@@ -22,7 +22,11 @@ export function MemberGroup({ name, members, roles, onOpenProfile, onMemberConte
           <button key={member.id} className="member-row" onClick={(event) => onOpenProfile(event, member)} onContextMenu={(event) => onMemberContextMenu(event, member)}>
             <span className="member-avatar-wrap">
               <MemberAvatar member={member} size={34} />
-              <i className={`status-dot ${member.status}`} />
+              <i
+                className={`status-dot ${member.status}`}
+                aria-label={`${member.displayName} status: ${member.statusText}`}
+                title={member.statusText}
+              />
             </span>
             <span className="member-copy">
               <strong>{member.displayName}</strong>
