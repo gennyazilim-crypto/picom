@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import type { Community, Member } from "../types/community";
 import { AppIcon } from "./AppIcon";
+import { mvpUiIconMap } from "./iconRegistry";
 
+const memberSidebarIcons = mvpUiIconMap.memberSidebar;
 const avatarPalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
 const hash = (value: string) => Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
 
@@ -47,7 +49,7 @@ export function MemberSidebar({ community, onOpenProfile, onMemberContextMenu }:
   return (
     <aside className="member-sidebar">
       <div className="member-search">
-        <AppIcon name="search" size="sm" />
+        <AppIcon name={memberSidebarIcons.search} size="sm" />
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search participants" />
       </div>
       <div className="member-list">
