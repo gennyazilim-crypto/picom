@@ -14,6 +14,7 @@ import { ImagePreviewModal } from "./components/ImagePreviewModal";
 import { UserProfilePopover } from "./components/UserProfilePopover";
 import { DesktopContextMenu } from "./components/DesktopContextMenu";
 import { SettingsModal } from "./components/SettingsModal";
+import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
@@ -195,6 +196,7 @@ export function App() {
     openPreview,
     closePreview,
     closeTransientOverlays,
+    dismissToast,
     pushToast,
   } = useOverlayState();
   const {
@@ -646,13 +648,7 @@ export function App() {
             />
           )}
         </DesktopAppShell>
-        <div className="toast-stack">
-          {toasts.map((toast) => (
-            <div key={toast.id} className={`toast ${toast.tone ?? "info"}`}>
-              {toast.message}
-            </div>
-          ))}
-        </div>
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
     );
   }
@@ -856,13 +852,7 @@ export function App() {
       {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} /> : null}
       {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} /> : null}
       {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
-      <div className="toast-stack">
-        {toasts.map((toast) => (
-          <div key={toast.id} className={`toast ${toast.tone ?? "info"}`}>
-            {toast.message}
-          </div>
-        ))}
-      </div>
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>
   );
 }

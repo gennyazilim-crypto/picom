@@ -9,7 +9,7 @@ export interface OverlayMenuItem {
 }
 
 export interface OverlayToast {
-  id: number;
+  id: string;
   message: string;
   tone?: "info" | "error" | "success";
 }
@@ -63,8 +63,16 @@ export function useOverlayState() {
     setPaletteOpen(false);
   }, []);
 
+  const dismissToast = useCallback((id: OverlayToast["id"]) => {
+    setToasts((current) => current.filter((item) => item.id !== id));
+  }, []);
+
   const pushToast = useCallback((message: string, tone: OverlayToast["tone"] = "info") => {
-    const toast: OverlayToast = { id: Date.now(), message, tone };
+    const id =
+      typeof window.crypto?.randomUUID === "function"
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const toast: OverlayToast = { id, message, tone };
     setToasts((current) => [...current.slice(-2), toast]);
     window.setTimeout(() => setToasts((current) => current.filter((item) => item.id !== toast.id)), 2600);
   }, []);
@@ -91,6 +99,7 @@ export function useOverlayState() {
     openPreview,
     closePreview,
     closeTransientOverlays,
+    dismissToast,
     pushToast,
   };
 }
