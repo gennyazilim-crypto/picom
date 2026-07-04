@@ -663,3 +663,6 @@ body{
 .realtime-pill.connecting span,.realtime-pill.reconnecting span{background:var(--warning);box-shadow:0 0 0 3px color-mix(in srgb,var(--warning) 18%,transparent)}
 .realtime-pill.disconnected span{background:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 14%,transparent)}
 .realtime-pill.idle{display:none}
+
+/* Task 186: Supabase broadcast typing indicator */
+.typing-indicator{width:max-content;max-width:100%;margin:4px 0 12px 54px;border:1px solid var(--border);border-radius:999px;background:var(--surface-soft);color:var(--text-muted);box-shadow:var(--shadow-soft);padding:8px 12px;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

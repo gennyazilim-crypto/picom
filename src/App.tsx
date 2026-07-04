@@ -32,6 +32,7 @@ import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOv
 import { useMemberSidebarState } from "./state/useMemberSidebarState";
 import { useProtectedDesktopSession } from "./hooks/useProtectedDesktopSession";
 import { useSupabaseMessageRealtime } from "./hooks/useSupabaseMessageRealtime";
+import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
 import { createCommunityFromSummary } from "./utils/communityFactory";
 
 const overlayIcons = mvpUiIconMap.overlays;
@@ -282,6 +283,13 @@ export function App() {
     onInsert: handleRealtimeMessageInsert,
     onUpdate: handleRealtimeMessageUpdate,
     onDelete: handleRealtimeMessageDelete,
+  });
+  const typingBroadcast = useSupabaseTypingBroadcast({
+    enabled: Boolean(authSession),
+    communityId: activeCommunity.id,
+    channelId: activeChannel.id,
+    currentUserId: currentUser.userId,
+    displayName: currentUser.displayName,
   });
 
   useEffect(() => {
@@ -750,6 +758,9 @@ export function App() {
             channel={activeChannel}
             messages={activeCommunity.messages}
             realtimeStatus={realtimeStatus}
+            typingNames={typingBroadcast.typingNames}
+            onTypingStart={typingBroadcast.sendTypingStart}
+            onTypingStop={typingBroadcast.sendTypingStop}
             onSendMessage={sendMessage}
             membersVisible={membersVisible}
             onToggleMembers={toggleMembersVisible}

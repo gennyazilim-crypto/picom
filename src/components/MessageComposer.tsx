@@ -28,16 +28,20 @@ type MessageComposerProps = {
   communityId: string;
   channel: Channel;
   onSendMessage: (body: string, attachments?: Attachment[]) => void | Promise<void>;
+  onTypingStart: () => void;
+  onTypingStop: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function MessageComposer({ communityId, channel, onSendMessage, pushToast }: MessageComposerProps) {
+export function MessageComposer({ communityId, channel, onSendMessage, onTypingStart, onTypingStop, pushToast }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
   const [sending, setSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewsRef = useRef<LocalAttachmentPreview[]>([]);
+  const lastTypingSentAtRef = useRef(0);
+  const typingStopTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     previewsRef.current = previews;
@@ -45,7 +49,33 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
 
   useEffect(() => () => {
     previewsRef.current.forEach((preview) => fileService.revoke(preview));
+    if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
+    onTypingStop();
   }, []);
+
+  const scheduleTypingStop = () => {
+    if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
+
+    typingStopTimerRef.current = window.setTimeout(() => {
+      onTypingStop();
+      typingStopTimerRef.current = null;
+    }, 2400);
+  };
+
+  const notifyTyping = (value: string) => {
+    if (!value.trim()) {
+      onTypingStop();
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastTypingSentAtRef.current > 1400) {
+      onTypingStart();
+      lastTypingSentAtRef.current = now;
+    }
+
+    scheduleTypingStop();
+  };
 
   useEffect(() => {
     const preventWindowFileDrop = (event: DragEvent) => {
@@ -153,6 +183,7 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
     });
 
     await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments);
+    onTypingStop();
     setBody("");
     setPreviews([]);
     setSending(false);
@@ -203,7 +234,11 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
           value={body}
           placeholder={`Message #${channel.name}`}
           rows={1}
-          onChange={(event) => setBody(event.target.value)}
+          onChange={(event) => {
+            setBody(event.target.value);
+            notifyTyping(event.target.value);
+          }}
+          onBlur={onTypingStop}
           onPaste={(event) => {
             const files = getClipboardFiles(event.clipboardData);
             if (!files.length) return;

@@ -17,6 +17,9 @@ type ChatMainProps = {
   channel: Channel;
   messages: Message[];
   realtimeStatus: RealtimeConnectionStatus;
+  typingNames: string[];
+  onTypingStart: () => void;
+  onTypingStop: () => void;
   onSendMessage: (body: string, attachments?: Attachment[]) => void | Promise<void>;
   onToggleMembers: () => void;
   membersVisible: boolean;
@@ -26,7 +29,7 @@ type ChatMainProps = {
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function ChatMain({ community, channel, messages, realtimeStatus, onSendMessage, onToggleMembers, membersVisible, onMessageContextMenu, onOpenProfile, onOpenImage, pushToast }: ChatMainProps) {
+export function ChatMain({ community, channel, messages, realtimeStatus, typingNames, onTypingStart, onTypingStop, onSendMessage, onToggleMembers, membersVisible, onMessageContextMenu, onOpenProfile, onOpenImage, pushToast }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
 
   return (
@@ -43,8 +46,8 @@ export function ChatMain({ community, channel, messages, realtimeStatus, onSendM
         </div>
       ) : (
         <>
-          <MessageList community={community} messages={channelMessages} onContextMenu={onMessageContextMenu} onOpenProfile={onOpenProfile} onOpenImage={onOpenImage} />
-          <MessageComposer communityId={community.id} channel={channel} onSendMessage={onSendMessage} pushToast={pushToast} />
+          <MessageList community={community} messages={channelMessages} typingNames={typingNames} onContextMenu={onMessageContextMenu} onOpenProfile={onOpenProfile} onOpenImage={onOpenImage} />
+          <MessageComposer communityId={community.id} channel={channel} onSendMessage={onSendMessage} onTypingStart={onTypingStart} onTypingStop={onTypingStop} pushToast={pushToast} />
         </>
       )}
     </main>

@@ -7,12 +7,19 @@ import { UnreadDivider } from "./UnreadDivider";
 type MessageListProps = {
   community: Community;
   messages: Message[];
+  typingNames: string[];
   onContextMenu: (event: MouseEvent, message: Message) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenImage: (image: Attachment) => void;
 };
 
-export function MessageList({ community, messages, onContextMenu, onOpenProfile, onOpenImage }: MessageListProps) {
+function formatTypingNames(names: string[]): string {
+  if (names.length === 1) return `${names[0]} is typing...`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} are typing...`;
+  return `${names[0]}, ${names[1]}, and ${names.length - 2} more are typing...`;
+}
+
+export function MessageList({ community, messages, typingNames, onContextMenu, onOpenProfile, onOpenImage }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const lastMessageId = messages[messages.length - 1]?.id;
 
@@ -27,7 +34,7 @@ export function MessageList({ community, messages, onContextMenu, onOpenProfile,
     return (
       <div className="message-list empty-state">
         <h2>No messages yet</h2>
-        <p>Send the first local message in this desktop channel.</p>
+        <p>{typingNames.length ? formatTypingNames(typingNames) : "Send the first local message in this desktop channel."}</p>
       </div>
     );
   }
@@ -52,6 +59,7 @@ export function MessageList({ community, messages, onContextMenu, onOpenProfile,
           </div>
         );
       })}
+      {typingNames.length ? <div className="typing-indicator">{formatTypingNames(typingNames)}</div> : null}
     </div>
   );
 }
