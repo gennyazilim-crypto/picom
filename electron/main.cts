@@ -3,6 +3,10 @@ import path from "node:path";
 
 const APP_ID = "com.picom.desktop";
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
+const DEFAULT_WINDOW_WIDTH = 1440;
+const DEFAULT_WINDOW_HEIGHT = 900;
+const MIN_WINDOW_WIDTH = 1100;
+const MIN_WINDOW_HEIGHT = 700;
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -49,10 +53,10 @@ function configureWebContents(window: BrowserWindow): void {
 
 async function createMainWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 1100,
-    minHeight: 700,
+    width: DEFAULT_WINDOW_WIDTH,
+    height: DEFAULT_WINDOW_HEIGHT,
+    minWidth: MIN_WINDOW_WIDTH,
+    minHeight: MIN_WINDOW_HEIGHT,
     show: false,
     title: "Picom",
     backgroundColor: "#eef3f5",
