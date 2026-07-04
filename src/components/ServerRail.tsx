@@ -10,17 +10,20 @@ const railIcons = mvpUiIconMap.serverRail;
 type ServerRailProps = {
   communities: Community[];
   activeCommunityId: string;
+  homeActive?: boolean;
   onSelectCommunity: (id: string) => void;
+  onOpenHome: () => void;
   onOpenSettings: () => void;
   onUtilityAction?: (label: string) => void;
   onContextMenu: (event: MouseEvent, label: string) => void;
 };
 
-export function ServerRail({ communities, activeCommunityId, onSelectCommunity, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
+export function ServerRail({ communities, activeCommunityId, homeActive = false, onSelectCommunity, onOpenHome, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
   return (
     <nav className="server-rail" aria-label="Communities">
-      <button className="server-home" aria-label="Home" onClick={() => onUtilityAction?.("Home placeholder opened.")}>
+      <button className={`server-home ${homeActive ? "active" : ""}`} aria-label="Open mention feed" aria-current={homeActive ? "page" : undefined} onClick={onOpenHome}>
         <img src={logoUrl} alt="" />
+        {homeActive ? <span className="active-rail" /> : null}
       </button>
       <span className="rail-separator" />
       <div className="server-stack">

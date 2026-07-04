@@ -79,9 +79,10 @@ export function useMvpAppState(communities: Community[]) {
   );
 
   const switchCommunity = useCallback(
-    (id: string) => {
+    (id: string, preferredChannelId?: string) => {
       const community = safeCommunities.find((candidate) => candidate.id === id) ?? safeCommunities[0];
-      const firstTextChannel = getFirstTextChannel(community) ?? FALLBACK_CHANNEL;
+      const targetChannel = getChannels(community).find((channel) => channel.id === preferredChannelId);
+      const firstTextChannel = targetChannel ?? getFirstTextChannel(community) ?? FALLBACK_CHANNEL;
       setActiveCommunityId(community.id);
       setActiveChannelId(firstTextChannel.id);
     },

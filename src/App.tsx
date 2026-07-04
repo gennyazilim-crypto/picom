@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { currentUserId, mockCommunities } from "./data/mockCommunities";
+import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
+import { mockMentionItems } from "./data/mockMentions";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
+import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
@@ -19,6 +22,8 @@ import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
+import { MentionFeedMain } from "./components/MentionFeedMain";
+import { MentionRightPanel } from "./components/MentionRightPanel";
 import { clipboardService } from "./services/clipboardService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
@@ -46,6 +51,8 @@ type PaletteResult = {
   detail: string;
   run: () => void;
 };
+
+type ActiveView = "community" | "mentionFeed";
 
 type CommandPaletteProps = {
   communities: Community[];
@@ -149,6 +156,10 @@ export function App() {
   const saved = settingsService.getSettings();
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
   const [authView, setAuthView] = useState<"login" | "register">("login");
+  const [activeView, setActiveView] = useState<ActiveView>("community");
+  const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
+  const [mentionTab, setMentionTab] = useState<MentionFeedTab>("feed");
+  const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
   const {
@@ -617,6 +628,56 @@ export function App() {
       .slice(0, 36);
   }, [clearChannelUnread, closePalette, communities, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
+  const openMentionFeed = useCallback(() => {
+    setActiveView("mentionFeed");
+    closeTransientOverlays();
+  }, [closeTransientOverlays]);
+
+  const openCommunityFromRail = useCallback((communityId: string) => {
+    setActiveView("community");
+    switchCommunity(communityId);
+    closeTransientOverlays();
+  }, [closeTransientOverlays, switchCommunity]);
+
+  const toggleMentionReaction = useCallback((id: string) => {
+    setMentionItems((current) =>
+      current.map((item) => {
+        if (item.id !== id) return item;
+
+        const [primaryReaction, ...rest] = item.reactions ?? [{ emoji: "Like", count: 0 }];
+        const reactedByCurrentUser = Boolean(primaryReaction.reactedByCurrentUser);
+        const nextPrimaryReaction = {
+          ...primaryReaction,
+          count: Math.max(0, primaryReaction.count + (reactedByCurrentUser ? -1 : 1)),
+          reactedByCurrentUser: !reactedByCurrentUser,
+        };
+
+        return { ...item, reactions: [nextPrimaryReaction, ...rest] };
+      }),
+    );
+  }, []);
+
+  const toggleMentionSaved = useCallback((id: string) => {
+    setMentionItems((current) => current.map((item) => (item.id === id ? { ...item, isSaved: !item.isSaved } : item)));
+  }, []);
+
+  const markMentionRead = useCallback((id: string) => {
+    setMentionItems((current) => current.map((item) => (item.id === id ? { ...item, isUnread: false } : item)));
+  }, []);
+
+  const toggleMentionFilter = useCallback((filter: MentionQuickFilter) => {
+    setMentionQuickFilter((current) => (current === filter ? null : filter));
+  }, []);
+
+  const openMentionInChannel = useCallback((item: MentionItem) => {
+    setActiveView("community");
+    switchCommunity(item.communityId, item.channelId);
+    clearChannelUnread({ communityId: item.communityId, channelId: item.channelId });
+    setMentionItems((current) => current.map((candidate) => (candidate.id === item.id ? { ...candidate, isUnread: false } : candidate)));
+    closeTransientOverlays();
+    console.info("[Picom mention feed] Message highlight placeholder prepared.", { messageId: item.messageId });
+  }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
+
   if (!authReady || !authSession) {
     return (
       <>
@@ -742,7 +803,9 @@ export function App() {
           <ServerRail
             communities={communities}
             activeCommunityId={activeCommunityId}
-            onSelectCommunity={switchCommunity}
+            homeActive={activeView === "mentionFeed"}
+            onOpenHome={openMentionFeed}
+            onSelectCommunity={openCommunityFromRail}
             onOpenSettings={openSettings}
             onUtilityAction={(message) => {
               if (message === "create-community") {
@@ -754,77 +817,124 @@ export function App() {
             }}
             onContextMenu={(event, label) => openContext(event, [{ label }, { label: "Context placeholder" }])}
           />
-          <CommunitySidebar
-            community={displayedActiveCommunity}
-            activeChannelId={activeChannel.id}
-            currentUser={displayedCurrentUser}
-            onSelectChannel={(channel) => {
-              setActiveChannelId(channel.id);
-              clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
-            }}
-            onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
-            onOpenSettings={openSettings}
-            onLogout={handleLogout}
-            onChannelContextMenu={(event, channel) =>
-              openContext(event, [
-                {
-                  label: "Copy channel ID",
-                  onSelect: () => clipboardService.copyText(channel.id).then(() => pushToast("Channel ID copied.", "success")),
-                },
-                {
-                  label: "Edit channel placeholder",
-                  onSelect: () => channelService.updateChannel({ channelId: channel.id }).then((result) => {
-                    if (!result.ok) pushToast(result.error.message, "info");
-                  }),
-                },
-                {
-                  label: "Delete channel placeholder",
-                  tone: "danger",
-                  onSelect: () => channelService.deleteChannel({ channelId: channel.id }).then((result) => {
-                    if (!result.ok) pushToast(result.error.message, "info");
-                  }),
-                },
-              ])
-            }
-          />
-          <ChatMain
-            community={displayedActiveCommunity}
-            channel={activeChannel}
-            messages={displayedActiveCommunity.messages}
-            realtimeStatus={realtimeStatus}
-            typingNames={typingBroadcast.typingNames}
-            onTypingStart={typingBroadcast.sendTypingStart}
-            onTypingStop={typingBroadcast.sendTypingStop}
-            onSendMessage={sendMessage}
-            membersVisible={membersVisible}
-            onToggleMembers={toggleMembersVisible}
-            onMessageContextMenu={(event, message) =>
-              openContext(event, [
-                { label: "Reply placeholder" },
-                { label: "React placeholder" },
-                {
-                  label: "Copy message ID",
-                  onSelect: () => clipboardService.copyText(message.id).then(() => pushToast("Message ID copied.", "success")),
-                },
-              ])
-            }
-            onOpenProfile={openProfile}
-            onOpenImage={openPreview}
-            pushToast={pushToast}
-          />
-          {membersVisible ? (
-            <MemberSidebar
-              community={displayedActiveCommunity}
-              onOpenProfile={openProfile}
-              onMemberContextMenu={(event, member) =>
-                openContext(event, [
-                  { label: `View ${member.displayName}` },
-                  { label: "Message placeholder" },
-                  { label: "Moderation placeholder", disabled: true },
-                ])
-              }
-            />
-          ) : null}
+          {activeView === "mentionFeed" ? (
+            <div className="mention-feed-shell">
+              <MentionFeedMain
+                items={mentionItems}
+                communities={communities}
+                followedUserIds={currentUserFollowedUserIds}
+                activeTab={mentionTab}
+                activeFilter={mentionQuickFilter}
+                onTabChange={setMentionTab}
+                onOpenImage={openPreview}
+                onOpenInChannel={openMentionInChannel}
+                onToggleReaction={toggleMentionReaction}
+                onToggleSaved={toggleMentionSaved}
+                onMarkRead={markMentionRead}
+                onOpenProfile={openProfile}
+                onOpenMore={(event, item) =>
+                  openContext(event, [
+                    {
+                      label: item.isSaved ? "Unsave mention" : "Save mention",
+                      onSelect: () => toggleMentionSaved(item.id),
+                    },
+                    {
+                      label: item.isUnread ? "Mark as read" : "Already read",
+                      disabled: !item.isUnread,
+                      onSelect: () => markMentionRead(item.id),
+                    },
+                    {
+                      label: "Open in channel",
+                      onSelect: () => openMentionInChannel(item),
+                    },
+                  ])
+                }
+              />
+              <MentionRightPanel
+                items={mentionItems}
+                communities={communities}
+                popularUserIds={[...mockPopularUserIds]}
+                followedUserIds={currentUserFollowedUserIds}
+                activeFilter={mentionQuickFilter}
+                onFilterChange={toggleMentionFilter}
+                onOpenProfile={openProfile}
+              />
+            </div>
+          ) : (
+            <>
+              <CommunitySidebar
+                community={displayedActiveCommunity}
+                activeChannelId={activeChannel.id}
+                currentUser={displayedCurrentUser}
+                onSelectChannel={(channel) => {
+                  setActiveChannelId(channel.id);
+                  clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
+                }}
+                onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
+                onOpenSettings={openSettings}
+                onLogout={handleLogout}
+                onChannelContextMenu={(event, channel) =>
+                  openContext(event, [
+                    {
+                      label: "Copy channel ID",
+                      onSelect: () => clipboardService.copyText(channel.id).then(() => pushToast("Channel ID copied.", "success")),
+                    },
+                    {
+                      label: "Edit channel placeholder",
+                      onSelect: () => channelService.updateChannel({ channelId: channel.id }).then((result) => {
+                        if (!result.ok) pushToast(result.error.message, "info");
+                      }),
+                    },
+                    {
+                      label: "Delete channel placeholder",
+                      tone: "danger",
+                      onSelect: () => channelService.deleteChannel({ channelId: channel.id }).then((result) => {
+                        if (!result.ok) pushToast(result.error.message, "info");
+                      }),
+                    },
+                  ])
+                }
+              />
+              <ChatMain
+                community={displayedActiveCommunity}
+                channel={activeChannel}
+                messages={displayedActiveCommunity.messages}
+                realtimeStatus={realtimeStatus}
+                typingNames={typingBroadcast.typingNames}
+                onTypingStart={typingBroadcast.sendTypingStart}
+                onTypingStop={typingBroadcast.sendTypingStop}
+                onSendMessage={sendMessage}
+                membersVisible={membersVisible}
+                onToggleMembers={toggleMembersVisible}
+                onMessageContextMenu={(event, message) =>
+                  openContext(event, [
+                    { label: "Reply placeholder" },
+                    { label: "React placeholder" },
+                    {
+                      label: "Copy message ID",
+                      onSelect: () => clipboardService.copyText(message.id).then(() => pushToast("Message ID copied.", "success")),
+                    },
+                  ])
+                }
+                onOpenProfile={openProfile}
+                onOpenImage={openPreview}
+                pushToast={pushToast}
+              />
+              {membersVisible ? (
+                <MemberSidebar
+                  community={displayedActiveCommunity}
+                  onOpenProfile={openProfile}
+                  onMemberContextMenu={(event, member) =>
+                    openContext(event, [
+                      { label: `View ${member.displayName}` },
+                      { label: "Message placeholder" },
+                      { label: "Moderation placeholder", disabled: true },
+                    ])
+                  }
+                />
+              ) : null}
+            </>
+          )}
         </div>
       </DesktopAppShell>
 
