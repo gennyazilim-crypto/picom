@@ -13,7 +13,8 @@
                     "build":  "npm run typecheck \u0026\u0026 npm run electron:build \u0026\u0026 vite build",
                     "preview":  "vite preview --host 127.0.0.1",
                     "supabase:types":  "supabase gen types typescript --local --schema public \u003e src/services/supabase/database.types.ts",
-                    "supabase:smoke":  "node scripts/supabase-schema-smoke-test.mjs"
+                    "supabase:smoke":  "node scripts/supabase-schema-smoke-test.mjs",
+                    "mock:smoke":  "node scripts/mock-mode-smoke-test.mjs"
                 },
     "dependencies":  {
                          "@supabase/supabase-js":  "^2.110.0",
