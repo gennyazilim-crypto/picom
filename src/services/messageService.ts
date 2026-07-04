@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { dataSourceService } from "./dataSourceService";
+import { createMockDeletedMessage, deleteSupabaseMessage, type DeletedMessageSummary } from "./messageDeleteMutation";
 import { createMockEditedMessage, editSupabaseMessage, type EditedMessageSummary } from "./messageEditMutation";
 import { listMockMessageSummaries, listSupabaseMessageSummaries, type ListMessagesInput, type MessagePage } from "./messageListQuery";
 import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutation";
@@ -45,13 +46,18 @@ export type EditMessageInput = Readonly<{
   body: string;
 }>;
 
+export type DeleteMessageInput = Readonly<{
+  messageId: string;
+}>;
+
 export type MessageServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
   | "MESSAGE_SEND_FAILED"
   | "MESSAGE_LIST_FAILED"
-  | "MESSAGE_EDIT_FAILED";
+  | "MESSAGE_EDIT_FAILED"
+  | "MESSAGE_DELETE_FAILED";
 
 export type MessageServiceError = Readonly<{
   code: MessageServiceErrorCode;
@@ -144,6 +150,14 @@ function validateEditMessageInput(input: EditMessageInput): MessageServiceError 
   return null;
 }
 
+function validateDeleteMessageInput(input: DeleteMessageInput): MessageServiceError | null {
+  if (!input.messageId.trim()) {
+    return { code: "VALIDATION_ERROR", message: "Message ID is required." };
+  }
+
+  return null;
+}
+
 async function getSupabaseAuthorId(client: SupabaseClient<Database>, explicitAuthorId?: string): Promise<MessageServiceResult<string>> {
   if (explicitAuthorId?.trim()) {
     return { ok: true, data: explicitAuthorId.trim() };
@@ -225,6 +239,28 @@ export const messageService = {
 
     if (error || !data) {
       return messageError("MESSAGE_EDIT_FAILED", "Could not edit message.");
+    }
+
+    return { ok: true, data };
+  },
+
+  async deleteMessage(input: DeleteMessageInput): Promise<MessageServiceResult<DeletedMessageSummary>> {
+    const validationError = validateDeleteMessageInput(input);
+    if (validationError) return { ok: false, error: validationError };
+
+    const dataSource = dataSourceService.getStatus();
+
+    if (dataSource.isMock) {
+      return { ok: true, data: createMockDeletedMessage(input.messageId) };
+    }
+
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+
+    const { data, error } = await deleteSupabaseMessage(configured.data, input.messageId);
+
+    if (error || !data) {
+      return messageError("MESSAGE_DELETE_FAILED", "Could not delete message.");
     }
 
     return { ok: true, data };
