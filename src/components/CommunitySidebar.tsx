@@ -5,6 +5,7 @@ import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { MemberAvatar } from "./MemberAvatar";
 import { CommunityHeader } from "./CommunityHeader";
+import { ChannelCategory } from "./ChannelCategory";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
 type CommunitySidebarProps = {
@@ -27,32 +28,15 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
 
       <div className="channel-scroll">
         {community.categories.map((category) => (
-          <section className="channel-category" key={category.id}>
-            <button
-              className="category-header"
-              onClick={() => setCollapsed((current) => ({ ...current, [category.id]: !current[category.id] }))}
-            >
-              <AppIcon name={collapsed[category.id] ? sidebarIcons.collapse : sidebarIcons.expand} size="xs" />
-              <strong>{category.name}</strong>
-              <em>{category.channels.length}</em>
-            </button>
-            {!collapsed[category.id]
-              ? category.channels.map((channel) => (
-                  <button
-                    key={channel.id}
-                    className={`channel-item ${channel.id === activeChannelId ? "active" : ""}`}
-                    onClick={() => onSelectChannel(channel)}
-                    onContextMenu={(event) => onChannelContextMenu(event, channel)}
-                  >
-                    <AppIcon name={channel.type === "voice" ? sidebarIcons.voiceChannel : sidebarIcons.textChannel} size="sm" />
-                    <span className="channel-name">{channel.name}</span>
-                    {channel.isPrivate ? <AppIcon name={sidebarIcons.privateChannel} size="xs" /> : null}
-                    {channel.unread ? <span className="channel-unread" /> : null}
-                    {channel.mentions ? <span className="mention-badge">{channel.mentions}</span> : null}
-                  </button>
-                ))
-              : null}
-          </section>
+          <ChannelCategory
+            key={category.id}
+            category={category}
+            collapsed={Boolean(collapsed[category.id])}
+            activeChannelId={activeChannelId}
+            onToggle={() => setCollapsed((current) => ({ ...current, [category.id]: !current[category.id] }))}
+            onSelectChannel={onSelectChannel}
+            onChannelContextMenu={onChannelContextMenu}
+          />
         ))}
       </div>
 
