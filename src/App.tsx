@@ -45,6 +45,15 @@ import { createCommunityFromSummary } from "./utils/communityFactory";
 
 const overlayIcons = mvpUiIconMap.overlays;
 
+function getLocalMentionCount(body: string, currentUser: Member): number {
+  const normalizedBody = body.toLowerCase();
+  const mentionTargets = [currentUser.username, currentUser.displayName]
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+  return mentionTargets.some((target) => normalizedBody.includes(`@${target}`)) ? 1 : 0;
+}
+
 type PaletteResult = {
   id: string;
   group: string;
@@ -252,11 +261,6 @@ export function App() {
   const handleRealtimeMessageInsert = useCallback((message: MessageSummary) => {
     if (message.communityId !== activeCommunity.id) return;
 
-    if (message.channelId !== activeChannel.id) {
-      markChannelUnread({ communityId: message.communityId, channelId: message.channelId });
-      return;
-    }
-
     upsertLocalMessage({
       id: message.id,
       clientMessageId: message.clientMessageId,
@@ -268,7 +272,15 @@ export function App() {
       editedAt: message.editedAt,
       deletedAt: message.deletedAt,
     });
-  }, [activeChannel.id, activeCommunity.id, markChannelUnread, upsertLocalMessage]);
+
+    if (message.channelId !== activeChannel.id && message.authorId !== currentUser.userId) {
+      markChannelUnread({
+        communityId: message.communityId,
+        channelId: message.channelId,
+        mentionCount: getLocalMentionCount(message.body, currentUser),
+      });
+    }
+  }, [activeChannel.id, activeCommunity.id, currentUser, markChannelUnread, upsertLocalMessage]);
 
   const handleRealtimeMessageUpdate = useCallback((message: MessageSummary) => {
     if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;

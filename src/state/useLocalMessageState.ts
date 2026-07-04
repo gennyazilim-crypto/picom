@@ -62,25 +62,36 @@ function updateChannelUnreadState(
   { communityId, channelId, mentionCount }: ChannelUnreadInput,
   unread: boolean,
 ): Community[] {
-  return communities.map((community) => {
+  let changed = false;
+  const nextCommunities = communities.map((community) => {
     if (community.id !== communityId) return community;
 
-    return {
+    const nextCategories = community.categories.map((category) => ({
+      ...category,
+      channels: category.channels.map((channel) => {
+        if (channel.id !== channelId) return channel;
+
+        const nextMentions = unread ? mentionCount ?? channel.mentions ?? 0 : 0;
+        if (channel.unread === unread && (channel.mentions ?? 0) === nextMentions) return channel;
+
+        changed = true;
+        return {
+          ...channel,
+          unread,
+          mentions: nextMentions,
+        };
+      }),
+    }));
+
+    return changed
+      ? {
       ...community,
-      categories: community.categories.map((category) => ({
-        ...category,
-        channels: category.channels.map((channel) =>
-          channel.id === channelId
-            ? {
-                ...channel,
-                unread,
-                mentions: unread ? mentionCount ?? channel.mentions ?? 0 : 0,
-              }
-            : channel,
-        ),
-      })),
-    };
+      categories: nextCategories,
+    }
+      : community;
   });
+
+  return changed ? nextCommunities : communities;
 }
 
 type AddLocalChannelInput = {
