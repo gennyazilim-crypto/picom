@@ -11,6 +11,12 @@ export function formatMentionBadge(count?: number | null): string {
   return normalized > MAX_VISIBLE_MENTION_COUNT ? `${MAX_VISIBLE_MENTION_COUNT}+` : String(normalized);
 }
 
+export function formatMentionLabel(count?: number | null): string {
+  const normalized = normalizeMentionCount(count);
+  if (normalized <= 0) return "No mentions";
+  return `${normalized} mention${normalized === 1 ? "" : "s"}`;
+}
+
 export function messageMentionsUser(body: string, username: string, displayName: string): boolean {
   const normalizedBody = body.toLowerCase();
   const normalizedUsername = username.trim().toLowerCase();

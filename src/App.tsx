@@ -42,16 +42,12 @@ import { useSupabaseMessageRealtime } from "./hooks/useSupabaseMessageRealtime";
 import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
 import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
 import { createCommunityFromSummary } from "./utils/communityFactory";
+import { messageMentionsUser } from "./utils/mentionUtils";
 
 const overlayIcons = mvpUiIconMap.overlays;
 
 function getLocalMentionCount(body: string, currentUser: Member): number {
-  const normalizedBody = body.toLowerCase();
-  const mentionTargets = [currentUser.username, currentUser.displayName]
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-
-  return mentionTargets.some((target) => normalizedBody.includes(`@${target}`)) ? 1 : 0;
+  return messageMentionsUser(body, currentUser.username, currentUser.displayName) ? 1 : 0;
 }
 
 type PaletteResult = {

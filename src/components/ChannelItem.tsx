@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 import type { Channel } from "../types/community";
-import { formatMentionBadge, normalizeMentionCount } from "../utils/mentionUtils";
+import { formatMentionBadge, formatMentionLabel, normalizeMentionCount } from "../utils/mentionUtils";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 
@@ -17,10 +17,11 @@ export function ChannelItem({ channel, active, onSelect, onContextMenu }: Channe
   const icon = channel.type === "voice" ? sidebarIcons.voiceChannel : sidebarIcons.textChannel;
   const mentionCount = normalizeMentionCount(channel.mentions);
   const mentionLabel = formatMentionBadge(mentionCount);
+  const mentionBadgeLabel = formatMentionLabel(mentionCount);
 
   return (
     <button
-      className={`channel-item ${active ? "active" : ""}`}
+      className={`channel-item ${active ? "active" : ""} ${mentionCount ? "has-mentions" : ""}`}
       aria-current={active ? "page" : undefined}
       onClick={() => onSelect(channel)}
       onContextMenu={(event) => onContextMenu(event, channel)}
@@ -30,7 +31,7 @@ export function ChannelItem({ channel, active, onSelect, onContextMenu }: Channe
       {channel.isPrivate ? <AppIcon name={sidebarIcons.privateChannel} size="xs" /> : null}
       {channel.unread ? <span className="channel-unread" aria-label="Unread channel" /> : null}
       {mentionCount ? (
-        <span className="mention-badge" aria-label={`${mentionCount} mention${mentionCount === 1 ? "" : "s"}`} title={`${mentionCount} mention${mentionCount === 1 ? "" : "s"}`}>
+        <span className="mention-badge" aria-label={mentionBadgeLabel} title={mentionBadgeLabel}>
           {mentionLabel}
         </span>
       ) : null}
