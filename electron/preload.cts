@@ -1,4 +1,6 @@
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
+
+type WindowAction = "minimize" | "maximize" | "close";
 
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
@@ -9,6 +11,10 @@ type PicomRuntimeInfo = Readonly<{
     node?: string;
   }>;
 }>;
+
+function isWindowAction(action: unknown): action is WindowAction {
+  return action === "minimize" || action === "maximize" || action === "close";
+}
 
 const runtimeInfo: PicomRuntimeInfo = Object.freeze({
   runtime: "electron",
@@ -21,7 +27,17 @@ const runtimeInfo: PicomRuntimeInfo = Object.freeze({
 });
 
 const bridge = Object.freeze({
-  getRuntimeInfo: (): PicomRuntimeInfo => runtimeInfo
+  getRuntimeInfo: (): PicomRuntimeInfo => runtimeInfo,
+  windowControl: (action: WindowAction) => {
+    if (!isWindowAction(action)) {
+      return Promise.resolve({ ok: false, native: true, error: "INVALID_WINDOW_ACTION" } as const);
+    }
+
+    return ipcRenderer.invoke("picom:window-control", action) as Promise<
+      | { ok: true; native: true; action: WindowAction }
+      | { ok: false; native: true; error: string }
+    >;
+  }
 });
 
 contextBridge.exposeInMainWorld("picomDesktop", bridge);

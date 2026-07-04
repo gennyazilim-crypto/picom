@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
 
 const APP_ID = "com.picom.desktop";
@@ -8,7 +8,13 @@ const DEFAULT_WINDOW_HEIGHT = 900;
 const MIN_WINDOW_WIDTH = 1100;
 const MIN_WINDOW_HEIGHT = 700;
 
+type WindowAction = "minimize" | "maximize" | "close";
+
 let mainWindow: BrowserWindow | null = null;
+
+function isWindowAction(action: unknown): action is WindowAction {
+  return action === "minimize" || action === "maximize" || action === "close";
+}
 
 function isSafeExternalUrl(url: string): boolean {
   try {
@@ -48,6 +54,38 @@ function configureWebContents(window: BrowserWindow): void {
 
     event.preventDefault();
     openExternalSafely(url);
+  });
+}
+
+function registerIpcHandlers(): void {
+  ipcMain.handle("picom:window-control", (event, action: unknown) => {
+    if (!isWindowAction(action)) {
+      return { ok: false, native: true, error: "INVALID_WINDOW_ACTION" } as const;
+    }
+
+    const window = BrowserWindow.fromWebContents(event.sender);
+
+    if (!window) {
+      return { ok: false, native: true, error: "WINDOW_NOT_FOUND" } as const;
+    }
+
+    if (action === "minimize") {
+      window.minimize();
+    }
+
+    if (action === "maximize") {
+      if (window.isMaximized()) {
+        window.unmaximize();
+      } else {
+        window.maximize();
+      }
+    }
+
+    if (action === "close") {
+      window.close();
+    }
+
+    return { ok: true, native: true, action } as const;
   });
 }
 
@@ -91,6 +129,7 @@ async function createMainWindow(): Promise<void> {
 app.setAppUserModelId(APP_ID);
 
 app.whenReady().then(() => {
+  registerIpcHandlers();
   void createMainWindow();
 
   app.on("activate", () => {
