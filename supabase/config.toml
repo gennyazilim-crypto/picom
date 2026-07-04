@@ -56,3 +56,6 @@ verify_jwt = true
 
 [functions.moderation-helper]
 verify_jwt = true
+
+[functions.notification-fanout]
+verify_jwt = true
