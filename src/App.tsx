@@ -32,6 +32,7 @@ import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOv
 import { useMemberSidebarState } from "./state/useMemberSidebarState";
 import { useProtectedDesktopSession } from "./hooks/useProtectedDesktopSession";
 import { useSupabaseMessageRealtime } from "./hooks/useSupabaseMessageRealtime";
+import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
 import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
 import { createCommunityFromSummary } from "./utils/communityFactory";
 
@@ -291,6 +292,32 @@ export function App() {
     currentUserId: currentUser.userId,
     displayName: currentUser.displayName,
   });
+  const presenceChannel = useSupabasePresenceChannel({
+    enabled: Boolean(authSession),
+    communityId: activeCommunity.id,
+    currentUserId: currentUser.userId,
+    displayName: currentUser.displayName,
+    status: currentUser.status,
+  });
+  const displayedActiveCommunity = useMemo<Community>(() => {
+    if (!presenceChannel.onlineUserIds.length) return activeCommunity;
+
+    const onlineUserIds = new Set(presenceChannel.onlineUserIds);
+
+    return {
+      ...activeCommunity,
+      members: activeCommunity.members.map((member) =>
+        onlineUserIds.has(member.userId)
+          ? {
+              ...member,
+              status: member.status === "dnd" ? member.status : "online",
+              statusText: member.status === "dnd" ? member.statusText : "Online now",
+            }
+          : member,
+      ),
+    };
+  }, [activeCommunity, presenceChannel.onlineUserIds]);
+  const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -724,9 +751,9 @@ export function App() {
             onContextMenu={(event, label) => openContext(event, [{ label }, { label: "Context placeholder" }])}
           />
           <CommunitySidebar
-            community={activeCommunity}
+            community={displayedActiveCommunity}
             activeChannelId={activeChannel.id}
-            currentUser={currentUser}
+            currentUser={displayedCurrentUser}
             onSelectChannel={(channel) => setActiveChannelId(channel.id)}
             onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
             onOpenSettings={openSettings}
@@ -754,9 +781,9 @@ export function App() {
             }
           />
           <ChatMain
-            community={activeCommunity}
+            community={displayedActiveCommunity}
             channel={activeChannel}
-            messages={activeCommunity.messages}
+            messages={displayedActiveCommunity.messages}
             realtimeStatus={realtimeStatus}
             typingNames={typingBroadcast.typingNames}
             onTypingStart={typingBroadcast.sendTypingStart}
@@ -780,7 +807,7 @@ export function App() {
           />
           {membersVisible ? (
             <MemberSidebar
-              community={activeCommunity}
+              community={displayedActiveCommunity}
               onOpenProfile={openProfile}
               onMemberContextMenu={(event, member) =>
                 openContext(event, [
