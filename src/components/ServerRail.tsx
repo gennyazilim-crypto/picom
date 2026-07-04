@@ -12,13 +12,14 @@ type ServerRailProps = {
   activeCommunityId: string;
   onSelectCommunity: (id: string) => void;
   onOpenSettings: () => void;
+  onUtilityAction?: (label: string) => void;
   onContextMenu: (event: MouseEvent, label: string) => void;
 };
 
-export function ServerRail({ communities, activeCommunityId, onSelectCommunity, onOpenSettings, onContextMenu }: ServerRailProps) {
+export function ServerRail({ communities, activeCommunityId, onSelectCommunity, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
   return (
     <nav className="server-rail" aria-label="Communities">
-      <button className="server-home" aria-label="Home">
+      <button className="server-home" aria-label="Home" onClick={() => onUtilityAction?.("Home placeholder opened.")}>
         <img src={logoUrl} alt="" />
       </button>
       <span className="rail-separator" />
@@ -39,10 +40,10 @@ export function ServerRail({ communities, activeCommunityId, onSelectCommunity, 
             {community.id === "aurora" ? <i className="unread-dot" /> : null}
           </button>
         ))}
-        <button className="server-button utility" aria-label="Add community">
+        <button className="server-button utility" aria-label="Add community" onClick={() => onUtilityAction?.("Create community placeholder opened.")}>
           <AppIcon name={railIcons.addCommunity} size="lg" />
         </button>
-        <button className="server-button utility" aria-label="Discover communities placeholder">
+        <button className="server-button utility" aria-label="Discover communities placeholder" onClick={() => onUtilityAction?.("Discover communities placeholder opened.")}>
           <AppIcon name={railIcons.discover} size="lg" />
         </button>
       </div>
