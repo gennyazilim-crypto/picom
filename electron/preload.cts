@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { IPC_CHANNELS, isIpcChannel } from "./ipcChannels.cjs";
 
 type WindowAction = "minimize" | "maximize" | "close";
 
@@ -14,6 +15,14 @@ type PicomRuntimeInfo = Readonly<{
 
 function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";
+}
+
+function invokeWhitelisted(channel: string, ...args: unknown[]): Promise<unknown> {
+  if (!isIpcChannel(channel)) {
+    return Promise.resolve({ ok: false, native: true, error: "IPC_CHANNEL_NOT_ALLOWED" });
+  }
+
+  return ipcRenderer.invoke(channel, ...args);
 }
 
 const runtimeInfo: PicomRuntimeInfo = Object.freeze({
@@ -33,7 +42,7 @@ const bridge = Object.freeze({
       return Promise.resolve({ ok: false, native: true, error: "INVALID_WINDOW_ACTION" } as const);
     }
 
-    return ipcRenderer.invoke("picom:window-control", action) as Promise<
+    return invokeWhitelisted(IPC_CHANNELS.windowControl, action) as Promise<
       | { ok: true; native: true; action: WindowAction }
       | { ok: false; native: true; error: string }
     >;

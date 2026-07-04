@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
+import { IPC_CHANNELS } from "./ipcChannels.cjs";
 
 const APP_ID = "com.picom.desktop";
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
@@ -58,7 +59,7 @@ function configureWebContents(window: BrowserWindow): void {
 }
 
 function registerIpcHandlers(): void {
-  ipcMain.handle("picom:window-control", (event, action: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.windowControl, (event, action: unknown) => {
     if (!isWindowAction(action)) {
       return { ok: false, native: true, error: "INVALID_WINDOW_ACTION" } as const;
     }
