@@ -63,6 +63,22 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
+  const replaceChannelMessages = useCallback((communityId: string, channelId: string, messages: Message[]) => {
+    setCommunities((current) =>
+      current.map((community) =>
+        community.id === communityId
+          ? {
+              ...community,
+              messages: [
+                ...community.messages.filter((message) => message.channelId !== channelId),
+                ...messages,
+              ],
+            }
+          : community,
+      ),
+    );
+  }, []);
+
   const addChannel = useCallback((input: AddLocalChannelInput) => {
     const channel: Channel = {
       id: input.id,
@@ -95,5 +111,5 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return channel;
   }, []);
 
-  return { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories };
+  return { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories, replaceChannelMessages };
 }

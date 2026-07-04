@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { currentUserId, mockCommunities } from "./data/mockCommunities";
-import type { Attachment, ChannelCategory, Community, Member } from "./types/community";
+import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
@@ -146,7 +146,7 @@ export function App() {
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
-  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories } = useLocalMessageState(mockCommunities);
+  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories, replaceChannelMessages } = useLocalMessageState(mockCommunities);
   const {
     activeCommunityId,
     activeCommunity,
@@ -194,6 +194,7 @@ export function App() {
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? activeCommunity.members[0];
   const supabaseCommunitiesLoadedRef = useRef(false);
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
+  const supabaseMessagesLoadedRef = useRef(new Set<string>());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -290,6 +291,47 @@ export function App() {
       canceled = true;
     };
   }, [activeCommunity.id, authSession, pushToast, replaceCommunityCategories]);
+
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+
+    const messageKey = `${activeCommunity.id}:${activeChannel.id}`;
+    if (supabaseMessagesLoadedRef.current.has(messageKey)) return;
+
+    let canceled = false;
+    supabaseMessagesLoadedRef.current.add(messageKey);
+
+    messageService.listMessages({
+      communityId: activeCommunity.id,
+      channelId: activeChannel.id,
+    }).then((result) => {
+      if (canceled) return;
+
+      if (!result.ok) {
+        supabaseMessagesLoadedRef.current.delete(messageKey);
+        pushToast(result.error.message, "error");
+        return;
+      }
+
+      const messages: Message[] = result.data.items.map((message) => ({
+        id: message.id,
+        channelId: message.channelId,
+        authorId: message.authorId,
+        body: message.body,
+        createdAt: message.createdAt,
+        editedAt: message.editedAt ?? undefined,
+        attachments: [],
+        reactions: [],
+        localStatus: "sent",
+      }));
+
+      replaceChannelMessages(activeCommunity.id, activeChannel.id, messages);
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [activeChannel.id, activeCommunity.id, authSession, pushToast, replaceChannelMessages]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
