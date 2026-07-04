@@ -11,6 +11,26 @@ type AppendLocalMessageInput = {
   attachments?: Attachment[];
 };
 
+type UpsertLocalMessageInput = AppendLocalMessageInput & {
+  editedAt?: string | null;
+  deletedAt?: string | null;
+};
+
+type UpdateLocalMessageInput = {
+  communityId: string;
+  channelId: string;
+  id: string;
+  body: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
+};
+
+type RemoveLocalMessageInput = {
+  communityId: string;
+  channelId: string;
+  id: string;
+};
+
 type AddLocalChannelInput = {
   communityId: string;
   categoryId?: string | null;
@@ -45,6 +65,68 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
 
     return message;
+  }, []);
+
+  const upsertLocalMessage = useCallback(({ id, communityId, channelId, authorId, body, createdAt, editedAt, deletedAt, attachments }: UpsertLocalMessageInput) => {
+    if (!id || deletedAt) return null;
+
+    const message: Message = {
+      id,
+      channelId,
+      authorId,
+      body,
+      createdAt: createdAt ?? new Date().toISOString(),
+      editedAt: editedAt ?? undefined,
+      attachments,
+      reactions: [],
+      localStatus: "sent",
+    };
+
+    setCommunities((current) =>
+      current.map((community) => {
+        if (community.id !== communityId) return community;
+
+        const exists = community.messages.some((item) => item.id === id);
+        const messages = exists
+          ? community.messages.map((item) => item.id === id ? { ...item, ...message, reactions: item.reactions ?? [], attachments: item.attachments ?? message.attachments } : item)
+          : [...community.messages, message];
+
+        return {
+          ...community,
+          messages: messages.sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+        };
+      }),
+    );
+
+    return message;
+  }, []);
+
+  const updateLocalMessage = useCallback(({ communityId, channelId, id, body, editedAt, deletedAt }: UpdateLocalMessageInput) => {
+    setCommunities((current) =>
+      current.map((community) => {
+        if (community.id !== communityId) return community;
+
+        const messages = deletedAt
+          ? community.messages.filter((message) => message.id !== id)
+          : community.messages.map((message) =>
+              message.id === id && message.channelId === channelId
+                ? { ...message, body, editedAt: editedAt ?? new Date().toISOString() }
+                : message,
+            );
+
+        return { ...community, messages };
+      }),
+    );
+  }, []);
+
+  const removeLocalMessage = useCallback(({ communityId, channelId, id }: RemoveLocalMessageInput) => {
+    setCommunities((current) =>
+      current.map((community) =>
+        community.id === communityId
+          ? { ...community, messages: community.messages.filter((message) => !(message.id === id && message.channelId === channelId)) }
+          : community,
+      ),
+    );
   }, []);
 
   const addCommunity = useCallback((community: Community) => {
@@ -117,5 +199,17 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return channel;
   }, []);
 
-  return { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories, replaceChannelMessages, replaceCommunityMembers };
+  return {
+    communities,
+    appendLocalMessage,
+    upsertLocalMessage,
+    updateLocalMessage,
+    removeLocalMessage,
+    addCommunity,
+    addChannel,
+    replaceCommunities,
+    replaceCommunityCategories,
+    replaceChannelMessages,
+    replaceCommunityMembers,
+  };
 }

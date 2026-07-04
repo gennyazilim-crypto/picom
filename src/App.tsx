@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { currentUserId, mockCommunities } from "./data/mockCommunities";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
@@ -25,12 +25,13 @@ import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
 import { membersService } from "./services/membersService";
-import { messageService } from "./services/messageService";
+import { messageService, type MessageSummary } from "./services/messageService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
 import { useMemberSidebarState } from "./state/useMemberSidebarState";
 import { useProtectedDesktopSession } from "./hooks/useProtectedDesktopSession";
+import { useSupabaseMessageRealtime } from "./hooks/useSupabaseMessageRealtime";
 import { createCommunityFromSummary } from "./utils/communityFactory";
 
 const overlayIcons = mvpUiIconMap.overlays;
@@ -147,7 +148,19 @@ export function App() {
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
-  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories, replaceChannelMessages, replaceCommunityMembers } = useLocalMessageState(mockCommunities);
+  const {
+    communities,
+    appendLocalMessage,
+    upsertLocalMessage,
+    updateLocalMessage,
+    removeLocalMessage,
+    addCommunity,
+    addChannel,
+    replaceCommunities,
+    replaceCommunityCategories,
+    replaceChannelMessages,
+    replaceCommunityMembers,
+  } = useLocalMessageState(mockCommunities);
   const {
     activeCommunityId,
     activeCommunity,
@@ -197,6 +210,63 @@ export function App() {
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
+
+  const mapMessageSummaryToMessage = useCallback((message: MessageSummary): Message => ({
+    id: message.id,
+    channelId: message.channelId,
+    authorId: message.authorId,
+    body: message.body,
+    createdAt: message.createdAt,
+    editedAt: message.editedAt ?? undefined,
+    attachments: [],
+    reactions: [],
+    localStatus: "sent",
+  }), []);
+
+  const handleRealtimeMessageInsert = useCallback((message: MessageSummary) => {
+    if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;
+
+    upsertLocalMessage({
+      id: message.id,
+      communityId: message.communityId,
+      channelId: message.channelId,
+      authorId: message.authorId,
+      body: message.body,
+      createdAt: message.createdAt,
+      editedAt: message.editedAt,
+      deletedAt: message.deletedAt,
+    });
+  }, [activeChannel.id, activeCommunity.id, upsertLocalMessage]);
+
+  const handleRealtimeMessageUpdate = useCallback((message: MessageSummary) => {
+    if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;
+
+    updateLocalMessage({
+      communityId: message.communityId,
+      channelId: message.channelId,
+      id: message.id,
+      body: message.body,
+      editedAt: message.editedAt,
+      deletedAt: message.deletedAt,
+    });
+  }, [activeChannel.id, activeCommunity.id, updateLocalMessage]);
+
+  const handleRealtimeMessageDelete = useCallback((messageId: string) => {
+    removeLocalMessage({
+      communityId: activeCommunity.id,
+      channelId: activeChannel.id,
+      id: messageId,
+    });
+  }, [activeChannel.id, activeCommunity.id, removeLocalMessage]);
+
+  useSupabaseMessageRealtime({
+    enabled: Boolean(authSession),
+    communityId: activeCommunity.id,
+    channelId: activeChannel.id,
+    onInsert: handleRealtimeMessageInsert,
+    onUpdate: handleRealtimeMessageUpdate,
+    onDelete: handleRealtimeMessageDelete,
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -315,17 +385,7 @@ export function App() {
         return;
       }
 
-      const messages: Message[] = result.data.items.map((message) => ({
-        id: message.id,
-        channelId: message.channelId,
-        authorId: message.authorId,
-        body: message.body,
-        createdAt: message.createdAt,
-        editedAt: message.editedAt ?? undefined,
-        attachments: [],
-        reactions: [],
-        localStatus: "sent",
-      }));
+      const messages: Message[] = result.data.items.map(mapMessageSummaryToMessage);
 
       replaceChannelMessages(activeCommunity.id, activeChannel.id, messages);
     });
@@ -333,7 +393,7 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeChannel.id, activeCommunity.id, authSession, pushToast, replaceChannelMessages]);
+  }, [activeChannel.id, activeCommunity.id, authSession, mapMessageSummaryToMessage, pushToast, replaceChannelMessages]);
 
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
