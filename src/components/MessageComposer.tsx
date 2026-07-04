@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Attachment, Channel } from "../types/community";
 import { attachmentService } from "../services/attachmentService";
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
+import { loggingService } from "../services/loggingService";
 import { uploadService } from "../services/uploadService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -38,6 +39,11 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
     Array.from(files).forEach((file) => {
       const validation = fileService.validate(file);
       if (!validation.ok) {
+        loggingService.logWarn("Attachment rejected before preview", {
+          code: validation.code,
+          mimeType: file.type || "unknown",
+          sizeBytes: file.size,
+        });
         pushToast(validation.reason ?? "File rejected.", "error");
         return;
       }

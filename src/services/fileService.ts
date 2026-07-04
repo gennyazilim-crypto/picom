@@ -3,6 +3,12 @@ export const allowedImageMimeTypes = new Set(["image/png", "image/jpeg", "image/
 export const allowedImageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
 export const maxImageFileSizeBytes = 10 * 1024 * 1024;
 
+export type FileValidationErrorCode = "UNSUPPORTED_MIME_TYPE" | "UNSUPPORTED_EXTENSION" | "FILE_TOO_LARGE";
+
+export type FileValidationResult =
+  | Readonly<{ ok: true }>
+  | Readonly<{ ok: false; code: FileValidationErrorCode; reason: string }>;
+
 function getFileExtension(fileName: string): string {
   const dotIndex = fileName.lastIndexOf(".");
   if (dotIndex < 0) return "";
@@ -10,10 +16,31 @@ function getFileExtension(fileName: string): string {
 }
 
 export const fileService = {
-  validate(file: File) {
-    if (!allowedImageMimeTypes.has(file.type)) return { ok: false, reason: "Only PNG, JPEG, WEBP, and GIF images are supported in the MVP." };
-    if (!allowedImageExtensions.has(getFileExtension(file.name))) return { ok: false, reason: "Image file extension must be PNG, JPG, JPEG, WEBP, or GIF." };
-    if (file.size > maxImageFileSizeBytes) return { ok: false, reason: "Image is larger than the 10 MB MVP limit." };
+  validate(file: File): FileValidationResult {
+    if (!allowedImageMimeTypes.has(file.type)) {
+      return {
+        ok: false,
+        code: "UNSUPPORTED_MIME_TYPE",
+        reason: "Only PNG, JPEG, WEBP, and GIF images are supported in the MVP.",
+      };
+    }
+
+    if (!allowedImageExtensions.has(getFileExtension(file.name))) {
+      return {
+        ok: false,
+        code: "UNSUPPORTED_EXTENSION",
+        reason: "Image file extension must be PNG, JPG, JPEG, WEBP, or GIF.",
+      };
+    }
+
+    if (file.size > maxImageFileSizeBytes) {
+      return {
+        ok: false,
+        code: "FILE_TOO_LARGE",
+        reason: "Image is larger than the 10 MB MVP limit.",
+      };
+    }
+
     return { ok: true };
   },
   createPreview(file: File): LocalAttachmentPreview {
