@@ -1,7 +1,8 @@
-﻿import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { appConfig, isSupabaseMode } from "../../config/appConfig";
+import type { Database } from "./database.types";
 
-let client: SupabaseClient | null = null;
+let client: SupabaseClient<Database> | null = null;
 
 export type SupabaseClientStatus = {
   enabled: boolean;
@@ -21,7 +22,7 @@ export function getSupabaseClientStatus(): SupabaseClientStatus {
   return { enabled: true, configured: true };
 }
 
-export function getSupabaseClient(): SupabaseClient | null {
+export function getSupabaseClient(): SupabaseClient<Database> | null {
   const status = getSupabaseClientStatus();
   if (!status.configured) return null;
   if (client) return client;
