@@ -197,3 +197,89 @@ html,body,#root,.picom-root,.desktop-app-shell,.desktop-frame{max-width:100%;ove
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* Task 100: final MVP desktop UI polish */
+.desktop-frame {
+  border: 1px solid var(--border);
+  background: var(--bg-frame);
+  box-shadow: var(--shadow);
+}
+
+.community-header,
+.chat-header,
+.user-mini-card {
+  backdrop-filter: blur(12px);
+}
+
+.channel-item,
+.member-row,
+.message-item,
+.theme-card,
+.context-menu-item,
+.command-group button {
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.message-item {
+  border-radius: 18px;
+  padding-left: 6px;
+  padding-right: 8px;
+}
+
+.message-item:hover {
+  background: color-mix(in srgb, var(--surface-soft) 58%, transparent);
+}
+
+.composer-bar {
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.composer-bar:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.attachment-card {
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.attachment-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+  filter: saturate(1.04);
+}
+
+.profile-popover,
+.desktop-context-menu,
+.command-palette,
+.settings-modal,
+.image-preview-modal {
+  box-shadow: var(--shadow);
+}
+
+:where(button, input, textarea):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channel-item,
+  .member-row,
+  .message-item,
+  .theme-card,
+  .context-menu-item,
+  .command-group button,
+  .composer-bar,
+  .attachment-card {
+    transition: none;
+  }
+
+  .attachment-card:hover {
+    transform: none;
+  }
+}
