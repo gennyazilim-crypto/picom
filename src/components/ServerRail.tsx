@@ -3,6 +3,7 @@ import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import type { Community } from "../types/community";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
+import { getCommunityIconLabel } from "../utils/generatedIdentity";
 
 const railIcons = mvpUiIconMap.serverRail;
 
@@ -34,7 +35,7 @@ export function ServerRail({ communities, activeCommunityId, onSelectCommunity, 
             onContextMenu={(event) => onContextMenu(event, community.name)}
           >
             <span className="active-rail" />
-            <span>{community.icon}</span>
+            <span>{getCommunityIconLabel(community.name, community.icon)}</span>
             {community.id === "aurora" ? <i className="unread-dot" /> : null}
           </button>
         ))}
