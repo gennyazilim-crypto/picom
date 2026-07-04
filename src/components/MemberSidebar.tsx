@@ -3,30 +3,9 @@ import type { MouseEvent } from "react";
 import type { Community, Member } from "../types/community";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
+import { MemberAvatar } from "./MemberAvatar";
 
 const memberSidebarIcons = mvpUiIconMap.memberSidebar;
-const avatarPalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
-const hash = (value: string) => Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
-function MemberAvatar({ member, size = 34 }: { member: Member; size?: number }) {
-  const color = avatarPalette[hash(member.displayName) % avatarPalette.length];
-  const initials = member.displayName
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <span
-      className="generated-avatar"
-      style={{ width: size, height: size, background: `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 52%, black))` }}
-    >
-      {initials}
-    </span>
-  );
-}
-
 type MemberSidebarProps = {
   community: Community;
   onOpenProfile: (event: MouseEvent, member: Member) => void;

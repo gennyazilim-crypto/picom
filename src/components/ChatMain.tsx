@@ -4,34 +4,12 @@ import type { Attachment, Channel, Community, Member, Message } from "../types/c
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
+import { MemberAvatar } from "./MemberAvatar";
 
 type ToastTone = "info" | "error" | "success";
 const chatHeaderIcons = mvpUiIconMap.chatHeader;
 const channelIcons = mvpUiIconMap.communitySidebar;
 const composerIcons = mvpUiIconMap.messageComposer;
-
-const avatarPalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
-const hash = (value: string) => Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
-function Avatar({ member, size = 36 }: { member?: Member; size?: number }) {
-  const text = member?.displayName ?? "P";
-  const color = avatarPalette[hash(text) % avatarPalette.length];
-  const initials = text
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <span
-      className="generated-avatar"
-      style={{ width: size, height: size, background: `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 52%, black))` }}
-    >
-      {initials}
-    </span>
-  );
-}
 
 type ChatMainProps = {
   community: Community;
@@ -130,7 +108,7 @@ function MessageList({ community, messages, onContextMenu, onOpenProfile, onOpen
             ) : null}
             <article className="message-item" onContextMenu={(event) => onContextMenu(event, message)}>
               <button className="avatar-button" onClick={(event) => onOpenProfile(event, member)} aria-label={`Open ${member.displayName} profile`}>
-                <Avatar member={member} size={42} />
+                <MemberAvatar member={member} size={42} />
               </button>
               <div className="message-content">
                 <div className="message-meta">

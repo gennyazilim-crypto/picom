@@ -25,6 +25,7 @@ export interface Member {
   displayName: string;
   username: string;
   avatarSeed: string;
+  avatarUrl?: string;
   status: UserStatus;
   statusText: string;
   roleId: RoleId;
