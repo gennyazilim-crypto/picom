@@ -1,5 +1,6 @@
 import { handleCorsPreflight } from "../_shared/cors.ts";
 import { jsonResponse, methodNotAllowed } from "../_shared/http.ts";
+import { requireSupabaseUser } from "../_shared/supabase-auth.ts";
 
 type ModerationAction = "delete_message" | "kick_member" | "ban_member" | "timeout_member";
 
@@ -33,10 +34,8 @@ Deno.serve(async (request: Request) => {
     return methodNotAllowed(["POST", "OPTIONS"]);
   }
 
-  const authorization = request.headers.get("Authorization");
-  if (!authorization) {
-    return jsonResponse({ code: "AUTH_REQUIRED", message: "Sign in before using moderation tools." }, { status: 401 });
-  }
+  const auth = await requireSupabaseUser(request);
+  if (!auth.ok) return auth.response;
 
   const body = await readJsonBody(request);
 

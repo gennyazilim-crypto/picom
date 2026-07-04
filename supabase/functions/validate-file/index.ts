@@ -1,6 +1,7 @@
 import { handleCorsPreflight } from "../_shared/cors.ts";
 import { validateImageMetadata } from "../_shared/file-validation.ts";
 import { jsonResponse, methodNotAllowed } from "../_shared/http.ts";
+import { requireSupabaseUser } from "../_shared/supabase-auth.ts";
 
 type ValidateFileRequest = {
   fileName?: string;
@@ -24,10 +25,8 @@ Deno.serve(async (request: Request) => {
     return methodNotAllowed(["POST", "OPTIONS"]);
   }
 
-  const authorization = request.headers.get("Authorization");
-  if (!authorization) {
-    return jsonResponse({ code: "AUTH_REQUIRED", message: "Sign in before validating uploads." }, { status: 401 });
-  }
+  const auth = await requireSupabaseUser(request);
+  if (!auth.ok) return auth.response;
 
   const body = await readJsonBody(request);
   const validation = validateImageMetadata(body?.fileName, body?.mimeType, body?.sizeBytes);
