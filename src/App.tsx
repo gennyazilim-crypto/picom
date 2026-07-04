@@ -213,6 +213,7 @@ export function App() {
 
   const mapMessageSummaryToMessage = useCallback((message: MessageSummary): Message => ({
     id: message.id,
+    clientMessageId: message.clientMessageId,
     channelId: message.channelId,
     authorId: message.authorId,
     body: message.body,
@@ -228,6 +229,7 @@ export function App() {
 
     upsertLocalMessage({
       id: message.id,
+      clientMessageId: message.clientMessageId,
       communityId: message.communityId,
       channelId: message.channelId,
       authorId: message.authorId,
@@ -255,6 +257,7 @@ export function App() {
 
     upsertLocalMessage({
       id: message.id,
+      clientMessageId: message.clientMessageId,
       communityId: message.communityId,
       channelId: message.channelId,
       authorId: message.authorId,
@@ -634,6 +637,7 @@ export function App() {
 
     appendLocalMessage({
       id: result.data.id,
+      clientMessageId,
       communityId: activeCommunity.id,
       channelId: activeChannel.id,
       authorId: result.data.authorId,

@@ -3,6 +3,7 @@ import type { Attachment, Channel, ChannelCategory, ChannelId, ChannelType, Comm
 
 type AppendLocalMessageInput = {
   id?: string;
+  clientMessageId?: string | null;
   communityId: string;
   channelId: string;
   authorId: UserId;
@@ -31,6 +32,10 @@ type RemoveLocalMessageInput = {
   id: string;
 };
 
+function isSameMessage(message: Message, id: string, clientMessageId?: string | null): boolean {
+  return message.id === id || Boolean(clientMessageId && message.clientMessageId === clientMessageId);
+}
+
 type AddLocalChannelInput = {
   communityId: string;
   categoryId?: string | null;
@@ -45,10 +50,11 @@ type AddLocalChannelInput = {
 export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
-  const appendLocalMessage = useCallback(({ id, communityId, channelId, authorId, body, createdAt, attachments }: AppendLocalMessageInput) => {
+  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, createdAt, attachments }: AppendLocalMessageInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
       id: id ?? `local-${idSuffix}`,
+      clientMessageId: clientMessageId ?? null,
       channelId,
       authorId,
       body,
@@ -62,10 +68,10 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       current.map((community) => {
         if (community.id !== communityId) return community;
 
-        const exists = community.messages.some((item) => item.id === message.id);
+        const exists = community.messages.some((item) => isSameMessage(item, message.id, message.clientMessageId));
         const messages = exists
           ? community.messages.map((item) =>
-              item.id === message.id
+              isSameMessage(item, message.id, message.clientMessageId)
                 ? {
                     ...item,
                     ...message,
@@ -86,11 +92,12 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return message;
   }, []);
 
-  const upsertLocalMessage = useCallback(({ id, communityId, channelId, authorId, body, createdAt, editedAt, deletedAt, attachments }: UpsertLocalMessageInput) => {
+  const upsertLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, createdAt, editedAt, deletedAt, attachments }: UpsertLocalMessageInput) => {
     if (!id || deletedAt) return null;
 
     const message: Message = {
       id,
+      clientMessageId: clientMessageId ?? null,
       channelId,
       authorId,
       body,
@@ -105,9 +112,13 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       current.map((community) => {
         if (community.id !== communityId) return community;
 
-        const exists = community.messages.some((item) => item.id === id);
+        const exists = community.messages.some((item) => isSameMessage(item, id, clientMessageId));
         const messages = exists
-          ? community.messages.map((item) => item.id === id ? { ...item, ...message, reactions: item.reactions ?? [], attachments: item.attachments ?? message.attachments } : item)
+          ? community.messages.map((item) =>
+              isSameMessage(item, id, clientMessageId)
+                ? { ...item, ...message, reactions: item.reactions ?? [], attachments: item.attachments ?? message.attachments }
+                : item,
+            )
           : [...community.messages, message];
 
         return {

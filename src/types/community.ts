@@ -53,6 +53,7 @@ export interface Attachment {
 
 export interface Message {
   id: MessageId;
+  clientMessageId?: string | null;
   channelId: ChannelId;
   authorId: UserId;
   body: string;
