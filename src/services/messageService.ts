@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { dataSourceService } from "./dataSourceService";
+import { createMockEditedMessage, editSupabaseMessage, type EditedMessageSummary } from "./messageEditMutation";
 import { listMockMessageSummaries, listSupabaseMessageSummaries, type ListMessagesInput, type MessagePage } from "./messageListQuery";
 import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutation";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
@@ -39,12 +40,18 @@ export type SendMessageInput = Readonly<{
   clientMessageId?: string | null;
 }>;
 
+export type EditMessageInput = Readonly<{
+  messageId: string;
+  body: string;
+}>;
+
 export type MessageServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
   | "MESSAGE_SEND_FAILED"
-  | "MESSAGE_LIST_FAILED";
+  | "MESSAGE_LIST_FAILED"
+  | "MESSAGE_EDIT_FAILED";
 
 export type MessageServiceError = Readonly<{
   code: MessageServiceErrorCode;
@@ -121,6 +128,22 @@ function validateListMessagesInput(input: ListMessagesInput): MessageServiceErro
   return null;
 }
 
+function validateEditMessageInput(input: EditMessageInput): MessageServiceError | null {
+  if (!input.messageId.trim()) {
+    return { code: "VALIDATION_ERROR", message: "Message ID is required." };
+  }
+
+  if (!input.body.trim()) {
+    return { code: "VALIDATION_ERROR", message: "Message body is required." };
+  }
+
+  if (input.body.length > 4000) {
+    return { code: "VALIDATION_ERROR", message: "Message must be 4000 characters or fewer." };
+  }
+
+  return null;
+}
+
 async function getSupabaseAuthorId(client: SupabaseClient<Database>, explicitAuthorId?: string): Promise<MessageServiceResult<string>> {
   if (explicitAuthorId?.trim()) {
     return { ok: true, data: explicitAuthorId.trim() };
@@ -179,6 +202,29 @@ export const messageService = {
 
     if (error || !data) {
       return messageError("MESSAGE_SEND_FAILED", "Could not send message.");
+    }
+
+    return { ok: true, data };
+  },
+
+  async editMessage(input: EditMessageInput): Promise<MessageServiceResult<EditedMessageSummary>> {
+    const validationError = validateEditMessageInput(input);
+    if (validationError) return { ok: false, error: validationError };
+
+    const body = input.body.trim();
+    const dataSource = dataSourceService.getStatus();
+
+    if (dataSource.isMock) {
+      return { ok: true, data: createMockEditedMessage(input.messageId, body) };
+    }
+
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+
+    const { data, error } = await editSupabaseMessage(configured.data, input.messageId, body);
+
+    if (error || !data) {
+      return messageError("MESSAGE_EDIT_FAILED", "Could not edit message.");
     }
 
     return { ok: true, data };
