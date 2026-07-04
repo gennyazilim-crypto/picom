@@ -2,6 +2,9 @@ import type { CSSProperties, MouseEvent } from "react";
 import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import type { Community } from "../types/community";
 import { AppIcon } from "./AppIcon";
+import { mvpUiIconMap } from "./iconRegistry";
+
+const railIcons = mvpUiIconMap.serverRail;
 
 type ServerRailProps = {
   communities: Community[];
@@ -36,14 +39,14 @@ export function ServerRail({ communities, activeCommunityId, onSelectCommunity, 
           </button>
         ))}
         <button className="server-button utility" aria-label="Add community">
-          <AppIcon name="plus" size="lg" />
+          <AppIcon name={railIcons.addCommunity} size="lg" />
         </button>
         <button className="server-button utility" aria-label="Discover communities placeholder">
-          <AppIcon name="search" size="lg" />
+          <AppIcon name={railIcons.discover} size="lg" />
         </button>
       </div>
       <button className="server-button utility bottom" aria-label="Settings" onClick={onOpenSettings}>
-        <AppIcon name="settings" size="lg" />
+        <AppIcon name={railIcons.settings} size="lg" />
       </button>
     </nav>
   );
