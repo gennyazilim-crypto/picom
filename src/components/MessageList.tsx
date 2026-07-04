@@ -2,6 +2,7 @@
 import type { MouseEvent } from "react";
 import type { Attachment, Community, Member, Message } from "../types/community";
 import { MessageItem } from "./MessageItem";
+import { UnreadDivider } from "./UnreadDivider";
 
 type MessageListProps = {
   community: Community;
@@ -35,11 +36,7 @@ export function MessageList({ community, messages, onContextMenu, onOpenProfile,
 
         return (
           <div key={message.id}>
-            {index === Math.max(1, Math.floor(messages.length / 2)) ? (
-              <div className="unread-divider">
-                <span />Unread messages<span />
-              </div>
-            ) : null}
+            {index === Math.max(1, Math.floor(messages.length / 2)) ? <UnreadDivider /> : null}
             <MessageItem
               message={message}
               member={member}
