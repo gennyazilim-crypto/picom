@@ -2,7 +2,9 @@ import { useState } from "react";
 import type { MouseEvent } from "react";
 import type { Channel, Community, Member } from "../types/community";
 import { AppIcon } from "./AppIcon";
+import { mvpUiIconMap } from "./iconRegistry";
 
+const sidebarIcons = mvpUiIconMap.communitySidebar;
 const avatarPalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
 const hash = (value: string) => Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
 
@@ -48,7 +50,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
           <span>Desktop community</span>
         </div>
         <button className="icon-button" aria-label="Community menu">
-          <AppIcon name="chevronDown" size="sm" />
+          <AppIcon name={sidebarIcons.expand} size="sm" />
         </button>
       </header>
 
@@ -59,7 +61,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
               className="category-header"
               onClick={() => setCollapsed((current) => ({ ...current, [category.id]: !current[category.id] }))}
             >
-              <AppIcon name={collapsed[category.id] ? "chevronRight" : "chevronDown"} size="xs" />
+              <AppIcon name={collapsed[category.id] ? sidebarIcons.collapse : sidebarIcons.expand} size="xs" />
               <strong>{category.name}</strong>
               <em>{category.channels.length}</em>
             </button>
@@ -71,9 +73,9 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
                     onClick={() => onSelectChannel(channel)}
                     onContextMenu={(event) => onChannelContextMenu(event, channel)}
                   >
-                    <AppIcon name={channel.type === "voice" ? "voice" : "hash"} size="sm" />
+                    <AppIcon name={channel.type === "voice" ? sidebarIcons.voiceChannel : sidebarIcons.textChannel} size="sm" />
                     <span className="channel-name">{channel.name}</span>
-                    {channel.isPrivate ? <AppIcon name="lock" size="xs" /> : null}
+                    {channel.isPrivate ? <AppIcon name={sidebarIcons.privateChannel} size="xs" /> : null}
                     {channel.unread ? <span className="channel-unread" /> : null}
                     {channel.mentions ? <span className="mention-badge">{channel.mentions}</span> : null}
                   </button>
@@ -90,13 +92,13 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
           <span>{currentUser.statusText}</span>
         </button>
         <button className="mini-action" aria-label="Mute">
-          <AppIcon name="microphone" size="sm" />
+          <AppIcon name={sidebarIcons.mute} size="sm" />
         </button>
         <button className="mini-action" aria-label="Deafen">
-          <AppIcon name="headphones" size="sm" />
+          <AppIcon name={sidebarIcons.deafen} size="sm" />
         </button>
         <button className="mini-action" aria-label="Settings" onClick={onOpenSettings}>
-          <AppIcon name="settings" size="sm" />
+          <AppIcon name={sidebarIcons.settings} size="sm" />
         </button>
       </footer>
     </aside>
