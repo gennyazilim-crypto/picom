@@ -1,0 +1,36 @@
+START HERE
+
+This package is the merged master task list requested by the user. It combines:
+- the old broad roadmap topics from the previous 001-260 planning package,
+- the new Electron desktop target,
+- Windows + Linux + macOS support,
+- the uploaded premium Discord-like reference UI direction,
+- Coolicons,
+- Supabase Auth/Postgres/RLS/Storage/Realtime,
+- Supabase Edge Functions as microservice boundaries,
+- LiveKit/WebRTC voice chat and screen sharing,
+- production operations,
+- enterprise preparation,
+- bot/webhook/plugin systems,
+- analytics placeholder,
+- E2EE documents,
+- incident response,
+- audit documents,
+- error logs / crash logs / diagnostics,
+- beta and live release preparation.
+
+TOTAL TASKS: 473
+
+IMPORTANT EXECUTION RULE
+Do not run the whole pack at once. Run exactly one task, test, commit, then continue.
+
+RECOMMENDED FIRST COMMANDS BEFORE CODEX CHANGES
+1. Make a zip backup of the project folder.
+2. Initialize git if missing.
+3. Commit the clean baseline.
+4. Then run task_001.txt.
+
+RECOMMENDED PRIORITY ORDER
+P0 tasks first: project safety, Electron foundation, UI MVP, Supabase core, RLS, chat, LiveKit MVP, packaging smoke tests.
+P1 tasks next: polish, native services, beta docs, diagnostics.
+P2/P3 tasks later: production operations, enterprise, bot/webhook/plugin/analytics/E2EE.

@@ -1,0 +1,207 @@
+# Task Index — Electron + macOS/Linux/Windows + Supabase + LiveKit Full MVP
+
+Toplam görev: 186
+
+## 00 — Scope, Safety, Project Bootstrap
+- task_001.txt — Read-only project audit and reset plan
+- task_002.txt — Create fresh project safety baseline
+- task_003.txt — Lock MVP scope for Electron + macOS/Linux/Windows
+- task_004.txt — Choose package manager and workspace structure
+- task_005.txt — Bootstrap Electron + React + TypeScript + Vite
+- task_006.txt — Secure Electron defaults
+- task_007.txt — Create environment examples
+- task_008.txt — Brand configuration foundation
+- task_009.txt — Coolicons attribution and icon policy
+- task_010.txt — Quality scripts baseline
+
+## 01 — Reference UI Foundation
+- task_011.txt — Design token system
+- task_012.txt — Theme store and early theme loading
+- task_013.txt — App shell layout
+- task_014.txt — Rounded desktop frame polish
+- task_015.txt — WindowTitleBar MVP
+- task_016.txt — AppIcon component
+- task_017.txt — Icon replacement pass shell
+- task_018.txt — Mock data types
+- task_019.txt — Mock data content
+- task_020.txt — Avatar and community icon fallback
+- task_021.txt — ServerRail structure
+- task_022.txt — ServerRail polish
+- task_023.txt — CommunitySidebar structure
+- task_024.txt — Channel category collapse
+- task_025.txt — ChannelItem states
+- task_026.txt — UserMiniCard MVP
+- task_027.txt — ChatMain shell
+- task_028.txt — ChatHeader MVP
+- task_029.txt — MessageList rendering
+- task_030.txt — Message hover actions
+- task_031.txt — AttachmentGrid MVP
+- task_032.txt — ImagePreviewModal
+- task_033.txt — MessageComposer MVP
+- task_034.txt — Composer auto-scroll
+- task_035.txt — MemberSidebar structure
+- task_036.txt — Member search
+- task_037.txt — UserProfilePopover
+- task_038.txt — DesktopContextMenu
+- task_039.txt — SettingsModal MVP
+- task_040.txt — Keyboard shortcuts MVP
+- task_041.txt — Overlay stack manager MVP
+- task_042.txt — Responsive desktop bounds only
+- task_043.txt — UI accessibility pass
+- task_044.txt — UI visual polish pass
+- task_045.txt — Mock MVP regression test
+- task_046.txt — UI build test
+
+## 02 — Supabase Backend Foundation
+- task_047.txt — Supabase architecture decision
+- task_048.txt — Supabase CLI project setup
+- task_049.txt — Database schema planning
+- task_050.txt — Profiles and auth schema
+- task_051.txt — Communities schema
+- task_052.txt — Roles and permissions schema
+- task_053.txt — Channel categories and channels schema
+- task_054.txt — Messages schema
+- task_055.txt — Attachments and reactions schema
+- task_056.txt — Read state and notification MVP schema
+- task_057.txt — Voice room schema
+- task_058.txt — RLS policy baseline
+- task_059.txt — Private channel RLS
+- task_060.txt — Storage buckets
+- task_061.txt — Seed data
+- task_062.txt — Supabase generated types
+- task_063.txt — Shared DTO types
+- task_064.txt — Supabase client in Electron renderer
+- task_065.txt — Auth data source
+- task_066.txt — Session persistence in Electron
+- task_067.txt — Supabase API smoke test
+- task_068.txt — RLS test checklist
+- task_069.txt — Supabase env separation
+- task_070.txt — Supabase migration workflow
+- task_071.txt — Supabase foundation integration test
+
+## 03 — Core Data Features with Supabase + Edge Functions
+- task_072.txt — Data source switch finalization
+- task_073.txt — Profile API functions
+- task_074.txt — Community list and create
+- task_075.txt — Community update and leave
+- task_076.txt — Channel list and create
+- task_077.txt — Channel edit/delete
+- task_078.txt — Member list datasource
+- task_079.txt — Permission helper parity
+- task_080.txt — Message fetch pagination
+- task_081.txt — Message send with clientMessageId
+- task_082.txt — Message edit/delete
+- task_083.txt — Message reactions
+- task_084.txt — Read/unread MVP
+- task_085.txt — Mention detection MVP
+- task_086.txt — Attachment upload data source
+- task_087.txt — Attachment validation client
+- task_088.txt — Attachment preview and send
+- task_089.txt — Invite MVP schema and functions
+- task_090.txt — Settings persistence
+- task_091.txt — Error taxonomy
+- task_092.txt — Toast feedback
+- task_093.txt — Supabase core E2E manual test
+- task_094.txt — Core data build test
+- task_095.txt — Supabase security pass MVP
+- task_096.txt — Core feature QA
+- task_097.txt — Core feature polish
+- task_098.txt — Supabase deploy preparation
+- task_099.txt — Edge function service boundaries
+- task_100.txt — Backend/microservice audit
+- task_101.txt — Core MVP stabilization
+
+## 04 — Supabase Realtime Chat, Presence, Notifications
+- task_102.txt — Realtime architecture for Supabase
+- task_103.txt — Message realtime subscription
+- task_104.txt — Optimistic realtime reconciliation
+- task_105.txt — Reaction realtime
+- task_106.txt — Typing indicator MVP
+- task_107.txt — Presence MVP
+- task_108.txt — Reconnect handling
+- task_109.txt — Network status UI
+- task_110.txt — Unread realtime update
+- task_111.txt — Mention notification routing MVP
+- task_112.txt — Supabase Realtime security review
+- task_113.txt — Realtime load sanity test
+- task_114.txt — Notification service foundation
+- task_115.txt — Notification inbox placeholder
+- task_116.txt — Quiet hours and DND basic
+- task_117.txt — Realtime final QA
+- task_118.txt — Realtime memory leak pass
+- task_119.txt — Realtime mock fallback
+- task_120.txt — Realtime build test
+- task_121.txt — Realtime release readiness note
+
+## 05 — Voice Chat and Screen Sharing MVP with LiveKit/WebRTC
+- task_122.txt — Media architecture decision
+- task_123.txt — LiveKit environment setup
+- task_124.txt — Media token Edge Function
+- task_125.txt — Voice channel permissions
+- task_126.txt — VoiceRoomView UI
+- task_127.txt — LiveKit client integration
+- task_128.txt — Microphone permission flow
+- task_129.txt — Mute/deafen controls
+- task_130.txt — Active speaker indicators
+- task_131.txt — Voice participant presence sync
+- task_132.txt — Screen share permission model
+- task_133.txt — Electron desktopCapturer bridge
+- task_134.txt — Screen source picker UI
+- task_135.txt — Start/stop screen sharing
+- task_136.txt — Screen share viewer UI
+- task_137.txt — Camera placeholder
+- task_138.txt — Audio output device placeholder
+- task_139.txt — Voice reconnect handling
+- task_140.txt — Voice room notifications
+- task_141.txt — Media security pass
+- task_142.txt — Media smoke test two clients
+- task_143.txt — macOS media permission guide
+- task_144.txt — Windows/Linux media permission guide
+- task_145.txt — Voice feature flag
+- task_146.txt — Media final integration test
+
+## 06 — Electron Native Services and Packaging for Windows/Linux/macOS
+- task_147.txt — Desktop service abstraction
+- task_148.txt — Window controls integration
+- task_149.txt — Window state persistence
+- task_150.txt — Single instance lock
+- task_151.txt — Tray service MVP
+- task_152.txt — Native notification integration
+- task_153.txt — Clipboard and external link safety
+- task_154.txt — File picker and drag-drop
+- task_155.txt — Deep link protocol placeholder
+- task_156.txt — macOS app metadata
+- task_157.txt — Windows app metadata
+- task_158.txt — Linux app metadata
+- task_159.txt — App icons placeholder
+- task_160.txt — Auto-update placeholder
+- task_161.txt — Code signing docs
+- task_162.txt — Electron security audit
+- task_163.txt — Packaging scripts
+- task_164.txt — Windows package smoke test
+- task_165.txt — Linux package smoke test
+- task_166.txt — macOS package smoke test
+
+## 07 — Microservices, Deployment, Live Readiness
+- task_167.txt — Microservice boundary map
+- task_168.txt — Edge Functions deploy pipeline
+- task_169.txt — Supabase staging environment
+- task_170.txt — LiveKit staging environment
+- task_171.txt — Production env plan
+- task_172.txt — Database backup and migration plan
+- task_173.txt — RLS production hardening
+- task_174.txt — Rate limiting strategy
+- task_175.txt — Observability baseline
+- task_176.txt — Error reporting placeholder
+- task_177.txt — CI pipeline
+- task_178.txt — Release channel config
+- task_179.txt — Beta environment config
+- task_180.txt — Release notes and known issues
+- task_181.txt — Go-live checklist
+
+## 08 — Final Full MVP QA
+- task_182.txt — End-to-end mock mode test
+- task_183.txt — End-to-end Supabase mode test
+- task_184.txt — End-to-end media test
+- task_185.txt — Cross-platform desktop QA
+- task_186.txt — Final Full MVP Audit

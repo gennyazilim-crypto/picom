@@ -1,0 +1,3313 @@
+[
+  {
+    "num": 1,
+    "title": "Backup current project and initialize Git baseline",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 2,
+    "title": "Execution rules: one task at a time, test and commit",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 3,
+    "title": "Full scope definition: Electron desktop + Supabase + LiveKit + production roadmap",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 4,
+    "title": "Compare legacy 001-260 task pack with the new master plan",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 5,
+    "title": "Platform direction: Windows, Linux, macOS Electron desktop app",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 6,
+    "title": "Reference image UI design direction and originality rules",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 7,
+    "title": "Supabase-first backend architecture decision",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 8,
+    "title": "LiveKit/WebRTC voice and screen share architecture decision",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 9,
+    "title": "License and branding guardrails: no Discord assets, Coolicons attribution",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 10,
+    "title": "Read-only project audit before coding",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 11,
+    "title": "Create docs/project-scope.md",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 12,
+    "title": "Create docs/architecture-overview.md",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 13,
+    "title": "Create docs/development-workflow.md",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 14,
+    "title": "Create docs/risk-register.md",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 15,
+    "title": "Create docs/decision-log.md",
+    "phase": "A. Safety, scope, recovery",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 16,
+    "title": "Create Electron + Vite + React + TypeScript app foundation",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 17,
+    "title": "Configure Electron main process",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 18,
+    "title": "Configure Electron preload bridge with contextIsolation",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 19,
+    "title": "Configure renderer entry point",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 20,
+    "title": "Configure package scripts for electron:dev and build",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 21,
+    "title": "Set default window size 1440x900 and min size 1100x700",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 22,
+    "title": "Create safe windowService abstraction",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 23,
+    "title": "Create platformService runtime detection",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 24,
+    "title": "Add macOS, Windows, Linux runtime labels",
+    "phase": "B. Electron foundation",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 25,
+    "title": "Add safe IPC channel whitelist",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 26,
+    "title": "Add app config and brand config",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 27,
+    "title": "Create placeholder app icon assets",
+    "phase": "B. Electron foundation",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 28,
+    "title": "Configure environment variables for desktop app",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 29,
+    "title": "Create desktop startup error boundary",
+    "phase": "B. Electron foundation",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 30,
+    "title": "Electron dev mode smoke test",
+    "phase": "B. Electron foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 31,
+    "title": "Create DesktopAppShell four-column layout",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 32,
+    "title": "Create custom WindowTitleBar",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 33,
+    "title": "Create design token CSS variables",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 34,
+    "title": "Create light theme",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 35,
+    "title": "Create dark theme",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 36,
+    "title": "Create ThemeToggle and theme persistence placeholder",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 37,
+    "title": "Create rounded premium app frame",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 38,
+    "title": "Add minimum desktop width warning",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 39,
+    "title": "Prevent horizontal overflow",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 40,
+    "title": "Prepare independent scroll containers",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 41,
+    "title": "Create ServerRail placeholder",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 42,
+    "title": "Create CommunitySidebar placeholder",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 43,
+    "title": "Create ChatMain placeholder",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 44,
+    "title": "Create MemberSidebar placeholder",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 45,
+    "title": "UI shell resize QA",
+    "phase": "C. Premium desktop UI shell",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 46,
+    "title": "Audit current icon usage read-only",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 47,
+    "title": "Add Coolicons attribution to THIRD_PARTY_NOTICES.md",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 48,
+    "title": "Add free Coolicons source policy",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 49,
+    "title": "Create AppIcon component",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 50,
+    "title": "Create semantic icon registry",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 51,
+    "title": "Map MVP UI icons to Coolicons",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 52,
+    "title": "Replace WindowTitleBar icons with AppIcon",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 53,
+    "title": "Replace ServerRail icons with AppIcon",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 54,
+    "title": "Replace CommunitySidebar icons with AppIcon",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 55,
+    "title": "Replace ChatHeader icons with AppIcon",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 56,
+    "title": "Replace MessageComposer icons with AppIcon",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 57,
+    "title": "Replace MemberSidebar icons with AppIcon",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 58,
+    "title": "Replace overlay/context menu icons with AppIcon",
+    "phase": "D. Coolicons icon system",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 59,
+    "title": "Add aria-label rules for icon buttons",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 60,
+    "title": "Run Coolicons build and visual QA",
+    "phase": "D. Coolicons icon system",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 61,
+    "title": "Create TypeScript community domain types",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 62,
+    "title": "Create mockCommunities dataset",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 63,
+    "title": "Create mock members and roles",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 64,
+    "title": "Create mock channels and categories",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 65,
+    "title": "Create mock messages and reactions",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 66,
+    "title": "Create mock image attachments for 1/2/3/4 layouts",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 67,
+    "title": "Create generated avatar and community icon fallback utilities",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 68,
+    "title": "Create MVP app state for activeCommunityId and activeChannelId",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 69,
+    "title": "Create local message state",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 70,
+    "title": "Create UI overlay state",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 71,
+    "title": "Create member sidebar visibility state",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 72,
+    "title": "Create safe fallback selection for missing channel/community",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 73,
+    "title": "Add mock mode environment setting",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 74,
+    "title": "Mock data QA",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 75,
+    "title": "Commit mock mode baseline",
+    "phase": "E. Mock data and MVP state",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 76,
+    "title": "Build ServerRail component",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 77,
+    "title": "Polish ServerRail active and hover states",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 78,
+    "title": "Build CommunityHeader",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 79,
+    "title": "Build ChannelCategory collapsible component",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 80,
+    "title": "Build ChannelItem component",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 81,
+    "title": "Build UserMiniCard",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 82,
+    "title": "Build CommunitySidebar scroll behavior",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 83,
+    "title": "Build ChatHeader",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 84,
+    "title": "Build MemberSidebar toggle from ChatHeader",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 85,
+    "title": "Build MessageList container",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 86,
+    "title": "Build MessageItem",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 87,
+    "title": "Build message hover actions",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 88,
+    "title": "Build unread divider placeholder",
+    "phase": "F. Core chat UI components",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 89,
+    "title": "Build AttachmentGrid",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 90,
+    "title": "Build ImagePreviewModal",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 91,
+    "title": "Build MessageComposer",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 92,
+    "title": "Implement Enter and Shift+Enter behavior",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 93,
+    "title": "Implement local message send and auto-scroll",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 94,
+    "title": "Build MemberSidebar groups",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 95,
+    "title": "Implement member search",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 96,
+    "title": "Build UserProfilePopover",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 97,
+    "title": "Build DesktopContextMenu",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 98,
+    "title": "Build SettingsModal MVP",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 99,
+    "title": "Build Keyboard Shortcuts section",
+    "phase": "F. Core chat UI components",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 100,
+    "title": "Final MVP UI polish against reference image",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 101,
+    "title": "MVP UI build test",
+    "phase": "F. Core chat UI components",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 102,
+    "title": "Create Supabase project setup guide",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 103,
+    "title": "Install and configure Supabase client",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 104,
+    "title": "Create Supabase environment variables",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 105,
+    "title": "Create Supabase local development notes",
+    "phase": "G. Supabase foundation",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 106,
+    "title": "Create database migration baseline",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 107,
+    "title": "Create schema for profiles table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 108,
+    "title": "Create schema for communities table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 109,
+    "title": "Create schema for community_members table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 110,
+    "title": "Create schema for roles table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 111,
+    "title": "Create schema for channel_categories table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 112,
+    "title": "Create schema for channels table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 113,
+    "title": "Create schema for messages table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 114,
+    "title": "Create schema for message_attachments table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 115,
+    "title": "Create schema for message_reactions table",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 116,
+    "title": "Create schema for read_states table",
+    "phase": "G. Supabase foundation",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 117,
+    "title": "Create indexes for chat queries",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 118,
+    "title": "Create seed data for Supabase",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 119,
+    "title": "Create Supabase type generation workflow",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 120,
+    "title": "Create Supabase DB docs",
+    "phase": "G. Supabase foundation",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 121,
+    "title": "Supabase schema smoke test",
+    "phase": "G. Supabase foundation",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 122,
+    "title": "Configure Supabase Auth email/password",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 123,
+    "title": "Create auth service wrapper",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 124,
+    "title": "Create Login screen desktop UI",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 125,
+    "title": "Create Register screen desktop UI",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 126,
+    "title": "Connect login/register to Supabase Auth",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 127,
+    "title": "Create user profile after signup",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 128,
+    "title": "Create protected desktop app route/state",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 129,
+    "title": "Implement logout",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 130,
+    "title": "Create RLS policy for profiles",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 131,
+    "title": "Create RLS policy for communities",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 132,
+    "title": "Create RLS policy for community_members",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 133,
+    "title": "Create RLS policy for channels",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 134,
+    "title": "Create RLS policy for messages",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 135,
+    "title": "Create RLS policy for attachments",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 136,
+    "title": "Create RLS policy for reactions",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 137,
+    "title": "Test member-only community access",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 138,
+    "title": "Test private channel access boundaries",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 139,
+    "title": "Document RLS policies",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 140,
+    "title": "Add RLS security checklist",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 141,
+    "title": "Auth and RLS integration test",
+    "phase": "H. Supabase Auth and RLS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 142,
+    "title": "Create data source switch mock vs Supabase",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 143,
+    "title": "Create community service",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 144,
+    "title": "Create community list query",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 145,
+    "title": "Create create community flow",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 146,
+    "title": "Create community update placeholder",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 147,
+    "title": "Create channel service",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 148,
+    "title": "Create channel list query",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 149,
+    "title": "Create create channel flow",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 150,
+    "title": "Create channel update/delete placeholder",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 151,
+    "title": "Create message service",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 152,
+    "title": "Create message fetch query with pagination placeholder",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 153,
+    "title": "Create message send mutation",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 154,
+    "title": "Create message edit mutation",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 155,
+    "title": "Create message delete mutation",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 156,
+    "title": "Create reactions service",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 157,
+    "title": "Create members service",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 158,
+    "title": "Connect ServerRail to Supabase data mode",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 159,
+    "title": "Connect CommunitySidebar to Supabase data mode",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 160,
+    "title": "Connect MessageList to Supabase data mode",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 161,
+    "title": "Connect MemberSidebar to Supabase data mode",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 162,
+    "title": "Ensure mock mode still works",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 163,
+    "title": "Supabase API mode regression test",
+    "phase": "I. Core data services and CRUD",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 164,
+    "title": "Create Supabase Storage bucket plan",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 165,
+    "title": "Create image upload bucket",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 166,
+    "title": "Create Storage RLS policy for attachments",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 167,
+    "title": "Create upload service wrapper",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 168,
+    "title": "Validate image file types",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 169,
+    "title": "Validate max file size",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 170,
+    "title": "Implement composer attachment preview",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 171,
+    "title": "Upload image before sending message",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 172,
+    "title": "Persist attachment metadata",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 173,
+    "title": "Render uploaded images in AttachmentGrid",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 174,
+    "title": "Create image preview modal for uploaded images",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 175,
+    "title": "Reject unsupported files with clear error",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 176,
+    "title": "Add drag and drop placeholder",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 177,
+    "title": "Add clipboard paste image placeholder",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 178,
+    "title": "Attachment upload security QA",
+    "phase": "J. Supabase Storage and attachments",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 179,
+    "title": "Enable Supabase Realtime for messages",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 180,
+    "title": "Subscribe to active channel messages",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 181,
+    "title": "Handle realtime message insert",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 182,
+    "title": "Handle realtime message update",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 183,
+    "title": "Handle realtime message delete",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 184,
+    "title": "Prevent duplicate optimistic messages",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 185,
+    "title": "Implement realtime reconnect status",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 186,
+    "title": "Create typing indicator via broadcast",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 187,
+    "title": "Create presence channel for online status",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 188,
+    "title": "Update MemberSidebar presence dots",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 189,
+    "title": "Create unread state foundation",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 190,
+    "title": "Create mention badge foundation",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 191,
+    "title": "Create notification settings placeholder",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 192,
+    "title": "Create in-app notification/toast system",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 193,
+    "title": "Create native notification service placeholder",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P2",
+    "notes": ""
+  },
+  {
+    "num": 194,
+    "title": "Supabase realtime two-window test",
+    "phase": "K. Supabase Realtime, presence, notifications",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 195,
+    "title": "Define microservice boundaries on Supabase",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 196,
+    "title": "Create Edge Function project structure",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 197,
+    "title": "Create LiveKit token Edge Function",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 198,
+    "title": "Create invite acceptance Edge Function placeholder",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P2",
+    "notes": ""
+  },
+  {
+    "num": 199,
+    "title": "Create moderation helper Edge Function placeholder",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P2",
+    "notes": ""
+  },
+  {
+    "num": 200,
+    "title": "Create notification fanout Edge Function placeholder",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P2",
+    "notes": ""
+  },
+  {
+    "num": 201,
+    "title": "Create file validation Edge Function placeholder",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P2",
+    "notes": ""
+  },
+  {
+    "num": 202,
+    "title": "Secure Edge Functions with Supabase JWT",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 203,
+    "title": "Add Edge Function environment variable docs",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 204,
+    "title": "Deploy Edge Functions to staging placeholder",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 205,
+    "title": "Edge Function local test guide",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 206,
+    "title": "Microservice boundary documentation",
+    "phase": "L. Supabase Edge Functions and microservice boundaries",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 207,
+    "title": "Create LiveKit architecture document",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 208,
+    "title": "Add LiveKit environment variables",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 209,
+    "title": "Install LiveKit client dependency",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 210,
+    "title": "Create voice service wrapper",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 211,
+    "title": "Create VoiceRoomView UI",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 212,
+    "title": "Click voice channel opens VoiceRoomView",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 213,
+    "title": "Create LiveKit room naming strategy",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 214,
+    "title": "Fetch LiveKit token from Edge Function",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 215,
+    "title": "Join voice room",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 216,
+    "title": "Leave voice room",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 217,
+    "title": "Mute microphone",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 218,
+    "title": "Deafen audio",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 219,
+    "title": "Show connected users",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 220,
+    "title": "Show speaking indicator",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 221,
+    "title": "Handle audio device selection placeholder",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 222,
+    "title": "Create screen share button",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 223,
+    "title": "Implement Electron desktop screen capture source picker",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 224,
+    "title": "Start screen share in LiveKit room",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 225,
+    "title": "Stop screen share",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 226,
+    "title": "Show screen share preview tile",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 227,
+    "title": "Handle macOS microphone permission notes",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 228,
+    "title": "Handle macOS screen recording permission notes",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 229,
+    "title": "Handle Windows screen share test",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 230,
+    "title": "Handle Linux screen share test",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 231,
+    "title": "Voice and screen share QA",
+    "phase": "M. LiveKit voice and screen sharing MVP",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 232,
+    "title": "Create notificationService native bridge",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 233,
+    "title": "Create trayService native bridge",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 234,
+    "title": "Create fileService native bridge",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 235,
+    "title": "Create clipboardService native bridge",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 236,
+    "title": "Create externalLinkService safe opener",
+    "phase": "N. Electron native services",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 237,
+    "title": "Create menuService placeholder",
+    "phase": "N. Electron native services",
+    "priority": "P2",
+    "notes": ""
+  },
+  {
+    "num": 238,
+    "title": "Create deepLinkService placeholder",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 239,
+    "title": "Create updateService placeholder",
+    "phase": "N. Electron native services",
+    "priority": "P2",
+    "notes": ""
+  },
+  {
+    "num": 240,
+    "title": "Create loggingService",
+    "phase": "N. Electron native services",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 241,
+    "title": "Create crash recovery ErrorBoundary integration",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 242,
+    "title": "Implement single instance lock",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 243,
+    "title": "Implement window state persistence",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 244,
+    "title": "Implement network status detection",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 245,
+    "title": "Implement sleep/wake resume handling",
+    "phase": "N. Electron native services",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 246,
+    "title": "IPC security audit",
+    "phase": "N. Electron native services",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 247,
+    "title": "Configure electron-builder or forge",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 248,
+    "title": "Configure Windows packaging",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 249,
+    "title": "Configure Linux AppImage",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 250,
+    "title": "Configure Linux deb package",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 251,
+    "title": "Configure macOS dmg or zip package",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 252,
+    "title": "Set app name and identifier",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 253,
+    "title": "Set app icons",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 254,
+    "title": "Configure preload and context isolation in packaged app",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 255,
+    "title": "Configure production environment injection",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 256,
+    "title": "Create Windows smoke test document",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 257,
+    "title": "Create Linux smoke test document",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 258,
+    "title": "Create macOS smoke test document",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 259,
+    "title": "Document macOS signing and notarization placeholder",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 260,
+    "title": "Document Windows code signing placeholder",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 261,
+    "title": "Run packaged app smoke test checklist",
+    "phase": "O. Packaging Windows Linux macOS",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 262,
+    "title": "Create MVP QA checklist",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 263,
+    "title": "Run UI regression test",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 264,
+    "title": "Run Coolicons QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 265,
+    "title": "Run Supabase RLS QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 266,
+    "title": "Run auth QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 267,
+    "title": "Run chat QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 268,
+    "title": "Run upload QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 269,
+    "title": "Run realtime QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 270,
+    "title": "Run voice QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 271,
+    "title": "Run screen share QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 272,
+    "title": "Run Electron native service QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 273,
+    "title": "Run Windows package QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 274,
+    "title": "Run Linux package QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 275,
+    "title": "Run macOS package QA",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 276,
+    "title": "Create beta environment config",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 277,
+    "title": "Create beta release notes",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 278,
+    "title": "Create known issues document",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 279,
+    "title": "Create feedback and logs placeholder",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 280,
+    "title": "Create beta bug triage workflow",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P1",
+    "notes": ""
+  },
+  {
+    "num": 281,
+    "title": "Create beta go/no-go checklist",
+    "phase": "P. Full MVP QA and beta",
+    "priority": "P0",
+    "notes": ""
+  },
+  {
+    "num": 282,
+    "title": "Direct messages foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 283,
+    "title": "Friends system foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 284,
+    "title": "Profile editing",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 285,
+    "title": "Account security settings",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 286,
+    "title": "Command palette enhancement",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 287,
+    "title": "Deep links and protocol handler",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 288,
+    "title": "Native app menu foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 289,
+    "title": "Auto-update architecture placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 290,
+    "title": "Crash reporting and logs foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 291,
+    "title": "Security hardening pass",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 292,
+    "title": "Performance optimization pass",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 293,
+    "title": "Accessibility pass",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 294,
+    "title": "Automated tests foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 295,
+    "title": "CI/CD pipeline foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 296,
+    "title": "Community discovery placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 297,
+    "title": "Notification preferences per community/channel",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 298,
+    "title": "Message link and copy link foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 299,
+    "title": "Markdown lite support",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 300,
+    "title": "Emoji picker placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 301,
+    "title": "GIF picker placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 302,
+    "title": "Pinned messages",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 303,
+    "title": "Inbox and mentions view",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 304,
+    "title": "Channel topic and description",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 305,
+    "title": "Channel welcome empty state",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 306,
+    "title": "Scroll position management",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 307,
+    "title": "Message pagination and load older",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 308,
+    "title": "Typing indicator polish",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 309,
+    "title": "Desktop sound effects placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 310,
+    "title": "Developer diagnostics panel",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 311,
+    "title": "Design QA against reference",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 312,
+    "title": "Final README",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 313,
+    "title": "Release checklist",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 314,
+    "title": "Admin operations panel placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 315,
+    "title": "Report management system",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 316,
+    "title": "Community rules and welcome screening",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 317,
+    "title": "Community templates",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 318,
+    "title": "Community onboarding checklist",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 319,
+    "title": "Scheduled maintenance mode",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 320,
+    "title": "Status page integration placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 321,
+    "title": "Background job queue foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 322,
+    "title": "Expired invites cleanup job",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 323,
+    "title": "Orphaned upload cleanup job",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 324,
+    "title": "Email service placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 325,
+    "title": "Password reset flow placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 326,
+    "title": "Email verification placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 327,
+    "title": "Session management hardening",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 328,
+    "title": "Two-factor authentication placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 329,
+    "title": "Account deletion workflow",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 330,
+    "title": "Data export placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 331,
+    "title": "Community ownership transfer",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 332,
+    "title": "Community delete safety",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 333,
+    "title": "Private channel permission UI",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 334,
+    "title": "Channel category management",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 335,
+    "title": "Channel reorder UI placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 336,
+    "title": "Message moderation filters placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 337,
+    "title": "User blocking placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 338,
+    "title": "Bot system foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 339,
+    "title": "Webhook foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 340,
+    "title": "Slash commands placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 341,
+    "title": "Custom emoji foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 342,
+    "title": "Stickers placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 343,
+    "title": "Polls feature",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 344,
+    "title": "Community events / scheduled sessions",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 345,
+    "title": "Threads placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 346,
+    "title": "Forum channel placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 347,
+    "title": "Announcement channel placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 348,
+    "title": "Saved messages",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 349,
+    "title": "Message drafts per channel",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 350,
+    "title": "Composer permission states",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 351,
+    "title": "Slow mode placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 352,
+    "title": "Message search result jump",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 353,
+    "title": "Advanced notification routing",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 354,
+    "title": "Multi-account placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 355,
+    "title": "Workspace export/import placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 356,
+    "title": "Plugin system architecture document",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 357,
+    "title": "Bot API architecture document",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 358,
+    "title": "Developer portal placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 359,
+    "title": "Community discovery production plan",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 360,
+    "title": "Privacy-friendly analytics placeholder",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 361,
+    "title": "Data migration strategy document",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 362,
+    "title": "Feature flags foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 363,
+    "title": "Remote config foundation",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 364,
+    "title": "Client/server version compatibility",
+    "phase": "Q. Advanced product features",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 365,
+    "title": "Realtime horizontal scaling preparation",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 366,
+    "title": "Database performance audit",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 367,
+    "title": "Message retention and archiving",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 368,
+    "title": "Attachment CDN and signed URL plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 369,
+    "title": "Actual desktop protocol handler wiring",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 370,
+    "title": "Real native notifications integration",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 371,
+    "title": "Real system tray integration",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 372,
+    "title": "Launch on startup placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 373,
+    "title": "App lock / quick lock",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 374,
+    "title": "E2EE architecture document",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 375,
+    "title": "Compliance export/deletion hardening",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 376,
+    "title": "Localization QA TR/EN",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 377,
+    "title": "Date/time/timezone formatting",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 378,
+    "title": "High contrast and reduced motion",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 379,
+    "title": "Client local data migration",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 380,
+    "title": "API deprecation and compatibility policy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 381,
+    "title": "Multi-tenant isolation review",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 382,
+    "title": "Dependency audit and update plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 383,
+    "title": "License and third-party notices",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 384,
+    "title": "Enterprise readiness report",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 385,
+    "title": "Final long-term architecture review",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 386,
+    "title": "Final roadmap consolidation",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 387,
+    "title": "Architecture Decision Records",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 388,
+    "title": "Monorepo package boundary cleanup",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 389,
+    "title": "Shared types package",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 390,
+    "title": "API SDK generation plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 391,
+    "title": "Desktop IPC security audit",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 392,
+    "title": "Content Security Policy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 393,
+    "title": "Safe external link service hardening",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 394,
+    "title": "Image thumbnail generation placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 395,
+    "title": "Attachment malware scanning placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 396,
+    "title": "Attachment quarantine system",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 397,
+    "title": "Realtime event ordering",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 398,
+    "title": "Message sequence numbers",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 399,
+    "title": "Offline sync conflict resolution",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 400,
+    "title": "Database transaction consistency pass",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 401,
+    "title": "Audit log immutability plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 402,
+    "title": "Data residency plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 403,
+    "title": "Moderation appeals placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 404,
+    "title": "Trust and safety dashboard placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 405,
+    "title": "Community insights dashboard",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 406,
+    "title": "Code quality gate",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 407,
+    "title": "TypeScript strictness hardening",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 408,
+    "title": "Unified error code taxonomy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 409,
+    "title": "Unified error UX",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 410,
+    "title": "Optimistic UI consistency audit",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 411,
+    "title": "Entity store normalization",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 412,
+    "title": "MessageList virtualization",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 413,
+    "title": "MemberSidebar virtualization",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 414,
+    "title": "Upload cancel/retry",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 415,
+    "title": "Image cache strategy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 416,
+    "title": "Disk cache management",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 417,
+    "title": "Safe mode startup",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 418,
+    "title": "Crash recovery flow",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 419,
+    "title": "Backend maintenance scripts",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 420,
+    "title": "Admin user bootstrap",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 421,
+    "title": "Abuse event logging",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 422,
+    "title": "User safety center",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 423,
+    "title": "Quiet hours",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 424,
+    "title": "Notification digest placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 425,
+    "title": "Multi-client session sync",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 426,
+    "title": "User activity history",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 427,
+    "title": "API pagination standardization",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 428,
+    "title": "API idempotency keys",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 429,
+    "title": "Database integrity constraints audit",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 430,
+    "title": "Soft delete and restore policy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 431,
+    "title": "Message history export placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 432,
+    "title": "Release artifact checksums",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 433,
+    "title": "Release artifact provenance",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 434,
+    "title": "Safe rollout strategy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 435,
+    "title": "Emergency kill switch foundation",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 436,
+    "title": "Backend health/readiness/liveness split",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 437,
+    "title": "Backend graceful degradation",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 438,
+    "title": "Realtime load simulation script",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 439,
+    "title": "Message delivery receipts placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 440,
+    "title": "Read receipts placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 441,
+    "title": "Notification permission onboarding",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 442,
+    "title": "First-run performance budget",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 443,
+    "title": "Dependency bundle size audit",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 444,
+    "title": "Service Level Objectives plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 445,
+    "title": "Incident response runbook",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 446,
+    "title": "Postmortem template",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 447,
+    "title": "Staging environment smoke test",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 448,
+    "title": "Production deployment checklist",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 449,
+    "title": "Rollback runbook",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 450,
+    "title": "Backup verification script placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 451,
+    "title": "Database restore drill",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 452,
+    "title": "Data corruption detection plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 453,
+    "title": "Production secrets management plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 454,
+    "title": "Secret scanning CI placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 455,
+    "title": "Dependency vulnerability policy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 456,
+    "title": "Database connection pooling plan",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 457,
+    "title": "API request timeout and retry policy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 458,
+    "title": "Realtime backpressure policy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 459,
+    "title": "Message send queue ordering",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 460,
+    "title": "Desktop update failure recovery",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 461,
+    "title": "Release candidate dry run",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 462,
+    "title": "Final Go/No-Go checklist",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 463,
+    "title": "Final production launch audit",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 464,
+    "title": "SSO/SAML enterprise placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 465,
+    "title": "SCIM provisioning placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 466,
+    "title": "Enterprise audit export",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 467,
+    "title": "Enterprise data retention policy",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 468,
+    "title": "Enterprise legal hold placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 469,
+    "title": "Enterprise deployment model document",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 470,
+    "title": "Enterprise admin console placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 471,
+    "title": "Enterprise billing placeholder",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 472,
+    "title": "Enterprise support runbook",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  },
+  {
+    "num": 473,
+    "title": "Final enterprise and operations audit",
+    "phase": "R. Production operations, enterprise, compliance",
+    "priority": "P3",
+    "notes": ""
+  }
+]

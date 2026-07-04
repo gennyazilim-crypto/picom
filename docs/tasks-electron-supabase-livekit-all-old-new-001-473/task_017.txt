@@ -1,0 +1,46 @@
+TASK 017: Configure Electron main process
+PHASE: B. Electron foundation
+PRIORITY: P0
+
+GLOBAL RULES FOR EVERY TASK
+- This is an Electron desktop app for Windows, Linux, and macOS.
+- Do not create mobile UI or web-first responsive UI.
+- The UI must follow the uploaded reference image quality: premium desktop chat layout, soft rounded surfaces, compact spacing, clean light/dark modes.
+- Use Coolicons as the approved icon system; do not use Discord branding, Discord logo, copied Discord assets, or exact Discord colors.
+- Use Supabase for the MVP backend: Auth, Postgres, RLS, Storage, Realtime, and Edge Functions where appropriate.
+- Use LiveKit/WebRTC for MVP voice chat and screen sharing.
+- Do exactly one task at a time.
+- Do not refactor unrelated working code.
+- Do not delete previous work unless explicitly instructed.
+- After each task: run the smallest relevant test, list changed files, explain how to test, then commit.
+
+PHASE GUIDANCE
+Focus on Electron + React + TypeScript desktop runtime. Keep native access behind preload/service abstractions. Avoid direct Node access in renderer.
+
+OBJECTIVE
+Complete this task: Configure Electron main process.
+
+REQUIREMENTS
+- Keep Electron native APIs outside React components; use preload and typed service wrappers.
+- Maintain contextIsolation and avoid nodeIntegration in the renderer unless explicitly justified.
+- Verify the app still runs in Electron dev mode after the task.
+
+IMPLEMENTATION NOTES
+- Keep changes scoped to this task.
+- If the task is documentation-only, create/update the relevant docs file and do not change runtime code.
+- If implementation needs a decision, document the decision before coding.
+- If a dependency is required, explain why and avoid unnecessary large dependencies.
+- If the current project structure differs, adapt safely and document the chosen path.
+- If something cannot be completed safely, mark it as TODO with a clear reason instead of guessing.
+
+ACCEPTANCE CRITERIA
+- Changed files are listed.
+- Relevant test/manual verification steps are documented.
+- No unrelated features were added.
+- Existing MVP UI remains stable unless this task explicitly changes it.
+
+AFTER FINISHING
+- List changed files.
+- List commands run.
+- Explain how to test.
+- Commit with a message like: task-017 Configure Electron main process.

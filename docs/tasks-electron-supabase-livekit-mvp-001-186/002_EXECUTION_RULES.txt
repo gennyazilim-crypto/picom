@@ -1,0 +1,17 @@
+GENEL KURALLAR — HER GÖREV İÇİN GEÇERLİ
+- Bu proje Windows, Linux ve macOS hedefli Electron desktop uygulamasıdır.
+- iOS bu Electron MVP kapsamına dahil değildir; iOS gerekiyorsa ayrı React Native/Capacitor paketi olarak sonra planlanmalıdır.
+- Verilen referans görseldeki premium community chat UI kalitesi, spacing, rounded frame, light/dark şıklığı ve 4 kolonlu desktop hissi korunmalıdır.
+- Discord logosu, branding’i, assetleri, ikonları veya birebir renkleri kullanılmayacak.
+- Coolicons free set tek ikon sistemi olarak kullanılacak; CC BY 4.0 attribution korunacak.
+- Backend temeli Supabase üzerine kurulacak: Auth, Postgres, RLS, Storage, Realtime, Edge Functions.
+- Microservice yaklaşımı Supabase Edge Functions ve gerekirse küçük Node worker/service boundaries ile uygulanacak.
+- Sesli sohbet ve ekran paylaşımı için LiveKit/WebRTC kullanılacak; Supabase medya sunucusu değildir.
+- Her görev tek başına uygulanmalı, unrelated refactor yapılmamalı.
+- Her görevden sonra test çalıştır ve git commit al.
+- Hepsini tek seferde Codex’e verme.
+
+EK GÜVENLİK:
+- Büyük görevleri Codex’e bölerek ver.
+- Bir görev başarısızsa sonraki göreve geçme.
+- Build kırılırsa yeni özellik ekleme; önce düzelt.

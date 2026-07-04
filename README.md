@@ -1,19 +1,51 @@
-﻿# Picom
+# Picom
 
-Windows/Linux desktop-only community chat app.
+Picom is a fresh premium desktop community chat app rebuild.
 
-## Scope
+## Active task source
 
-This repository is a clean rebuild for Picom using the approved task archive from tasks 001-260.
+The active task pack is now:
 
-## Guardrails
+- `docs/electron_mac_supabase_livekit_full_mvp_tasks_001_186_txt.zip`
+- Extracted tasks: `docs/tasks-electron-supabase-livekit-mvp-001-186/`
 
-- Desktop only: Windows and Linux.
-- No mobile UI.
-- No Discord branding, logo, copied assets, or exact colors.
-- Preserve checkpoint discipline: commit after stable blocks.
-- Advanced features stay tied to the task pack and must not be mixed into MVP UI before their planned phase.
+The older 260-task packs remain as historical archive material only. New implementation work should follow the 001-186 Electron + Supabase + LiveKit MVP task sequence.
 
-## Brand
+## Current MVP direction
 
-The current placeholder logo is stored at `assets/brand/picom-logo-concept.png`.
+- Runtime: Electron desktop app.
+- Platforms: Windows, Linux, macOS.
+- Frontend: React + TypeScript + Vite.
+- Backend foundation: Supabase Auth, Postgres, RLS, Storage, Realtime, Edge Functions.
+- Media foundation: LiveKit/WebRTC for voice and screen sharing.
+- UI target: premium 4-column desktop community chat structure.
+- Icon system: Coolicons Free icon set, attributed in `THIRD_PARTY_NOTICES.md`.
+
+## Brand inputs
+
+- App name: Picom
+- Logo concept: `assets/brand/picom-logo-concept.png`
+- Palette: `#007571`, `#10C2BB`, `#C24D0F`, `#FF772E`, `#752C05`
+- UI references: provided desktop chat reference image, Orion preview assets, Material X reference where accessible.
+
+## Hard exclusions
+
+- No iOS or Android in this Electron MVP.
+- No Discord branding, logos, copied assets, icons, or exact colors.
+- No enterprise/plugin/bot marketplace work before the MVP is stable.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+Open the local Vite URL and use a desktop viewport such as `1440x900`.
+
+## Workflow
+
+1. Follow one task file at a time from the active 001-186 pack.
+2. Test after each task.
+3. Commit stable checkpoints to Git.
+4. If build/typecheck breaks, stop feature work and fix the blocker first.

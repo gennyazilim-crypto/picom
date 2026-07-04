@@ -1,0 +1,46 @@
+TASK 356: Plugin system architecture document
+PHASE: Q. Advanced product features
+PRIORITY: P3
+
+GLOBAL RULES FOR EVERY TASK
+- This is an Electron desktop app for Windows, Linux, and macOS.
+- Do not create mobile UI or web-first responsive UI.
+- The UI must follow the uploaded reference image quality: premium desktop chat layout, soft rounded surfaces, compact spacing, clean light/dark modes.
+- Use Coolicons as the approved icon system; do not use Discord branding, Discord logo, copied Discord assets, or exact Discord colors.
+- Use Supabase for the MVP backend: Auth, Postgres, RLS, Storage, Realtime, and Edge Functions where appropriate.
+- Use LiveKit/WebRTC for MVP voice chat and screen sharing.
+- Do exactly one task at a time.
+- Do not refactor unrelated working code.
+- Do not delete previous work unless explicitly instructed.
+- After each task: run the smallest relevant test, list changed files, explain how to test, then commit.
+
+PHASE GUIDANCE
+Focus on post-MVP feature foundations. Keep them feature-flagged/placeholder if not required for MVP.
+
+OBJECTIVE
+Complete this task: Plugin system architecture document.
+
+REQUIREMENTS
+- This is post-MVP unless explicitly requested; keep behind feature flags or documentation-first.
+- Do not execute arbitrary plugin code or expose unsafe tokens.
+- Do not track message content or sensitive user data in analytics.
+
+IMPLEMENTATION NOTES
+- Keep changes scoped to this task.
+- If the task is documentation-only, create/update the relevant docs file and do not change runtime code.
+- If implementation needs a decision, document the decision before coding.
+- If a dependency is required, explain why and avoid unnecessary large dependencies.
+- If the current project structure differs, adapt safely and document the chosen path.
+- If something cannot be completed safely, mark it as TODO with a clear reason instead of guessing.
+
+ACCEPTANCE CRITERIA
+- Changed files are listed.
+- Relevant test/manual verification steps are documented.
+- No unrelated features were added.
+- Existing MVP UI remains stable unless this task explicitly changes it.
+
+AFTER FINISHING
+- List changed files.
+- List commands run.
+- Explain how to test.
+- Commit with a message like: task-356 Plugin system architecture document.

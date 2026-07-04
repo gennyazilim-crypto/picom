@@ -1,0 +1,38 @@
+COVERAGE SUMMARY
+
+Included from the old broad roadmap:
+- production operations
+- enterprise readiness
+- bot system
+- webhook system
+- plugin architecture
+- analytics placeholder
+- E2EE documents
+- incident response
+- audit documents
+- release checklists
+- logging/error/crash diagnostics
+- recovery, rollback, backup, deployment, security, QA
+
+Included from the new target:
+- Electron desktop app
+- Windows + Linux + macOS
+- premium reference-image UI
+- Coolicons
+- Supabase backend infrastructure
+- Supabase Auth, Postgres, RLS, Storage, Realtime
+- Supabase Edge Functions as microservice boundaries
+- LiveKit/WebRTC voice chat
+- LiveKit/WebRTC screen sharing
+- Electron native services and packaging
+
+Suggested execution:
+- tasks 001-015: safety and scope
+- tasks 016-030: Electron foundation
+- tasks 031-096: UI/Coolicons/mock/chat components
+- tasks 097-198: Supabase core, RLS, data, storage, realtime
+- tasks 199-223: LiveKit voice/screen share
+- tasks 224-253: Electron native services and packaging
+- tasks 254-273: MVP QA and beta
+- tasks 274-355: advanced product features
+- tasks 356-473: production/enterprise/ops/security/compliance/reliability

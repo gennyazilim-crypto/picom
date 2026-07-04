@@ -1,0 +1,476 @@
+TASK INDEX
+TOTAL TASKS: 473
+
+001 | P0 | A. Safety, scope, recovery | Backup current project and initialize Git baseline
+002 | P0 | A. Safety, scope, recovery | Execution rules: one task at a time, test and commit
+003 | P0 | A. Safety, scope, recovery | Full scope definition: Electron desktop + Supabase + LiveKit + production roadmap
+004 | P0 | A. Safety, scope, recovery | Compare legacy 001-260 task pack with the new master plan
+005 | P0 | A. Safety, scope, recovery | Platform direction: Windows, Linux, macOS Electron desktop app
+006 | P0 | A. Safety, scope, recovery | Reference image UI design direction and originality rules
+007 | P0 | A. Safety, scope, recovery | Supabase-first backend architecture decision
+008 | P0 | A. Safety, scope, recovery | LiveKit/WebRTC voice and screen share architecture decision
+009 | P0 | A. Safety, scope, recovery | License and branding guardrails: no Discord assets, Coolicons attribution
+010 | P0 | A. Safety, scope, recovery | Read-only project audit before coding
+011 | P0 | A. Safety, scope, recovery | Create docs/project-scope.md
+012 | P0 | A. Safety, scope, recovery | Create docs/architecture-overview.md
+013 | P0 | A. Safety, scope, recovery | Create docs/development-workflow.md
+014 | P1 | A. Safety, scope, recovery | Create docs/risk-register.md
+015 | P1 | A. Safety, scope, recovery | Create docs/decision-log.md
+016 | P0 | B. Electron foundation | Create Electron + Vite + React + TypeScript app foundation
+017 | P0 | B. Electron foundation | Configure Electron main process
+018 | P0 | B. Electron foundation | Configure Electron preload bridge with contextIsolation
+019 | P0 | B. Electron foundation | Configure renderer entry point
+020 | P0 | B. Electron foundation | Configure package scripts for electron:dev and build
+021 | P0 | B. Electron foundation | Set default window size 1440x900 and min size 1100x700
+022 | P0 | B. Electron foundation | Create safe windowService abstraction
+023 | P0 | B. Electron foundation | Create platformService runtime detection
+024 | P1 | B. Electron foundation | Add macOS, Windows, Linux runtime labels
+025 | P0 | B. Electron foundation | Add safe IPC channel whitelist
+026 | P0 | B. Electron foundation | Add app config and brand config
+027 | P1 | B. Electron foundation | Create placeholder app icon assets
+028 | P0 | B. Electron foundation | Configure environment variables for desktop app
+029 | P1 | B. Electron foundation | Create desktop startup error boundary
+030 | P0 | B. Electron foundation | Electron dev mode smoke test
+031 | P0 | C. Premium desktop UI shell | Create DesktopAppShell four-column layout
+032 | P0 | C. Premium desktop UI shell | Create custom WindowTitleBar
+033 | P0 | C. Premium desktop UI shell | Create design token CSS variables
+034 | P0 | C. Premium desktop UI shell | Create light theme
+035 | P0 | C. Premium desktop UI shell | Create dark theme
+036 | P0 | C. Premium desktop UI shell | Create ThemeToggle and theme persistence placeholder
+037 | P0 | C. Premium desktop UI shell | Create rounded premium app frame
+038 | P0 | C. Premium desktop UI shell | Add minimum desktop width warning
+039 | P0 | C. Premium desktop UI shell | Prevent horizontal overflow
+040 | P0 | C. Premium desktop UI shell | Prepare independent scroll containers
+041 | P0 | C. Premium desktop UI shell | Create ServerRail placeholder
+042 | P0 | C. Premium desktop UI shell | Create CommunitySidebar placeholder
+043 | P0 | C. Premium desktop UI shell | Create ChatMain placeholder
+044 | P0 | C. Premium desktop UI shell | Create MemberSidebar placeholder
+045 | P0 | C. Premium desktop UI shell | UI shell resize QA
+046 | P0 | D. Coolicons icon system | Audit current icon usage read-only
+047 | P0 | D. Coolicons icon system | Add Coolicons attribution to THIRD_PARTY_NOTICES.md
+048 | P0 | D. Coolicons icon system | Add free Coolicons source policy
+049 | P0 | D. Coolicons icon system | Create AppIcon component
+050 | P0 | D. Coolicons icon system | Create semantic icon registry
+051 | P0 | D. Coolicons icon system | Map MVP UI icons to Coolicons
+052 | P0 | D. Coolicons icon system | Replace WindowTitleBar icons with AppIcon
+053 | P0 | D. Coolicons icon system | Replace ServerRail icons with AppIcon
+054 | P0 | D. Coolicons icon system | Replace CommunitySidebar icons with AppIcon
+055 | P0 | D. Coolicons icon system | Replace ChatHeader icons with AppIcon
+056 | P0 | D. Coolicons icon system | Replace MessageComposer icons with AppIcon
+057 | P0 | D. Coolicons icon system | Replace MemberSidebar icons with AppIcon
+058 | P1 | D. Coolicons icon system | Replace overlay/context menu icons with AppIcon
+059 | P0 | D. Coolicons icon system | Add aria-label rules for icon buttons
+060 | P0 | D. Coolicons icon system | Run Coolicons build and visual QA
+061 | P0 | E. Mock data and MVP state | Create TypeScript community domain types
+062 | P0 | E. Mock data and MVP state | Create mockCommunities dataset
+063 | P0 | E. Mock data and MVP state | Create mock members and roles
+064 | P0 | E. Mock data and MVP state | Create mock channels and categories
+065 | P0 | E. Mock data and MVP state | Create mock messages and reactions
+066 | P0 | E. Mock data and MVP state | Create mock image attachments for 1/2/3/4 layouts
+067 | P0 | E. Mock data and MVP state | Create generated avatar and community icon fallback utilities
+068 | P0 | E. Mock data and MVP state | Create MVP app state for activeCommunityId and activeChannelId
+069 | P0 | E. Mock data and MVP state | Create local message state
+070 | P0 | E. Mock data and MVP state | Create UI overlay state
+071 | P0 | E. Mock data and MVP state | Create member sidebar visibility state
+072 | P0 | E. Mock data and MVP state | Create safe fallback selection for missing channel/community
+073 | P0 | E. Mock data and MVP state | Add mock mode environment setting
+074 | P0 | E. Mock data and MVP state | Mock data QA
+075 | P0 | E. Mock data and MVP state | Commit mock mode baseline
+076 | P0 | F. Core chat UI components | Build ServerRail component
+077 | P0 | F. Core chat UI components | Polish ServerRail active and hover states
+078 | P0 | F. Core chat UI components | Build CommunityHeader
+079 | P0 | F. Core chat UI components | Build ChannelCategory collapsible component
+080 | P0 | F. Core chat UI components | Build ChannelItem component
+081 | P0 | F. Core chat UI components | Build UserMiniCard
+082 | P0 | F. Core chat UI components | Build CommunitySidebar scroll behavior
+083 | P0 | F. Core chat UI components | Build ChatHeader
+084 | P0 | F. Core chat UI components | Build MemberSidebar toggle from ChatHeader
+085 | P0 | F. Core chat UI components | Build MessageList container
+086 | P0 | F. Core chat UI components | Build MessageItem
+087 | P0 | F. Core chat UI components | Build message hover actions
+088 | P1 | F. Core chat UI components | Build unread divider placeholder
+089 | P0 | F. Core chat UI components | Build AttachmentGrid
+090 | P0 | F. Core chat UI components | Build ImagePreviewModal
+091 | P0 | F. Core chat UI components | Build MessageComposer
+092 | P0 | F. Core chat UI components | Implement Enter and Shift+Enter behavior
+093 | P0 | F. Core chat UI components | Implement local message send and auto-scroll
+094 | P0 | F. Core chat UI components | Build MemberSidebar groups
+095 | P0 | F. Core chat UI components | Implement member search
+096 | P0 | F. Core chat UI components | Build UserProfilePopover
+097 | P0 | F. Core chat UI components | Build DesktopContextMenu
+098 | P0 | F. Core chat UI components | Build SettingsModal MVP
+099 | P1 | F. Core chat UI components | Build Keyboard Shortcuts section
+100 | P0 | F. Core chat UI components | Final MVP UI polish against reference image
+101 | P0 | F. Core chat UI components | MVP UI build test
+102 | P0 | G. Supabase foundation | Create Supabase project setup guide
+103 | P0 | G. Supabase foundation | Install and configure Supabase client
+104 | P0 | G. Supabase foundation | Create Supabase environment variables
+105 | P1 | G. Supabase foundation | Create Supabase local development notes
+106 | P0 | G. Supabase foundation | Create database migration baseline
+107 | P0 | G. Supabase foundation | Create schema for profiles table
+108 | P0 | G. Supabase foundation | Create schema for communities table
+109 | P0 | G. Supabase foundation | Create schema for community_members table
+110 | P0 | G. Supabase foundation | Create schema for roles table
+111 | P0 | G. Supabase foundation | Create schema for channel_categories table
+112 | P0 | G. Supabase foundation | Create schema for channels table
+113 | P0 | G. Supabase foundation | Create schema for messages table
+114 | P0 | G. Supabase foundation | Create schema for message_attachments table
+115 | P0 | G. Supabase foundation | Create schema for message_reactions table
+116 | P1 | G. Supabase foundation | Create schema for read_states table
+117 | P0 | G. Supabase foundation | Create indexes for chat queries
+118 | P0 | G. Supabase foundation | Create seed data for Supabase
+119 | P0 | G. Supabase foundation | Create Supabase type generation workflow
+120 | P1 | G. Supabase foundation | Create Supabase DB docs
+121 | P0 | G. Supabase foundation | Supabase schema smoke test
+122 | P0 | H. Supabase Auth and RLS | Configure Supabase Auth email/password
+123 | P0 | H. Supabase Auth and RLS | Create auth service wrapper
+124 | P0 | H. Supabase Auth and RLS | Create Login screen desktop UI
+125 | P0 | H. Supabase Auth and RLS | Create Register screen desktop UI
+126 | P0 | H. Supabase Auth and RLS | Connect login/register to Supabase Auth
+127 | P0 | H. Supabase Auth and RLS | Create user profile after signup
+128 | P0 | H. Supabase Auth and RLS | Create protected desktop app route/state
+129 | P0 | H. Supabase Auth and RLS | Implement logout
+130 | P0 | H. Supabase Auth and RLS | Create RLS policy for profiles
+131 | P0 | H. Supabase Auth and RLS | Create RLS policy for communities
+132 | P0 | H. Supabase Auth and RLS | Create RLS policy for community_members
+133 | P0 | H. Supabase Auth and RLS | Create RLS policy for channels
+134 | P0 | H. Supabase Auth and RLS | Create RLS policy for messages
+135 | P0 | H. Supabase Auth and RLS | Create RLS policy for attachments
+136 | P0 | H. Supabase Auth and RLS | Create RLS policy for reactions
+137 | P0 | H. Supabase Auth and RLS | Test member-only community access
+138 | P0 | H. Supabase Auth and RLS | Test private channel access boundaries
+139 | P0 | H. Supabase Auth and RLS | Document RLS policies
+140 | P0 | H. Supabase Auth and RLS | Add RLS security checklist
+141 | P0 | H. Supabase Auth and RLS | Auth and RLS integration test
+142 | P0 | I. Core data services and CRUD | Create data source switch mock vs Supabase
+143 | P0 | I. Core data services and CRUD | Create community service
+144 | P0 | I. Core data services and CRUD | Create community list query
+145 | P0 | I. Core data services and CRUD | Create create community flow
+146 | P1 | I. Core data services and CRUD | Create community update placeholder
+147 | P0 | I. Core data services and CRUD | Create channel service
+148 | P0 | I. Core data services and CRUD | Create channel list query
+149 | P0 | I. Core data services and CRUD | Create create channel flow
+150 | P1 | I. Core data services and CRUD | Create channel update/delete placeholder
+151 | P0 | I. Core data services and CRUD | Create message service
+152 | P0 | I. Core data services and CRUD | Create message fetch query with pagination placeholder
+153 | P0 | I. Core data services and CRUD | Create message send mutation
+154 | P0 | I. Core data services and CRUD | Create message edit mutation
+155 | P0 | I. Core data services and CRUD | Create message delete mutation
+156 | P0 | I. Core data services and CRUD | Create reactions service
+157 | P0 | I. Core data services and CRUD | Create members service
+158 | P0 | I. Core data services and CRUD | Connect ServerRail to Supabase data mode
+159 | P0 | I. Core data services and CRUD | Connect CommunitySidebar to Supabase data mode
+160 | P0 | I. Core data services and CRUD | Connect MessageList to Supabase data mode
+161 | P0 | I. Core data services and CRUD | Connect MemberSidebar to Supabase data mode
+162 | P0 | I. Core data services and CRUD | Ensure mock mode still works
+163 | P0 | I. Core data services and CRUD | Supabase API mode regression test
+164 | P0 | J. Supabase Storage and attachments | Create Supabase Storage bucket plan
+165 | P0 | J. Supabase Storage and attachments | Create image upload bucket
+166 | P0 | J. Supabase Storage and attachments | Create Storage RLS policy for attachments
+167 | P0 | J. Supabase Storage and attachments | Create upload service wrapper
+168 | P0 | J. Supabase Storage and attachments | Validate image file types
+169 | P0 | J. Supabase Storage and attachments | Validate max file size
+170 | P0 | J. Supabase Storage and attachments | Implement composer attachment preview
+171 | P0 | J. Supabase Storage and attachments | Upload image before sending message
+172 | P0 | J. Supabase Storage and attachments | Persist attachment metadata
+173 | P0 | J. Supabase Storage and attachments | Render uploaded images in AttachmentGrid
+174 | P0 | J. Supabase Storage and attachments | Create image preview modal for uploaded images
+175 | P0 | J. Supabase Storage and attachments | Reject unsupported files with clear error
+176 | P1 | J. Supabase Storage and attachments | Add drag and drop placeholder
+177 | P1 | J. Supabase Storage and attachments | Add clipboard paste image placeholder
+178 | P0 | J. Supabase Storage and attachments | Attachment upload security QA
+179 | P0 | K. Supabase Realtime, presence, notifications | Enable Supabase Realtime for messages
+180 | P0 | K. Supabase Realtime, presence, notifications | Subscribe to active channel messages
+181 | P0 | K. Supabase Realtime, presence, notifications | Handle realtime message insert
+182 | P0 | K. Supabase Realtime, presence, notifications | Handle realtime message update
+183 | P0 | K. Supabase Realtime, presence, notifications | Handle realtime message delete
+184 | P0 | K. Supabase Realtime, presence, notifications | Prevent duplicate optimistic messages
+185 | P0 | K. Supabase Realtime, presence, notifications | Implement realtime reconnect status
+186 | P1 | K. Supabase Realtime, presence, notifications | Create typing indicator via broadcast
+187 | P0 | K. Supabase Realtime, presence, notifications | Create presence channel for online status
+188 | P0 | K. Supabase Realtime, presence, notifications | Update MemberSidebar presence dots
+189 | P1 | K. Supabase Realtime, presence, notifications | Create unread state foundation
+190 | P1 | K. Supabase Realtime, presence, notifications | Create mention badge foundation
+191 | P1 | K. Supabase Realtime, presence, notifications | Create notification settings placeholder
+192 | P1 | K. Supabase Realtime, presence, notifications | Create in-app notification/toast system
+193 | P2 | K. Supabase Realtime, presence, notifications | Create native notification service placeholder
+194 | P0 | K. Supabase Realtime, presence, notifications | Supabase realtime two-window test
+195 | P1 | L. Supabase Edge Functions and microservice boundaries | Define microservice boundaries on Supabase
+196 | P1 | L. Supabase Edge Functions and microservice boundaries | Create Edge Function project structure
+197 | P0 | L. Supabase Edge Functions and microservice boundaries | Create LiveKit token Edge Function
+198 | P2 | L. Supabase Edge Functions and microservice boundaries | Create invite acceptance Edge Function placeholder
+199 | P2 | L. Supabase Edge Functions and microservice boundaries | Create moderation helper Edge Function placeholder
+200 | P2 | L. Supabase Edge Functions and microservice boundaries | Create notification fanout Edge Function placeholder
+201 | P2 | L. Supabase Edge Functions and microservice boundaries | Create file validation Edge Function placeholder
+202 | P0 | L. Supabase Edge Functions and microservice boundaries | Secure Edge Functions with Supabase JWT
+203 | P0 | L. Supabase Edge Functions and microservice boundaries | Add Edge Function environment variable docs
+204 | P1 | L. Supabase Edge Functions and microservice boundaries | Deploy Edge Functions to staging placeholder
+205 | P1 | L. Supabase Edge Functions and microservice boundaries | Edge Function local test guide
+206 | P1 | L. Supabase Edge Functions and microservice boundaries | Microservice boundary documentation
+207 | P0 | M. LiveKit voice and screen sharing MVP | Create LiveKit architecture document
+208 | P0 | M. LiveKit voice and screen sharing MVP | Add LiveKit environment variables
+209 | P0 | M. LiveKit voice and screen sharing MVP | Install LiveKit client dependency
+210 | P0 | M. LiveKit voice and screen sharing MVP | Create voice service wrapper
+211 | P0 | M. LiveKit voice and screen sharing MVP | Create VoiceRoomView UI
+212 | P0 | M. LiveKit voice and screen sharing MVP | Click voice channel opens VoiceRoomView
+213 | P0 | M. LiveKit voice and screen sharing MVP | Create LiveKit room naming strategy
+214 | P0 | M. LiveKit voice and screen sharing MVP | Fetch LiveKit token from Edge Function
+215 | P0 | M. LiveKit voice and screen sharing MVP | Join voice room
+216 | P0 | M. LiveKit voice and screen sharing MVP | Leave voice room
+217 | P0 | M. LiveKit voice and screen sharing MVP | Mute microphone
+218 | P0 | M. LiveKit voice and screen sharing MVP | Deafen audio
+219 | P0 | M. LiveKit voice and screen sharing MVP | Show connected users
+220 | P1 | M. LiveKit voice and screen sharing MVP | Show speaking indicator
+221 | P1 | M. LiveKit voice and screen sharing MVP | Handle audio device selection placeholder
+222 | P0 | M. LiveKit voice and screen sharing MVP | Create screen share button
+223 | P0 | M. LiveKit voice and screen sharing MVP | Implement Electron desktop screen capture source picker
+224 | P0 | M. LiveKit voice and screen sharing MVP | Start screen share in LiveKit room
+225 | P0 | M. LiveKit voice and screen sharing MVP | Stop screen share
+226 | P1 | M. LiveKit voice and screen sharing MVP | Show screen share preview tile
+227 | P0 | M. LiveKit voice and screen sharing MVP | Handle macOS microphone permission notes
+228 | P0 | M. LiveKit voice and screen sharing MVP | Handle macOS screen recording permission notes
+229 | P0 | M. LiveKit voice and screen sharing MVP | Handle Windows screen share test
+230 | P0 | M. LiveKit voice and screen sharing MVP | Handle Linux screen share test
+231 | P0 | M. LiveKit voice and screen sharing MVP | Voice and screen share QA
+232 | P1 | N. Electron native services | Create notificationService native bridge
+233 | P1 | N. Electron native services | Create trayService native bridge
+234 | P1 | N. Electron native services | Create fileService native bridge
+235 | P1 | N. Electron native services | Create clipboardService native bridge
+236 | P0 | N. Electron native services | Create externalLinkService safe opener
+237 | P2 | N. Electron native services | Create menuService placeholder
+238 | P1 | N. Electron native services | Create deepLinkService placeholder
+239 | P2 | N. Electron native services | Create updateService placeholder
+240 | P0 | N. Electron native services | Create loggingService
+241 | P1 | N. Electron native services | Create crash recovery ErrorBoundary integration
+242 | P1 | N. Electron native services | Implement single instance lock
+243 | P1 | N. Electron native services | Implement window state persistence
+244 | P1 | N. Electron native services | Implement network status detection
+245 | P1 | N. Electron native services | Implement sleep/wake resume handling
+246 | P0 | N. Electron native services | IPC security audit
+247 | P0 | O. Packaging Windows Linux macOS | Configure electron-builder or forge
+248 | P0 | O. Packaging Windows Linux macOS | Configure Windows packaging
+249 | P0 | O. Packaging Windows Linux macOS | Configure Linux AppImage
+250 | P1 | O. Packaging Windows Linux macOS | Configure Linux deb package
+251 | P0 | O. Packaging Windows Linux macOS | Configure macOS dmg or zip package
+252 | P0 | O. Packaging Windows Linux macOS | Set app name and identifier
+253 | P0 | O. Packaging Windows Linux macOS | Set app icons
+254 | P0 | O. Packaging Windows Linux macOS | Configure preload and context isolation in packaged app
+255 | P0 | O. Packaging Windows Linux macOS | Configure production environment injection
+256 | P0 | O. Packaging Windows Linux macOS | Create Windows smoke test document
+257 | P0 | O. Packaging Windows Linux macOS | Create Linux smoke test document
+258 | P0 | O. Packaging Windows Linux macOS | Create macOS smoke test document
+259 | P1 | O. Packaging Windows Linux macOS | Document macOS signing and notarization placeholder
+260 | P1 | O. Packaging Windows Linux macOS | Document Windows code signing placeholder
+261 | P0 | O. Packaging Windows Linux macOS | Run packaged app smoke test checklist
+262 | P0 | P. Full MVP QA and beta | Create MVP QA checklist
+263 | P0 | P. Full MVP QA and beta | Run UI regression test
+264 | P0 | P. Full MVP QA and beta | Run Coolicons QA
+265 | P0 | P. Full MVP QA and beta | Run Supabase RLS QA
+266 | P0 | P. Full MVP QA and beta | Run auth QA
+267 | P0 | P. Full MVP QA and beta | Run chat QA
+268 | P0 | P. Full MVP QA and beta | Run upload QA
+269 | P0 | P. Full MVP QA and beta | Run realtime QA
+270 | P0 | P. Full MVP QA and beta | Run voice QA
+271 | P0 | P. Full MVP QA and beta | Run screen share QA
+272 | P0 | P. Full MVP QA and beta | Run Electron native service QA
+273 | P0 | P. Full MVP QA and beta | Run Windows package QA
+274 | P0 | P. Full MVP QA and beta | Run Linux package QA
+275 | P0 | P. Full MVP QA and beta | Run macOS package QA
+276 | P0 | P. Full MVP QA and beta | Create beta environment config
+277 | P0 | P. Full MVP QA and beta | Create beta release notes
+278 | P0 | P. Full MVP QA and beta | Create known issues document
+279 | P1 | P. Full MVP QA and beta | Create feedback and logs placeholder
+280 | P1 | P. Full MVP QA and beta | Create beta bug triage workflow
+281 | P0 | P. Full MVP QA and beta | Create beta go/no-go checklist
+282 | P3 | Q. Advanced product features | Direct messages foundation
+283 | P3 | Q. Advanced product features | Friends system foundation
+284 | P3 | Q. Advanced product features | Profile editing
+285 | P3 | Q. Advanced product features | Account security settings
+286 | P3 | Q. Advanced product features | Command palette enhancement
+287 | P3 | Q. Advanced product features | Deep links and protocol handler
+288 | P3 | Q. Advanced product features | Native app menu foundation
+289 | P3 | Q. Advanced product features | Auto-update architecture placeholder
+290 | P3 | Q. Advanced product features | Crash reporting and logs foundation
+291 | P3 | Q. Advanced product features | Security hardening pass
+292 | P3 | Q. Advanced product features | Performance optimization pass
+293 | P3 | Q. Advanced product features | Accessibility pass
+294 | P3 | Q. Advanced product features | Automated tests foundation
+295 | P3 | Q. Advanced product features | CI/CD pipeline foundation
+296 | P3 | Q. Advanced product features | Community discovery placeholder
+297 | P3 | Q. Advanced product features | Notification preferences per community/channel
+298 | P3 | Q. Advanced product features | Message link and copy link foundation
+299 | P3 | Q. Advanced product features | Markdown lite support
+300 | P3 | Q. Advanced product features | Emoji picker placeholder
+301 | P3 | Q. Advanced product features | GIF picker placeholder
+302 | P3 | Q. Advanced product features | Pinned messages
+303 | P3 | Q. Advanced product features | Inbox and mentions view
+304 | P3 | Q. Advanced product features | Channel topic and description
+305 | P3 | Q. Advanced product features | Channel welcome empty state
+306 | P3 | Q. Advanced product features | Scroll position management
+307 | P3 | Q. Advanced product features | Message pagination and load older
+308 | P3 | Q. Advanced product features | Typing indicator polish
+309 | P3 | Q. Advanced product features | Desktop sound effects placeholder
+310 | P3 | Q. Advanced product features | Developer diagnostics panel
+311 | P3 | Q. Advanced product features | Design QA against reference
+312 | P3 | Q. Advanced product features | Final README
+313 | P3 | Q. Advanced product features | Release checklist
+314 | P3 | Q. Advanced product features | Admin operations panel placeholder
+315 | P3 | Q. Advanced product features | Report management system
+316 | P3 | Q. Advanced product features | Community rules and welcome screening
+317 | P3 | Q. Advanced product features | Community templates
+318 | P3 | Q. Advanced product features | Community onboarding checklist
+319 | P3 | Q. Advanced product features | Scheduled maintenance mode
+320 | P3 | Q. Advanced product features | Status page integration placeholder
+321 | P3 | Q. Advanced product features | Background job queue foundation
+322 | P3 | Q. Advanced product features | Expired invites cleanup job
+323 | P3 | Q. Advanced product features | Orphaned upload cleanup job
+324 | P3 | Q. Advanced product features | Email service placeholder
+325 | P3 | Q. Advanced product features | Password reset flow placeholder
+326 | P3 | Q. Advanced product features | Email verification placeholder
+327 | P3 | Q. Advanced product features | Session management hardening
+328 | P3 | Q. Advanced product features | Two-factor authentication placeholder
+329 | P3 | Q. Advanced product features | Account deletion workflow
+330 | P3 | Q. Advanced product features | Data export placeholder
+331 | P3 | Q. Advanced product features | Community ownership transfer
+332 | P3 | Q. Advanced product features | Community delete safety
+333 | P3 | Q. Advanced product features | Private channel permission UI
+334 | P3 | Q. Advanced product features | Channel category management
+335 | P3 | Q. Advanced product features | Channel reorder UI placeholder
+336 | P3 | Q. Advanced product features | Message moderation filters placeholder
+337 | P3 | Q. Advanced product features | User blocking placeholder
+338 | P3 | Q. Advanced product features | Bot system foundation
+339 | P3 | Q. Advanced product features | Webhook foundation
+340 | P3 | Q. Advanced product features | Slash commands placeholder
+341 | P3 | Q. Advanced product features | Custom emoji foundation
+342 | P3 | Q. Advanced product features | Stickers placeholder
+343 | P3 | Q. Advanced product features | Polls feature
+344 | P3 | Q. Advanced product features | Community events / scheduled sessions
+345 | P3 | Q. Advanced product features | Threads placeholder
+346 | P3 | Q. Advanced product features | Forum channel placeholder
+347 | P3 | Q. Advanced product features | Announcement channel placeholder
+348 | P3 | Q. Advanced product features | Saved messages
+349 | P3 | Q. Advanced product features | Message drafts per channel
+350 | P3 | Q. Advanced product features | Composer permission states
+351 | P3 | Q. Advanced product features | Slow mode placeholder
+352 | P3 | Q. Advanced product features | Message search result jump
+353 | P3 | Q. Advanced product features | Advanced notification routing
+354 | P3 | Q. Advanced product features | Multi-account placeholder
+355 | P3 | Q. Advanced product features | Workspace export/import placeholder
+356 | P3 | Q. Advanced product features | Plugin system architecture document
+357 | P3 | Q. Advanced product features | Bot API architecture document
+358 | P3 | Q. Advanced product features | Developer portal placeholder
+359 | P3 | Q. Advanced product features | Community discovery production plan
+360 | P3 | Q. Advanced product features | Privacy-friendly analytics placeholder
+361 | P3 | Q. Advanced product features | Data migration strategy document
+362 | P3 | Q. Advanced product features | Feature flags foundation
+363 | P3 | Q. Advanced product features | Remote config foundation
+364 | P3 | Q. Advanced product features | Client/server version compatibility
+365 | P3 | R. Production operations, enterprise, compliance | Realtime horizontal scaling preparation
+366 | P3 | R. Production operations, enterprise, compliance | Database performance audit
+367 | P3 | R. Production operations, enterprise, compliance | Message retention and archiving
+368 | P3 | R. Production operations, enterprise, compliance | Attachment CDN and signed URL plan
+369 | P3 | R. Production operations, enterprise, compliance | Actual desktop protocol handler wiring
+370 | P3 | R. Production operations, enterprise, compliance | Real native notifications integration
+371 | P3 | R. Production operations, enterprise, compliance | Real system tray integration
+372 | P3 | R. Production operations, enterprise, compliance | Launch on startup placeholder
+373 | P3 | R. Production operations, enterprise, compliance | App lock / quick lock
+374 | P3 | R. Production operations, enterprise, compliance | E2EE architecture document
+375 | P3 | R. Production operations, enterprise, compliance | Compliance export/deletion hardening
+376 | P3 | R. Production operations, enterprise, compliance | Localization QA TR/EN
+377 | P3 | R. Production operations, enterprise, compliance | Date/time/timezone formatting
+378 | P3 | R. Production operations, enterprise, compliance | High contrast and reduced motion
+379 | P3 | R. Production operations, enterprise, compliance | Client local data migration
+380 | P3 | R. Production operations, enterprise, compliance | API deprecation and compatibility policy
+381 | P3 | R. Production operations, enterprise, compliance | Multi-tenant isolation review
+382 | P3 | R. Production operations, enterprise, compliance | Dependency audit and update plan
+383 | P3 | R. Production operations, enterprise, compliance | License and third-party notices
+384 | P3 | R. Production operations, enterprise, compliance | Enterprise readiness report
+385 | P3 | R. Production operations, enterprise, compliance | Final long-term architecture review
+386 | P3 | R. Production operations, enterprise, compliance | Final roadmap consolidation
+387 | P3 | R. Production operations, enterprise, compliance | Architecture Decision Records
+388 | P3 | R. Production operations, enterprise, compliance | Monorepo package boundary cleanup
+389 | P3 | R. Production operations, enterprise, compliance | Shared types package
+390 | P3 | R. Production operations, enterprise, compliance | API SDK generation plan
+391 | P3 | R. Production operations, enterprise, compliance | Desktop IPC security audit
+392 | P3 | R. Production operations, enterprise, compliance | Content Security Policy
+393 | P3 | R. Production operations, enterprise, compliance | Safe external link service hardening
+394 | P3 | R. Production operations, enterprise, compliance | Image thumbnail generation placeholder
+395 | P3 | R. Production operations, enterprise, compliance | Attachment malware scanning placeholder
+396 | P3 | R. Production operations, enterprise, compliance | Attachment quarantine system
+397 | P3 | R. Production operations, enterprise, compliance | Realtime event ordering
+398 | P3 | R. Production operations, enterprise, compliance | Message sequence numbers
+399 | P3 | R. Production operations, enterprise, compliance | Offline sync conflict resolution
+400 | P3 | R. Production operations, enterprise, compliance | Database transaction consistency pass
+401 | P3 | R. Production operations, enterprise, compliance | Audit log immutability plan
+402 | P3 | R. Production operations, enterprise, compliance | Data residency plan
+403 | P3 | R. Production operations, enterprise, compliance | Moderation appeals placeholder
+404 | P3 | R. Production operations, enterprise, compliance | Trust and safety dashboard placeholder
+405 | P3 | R. Production operations, enterprise, compliance | Community insights dashboard
+406 | P3 | R. Production operations, enterprise, compliance | Code quality gate
+407 | P3 | R. Production operations, enterprise, compliance | TypeScript strictness hardening
+408 | P3 | R. Production operations, enterprise, compliance | Unified error code taxonomy
+409 | P3 | R. Production operations, enterprise, compliance | Unified error UX
+410 | P3 | R. Production operations, enterprise, compliance | Optimistic UI consistency audit
+411 | P3 | R. Production operations, enterprise, compliance | Entity store normalization
+412 | P3 | R. Production operations, enterprise, compliance | MessageList virtualization
+413 | P3 | R. Production operations, enterprise, compliance | MemberSidebar virtualization
+414 | P3 | R. Production operations, enterprise, compliance | Upload cancel/retry
+415 | P3 | R. Production operations, enterprise, compliance | Image cache strategy
+416 | P3 | R. Production operations, enterprise, compliance | Disk cache management
+417 | P3 | R. Production operations, enterprise, compliance | Safe mode startup
+418 | P3 | R. Production operations, enterprise, compliance | Crash recovery flow
+419 | P3 | R. Production operations, enterprise, compliance | Backend maintenance scripts
+420 | P3 | R. Production operations, enterprise, compliance | Admin user bootstrap
+421 | P3 | R. Production operations, enterprise, compliance | Abuse event logging
+422 | P3 | R. Production operations, enterprise, compliance | User safety center
+423 | P3 | R. Production operations, enterprise, compliance | Quiet hours
+424 | P3 | R. Production operations, enterprise, compliance | Notification digest placeholder
+425 | P3 | R. Production operations, enterprise, compliance | Multi-client session sync
+426 | P3 | R. Production operations, enterprise, compliance | User activity history
+427 | P3 | R. Production operations, enterprise, compliance | API pagination standardization
+428 | P3 | R. Production operations, enterprise, compliance | API idempotency keys
+429 | P3 | R. Production operations, enterprise, compliance | Database integrity constraints audit
+430 | P3 | R. Production operations, enterprise, compliance | Soft delete and restore policy
+431 | P3 | R. Production operations, enterprise, compliance | Message history export placeholder
+432 | P3 | R. Production operations, enterprise, compliance | Release artifact checksums
+433 | P3 | R. Production operations, enterprise, compliance | Release artifact provenance
+434 | P3 | R. Production operations, enterprise, compliance | Safe rollout strategy
+435 | P3 | R. Production operations, enterprise, compliance | Emergency kill switch foundation
+436 | P3 | R. Production operations, enterprise, compliance | Backend health/readiness/liveness split
+437 | P3 | R. Production operations, enterprise, compliance | Backend graceful degradation
+438 | P3 | R. Production operations, enterprise, compliance | Realtime load simulation script
+439 | P3 | R. Production operations, enterprise, compliance | Message delivery receipts placeholder
+440 | P3 | R. Production operations, enterprise, compliance | Read receipts placeholder
+441 | P3 | R. Production operations, enterprise, compliance | Notification permission onboarding
+442 | P3 | R. Production operations, enterprise, compliance | First-run performance budget
+443 | P3 | R. Production operations, enterprise, compliance | Dependency bundle size audit
+444 | P3 | R. Production operations, enterprise, compliance | Service Level Objectives plan
+445 | P3 | R. Production operations, enterprise, compliance | Incident response runbook
+446 | P3 | R. Production operations, enterprise, compliance | Postmortem template
+447 | P3 | R. Production operations, enterprise, compliance | Staging environment smoke test
+448 | P3 | R. Production operations, enterprise, compliance | Production deployment checklist
+449 | P3 | R. Production operations, enterprise, compliance | Rollback runbook
+450 | P3 | R. Production operations, enterprise, compliance | Backup verification script placeholder
+451 | P3 | R. Production operations, enterprise, compliance | Database restore drill
+452 | P3 | R. Production operations, enterprise, compliance | Data corruption detection plan
+453 | P3 | R. Production operations, enterprise, compliance | Production secrets management plan
+454 | P3 | R. Production operations, enterprise, compliance | Secret scanning CI placeholder
+455 | P3 | R. Production operations, enterprise, compliance | Dependency vulnerability policy
+456 | P3 | R. Production operations, enterprise, compliance | Database connection pooling plan
+457 | P3 | R. Production operations, enterprise, compliance | API request timeout and retry policy
+458 | P3 | R. Production operations, enterprise, compliance | Realtime backpressure policy
+459 | P3 | R. Production operations, enterprise, compliance | Message send queue ordering
+460 | P3 | R. Production operations, enterprise, compliance | Desktop update failure recovery
+461 | P3 | R. Production operations, enterprise, compliance | Release candidate dry run
+462 | P3 | R. Production operations, enterprise, compliance | Final Go/No-Go checklist
+463 | P3 | R. Production operations, enterprise, compliance | Final production launch audit
+464 | P3 | R. Production operations, enterprise, compliance | SSO/SAML enterprise placeholder
+465 | P3 | R. Production operations, enterprise, compliance | SCIM provisioning placeholder
+466 | P3 | R. Production operations, enterprise, compliance | Enterprise audit export
+467 | P3 | R. Production operations, enterprise, compliance | Enterprise data retention policy
+468 | P3 | R. Production operations, enterprise, compliance | Enterprise legal hold placeholder
+469 | P3 | R. Production operations, enterprise, compliance | Enterprise deployment model document
+470 | P3 | R. Production operations, enterprise, compliance | Enterprise admin console placeholder
+471 | P3 | R. Production operations, enterprise, compliance | Enterprise billing placeholder
+472 | P3 | R. Production operations, enterprise, compliance | Enterprise support runbook
+473 | P3 | R. Production operations, enterprise, compliance | Final enterprise and operations audit

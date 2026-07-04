@@ -1,0 +1,19 @@
+GLOBAL RULES FOR EVERY TASK
+- This is an Electron desktop app for Windows, Linux, and macOS.
+- Do not create mobile UI or web-first responsive UI.
+- The UI must follow the uploaded reference image quality: premium desktop chat layout, soft rounded surfaces, compact spacing, clean light/dark modes.
+- Use Coolicons as the approved icon system; do not use Discord branding, Discord logo, copied Discord assets, or exact Discord colors.
+- Use Supabase for the MVP backend: Auth, Postgres, RLS, Storage, Realtime, and Edge Functions where appropriate.
+- Use LiveKit/WebRTC for MVP voice chat and screen sharing.
+- Do exactly one task at a time.
+- Do not refactor unrelated working code.
+- Do not delete previous work unless explicitly instructed.
+- After each task: run the smallest relevant test, list changed files, explain how to test, then commit.
+
+
+ADDITIONAL RULES
+- If Codex attempts to delete large parts of the project, stop and ask for confirmation.
+- If a task touches more than one phase, split it and do only the MVP-safe part.
+- Commit after every successful task.
+- Never run git reset --hard or git clean -fd unless explicitly approved by the user.
+- Do not overwrite user work blindly.
