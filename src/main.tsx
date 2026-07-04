@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
+import { DesktopStartupErrorBoundary } from "./components/DesktopStartupErrorBoundary";
 import "./styles.css";
 
 function markRuntime(): void {
@@ -30,7 +31,9 @@ function bootstrapRenderer(): void {
 
   ReactDOM.createRoot(getRootElement()).render(
     <React.StrictMode>
-      <App />
+      <DesktopStartupErrorBoundary>
+        <App />
+      </DesktopStartupErrorBoundary>
     </React.StrictMode>
   );
 }
