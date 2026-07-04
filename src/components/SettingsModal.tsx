@@ -95,3 +95,4 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
     </div>
   );
 }
+
