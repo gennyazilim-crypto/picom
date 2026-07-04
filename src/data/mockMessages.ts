@@ -12,13 +12,15 @@ const messageBodies = [
   "Local mock messages are enough until the backend integration phase.",
 ];
 
+const MOCK_BASE_TIME = Date.UTC(2026, 6, 4, 12, 0, 0);
+
 export function createMockMessageSet(channelId: string, members: Member[], prefix: string): Message[] {
   return messageBodies.map((body, index) => ({
     id: `${prefix}-msg-${index}`,
     channelId,
     authorId: members[(index + 1) % members.length].userId,
     body,
-    createdAt: new Date(Date.now() - (8 - index) * 1000 * 60 * 16).toISOString(),
+    createdAt: new Date(MOCK_BASE_TIME - (8 - index) * 1000 * 60 * 16).toISOString(),
     attachments: createMockAttachmentsForMessage(prefix, index),
     reactions: index % 3 === 0 ? [{ emoji: "Fire", count: index + 2 }, { emoji: "Eyes", count: 3 }] : undefined,
   }));
