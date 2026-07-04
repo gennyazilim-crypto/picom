@@ -1,6 +1,6 @@
-import { mockCommunities } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
+import { listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow, COMMUNITY_LIST_SELECT } from "./communityListQuery";
 
 export type CommunitySummary = Readonly<{
   id: string;
@@ -35,19 +35,6 @@ export type CommunityServiceResult<T> =
   | Readonly<{ ok: true; data: T }>
   | Readonly<{ ok: false; error: CommunityServiceError }>;
 
-function mapMockCommunity(community: (typeof mockCommunities)[number]): CommunitySummary {
-  return {
-    id: community.id,
-    ownerId: "mock-current-user",
-    name: community.name,
-    description: null,
-    iconUrl: null,
-    accentColor: community.accentColor,
-    createdAt: null,
-    updatedAt: null,
-  };
-}
-
 function cleanName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
 }
@@ -68,28 +55,6 @@ function validateCreateInput(input: CreateCommunityInput): CommunityServiceError
   }
 
   return null;
-}
-
-function mapSupabaseCommunity(row: {
-  id: string;
-  owner_id: string;
-  name: string;
-  description: string | null;
-  icon_url: string | null;
-  accent_color: string;
-  created_at: string;
-  updated_at: string;
-}): CommunitySummary {
-  return {
-    id: row.id,
-    ownerId: row.owner_id,
-    name: row.name,
-    description: row.description,
-    iconUrl: row.icon_url,
-    accentColor: row.accent_color,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
 }
 
 function getConfiguredSupabaseClient() {
@@ -125,22 +90,19 @@ export const communityService = {
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
-      return { ok: true, data: mockCommunities.map(mapMockCommunity) };
+      return { ok: true, data: listMockCommunitySummaries() };
     }
 
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data, error } = await configured.data
-      .from("communities")
-      .select("id, owner_id, name, description, icon_url, accent_color, created_at, updated_at")
-      .order("created_at", { ascending: true });
+    const result = await listSupabaseCommunitySummaries(configured.data);
 
-    if (error) {
+    if (result.error || !result.data) {
       return { ok: false, error: { code: "COMMUNITY_LIST_FAILED", message: "Could not load communities." } };
     }
 
-    return { ok: true, data: (data ?? []).map(mapSupabaseCommunity) };
+    return { ok: true, data: result.data };
   },
 
   async createCommunity(input: CreateCommunityInput): Promise<CommunityServiceResult<CommunitySummary>> {
@@ -185,13 +147,13 @@ export const communityService = {
         description: input.description?.trim() || null,
         accent_color: input.accentColor ?? "#007571",
       })
-      .select("id, owner_id, name, description, icon_url, accent_color, created_at, updated_at")
+      .select(COMMUNITY_LIST_SELECT)
       .single();
 
     if (error || !data) {
       return { ok: false, error: { code: "COMMUNITY_CREATE_FAILED", message: "Could not create community." } };
     }
 
-    return { ok: true, data: mapSupabaseCommunity(data) };
+    return { ok: true, data: mapCommunityListRow(data) };
   },
 };
