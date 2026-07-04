@@ -1,0 +1,9 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Picom app icon placeholder</title>
+  <desc id="desc">Original Picom placeholder icon using the approved Picom palette.</desc>
+  <rect width="512" height="512" rx="132" fill="#007571"/>
+  <path d="M151 392V136H288C342.124 136 386 178.085 386 230C386 281.915 342.124 324 288 324H226V392H151Z" fill="#10C2BB"/>
+  <path d="M226 258H283C303.435 258 320 245.464 320 230C320 214.536 303.435 202 283 202H226V258Z" fill="#FF772E"/>
+  <path d="M151 392L226 324V392H151Z" fill="#C24D0F" opacity="0.9"/>
+  <path d="M226 258H283C303.435 258 320 245.464 320 230C320 214.536 303.435 202 283 202H226V258Z" stroke="#752C05" stroke-opacity="0.24" stroke-width="10"/>
+</svg>
