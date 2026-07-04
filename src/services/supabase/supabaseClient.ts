@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { appConfig, isSupabaseMode } from "../../config/appConfig";
+import { dataSourceService } from "../dataSourceService";
 import type { Database } from "./database.types";
 
 let client: SupabaseClient<Database> | null = null;
@@ -11,12 +11,14 @@ export type SupabaseClientStatus = {
 };
 
 export function getSupabaseClientStatus(): SupabaseClientStatus {
-  if (!isSupabaseMode) {
+  const status = dataSourceService.getStatus();
+
+  if (!status.isSupabase) {
     return { enabled: false, configured: false, reason: "VITE_DATA_SOURCE is not supabase." };
   }
 
-  if (!appConfig.supabase.url || !appConfig.supabase.anonKey) {
-    return { enabled: true, configured: false, reason: "Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY." };
+  if (!status.configured) {
+    return { enabled: true, configured: false, reason: status.reason };
   }
 
   return { enabled: true, configured: true };
@@ -27,7 +29,9 @@ export function getSupabaseClient(): SupabaseClient<Database> | null {
   if (!status.configured) return null;
   if (client) return client;
 
-  client = createClient(appConfig.supabase.url, appConfig.supabase.anonKey, {
+  const supabaseConfig = dataSourceService.getSupabaseConfig();
+
+  client = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,

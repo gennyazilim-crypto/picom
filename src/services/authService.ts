@@ -1,5 +1,5 @@
 import type { AuthError, Session, User } from "@supabase/supabase-js";
-import { isMockMode } from "../config/appConfig";
+import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 
 export type AuthServiceUser = Readonly<{
@@ -90,14 +90,16 @@ function getMockSession(email = "mock@picom.local"): AuthServiceSession {
 }
 
 function getConfiguredClient() {
-  const status = getSupabaseClientStatus();
+  const dataSourceStatus = dataSourceService.getStatus();
 
-  if (!status.enabled && !isMockMode) {
-    return authError("AUTH_DISABLED", "Authentication is disabled for the current data source.");
+  if (dataSourceStatus.isMock) {
+    return { ok: true as const, data: null };
   }
 
-  if (isMockMode) {
-    return { ok: true as const, data: null };
+  const status = getSupabaseClientStatus();
+
+  if (!status.enabled) {
+    return authError("AUTH_DISABLED", "Authentication is disabled for the current data source.");
   }
 
   if (!status.configured) {
