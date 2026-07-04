@@ -165,3 +165,25 @@ html,body,#root,.picom-root,.desktop-app-shell,.desktop-frame{max-width:100%;ove
     transform: none;
   }
 }
+
+/* Task 082: CommunitySidebar scroll behavior */
+.community-sidebar {
+  height: 100%;
+  overflow: hidden;
+}
+
+.channel-scroll {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  contain: content;
+  padding-bottom: 18px;
+}
+
+.channel-category:last-child {
+  margin-bottom: 0;
+}
+
+.channel-item,
+.category-header {
+  max-width: 100%;
+}
