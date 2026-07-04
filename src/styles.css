@@ -651,3 +651,7 @@ body{
   font-style:normal;
   line-height:1.4;
 }
+
+/* Task 170: hidden native file input for composer image picker. */
+.composer-file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+

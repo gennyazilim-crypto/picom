@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Attachment, Channel } from "../types/community";
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
 import { AppIcon } from "./AppIcon";
@@ -17,18 +17,38 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
   const [body, setBody] = useState("");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewsRef = useRef<LocalAttachmentPreview[]>([]);
+
+  useEffect(() => {
+    previewsRef.current = previews;
+  }, [previews]);
+
+  useEffect(() => () => {
+    previewsRef.current.forEach((preview) => fileService.revoke(preview));
+  }, []);
 
   const addFiles = (files: FileList | File[]) => {
     const next: LocalAttachmentPreview[] = [];
+
     Array.from(files).forEach((file) => {
       const validation = fileService.validate(file);
       if (!validation.ok) {
         pushToast(validation.reason ?? "File rejected.", "error");
         return;
       }
+
       next.push(fileService.createPreview(file));
     });
-    if (next.length) setPreviews((current) => [...current, ...next].slice(0, 4));
+
+    if (next.length) {
+      setPreviews((current) => {
+        const combined = [...current, ...next];
+        const kept = combined.slice(0, 4);
+        combined.slice(4).forEach((preview) => fileService.revoke(preview));
+        return kept;
+      });
+    }
   };
 
   const removePreview = (preview: LocalAttachmentPreview) => {
@@ -39,7 +59,14 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
   const send = () => {
     const value = body.trim();
     if (!value && !previews.length) return;
-    const attachments: Attachment[] = previews.map((preview) => ({ id: preview.id, type: "image", url: preview.url, alt: preview.name }));
+
+    const attachments: Attachment[] = previews.map((preview) => ({
+      id: preview.id,
+      type: "image",
+      url: preview.url,
+      alt: preview.name,
+    }));
+
     onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments);
     setBody("");
     setPreviews([]);
@@ -60,7 +87,20 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
       }}
     >
       <div className="composer-bar">
-        <button className="composer-tool" aria-label="Attach"><AppIcon name={composerIcons.attach} size="lg" /></button>
+        <input
+          ref={fileInputRef}
+          className="composer-file-input"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          multiple
+          onChange={(event) => {
+            if (event.target.files?.length) addFiles(event.target.files);
+            event.target.value = "";
+          }}
+        />
+        <button className="composer-tool" aria-label="Attach image" onClick={() => fileInputRef.current?.click()}>
+          <AppIcon name={composerIcons.attach} size="lg" />
+        </button>
         <textarea
           value={body}
           placeholder={`Message #${channel.name}`}
@@ -96,4 +136,3 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
     </footer>
   );
 }
-
