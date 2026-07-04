@@ -4,12 +4,14 @@ import type { UserStatus } from "../types/community";
 import { dataSourceService } from "../services/dataSourceService";
 import { loggingService } from "../services/loggingService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../services/supabase/supabaseClient";
+import { realtimeChannelNames } from "../services/supabase/realtimeService";
 
 type PresencePayload = Readonly<{
   userId: string;
   displayName: string;
+  avatarUrl: string | null;
   status: UserStatus;
-  onlineAt: string;
+  lastSeen: string;
 }>;
 
 type UseSupabasePresenceChannelInput = Readonly<{
@@ -17,6 +19,7 @@ type UseSupabasePresenceChannelInput = Readonly<{
   communityId: string;
   currentUserId: string;
   displayName: string;
+  avatarUrl?: string | null;
   status: UserStatus;
 }>;
 
@@ -36,6 +39,7 @@ export function useSupabasePresenceChannel({
   communityId,
   currentUserId,
   displayName,
+  avatarUrl,
   status,
 }: UseSupabasePresenceChannelInput): UseSupabasePresenceChannelResult {
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
@@ -54,7 +58,7 @@ export function useSupabasePresenceChannel({
     if (!client) return;
 
     const channel = client
-      .channel(`presence:community:${communityId}`, {
+      .channel(realtimeChannelNames.presence(communityId), {
         config: {
           presence: {
             key: currentUserId,
@@ -78,8 +82,9 @@ export function useSupabasePresenceChannel({
           await channel.track({
             userId: currentUserId,
             displayName: displayName.slice(0, 80),
+            avatarUrl: avatarUrl ?? null,
             status: safeStatus,
-            onlineAt: new Date().toISOString(),
+            lastSeen: new Date().toISOString(),
           } satisfies PresencePayload);
           return;
         }
@@ -99,7 +104,7 @@ export function useSupabasePresenceChannel({
       void channel.untrack();
       void client.removeChannel(channel);
     };
-  }, [communityId, currentUserId, displayName, enabled, safeStatus]);
+  }, [avatarUrl, communityId, currentUserId, displayName, enabled, safeStatus]);
 
   return useMemo(() => ({ onlineUserIds }), [onlineUserIds]);
 }

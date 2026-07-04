@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { dataSourceService } from "../services/dataSourceService";
 import { loggingService } from "../services/loggingService";
 import { mapMessageRow, type MessageRow, type MessageSummary } from "../services/messageService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../services/supabase/supabaseClient";
+import {
+  createRealtimeMessageDeduper,
+  mapRealtimeSubscriptionStatus,
+  realtimeChannelNames,
+  type RealtimeConnectionStatus,
+} from "../services/supabase/realtimeService";
 
 type UseSupabaseMessageRealtimeInput = Readonly<{
   enabled: boolean;
@@ -13,7 +19,7 @@ type UseSupabaseMessageRealtimeInput = Readonly<{
   onDelete: (messageId: string) => void;
 }>;
 
-export type RealtimeConnectionStatus = "idle" | "connecting" | "connected" | "reconnecting" | "disconnected";
+export type { RealtimeConnectionStatus } from "../services/supabase/realtimeService";
 
 export function useSupabaseMessageRealtime({
   enabled,
@@ -24,6 +30,7 @@ export function useSupabaseMessageRealtime({
   onDelete,
 }: UseSupabaseMessageRealtimeInput): RealtimeConnectionStatus {
   const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("idle");
+  const insertDeduperRef = useRef(createRealtimeMessageDeduper());
 
   useEffect(() => {
     if (!enabled || !dataSourceService.getStatus().isSupabase) {
@@ -46,13 +53,30 @@ export function useSupabaseMessageRealtime({
     }
 
     setConnectionStatus("connecting");
+    insertDeduperRef.current.clear();
+    let hasConnected = false;
+    let canceled = false;
 
     const channel = client
-      .channel(`messages:${communityId}:${channelId}`)
+      .channel(realtimeChannelNames.messages(communityId, channelId))
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
-        (payload) => onInsert(mapMessageRow(payload.new as MessageRow)),
+        (payload) => {
+          const message = mapMessageRow(payload.new as MessageRow);
+
+          if (!insertDeduperRef.current.shouldProcessInsert(message)) {
+            loggingService.logInfo("Supabase duplicate realtime message ignored", {
+              messageId: message.id,
+              clientMessageId: message.clientMessageId,
+              communityId,
+              channelId,
+            });
+            return;
+          }
+
+          onInsert(message);
+        },
       )
       .on(
         "postgres_changes",
@@ -76,20 +100,18 @@ export function useSupabaseMessageRealtime({
         },
       )
       .subscribe((statusValue) => {
-        if (statusValue === "SUBSCRIBED") {
-          setConnectionStatus("connected");
-          return;
-        }
+        if (canceled) return;
 
-        if (statusValue === "CLOSED") {
-          setConnectionStatus("disconnected");
-          return;
-        }
+        const nextStatus = mapRealtimeSubscriptionStatus(statusValue, hasConnected);
+        if (!nextStatus) return;
 
-        if (statusValue === "CHANNEL_ERROR" || statusValue === "TIMED_OUT") {
-          setConnectionStatus("reconnecting");
+        if (nextStatus === "connected") hasConnected = true;
+        setConnectionStatus(nextStatus);
+
+        if (nextStatus === "reconnecting" || nextStatus === "disconnected") {
           loggingService.logWarn("Supabase message realtime status", {
             status: statusValue,
+            nextStatus,
             communityId,
             channelId,
           });
@@ -97,6 +119,7 @@ export function useSupabaseMessageRealtime({
       });
 
     return () => {
+      canceled = true;
       void client.removeChannel(channel);
     };
   }, [channelId, communityId, enabled, onDelete, onInsert, onUpdate]);

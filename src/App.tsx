@@ -176,6 +176,7 @@ export function App() {
     editLocalMessage,
     deleteLocalMessage,
     toggleLocalReaction,
+    markChannelUnread,
     clearChannelUnread,
     addCommunity,
     addChannel,
@@ -249,7 +250,12 @@ export function App() {
   }), []);
 
   const handleRealtimeMessageInsert = useCallback((message: MessageSummary) => {
-    if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;
+    if (message.communityId !== activeCommunity.id) return;
+
+    if (message.channelId !== activeChannel.id) {
+      markChannelUnread({ communityId: message.communityId, channelId: message.channelId });
+      return;
+    }
 
     upsertLocalMessage({
       id: message.id,
@@ -262,7 +268,7 @@ export function App() {
       editedAt: message.editedAt,
       deletedAt: message.deletedAt,
     });
-  }, [activeChannel.id, activeCommunity.id, upsertLocalMessage]);
+  }, [activeChannel.id, activeCommunity.id, markChannelUnread, upsertLocalMessage]);
 
   const handleRealtimeMessageUpdate = useCallback((message: MessageSummary) => {
     if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;
@@ -319,6 +325,7 @@ export function App() {
     communityId: activeCommunity.id,
     currentUserId: currentUser.userId,
     displayName: currentUser.displayName,
+    avatarUrl: currentUser.avatarUrl,
     status: currentUser.status,
   });
   const displayedActiveCommunity = useMemo<Community>(() => {
