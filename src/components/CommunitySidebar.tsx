@@ -10,12 +10,13 @@ type CommunitySidebarProps = {
   activeChannelId: string;
   currentUser: Member;
   onSelectChannel: (channel: Channel) => void;
+  onCreateChannel: (categoryId: string) => void;
   onOpenSettings: () => void;
   onLogout: () => void;
   onChannelContextMenu: (event: MouseEvent, channel: Channel) => void;
 };
 
-export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onOpenSettings, onLogout, onChannelContextMenu }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -32,6 +33,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
             collapsed={Boolean(collapsed[category.id])}
             activeChannelId={activeChannelId}
             onToggle={() => setCollapsed((current) => ({ ...current, [category.id]: !current[category.id] }))}
+            onCreateChannel={onCreateChannel}
             onSelectChannel={onSelectChannel}
             onChannelContextMenu={onChannelContextMenu}
           />

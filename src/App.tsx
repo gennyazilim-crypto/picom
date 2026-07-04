@@ -17,9 +17,11 @@ import { SettingsModal } from "./components/SettingsModal";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
+import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { clipboardService } from "./services/clipboardService";
 import { settingsService } from "./services/settingsService";
 import { communityService } from "./services/communityService";
+import { channelService } from "./services/channelService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
@@ -140,7 +142,8 @@ export function App() {
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
-  const { communities, appendLocalMessage, addCommunity } = useLocalMessageState(mockCommunities);
+  const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
+  const { communities, appendLocalMessage, addCommunity, addChannel } = useLocalMessageState(mockCommunities);
   const {
     activeCommunityId,
     activeCommunity,
@@ -386,6 +389,36 @@ export function App() {
     pushToast(`${community.name} created.`, "success");
   };
 
+  const handleCreateChannel = async (value: CreateChannelFormValue) => {
+    const result = await channelService.createChannel({
+      communityId: activeCommunity.id,
+      categoryId: value.categoryId,
+      name: value.name,
+      type: value.type,
+      isPrivate: value.isPrivate,
+    });
+
+    if (!result.ok) {
+      pushToast(result.error.message, "error");
+      return;
+    }
+
+    const channel = addChannel({
+      id: result.data.id,
+      communityId: result.data.communityId,
+      categoryId: result.data.categoryId,
+      name: result.data.name,
+      type: result.data.type,
+      topic: result.data.topic,
+      isPrivate: result.data.isPrivate,
+      position: result.data.position,
+    });
+
+    setActiveChannelId(channel.id);
+    setCreateChannelCategoryId(null);
+    pushToast(`#${channel.name} created.`, "success");
+  };
+
   const openProfile = (event: MouseEvent, member: Member) => {
     showProfile(member, event.clientX + 10, event.clientY + 10);
   };
@@ -415,6 +448,7 @@ export function App() {
             activeChannelId={activeChannel.id}
             currentUser={currentUser}
             onSelectChannel={(channel) => setActiveChannelId(channel.id)}
+            onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
             onOpenSettings={openSettings}
             onLogout={handleLogout}
             onChannelContextMenu={(event, channel) =>
@@ -466,6 +500,14 @@ export function App() {
       </DesktopAppShell>
 
       {createCommunityOpen ? <CreateCommunityModal onClose={() => setCreateCommunityOpen(false)} onSubmit={handleCreateCommunity} /> : null}
+      {createChannelCategoryId ? (
+        <CreateChannelModal
+          community={activeCommunity}
+          defaultCategoryId={createChannelCategoryId}
+          onClose={() => setCreateChannelCategoryId(null)}
+          onSubmit={handleCreateChannel}
+        />
+      ) : null}
       {settingsOpen ? <SettingsModal theme={theme} onThemeChange={setTheme} onClose={closeSettings} pushToast={pushToast} /> : null}
       {paletteOpen ? (
         <CommandPalette

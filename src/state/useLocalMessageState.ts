@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { Attachment, Community, Message, UserId } from "../types/community";
+import type { Attachment, Channel, ChannelId, ChannelType, Community, Message, UserId } from "../types/community";
 
 type AppendLocalMessageInput = {
   communityId: string;
@@ -7,6 +7,17 @@ type AppendLocalMessageInput = {
   authorId: UserId;
   body: string;
   attachments?: Attachment[];
+};
+
+type AddLocalChannelInput = {
+  communityId: string;
+  categoryId?: string | null;
+  id: ChannelId;
+  name: string;
+  type: ChannelType;
+  topic?: string | null;
+  isPrivate?: boolean;
+  position?: number;
 };
 
 export function useLocalMessageState(initialCommunities: Community[]) {
@@ -39,5 +50,37 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return community;
   }, []);
 
-  return { communities, appendLocalMessage, addCommunity };
+  const addChannel = useCallback((input: AddLocalChannelInput) => {
+    const channel: Channel = {
+      id: input.id,
+      name: input.name,
+      type: input.type,
+      topic: input.topic ?? undefined,
+      isPrivate: input.isPrivate,
+      categoryId: input.categoryId ?? undefined,
+      position: input.position,
+    };
+
+    setCommunities((current) =>
+      current.map((community) => {
+        if (community.id !== input.communityId) return community;
+
+        const fallbackCategoryId = community.categories[0]?.id;
+        const targetCategoryId = input.categoryId ?? fallbackCategoryId;
+
+        return {
+          ...community,
+          categories: community.categories.map((category) =>
+            category.id === targetCategoryId
+              ? { ...category, channels: [...category.channels, { ...channel, categoryId: category.id }] }
+              : category,
+          ),
+        };
+      }),
+    );
+
+    return channel;
+  }, []);
+
+  return { communities, appendLocalMessage, addCommunity, addChannel };
 }
