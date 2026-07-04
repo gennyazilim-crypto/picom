@@ -14,6 +14,16 @@ function isFileDrag(dataTransfer: DataTransfer | null): boolean {
   return Boolean(dataTransfer && Array.from(dataTransfer.types).includes("Files"));
 }
 
+function getClipboardFiles(dataTransfer: DataTransfer): File[] {
+  const directFiles = Array.from(dataTransfer.files);
+  if (directFiles.length) return directFiles;
+
+  return Array.from(dataTransfer.items)
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file));
+}
+
 type MessageComposerProps = {
   communityId: string;
   channel: Channel;
@@ -195,7 +205,11 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
           rows={1}
           onChange={(event) => setBody(event.target.value)}
           onPaste={(event) => {
-            if (event.clipboardData.files.length) addFiles(event.clipboardData.files);
+            const files = getClipboardFiles(event.clipboardData);
+            if (!files.length) return;
+
+            event.preventDefault();
+            addFiles(files);
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
