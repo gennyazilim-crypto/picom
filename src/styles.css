@@ -1,6 +1,36 @@
+/* Picom design token foundation: keep UI values centralized and desktop-first. */
+:root{
+  --font-sans:"Segoe UI","Aptos",system-ui,sans-serif;
+  --font-size-xs:11px;
+  --font-size-sm:12px;
+  --font-size-md:13px;
+  --font-size-lg:15px;
+  --font-size-xl:24px;
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-7:28px;
+  --radius-sm:10px;
+  --radius-md:12px;
+  --radius-lg:14px;
+  --radius-xl:18px;
+  --radius-2xl:24px;
+  --titlebar-height:44px;
+  --server-rail-width:72px;
+  --community-sidebar-width:260px;
+  --member-sidebar-width:280px;
+  --desktop-min-width:1100px;
+  --desktop-min-height:700px;
+  --motion-fast:120ms;
+  --motion-medium:180ms;
+  --motion-ease:cubic-bezier(.2,.8,.2,1);
+}
 :root{--picom-teal:#007571;--picom-aqua:#10C2BB;--picom-rust:#C24D0F;--picom-orange:#FF772E;--picom-brown:#752C05;--bg-outer:#e7ebf2;--bg-frame:#fff;--bg-titlebar:rgba(255,255,255,.72);--bg-rail:#f8fafc;--bg-sidebar:#f4f7fb;--bg-chat:#fff;--bg-member:#fbfcfe;--surface:#fff;--surface-soft:#f2f5fa;--surface-hover:#e8eef6;--border:#dce3ec;--border-strong:#c8d2df;--text-primary:#102033;--text-secondary:#43546a;--text-muted:#7a8899;--accent:var(--picom-teal);--accent-soft:color-mix(in srgb,var(--picom-aqua) 18%,white);--success:#087f5b;--warning:var(--picom-orange);--danger:#bf2f2f;--shadow:0 30px 80px rgba(29,45,67,.18);--shadow-soft:0 12px 32px rgba(29,45,67,.10);--radius-frame:28px;--focus-ring:0 0 0 3px color-mix(in srgb,var(--picom-aqua) 28%,transparent)}
 :root[data-theme=dark]{--bg-outer:#1d211f;--bg-frame:#151917;--bg-titlebar:rgba(19,23,21,.78);--bg-rail:#101412;--bg-sidebar:#151a18;--bg-chat:#121614;--bg-member:#141917;--surface:#1b211f;--surface-soft:#202725;--surface-hover:#27302d;--border:#2d3935;--border-strong:#3a4945;--text-primary:#eef7f3;--text-secondary:#b6c4bf;--text-muted:#7f908a;--accent-soft:color-mix(in srgb,var(--picom-teal) 26%,#151917);--shadow:0 30px 80px rgba(0,0,0,.42);--shadow-soft:0 12px 32px rgba(0,0,0,.28)}
-*{box-sizing:border-box}html,body,#root{height:100%;margin:0;overflow:hidden}body{font-family:"Segoe UI","Aptos",sans-serif;background:radial-gradient(circle at 20% 20%,color-mix(in srgb,var(--picom-aqua) 18%,transparent),transparent 34%),radial-gradient(circle at 82% 18%,color-mix(in srgb,var(--picom-orange) 16%,transparent),transparent 30%),var(--bg-outer);color:var(--text-primary)}button,input,textarea{font:inherit}button{color:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+*{box-sizing:border-box}html,body,#root{height:100%;margin:0;overflow:hidden}body{font-family:var(--font-sans);background:radial-gradient(circle at 20% 20%,color-mix(in srgb,var(--picom-aqua) 18%,transparent),transparent 34%),radial-gradient(circle at 82% 18%,color-mix(in srgb,var(--picom-orange) 16%,transparent),transparent 30%),var(--bg-outer);color:var(--text-primary)}button,input,textarea{font:inherit}button{color:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:none;box-shadow:var(--focus-ring)}
 .picom-root{width:100vw;height:100vh;padding:28px}.desktop-app-shell{width:100%;height:100%;min-width:1100px;display:grid;grid-template-rows:44px minmax(0,1fr);overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-frame);background:var(--bg-frame);box-shadow:var(--shadow)}.desktop-frame{min-height:0;display:flex;overflow:hidden}.desktop-size-warning{display:none}
 .window-titlebar{display:flex;align-items:center;gap:18px;padding:0 12px 0 18px;background:var(--bg-titlebar);border-bottom:1px solid var(--border);-webkit-app-region:drag}.window-titlebar button,.titlebar-search{-webkit-app-region:no-drag}.window-brand,.titlebar-actions,.chat-actions{display:flex;align-items:center;gap:8px}.window-brand img{width:26px;height:26px;object-fit:contain;border-radius:9px}.window-brand strong{font-weight:800;letter-spacing:-.03em}.window-brand span,.titlebar-search,.connection-pill{color:var(--text-muted);font-size:12px}.titlebar-search{height:28px;flex:1;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:999px;background:var(--surface-soft);border:1px solid var(--border)}.connection-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--surface-soft)}.connection-pill span{width:7px;height:7px;border-radius:999px;background:var(--success)}.icon-button,.window-control,.mini-action,.composer-tool{border:0;background:transparent;border-radius:10px;display:inline-grid;place-items:center;color:var(--text-muted);cursor:pointer}.icon-button{width:34px;height:34px}.icon-button:hover,.icon-button.active,.window-control:hover,.mini-action:hover,.composer-tool:hover{background:var(--surface-hover);color:var(--text-primary)}.window-control{width:32px;height:28px}.window-control.danger:hover{color:#fff;background:var(--danger)}
 .server-rail{width:72px;flex:0 0 72px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 10px;background:var(--bg-rail);border-right:1px solid var(--border)}.server-home,.server-button{position:relative;width:44px;height:44px;border:0;border-radius:16px;background:var(--surface);color:var(--text-secondary);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow-soft)}.server-home img{width:30px;height:30px;object-fit:contain}.rail-separator{width:34px;height:1px;background:var(--border)}.server-stack{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:hidden auto}.server-button{font-weight:800;box-shadow:none;background:var(--surface-soft)}.server-button:hover,.server-button.active{color:#fff;background:var(--server-accent,var(--accent));border-radius:14px}.server-button.utility:hover{color:var(--accent);background:var(--accent-soft)}.active-rail{position:absolute;left:-10px;width:4px;height:18px;border-radius:999px;background:var(--server-accent,var(--accent));opacity:0}.server-button.active .active-rail{opacity:1}.unread-dot{position:absolute;right:4px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--picom-orange);border:2px solid var(--bg-rail)}.server-button.bottom{margin-top:auto}
