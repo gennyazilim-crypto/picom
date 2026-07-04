@@ -59,9 +59,28 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     };
 
     setCommunities((current) =>
-      current.map((community) =>
-        community.id === communityId ? { ...community, messages: [...community.messages, message] } : community,
-      ),
+      current.map((community) => {
+        if (community.id !== communityId) return community;
+
+        const exists = community.messages.some((item) => item.id === message.id);
+        const messages = exists
+          ? community.messages.map((item) =>
+              item.id === message.id
+                ? {
+                    ...item,
+                    ...message,
+                    attachments: message.attachments ?? item.attachments,
+                    reactions: item.reactions ?? [],
+                  }
+                : item,
+            )
+          : [...community.messages, message];
+
+        return {
+          ...community,
+          messages: messages.sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+        };
+      }),
     );
 
     return message;
