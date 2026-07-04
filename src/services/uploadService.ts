@@ -146,6 +146,10 @@ export const uploadService = {
       return uploadError("UPLOAD_FAILED", "Could not upload attachment.");
     }
 
+    const { data: publicUrlData } = configured.data.storage
+      .from(MESSAGE_ATTACHMENTS_BUCKET)
+      .getPublicUrl(storagePath);
+
     return {
       ok: true,
       data: {
@@ -155,7 +159,7 @@ export const uploadService = {
         fileName: sanitizeUploadFileName(input.file.name),
         mimeType: input.file.type,
         sizeBytes: input.file.size,
-        publicUrl: null,
+        publicUrl: publicUrlData.publicUrl || null,
       },
     };
   },

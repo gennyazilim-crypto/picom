@@ -10,11 +10,15 @@ export function AttachmentGrid({ attachments, onOpenImage }: AttachmentGridProps
 
   return (
     <div className={`attachment-grid count-${Math.min(attachments.length, 4)}`}>
-      {visibleAttachments.map((attachment) => (
-        <button key={attachment.id} className="attachment-card" onClick={() => onOpenImage(attachment)} aria-label={`Open ${attachment.alt}`}>
-          <img src={attachment.url} alt={attachment.alt} loading="lazy" />
-        </button>
-      ))}
+      {visibleAttachments.map((attachment) => {
+        const imageUrl = attachment.thumbnailUrl || attachment.publicUrl || attachment.url;
+
+        return (
+          <button key={attachment.id} className="attachment-card" onClick={() => onOpenImage(attachment)} aria-label={`Open ${attachment.alt}`}>
+            <img src={imageUrl} alt={attachment.alt} loading="lazy" decoding="async" />
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -65,7 +65,13 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
     if ((!value && !previews.length) || sending) return;
 
     setSending(true);
-    const persistedAttachmentIds = new Map<string, string>();
+    const persistedAttachments = new Map<string, {
+      id: string;
+      publicUrl: string | null;
+      storagePath: string;
+      fileName: string;
+      mimeType: string;
+    }>();
 
     for (const preview of previews) {
       const result = await uploadService.uploadImageAttachment({
@@ -87,15 +93,29 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
         return;
       }
 
-      persistedAttachmentIds.set(preview.id, metadata.data.id);
+      persistedAttachments.set(preview.id, {
+        id: metadata.data.id,
+        publicUrl: metadata.data.publicUrl ?? result.data.publicUrl,
+        storagePath: metadata.data.storagePath,
+        fileName: metadata.data.fileName,
+        mimeType: metadata.data.mimeType,
+      });
     }
 
-    const attachments: Attachment[] = previews.map((preview) => ({
-      id: persistedAttachmentIds.get(preview.id) ?? preview.id,
-      type: "image",
-      url: preview.url,
-      alt: preview.name,
-    }));
+    const attachments: Attachment[] = previews.map((preview) => {
+      const persisted = persistedAttachments.get(preview.id);
+      const uploadedUrl = persisted?.publicUrl ?? null;
+
+      return {
+        id: persisted?.id ?? preview.id,
+        type: "image",
+        url: uploadedUrl || preview.url,
+        publicUrl: uploadedUrl,
+        storagePath: persisted?.storagePath,
+        mimeType: persisted?.mimeType,
+        alt: persisted?.fileName ?? preview.name,
+      };
+    });
 
     await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments);
     setBody("");

@@ -42,6 +42,10 @@ export interface Attachment {
   id: AttachmentId;
   type: AttachmentType;
   url: string;
+  publicUrl?: string | null;
+  thumbnailUrl?: string | null;
+  storagePath?: string;
+  mimeType?: string;
   alt: string;
   width?: number;
   height?: number;
