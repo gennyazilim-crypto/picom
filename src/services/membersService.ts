@@ -26,6 +26,15 @@ export type MemberSummary = Readonly<{
   statusText: string | null;
 }>;
 
+type ProfileRow = Readonly<{
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  status: string;
+  status_text: string;
+}>;
+
 export type MembersServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "VALIDATION_ERROR"
@@ -56,6 +65,26 @@ function mapMemberRow(row: MemberRow): MemberSummary {
     avatarUrl: null,
     status: null,
     statusText: null,
+  };
+}
+
+function toUserStatus(value: string | null | undefined): UserStatus {
+  if (value === "online" || value === "idle" || value === "dnd" || value === "offline") return value;
+  return "offline";
+}
+
+function mapMemberWithProfile(row: MemberRow, profile?: ProfileRow): MemberSummary {
+  return {
+    id: row.id,
+    communityId: row.community_id,
+    userId: row.user_id,
+    roleId: row.role_id,
+    joinedAt: row.joined_at,
+    displayName: profile?.display_name ?? null,
+    username: profile?.username ?? null,
+    avatarUrl: profile?.avatar_url ?? null,
+    status: profile ? toUserStatus(profile.status) : null,
+    statusText: profile?.status_text ?? null,
   };
 }
 
@@ -115,6 +144,15 @@ export const membersService = {
       return membersError("MEMBERS_LIST_FAILED", "Could not load community members.");
     }
 
-    return { ok: true, data: data.map(mapMemberRow) };
+    const userIds = data.map((member) => member.user_id);
+    const { data: profiles } = userIds.length
+      ? await configured.data
+          .from("profiles")
+          .select("id, username, display_name, avatar_url, status, status_text")
+          .in("id", userIds)
+      : { data: [] };
+    const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile as ProfileRow]));
+
+    return { ok: true, data: data.map((member) => mapMemberWithProfile(member, profileById.get(member.user_id)) ?? mapMemberRow(member)) };
   },
 };

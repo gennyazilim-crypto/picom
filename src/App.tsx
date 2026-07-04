@@ -24,6 +24,7 @@ import { settingsService } from "./services/settingsService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
+import { membersService } from "./services/membersService";
 import { messageService } from "./services/messageService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
@@ -146,7 +147,7 @@ export function App() {
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
-  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories, replaceChannelMessages } = useLocalMessageState(mockCommunities);
+  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories, replaceChannelMessages, replaceCommunityMembers } = useLocalMessageState(mockCommunities);
   const {
     activeCommunityId,
     activeCommunity,
@@ -195,6 +196,7 @@ export function App() {
   const supabaseCommunitiesLoadedRef = useRef(false);
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
+  const supabaseMembersLoadedRef = useRef(new Set<string>());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -332,6 +334,45 @@ export function App() {
       canceled = true;
     };
   }, [activeChannel.id, activeCommunity.id, authSession, pushToast, replaceChannelMessages]);
+
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
+
+    let canceled = false;
+    supabaseMembersLoadedRef.current.add(activeCommunity.id);
+
+    membersService.listMembers(activeCommunity.id).then((result) => {
+      if (canceled) return;
+
+      if (!result.ok) {
+        supabaseMembersLoadedRef.current.delete(activeCommunity.id);
+        pushToast(result.error.message, "error");
+        return;
+      }
+
+      const fallbackRole = activeCommunity.roles.find((role) => role.name === "Member") ?? activeCommunity.roles[0];
+      const members: Member[] = result.data.map((member) => ({
+        id: member.id,
+        userId: member.userId,
+        displayName: member.displayName ?? `User ${member.userId.slice(0, 8)}`,
+        username: member.username ?? `user-${member.userId.slice(0, 8)}`,
+        avatarSeed: member.userId,
+        avatarUrl: member.avatarUrl ?? undefined,
+        status: member.status ?? "offline",
+        statusText: member.statusText ?? "Member",
+        roleId: member.roleId ?? fallbackRole.id,
+        bio: "Supabase community member.",
+      }));
+
+      if (members.length > 0) {
+        replaceCommunityMembers(activeCommunity.id, members);
+      }
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [activeCommunity.id, activeCommunity.roles, authSession, pushToast, replaceCommunityMembers]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
