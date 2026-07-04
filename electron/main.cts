@@ -1,13 +1,9 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "node:path";
+import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
 
-const APP_ID = "com.picom.desktop";
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
-const DEFAULT_WINDOW_WIDTH = 1440;
-const DEFAULT_WINDOW_HEIGHT = 900;
-const MIN_WINDOW_WIDTH = 1100;
-const MIN_WINDOW_HEIGHT = 700;
 
 type WindowAction = "minimize" | "maximize" | "close";
 
@@ -92,13 +88,13 @@ function registerIpcHandlers(): void {
 
 async function createMainWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
-    width: DEFAULT_WINDOW_WIDTH,
-    height: DEFAULT_WINDOW_HEIGHT,
-    minWidth: MIN_WINDOW_WIDTH,
-    minHeight: MIN_WINDOW_HEIGHT,
+    width: ELECTRON_APP_CONFIG.window.defaultWidth,
+    height: ELECTRON_APP_CONFIG.window.defaultHeight,
+    minWidth: ELECTRON_APP_CONFIG.window.minWidth,
+    minHeight: ELECTRON_APP_CONFIG.window.minHeight,
     show: false,
-    title: "Picom",
-    backgroundColor: "#eef3f5",
+    title: ELECTRON_APP_CONFIG.name,
+    backgroundColor: ELECTRON_APP_CONFIG.window.backgroundColor,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -127,7 +123,7 @@ async function createMainWindow(): Promise<void> {
   }
 }
 
-app.setAppUserModelId(APP_ID);
+app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
 
 app.whenReady().then(() => {
   registerIpcHandlers();
