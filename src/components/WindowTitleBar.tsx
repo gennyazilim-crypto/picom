@@ -1,6 +1,7 @@
 import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import { windowService } from "../services/windowService";
 import { AppIcon } from "./AppIcon";
+import { ThemeToggle } from "./ThemeToggle";
 
 type WindowTitleBarProps = {
   theme: "light" | "dark";
@@ -26,9 +27,7 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch }: WindowTit
         <span className="connection-pill">
           <span />Mock online
         </span>
-        <button className="icon-button" aria-label="Toggle theme" onClick={onToggleTheme}>
-          <AppIcon name={theme === "light" ? "moon" : "sun"} />
-        </button>
+        <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         <button className="window-control" aria-label="Minimize window" onClick={() => void windowService.run("minimize")}>
           <AppIcon name="minimize" size="sm" />
         </button>
