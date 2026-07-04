@@ -44,3 +44,6 @@ secure_password_change = true
 max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
+
+[functions.health]
+verify_jwt = false
