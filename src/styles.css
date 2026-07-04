@@ -655,3 +655,11 @@ body{
 /* Task 170: hidden native file input for composer image picker. */
 .composer-file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 
+
+/* Task 185: compact realtime reconnect status in ChatHeader */
+.realtime-pill{height:28px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:999px;background:var(--surface-soft);color:var(--text-muted);padding:0 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.realtime-pill span{width:7px;height:7px;border-radius:999px;background:var(--text-muted);box-shadow:0 0 0 3px color-mix(in srgb,var(--text-muted) 14%,transparent)}
+.realtime-pill.connected span{background:var(--success);box-shadow:0 0 0 3px color-mix(in srgb,var(--success) 16%,transparent)}
+.realtime-pill.connecting span,.realtime-pill.reconnecting span{background:var(--warning);box-shadow:0 0 0 3px color-mix(in srgb,var(--warning) 18%,transparent)}
+.realtime-pill.disconnected span{background:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 14%,transparent)}
+.realtime-pill.idle{display:none}

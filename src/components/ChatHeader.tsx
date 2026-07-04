@@ -1,4 +1,5 @@
 import type { Channel } from "../types/community";
+import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 
@@ -7,11 +8,20 @@ const channelIcons = mvpUiIconMap.communitySidebar;
 
 type ChatHeaderProps = {
   channel: Channel;
+  realtimeStatus: RealtimeConnectionStatus;
   membersVisible: boolean;
   onToggleMembers: () => void;
 };
 
-export function ChatHeader({ channel, membersVisible, onToggleMembers }: ChatHeaderProps) {
+const realtimeLabels: Record<RealtimeConnectionStatus, string> = {
+  idle: "Realtime idle",
+  connecting: "Connecting",
+  connected: "Live",
+  reconnecting: "Reconnecting",
+  disconnected: "Disconnected",
+};
+
+export function ChatHeader({ channel, realtimeStatus, membersVisible, onToggleMembers }: ChatHeaderProps) {
   return (
     <header className="chat-header">
       <div className="chat-title">
@@ -22,6 +32,10 @@ export function ChatHeader({ channel, membersVisible, onToggleMembers }: ChatHea
         </div>
       </div>
       <div className="chat-actions">
+        <span className={`realtime-pill ${realtimeStatus}`} title={`Realtime status: ${realtimeLabels[realtimeStatus]}`}>
+          <span aria-hidden="true" />
+          {realtimeLabels[realtimeStatus]}
+        </span>
         <button className="icon-button" aria-label="Pinned">
           <AppIcon name={chatHeaderIcons.pinned} />
         </button>

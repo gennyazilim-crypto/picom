@@ -275,7 +275,7 @@ export function App() {
     });
   }, [activeChannel.id, activeCommunity.id, removeLocalMessage]);
 
-  useSupabaseMessageRealtime({
+  const realtimeStatus = useSupabaseMessageRealtime({
     enabled: Boolean(authSession),
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
@@ -749,6 +749,7 @@ export function App() {
             community={activeCommunity}
             channel={activeChannel}
             messages={activeCommunity.messages}
+            realtimeStatus={realtimeStatus}
             onSendMessage={sendMessage}
             membersVisible={membersVisible}
             onToggleMembers={toggleMembersVisible}

@@ -1,6 +1,7 @@
 ﻿import { useMemo } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
+import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { MemberAvatar } from "./MemberAvatar";
@@ -15,6 +16,7 @@ type ChatMainProps = {
   community: Community;
   channel: Channel;
   messages: Message[];
+  realtimeStatus: RealtimeConnectionStatus;
   onSendMessage: (body: string, attachments?: Attachment[]) => void | Promise<void>;
   onToggleMembers: () => void;
   membersVisible: boolean;
@@ -24,12 +26,12 @@ type ChatMainProps = {
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function ChatMain({ community, channel, messages, onSendMessage, onToggleMembers, membersVisible, onMessageContextMenu, onOpenProfile, onOpenImage, pushToast }: ChatMainProps) {
+export function ChatMain({ community, channel, messages, realtimeStatus, onSendMessage, onToggleMembers, membersVisible, onMessageContextMenu, onOpenProfile, onOpenImage, pushToast }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
 
   return (
     <main className="chat-main">
-      <ChatHeader channel={channel} membersVisible={membersVisible} onToggleMembers={onToggleMembers} />
+      <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} />
 
       {channel.type === "voice" ? (
         <div className="voice-placeholder">

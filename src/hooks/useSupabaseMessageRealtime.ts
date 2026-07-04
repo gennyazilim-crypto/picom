@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { dataSourceService } from "../services/dataSourceService";
 import { loggingService } from "../services/loggingService";
 import { mapMessageRow, type MessageRow, type MessageSummary } from "../services/messageService";
@@ -13,6 +13,8 @@ type UseSupabaseMessageRealtimeInput = Readonly<{
   onDelete: (messageId: string) => void;
 }>;
 
+export type RealtimeConnectionStatus = "idle" | "connecting" | "connected" | "reconnecting" | "disconnected";
+
 export function useSupabaseMessageRealtime({
   enabled,
   communityId,
@@ -20,21 +22,30 @@ export function useSupabaseMessageRealtime({
   onInsert,
   onUpdate,
   onDelete,
-}: UseSupabaseMessageRealtimeInput): void {
+}: UseSupabaseMessageRealtimeInput): RealtimeConnectionStatus {
+  const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("idle");
+
   useEffect(() => {
-    if (!enabled || !dataSourceService.getStatus().isSupabase) return;
+    if (!enabled || !dataSourceService.getStatus().isSupabase) {
+      setConnectionStatus("idle");
+      return;
+    }
 
     const status = getSupabaseClientStatus();
     if (!status.configured) {
+      setConnectionStatus("disconnected");
       loggingService.logWarn("Supabase message realtime skipped", { reason: status.reason });
       return;
     }
 
     const client = getSupabaseClient();
     if (!client) {
+      setConnectionStatus("disconnected");
       loggingService.logWarn("Supabase message realtime skipped", { reason: "client_unavailable" });
       return;
     }
+
+    setConnectionStatus("connecting");
 
     const channel = client
       .channel(`messages:${communityId}:${channelId}`)
@@ -65,7 +76,18 @@ export function useSupabaseMessageRealtime({
         },
       )
       .subscribe((statusValue) => {
+        if (statusValue === "SUBSCRIBED") {
+          setConnectionStatus("connected");
+          return;
+        }
+
+        if (statusValue === "CLOSED") {
+          setConnectionStatus("disconnected");
+          return;
+        }
+
         if (statusValue === "CHANNEL_ERROR" || statusValue === "TIMED_OUT") {
+          setConnectionStatus("reconnecting");
           loggingService.logWarn("Supabase message realtime status", {
             status: statusValue,
             communityId,
@@ -78,4 +100,6 @@ export function useSupabaseMessageRealtime({
       void client.removeChannel(channel);
     };
   }, [channelId, communityId, enabled, onDelete, onInsert, onUpdate]);
+
+  return connectionStatus;
 }
