@@ -3,8 +3,11 @@ import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
 import { AppIcon } from "./AppIcon";
+import { mvpUiIconMap } from "./iconRegistry";
 
 type ToastTone = "info" | "error" | "success";
+const chatHeaderIcons = mvpUiIconMap.chatHeader;
+const channelIcons = mvpUiIconMap.communitySidebar;
 
 const avatarPalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
 const hash = (value: string) => Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
@@ -49,7 +52,7 @@ export function ChatMain({ community, channel, messages, onSendMessage, onToggle
     <main className="chat-main">
       <header className="chat-header">
         <div className="chat-title">
-          <AppIcon name={channel.type === "voice" ? "voice" : "hash"} size="lg" />
+          <AppIcon name={channel.type === "voice" ? channelIcons.voiceChannel : channelIcons.textChannel} size="lg" />
           <div>
             <strong>{channel.name}</strong>
             <span>{channel.topic ?? "Picom desktop channel"}</span>
@@ -57,22 +60,22 @@ export function ChatMain({ community, channel, messages, onSendMessage, onToggle
         </div>
         <div className="chat-actions">
           <button className="icon-button" aria-label="Pinned">
-            <AppIcon name="pin" />
+            <AppIcon name={chatHeaderIcons.pinned} />
           </button>
           <button className="icon-button" aria-label="Notifications">
-            <AppIcon name="bell" />
+            <AppIcon name={chatHeaderIcons.notifications} />
           </button>
           <button className="icon-button" aria-label="Inbox">
-            <AppIcon name="inbox" />
+            <AppIcon name={chatHeaderIcons.inbox} />
           </button>
           <button className={`icon-button ${membersVisible ? "active" : ""}`} aria-label="Toggle members" onClick={onToggleMembers}>
-            <AppIcon name="users" />
+            <AppIcon name={chatHeaderIcons.members} />
           </button>
           <button className="icon-button" aria-label="Search">
-            <AppIcon name="search" />
+            <AppIcon name={chatHeaderIcons.search} />
           </button>
           <button className="icon-button" aria-label="More">
-            <AppIcon name="more" />
+            <AppIcon name={chatHeaderIcons.more} />
           </button>
         </div>
       </header>
