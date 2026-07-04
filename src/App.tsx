@@ -457,8 +457,19 @@ export function App() {
                   label: "Copy channel ID",
                   onSelect: () => clipboardService.copyText(channel.id).then(() => pushToast("Channel ID copied.", "success")),
                 },
-                { label: "Edit channel placeholder" },
-                { label: "Delete channel placeholder", tone: "danger" },
+                {
+                  label: "Edit channel placeholder",
+                  onSelect: () => channelService.updateChannel({ channelId: channel.id }).then((result) => {
+                    if (!result.ok) pushToast(result.error.message, "info");
+                  }),
+                },
+                {
+                  label: "Delete channel placeholder",
+                  tone: "danger",
+                  onSelect: () => channelService.deleteChannel({ channelId: channel.id }).then((result) => {
+                    if (!result.ok) pushToast(result.error.message, "info");
+                  }),
+                },
               ])
             }
           />

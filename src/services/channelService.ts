@@ -25,11 +25,27 @@ export type CreateChannelInput = Readonly<{
   isPrivate?: boolean;
 }>;
 
+export type UpdateChannelInput = Readonly<{
+  channelId: string;
+  name?: string;
+  type?: ChannelType;
+  topic?: string | null;
+  categoryId?: string | null;
+  isPrivate?: boolean;
+}>;
+
+export type DeleteChannelInput = Readonly<{
+  channelId: string;
+  confirmName?: string;
+}>;
+
 export type ChannelServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "VALIDATION_ERROR"
   | "CHANNEL_CREATE_FAILED"
-  | "CHANNEL_LIST_FAILED";
+  | "CHANNEL_LIST_FAILED"
+  | "CHANNEL_UPDATE_PLACEHOLDER"
+  | "CHANNEL_DELETE_PLACEHOLDER";
 
 export type ChannelServiceError = Readonly<{
   code: ChannelServiceErrorCode;
@@ -163,5 +179,33 @@ export const channelService = {
     }
 
     return { ok: true, data: mapChannelListRow(data) };
+  },
+
+  async updateChannel(input: UpdateChannelInput): Promise<ChannelServiceResult<ChannelSummary>> {
+    if (!input.channelId.trim()) {
+      return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel ID is required." } };
+    }
+
+    return {
+      ok: false,
+      error: {
+        code: "CHANNEL_UPDATE_PLACEHOLDER",
+        message: "Channel editing is prepared but not enabled in the MVP yet.",
+      },
+    };
+  },
+
+  async deleteChannel(input: DeleteChannelInput): Promise<ChannelServiceResult<void>> {
+    if (!input.channelId.trim()) {
+      return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel ID is required." } };
+    }
+
+    return {
+      ok: false,
+      error: {
+        code: "CHANNEL_DELETE_PLACEHOLDER",
+        message: "Channel deletion is prepared but not enabled in the MVP yet.",
+      },
+    };
   },
 };
