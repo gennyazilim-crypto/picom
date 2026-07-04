@@ -8,6 +8,7 @@ import { mvpUiIconMap } from "./iconRegistry";
 type ToastTone = "info" | "error" | "success";
 const chatHeaderIcons = mvpUiIconMap.chatHeader;
 const channelIcons = mvpUiIconMap.communitySidebar;
+const composerIcons = mvpUiIconMap.messageComposer;
 
 const avatarPalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
 const hash = (value: string) => Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
@@ -219,7 +220,7 @@ function MessageComposer({ channel, onSendMessage, pushToast }: { channel: Chann
       }}
     >
       <div className="composer-bar">
-        <button className="composer-tool" aria-label="Attach"><AppIcon name="paperclip" size="lg" /></button>
+        <button className="composer-tool" aria-label="Attach"><AppIcon name={composerIcons.attach} size="lg" /></button>
         <textarea
           value={body}
           placeholder={`Message #${channel.name}`}
@@ -235,10 +236,10 @@ function MessageComposer({ channel, onSendMessage, pushToast }: { channel: Chann
             }
           }}
         />
-        <button className="composer-tool" aria-label="Emoji"><AppIcon name="smile" size="lg" /></button>
+        <button className="composer-tool" aria-label="Emoji"><AppIcon name={composerIcons.emoji} size="lg" /></button>
         <button className="composer-tool text-tool" aria-label="GIF placeholder">GIF</button>
         <button className="send-button" disabled={!body.trim() && !previews.length} onClick={send}>
-          <AppIcon name="send" size="sm" /> Send
+          <AppIcon name={composerIcons.send} size="sm" /> Send
         </button>
       </div>
       {previews.length ? (
@@ -246,12 +247,12 @@ function MessageComposer({ channel, onSendMessage, pushToast }: { channel: Chann
           {previews.map((preview) => (
             <div key={preview.id}>
               <img src={preview.url} alt={preview.name} />
-              <button aria-label={`Remove ${preview.name}`} onClick={() => removePreview(preview)}><AppIcon name="close" size="xs" /></button>
+              <button aria-label={`Remove ${preview.name}`} onClick={() => removePreview(preview)}><AppIcon name={composerIcons.close} size="xs" /></button>
             </div>
           ))}
         </div>
       ) : null}
-      {dragging ? <div className="drop-hint"><AppIcon name="image" /> Drop images to attach</div> : null}
+      {dragging ? <div className="drop-hint"><AppIcon name={composerIcons.image} /> Drop images to attach</div> : null}
     </footer>
   );
 }
