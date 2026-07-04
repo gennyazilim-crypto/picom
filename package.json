@@ -14,7 +14,8 @@
                     "preview":  "vite preview --host 127.0.0.1",
                     "supabase:types":  "supabase gen types typescript --local --schema public \u003e src/services/supabase/database.types.ts",
                     "supabase:smoke":  "node scripts/supabase-schema-smoke-test.mjs",
-                    "mock:smoke":  "node scripts/mock-mode-smoke-test.mjs"
+                    "mock:smoke":  "node scripts/mock-mode-smoke-test.mjs",
+                    "supabase:api-regression":  "node scripts/supabase-api-mode-regression.mjs"
                 },
     "dependencies":  {
                          "@supabase/supabase-js":  "^2.110.0",
