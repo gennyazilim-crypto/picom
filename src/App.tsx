@@ -331,21 +331,24 @@ export function App() {
   const displayedActiveCommunity = useMemo<Community>(() => {
     if (!presenceChannel.onlineUserIds.length) return activeCommunity;
 
-    const onlineUserIds = new Set(presenceChannel.onlineUserIds);
-
     return {
       ...activeCommunity,
-      members: activeCommunity.members.map((member) =>
-        onlineUserIds.has(member.userId)
-          ? {
-              ...member,
-              status: member.status === "dnd" ? member.status : "online",
-              statusText: member.status === "dnd" ? member.statusText : "Online now",
-            }
-          : member,
-      ),
+      members: activeCommunity.members.map((member) => {
+        const presence = presenceChannel.presenceByUserId[member.userId];
+        if (!presence) return member;
+
+        const status = presence.status === "offline" ? "online" : presence.status;
+        const statusText = status === "dnd" ? "Do not disturb" : status === "idle" ? "Idle now" : "Online now";
+
+        return {
+          ...member,
+          avatarUrl: presence.avatarUrl ?? member.avatarUrl,
+          status,
+          statusText,
+        };
+      }),
     };
-  }, [activeCommunity, presenceChannel.onlineUserIds]);
+  }, [activeCommunity, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
   const replyToMessage = useMemo(
     () => displayedActiveCommunity.messages.find((message) => message.id === replyToMessageId && message.channelId === activeChannel.id) ?? null,
