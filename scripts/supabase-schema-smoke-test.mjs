@@ -6,6 +6,7 @@ const root = process.cwd();
 const shouldReset = process.argv.includes("--reset");
 
 const requiredFiles = [
+  "supabase/config.toml",
   "supabase/seed.sql",
   "src/services/supabase/database.types.ts",
   "docs/supabase-database.md",
