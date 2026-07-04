@@ -1463,10 +1463,13 @@ body{
 .typing-indicator{width:max-content;max-width:100%;margin:4px 0 12px 54px;border:1px solid var(--border);border-radius:999px;background:var(--surface-soft);color:var(--text-muted);box-shadow:var(--shadow-soft);padding:8px 12px;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Task 188: clearer live presence dots in MemberSidebar */
+.status-dot{position:relative;transition:background-color 140ms ease,box-shadow 140ms ease,opacity 140ms ease}
 .member-avatar-wrap .status-dot{box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--text-muted) 10%,transparent)}
 .member-avatar-wrap .status-dot.online{box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--success) 18%,transparent)}
 .member-avatar-wrap .status-dot.idle{box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--warning) 18%,transparent)}
 .member-avatar-wrap .status-dot.dnd{box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--danger) 16%,transparent)}
+.member-avatar-wrap .status-dot.offline{background:color-mix(in srgb,var(--text-muted) 64%,transparent);opacity:.82;box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--text-muted) 8%,transparent)}
+.member-row[data-online="true"] .member-copy strong{color:var(--text-primary)}
 
 /* Task 191: local notification settings placeholder rows */
 .settings-toggle-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface-soft);padding:12px 14px;color:var(--text-primary)}
