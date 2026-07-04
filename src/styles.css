@@ -517,3 +517,14 @@ body{
   font-size:12px;
   line-height:1.5;
 }
+.auth-secondary-link{
+  height:38px;
+  border:0;
+  background:transparent;
+  color:var(--accent);
+  cursor:pointer;
+  font-weight:900;
+}
+.auth-secondary-link:hover{
+  color:var(--picom-orange);
+}

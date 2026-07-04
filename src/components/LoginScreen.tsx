@@ -9,6 +9,7 @@ type LoginScreenProps = {
   error: string | null;
   onToggleTheme: () => void;
   onSubmit: (email: string, password: string) => Promise<void>;
+  onSwitchToRegister: () => void;
 };
 
 const localSeed = {
@@ -16,7 +17,7 @@ const localSeed = {
   password: "PicomDev123!",
 };
 
-export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit }: LoginScreenProps) {
+export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, onSwitchToRegister }: LoginScreenProps) {
   const [email, setEmail] = useState(localSeed.email);
   const [password, setPassword] = useState(localSeed.password);
 
