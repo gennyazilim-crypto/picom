@@ -5,10 +5,9 @@ import { fileService, type LocalAttachmentPreview } from "../services/fileServic
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { MemberAvatar } from "./MemberAvatar";
+import { ChatHeader } from "./ChatHeader";
 
 type ToastTone = "info" | "error" | "success";
-const chatHeaderIcons = mvpUiIconMap.chatHeader;
-const channelIcons = mvpUiIconMap.communitySidebar;
 const composerIcons = mvpUiIconMap.messageComposer;
 
 type ChatMainProps = {
@@ -29,35 +28,7 @@ export function ChatMain({ community, channel, messages, onSendMessage, onToggle
 
   return (
     <main className="chat-main">
-      <header className="chat-header">
-        <div className="chat-title">
-          <AppIcon name={channel.type === "voice" ? channelIcons.voiceChannel : channelIcons.textChannel} size="lg" />
-          <div>
-            <strong>{channel.name}</strong>
-            <span>{channel.topic ?? "Picom desktop channel"}</span>
-          </div>
-        </div>
-        <div className="chat-actions">
-          <button className="icon-button" aria-label="Pinned">
-            <AppIcon name={chatHeaderIcons.pinned} />
-          </button>
-          <button className="icon-button" aria-label="Notifications">
-            <AppIcon name={chatHeaderIcons.notifications} />
-          </button>
-          <button className="icon-button" aria-label="Inbox">
-            <AppIcon name={chatHeaderIcons.inbox} />
-          </button>
-          <button className={`icon-button ${membersVisible ? "active" : ""}`} aria-label="Toggle members" onClick={onToggleMembers}>
-            <AppIcon name={chatHeaderIcons.members} />
-          </button>
-          <button className="icon-button" aria-label="Search">
-            <AppIcon name={chatHeaderIcons.search} />
-          </button>
-          <button className="icon-button" aria-label="More">
-            <AppIcon name={chatHeaderIcons.more} />
-          </button>
-        </div>
-      </header>
+      <ChatHeader channel={channel} membersVisible={membersVisible} onToggleMembers={onToggleMembers} />
 
       {channel.type === "voice" ? (
         <div className="voice-placeholder">
