@@ -672,3 +672,9 @@ body{
 .member-avatar-wrap .status-dot.online{box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--success) 18%,transparent)}
 .member-avatar-wrap .status-dot.idle{box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--warning) 18%,transparent)}
 .member-avatar-wrap .status-dot.dnd{box-shadow:0 0 0 2px var(--bg-member),0 0 0 5px color-mix(in srgb,var(--danger) 16%,transparent)}
+
+/* Task 191: local notification settings placeholder rows */
+.settings-toggle-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface-soft);padding:12px 14px;color:var(--text-primary)}
+.settings-toggle-row span{display:grid;gap:3px;min-width:0}
+.settings-toggle-row small{color:var(--text-muted);font-size:12px;line-height:1.4}
+.settings-toggle-row input{width:18px;height:18px;accent-color:var(--accent)}

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { notificationService } from "../services/notificationService";
+import { settingsService, type NotificationSettings } from "../services/settingsService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
 import { AppIcon } from "./AppIcon";
@@ -17,6 +18,7 @@ type SettingsModalProps = {
 
 export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: SettingsModalProps) {
   const [active, setActive] = useState("Appearance");
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
   useEffect(() => {
@@ -28,6 +30,11 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
     pushToast(result.ok ? "Notification placeholder sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
+  };
+  const updateNotifications = (partial: Partial<NotificationSettings>) => {
+    const next = settingsService.updateNotificationSettings(partial).notificationSettings;
+    setNotificationSettings(next);
+    pushToast("Notification setting saved locally.", "success");
   };
 
   return (
@@ -67,6 +74,27 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
             <div className="placeholder-panel action-panel">
               <strong>Native notification foundation</strong>
               <p>Uses a safe browser/native fallback and never calls desktop APIs directly from React.</p>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Enable desktop notifications</strong>
+                  <small>Allow Picom to show native desktop notification placeholders.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.enabled} onChange={(event) => updateNotifications({ enabled: event.target.checked })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Mute notifications</strong>
+                  <small>Keep notifications quiet while preserving inbox foundations later.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.muted} onChange={(event) => updateNotifications({ muted: event.target.checked })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Mentions only placeholder</strong>
+                  <small>Future notification routing can use this preference.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.mentionsOnly} onChange={(event) => updateNotifications({ mentionsOnly: event.target.checked })} />
+              </label>
               <button onClick={testNotification}>Send test notification</button>
             </div>
           ) : active === "Keyboard Shortcuts" ? (
