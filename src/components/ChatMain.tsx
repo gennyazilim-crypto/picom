@@ -1,7 +1,6 @@
 ﻿import { useMemo } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
-import { fileService, type LocalAttachmentPreview } from "../services/fileService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { MemberAvatar } from "./MemberAvatar";
@@ -16,7 +15,7 @@ type ChatMainProps = {
   community: Community;
   channel: Channel;
   messages: Message[];
-  onSendMessage: (body: string, attachments?: Attachment[]) => void;
+  onSendMessage: (body: string, attachments?: Attachment[]) => void | Promise<void>;
   onToggleMembers: () => void;
   membersVisible: boolean;
   onMessageContextMenu: (event: MouseEvent, message: Message) => void;
@@ -43,7 +42,7 @@ export function ChatMain({ community, channel, messages, onSendMessage, onToggle
       ) : (
         <>
           <MessageList community={community} messages={channelMessages} onContextMenu={onMessageContextMenu} onOpenProfile={onOpenProfile} onOpenImage={onOpenImage} />
-          <MessageComposer channel={channel} onSendMessage={onSendMessage} pushToast={pushToast} />
+          <MessageComposer communityId={community.id} channel={channel} onSendMessage={onSendMessage} pushToast={pushToast} />
         </>
       )}
     </main>

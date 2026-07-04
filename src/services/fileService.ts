@@ -1,4 +1,4 @@
-export interface LocalAttachmentPreview { id: string; name: string; url: string; type: string; size: number; }
+export interface LocalAttachmentPreview { id: string; name: string; url: string; type: string; size: number; file: File; }
 export const allowedImageMimeTypes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 export const allowedImageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
 export const maxImageFileSizeBytes = 10 * 1024 * 1024;
@@ -17,7 +17,7 @@ export const fileService = {
     return { ok: true };
   },
   createPreview(file: File): LocalAttachmentPreview {
-    return { id: `local-file-${Date.now()}-${file.name}`, name: file.name, type: file.type, size: file.size, url: URL.createObjectURL(file) };
+    return { id: `local-file-${Date.now()}-${file.name}`, name: file.name, type: file.type, size: file.size, file, url: URL.createObjectURL(file) };
   },
   revoke(preview: LocalAttachmentPreview) { URL.revokeObjectURL(preview.url); }
 };

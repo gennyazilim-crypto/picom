@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Attachment, Channel } from "../types/community";
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
+import { uploadService } from "../services/uploadService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 
@@ -8,15 +9,17 @@ type ToastTone = "info" | "error" | "success";
 const composerIcons = mvpUiIconMap.messageComposer;
 
 type MessageComposerProps = {
+  communityId: string;
   channel: Channel;
-  onSendMessage: (body: string, attachments?: Attachment[]) => void;
+  onSendMessage: (body: string, attachments?: Attachment[]) => void | Promise<void>;
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function MessageComposer({ channel, onSendMessage, pushToast }: MessageComposerProps) {
+export function MessageComposer({ communityId, channel, onSendMessage, pushToast }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
+  const [sending, setSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewsRef = useRef<LocalAttachmentPreview[]>([]);
 
@@ -56,9 +59,25 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
     setPreviews((current) => current.filter((item) => item.id !== preview.id));
   };
 
-  const send = () => {
+  const send = async () => {
     const value = body.trim();
-    if (!value && !previews.length) return;
+    if ((!value && !previews.length) || sending) return;
+
+    setSending(true);
+
+    for (const preview of previews) {
+      const result = await uploadService.uploadImageAttachment({
+        communityId,
+        channelId: channel.id,
+        file: preview.file,
+      });
+
+      if (!result.ok) {
+        pushToast(result.error.message, "error");
+        setSending(false);
+        return;
+      }
+    }
 
     const attachments: Attachment[] = previews.map((preview) => ({
       id: preview.id,
@@ -67,9 +86,10 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
       alt: preview.name,
     }));
 
-    onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments);
+    await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments);
     setBody("");
     setPreviews([]);
+    setSending(false);
   };
 
   return (
@@ -118,8 +138,8 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
         />
         <button className="composer-tool" aria-label="Emoji"><AppIcon name={composerIcons.emoji} size="lg" /></button>
         <button className="composer-tool text-tool" aria-label="GIF placeholder">GIF</button>
-        <button className="send-button" disabled={!body.trim() && !previews.length} onClick={send}>
-          <AppIcon name={composerIcons.send} size="sm" /> Send
+        <button className="send-button" disabled={sending || (!body.trim() && !previews.length)} onClick={send}>
+          <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
         </button>
       </div>
       {previews.length ? (
