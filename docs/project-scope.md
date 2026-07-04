@@ -13,45 +13,43 @@ Picom is a premium desktop community chat app for Windows, Linux, and macOS. The
 - Backend direction: Supabase-first
 - Voice direction: LiveKit/WebRTC
 
-## MVP scope
+## Full MVP scope
 
-The MVP includes:
+Picom is now locked to the Full MVP. The Full MVP includes:
 
-- desktop app shell
-- custom desktop title bar/frame direction
-- server rail
-- community sidebar
-- chat main area
-- chat header
-- message list
-- message composer
-- member sidebar
-- settings modal foundation
-- profile popover foundation
-- desktop context menu foundation
-- light and dark theme
-- mock data during early UI work
-- Supabase Auth
-- Supabase Postgres with RLS
-- Supabase Storage for attachments
-- Supabase Realtime where appropriate
-- LiveKit/WebRTC voice rooms and screen sharing
-- Windows/Linux/macOS desktop packaging direction
+- Electron desktop shell with custom titlebar, safe preload IPC, `contextIsolation: true`, and `nodeIntegration: false`.
+- Premium desktop UI: ServerRail, CommunitySidebar, ChatMain, MemberSidebar, MessageComposer, SettingsModal, ContextMenu, ImagePreviewModal, Mention Feed, Full Profile Page, light/dark theme, and rounded Picom app frame.
+- Supabase backend: Auth, Postgres, RLS, Storage, Realtime, and Edge Functions where needed.
+- Auth: login, register, logout, session restore, protected app route, and profile creation after signup.
+- Community and channel flows: community list/create/switch, channel list/create/switch, private channel flag, and basic permissions.
+- Messaging: fetch/send/edit/delete messages, moderator/admin delete permission, realtime insert/update/delete, typing indicator, unread/mention foundation, optimistic send, and duplicate prevention.
+- Attachments: Supabase Storage image upload, PNG/JPG/WEBP/GIF validation, max file size, attachment metadata, AttachmentGrid, and ImagePreviewModal.
+- Emoji, reactions, and replies: EmojiPicker MVP, emoji insertion, add/remove reactions, reaction counts, full reply system, composer reply preview, message reply preview, and deleted reply fallback.
+- Home Mention Feed: home button opens Mention Feed, not DMs or a general social feed; tabs are only `Feed` and `Takip Ettiğin Kişiler`.
+- Full Profile Page: full ProfileView from avatar/name, profile card, gallery/stats/bio/details, skills/tags, recent activity, shared media, local follow/unfollow, open activity in channel, and image preview.
+- Voice chat: LiveKit token Edge Function, join/leave voice room, mute, deafen, speaking indicator, participants list, and voice room state.
+- Screen share: Electron desktopCapturer source picker, start/stop screen share, LiveKit screen share track, and Windows/Linux/macOS QA notes.
+- Settings: Account, Profile, Appearance, Notifications, Voice & Video, Keyboard Shortcuts, Advanced, theme switch, profile edit, notification settings, and basic diagnostics/log export.
+- QA/build: mock mode, Supabase mode, RLS tests, realtime two-window test, voice/screen-share tests, and Windows/Linux/macOS package smoke tests.
 
-## Out of scope for early MVP phases
+## Out of scope for Full MVP
 
-Do not add these until the task pack explicitly reaches them:
+Do not add these to the Full MVP:
 
 - mobile app
 - mobile-first responsive UI
 - Discord branding or assets
-- plugin system
-- bot platform
+- bot marketplace
+- webhook production system
+- plugin runtime
+- enterprise admin console
+- SSO
+- SCIM
+- billing
 - public discovery marketplace
-- enterprise controls
 - production auto-update rollout
-- analytics provider integration
-- E2EE implementation
+- E2EE production
+- advanced analytics
 - arbitrary native shell execution
 
 ## Design scope

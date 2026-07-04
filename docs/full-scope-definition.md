@@ -4,9 +4,11 @@ Picom is a premium Electron desktop community chat app for Windows, Linux, and m
 
 This document defines the full product and technical scope for the active master task pack.
 
-## MVP product scope
+## Full MVP product scope
 
-Included in the MVP:
+Picom is locked to the Full MVP for the current build plan.
+
+Included in the Full MVP:
 
 - Premium 4-column desktop community chat UI.
 - Light and dark theme quality matching the provided desktop reference direction.
@@ -18,16 +20,28 @@ Included in the MVP:
 - LiveKit/WebRTC for MVP voice room and screen sharing foundations.
 - Electron native shell with secure IPC boundaries.
 - Windows, Linux, and macOS packaging readiness.
+- Mention Feed as the home surface, with only `Feed` and `Takip Ettiğin Kişiler` tabs.
+- Full Profile Page with profile card, gallery/stats/bio/details, skills/tags, recent activity, shared media, follow/unfollow local state, open activity in channel, and image preview.
+- EmojiPicker MVP, message reactions, and full reply system.
+- Voice room MVP with join, leave, mute, deafen, speaking indicator, participants list, and room state.
+- Screen share MVP through Electron desktopCapturer and LiveKit screen share track.
 
-Excluded from MVP until later tasks explicitly add them:
+Excluded from Full MVP:
 
 - iOS and Android apps.
 - Discord branding, logos, copied assets, icons, or exact colors.
-- Enterprise SSO/compliance production rollout.
-- Public plugin marketplace.
-- Full bot platform production launch.
-- Production analytics provider integration.
-- E2EE implementation.
+- Bot marketplace.
+- Webhook production system.
+- Plugin runtime.
+- Enterprise admin console.
+- SSO.
+- SCIM.
+- Billing.
+- Public discovery marketplace.
+- Production auto-update.
+- E2EE production.
+- Advanced analytics.
+- Mobile app.
 
 ## Electron scope
 
@@ -82,6 +96,16 @@ Planned tables or equivalent schema groups:
 - `notifications`
 - `voice_rooms`
 - `voice_participants`
+
+Full MVP feature domains may also require safe schema or local-state foundations for:
+
+- mention feed state
+- profile activity/shared media
+- message replies
+- notification preferences
+- voice room state
+
+These must stay within the MVP boundaries above and must not expand into post-MVP platform features.
 
 ## RLS implications
 
@@ -172,7 +196,7 @@ For each task:
 
 ## Known risks
 
-- Current app is still Vite-first and needs Electron foundation tasks before it is a complete desktop runtime.
-- Supabase schema/RLS is not implemented yet.
-- LiveKit token generation is not implemented yet.
-- Current UI is mock-first and must be progressively connected to Supabase after schema and RLS are defined.
+- The task pack is large, so scope discipline is required to avoid drifting into post-MVP platform work.
+- Supabase RLS must remain the source of truth for private/community data access.
+- LiveKit and screen-share work must keep secrets server-side and platform permission differences documented.
+- Mock mode and Supabase mode must both remain usable while the Full MVP is assembled.
