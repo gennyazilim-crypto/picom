@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 import type { Attachment, Member, Message, Role } from "../types/community";
-import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
+import { MessageHoverActions } from "./MessageHoverActions";
 
 type MessageItemProps = {
   message: Message;
@@ -33,11 +33,7 @@ export function MessageItem({ message, member, role, onContextMenu, onOpenProfil
             ))}
           </div>
         ) : null}
-        <div className="message-hover-actions">
-          <button aria-label="Reply"><AppIcon name="reply" size="sm" /></button>
-          <button aria-label="React"><AppIcon name="smile" size="sm" /></button>
-          <button aria-label="More"><AppIcon name="more" size="sm" /></button>
-        </div>
+        <MessageHoverActions />
       </div>
     </article>
   );

@@ -187,3 +187,13 @@ html,body,#root,.picom-root,.desktop-app-shell,.desktop-frame{max-width:100%;ove
 .category-header {
   max-width: 100%;
 }
+
+/* Task 087: message hover actions */
+.message-item:focus-within .message-hover-actions {
+  display: flex;
+}
+
+.message-hover-actions button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
