@@ -31,7 +31,13 @@ export function ChatHeader({ channel, membersVisible, onToggleMembers }: ChatHea
         <button className="icon-button" aria-label="Inbox">
           <AppIcon name={chatHeaderIcons.inbox} />
         </button>
-        <button className={`icon-button ${membersVisible ? "active" : ""}`} aria-label="Toggle members" onClick={onToggleMembers}>
+        <button
+          className={`icon-button ${membersVisible ? "active" : ""}`}
+          aria-label={membersVisible ? "Hide member sidebar" : "Show member sidebar"}
+          aria-pressed={membersVisible}
+          title={membersVisible ? "Hide member sidebar" : "Show member sidebar"}
+          onClick={onToggleMembers}
+        >
           <AppIcon name={chatHeaderIcons.members} />
         </button>
         <button className="icon-button" aria-label="Search">
