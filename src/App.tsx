@@ -241,15 +241,28 @@ export function App() {
   const handleRealtimeMessageUpdate = useCallback((message: MessageSummary) => {
     if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;
 
-    updateLocalMessage({
+    if (message.deletedAt) {
+      updateLocalMessage({
+        communityId: message.communityId,
+        channelId: message.channelId,
+        id: message.id,
+        body: message.body,
+        editedAt: message.editedAt,
+        deletedAt: message.deletedAt,
+      });
+      return;
+    }
+
+    upsertLocalMessage({
+      id: message.id,
       communityId: message.communityId,
       channelId: message.channelId,
-      id: message.id,
+      authorId: message.authorId,
       body: message.body,
+      createdAt: message.createdAt,
       editedAt: message.editedAt,
-      deletedAt: message.deletedAt,
     });
-  }, [activeChannel.id, activeCommunity.id, updateLocalMessage]);
+  }, [activeChannel.id, activeCommunity.id, updateLocalMessage, upsertLocalMessage]);
 
   const handleRealtimeMessageDelete = useCallback((messageId: string) => {
     removeLocalMessage({
