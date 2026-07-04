@@ -94,6 +94,7 @@ async function createMainWindow(): Promise<void> {
     minHeight: ELECTRON_APP_CONFIG.window.minHeight,
     show: false,
     frame: false,
+    transparent: false,
     autoHideMenuBar: true,
     title: ELECTRON_APP_CONFIG.name,
     backgroundColor: ELECTRON_APP_CONFIG.window.backgroundColor,

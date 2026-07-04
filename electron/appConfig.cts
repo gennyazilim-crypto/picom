@@ -6,6 +6,6 @@ export const ELECTRON_APP_CONFIG = Object.freeze({
     defaultHeight: 900,
     minWidth: 1100,
     minHeight: 700,
-    backgroundColor: "#e7ebf2"
+    backgroundColor: "#e8eef4"
   })
 });
