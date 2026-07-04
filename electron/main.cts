@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from "electron";
 import path from "node:path";
 
+const APP_ID = "com.picom.desktop";
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
 
 let mainWindow: BrowserWindow | null = null;
@@ -12,6 +13,38 @@ function isSafeExternalUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+function isTrustedAppUrl(url: string): boolean {
+  if (app.isPackaged) {
+    return url.startsWith("file://");
+  }
+
+  return url.startsWith(DEV_SERVER_URL);
+}
+
+function openExternalSafely(url: string): void {
+  if (!isSafeExternalUrl(url)) {
+    return;
+  }
+
+  shell.openExternal(url).catch(() => undefined);
+}
+
+function configureWebContents(window: BrowserWindow): void {
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    openExternalSafely(url);
+    return { action: "deny" };
+  });
+
+  window.webContents.on("will-navigate", (event, url) => {
+    if (isTrustedAppUrl(url)) {
+      return;
+    }
+
+    event.preventDefault();
+    openExternalSafely(url);
+  });
 }
 
 async function createMainWindow(): Promise<void> {
@@ -27,20 +60,21 @@ async function createMainWindow(): Promise<void> {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      devTools: !app.isPackaged
     }
   });
+
+  configureWebContents(mainWindow);
 
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (isSafeExternalUrl(url)) {
-      shell.openExternal(url).catch(() => undefined);
-    }
-
-    return { action: "deny" };
+  mainWindow.on("closed", () => {
+    mainWindow = null;
   });
 
   if (app.isPackaged) {
@@ -49,6 +83,8 @@ async function createMainWindow(): Promise<void> {
     await mainWindow.loadURL(DEV_SERVER_URL);
   }
 }
+
+app.setAppUserModelId(APP_ID);
 
 app.whenReady().then(() => {
   void createMainWindow();
