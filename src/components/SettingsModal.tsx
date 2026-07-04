@@ -31,6 +31,7 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
     const result = await notificationService.showTestNotification();
     pushToast(result.ok ? "Notification placeholder sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
   };
+  const notificationStatus = notificationService.getStatus();
   const updateNotifications = (partial: Partial<NotificationSettings>) => {
     const next = settingsService.updateNotificationSettings(partial).notificationSettings;
     setNotificationSettings(next);
@@ -74,6 +75,11 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
             <div className="placeholder-panel action-panel">
               <strong>Native notification foundation</strong>
               <p>Uses a safe browser/native fallback and never calls desktop APIs directly from React.</p>
+              <div className="settings-status-card" aria-label="Notification runtime status">
+                <span>Runtime support</span>
+                <strong>{notificationStatus.supported ? "Available" : "Fallback only"}</strong>
+                <small>Permission: {notificationStatus.permission}. Settings are saved locally for this desktop profile.</small>
+              </div>
               <label className="settings-toggle-row">
                 <span>
                   <strong>Enable desktop notifications</strong>

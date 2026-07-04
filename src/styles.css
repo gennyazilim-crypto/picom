@@ -1476,5 +1476,9 @@ body{
 .settings-toggle-row span{display:grid;gap:3px;min-width:0}
 .settings-toggle-row small{color:var(--text-muted);font-size:12px;line-height:1.4}
 .settings-toggle-row input{width:18px;height:18px;accent-color:var(--accent)}
+.settings-status-card{display:grid;gap:4px;border:1px solid var(--border);border-radius:16px;background:color-mix(in srgb,var(--surface) 72%,transparent);padding:12px 14px;color:var(--text-secondary)}
+.settings-status-card span{font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+.settings-status-card strong{color:var(--text-primary)}
+.settings-status-card small{color:var(--text-muted);line-height:1.4}
 
 .toast{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:10px}.toast-indicator{width:8px;height:8px;margin-top:5px;border-radius:999px;background:var(--text-muted);box-shadow:0 0 0 4px color-mix(in srgb,var(--text-muted) 12%,transparent)}.toast.success .toast-indicator{background:var(--success);box-shadow:0 0 0 4px color-mix(in srgb,var(--success) 14%,transparent)}.toast.error .toast-indicator{background:var(--danger);box-shadow:0 0 0 4px color-mix(in srgb,var(--danger) 14%,transparent)}.toast-copy{min-width:0;display:grid;gap:2px}.toast-copy strong{font-size:11px;line-height:1;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted)}.toast-copy span{overflow:hidden;text-overflow:ellipsis;line-height:1.35}.toast-dismiss{width:24px;height:24px;border:0;border-radius:8px;display:grid;place-items:center;background:transparent;color:var(--text-muted);cursor:pointer}.toast-dismiss:hover{background:var(--surface-hover);color:var(--text-primary)}.toast-dismiss:focus-visible{outline:0;box-shadow:var(--focus-ring)}
