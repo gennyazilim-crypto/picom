@@ -1,7 +1,7 @@
-import { mockCommunities } from "../data/mockCommunities";
 import type { ChannelType } from "../types/community";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
+import { CHANNEL_LIST_SELECT, listMockChannelSummaries, listSupabaseChannelSummaries, mapChannelListRow } from "./channelListQuery";
 
 export type ChannelSummary = Readonly<{
   id: string;
@@ -42,52 +42,6 @@ export type ChannelServiceResult<T> =
 
 function normalizeChannelName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "").replace(/-+/g, "-").slice(0, 80);
-}
-
-function mapSupabaseChannel(row: {
-  id: string;
-  community_id: string;
-  category_id: string | null;
-  name: string;
-  type: ChannelType;
-  topic: string | null;
-  is_private: boolean;
-  position: number;
-  created_at: string;
-  updated_at: string;
-}): ChannelSummary {
-  return {
-    id: row.id,
-    communityId: row.community_id,
-    categoryId: row.category_id,
-    name: row.name,
-    type: row.type,
-    topic: row.topic,
-    isPrivate: row.is_private,
-    position: row.position,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-function listMockChannels(communityId: string): ChannelSummary[] {
-  const community = mockCommunities.find((item) => item.id === communityId);
-  if (!community) return [];
-
-  return community.categories.flatMap((category) =>
-    category.channels.map((channel) => ({
-      id: channel.id,
-      communityId: community.id,
-      categoryId: channel.categoryId ?? category.id,
-      name: channel.name,
-      type: channel.type,
-      topic: channel.topic ?? null,
-      isPrivate: Boolean(channel.isPrivate),
-      position: channel.position ?? 0,
-      createdAt: null,
-      updatedAt: null,
-    })),
-  );
 }
 
 function getConfiguredSupabaseClient() {
@@ -146,23 +100,19 @@ export const channelService = {
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
-      return { ok: true, data: listMockChannels(communityId) };
+      return { ok: true, data: listMockChannelSummaries(communityId) };
     }
 
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data, error } = await configured.data
-      .from("channels")
-      .select("id, community_id, category_id, name, type, topic, is_private, position, created_at, updated_at")
-      .eq("community_id", communityId)
-      .order("position", { ascending: true });
+    const result = await listSupabaseChannelSummaries(configured.data, communityId);
 
-    if (error) {
+    if (result.error || !result.data) {
       return { ok: false, error: { code: "CHANNEL_LIST_FAILED", message: "Could not load channels." } };
     }
 
-    return { ok: true, data: (data ?? []).map(mapSupabaseChannel) };
+    return { ok: true, data: result.data };
   },
 
   async createChannel(input: CreateChannelInput): Promise<ChannelServiceResult<ChannelSummary>> {
@@ -205,13 +155,13 @@ export const channelService = {
         topic: input.topic?.trim() || null,
         is_private: Boolean(input.isPrivate),
       })
-      .select("id, community_id, category_id, name, type, topic, is_private, position, created_at, updated_at")
+      .select(CHANNEL_LIST_SELECT)
       .single();
 
     if (error || !data) {
       return { ok: false, error: { code: "CHANNEL_CREATE_FAILED", message: "Could not create channel." } };
     }
 
-    return { ok: true, data: mapSupabaseChannel(data) };
+    return { ok: true, data: mapChannelListRow(data) };
   },
 };
