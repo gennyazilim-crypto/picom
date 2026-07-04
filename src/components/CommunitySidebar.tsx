@@ -4,7 +4,7 @@ import type { Channel, Community, Member } from "../types/community";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { MemberAvatar } from "./MemberAvatar";
-import { getCommunityIconLabel } from "../utils/generatedIdentity";
+import { CommunityHeader } from "./CommunityHeader";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
 type CommunitySidebarProps = {
@@ -23,16 +23,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
 
   return (
     <aside className="community-sidebar">
-      <header className="community-header">
-        <div className="community-mark" style={{ background: community.accentColor }}>{getCommunityIconLabel(community.name, community.icon)}</div>
-        <div>
-          <strong>{community.name}</strong>
-          <span>Desktop community</span>
-        </div>
-        <button className="icon-button" aria-label="Community menu">
-          <AppIcon name={sidebarIcons.expand} size="sm" />
-        </button>
-      </header>
+      <CommunityHeader community={community} onOpenMenu={onOpenSettings} />
 
       <div className="channel-scroll">
         {community.categories.map((category) => (
