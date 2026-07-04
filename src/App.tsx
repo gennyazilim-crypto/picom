@@ -163,6 +163,8 @@ export function App() {
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
   const {
@@ -171,6 +173,9 @@ export function App() {
     upsertLocalMessage,
     updateLocalMessage,
     removeLocalMessage,
+    editLocalMessage,
+    deleteLocalMessage,
+    toggleLocalReaction,
     clearChannelUnread,
     addCommunity,
     addChannel,
@@ -335,6 +340,10 @@ export function App() {
     };
   }, [activeCommunity, presenceChannel.onlineUserIds]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
+  const replyToMessage = useMemo(
+    () => displayedActiveCommunity.messages.find((message) => message.id === replyToMessageId && message.channelId === activeChannel.id) ?? null,
+    [activeChannel.id, displayedActiveCommunity.messages, replyToMessageId],
+  );
   const selectedProfileMember = useMemo(() => {
     if (!profileUserId) return null;
     return communities.flatMap((community) => community.members).find((member) => member.userId === profileUserId) ?? null;
@@ -748,7 +757,7 @@ export function App() {
     openContextMenu(event.clientX, event.clientY, items);
   };
 
-  const sendMessage = async (body: string, attachments?: Attachment[]) => {
+  const sendMessage = async (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => {
     const clientMessageId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const result = await messageService.sendMessage({
       communityId: activeCommunity.id,
@@ -771,9 +780,65 @@ export function App() {
       authorId: result.data.authorId,
       body: result.data.body,
       createdAt: result.data.createdAt,
+      replyToMessageId,
       attachments,
     });
+
+    setReplyToMessageId(null);
   };
+
+  const canCurrentUserModerate = useCallback(() => {
+    const role = activeCommunity.roles.find((candidate) => candidate.id === currentUser.roleId);
+    return (role?.level ?? 0) >= 60;
+  }, [activeCommunity.roles, currentUser.roleId]);
+
+  const handleSaveMessageEdit = useCallback((message: Message, body: string) => {
+    if (message.authorId !== currentUser.userId || message.deletedAt) {
+      pushToast("You can only edit your own active messages.", "error");
+      return;
+    }
+
+    editLocalMessage({
+      communityId: activeCommunity.id,
+      channelId: activeChannel.id,
+      id: message.id,
+      body,
+    });
+    setEditingMessageId(null);
+  }, [activeChannel.id, activeCommunity.id, currentUser.userId, editLocalMessage, pushToast]);
+
+  const handleDeleteMessage = useCallback((message: Message) => {
+    const ownMessage = message.authorId === currentUser.userId;
+
+    if (!ownMessage && !canCurrentUserModerate()) {
+      pushToast("You do not have permission to delete this message.", "error");
+      return;
+    }
+
+    const needsConfirmation = message.body.length > 80 || Boolean(message.attachments?.length);
+    if (needsConfirmation && !window.confirm("Delete this message? It will be replaced with a deleted message placeholder.")) {
+      return;
+    }
+
+    deleteLocalMessage({
+      communityId: activeCommunity.id,
+      channelId: activeChannel.id,
+      id: message.id,
+    });
+
+    if (replyToMessageId === message.id) {
+      setReplyToMessageId(null);
+    }
+  }, [activeChannel.id, activeCommunity.id, canCurrentUserModerate, currentUser.userId, deleteLocalMessage, pushToast, replyToMessageId]);
+
+  const handleToggleMessageReaction = useCallback((message: Message, emoji: string) => {
+    toggleLocalReaction({
+      communityId: activeCommunity.id,
+      channelId: activeChannel.id,
+      id: message.id,
+      emoji,
+    });
+  }, [activeChannel.id, activeCommunity.id, toggleLocalReaction]);
 
   const handleCreateCommunity = async (name: string, description?: string) => {
     const result = await communityService.createCommunity({ name, description });
@@ -944,12 +1009,35 @@ export function App() {
                 onTypingStart={typingBroadcast.sendTypingStart}
                 onTypingStop={typingBroadcast.sendTypingStop}
                 onSendMessage={sendMessage}
+                currentUserId={currentUser.userId}
+                replyToMessage={replyToMessage}
+                editingMessageId={editingMessageId}
+                onCancelReply={() => setReplyToMessageId(null)}
                 membersVisible={membersVisible}
                 onToggleMembers={toggleMembersVisible}
                 onMessageContextMenu={(event, message) =>
                   openContext(event, [
-                    { label: "Reply placeholder" },
-                    { label: "React placeholder" },
+                    {
+                      label: "Reply",
+                      disabled: Boolean(message.deletedAt),
+                      onSelect: () => setReplyToMessageId(message.id),
+                    },
+                    {
+                      label: "React with 👍",
+                      disabled: Boolean(message.deletedAt),
+                      onSelect: () => handleToggleMessageReaction(message, "👍"),
+                    },
+                    {
+                      label: "Edit message",
+                      disabled: message.authorId !== currentUser.userId || Boolean(message.deletedAt),
+                      onSelect: () => setEditingMessageId(message.id),
+                    },
+                    {
+                      label: "Delete message",
+                      tone: "danger",
+                      disabled: Boolean(message.deletedAt) || (message.authorId !== currentUser.userId && !canCurrentUserModerate()),
+                      onSelect: () => handleDeleteMessage(message),
+                    },
                     {
                       label: "Copy message ID",
                       onSelect: () => clipboardService.copyText(message.id).then(() => pushToast("Message ID copied.", "success")),
@@ -958,6 +1046,12 @@ export function App() {
                 }
                 onOpenProfile={openProfile}
                 onOpenImage={openPreview}
+                onReplyMessage={(message) => setReplyToMessageId(message.id)}
+                onStartEditMessage={(message) => setEditingMessageId(message.id)}
+                onCancelEditMessage={() => setEditingMessageId(null)}
+                onSaveEditMessage={handleSaveMessageEdit}
+                onDeleteMessage={handleDeleteMessage}
+                onToggleReaction={handleToggleMessageReaction}
                 pushToast={pushToast}
               />
               {membersVisible ? (

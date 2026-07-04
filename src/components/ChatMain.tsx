@@ -20,17 +20,53 @@ type ChatMainProps = {
   typingNames: string[];
   onTypingStart: () => void;
   onTypingStop: () => void;
-  onSendMessage: (body: string, attachments?: Attachment[]) => void | Promise<void>;
+  currentUserId: string;
+  replyToMessage?: Message | null;
+  editingMessageId: string | null;
+  onCancelReply: () => void;
+  onSendMessage: (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => void | Promise<void>;
   onToggleMembers: () => void;
   membersVisible: boolean;
   onMessageContextMenu: (event: MouseEvent, message: Message) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenImage: (image: Attachment) => void;
+  onReplyMessage: (message: Message) => void;
+  onStartEditMessage: (message: Message) => void;
+  onCancelEditMessage: () => void;
+  onSaveEditMessage: (message: Message, body: string) => void;
+  onDeleteMessage: (message: Message) => void;
+  onToggleReaction: (message: Message, emoji: string) => void;
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function ChatMain({ community, channel, messages, realtimeStatus, typingNames, onTypingStart, onTypingStop, onSendMessage, onToggleMembers, membersVisible, onMessageContextMenu, onOpenProfile, onOpenImage, pushToast }: ChatMainProps) {
+export function ChatMain({
+  community,
+  channel,
+  messages,
+  realtimeStatus,
+  typingNames,
+  onTypingStart,
+  onTypingStop,
+  currentUserId,
+  replyToMessage,
+  editingMessageId,
+  onCancelReply,
+  onSendMessage,
+  onToggleMembers,
+  membersVisible,
+  onMessageContextMenu,
+  onOpenProfile,
+  onOpenImage,
+  onReplyMessage,
+  onStartEditMessage,
+  onCancelEditMessage,
+  onSaveEditMessage,
+  onDeleteMessage,
+  onToggleReaction,
+  pushToast,
+}: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
+  const replyToMember = replyToMessage ? community.members.find((member) => member.userId === replyToMessage.authorId) : undefined;
 
   return (
     <main className="chat-main">
@@ -46,8 +82,33 @@ export function ChatMain({ community, channel, messages, realtimeStatus, typingN
         </div>
       ) : (
         <>
-          <MessageList community={community} messages={channelMessages} typingNames={typingNames} onContextMenu={onMessageContextMenu} onOpenProfile={onOpenProfile} onOpenImage={onOpenImage} />
-          <MessageComposer communityId={community.id} channel={channel} onSendMessage={onSendMessage} onTypingStart={onTypingStart} onTypingStop={onTypingStop} pushToast={pushToast} />
+          <MessageList
+            community={community}
+            messages={channelMessages}
+            currentUserId={currentUserId}
+            editingMessageId={editingMessageId}
+            typingNames={typingNames}
+            onContextMenu={onMessageContextMenu}
+            onOpenProfile={onOpenProfile}
+            onOpenImage={onOpenImage}
+            onReply={onReplyMessage}
+            onStartEdit={onStartEditMessage}
+            onCancelEdit={onCancelEditMessage}
+            onSaveEdit={onSaveEditMessage}
+            onDelete={onDeleteMessage}
+            onToggleReaction={onToggleReaction}
+          />
+          <MessageComposer
+            communityId={community.id}
+            channel={channel}
+            replyToMessage={replyToMessage}
+            replyToMember={replyToMember}
+            onCancelReply={onCancelReply}
+            onSendMessage={onSendMessage}
+            onTypingStart={onTypingStart}
+            onTypingStop={onTypingStop}
+            pushToast={pushToast}
+          />
         </>
       )}
     </main>

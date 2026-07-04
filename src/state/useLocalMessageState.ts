@@ -9,6 +9,7 @@ type AppendLocalMessageInput = {
   authorId: UserId;
   body: string;
   createdAt?: string;
+  replyToMessageId?: string | null;
   attachments?: Attachment[];
 };
 
@@ -30,6 +31,20 @@ type RemoveLocalMessageInput = {
   communityId: string;
   channelId: string;
   id: string;
+};
+
+type EditLocalMessageInput = {
+  communityId: string;
+  channelId: string;
+  id: string;
+  body: string;
+};
+
+type ToggleLocalReactionInput = {
+  communityId: string;
+  channelId: string;
+  id: string;
+  emoji: string;
 };
 
 type ChannelUnreadInput = {
@@ -82,7 +97,7 @@ type AddLocalChannelInput = {
 export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
-  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, createdAt, attachments }: AppendLocalMessageInput) => {
+  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, createdAt, replyToMessageId, attachments }: AppendLocalMessageInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
       id: id ?? `local-${idSuffix}`,
@@ -91,6 +106,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       authorId,
       body,
       createdAt: createdAt ?? new Date().toISOString(),
+      replyToMessageId: replyToMessageId ?? null,
       attachments,
       reactions: [],
       localStatus: "sent",
@@ -135,6 +151,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       body,
       createdAt: createdAt ?? new Date().toISOString(),
       editedAt: editedAt ?? undefined,
+      deletedAt: deletedAt ?? undefined,
       attachments,
       reactions: [],
       localStatus: "sent",
@@ -186,6 +203,83 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       current.map((community) =>
         community.id === communityId
           ? { ...community, messages: community.messages.filter((message) => !(message.id === id && message.channelId === channelId)) }
+          : community,
+      ),
+    );
+  }, []);
+
+  const editLocalMessage = useCallback(({ communityId, channelId, id, body }: EditLocalMessageInput) => {
+    setCommunities((current) =>
+      current.map((community) =>
+        community.id === communityId
+          ? {
+              ...community,
+              messages: community.messages.map((message) =>
+                message.id === id && message.channelId === channelId && !message.deletedAt
+                  ? { ...message, body, editedAt: new Date().toISOString() }
+                  : message,
+              ),
+            }
+          : community,
+      ),
+    );
+  }, []);
+
+  const deleteLocalMessage = useCallback(({ communityId, channelId, id }: RemoveLocalMessageInput) => {
+    setCommunities((current) =>
+      current.map((community) =>
+        community.id === communityId
+          ? {
+              ...community,
+              messages: community.messages.map((message) =>
+                message.id === id && message.channelId === channelId
+                  ? {
+                      ...message,
+                      body: "",
+                      deletedAt: new Date().toISOString(),
+                      editedAt: undefined,
+                      attachments: [],
+                      reactions: [],
+                    }
+                  : message,
+              ),
+            }
+          : community,
+      ),
+    );
+  }, []);
+
+  const toggleLocalReaction = useCallback(({ communityId, channelId, id, emoji }: ToggleLocalReactionInput) => {
+    setCommunities((current) =>
+      current.map((community) =>
+        community.id === communityId
+          ? {
+              ...community,
+              messages: community.messages.map((message) => {
+                if (message.id !== id || message.channelId !== channelId || message.deletedAt) return message;
+
+                const reactions = message.reactions ?? [];
+                const existing = reactions.find((reaction) => reaction.emoji === emoji);
+
+                if (!existing) {
+                  return {
+                    ...message,
+                    reactions: [...reactions, { emoji, count: 1, reactedByCurrentUser: true }],
+                  };
+                }
+
+                const nextCount = existing.count + (existing.reactedByCurrentUser ? -1 : 1);
+                const nextReactions = reactions
+                  .map((reaction) =>
+                    reaction.emoji === emoji
+                      ? { ...reaction, count: Math.max(0, nextCount), reactedByCurrentUser: !reaction.reactedByCurrentUser }
+                      : reaction,
+                  )
+                  .filter((reaction) => reaction.count > 0);
+
+                return { ...message, reactions: nextReactions };
+              }),
+            }
           : community,
       ),
     );
@@ -275,6 +369,9 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     upsertLocalMessage,
     updateLocalMessage,
     removeLocalMessage,
+    editLocalMessage,
+    deleteLocalMessage,
+    toggleLocalReaction,
     markChannelUnread,
     clearChannelUnread,
     addCommunity,

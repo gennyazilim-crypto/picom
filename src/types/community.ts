@@ -59,6 +59,8 @@ export interface Message {
   body: string;
   createdAt: string;
   editedAt?: string;
+  deletedAt?: string;
+  replyToMessageId?: MessageId | null;
   attachments?: Attachment[];
   reactions?: Reaction[];
   localStatus?: "sent" | "sending" | "failed";

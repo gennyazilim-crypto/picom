@@ -19,6 +19,8 @@ export const semanticIconRegistry = {
   emoji: "smile",
   moreActions: "more",
   reply: "reply",
+  edit: "edit",
+  delete: "trash",
   close: "close",
   minimizeWindow: "minimize",
   maximizeWindow: "maximize",
@@ -78,6 +80,8 @@ export const mvpUiIconMap = {
   messageItem: {
     reply: semanticIconRegistry.reply,
     react: semanticIconRegistry.emoji,
+    edit: semanticIconRegistry.edit,
+    delete: semanticIconRegistry.delete,
     more: semanticIconRegistry.moreActions,
   },
   memberSidebar: {

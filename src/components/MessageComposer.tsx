@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Attachment, Channel } from "../types/community";
+import type { Attachment, Channel, Member, Message } from "../types/community";
 import { attachmentService } from "../services/attachmentService";
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
 import { loggingService } from "../services/loggingService";
@@ -27,17 +27,23 @@ function getClipboardFiles(dataTransfer: DataTransfer): File[] {
 type MessageComposerProps = {
   communityId: string;
   channel: Channel;
-  onSendMessage: (body: string, attachments?: Attachment[]) => void | Promise<void>;
+  replyToMessage?: Message | null;
+  replyToMember?: Member;
+  onCancelReply: () => void;
+  onSendMessage: (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => void | Promise<void>;
   onTypingStart: () => void;
   onTypingStop: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function MessageComposer({ communityId, channel, onSendMessage, onTypingStart, onTypingStop, pushToast }: MessageComposerProps) {
+const composerEmojiOptions = ["👍", "❤️", "😂", "🔥", "👀"];
+
+export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
   const [sending, setSending] = useState(false);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewsRef = useRef<LocalAttachmentPreview[]>([]);
   const lastTypingSentAtRef = useRef(0);
@@ -182,10 +188,12 @@ export function MessageComposer({ communityId, channel, onSendMessage, onTypingS
       };
     });
 
-    await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments);
+    await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments, replyToMessage?.id ?? null);
     onTypingStop();
+    onCancelReply();
     setBody("");
     setPreviews([]);
+    setEmojiPickerOpen(false);
     setSending(false);
   };
 
@@ -215,6 +223,17 @@ export function MessageComposer({ communityId, channel, onSendMessage, onTypingS
         addFiles(event.dataTransfer.files);
       }}
     >
+      {replyToMessage ? (
+        <div className="composer-reply-preview">
+          <div>
+            <strong>Replying to {replyToMember?.displayName ?? "message"}</strong>
+            <span>{replyToMessage.deletedAt ? "Original message was deleted." : replyToMessage.body}</span>
+          </div>
+          <button type="button" aria-label="Cancel reply" onClick={onCancelReply}>
+            <AppIcon name={composerIcons.close} size="xs" />
+          </button>
+        </div>
+      ) : null}
       <div className="composer-bar">
         <input
           ref={fileInputRef}
@@ -253,7 +272,9 @@ export function MessageComposer({ communityId, channel, onSendMessage, onTypingS
             }
           }}
         />
-        <button className="composer-tool" aria-label="Emoji"><AppIcon name={composerIcons.emoji} size="lg" /></button>
+        <button className="composer-tool" aria-label="Emoji" onClick={() => setEmojiPickerOpen((current) => !current)}>
+          <AppIcon name={composerIcons.emoji} size="lg" />
+        </button>
         <button className="composer-tool text-tool" aria-label="GIF placeholder">GIF</button>
         <button className="send-button" disabled={sending || (!body.trim() && !previews.length)} onClick={send}>
           <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
@@ -266,6 +287,22 @@ export function MessageComposer({ communityId, channel, onSendMessage, onTypingS
               <img src={preview.url} alt={preview.name} />
               <button aria-label={`Remove ${preview.name}`} onClick={() => removePreview(preview)}><AppIcon name={composerIcons.close} size="xs" /></button>
             </div>
+          ))}
+        </div>
+      ) : null}
+      {emojiPickerOpen ? (
+        <div className="composer-emoji-picker" role="menu" aria-label="Choose emoji">
+          {composerEmojiOptions.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => {
+                setBody((current) => `${current}${emoji}`);
+                setEmojiPickerOpen(false);
+              }}
+            >
+              {emoji}
+            </button>
           ))}
         </div>
       ) : null}
