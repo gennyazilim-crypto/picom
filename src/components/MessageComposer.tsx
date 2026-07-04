@@ -96,3 +96,4 @@ export function MessageComposer({ channel, onSendMessage, pushToast }: MessageCo
     </footer>
   );
 }
+
