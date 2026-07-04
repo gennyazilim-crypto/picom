@@ -14,10 +14,14 @@ type MessageListProps = {
 
 export function MessageList({ community, messages, onContextMenu, onOpenProfile, onOpenImage }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
+  const lastMessageId = messages[messages.length - 1]?.id;
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+    const frame = window.requestAnimationFrame(() => {
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [lastMessageId]);
 
   if (!messages.length) {
     return (

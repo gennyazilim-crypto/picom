@@ -13,8 +13,9 @@ export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
   const appendLocalMessage = useCallback(({ communityId, channelId, authorId, body, attachments }: AppendLocalMessageInput) => {
+    const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
-      id: `local-${Date.now()}`,
+      id: `local-${idSuffix}`,
       channelId,
       authorId,
       body,
