@@ -8,9 +8,10 @@ const sidebarIcons = mvpUiIconMap.communitySidebar;
 type UserMiniCardProps = {
   member: Member;
   onOpenSettings: () => void;
+  onLogout: () => void;
 };
 
-export function UserMiniCard({ member, onOpenSettings }: UserMiniCardProps) {
+export function UserMiniCard({ member, onOpenSettings, onLogout }: UserMiniCardProps) {
   return (
     <footer className="user-mini-card">
       <MemberAvatar member={member} size={38} />

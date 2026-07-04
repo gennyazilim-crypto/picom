@@ -11,10 +11,11 @@ type CommunitySidebarProps = {
   currentUser: Member;
   onSelectChannel: (channel: Channel) => void;
   onOpenSettings: () => void;
+  onLogout: () => void;
   onChannelContextMenu: (event: MouseEvent, channel: Channel) => void;
 };
 
-export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onOpenSettings, onChannelContextMenu }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onOpenSettings, onLogout, onChannelContextMenu }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -37,7 +38,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
         ))}
       </div>
 
-      <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} />
+      <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />
     </aside>
   );
 }
