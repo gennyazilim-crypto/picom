@@ -19,3 +19,6 @@ export const appConfig = Object.freeze({
     url: import.meta.env.VITE_LIVEKIT_URL ?? ""
   })
 });
+
+export const isMockMode = appConfig.dataSource === "mock";
+export const isSupabaseMode = appConfig.dataSource === "supabase";
