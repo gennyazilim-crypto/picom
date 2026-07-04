@@ -44,6 +44,16 @@ supabase db reset
 
 Supabase automatically applies migrations and then runs `supabase/seed.sql`.
 
+## Login troubleshooting
+
+If `owner@picom.local` returns invalid credentials in local Supabase mode, rerun the seed/reset workflow. The seed now refreshes the development password hash on conflict, so `PicomDev123!` is restored for local users.
+
+```powershell
+supabase db reset
+```
+
+If you are not using Supabase locally, keep `VITE_DATA_SOURCE=mock` so the desktop MVP can sign in without backend services.
+
 ## Manual verification
 
 1. Start local Supabase.
