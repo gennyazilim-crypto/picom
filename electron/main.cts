@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, shell } from "electron";
 import path from "node:path";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
@@ -93,6 +93,8 @@ async function createMainWindow(): Promise<void> {
     minWidth: ELECTRON_APP_CONFIG.window.minWidth,
     minHeight: ELECTRON_APP_CONFIG.window.minHeight,
     show: false,
+    frame: false,
+    autoHideMenuBar: true,
     title: ELECTRON_APP_CONFIG.name,
     backgroundColor: ELECTRON_APP_CONFIG.window.backgroundColor,
     webPreferences: {
@@ -105,6 +107,9 @@ async function createMainWindow(): Promise<void> {
       devTools: !app.isPackaged
     }
   });
+
+  mainWindow.setAutoHideMenuBar(true);
+  mainWindow.setMenuBarVisibility(false);
 
   configureWebContents(mainWindow);
 
@@ -126,6 +131,7 @@ async function createMainWindow(): Promise<void> {
 app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   registerIpcHandlers();
   void createMainWindow();
 
