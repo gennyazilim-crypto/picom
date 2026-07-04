@@ -30,6 +30,7 @@ const requiredMigrationPrefixes = [
   "20260704001500_profiles_rls",
   "20260704001600_communities_rls",
   "20260704001700_community_members_rls",
+  "20260704001800_channels_rls",
 ];
 
 function fail(message) {
