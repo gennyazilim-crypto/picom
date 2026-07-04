@@ -10,6 +10,10 @@ import { mvpUiIconMap } from "./iconRegistry";
 type ToastTone = "info" | "error" | "success";
 const composerIcons = mvpUiIconMap.messageComposer;
 
+function isFileDrag(dataTransfer: DataTransfer | null): boolean {
+  return Boolean(dataTransfer && Array.from(dataTransfer.types).includes("Files"));
+}
+
 type MessageComposerProps = {
   communityId: string;
   channel: Channel;
@@ -31,6 +35,21 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
 
   useEffect(() => () => {
     previewsRef.current.forEach((preview) => fileService.revoke(preview));
+  }, []);
+
+  useEffect(() => {
+    const preventWindowFileDrop = (event: DragEvent) => {
+      if (!isFileDrag(event.dataTransfer)) return;
+      event.preventDefault();
+    };
+
+    window.addEventListener("dragover", preventWindowFileDrop);
+    window.addEventListener("drop", preventWindowFileDrop);
+
+    return () => {
+      window.removeEventListener("dragover", preventWindowFileDrop);
+      window.removeEventListener("drop", preventWindowFileDrop);
+    };
   }, []);
 
   const addFiles = (files: FileList | File[]) => {
@@ -132,12 +151,24 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
   return (
     <footer
       className={`message-composer ${dragging ? "dragging" : ""}`}
-      onDragOver={(event) => {
+      aria-label="Message composer. Drop image files here to attach them."
+      onDragEnter={(event) => {
+        if (!isFileDrag(event.dataTransfer)) return;
         event.preventDefault();
         setDragging(true);
       }}
-      onDragLeave={() => setDragging(false)}
+      onDragOver={(event) => {
+        if (!isFileDrag(event.dataTransfer)) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(event) => {
+        const nextTarget = event.relatedTarget instanceof Node ? event.relatedTarget : null;
+        if (nextTarget && event.currentTarget.contains(nextTarget)) return;
+        setDragging(false);
+      }}
       onDrop={(event) => {
+        if (!isFileDrag(event.dataTransfer)) return;
         event.preventDefault();
         setDragging(false);
         addFiles(event.dataTransfer.files);
