@@ -20,6 +20,8 @@ declare global {
         | { ok: true; native: true; action: PicomWindowAction }
         | { ok: false; native: true; error: string }
       >;
+      isWindowMaximized?: () => Promise<boolean>;
+      onWindowMaximizeStateChanged?: (callback: (isMaximized: boolean) => void) => () => void;
     };
   }
 }

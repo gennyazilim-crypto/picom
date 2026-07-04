@@ -530,3 +530,32 @@ body{
 }
 
 .mini-action.danger:hover{background:color-mix(in srgb,var(--danger) 14%,var(--surface-hover));color:var(--danger)}
+
+/* Electron maximize/restore frame behavior: normal windows float, maximized windows fill the BrowserWindow. */
+.picom-root.is-maximized {
+  padding: 0;
+}
+
+.picom-root.is-maximized .desktop-app-shell {
+  border-radius: 0;
+  box-shadow: none;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+
+.picom-root.is-maximized .window-titlebar {
+  border-radius: 0;
+}
+
+.picom-root.is-maximized .desktop-frame {
+  border-radius: 0;
+  box-shadow: none;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.picom-root.is-maximized .desktop-size-warning {
+  border-radius: 0;
+}

@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import { IPC_CHANNELS, isIpcChannel } from "./ipcChannels.cjs";
 
 type WindowAction = "minimize" | "maximize" | "close";
+type MaximizeStateHandler = (isMaximized: boolean) => void;
 
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
@@ -46,6 +47,26 @@ const bridge = Object.freeze({
       | { ok: true; native: true; action: WindowAction }
       | { ok: false; native: true; error: string }
     >;
+  },
+  isWindowMaximized: async (): Promise<boolean> => {
+    const result = await invokeWhitelisted(IPC_CHANNELS.windowIsMaximized);
+
+    if (typeof result !== "object" || result === null || !("maximized" in result)) {
+      return false;
+    }
+
+    return Boolean((result as { maximized?: unknown }).maximized);
+  },
+  onWindowMaximizeStateChanged: (callback: MaximizeStateHandler) => {
+    const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+      callback(Boolean(value));
+    };
+
+    ipcRenderer.on(IPC_CHANNELS.windowMaximizeStateChanged, listener);
+
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.windowMaximizeStateChanged, listener);
+    };
   }
 });
 

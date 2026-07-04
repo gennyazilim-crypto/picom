@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import { windowService } from "../services/windowService";
 import { AppIcon } from "./AppIcon";
@@ -13,6 +14,25 @@ type WindowTitleBarProps = {
 const titleBarIcons = mvpUiIconMap.windowTitleBar;
 
 export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch }: WindowTitleBarProps) {
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void windowService.isMaximized().then((value) => {
+      if (mounted) {
+        setIsMaximized(value);
+      }
+    });
+
+    const unsubscribe = windowService.onMaximizeStateChanged(setIsMaximized);
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
   return (
     <header className="window-titlebar">
       <div className="window-brand">
@@ -34,7 +54,7 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch }: WindowTit
         <button className="window-control" aria-label="Minimize window" onClick={() => void windowService.run("minimize")}>
           <AppIcon name={titleBarIcons.minimize} size="sm" />
         </button>
-        <button className="window-control" aria-label="Maximize window" onClick={() => void windowService.run("maximize")}>
+        <button className="window-control" aria-label={isMaximized ? "Restore window" : "Maximize window"} onClick={() => void windowService.run("maximize")}>
           <AppIcon name={titleBarIcons.maximize} size="sm" />
         </button>
         <button className="window-control danger" aria-label="Close window" onClick={() => void windowService.run("close")}>

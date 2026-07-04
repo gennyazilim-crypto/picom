@@ -38,6 +38,14 @@ function openExternalSafely(url: string): void {
   shell.openExternal(url).catch(() => undefined);
 }
 
+function sendWindowMaximizeState(window: BrowserWindow): void {
+  if (window.isDestroyed()) {
+    return;
+  }
+
+  window.webContents.send(IPC_CHANNELS.windowMaximizeStateChanged, window.isMaximized() || window.isFullScreen());
+}
+
 function configureWebContents(window: BrowserWindow): void {
   window.webContents.setWindowOpenHandler(({ url }) => {
     openExternalSafely(url);
@@ -52,6 +60,16 @@ function configureWebContents(window: BrowserWindow): void {
     event.preventDefault();
     openExternalSafely(url);
   });
+}
+
+function registerWindowStateForwarding(window: BrowserWindow): void {
+  const forwardState = () => sendWindowMaximizeState(window);
+
+  window.on("maximize", forwardState);
+  window.on("unmaximize", forwardState);
+  window.on("enter-full-screen", forwardState);
+  window.on("leave-full-screen", forwardState);
+  window.webContents.on("did-finish-load", forwardState);
 }
 
 function registerIpcHandlers(): void {
@@ -84,6 +102,16 @@ function registerIpcHandlers(): void {
 
     return { ok: true, native: true, action } as const;
   });
+
+  ipcMain.handle(IPC_CHANNELS.windowIsMaximized, (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+
+    return {
+      ok: Boolean(window),
+      native: true,
+      maximized: window ? window.isMaximized() || window.isFullScreen() : false
+    } as const;
+  });
 }
 
 async function createMainWindow(): Promise<void> {
@@ -113,9 +141,13 @@ async function createMainWindow(): Promise<void> {
   mainWindow.setMenuBarVisibility(false);
 
   configureWebContents(mainWindow);
+  registerWindowStateForwarding(mainWindow);
 
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
+    if (mainWindow) {
+      sendWindowMaximizeState(mainWindow);
+    }
   });
 
   mainWindow.on("closed", () => {
