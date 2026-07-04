@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "npm run electron:dev",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
-    "preview": "vite preview --host 127.0.0.1",
-    "electron:build": "tsc -p tsconfig.electron.json",
-    "electron:dev": "npm run electron:build && concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
     "renderer:dev": "vite --host 127.0.0.1",
-    "web:dev": "vite --host 127.0.0.1"
+    "web:dev": "vite --host 127.0.0.1",
+    "electron:build": "tsc -p tsconfig.electron.json",
+    "electron:dev": "npm run electron:build && concurrently -k \"npm run renderer:dev\" \"wait-on http://127.0.0.1:5173 && electron .\"",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && npm run electron:build && vite build",
+    "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
