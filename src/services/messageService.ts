@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
+import { listMockMessageSummaries, listSupabaseMessageSummaries, type ListMessagesInput, type MessagePage } from "./messageListQuery";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
 
@@ -42,7 +43,8 @@ export type MessageServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
-  | "MESSAGE_SEND_FAILED";
+  | "MESSAGE_SEND_FAILED"
+  | "MESSAGE_LIST_FAILED";
 
 export type MessageServiceError = Readonly<{
   code: MessageServiceErrorCode;
@@ -107,6 +109,18 @@ function validateSendMessageInput(input: SendMessageInput): MessageServiceError 
   return null;
 }
 
+function validateListMessagesInput(input: ListMessagesInput): MessageServiceError | null {
+  if (!input.communityId.trim()) {
+    return { code: "VALIDATION_ERROR", message: "Community ID is required." };
+  }
+
+  if (!input.channelId.trim()) {
+    return { code: "VALIDATION_ERROR", message: "Channel ID is required." };
+  }
+
+  return null;
+}
+
 async function getSupabaseAuthorId(client: SupabaseClient<Database>, explicitAuthorId?: string): Promise<MessageServiceResult<string>> {
   if (explicitAuthorId?.trim()) {
     return { ok: true, data: explicitAuthorId.trim() };
@@ -122,6 +136,28 @@ async function getSupabaseAuthorId(client: SupabaseClient<Database>, explicitAut
 }
 
 export const messageService = {
+  async listMessages(input: ListMessagesInput): Promise<MessageServiceResult<MessagePage>> {
+    const validationError = validateListMessagesInput(input);
+    if (validationError) return { ok: false, error: validationError };
+
+    const dataSource = dataSourceService.getStatus();
+
+    if (dataSource.isMock) {
+      return { ok: true, data: listMockMessageSummaries(input) };
+    }
+
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+
+    const result = await listSupabaseMessageSummaries(configured.data, input);
+
+    if (result.error || !result.data) {
+      return messageError("MESSAGE_LIST_FAILED", "Could not load messages.");
+    }
+
+    return { ok: true, data: result.data };
+  },
+
   async sendMessage(input: SendMessageInput): Promise<MessageServiceResult<MessageSummary>> {
     const validationError = validateSendMessageInput(input);
     if (validationError) return { ok: false, error: validationError };
