@@ -29,6 +29,7 @@ const requiredMigrationPrefixes = [
   "20260704001400_profile_signup_backfill",
   "20260704001500_profiles_rls",
   "20260704001600_communities_rls",
+  "20260704001700_community_members_rls",
 ];
 
 function fail(message) {
