@@ -26,6 +26,7 @@ const requiredMigrationPrefixes = [
   "20260704001100_read_states_schema",
   "20260704001200_chat_query_indexes",
   "20260704001300_auth_profile_trigger",
+  "20260704001400_profile_signup_backfill",
 ];
 
 function fail(message) {
