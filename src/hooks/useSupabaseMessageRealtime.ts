@@ -53,7 +53,15 @@ export function useSupabaseMessageRealtime({
         { event: "DELETE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
           const oldRow = payload.old as Partial<MessageRow>;
-          if (oldRow.id) onDelete(oldRow.id);
+          if (oldRow.id) {
+            onDelete(oldRow.id);
+            return;
+          }
+
+          loggingService.logWarn("Supabase message delete event missing id", {
+            communityId,
+            channelId,
+          });
         },
       )
       .subscribe((statusValue) => {
