@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { listMockMessageSummaries, listSupabaseMessageSummaries, type ListMessagesInput, type MessagePage } from "./messageListQuery";
+import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutation";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
 
@@ -166,23 +166,7 @@ export const messageService = {
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
-      const now = new Date().toISOString();
-      const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-      return {
-        ok: true,
-        data: {
-          id: `mock-message-${idSuffix}`,
-          communityId: input.communityId,
-          channelId: input.channelId,
-          authorId: input.authorId ?? currentUserId,
-          body,
-          clientMessageId: input.clientMessageId ?? null,
-          createdAt: now,
-          editedAt: null,
-          deletedAt: null,
-        },
-      };
+      return { ok: true, data: createMockSentMessage(input, body) };
     }
 
     const configured = getConfiguredSupabaseClient();
@@ -191,22 +175,12 @@ export const messageService = {
     const author = await getSupabaseAuthorId(configured.data, input.authorId);
     if (!author.ok) return author;
 
-    const { data, error } = await configured.data
-      .from("messages")
-      .insert({
-        community_id: input.communityId,
-        channel_id: input.channelId,
-        author_id: author.data,
-        body,
-        client_message_id: input.clientMessageId ?? null,
-      })
-      .select(MESSAGE_SELECT)
-      .single();
+    const { data, error } = await sendSupabaseMessage(configured.data, input, author.data, body);
 
     if (error || !data) {
       return messageError("MESSAGE_SEND_FAILED", "Could not send message.");
     }
 
-    return { ok: true, data: mapMessageRow(data) };
+    return { ok: true, data };
   },
 };

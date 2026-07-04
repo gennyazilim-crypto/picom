@@ -22,6 +22,7 @@ import { clipboardService } from "./services/clipboardService";
 import { settingsService } from "./services/settingsService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
+import { messageService } from "./services/messageService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
@@ -365,12 +366,28 @@ export function App() {
     openContextMenu(event.clientX, event.clientY, items);
   };
 
-  const sendMessage = (body: string, attachments?: Attachment[]) => {
-    appendLocalMessage({
+  const sendMessage = async (body: string, attachments?: Attachment[]) => {
+    const clientMessageId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const result = await messageService.sendMessage({
       communityId: activeCommunity.id,
       channelId: activeChannel.id,
       authorId: currentUser.userId,
       body,
+      clientMessageId,
+    });
+
+    if (!result.ok) {
+      pushToast(result.error.message, "error");
+      return;
+    }
+
+    appendLocalMessage({
+      id: result.data.id,
+      communityId: activeCommunity.id,
+      channelId: activeChannel.id,
+      authorId: result.data.authorId,
+      body: result.data.body,
+      createdAt: result.data.createdAt,
       attachments,
     });
   };
