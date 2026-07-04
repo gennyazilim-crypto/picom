@@ -8,7 +8,7 @@
                     "renderer:dev":  "vite --host 127.0.0.1",
                     "web:dev":  "vite --host 127.0.0.1",
                     "electron:build":  "tsc -p tsconfig.electron.json",
-                    "electron:dev":  "npm run electron:build \u0026\u0026 concurrently -k \"npm run renderer:dev\" \"wait-on http://127.0.0.1:5173 \u0026\u0026 electron .\"",
+                    "electron:dev":  "npm run electron:build && node scripts/electron-dev.mjs",
                     "typecheck":  "tsc --noEmit",
                     "build":  "npm run typecheck \u0026\u0026 npm run electron:build \u0026\u0026 vite build",
                     "preview":  "vite preview --host 127.0.0.1",
