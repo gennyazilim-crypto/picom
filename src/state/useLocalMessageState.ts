@@ -34,5 +34,10 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return message;
   }, []);
 
-  return { communities, appendLocalMessage };
+  const addCommunity = useCallback((community: Community) => {
+    setCommunities((current) => current.some((item) => item.id === community.id) ? current : [...current, community]);
+    return community;
+  }, []);
+
+  return { communities, appendLocalMessage, addCommunity };
 }

@@ -40,7 +40,7 @@ export function ServerRail({ communities, activeCommunityId, onSelectCommunity, 
             {community.id === "aurora" ? <i className="unread-dot" /> : null}
           </button>
         ))}
-        <button className="server-button utility" aria-label="Add community" onClick={() => onUtilityAction?.("Create community placeholder opened.")}>
+        <button className="server-button utility" aria-label="Add community" onClick={() => onUtilityAction?.("create-community")}>
           <AppIcon name={railIcons.addCommunity} size="lg" />
         </button>
         <button className="server-button utility" aria-label="Discover communities placeholder" onClick={() => onUtilityAction?.("Discover communities placeholder opened.")}>

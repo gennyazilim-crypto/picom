@@ -559,3 +559,17 @@ body{
 .picom-root.is-maximized .desktop-size-warning {
   border-radius: 0;
 }
+
+/* Task 145: compact desktop create-community flow. */
+.create-community-modal{
+  position:relative;
+  width:min(520px,calc(100vw - 96px));
+  display:grid;
+  gap:14px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  padding:26px;
+}
+.create-community-modal h2{margin:4px 44px 0 0;font-size:24px;letter-spacing:-.04em}.create-community-modal p{margin:0;color:var(--text-secondary);line-height:1.55}.create-community-modal textarea{width:100%;resize:none;border:1px solid var(--border);border-radius:14px;background:var(--surface-soft);color:var(--text-primary);padding:12px 13px;outline:0}.create-community-modal textarea:focus{border-color:color-mix(in srgb,var(--picom-aqua) 58%,var(--border));box-shadow:var(--focus-ring)}.optional-label{color:var(--text-muted);font-weight:700}.modal-actions-row{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}.secondary-action{height:36px;border:1px solid var(--border);border-radius:12px;background:var(--surface-soft);color:var(--text-secondary);padding:0 14px;cursor:pointer}.secondary-action:hover{background:var(--surface-hover);color:var(--text-primary)}.secondary-action:disabled{opacity:.55;cursor:not-allowed}
