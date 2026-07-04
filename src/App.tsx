@@ -787,12 +787,12 @@ export function App() {
     setReplyToMessageId(null);
   };
 
-  const canCurrentUserModerate = useCallback(() => {
+  const canCurrentUserModerate = () => {
     const role = activeCommunity.roles.find((candidate) => candidate.id === currentUser.roleId);
     return (role?.level ?? 0) >= 60;
-  }, [activeCommunity.roles, currentUser.roleId]);
+  };
 
-  const handleSaveMessageEdit = useCallback((message: Message, body: string) => {
+  const handleSaveMessageEdit = (message: Message, body: string) => {
     if (message.authorId !== currentUser.userId || message.deletedAt) {
       pushToast("You can only edit your own active messages.", "error");
       return;
@@ -805,9 +805,9 @@ export function App() {
       body,
     });
     setEditingMessageId(null);
-  }, [activeChannel.id, activeCommunity.id, currentUser.userId, editLocalMessage, pushToast]);
+  };
 
-  const handleDeleteMessage = useCallback((message: Message) => {
+  const handleDeleteMessage = (message: Message) => {
     const ownMessage = message.authorId === currentUser.userId;
 
     if (!ownMessage && !canCurrentUserModerate()) {
@@ -829,16 +829,16 @@ export function App() {
     if (replyToMessageId === message.id) {
       setReplyToMessageId(null);
     }
-  }, [activeChannel.id, activeCommunity.id, canCurrentUserModerate, currentUser.userId, deleteLocalMessage, pushToast, replyToMessageId]);
+  };
 
-  const handleToggleMessageReaction = useCallback((message: Message, emoji: string) => {
+  const handleToggleMessageReaction = (message: Message, emoji: string) => {
     toggleLocalReaction({
       communityId: activeCommunity.id,
       channelId: activeChannel.id,
       id: message.id,
       emoji,
     });
-  }, [activeChannel.id, activeCommunity.id, toggleLocalReaction]);
+  };
 
   const handleCreateCommunity = async (name: string, description?: string) => {
     const result = await communityService.createCommunity({ name, description });
