@@ -14,6 +14,7 @@ export type UploadImageAttachmentInput = Readonly<{
 
 export type UploadedAttachmentSummary = Readonly<{
   bucket: typeof MESSAGE_ATTACHMENTS_BUCKET;
+  userId: string;
   storagePath: string;
   fileName: string;
   mimeType: string;
@@ -110,6 +111,7 @@ export const uploadService = {
         ok: true,
         data: {
           bucket: MESSAGE_ATTACHMENTS_BUCKET,
+          userId,
           storagePath,
           fileName: sanitizeUploadFileName(input.file.name),
           mimeType: input.file.type,
@@ -148,6 +150,7 @@ export const uploadService = {
       ok: true,
       data: {
         bucket: MESSAGE_ATTACHMENTS_BUCKET,
+        userId,
         storagePath,
         fileName: sanitizeUploadFileName(input.file.name),
         mimeType: input.file.type,

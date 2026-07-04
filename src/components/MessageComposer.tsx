@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Attachment, Channel } from "../types/community";
+import { attachmentService } from "../services/attachmentService";
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
 import { uploadService } from "../services/uploadService";
 import { AppIcon } from "./AppIcon";
@@ -64,6 +65,7 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
     if ((!value && !previews.length) || sending) return;
 
     setSending(true);
+    const persistedAttachmentIds = new Map<string, string>();
 
     for (const preview of previews) {
       const result = await uploadService.uploadImageAttachment({
@@ -77,10 +79,19 @@ export function MessageComposer({ communityId, channel, onSendMessage, pushToast
         setSending(false);
         return;
       }
+
+      const metadata = await attachmentService.createPendingAttachmentMetadata({ upload: result.data });
+      if (!metadata.ok) {
+        pushToast(metadata.error.message, "error");
+        setSending(false);
+        return;
+      }
+
+      persistedAttachmentIds.set(preview.id, metadata.data.id);
     }
 
     const attachments: Attachment[] = previews.map((preview) => ({
-      id: preview.id,
+      id: persistedAttachmentIds.get(preview.id) ?? preview.id,
       type: "image",
       url: preview.url,
       alt: preview.name,
