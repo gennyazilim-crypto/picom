@@ -87,17 +87,9 @@ The committed placeholder keeps builds stable before Supabase CLI is available. 
 
 ## RLS model
 
-All public MVP tables have RLS enabled in the baseline migration. Policies are intentionally not completed in this phase unless a task explicitly adds them.
+All public MVP tables have RLS enabled. Current policies cover profiles, communities, community members, channels, messages, attachments, and reactions.
 
-Expected future policy model:
-
-- Users can read their own profile and public profile fields needed for chat.
-- Community members can read communities they belong to.
-- Channel reads are limited by community membership and private channel rules.
-- Message reads follow channel visibility.
-- Message writes require membership and `sendMessages` permission.
-- Attachment reads follow message/channel visibility.
-- Read state rows are private to the current user.
+See `docs/rls-policies.md` for the current policy matrix, helper functions, security notes, and manual verification steps.
 
 Never bypass RLS from renderer/client code. Privileged operations must use trusted server-side code or Supabase Edge Functions when justified.
 
@@ -136,3 +128,4 @@ The schema is prepared for Supabase Realtime on chat tables, but publication/pol
 - `docs/chat-query-indexes.md`
 - `docs/supabase-seed-data.md`
 - `docs/supabase-type-generation.md`
+- `docs/rls-policies.md`
