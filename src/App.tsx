@@ -156,6 +156,7 @@ export function App() {
     upsertLocalMessage,
     updateLocalMessage,
     removeLocalMessage,
+    clearChannelUnread,
     addCommunity,
     addChannel,
     replaceCommunities,
@@ -323,6 +324,10 @@ export function App() {
     document.documentElement.dataset.theme = theme;
     settingsService.updateSettings({ theme });
   }, [theme]);
+
+  useEffect(() => {
+    clearChannelUnread({ communityId: activeCommunity.id, channelId: activeChannel.id });
+  }, [activeChannel.id, activeCommunity.id, clearChannelUnread]);
 
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
@@ -568,6 +573,7 @@ export function App() {
             run: () => {
               switchCommunity(community.id);
               setActiveChannelId(channel.id);
+              clearChannelUnread({ communityId: community.id, channelId: channel.id });
               closePalette();
             },
           }),
@@ -596,6 +602,7 @@ export function App() {
           run: () => {
             switchCommunity(community.id);
             setActiveChannelId(message.channelId);
+            clearChannelUnread({ communityId: community.id, channelId: message.channelId });
             closePalette();
             pushToast("Message channel opened. Highlight placeholder is pending.", "info");
           },
@@ -606,7 +613,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [closePalette, communities, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
+  }, [clearChannelUnread, closePalette, communities, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
   if (!authReady || !authSession) {
     return (
@@ -722,6 +729,7 @@ export function App() {
     });
 
     setActiveChannelId(channel.id);
+    clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
     setCreateChannelCategoryId(null);
     pushToast(`#${channel.name} created.`, "success");
   };
@@ -754,7 +762,10 @@ export function App() {
             community={displayedActiveCommunity}
             activeChannelId={activeChannel.id}
             currentUser={displayedCurrentUser}
-            onSelectChannel={(channel) => setActiveChannelId(channel.id)}
+            onSelectChannel={(channel) => {
+              setActiveChannelId(channel.id);
+              clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
+            }}
             onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
             onOpenSettings={openSettings}
             onLogout={handleLogout}

@@ -32,8 +32,40 @@ type RemoveLocalMessageInput = {
   id: string;
 };
 
+type ChannelUnreadInput = {
+  communityId: string;
+  channelId: string;
+  mentionCount?: number;
+};
+
 function isSameMessage(message: Message, id: string, clientMessageId?: string | null): boolean {
   return message.id === id || Boolean(clientMessageId && message.clientMessageId === clientMessageId);
+}
+
+function updateChannelUnreadState(
+  communities: Community[],
+  { communityId, channelId, mentionCount }: ChannelUnreadInput,
+  unread: boolean,
+): Community[] {
+  return communities.map((community) => {
+    if (community.id !== communityId) return community;
+
+    return {
+      ...community,
+      categories: community.categories.map((category) => ({
+        ...category,
+        channels: category.channels.map((channel) =>
+          channel.id === channelId
+            ? {
+                ...channel,
+                unread,
+                mentions: unread ? mentionCount ?? channel.mentions ?? 0 : 0,
+              }
+            : channel,
+        ),
+      })),
+    };
+  });
 }
 
 type AddLocalChannelInput = {
@@ -159,6 +191,14 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
+  const markChannelUnread = useCallback((input: ChannelUnreadInput) => {
+    setCommunities((current) => updateChannelUnreadState(current, input, true));
+  }, []);
+
+  const clearChannelUnread = useCallback((input: ChannelUnreadInput) => {
+    setCommunities((current) => updateChannelUnreadState(current, input, false));
+  }, []);
+
   const addCommunity = useCallback((community: Community) => {
     setCommunities((current) => current.some((item) => item.id === community.id) ? current : [...current, community]);
     return community;
@@ -235,6 +275,8 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     upsertLocalMessage,
     updateLocalMessage,
     removeLocalMessage,
+    markChannelUnread,
+    clearChannelUnread,
     addCommunity,
     addChannel,
     replaceCommunities,
