@@ -1,9 +1,14 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dataSourceService } from "../services/dataSourceService";
 import { loggingService } from "../services/loggingService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../services/supabase/supabaseClient";
-import { realtimeChannelNames, shouldThrottleRealtimeSend } from "../services/supabase/realtimeService";
+import {
+  mapRealtimeSubscriptionStatus,
+  realtimeChannelNames,
+  shouldThrottleRealtimeSend,
+  type RealtimeConnectionStatus,
+} from "../services/supabase/realtimeService";
 
 const TYPING_TTL_MS = 4000;
 
@@ -17,6 +22,7 @@ type TypingPayload = Readonly<{
   userId?: unknown;
   displayName?: unknown;
   isTyping?: unknown;
+  sentAt?: unknown;
 }>;
 
 type UseSupabaseTypingBroadcastInput = Readonly<{
@@ -29,6 +35,7 @@ type UseSupabaseTypingBroadcastInput = Readonly<{
 
 type UseSupabaseTypingBroadcastResult = Readonly<{
   typingNames: string[];
+  connectionStatus: RealtimeConnectionStatus;
   sendTypingStart: () => void;
   sendTypingStop: () => void;
 }>;
@@ -53,21 +60,34 @@ export function useSupabaseTypingBroadcast({
   displayName,
 }: UseSupabaseTypingBroadcastInput): UseSupabaseTypingBroadcastResult {
   const [typingUsers, setTypingUsers] = useState<Record<string, TypingUser>>({});
+  const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("idle");
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const subscribedRef = useRef(false);
   const lastTypingStartAtRef = useRef(0);
 
   useEffect(() => {
     setTypingUsers({});
+    setConnectionStatus("idle");
+    subscribedRef.current = false;
     lastTypingStartAtRef.current = 0;
 
     if (!enabled || !dataSourceService.getStatus().isSupabase) return;
 
     const status = getSupabaseClientStatus();
-    if (!status.configured) return;
+    if (!status.configured) {
+      setConnectionStatus("disconnected");
+      return;
+    }
 
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      setConnectionStatus("disconnected");
+      return;
+    }
 
+    setConnectionStatus("connecting");
+    let hasConnected = false;
+    let canceled = false;
     const channel = client
       .channel(realtimeChannelNames.typing(communityId, channelId), {
         config: { broadcast: { self: false } },
@@ -93,9 +113,19 @@ export function useSupabaseTypingBroadcast({
         });
       })
       .subscribe((statusValue) => {
-        if (statusValue === "CHANNEL_ERROR" || statusValue === "TIMED_OUT") {
+        if (canceled) return;
+
+        const nextStatus = mapRealtimeSubscriptionStatus(statusValue, hasConnected);
+        if (nextStatus) {
+          hasConnected = nextStatus === "connected" || hasConnected;
+          subscribedRef.current = nextStatus === "connected";
+          setConnectionStatus(nextStatus);
+        }
+
+        if (statusValue === "CHANNEL_ERROR" || statusValue === "TIMED_OUT" || statusValue === "CLOSED") {
           loggingService.logWarn("Supabase typing broadcast status", {
             status: statusValue,
+            nextStatus,
             communityId,
             channelId,
           });
@@ -110,26 +140,30 @@ export function useSupabaseTypingBroadcast({
     }, 1500);
 
     return () => {
+      canceled = true;
       window.clearInterval(cleanupTimer);
+      if (subscribedRef.current) {
+        void channel.send({
+          type: "broadcast",
+          event: "typing",
+          payload: {
+            userId: currentUserId,
+            displayName,
+            isTyping: false,
+            sentAt: new Date().toISOString(),
+          },
+        });
+      }
       channelRef.current = null;
+      subscribedRef.current = false;
       lastTypingStartAtRef.current = 0;
-      void channel.send({
-        type: "broadcast",
-        event: "typing",
-        payload: {
-          userId: currentUserId,
-          displayName,
-          isTyping: false,
-          sentAt: new Date().toISOString(),
-        },
-      });
       void client.removeChannel(channel);
     };
   }, [channelId, communityId, currentUserId, displayName, enabled]);
 
   const sendTyping = useCallback((isTyping: boolean) => {
     const channel = channelRef.current;
-    if (!channel) return;
+    if (!channel || !subscribedRef.current) return;
 
     const now = Date.now();
     if (isTyping && shouldThrottleRealtimeSend(lastTypingStartAtRef.current, now)) return;
@@ -147,8 +181,14 @@ export function useSupabaseTypingBroadcast({
     });
   }, [currentUserId, displayName]);
 
+  const typingNames = useMemo(
+    () => Object.values(typingUsers).map((user) => user.displayName).sort((left, right) => left.localeCompare(right)),
+    [typingUsers],
+  );
+
   return {
-    typingNames: Object.values(typingUsers).map((user) => user.displayName),
+    typingNames,
+    connectionStatus,
     sendTypingStart: () => sendTyping(true),
     sendTypingStop: () => sendTyping(false),
   };

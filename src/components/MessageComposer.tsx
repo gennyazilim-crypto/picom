@@ -48,29 +48,51 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   const previewsRef = useRef<LocalAttachmentPreview[]>([]);
   const lastTypingSentAtRef = useRef(0);
   const typingStopTimerRef = useRef<number | null>(null);
+  const onTypingStopRef = useRef(onTypingStop);
+  const previousChannelIdRef = useRef(channel.id);
 
   useEffect(() => {
     previewsRef.current = previews;
   }, [previews]);
 
+  useEffect(() => {
+    onTypingStopRef.current = onTypingStop;
+  }, [onTypingStop]);
+
+  const stopTypingNow = () => {
+    if (typingStopTimerRef.current !== null) {
+      window.clearTimeout(typingStopTimerRef.current);
+      typingStopTimerRef.current = null;
+    }
+
+    lastTypingSentAtRef.current = 0;
+    onTypingStopRef.current();
+  };
+
   useEffect(() => () => {
     previewsRef.current.forEach((preview) => fileService.revoke(preview));
-    if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
-    onTypingStop();
+    stopTypingNow();
   }, []);
 
+  useEffect(() => {
+    if (previousChannelIdRef.current === channel.id) return;
+
+    previousChannelIdRef.current = channel.id;
+    stopTypingNow();
+  }, [channel.id]);
+
   const scheduleTypingStop = () => {
-    if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
+    if (typingStopTimerRef.current !== null) window.clearTimeout(typingStopTimerRef.current);
 
     typingStopTimerRef.current = window.setTimeout(() => {
-      onTypingStop();
+      onTypingStopRef.current();
       typingStopTimerRef.current = null;
     }, 2400);
   };
 
   const notifyTyping = (value: string) => {
     if (!value.trim()) {
-      onTypingStop();
+      stopTypingNow();
       return;
     }
 
@@ -189,7 +211,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     });
 
     await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments, replyToMessage?.id ?? null);
-    onTypingStop();
+    stopTypingNow();
     onCancelReply();
     setBody("");
     setPreviews([]);
@@ -257,7 +279,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
             setBody(event.target.value);
             notifyTyping(event.target.value);
           }}
-          onBlur={onTypingStop}
+          onBlur={stopTypingNow}
           onPaste={(event) => {
             const files = getClipboardFiles(event.clipboardData);
             if (!files.length) return;
