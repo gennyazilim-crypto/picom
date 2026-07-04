@@ -19,6 +19,7 @@ import { RegisterScreen } from "./components/RegisterScreen";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { clipboardService } from "./services/clipboardService";
+import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
@@ -144,7 +145,7 @@ export function App() {
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
-  const { communities, appendLocalMessage, addCommunity, addChannel } = useLocalMessageState(mockCommunities);
+  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities } = useLocalMessageState(mockCommunities);
   const {
     activeCommunityId,
     activeCommunity,
@@ -190,11 +191,40 @@ export function App() {
   } = useProtectedDesktopSession(pushToast);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? activeCommunity.members[0];
+  const supabaseCommunitiesLoadedRef = useRef(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     settingsService.updateSettings({ theme });
   }, [theme]);
+
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
+
+    let canceled = false;
+    supabaseCommunitiesLoadedRef.current = true;
+
+    communityService.listCommunities().then((result) => {
+      if (canceled) return;
+
+      if (!result.ok) {
+        supabaseCommunitiesLoadedRef.current = false;
+        pushToast(result.error.message, "error");
+        return;
+      }
+
+      const nextCommunities = result.data.map(createCommunityFromSummary);
+      replaceCommunities(nextCommunities);
+
+      if (nextCommunities[0]) {
+        switchCommunity(nextCommunities[0].id);
+      }
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [authSession, pushToast, replaceCommunities, switchCommunity]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

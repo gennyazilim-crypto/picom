@@ -52,6 +52,11 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return community;
   }, []);
 
+  const replaceCommunities = useCallback((nextCommunities: Community[]) => {
+    setCommunities(nextCommunities);
+    return nextCommunities;
+  }, []);
+
   const addChannel = useCallback((input: AddLocalChannelInput) => {
     const channel: Channel = {
       id: input.id,
@@ -84,5 +89,5 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return channel;
   }, []);
 
-  return { communities, appendLocalMessage, addCommunity, addChannel };
+  return { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities };
 }
