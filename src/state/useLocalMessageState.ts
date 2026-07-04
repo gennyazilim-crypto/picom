@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { Attachment, Channel, ChannelId, ChannelType, Community, Message, UserId } from "../types/community";
+import type { Attachment, Channel, ChannelCategory, ChannelId, ChannelType, Community, Message, UserId } from "../types/community";
 
 type AppendLocalMessageInput = {
   id?: string;
@@ -57,6 +57,12 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return nextCommunities;
   }, []);
 
+  const replaceCommunityCategories = useCallback((communityId: string, categories: ChannelCategory[]) => {
+    setCommunities((current) =>
+      current.map((community) => community.id === communityId ? { ...community, categories } : community),
+    );
+  }, []);
+
   const addChannel = useCallback((input: AddLocalChannelInput) => {
     const channel: Channel = {
       id: input.id,
@@ -89,5 +95,5 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return channel;
   }, []);
 
-  return { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities };
+  return { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories };
 }

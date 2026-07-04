@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { currentUserId, mockCommunities } from "./data/mockCommunities";
-import type { Attachment, Community, Member } from "./types/community";
+import type { Attachment, ChannelCategory, Community, Member } from "./types/community";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
@@ -23,6 +23,7 @@ import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
+import { channelCategoryService } from "./services/channelCategoryService";
 import { messageService } from "./services/messageService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
@@ -145,7 +146,7 @@ export function App() {
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
-  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities } = useLocalMessageState(mockCommunities);
+  const { communities, appendLocalMessage, addCommunity, addChannel, replaceCommunities, replaceCommunityCategories } = useLocalMessageState(mockCommunities);
   const {
     activeCommunityId,
     activeCommunity,
@@ -192,6 +193,7 @@ export function App() {
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? activeCommunity.members[0];
   const supabaseCommunitiesLoadedRef = useRef(false);
+  const supabaseSidebarLoadedRef = useRef(new Set<string>());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -225,6 +227,69 @@ export function App() {
       canceled = true;
     };
   }, [authSession, pushToast, replaceCommunities, switchCommunity]);
+
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
+
+    let canceled = false;
+    supabaseSidebarLoadedRef.current.add(activeCommunity.id);
+
+    Promise.all([
+      channelCategoryService.listCategories(activeCommunity.id),
+      channelService.listChannels(activeCommunity.id),
+    ]).then(([categoryResult, channelResult]) => {
+      if (canceled) return;
+
+      if (!categoryResult.ok) {
+        supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+        pushToast(categoryResult.error.message, "error");
+        return;
+      }
+
+      if (!channelResult.ok) {
+        supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+        pushToast(channelResult.error.message, "error");
+        return;
+      }
+
+      const fallbackCategoryId = `${activeCommunity.id}-channels`;
+      const nextCategories: ChannelCategory[] = (categoryResult.data.length ? categoryResult.data : [
+        { id: fallbackCategoryId, communityId: activeCommunity.id, name: "Channels", position: 0, createdAt: null, updatedAt: null },
+      ]).map((category) => ({
+        id: category.id,
+        name: category.name,
+        position: category.position,
+        channels: [],
+      }));
+      const categoryById = new Map(nextCategories.map((category) => [category.id, category]));
+      const defaultCategory = nextCategories[0];
+
+      channelResult.data.forEach((channel) => {
+        const targetCategory = categoryById.get(channel.categoryId ?? "") ?? defaultCategory;
+        if (!targetCategory) return;
+
+        targetCategory.channels.push({
+          id: channel.id,
+          name: channel.name,
+          type: channel.type,
+          topic: channel.topic ?? undefined,
+          isPrivate: channel.isPrivate,
+          categoryId: targetCategory.id,
+          position: channel.position,
+        });
+      });
+
+      nextCategories.forEach((category) => {
+        category.channels.sort((left, right) => (left.position ?? 0) - (right.position ?? 0) || left.name.localeCompare(right.name));
+      });
+
+      replaceCommunityCategories(activeCommunity.id, nextCategories);
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [activeCommunity.id, authSession, pushToast, replaceCommunityCategories]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
