@@ -24,6 +24,7 @@ import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
+import { ProfileView } from "./components/ProfileView";
 import { clipboardService } from "./services/clipboardService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
@@ -52,7 +53,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "mentionFeed";
+type ActiveView = "community" | "mentionFeed" | "profile";
 
 type CommandPaletteProps = {
   communities: Community[];
@@ -160,6 +161,8 @@ export function App() {
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
   const [mentionTab, setMentionTab] = useState<MentionFeedTab>("feed");
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
+  const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
   const {
@@ -332,6 +335,10 @@ export function App() {
     };
   }, [activeCommunity, presenceChannel.onlineUserIds]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
+  const selectedProfileMember = useMemo(() => {
+    if (!profileUserId) return null;
+    return communities.flatMap((community) => community.members).find((member) => member.userId === profileUserId) ?? null;
+  }, [communities, profileUserId]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -639,6 +646,14 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, switchCommunity]);
 
+  const toggleFollowUser = useCallback((userId: string) => {
+    if (userId === currentUserId) return;
+
+    setFollowedUserIds((current) =>
+      current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId],
+    );
+  }, []);
+
   const toggleMentionReaction = useCallback((id: string) => {
     setMentionItems((current) =>
       current.map((item) => {
@@ -676,6 +691,20 @@ export function App() {
     setMentionItems((current) => current.map((candidate) => (candidate.id === item.id ? { ...candidate, isUnread: false } : candidate)));
     closeTransientOverlays();
     console.info("[Picom mention feed] Message highlight placeholder prepared.", { messageId: item.messageId });
+  }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
+
+  const openProfilePage = useCallback((member: Member) => {
+    setProfileUserId(member.userId);
+    setActiveView("profile");
+    closeTransientOverlays();
+  }, [closeTransientOverlays]);
+
+  const openProfileActivity = useCallback((activity: { community: Community; channel: { id: string }; message: { id: string } }) => {
+    setActiveView("community");
+    switchCommunity(activity.community.id, activity.channel.id);
+    clearChannelUnread({ communityId: activity.community.id, channelId: activity.channel.id });
+    closeTransientOverlays();
+    console.info("[Picom profile] Activity highlight placeholder prepared.", { messageId: activity.message.id });
   }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
 
   if (!authReady || !authSession) {
@@ -791,8 +820,8 @@ export function App() {
     pushToast(`#${channel.name} created.`, "success");
   };
 
-  const openProfile = (event: MouseEvent, member: Member) => {
-    showProfile(member, event.clientX + 10, event.clientY + 10);
+  const openProfile = (_event: MouseEvent, member: Member) => {
+    openProfilePage(member);
   };
 
   return (
@@ -822,7 +851,7 @@ export function App() {
               <MentionFeedMain
                 items={mentionItems}
                 communities={communities}
-                followedUserIds={currentUserFollowedUserIds}
+                followedUserIds={followedUserIds}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
                 onTabChange={setMentionTab}
@@ -854,12 +883,23 @@ export function App() {
                 items={mentionItems}
                 communities={communities}
                 popularUserIds={[...mockPopularUserIds]}
-                followedUserIds={currentUserFollowedUserIds}
+                followedUserIds={followedUserIds}
                 activeFilter={mentionQuickFilter}
                 onFilterChange={toggleMentionFilter}
                 onOpenProfile={openProfile}
               />
             </div>
+          ) : activeView === "profile" && selectedProfileMember ? (
+            <ProfileView
+              member={selectedProfileMember}
+              communities={communities}
+              currentUserId={currentUserId}
+              followedUserIds={followedUserIds}
+              onBack={() => setActiveView("community")}
+              onToggleFollow={toggleFollowUser}
+              onOpenActivity={openProfileActivity}
+              onOpenImage={openPreview}
+            />
           ) : (
             <>
               <CommunitySidebar
