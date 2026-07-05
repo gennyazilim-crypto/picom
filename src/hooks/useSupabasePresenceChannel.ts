@@ -74,11 +74,70 @@ export function useSupabasePresenceChannel({
   const [presenceByUserId, setPresenceByUserId] = useState<Record<string, PresencePayload>>({});
   const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("idle");
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const subscribedRef = useRef(false);
   const safeStatus = status === "offline" ? "online" : status;
+  const presencePayloadRef = useRef<PresencePayload>({
+    userId: currentUserId,
+    displayName: displayName.slice(0, 80),
+    avatarUrl: avatarUrl ?? null,
+    status: safeStatus,
+    lastSeen: new Date().toISOString(),
+  });
+
+  useEffect(() => {
+    presencePayloadRef.current = {
+      userId: currentUserId,
+      displayName: displayName.slice(0, 80),
+      avatarUrl: avatarUrl ?? null,
+      status: safeStatus,
+      lastSeen: new Date().toISOString(),
+    };
+
+    if (subscribedRef.current && channelRef.current) {
+      void channelRef.current.track(presencePayloadRef.current);
+    }
+  }, [avatarUrl, currentUserId, displayName, safeStatus]);
+
+  useEffect(() => {
+    if (!enabled || !dataSourceService.getStatus().isSupabase) return;
+
+    const markOffline = () => setConnectionStatus("disconnected");
+    const retrackPresence = () => {
+      setConnectionStatus((current) => (current === "disconnected" ? "reconnecting" : current));
+
+      if (subscribedRef.current && channelRef.current) {
+        presencePayloadRef.current = {
+          ...presencePayloadRef.current,
+          lastSeen: new Date().toISOString(),
+        };
+        void channelRef.current.track(presencePayloadRef.current);
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") retrackPresence();
+    };
+
+    window.addEventListener("offline", markOffline);
+    window.addEventListener("online", retrackPresence);
+    window.addEventListener("focus", retrackPresence);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setConnectionStatus("disconnected");
+    }
+
+    return () => {
+      window.removeEventListener("offline", markOffline);
+      window.removeEventListener("online", retrackPresence);
+      window.removeEventListener("focus", retrackPresence);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [enabled]);
 
   useEffect(() => {
     setPresenceByUserId({});
     setConnectionStatus("idle");
+    subscribedRef.current = false;
 
     if (!enabled || !dataSourceService.getStatus().isSupabase) return;
 
@@ -134,17 +193,16 @@ export function useSupabasePresenceChannel({
         const nextStatus = mapRealtimeSubscriptionStatus(statusValue, hasConnected);
         if (nextStatus) {
           hasConnected = nextStatus === "connected" || hasConnected;
+          subscribedRef.current = nextStatus === "connected";
           setConnectionStatus(nextStatus);
         }
 
         if (statusValue === "SUBSCRIBED") {
-          await channel.track({
-            userId: currentUserId,
-            displayName: displayName.slice(0, 80),
-            avatarUrl: avatarUrl ?? null,
-            status: safeStatus,
+          presencePayloadRef.current = {
+            ...presencePayloadRef.current,
             lastSeen: new Date().toISOString(),
-          } satisfies PresencePayload);
+          };
+          await channel.track(presencePayloadRef.current);
           return;
         }
 
@@ -162,11 +220,12 @@ export function useSupabasePresenceChannel({
     return () => {
       canceled = true;
       channelRef.current = null;
+      subscribedRef.current = false;
       setConnectionStatus("disconnected");
       void channel.untrack();
       void client.removeChannel(channel);
     };
-  }, [avatarUrl, communityId, currentUserId, displayName, enabled, safeStatus]);
+  }, [communityId, currentUserId, enabled]);
 
   const onlineUserIds = useMemo(() => Object.keys(presenceByUserId), [presenceByUserId]);
 
