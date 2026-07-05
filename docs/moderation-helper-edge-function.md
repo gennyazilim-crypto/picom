@@ -34,7 +34,10 @@ The function validates auth presence, `communityId`, `targetId`, and action type
 {
   "code": "MODERATION_HELPER_NOT_IMPLEMENTED",
   "message": "Moderation helper is prepared but not enabled yet.",
-  "applied": false
+  "details": {
+    "action": "delete_message",
+    "applied": false
+  }
 }
 ```
 
@@ -49,6 +52,7 @@ Moderation requires audited permission checks, durable moderation records, and c
 - Prevent moderation of owners by lower roles.
 - Write audit/moderation records inside the trusted boundary.
 - Soft-delete messages rather than hard-delete where possible.
+- Use typed `errorResponse()` bodies for rejected or placeholder actions.
 - Never store message content, tokens, passwords, or authorization headers in logs.
 
 ## Supabase configuration

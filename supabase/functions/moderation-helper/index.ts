@@ -1,6 +1,6 @@
 import { handleCorsPreflight } from "../_shared/cors.ts";
-import { jsonResponse, methodNotAllowed } from "../_shared/http.ts";
-import { requireSupabaseUser } from "../_shared/supabase-auth.ts";
+import { errorResponse, methodNotAllowed } from "../_shared/http.ts";
+import { requireSupabaseUser } from "../_shared/auth.ts";
 
 type ModerationAction = "delete_message" | "kick_member" | "ban_member" | "timeout_member";
 
@@ -40,24 +40,24 @@ Deno.serve(async (request: Request) => {
   const body = await readJsonBody(request);
 
   if (!body?.communityId || !uuidPattern.test(body.communityId)) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "A valid communityId is required." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "A valid communityId is required.", 400);
   }
 
   if (!body.targetId || typeof body.targetId !== "string" || body.targetId.trim().length < 3) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "A valid targetId is required." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "A valid targetId is required.", 400);
   }
 
   if (!isModerationAction(body.action)) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "A valid moderation action is required." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "A valid moderation action is required.", 400);
   }
 
-  return jsonResponse(
+  return errorResponse(
+    "MODERATION_HELPER_NOT_IMPLEMENTED",
+    "Moderation helper is prepared but not enabled yet.",
+    501,
     {
-      code: "MODERATION_HELPER_NOT_IMPLEMENTED",
-      message: "Moderation helper is prepared but not enabled yet.",
       action: body.action,
       applied: false,
     },
-    { status: 501 },
   );
 });

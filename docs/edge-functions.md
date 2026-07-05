@@ -80,6 +80,7 @@ When the Supabase CLI is available:
 supabase functions serve health --no-verify-jwt
 supabase functions serve livekit-token
 supabase functions serve accept-invite
+supabase functions serve moderation-helper
 ```
 
 Example protected invocation:
