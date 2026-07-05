@@ -101,11 +101,11 @@ export function VoiceRoomView({
               {snapshot.participants.map((participant) => {
                 const member = findMemberForParticipant(community, participant);
                 return (
-                  <div className="voice-participant-row" key={participant.identity}>
+                  <div className={`voice-participant-row ${participant.isSpeaking ? "is-speaking" : ""}`} key={participant.identity}>
                     <MemberAvatar member={member} label={participant.name} size={38} />
                     <span>
                       <strong>{member?.displayName ?? participant.name}</strong>
-                      <small>{participant.isLocal ? "You" : "Connected"}</small>
+                      <small>{participant.isSpeaking ? "Speaking" : participant.isLocal ? "You" : "Connected"}</small>
                     </span>
                   </div>
                 );

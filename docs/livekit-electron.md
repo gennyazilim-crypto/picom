@@ -78,6 +78,14 @@ Leaving a room must release local capture resources before disconnecting:
 - Undeafen resubscribes remote audio publications.
 - Deafen does not expose tokens, device IDs, or audio metadata.
 
+## Speaking indicator behavior
+
+- Speaking state is derived from LiveKit `ActiveSpeakersChanged` room events.
+- Picom stores only participant identities in renderer memory for the current room.
+- The UI highlights connected users while they are actively speaking.
+- Speaking state is cleared on participant disconnect, room disconnect, leave, and reconnect cleanup paths.
+- No audio samples, device identifiers, tokens, or secrets are logged or persisted.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.

@@ -20,6 +20,7 @@ export type VoiceParticipant = Readonly<{
   identity: string;
   name: string;
   isLocal: boolean;
+  isSpeaking: boolean;
 }>;
 
 export type VoiceServiceSnapshot = Readonly<{
@@ -45,6 +46,7 @@ export type VoiceServiceResult<T> =
 export type VoiceStateListener = (snapshot: VoiceServiceSnapshot) => void;
 
 let room: Room | null = null;
+let speakingIdentities = new Set<string>();
 let snapshot: VoiceServiceSnapshot = {
   status: "idle",
   roomName: null,
@@ -77,6 +79,7 @@ function mapParticipant(participant: RemoteParticipant): VoiceParticipant {
     identity: participant.identity,
     name: participant.name || participant.identity,
     isLocal: false,
+    isSpeaking: speakingIdentities.has(participant.identity),
   };
 }
 
@@ -88,6 +91,7 @@ function getParticipants(activeRoom: Room): VoiceParticipant[] {
       identity: activeRoom.localParticipant.identity,
       name: activeRoom.localParticipant.name || activeRoom.localParticipant.identity,
       isLocal: true,
+      isSpeaking: speakingIdentities.has(activeRoom.localParticipant.identity),
     },
     ...remoteParticipants,
   ];
@@ -116,6 +120,7 @@ function bindRoomEvents(activeRoom: Room): void {
       }
 
       if (state === ConnectionState.Disconnected) {
+        speakingIdentities = new Set<string>();
         emit({ status: "disconnected" });
       }
     })
@@ -123,10 +128,16 @@ function bindRoomEvents(activeRoom: Room): void {
       if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
       emit({ participants: getParticipants(activeRoom) });
     })
-    .on(RoomEvent.ParticipantDisconnected, () => {
+    .on(RoomEvent.ParticipantDisconnected, (participant) => {
+      speakingIdentities.delete(participant.identity);
+      emit({ participants: getParticipants(activeRoom) });
+    })
+    .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+      speakingIdentities = new Set(speakers.map((speaker) => speaker.identity));
       emit({ participants: getParticipants(activeRoom) });
     })
     .on(RoomEvent.Disconnected, () => {
+      speakingIdentities = new Set<string>();
       emit({ status: "disconnected", participants: [], roomName: null });
     });
 }
@@ -208,6 +219,7 @@ export const voiceService = {
       room.disconnect();
       room = null;
     }
+    speakingIdentities = new Set<string>();
 
     const token = await requestToken(request);
     if (!token.ok) return token;
@@ -221,6 +233,7 @@ export const voiceService = {
       room.disconnect();
       room = null;
     }
+    speakingIdentities = new Set<string>();
 
     emit({
       status: "disconnected",
