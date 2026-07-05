@@ -69,7 +69,8 @@
     "slash:commands:smoke": "node scripts/slash-commands-placeholder-smoke-test.mjs",
     "emoji:custom:smoke": "node scripts/custom-emoji-foundation-smoke-test.mjs",
     "stickers:placeholder:smoke": "node scripts/stickers-placeholder-smoke-test.mjs",
-    "polls:foundation:smoke": "node scripts/polls-feature-foundation-smoke-test.mjs"
+    "polls:foundation:smoke": "node scripts/polls-feature-foundation-smoke-test.mjs",
+    "events:foundation:smoke": "node scripts/community-events-foundation-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
