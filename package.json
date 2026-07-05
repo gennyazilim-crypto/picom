@@ -56,6 +56,8 @@
     "uploads:cleanup:smoke": "node scripts/orphaned-uploads-cleanup-smoke-test.mjs",
     "storage:check": "node scripts/check-storage.mjs",
     "health:check": "node scripts/check-health.mjs",
+    "admin:bootstrap:smoke": "node scripts/admin-bootstrap-smoke-test.mjs",
+    "create-admin-user": "node scripts/create-admin-user-placeholder.mjs",
     "admin:create:placeholder": "node scripts/create-admin-user-placeholder.mjs",
     "dev:reset-data": "node scripts/reset-dev-data.mjs",
     "email:smoke": "node scripts/email-service-smoke-test.mjs",

@@ -13,6 +13,7 @@ Picom's Admin Operations panel is a development-only placeholder for future app-
 ## Production requirement before enabling
 
 - Add app-admin authorization.
+- Bootstrap app-admin authorization through the guarded process in `docs/admin-user-bootstrap.md`.
 - Enforce backend authorization for every admin route.
 - Return only redacted operational summaries.
 - Keep admin tooling hidden from normal users.

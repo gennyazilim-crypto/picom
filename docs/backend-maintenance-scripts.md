@@ -11,6 +11,7 @@ Picom includes safe placeholders for common backend maintenance operations. Thes
 - `npm run storage:check`: read-only storage provider check placeholder.
 - `npm run health:check`: read-only backend health check placeholder.
 - `npm run admin:create:placeholder -- --email=admin@example.com --confirm-create-admin`: guarded admin bootstrap placeholder.
+- `npm run create-admin-user -- --email=admin@example.com --confirm-create-admin`: explicit admin bootstrap alias.
 - `npm run dev:reset-data -- --confirm-reset-dev-data`: guarded development reset placeholder.
 
 ## Safety rules
@@ -27,3 +28,4 @@ Picom includes safe placeholders for common backend maintenance operations. Thes
 - Restore only into a temporary or staging database until the restore drill is verified.
 - Add object storage integrity checks once the production provider is finalized.
 - Keep admin bootstrap behind an operator-only process.
+- Follow `docs/admin-user-bootstrap.md` before implementing a real privileged account creator.
