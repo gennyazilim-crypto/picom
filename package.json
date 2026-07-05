@@ -26,6 +26,7 @@
     "packaging:smoke": "node scripts/verify-electron-packaging.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "env:smoke": "node scripts/env-safety-smoke-test.mjs",
+    "qa:output:smoke": "node scripts/qa-output-smoke-test.mjs",
     "logs:smoke": "node scripts/logging-service-smoke-test.mjs",
     "diagnostics:smoke": "node scripts/diagnostics-redaction-smoke-test.mjs",
     "errors:smoke": "node scripts/error-codes-smoke-test.mjs",

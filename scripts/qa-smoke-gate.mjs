@@ -4,6 +4,7 @@ const npmCliPath = process.env.npm_execpath;
 const npmCommand = npmCliPath ? process.execPath : process.platform === "win32" ? "npm.cmd" : "npm";
 const checks = [
   ["run", "env:smoke"],
+  ["run", "qa:output:smoke"],
   ["run", "logs:smoke"],
   ["run", "diagnostics:smoke"],
   ["run", "errors:smoke"],
@@ -37,4 +38,4 @@ for (const args of checks) {
   }
 }
 
-console.log("\n✓ Picom QA smoke gate completed");
+console.log("\nOK Picom QA smoke gate completed");
