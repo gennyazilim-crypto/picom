@@ -8,6 +8,7 @@ import { statusPageService } from "../services/statusPageService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
 import { twoFactorAuthService } from "../services/twoFactorAuthService";
 import { accountDeletionService } from "../services/accountDeletionService";
+import { dataExportService } from "../services/dataExportService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
@@ -42,6 +43,7 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [twoFactorMessage, setTwoFactorMessage] = useState(twoFactorStatus.message);
   const [accountDeletionStatus, setAccountDeletionStatus] = useState(() => accountDeletionService.getStatus());
   const [accountDeletionConfirmText, setAccountDeletionConfirmText] = useState("");
+  const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -204,6 +206,31 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     setAccountDeletionConfirmText("");
     pushToast("Account deletion placeholder canceled.", "info");
   };
+  const requestDataExportPlaceholder = () => {
+    const result = dataExportService.requestExportPlaceholder();
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    setDataExportStatus(result.data);
+    pushToast(result.data.message, "success");
+  };
+  const downloadDataExportPlaceholder = () => {
+    const payload = dataExportService.buildPlaceholderPayload(profileDraft);
+    if (!payload.ok) {
+      pushToast(payload.message, "error");
+      return;
+    }
+
+    const result = dataExportService.downloadPlaceholderJson(payload.data);
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    pushToast(`Data export placeholder downloaded: ${result.data.fileName}.`, "success");
+  };
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -296,6 +323,15 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                 <button onClick={prepareTwoFactorPlaceholder}>Enable 2FA placeholder</button>
                 <button onClick={disableTwoFactorPlaceholder}>Disable 2FA placeholder</button>
                 <button onClick={regenerateRecoveryCodesPlaceholder}>Recovery codes placeholder</button>
+              </div>
+              <div className="settings-status-card" aria-label="User data export placeholder">
+                <span>Data export</span>
+                <strong>{dataExportStatus.status === "ready_placeholder" ? "Ready placeholder" : "Not requested"}</strong>
+                <small>{dataExportStatus.message}</small>
+              </div>
+              <div className="settings-actions-row">
+                <button onClick={requestDataExportPlaceholder}>Request data export placeholder</button>
+                <button onClick={downloadDataExportPlaceholder}>Download export JSON placeholder</button>
               </div>
               <div className="danger-zone-card" aria-label="Account deletion danger zone">
                 <span>Danger Zone</span>

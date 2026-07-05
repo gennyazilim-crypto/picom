@@ -55,6 +55,7 @@
     "auth:sessions:smoke": "node scripts/session-management-smoke-test.mjs",
     "auth:2fa:smoke": "node scripts/two-factor-placeholder-smoke-test.mjs",
     "auth:account-deletion:smoke": "node scripts/account-deletion-smoke-test.mjs",
+    "privacy:data-export:smoke": "node scripts/data-export-placeholder-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {

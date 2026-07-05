@@ -1958,3 +1958,4 @@ body{
 .danger-zone-card input{height:38px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text-primary);padding:0 12px;outline:0}
 .danger-zone-card input:focus{box-shadow:var(--focus-ring);border-color:color-mix(in srgb,var(--danger) 44%,var(--border))}
 .danger-zone-card button:disabled{opacity:.45;cursor:not-allowed}
+.settings-content{overflow:auto}
