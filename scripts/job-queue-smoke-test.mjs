@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createInMemoryJobQueue, isJobType, JOB_TYPES } from "./lib/background-job-queue.mjs";
+import { cleanupExpiredInvites } from "./lib/jobs/cleanup-expired-invites.mjs";
 
 const logs = [];
 const logger = {
@@ -21,12 +22,7 @@ assert.equal(job.status, "queued");
 assert.equal(queue.list().length, 1);
 
 const processed = await queue.processNext({
-  cleanup_expired_invites: async (currentJob) => ({
-    ok: true,
-    jobId: currentJob.id,
-    scanned: 0,
-    expired: 0,
-  }),
+  cleanup_expired_invites: async () => cleanupExpiredInvites({ invites: [], dryRun: true, logger }),
 });
 
 assert.equal(processed.status, "completed");
