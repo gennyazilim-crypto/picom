@@ -146,3 +146,12 @@ Leaving a room must release local capture resources before disconnecting:
 - Windows: microphone access depends on Windows privacy settings.
 - Linux: microphone and screen sharing may depend on PulseAudio/PipeWire, Wayland/X11, and portal setup.
 - macOS: microphone and screen recording require System Settings permissions.
+
+## macOS microphone permission notes
+
+- macOS requires explicit Microphone permission for the packaged Picom app before local audio capture can work.
+- If joining succeeds but microphone enable fails, Picom should keep the user connected as muted and show the microphone warning in the voice room.
+- Users should check `System Settings > Privacy & Security > Microphone` and enable Picom for the installed app bundle.
+- During local development, the permission prompt may appear under the Electron runtime or terminal-launched app identity instead of the final packaged app name.
+- After changing macOS microphone permissions, users may need to restart Picom before capture starts working.
+- Picom must not log device IDs, permission prompt details, LiveKit tokens, or OS account information while handling microphone failures.
