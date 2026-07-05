@@ -59,6 +59,8 @@ assertIncludes(mainProcess, "contextIsolation: true", "context isolation");
 assertIncludes(mainProcess, "nodeIntegration: false", "disabled node integration");
 assertIncludes(mainProcess, "sandbox: true", "renderer sandbox");
 assertIncludes(mainProcess, "webSecurity: true", "web security");
+assertIncludes(mainProcess, "allowRunningInsecureContent: false", "blocked insecure content");
+assertIncludes(mainProcess, "devTools: !app.isPackaged", "devtools disabled in packaged builds");
 assertIncludes(mainProcess, 'window.webContents.on("will-navigate"', "blocked top-level external navigation");
 assertIncludes(mainProcess, 'window.webContents.on("will-attach-webview"', "blocked webview attachment");
 

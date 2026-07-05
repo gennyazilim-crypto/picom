@@ -18,6 +18,8 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 - `contextIsolation` is enabled.
 - `nodeIntegration` is disabled.
 - Renderer sandbox is enabled.
+- Insecure mixed content is disabled.
+- DevTools are disabled automatically in packaged builds.
 - Preload exposes a narrow `window.picomDesktop` bridge instead of raw Electron objects.
 - The exposed preload bridge is frozen before it is attached to the renderer global.
 - External links are routed through the safe external link service.
