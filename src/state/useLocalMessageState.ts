@@ -112,6 +112,13 @@ type DeleteLocalCategoryInput = {
   categoryId: string;
 };
 
+type MoveLocalChannelInput = {
+  communityId: string;
+  categoryId: string;
+  channelId: string;
+  direction: "up" | "down";
+};
+
 type AddLocalChannelInput = {
   communityId: string;
   categoryId?: string | null;
@@ -420,6 +427,36 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
+
+  const moveChannel = useCallback(({ communityId, categoryId, channelId, direction }: MoveLocalChannelInput) => {
+    setCommunities((current) =>
+      current.map((community) => {
+        if (community.id !== communityId) return community;
+
+        return {
+          ...community,
+          categories: community.categories.map((category) => {
+            if (category.id !== categoryId) return category;
+
+            const currentIndex = category.channels.findIndex((channel) => channel.id === channelId);
+            if (currentIndex < 0) return category;
+
+            const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+            if (targetIndex < 0 || targetIndex >= category.channels.length) return category;
+
+            const nextChannels = [...category.channels];
+            const [channel] = nextChannels.splice(currentIndex, 1);
+            nextChannels.splice(targetIndex, 0, channel);
+
+            return {
+              ...category,
+              channels: nextChannels.map((item, position) => ({ ...item, position })),
+            };
+          }),
+        };
+      }),
+    );
+  }, []);
   const addChannel = useCallback((input: AddLocalChannelInput) => {
     const channel: Channel = {
       id: input.id,
@@ -467,6 +504,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     addCategory,
     renameCategory,
     deleteCategory,
+    moveChannel,
     addChannel,
     replaceCommunities,
     replaceCommunityCategories,

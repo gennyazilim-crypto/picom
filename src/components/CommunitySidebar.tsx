@@ -21,14 +21,16 @@ type CommunitySidebarProps = {
   onCreateCategory: (name: string) => void;
   onRenameCategory: (categoryId: string, name: string) => void;
   onDeleteCategory: (categoryId: string) => void;
+  onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void;
 };
 
-export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
   const currentRole = community.roles.find((role) => role.id === currentUser.roleId);
   const canViewOnboardingChecklist = Boolean(currentRole && (currentRole.name === "Owner" || currentRole.name === "Admin" || currentRole.level >= 80));
+  const canReorderChannels = canViewOnboardingChecklist;
 
   return (
     <aside className="community-sidebar">
@@ -50,6 +52,8 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
             onCreateChannel={onCreateChannel}
             onSelectChannel={onSelectChannel}
             onChannelContextMenu={onChannelContextMenu}
+            showReorderControls={canReorderChannels}
+            onMoveChannel={onMoveChannel}
           />
         ))}
       </div>

@@ -1999,3 +1999,11 @@ body{
 .category-management-card button:disabled{opacity:.45;cursor:not-allowed}
 .category-management-list{display:grid;gap:6px;max-height:148px;overflow:auto;padding-right:2px}
 .category-management-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);font-size:12px;font-weight:800}
+.channel-reorder-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px}
+.channel-reorder-row .channel-item{min-width:0}
+.channel-reorder-controls{display:flex;gap:3px;padding-right:6px;opacity:.62;transition:opacity .14s ease}
+.channel-reorder-row:hover .channel-reorder-controls{opacity:1}
+.channel-reorder-controls button{width:22px;height:22px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-muted);display:grid;place-items:center;cursor:pointer}
+.channel-reorder-controls button:hover:not(:disabled){color:var(--text-primary);background:var(--surface-hover)}
+.channel-reorder-controls button:disabled{opacity:.35;cursor:not-allowed}
+.channel-reorder-up svg{transform:rotate(180deg)}

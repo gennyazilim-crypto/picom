@@ -210,6 +210,7 @@ export function App() {
     addCategory,
     renameCategory,
     deleteCategory,
+    moveChannel,
     addChannel,
     replaceCommunities,
     replaceCommunityCategories,
@@ -1397,6 +1398,10 @@ export function App() {
                 onDeleteCategory={(categoryId) => {
                   deleteCategory({ communityId: activeCommunity.id, categoryId });
                   pushToast("Category deleted locally; channels moved safely.", "info");
+                }}
+                onMoveChannel={(categoryId, channelId, direction) => {
+                  moveChannel({ communityId: activeCommunity.id, categoryId, channelId, direction });
+                  pushToast("Channel order updated locally.", "success");
                 }}
                 onChannelContextMenu={(event, channel) =>
                   openContext(event, [
