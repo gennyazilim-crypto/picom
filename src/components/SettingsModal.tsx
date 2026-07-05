@@ -1,10 +1,11 @@
-﻿import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { notificationService } from "../services/notificationService";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { authService } from "../services/authService";
 import { menuService } from "../services/menuService";
 import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
 import { statusPageService } from "../services/statusPageService";
+import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
@@ -33,6 +34,8 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [includeDiagnostics, setIncludeDiagnostics] = useState(true);
   const [includeLogs, setIncludeLogs] = useState(false);
   const [emailVerificationMessage, setEmailVerificationMessage] = useState<string | null>(null);
+  const [activeSessions, setActiveSessions] = useState<SessionDeviceSummary[]>([]);
+  const [sessionManagementMessage, setSessionManagementMessage] = useState<string | null>(null);
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -45,6 +48,25 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   useEffect(() => {
     setProfileDraft(profileSettings);
   }, [profileSettings]);
+
+  const refreshActiveSessions = useCallback(async () => {
+    const result = await sessionManagementService.getActiveSessions();
+    if (!result.ok) {
+      setSessionManagementMessage(result.message);
+      setActiveSessions([]);
+      pushToast(result.message, result.requiresSignIn ? "error" : "info");
+      return;
+    }
+
+    setActiveSessions(result.data.sessions);
+    setSessionManagementMessage(result.data.message);
+  }, [pushToast]);
+
+  useEffect(() => {
+    if (active === "Account") {
+      void refreshActiveSessions();
+    }
+  }, [active, refreshActiveSessions]);
 
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
@@ -109,6 +131,16 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     }
 
     setEmailVerificationMessage(result.data.message);
+    pushToast(result.data.message, "success");
+  };
+  const revokeOtherSessions = async () => {
+    const result = await sessionManagementService.revokeOtherSessions();
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    setSessionManagementMessage(result.data.message);
     pushToast(result.data.message, "success");
   };
 
@@ -176,10 +208,30 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                   <small>Support payloads are routed through loggingService redaction before export.</small>
                 </article>
               </div>
+              <div className="settings-status-card" aria-label="Active desktop sessions">
+                <span>Active sessions</span>
+                <strong>{activeSessions.length ? `${activeSessions.length} current session` : "Session metadata unavailable"}</strong>
+                <small>{sessionManagementMessage ?? "Refresh active sessions to inspect safe desktop session metadata."}</small>
+              </div>
+              <div className="session-list" aria-label="Active sessions list">
+                {activeSessions.map((session) => (
+                  <article key={session.id} className="session-card">
+                    <div>
+                      <strong>{session.deviceLabel}</strong>
+                      <small>{session.email ?? session.displayName ?? "Current Picom account"}</small>
+                    </div>
+                    <span className={`session-status ${session.status}`}>{session.current ? "Current" : session.status}</span>
+                    <small>Provider: {session.provider}. Last checked: {new Date(session.lastUsedAt).toLocaleString()}.</small>
+                    {session.expiresAt ? <small>Expires: {new Date(session.expiresAt).toLocaleString()}.</small> : <small>Mock/local sessions do not expose an expiry.</small>}
+                  </article>
+                ))}
+              </div>
               <div className="settings-actions-row">
                 <button onClick={() => pushToast("Security settings placeholder reviewed.", "info")}>Review placeholder</button>
-                <button onClick={() => pushToast("Password reset is not enabled in this beta placeholder.", "info")}>Password reset placeholder</button>
+                <button onClick={() => pushToast("Password reset is available from the login screen placeholder.", "info")}>Password reset placeholder</button>
                 <button onClick={requestEmailVerification}>Resend verification placeholder</button>
+                <button onClick={refreshActiveSessions}>Refresh sessions</button>
+                <button onClick={revokeOtherSessions}>Revoke other sessions placeholder</button>
               </div>
             </div>
           ) : active === "Profile" ? (
