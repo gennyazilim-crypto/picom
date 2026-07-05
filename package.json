@@ -50,6 +50,7 @@
     "uploads:cleanup:dry-run": "node scripts/cleanup-orphaned-uploads.mjs",
     "uploads:cleanup:smoke": "node scripts/orphaned-uploads-cleanup-smoke-test.mjs",
     "email:smoke": "node scripts/email-service-smoke-test.mjs",
+    "auth:password-reset:smoke": "node scripts/password-reset-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {

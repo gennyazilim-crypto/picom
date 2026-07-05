@@ -14,6 +14,11 @@ export type AuthServiceSession = Readonly<{
   expiresAt: number | null;
 }>;
 
+export type PasswordResetRequestSummary = Readonly<{
+  provider: "mock" | "supabase";
+  message: string;
+}>;
+
 export type AuthServiceErrorCode =
   | "AUTH_DISABLED"
   | "AUTH_NOT_CONFIGURED"
@@ -89,6 +94,10 @@ function getMockSession(email = "mock@picom.local"): AuthServiceSession {
   };
 }
 
+function getPasswordResetSafeMessage(): string {
+  return "If an account exists for that email, password reset instructions will be prepared.";
+}
+
 function getConfiguredClient() {
   const dataSourceStatus = dataSourceService.getStatus();
 
@@ -162,6 +171,49 @@ export const authService = {
     }
 
     return { ok: true, data: mapSession(data.session) ?? { provider: "supabase", user: mapUser(data.user), expiresAt: null } };
+  },
+
+  async requestPasswordReset(email: string): Promise<AuthServiceResult<PasswordResetRequestSummary>> {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) {
+      return authError("AUTH_INVALID_INPUT", "Email is required.");
+    }
+
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+
+    if (!configured.data) {
+      return {
+        ok: true,
+        data: {
+          provider: "mock",
+          message: getPasswordResetSafeMessage(),
+        },
+      };
+    }
+
+    await configured.data.auth.resetPasswordForEmail(normalizedEmail).catch(() => null);
+
+    return {
+      ok: true,
+      data: {
+        provider: "supabase",
+        message: getPasswordResetSafeMessage(),
+      },
+    };
+  },
+
+  async confirmPasswordResetPlaceholder(newPassword: string): Promise<AuthServiceResult<{ message: string }>> {
+    if (newPassword.trim().length < 8) {
+      return authError("AUTH_INVALID_INPUT", "New password must be at least 8 characters.");
+    }
+
+    return {
+      ok: true,
+      data: {
+        message: "Password reset confirmation placeholder is prepared for a future deep link flow.",
+      },
+    };
   },
 
   async getCurrentSession(): Promise<AuthServiceResult<AuthServiceSession | null>> {

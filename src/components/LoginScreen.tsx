@@ -9,6 +9,7 @@ type LoginScreenProps = {
   error: string | null;
   onToggleTheme: () => void;
   onSubmit: (email: string, password: string) => Promise<void>;
+  onPasswordResetRequest: (email: string) => Promise<string>;
   onSwitchToRegister: () => void;
 };
 
@@ -17,13 +18,25 @@ const localSeed = {
   password: "PicomDev123!",
 };
 
-export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, onSwitchToRegister }: LoginScreenProps) {
+export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, onPasswordResetRequest, onSwitchToRegister }: LoginScreenProps) {
   const [email, setEmail] = useState(localSeed.email);
   const [password, setPassword] = useState(localSeed.password);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState(localSeed.email);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await onSubmit(email, password);
+  };
+
+  const requestPasswordReset = async () => {
+    setResetMessage(null);
+    setResetLoading(true);
+    const message = await onPasswordResetRequest(resetEmail || email);
+    setResetMessage(message);
+    setResetLoading(false);
   };
 
   return (
@@ -79,6 +92,31 @@ export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, on
         </label>
 
         {error ? <div className="auth-error" role="alert">{error}</div> : null}
+
+        <button className="auth-secondary-link" type="button" onClick={() => setResetOpen((current) => !current)}>
+          Forgot password?
+        </button>
+
+        {resetOpen ? (
+          <div className="password-reset-panel">
+            <strong>Password reset placeholder</strong>
+            <p>Enter your email. Picom will show the same safe response whether an account exists or not.</p>
+            <label className="auth-field">
+              <span>Reset email</span>
+              <input
+                type="email"
+                autoComplete="email"
+                value={resetEmail}
+                onChange={(event) => setResetEmail(event.target.value)}
+                placeholder="you@company.com"
+              />
+            </label>
+            {resetMessage ? <div className="auth-success" role="status">{resetMessage}</div> : null}
+            <button className="auth-seed-button" type="button" disabled={resetLoading} onClick={requestPasswordReset}>
+              {resetLoading ? "Preparing..." : "Request reset placeholder"}
+            </button>
+          </div>
+        ) : null}
 
         <button className="auth-submit" type="submit" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}

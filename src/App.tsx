@@ -43,6 +43,7 @@ import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { maintenanceStatusService } from "./services/maintenanceStatusService";
 import { statusPageService } from "./services/statusPageService";
+import { authService } from "./services/authService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
@@ -429,6 +430,16 @@ export function App() {
     }
 
     pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
+  }, [pushToast]);
+  const handlePasswordResetRequest = useCallback(async (email: string) => {
+    const result = await authService.requestPasswordReset(email);
+    if (!result.ok) {
+      pushToast(result.error.message, "error");
+      return result.error.message;
+    }
+
+    pushToast(result.data.message, "success");
+    return result.data.message;
   }, [pushToast]);
 
   useEffect(() => {
@@ -1057,6 +1068,7 @@ export function App() {
               error={authError}
               onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")}
               onSubmit={handleLogin}
+              onPasswordResetRequest={handlePasswordResetRequest}
               onSwitchToRegister={() => {
                 clearAuthError();
                 setAuthView("register");
