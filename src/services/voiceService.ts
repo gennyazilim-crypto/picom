@@ -1,6 +1,6 @@
 import { ConnectionState, Room, RoomEvent, type RemoteParticipant } from "livekit-client";
-import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import { createPicomLiveKitRoomName } from "./voiceRoomNaming";
+import { liveKitService } from "./livekit/livekitService";
+import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
 
 export type VoiceConnectionStatus =
   | "idle"
@@ -12,25 +12,9 @@ export type VoiceConnectionStatus =
   | "token_error"
   | "disconnected";
 
-export type VoiceIntent = "voice" | "screen";
-
-export type VoiceTokenRequest = Readonly<{
-  communityId: string;
-  channelId: string;
-  roomName?: string;
-  participantName?: string;
-  intent?: VoiceIntent;
-}>;
-
-export type VoiceTokenResponse = Readonly<{
-  token: string;
-  url: string;
-  roomName: string;
-  identity: string;
-  participantName: string;
-  intent: VoiceIntent;
-  expiresAt: string;
-}>;
+export type VoiceIntent = LiveKitIntent;
+export type VoiceTokenRequest = LiveKitTokenRequest;
+export type VoiceTokenResponse = LiveKitTokenResponse;
 
 export type VoiceParticipant = Readonly<{
   identity: string;
@@ -140,33 +124,13 @@ function bindRoomEvents(activeRoom: Room): void {
 async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
   emit({ status: "requesting_token", error: null });
 
-  const status = getSupabaseClientStatus();
-  if (!status.configured) {
-    return voiceError("VOICE_NOT_CONFIGURED", status.reason ?? "Supabase is not configured for voice tokens.");
+  const token = await liveKitService.fetchToken(request);
+  if (!token.ok) {
+    const code = token.error.code === "LIVEKIT_NOT_CONFIGURED" ? "VOICE_NOT_CONFIGURED" : "VOICE_TOKEN_FAILED";
+    return voiceError(code, token.error.message);
   }
 
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return voiceError("VOICE_NOT_CONFIGURED", "Supabase client is unavailable.");
-  }
-
-  const roomName = request.roomName ?? createPicomLiveKitRoomName(request.communityId, request.channelId);
-
-  const { data, error } = await supabase.functions.invoke<VoiceTokenResponse>("livekit-token", {
-    body: {
-      communityId: request.communityId,
-      channelId: request.channelId,
-      roomName,
-      participantName: request.participantName,
-      intent: request.intent ?? "voice",
-    },
-  });
-
-  if (error || !data?.token || !data.url) {
-    return voiceError("VOICE_TOKEN_FAILED", "Could not get a voice room token.");
-  }
-
-  return { ok: true, data };
+  return { ok: true, data: token.data };
 }
 
 async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
