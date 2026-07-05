@@ -2,6 +2,7 @@ import type { Channel, Community, Member } from "../types/community";
 import type { VoiceParticipant, VoiceServiceSnapshot } from "../services/voiceService";
 import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
+import { ScreenSharePicker } from "./voice/ScreenSharePicker";
 
 type VoiceRoomViewProps = {
   community: Community;
@@ -118,6 +119,8 @@ export function VoiceRoomView({
             </label>
             <p>Device switching will be enabled after the native permission flow is wired safely.</p>
           </div>
+
+          <ScreenSharePicker />
         </article>
 
         <article className="voice-room-card">

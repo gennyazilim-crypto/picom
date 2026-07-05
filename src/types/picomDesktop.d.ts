@@ -8,6 +8,13 @@ declare global {
     tag?: string;
     silent?: boolean;
   };
+  type PicomScreenCaptureSource = {
+    id: string;
+    name: string;
+    type: "screen" | "window";
+    thumbnailDataUrl: string | null;
+    appIconDataUrl: string | null;
+  };
 
   interface Window {
     picomDesktop?: {
@@ -34,6 +41,12 @@ declare global {
         | { ok: true; native: true }
         | { ok: false; native: true; error: string }
       >;
+      screenCapture?: {
+        getSources: () => Promise<
+          | { ok: true; native: true; sources: PicomScreenCaptureSource[] }
+          | { ok: false; native: true; error: string }
+        >;
+      };
     };
   }
 }

@@ -110,6 +110,15 @@ Leaving a room must release local capture resources before disconnecting:
 - Future output switching should use supported safe browser/Electron audio output APIs where available, with a graceful fallback when unsupported.
 - macOS may require microphone permission before input devices are visible; Windows and Linux can also hide devices depending on privacy and audio server settings.
 
+## Screen capture source picker
+
+- Screen/window sources are collected only in the Electron main process through `desktopCapturer`.
+- The renderer uses the preload bridge and receives sanitized source DTOs only.
+- IPC is restricted to the whitelisted `picom:screen-capture-get-sources` channel.
+- Source loading happens after an explicit user click and is not triggered during app startup.
+- The picker currently selects a source for the next screen-share task; starting/stopping the LiveKit screen-share track is wired separately.
+- macOS users may need Screen Recording permission before window/screen thumbnails are available.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.

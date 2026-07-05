@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, shell } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, shell, desktopCapturer } from "electron";
 import path from "node:path";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
@@ -6,6 +6,13 @@ import { IPC_CHANNELS } from "./ipcChannels.cjs";
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
 
 type WindowAction = "minimize" | "maximize" | "close";
+type SafeScreenCaptureSource = Readonly<{
+  id: string;
+  name: string;
+  type: "screen" | "window";
+  thumbnailDataUrl: string | null;
+  appIconDataUrl: string | null;
+}>;
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -111,6 +118,28 @@ function registerIpcHandlers(): void {
       native: true,
       maximized: window ? window.isMaximized() || window.isFullScreen() : false
     } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.screenCaptureGetSources, async () => {
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ["screen", "window"],
+        thumbnailSize: { width: 320, height: 180 },
+        fetchWindowIcons: true
+      });
+
+      const safeSources: SafeScreenCaptureSource[] = sources.map((source) => ({
+        id: source.id,
+        name: source.name,
+        type: source.id.startsWith("screen:") ? "screen" : "window",
+        thumbnailDataUrl: source.thumbnail.isEmpty() ? null : source.thumbnail.toDataURL(),
+        appIconDataUrl: source.appIcon?.isEmpty() ? null : source.appIcon?.toDataURL() ?? null
+      }));
+
+      return { ok: true, native: true, sources: safeSources } as const;
+    } catch {
+      return { ok: false, native: true, error: "SCREEN_CAPTURE_SOURCES_UNAVAILABLE" } as const;
+    }
   });
 }
 

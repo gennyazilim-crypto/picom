@@ -3,6 +3,13 @@ import { IPC_CHANNELS, isIpcChannel } from "./ipcChannels.cjs";
 
 type WindowAction = "minimize" | "maximize" | "close";
 type MaximizeStateHandler = (isMaximized: boolean) => void;
+type SafeScreenCaptureSource = Readonly<{
+  id: string;
+  name: string;
+  type: "screen" | "window";
+  thumbnailDataUrl: string | null;
+  appIconDataUrl: string | null;
+}>;
 
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
@@ -67,6 +74,13 @@ const bridge = Object.freeze({
     return () => {
       ipcRenderer.removeListener(IPC_CHANNELS.windowMaximizeStateChanged, listener);
     };
+  },
+  screenCapture: {
+    getSources: () =>
+      invokeWhitelisted(IPC_CHANNELS.screenCaptureGetSources) as Promise<
+        | { ok: true; native: true; sources: SafeScreenCaptureSource[] }
+        | { ok: false; native: true; error: string }
+      >
   }
 });
 

@@ -1,7 +1,8 @@
 export const IPC_CHANNELS = Object.freeze({
   windowControl: "picom:window-control",
   windowIsMaximized: "picom:window-is-maximized",
-  windowMaximizeStateChanged: "picom:window-maximize-state-changed"
+  windowMaximizeStateChanged: "picom:window-maximize-state-changed",
+  screenCaptureGetSources: "picom:screen-capture-get-sources"
 });
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
