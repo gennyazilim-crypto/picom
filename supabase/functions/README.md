@@ -11,8 +11,13 @@ This directory contains Supabase Edge Function code for trusted server-side MVP 
 
 ## Current structure
 
-- `_shared/` - reusable HTTP/CORS helpers.
+- `_shared/` - reusable auth, HTTP, typed error, CORS, LiveKit, and validation helpers.
 - `health/` - safe unauthenticated placeholder function for local structure checks.
+- `livekit-token/` - protected LiveKit token function; secrets stay server-side.
+- `accept-invite/` - protected invite acceptance boundary.
+- `moderation-helper/` - protected moderation placeholder boundary.
+- `notification-fanout/` - protected notification fanout placeholder boundary.
+- `validate-file/` - protected upload validation boundary.
 
 ## Local invocation placeholder
 
@@ -20,6 +25,7 @@ When Supabase CLI is available:
 
 ```powershell
 supabase functions serve health --no-verify-jwt
+supabase functions serve livekit-token
 ```
 
 Then call:

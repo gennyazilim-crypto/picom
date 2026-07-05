@@ -47,6 +47,7 @@ Use Edge Functions for trusted or privileged work:
 
 ```text
 supabase/functions/_shared/
+  auth.ts
   cors.ts
   errors.ts
   http.ts
@@ -58,6 +59,7 @@ supabase/functions/_shared/
 - `cors.ts` owns preflight headers. Production should replace wildcard origins with an explicit allowlist before stable release.
 - `errors.ts` defines typed error bodies.
 - `http.ts` returns JSON responses and typed error responses.
+- `auth.ts` is the stable shared auth import path for functions.
 - `supabase-auth.ts` verifies the signed-in Supabase user from the Authorization header.
 - `livekit-token.ts` signs LiveKit grants inside the trusted server boundary.
 
