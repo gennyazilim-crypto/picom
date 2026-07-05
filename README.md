@@ -50,12 +50,14 @@ Picom uses `electron-builder` for Windows, Linux, and macOS package preparation.
 ```bash
 npm run build
 npm run package
+npm run package:win:dir
 npm run package:win
 npm run package:linux
 npm run package:mac
 ```
 
 - `npm run package` creates an unpacked local build in `release/`.
+- `npm run package:win:dir` creates an unpacked Windows x64 smoke build.
 - Windows builds target an unsigned NSIS x64 installer.
 - Linux builds target AppImage x64 and deb x64.
 - macOS builds target an unsigned dmg x64 placeholder.

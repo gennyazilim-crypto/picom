@@ -9,6 +9,7 @@ directories:
 files:
   - dist/**/*
   - dist-electron/**/*
+  - assets/brand/app-icon.ico
   - assets/brand/app-icon.png
   - assets/brand/app-icon.svg
   - package.json
@@ -19,14 +20,21 @@ extraMetadata:
   main: dist-electron/main.cjs
 
 win:
-  icon: assets/brand/app-icon.png
+  icon: assets/brand/app-icon.ico
+  executableName: Picom
+  requestedExecutionLevel: asInvoker
   target:
     - target: nsis
       arch:
         - x64
   artifactName: Picom-${version}-Windows-${arch}.${ext}
+  # Production code-signing placeholder. Do not commit certificate files or passwords.
+  # certificateFile: ${env.WINDOWS_CERTIFICATE_FILE}
+  # certificatePassword: ${env.WINDOWS_CERTIFICATE_PASSWORD}
 
 nsis:
+  installerIcon: assets/brand/app-icon.ico
+  uninstallerIcon: assets/brand/app-icon.ico
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true

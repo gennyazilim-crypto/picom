@@ -16,12 +16,14 @@ This avoids a larger Electron Forge migration while giving straightforward Windo
 
 ```bash
 npm run package
+npm run package:win:dir
 npm run package:win
 npm run package:linux
 npm run package:mac
 ```
 
 `npm run package` creates an unpacked directory build for local smoke checks.
+`npm run package:win:dir` creates an unpacked Windows x64 smoke build.
 
 ## Targets
 
@@ -44,11 +46,12 @@ The packaging config references:
 ```text
 assets/brand/app-icon.png
 assets/brand/app-icon.svg
+assets/brand/app-icon.ico
 ```
 
 Before final release, generate platform-native icon formats if needed:
 
-- Windows `.ico`
+- Windows final multi-size `.ico`
 - macOS `.icns`
 - Linux icon size set
 
@@ -63,10 +66,11 @@ Before final release, generate platform-native icon formats if needed:
 
 1. Run `npm run build`.
 2. Run `npm run package` for an unpacked local smoke build.
-3. On Windows, run `npm run package:win` when NSIS packaging is available.
-4. On Linux, run `npm run package:linux` on a Linux runner or VM.
-5. On macOS, run `npm run package:mac` on macOS.
-6. Confirm the packaged app opens, shows the custom Picom titlebar, and keeps the 4-column desktop layout.
+3. On Windows, run `npm run package:win:dir` before the installer build.
+4. On Windows, run `npm run package:win` when NSIS packaging is available.
+5. On Linux, run `npm run package:linux` on a Linux runner or VM.
+6. On macOS, run `npm run package:mac` on macOS.
+7. Confirm the packaged app opens, shows the custom Picom titlebar, and keeps the 4-column desktop layout.
 
 ## Known local Windows packaging issue
 
