@@ -13,6 +13,7 @@ export type AttachmentDTO = Readonly<{
   thumbnailUrl?: string | null;
   width?: number | null;
   height?: number | null;
+  blurhashPlaceholder?: string | null;
   scanStatus?: "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
   createdAt?: ISODateString | null;
 }>;

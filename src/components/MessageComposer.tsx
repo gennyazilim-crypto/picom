@@ -183,6 +183,10 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
       storagePath: string;
       fileName: string;
       mimeType: string;
+      thumbnailUrl: string | null;
+      width: number | null;
+      height: number | null;
+      blurhashPlaceholder: string | null;
     }>();
 
     for (const preview of previews) {
@@ -211,6 +215,10 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         storagePath: metadata.data.storagePath,
         fileName: metadata.data.fileName,
         mimeType: metadata.data.mimeType,
+        thumbnailUrl: metadata.data.thumbnailUrl,
+        width: metadata.data.width,
+        height: metadata.data.height,
+        blurhashPlaceholder: metadata.data.blurhashPlaceholder,
       });
     }
 
@@ -225,6 +233,10 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         publicUrl: uploadedUrl,
         storagePath: persisted?.storagePath,
         mimeType: persisted?.mimeType,
+        thumbnailUrl: persisted?.thumbnailUrl,
+        width: persisted?.width ?? undefined,
+        height: persisted?.height ?? undefined,
+        blurhashPlaceholder: persisted?.blurhashPlaceholder,
         alt: persisted?.fileName ?? preview.name,
       };
     });

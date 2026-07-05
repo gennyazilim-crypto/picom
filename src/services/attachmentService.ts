@@ -3,7 +3,7 @@ import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { UploadedAttachmentSummary } from "./uploadService";
 
-export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, status, created_at" as const;
+export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, status, created_at" as const;
 
 export type AttachmentMetadataRow = Readonly<{
   id: string;
@@ -16,6 +16,8 @@ export type AttachmentMetadataRow = Readonly<{
   attachment_type: "image";
   public_url: string | null;
   thumbnail_url: string | null;
+  width: number | null;
+  height: number | null;
   status: "pending" | "attached" | "failed";
   created_at: string;
 }>;
@@ -31,6 +33,9 @@ export type AttachmentMetadataSummary = Readonly<{
   attachmentType: "image";
   publicUrl: string | null;
   thumbnailUrl: string | null;
+  width: number | null;
+  height: number | null;
+  blurhashPlaceholder: string | null;
   status: "pending" | "attached" | "failed";
   createdAt: string;
 }>;
@@ -70,6 +75,9 @@ function mapAttachmentMetadataRow(row: AttachmentMetadataRow): AttachmentMetadat
     attachmentType: row.attachment_type,
     publicUrl: row.public_url,
     thumbnailUrl: row.thumbnail_url,
+    width: row.width,
+    height: row.height,
+    blurhashPlaceholder: null,
     status: row.status,
     createdAt: row.created_at,
   };
@@ -114,7 +122,10 @@ export const attachmentService = {
           sizeBytes: upload.sizeBytes,
           attachmentType: "image",
           publicUrl: upload.publicUrl,
-          thumbnailUrl: null,
+          thumbnailUrl: upload.thumbnailUrl,
+          width: upload.width,
+          height: upload.height,
+          blurhashPlaceholder: upload.blurhashPlaceholder,
           status: "pending",
           createdAt: new Date().toISOString(),
         },
@@ -144,6 +155,9 @@ export const attachmentService = {
         size_bytes: upload.sizeBytes,
         attachment_type: "image",
         public_url: upload.publicUrl,
+        thumbnail_url: upload.thumbnailUrl,
+        width: upload.width,
+        height: upload.height,
         status: "pending",
       })
       .select(ATTACHMENT_METADATA_SELECT)

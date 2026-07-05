@@ -1,6 +1,7 @@
 import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { fileService } from "./fileService";
+import { attachmentThumbnailService } from "./attachmentThumbnailService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 
 export const MESSAGE_ATTACHMENTS_BUCKET = "message-attachments" as const;
@@ -20,6 +21,11 @@ export type UploadedAttachmentSummary = Readonly<{
   mimeType: string;
   sizeBytes: number;
   publicUrl: string | null;
+  thumbnailUrl: string | null;
+  thumbnailStoragePath: string | null;
+  width: number | null;
+  height: number | null;
+  blurhashPlaceholder: string | null;
 }>;
 
 export type UploadServiceErrorCode =
@@ -107,6 +113,12 @@ export const uploadService = {
     if (dataSource.isMock) {
       const userId = input.userId ?? currentUserId;
       const storagePath = createPendingStoragePath(input, userId);
+      const thumbnail = attachmentThumbnailService.createThumbnailPlaceholder({
+        storagePath,
+        publicUrl: null,
+        mimeType: input.file.type,
+        sizeBytes: input.file.size,
+      });
       return {
         ok: true,
         data: {
@@ -117,6 +129,11 @@ export const uploadService = {
           mimeType: input.file.type,
           sizeBytes: input.file.size,
           publicUrl: null,
+          thumbnailUrl: thumbnail.thumbnailUrl,
+          thumbnailStoragePath: thumbnail.thumbnailStoragePath,
+          width: thumbnail.width,
+          height: thumbnail.height,
+          blurhashPlaceholder: thumbnail.blurhashPlaceholder,
         },
       };
     }
@@ -149,6 +166,13 @@ export const uploadService = {
     const { data: publicUrlData } = configured.data.storage
       .from(MESSAGE_ATTACHMENTS_BUCKET)
       .getPublicUrl(storagePath);
+    const publicUrl = publicUrlData.publicUrl || null;
+    const thumbnail = attachmentThumbnailService.createThumbnailPlaceholder({
+      storagePath,
+      publicUrl,
+      mimeType: input.file.type,
+      sizeBytes: input.file.size,
+    });
 
     return {
       ok: true,
@@ -159,7 +183,12 @@ export const uploadService = {
         fileName: sanitizeUploadFileName(input.file.name),
         mimeType: input.file.type,
         sizeBytes: input.file.size,
-        publicUrl: publicUrlData.publicUrl || null,
+        publicUrl,
+        thumbnailUrl: thumbnail.thumbnailUrl,
+        thumbnailStoragePath: thumbnail.thumbnailStoragePath,
+        width: thumbnail.width,
+        height: thumbnail.height,
+        blurhashPlaceholder: thumbnail.blurhashPlaceholder,
       },
     };
   },

@@ -49,6 +49,7 @@ export interface Attachment {
   alt: string;
   width?: number;
   height?: number;
+  blurhashPlaceholder?: string | null;
 }
 
 export interface Message {

@@ -15,7 +15,7 @@ export function AttachmentGrid({ attachments, onOpenImage }: AttachmentGridProps
 
         return (
           <button key={attachment.id} className="attachment-card" onClick={() => onOpenImage(attachment)} aria-label={`Open ${attachment.alt}`}>
-            <img src={imageUrl} alt={attachment.alt} loading="lazy" decoding="async" />
+            <img src={imageUrl} alt={attachment.alt} width={attachment.width ?? undefined} height={attachment.height ?? undefined} loading="lazy" decoding="async" />
           </button>
         );
       })}

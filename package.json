@@ -120,7 +120,8 @@
     "api:sdk:smoke": "node scripts/api-sdk-generation-smoke-test.mjs",
     "desktop:ipc:security:smoke": "node scripts/desktop-ipc-security-audit-smoke-test.mjs",
     "csp:smoke": "node scripts/content-security-policy-smoke-test.mjs",
-    "external-links:smoke": "node scripts/external-link-service-smoke-test.mjs"
+    "external-links:smoke": "node scripts/external-link-service-smoke-test.mjs",
+    "thumbnails:smoke": "node scripts/image-thumbnail-placeholder-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
