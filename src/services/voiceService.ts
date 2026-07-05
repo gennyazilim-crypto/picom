@@ -77,9 +77,11 @@ function emit(next: Partial<VoiceServiceSnapshot>): void {
 }
 
 function voiceError(code: VoiceServiceErrorCode, message: string): VoiceServiceResult<never> {
+  const status: VoiceConnectionStatus = code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : "token_error";
+
   emit({
     error: message,
-    status: code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : snapshot.status,
+    status,
   });
 
   return { ok: false, error: { code, message } };

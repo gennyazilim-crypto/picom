@@ -1,16 +1,22 @@
-﻿import { useMemo } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
 import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
-import { AppIcon } from "./AppIcon";
-import { mvpUiIconMap } from "./iconRegistry";
-import { MemberAvatar } from "./MemberAvatar";
+import type { VoiceServiceSnapshot } from "../services/voiceService";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { MessageComposer } from "./MessageComposer";
+import { VoiceRoomView } from "./VoiceRoomView";
 
 type ToastTone = "info" | "error" | "success";
-const composerIcons = mvpUiIconMap.messageComposer;
+const initialVoiceSnapshot: VoiceServiceSnapshot = {
+  status: "idle",
+  roomName: null,
+  muted: false,
+  deafened: false,
+  participants: [],
+  error: null,
+};
 
 type ChatMainProps = {
   community: Community;
@@ -67,19 +73,74 @@ export function ChatMain({
 }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
   const replyToMember = replyToMessage ? community.members.find((member) => member.userId === replyToMessage.authorId) : undefined;
+  const currentMember = useMemo(() => community.members.find((member) => member.userId === currentUserId), [community.members, currentUserId]);
+  const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    let active = true;
+
+    void import("../services/voiceService").then(({ voiceService }) => {
+      if (!active) return;
+      cleanup = voiceService.subscribe(setVoiceSnapshot);
+    });
+
+    return () => {
+      active = false;
+      cleanup?.();
+    };
+  }, []);
+
+  const handleJoinVoice = () => {
+    void import("../services/voiceService").then(({ voiceService }) => {
+      void voiceService
+        .join({
+          communityId: community.id,
+          channelId: channel.id,
+          participantName: currentMember?.displayName ?? "Picom member",
+          intent: "voice",
+        })
+        .then((result) => {
+          if (!result.ok) pushToast(result.error.message, "error");
+        });
+    });
+  };
+
+  const handleLeaveVoice = () => {
+    void import("../services/voiceService").then(({ voiceService }) => {
+      void voiceService.leave();
+    });
+  };
+
+  const handleToggleMute = () => {
+    void import("../services/voiceService").then(({ voiceService }) => {
+      void voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
+        if (!result.ok) pushToast(result.error.message, "error");
+      })
+    });
+  };
+
+  const handleToggleDeafen = () => {
+    void import("../services/voiceService").then(({ voiceService }) => {
+      const result = voiceService.setDeafened(!voiceSnapshot.deafened);
+      if (!result.ok) pushToast(result.error.message, "error");
+    });
+  };
 
   return (
     <main className="chat-main">
       <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} />
 
       {channel.type === "voice" ? (
-        <div className="voice-placeholder">
-          <span className="voice-orb">
-            <AppIcon name="voice" size="xl" />
-          </span>
-          <h2>{channel.name}</h2>
-          <p>Voice rooms are placeholders in the MVP. Text chat remains the first stable path.</p>
-        </div>
+        <VoiceRoomView
+          community={community}
+          channel={channel}
+          snapshot={voiceSnapshot}
+          onJoin={handleJoinVoice}
+          onLeave={handleLeaveVoice}
+          onToggleMute={handleToggleMute}
+          onToggleDeafen={handleToggleDeafen}
+        />
       ) : (
         <>
           <MessageList
