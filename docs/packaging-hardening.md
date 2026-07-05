@@ -45,6 +45,8 @@ Windows local builds use `requestedExecutionLevel: asInvoker` and the assisted N
 
 Linux package metadata uses the `Network` desktop category, `net` Debian package category, and placeholder `Picom Contributors` maintainer identity until final release ownership details are chosen.
 
+macOS packaging remains a local unsigned placeholder with explicit microphone and screen-capture usage strings for future voice and screen-share smoke tests.
+
 ## Icon and metadata checks
 
 - Windows icon: `assets/brand/app-icon.ico`
