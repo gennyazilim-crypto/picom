@@ -40,7 +40,14 @@ type UseSupabaseTypingBroadcastResult = Readonly<{
   sendTypingStop: () => void;
 }>;
 
-function parseTypingPayload(payload: TypingPayload): { userId: string; displayName: string; isTyping: boolean } | null {
+function parseTypingTimestamp(value: unknown): number {
+  if (typeof value !== "string") return Date.now();
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Date.now();
+}
+
+function parseTypingPayload(payload: TypingPayload): { userId: string; displayName: string; isTyping: boolean; sentAt: number } | null {
   if (typeof payload.userId !== "string" || typeof payload.displayName !== "string" || typeof payload.isTyping !== "boolean") {
     return null;
   }
@@ -49,6 +56,7 @@ function parseTypingPayload(payload: TypingPayload): { userId: string; displayNa
     userId: payload.userId,
     displayName: payload.displayName.slice(0, 80),
     isTyping: payload.isTyping,
+    sentAt: parseTypingTimestamp(payload.sentAt),
   };
 }
 
@@ -64,12 +72,35 @@ export function useSupabaseTypingBroadcast({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const subscribedRef = useRef(false);
   const lastTypingStartAtRef = useRef(0);
+  const latestTypingEventAtRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!enabled || !dataSourceService.getStatus().isSupabase) return;
+
+    const handleOffline = () => setConnectionStatus("disconnected");
+    const handleOnline = () => {
+      setConnectionStatus((current) => (current === "disconnected" ? "reconnecting" : current));
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setConnectionStatus("disconnected");
+    }
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [enabled]);
 
   useEffect(() => {
     setTypingUsers({});
     setConnectionStatus("idle");
     subscribedRef.current = false;
     lastTypingStartAtRef.current = 0;
+    latestTypingEventAtRef.current = {};
 
     if (!enabled || !dataSourceService.getStatus().isSupabase) return;
 
@@ -97,17 +128,29 @@ export function useSupabaseTypingBroadcast({
         if (!parsed || parsed.userId === currentUserId) return;
 
         setTypingUsers((current) => {
+          const latestEventAt = latestTypingEventAtRef.current[parsed.userId] ?? 0;
+          if (parsed.sentAt < latestEventAt) return current;
+
+          latestTypingEventAtRef.current[parsed.userId] = parsed.sentAt;
           const next = { ...current };
 
           if (!parsed.isTyping) {
+            if (!next[parsed.userId]) return current;
             delete next[parsed.userId];
+            return next;
+          }
+
+          const expiresAt = Date.now() + TYPING_TTL_MS;
+          const currentUser = next[parsed.userId];
+          if (currentUser?.displayName === parsed.displayName && currentUser.expiresAt > Date.now()) {
+            next[parsed.userId] = { ...currentUser, expiresAt };
             return next;
           }
 
           next[parsed.userId] = {
             userId: parsed.userId,
             displayName: parsed.displayName,
-            expiresAt: Date.now() + TYPING_TTL_MS,
+            expiresAt,
           };
           return next;
         });
@@ -157,6 +200,7 @@ export function useSupabaseTypingBroadcast({
       channelRef.current = null;
       subscribedRef.current = false;
       lastTypingStartAtRef.current = 0;
+      latestTypingEventAtRef.current = {};
       void client.removeChannel(channel);
     };
   }, [channelId, communityId, currentUserId, displayName, enabled]);
