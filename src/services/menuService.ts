@@ -1,5 +1,9 @@
 export type MenuAction =
   | "open-settings"
+  | "open-command-palette"
+  | "open-mention-feed"
+  | "open-direct-messages"
+  | "open-friends"
   | "open-help"
   | "open-about"
   | "send-feedback"
@@ -20,6 +24,18 @@ export type MenuServiceState = Readonly<{
 type MenuActionListener = (payload: MenuActionPayload) => void;
 
 const listeners = new Set<MenuActionListener>();
+const menuLabels: Record<MenuAction, string> = {
+  "open-settings": "Open Settings",
+  "open-command-palette": "Open Command Palette",
+  "open-mention-feed": "Open Mention Feed",
+  "open-direct-messages": "Open Direct Messages",
+  "open-friends": "Open Friends",
+  "open-help": "Open Help",
+  "open-about": "Open About",
+  "send-feedback": "Send Feedback",
+  "export-diagnostics": "Export Diagnostics",
+  quit: "Quit Picom"
+};
 
 function notify(payload: MenuActionPayload): void {
   for (const listener of listeners) {
@@ -42,6 +58,13 @@ export const menuService = {
     return () => {
       listeners.delete(listener);
     };
+  },
+
+  getPlaceholderActions(): ReadonlyArray<Readonly<{ action: MenuAction; label: string }>> {
+    return Object.entries(menuLabels).map(([action, label]) => ({
+      action: action as MenuAction,
+      label
+    }));
   },
 
   triggerPlaceholderAction(action: MenuAction): MenuActionPayload {

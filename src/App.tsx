@@ -33,7 +33,9 @@ import { DirectMessagesView } from "./components/DirectMessagesView";
 import { FriendsView } from "./components/FriendsView";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
+import { feedbackService } from "./services/feedbackService";
 import { loggingService } from "./services/loggingService";
+import { menuService, type MenuActionPayload } from "./services/menuService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { communityService } from "./services/communityService";
@@ -638,6 +640,82 @@ export function App() {
 
     return deepLinkService.onDeepLink(handleDeepLinkAction);
   }, [clearChannelUnread, closeTransientOverlays, communities, openSettings, pushToast, switchCommunity]);
+
+  useEffect(() => {
+    const handleMenuAction = (payload: MenuActionPayload) => {
+      if (payload.action === "open-settings") {
+        closeTransientOverlays();
+        openSettings();
+        pushToast("Opened settings from the app menu foundation.", "info");
+        return;
+      }
+
+      if (payload.action === "open-command-palette") {
+        closeTransientOverlays();
+        openPalette();
+        return;
+      }
+
+      if (payload.action === "open-mention-feed") {
+        setActiveView("mentionFeed");
+        closeTransientOverlays();
+        pushToast("Opened mention feed from the app menu foundation.", "info");
+        return;
+      }
+
+      if (payload.action === "open-direct-messages") {
+        if (directConversations[0]) setActiveDirectConversationId(directConversations[0].id);
+        setActiveView("directMessages");
+        closeTransientOverlays();
+        pushToast("Opened direct messages from the app menu foundation.", "info");
+        return;
+      }
+
+      if (payload.action === "open-friends") {
+        setActiveView("friends");
+        closeTransientOverlays();
+        pushToast("Opened friends from the app menu foundation.", "info");
+        return;
+      }
+
+      if (payload.action === "send-feedback") {
+        closeTransientOverlays();
+        openSettings();
+        pushToast("Feedback placeholder is available in Settings > Advanced.", "info");
+        return;
+      }
+
+      if (payload.action === "export-diagnostics") {
+        void feedbackService.exportSupportDiagnostics({
+          issueType: "other",
+          title: "App menu diagnostics export",
+          description: "Diagnostics export requested through the app menu foundation.",
+          includeDiagnostics: true,
+          includeLogs: true
+        }).then((result) => {
+          if (result.ok) {
+            pushToast(result.canceled ? "Diagnostics export canceled." : `Diagnostics exported via ${result.method}.`, result.canceled ? "info" : "success");
+            return;
+          }
+
+          pushToast(result.reason, "error");
+        });
+        return;
+      }
+
+      if (payload.action === "open-help" || payload.action === "open-about") {
+        openSettings();
+        pushToast(`${payload.action === "open-help" ? "Help" : "About"} placeholder is kept in Settings for MVP.`, "info");
+        return;
+      }
+
+      if (payload.action === "quit") {
+        pushToast("Quit stays behind native tray/window controls in this placeholder.", "info");
+      }
+    };
+
+    return menuService.onAction(handleMenuAction);
+  }, [closeTransientOverlays, directConversations, openPalette, openSettings, pushToast]);
 
   const paletteResults = useMemo<PaletteResult[]>(() => {
     const q = paletteQuery.toLowerCase();

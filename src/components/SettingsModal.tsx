@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { notificationService } from "../services/notificationService";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
+import { menuService } from "../services/menuService";
 import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
@@ -219,6 +220,15 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
               <strong>Desktop service placeholders</strong>
               <p>Tray, window controls, file handling and clipboard are routed through safe services.</p>
               <button onClick={() => { trayService.simulate("settings"); pushToast("Tray settings action simulated.", "info"); }}>Simulate tray settings</button>
+              <div className="settings-status-card" aria-label="Native app menu foundation">
+                <span>Native app menu</span>
+                <strong>Hidden chrome, safe actions</strong>
+                <small>The operating-system menu remains hidden for the custom Picom titlebar. Future menu entries route through menuService instead of direct Electron calls.</small>
+              </div>
+              <div className="settings-actions-row">
+                <button onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
+                <button onClick={() => menuService.triggerPlaceholderAction("export-diagnostics")}>Simulate menu diagnostics</button>
+              </div>
               <div className="settings-status-card" aria-label="Beta feedback and logs placeholder">
                 <span>Beta support</span>
                 <strong>Feedback & logs placeholder</strong>
