@@ -26,6 +26,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "diagnostics:smoke": "node scripts/diagnostics-redaction-smoke-test.mjs",
     "errors:smoke": "node scripts/error-codes-smoke-test.mjs",
+    "crash:smoke": "node scripts/crash-diagnostics-smoke-test.mjs",
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",

@@ -1,3 +1,4 @@
+import { diagnosticsService, type DiagnosticsSnapshot } from "./diagnosticsService";
 import { loggingService, type LogEntry } from "./loggingService";
 
 export type CrashRecoveryRecord = Readonly<{
@@ -5,6 +6,7 @@ export type CrashRecoveryRecord = Readonly<{
   errorName: string;
   userMessage: string;
   logId: string;
+  diagnostics: DiagnosticsSnapshot;
 }>;
 
 const crashRecordKey = "picom:last-renderer-crash";
@@ -25,7 +27,8 @@ function readRecord(): CrashRecoveryRecord | null {
       timestamp: parsed.timestamp,
       errorName: parsed.errorName,
       userMessage: parsed.userMessage,
-      logId: parsed.logId
+      logId: parsed.logId,
+      diagnostics: diagnosticsService.getSnapshot()
     };
   } catch {
     return null;
@@ -46,7 +49,8 @@ export const crashRecoveryService = {
       timestamp: new Date().toISOString(),
       errorName: error.name,
       userMessage: loggingService.formatUserError(error, "Picom could not finish starting."),
-      logId: logEntry.id
+      logId: logEntry.id,
+      diagnostics: diagnosticsService.getSnapshot()
     };
 
     writeRecord(record);
@@ -69,6 +73,7 @@ export const crashRecoveryService = {
     return JSON.stringify(
       {
         lastCrash: readRecord(),
+        diagnostics: diagnosticsService.getSnapshot(),
         recentLogs: loggingService.getRecentLogs(50)
       },
       null,
