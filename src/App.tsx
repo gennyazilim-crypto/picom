@@ -4,8 +4,10 @@ import { currentUserId, mockCommunities } from "./data/mockCommunities";
 import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
 import { mockMentionItems } from "./data/mockMentions";
 import { mockDirectConversations } from "./data/mockDirectMessages";
+import { mockFriendState } from "./data/mockFriends";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import type { DirectConversation } from "./types/directMessages";
+import type { FriendState } from "./types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
@@ -28,6 +30,7 @@ import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
+import { FriendsView } from "./components/FriendsView";
 import { clipboardService } from "./services/clipboardService";
 import { loggingService } from "./services/loggingService";
 import { dataSourceService } from "./services/dataSourceService";
@@ -62,7 +65,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages";
+type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages" | "friends";
 
 type CommandPaletteProps = {
   communities: Community[];
@@ -174,6 +177,7 @@ export function App() {
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [directConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
+  const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
@@ -744,6 +748,80 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, directConversations]);
 
+  const openFriends = useCallback(() => {
+    setActiveView("friends");
+    closeTransientOverlays();
+  }, [closeTransientOverlays]);
+
+  const toggleFriendFavorite = useCallback((userId: string) => {
+    setFriendState((current) => ({
+      ...current,
+      friends: current.friends.map((friend) => friend.userId === userId ? { ...friend, favorite: !friend.favorite } : friend),
+    }));
+  }, []);
+
+  const acceptFriendRequest = useCallback((requestId: string) => {
+    setFriendState((current) => {
+      const request = current.requests.find((candidate) => candidate.id === requestId && candidate.direction === "incoming");
+      if (!request) return current;
+
+      return {
+        ...current,
+        requests: current.requests.filter((candidate) => candidate.id !== requestId),
+        friends: [
+          ...current.friends,
+          {
+            userId: request.userId,
+            displayName: request.displayName,
+            username: request.username,
+            status: "online",
+            statusText: "New beta friend",
+            favorite: false,
+            mutualCommunityCount: 1,
+          },
+        ],
+      };
+    });
+    pushToast("Friend request accepted locally.", "success");
+  }, [pushToast]);
+
+  const dismissFriendRequest = useCallback((requestId: string) => {
+    setFriendState((current) => ({
+      ...current,
+      requests: current.requests.filter((request) => request.id !== requestId),
+    }));
+    pushToast("Friend request dismissed locally.", "info");
+  }, [pushToast]);
+
+  const sendFriendRequestPlaceholder = useCallback((userId: string) => {
+    setFriendState((current) => {
+      if (current.requests.some((request) => request.userId === userId) || current.friends.some((friend) => friend.userId === userId)) {
+        return current;
+      }
+
+      const suggestion = current.suggestions.find((candidate) => candidate.userId === userId);
+      if (!suggestion) return current;
+
+      return {
+        friends: current.friends,
+        suggestions: current.suggestions.filter((candidate) => candidate.userId !== userId),
+        requests: [
+          ...current.requests,
+          {
+            id: `friend-request-${userId}`,
+            userId,
+            displayName: suggestion.displayName,
+            username: suggestion.username,
+            direction: "outgoing",
+            note: "Local beta placeholder request.",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+    });
+    pushToast("Friend request placeholder created locally.", "success");
+  }, [pushToast]);
+
   const openProfileActivity = useCallback((activity: { community: Community; channel: { id: string }; message: { id: string } }) => {
     setActiveView("community");
     switchCommunity(activity.community.id, activity.channel.id);
@@ -1013,6 +1091,22 @@ export function App() {
                 if (member) openProfilePage(member);
               }}
             />
+          ) : activeView === "friends" ? (
+            <FriendsView
+              friends={friendState.friends}
+              requests={friendState.requests}
+              suggestions={friendState.suggestions}
+              onBackToCommunity={() => setActiveView("community")}
+              onOpenDirectMessage={openDirectMessages}
+              onOpenProfile={(userId) => {
+                const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+                if (member) openProfilePage(member);
+              }}
+              onToggleFavorite={toggleFriendFavorite}
+              onAcceptRequest={acceptFriendRequest}
+              onDismissRequest={dismissFriendRequest}
+              onSendRequestPlaceholder={sendFriendRequestPlaceholder}
+            />
           ) : (
             <>
               <CommunitySidebar
@@ -1110,6 +1204,7 @@ export function App() {
                   openContext(event, [
                     { label: `View ${member.displayName}` },
                     { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
+                    { label: "Open friends foundation", onSelect: openFriends },
                     { label: "Moderation placeholder", disabled: true },
                   ])
                   }

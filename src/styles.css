@@ -1024,6 +1024,63 @@ body{
 .direct-message.own span{border-radius:18px 18px 8px 18px;background:var(--accent-soft);border-color:color-mix(in srgb,var(--picom-aqua) 38%,var(--border))}
 .direct-message small{color:var(--text-muted);font-size:11px}
 .direct-composer-placeholder{margin:0 24px 24px;border:1px dashed var(--border-strong);border-radius:18px;background:var(--surface-soft);color:var(--text-secondary);min-height:54px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700}
+
+/* Task 283 friends foundation */
+.friends-view{
+  flex:1 1 auto;
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  background:var(--bg-chat);
+}
+.friends-header{
+  min-width:0;
+  min-height:84px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:18px 22px;
+}
+.friends-header h2{margin:4px 0}
+.friends-header p{margin:0;color:var(--text-muted)}
+.friends-grid{
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 360px;
+  gap:18px;
+  padding:18px;
+  overflow:hidden;
+}
+.friends-panel{
+  min-width:0;
+  min-height:0;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:var(--surface);
+  box-shadow:var(--shadow-soft);
+  overflow:hidden;
+}
+.friends-panel.compact{padding-bottom:10px}
+.friends-panel-title{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border)}
+.friends-panel-title span{color:var(--text-muted);font-weight:800}
+.friend-list{min-height:0;overflow:auto;padding:12px;display:grid;gap:10px}
+.friend-card,.friend-request-card,.friend-mini-row{border:1px solid var(--border);border-radius:18px;background:var(--surface-soft);display:grid;gap:12px;align-items:center}
+.friend-card{grid-template-columns:44px minmax(0,1fr) auto;padding:12px}
+.friend-request-card{grid-template-columns:40px minmax(0,1fr);padding:12px;margin:12px}
+.friend-mini-row{grid-template-columns:36px minmax(0,1fr) auto;padding:10px 12px;margin:10px 12px}
+.friend-avatar{width:42px;height:42px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,var(--picom-teal),var(--picom-aqua));color:white;font-weight:900;text-transform:uppercase}
+.friend-avatar.status-idle{background:linear-gradient(135deg,var(--picom-rust),var(--picom-orange))}
+.friend-avatar.status-offline{background:var(--surface);color:var(--text-secondary);border:1px solid var(--border)}
+.friend-copy,.friend-mini-row span,.friend-request-card div{min-width:0;display:grid;gap:3px}
+.friend-copy strong,.friend-copy small,.friend-copy span,.friend-mini-row strong,.friend-mini-row small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.friend-copy small,.friend-copy span,.friend-mini-row small,.friend-request-card small,.friend-request-card p{color:var(--text-muted);font-size:12px}
+.friend-actions,.friend-request-actions{display:flex;gap:8px;flex-wrap:wrap}
+.friend-actions button,.friend-request-actions button,.friend-mini-row button{height:32px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-primary);padding:0 10px;cursor:pointer}
+.friends-side-panel{min-height:0;overflow:auto;display:grid;gap:14px;align-content:start}
+.friend-empty{margin:12px 16px;color:var(--text-muted)}
 .profile-left-card,
 .profile-main-panel{
   min-width:0;
