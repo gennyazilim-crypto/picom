@@ -107,7 +107,8 @@
     "accessibility:display:smoke": "node scripts/accessibility-display-smoke-test.mjs",
     "local-data:migration:smoke": "node scripts/local-data-migration-smoke-test.mjs",
     "api:compatibility:smoke": "node scripts/api-compatibility-smoke-test.mjs",
-    "isolation:multi-tenant:smoke": "node scripts/multi-tenant-isolation-review-smoke-test.mjs"
+    "isolation:multi-tenant:smoke": "node scripts/multi-tenant-isolation-review-smoke-test.mjs",
+    "deps:management:smoke": "node scripts/dependency-management-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
