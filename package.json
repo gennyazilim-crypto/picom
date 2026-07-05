@@ -71,7 +71,8 @@
     "stickers:placeholder:smoke": "node scripts/stickers-placeholder-smoke-test.mjs",
     "polls:foundation:smoke": "node scripts/polls-feature-foundation-smoke-test.mjs",
     "events:foundation:smoke": "node scripts/community-events-foundation-smoke-test.mjs",
-    "threads:placeholder:smoke": "node scripts/threads-placeholder-smoke-test.mjs"
+    "threads:placeholder:smoke": "node scripts/threads-placeholder-smoke-test.mjs",
+    "forum:channel:smoke": "node scripts/forum-channel-placeholder-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
