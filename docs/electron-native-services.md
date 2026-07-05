@@ -315,3 +315,31 @@ Manual verification:
 3. Confirm subscribers receive `offline` and `online` state updates.
 4. In Supabase mode with health configured, call `networkStatusService.checkBackendHealth()`.
 5. Stop the backend or block the health endpoint and confirm `backend_unreachable` is returned without crashing.
+
+## Sleep/wake resume handling
+
+- Main process API: Electron `powerMonitor.on("resume")`
+- Preload bridge: `window.picomDesktop.power.onResume()`
+- Renderer entry point: `src/services/sleepWakeResumeService.ts`
+
+Resume signals:
+
+- Native OS resume event where Electron supports it.
+- `visibilitychange` when the app becomes visible.
+- Window `focus`.
+- Browser `online`.
+
+Safety rules:
+
+- Resume handling is debounced to avoid fetch storms after laptop wake.
+- Resume handling refreshes network status through `networkStatusService`.
+- Optional realtime/session refresh hooks can subscribe later without changing React components.
+- The app must keep the current UI visible while reconnect checks run.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Call `sleepWakeResumeService.triggerManualResume()` and confirm a resume event is emitted.
+3. Minimize/focus or hide/show the window and confirm resume events are debounced.
+4. Put the machine to sleep/wake if practical and confirm no renderer crash occurs.
+5. Confirm backend health is refreshed but not spammed.

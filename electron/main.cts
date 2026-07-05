@@ -11,6 +11,7 @@ import {
   dialog,
   clipboard,
   screen,
+  powerMonitor,
   type OpenDialogOptions,
   type SaveDialogOptions
 } from "electron";
@@ -162,6 +163,16 @@ function flushPendingDeepLinks(): void {
       mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
     }
   }
+}
+
+function sendPowerResumeToRenderer(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  mainWindow.webContents.send(IPC_CHANNELS.powerResume, {
+    timestamp: new Date().toISOString()
+  });
 }
 
 function sendTrayAction(action: TrayAction): void {
@@ -754,6 +765,7 @@ if (!hasSingleInstanceLock) {
   app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
     registerIpcHandlers();
+    powerMonitor.on("resume", sendPowerResumeToRenderer);
 
     const initialDeepLink = extractDeepLinkFromArgs(process.argv);
     if (initialDeepLink) {

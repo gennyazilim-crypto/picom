@@ -33,6 +33,9 @@ type SaveTextPayload = Readonly<{
   defaultPath?: string;
   content: string;
 }>;
+type PowerResumePayload = Readonly<{
+  timestamp: string;
+}>;
 
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
@@ -87,6 +90,14 @@ function isSafeDeepLink(value: unknown): value is string {
   } catch {
     return false;
   }
+}
+
+function isPowerResumePayload(value: unknown): value is PowerResumePayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  return typeof (value as { timestamp?: unknown }).timestamp === "string";
 }
 
 const runtimeInfo: PicomRuntimeInfo = Object.freeze({
@@ -226,6 +237,21 @@ const bridge = Object.freeze({
 
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.deepLinkOpen, listener);
+      };
+    }
+  },
+  power: {
+    onResume: (callback: (payload: PowerResumePayload) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (isPowerResumePayload(value)) {
+          callback(value);
+        }
+      };
+
+      ipcRenderer.on(IPC_CHANNELS.powerResume, listener);
+
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.powerResume, listener);
       };
     }
   }

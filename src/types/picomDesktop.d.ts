@@ -118,6 +118,9 @@ declare global {
       deepLinks?: {
         onOpen: (callback: (url: string) => void) => () => void;
       };
+      power?: {
+        onResume: (callback: (payload: { timestamp: string }) => void) => () => void;
+      };
     };
   }
 }

@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import { DesktopStartupErrorBoundary } from "./components/DesktopStartupErrorBoundary";
 import { deepLinkService } from "./services/deepLinkService";
+import { sleepWakeResumeService } from "./services/sleepWakeResumeService";
 import "./styles.css";
 
 function markRuntime(): void {
@@ -30,6 +31,7 @@ function getRootElement(): HTMLElement {
 function bootstrapRenderer(): void {
   markRuntime();
   deepLinkService.startNativeListener();
+  sleepWakeResumeService.start();
 
   ReactDOM.createRoot(getRootElement()).render(
     <React.StrictMode>
