@@ -125,3 +125,24 @@ Manual verification:
 3. Confirm the URL opens in the default browser.
 4. Trigger `externalLinkService.openExternalUrl("javascript:alert(1)")`.
 5. Confirm the service returns a blocked/unsafe result and does not open anything.
+
+## Menu service placeholder
+
+- Renderer entry point: `src/services/menuService.ts`
+- Native menu state: intentionally hidden for the MVP custom titlebar shell
+- Main process behavior: `Menu.setApplicationMenu(null)` and `setMenuBarVisibility(false)`
+
+Safety rules:
+
+- React components should use `menuService` for future app-menu actions.
+- The visible native File/Edit/View menu must remain disabled while Picom uses the custom desktop titlebar.
+- The placeholder emits typed menu actions locally and does not expose Electron `Menu` objects.
+- Future native menu support should be added through preload/IPC, not direct renderer imports.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Confirm no native File/Edit/View/Window menu appears.
+3. Confirm the custom Picom titlebar remains visible.
+4. In a diagnostics/dev path, call `menuService.getState()` and confirm `nativeMenuVisible` is `false`.
+5. Call `menuService.triggerPlaceholderAction("open-settings")` and confirm subscribers receive a typed placeholder action.
