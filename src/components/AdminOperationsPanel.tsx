@@ -1,6 +1,7 @@
 import { appConfig } from "../config/appConfig";
 import { reportService } from "../services/reportService";
 import { attachmentQuarantineService } from "../services/attachmentQuarantineService";
+import { abuseEventService } from "../services/abuseEventService";
 
 const adminSections = [
   {
@@ -41,6 +42,7 @@ export function AdminOperationsPanel() {
   const reportSummary = reportService.getSummary();
   const quarantineSummary = attachmentQuarantineService.getAdminSummaryPlaceholder();
   const quarantineRoutes = attachmentQuarantineService.getReviewRoutePlaceholders();
+  const abuseSummary = abuseEventService.getAdminSummary();
 
   return (
     <section className="settings-status-card" aria-label="Admin operations placeholder">
@@ -69,6 +71,11 @@ export function AdminOperationsPanel() {
           <span>Attachment quarantine</span>
           <strong>{quarantineSummary.quarantinedCount} blocked</strong>
           <small>{quarantineSummary.needsReviewCount} needing review. Routes prepared: {quarantineRoutes.list}; {quarantineRoutes.review}.</small>
+        </article>
+        <article className="security-card">
+          <span>Abuse events</span>
+          <strong>{abuseSummary.total} local</strong>
+          <small>{abuseSummary.critical} critical, {abuseSummary.warning} warnings. Metadata is redacted and private content is not stored.</small>
         </article>
       </div>
       <div className="security-card-grid">

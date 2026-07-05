@@ -59,6 +59,7 @@
     "admin:bootstrap:smoke": "node scripts/admin-bootstrap-smoke-test.mjs",
     "create-admin-user": "node scripts/create-admin-user-placeholder.mjs",
     "admin:create:placeholder": "node scripts/create-admin-user-placeholder.mjs",
+    "abuse:events:smoke": "node scripts/abuse-event-logging-smoke-test.mjs",
     "dev:reset-data": "node scripts/reset-dev-data.mjs",
     "email:smoke": "node scripts/email-service-smoke-test.mjs",
     "auth:password-reset:smoke": "node scripts/password-reset-smoke-test.mjs",
