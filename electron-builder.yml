@@ -12,6 +12,7 @@ files:
   - assets/brand/app-icon.ico
   - assets/brand/app-icon.png
   - assets/brand/app-icon.svg
+  - assets/brand/icons/**/*
   - package.json
 
 asar: true
@@ -43,7 +44,7 @@ nsis:
   shortcutName: Picom
 
 linux:
-  icon: assets/brand/app-icon.png
+  icon: assets/brand/icons
   category: Network
   executableName: Picom
   maintainer: Picom Contributors

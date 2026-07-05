@@ -55,7 +55,7 @@ The AppImage build should preserve:
 Linux packaging currently uses:
 
 ```text
-assets/brand/app-icon.png
+assets/brand/icons/
 ```
 
 Before final release, prepare a proper Linux icon size set if the desktop environment requires it.

@@ -56,6 +56,7 @@ The packaging config references:
 assets/brand/app-icon.png
 assets/brand/app-icon.svg
 assets/brand/app-icon.ico
+assets/brand/icons/
 ```
 
 Before final release, generate platform-native icon formats if needed:
