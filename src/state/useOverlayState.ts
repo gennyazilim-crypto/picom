@@ -1,4 +1,4 @@
-﻿import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Attachment, Member } from "../types/community";
 
 export interface OverlayMenuItem {
@@ -35,6 +35,12 @@ export function useOverlayState() {
   const [profile, setProfile] = useState<ProfileOverlay | null>(null);
   const [preview, setPreview] = useState<Attachment | null>(null);
   const [toasts, setToasts] = useState<OverlayToast[]>([]);
+  const toastTimeoutsRef = useRef(new Map<OverlayToast["id"], number>());
+
+  useEffect(() => () => {
+    toastTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    toastTimeoutsRef.current.clear();
+  }, []);
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
@@ -64,6 +70,12 @@ export function useOverlayState() {
   }, []);
 
   const dismissToast = useCallback((id: OverlayToast["id"]) => {
+    const timeoutId = toastTimeoutsRef.current.get(id);
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+      toastTimeoutsRef.current.delete(id);
+    }
+
     setToasts((current) => current.filter((item) => item.id !== id));
   }, []);
 
@@ -73,8 +85,24 @@ export function useOverlayState() {
         ? window.crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const toast: OverlayToast = { id, message, tone };
-    setToasts((current) => [...current.slice(-2), toast]);
-    window.setTimeout(() => setToasts((current) => current.filter((item) => item.id !== toast.id)), 2600);
+    setToasts((current) => {
+      const next = [...current.slice(-2), toast];
+      const visibleIds = new Set(next.map((item) => item.id));
+
+      toastTimeoutsRef.current.forEach((timeoutId, toastId) => {
+        if (visibleIds.has(toastId)) return;
+        window.clearTimeout(timeoutId);
+        toastTimeoutsRef.current.delete(toastId);
+      });
+
+      return next;
+    });
+
+    const timeoutId = window.setTimeout(() => {
+      toastTimeoutsRef.current.delete(toast.id);
+      setToasts((current) => current.filter((item) => item.id !== toast.id));
+    }, 2600);
+    toastTimeoutsRef.current.set(toast.id, timeoutId);
   }, []);
 
   return {
