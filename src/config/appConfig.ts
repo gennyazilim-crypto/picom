@@ -17,11 +17,13 @@ const environment = import.meta.env.VITE_APP_ENV ?? "development";
 
 export const appConfig = Object.freeze({
   name: import.meta.env.VITE_APP_NAME ?? "Picom",
+  version: import.meta.env.VITE_APP_VERSION ?? "0.1.0",
   identifier: import.meta.env.VITE_APP_IDENTIFIER ?? "com.picom.desktop",
   environment,
   releaseChannel: getReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment),
   dataSource: getDataSourceMode(import.meta.env.VITE_DATA_SOURCE),
   statusPageUrl: import.meta.env.VITE_STATUS_PAGE_URL ?? "",
+  remoteConfigUrl: import.meta.env.VITE_REMOTE_CONFIG_URL ?? "",
   runtimeTarget: "electron" as const,
   supportedPlatforms: ["windows", "linux", "macos"] as const,
   supabase: Object.freeze({
