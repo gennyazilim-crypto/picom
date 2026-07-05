@@ -45,6 +45,8 @@ nsis:
 linux:
   icon: assets/brand/app-icon.png
   category: Network
+  executableName: Picom
+  maintainer: Picom Contributors
   synopsis: Premium desktop community chat app
   description: Picom is a premium Electron desktop community chat app for focused groups.
   target:

@@ -18,12 +18,14 @@ This avoids a larger Electron Forge migration while giving straightforward Windo
 npm run package
 npm run package:win:dir
 npm run package:win
+npm run package:linux:appimage
 npm run package:linux
 npm run package:mac
 ```
 
 `npm run package` creates an unpacked directory build for local smoke checks.
 `npm run package:win:dir` creates an unpacked Windows x64 smoke build.
+`npm run package:linux:appimage` creates a Linux AppImage target on a Linux host or CI runner.
 
 ## Targets
 
