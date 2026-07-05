@@ -78,3 +78,16 @@ Invoke-RestMethod `
 ```
 
 Expected: `valid: true`.
+
+Validation failures return typed API errors:
+
+```json
+{
+  "code": "UPLOAD_INVALID_TYPE",
+  "message": "Only PNG, JPEG, WEBP, and GIF images are supported in the MVP.",
+  "details": {
+    "valid": false,
+    "reason": "UNSUPPORTED_MIME_TYPE"
+  }
+}
+```

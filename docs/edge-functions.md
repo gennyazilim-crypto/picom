@@ -82,6 +82,7 @@ supabase functions serve livekit-token
 supabase functions serve accept-invite
 supabase functions serve moderation-helper
 supabase functions serve notification-fanout
+supabase functions serve validate-file
 ```
 
 Example protected invocation:
