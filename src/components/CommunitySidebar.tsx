@@ -7,6 +7,7 @@ import { UserMiniCard } from "./UserMiniCard";
 import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
 import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
 import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
+import { CommunityCategoryManagementPanel } from "./CommunityCategoryManagementPanel";
 
 type CommunitySidebarProps = {
   community: Community;
@@ -17,9 +18,12 @@ type CommunitySidebarProps = {
   onOpenSettings: () => void;
   onLogout: () => void;
   onChannelContextMenu: (event: MouseEvent, channel: Channel) => void;
+  onCreateCategory: (name: string) => void;
+  onRenameCategory: (categoryId: string, name: string) => void;
+  onDeleteCategory: (categoryId: string) => void;
 };
 
-export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -34,6 +38,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
         {canViewOnboardingChecklist ? <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} /> : null}
         <CommunityOwnershipTransferPanel community={community} currentUser={currentUser} />
         <CommunityDeleteSafetyPanel community={community} currentUser={currentUser} />
+        <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />
 
         {community.categories.map((category) => (
           <ChannelCategory

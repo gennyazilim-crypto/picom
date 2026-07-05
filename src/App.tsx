@@ -207,6 +207,9 @@ export function App() {
     markChannelUnread,
     clearChannelUnread,
     addCommunity,
+    addCategory,
+    renameCategory,
+    deleteCategory,
     addChannel,
     replaceCommunities,
     replaceCommunityCategories,
@@ -1383,6 +1386,18 @@ export function App() {
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onOpenSettings={openSettings}
                 onLogout={handleLogout}
+                onCreateCategory={(name) => {
+                  const category = addCategory({ communityId: activeCommunity.id, name });
+                  pushToast(`${category.name} category created locally.`, "success");
+                }}
+                onRenameCategory={(categoryId, name) => {
+                  renameCategory({ communityId: activeCommunity.id, categoryId, name });
+                  pushToast("Category renamed locally.", "success");
+                }}
+                onDeleteCategory={(categoryId) => {
+                  deleteCategory({ communityId: activeCommunity.id, categoryId });
+                  pushToast("Category deleted locally; channels moved safely.", "info");
+                }}
                 onChannelContextMenu={(event, channel) =>
                   openContext(event, [
                     {

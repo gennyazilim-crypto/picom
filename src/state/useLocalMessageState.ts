@@ -94,6 +94,24 @@ function updateChannelUnreadState(
   return changed ? nextCommunities : communities;
 }
 
+type AddLocalCategoryInput = {
+  communityId: string;
+  id?: string;
+  name: string;
+  position?: number;
+};
+
+type RenameLocalCategoryInput = {
+  communityId: string;
+  categoryId: string;
+  name: string;
+};
+
+type DeleteLocalCategoryInput = {
+  communityId: string;
+  categoryId: string;
+};
+
 type AddLocalChannelInput = {
   communityId: string;
   categoryId?: string | null;
@@ -342,6 +360,66 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
+  const addCategory = useCallback((input: AddLocalCategoryInput) => {
+    const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const category: ChannelCategory = {
+      id: input.id ?? `local-category-${idSuffix}`,
+      name: input.name.trim(),
+      channels: [],
+      position: input.position,
+    };
+
+    setCommunities((current) =>
+      current.map((community) => {
+        if (community.id !== input.communityId) return community;
+        return {
+          ...community,
+          categories: [...community.categories, { ...category, position: category.position ?? community.categories.length }],
+        };
+      }),
+    );
+
+    return category;
+  }, []);
+
+  const renameCategory = useCallback(({ communityId, categoryId, name }: RenameLocalCategoryInput) => {
+    setCommunities((current) =>
+      current.map((community) =>
+        community.id === communityId
+          ? {
+              ...community,
+              categories: community.categories.map((category) => category.id === categoryId ? { ...category, name: name.trim() } : category),
+            }
+          : community,
+      ),
+    );
+  }, []);
+
+  const deleteCategory = useCallback(({ communityId, categoryId }: DeleteLocalCategoryInput) => {
+    setCommunities((current) =>
+      current.map((community) => {
+        if (community.id !== communityId || community.categories.length <= 1) return community;
+
+        const target = community.categories.find((category) => category.id === categoryId);
+        if (!target) return community;
+
+        const remaining = community.categories.filter((category) => category.id !== categoryId);
+        const [firstCategory, ...otherCategories] = remaining;
+        if (!firstCategory) return community;
+
+        const movedChannels = target.channels.map((channel) => ({ ...channel, categoryId: firstCategory.id }));
+
+        return {
+          ...community,
+          categories: [
+            { ...firstCategory, channels: [...firstCategory.channels, ...movedChannels] },
+            ...otherCategories,
+          ].map((category, position) => ({ ...category, position })),
+        };
+      }),
+    );
+  }, []);
+
   const addChannel = useCallback((input: AddLocalChannelInput) => {
     const channel: Channel = {
       id: input.id,
@@ -386,6 +464,9 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     markChannelUnread,
     clearChannelUnread,
     addCommunity,
+    addCategory,
+    renameCategory,
+    deleteCategory,
     addChannel,
     replaceCommunities,
     replaceCommunityCategories,

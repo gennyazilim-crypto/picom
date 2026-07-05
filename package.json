@@ -59,6 +59,7 @@
     "community:ownership-transfer:smoke": "node scripts/community-ownership-transfer-smoke-test.mjs",
     "community:delete-safety:smoke": "node scripts/community-delete-safety-smoke-test.mjs",
     "channel:private-permissions:smoke": "node scripts/private-channel-permissions-smoke-test.mjs",
+    "channel:categories:smoke": "node scripts/channel-category-management-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {
