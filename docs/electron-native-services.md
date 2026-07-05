@@ -146,3 +146,34 @@ Manual verification:
 3. Confirm the custom Picom titlebar remains visible.
 4. In a diagnostics/dev path, call `menuService.getState()` and confirm `nativeMenuVisible` is `false`.
 5. Call `menuService.triggerPlaceholderAction("open-settings")` and confirm subscribers receive a typed placeholder action.
+
+## Deep link service placeholder
+
+- Renderer entry point: `src/services/deepLinkService.ts`
+- Protocol placeholder: `picom://`
+- Native protocol registration: intentionally deferred to the later protocol-handler task
+
+Supported placeholder links:
+
+- `picom://invite/{code}`
+- `picom://community/{communityId}`
+- `picom://community/{communityId}/channel/{channelId}`
+- `picom://community/{communityId}/channel/{channelId}/message/{messageId}`
+- `picom://settings`
+- `picom://friends`
+
+Safety rules:
+
+- Deep links are parsed and validated before any app action is emitted.
+- Only safe alphanumeric, underscore, and hyphen route segments are accepted.
+- Unknown protocols and routes are rejected.
+- Deep links do not execute commands and do not open external URLs.
+- External web URLs must continue to use `externalLinkService`.
+
+Manual verification:
+
+1. Call `deepLinkService.simulateDeepLink("picom://settings")`.
+2. Confirm the result is a typed settings action.
+3. Call `deepLinkService.simulateDeepLink("picom://community/demo/channel/general/message/msg-1")`.
+4. Confirm the result includes community, channel, and message identifiers.
+5. Call `deepLinkService.simulateDeepLink("javascript:alert(1)")` and confirm it is rejected.
