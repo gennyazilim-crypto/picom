@@ -43,6 +43,8 @@ Artifact names include the Picom product name, package version, target platform,
 
 Windows local builds use `requestedExecutionLevel: asInvoker` and the assisted NSIS installer mode so smoke tests do not require forced elevation by default.
 
+Linux package metadata uses the `Network` desktop category, `net` Debian package category, and placeholder `Picom Contributors` maintainer identity until final release ownership details are chosen.
+
 ## Icon and metadata checks
 
 - Windows icon: `assets/brand/app-icon.ico`
