@@ -17,6 +17,10 @@ function assertIncludes(text, expected, label) {
   assertCondition(text.includes(expected), `${label} is missing: ${expected}`);
 }
 
+function assertNotMatches(text, pattern, label) {
+  assertCondition(!pattern.test(text), label);
+}
+
 function assertFile(path) {
   assertCondition(existsSync(resolve(root, path)), `Required packaging asset is missing: ${path}`);
 }
@@ -45,6 +49,11 @@ assertIncludes(builderConfig, "target: deb", "Linux deb target");
 assertIncludes(builderConfig, "target: dmg", "macOS dmg target");
 assertIncludes(builderConfig, "target: zip", "macOS zip target");
 assertIncludes(builderConfig, "publish: null", "publish config");
+assertNotMatches(
+  builderConfig,
+  /^(?!\s*#)\s*(certificateFile|certificatePassword|identity|appleId|appleIdPassword|notarize):/m,
+  "Packaging config must not contain active signing or notarization secrets."
+);
 
 assertIncludes(appConfig, 'name: "Picom"', "Electron app name");
 assertIncludes(appConfig, 'appId: "com.picom.desktop"', "Electron app id");

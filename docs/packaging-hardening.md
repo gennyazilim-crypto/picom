@@ -50,6 +50,7 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 - Windows signing is intentionally disabled for local builds.
 - macOS signing and notarization are intentionally disabled for local builds.
 - Signing certificates, passwords, private keys, and notarization credentials must be supplied only through secure CI or a local secret manager later.
+- `npm run package:verify` fails if active signing or notarization secret fields are added to the committed packaging config.
 
 ## Smoke-test references
 
