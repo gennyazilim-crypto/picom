@@ -2,6 +2,8 @@
 
 Task 247 configures `electron-builder` for Picom desktop packaging.
 
+See `docs/app-identity.md` for the canonical Picom app name and identifier values.
+
 ## Packaging tool decision
 
 Picom uses `electron-builder` because the project already has:

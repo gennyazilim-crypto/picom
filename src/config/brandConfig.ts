@@ -5,7 +5,8 @@ export const brandConfig = Object.freeze({
   assets: Object.freeze({
     sourceLogo: "/assets/brand/picom-logo-concept.png",
     appIconPng: "/assets/brand/app-icon.png",
-    appIconSvg: "/assets/brand/app-icon.svg"
+    appIconSvg: "/assets/brand/app-icon.svg",
+    appIconIco: "/assets/brand/app-icon.ico"
   }),
   palette: Object.freeze({
     deepTeal: "#007571",
