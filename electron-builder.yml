@@ -1,6 +1,6 @@
 appId: com.picom.desktop
 productName: Picom
-copyright: Copyright © 2026 Picom
+copyright: Copyright (c) 2026 Picom
 
 directories:
   output: release
