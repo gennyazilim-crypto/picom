@@ -10,6 +10,7 @@ const checks = [
   ["run", "renderer:native:smoke"],
   ["run", "branding:smoke"],
   ["run", "desktop:smoke"],
+  ["run", "electron:security:smoke"],
   ["run", "mock:smoke"]
 ];
 
