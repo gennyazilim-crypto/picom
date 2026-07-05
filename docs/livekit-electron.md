@@ -94,6 +94,14 @@ Leaving a room must release local capture resources before disconnecting:
 - Rows show compact states for local user, connected users, muted microphones, and speaking users.
 - The list does not expose device IDs, tokens, IP addresses, or raw LiveKit secrets.
 
+## Audio device selection placeholder
+
+- The MVP UI shows system default input/output placeholders without enumerating devices on startup.
+- Device enumeration should only happen after an explicit user action because it may trigger OS/browser permission prompts.
+- Future input switching should use LiveKit local track APIs rather than storing raw device identifiers in settings or logs.
+- Future output switching should use supported safe browser/Electron audio output APIs where available, with a graceful fallback when unsupported.
+- macOS may require microphone permission before input devices are visible; Windows and Linux can also hide devices depending on privacy and audio server settings.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.

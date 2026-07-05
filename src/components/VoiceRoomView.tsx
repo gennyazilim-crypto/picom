@@ -97,6 +97,26 @@ export function VoiceRoomView({
 
           {snapshot.error ? <p className="voice-room-error">{snapshot.error}</p> : null}
           <p className="voice-room-note">LiveKit tokens are requested through the Supabase Edge Function. Secrets never enter the renderer.</p>
+
+          <div className="voice-device-placeholder" aria-label="Audio device selection placeholder">
+            <div>
+              <strong>Audio devices</strong>
+              <small>Selection placeholder</small>
+            </div>
+            <label>
+              Input
+              <select disabled value="system-default-input" aria-label="Microphone device placeholder">
+                <option value="system-default-input">System default microphone</option>
+              </select>
+            </label>
+            <label>
+              Output
+              <select disabled value="system-default-output" aria-label="Speaker device placeholder">
+                <option value="system-default-output">System default speakers</option>
+              </select>
+            </label>
+            <p>Device switching will be enabled after the native permission flow is wired safely.</p>
+          </div>
         </article>
 
         <article className="voice-room-card">
