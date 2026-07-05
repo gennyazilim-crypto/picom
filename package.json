@@ -31,6 +31,7 @@
     "logs:smoke": "node scripts/logging-service-smoke-test.mjs",
     "diagnostics:smoke": "node scripts/diagnostics-redaction-smoke-test.mjs",
     "errors:smoke": "node scripts/error-codes-smoke-test.mjs",
+    "entity-store:smoke": "node scripts/entity-store-normalization-smoke-test.mjs",
     "crash:smoke": "node scripts/crash-diagnostics-smoke-test.mjs",
     "secrets:smoke": "node scripts/secret-exposure-smoke-test.mjs",
     "renderer:native:smoke": "node scripts/renderer-native-api-smoke-test.mjs",
