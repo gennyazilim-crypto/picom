@@ -43,6 +43,26 @@ npm run dev
 
 Open the local Vite URL and use a desktop viewport such as `1440x900`.
 
+## Packaging
+
+Picom uses `electron-builder` for Windows, Linux, and macOS package preparation.
+
+```bash
+npm run build
+npm run package
+npm run package:win
+npm run package:linux
+npm run package:mac
+```
+
+- `npm run package` creates an unpacked local build in `release/`.
+- Windows builds target an unsigned NSIS x64 installer.
+- Linux builds target AppImage x64 and deb x64.
+- macOS builds target an unsigned dmg x64 placeholder.
+- Signing/notarization is intentionally not configured yet; do not commit certificates, private keys, or signing secrets.
+
+See `docs/electron-packaging.md` for packaging notes and platform implications.
+
 ## Workflow
 
 1. Follow one task file at a time from the active 001-186 pack.

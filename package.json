@@ -1,6 +1,8 @@
 {
   "name": "picom",
   "version": "0.1.0",
+  "description": "Picom premium desktop community chat app.",
+  "author": "Picom Contributors",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +13,10 @@
     "electron:dev": "npm run electron:build && node scripts/electron-dev.mjs",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && npm run electron:build && vite build",
+    "package": "npm run build && electron-builder --dir",
+    "package:win": "npm run build && electron-builder --win --x64",
+    "package:linux": "npm run build && electron-builder --linux --x64",
+    "package:mac": "npm run build && electron-builder --mac --x64",
     "preview": "vite preview --host 127.0.0.1",
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
@@ -32,6 +38,7 @@
     "@types/react-dom": "^19.2.3",
     "concurrently": "^10.0.3",
     "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
     "wait-on": "^9.0.10"
   },
   "main": "dist-electron/main.cjs"

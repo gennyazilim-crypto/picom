@@ -1,0 +1,60 @@
+appId: com.picom.desktop
+productName: Picom
+copyright: Copyright © 2026 Picom
+
+directories:
+  output: release
+  buildResources: assets/brand
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - assets/brand/app-icon.png
+  - assets/brand/app-icon.svg
+  - package.json
+
+asar: true
+
+extraMetadata:
+  main: dist-electron/main.cjs
+
+win:
+  icon: assets/brand/app-icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: Picom-${version}-Windows-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Picom
+
+linux:
+  icon: assets/brand/app-icon.png
+  category: Network
+  synopsis: Premium desktop community chat app
+  description: Picom is a premium Electron desktop community chat app for focused groups.
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  artifactName: Picom-${version}-Linux-${arch}.${ext}
+
+mac:
+  icon: assets/brand/app-icon.png
+  category: public.app-category.social-networking
+  target:
+    - target: dmg
+      arch:
+        - x64
+  artifactName: Picom-${version}-macOS-${arch}.${ext}
+
+publish: null

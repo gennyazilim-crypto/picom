@@ -1,0 +1,84 @@
+# Electron Packaging
+
+Task 247 configures `electron-builder` for Picom desktop packaging.
+
+## Packaging tool decision
+
+Picom uses `electron-builder` because the project already has:
+
+- Vite renderer output in `dist/`
+- Electron main/preload output in `dist-electron/`
+- a root `main` entry pointing to `dist-electron/main.cjs`
+
+This avoids a larger Electron Forge migration while giving straightforward Windows, Linux, and macOS targets.
+
+## Commands
+
+```bash
+npm run package
+npm run package:win
+npm run package:linux
+npm run package:mac
+```
+
+`npm run package` creates an unpacked directory build for local smoke checks.
+
+## Targets
+
+- Windows: NSIS x64 installer.
+- Linux: AppImage x64 and deb x64.
+- macOS: dmg x64 placeholder target.
+
+## Output
+
+Artifacts are written to:
+
+```text
+release/
+```
+
+## Branding assets
+
+The packaging config references:
+
+```text
+assets/brand/app-icon.png
+assets/brand/app-icon.svg
+```
+
+Before final release, generate platform-native icon formats if needed:
+
+- Windows `.ico`
+- macOS `.icns`
+- Linux icon size set
+
+## Signing and notarization
+
+- Local builds are unsigned.
+- Windows code signing is not configured yet.
+- macOS signing/notarization is not configured yet.
+- No certificates, private keys, signing passwords, or production credentials are committed.
+
+## Manual verification
+
+1. Run `npm run build`.
+2. Run `npm run package` for an unpacked local smoke build.
+3. On Windows, run `npm run package:win` when NSIS packaging is available.
+4. On Linux, run `npm run package:linux` on a Linux runner or VM.
+5. On macOS, run `npm run package:mac` on macOS.
+6. Confirm the packaged app opens, shows the custom Picom titlebar, and keeps the 4-column desktop layout.
+
+## Known local Windows packaging issue
+
+On the current Windows workstation, `npm run package` successfully runs the renderer/Electron build and loads `electron-builder.yml`, but the unpacked smoke package can fail at Electron's temporary folder rename step:
+
+```text
+EPERM: operation not permitted, rename 'release\\win-unpacked.tmp' -> 'release\\win-unpacked'
+```
+
+If this appears:
+
+1. Close any running Picom/Electron process.
+2. Delete the generated `release/win-unpacked.tmp` folder.
+3. Retry from a normal local folder or an elevated terminal if Windows Controlled Folder Access or antivirus is locking Desktop writes.
+4. Treat this as a local filesystem smoke-test blocker, not a TypeScript/Vite build failure.
