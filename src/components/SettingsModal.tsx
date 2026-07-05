@@ -18,6 +18,7 @@ import { cacheManagementService, type CacheSummary } from "../services/cacheMana
 import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";
 import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
 import { notificationDigestService } from "../services/notificationDigestService";
+import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -73,6 +74,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [cacheSummary, setCacheSummary] = useState<CacheSummary | null>(null);
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
+  const [accountActivities, setAccountActivities] = useState<AccountActivityRecord[]>(() => accountActivityService.listRecent());
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -102,6 +104,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   useEffect(() => {
     if (active === "Account") {
       void refreshActiveSessions();
+      setAccountActivities(accountActivityService.listRecent());
     }
   }, [active, refreshActiveSessions]);
 
@@ -428,6 +431,30 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                     {session.expiresAt ? <small>Expires: {dateTimeService.formatFullTimestamp(session.expiresAt)}.</small> : <small>Mock/local sessions do not expose an expiry.</small>}
                   </article>
                 ))}
+              </div>
+              <div className="settings-status-card" aria-label="Account Activity section">
+                <span>Account Activity</span>
+                <strong>{accountActivities.length ? `${accountActivities.length} recent events` : "No recent activity"}</strong>
+                <small>Security history is local placeholder data. Raw IP addresses, passwords, tokens, cookies, and auth headers are not stored.</small>
+              </div>
+              <div className="session-list" aria-label="Account activity history">
+                {accountActivities.length ? accountActivities.map((activity) => (
+                  <article key={activity.id} className="session-card">
+                    <div>
+                      <strong>{accountActivityService.getActivityTitle(activity.type)}</strong>
+                      <small>{activity.device} · {activity.locationPlaceholder}</small>
+                    </div>
+                    <span className="session-status active">{activity.platform}</span>
+                    <small>{dateTimeService.formatFullTimestamp(activity.timestamp)}</small>
+                  </article>
+                )) : (
+                  <article className="session-card">
+                    <div>
+                      <strong>No account activity yet</strong>
+                      <small>Sign in, log out, or update security settings to create local activity records.</small>
+                    </div>
+                  </article>
+                )}
               </div>
               <div className="settings-actions-row">
                 <button onClick={() => pushToast("Security settings placeholder reviewed.", "info")}>Review placeholder</button>

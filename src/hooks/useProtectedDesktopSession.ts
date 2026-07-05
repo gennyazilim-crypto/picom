@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { authService, type AuthServiceSession } from "../services/authService";
 import { loggingService } from "../services/loggingService";
 import { multiClientSessionSyncService } from "../services/multiClientSessionSyncService";
+import { accountActivityService } from "../services/accountActivityService";
 
 type NoticeTone = "info" | "success" | "error";
 type NoticeCallback = (message: string, tone?: NoticeTone) => void;
@@ -62,6 +63,15 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
         reason: event.reason
       }, "multi-client-sync");
 
+      accountActivityService.recordActivity({
+        type: "session_revoked",
+        userId: event.userId,
+        metadata: {
+          source: "multi_client_sync",
+          reason: event.reason ?? "revoked_placeholder"
+        }
+      });
+
       void authService.signOut().finally(() => {
         if (!alive) return;
         setSession(null);
@@ -84,6 +94,11 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
     const result = await authService.signInWithEmailPassword(email, password);
     if (result.ok) {
       setSession(result.data);
+      accountActivityService.recordActivity({
+        type: "login_success",
+        userId: result.data.user?.id ?? null,
+        metadata: { provider: result.data.provider }
+      });
       notify?.("Signed in to Picom.", "success");
     } else {
       loggingService.logWarn("Auth sign-in failed", { code: result.error.code });
@@ -100,6 +115,11 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
     const result = await authService.signUpWithEmailPassword(email, password, displayName);
     if (result.ok) {
       setSession(result.data);
+      accountActivityService.recordActivity({
+        type: "login_success",
+        userId: result.data.user?.id ?? null,
+        metadata: { provider: result.data.provider, signup: true }
+      });
       notify?.("Picom account created.", "success");
     } else {
       loggingService.logWarn("Auth register failed", { code: result.error.code });
@@ -115,6 +135,11 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
 
     const result = await authService.signOut();
     if (result.ok) {
+      accountActivityService.recordActivity({
+        type: "logout",
+        userId: sessionRef.current?.user?.id ?? null,
+        metadata: { provider: sessionRef.current?.provider ?? "unknown" }
+      });
       setSession(null);
       notify?.("Signed out.", "info");
     } else {

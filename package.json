@@ -67,6 +67,7 @@
     "auth:email-verification:smoke": "node scripts/email-verification-smoke-test.mjs",
     "auth:sessions:smoke": "node scripts/session-management-smoke-test.mjs",
     "auth:multi-client-sync:smoke": "node scripts/multi-client-session-sync-smoke-test.mjs",
+    "account:activity:smoke": "node scripts/user-activity-history-smoke-test.mjs",
     "auth:2fa:smoke": "node scripts/two-factor-placeholder-smoke-test.mjs",
     "auth:account-deletion:smoke": "node scripts/account-deletion-smoke-test.mjs",
     "privacy:data-export:smoke": "node scripts/data-export-placeholder-smoke-test.mjs",
