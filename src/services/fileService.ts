@@ -8,6 +8,12 @@ export type FileValidationErrorCode = "UNSUPPORTED_MIME_TYPE" | "UNSUPPORTED_EXT
 export type FileValidationResult =
   | Readonly<{ ok: true }>
   | Readonly<{ ok: false; code: FileValidationErrorCode; reason: string }>;
+export type NativeImagePickResult =
+  | Readonly<{ ok: true; canceled: boolean; files: File[] }>
+  | Readonly<{ ok: false; reason: string }>;
+export type NativeTextSaveResult =
+  | Readonly<{ ok: true; canceled: boolean }>
+  | Readonly<{ ok: false; reason: string }>;
 
 function getFileExtension(fileName: string): string {
   const dotIndex = fileName.lastIndexOf(".");
@@ -46,5 +52,31 @@ export const fileService = {
   createPreview(file: File): LocalAttachmentPreview {
     return { id: `local-file-${Date.now()}-${file.name}`, name: file.name, type: file.type, size: file.size, file, url: URL.createObjectURL(file) };
   },
-  revoke(preview: LocalAttachmentPreview) { URL.revokeObjectURL(preview.url); }
+  revoke(preview: LocalAttachmentPreview) { URL.revokeObjectURL(preview.url); },
+  async pickImages(): Promise<NativeImagePickResult> {
+    const bridge = window.picomDesktop?.file?.pickImages;
+    if (!bridge) return { ok: false, reason: "Native image picker is unavailable in this runtime." };
+
+    const result = await bridge().catch(() => null);
+    if (!result?.ok) return { ok: false, reason: "Native image picker failed safely." };
+
+    const files = await Promise.all(
+      result.files.map(async (pickedFile) => {
+        const response = await fetch(pickedFile.dataUrl);
+        const blob = await response.blob();
+        return new File([blob], pickedFile.name, { type: pickedFile.type });
+      })
+    );
+
+    return { ok: true, canceled: result.canceled, files };
+  },
+  async saveText(defaultPath: string, content: string): Promise<NativeTextSaveResult> {
+    const bridge = window.picomDesktop?.file?.saveText;
+    if (!bridge) return { ok: false, reason: "Native save dialog is unavailable in this runtime." };
+
+    const result = await bridge({ defaultPath, content }).catch(() => null);
+    if (!result?.ok) return { ok: false, reason: "Native save failed safely." };
+
+    return { ok: true, canceled: result.canceled };
+  }
 };

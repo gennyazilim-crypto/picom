@@ -1,5 +1,19 @@
-import { app, BrowserWindow, Menu, ipcMain, shell, desktopCapturer, Notification, Tray, nativeImage } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  ipcMain,
+  shell,
+  desktopCapturer,
+  Notification,
+  Tray,
+  nativeImage,
+  dialog,
+  type OpenDialogOptions,
+  type SaveDialogOptions
+} from "electron";
 import path from "node:path";
+import { promises as fs } from "node:fs";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
 
@@ -20,6 +34,12 @@ type SafeNotificationPayload = Readonly<{
 }>;
 type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 type TrayAction = "open" | "settings" | "mute" | "quit" | "online" | "idle" | "dnd" | "invisible";
+type SafePickedImageFile = Readonly<{
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+}>;
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -200,6 +220,38 @@ function parseNotificationPayload(value: unknown): SafeNotificationPayload | nul
   };
 }
 
+const imageMimeByExtension = new Map([
+  [".png", "image/png"],
+  [".jpg", "image/jpeg"],
+  [".jpeg", "image/jpeg"],
+  [".webp", "image/webp"],
+  [".gif", "image/gif"]
+]);
+const maxNativePickedImageBytes = 10 * 1024 * 1024;
+
+function sanitizeDefaultFileName(value: unknown): string {
+  const fallback = "picom-export.txt";
+  const raw = sanitizeText(value, 120) ?? fallback;
+  const safe = raw.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-").trim();
+  return safe || fallback;
+}
+
+function parseSaveTextPayload(value: unknown): { defaultPath: string; content: string } | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (typeof record.content !== "string") {
+    return null;
+  }
+
+  return {
+    defaultPath: sanitizeDefaultFileName(record.defaultPath),
+    content: record.content.slice(0, 2 * 1024 * 1024)
+  };
+}
+
 function sendWindowMaximizeState(window: BrowserWindow): void {
   if (window.isDestroyed()) {
     return;
@@ -346,6 +398,69 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.trayQuit, () => {
     app.quit();
     return { ok: true, native: true } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.filePickImages, async (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender) ?? mainWindow ?? undefined;
+    const options: OpenDialogOptions = {
+      title: "Choose images",
+      properties: ["openFile", "multiSelections"],
+      filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "gif"] }]
+    };
+    const result = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options);
+
+    if (result.canceled) {
+      return { ok: true, native: true, canceled: true, files: [] } as const;
+    }
+
+    const files: SafePickedImageFile[] = [];
+
+    for (const filePath of result.filePaths.slice(0, 4)) {
+      const extension = path.extname(filePath).toLowerCase();
+      const mimeType = imageMimeByExtension.get(extension);
+      if (!mimeType) continue;
+
+      const stat = await fs.stat(filePath).catch(() => null);
+      if (!stat || !stat.isFile() || stat.size > maxNativePickedImageBytes) continue;
+
+      const data = await fs.readFile(filePath).catch(() => null);
+      if (!data) continue;
+
+      files.push({
+        name: path.basename(filePath),
+        type: mimeType,
+        size: stat.size,
+        dataUrl: `data:${mimeType};base64,${data.toString("base64")}`
+      });
+    }
+
+    return { ok: true, native: true, canceled: false, files } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fileSaveText, async (event, payload: unknown) => {
+    const safePayload = parseSaveTextPayload(payload);
+    if (!safePayload) {
+      return { ok: false, native: true, error: "INVALID_SAVE_TEXT_PAYLOAD" } as const;
+    }
+
+    const window = BrowserWindow.fromWebContents(event.sender) ?? mainWindow ?? undefined;
+    const options: SaveDialogOptions = {
+      title: "Save Picom file",
+      defaultPath: safePayload.defaultPath,
+      filters: [{ name: "Text", extensions: ["txt", "json", "log"] }]
+    };
+    const result = window ? await dialog.showSaveDialog(window, options) : await dialog.showSaveDialog(options);
+
+    if (result.canceled || !result.filePath) {
+      return { ok: true, native: true, canceled: true } as const;
+    }
+
+    try {
+      await fs.writeFile(result.filePath, safePayload.content, "utf8");
+      return { ok: true, native: true, canceled: false } as const;
+    } catch {
+      return { ok: false, native: true, error: "SAVE_TEXT_FAILED" } as const;
+    }
   });
 }
 

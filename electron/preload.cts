@@ -23,6 +23,16 @@ type TrayActionPayload = Readonly<{
   status: TrayStatus;
   muted: boolean;
 }>;
+type PickedImageFile = Readonly<{
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+}>;
+type SaveTextPayload = Readonly<{
+  defaultPath?: string;
+  content: string;
+}>;
 
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
@@ -160,6 +170,18 @@ const bridge = Object.freeze({
         ipcRenderer.removeListener(IPC_CHANNELS.trayAction, listener);
       };
     }
+  },
+  file: {
+    pickImages: () =>
+      invokeWhitelisted(IPC_CHANNELS.filePickImages) as Promise<
+        | { ok: true; native: true; canceled: boolean; files: PickedImageFile[] }
+        | { ok: false; native: true; error: string }
+      >,
+    saveText: (payload: SaveTextPayload) =>
+      invokeWhitelisted(IPC_CHANNELS.fileSaveText, payload) as Promise<
+        | { ok: true; native: true; canceled: boolean }
+        | { ok: false; native: true; error: string }
+      >
   }
 });
 

@@ -22,6 +22,12 @@ declare global {
     thumbnailDataUrl: string | null;
     appIconDataUrl: string | null;
   };
+  type PicomPickedImageFile = {
+    name: string;
+    type: string;
+    size: number;
+    dataUrl: string;
+  };
 
   interface Window {
     picomDesktop?: {
@@ -76,6 +82,18 @@ declare global {
           | { ok: false; native: true; error: string }
         >;
         onAction: (callback: (payload: PicomTrayActionPayload) => void) => () => void;
+      };
+      file?: {
+        pickImages: () => Promise<
+          | { ok: true; native: true; canceled: boolean; files: PicomPickedImageFile[] }
+          | { ok: false; native: true; error: string }
+        >;
+        saveText: (
+          payload: { defaultPath?: string; content: string }
+        ) => Promise<
+          | { ok: true; native: true; canceled: boolean }
+          | { ok: false; native: true; error: string }
+        >;
       };
     };
   }

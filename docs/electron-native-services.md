@@ -51,3 +51,28 @@ Manual verification:
 4. Change each status and confirm the action is sent through the bridge.
 5. Toggle `Mute Notifications` and confirm the tray tooltip/menu state changes.
 6. Confirm `Quit` exits the app.
+
+## File bridge
+
+- Renderer entry point: `src/services/fileService.ts`
+- Preload bridge: `window.picomDesktop.file`
+- IPC channels:
+  - `picom:file-pick-images`
+  - `picom:file-save-text`
+- Main process APIs: Electron `dialog` plus Node `fs` in the main process only
+
+Safety rules:
+
+- React components should call `fileService`, not Electron or Node APIs.
+- Picked image file paths are not returned to the renderer.
+- The main process validates image extensions and limits returned image data to the MVP 10 MB size limit.
+- Only PNG, JPG, JPEG, WEBP, and GIF image files are returned by the native picker.
+- Text save payloads are capped and written only after the user confirms the save dialog.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Trigger `fileService.pickImages()` from diagnostics or a temporary dev console path.
+3. Confirm the native image picker opens and returns selected image files without exposing paths.
+4. Trigger `fileService.saveText("picom-test.txt", "Picom file bridge test")`.
+5. Confirm the native save dialog opens and writes the selected file.

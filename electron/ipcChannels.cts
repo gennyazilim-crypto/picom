@@ -8,7 +8,9 @@ export const IPC_CHANNELS = Object.freeze({
   traySetMuted: "picom:tray-set-muted",
   trayShowWindow: "picom:tray-show-window",
   trayQuit: "picom:tray-quit",
-  trayAction: "picom:tray-action"
+  trayAction: "picom:tray-action",
+  filePickImages: "picom:file-pick-images",
+  fileSaveText: "picom:file-save-text"
 });
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
