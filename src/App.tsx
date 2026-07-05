@@ -6,6 +6,7 @@ import { mockMentionItems } from "./data/mockMentions";
 import { getMockProfileForMember } from "./data/mockProfiles";
 import { mockDirectConversations } from "./data/mockDirectMessages";
 import { mockFriendState } from "./data/mockFriends";
+import { mockUpcomingEvents } from "./data/mockEvents";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import type { DirectConversation } from "./types/directMessages";
 import type { FriendState } from "./types/friends";
@@ -13,6 +14,7 @@ import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/me
 import type { ProfileActivityItem } from "./types/profile";
 import type { CommunityTemplateId } from "./types/communityTemplates";
 import type { CommunityAccess } from "./types/communityAccess";
+import type { MockVoiceState } from "./types/voice";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
@@ -231,6 +233,15 @@ export function App() {
   const [directConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
+  const [feedVoiceState, setFeedVoiceState] = useState<MockVoiceState>({
+    isInVoiceRoom: true,
+    roomName: "Focus Room",
+    communityName: "Aurora Studio",
+    participantCount: 8,
+    isMuted: false,
+    isDeafened: false,
+    isScreenSharing: false,
+  });
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
@@ -1118,6 +1129,39 @@ export function App() {
     loggingService.logInfo("Mention feed message highlight placeholder prepared", { messageId: item.messageId }, "mention-feed");
   }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
 
+  const toggleFeedVoiceMute = useCallback(() => {
+    setFeedVoiceState((current) => ({ ...current, isMuted: !current.isMuted }));
+  }, []);
+
+  const toggleFeedVoiceDeafen = useCallback(() => {
+    setFeedVoiceState((current) => ({ ...current, isDeafened: !current.isDeafened }));
+  }, []);
+
+  const leaveFeedVoice = useCallback(() => {
+    setFeedVoiceState((current) => ({ ...current, isInVoiceRoom: false }));
+    pushToast("Left the mock voice room.", "info");
+  }, [pushToast]);
+
+  const showScreenSharePlaceholder = useCallback(() => {
+    pushToast("Screen share controls are prepared for LiveKit, but stay local in this task.", "info");
+  }, [pushToast]);
+
+  const openFeedEventCommunity = useCallback((communityId: string) => {
+    const targetCommunity = communities.find((community) => community.id === communityId);
+    if (!targetCommunity) {
+      pushToast("This event community is not available in mock data.", "error");
+      return;
+    }
+
+    setActiveView("community");
+    switchCommunity(communityId);
+    closeTransientOverlays();
+  }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
+
+  const showFeedEventDetails = useCallback((event: typeof mockUpcomingEvents[number]) => {
+    pushToast(`${event.title} details are a local placeholder.`, "info");
+  }, [pushToast]);
+
   const openProfilePage = useCallback((member: Member) => {
     setPreviousViewBeforeProfile((previous) => (activeView === "profile" ? previous : activeView));
     setActiveProfileUserId(member.userId);
@@ -1541,6 +1585,9 @@ export function App() {
               <MentionFeedMain
                 items={mentionItems}
                 communities={communities}
+                friends={friendState.friends}
+                events={mockUpcomingEvents}
+                voiceState={feedVoiceState}
                 followedUserIds={followedUserIds}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
@@ -1551,6 +1598,12 @@ export function App() {
                 onToggleSaved={toggleMentionSaved}
                 onMarkRead={markMentionRead}
                 onOpenProfile={openProfile}
+                onToggleVoiceMute={toggleFeedVoiceMute}
+                onToggleVoiceDeafen={toggleFeedVoiceDeafen}
+                onLeaveVoice={leaveFeedVoice}
+                onScreenSharePlaceholder={showScreenSharePlaceholder}
+                onOpenEventCommunity={openFeedEventCommunity}
+                onEventDetails={showFeedEventDetails}
                 onOpenMore={(event, item) =>
                   openContext(event, [
                     {

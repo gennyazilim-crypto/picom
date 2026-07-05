@@ -1,12 +1,19 @@
 import { useMemo, type MouseEvent } from "react";
 import type { Attachment, Community, Member } from "../types/community";
+import type { UpcomingEvent } from "../types/events";
+import type { FriendConnection } from "../types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "../types/mentions";
+import type { MockVoiceState } from "../types/voice";
+import { FeedCompanionRail } from "./FeedCompanionRail";
 import { MentionFeedHeader } from "./MentionFeedHeader";
 import { MentionFeedList } from "./MentionFeedList";
 
 type MentionFeedMainProps = {
   items: MentionItem[];
   communities: Community[];
+  friends: FriendConnection[];
+  events: UpcomingEvent[];
+  voiceState: MockVoiceState;
   followedUserIds: string[];
   activeTab: MentionFeedTab;
   activeFilter: MentionQuickFilter | null;
@@ -18,6 +25,12 @@ type MentionFeedMainProps = {
   onMarkRead: (id: string) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenMore: (event: MouseEvent, item: MentionItem) => void;
+  onToggleVoiceMute: () => void;
+  onToggleVoiceDeafen: () => void;
+  onLeaveVoice: () => void;
+  onScreenSharePlaceholder: () => void;
+  onOpenEventCommunity: (communityId: string) => void;
+  onEventDetails: (event: UpcomingEvent) => void;
 };
 
 function sortPopular(left: MentionItem, right: MentionItem) {
@@ -48,6 +61,9 @@ function applyQuickFilter(items: MentionItem[], filter: MentionQuickFilter | nul
 export function MentionFeedMain({
   items,
   communities,
+  friends,
+  events,
+  voiceState,
   followedUserIds,
   activeTab,
   activeFilter,
@@ -59,6 +75,12 @@ export function MentionFeedMain({
   onMarkRead,
   onOpenProfile,
   onOpenMore,
+  onToggleVoiceMute,
+  onToggleVoiceDeafen,
+  onLeaveVoice,
+  onScreenSharePlaceholder,
+  onOpenEventCommunity,
+  onEventDetails,
 }: MentionFeedMainProps) {
   const followedSet = useMemo(() => new Set(followedUserIds), [followedUserIds]);
   const feedItems = useMemo(() => items.filter((item) => item.source === "popular_feed").sort(sortPopular), [items]);
@@ -79,17 +101,32 @@ export function MentionFeedMain({
         followingCount={followingItems.length}
         onTabChange={onTabChange}
       />
-      <MentionFeedList
-        items={visibleItems}
-        communities={communities}
-        onOpenImage={onOpenImage}
-        onOpenInChannel={onOpenInChannel}
-        onToggleReaction={onToggleReaction}
-        onToggleSaved={onToggleSaved}
-        onMarkRead={onMarkRead}
-        onOpenProfile={onOpenProfile}
-        onOpenMore={onOpenMore}
-      />
+      <div className="mention-feed-body-grid">
+        <MentionFeedList
+          items={visibleItems}
+          communities={communities}
+          onOpenImage={onOpenImage}
+          onOpenInChannel={onOpenInChannel}
+          onToggleReaction={onToggleReaction}
+          onToggleSaved={onToggleSaved}
+          onMarkRead={onMarkRead}
+          onOpenProfile={onOpenProfile}
+          onOpenMore={onOpenMore}
+        />
+        <FeedCompanionRail
+          voiceState={voiceState}
+          friends={friends}
+          events={events}
+          communities={communities}
+          onToggleMute={onToggleVoiceMute}
+          onToggleDeafen={onToggleVoiceDeafen}
+          onLeaveVoice={onLeaveVoice}
+          onScreenSharePlaceholder={onScreenSharePlaceholder}
+          onOpenProfile={onOpenProfile}
+          onOpenEventCommunity={onOpenEventCommunity}
+          onEventDetails={onEventDetails}
+        />
+      </div>
     </main>
   );
 }

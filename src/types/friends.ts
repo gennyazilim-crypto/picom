@@ -1,9 +1,11 @@
 import type { UserStatus } from "./community";
 
 export type FriendConnection = Readonly<{
+  id?: string;
   userId: string;
   displayName: string;
   username: string;
+  avatarUrl?: string;
   status: UserStatus;
   statusText: string;
   favorite: boolean;
