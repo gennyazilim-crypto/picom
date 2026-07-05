@@ -100,7 +100,8 @@
     "tray:integration:smoke": "node scripts/tray-integration-smoke-test.mjs",
     "startup:smoke": "node scripts/launch-on-startup-smoke-test.mjs",
     "app-lock:smoke": "node scripts/app-lock-smoke-test.mjs",
-    "e2ee:architecture:smoke": "node scripts/e2ee-architecture-smoke-test.mjs"
+    "e2ee:architecture:smoke": "node scripts/e2ee-architecture-smoke-test.mjs",
+    "compliance:export-deletion:smoke": "node scripts/compliance-export-deletion-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

@@ -11,6 +11,12 @@ export type AccountDeletionStatus = Readonly<{
   requested: boolean;
   deletionRequestedAt: string | null;
   deletionMode: StoredDeletionState["deletionMode"];
+  safety: {
+    destructiveActionPerformed: false;
+    requiresBackendConfirmation: true;
+    sessionsRevoked: false;
+    ownedCommunitiesRequireTransfer: true;
+  };
   message: string;
 }>;
 
@@ -52,6 +58,15 @@ function writeState(next: StoredDeletionState): void {
   }
 }
 
+function buildDeletionSafety() {
+  return {
+    destructiveActionPerformed: false,
+    requiresBackendConfirmation: true,
+    sessionsRevoked: false,
+    ownedCommunitiesRequireTransfer: true,
+  } as const;
+}
+
 function toStatus(state: StoredDeletionState): AccountDeletionStatus {
   const requested = Boolean(state.deletionRequestedAt);
 
@@ -59,6 +74,7 @@ function toStatus(state: StoredDeletionState): AccountDeletionStatus {
     requested,
     deletionRequestedAt: state.deletionRequestedAt,
     deletionMode: state.deletionMode,
+    safety: buildDeletionSafety(),
     message: requested
       ? "Account deletion request placeholder is recorded locally. No data has been deleted."
       : "No account deletion request is active.",
