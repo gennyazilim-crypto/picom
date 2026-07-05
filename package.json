@@ -78,7 +78,8 @@
     "drafts:smoke": "node scripts/message-drafts-smoke-test.mjs",
     "composer:permissions:smoke": "node scripts/composer-permission-states-smoke-test.mjs",
     "slow-mode:placeholder:smoke": "node scripts/slow-mode-placeholder-smoke-test.mjs",
-    "message:search-jump:smoke": "node scripts/message-search-jump-smoke-test.mjs"
+    "message:search-jump:smoke": "node scripts/message-search-jump-smoke-test.mjs",
+    "notifications:routing:smoke": "node scripts/advanced-notification-routing-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

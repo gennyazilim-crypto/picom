@@ -1,5 +1,5 @@
 import { platformService } from "./platformService";
-import { settingsService } from "./settingsService";
+import { settingsService, type NotificationSettings } from "./settingsService";
 
 export type NotificationPermissionState = NotificationPermission | "unsupported";
 export type NotificationCategory = "system" | "mention" | "message";
@@ -18,6 +18,26 @@ export interface NotificationServiceResult {
   permission?: NotificationPermissionState;
 }
 
+export interface NotificationRouteContext {
+  category: NotificationCategory;
+  isMention?: boolean;
+  appFocused?: boolean;
+  activeChannelId?: string | null;
+  eventChannelId?: string | null;
+  isNearBottom?: boolean;
+  channelMuted?: boolean;
+  communityMuted?: boolean;
+  doNotDisturb?: boolean;
+  settings?: NotificationSettings;
+}
+
+export interface NotificationRouteDecision {
+  desktop: boolean;
+  inbox: boolean;
+  inAppUnread: boolean;
+  reason: string;
+}
+
 function getNotificationConstructor(): typeof Notification | null {
   return typeof window !== "undefined" && "Notification" in window ? window.Notification : null;
 }
@@ -26,14 +46,36 @@ function getNativeNotificationBridge() {
   return window.picomDesktop?.showNotification ?? null;
 }
 
-function isSuppressedBySettings(category: NotificationCategory): string | null {
-  const settings = settingsService.getSettings().notificationSettings;
+export function decideNotificationRoute(context: NotificationRouteContext): NotificationRouteDecision {
+  const settings = context.settings ?? settingsService.getSettings().notificationSettings;
+  const isActiveChannel = Boolean(context.activeChannelId && context.eventChannelId && context.activeChannelId === context.eventChannelId);
+  const isMention = Boolean(context.isMention || context.category === "mention");
 
-  if (!settings.enabled) return "Desktop notifications are disabled in settings.";
-  if (settings.muted) return "Notifications are currently muted.";
-  if (settings.mentionsOnly && category === "message") return "Only mention notifications are enabled.";
+  if (!settings.enabled) {
+    return { desktop: false, inbox: false, inAppUnread: false, reason: "Desktop notifications are disabled in settings." };
+  }
 
-  return null;
+  if (settings.muted || context.doNotDisturb) {
+    return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Notifications are currently muted." };
+  }
+
+  if (settings.mentionsOnly && context.category === "message" && !isMention) {
+    return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Only mention notifications are enabled." };
+  }
+
+  if ((context.channelMuted || context.communityMuted) && !isMention) {
+    return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Muted channel or community suppressed this notification." };
+  }
+
+  if (context.appFocused && isActiveChannel && context.isNearBottom) {
+    return { desktop: false, inbox: false, inAppUnread: false, reason: "User is already reading the active channel." };
+  }
+
+  if (context.appFocused && isActiveChannel) {
+    return { desktop: false, inbox: true, inAppUnread: true, reason: "Active channel notification routed in-app." };
+  }
+
+  return { desktop: true, inbox: true, inAppUnread: !isActiveChannel, reason: "Desktop notification allowed." };
 }
 
 export const notificationService = {
@@ -76,10 +118,10 @@ export const notificationService = {
 
   async showNotification(payload: NativeNotificationPayload): Promise<NotificationServiceResult> {
     const category = payload.category ?? "system";
-    const suppressedReason = isSuppressedBySettings(category);
+    const route = decideNotificationRoute({ category });
 
-    if (suppressedReason) {
-      return { ok: false, reason: suppressedReason, permission: this.getPermission() };
+    if (!route.desktop) {
+      return { ok: false, reason: route.reason, permission: this.getPermission() };
     }
 
     const nativeBridge = getNativeNotificationBridge();
