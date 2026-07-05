@@ -1,13 +1,77 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { Attachment, Member, Message, Role } from "../types/community";
 import { dateTimeService } from "../services/dateTimeService";
+import { externalLinkService } from "../services/desktop/externalLinkService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { MemberAvatar } from "./MemberAvatar";
 import { MessageHoverActions } from "./MessageHoverActions";
 
-const reactionOptions = ["👍", "❤️", "😂", "🔥", "👀"];
+const reactionOptions = ["ğŸ‘", "â¤ï¸", "ğŸ˜‚", "ğŸ”¥", "ğŸ‘€"];
+const messageUrlPattern = /(https?:\/\/[^\s<>"]+)/gi;
+const trailingUrlPunctuationPattern = /[),.!?;:]+$/;
+type ToastTone = "info" | "error" | "success";
+type MessageTextPart = Readonly<{ type: "text"; value: string } | { type: "link"; value: string; href: string; domain: string }>;
 
+function splitMessageText(body: string): MessageTextPart[] {
+  const parts: MessageTextPart[] = [];
+  let lastIndex = 0;
+
+  for (const match of body.matchAll(messageUrlPattern)) {
+    const rawMatch = match[0];
+    const index = match.index ?? 0;
+    if (index > lastIndex) {
+      parts.push({ type: "text", value: body.slice(lastIndex, index) });
+    }
+
+    const trimmedUrl = rawMatch.replace(trailingUrlPunctuationPattern, "");
+    const trailing = rawMatch.slice(trimmedUrl.length);
+    const safeUrl = externalLinkService.normalizeUrl(trimmedUrl);
+
+    if (safeUrl) {
+      parts.push({ type: "link", value: trimmedUrl, href: safeUrl, domain: externalLinkService.getDisplayDomain(safeUrl) });
+    } else {
+      parts.push({ type: "text", value: trimmedUrl });
+    }
+
+    if (trailing) {
+      parts.push({ type: "text", value: trailing });
+    }
+
+    lastIndex = index + rawMatch.length;
+  }
+
+  if (lastIndex < body.length) {
+    parts.push({ type: "text", value: body.slice(lastIndex) });
+  }
+
+  return parts.length ? parts : [{ type: "text", value: body }];
+}
+
+function renderMessageText(body: string, onOpenLink: (url: string) => void) {
+  return splitMessageText(body).map((part, index) => {
+    if (part.type === "text") {
+      return <span key={`${index}-text`}>{part.value}</span>;
+    }
+
+    return (
+      <button
+        key={`${index}-link`}
+        type="button"
+        className="message-link-button"
+        title={`Open external link: ${part.domain}`}
+        aria-label={`Open external link: ${part.domain}`}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onOpenLink(part.href);
+        }}
+      >
+        {part.value}
+      </button>
+    );
+  });
+}
 type MessageItemProps = {
   message: Message;
   member: Member;
@@ -27,6 +91,7 @@ type MessageItemProps = {
   onSaveEdit: (message: Message, body: string) => void;
   onDelete: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
+  pushToast?: (message: string, tone?: ToastTone) => void;
 };
 
 export function MessageItem({
@@ -48,6 +113,7 @@ export function MessageItem({
   onSaveEdit,
   onDelete,
   onToggleReaction,
+  pushToast,
 }: MessageItemProps) {
   const [draft, setDraft] = useState(message.body);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
@@ -65,6 +131,13 @@ export function MessageItem({
     }
 
     onSaveEdit(message, nextBody);
+  };
+
+  const openMessageLink = async (url: string) => {
+    const result = await externalLinkService.openExternalUrl(url);
+    if (!result.ok) {
+      pushToast?.(externalLinkService.getUserFriendlyError(result.reason), "error");
+    }
   };
 
   const onEditKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -110,7 +183,7 @@ export function MessageItem({
             <small>Enter saves, Escape cancels, Shift Enter adds a new line.</small>
           </div>
         ) : (
-          <p>{message.body}</p>
+          <p className="message-text">{renderMessageText(message.body, (url) => { void openMessageLink(url); })}</p>
         )}
         {!deleted && message.attachments?.length ? <AttachmentGrid attachments={message.attachments} onOpenImage={onOpenImage} /> : null}
         {!deleted && message.reactions?.length ? (
@@ -158,3 +231,4 @@ export function MessageItem({
     </article>
   );
 }
+

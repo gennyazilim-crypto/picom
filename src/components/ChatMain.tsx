@@ -199,6 +199,8 @@ export function ChatMain({
             onSaveEdit={onSaveEditMessage}
             onDelete={onDeleteMessage}
             onToggleReaction={onToggleReaction}
+            pushToast={pushToast}
+            blockedUserIds={blockedUserIds}
           />
           <MessageComposer
             communityId={community.id}

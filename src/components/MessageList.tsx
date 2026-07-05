@@ -4,6 +4,8 @@ import type { Attachment, Community, Member, Message } from "../types/community"
 import { MessageItem } from "./MessageItem";
 import { UnreadDivider } from "./UnreadDivider";
 
+type ToastTone = "info" | "error" | "success";
+
 type MessageListProps = {
   community: Community;
   messages: Message[];
@@ -20,6 +22,7 @@ type MessageListProps = {
   onSaveEdit: (message: Message, body: string) => void;
   onDelete: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
+  pushToast: (message: string, tone?: ToastTone) => void;
   blockedUserIds?: string[];
 };
 
@@ -49,6 +52,7 @@ export function MessageList({
   onSaveEdit,
   onDelete,
   onToggleReaction,
+  pushToast,
   blockedUserIds = [],
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -128,6 +132,7 @@ export function MessageList({
               onSaveEdit={onSaveEdit}
               onDelete={onDelete}
               onToggleReaction={onToggleReaction}
+              pushToast={pushToast}
             />
           </div>
         );
