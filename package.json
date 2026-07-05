@@ -129,7 +129,9 @@
     "thumbnails:smoke": "node scripts/image-thumbnail-placeholder-smoke-test.mjs",
     "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs",
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",
-    "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs"
+    "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",
+    "quality:fast": "npm run qa:smoke && npm run typecheck",
+    "quality:gate": "npm run qa:smoke && npm run typecheck && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

@@ -93,8 +93,20 @@ Useful docs:
 Run the main local quality gate after scoped changes:
 
 ```bash
+npm run quality:fast
+npm run quality:gate
+```
+
+The fast gate is intended for small code/doc checkpoints:
+
+```bash
 npm run qa:smoke
 npm run typecheck
+```
+
+The full gate includes the production renderer/Electron build:
+
+```bash
 npm run build
 ```
 

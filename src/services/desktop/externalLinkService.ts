@@ -28,8 +28,8 @@ export function normalizeUrl(url: string): string | null {
       return null;
     }
 
-    parsed.username = "";
-    parsed.password = "";
+    Reflect.set(parsed, "username", "");
+    Reflect.set(parsed, "password", "");
     return parsed.href;
   } catch {
     return null;
