@@ -53,6 +53,7 @@ Use the lightweight QA gate after scoped implementation tasks:
 
 ```bash
 npm run qa:smoke
+npm run qa:supabase
 npm run typecheck
 npm run build
 ```
@@ -71,6 +72,8 @@ The combined `qa:smoke` command runs:
 - `npm run mock:smoke`
 
 Use the individual commands when a task only touches one area. See `docs/qa-smoke-gate.md`, `docs/diagnostics-logging-qa.md`, and `docs/error-handling-qa.md` for the checklists and redaction rules.
+
+Use `npm run qa:supabase` before Supabase-mode work. It runs schema/API-mode regression checks without requiring production secrets.
 
 ## Packaging
 

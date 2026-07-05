@@ -33,6 +33,9 @@ jobs:
       - name: Run QA smoke gate
         run: npm run qa:smoke
 
+      - name: Run Supabase QA gate
+        run: npm run qa:supabase
+
       - name: Typecheck
         run: npm run typecheck
 

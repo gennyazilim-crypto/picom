@@ -21,13 +21,16 @@ Picom uses a lightweight GitHub Actions QA workflow for Windows and Linux.
 ```bash
 npm ci
 npm run qa:smoke
+npm run qa:supabase
 npm run typecheck
 npm run build
 ```
 
 ## Scope
 
-This workflow verifies the MVP desktop code path. It does not publish packages, sign installers, run Supabase migrations, or require production secrets.
+This workflow verifies the MVP desktop code path and Supabase static/API-mode regression path. It does not publish packages, sign installers, run Supabase migrations, or require production secrets.
+
+`npm run qa:supabase` is intentionally limited to local static checks and API-mode wiring checks. It may report that Supabase CLI is missing for optional reset testing, but that warning is not required for this CI gate.
 
 ## Secret safety
 
