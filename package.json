@@ -96,6 +96,7 @@
     "messages:sequence:smoke": "node scripts/message-sequence-numbers-smoke-test.mjs",
     "offline:conflicts:smoke": "node scripts/offline-sync-conflict-smoke-test.mjs",
     "database:transactions:smoke": "node scripts/database-transaction-consistency-smoke-test.mjs",
+    "audit-logs:immutability:smoke": "node scripts/audit-log-immutability-smoke-test.mjs",
     "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs",
     "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs",
     "attachment-delivery:smoke": "node scripts/attachment-delivery-smoke-test.mjs",
