@@ -58,6 +58,10 @@ linux:
         - x64
   artifactName: Picom-${version}-Linux-${arch}.${ext}
 
+deb:
+  packageCategory: net
+  priority: optional
+
 mac:
   icon: assets/brand/app-icon.png
   category: public.app-category.social-networking
