@@ -26,6 +26,7 @@ const builderConfig = readText("electron-builder.yml");
 const appConfig = readText("electron/appConfig.cts");
 const mainProcess = readText("electron/main.cts");
 const preload = readText("electron/preload.cts");
+const gitignore = readText(".gitignore");
 
 assertCondition(packageJson.name === "picom", "package.json name must remain picom.");
 assertCondition(packageJson.main === "dist-electron/main.cjs", "package.json main must point to dist-electron/main.cjs.");
@@ -61,6 +62,10 @@ assertIncludes(mainProcess, "webSecurity: true", "web security");
 
 assertIncludes(preload, "contextBridge.exposeInMainWorld", "safe preload bridge");
 assertIncludes(preload, "picomDesktop", "Picom preload namespace");
+
+assertIncludes(gitignore, "dist/", "ignored renderer build output");
+assertIncludes(gitignore, "dist-electron/", "ignored Electron build output");
+assertIncludes(gitignore, "release/", "ignored package output");
 
 assertFile("assets/brand/app-icon.ico");
 assertFile("assets/brand/app-icon.png");
