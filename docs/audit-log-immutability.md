@@ -84,6 +84,69 @@ Audit logs should use the same redaction principle:
 - user-facing errors must stay friendly and non-technical
 - audit metadata must not become a secret dump
 
+## Centralized error and diagnostics boundary
+
+Audit logging must not replace the existing user-facing error flow.
+
+Required separation:
+
+- user-facing UI shows concise, friendly messages through the shared error formatting path
+- renderer/developer diagnostics go through `loggingService` with redaction applied
+- future backend/Edge Function diagnostics should use the same redaction rules before persistence
+- immutable audit rows store event facts and safe identifiers, not stack traces or raw request payloads
+
+Audit entries may reference:
+
+- `request_id`
+- `actor_user_id`
+- `community_id`
+- `target_type`
+- `target_id`
+- normalized action names
+- safe enum/status values
+- redacted metadata
+
+Audit entries must not include:
+
+- full authorization headers
+- cookies
+- Supabase JWTs
+- LiveKit tokens
+- password reset or email verification tokens
+- raw uploaded file paths that expose private storage internals
+- full private message bodies unless a reviewed moderation evidence policy exists
+
+## Immutability enforcement plan
+
+When `audit_logs` is implemented, immutability should be enforced in multiple layers:
+
+- database grants: no renderer/client role receives `update` or `delete`
+- RLS: no authenticated user policy allows mutation after insert
+- insert boundary: writes happen through trusted RPC, Edge Function, or backend service only
+- service code: no generic update/delete helper should target audit logs
+- migrations: avoid `on delete cascade` from users, communities, messages, or moderation targets into audit logs
+- operations: cleanup scripts must explicitly skip audit log tables unless a separately approved retention job exists
+
+Correction model:
+
+- incorrect audit entry remains stored
+- a follow-up `audit_correction_recorded` entry explains the correction
+- viewer UI should show correction chains instead of editing original rows
+
+## RLS test expectations
+
+Future Supabase RLS tests should prove:
+
+- normal authenticated users cannot select audit rows outside permitted scope
+- normal authenticated users cannot insert arbitrary audit rows
+- normal authenticated users cannot update audit rows
+- normal authenticated users cannot delete audit rows
+- community admins can read only community-scoped rows they are allowed to view
+- app admins can read app-level rows only after app-admin authorization exists
+- service-role or Edge Function insertion redacts sensitive metadata before write
+
+These tests must use safe fake values only. Do not add real tokens, cookies, secrets, or private user data to fixtures.
+
 ## Retention
 
 Audit retention should be separate from message retention:
@@ -111,6 +174,8 @@ Future audit export should:
 - Add redaction tests for metadata.
 - Add admin/community audit viewer only after authorization is ready.
 - Add backup/retention policy.
+- Add a release-gate check that audit log mutation policies are still deny-by-default.
+- Add incident-response notes for suspected audit tampering.
 
 ## Current MVP status
 

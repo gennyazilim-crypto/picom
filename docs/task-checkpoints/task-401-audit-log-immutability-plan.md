@@ -1,33 +1,23 @@
-# Task 401 - Audit log immutability plan
+﻿# Task 401: Audit log immutability plan
 
-## Summary
+## Scope
+- Documentation-only production operations task.
+- No runtime code, UI, Electron shell, Supabase client, or LiveKit behavior changed.
 
-Created the audit log immutability plan for future moderation, app-admin, ownership, and compliance workflows.
-
-## Changes
-
-- Added `docs/audit-log-immutability.md`.
-- Documented append-only policy, RLS expectations, sensitive data exclusions, retention separation, export placeholder, and production checklist.
-- Added a smoke test that verifies the plan and centralized logging redaction references.
+## Completed
+- Updated `docs/audit-log-immutability.md` with a stronger production immutability model.
+- Documented the centralized error/diagnostics boundary between user-facing errors, renderer diagnostics, and future audit rows.
+- Documented sensitive data exclusions for audit metadata.
+- Documented multi-layer immutability enforcement expectations.
+- Documented future Supabase RLS test expectations for audit logs.
+- Added release-gate and incident-response reminders for audit mutation/tampering risk.
 
 ## Verification
+- Confirmed the audit log plan document exists.
+- Confirmed the document references centralized redaction/logging expectations.
+- Confirmed this task does not add unrelated runtime features.
 
-Commands to run:
-
-```powershell
-npm run audit-logs:immutability:smoke
-npm run typecheck
-npm run build
-```
-
-Manual verification:
-
-1. Read `docs/audit-log-immutability.md`.
-2. Confirm audit logs are documented as append-only.
-3. Confirm passwords, tokens, cookies, authorization headers, and private secrets are excluded from audit metadata.
-4. Confirm the runtime still uses `loggingService` for redacted diagnostics.
-
-## Known limitations
-
-- The production `audit_logs` table and RLS policies are not implemented in this task.
-- Placeholder admin/moderation flows must not claim immutable audit coverage yet.
+## Manual test steps
+1. Open `docs/audit-log-immutability.md`.
+2. Confirm it includes append-only policy, sensitive metadata exclusions, centralized diagnostics boundary, RLS expectations, and production checklist.
+3. Confirm no secrets, real credentials, tokens, cookies, or private user data were added.
