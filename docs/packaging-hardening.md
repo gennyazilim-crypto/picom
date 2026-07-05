@@ -19,6 +19,7 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 - `nodeIntegration` is disabled.
 - Renderer sandbox is enabled.
 - Preload exposes a narrow `window.picomDesktop` bridge instead of raw Electron objects.
+- The exposed preload bridge is frozen before it is attached to the renderer global.
 - External links are routed through the safe external link service.
 
 ## Platform targets

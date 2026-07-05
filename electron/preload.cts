@@ -257,4 +257,4 @@ const bridge = Object.freeze({
   }
 });
 
-contextBridge.exposeInMainWorld("picomDesktop", bridge);
+contextBridge.exposeInMainWorld("picomDesktop", Object.freeze(bridge));

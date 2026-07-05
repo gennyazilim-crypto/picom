@@ -62,6 +62,7 @@ assertIncludes(mainProcess, "webSecurity: true", "web security");
 
 assertIncludes(preload, "contextBridge.exposeInMainWorld", "safe preload bridge");
 assertIncludes(preload, "picomDesktop", "Picom preload namespace");
+assertIncludes(preload, "Object.freeze(bridge)", "frozen preload bridge");
 
 assertIncludes(gitignore, "dist/", "ignored renderer build output");
 assertIncludes(gitignore, "dist-electron/", "ignored Electron build output");
