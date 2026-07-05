@@ -47,6 +47,8 @@
     "jobs:smoke": "node scripts/job-queue-smoke-test.mjs",
     "invites:cleanup:dry-run": "node scripts/cleanup-expired-invites.mjs",
     "invites:cleanup:smoke": "node scripts/expired-invites-cleanup-smoke-test.mjs",
+    "uploads:cleanup:dry-run": "node scripts/cleanup-orphaned-uploads.mjs",
+    "uploads:cleanup:smoke": "node scripts/orphaned-uploads-cleanup-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {

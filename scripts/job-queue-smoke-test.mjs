@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createInMemoryJobQueue, isJobType, JOB_TYPES } from "./lib/background-job-queue.mjs";
 import { cleanupExpiredInvites } from "./lib/jobs/cleanup-expired-invites.mjs";
+import { cleanupOrphanedUploads } from "./lib/jobs/cleanup-orphaned-uploads.mjs";
 
 const logs = [];
 const logger = {
@@ -30,9 +31,11 @@ assert.equal(processed.result.ok, true);
 assert.equal(queue.list()[0].status, "completed");
 
 queue.enqueue("cleanup_orphaned_uploads", { dryRun: true });
-const drained = await queue.drain();
+const drained = await queue.drain({
+  cleanup_orphaned_uploads: async () => cleanupOrphanedUploads({ attachments: [], dryRun: true, logger }),
+});
 assert.equal(drained.length, 1);
-assert.equal(drained[0].result.reason, "NO_PROCESSOR_PLACEHOLDER");
+assert.equal(drained[0].result.ok, true);
 
 queue.shutdown();
 assert.throws(() => queue.enqueue("notification_fanout", {}), /shut down/);
