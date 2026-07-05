@@ -1,4 +1,3 @@
-import { AppIcon } from "./AppIcon";
 import { MentionFeedTabs } from "./MentionFeedTabs";
 import type { MentionFeedTab } from "../types/mentions";
 
@@ -11,16 +10,7 @@ type MentionFeedHeaderProps = {
 
 export function MentionFeedHeader({ activeTab, feedCount, followingCount, onTabChange }: MentionFeedHeaderProps) {
   return (
-    <header className="mention-feed-header">
-      <div className="mention-feed-title">
-        <p className="eyebrow">Mention tracking</p>
-        <h1>Feeds</h1>
-        <span>Popular people mentions and followed-person mentions across visible Picom communities.</span>
-      </div>
-      <button className="mention-refresh-button" type="button" aria-label="Refresh mention feed placeholder">
-        <AppIcon name="search" size="sm" />
-        <span>Refresh</span>
-      </button>
+    <header className="mention-feed-tabs-header">
       <MentionFeedTabs activeTab={activeTab} feedCount={feedCount} followingCount={followingCount} onTabChange={onTabChange} />
     </header>
   );

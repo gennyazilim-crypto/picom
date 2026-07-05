@@ -7,11 +7,13 @@ import { getMockProfileForMember } from "./data/mockProfiles";
 import { mockDirectConversations } from "./data/mockDirectMessages";
 import { mockFriendState } from "./data/mockFriends";
 import { mockUpcomingEvents } from "./data/mockEvents";
+import { mockFollowedUserStories } from "./data/mockStories";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import type { DirectConversation } from "./types/directMessages";
 import type { FriendState } from "./types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import type { ProfileActivityItem } from "./types/profile";
+import type { FollowedUserStory } from "./types/stories";
 import type { CommunityTemplateId } from "./types/communityTemplates";
 import type { CommunityAccess } from "./types/communityAccess";
 import type { MockVoiceState } from "./types/voice";
@@ -225,6 +227,7 @@ export function App() {
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [activeView, setActiveView] = useState<ActiveView>("community");
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
+  const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(mockFollowedUserStories);
   const [mentionTab, setMentionTab] = useState<MentionFeedTab>("feed");
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
@@ -1129,6 +1132,24 @@ export function App() {
     loggingService.logInfo("Mention feed message highlight placeholder prepared", { messageId: item.messageId }, "mention-feed");
   }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
 
+  const markStorySeen = useCallback((storyId: string) => {
+    setStoryItems((current) => current.map((story) => (story.id === storyId ? { ...story, status: "seen" } : story)));
+  }, []);
+
+  const openStoryInChannel = useCallback((story: FollowedUserStory) => {
+    if (!story.communityId || !story.channelId) {
+      pushToast("This story is not linked to an open channel yet.", "info");
+      return;
+    }
+
+    setActiveView("community");
+    switchCommunity(story.communityId, story.channelId);
+    clearChannelUnread({ communityId: story.communityId, channelId: story.channelId });
+    markStorySeen(story.id);
+    closeTransientOverlays();
+    loggingService.logInfo("Story message highlight placeholder prepared", { messageId: story.messageId }, "mention-feed");
+  }, [clearChannelUnread, closeTransientOverlays, markStorySeen, pushToast, switchCommunity]);
+
   const toggleFeedVoiceMute = useCallback(() => {
     setFeedVoiceState((current) => ({ ...current, isMuted: !current.isMuted }));
   }, []);
@@ -1587,6 +1608,7 @@ export function App() {
                 communities={communities}
                 friends={friendState.friends}
                 events={mockUpcomingEvents}
+                stories={storyItems}
                 voiceState={feedVoiceState}
                 followedUserIds={followedUserIds}
                 activeTab={mentionTab}
@@ -1598,6 +1620,8 @@ export function App() {
                 onToggleSaved={toggleMentionSaved}
                 onMarkRead={markMentionRead}
                 onOpenProfile={openProfile}
+                onMarkStorySeen={markStorySeen}
+                onOpenStoryInChannel={openStoryInChannel}
                 onToggleVoiceMute={toggleFeedVoiceMute}
                 onToggleVoiceDeafen={toggleFeedVoiceDeafen}
                 onLeaveVoice={leaveFeedVoice}
