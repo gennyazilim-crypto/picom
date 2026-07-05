@@ -93,10 +93,19 @@ function getParticipants(activeRoom: Room): VoiceParticipant[] {
   ];
 }
 
+function applyRemoteAudioSubscription(activeRoom: Room, subscribed: boolean): void {
+  activeRoom.remoteParticipants.forEach((participant) => {
+    participant.audioTrackPublications.forEach((publication) => {
+      publication.setSubscribed(subscribed);
+    });
+  });
+}
+
 function bindRoomEvents(activeRoom: Room): void {
   activeRoom
     .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
       if (state === ConnectionState.Connected) {
+        if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
         emit({ status: "connected", participants: getParticipants(activeRoom), error: null });
         return;
       }
@@ -111,6 +120,7 @@ function bindRoomEvents(activeRoom: Room): void {
       }
     })
     .on(RoomEvent.ParticipantConnected, () => {
+      if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
       emit({ participants: getParticipants(activeRoom) });
     })
     .on(RoomEvent.ParticipantDisconnected, () => {
@@ -246,13 +256,9 @@ export const voiceService = {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before changing audio playback state.");
     }
 
-    room.remoteParticipants.forEach((participant) => {
-      participant.audioTrackPublications.forEach((publication) => {
-        publication.setSubscribed(!deafened);
-      });
-    });
+    applyRemoteAudioSubscription(room, !deafened);
 
-    emit({ deafened });
+    emit({ deafened, error: null });
     return { ok: true, data: snapshot };
   },
 };

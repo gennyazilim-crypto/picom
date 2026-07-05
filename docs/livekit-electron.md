@@ -70,6 +70,14 @@ Leaving a room must release local capture resources before disconnecting:
 - If unmute fails, Picom keeps the user muted and shows a permission/device warning.
 - Successful mute/unmute clears stale microphone errors.
 
+## Deafen behavior
+
+- Deafen controls remote audio output only.
+- Current remote audio publications are unsubscribed while deafened.
+- Newly connected participants are also kept unsubscribed if the user is already deafened.
+- Undeafen resubscribes remote audio publications.
+- Deafen does not expose tokens, device IDs, or audio metadata.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.
