@@ -6,10 +6,9 @@ Picom is a fresh premium desktop community chat app rebuild.
 
 The active task pack is now:
 
-- `docs/electron_mac_supabase_livekit_full_mvp_tasks_001_186_txt.zip`
-- Extracted tasks: `docs/tasks-electron-supabase-livekit-mvp-001-186/`
+- `C:\Users\ACER\Desktop\electron_supabase_livekit_all_old_new_tasks_001_473_txt.zip`
 
-The older 260-task packs remain as historical archive material only. New implementation work should follow the 001-186 Electron + Supabase + LiveKit MVP task sequence.
+The older 260-task packs and earlier 001-186 pack remain historical archive material only. New implementation work should follow the 001-473 Electron + Supabase + LiveKit task sequence.
 
 ## Current MVP direction
 
@@ -48,6 +47,7 @@ Open the local Vite URL and use a desktop viewport such as `1440x900`.
 Picom uses `electron-builder` for Windows, Linux, and macOS package preparation.
 
 ```bash
+npm run package:verify
 npm run build
 npm run package
 npm run package:win:dir
@@ -60,6 +60,7 @@ npm run package:mac:zip
 npm run package:mac
 ```
 
+- `npm run package:verify` checks package identity, platform targets, window sizing, Electron security posture, and required icon paths without building installers.
 - `npm run package` creates an unpacked local build in `release/`.
 - `npm run package:win:dir` creates an unpacked Windows x64 smoke build.
 - `npm run package:linux:appimage` creates a Linux AppImage target on a Linux host/CI runner.
@@ -70,11 +71,12 @@ npm run package:mac
 - macOS builds target an unsigned dmg x64 placeholder.
 - Signing/notarization is intentionally not configured yet; do not commit certificates, private keys, or signing secrets.
 
-See `docs/electron-packaging.md` for packaging notes and platform implications.
+See `docs/packaging-hardening.md` and `docs/electron-packaging.md` for packaging notes, hardening checks, and platform implications.
+Use the platform smoke-test checklists in `docs/windows-smoke-test.md`, `docs/linux-smoke-test.md`, and `docs/macos-smoke-test.md` after a package build.
 
 ## Workflow
 
-1. Follow one task file at a time from the active 001-186 pack.
+1. Follow one task file at a time from the active 001-473 pack.
 2. Test after each task.
 3. Commit stable checkpoints to Git.
 4. If build/typecheck breaks, stop feature work and fix the blocker first.
