@@ -3,6 +3,7 @@ import type { Attachment, Channel, Member, Message } from "../types/community";
 import { attachmentService } from "../services/attachmentService";
 import { fileService, type LocalAttachmentPreview } from "../services/fileService";
 import { loggingService } from "../services/loggingService";
+import { messageDraftService } from "../services/messageDraftService";
 import { uploadService } from "../services/uploadService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -39,7 +40,7 @@ type MessageComposerProps = {
 const composerEmojiOptions = ["👍", "❤️", "😂", "🔥", "👀"];
 
 export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast }: MessageComposerProps) {
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(() => messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
   const [sending, setSending] = useState(false);
@@ -50,6 +51,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   const typingStopTimerRef = useRef<number | null>(null);
   const onTypingStopRef = useRef(onTypingStop);
   const previousChannelIdRef = useRef(channel.id);
+  const previousCommunityIdRef = useRef(communityId);
 
   useEffect(() => {
     previewsRef.current = previews;
@@ -75,11 +77,17 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   }, []);
 
   useEffect(() => {
-    if (previousChannelIdRef.current === channel.id) return;
+    if (previousChannelIdRef.current === channel.id && previousCommunityIdRef.current === communityId) return;
 
     previousChannelIdRef.current = channel.id;
+    previousCommunityIdRef.current = communityId;
     stopTypingNow();
-  }, [channel.id]);
+    previewsRef.current.forEach((preview) => fileService.revoke(preview));
+    previewsRef.current = [];
+    setPreviews([]);
+    setEmojiPickerOpen(false);
+    setBody(messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
+  }, [channel.id, communityId]);
 
   const scheduleTypingStop = () => {
     if (typingStopTimerRef.current !== null) window.clearTimeout(typingStopTimerRef.current);
@@ -211,6 +219,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     });
 
     await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments, replyToMessage?.id ?? null);
+    messageDraftService.clearDraft({ communityId, channelId: channel.id });
     stopTypingNow();
     onCancelReply();
     setBody("");
@@ -276,8 +285,10 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           placeholder={`Message #${channel.name}`}
           rows={1}
           onChange={(event) => {
-            setBody(event.target.value);
-            notifyTyping(event.target.value);
+            const nextBody = event.target.value;
+            setBody(nextBody);
+            messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
+            notifyTyping(nextBody);
           }}
           onBlur={stopTypingNow}
           onPaste={(event) => {
@@ -319,7 +330,9 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
               key={emoji}
               type="button"
               onClick={() => {
-                setBody((current) => `${current}${emoji}`);
+                const nextBody = `${body}${emoji}`;
+                setBody(nextBody);
+                messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
                 setEmojiPickerOpen(false);
               }}
             >
