@@ -93,6 +93,8 @@ function migrateSettings(settings: StoredPicomSettings): PicomSettings {
 function backupInvalidSettings(raw: string): void {
   try {
     localStorage.setItem(`${backupKeyPrefix}.${Date.now()}`, raw.slice(0, 12_000));
+    localStorage.setItem("picom:safe-mode:forced", "true");
+    localStorage.setItem("picom:safe-mode:reason", "corrupted_settings_placeholder");
     localStorage.removeItem(key);
   } catch {
     // If localStorage is unavailable, fall back to safe defaults without blocking startup.
@@ -104,6 +106,14 @@ function writeSettings(next: PicomSettings): void {
 }
 
 export const settingsService = {
+  getDefaultSettings(): PicomSettings {
+    return {
+      ...defaults,
+      notificationSettings: { ...defaults.notificationSettings },
+      profileSettings: { ...defaults.profileSettings },
+      accessibilitySettings: { ...defaults.accessibilitySettings },
+    };
+  },
   getSettings(): PicomSettings {
     const raw = localStorage.getItem(key);
     if (!raw) return defaults;

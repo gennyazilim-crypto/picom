@@ -37,6 +37,7 @@ import { MentionRightPanel } from "./components/MentionRightPanel";
 import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
 import { FriendsView } from "./components/FriendsView";
+import { SafeModeBanner } from "./components/SafeModeBanner";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
 import { diagnosticsService } from "./services/diagnosticsService";
@@ -47,6 +48,7 @@ import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { trayService, type TrayStatus } from "./services/trayService";
 import { maintenanceStatusService } from "./services/maintenanceStatusService";
+import { safeModeService, type SafeModeState } from "./services/safeModeService";
 import { statusPageService } from "./services/statusPageService";
 import { authService } from "./services/authService";
 import { communityService } from "./services/communityService";
@@ -210,7 +212,9 @@ function CommandPalette({
 }
 
 export function App() {
-  const saved = settingsService.getSettings();
+  const startupSafeMode = safeModeService.getStartupState();
+  const saved = startupSafeMode.active ? settingsService.getDefaultSettings() : settingsService.getSettings();
+  const [safeMode, setSafeMode] = useState<SafeModeState>(startupSafeMode);
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
   const [accessibilitySettings, setAccessibilitySettings] = useState(saved.accessibilitySettings);
   const [maintenanceStatus, setMaintenanceStatus] = useState(() => maintenanceStatusService.getSnapshot());
@@ -386,7 +390,7 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id, removeLocalMessage]);
 
   const realtimeStatus = useSupabaseMessageRealtime({
-    enabled: Boolean(authSession),
+    enabled: Boolean(authSession) && !safeMode.active,
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
     onInsert: handleRealtimeMessageInsert,
@@ -394,14 +398,14 @@ export function App() {
     onDelete: handleRealtimeMessageDelete,
   });
   const typingBroadcast = useSupabaseTypingBroadcast({
-    enabled: Boolean(authSession),
+    enabled: Boolean(authSession) && !safeMode.active,
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
     currentUserId: currentUser.userId,
     displayName: currentUser.displayName,
   });
   const presenceChannel = useSupabasePresenceChannel({
-    enabled: Boolean(authSession),
+    enabled: Boolean(authSession) && !safeMode.active,
     communityId: activeCommunity.id,
     currentUserId: currentUser.userId,
     displayName: currentUser.displayName,
@@ -412,11 +416,16 @@ export function App() {
     diagnosticsService.setRealtimeStatus(realtimeStatus);
   }, [realtimeStatus]);
   useEffect(() => {
+    if (safeMode.active) {
+      setMaintenanceStatus(maintenanceStatusService.getSnapshot());
+      return;
+    }
+
     const unsubscribe = maintenanceStatusService.subscribe(setMaintenanceStatus);
     void maintenanceStatusService.refresh().then(setMaintenanceStatus);
 
     return unsubscribe;
-  }, []);
+  }, [safeMode.active]);
   const displayedActiveCommunity = useMemo<Community>(() => {
     const baseCommunity = !presenceChannel.onlineUserIds.length ? activeCommunity : {
       ...activeCommunity,
@@ -499,6 +508,26 @@ export function App() {
 
     pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
   }, [pushToast]);
+  const resetSafeModeSettings = useCallback(() => {
+    void safeModeService.resetSettings().then((result) => {
+      const defaults = settingsService.getDefaultSettings();
+      setTheme(defaults.theme);
+      setAccessibilitySettings(defaults.accessibilitySettings);
+      setProfileSettings(defaults.profileSettings);
+      pushToast(result.message, "success");
+    });
+  }, [pushToast]);
+  const clearSafeModeCache = useCallback(() => {
+    void safeModeService.clearCache().then((result) => pushToast(result.message, "success"));
+  }, [pushToast]);
+  const exportSafeModeLogs = useCallback(() => {
+    const result = safeModeService.exportLogs();
+    pushToast(result.message, "success");
+  }, [pushToast]);
+  const restartNormallyFromSafeMode = useCallback(() => {
+    setSafeMode(safeModeService.getStartupState());
+    safeModeService.restartNormally();
+  }, []);
   const handlePasswordResetRequest = useCallback(async (email: string) => {
     const result = await authService.requestPasswordReset(email);
     if (!result.ok) {
@@ -552,7 +581,7 @@ export function App() {
   }, [authSession, pushToast, replaceCommunities, switchCommunity]);
 
   useEffect(() => {
-    if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
+    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
     supabaseSidebarLoadedRef.current.add(activeCommunity.id);
@@ -612,10 +641,10 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeCommunity.id, authSession, pushToast, replaceCommunityCategories]);
+  }, [activeCommunity.id, authSession, pushToast, replaceCommunityCategories, safeMode.active]);
 
   useEffect(() => {
-    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
 
     const messageKey = `${activeCommunity.id}:${activeChannel.id}`;
     if (supabaseMessagesLoadedRef.current.has(messageKey)) return;
@@ -643,10 +672,10 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeChannel.id, activeCommunity.id, authSession, mapMessageSummaryToMessage, pushToast, replaceChannelMessages]);
+  }, [activeChannel.id, activeCommunity.id, authSession, mapMessageSummaryToMessage, pushToast, replaceChannelMessages, safeMode.active]);
 
   useEffect(() => {
-    if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
+    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
     supabaseMembersLoadedRef.current.add(activeCommunity.id);
@@ -682,7 +711,7 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeCommunity.id, activeCommunity.roles, authSession, pushToast, replaceCommunityMembers]);
+  }, [activeCommunity.id, activeCommunity.roles, authSession, pushToast, replaceCommunityMembers, safeMode.active]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -850,6 +879,8 @@ export function App() {
   }, [closeTransientOverlays, directConversations, openPalette, openSettings, openSystemStatusPage, pushToast]);
 
   useEffect(() => {
+    if (safeMode.active) return;
+
     const handleTrayAction = (payload: PicomTrayActionPayload) => {
       if (payload.action === "open") {
         pushToast("Picom restored from the system tray.", "info");
@@ -876,7 +907,7 @@ export function App() {
     };
 
     return trayService.onAction(handleTrayAction);
-  }, [closeTransientOverlays, openSettings, pushToast]);
+  }, [closeTransientOverlays, openSettings, pushToast, safeMode.active]);
 
   const jumpToMessage = useCallback((community: Community, message: Message) => {
     setActiveView("community");
@@ -1480,6 +1511,13 @@ export function App() {
           <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} onOpenStatusPage={openSystemStatusPage} />
         ) : (
         <div className="desktop-frame">
+          <SafeModeBanner
+            state={safeMode}
+            onResetSettings={resetSafeModeSettings}
+            onClearCache={clearSafeModeCache}
+            onExportLogs={exportSafeModeLogs}
+            onRestartNormally={restartNormallyFromSafeMode}
+          />
           <MaintenanceStatusBanner status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
           <ServerRail
             communities={communities}

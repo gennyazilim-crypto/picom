@@ -130,6 +130,7 @@
     "thumbnails:smoke": "node scripts/image-thumbnail-placeholder-smoke-test.mjs",
     "image-cache:smoke": "node scripts/image-cache-strategy-smoke-test.mjs",
     "disk-cache:smoke": "node scripts/disk-cache-management-smoke-test.mjs",
+    "safe-mode:smoke": "node scripts/safe-mode-smoke-test.mjs",
     "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs",
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",
     "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",

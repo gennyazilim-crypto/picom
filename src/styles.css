@@ -2097,6 +2097,65 @@ body{
   background:var(--success);
 }
 
+.desktop-frame{
+  position:relative;
+}
+.safe-mode-banner{
+  position:absolute;
+  z-index:24;
+  top:12px;
+  left:50%;
+  width:min(900px,calc(100% - 48px));
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:10px 12px 10px 14px;
+  border:1px solid color-mix(in srgb,var(--warning) 34%,var(--border));
+  border-radius:16px;
+  background:color-mix(in srgb,var(--surface) 92%,var(--warning) 8%);
+  box-shadow:var(--shadow-soft);
+  color:var(--text-secondary);
+  pointer-events:auto;
+}
+.safe-mode-banner>div:first-child{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+.safe-mode-banner strong{
+  color:var(--text-primary);
+  font-size:13px;
+}
+.safe-mode-banner span,
+.safe-mode-banner small{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+}
+.safe-mode-actions{
+  display:flex;
+  flex:0 0 auto;
+  gap:7px;
+}
+.safe-mode-actions button{
+  height:30px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+  color:var(--text-primary);
+  font-size:11px;
+  font-weight:800;
+  padding:0 9px;
+  cursor:pointer;
+}
+.safe-mode-actions button:hover{
+  background:var(--surface-hover);
+}
+
 /* Task 352: Message search result jump highlight */
 .message-search-highlight{border-radius:18px;animation:message-search-highlight 2.1s var(--motion-ease)}
 @keyframes message-search-highlight{0%{background:color-mix(in srgb,var(--picom-aqua) 18%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-aqua) 28%,transparent)}55%{background:color-mix(in srgb,var(--picom-aqua) 10%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-aqua) 16%,transparent)}100%{background:transparent;box-shadow:none}}

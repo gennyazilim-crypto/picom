@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { clipboardService } from "../services/clipboardService";
 import { crashRecoveryService, type CrashRecoveryRecord } from "../services/crashRecoveryService";
 import { loggingService } from "../services/loggingService";
+import { safeModeService } from "../services/safeModeService";
 
 type DesktopStartupErrorBoundaryProps = {
   children: ReactNode;
@@ -43,6 +44,7 @@ export class DesktopStartupErrorBoundary extends Component<
     this.setState({
       recoveryRecord: crashRecoveryService.recordCrash(error, logEntry)
     });
+    safeModeService.recordStartupCrash();
   }
 
   private copyDiagnostics = async (): Promise<void> => {
