@@ -51,6 +51,16 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 - Linux smoke test: `docs/linux-smoke-test.md`
 - macOS smoke test: `docs/macos-smoke-test.md`
 
+## Local verification command
+
+Run the lightweight packaging config check before platform packaging smoke tests:
+
+```bash
+npm run package:verify
+```
+
+This command validates the expected Picom package identity, platform targets, window sizing, Electron security posture, and required icon asset paths without building installers.
+
 ## Known local limitation
 
 On the current Windows workstation, `electron-builder --dir` can fail at the temporary unpacked folder rename step with `EPERM`. The build and config still complete before the local filesystem lock. See `docs/electron-packaging.md` for the exact recovery steps.

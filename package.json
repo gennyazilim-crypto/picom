@@ -22,6 +22,7 @@
     "package:mac:dmg": "npm run build && electron-builder --mac dmg --x64",
     "package:mac:zip": "npm run build && electron-builder --mac zip --x64",
     "package:mac": "npm run build && electron-builder --mac --x64",
+    "package:verify": "node scripts/verify-electron-packaging.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
