@@ -56,11 +56,28 @@ function isTrayStatus(status: unknown): status is TrayStatus {
 }
 
 function isSafeExternalUrl(url: string): boolean {
+  return normalizeExternalUrl(url) !== null;
+}
+
+function normalizeExternalUrl(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const url = value.trim();
+  if (!url || url.length > 2048) {
+    return null;
+  }
+
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return null;
+    }
+
+    return parsed.href;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -73,11 +90,12 @@ function isTrustedAppUrl(url: string): boolean {
 }
 
 function openExternalSafely(url: string): void {
-  if (!isSafeExternalUrl(url)) {
+  const safeUrl = normalizeExternalUrl(url);
+  if (!safeUrl) {
     return;
   }
 
-  shell.openExternal(url).catch(() => undefined);
+  shell.openExternal(safeUrl).catch(() => undefined);
 }
 
 function focusMainWindow(): void {
@@ -496,6 +514,20 @@ function registerIpcHandlers(): void {
       return { ok: true, native: true } as const;
     } catch {
       return { ok: false, native: true, error: "CLIPBOARD_WRITE_FAILED" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.externalOpenUrl, async (_event, payload: unknown) => {
+    const safeUrl = normalizeExternalUrl(payload);
+    if (!safeUrl) {
+      return { ok: false, native: true, error: "UNSAFE_EXTERNAL_URL" } as const;
+    }
+
+    try {
+      await shell.openExternal(safeUrl);
+      return { ok: true, native: true, url: safeUrl } as const;
+    } catch {
+      return { ok: false, native: true, error: "EXTERNAL_URL_OPEN_FAILED" } as const;
     }
   });
 }

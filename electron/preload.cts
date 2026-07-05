@@ -194,6 +194,13 @@ const bridge = Object.freeze({
         | { ok: true; native: true }
         | { ok: false; native: true; error: string }
       >
+  },
+  externalLinks: {
+    openUrl: (url: string) =>
+      invokeWhitelisted(IPC_CHANNELS.externalOpenUrl, url) as Promise<
+        | { ok: true; native: true; url: string }
+        | { ok: false; native: true; error: string }
+      >
   }
 });
 

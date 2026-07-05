@@ -101,3 +101,27 @@ Manual verification:
 3. Paste into a safe text field and confirm the text appears.
 4. Copy text from another app, trigger `clipboardService.readText()`, and confirm text is returned.
 5. Run the same calls in browser dev mode and confirm fallback behavior is safe.
+
+## External link bridge
+
+- Renderer entry point: `src/services/externalLinkService.ts`
+- Preload bridge: `window.picomDesktop.externalLinks`
+- IPC channel: `picom:external-open-url`
+- Main process API: Electron `shell.openExternal`
+
+Safety rules:
+
+- React components should call `externalLinkService`, not `window.open` or Electron APIs directly.
+- Only `http` and `https` URLs are allowed by default.
+- `javascript:`, `file:`, `data:`, shell-like, and unknown protocols are blocked.
+- The main process validates and normalizes URLs again before opening them.
+- Browser/dev fallback uses `window.open` with `noopener,noreferrer`.
+- Deep links should use a future `deepLinkService`, not this external-link opener.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Trigger `externalLinkService.openExternalUrl("https://example.com")`.
+3. Confirm the URL opens in the default browser.
+4. Trigger `externalLinkService.openExternalUrl("javascript:alert(1)")`.
+5. Confirm the service returns a blocked/unsafe result and does not open anything.

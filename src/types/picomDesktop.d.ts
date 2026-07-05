@@ -107,6 +107,14 @@ declare global {
           | { ok: false; native: true; error: string }
         >;
       };
+      externalLinks?: {
+        openUrl: (
+          url: string
+        ) => Promise<
+          | { ok: true; native: true; url: string }
+          | { ok: false; native: true; error: string }
+        >;
+      };
     };
   }
 }
