@@ -5,6 +5,7 @@ import { CommunityHeader } from "./CommunityHeader";
 import { ChannelCategory } from "./ChannelCategory";
 import { UserMiniCard } from "./UserMiniCard";
 import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
+import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
 
 type CommunitySidebarProps = {
   community: Community;
@@ -30,6 +31,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
 
       <div className="channel-scroll">
         {canViewOnboardingChecklist ? <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} /> : null}
+        <CommunityOwnershipTransferPanel community={community} currentUser={currentUser} />
 
         {community.categories.map((category) => (
           <ChannelCategory
