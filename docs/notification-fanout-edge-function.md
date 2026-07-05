@@ -34,7 +34,10 @@ The function validates auth presence and event shape, then returns:
 {
   "code": "NOTIFICATION_FANOUT_NOT_IMPLEMENTED",
   "message": "Notification fanout is prepared but not enabled yet.",
-  "delivered": false
+  "details": {
+    "eventType": "message_mention",
+    "delivered": false
+  }
 }
 ```
 
@@ -49,6 +52,7 @@ Notification fanout should respect user preferences, muted communities/channels,
 - Respect user notification settings.
 - Avoid sending notifications for active focused channels when appropriate.
 - Store notification inbox records if that table is introduced.
+- Use typed `errorResponse()` bodies for rejected or placeholder fanout requests.
 - Avoid logging message content, tokens, passwords, authorization headers, or private payloads.
 
 ## Supabase configuration

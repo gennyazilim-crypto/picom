@@ -1,6 +1,6 @@
 import { handleCorsPreflight } from "../_shared/cors.ts";
-import { jsonResponse, methodNotAllowed } from "../_shared/http.ts";
-import { requireSupabaseUser } from "../_shared/supabase-auth.ts";
+import { errorResponse, methodNotAllowed } from "../_shared/http.ts";
+import { requireSupabaseUser } from "../_shared/auth.ts";
 
 type FanoutEventType = "message_mention" | "direct_message" | "community_announcement" | "system_notice";
 
@@ -40,28 +40,28 @@ Deno.serve(async (request: Request) => {
   const body = await readJsonBody(request);
 
   if (!isFanoutEventType(body?.eventType)) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "A valid notification eventType is required." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "A valid notification eventType is required.", 400);
   }
 
   if (body.communityId && !uuidPattern.test(body.communityId)) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "communityId must be a valid UUID when provided." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "communityId must be a valid UUID when provided.", 400);
   }
 
   if (body.channelId && !uuidPattern.test(body.channelId)) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "channelId must be a valid UUID when provided." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "channelId must be a valid UUID when provided.", 400);
   }
 
   if (body.messageId && !uuidPattern.test(body.messageId)) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "messageId must be a valid UUID when provided." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "messageId must be a valid UUID when provided.", 400);
   }
 
-  return jsonResponse(
+  return errorResponse(
+    "NOTIFICATION_FANOUT_NOT_IMPLEMENTED",
+    "Notification fanout is prepared but not enabled yet.",
+    501,
     {
-      code: "NOTIFICATION_FANOUT_NOT_IMPLEMENTED",
-      message: "Notification fanout is prepared but not enabled yet.",
       eventType: body.eventType,
       delivered: false,
     },
-    { status: 501 },
   );
 });
