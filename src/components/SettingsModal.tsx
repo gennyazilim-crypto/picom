@@ -7,6 +7,7 @@ import { settingsService, type NotificationSettings, type ProfileSettings } from
 import { statusPageService } from "../services/statusPageService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
 import { twoFactorAuthService } from "../services/twoFactorAuthService";
+import { accountDeletionService } from "../services/accountDeletionService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
@@ -39,6 +40,8 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [sessionManagementMessage, setSessionManagementMessage] = useState<string | null>(null);
   const [twoFactorStatus, setTwoFactorStatus] = useState(() => twoFactorAuthService.getStatus());
   const [twoFactorMessage, setTwoFactorMessage] = useState(twoFactorStatus.message);
+  const [accountDeletionStatus, setAccountDeletionStatus] = useState(() => accountDeletionService.getStatus());
+  const [accountDeletionConfirmText, setAccountDeletionConfirmText] = useState("");
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -178,6 +181,29 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     setTwoFactorMessage(result.data.message);
     pushToast(result.data.message, "info");
   };
+  const accountDeletionConfirmationText = profileDraft.displayName.trim() || "Picom Mock User";
+  const requestAccountDeletionPlaceholder = () => {
+    const result = accountDeletionService.requestDeletionPlaceholder(accountDeletionConfirmText, accountDeletionConfirmationText);
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    setAccountDeletionStatus(result.data);
+    setAccountDeletionConfirmText("");
+    pushToast(result.data.message, "success");
+  };
+  const cancelAccountDeletionPlaceholder = () => {
+    const result = accountDeletionService.cancelDeletionPlaceholder();
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    setAccountDeletionStatus(result.data);
+    setAccountDeletionConfirmText("");
+    pushToast("Account deletion placeholder canceled.", "info");
+  };
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -270,6 +296,19 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                 <button onClick={prepareTwoFactorPlaceholder}>Enable 2FA placeholder</button>
                 <button onClick={disableTwoFactorPlaceholder}>Disable 2FA placeholder</button>
                 <button onClick={regenerateRecoveryCodesPlaceholder}>Recovery codes placeholder</button>
+              </div>
+              <div className="danger-zone-card" aria-label="Account deletion danger zone">
+                <span>Danger Zone</span>
+                <strong>Delete account request placeholder</strong>
+                <small>{accountDeletionStatus.message} Community ownership transfer and data retention review must happen before any real deletion.</small>
+                <label>
+                  <small>Type <b>{accountDeletionConfirmationText}</b> to request account deletion placeholder.</small>
+                  <input value={accountDeletionConfirmText} onChange={(event) => setAccountDeletionConfirmText(event.target.value)} placeholder={accountDeletionConfirmationText} />
+                </label>
+                <div className="settings-actions-row">
+                  <button disabled={accountDeletionConfirmText.trim() !== accountDeletionConfirmationText} onClick={requestAccountDeletionPlaceholder}>Request deletion placeholder</button>
+                  <button onClick={cancelAccountDeletionPlaceholder}>Cancel deletion placeholder</button>
+                </div>
               </div>
             </div>
           ) : active === "Profile" ? (

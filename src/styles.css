@@ -1950,3 +1950,11 @@ body{
 .session-status{align-self:start;border:1px solid var(--border);border-radius:999px;padding:4px 9px;color:var(--text-muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
 .session-status.active{border-color:color-mix(in srgb,var(--success) 38%,var(--border));color:var(--success)}
 .session-status.expired,.session-status.revoked{border-color:color-mix(in srgb,var(--danger) 42%,var(--border));color:var(--danger)}
+.danger-zone-card{display:grid;gap:10px;border:1px solid color-mix(in srgb,var(--danger) 34%,var(--border));border-radius:18px;background:color-mix(in srgb,var(--danger) 7%,var(--surface));padding:14px;color:var(--text-secondary)}
+.danger-zone-card>span{font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--danger)}
+.danger-zone-card strong{color:var(--text-primary)}
+.danger-zone-card small{color:var(--text-muted);line-height:1.45}
+.danger-zone-card label{display:grid;gap:7px}
+.danger-zone-card input{height:38px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text-primary);padding:0 12px;outline:0}
+.danger-zone-card input:focus{box-shadow:var(--focus-ring);border-color:color-mix(in srgb,var(--danger) 44%,var(--border))}
+.danger-zone-card button:disabled{opacity:.45;cursor:not-allowed}
