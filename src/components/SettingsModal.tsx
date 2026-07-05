@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { notificationService } from "../services/notificationService";
+import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { settingsService, type NotificationSettings } from "../services/settingsService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
@@ -19,6 +20,11 @@ type SettingsModalProps = {
 export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: SettingsModalProps) {
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
+  const [feedbackIssueType, setFeedbackIssueType] = useState<FeedbackIssueType>("bug");
+  const [feedbackTitle, setFeedbackTitle] = useState("Beta feedback placeholder");
+  const [feedbackDescription, setFeedbackDescription] = useState("");
+  const [includeDiagnostics, setIncludeDiagnostics] = useState(true);
+  const [includeLogs, setIncludeLogs] = useState(false);
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
   useEffect(() => {
@@ -36,6 +42,26 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
     const next = settingsService.updateNotificationSettings(partial).notificationSettings;
     setNotificationSettings(next);
     pushToast("Notification setting saved locally.", "success");
+  };
+  const createFeedbackDraft = () => ({
+    issueType: feedbackIssueType,
+    title: feedbackTitle.trim() || "Beta feedback placeholder",
+    description: feedbackDescription.trim() || "No description provided.",
+    includeDiagnostics,
+    includeLogs
+  });
+  const submitFeedbackPlaceholder = () => {
+    const result = feedbackService.submitPlaceholder(createFeedbackDraft());
+    pushToast(`${result.message} Ref: ${result.referenceId}`, "success");
+  };
+  const exportDiagnostics = async () => {
+    const result = await feedbackService.exportSupportDiagnostics(createFeedbackDraft());
+    if (result.ok) {
+      pushToast(result.canceled ? "Diagnostics export canceled." : `Diagnostics exported via ${result.method}.`, result.canceled ? "info" : "success");
+      return;
+    }
+
+    pushToast(result.reason, "error");
   };
 
   return (
@@ -117,6 +143,47 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
               <strong>Desktop service placeholders</strong>
               <p>Tray, window controls, file handling and clipboard are routed through safe services.</p>
               <button onClick={() => { trayService.simulate("settings"); pushToast("Tray settings action simulated.", "info"); }}>Simulate tray settings</button>
+              <div className="settings-status-card" aria-label="Beta feedback and logs placeholder">
+                <span>Beta support</span>
+                <strong>Feedback & logs placeholder</strong>
+                <small>User-facing feedback stays separate from redacted developer diagnostics. No report is sent until a backend endpoint is added.</small>
+              </div>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Issue type</strong>
+                  <small>Used only in the local placeholder payload.</small>
+                </span>
+                <select value={feedbackIssueType} onChange={(event) => setFeedbackIssueType(event.target.value as FeedbackIssueType)}>
+                  <option value="bug">Bug</option>
+                  <option value="crash">Crash</option>
+                  <option value="login">Login</option>
+                  <option value="message">Message</option>
+                  <option value="upload">Upload</option>
+                  <option value="voice">Voice</option>
+                  <option value="packaging">Packaging</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <input value={feedbackTitle} onChange={(event) => setFeedbackTitle(event.target.value)} placeholder="Short feedback title" aria-label="Feedback title" />
+              <textarea value={feedbackDescription} onChange={(event) => setFeedbackDescription(event.target.value)} placeholder="Describe what happened. Do not include passwords, tokens, or secrets." aria-label="Feedback description" rows={3} />
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Include diagnostics</strong>
+                  <small>Includes app mode, release channel, runtime, and non-sensitive state.</small>
+                </span>
+                <input type="checkbox" checked={includeDiagnostics} onChange={(event) => setIncludeDiagnostics(event.target.checked)} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Include recent redacted logs</strong>
+                  <small>Logs are redacted by loggingService before export.</small>
+                </span>
+                <input type="checkbox" checked={includeLogs} onChange={(event) => setIncludeLogs(event.target.checked)} />
+              </label>
+              <div className="settings-actions-row">
+                <button onClick={submitFeedbackPlaceholder}>Save feedback placeholder</button>
+                <button onClick={exportDiagnostics}>Export diagnostics JSON</button>
+              </div>
             </div>
           ) : (
             <div className="placeholder-panel">
