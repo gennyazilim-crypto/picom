@@ -117,7 +117,8 @@
     "package-boundaries:smoke": "node scripts/package-boundaries-smoke-test.mjs",
     "shared:types:check": "tsc -p packages/shared/tsconfig.json",
     "shared:types:smoke": "node scripts/shared-types-smoke-test.mjs",
-    "api:sdk:smoke": "node scripts/api-sdk-generation-smoke-test.mjs"
+    "api:sdk:smoke": "node scripts/api-sdk-generation-smoke-test.mjs",
+    "desktop:ipc:security:smoke": "node scripts/desktop-ipc-security-audit-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
