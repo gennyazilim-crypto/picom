@@ -66,7 +66,8 @@
     "bots:foundation:smoke": "node scripts/bot-system-foundation-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs",
     "webhooks:foundation:smoke": "node scripts/webhook-foundation-smoke-test.mjs",
-    "slash:commands:smoke": "node scripts/slash-commands-placeholder-smoke-test.mjs"
+    "slash:commands:smoke": "node scripts/slash-commands-placeholder-smoke-test.mjs",
+    "emoji:custom:smoke": "node scripts/custom-emoji-foundation-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
