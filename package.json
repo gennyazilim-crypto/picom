@@ -57,6 +57,7 @@
     "auth:account-deletion:smoke": "node scripts/account-deletion-smoke-test.mjs",
     "privacy:data-export:smoke": "node scripts/data-export-placeholder-smoke-test.mjs",
     "community:ownership-transfer:smoke": "node scripts/community-ownership-transfer-smoke-test.mjs",
+    "community:delete-safety:smoke": "node scripts/community-delete-safety-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {
