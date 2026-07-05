@@ -128,6 +128,7 @@
     "csp:smoke": "node scripts/content-security-policy-smoke-test.mjs",
     "external-links:smoke": "node scripts/external-link-service-smoke-test.mjs",
     "thumbnails:smoke": "node scripts/image-thumbnail-placeholder-smoke-test.mjs",
+    "image-cache:smoke": "node scripts/image-cache-strategy-smoke-test.mjs",
     "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs",
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",
     "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",
