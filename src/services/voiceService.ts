@@ -10,6 +10,7 @@ export type VoiceConnectionStatus =
   | "reconnecting"
   | "permission_denied"
   | "token_error"
+  | "error"
   | "disconnected";
 
 export type VoiceIntent = LiveKitIntent;
@@ -65,7 +66,8 @@ function emit(next: Partial<VoiceServiceSnapshot>): void {
 }
 
 function voiceError(code: VoiceServiceErrorCode, message: string): VoiceServiceResult<never> {
-  const status: VoiceConnectionStatus = code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : "token_error";
+  const status: VoiceConnectionStatus =
+    code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : code === "VOICE_TOKEN_FAILED" ? "token_error" : "error";
 
   emit({
     error: message,
@@ -234,6 +236,7 @@ export const voiceService = {
       room = null;
     }
     speakingIdentities = new Set<string>();
+    emit({ error: null, participants: [] });
 
     const token = await requestToken(request);
     if (!token.ok) return token;

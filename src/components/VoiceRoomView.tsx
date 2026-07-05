@@ -21,6 +21,7 @@ const statusLabels: Record<VoiceServiceSnapshot["status"], string> = {
   reconnecting: "Reconnecting",
   permission_denied: "Permission needed",
   token_error: "Token error",
+  error: "Connection error",
   disconnected: "Disconnected",
 };
 

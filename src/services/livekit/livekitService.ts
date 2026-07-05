@@ -23,15 +23,20 @@ export const liveKitService = {
     }
 
     const roomName = request.roomName ?? createPicomLiveKitRoomName(request.communityId, request.channelId);
-    const { data, error } = await supabase.functions.invoke<LiveKitTokenResponse>("livekit-token", {
-      body: {
-        communityId: request.communityId,
-        channelId: request.channelId,
-        roomName,
-        participantName: request.participantName,
-        intent: request.intent ?? "voice",
-      },
-    });
+    const { data, error } = await supabase.functions
+      .invoke<LiveKitTokenResponse>("livekit-token", {
+        body: {
+          communityId: request.communityId,
+          channelId: request.channelId,
+          roomName,
+          participantName: request.participantName,
+          intent: request.intent ?? "voice",
+        },
+      })
+      .catch(() => ({
+        data: null,
+        error: new Error("Could not reach the LiveKit token Edge Function."),
+      }));
 
     if (error) {
       return liveKitError("LIVEKIT_TOKEN_FAILED", "Could not fetch a LiveKit token from the Edge Function.");

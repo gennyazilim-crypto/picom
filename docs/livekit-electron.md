@@ -45,6 +45,14 @@ The LiveKit service separates:
 
 The UI should show user-friendly messages and keep developer details redacted.
 
+Renderer voice errors use safe states:
+
+- `permission_denied` for microphone permission/device failures
+- `token_error` for Edge Function token failures
+- `error` for room connection failures, unavailable room operations, and unexpected voice runtime failures
+
+Network failures while invoking the token Edge Function are caught and converted into a safe token failure message. Raw stack traces, tokens, and provider details are not shown in the voice room UI.
+
 ## Join behavior
 
 Joining a voice room performs two steps:
