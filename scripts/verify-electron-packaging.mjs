@@ -26,6 +26,7 @@ function assertFile(path) {
 }
 
 const packageJson = JSON.parse(readText("package.json"));
+const packageJsonText = JSON.stringify(packageJson, null, 2);
 const builderConfig = readText("electron-builder.yml");
 const appConfig = readText("electron/appConfig.cts");
 const mainProcess = readText("electron/main.cts");
@@ -77,6 +78,9 @@ assertNotMatches(
   /^(?!\s*#)\s*(certificateFile|certificatePassword|identity|appleId|appleIdPassword|notarize):/m,
   "Packaging config must not contain active signing or notarization secrets."
 );
+assertNotMatches(packageJsonText, /discord/i, "Package metadata must not contain Discord branding.");
+assertNotMatches(builderConfig, /discord/i, "Electron Builder metadata must not contain Discord branding.");
+assertNotMatches(appConfig, /discord/i, "Electron app config must not contain Discord branding.");
 
 assertIncludes(appConfig, 'name: "Picom"', "Electron app name");
 assertIncludes(appConfig, 'appId: "com.picom.desktop"', "Electron app id");

@@ -61,6 +61,7 @@ macOS packaging remains a local unsigned placeholder with explicit microphone an
 - macOS signing and notarization are intentionally disabled for local builds.
 - Signing certificates, passwords, private keys, and notarization credentials must be supplied only through secure CI or a local secret manager later.
 - `npm run package:verify` fails if active signing or notarization secret fields are added to the committed packaging config.
+- `npm run package:verify` fails if package/app metadata contains Discord branding.
 
 ## Smoke-test references
 
