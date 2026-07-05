@@ -6,6 +6,7 @@ import { menuService } from "../services/menuService";
 import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
 import { statusPageService } from "../services/statusPageService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
+import { twoFactorAuthService } from "../services/twoFactorAuthService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
@@ -36,6 +37,8 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [emailVerificationMessage, setEmailVerificationMessage] = useState<string | null>(null);
   const [activeSessions, setActiveSessions] = useState<SessionDeviceSummary[]>([]);
   const [sessionManagementMessage, setSessionManagementMessage] = useState<string | null>(null);
+  const [twoFactorStatus, setTwoFactorStatus] = useState(() => twoFactorAuthService.getStatus());
+  const [twoFactorMessage, setTwoFactorMessage] = useState(twoFactorStatus.message);
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -143,6 +146,38 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     setSessionManagementMessage(result.data.message);
     pushToast(result.data.message, "success");
   };
+  const prepareTwoFactorPlaceholder = () => {
+    const result = twoFactorAuthService.prepareSetupPlaceholder();
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    setTwoFactorStatus(result.data);
+    setTwoFactorMessage(result.data.message);
+    pushToast("Two-factor placeholder prepared locally.", "success");
+  };
+  const disableTwoFactorPlaceholder = () => {
+    const result = twoFactorAuthService.disablePlaceholder();
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    setTwoFactorStatus(result.data);
+    setTwoFactorMessage(result.data.message);
+    pushToast("Two-factor placeholder disabled locally.", "info");
+  };
+  const regenerateRecoveryCodesPlaceholder = () => {
+    const result = twoFactorAuthService.regenerateRecoveryCodesPlaceholder();
+    if (!result.ok) {
+      pushToast(result.message, "error");
+      return;
+    }
+
+    setTwoFactorMessage(result.data.message);
+    pushToast(result.data.message, "info");
+  };
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -199,8 +234,8 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                 </article>
                 <article className="security-card">
                   <span>2FA</span>
-                  <strong>Two-factor placeholder</strong>
-                  <small>Architecture is reserved for later; no secrets or recovery codes are generated in this MVP placeholder.</small>
+                  <strong>{twoFactorStatus.enabled ? "Prepared locally" : "Two-factor placeholder"}</strong>
+                  <small>{twoFactorMessage}</small>
                 </article>
                 <article className="security-card">
                   <span>Logs</span>
@@ -232,6 +267,9 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                 <button onClick={requestEmailVerification}>Resend verification placeholder</button>
                 <button onClick={refreshActiveSessions}>Refresh sessions</button>
                 <button onClick={revokeOtherSessions}>Revoke other sessions placeholder</button>
+                <button onClick={prepareTwoFactorPlaceholder}>Enable 2FA placeholder</button>
+                <button onClick={disableTwoFactorPlaceholder}>Disable 2FA placeholder</button>
+                <button onClick={regenerateRecoveryCodesPlaceholder}>Recovery codes placeholder</button>
               </div>
             </div>
           ) : active === "Profile" ? (
