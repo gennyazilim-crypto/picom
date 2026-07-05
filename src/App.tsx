@@ -32,6 +32,7 @@ import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
 import { FriendsView } from "./components/FriendsView";
 import { clipboardService } from "./services/clipboardService";
+import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
 import { loggingService } from "./services/loggingService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
@@ -594,6 +595,49 @@ export function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [activeChannel.id, channels, closeTransientOverlays, openPalette, openSettings, selectChannelByOffset]);
+
+  useEffect(() => {
+    const handleDeepLinkAction = (action: DeepLinkAction) => {
+      if (action.type === "settings") {
+        openSettings();
+        pushToast("Opened settings from deep link.", "info");
+        return;
+      }
+
+      if (action.type === "friends") {
+        setActiveView("friends");
+        closeTransientOverlays();
+        pushToast("Opened friends foundation from deep link.", "info");
+        return;
+      }
+
+      if (action.type === "invite") {
+        pushToast(`Invite deep link received: ${action.code}. Invite acceptance is a placeholder.`, "info");
+        return;
+      }
+
+      const targetCommunity = communities.find((community) => community.id === action.communityId);
+      if (!targetCommunity) {
+        pushToast("Deep link community is unavailable in this local workspace.", "error");
+        return;
+      }
+
+      setActiveView("community");
+      switchCommunity(action.communityId, action.channelId);
+      if (action.channelId) {
+        clearChannelUnread({ communityId: action.communityId, channelId: action.channelId });
+      }
+      closeTransientOverlays();
+
+      if (action.messageId) {
+        pushToast("Deep link opened the channel. Message highlight is a placeholder.", "info");
+      } else {
+        pushToast("Deep link opened the community.", "info");
+      }
+    };
+
+    return deepLinkService.onDeepLink(handleDeepLinkAction);
+  }, [clearChannelUnread, closeTransientOverlays, communities, openSettings, pushToast, switchCommunity]);
 
   const paletteResults = useMemo<PaletteResult[]>(() => {
     const q = paletteQuery.toLowerCase();

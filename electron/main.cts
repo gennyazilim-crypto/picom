@@ -165,6 +165,15 @@ function flushPendingDeepLinks(): void {
   }
 }
 
+function registerProtocolHandler(): void {
+  if (process.defaultApp && process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient("picom", process.execPath, [path.resolve(process.argv[1])]);
+    return;
+  }
+
+  app.setAsDefaultProtocolClient("picom");
+}
+
 function sendPowerResumeToRenderer(): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return;
@@ -768,6 +777,7 @@ if (!hasSingleInstanceLock) {
 
   app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
+    registerProtocolHandler();
     registerIpcHandlers();
     powerMonitor.on("resume", sendPowerResumeToRenderer);
 
