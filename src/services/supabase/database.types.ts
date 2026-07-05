@@ -104,6 +104,7 @@ export type Database = {
           author_id: string;
           body: string;
           client_message_id: string | null;
+          sequence: number | null;
           created_at: string;
           edited_at: string | null;
           deleted_at: string | null;

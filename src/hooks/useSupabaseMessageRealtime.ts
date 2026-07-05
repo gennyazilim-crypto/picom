@@ -53,10 +53,10 @@ function createMessageOrderingMetadata(
     }),
     type,
     communityId: message.communityId,
-    channelId: message.channelId,
-    messageId: message.id,
-    serverTimestamp,
-    sequence: null,
+      channelId: message.channelId,
+      messageId: message.id,
+      serverTimestamp,
+      sequence: message.sequence,
   };
 }
 

@@ -294,6 +294,7 @@ export function App() {
     channelId: message.channelId,
     authorId: message.authorId,
     body: message.body,
+    sequence: message.sequence,
     createdAt: message.createdAt,
     editedAt: message.editedAt ?? undefined,
     attachments: [],
@@ -311,6 +312,7 @@ export function App() {
       channelId: message.channelId,
       authorId: message.authorId,
       body: message.body,
+      sequence: message.sequence,
       createdAt: message.createdAt,
       editedAt: message.editedAt,
       deletedAt: message.deletedAt,
@@ -347,6 +349,7 @@ export function App() {
       channelId: message.channelId,
       authorId: message.authorId,
       body: message.body,
+      sequence: message.sequence,
       createdAt: message.createdAt,
       editedAt: message.editedAt,
     });

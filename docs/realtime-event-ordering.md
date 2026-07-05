@@ -13,7 +13,7 @@ Picom uses Supabase Realtime for MVP message updates. Realtime events can arrive
   - `channelId`
   - `messageId`
   - `serverTimestamp`
-  - `sequence` placeholder
+  - `sequence` when available
 - Event IDs are remembered in a bounded cache to avoid duplicate processing.
 - Latest per-message timestamps are remembered during the subscription lifetime.
 - Soft-delete updates are treated as `message:delete` ordering events.
@@ -21,7 +21,7 @@ Picom uses Supabase Realtime for MVP message updates. Realtime events can arrive
 
 ## Event metadata
 
-Supabase row-change payloads do not currently provide Picom-specific event IDs. The client derives a deterministic event ID from the message event type, community, channel, message ID, timestamp, sequence placeholder, and optional `clientMessageId`.
+Supabase row-change payloads do not currently provide Picom-specific event IDs. The client derives a deterministic event ID from the message event type, community, channel, message ID, timestamp, optional sequence, and optional `clientMessageId`.
 
 When a future server-side event envelope exists, it should provide durable fields directly:
 
@@ -38,9 +38,9 @@ Deleted messages should not reappear because an older update arrives late. Picom
 1. The realtime ordering guard rejects older non-delete events after a delete event.
 2. The local message state keeps an existing deleted message when an incoming non-delete upsert is older than the deletion timestamp.
 
-## Future sequence numbers
+## Sequence numbers
 
-Task 398 prepares per-channel message sequence numbers. Once message rows include a stable sequence, the ordering guard can prefer sequence comparisons over timestamp comparisons while keeping timestamp fallback for older data.
+Task 398 adds per-channel message sequence numbers. Message rows can now carry a stable `sequence` field for display ordering and future compound pagination. Realtime event freshness still uses timestamps for update/delete ordering because a message keeps the same sequence across edits.
 
 ## Manual verification
 

@@ -7,7 +7,7 @@ import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutatio
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
 
-export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, created_at, edited_at, deleted_at" as const;
+export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at" as const;
 
 export type MessageRow = Readonly<{
   id: string;
@@ -16,6 +16,7 @@ export type MessageRow = Readonly<{
   author_id: string;
   body: string;
   client_message_id: string | null;
+  sequence: number | null;
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
@@ -28,6 +29,7 @@ export type MessageSummary = Readonly<{
   authorId: string;
   body: string;
   clientMessageId: string | null;
+  sequence: number | null;
   createdAt: string;
   editedAt: string | null;
   deletedAt: string | null;
@@ -76,6 +78,7 @@ export function mapMessageRow(row: MessageRow): MessageSummary {
     authorId: row.author_id,
     body: row.body,
     clientMessageId: row.client_message_id,
+    sequence: row.sequence,
     createdAt: row.created_at,
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,

@@ -21,7 +21,7 @@ It returns:
 
 ## Ordering
 
-The query fetches newest records first for efficient pagination, then returns the page in chronological order for the chat UI.
+The query fetches newest records first for efficient pagination, then returns the page in chronological order for the chat UI. When `sequence` exists, the client and Supabase query prefer sequence ordering and fall back to `createdAt` for older or mock data.
 
 ## Mock mode
 
@@ -34,6 +34,7 @@ Supabase mode queries `public.messages` with:
 - community id
 - channel id
 - `deleted_at is null`
+- descending `sequence` when available
 - descending `created_at`
 - `limit + 1` to calculate `hasMore`
 
@@ -41,4 +42,4 @@ RLS remains responsible for access control.
 
 ## Placeholder notes
 
-`previousCursor` is currently `null`. Future infinite scroll can extend this once the UI supports loading newer context or bidirectional pagination.
+`previousCursor` is currently `null`. The current `before` cursor remains timestamp-based for backward compatibility; future pagination can move to a compound `(sequence, created_at, id)` cursor once sequence numbers are fully deployed.

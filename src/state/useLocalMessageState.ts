@@ -8,6 +8,7 @@ type AppendLocalMessageInput = {
   channelId: string;
   authorId: UserId;
   body: string;
+  sequence?: number | null;
   createdAt?: string;
   replyToMessageId?: string | null;
   attachments?: Attachment[];
@@ -70,6 +71,20 @@ function shouldKeepDeletedMessage(existing: Message, incoming: Message): boolean
 
   if (!Number.isFinite(deletedAt) || incomingTimestamp <= 0) return false;
   return incomingTimestamp <= deletedAt;
+}
+
+function compareMessagesByDisplayOrder(left: Message, right: Message): number {
+  if (
+    left.channelId === right.channelId &&
+    typeof left.sequence === "number" &&
+    typeof right.sequence === "number" &&
+    left.sequence !== right.sequence
+  ) {
+    return left.sequence - right.sequence;
+  }
+
+  const createdAtOrder = left.createdAt.localeCompare(right.createdAt);
+  return createdAtOrder === 0 ? left.id.localeCompare(right.id) : createdAtOrder;
 }
 
 function updateChannelUnreadState(
@@ -148,11 +163,12 @@ type AddLocalChannelInput = {
 export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
-  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, createdAt, replyToMessageId, attachments }: AppendLocalMessageInput) => {
+  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, createdAt, replyToMessageId, attachments }: AppendLocalMessageInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
       id: id ?? `local-${idSuffix}`,
       clientMessageId: clientMessageId ?? null,
+      sequence: sequence ?? null,
       channelId,
       authorId,
       body,
@@ -183,7 +199,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
 
         return {
           ...community,
-          messages: messages.sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+          messages: messages.sort(compareMessagesByDisplayOrder),
         };
       }),
     );
@@ -191,12 +207,13 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return message;
   }, []);
 
-  const upsertLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, createdAt, editedAt, deletedAt, attachments }: UpsertLocalMessageInput) => {
+  const upsertLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, createdAt, editedAt, deletedAt, attachments }: UpsertLocalMessageInput) => {
     if (!id || deletedAt) return null;
 
     const message: Message = {
       id,
       clientMessageId: clientMessageId ?? null,
+      sequence: sequence ?? null,
       channelId,
       authorId,
       body,
@@ -225,7 +242,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
 
         return {
           ...community,
-          messages: messages.sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+          messages: messages.sort(compareMessagesByDisplayOrder),
         };
       }),
     );

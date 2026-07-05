@@ -24,7 +24,7 @@ const checks = [
   [files.sharedEvents.includes("eventId"), "shared realtime event id type"],
   [files.sharedEvents.includes("serverTimestamp"), "shared realtime timestamp type"],
   [files.doc.includes("Deleted messages should not reappear"), "delete safety documented"],
-  [files.doc.includes("sequence placeholder"), "sequence placeholder documented"],
+  [files.doc.includes("`sequence` when available"), "sequence metadata documented"],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);

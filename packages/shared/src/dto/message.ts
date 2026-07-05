@@ -14,6 +14,7 @@ export type MessageDTO = Readonly<{
   authorId: UUIDString;
   body: string;
   clientMessageId?: string | null;
+  sequence?: number | null;
   replyToMessageId?: UUIDString | null;
   attachments?: AttachmentDTO[];
   reactions?: ReactionDTO[];
