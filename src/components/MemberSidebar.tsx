@@ -26,12 +26,15 @@ export function MemberSidebar({ community, onOpenProfile, onMemberContextMenu }:
       }),
     [community.members, normalizedQuery, roleById],
   );
-  const groups = [
-    { name: "Admins", members: filtered.filter((member) => ["owner", "admin"].includes(member.roleId)) },
-    { name: "Moderators", members: filtered.filter((member) => member.roleId === "mod") },
-    { name: "Participants", members: filtered.filter((member) => !["owner", "admin", "mod"].includes(member.roleId) && member.status !== "offline") },
-    { name: "Offline", members: filtered.filter((member) => member.status === "offline") },
-  ];
+  const groups = useMemo(
+    () => [
+      { name: "Admins", members: filtered.filter((member) => ["owner", "admin"].includes(member.roleId)) },
+      { name: "Moderators", members: filtered.filter((member) => member.roleId === "mod") },
+      { name: "Participants", members: filtered.filter((member) => !["owner", "admin", "mod"].includes(member.roleId) && member.status !== "offline") },
+      { name: "Offline", members: filtered.filter((member) => member.status === "offline") },
+    ],
+    [filtered],
+  );
 
   return (
     <aside className="member-sidebar">

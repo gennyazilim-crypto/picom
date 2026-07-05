@@ -1,21 +1,23 @@
-# Task 188 Checkpoint - MemberSidebar Presence Dots
+﻿# Task 188: Update MemberSidebar presence dots
 
-## Completed
+## Scope
+- Hardened MemberSidebar presence rendering without changing the desktop layout or visual direction.
+- Kept all realtime, community, profile, and chat flows intact.
 
-- MemberSidebar rows already receive live presence state from Task 187.
-- Presence dots now expose a status label/title for better desktop accessibility.
-- Status dots have a subtle token-based halo for clearer online/idle/DND/offline states.
-- No layout structure changed; the 280px member sidebar remains fixed.
+## Changes
+- Member groups are memoized after search filtering so presence updates do not repeatedly rebuild group structure outside dependency changes.
+- Added a memoized `MemberRow` component so unchanged member rows can avoid unnecessary rerenders when presence updates affect only specific members.
+- Presence dots still use `data-presence`, `data-online`, semantic labels, and token-driven status colors.
+- Existing online, idle, do-not-disturb, and offline visual states remain intact.
 
-## Manual verification
+## Safety notes
+- No secrets are exposed.
+- No new mobile or web-first UI was introduced.
+- The existing MemberSidebar search and profile/context-menu interactions remain unchanged.
 
-1. Run Picom in Supabase mode with two clients in the same community.
-2. Confirm online users show green presence dots in MemberSidebar.
-3. Confirm offline users remain muted.
-4. Hover a dot and confirm the status title is available.
-5. Switch themes and confirm dots remain readable in light and dark mode.
-
-## Notes
-
-- This task does not persist status to the database.
-- Presence remains a live Supabase Presence overlay.
+## Manual test steps
+1. Start the app in mock mode and confirm MemberSidebar renders Admins, Moderators, Participants, and Offline groups.
+2. Search for a member and confirm matching rows still filter correctly.
+3. In Supabase mode with two sessions, update presence and confirm only the affected member status dot/text changes visually.
+4. Click a member row and confirm the ProfileView still opens.
+5. Right-click a member row and confirm the context menu still opens.
