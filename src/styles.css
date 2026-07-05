@@ -358,6 +358,30 @@ body{
 .startup-error-screen{
   background:var(--window-backdrop);
 }
+.startup-error-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:20px;
+}
+.startup-error-actions button{
+  min-height:38px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface-soft);
+  color:var(--text-primary);
+  padding:0 14px;
+  font-weight:800;
+  cursor:pointer;
+}
+.startup-error-actions button:hover{
+  background:var(--accent-soft);
+}
+.startup-error-actions button.primary{
+  border-color:color-mix(in srgb,var(--picom-amber) 58%,var(--border));
+  background:var(--picom-amber);
+  color:#1b1208;
+}
 @media(max-width:1099px){
   .picom-root{
     padding:18px;

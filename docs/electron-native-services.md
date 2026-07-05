@@ -220,3 +220,25 @@ Manual verification:
 3. Call `loggingService.captureException(new Error("token=secret"))`.
 4. Confirm the stored message/stack is redacted.
 5. Call `loggingService.clearLogs()` and confirm the in-memory buffer is empty.
+
+## Crash recovery ErrorBoundary integration
+
+- Renderer boundary: `src/components/DesktopStartupErrorBoundary.tsx`
+- Recovery service: `src/services/crashRecoveryService.ts`
+- Diagnostics source: redacted `loggingService` entries
+
+Safety rules:
+
+- Startup/runtime React crashes show a user-friendly error screen.
+- Developer diagnostics are separated behind a details disclosure.
+- Crash diagnostics are copied through `clipboardService`, not direct native clipboard calls.
+- Recovery state stores only a short error summary, timestamp, and log id.
+- Passwords, tokens, cookies, authorization headers, sessions, API keys, and JWT-like values remain redacted.
+
+Manual verification:
+
+1. Temporarily throw an error inside a local development-only render path.
+2. Confirm the Picom startup error screen appears.
+3. Click `Copy diagnostics` and confirm the copied payload contains redacted logs.
+4. Click `Clear recovery state` and confirm the recovery record is cleared.
+5. Click `Restart app view` and confirm the renderer reloads.
