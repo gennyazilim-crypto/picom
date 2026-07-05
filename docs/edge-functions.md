@@ -89,7 +89,7 @@ Invoke-RestMethod `
   -Uri "http://127.0.0.1:54321/functions/v1/livekit-token" `
   -Headers @{ Authorization = "Bearer <user-jwt>" } `
   -ContentType "application/json" `
-  -Body '{"communityId":"<uuid>","channelId":"<uuid>"}'
+  -Body '{"communityId":"<uuid>","channelId":"<uuid>","intent":"voice"}'
 ```
 
 Use a real user JWT from Supabase Auth. Do not use service-role keys for renderer tests.

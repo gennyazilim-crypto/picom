@@ -13,7 +13,10 @@ The function accepts:
 ```json
 {
   "communityId": "uuid",
-  "channelId": "uuid"
+  "channelId": "uuid",
+  "roomName": "picom:communityId:channelId optional",
+  "participantName": "optional display name",
+  "intent": "voice | screen"
 }
 ```
 
@@ -25,6 +28,8 @@ It returns:
   "url": "livekit-server-url",
   "roomName": "picom:communityId:channelId",
   "identity": "supabase-user-id",
+  "participantName": "display name",
+  "intent": "voice",
   "expiresAt": "iso-date"
 }
 ```
@@ -37,6 +42,9 @@ It returns:
 - The channel must be a `voice` channel.
 - LiveKit API key/secret stay in Edge Function environment variables only.
 - The token is scoped to one room and one user identity.
+- `roomName` is optional and must match the deterministic `picom:{communityId}:{channelId}` room.
+- `intent` is validated as `voice` or `screen`; both currently receive the MVP publish/subscribe grants.
+- Token expiry is short-lived at 1 hour.
 
 ## Required environment variables
 
