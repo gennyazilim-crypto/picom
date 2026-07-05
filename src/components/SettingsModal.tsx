@@ -3,7 +3,7 @@ import { notificationService } from "../services/notificationService";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { authService } from "../services/authService";
 import { menuService } from "../services/menuService";
-import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
+import { settingsService, type AccessibilitySettings, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
 import { statusPageService } from "../services/statusPageService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
 import { twoFactorAuthService } from "../services/twoFactorAuthService";
@@ -23,14 +23,16 @@ type ToastTone = "info" | "error" | "success";
 
 type SettingsModalProps = {
   theme: "light" | "dark";
+  accessibilitySettings: AccessibilitySettings;
   profileSettings: ProfileSettings;
   onThemeChange: (theme: "light" | "dark") => void;
+  onAccessibilitySettingsChange: (settings: AccessibilitySettings) => void;
   onProfileSettingsChange: (settings: ProfileSettings) => void;
   onClose: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function SettingsModal({ theme, profileSettings, onThemeChange, onProfileSettingsChange, onClose, pushToast }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast }: SettingsModalProps) {
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
@@ -90,6 +92,11 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     const next = settingsService.updateNotificationSettings(partial).notificationSettings;
     setNotificationSettings(next);
     pushToast("Notification setting saved locally.", "success");
+  };
+  const updateAccessibility = (partial: Partial<AccessibilitySettings>) => {
+    const next = settingsService.updateAccessibilitySettings(partial).accessibilitySettings;
+    onAccessibilitySettingsChange(next);
+    pushToast("Accessibility setting saved locally.", "success");
   };
   const saveProfileSettings = () => {
     const next = settingsService.updateProfileSettings({
@@ -273,17 +280,51 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
           <span className="eyebrow">{active}</span>
           <h2>{active}</h2>
           {active === "Appearance" ? (
-            <div className="theme-grid">
-              <button className={`theme-card ${theme === "light" ? "selected" : ""}`} onClick={() => onThemeChange("light")}>
-                <span className="theme-preview light-preview" />
-                <strong>Light Theme</strong>
-                <small>Soft shell with clean white surfaces.</small>
-              </button>
-              <button className={`theme-card ${theme === "dark" ? "selected" : ""}`} onClick={() => onThemeChange("dark")}>
-                <span className="theme-preview dark-preview" />
-                <strong>Dark Theme</strong>
-                <small>Charcoal shell with separated surfaces.</small>
-              </button>
+            <div className="appearance-settings-stack">
+              <div className="theme-grid">
+                <button className={`theme-card ${theme === "light" ? "selected" : ""}`} onClick={() => onThemeChange("light")}>
+                  <span className="theme-preview light-preview" />
+                  <strong>Light Theme</strong>
+                  <small>Soft shell with clean white surfaces.</small>
+                </button>
+                <button className={`theme-card ${theme === "dark" ? "selected" : ""}`} onClick={() => onThemeChange("dark")}>
+                  <span className="theme-preview dark-preview" />
+                  <strong>Dark Theme</strong>
+                  <small>Charcoal shell with separated surfaces.</small>
+                </button>
+              </div>
+              <div className="accessibility-card" aria-label="Accessibility display options">
+                <strong>Accessibility display options</strong>
+                <p>Local desktop preferences for contrast, motion, text scale, and focus visibility.</p>
+                <label className="settings-toggle-row">
+                  <span>
+                    <strong>High contrast mode</strong>
+                    <small>Strengthens text, borders, and focus rings using Picom design tokens.</small>
+                  </span>
+                  <input type="checkbox" checked={accessibilitySettings.highContrast} onChange={(event) => updateAccessibility({ highContrast: event.target.checked })} />
+                </label>
+                <label className="settings-toggle-row">
+                  <span>
+                    <strong>Reduced motion</strong>
+                    <small>Reduces non-essential transitions, animations, and smooth scrolling.</small>
+                  </span>
+                  <input type="checkbox" checked={accessibilitySettings.reducedMotion} onChange={(event) => updateAccessibility({ reducedMotion: event.target.checked })} />
+                </label>
+                <label className="settings-toggle-row">
+                  <span>
+                    <strong>Larger text placeholder</strong>
+                    <small>Gently increases base desktop text scale without changing layout.</small>
+                  </span>
+                  <input type="checkbox" checked={accessibilitySettings.largerText} onChange={(event) => updateAccessibility({ largerText: event.target.checked })} />
+                </label>
+                <label className="settings-toggle-row">
+                  <span>
+                    <strong>Strong focus ring placeholder</strong>
+                    <small>Makes keyboard focus indicators more visible.</small>
+                  </span>
+                  <input type="checkbox" checked={accessibilitySettings.focusRingStrong} onChange={(event) => updateAccessibility({ focusRingStrong: event.target.checked })} />
+                </label>
+              </div>
             </div>
           ) : active === "Account" ? (
             <div className="placeholder-panel action-panel">

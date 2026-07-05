@@ -194,6 +194,7 @@ function CommandPalette({
 export function App() {
   const saved = settingsService.getSettings();
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
+  const [accessibilitySettings, setAccessibilitySettings] = useState(saved.accessibilitySettings);
   const [maintenanceStatus, setMaintenanceStatus] = useState(() => maintenanceStatusService.getSnapshot());
   const [profileSettings, setProfileSettings] = useState(saved.profileSettings);
   const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>("online");
@@ -438,8 +439,12 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    settingsService.updateSettings({ theme });
-  }, [theme]);
+    document.documentElement.dataset.highContrast = accessibilitySettings.highContrast ? "true" : "false";
+    document.documentElement.dataset.reducedMotion = accessibilitySettings.reducedMotion ? "true" : "false";
+    document.documentElement.dataset.largerText = accessibilitySettings.largerText ? "true" : "false";
+    document.documentElement.dataset.focusRingStrong = accessibilitySettings.focusRingStrong ? "true" : "false";
+    settingsService.updateSettings({ theme, accessibilitySettings });
+  }, [accessibilitySettings, theme]);
 
   useEffect(() => {
     clearChannelUnread({ communityId: activeCommunity.id, channelId: activeChannel.id });
@@ -1617,7 +1622,7 @@ export function App() {
           onSubmit={handleCreateChannel}
         />
       ) : null}
-      {settingsOpen ? <SettingsModal theme={theme} profileSettings={profileSettings} onThemeChange={setTheme} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
+      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
       {paletteOpen ? (
         <CommandPalette
           communities={communities}

@@ -1,12 +1,14 @@
 export type ThemeMode = "light" | "dark";
 export interface NotificationSettings { enabled: boolean; muted: boolean; mentionsOnly: boolean; }
 export interface ProfileSettings { displayName: string; statusText: string; bio: string; }
-export interface PicomSettings { theme: ThemeMode; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; }
+export interface AccessibilitySettings { highContrast: boolean; reducedMotion: boolean; largerText: boolean; focusRingStrong: boolean; }
+export interface PicomSettings { theme: ThemeMode; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; accessibilitySettings: AccessibilitySettings; }
 const key = "picom-settings";
 const defaults: PicomSettings = {
   theme: "light",
   notificationSettings: { enabled: true, muted: false, mentionsOnly: false },
   profileSettings: { displayName: "", statusText: "", bio: "" },
+  accessibilitySettings: { highContrast: false, reducedMotion: false, largerText: false, focusRingStrong: false },
 };
 export const settingsService = {
   getSettings(): PicomSettings {
@@ -22,6 +24,10 @@ export const settingsService = {
         profileSettings: {
           ...defaults.profileSettings,
           ...(parsed.profileSettings ?? {}),
+        },
+        accessibilitySettings: {
+          ...defaults.accessibilitySettings,
+          ...(parsed.accessibilitySettings ?? {}),
         },
       };
     } catch { return defaults; }
@@ -45,6 +51,15 @@ export const settingsService = {
     return this.updateSettings({
       profileSettings: {
         ...current.profileSettings,
+        ...partial,
+      },
+    });
+  },
+  updateAccessibilitySettings(partial: Partial<AccessibilitySettings>) {
+    const current = this.getSettings();
+    return this.updateSettings({
+      accessibilitySettings: {
+        ...current.accessibilitySettings,
         ...partial,
       },
     });
