@@ -14,12 +14,28 @@ import { shortcutService } from "../services/shortcutService";
 import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
 import { dateTimeService } from "../services/dateTimeService";
+import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
+
+function formatCacheSize(bytes: number | null): string {
+  if (bytes === null) return "Not available";
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${value.toFixed(value >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+}
 
 type SettingsModalProps = {
   theme: "light" | "dark";
@@ -51,6 +67,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
   const [appLockSettings, setAppLockSettings] = useState(() => appLockService.getSettings());
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
+  const [cacheSummary, setCacheSummary] = useState<CacheSummary | null>(null);
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -82,6 +99,16 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
       void refreshActiveSessions();
     }
   }, [active, refreshActiveSessions]);
+
+  const refreshCacheSummary = useCallback(async () => {
+    setCacheSummary(await cacheManagementService.getCacheSummary());
+  }, []);
+
+  useEffect(() => {
+    if (active === "Advanced") {
+      void refreshCacheSummary();
+    }
+  }, [active, refreshCacheSummary]);
 
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
@@ -156,6 +183,11 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     const next = appLockService.updateSettings({ lockAfterInactivityEnabled: enabled });
     setAppLockSettings(next);
     pushToast(enabled ? "Inactivity lock placeholder enabled locally." : "Inactivity lock placeholder disabled locally.", "info");
+  };
+  const runCacheAction = async (action: () => Promise<{ message: string; summary: CacheSummary }>) => {
+    const result = await action();
+    setCacheSummary(result.summary);
+    pushToast(result.message, "success");
   };
   const requestEmailVerification = async () => {
     const result = await authService.requestEmailVerification();
@@ -523,6 +555,44 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </span>
                 <input type="checkbox" checked={appLockSettings.lockAfterInactivityEnabled} onChange={(event) => updateLockAfterInactivity(event.target.checked)} />
               </label>
+              <div className="settings-status-card" aria-label="Cache management foundation">
+                <span>Cache management</span>
+                <strong>{cacheSummary ? `${cacheSummary.imageCacheEntries}/${cacheSummary.imageCacheMaxEntries} image cache entries` : "Loading cache summary"}</strong>
+                <small>
+                  Storage estimate: {formatCacheSize(cacheSummary?.estimatedUsageBytes ?? null)}
+                  {cacheSummary?.estimatedQuotaBytes ? ` of ${formatCacheSize(cacheSummary.estimatedQuotaBytes)}` : ""}.
+                  Auth sessions and drafts are preserved.
+                </small>
+              </div>
+              <div className="security-card-grid" aria-label="Cache summary cards">
+                <article className="security-card">
+                  <span>Images</span>
+                  <strong>{cacheSummary?.imageCacheEntries ?? 0}</strong>
+                  <small>Metadata-only cache entries. Browser image bytes remain Chromium-managed.</small>
+                </article>
+                <article className="security-card">
+                  <span>Logs</span>
+                  <strong>{cacheSummary?.recentLogEntries ?? 0}</strong>
+                  <small>Recent redacted in-memory log entries.</small>
+                </article>
+                <article className="security-card">
+                  <span>Messages</span>
+                  <strong>{cacheSummary?.messageCacheStatus.replace(/_/g, " ") ?? "placeholder"}</strong>
+                  <small>Message cache clearing is prepared without deleting drafts.</small>
+                </article>
+                <article className="security-card">
+                  <span>Offline data</span>
+                  <strong>{cacheSummary?.offlineDataStatus.replace(/_/g, " ") ?? "placeholder"}</strong>
+                  <small>No offline action queue is cleared in this MVP placeholder.</small>
+                </article>
+              </div>
+              <div className="settings-actions-row">
+                <button onClick={refreshCacheSummary}>Refresh cache summary</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache())}>Clear image cache placeholder</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearMessageCache())}>Clear message cache placeholder</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearLogs())}>Clear logs</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearAllNonEssentialCache())}>Clear all non-essential cache</button>
+              </div>
               <div className="settings-status-card" aria-label="Beta feedback and logs placeholder">
                 <span>Beta support</span>
                 <strong>Feedback & logs placeholder</strong>
