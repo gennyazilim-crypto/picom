@@ -145,12 +145,20 @@ async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceService
     bindRoomEvents(activeRoom);
     await activeRoom.connect(token.url, token.token);
 
+    let microphoneEnabled = true;
+    try {
+      await activeRoom.localParticipant.setMicrophoneEnabled(true);
+    } catch {
+      microphoneEnabled = false;
+    }
+
     room = activeRoom;
     emit({
       status: "connected",
       roomName: token.roomName,
       participants: getParticipants(activeRoom),
-      error: null,
+      muted: !microphoneEnabled,
+      error: microphoneEnabled ? null : "Microphone permission was denied or no input device is available.",
     });
 
     return { ok: true, data: snapshot };

@@ -45,6 +45,15 @@ The LiveKit service separates:
 
 The UI should show user-friendly messages and keep developer details redacted.
 
+## Join behavior
+
+Joining a voice room performs two steps:
+
+1. Connect to the LiveKit room with the short-lived Edge Function token.
+2. Try to enable the local microphone.
+
+If the room connection succeeds but microphone permission is denied or no input device is available, Picom keeps the user in the room as muted and shows a clear warning. This avoids dropping the room connection just because audio capture is unavailable.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.
