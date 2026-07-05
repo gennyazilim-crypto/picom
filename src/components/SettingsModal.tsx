@@ -5,6 +5,7 @@ import { menuService } from "../services/menuService";
 import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
+import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 
@@ -29,6 +30,7 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [includeDiagnostics, setIncludeDiagnostics] = useState(true);
   const [includeLogs, setIncludeLogs] = useState(false);
+  const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
   useEffect(() => {
@@ -270,6 +272,7 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                 <button onClick={submitFeedbackPlaceholder}>Save feedback placeholder</button>
                 <button onClick={exportDiagnostics}>Export diagnostics JSON</button>
               </div>
+              {showAdminOperationsPlaceholder ? <AdminOperationsPanel /> : null}
             </div>
           ) : (
             <div className="placeholder-panel">
