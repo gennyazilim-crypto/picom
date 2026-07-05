@@ -8,6 +8,7 @@ import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
 import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
 import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
 import { CommunityCategoryManagementPanel } from "./CommunityCategoryManagementPanel";
+import { MessageModerationFiltersPanel } from "./MessageModerationFiltersPanel";
 
 type CommunitySidebarProps = {
   community: Community;
@@ -41,6 +42,7 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
         <CommunityOwnershipTransferPanel community={community} currentUser={currentUser} />
         <CommunityDeleteSafetyPanel community={community} currentUser={currentUser} />
         <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />
+        <MessageModerationFiltersPanel community={community} currentUser={currentUser} />
 
         {community.categories.map((category) => (
           <ChannelCategory

@@ -2007,3 +2007,13 @@ body{
 .channel-reorder-controls button:hover:not(:disabled){color:var(--text-primary);background:var(--surface-hover)}
 .channel-reorder-controls button:disabled{opacity:.35;cursor:not-allowed}
 .channel-reorder-up svg{transform:rotate(180deg)}
+
+.moderation-filter-card{margin:0 10px 14px;display:grid;gap:9px;border:1px solid color-mix(in srgb,var(--warning) 34%,var(--border));border-radius:18px;background:color-mix(in srgb,var(--warning) 7%,var(--surface));padding:12px;color:var(--text-secondary)}
+.moderation-filter-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:center}
+.moderation-filter-head>span{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--surface);color:var(--warning);border:1px solid var(--border)}
+.moderation-filter-head strong{display:block;color:var(--text-primary);font-size:13px}
+.moderation-filter-head small,.moderation-filter-status{color:var(--text-muted);line-height:1.35;font-size:11px}
+.moderation-filter-card textarea,.moderation-filter-card input{min-width:0;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-primary);padding:8px 9px;outline:0;font-size:12px;resize:vertical}
+.moderation-filter-card textarea:focus,.moderation-filter-card input:focus{box-shadow:var(--focus-ring)}
+.moderation-filter-card label{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:8px;align-items:center;color:var(--text-muted);font-size:12px;font-weight:800}
+.moderation-filter-card button{height:32px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-primary);font-size:12px;font-weight:800;padding:0 10px;cursor:pointer}

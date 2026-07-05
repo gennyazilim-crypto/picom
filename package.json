@@ -61,6 +61,7 @@
     "channel:private-permissions:smoke": "node scripts/private-channel-permissions-smoke-test.mjs",
     "channel:categories:smoke": "node scripts/channel-category-management-smoke-test.mjs",
     "channel:reorder:smoke": "node scripts/channel-reorder-ui-smoke-test.mjs",
+    "moderation:filters:smoke": "node scripts/message-moderation-filters-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {

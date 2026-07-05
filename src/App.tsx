@@ -50,6 +50,7 @@ import { channelCategoryService } from "./services/channelCategoryService";
 import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
 import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
+import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { reportService } from "./services/reportService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
@@ -1104,6 +1105,11 @@ export function App() {
   };
 
   const sendMessage = async (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => {
+    const moderation = messageModerationFilterService.checkMessage(activeCommunity.id, body);
+    if (!moderation.allowed) {
+      pushToast(moderation.reason ?? "Message blocked by moderation filters.", "error");
+      return;
+    }
     const clientMessageId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const result = await messageService.sendMessage({
       communityId: activeCommunity.id,
