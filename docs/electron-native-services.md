@@ -285,3 +285,33 @@ Manual verification:
 3. Restart Picom and confirm the previous size/position is restored.
 4. Maximize Picom, close it, restart it, and confirm maximized state is restored.
 5. Delete or corrupt the state file and confirm Picom falls back to the default 1440 x 900 window.
+
+## Network status service
+
+- Renderer entry point: `src/services/networkStatusService.ts`
+- Browser signals: `online` and `offline` events
+- Optional backend signal: Supabase `functions/v1/health` when Supabase mode is configured
+
+States:
+
+- `online`
+- `offline`
+- `backend_unreachable`
+- `degraded`
+- `checking`
+
+Safety rules:
+
+- The service does not call Electron native APIs directly.
+- Health checks use a timeout and must not spam the backend.
+- Mock mode skips backend health checks and remains usable offline for MVP UI work.
+- Backend failures are logged through redacted `loggingService` warnings.
+- UI integrations should subscribe to the service instead of polling aggressively.
+
+Manual verification:
+
+1. Call `networkStatusService.getSnapshot()` and confirm an initial state is returned.
+2. Call `networkStatusService.start()` and toggle the OS/network offline state if practical.
+3. Confirm subscribers receive `offline` and `online` state updates.
+4. In Supabase mode with health configured, call `networkStatusService.checkBackendHealth()`.
+5. Stop the backend or block the health endpoint and confirm `backend_unreachable` is returned without crashing.
