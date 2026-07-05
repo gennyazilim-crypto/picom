@@ -618,6 +618,50 @@ export function App() {
           closePalette();
         },
       },
+      {
+        id: "cmd-mention-feed",
+        group: "Navigation",
+        label: "Open mention feed",
+        detail: "Home feed for popular and followed people mentions",
+        run: () => {
+          setActiveView("mentionFeed");
+          closeTransientOverlays();
+          closePalette();
+        },
+      },
+      {
+        id: "cmd-direct-messages",
+        group: "Navigation",
+        label: "Open direct messages",
+        detail: "Beta placeholder conversations",
+        run: () => {
+          if (directConversations[0]) setActiveDirectConversationId(directConversations[0].id);
+          setActiveView("directMessages");
+          closeTransientOverlays();
+          closePalette();
+        },
+      },
+      {
+        id: "cmd-friends",
+        group: "Navigation",
+        label: "Open friends foundation",
+        detail: "Local beta friends placeholder",
+        run: () => {
+          setActiveView("friends");
+          closeTransientOverlays();
+          closePalette();
+        },
+      },
+      {
+        id: "cmd-create-community",
+        group: "Actions",
+        label: "Create community",
+        detail: "Open the desktop create community modal",
+        run: () => {
+          setCreateCommunityOpen(true);
+          closePalette();
+        },
+      },
     ];
 
     communities.forEach((community) => {
@@ -683,7 +727,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [clearChannelUnread, closePalette, communities, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
+  }, [clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");
