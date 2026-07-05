@@ -47,8 +47,9 @@ LIVEKIT_API_SECRET=
 Rules:
 
 - `LIVEKIT_URL` may be returned to the renderer as a public connection URL.
-- `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` must never be placed in `.env.example`, `.env.local`, Vite variables, renderer code, preload code, or docs with real values.
+- `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` must never be placed in renderer `.env.example`, `.env.local`, Vite variables, renderer code, preload code, or docs with real values.
 - Store real values only in Supabase function secret storage.
+- `supabase/functions/.env.example` may list placeholder names for local function testing, but it must never contain real values.
 
 ## Optional future server-only values
 
@@ -92,7 +93,7 @@ supabase secrets set LIVEKIT_API_SECRET=replace-with-local-dev-secret
 
 Do not commit the real output of these commands.
 
-For local `.env` files used by `supabase functions serve`, keep the same placeholder discipline:
+For local `.env` files used by `supabase functions serve`, start from `supabase/functions/.env.example` and keep the same placeholder discipline:
 
 ```env
 SUPABASE_URL=http://127.0.0.1:54321
@@ -108,6 +109,7 @@ Never copy these server-only names into Vite variables unless they are explicitl
 
 - Search the repository for real secret values before committing.
 - Confirm `.env.example` contains only renderer-safe placeholders.
+- Confirm `supabase/functions/.env.example` contains only server-side placeholder values, never real secrets.
 - Confirm Edge Function docs show placeholder names, not real values.
 - Confirm protected functions use `requireSupabaseUser()` before privileged work.
 - Confirm every new required variable is listed in the function matrix.
