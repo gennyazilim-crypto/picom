@@ -10,6 +10,7 @@ import { twoFactorAuthService } from "../services/twoFactorAuthService";
 import { accountDeletionService } from "../services/accountDeletionService";
 import { dataExportService } from "../services/dataExportService";
 import { shortcutService } from "../services/shortcutService";
+import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
@@ -44,6 +45,7 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [accountDeletionStatus, setAccountDeletionStatus] = useState(() => accountDeletionService.getStatus());
   const [accountDeletionConfirmText, setAccountDeletionConfirmText] = useState("");
   const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
+  const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -129,6 +131,16 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     }
 
     pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
+  };
+  const updateLaunchOnStartup = (enabled: boolean) => {
+    const next = startupService.setLaunchOnStartupEnabled(enabled);
+    setStartupSettings(next);
+    pushToast(enabled ? "Launch on startup placeholder enabled locally." : "Launch on startup placeholder disabled locally.", "info");
+  };
+  const updateStartMinimizedToTray = (enabled: boolean) => {
+    const next = startupService.setStartMinimizedToTray(enabled);
+    setStartupSettings(next);
+    pushToast(enabled ? "Start minimized to tray placeholder enabled locally." : "Start minimized to tray placeholder disabled locally.", "info");
   };
   const requestEmailVerification = async () => {
     const result = await authService.requestEmailVerification();
@@ -431,6 +443,25 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                 <strong>{statusPageService.isConfigured() ? statusPageService.getDisplayDomain() : "Not configured"}</strong>
                 <small>Future production deployments can point `VITE_STATUS_PAGE_URL` to a public non-sensitive status page.</small>
               </div>
+              <div className="settings-status-card" aria-label="Launch on startup placeholder">
+                <span>Launch on startup</span>
+                <strong>{startupSettings.launchOnStartup ? "Prepared locally" : "Disabled"}</strong>
+                <small>Mode: {startupSettings.mode}. Native OS registration is intentionally deferred until packaging/signing is finalized.</small>
+              </div>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Launch Picom on startup placeholder</strong>
+                  <small>Saves the preference locally without creating OS startup entries yet.</small>
+                </span>
+                <input type="checkbox" checked={startupSettings.launchOnStartup} onChange={(event) => updateLaunchOnStartup(event.target.checked)} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Start minimized to tray placeholder</strong>
+                  <small>Prepared for future tray startup behavior; currently stored as a local preference.</small>
+                </span>
+                <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => updateStartMinimizedToTray(event.target.checked)} />
+              </label>
               <div className="settings-status-card" aria-label="Beta feedback and logs placeholder">
                 <span>Beta support</span>
                 <strong>Feedback & logs placeholder</strong>
