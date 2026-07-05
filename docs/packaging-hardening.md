@@ -11,6 +11,8 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 - Minimum window size: `1100x700`
 - Output directory: `release/`
 - Local packages are unsigned by design.
+- Packaged app entrypoint is `dist-electron/main.cjs`.
+- Electron Builder uses `asar: true`.
 
 ## Electron security posture
 

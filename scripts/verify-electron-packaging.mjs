@@ -49,6 +49,10 @@ assertIncludes(builderConfig, "target: deb", "Linux deb target");
 assertIncludes(builderConfig, "target: dmg", "macOS dmg target");
 assertIncludes(builderConfig, "target: zip", "macOS zip target");
 assertIncludes(builderConfig, "publish: null", "publish config");
+assertIncludes(builderConfig, "asar: true", "asar packaging");
+assertIncludes(builderConfig, "main: dist-electron/main.cjs", "packaged Electron main entry");
+assertIncludes(builderConfig, "dist/**/*", "renderer build files");
+assertIncludes(builderConfig, "dist-electron/**/*", "Electron build files");
 assertNotMatches(
   builderConfig,
   /^(?!\s*#)\s*(certificateFile|certificatePassword|identity|appleId|appleIdPassword|notarize):/m,
