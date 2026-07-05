@@ -1,22 +1,40 @@
 import { currentUserId } from "../data/mockCommunities";
 import { mockRoles } from "../data/mockMembers";
+import { getCommunityTemplate } from "../data/communityTemplates";
 import type { CommunitySummary } from "../services/communityService";
-import type { Community } from "../types/community";
+import type { ChannelCategory, Community } from "../types/community";
 
 function getIcon(name: string): string {
   return name.trim().slice(0, 1).toUpperCase() || "P";
 }
 
 export function createCommunityFromSummary(summary: CommunitySummary): Community {
-  const channelId = `${summary.id}-general`;
-  const categoryId = `${summary.id}-general-category`;
+  const template = getCommunityTemplate(summary.templateId);
   const ownerRole = mockRoles.find((role) => role.name === "Owner") ?? mockRoles[0];
+  const categories: ChannelCategory[] = template.categories.map((category, categoryIndex) => {
+    const categoryId = `${summary.id}-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "category"}`;
+
+    return {
+      id: categoryId,
+      name: category.name,
+      position: categoryIndex,
+      channels: category.channels.map((channel, channelIndex) => ({
+        id: `${summary.id}-${channel.name}`,
+        categoryId,
+        name: channel.name,
+        type: channel.type,
+        topic: channel.topic ?? summary.description ?? template.welcomeMessage,
+        isPrivate: channel.isPrivate,
+        position: channelIndex,
+      })),
+    };
+  });
 
   return {
     id: summary.id,
     name: summary.name,
     icon: getIcon(summary.name),
-    accentColor: summary.accentColor,
+    accentColor: summary.accentColor || template.accentColor,
     roles: mockRoles,
     members: [
       {
@@ -31,23 +49,7 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
         bio: "Community owner placeholder for the MVP create flow.",
       },
     ],
-    categories: [
-      {
-        id: categoryId,
-        name: "General",
-        position: 0,
-        channels: [
-          {
-            id: channelId,
-            categoryId,
-            name: "general",
-            type: "text",
-            topic: summary.description ?? "New Picom community",
-            position: 0,
-          },
-        ],
-      },
-    ],
+    categories,
     messages: [],
   };
 }

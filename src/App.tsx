@@ -9,6 +9,7 @@ import type { Attachment, ChannelCategory, Community, Member, Message } from "./
 import type { DirectConversation } from "./types/directMessages";
 import type { FriendState } from "./types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
+import type { CommunityTemplateId } from "./types/communityTemplates";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
@@ -1165,8 +1166,8 @@ export function App() {
     pushToast(result.ok ? "User report placeholder submitted." : result.message, result.ok ? "success" : "error");
   };
 
-  const handleCreateCommunity = async (name: string, description?: string) => {
-    const result = await communityService.createCommunity({ name, description });
+  const handleCreateCommunity = async (name: string, description?: string, templateId?: CommunityTemplateId) => {
+    const result = await communityService.createCommunity({ name, description, templateId });
 
     if (!result.ok) {
       pushToast(result.error.message, "error");

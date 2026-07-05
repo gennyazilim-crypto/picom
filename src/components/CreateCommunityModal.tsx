@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { communityTemplates } from "../data/communityTemplates";
+import type { CommunityTemplateId } from "../types/communityTemplates";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 
@@ -6,14 +8,16 @@ const overlayIcons = mvpUiIconMap.overlays;
 
 type CreateCommunityModalProps = {
   onClose: () => void;
-  onSubmit: (name: string, description?: string) => Promise<void>;
+  onSubmit: (name: string, description?: string, templateId?: CommunityTemplateId) => Promise<void>;
 };
 
 export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [templateId, setTemplateId] = useState<CommunityTemplateId>("custom");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const selectedTemplate = communityTemplates.find((template) => template.id === templateId) ?? communityTemplates[0];
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -33,7 +37,7 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
     setError(null);
 
     try {
-      await onSubmit(cleanedName, description.trim() || undefined);
+      await onSubmit(cleanedName, description.trim() || undefined, templateId);
     } catch {
       setError("Could not create community. Please try again.");
     } finally {
@@ -50,6 +54,31 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
         <span className="eyebrow">New community</span>
         <h2 id="create-community-title">Create a Picom community</h2>
         <p>Start with a clean desktop chat space. Channels and members can be expanded in the next setup steps.</p>
+
+        <div className="template-picker" aria-label="Community template selection">
+          {communityTemplates.map((template) => (
+            <button
+              key={template.id}
+              type="button"
+              className={template.id === templateId ? "selected" : ""}
+              onClick={() => setTemplateId(template.id)}
+              style={{ "--template-accent": template.accentColor } as React.CSSProperties}
+            >
+              <strong>{template.name}</strong>
+              <span>{template.description}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="template-preview">
+          <strong>{selectedTemplate.name} preview</strong>
+          <span>{selectedTemplate.categories.flatMap((category) => category.channels).length} channels prepared</span>
+          <ul>
+            {selectedTemplate.categories.flatMap((category) => category.channels).slice(0, 6).map((channel) => (
+              <li key={`${selectedTemplate.id}-${channel.name}`}>{channel.type === "voice" ? "voice" : "#"} {channel.name}</li>
+            ))}
+          </ul>
+        </div>
 
         <label className="auth-field">
           Community name

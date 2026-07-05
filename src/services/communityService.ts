@@ -9,6 +9,7 @@ export type CommunitySummary = Readonly<{
   description: string | null;
   iconUrl: string | null;
   accentColor: string;
+  templateId?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }>;
@@ -17,6 +18,7 @@ export type CreateCommunityInput = Readonly<{
   name: string;
   description?: string | null;
   accentColor?: string;
+  templateId?: string | null;
 }>;
 
 export type UpdateCommunityInput = Readonly<{
@@ -155,6 +157,7 @@ export const communityService = {
           description: input.description?.trim() || null,
           iconUrl: null,
           accentColor: input.accentColor ?? "#007571",
+          templateId: input.templateId ?? "custom",
           createdAt: now,
           updatedAt: now,
         },
