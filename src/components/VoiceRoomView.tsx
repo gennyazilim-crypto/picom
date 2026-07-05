@@ -12,6 +12,7 @@ type VoiceRoomViewProps = {
   onLeave?: () => void;
   onToggleMute?: () => void;
   onToggleDeafen?: () => void;
+  onStartScreenShare?: (sourceId: string) => void;
 };
 
 const statusLabels: Record<VoiceServiceSnapshot["status"], string> = {
@@ -50,6 +51,7 @@ export function VoiceRoomView({
   onLeave,
   onToggleMute,
   onToggleDeafen,
+  onStartScreenShare,
 }: VoiceRoomViewProps) {
   const connected = snapshot.status === "connected" || snapshot.status === "reconnecting";
   const joining = snapshot.status === "requesting_token" || snapshot.status === "connecting";
@@ -120,7 +122,7 @@ export function VoiceRoomView({
             <p>Device switching will be enabled after the native permission flow is wired safely.</p>
           </div>
 
-          <ScreenSharePicker />
+          <ScreenSharePicker connected={connected} screenSharing={snapshot.screenSharing} onStart={onStartScreenShare} />
         </article>
 
         <article className="voice-room-card">

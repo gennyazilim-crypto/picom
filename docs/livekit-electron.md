@@ -116,8 +116,16 @@ Leaving a room must release local capture resources before disconnecting:
 - The renderer uses the preload bridge and receives sanitized source DTOs only.
 - IPC is restricted to the whitelisted `picom:screen-capture-get-sources` channel.
 - Source loading happens after an explicit user click and is not triggered during app startup.
-- The picker currently selects a source for the next screen-share task; starting/stopping the LiveKit screen-share track is wired separately.
 - macOS users may need Screen Recording permission before window/screen thumbnails are available.
+
+## Start screen share behavior
+
+- The renderer starts sharing only after the user has joined a LiveKit room and selected a source from the Electron bridge.
+- Picom uses the selected Electron `sourceId` with `navigator.mediaDevices.getUserMedia()` and publishes the returned video track as `Track.Source.ScreenShare`.
+- The renderer never imports or calls Electron `desktopCapturer` directly.
+- Screen sharing failures are converted into safe user-facing voice errors.
+- Leaving the room stops local published tracks and clears the `screenSharing` state.
+- Stop screen share has a dedicated follow-up task; until then, leaving the room is the safe cleanup path.
 
 ## Platform notes
 

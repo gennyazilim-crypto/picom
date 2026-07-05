@@ -1,4 +1,4 @@
-import { ConnectionState, Room, RoomEvent, type RemoteParticipant } from "livekit-client";
+import { ConnectionState, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
 
@@ -30,6 +30,7 @@ export type VoiceServiceSnapshot = Readonly<{
   roomName: string | null;
   muted: boolean;
   deafened: boolean;
+  screenSharing: boolean;
   participants: VoiceParticipant[];
   error: string | null;
 }>;
@@ -39,7 +40,8 @@ export type VoiceServiceErrorCode =
   | "VOICE_TOKEN_FAILED"
   | "VOICE_CONNECTION_FAILED"
   | "VOICE_ROOM_UNAVAILABLE"
-  | "VOICE_PERMISSION_DENIED";
+  | "VOICE_PERMISSION_DENIED"
+  | "VOICE_SCREEN_SHARE_FAILED";
 
 export type VoiceServiceResult<T> =
   | Readonly<{ ok: true; data: T }>
@@ -49,11 +51,13 @@ export type VoiceStateListener = (snapshot: VoiceServiceSnapshot) => void;
 
 let room: Room | null = null;
 let speakingIdentities = new Set<string>();
+let screenShareMediaTrack: MediaStreamTrack | null = null;
 let snapshot: VoiceServiceSnapshot = {
   status: "idle",
   roomName: null,
   muted: false,
   deafened: false,
+  screenSharing: false,
   participants: [],
   error: null,
 };
@@ -114,6 +118,11 @@ function applyRemoteAudioSubscription(activeRoom: Room, subscribed: boolean): vo
   });
 }
 
+function clearScreenShareState(): void {
+  screenShareMediaTrack = null;
+  emit({ screenSharing: false });
+}
+
 function bindRoomEvents(activeRoom: Room): void {
   activeRoom
     .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
@@ -151,10 +160,16 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.TrackPublished, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackUnpublished, () => emitParticipants(activeRoom))
     .on(RoomEvent.LocalTrackPublished, () => emitParticipants(activeRoom))
-    .on(RoomEvent.LocalTrackUnpublished, () => emitParticipants(activeRoom))
+    .on(RoomEvent.LocalTrackUnpublished, (publication) => {
+      if (publication.source === Track.Source.ScreenShare) {
+        clearScreenShareState();
+      }
+      emitParticipants(activeRoom);
+    })
     .on(RoomEvent.Disconnected, () => {
       speakingIdentities = new Set<string>();
-      emit({ status: "disconnected", participants: [], roomName: null });
+      screenShareMediaTrack = null;
+      emit({ status: "disconnected", participants: [], roomName: null, screenSharing: false });
     });
 }
 
@@ -162,6 +177,22 @@ function stopLocalTracks(activeRoom: Room): void {
   activeRoom.localParticipant.trackPublications.forEach((publication) => {
     publication.track?.stop();
   });
+  screenShareMediaTrack = null;
+}
+
+function createElectronScreenShareConstraints(sourceId: string): MediaStreamConstraints {
+  return {
+    audio: false,
+    video: {
+      mandatory: {
+        chromeMediaSource: "desktop",
+        chromeMediaSourceId: sourceId,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        maxFrameRate: 30,
+      },
+    } as unknown as MediaTrackConstraints,
+  };
 }
 
 async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
@@ -201,6 +232,7 @@ async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceService
       roomName: token.roomName,
       participants: getParticipants(activeRoom),
       muted: !microphoneEnabled,
+      screenSharing: Boolean(screenShareMediaTrack),
       error: microphoneEnabled ? null : "Microphone permission was denied or no input device is available.",
     });
 
@@ -236,7 +268,8 @@ export const voiceService = {
       room = null;
     }
     speakingIdentities = new Set<string>();
-    emit({ error: null, participants: [] });
+    screenShareMediaTrack = null;
+    emit({ error: null, participants: [], screenSharing: false });
 
     const token = await requestToken(request);
     if (!token.ok) return token;
@@ -258,6 +291,7 @@ export const voiceService = {
       participants: [],
       muted: false,
       deafened: false,
+      screenSharing: false,
       error: null,
     });
   },
@@ -291,5 +325,50 @@ export const voiceService = {
 
     emit({ deafened, error: null });
     return { ok: true, data: snapshot };
+  },
+
+  async startScreenShare(sourceId: string): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    if (!room) {
+      return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");
+    }
+
+    if (screenShareMediaTrack) {
+      return { ok: true, data: snapshot };
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return voiceError("VOICE_SCREEN_SHARE_FAILED", "Screen capture is not available in this runtime.");
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(createElectronScreenShareConstraints(sourceId));
+      const [track] = stream.getVideoTracks();
+      if (!track) {
+        stream.getTracks().forEach((mediaTrack) => mediaTrack.stop());
+        return voiceError("VOICE_SCREEN_SHARE_FAILED", "No screen video track was returned.");
+      }
+
+      await room.localParticipant.publishTrack(track, {
+        name: "screen-share",
+        source: Track.Source.ScreenShare,
+      });
+
+      screenShareMediaTrack = track;
+      track.onended = () => {
+        if (screenShareMediaTrack === track) {
+          screenShareMediaTrack = null;
+          emit({ screenSharing: false, participants: room ? getParticipants(room) : snapshot.participants });
+        }
+      };
+
+      emit({ screenSharing: true, error: null, participants: getParticipants(room) });
+      return { ok: true, data: snapshot };
+    } catch (error) {
+      const denied = error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "SecurityError");
+      return voiceError(
+        denied ? "VOICE_PERMISSION_DENIED" : "VOICE_SCREEN_SHARE_FAILED",
+        denied ? "Screen recording permission was denied." : "Could not start screen sharing."
+      );
+    }
   },
 };

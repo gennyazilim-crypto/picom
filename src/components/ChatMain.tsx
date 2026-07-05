@@ -14,6 +14,7 @@ const initialVoiceSnapshot: VoiceServiceSnapshot = {
   roomName: null,
   muted: false,
   deafened: false,
+  screenSharing: false,
   participants: [],
   error: null,
 };
@@ -127,6 +128,19 @@ export function ChatMain({
     });
   };
 
+  const handleStartScreenShare = (sourceId: string) => {
+    void import("../services/voiceService").then(({ voiceService }) => {
+      void voiceService.startScreenShare(sourceId).then((result) => {
+        if (!result.ok) {
+          pushToast(result.error.message, "error");
+          return;
+        }
+
+        pushToast("Screen sharing started.", "success");
+      });
+    });
+  };
+
   return (
     <main className="chat-main">
       <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} />
@@ -140,6 +154,7 @@ export function ChatMain({
           onLeave={handleLeaveVoice}
           onToggleMute={handleToggleMute}
           onToggleDeafen={handleToggleDeafen}
+          onStartScreenShare={handleStartScreenShare}
         />
       ) : (
         <>

@@ -4,7 +4,13 @@ import { screenCaptureService, type ScreenCaptureSource } from "../../services/s
 
 type PickerStatus = "idle" | "loading" | "ready" | "error";
 
-export function ScreenSharePicker() {
+type ScreenSharePickerProps = {
+  connected: boolean;
+  screenSharing: boolean;
+  onStart?: (sourceId: string) => void;
+};
+
+export function ScreenSharePicker({ connected, screenSharing, onStart }: ScreenSharePickerProps) {
   const [status, setStatus] = useState<PickerStatus>("idle");
   const [sources, setSources] = useState<ScreenCaptureSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
@@ -29,6 +35,7 @@ export function ScreenSharePicker() {
   }
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId);
+  const startDisabled = !connected || screenSharing || !selectedSourceId;
 
   return (
     <div className="screen-share-picker">
@@ -48,22 +55,34 @@ export function ScreenSharePicker() {
       {error ? <p className="screen-share-picker-error">{error}</p> : null}
 
       {sources.length ? (
-        <div className="screen-source-grid" aria-label="Available screen capture sources">
-          {sources.map((source) => (
-            <button
-              className={`screen-source-card ${source.id === selectedSourceId ? "is-selected" : ""}`}
-              key={source.id}
-              type="button"
-              onClick={() => setSelectedSourceId(source.id)}
-            >
-              {source.thumbnailDataUrl ? <img src={source.thumbnailDataUrl} alt="" /> : <span className="screen-source-fallback" />}
-              <span>
-                <strong>{source.name}</strong>
-                <small>{source.type === "screen" ? "Screen" : "Window"}</small>
-              </span>
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="screen-source-grid" aria-label="Available screen capture sources">
+            {sources.map((source) => (
+              <button
+                className={`screen-source-card ${source.id === selectedSourceId ? "is-selected" : ""}`}
+                key={source.id}
+                type="button"
+                onClick={() => setSelectedSourceId(source.id)}
+              >
+                {source.thumbnailDataUrl ? <img src={source.thumbnailDataUrl} alt="" /> : <span className="screen-source-fallback" />}
+                <span>
+                  <strong>{source.name}</strong>
+                  <small>{source.type === "screen" ? "Screen" : "Window"}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+          <button
+            className="screen-share-start-button"
+            type="button"
+            disabled={startDisabled}
+            onClick={() => {
+              if (selectedSourceId) onStart?.(selectedSourceId);
+            }}
+          >
+            {screenSharing ? "Sharing active" : connected ? "Start sharing" : "Join room to share"}
+          </button>
+        </>
       ) : (
         <p className="screen-share-picker-note">Sources are loaded only after you choose them, so startup never triggers capture prompts.</p>
       )}
