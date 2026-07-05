@@ -36,6 +36,35 @@ Use Supabase Edge Functions for workflows that need privileged logic:
 - Any workflow requiring `SUPABASE_SERVICE_ROLE_KEY`.
 - Any workflow requiring third-party secrets such as LiveKit, email, or future payment/provider keys.
 
+## Boundary decision matrix
+
+| Workflow | Preferred boundary | Reason |
+| --- | --- | --- |
+| Login/register/logout/session restore | Supabase Auth from renderer | Supabase Auth client is designed for anon-key usage. |
+| Current profile read/edit | Renderer + RLS | User can only access their own safe profile fields. |
+| Community/channel/message reads | Renderer + RLS | Membership and private-channel visibility should be enforced by policies. |
+| Message send/edit/delete own message | Renderer + RLS | Ownership and member permissions should be enforced by policies. |
+| Moderator delete / cross-user moderation | Edge Function | Requires audited privileged decision making. |
+| Invite acceptance | Edge Function | Needs atomic validation, expiry/use count checks, and membership creation. |
+| LiveKit voice/screen token | Edge Function | Requires server-only LiveKit API credentials. |
+| Notification fanout | Edge Function | Server-side recipient routing and user preference checks. |
+| File metadata validation | Edge Function or shared client validation | Edge Function prepares a server-side validation boundary; Storage/RLS remain required. |
+| Health check | Public Edge Function | Non-sensitive operational status only. |
+
+If a workflow does not clearly need secrets, cross-user privilege, or atomic multi-step server logic, keep it in direct Supabase/RLS first.
+
+## Service-role usage policy
+
+`SUPABASE_SERVICE_ROLE_KEY` is allowed only inside trusted server boundaries and only after the task documents:
+
+- Why caller-scoped RLS access is insufficient.
+- Which tables/actions need elevated access.
+- How authorization is checked before elevated access.
+- What audit/log entry is written.
+- Which sensitive fields are excluded from responses and logs.
+
+Never expose service-role keys to Electron renderer, preload, Vite env variables, diagnostics export, screenshots, or logs.
+
 ## Not a microservice boundary
 
 Do not create Edge Functions just to bypass inconvenient RLS. Prefer table policies and helper SQL functions when the rule is data-local, auditable, and safe for the anon client.
@@ -98,6 +127,16 @@ Never add server-only values to Vite-prefixed variables.
 - Confirm normal message send works without service-role credentials.
 - Confirm privileged operations fail from the renderer unless routed through a documented Edge Function.
 - Confirm logs, diagnostics, and docs do not expose service-role keys or provider secrets.
+
+## Review checklist for new backend work
+
+- Can RLS enforce this safely without a function?
+- Does the operation touch another user's data?
+- Does the operation need a third-party secret?
+- Does the operation need a transaction or atomic counter?
+- Does the renderer need only a sanitized DTO?
+- Is there a rollback path if the function fails?
+- Are staging/local test steps documented?
 
 ## Current MVP decision
 

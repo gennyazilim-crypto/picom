@@ -20,6 +20,8 @@ The renderer must never receive:
 - database passwords
 - auth tokens from another user
 
+The broader Supabase microservice boundary policy is documented in `docs/supabase-microservice-boundaries.md`.
+
 ## Direct Supabase client flows
 
 Use direct Supabase Auth/Postgres/Storage/Realtime from the renderer only when RLS and Storage policies enforce the rule:
