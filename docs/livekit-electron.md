@@ -54,6 +54,15 @@ Joining a voice room performs two steps:
 
 If the room connection succeeds but microphone permission is denied or no input device is available, Picom keeps the user in the room as muted and shows a clear warning. This avoids dropping the room connection just because audio capture is unavailable.
 
+## Leave behavior
+
+Leaving a room must release local capture resources before disconnecting:
+
+- Stop local published tracks.
+- Disconnect from the LiveKit room.
+- Clear participants, muted/deafened state, room name, and user-facing errors.
+- Future screen-share tracks should use the same cleanup path.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.

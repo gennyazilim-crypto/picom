@@ -121,6 +121,12 @@ function bindRoomEvents(activeRoom: Room): void {
     });
 }
 
+function stopLocalTracks(activeRoom: Room): void {
+  activeRoom.localParticipant.trackPublications.forEach((publication) => {
+    publication.track?.stop();
+  });
+}
+
 async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
   emit({ status: "requesting_token", error: null });
 
@@ -201,6 +207,7 @@ export const voiceService = {
 
   async leave(): Promise<void> {
     if (room) {
+      stopLocalTracks(room);
       room.disconnect();
       room = null;
     }
