@@ -24,6 +24,7 @@ export const appConfig = Object.freeze({
   dataSource: getDataSourceMode(import.meta.env.VITE_DATA_SOURCE),
   statusPageUrl: import.meta.env.VITE_STATUS_PAGE_URL ?? "",
   remoteConfigUrl: import.meta.env.VITE_REMOTE_CONFIG_URL ?? "",
+  realtimeScalingMode: import.meta.env.VITE_REALTIME_SCALING_MODE ?? "supabase_managed",
   runtimeTarget: "electron" as const,
   supportedPlatforms: ["windows", "linux", "macos"] as const,
   supabase: Object.freeze({

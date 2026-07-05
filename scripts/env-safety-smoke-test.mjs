@@ -35,6 +35,7 @@ const allowedViteNames = new Set([
   "VITE_LIVEKIT_URL",
   "VITE_STATUS_PAGE_URL",
   "VITE_REMOTE_CONFIG_URL",
+  "VITE_REALTIME_SCALING_MODE",
   "VITE_DEV_SERVER_URL"
 ]);
 
