@@ -36,6 +36,26 @@ It provides:
 
 `loggingService.formatUserError` delegates to the unified formatter while developer diagnostics remain redacted through `loggingService`.
 
+## Unified error UX boundary
+
+User-facing error presentation should flow through `loggingService.captureUserError()` or `loggingService.formatUserError()` instead of rendering raw exception messages directly.
+
+The boundary is:
+
+- normal users see concise recovery-focused copy
+- developers/support can inspect redacted diagnostics
+- logs store error code, safe user message, source, and redacted context
+- passwords, tokens, cookies, auth headers, service keys, signing keys, and private secrets are never shown in user UI or exported diagnostics
+
+Recommended surfaces:
+
+- `inline` for form validation and recoverable field errors
+- `toast` for recoverable app actions
+- `blocking` for startup/session/service failures
+- `diagnostics` for support-only developer detail
+
+The startup error boundary follows this rule: the main card shows friendly recovery copy, while the expandable developer diagnostics block uses `loggingService.redactDiagnosticsValue()` before rendering technical context.
+
 ## Error codes
 
 Authentication:
@@ -114,4 +134,4 @@ npm run errors:smoke
 npm run typecheck
 ```
 
-The smoke test confirms required codes exist and `loggingService` uses the unified formatter.
+The smoke test confirms required codes exist, `loggingService` uses the unified formatter, and startup crash UX keeps user-facing copy separate from redacted developer diagnostics.

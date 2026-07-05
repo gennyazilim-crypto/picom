@@ -65,16 +65,26 @@ export class DesktopStartupErrorBoundary extends Component<
       return this.props.children;
     }
 
+    const userMessage = loggingService.formatUserError(
+      this.state.error,
+      "Picom could not finish starting. Restart the app view or copy diagnostics if this keeps happening."
+    );
+    const developerDiagnostics = loggingService.redactDiagnosticsValue({
+      error: {
+        name: this.state.error.name,
+        message: this.state.error.message,
+        stack: this.state.error.stack
+      },
+      recoveryRecord: this.state.recoveryRecord
+    });
+
     return (
       <main className="startup-error-screen" role="alert">
         <section className="startup-error-card" aria-labelledby="startup-error-title">
           <div className="startup-error-mark">!</div>
           <p className="eyebrow">Application error</p>
           <h1 id="startup-error-title">Picom could not finish starting</h1>
-          <p>
-            The desktop shell caught an unexpected renderer error. You can restart the app or open
-            diagnostics later without exposing sensitive data.
-          </p>
+          <p>{userMessage}</p>
           <div className="startup-error-actions">
             <button type="button" className="primary" onClick={this.restartRenderer}>
               Restart app view
@@ -88,16 +98,7 @@ export class DesktopStartupErrorBoundary extends Component<
           </div>
           <details>
             <summary>Developer diagnostics</summary>
-            <pre>
-              {JSON.stringify(
-                {
-                  error: this.state.error.message,
-                  recoveryRecord: this.state.recoveryRecord
-                },
-                null,
-                2
-              )}
-            </pre>
+            <pre>{JSON.stringify(developerDiagnostics, null, 2)}</pre>
           </details>
         </section>
       </main>

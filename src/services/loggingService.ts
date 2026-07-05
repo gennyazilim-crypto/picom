@@ -1,4 +1,4 @@
-import { formatUserFacingError } from "./errorCodes";
+import { createSafeAppError, formatUserFacingError, type AppErrorCode } from "./errorCodes";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -12,6 +12,25 @@ export type LogEntry = {
 };
 
 type LogListener = (entry: LogEntry) => void;
+
+export type ErrorUxSurface = "toast" | "inline" | "blocking" | "diagnostics";
+
+export type UserErrorNotice = {
+  code: AppErrorCode;
+  message: string;
+  tone: "error" | "warning" | "info";
+  surface: ErrorUxSurface;
+  logId?: string;
+};
+
+type CaptureUserErrorOptions = {
+  fallbackCode?: AppErrorCode;
+  fallbackMessage?: string;
+  source?: string;
+  surface?: ErrorUxSurface;
+  level?: Extract<LogLevel, "warn" | "error">;
+  context?: unknown;
+};
 
 const SENSITIVE_KEY_PATTERN = /(password|passcode|token|cookie|authorization|secret|session|jwt|api[-_]?key|service[-_]?role|livekit|supabase|signing|private[-_]?key|access[-_]?token|refresh[-_]?token)/i;
 const BEARER_PATTERN = /Bearer\s+[a-zA-Z0-9._-]+/g;
@@ -143,6 +162,26 @@ export const loggingService = {
     return redactValue(value) as T;
   },
 
+  captureUserError(error: unknown, options: CaptureUserErrorOptions = {}): UserErrorNotice {
+    const safeError = createSafeAppError(error, options.fallbackCode);
+    const message = formatUserFacingError(safeError, options.fallbackMessage);
+    const level = options.level ?? (safeError.code === "UNKNOWN_ERROR" || safeError.code === "SERVER_ERROR" ? "error" : "warn");
+    const logEntry = pushLog(level, "User-facing error shown", {
+      code: safeError.code,
+      userMessage: message,
+      originalError: error,
+      context: options.context
+    }, options.source ?? "error-ux");
+
+    return {
+      code: safeError.code as AppErrorCode,
+      message,
+      tone: level === "error" ? "error" : "warning",
+      surface: options.surface ?? "toast",
+      logId: logEntry.id
+    };
+  },
+
   onLog(listener: LogListener): () => void {
     listeners.add(listener);
 
@@ -151,7 +190,7 @@ export const loggingService = {
     };
   },
 
-  formatUserError(error: unknown, fallbackMessage = "Something went wrong. Please try again."): string {
+  formatUserError(error: unknown, fallbackMessage?: string): string {
     return formatUserFacingError(error, fallbackMessage);
   }
 };
