@@ -53,6 +53,7 @@ import { privateChannelPermissionService } from "./services/privateChannelPermis
 import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
+import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
 import { reportService } from "./services/reportService";
 import { userBlockingService } from "./services/userBlockingService";
 import { useMvpAppState } from "./state/useMvpAppState";
@@ -1213,7 +1214,12 @@ export function App() {
     });
 
     if (!result.ok) {
-      pushToast(result.error.message, "error");
+      const conflict = offlineSyncConflictService.classify({
+        actionType: "sendMessage",
+        errorCode: result.error.code,
+        errorMessage: result.error.message,
+      });
+      pushToast(conflict.userMessage, "error");
       return;
     }
 
