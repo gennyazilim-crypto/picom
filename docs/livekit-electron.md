@@ -164,3 +164,27 @@ Leaving a room must release local capture resources before disconnecting:
 - If permission is missing, source thumbnails may be blank, source listing may be incomplete, or `getUserMedia()` can fail when starting sharing.
 - After granting Screen Recording permission, macOS usually requires the app to be restarted before capture works.
 - Picom should show a safe screen-share error and must not log source thumbnails, screen content, tokens, OS usernames, or raw permission diagnostics.
+
+## Windows screen share test
+
+Use this test on Windows before marking screen share ready:
+
+1. Start Picom in Electron dev mode or from a packaged Windows build.
+2. Sign in with a test account and open a community voice channel.
+3. Join the voice room and confirm the connected status appears.
+4. Click `Choose source` in the screen share source picker.
+5. Confirm screens and windows appear with safe thumbnails.
+6. Select one source and click `Start sharing`.
+7. Confirm the screen-share viewer shows the selected source.
+8. Open a second Picom window/client with another test account in the same voice room.
+9. Confirm the second client sees the remote screen-share viewer.
+10. Click `Stop sharing` and confirm both clients clear the screen-share viewer.
+11. Leave the room and confirm local capture stops.
+
+Expected Windows results:
+
+- No native Electron menu or duplicate titlebar appears during the test.
+- The source picker does not load until the user clicks `Choose source`.
+- If Windows privacy settings block capture, Picom shows a safe screen-share error.
+- The app does not expose source thumbnails, tokens, or screen content in logs.
+- Voice mute/deafen and participant list remain usable while sharing.
