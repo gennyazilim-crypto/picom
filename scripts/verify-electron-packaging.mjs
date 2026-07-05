@@ -50,6 +50,8 @@ assertCondition(packageJson.scripts?.["package:mac"], "macOS package script is m
 assertIncludes(builderConfig, "appId: com.picom.desktop", "electron-builder appId");
 assertIncludes(builderConfig, "productName: Picom", "electron-builder productName");
 assertIncludes(builderConfig, "copyright: Copyright (c) 2026 Picom", "ASCII-safe copyright metadata");
+assertIncludes(builderConfig, "output: release", "package output directory");
+assertIncludes(builderConfig, "buildResources: assets/brand", "package build resources directory");
 assertIncludes(builderConfig, "target: nsis", "Windows NSIS target");
 assertIncludes(builderConfig, "target: AppImage", "Linux AppImage target");
 assertIncludes(builderConfig, "target: deb", "Linux deb target");
