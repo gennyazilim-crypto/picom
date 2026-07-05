@@ -3,12 +3,14 @@ import type { MouseEvent } from "react";
 import { currentUserId, mockCommunities } from "./data/mockCommunities";
 import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
 import { mockMentionItems } from "./data/mockMentions";
+import { getMockProfileForMember } from "./data/mockProfiles";
 import { mockDirectConversations } from "./data/mockDirectMessages";
 import { mockFriendState } from "./data/mockFriends";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import type { DirectConversation } from "./types/directMessages";
 import type { FriendState } from "./types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
+import type { ProfileActivityItem } from "./types/profile";
 import type { CommunityTemplateId } from "./types/communityTemplates";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
@@ -205,7 +207,8 @@ export function App() {
   const [mentionTab, setMentionTab] = useState<MentionFeedTab>("feed");
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
-  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
+  const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
   const [directConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
@@ -437,9 +440,14 @@ export function App() {
     [activeChannel.id, displayedActiveCommunity.messages, replyToMessageId],
   );
   const selectedProfileMember = useMemo(() => {
-    if (!profileUserId) return null;
-    return communities.flatMap((community) => community.members).find((member) => member.userId === profileUserId) ?? null;
-  }, [communities, profileUserId]);
+    if (!activeProfileUserId) return null;
+    return communities.flatMap((community) => community.members).find((member) => member.userId === activeProfileUserId) ?? null;
+  }, [activeProfileUserId, communities]);
+
+  const selectedUserProfile = useMemo(() => {
+    if (!selectedProfileMember) return null;
+    return getMockProfileForMember(selectedProfileMember, communities, { currentUserId, followedUserIds });
+  }, [communities, followedUserIds, selectedProfileMember]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1055,10 +1063,11 @@ export function App() {
   }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
 
   const openProfilePage = useCallback((member: Member) => {
-    setProfileUserId(member.userId);
+    setPreviousViewBeforeProfile((previous) => (activeView === "profile" ? previous : activeView));
+    setActiveProfileUserId(member.userId);
     setActiveView("profile");
     closeTransientOverlays();
-  }, [closeTransientOverlays]);
+  }, [activeView, closeTransientOverlays]);
 
   const openDirectMessages = useCallback((userId?: string) => {
     if (userId) {
@@ -1146,13 +1155,24 @@ export function App() {
     pushToast("Friend request placeholder created locally.", "success");
   }, [pushToast]);
 
-  const openProfileActivity = useCallback((activity: { community: Community; channel: { id: string }; message: { id: string } }) => {
-    setActiveView("community");
-    switchCommunity(activity.community.id, activity.channel.id);
-    clearChannelUnread({ communityId: activity.community.id, channelId: activity.channel.id });
+  const closeProfileView = useCallback(() => {
+    setActiveView(previousViewBeforeProfile ?? "mentionFeed");
+    setPreviousViewBeforeProfile(null);
     closeTransientOverlays();
-    loggingService.logInfo("Profile activity highlight placeholder prepared", { messageId: activity.message.id }, "profile");
-  }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
+  }, [closeTransientOverlays, previousViewBeforeProfile]);
+
+  const openProfileActivity = useCallback((activity: ProfileActivityItem) => {
+    if (!activity.communityId || !activity.channelId) {
+      pushToast("This activity is not linked to an open channel yet.", "info");
+      return;
+    }
+
+    setActiveView("community");
+    switchCommunity(activity.communityId, activity.channelId);
+    clearChannelUnread({ communityId: activity.communityId, channelId: activity.channelId });
+    closeTransientOverlays();
+    loggingService.logInfo("Profile activity highlight placeholder prepared", { messageId: activity.messageId }, "profile");
+  }, [clearChannelUnread, closeTransientOverlays, pushToast, switchCommunity]);
 
   if (!authReady || !authSession) {
     return (
@@ -1451,16 +1471,22 @@ export function App() {
                 onOpenProfile={openProfile}
               />
             </div>
-          ) : activeView === "profile" && selectedProfileMember ? (
+          ) : activeView === "profile" && selectedProfileMember && selectedUserProfile ? (
             <ProfileView
               member={selectedProfileMember}
+              profile={selectedUserProfile}
               communities={communities}
               currentUserId={currentUserId}
-              followedUserIds={followedUserIds}
-              onBack={() => setActiveView("community")}
+              onBack={closeProfileView}
               onToggleFollow={toggleFollowUser}
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
+              onPlaceholderAction={(message) => pushToast(message, "info")}
+              onOpenMore={(event, profile) => openContext(event, [
+                { label: profile.isCurrentUser ? "Edit profile placeholder" : "Message placeholder" },
+                { label: profile.isFollowing ? "Unfollow locally" : "Follow locally", onSelect: () => toggleFollowUser(profile.id), disabled: profile.isCurrentUser },
+                { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
+              ])}
             />
           ) : activeView === "directMessages" ? (
             <DirectMessagesView
@@ -1644,7 +1670,7 @@ export function App() {
         />
       ) : null}
       {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} /> : null}
-      {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onReportUser={handleReportUser} isBlocked={blockedUserIds.includes(profile.member.userId)} onToggleBlock={handleToggleBlockUser} /> : null}
+      {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onViewProfile={openProfilePage} onReportUser={handleReportUser} isBlocked={blockedUserIds.includes(profile.member.userId)} onToggleBlock={handleToggleBlockUser} /> : null}
       {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
       {isAppLocked ? <AppLockScreen currentUser={displayedCurrentUser} onUnlock={unlockApp} onLogout={logoutFromLockScreen} /> : null}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />

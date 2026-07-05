@@ -1,64 +1,54 @@
-# Task Checkpoint: Full Profile Page MVP
+﻿# Task Checkpoint: Full Profile Page MVP
+
+## Status
+Completed.
 
 ## Scope
+Implemented the Full Profile Page MVP using mock/local data only. No Supabase, LiveKit, Direct Messages, mobile UI, or advanced post-MVP features were added in this task.
 
-Implemented the Full Profile Page MVP after the Mention Feed MVP.
+## What changed
+- Added typed profile data models.
+- Added mock profile generation from existing communities, members, messages, attachments, and follow state.
+- Replaced the previous lightweight profile placeholder with a full desktop ProfileView.
+- Added ProfileView sub-sections:
+  - ProfileLeftCard
+  - ProfileMainPanel
+  - ProfileHeroGallery
+  - ProfileStats
+  - ProfileBio
+  - ProfileDetailsGrid
+  - ProfileSkillsTags
+  - ProfileActivityList
+  - ProfileSharedMedia
+  - ProfileActionButtons
+- Added app-level profile navigation state:
+  - activeProfileUserId
+  - previousViewBeforeProfile
+- Wired profile entry points from:
+  - MemberSidebar member rows
+  - MessageItem avatar and author name
+  - MentionFeedCard avatar and author name
+  - MentionRightPanel people rows through existing handlers
+  - UserProfilePopover View profile action
+- Added local follow/unfollow behavior on the profile page.
+- Added profile activity Open in channel behavior.
+- Added profile media ImagePreviewModal behavior.
 
-This task intentionally did not implement:
-
-- LiveKit
-- Supabase profile persistence
-- Direct Messages
-- Public discovery
-- Mobile UI
-
-## Implemented
-
-- Added a full desktop `ProfileView`.
-- Clicking user avatars/names now opens the full profile view instead of stopping at a popover-only flow.
-- Profile view includes:
-  - left profile card
-  - avatar
-  - display name
-  - username
-  - role badge
-  - bio/status/details
-  - follow/unfollow local state
-  - profile stats
-  - skills/tags
-  - recent activity
-  - shared media
-- Recent activity can open the related community/channel.
-- Shared media uses the existing AttachmentGrid and ImagePreviewModal.
-- Follow state is local and also feeds the Mention Feed following filter.
+## Safety notes
+- Existing community chat layout was not redesigned.
+- Existing Mention Feed layout was not redesigned.
+- Existing custom titlebar/window controls were not changed.
+- No native Electron menu changes were made.
+- No Discord branding, copied assets, or exact Discord colors were added.
+- Profile media uses existing attachments or generated local SVG placeholders.
+- Future Supabase/RLS filtering is still required before real private profile activity/media is shown from backend data.
 
 ## Validation
+- npm run typecheck: PASS
+- npm run mock:smoke: PASS
+- npm run build: PASS
 
-Run:
-
-```bash
-npm run typecheck
-npm run mock:smoke
-npm run build
-```
-
-Manual UI smoke:
-
-```bash
-npm run dev
-```
-
-Then verify:
-
-- Login with the local seed account.
-- Click a member avatar/name from MessageList, MemberSidebar, or Mention Feed.
-- Confirm the full ProfileView opens.
-- Toggle Follow/Following for a non-current user.
-- Open a recent activity and confirm the app returns to the community chat layout.
-- Open shared media and confirm ImagePreviewModal appears.
-- Confirm ServerRail and custom titlebar remain stable.
-
-## Notes
-
-- Profile persistence remains local/mock-only.
-- UserProfilePopover remains in the codebase as an MVP overlay foundation, but primary avatar/name clicks now route to the full profile view.
+## Known remaining issues
+- Production build still reports an existing large chunk warning.
+- Profile data is mock/local only.
+- Message/Add Friend/Edit Profile actions are safe placeholders.

@@ -72,7 +72,14 @@ export function MentionFeedCard({
           <MemberAvatar member={author} label={authorLabel} size={42} />
         </button>
         <div className="mention-author-copy">
-          <strong>{authorLabel}</strong>
+          <button
+            className="mention-author-name-button"
+            type="button"
+            onClick={(event) => author && onOpenProfile(event, author)}
+            disabled={!author}
+          >
+            {authorLabel}
+          </button>
           <span>
             {community?.name ?? "Visible community"} / #{channel?.name ?? "channel"} / {dateTimeService.formatCompactDateTime(item.createdAt)}
           </span>
