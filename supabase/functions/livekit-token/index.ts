@@ -2,6 +2,7 @@ import { handleCorsPreflight } from "../_shared/cors.ts";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
 import { createLiveKitToken } from "../_shared/livekit-token.ts";
 import { requireSupabaseUser } from "../_shared/auth.ts";
+import { createPicomLiveKitRoomName, matchesPicomLiveKitRoomName } from "../_shared/livekit-room.ts";
 
 type LiveKitIntent = "voice" | "screen";
 
@@ -92,9 +93,9 @@ Deno.serve(async (request: Request) => {
   const participantName = typeof body?.participantName === "string" && body.participantName.trim()
     ? body.participantName.trim().slice(0, maxParticipantNameLength)
     : displayName;
-  const roomName = `picom:${communityId}:${channelId}`;
+  const roomName = createPicomLiveKitRoomName(communityId, channelId);
 
-  if (body?.roomName && body.roomName !== roomName) {
+  if (body?.roomName && !matchesPicomLiveKitRoomName(body.roomName, communityId, channelId)) {
     return errorResponse("VALIDATION_ERROR", "roomName does not match the requested community/channel.", 400);
   }
 

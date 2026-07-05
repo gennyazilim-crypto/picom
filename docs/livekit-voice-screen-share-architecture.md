@@ -38,6 +38,8 @@ Room naming should stay deterministic:
 picom:{communityId}:{channelId}
 ```
 
+Detailed room naming rules are documented in `docs/livekit-room-naming.md`.
+
 The token response should be treated as sensitive runtime data. It should not be persisted to local settings, diagnostics exports, crash reports, logs, or screenshots.
 
 ## Voice room behavior

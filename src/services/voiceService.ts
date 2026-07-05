@@ -1,5 +1,6 @@
 import { ConnectionState, Room, RoomEvent, type RemoteParticipant } from "livekit-client";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
+import { createPicomLiveKitRoomName } from "./voiceRoomNaming";
 
 export type VoiceConnectionStatus =
   | "idle"
@@ -149,11 +150,13 @@ async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceRes
     return voiceError("VOICE_NOT_CONFIGURED", "Supabase client is unavailable.");
   }
 
+  const roomName = request.roomName ?? createPicomLiveKitRoomName(request.communityId, request.channelId);
+
   const { data, error } = await supabase.functions.invoke<VoiceTokenResponse>("livekit-token", {
     body: {
       communityId: request.communityId,
       channelId: request.channelId,
-      roomName: request.roomName,
+      roomName,
       participantName: request.participantName,
       intent: request.intent ?? "voice",
     },
