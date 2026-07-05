@@ -22,6 +22,10 @@ function getNotificationConstructor(): typeof Notification | null {
   return typeof window !== "undefined" && "Notification" in window ? window.Notification : null;
 }
 
+function getNativeNotificationBridge() {
+  return window.picomDesktop?.showNotification ?? null;
+}
+
 function isSuppressedBySettings(category: NotificationCategory): string | null {
   const settings = settingsService.getSettings().notificationSettings;
 
@@ -46,6 +50,7 @@ export const notificationService = {
       platform: platform.platform,
       permission: this.getPermission(),
       supported: this.getPermission() !== "unsupported",
+      nativeBridgeAvailable: Boolean(getNativeNotificationBridge()),
       settings: settingsService.getSettings().notificationSettings,
     };
   },
@@ -75,6 +80,26 @@ export const notificationService = {
 
     if (suppressedReason) {
       return { ok: false, reason: suppressedReason, permission: this.getPermission() };
+    }
+
+    const nativeBridge = getNativeNotificationBridge();
+    if (nativeBridge) {
+      try {
+        const result = await nativeBridge({
+          title: payload.title,
+          body: payload.body,
+          tag: payload.tag,
+          silent: payload.silent,
+        });
+
+        return {
+          ok: result.ok,
+          reason: result.ok ? undefined : result.error,
+          permission: this.getPermission(),
+        };
+      } catch {
+        return { ok: false, reason: "Native notification bridge failed safely.", permission: this.getPermission() };
+      }
     }
 
     const permission = await this.requestPermission();

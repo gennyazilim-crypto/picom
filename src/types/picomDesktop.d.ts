@@ -2,6 +2,12 @@ export {};
 
 declare global {
   type PicomWindowAction = "minimize" | "maximize" | "close";
+  type PicomNativeNotificationPayload = {
+    title: string;
+    body?: string;
+    tag?: string;
+    silent?: boolean;
+  };
 
   interface Window {
     picomDesktop?: {
@@ -22,6 +28,12 @@ declare global {
       >;
       isWindowMaximized?: () => Promise<boolean>;
       onWindowMaximizeStateChanged?: (callback: (isMaximized: boolean) => void) => () => void;
+      showNotification?: (
+        payload: PicomNativeNotificationPayload
+      ) => Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >;
     };
   }
 }
