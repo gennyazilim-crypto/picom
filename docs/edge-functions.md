@@ -66,7 +66,10 @@ supabase/functions/_shared/
 ## Security expectations
 
 - Protected functions require an `Authorization` header.
+- Protected functions require `Authorization: Bearer <user-jwt>`.
 - Protected functions verify Supabase JWT before reading user-specific data.
+- Public health functions are the only functions that should use `verify_jwt = false`.
+- Functions should import auth from `_shared/auth.ts` rather than directly from `_shared/supabase-auth.ts`.
 - Service-role access is allowed only inside trusted functions and only when RLS-safe client access is not enough.
 - Request bodies must be validated before use.
 - Responses should use `{ code, message, details? }` for errors.
