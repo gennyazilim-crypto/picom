@@ -1,0 +1,20 @@
+export type EdgeErrorCode =
+  | "AUTH_REQUIRED"
+  | "AUTH_INVALID"
+  | "VALIDATION_ERROR"
+  | "METHOD_NOT_ALLOWED"
+  | "SUPABASE_NOT_CONFIGURED"
+  | "VOICE_NOT_CONFIGURED"
+  | "VOICE_CHANNEL_FORBIDDEN"
+  | "VOICE_CHANNEL_REQUIRED"
+  | "INTERNAL_ERROR";
+
+export type EdgeErrorBody = {
+  code: EdgeErrorCode;
+  message: string;
+  details?: unknown;
+};
+
+export function createEdgeErrorBody(code: EdgeErrorCode, message: string, details?: unknown): EdgeErrorBody {
+  return details === undefined ? { code, message } : { code, message, details };
+}
