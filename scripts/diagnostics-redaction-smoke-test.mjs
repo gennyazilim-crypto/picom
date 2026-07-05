@@ -31,7 +31,8 @@ const requiredDiagnosticsFields = [
   "releaseChannel",
   "dataSource",
   "realtimeStatus",
-  "lastApiError"
+  "lastApiError",
+  "redactDiagnosticsValue"
 ];
 
 for (const field of requiredDiagnosticsFields) {

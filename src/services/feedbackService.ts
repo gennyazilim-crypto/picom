@@ -78,16 +78,21 @@ function browserDownload(defaultPath: string, content: string): SupportLogExport
   return { ok: true, method: "browser" };
 }
 
+function redactFeedbackDraft(feedback?: FeedbackDraft): FeedbackDraft | undefined {
+  return feedback ? loggingService.redactDiagnosticsValue(feedback) : undefined;
+}
+
 export const feedbackService = {
   createDiagnosticsPayload(feedback?: FeedbackDraft): SupportDiagnosticsPayload {
     const diagnostics = diagnosticsService.getSnapshot();
+    const redactedFeedback = redactFeedbackDraft(feedback);
 
     return {
       createdAt: new Date().toISOString(),
       app: diagnostics.app,
       runtime: diagnostics.runtime,
       serviceStatus: diagnostics.serviceStatus,
-      feedback,
+      feedback: redactedFeedback,
       recentLogs: feedback?.includeLogs ? loggingService.getRecentLogs(75) : [],
       note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, service-role keys, or private secrets."
     };

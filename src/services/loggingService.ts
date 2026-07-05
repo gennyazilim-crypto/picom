@@ -139,6 +139,10 @@ export const loggingService = {
     return JSON.stringify(this.getLogs(), null, 2);
   },
 
+  redactDiagnosticsValue<T>(value: T): T {
+    return redactValue(value) as T;
+  },
+
   onLog(listener: LogListener): () => void {
     listeners.add(listener);
 
