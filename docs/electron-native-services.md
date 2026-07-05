@@ -263,3 +263,25 @@ Manual verification:
 3. Click `Copy diagnostics` and confirm the copied payload contains redacted logs.
 4. Click `Clear recovery state` and confirm the recovery record is cleared.
 5. Click `Restart app view` and confirm the renderer reloads.
+
+## Window state persistence
+
+- Main process file: Electron `app.getPath("userData")/window-state.json`
+- Stored state: width, height, x, y, and maximized state
+- Minimum size guard: 1100 x 700
+
+Safety rules:
+
+- Window state is handled in the Electron main process only.
+- React components should not store native window size or screen coordinates directly.
+- Off-screen saved positions are ignored so Picom does not restore outside visible displays.
+- Fullscreen state is not persisted as maximized state.
+- Persistence is best-effort and must never block startup or shutdown.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Resize and move the window, then close Picom normally.
+3. Restart Picom and confirm the previous size/position is restored.
+4. Maximize Picom, close it, restart it, and confirm maximized state is restored.
+5. Delete or corrupt the state file and confirm Picom falls back to the default 1440 x 900 window.

@@ -10,6 +10,7 @@ import {
   nativeImage,
   dialog,
   clipboard,
+  screen,
   type OpenDialogOptions,
   type SaveDialogOptions
 } from "electron";
@@ -41,12 +42,20 @@ type SafePickedImageFile = Readonly<{
   size: number;
   dataUrl: string;
 }>;
+type PersistedWindowState = Readonly<{
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  isMaximized: boolean;
+}>;
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let trayStatus: TrayStatus = "online";
 let trayMuted = false;
 const pendingDeepLinks: string[] = [];
+let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";
@@ -323,6 +332,90 @@ function parseClipboardWritePayload(value: unknown): string | null {
   return value.slice(0, maxClipboardTextLength);
 }
 
+function getWindowStatePath(): string {
+  return path.join(app.getPath("userData"), "window-state.json");
+}
+
+function normalizeWindowState(value: unknown): PersistedWindowState | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const width = Number(record.width);
+  const height = Number(record.height);
+  const x = Number(record.x);
+  const y = Number(record.y);
+  const isMaximized = Boolean(record.isMaximized);
+
+  if (![width, height, x, y].every(Number.isFinite)) {
+    return null;
+  }
+
+  const safeState: PersistedWindowState = {
+    width: Math.max(ELECTRON_APP_CONFIG.window.minWidth, Math.round(width)),
+    height: Math.max(ELECTRON_APP_CONFIG.window.minHeight, Math.round(height)),
+    x: Math.round(x),
+    y: Math.round(y),
+    isMaximized
+  };
+
+  return isWindowStateVisible(safeState) ? safeState : null;
+}
+
+function isWindowStateVisible(state: PersistedWindowState): boolean {
+  const minimumVisibleSize = 120;
+  const right = state.x + state.width;
+  const bottom = state.y + state.height;
+
+  return screen.getAllDisplays().some((display) => {
+    const bounds = display.workArea;
+    const visibleWidth = Math.min(right, bounds.x + bounds.width) - Math.max(state.x, bounds.x);
+    const visibleHeight = Math.min(bottom, bounds.y + bounds.height) - Math.max(state.y, bounds.y);
+    return visibleWidth >= minimumVisibleSize && visibleHeight >= minimumVisibleSize;
+  });
+}
+
+async function loadWindowState(): Promise<PersistedWindowState | null> {
+  try {
+    const raw = await fs.readFile(getWindowStatePath(), "utf8");
+    return normalizeWindowState(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+async function persistWindowState(window: BrowserWindow): Promise<void> {
+  if (window.isDestroyed() || window.isFullScreen()) {
+    return;
+  }
+
+  const bounds = window.isMaximized() ? window.getNormalBounds() : window.getBounds();
+  const state: PersistedWindowState = {
+    width: Math.max(ELECTRON_APP_CONFIG.window.minWidth, bounds.width),
+    height: Math.max(ELECTRON_APP_CONFIG.window.minHeight, bounds.height),
+    x: bounds.x,
+    y: bounds.y,
+    isMaximized: window.isMaximized()
+  };
+
+  try {
+    await fs.writeFile(getWindowStatePath(), JSON.stringify(state, null, 2), "utf8");
+  } catch {
+    // Window state persistence is best-effort and must never block startup/shutdown.
+  }
+}
+
+function scheduleWindowStatePersistence(window: BrowserWindow): void {
+  if (windowStateSaveTimer) {
+    clearTimeout(windowStateSaveTimer);
+  }
+
+  windowStateSaveTimer = setTimeout(() => {
+    void persistWindowState(window);
+  }, 350);
+}
+
 function sendWindowMaximizeState(window: BrowserWindow): void {
   if (window.isDestroyed()) {
     return;
@@ -349,11 +442,23 @@ function configureWebContents(window: BrowserWindow): void {
 
 function registerWindowStateForwarding(window: BrowserWindow): void {
   const forwardState = () => sendWindowMaximizeState(window);
+  const persistState = () => scheduleWindowStatePersistence(window);
 
   window.on("maximize", forwardState);
   window.on("unmaximize", forwardState);
   window.on("enter-full-screen", forwardState);
   window.on("leave-full-screen", forwardState);
+  window.on("resize", persistState);
+  window.on("move", persistState);
+  window.on("maximize", persistState);
+  window.on("unmaximize", persistState);
+  window.on("close", () => {
+    if (windowStateSaveTimer) {
+      clearTimeout(windowStateSaveTimer);
+      windowStateSaveTimer = null;
+    }
+    void persistWindowState(window);
+  });
   window.webContents.on("did-finish-load", forwardState);
   window.webContents.on("did-finish-load", flushPendingDeepLinks);
 }
@@ -577,9 +682,13 @@ function registerIpcHandlers(): void {
 }
 
 async function createMainWindow(): Promise<void> {
+  const savedWindowState = await loadWindowState();
+
   mainWindow = new BrowserWindow({
-    width: ELECTRON_APP_CONFIG.window.defaultWidth,
-    height: ELECTRON_APP_CONFIG.window.defaultHeight,
+    width: savedWindowState?.width ?? ELECTRON_APP_CONFIG.window.defaultWidth,
+    height: savedWindowState?.height ?? ELECTRON_APP_CONFIG.window.defaultHeight,
+    x: savedWindowState?.x,
+    y: savedWindowState?.y,
     minWidth: ELECTRON_APP_CONFIG.window.minWidth,
     minHeight: ELECTRON_APP_CONFIG.window.minHeight,
     show: false,
@@ -604,6 +713,10 @@ async function createMainWindow(): Promise<void> {
 
   configureWebContents(mainWindow);
   registerWindowStateForwarding(mainWindow);
+
+  if (savedWindowState?.isMaximized) {
+    mainWindow.maximize();
+  }
 
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
