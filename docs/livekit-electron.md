@@ -155,3 +155,12 @@ Leaving a room must release local capture resources before disconnecting:
 - During local development, the permission prompt may appear under the Electron runtime or terminal-launched app identity instead of the final packaged app name.
 - After changing macOS microphone permissions, users may need to restart Picom before capture starts working.
 - Picom must not log device IDs, permission prompt details, LiveKit tokens, or OS account information while handling microphone failures.
+
+## macOS screen recording permission notes
+
+- macOS requires Screen Recording permission before Picom can capture windows or displays.
+- Users should check `System Settings > Privacy & Security > Screen Recording` and enable Picom for the installed app bundle.
+- During development, the required permission can appear under Electron, the terminal, or the local app identity depending on how the app was launched.
+- If permission is missing, source thumbnails may be blank, source listing may be incomplete, or `getUserMedia()` can fail when starting sharing.
+- After granting Screen Recording permission, macOS usually requires the app to be restarted before capture works.
+- Picom should show a safe screen-share error and must not log source thumbnails, screen content, tokens, OS usernames, or raw permission diagnostics.
