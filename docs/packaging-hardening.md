@@ -6,6 +6,7 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 
 - Product name: `Picom`
 - App identifier: `com.picom.desktop`
+- `package.json` remains private to avoid accidental npm publishing.
 - Default window size: `1440x900`
 - Minimum window size: `1100x700`
 - Output directory: `release/`

@@ -29,6 +29,7 @@ const preload = readText("electron/preload.cts");
 const gitignore = readText(".gitignore");
 
 assertCondition(packageJson.name === "picom", "package.json name must remain picom.");
+assertCondition(packageJson.private === true, "package.json private must remain true.");
 assertCondition(packageJson.main === "dist-electron/main.cjs", "package.json main must point to dist-electron/main.cjs.");
 assertCondition(packageJson.scripts?.package, "package script is missing.");
 assertCondition(packageJson.scripts?.["package:win"], "Windows package script is missing.");
