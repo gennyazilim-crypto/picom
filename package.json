@@ -34,6 +34,7 @@
     "electron:security:smoke": "node scripts/electron-security-smoke-test.mjs",
     "settings:diagnostics:smoke": "node scripts/settings-diagnostics-smoke-test.mjs",
     "qa:smoke": "node scripts/qa-smoke-gate.mjs",
+    "qa:supabase": "node scripts/supabase-qa-gate.mjs",
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
