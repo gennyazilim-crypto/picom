@@ -37,8 +37,14 @@ assertCondition(packageJson.name === "picom", "package.json name must remain pic
 assertCondition(packageJson.private === true, "package.json private must remain true.");
 assertCondition(packageJson.main === "dist-electron/main.cjs", "package.json main must point to dist-electron/main.cjs.");
 assertCondition(packageJson.scripts?.package, "package script is missing.");
+assertCondition(packageJson.scripts?.["package:verify"], "package verification script is missing.");
+assertCondition(packageJson.scripts?.["package:win:dir"], "Windows unpacked package script is missing.");
 assertCondition(packageJson.scripts?.["package:win"], "Windows package script is missing.");
+assertCondition(packageJson.scripts?.["package:linux:appimage"], "Linux AppImage package script is missing.");
+assertCondition(packageJson.scripts?.["package:linux:deb"], "Linux deb package script is missing.");
 assertCondition(packageJson.scripts?.["package:linux"], "Linux package script is missing.");
+assertCondition(packageJson.scripts?.["package:mac:dmg"], "macOS dmg package script is missing.");
+assertCondition(packageJson.scripts?.["package:mac:zip"], "macOS zip package script is missing.");
 assertCondition(packageJson.scripts?.["package:mac"], "macOS package script is missing.");
 
 assertIncludes(builderConfig, "appId: com.picom.desktop", "electron-builder appId");

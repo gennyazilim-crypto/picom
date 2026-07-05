@@ -78,6 +78,7 @@ npm run package:verify
 ```
 
 This command validates the expected Picom package identity, platform targets, window sizing, Electron security posture, ASCII-safe packaging metadata, ignored build/package output directories, required icon asset paths, and platform smoke-test documentation without building installers.
+It also verifies that the expected Windows, Linux, and macOS package scripts remain available in `package.json`.
 
 ## Known local limitation
 
