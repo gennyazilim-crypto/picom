@@ -8,9 +8,10 @@ type ScreenSharePickerProps = {
   connected: boolean;
   screenSharing: boolean;
   onStart?: (sourceId: string) => void;
+  onStop?: () => void;
 };
 
-export function ScreenSharePicker({ connected, screenSharing, onStart }: ScreenSharePickerProps) {
+export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }: ScreenSharePickerProps) {
   const [status, setStatus] = useState<PickerStatus>("idle");
   const [sources, setSources] = useState<ScreenCaptureSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
@@ -35,7 +36,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart }: ScreenS
   }
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId);
-  const startDisabled = !connected || screenSharing || !selectedSourceId;
+  const startDisabled = !connected || (!screenSharing && !selectedSourceId);
 
   return (
     <div className="screen-share-picker">
@@ -77,10 +78,14 @@ export function ScreenSharePicker({ connected, screenSharing, onStart }: ScreenS
             type="button"
             disabled={startDisabled}
             onClick={() => {
+              if (screenSharing) {
+                onStop?.();
+                return;
+              }
               if (selectedSourceId) onStart?.(selectedSourceId);
             }}
           >
-            {screenSharing ? "Sharing active" : connected ? "Start sharing" : "Join room to share"}
+            {screenSharing ? "Stop sharing" : connected ? "Start sharing" : "Join room to share"}
           </button>
         </>
       ) : (

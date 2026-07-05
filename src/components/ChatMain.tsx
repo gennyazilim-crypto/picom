@@ -141,6 +141,19 @@ export function ChatMain({
     });
   };
 
+  const handleStopScreenShare = () => {
+    void import("../services/voiceService").then(({ voiceService }) => {
+      void voiceService.stopScreenShare().then((result) => {
+        if (!result.ok) {
+          pushToast(result.error.message, "error");
+          return;
+        }
+
+        pushToast("Screen sharing stopped.", "success");
+      });
+    });
+  };
+
   return (
     <main className="chat-main">
       <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} />
@@ -155,6 +168,7 @@ export function ChatMain({
           onToggleMute={handleToggleMute}
           onToggleDeafen={handleToggleDeafen}
           onStartScreenShare={handleStartScreenShare}
+          onStopScreenShare={handleStopScreenShare}
         />
       ) : (
         <>

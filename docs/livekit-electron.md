@@ -125,7 +125,13 @@ Leaving a room must release local capture resources before disconnecting:
 - The renderer never imports or calls Electron `desktopCapturer` directly.
 - Screen sharing failures are converted into safe user-facing voice errors.
 - Leaving the room stops local published tracks and clears the `screenSharing` state.
-- Stop screen share has a dedicated follow-up task; until then, leaving the room is the safe cleanup path.
+
+## Stop screen share behavior
+
+- Stopping screen share unpublishes the screen track from LiveKit and stops the local media track.
+- If the user stops sharing through the operating system/browser capture UI, Picom also runs the same cleanup path.
+- If LiveKit unpublish fails, Picom still stops the local media track and clears the UI sharing state.
+- Leaving the voice room also stops any active local screen-share track.
 
 ## Platform notes
 

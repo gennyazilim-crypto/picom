@@ -123,6 +123,39 @@ function clearScreenShareState(): void {
   emit({ screenSharing: false });
 }
 
+async function stopScreenShareInternal(activeRoom: Room): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+  const track = screenShareMediaTrack;
+
+  if (!track) {
+    emit({ screenSharing: false, participants: getParticipants(activeRoom) });
+    return { ok: true, data: snapshot };
+  }
+
+  screenShareMediaTrack = null;
+
+  try {
+    await activeRoom.localParticipant.unpublishTrack(track, true);
+    track.stop();
+    emit({ screenSharing: false, error: null, participants: getParticipants(activeRoom) });
+    return { ok: true, data: snapshot };
+  } catch {
+    track.stop();
+    emit({
+      screenSharing: false,
+      participants: getParticipants(activeRoom),
+      error: "Screen sharing stopped locally, but LiveKit unpublish failed.",
+    });
+    return {
+      ok: false,
+      error: {
+        code: "VOICE_SCREEN_SHARE_FAILED",
+        message: "Screen sharing stopped locally, but LiveKit unpublish failed.",
+      },
+    };
+  }
+}
+
+
 function bindRoomEvents(activeRoom: Room): void {
   activeRoom
     .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
@@ -348,16 +381,20 @@ export const voiceService = {
         return voiceError("VOICE_SCREEN_SHARE_FAILED", "No screen video track was returned.");
       }
 
-      await room.localParticipant.publishTrack(track, {
-        name: "screen-share",
-        source: Track.Source.ScreenShare,
-      });
+      try {
+        await room.localParticipant.publishTrack(track, {
+          name: "screen-share",
+          source: Track.Source.ScreenShare,
+        });
+      } catch (error) {
+        track.stop();
+        throw error;
+      }
 
       screenShareMediaTrack = track;
       track.onended = () => {
-        if (screenShareMediaTrack === track) {
-          screenShareMediaTrack = null;
-          emit({ screenSharing: false, participants: room ? getParticipants(room) : snapshot.participants });
+        if (screenShareMediaTrack === track && room) {
+          void stopScreenShareInternal(room);
         }
       };
 
@@ -370,5 +407,13 @@ export const voiceService = {
         denied ? "Screen recording permission was denied." : "Could not start screen sharing."
       );
     }
+  },
+
+  async stopScreenShare(): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    if (!room) {
+      return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before stopping screen share.");
+    }
+
+    return stopScreenShareInternal(room);
   },
 };
