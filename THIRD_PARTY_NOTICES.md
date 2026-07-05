@@ -17,3 +17,18 @@ Picom uses Coolicons as the approved MVP icon direction. Only the free Coolicons
 ## Brand and asset guardrail
 
 The Picom logo and generated mock imagery are project-owned placeholders. They are not Discord assets and are not part of the Coolicons set.
+
+## Dependency license review placeholder
+
+Before beta/stable release, review runtime and build dependencies listed in `package.json` and the generated lockfile.
+
+Current dependency areas include:
+
+- React and React DOM
+- Vite and TypeScript
+- Electron and electron-builder
+- Supabase JavaScript client
+- LiveKit client
+- Development helper packages
+
+Do not bundle proprietary assets, Coolicons PRO assets, unlicensed UI kit exports, copied Discord assets, or third-party images without documented rights.
