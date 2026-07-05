@@ -79,6 +79,7 @@ When the Supabase CLI is available:
 ```powershell
 supabase functions serve health --no-verify-jwt
 supabase functions serve livekit-token
+supabase functions serve accept-invite
 ```
 
 Example protected invocation:

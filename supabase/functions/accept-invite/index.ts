@@ -1,6 +1,6 @@
 import { handleCorsPreflight } from "../_shared/cors.ts";
-import { jsonResponse, methodNotAllowed } from "../_shared/http.ts";
-import { requireSupabaseUser } from "../_shared/supabase-auth.ts";
+import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
+import { requireSupabaseUser } from "../_shared/auth.ts";
 
 type AcceptInviteRequest = {
   code?: string;
@@ -38,15 +38,12 @@ Deno.serve(async (request: Request) => {
   const code = normalizeInviteCode(body?.code);
 
   if (!code) {
-    return jsonResponse({ code: "VALIDATION_ERROR", message: "A valid invite code is required." }, { status: 400 });
+    return errorResponse("VALIDATION_ERROR", "A valid invite code is required.", 400);
   }
 
-  return jsonResponse(
-    {
-      code: "INVITE_ACCEPTANCE_NOT_IMPLEMENTED",
-      message: "Invite acceptance is prepared but not enabled yet.",
-      accepted: false,
-    },
-    { status: 501 },
-  );
+  return jsonResponse({
+    code: "INVITE_ACCEPTANCE_NOT_IMPLEMENTED",
+    message: "Invite acceptance is prepared but not enabled yet.",
+    accepted: false,
+  }, { status: 501 });
 });

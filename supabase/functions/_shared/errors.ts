@@ -7,6 +7,7 @@ export type EdgeErrorCode =
   | "VOICE_NOT_CONFIGURED"
   | "VOICE_CHANNEL_FORBIDDEN"
   | "VOICE_CHANNEL_REQUIRED"
+  | "INVITE_ACCEPTANCE_NOT_IMPLEMENTED"
   | "INTERNAL_ERROR";
 
 export type EdgeErrorBody = {

@@ -35,6 +35,7 @@ The current schema does not yet include an `invites` table or atomic invite acce
 - JWT verification is enabled for the function.
 - The function requires an `Authorization` header.
 - Invite codes are validated before any future database lookup.
+- Invalid code shape returns typed `VALIDATION_ERROR`.
 - No service-role key is used in the placeholder.
 - Future implementation should perform invite lookup, expiration checks, use-count updates, and member creation atomically.
 
