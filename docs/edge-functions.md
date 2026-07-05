@@ -87,6 +87,10 @@ Function-specific environment variables are documented in `docs/edge-function-en
 
 Staging deployment assumptions, verification steps, and rollback notes are documented in `docs/edge-functions-staging-deploy.md`.
 
+## Local testing
+
+Local Supabase CLI invocation and expected auth/error checks are documented in `docs/edge-functions-local-test-guide.md`.
+
 ## Local invocation
 
 When the Supabase CLI is available:
