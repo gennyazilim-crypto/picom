@@ -15,6 +15,8 @@ import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
 import { dateTimeService } from "../services/dateTimeService";
 import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";
+import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";
+import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -68,8 +70,10 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [appLockSettings, setAppLockSettings] = useState(() => appLockService.getSettings());
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
   const [cacheSummary, setCacheSummary] = useState<CacheSummary | null>(null);
+  const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
-  const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
+  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -110,6 +114,13 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     }
   }, [active, refreshCacheSummary]);
 
+  useEffect(() => {
+    if (active === "Privacy & Safety") {
+      setBlockedUsers(userBlockingService.listBlockedUsers());
+      setSafetySettings(userSafetyCenterService.getSettings());
+    }
+  }, [active]);
+
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
     pushToast(result.ok ? "Notification placeholder sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
@@ -124,6 +135,16 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     const next = settingsService.updateAccessibilitySettings(partial).accessibilitySettings;
     onAccessibilitySettingsChange(next);
     pushToast("Accessibility setting saved locally.", "success");
+  };
+  const updateSafetySettings = (partial: Partial<UserSafetySettings>) => {
+    const next = userSafetyCenterService.updateSettings(partial);
+    setSafetySettings(next);
+    pushToast("Privacy & Safety setting saved locally.", "success");
+  };
+  const unblockUser = (userId: string, displayName: string) => {
+    userBlockingService.unblockUser(userId);
+    setBlockedUsers(userBlockingService.listBlockedUsers());
+    pushToast(`${displayName} unblocked locally.`, "success");
   };
   const saveProfileSettings = () => {
     const next = settingsService.updateProfileSettings({
@@ -438,6 +459,110 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                   <button disabled={accountDeletionConfirmText.trim() !== accountDeletionConfirmationText} onClick={requestAccountDeletionPlaceholder}>Request deletion placeholder</button>
                   <button onClick={cancelAccountDeletionPlaceholder}>Cancel deletion placeholder</button>
                 </div>
+              </div>
+            </div>
+          ) : active === "Privacy & Safety" ? (
+            <div className="placeholder-panel action-panel">
+              <strong>User Safety Center</strong>
+              <p>Central desktop controls for blocking, privacy, data requests, and safety guidance. Supabase/RLS remains the source of truth for production enforcement.</p>
+              <div className="settings-status-card" aria-label="Safety summary">
+                <span>Safety summary</span>
+                <strong>{userSafetyCenterService.getPrivacySummary(blockedUsers.length)}</strong>
+                <small>These preferences are local placeholders and never store passwords, tokens, or private message content.</small>
+              </div>
+              <div className="security-card-grid">
+                <article className="security-card">
+                  <span>Blocked users</span>
+                  <strong>{blockedUsers.length}</strong>
+                  <small>Messages from blocked users can be collapsed later. DMs and friend requests are backend TODOs.</small>
+                </article>
+                <article className="security-card">
+                  <span>Online status</span>
+                  <strong>{safetySettings.showOnlineStatus ? "Visible" : "Hidden placeholder"}</strong>
+                  <small>Presence visibility is local for now and must be enforced server-side later.</small>
+                </article>
+                <article className="security-card">
+                  <span>Read receipts</span>
+                  <strong>{safetySettings.enableReadReceipts ? "Enabled placeholder" : "Disabled"}</strong>
+                  <small>Read receipts remain opt-in and should not expose detailed reads in large communities.</small>
+                </article>
+                <article className="security-card">
+                  <span>Account data</span>
+                  <strong>{dataExportStatus.status === "ready_placeholder" ? "Export ready" : "Export not requested"}</strong>
+                  <small>{accountDeletionStatus.requested ? "Deletion request placeholder recorded." : "No deletion request active."}</small>
+                </article>
+              </div>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Who can DM me placeholder</strong>
+                  <small>Prepared for future direct messages; no DM backend is enabled by this setting.</small>
+                </span>
+                <select value={safetySettings.whoCanDmMe} onChange={(event) => updateSafetySettings({ whoCanDmMe: event.target.value as UserSafetySettings["whoCanDmMe"] })}>
+                  <option value="everyone">Everyone</option>
+                  <option value="community_members">Community members</option>
+                  <option value="friends_only">Friends only</option>
+                  <option value="nobody">Nobody</option>
+                </select>
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Who can send friend requests placeholder</strong>
+                  <small>Prepared for future friends backend; existing community chat is unchanged.</small>
+                </span>
+                <select value={safetySettings.whoCanSendFriendRequests} onChange={(event) => updateSafetySettings({ whoCanSendFriendRequests: event.target.value as UserSafetySettings["whoCanSendFriendRequests"] })}>
+                  <option value="everyone">Everyone</option>
+                  <option value="community_members">Community members</option>
+                  <option value="friends_of_friends_placeholder">Friends of friends placeholder</option>
+                  <option value="nobody">Nobody</option>
+                </select>
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Show online status</strong>
+                  <small>Controls the local placeholder preference for presence visibility.</small>
+                </span>
+                <input type="checkbox" checked={safetySettings.showOnlineStatus} onChange={(event) => updateSafetySettings({ showOnlineStatus: event.target.checked })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Read receipts placeholder</strong>
+                  <small>Future read receipts should respect this privacy setting by default.</small>
+                </span>
+                <input type="checkbox" checked={safetySettings.enableReadReceipts} onChange={(event) => updateSafetySettings({ enableReadReceipts: event.target.checked })} />
+              </label>
+              <div className="settings-status-card" aria-label="Blocked users list">
+                <span>Blocked users</span>
+                <strong>{blockedUsers.length ? "Manage locally" : "No blocked users"}</strong>
+                <small>Blocking is local placeholder state until Supabase-backed safety rules are enabled.</small>
+                <div className="session-list">
+                  {blockedUsers.length ? blockedUsers.map((blockedUser) => (
+                    <article key={blockedUser.userId} className="session-card">
+                      <div>
+                        <strong>{blockedUser.displayName}</strong>
+                        <small>@{blockedUser.username} blocked {dateTimeService.formatMessageTime(blockedUser.blockedAt)}</small>
+                      </div>
+                      <button onClick={() => unblockUser(blockedUser.userId, blockedUser.displayName)}>Unblock</button>
+                    </article>
+                  )) : (
+                    <article className="session-card">
+                      <div>
+                        <strong>Your block list is clear</strong>
+                        <small>Use member/profile actions to block someone locally.</small>
+                      </div>
+                    </article>
+                  )}
+                </div>
+              </div>
+              <div className="settings-status-card" aria-label="Safety tips">
+                <span>Safety tips</span>
+                <strong>Stay in control</strong>
+                <small>Do not share passwords, tokens, recovery codes, or private invite links. Report suspicious behavior from message/member context actions.</small>
+              </div>
+              <div className="settings-actions-row">
+                <button onClick={requestDataExportPlaceholder}>Request data export placeholder</button>
+                <button onClick={() => pushToast(accountDeletionStatus.message, accountDeletionStatus.requested ? "info" : "success")}>Account deletion status placeholder</button>
+                <button onClick={() => { setActive("Advanced"); pushToast("Open Beta support to report a problem.", "info"); }}>Report a problem</button>
+                <button onClick={() => updateSafetySettings(userSafetyCenterService.resetSettings())}>Reset safety settings</button>
               </div>
             </div>
           ) : active === "Profile" ? (

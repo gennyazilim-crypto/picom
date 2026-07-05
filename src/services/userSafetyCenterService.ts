@@ -1,0 +1,79 @@
+export type DirectMessagePolicy = "everyone" | "community_members" | "friends_only" | "nobody";
+export type FriendRequestPolicy = "everyone" | "community_members" | "friends_of_friends_placeholder" | "nobody";
+
+export type UserSafetySettings = Readonly<{
+  schemaVersion: 1;
+  whoCanDmMe: DirectMessagePolicy;
+  whoCanSendFriendRequests: FriendRequestPolicy;
+  showOnlineStatus: boolean;
+  enableReadReceipts: boolean;
+  safetyTipsVisible: boolean;
+}>;
+
+const STORAGE_KEY = "picom.userSafetyCenter.v1";
+const defaults: UserSafetySettings = {
+  schemaVersion: 1,
+  whoCanDmMe: "community_members",
+  whoCanSendFriendRequests: "community_members",
+  showOnlineStatus: true,
+  enableReadReceipts: false,
+  safetyTipsVisible: true,
+};
+
+function normalizeSettings(value: Partial<UserSafetySettings> | null | undefined): UserSafetySettings {
+  return {
+    ...defaults,
+    ...value,
+    schemaVersion: 1,
+    whoCanDmMe: value?.whoCanDmMe ?? defaults.whoCanDmMe,
+    whoCanSendFriendRequests: value?.whoCanSendFriendRequests ?? defaults.whoCanSendFriendRequests,
+    showOnlineStatus: typeof value?.showOnlineStatus === "boolean" ? value.showOnlineStatus : defaults.showOnlineStatus,
+    enableReadReceipts: typeof value?.enableReadReceipts === "boolean" ? value.enableReadReceipts : defaults.enableReadReceipts,
+    safetyTipsVisible: typeof value?.safetyTipsVisible === "boolean" ? value.safetyTipsVisible : defaults.safetyTipsVisible,
+  };
+}
+
+function readSettings(): UserSafetySettings {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw) as Partial<UserSafetySettings>;
+    return normalizeSettings(parsed.schemaVersion === 1 ? parsed : null);
+  } catch {
+    return defaults;
+  }
+}
+
+function writeSettings(next: UserSafetySettings): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // Local storage can be unavailable in restricted desktop fallback contexts.
+  }
+}
+
+export const userSafetyCenterService = {
+  getSettings(): UserSafetySettings {
+    return readSettings();
+  },
+
+  updateSettings(partial: Partial<UserSafetySettings>): UserSafetySettings {
+    const next = normalizeSettings({ ...readSettings(), ...partial });
+    writeSettings(next);
+    return next;
+  },
+
+  resetSettings(): UserSafetySettings {
+    writeSettings(defaults);
+    return defaults;
+  },
+
+  getPrivacySummary(blockedCount: number): string {
+    const settings = readSettings();
+    const dmSummary = settings.whoCanDmMe === "nobody"
+      ? "DMs disabled"
+      : settings.whoCanDmMe.replace(/_/g, " ");
+    const readReceipts = settings.enableReadReceipts ? "read receipts on" : "read receipts off";
+    return `${blockedCount} blocked users, ${dmSummary}, ${readReceipts}.`;
+  }
+};
