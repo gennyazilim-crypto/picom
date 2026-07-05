@@ -73,7 +73,8 @@
     "events:foundation:smoke": "node scripts/community-events-foundation-smoke-test.mjs",
     "threads:placeholder:smoke": "node scripts/threads-placeholder-smoke-test.mjs",
     "forum:channel:smoke": "node scripts/forum-channel-placeholder-smoke-test.mjs",
-    "announcement:channel:smoke": "node scripts/announcement-channel-placeholder-smoke-test.mjs"
+    "announcement:channel:smoke": "node scripts/announcement-channel-placeholder-smoke-test.mjs",
+    "saved:messages:smoke": "node scripts/saved-messages-foundation-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
