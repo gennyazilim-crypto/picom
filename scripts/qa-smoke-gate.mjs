@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 const npmCliPath = process.env.npm_execpath;
 const npmCommand = npmCliPath ? process.execPath : process.platform === "win32" ? "npm.cmd" : "npm";
 const checks = [
+  ["run", "logs:smoke"],
   ["run", "diagnostics:smoke"],
   ["run", "errors:smoke"],
   ["run", "crash:smoke"],

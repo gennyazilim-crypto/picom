@@ -1,0 +1,94 @@
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const loggingPath = resolve(root, "src/services/loggingService.ts");
+const loggingFacadePath = resolve(root, "src/services/logging/loggingService.ts");
+
+if (!existsSync(loggingPath)) {
+  throw new Error("Missing central logging service implementation.");
+}
+
+if (!existsSync(loggingFacadePath)) {
+  throw new Error("Missing src/services/logging/loggingService.ts facade.");
+}
+
+const implementation = readFileSync(loggingPath, "utf8");
+const facade = readFileSync(loggingFacadePath, "utf8");
+
+const requiredExports = [
+  "loggingService",
+  "type LogEntry",
+  "type LogLevel"
+];
+
+for (const term of requiredExports) {
+  if (!facade.includes(term)) {
+    throw new Error(`Missing logging facade export: ${term}`);
+  }
+}
+
+const requiredApi = [
+  "logDebug",
+  "logInfo",
+  "logWarn",
+  "logError",
+  "captureException",
+  "getLogs",
+  "getRecentLogs",
+  "clearLogs",
+  "exportLogs",
+  "redactDiagnosticsValue",
+  "onLog"
+];
+
+for (const term of requiredApi) {
+  if (!implementation.includes(term)) {
+    throw new Error(`Missing logging service API: ${term}`);
+  }
+}
+
+const redactionTerms = [
+  "password",
+  "token",
+  "authorization",
+  "cookie",
+  "service[-_]?role",
+  "livekit",
+  "signing",
+  "access[-_]?token",
+  "refresh[-_]?token"
+];
+
+for (const term of redactionTerms) {
+  if (!implementation.toLowerCase().includes(term.toLowerCase())) {
+    throw new Error(`Missing logging redaction coverage for: ${term}`);
+  }
+}
+
+const behaviorChecks = [
+  ["bounded log buffer", "MAX_LOGS = 250"],
+  ["old log trimming", "logs.splice(0, logs.length - MAX_LOGS)"],
+  ["listener cleanup", "listeners.delete(listener)"],
+  ["circular metadata guard", "[circular]"],
+  ["large message truncation", "[truncated]"],
+  ["error redaction", "value instanceof Error"],
+  ["user-safe formatter", "formatUserFacingError"]
+];
+
+for (const [label, needle] of behaviorChecks) {
+  if (!implementation.includes(needle)) {
+    throw new Error(`Missing logging behavior: ${label}`);
+  }
+}
+
+if (/console\.(log|warn|error|info|debug)\(/.test(implementation)) {
+  throw new Error("loggingService should not mirror redacted logs back to console by default.");
+}
+
+console.log("✓ central logging service facade");
+console.log("✓ redaction coverage for sensitive fields");
+console.log("✓ bounded log buffer and export controls");
+console.log("✓ listener cleanup and diagnostics helpers");
+console.log("✓ logging service smoke test completed");
