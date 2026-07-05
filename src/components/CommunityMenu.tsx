@@ -138,7 +138,7 @@ export function CommunityMenu({ community, access, callbacks, onClose }: Communi
   );
 }
 
-function ModalShell({ title, eyebrow, onClose, children }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode }) {
+function ModalShell({ title, eyebrow, onClose, children, className = "" }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -147,7 +147,7 @@ function ModalShell({ title, eyebrow, onClose, children }: { title: string; eyeb
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <section className="community-access-modal" role="dialog" aria-modal="true" aria-labelledby="community-access-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+      <section className={`community-access-modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="community-access-modal-title" onMouseDown={(event) => event.stopPropagation()}>
         <button className="icon-button modal-close" type="button" aria-label="Close" onClick={onClose}>
           <AppIcon name="close" size="lg" />
         </button>
@@ -174,7 +174,7 @@ export function CommunityAdminPanel({ community, access, onClose, adminTools }: 
   ];
 
   return (
-    <ModalShell title={`${community.name} admin panel`} eyebrow="Community administration" onClose={onClose}>
+    <ModalShell title={`${community.name} management center`} eyebrow="Community administration" onClose={onClose} className="community-management-modal">
       <div className="community-admin-panel">
         <nav aria-label="Community admin sections">
           {sections.map((section) => {

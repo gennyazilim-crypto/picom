@@ -1,9 +1,8 @@
-﻿import { useState } from "react";
-import type { Community } from "../types/community";
+﻿import type { Community } from "../types/community";
 import type { CommunityAccess } from "../types/communityAccess";
 import { getCommunityIconLabel } from "../utils/generatedIdentity";
 import { AppIcon } from "./AppIcon";
-import { CommunityMenu, CommunityRoleBadge } from "./CommunityMenu";
+import { CommunityRoleBadge } from "./CommunityMenu";
 import { mvpUiIconMap } from "./iconRegistry";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
@@ -21,7 +20,28 @@ type CommunityHeaderProps = {
 };
 
 export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenModeratorPanel, onOpenMemberPanel, onOpenVisitorPanel, onOpenJoinCommunity, onOpenLeaveCommunity, onPlaceholderAction }: CommunityHeaderProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const openManagementCenter = () => {
+    if (access.isOwner || access.isAdmin) {
+      onOpenAdminPanel();
+      return;
+    }
+
+    if (access.isModerator) {
+      onOpenModeratorPanel();
+      return;
+    }
+
+    if (access.isVisitor) {
+      onOpenVisitorPanel();
+      return;
+    }
+
+    onOpenMemberPanel();
+  };
+
+  void onOpenJoinCommunity;
+  void onOpenLeaveCommunity;
+  void onPlaceholderAction;
 
   return (
     <header className="community-header community-header-with-menu">
@@ -33,25 +53,9 @@ export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenMod
         <span>{access.isVisitor ? "Public preview" : "Desktop community"}</span>
       </div>
       <CommunityRoleBadge access={access} />
-      <button className="icon-button" aria-label="Community menu" title="Community menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}>
+      <button className="icon-button" aria-label="Open community management center" title="Open community management center" onClick={openManagementCenter}>
         <AppIcon name={sidebarIcons.expand} size="sm" />
       </button>
-      {menuOpen ? (
-        <CommunityMenu
-          community={community}
-          access={access}
-          onClose={() => setMenuOpen(false)}
-          callbacks={{
-            onOpenAdminPanel,
-            onOpenModeratorPanel,
-            onOpenMemberPanel,
-            onOpenVisitorPanel,
-            onOpenJoinCommunity,
-            onOpenLeaveCommunity,
-            onPlaceholderAction,
-          }}
-        />
-      ) : null}
     </header>
   );
 }

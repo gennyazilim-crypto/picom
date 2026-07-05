@@ -2710,8 +2710,9 @@ body{
   position: absolute;
   z-index: 45;
   top: 62px;
-  left: 12px;
-  width: 300px;
+  left: 10px;
+  right: 10px;
+  width: auto;
   max-height: min(640px, calc(100vh - 96px));
   overflow: auto;
   border: 1px solid var(--border);
@@ -2719,19 +2720,22 @@ body{
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 10px;
+  isolation: isolate;
 }
 
 .community-menu-popover header {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-columns: 38px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
   padding: 8px;
+  border-radius: 14px;
+  background: var(--surface-soft);
 }
 
 .community-menu-mark {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   border-radius: 14px;
@@ -2755,6 +2759,12 @@ body{
 .community-panel-list span {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.community-menu-popover header .community-role-badge {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 2px;
 }
 
 .community-menu-info-card {
@@ -2787,6 +2797,15 @@ body{
   padding: 10px 12px;
   text-align: left;
   cursor: pointer;
+  min-width: 0;
+}
+
+.community-menu-item span,
+.community-menu-item small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .community-menu-item:hover {
@@ -2855,19 +2874,45 @@ body{
   letter-spacing: -.035em;
 }
 
-.community-admin-panel {
-  min-height: 520px;
+.community-access-modal.community-management-modal {
+  width: min(1060px, calc(100vw - 96px));
+  height: min(720px, calc(100vh - 80px));
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  padding: 0;
+}
+
+.community-management-modal > .eyebrow {
+  margin: 26px 28px 0;
+}
+
+.community-management-modal > h2 {
+  margin: 8px 72px 20px 28px;
+}
+
+.community-management-modal > .modal-close {
+  top: 18px;
+  right: 18px;
+}
+
+.community-admin-panel {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr);
+  gap: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
 }
 
 .community-admin-panel nav {
   display: grid;
   align-content: start;
   gap: 6px;
+  overflow: auto;
+  background: var(--bg-sidebar);
   border-right: 1px solid var(--border);
-  padding-right: 14px;
+  padding: 18px 14px;
 }
 
 .community-admin-panel nav button {
@@ -2896,7 +2941,7 @@ body{
 .community-admin-content {
   min-width: 0;
   overflow: auto;
-  padding-right: 4px;
+  padding: 18px;
 }
 
 .community-panel-hero,
