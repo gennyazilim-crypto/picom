@@ -12,6 +12,7 @@ export type UploadImageAttachmentInput = Readonly<{
   channelId: string;
   file: File;
   userId?: string;
+  signal?: AbortSignal;
 }>;
 
 export type UploadedAttachmentSummary = Readonly<{
@@ -34,6 +35,7 @@ export type UploadServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
+  | "UPLOAD_CANCELED"
   | "UPLOAD_FAILED";
 
 export type UploadServiceError = Readonly<{
@@ -87,6 +89,31 @@ function createPendingStoragePath(input: UploadImageAttachmentInput, userId: str
   return `communities/${input.communityId}/channels/${input.channelId}/pending/${userId}/${createIdSuffix()}-${safeName}`;
 }
 
+function isUploadCanceled(input: UploadImageAttachmentInput): boolean {
+  return Boolean(input.signal?.aborted);
+}
+
+function waitForMockUpload(signal?: AbortSignal): Promise<UploadServiceResult<true>> {
+  return new Promise((resolve) => {
+    if (signal?.aborted) {
+      resolve(uploadError("UPLOAD_CANCELED", "Upload canceled."));
+      return;
+    }
+
+    const timeout = globalThis.setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve({ ok: true, data: true });
+    }, 520);
+
+    const onAbort = () => {
+      globalThis.clearTimeout(timeout);
+      resolve(uploadError("UPLOAD_CANCELED", "Upload canceled."));
+    };
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
 function getConfiguredSupabaseClient() {
   const status = getSupabaseClientStatus();
 
@@ -109,10 +136,14 @@ export const uploadService = {
   async uploadImageAttachment(input: UploadImageAttachmentInput): Promise<UploadServiceResult<UploadedAttachmentSummary>> {
     const validationError = validateInput(input);
     if (validationError) return { ok: false, error: validationError };
+    if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
 
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
+      const mockDelay = await waitForMockUpload(input.signal);
+      if (!mockDelay.ok) return mockDelay;
+
       const userId = input.userId ?? currentUserId;
       const storagePath = createPendingStoragePath(input, userId);
       const thumbnail = attachmentThumbnailService.createThumbnailPlaceholder({
@@ -160,12 +191,16 @@ export const uploadService = {
     }
 
     const storagePath = createPendingStoragePath(input, userId);
+    if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
+
     const { error } = await configured.data.storage
       .from(MESSAGE_ATTACHMENTS_BUCKET)
       .upload(storagePath, input.file, {
         contentType: input.file.type,
         upsert: false,
       });
+
+    if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
 
     if (error) {
       return uploadError("UPLOAD_FAILED", "Could not upload attachment.");

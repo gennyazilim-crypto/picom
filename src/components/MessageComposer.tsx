@@ -42,14 +42,36 @@ type MessageComposerProps = {
 
 const composerEmojiOptions = ["👍", "❤️", "😂", "🔥", "👀"];
 
+type ComposerUploadStatus = "pending" | "uploading" | "uploaded" | "failed" | "canceled";
+
+type ComposerAttachmentItem = LocalAttachmentPreview & {
+  status: ComposerUploadStatus;
+  progress: number;
+  error?: string;
+  attachment?: Attachment;
+};
+
+function getUploadStatusLabel(status: ComposerUploadStatus): string {
+  if (status === "pending") return "Ready";
+  if (status === "uploading") return "Uploading";
+  if (status === "uploaded") return "Uploaded";
+  if (status === "failed") return "Failed";
+  return "Canceled";
+}
+
+function createComposerAttachmentItem(preview: LocalAttachmentPreview): ComposerAttachmentItem {
+  return { ...preview, status: "pending", progress: 0 };
+}
+
 export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast, disabledReason, disabledActionLabel, onDisabledAction }: MessageComposerProps) {
   const [body, setBody] = useState(() => messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   const [dragging, setDragging] = useState(false);
-  const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
+  const [previews, setPreviews] = useState<ComposerAttachmentItem[]>([]);
   const [sending, setSending] = useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewsRef = useRef<LocalAttachmentPreview[]>([]);
+  const previewsRef = useRef<ComposerAttachmentItem[]>([]);
+  const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
   const lastTypingSentAtRef = useRef(0);
   const typingStopTimerRef = useRef<number | null>(null);
   const onTypingStopRef = useRef(onTypingStop);
@@ -75,6 +97,8 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   };
 
   useEffect(() => () => {
+    uploadControllersRef.current.forEach((controller) => controller.abort());
+    uploadControllersRef.current.clear();
     previewsRef.current.forEach((preview) => fileService.revoke(preview));
     stopTypingNow();
   }, []);
@@ -85,6 +109,8 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     previousChannelIdRef.current = channel.id;
     previousCommunityIdRef.current = communityId;
     stopTypingNow();
+    uploadControllersRef.current.forEach((controller) => controller.abort());
+    uploadControllersRef.current.clear();
     previewsRef.current.forEach((preview) => fileService.revoke(preview));
     previewsRef.current = [];
     setPreviews([]);
@@ -137,7 +163,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
       return;
     }
 
-    const next: LocalAttachmentPreview[] = [];
+    const next: ComposerAttachmentItem[] = [];
 
     Array.from(files).forEach((file) => {
       const validation = fileService.validate(file);
@@ -151,7 +177,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         return;
       }
 
-      next.push(fileService.createPreview(file));
+      next.push(createComposerAttachmentItem(fileService.createPreview(file)));
     });
 
     if (next.length) {
@@ -165,8 +191,94 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   };
 
   const removePreview = (preview: LocalAttachmentPreview) => {
+    uploadControllersRef.current.get(preview.id)?.abort();
+    uploadControllersRef.current.delete(preview.id);
     fileService.revoke(preview);
     setPreviews((current) => current.filter((item) => item.id !== preview.id));
+  };
+
+  const updatePreview = (id: string, patch: Partial<ComposerAttachmentItem>) => {
+    setPreviews((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
+  };
+
+  const cancelPreviewUpload = (preview: ComposerAttachmentItem) => {
+    uploadControllersRef.current.get(preview.id)?.abort();
+    uploadControllersRef.current.delete(preview.id);
+    updatePreview(preview.id, { status: "canceled", progress: 0, error: "Upload canceled." });
+  };
+
+  const uploadPreview = async (previewId: string, forceRetry = false): Promise<Attachment | null> => {
+    const preview = previewsRef.current.find((item) => item.id === previewId);
+    if (!preview) return null;
+    if (preview.status === "uploaded" && preview.attachment) return preview.attachment;
+    if (!forceRetry && (preview.status === "failed" || preview.status === "canceled")) {
+      pushToast("Retry or remove failed uploads before sending.", "error");
+      return null;
+    }
+
+    const controller = new AbortController();
+    uploadControllersRef.current.set(preview.id, controller);
+    updatePreview(preview.id, { status: "uploading", progress: 12, error: undefined, attachment: undefined });
+
+    const progressTimer = globalThis.setInterval(() => {
+      setPreviews((current) => current.map((item) => {
+        if (item.id !== preview.id || item.status !== "uploading") return item;
+        return { ...item, progress: Math.min(92, item.progress + 18) };
+      }));
+    }, 140);
+
+    const result = await uploadService.uploadImageAttachment({
+      communityId,
+      channelId: channel.id,
+      file: preview.file,
+      signal: controller.signal,
+    });
+
+    globalThis.clearInterval(progressTimer);
+    uploadControllersRef.current.delete(preview.id);
+
+    if (!result.ok) {
+      const status = result.error.code === "UPLOAD_CANCELED" ? "canceled" : "failed";
+      updatePreview(preview.id, { status, progress: 0, error: result.error.message });
+      return null;
+    }
+
+    if (controller.signal.aborted) {
+      updatePreview(preview.id, { status: "canceled", progress: 0, error: "Upload canceled." });
+      return null;
+    }
+
+    const metadata = await attachmentService.createPendingAttachmentMetadata({ upload: result.data });
+    if (!metadata.ok) {
+      updatePreview(preview.id, { status: "failed", progress: 0, error: metadata.error.message });
+      return null;
+    }
+
+    const uploadedUrl = metadata.data.publicUrl ?? result.data.publicUrl ?? null;
+    const attachment: Attachment = {
+      id: metadata.data.id,
+      type: "image",
+      url: uploadedUrl || preview.url,
+      publicUrl: uploadedUrl,
+      storagePath: metadata.data.storagePath,
+      mimeType: metadata.data.mimeType,
+      thumbnailUrl: metadata.data.thumbnailUrl,
+      width: metadata.data.width ?? undefined,
+      height: metadata.data.height ?? undefined,
+      blurhashPlaceholder: metadata.data.blurhashPlaceholder,
+      scanStatus: metadata.data.scanStatus,
+      alt: metadata.data.fileName,
+    };
+
+    updatePreview(preview.id, { status: "uploaded", progress: 100, attachment, error: undefined });
+    return attachment;
+  };
+
+  const retryPreviewUpload = async (preview: ComposerAttachmentItem) => {
+    if (preview.status === "uploading") return;
+    updatePreview(preview.id, { status: "pending", progress: 0, error: undefined, attachment: undefined });
+    const attachment = await uploadPreview(preview.id, true);
+    if (attachment) pushToast(`${preview.name} uploaded.`, "success");
   };
 
   const send = async () => {
@@ -179,77 +291,23 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     if ((!value && !previews.length) || sending) return;
 
     setSending(true);
-    const persistedAttachments = new Map<string, {
-      id: string;
-      publicUrl: string | null;
-      storagePath: string;
-      fileName: string;
-      mimeType: string;
-      thumbnailUrl: string | null;
-      width: number | null;
-      height: number | null;
-      blurhashPlaceholder: string | null;
-      scanStatus: Attachment["scanStatus"];
-    }>();
+    const attachments: Attachment[] = [];
 
-    for (const preview of previews) {
-      const result = await uploadService.uploadImageAttachment({
-        communityId,
-        channelId: channel.id,
-        file: preview.file,
-      });
-
-      if (!result.ok) {
-        pushToast(result.error.message, "error");
+    for (const preview of previewsRef.current) {
+      const attachment = await uploadPreview(preview.id);
+      if (!attachment) {
         setSending(false);
         return;
       }
 
-      const metadata = await attachmentService.createPendingAttachmentMetadata({ upload: result.data });
-      if (!metadata.ok) {
-        pushToast(metadata.error.message, "error");
-        setSending(false);
-        return;
-      }
-
-      persistedAttachments.set(preview.id, {
-        id: metadata.data.id,
-        publicUrl: metadata.data.publicUrl ?? result.data.publicUrl,
-        storagePath: metadata.data.storagePath,
-        fileName: metadata.data.fileName,
-        mimeType: metadata.data.mimeType,
-        thumbnailUrl: metadata.data.thumbnailUrl,
-        width: metadata.data.width,
-        height: metadata.data.height,
-        blurhashPlaceholder: metadata.data.blurhashPlaceholder,
-        scanStatus: metadata.data.scanStatus,
-      });
+      attachments.push(attachment);
     }
-
-    const attachments: Attachment[] = previews.map((preview) => {
-      const persisted = persistedAttachments.get(preview.id);
-      const uploadedUrl = persisted?.publicUrl ?? null;
-
-      return {
-        id: persisted?.id ?? preview.id,
-        type: "image",
-        url: uploadedUrl || preview.url,
-        publicUrl: uploadedUrl,
-        storagePath: persisted?.storagePath,
-        mimeType: persisted?.mimeType,
-        thumbnailUrl: persisted?.thumbnailUrl,
-        width: persisted?.width ?? undefined,
-        height: persisted?.height ?? undefined,
-        blurhashPlaceholder: persisted?.blurhashPlaceholder,
-        scanStatus: persisted?.scanStatus,
-        alt: persisted?.fileName ?? preview.name,
-      };
-    });
 
     await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments, replyToMessage?.id ?? null);
     messageDraftService.clearDraft({ communityId, channelId: channel.id });
     stopTypingNow();
     onCancelReply();
+    previewsRef.current.forEach((preview) => fileService.revoke(preview));
     setBody("");
     setPreviews([]);
     setEmojiPickerOpen(false);
@@ -349,16 +407,24 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           <AppIcon name={composerIcons.emoji} size="lg" />
         </button>
         <button className="composer-tool text-tool" aria-label="GIF placeholder" disabled={Boolean(disabledReason)}>GIF</button>
-        <button className="send-button" disabled={Boolean(disabledReason) || sending || (!body.trim() && !previews.length)} onClick={send}>
+        <button className="send-button" disabled={Boolean(disabledReason) || sending || previews.some((preview) => preview.status === "uploading") || (!body.trim() && !previews.length)} onClick={send}>
           <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
         </button>
       </div>
       {previews.length ? (
         <div className="composer-previews">
           {previews.map((preview) => (
-            <div key={preview.id}>
+            <div key={preview.id} className={`composer-preview-item status-${preview.status}`}>
               <img src={preview.url} alt={preview.name} />
-              <button aria-label={`Remove ${preview.name}`} onClick={() => removePreview(preview)}><AppIcon name={composerIcons.close} size="xs" /></button>
+              <span className="composer-preview-progress" aria-hidden="true"><span style={{ width: `${preview.progress}%` }} /></span>
+              <span className="composer-preview-status">{preview.error ?? getUploadStatusLabel(preview.status)}</span>
+              {preview.status === "uploading" ? (
+                <button aria-label={`Cancel upload for ${preview.name}`} onClick={() => cancelPreviewUpload(preview)}><AppIcon name={composerIcons.close} size="xs" /></button>
+              ) : preview.status === "failed" || preview.status === "canceled" ? (
+                <button aria-label={`Retry upload for ${preview.name}`} onClick={() => void retryPreviewUpload(preview)}>Retry</button>
+              ) : (
+                <button aria-label={`Remove ${preview.name}`} onClick={() => removePreview(preview)}><AppIcon name={composerIcons.close} size="xs" /></button>
+              )}
             </div>
           ))}
         </div>
