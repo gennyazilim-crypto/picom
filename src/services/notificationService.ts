@@ -10,6 +10,7 @@ export interface NativeNotificationPayload {
   category?: NotificationCategory;
   tag?: string;
   silent?: boolean;
+  routing?: Omit<NotificationRouteContext, "category">;
 }
 
 export interface NotificationServiceResult {
@@ -80,6 +81,10 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
 
 export const notificationService = {
   getPermission(): NotificationPermissionState {
+    if (getNativeNotificationBridge()) {
+      return "granted";
+    }
+
     const NativeNotification = getNotificationConstructor();
     return NativeNotification ? NativeNotification.permission : "unsupported";
   },
@@ -91,13 +96,17 @@ export const notificationService = {
       runtime: platform.runtime,
       platform: platform.platform,
       permission: this.getPermission(),
-      supported: this.getPermission() !== "unsupported",
+      supported: Boolean(getNativeNotificationBridge()) || this.getPermission() !== "unsupported",
       nativeBridgeAvailable: Boolean(getNativeNotificationBridge()),
       settings: settingsService.getSettings().notificationSettings,
     };
   },
 
   async requestPermission(): Promise<NotificationServiceResult> {
+    if (getNativeNotificationBridge()) {
+      return { ok: true, permission: "granted" };
+    }
+
     const NativeNotification = getNotificationConstructor();
 
     if (!NativeNotification) {
@@ -118,7 +127,7 @@ export const notificationService = {
 
   async showNotification(payload: NativeNotificationPayload): Promise<NotificationServiceResult> {
     const category = payload.category ?? "system";
-    const route = decideNotificationRoute({ category });
+    const route = decideNotificationRoute({ ...(payload.routing ?? {}), category });
 
     if (!route.desktop) {
       return { ok: false, reason: route.reason, permission: this.getPermission() };
