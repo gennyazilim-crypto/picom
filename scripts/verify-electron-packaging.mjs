@@ -59,6 +59,7 @@ assertIncludes(mainProcess, "contextIsolation: true", "context isolation");
 assertIncludes(mainProcess, "nodeIntegration: false", "disabled node integration");
 assertIncludes(mainProcess, "sandbox: true", "renderer sandbox");
 assertIncludes(mainProcess, "webSecurity: true", "web security");
+assertIncludes(mainProcess, 'window.webContents.on("will-navigate"', "blocked top-level external navigation");
 
 assertIncludes(preload, "contextBridge.exposeInMainWorld", "safe preload bridge");
 assertIncludes(preload, "picomDesktop", "Picom preload namespace");

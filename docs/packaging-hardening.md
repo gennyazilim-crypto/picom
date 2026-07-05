@@ -21,6 +21,7 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 - Preload exposes a narrow `window.picomDesktop` bridge instead of raw Electron objects.
 - The exposed preload bridge is frozen before it is attached to the renderer global.
 - External links are routed through the safe external link service.
+- Top-level renderer navigation is blocked and routed through the safe external opener.
 
 ## Platform targets
 
