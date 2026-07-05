@@ -71,6 +71,36 @@ export function useSupabaseMessageRealtime({
   const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("idle");
   const insertDeduperRef = useRef(createRealtimeMessageDeduper());
   const eventOrderingRef = useRef(createRealtimeEventOrderingGuard());
+  const onInsertRef = useRef(onInsert);
+  const onUpdateRef = useRef(onUpdate);
+  const onDeleteRef = useRef(onDelete);
+
+  useEffect(() => {
+    onInsertRef.current = onInsert;
+    onUpdateRef.current = onUpdate;
+    onDeleteRef.current = onDelete;
+  }, [onDelete, onInsert, onUpdate]);
+
+  useEffect(() => {
+    if (!enabled || !dataSourceService.getStatus().isSupabase) return;
+
+    const handleOffline = () => setConnectionStatus("disconnected");
+    const handleOnline = () => {
+      setConnectionStatus((current) => (current === "disconnected" ? "reconnecting" : current));
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setConnectionStatus("disconnected");
+    }
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled || !dataSourceService.getStatus().isSupabase) {
@@ -131,7 +161,7 @@ export function useSupabaseMessageRealtime({
             return;
           }
 
-          onInsert(message);
+          onInsertRef.current(message);
         },
       )
       .on(
@@ -155,7 +185,7 @@ export function useSupabaseMessageRealtime({
             return;
           }
 
-          onUpdate(message);
+          onUpdateRef.current(message);
         },
       )
       .on(
@@ -191,7 +221,7 @@ export function useSupabaseMessageRealtime({
               return;
             }
 
-            onDelete(oldRow.id);
+            onDeleteRef.current(oldRow.id);
             return;
           }
 
@@ -224,7 +254,7 @@ export function useSupabaseMessageRealtime({
       canceled = true;
       void client.removeChannel(channel);
     };
-  }, [channelId, communityId, enabled, onDelete, onInsert, onUpdate]);
+  }, [channelId, communityId, enabled]);
 
   return connectionStatus;
 }

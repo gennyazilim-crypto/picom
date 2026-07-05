@@ -32,7 +32,7 @@ export const realtimeChannelNames = {
 
 export function mapRealtimeSubscriptionStatus(status: string, hasConnected: boolean): RealtimeConnectionStatus | null {
   if (status === "SUBSCRIBED") return "connected";
-  if (status === "CLOSED") return hasConnected ? "disconnected" : "disconnected";
+  if (status === "CLOSED") return hasConnected ? "reconnecting" : "disconnected";
   if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") return hasConnected ? "reconnecting" : "disconnected";
   return null;
 }

@@ -1,29 +1,24 @@
-# Task 185 Checkpoint - Realtime Reconnect Status
+﻿# Task 185: Implement realtime reconnect status
 
-## Completed
+## Scope
+- Hardened Supabase message realtime connection status for the active community/channel subscription.
+- Kept the existing Electron desktop UI, custom titlebar, community layout, Mention Feed, and Profile Page unchanged.
 
-- `useSupabaseMessageRealtime` now returns a typed connection status:
-  - `idle`
-  - `connecting`
-  - `connected`
-  - `reconnecting`
-  - `disconnected`
-- Supabase channel subscription states are mapped into user-safe UI states.
-- `CHANNEL_ERROR` and `TIMED_OUT` move the UI into `reconnecting` and write a redacted warning log.
-- `SUBSCRIBED` moves the UI into `connected`.
-- ChatHeader now displays a compact realtime status pill without changing the desktop layout.
-- Mock mode hides the pill through the `idle` state.
+## Changes
+- Unexpected `CLOSED` realtime channel status after a successful connection now maps to `reconnecting` instead of immediately appearing permanently disconnected.
+- `useSupabaseMessageRealtime` stores realtime callbacks in refs so message insert/update/delete handlers can update without resubscribing the active channel.
+- Added browser/Electron renderer online/offline listeners for the message realtime hook so the ChatHeader status pill can show `disconnected` and recover to `reconnecting` safely.
 
-## Manual verification
+## Safety notes
+- The hook still subscribes only to the active community/channel message room.
+- Cleanup still removes the Supabase channel on channel/community change and unmount.
+- Existing message id/clientMessageId dedupe and event ordering guard remain in place.
+- No Supabase service_role, LiveKit secrets, tokens, or passwords are exposed.
 
-1. Run Picom in mock mode and confirm no realtime pill is shown.
-2. Run Picom in Supabase mode and open a text channel.
-3. Confirm the ChatHeader status moves from `Connecting` to `Live`.
-4. Temporarily interrupt the network or Supabase realtime connection.
-5. Confirm the status changes to `Reconnecting` or `Disconnected` without crashing.
-6. Restore the connection and confirm messages still work after resubscription.
-
-## Notes
-
-- This task does not implement a full reconnect queue or offline send queue.
-- The status is intentionally subtle and uses existing design tokens.
+## Manual test steps
+1. Start the app in Electron dev mode.
+2. Sign in or use Supabase mode with two windows.
+3. Open the same community/channel in both windows.
+4. Send messages from one window and confirm the other receives them without duplicates.
+5. Switch channels repeatedly and confirm no duplicate messages appear after returning.
+6. Temporarily disconnect network or stop/restart the realtime backend and confirm the ChatHeader status changes to disconnected/reconnecting without crashing.
