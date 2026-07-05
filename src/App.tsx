@@ -44,6 +44,7 @@ import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
 import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
+import { reportService } from "./services/reportService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
@@ -1137,6 +1138,33 @@ export function App() {
     });
   };
 
+  const handleReportMessage = (message: Message) => {
+    const result = reportService.submitReport({
+      communityId: activeCommunity.id,
+      channelId: activeChannel.id,
+      reporterId: currentUser.userId,
+      targetType: "message",
+      targetId: message.id,
+      reason: "other",
+      description: `Message report placeholder for ${message.id}`,
+    });
+
+    pushToast(result.ok ? "Report placeholder submitted." : result.message, result.ok ? "success" : "error");
+  };
+
+  const handleReportUser = (member: Member) => {
+    const result = reportService.submitReport({
+      communityId: activeCommunity.id,
+      reporterId: currentUser.userId,
+      targetType: "user",
+      targetId: member.userId,
+      reason: "other",
+      description: `User report placeholder for ${member.userId}`,
+    });
+
+    pushToast(result.ok ? "User report placeholder submitted." : result.message, result.ok ? "success" : "error");
+  };
+
   const handleCreateCommunity = async (name: string, description?: string) => {
     const result = await communityService.createCommunity({ name, description });
 
@@ -1364,6 +1392,11 @@ export function App() {
                       onSelect: () => handleDeleteMessage(message),
                     },
                     {
+                      label: "Report message",
+                      disabled: Boolean(message.deletedAt) || message.authorId === currentUser.userId,
+                      onSelect: () => handleReportMessage(message),
+                    },
+                    {
                       label: "Copy message ID",
                       onSelect: () => clipboardService.copyText(message.id).then(() => pushToast("Message ID copied.", "success")),
                     },
@@ -1388,6 +1421,7 @@ export function App() {
                     { label: `View ${member.displayName}` },
                     { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
                     { label: "Open friends foundation", onSelect: openFriends },
+                    { label: "Report user", disabled: member.userId === currentUser.userId, onSelect: () => handleReportUser(member) },
                     { label: "Moderation placeholder", disabled: true },
                   ])
                   }
@@ -1420,7 +1454,7 @@ export function App() {
         />
       ) : null}
       {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} /> : null}
-      {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} /> : null}
+      {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onReportUser={handleReportUser} /> : null}
       {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>

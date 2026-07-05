@@ -1,4 +1,5 @@
 import { appConfig } from "../config/appConfig";
+import { reportService } from "../services/reportService";
 
 const adminSections = [
   {
@@ -36,6 +37,8 @@ const adminSections = [
 ] as const;
 
 export function AdminOperationsPanel() {
+  const reportSummary = reportService.getSummary();
+
   return (
     <section className="settings-status-card" aria-label="Admin operations placeholder">
       <span>Development only</span>
@@ -53,6 +56,11 @@ export function AdminOperationsPanel() {
           <span>Security TODO</span>
           <strong>Admin auth required</strong>
           <small>Do not expose this panel to normal users or include secrets in responses.</small>
+        </article>
+        <article className="security-card">
+          <span>Reports</span>
+          <strong>{reportSummary.open} open</strong>
+          <small>{reportSummary.reviewed} reviewed, {reportSummary.dismissed} dismissed, {reportSummary.action_taken} action taken.</small>
         </article>
       </div>
       <div className="security-card-grid">

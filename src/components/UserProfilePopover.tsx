@@ -8,9 +8,10 @@ type UserProfilePopoverProps = {
   x: number;
   y: number;
   onClose: () => void;
+  onReportUser?: (member: Member) => void;
 };
 
-export function UserProfilePopover({ member, community, x, y, onClose }: UserProfilePopoverProps) {
+export function UserProfilePopover({ member, community, x, y, onClose, onReportUser }: UserProfilePopoverProps) {
   useEffect(() => {
     const close = () => onClose();
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -42,6 +43,7 @@ export function UserProfilePopover({ member, community, x, y, onClose }: UserPro
         <div className="profile-actions">
           <button>Message</button>
           <button>View profile</button>
+          {onReportUser ? <button onClick={() => onReportUser(member)}>Report</button> : null}
         </div>
       </div>
     </section>
