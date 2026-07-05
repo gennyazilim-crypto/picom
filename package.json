@@ -85,7 +85,8 @@
     "plugin-system:smoke": "node scripts/plugin-system-architecture-smoke-test.mjs",
     "bot-api:smoke": "node scripts/bot-api-architecture-smoke-test.mjs",
     "developer-portal:placeholder:smoke": "node scripts/developer-portal-placeholder-smoke-test.mjs",
-    "community-discovery:plan:smoke": "node scripts/community-discovery-plan-smoke-test.mjs"
+    "community-discovery:plan:smoke": "node scripts/community-discovery-plan-smoke-test.mjs",
+    "analytics:placeholder:smoke": "node scripts/analytics-placeholder-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
