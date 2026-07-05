@@ -63,6 +63,7 @@
     "channel:reorder:smoke": "node scripts/channel-reorder-ui-smoke-test.mjs",
     "moderation:filters:smoke": "node scripts/message-moderation-filters-smoke-test.mjs",
     "privacy:blocking:smoke": "node scripts/user-blocking-placeholder-smoke-test.mjs",
+    "bots:foundation:smoke": "node scripts/bot-system-foundation-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {
