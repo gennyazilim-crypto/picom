@@ -112,7 +112,8 @@
     "licenses:smoke": "node scripts/license-notices-smoke-test.mjs",
     "enterprise:readiness:smoke": "node scripts/enterprise-readiness-smoke-test.mjs",
     "architecture:long-term:smoke": "node scripts/long-term-architecture-review-smoke-test.mjs",
-    "roadmap:smoke": "node scripts/roadmap-smoke-test.mjs"
+    "roadmap:smoke": "node scripts/roadmap-smoke-test.mjs",
+    "adr:smoke": "node scripts/adr-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
