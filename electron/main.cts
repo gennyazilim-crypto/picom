@@ -57,6 +57,7 @@ let trayStatus: TrayStatus = "online";
 let trayMuted = false;
 const pendingDeepLinks: string[] = [];
 let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";
@@ -123,13 +124,47 @@ function focusMainWindow(): void {
   mainWindow.focus();
 }
 
-function isSafeDeepLink(value: string): boolean {
-  if (!value || value.length > 512) {
+function isSafeDeepLinkSegment(value: string | undefined): value is string {
+  return Boolean(value && safeDeepLinkSegmentPattern.test(value));
+}
+
+function isSupportedPicomDeepLink(parsed: URL): boolean {
+  if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.search || parsed.hash) {
+    return false;
+  }
+
+  const route = parsed.hostname;
+  const segments = parsed.pathname.split("/").filter(Boolean);
+
+  if (route === "invite") {
+    return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
+  }
+
+  if (route === "community") {
+    const [communityId, channelKeyword, channelId, messageKeyword, messageId] = segments;
+    if (!isSafeDeepLinkSegment(communityId)) return false;
+    if (segments.length === 1) return true;
+    if (segments.length === 3) return channelKeyword === "channel" && isSafeDeepLinkSegment(channelId);
+    if (segments.length === 5) {
+      return (
+        channelKeyword === "channel" &&
+        isSafeDeepLinkSegment(channelId) &&
+        messageKeyword === "message" &&
+        isSafeDeepLinkSegment(messageId)
+      );
+    }
+  }
+
+  return (route === "settings" || route === "friends") && segments.length === 0;
+}
+
+function isSafeDeepLink(value: unknown): value is string {
+  if (typeof value !== "string" || !value || value.length > 512) {
     return false;
   }
 
   try {
-    return new URL(value).protocol === "picom:";
+    return isSupportedPicomDeepLink(new URL(value));
   } catch {
     return false;
   }
@@ -150,6 +185,20 @@ function sendDeepLinkToRenderer(deepLink: string): void {
   }
 
   mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
+}
+
+function handleNativeDeepLink(deepLink: unknown): void {
+  if (!isSafeDeepLink(deepLink)) {
+    return;
+  }
+
+  if (!app.isReady()) {
+    pendingDeepLinks.push(deepLink);
+    return;
+  }
+
+  focusMainWindow();
+  sendDeepLinkToRenderer(deepLink);
 }
 
 function flushPendingDeepLinks(): void {
@@ -769,9 +818,10 @@ if (!hasSingleInstanceLock) {
 } else {
   app.on("second-instance", (_event, argv) => {
     const deepLink = extractDeepLinkFromArgs(argv);
-    focusMainWindow();
     if (deepLink) {
-      sendDeepLinkToRenderer(deepLink);
+      handleNativeDeepLink(deepLink);
+    } else {
+      focusMainWindow();
     }
   });
 
@@ -796,6 +846,11 @@ if (!hasSingleInstanceLock) {
     });
   });
 }
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  handleNativeDeepLink(url);
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

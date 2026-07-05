@@ -47,6 +47,8 @@ type PicomRuntimeInfo = Readonly<{
   }>;
 }>;
 
+const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
+
 function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";
 }
@@ -80,13 +82,47 @@ function invokeWhitelisted(channel: string, ...args: unknown[]): Promise<unknown
   return ipcRenderer.invoke(channel, ...args);
 }
 
+function isSafeDeepLinkSegment(value: string | undefined): value is string {
+  return Boolean(value && safeDeepLinkSegmentPattern.test(value));
+}
+
+function isSupportedPicomDeepLink(parsed: URL): boolean {
+  if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.search || parsed.hash) {
+    return false;
+  }
+
+  const route = parsed.hostname;
+  const segments = parsed.pathname.split("/").filter(Boolean);
+
+  if (route === "invite") {
+    return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
+  }
+
+  if (route === "community") {
+    const [communityId, channelKeyword, channelId, messageKeyword, messageId] = segments;
+    if (!isSafeDeepLinkSegment(communityId)) return false;
+    if (segments.length === 1) return true;
+    if (segments.length === 3) return channelKeyword === "channel" && isSafeDeepLinkSegment(channelId);
+    if (segments.length === 5) {
+      return (
+        channelKeyword === "channel" &&
+        isSafeDeepLinkSegment(channelId) &&
+        messageKeyword === "message" &&
+        isSafeDeepLinkSegment(messageId)
+      );
+    }
+  }
+
+  return (route === "settings" || route === "friends") && segments.length === 0;
+}
+
 function isSafeDeepLink(value: unknown): value is string {
   if (typeof value !== "string" || !value || value.length > 512) {
     return false;
   }
 
   try {
-    return new URL(value).protocol === "picom:";
+    return isSupportedPicomDeepLink(new URL(value));
   } catch {
     return false;
   }

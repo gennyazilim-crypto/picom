@@ -17,6 +17,11 @@ files:
 
 asar: true
 
+protocols:
+  - name: Picom Protocol
+    schemes:
+      - picom
+
 extraMetadata:
   main: dist-electron/main.cjs
 

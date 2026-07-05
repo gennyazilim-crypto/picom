@@ -78,6 +78,9 @@ assertIncludes(builderConfig, "NSScreenCaptureUsageDescription", "macOS screen c
 assertIncludes(builderConfig, "title: Picom ${version}", "macOS dmg title");
 assertIncludes(builderConfig, "publish: null", "publish config");
 assertIncludes(builderConfig, "asar: true", "asar packaging");
+assertIncludes(builderConfig, "protocols:", "custom protocol registration");
+assertIncludes(builderConfig, "name: Picom Protocol", "custom protocol name");
+assertIncludes(builderConfig, "- picom", "custom protocol scheme");
 assertIncludes(builderConfig, "main: dist-electron/main.cjs", "packaged Electron main entry");
 assertIncludes(builderConfig, "dist/**/*", "renderer build files");
 assertIncludes(builderConfig, "dist-electron/**/*", "Electron build files");
@@ -108,10 +111,16 @@ assertIncludes(mainProcess, "allowRunningInsecureContent: false", "blocked insec
 assertIncludes(mainProcess, "devTools: !app.isPackaged", "devtools disabled in packaged builds");
 assertIncludes(mainProcess, 'window.webContents.on("will-navigate"', "blocked top-level external navigation");
 assertIncludes(mainProcess, 'window.webContents.on("will-attach-webview"', "blocked webview attachment");
+assertIncludes(mainProcess, 'app.setAsDefaultProtocolClient("picom"', "registered Picom protocol handler");
+assertIncludes(mainProcess, 'app.on("open-url"', "macOS protocol open-url handler");
+assertIncludes(mainProcess, 'app.on("second-instance"', "second-instance protocol forwarding");
+assertIncludes(mainProcess, "isSupportedPicomDeepLink", "native deep link route allowlist");
 
 assertIncludes(preload, "contextBridge.exposeInMainWorld", "safe preload bridge");
 assertIncludes(preload, "picomDesktop", "Picom preload namespace");
 assertIncludes(preload, "Object.freeze(bridge)", "frozen preload bridge");
+assertIncludes(preload, "deepLinks", "preload deep link bridge");
+assertIncludes(preload, "isSupportedPicomDeepLink", "preload deep link route allowlist");
 
 assertIncludes(gitignore, "dist/", "ignored renderer build output");
 assertIncludes(gitignore, "dist-electron/", "ignored Electron build output");
