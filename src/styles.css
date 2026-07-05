@@ -2020,3 +2020,9 @@ body{
 .blocked-message-placeholder{margin:8px 18px 8px 68px;border:1px dashed var(--border-strong);border-radius:14px;background:var(--surface-soft);padding:10px 12px;color:var(--text-muted);display:grid;gap:3px}
 .blocked-message-placeholder strong{color:var(--text-secondary);font-size:13px}
 .blocked-message-placeholder span{font-size:12px;line-height:1.35}
+/* Task 350: Composer permission states */
+.message-composer.is-disabled{cursor:not-allowed}
+.composer-permission-hint{margin:0 0 8px 44px;border:1px solid color-mix(in srgb,var(--warning) 30%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--warning) 9%,var(--surface));color:var(--text-secondary);padding:9px 12px;font-size:12px;font-weight:800}
+.message-composer.is-disabled .composer-bar{background:color-mix(in srgb,var(--surface-soft) 72%,var(--bg-chat));border-style:dashed}
+.composer-bar textarea:disabled{color:var(--text-muted);cursor:not-allowed}
+.composer-tool:disabled{opacity:.45;cursor:not-allowed}

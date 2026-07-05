@@ -35,11 +35,12 @@ type MessageComposerProps = {
   onTypingStart: () => void;
   onTypingStop: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
+  disabledReason?: string;
 };
 
 const composerEmojiOptions = ["👍", "❤️", "😂", "🔥", "👀"];
 
-export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast }: MessageComposerProps) {
+export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast, disabledReason }: MessageComposerProps) {
   const [body, setBody] = useState(() => messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
@@ -129,6 +130,11 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   }, []);
 
   const addFiles = (files: FileList | File[]) => {
+    if (disabledReason) {
+      pushToast(disabledReason, "info");
+      return;
+    }
+
     const next: LocalAttachmentPreview[] = [];
 
     Array.from(files).forEach((file) => {
@@ -162,6 +168,11 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   };
 
   const send = async () => {
+    if (disabledReason) {
+      pushToast(disabledReason, "info");
+      return;
+    }
+
     const value = body.trim();
     if ((!value && !previews.length) || sending) return;
 
@@ -230,14 +241,16 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
 
   return (
     <footer
-      className={`message-composer ${dragging ? "dragging" : ""}`}
+      className={`message-composer ${dragging ? "dragging" : ""} ${disabledReason ? "is-disabled" : ""}`}
       aria-label="Message composer. Drop image files here to attach them."
       onDragEnter={(event) => {
+        if (disabledReason) return;
         if (!isFileDrag(event.dataTransfer)) return;
         event.preventDefault();
         setDragging(true);
       }}
       onDragOver={(event) => {
+        if (disabledReason) return;
         if (!isFileDrag(event.dataTransfer)) return;
         event.preventDefault();
         setDragging(true);
@@ -248,6 +261,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         setDragging(false);
       }}
       onDrop={(event) => {
+        if (disabledReason) return;
         if (!isFileDrag(event.dataTransfer)) return;
         event.preventDefault();
         setDragging(false);
@@ -265,6 +279,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           </button>
         </div>
       ) : null}
+      {disabledReason ? <div className="composer-permission-hint" role="status">{disabledReason}</div> : null}
       <div className="composer-bar">
         <input
           ref={fileInputRef}
@@ -277,13 +292,14 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
             event.target.value = "";
           }}
         />
-        <button className="composer-tool" aria-label="Attach image" onClick={() => fileInputRef.current?.click()}>
+        <button className="composer-tool" aria-label="Attach image" disabled={Boolean(disabledReason)} onClick={() => fileInputRef.current?.click()}>
           <AppIcon name={composerIcons.attach} size="lg" />
         </button>
         <textarea
           value={body}
-          placeholder={`Message #${channel.name}`}
+          placeholder={disabledReason ?? `Message #${channel.name}`}
           rows={1}
+          disabled={Boolean(disabledReason)}
           onChange={(event) => {
             const nextBody = event.target.value;
             setBody(nextBody);
@@ -292,6 +308,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           }}
           onBlur={stopTypingNow}
           onPaste={(event) => {
+            if (disabledReason) return;
             const files = getClipboardFiles(event.clipboardData);
             if (!files.length) return;
 
@@ -299,17 +316,18 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
             addFiles(files);
           }}
           onKeyDown={(event) => {
+            if (disabledReason) return;
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               send();
             }
           }}
         />
-        <button className="composer-tool" aria-label="Emoji" onClick={() => setEmojiPickerOpen((current) => !current)}>
+        <button className="composer-tool" aria-label="Emoji" disabled={Boolean(disabledReason)} onClick={() => setEmojiPickerOpen((current) => !current)}>
           <AppIcon name={composerIcons.emoji} size="lg" />
         </button>
-        <button className="composer-tool text-tool" aria-label="GIF placeholder">GIF</button>
-        <button className="send-button" disabled={sending || (!body.trim() && !previews.length)} onClick={send}>
+        <button className="composer-tool text-tool" aria-label="GIF placeholder" disabled={Boolean(disabledReason)}>GIF</button>
+        <button className="send-button" disabled={Boolean(disabledReason) || sending || (!body.trim() && !previews.length)} onClick={send}>
           <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
         </button>
       </div>

@@ -78,6 +78,12 @@ export function ChatMain({
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
   const replyToMember = replyToMessage ? community.members.find((member) => member.userId === replyToMessage.authorId) : undefined;
   const currentMember = useMemo(() => community.members.find((member) => member.userId === currentUserId), [community.members, currentUserId]);
+  const currentRole = useMemo(() => community.roles.find((role) => role.id === currentMember?.roleId), [community.roles, currentMember?.roleId]);
+  const composerDisabledReason = useMemo(() => {
+    if (!currentMember) return "You need to be a community member to send messages in this channel.";
+    if ((currentRole?.level ?? 0) < 10) return "You do not have permission to send messages in this channel.";
+    return undefined;
+  }, [currentMember, currentRole?.level]);
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
 
   useEffect(() => {
@@ -201,6 +207,7 @@ export function ChatMain({
             onTypingStart={onTypingStart}
             onTypingStop={onTypingStop}
             pushToast={pushToast}
+            disabledReason={composerDisabledReason}
           />
         </>
       )}
