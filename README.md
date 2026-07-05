@@ -47,6 +47,31 @@ Open the local Vite URL and use a desktop viewport such as `1440x900`.
 Use `.env.beta.example` as the template for beta smoke testing against Supabase and LiveKit placeholders.
 See `docs/beta-environment.md` for the secret-safety rules and manual setup steps.
 
+## Quality and diagnostics gates
+
+Use the lightweight QA gate after scoped implementation tasks:
+
+```bash
+npm run qa:smoke
+npm run typecheck
+npm run build
+```
+
+The combined `qa:smoke` command runs:
+
+- `npm run diagnostics:smoke`
+- `npm run errors:smoke`
+- `npm run crash:smoke`
+- `npm run secrets:smoke`
+- `npm run renderer:native:smoke`
+- `npm run branding:smoke`
+- `npm run desktop:smoke`
+- `npm run electron:security:smoke`
+- `npm run settings:diagnostics:smoke`
+- `npm run mock:smoke`
+
+Use the individual commands when a task only touches one area. See `docs/qa-smoke-gate.md`, `docs/diagnostics-logging-qa.md`, and `docs/error-handling-qa.md` for the checklists and redaction rules.
+
 ## Packaging
 
 Picom uses `electron-builder` for Windows, Linux, and macOS package preparation.
