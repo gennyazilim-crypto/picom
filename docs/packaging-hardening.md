@@ -39,6 +39,8 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 | macOS | dmg x64 | Placeholder configured |
 | macOS | zip x64 | Placeholder configured |
 
+Artifact names include the Picom product name, package version, target platform, and architecture to keep smoke-test outputs easy to identify.
+
 ## Icon and metadata checks
 
 - Windows icon: `assets/brand/app-icon.ico`
