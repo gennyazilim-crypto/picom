@@ -12,6 +12,7 @@ const checks = [
   ["run", "branding:smoke"],
   ["run", "desktop:smoke"],
   ["run", "electron:security:smoke"],
+  ["run", "packaging:smoke"],
   ["run", "settings:diagnostics:smoke"],
   ["run", "livekit:smoke"],
   ["run", "mock:smoke"]

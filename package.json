@@ -23,6 +23,7 @@
     "package:mac:zip": "npm run build && electron-builder --mac zip --x64",
     "package:mac": "npm run build && electron-builder --mac --x64",
     "package:verify": "node scripts/verify-electron-packaging.mjs",
+    "packaging:smoke": "node scripts/verify-electron-packaging.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "logs:smoke": "node scripts/logging-service-smoke-test.mjs",
     "diagnostics:smoke": "node scripts/diagnostics-redaction-smoke-test.mjs",
