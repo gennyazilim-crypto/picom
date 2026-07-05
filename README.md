@@ -55,6 +55,8 @@ npm run package:win
 npm run package:linux:appimage
 npm run package:linux:deb
 npm run package:linux
+npm run package:mac:dmg
+npm run package:mac:zip
 npm run package:mac
 ```
 
@@ -62,6 +64,7 @@ npm run package:mac
 - `npm run package:win:dir` creates an unpacked Windows x64 smoke build.
 - `npm run package:linux:appimage` creates a Linux AppImage target on a Linux host/CI runner.
 - `npm run package:linux:deb` creates a Debian/Ubuntu `.deb` package on a Linux host/CI runner.
+- `npm run package:mac:dmg` and `npm run package:mac:zip` create macOS artifacts on a macOS host/CI runner.
 - Windows builds target an unsigned NSIS x64 installer.
 - Linux builds target AppImage x64 and deb x64.
 - macOS builds target an unsigned dmg x64 placeholder.
