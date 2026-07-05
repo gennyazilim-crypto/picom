@@ -93,7 +93,8 @@
     "version-compatibility:smoke": "node scripts/version-compatibility-smoke-test.mjs",
     "realtime-scaling:smoke": "node scripts/realtime-scaling-smoke-test.mjs",
     "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs",
-    "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs"
+    "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs",
+    "attachment-delivery:smoke": "node scripts/attachment-delivery-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
