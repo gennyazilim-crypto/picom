@@ -6,6 +6,7 @@ const checks = [
   ["run", "diagnostics:smoke"],
   ["run", "errors:smoke"],
   ["run", "crash:smoke"],
+  ["run", "secrets:smoke"],
   ["run", "mock:smoke"]
 ];
 
