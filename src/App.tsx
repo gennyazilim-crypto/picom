@@ -42,6 +42,7 @@ import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
 import { FriendsView } from "./components/FriendsView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
+import { CrashRecoveryDialog } from "./components/CrashRecoveryDialog";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
 import { diagnosticsService } from "./services/diagnosticsService";
@@ -52,6 +53,7 @@ import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { trayService, type TrayStatus } from "./services/trayService";
 import { maintenanceStatusService } from "./services/maintenanceStatusService";
+import { crashRecoveryService, type CrashRecoveryRecord } from "./services/crashRecoveryService";
 import { safeModeService, type SafeModeState } from "./services/safeModeService";
 import { statusPageService } from "./services/statusPageService";
 import { authService } from "./services/authService";
@@ -218,6 +220,10 @@ function CommandPalette({
 export function App() {
   const startupSafeMode = safeModeService.getStartupState();
   const saved = startupSafeMode.active ? settingsService.getDefaultSettings() : settingsService.getSettings();
+  const [crashRecoveryRecord, setCrashRecoveryRecord] = useState<CrashRecoveryRecord | null>(() => {
+    const record = crashRecoveryService.recordStartupOpened();
+    return record && crashRecoveryService.shouldShowRecoveryDialog() ? record : null;
+  });
   const [safeMode, setSafeMode] = useState<SafeModeState>(startupSafeMode);
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
   const [accessibilitySettings, setAccessibilitySettings] = useState(saved.accessibilitySettings);
@@ -327,6 +333,21 @@ export function App() {
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    const stableTimer = window.setTimeout(() => {
+      crashRecoveryService.recordStartupStable();
+    }, 3000);
+    const recordCleanShutdown = () => crashRecoveryService.recordCleanShutdown();
+
+    window.addEventListener("beforeunload", recordCleanShutdown);
+
+    return () => {
+      window.clearTimeout(stableTimer);
+      window.removeEventListener("beforeunload", recordCleanShutdown);
+      crashRecoveryService.recordCleanShutdown();
+    };
+  }, []);
 
   const mapMessageSummaryToMessage = useCallback((message: MessageSummary): Message => ({
     id: message.id,
@@ -542,6 +563,32 @@ export function App() {
     setSafeMode(safeModeService.getStartupState());
     safeModeService.restartNormally();
   }, []);
+  const continueAfterCrashRecovery = useCallback(() => {
+    crashRecoveryService.dismissRecoveryDialog();
+    setCrashRecoveryRecord(null);
+    pushToast("Continuing normally after recovery check.", "success");
+  }, [pushToast]);
+  const startSafeModeFromCrashRecovery = useCallback(() => {
+    crashRecoveryService.dismissRecoveryDialog();
+    safeModeService.enableSafeMode("manual_flag");
+    setCrashRecoveryRecord(null);
+    window.location.reload();
+  }, []);
+  const exportCrashRecoveryLogs = useCallback(() => {
+    const result = crashRecoveryService.exportDiagnosticsFile();
+    pushToast(result.message, "success");
+  }, [pushToast]);
+  const resetSettingsFromCrashRecovery = useCallback(() => {
+    void safeModeService.resetSettings().then((result) => {
+      const defaults = settingsService.getDefaultSettings();
+      setTheme(defaults.theme);
+      setAccessibilitySettings(defaults.accessibilitySettings);
+      setProfileSettings(defaults.profileSettings);
+      crashRecoveryService.clearCrashState();
+      setCrashRecoveryRecord(null);
+      pushToast(result.message, "success");
+    });
+  }, [pushToast]);
   const handlePasswordResetRequest = useCallback(async (email: string) => {
     const result = await authService.requestPasswordReset(email);
     if (!result.ok) {
@@ -1864,6 +1911,15 @@ export function App() {
       {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} /> : null}
       {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onViewProfile={openProfilePage} onReportUser={handleReportUser} isBlocked={blockedUserIds.includes(profile.member.userId)} onToggleBlock={handleToggleBlockUser} /> : null}
       {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
+      {crashRecoveryRecord ? (
+        <CrashRecoveryDialog
+          record={crashRecoveryRecord}
+          onContinue={continueAfterCrashRecovery}
+          onSafeMode={startSafeModeFromCrashRecovery}
+          onExportLogs={exportCrashRecoveryLogs}
+          onResetSettings={resetSettingsFromCrashRecovery}
+        />
+      ) : null}
       {isAppLocked ? <AppLockScreen currentUser={displayedCurrentUser} onUnlock={unlockApp} onLogout={logoutFromLockScreen} /> : null}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>
