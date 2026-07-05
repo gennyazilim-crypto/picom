@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import type { Community, Member } from "../types/community";
 import { MemberAvatar } from "./MemberAvatar";
 
@@ -9,9 +9,11 @@ type UserProfilePopoverProps = {
   y: number;
   onClose: () => void;
   onReportUser?: (member: Member) => void;
+  isBlocked?: boolean;
+  onToggleBlock?: (member: Member) => void;
 };
 
-export function UserProfilePopover({ member, community, x, y, onClose, onReportUser }: UserProfilePopoverProps) {
+export function UserProfilePopover({ member, community, x, y, onClose, onReportUser, isBlocked = false, onToggleBlock }: UserProfilePopoverProps) {
   useEffect(() => {
     const close = () => onClose();
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -44,6 +46,7 @@ export function UserProfilePopover({ member, community, x, y, onClose, onReportU
           <button>Message</button>
           <button>View profile</button>
           {onReportUser ? <button onClick={() => onReportUser(member)}>Report</button> : null}
+          {onToggleBlock ? <button onClick={() => onToggleBlock(member)}>{isBlocked ? "Unblock" : "Block"}</button> : null}
         </div>
       </div>
     </section>

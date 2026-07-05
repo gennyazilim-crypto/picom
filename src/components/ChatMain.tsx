@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
 import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
@@ -44,6 +44,7 @@ type ChatMainProps = {
   onSaveEditMessage: (message: Message, body: string) => void;
   onDeleteMessage: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
+  blockedUserIds?: string[];
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
@@ -71,6 +72,7 @@ export function ChatMain({
   onSaveEditMessage,
   onDeleteMessage,
   onToggleReaction,
+  blockedUserIds = [],
   pushToast,
 }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);

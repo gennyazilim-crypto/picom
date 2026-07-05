@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Community, Member, Message } from "../types/community";
 import { MessageItem } from "./MessageItem";
@@ -19,6 +19,7 @@ type MessageListProps = {
   onSaveEdit: (message: Message, body: string) => void;
   onDelete: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
+  blockedUserIds?: string[];
 };
 
 function formatTypingNames(names: string[]): string {
@@ -46,6 +47,7 @@ export function MessageList({
   onSaveEdit,
   onDelete,
   onToggleReaction,
+  blockedUserIds = [],
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const lastMessageId = messages[messages.length - 1]?.id;
@@ -76,6 +78,19 @@ export function MessageList({
         const replyToMessage = message.replyToMessageId ? messages.find((candidate) => candidate.id === message.replyToMessageId) : null;
         const replyToMember = replyToMessage ? community.members.find((candidate) => candidate.userId === replyToMessage.authorId) : undefined;
         const ownMessage = message.authorId === currentUserId;
+        const blockedUserMessage = !ownMessage && blockedUserIds.includes(member.userId);
+
+        if (blockedUserMessage) {
+          return (
+            <div key={message.id}>
+              {index === Math.max(1, Math.floor(messages.length / 2)) ? <UnreadDivider /> : null}
+              <div className="blocked-message-placeholder">
+                <strong>Blocked user message</strong>
+                <span>Message hidden from {member.displayName}. Open their profile to unblock.</span>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div key={message.id}>

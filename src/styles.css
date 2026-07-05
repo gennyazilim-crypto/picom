@@ -2017,3 +2017,6 @@ body{
 .moderation-filter-card textarea:focus,.moderation-filter-card input:focus{box-shadow:var(--focus-ring)}
 .moderation-filter-card label{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:8px;align-items:center;color:var(--text-muted);font-size:12px;font-weight:800}
 .moderation-filter-card button{height:32px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-primary);font-size:12px;font-weight:800;padding:0 10px;cursor:pointer}
+.blocked-message-placeholder{margin:8px 18px 8px 68px;border:1px dashed var(--border-strong);border-radius:14px;background:var(--surface-soft);padding:10px 12px;color:var(--text-muted);display:grid;gap:3px}
+.blocked-message-placeholder strong{color:var(--text-secondary);font-size:13px}
+.blocked-message-placeholder span{font-size:12px;line-height:1.35}

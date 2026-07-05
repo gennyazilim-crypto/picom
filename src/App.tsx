@@ -52,6 +52,7 @@ import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { reportService } from "./services/reportService";
+import { userBlockingService } from "./services/userBlockingService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
@@ -192,6 +193,7 @@ export function App() {
   const [directConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
+  const [blockedUserVersion, setBlockedUserVersion] = useState(0);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
@@ -407,6 +409,7 @@ export function App() {
     };
   }, [activeCommunity, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
+  const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const replyToMessage = useMemo(
     () => displayedActiveCommunity.messages.find((message) => message.id === replyToMessageId && message.channelId === activeChannel.id) ?? null,
     [activeChannel.id, displayedActiveCommunity.messages, replyToMessageId],
@@ -1219,6 +1222,17 @@ export function App() {
     pushToast(result.ok ? "User report placeholder submitted." : result.message, result.ok ? "success" : "error");
   };
 
+  const handleToggleBlockUser = (member: Member) => {
+    if (member.userId === currentUser.userId) {
+      pushToast("You cannot block your own account.", "error");
+      return;
+    }
+
+    const result = userBlockingService.toggleBlockedUser(member);
+    setBlockedUserVersion((version) => version + 1);
+    pushToast(result.blocked ? `${member.displayName} blocked locally.` : `${member.displayName} unblocked locally.`, result.blocked ? "info" : "success");
+  };
+
   const handleCreateCommunity = async (name: string, description?: string, templateId?: CommunityTemplateId) => {
     const result = await communityService.createCommunity({ name, description, templateId });
 
@@ -1533,7 +1547,7 @@ export function App() {
         />
       ) : null}
       {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} /> : null}
-      {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onReportUser={handleReportUser} /> : null}
+      {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onReportUser={handleReportUser} isBlocked={blockedUserIds.includes(profile.member.userId)} onToggleBlock={handleToggleBlockUser} /> : null}
       {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>
