@@ -2,6 +2,7 @@ import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { fileService } from "./fileService";
 import { attachmentThumbnailService } from "./attachmentThumbnailService";
+import { attachmentScanService, type AttachmentScanStatus } from "./attachmentScanService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 
 export const MESSAGE_ATTACHMENTS_BUCKET = "message-attachments" as const;
@@ -26,6 +27,7 @@ export type UploadedAttachmentSummary = Readonly<{
   width: number | null;
   height: number | null;
   blurhashPlaceholder: string | null;
+  scanStatus: AttachmentScanStatus;
 }>;
 
 export type UploadServiceErrorCode =
@@ -119,6 +121,11 @@ export const uploadService = {
         mimeType: input.file.type,
         sizeBytes: input.file.size,
       });
+      const scan = attachmentScanService.scanFilePlaceholder({
+        fileName: input.file.name,
+        mimeType: input.file.type,
+        sizeBytes: input.file.size,
+      });
       return {
         ok: true,
         data: {
@@ -134,6 +141,7 @@ export const uploadService = {
           width: thumbnail.width,
           height: thumbnail.height,
           blurhashPlaceholder: thumbnail.blurhashPlaceholder,
+          scanStatus: scan.status,
         },
       };
     }
@@ -173,6 +181,11 @@ export const uploadService = {
       mimeType: input.file.type,
       sizeBytes: input.file.size,
     });
+    const scan = attachmentScanService.scanFilePlaceholder({
+      fileName: input.file.name,
+      mimeType: input.file.type,
+      sizeBytes: input.file.size,
+    });
 
     return {
       ok: true,
@@ -189,6 +202,7 @@ export const uploadService = {
         width: thumbnail.width,
         height: thumbnail.height,
         blurhashPlaceholder: thumbnail.blurhashPlaceholder,
+        scanStatus: scan.status,
       },
     };
   },

@@ -1,6 +1,7 @@
 import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
+import type { AttachmentScanStatus } from "./attachmentScanService";
 import type { UploadedAttachmentSummary } from "./uploadService";
 
 export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, status, created_at" as const;
@@ -36,6 +37,7 @@ export type AttachmentMetadataSummary = Readonly<{
   width: number | null;
   height: number | null;
   blurhashPlaceholder: string | null;
+  scanStatus: AttachmentScanStatus;
   status: "pending" | "attached" | "failed";
   createdAt: string;
 }>;
@@ -78,6 +80,7 @@ function mapAttachmentMetadataRow(row: AttachmentMetadataRow): AttachmentMetadat
     width: row.width,
     height: row.height,
     blurhashPlaceholder: null,
+    scanStatus: "skipped_development",
     status: row.status,
     createdAt: row.created_at,
   };
@@ -126,6 +129,7 @@ export const attachmentService = {
           width: upload.width,
           height: upload.height,
           blurhashPlaceholder: upload.blurhashPlaceholder,
+          scanStatus: upload.scanStatus,
           status: "pending",
           createdAt: new Date().toISOString(),
         },
@@ -167,6 +171,6 @@ export const attachmentService = {
       return attachmentError("ATTACHMENT_METADATA_CREATE_FAILED", "Could not save attachment metadata.");
     }
 
-    return { ok: true, data: mapAttachmentMetadataRow(data) };
+    return { ok: true, data: { ...mapAttachmentMetadataRow(data), scanStatus: upload.scanStatus } };
   },
 };

@@ -2098,3 +2098,6 @@ body{
 
 /* Task 393: safe external message links */
 .message-text{white-space:pre-wrap}.message-link-button{border:0;background:transparent;color:var(--accent);font:inherit;font-weight:700;padding:0 1px;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;cursor:pointer}.message-link-button:hover{color:var(--picom-orange)}.message-link-button:focus-visible{outline:none;border-radius:6px;box-shadow:var(--focus-ring)}
+
+/* Task 395: attachment scan blocked state */
+.attachment-card-blocked{display:grid;place-items:center;align-content:center;gap:6px;padding:14px;text-align:center;color:var(--text-muted);cursor:not-allowed}.attachment-card-blocked strong{color:var(--danger);font-size:13px}.attachment-card-blocked span{max-width:220px;font-size:12px;line-height:1.35}

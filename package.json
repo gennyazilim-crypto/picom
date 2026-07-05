@@ -121,7 +121,8 @@
     "desktop:ipc:security:smoke": "node scripts/desktop-ipc-security-audit-smoke-test.mjs",
     "csp:smoke": "node scripts/content-security-policy-smoke-test.mjs",
     "external-links:smoke": "node scripts/external-link-service-smoke-test.mjs",
-    "thumbnails:smoke": "node scripts/image-thumbnail-placeholder-smoke-test.mjs"
+    "thumbnails:smoke": "node scripts/image-thumbnail-placeholder-smoke-test.mjs",
+    "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

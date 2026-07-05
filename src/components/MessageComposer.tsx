@@ -187,6 +187,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
       width: number | null;
       height: number | null;
       blurhashPlaceholder: string | null;
+      scanStatus: Attachment["scanStatus"];
     }>();
 
     for (const preview of previews) {
@@ -219,6 +220,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         width: metadata.data.width,
         height: metadata.data.height,
         blurhashPlaceholder: metadata.data.blurhashPlaceholder,
+        scanStatus: metadata.data.scanStatus,
       });
     }
 
@@ -237,6 +239,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         width: persisted?.width ?? undefined,
         height: persisted?.height ?? undefined,
         blurhashPlaceholder: persisted?.blurhashPlaceholder,
+        scanStatus: persisted?.scanStatus,
         alt: persisted?.fileName ?? preview.name,
       };
     });

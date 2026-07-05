@@ -10,6 +10,7 @@ export type AttachmentId = string;
 export type UserStatus = "online" | "idle" | "dnd" | "offline";
 export type ChannelType = "text" | "voice";
 export type AttachmentType = "image";
+export type AttachmentScanStatus = "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
 export type RoleName = "Owner" | "Admin" | "Moderator" | "Member" | "Guest";
 
 export interface Role {
@@ -50,6 +51,7 @@ export interface Attachment {
   width?: number;
   height?: number;
   blurhashPlaceholder?: string | null;
+  scanStatus?: AttachmentScanStatus;
 }
 
 export interface Message {
