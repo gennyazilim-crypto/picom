@@ -9,6 +9,7 @@ import { sessionManagementService, type SessionDeviceSummary } from "../services
 import { twoFactorAuthService } from "../services/twoFactorAuthService";
 import { accountDeletionService } from "../services/accountDeletionService";
 import { dataExportService } from "../services/dataExportService";
+import { appLockService } from "../services/appLockService";
 import { shortcutService } from "../services/shortcutService";
 import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
@@ -45,6 +46,7 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [accountDeletionStatus, setAccountDeletionStatus] = useState(() => accountDeletionService.getStatus());
   const [accountDeletionConfirmText, setAccountDeletionConfirmText] = useState("");
   const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
+  const [appLockSettings, setAppLockSettings] = useState(() => appLockService.getSettings());
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
@@ -141,6 +143,11 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     const next = startupService.setStartMinimizedToTray(enabled);
     setStartupSettings(next);
     pushToast(enabled ? "Start minimized to tray placeholder enabled locally." : "Start minimized to tray placeholder disabled locally.", "info");
+  };
+  const updateLockAfterInactivity = (enabled: boolean) => {
+    const next = appLockService.updateSettings({ lockAfterInactivityEnabled: enabled });
+    setAppLockSettings(next);
+    pushToast(enabled ? "Inactivity lock placeholder enabled locally." : "Inactivity lock placeholder disabled locally.", "info");
   };
   const requestEmailVerification = async () => {
     const result = await authService.requestEmailVerification();
@@ -461,6 +468,18 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                   <small>Prepared for future tray startup behavior; currently stored as a local preference.</small>
                 </span>
                 <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => updateStartMinimizedToTray(event.target.checked)} />
+              </label>
+              <div className="settings-status-card" aria-label="App lock placeholder">
+                <span>App lock</span>
+                <strong>Ctrl + Shift + L</strong>
+                <small>Quick lock hides chat content without storing a password locally. Future Supabase re-auth can replace the placeholder unlock.</small>
+              </div>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Lock app after inactivity placeholder</strong>
+                  <small>Preference saved locally. Automatic idle locking is intentionally deferred until native idle detection is approved.</small>
+                </span>
+                <input type="checkbox" checked={appLockSettings.lockAfterInactivityEnabled} onChange={(event) => updateLockAfterInactivity(event.target.checked)} />
               </label>
               <div className="settings-status-card" aria-label="Beta feedback and logs placeholder">
                 <span>Beta support</span>

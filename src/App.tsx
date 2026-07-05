@@ -28,6 +28,7 @@ import { RegisterScreen } from "./components/RegisterScreen";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
+import { AppLockScreen } from "./components/AppLockScreen";
 import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { ProfileView } from "./components/ProfileView";
@@ -210,6 +211,7 @@ export function App() {
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [isAppLocked, setIsAppLocked] = useState(false);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
   const {
@@ -465,6 +467,19 @@ export function App() {
     pushToast(result.data.message, "success");
     return result.data.message;
   }, [pushToast]);
+  const lockApp = useCallback(() => {
+    closeTransientOverlays();
+    closePalette();
+    setIsAppLocked(true);
+  }, [closePalette, closeTransientOverlays]);
+  const unlockApp = useCallback(() => {
+    setIsAppLocked(false);
+    pushToast("Picom unlocked locally.", "success");
+  }, [pushToast]);
+  const logoutFromLockScreen = useCallback(() => {
+    setIsAppLocked(false);
+    void handleLogout();
+  }, [handleLogout]);
 
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
@@ -641,6 +656,12 @@ export function App() {
         return;
       }
 
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "l") {
+        event.preventDefault();
+        lockApp();
+        return;
+      }
+
       if (event.altKey && event.key === "ArrowUp") {
         event.preventDefault();
         selectChannelByOffset(-1);
@@ -660,7 +681,7 @@ export function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeChannel.id, channels, closeTransientOverlays, openPalette, openSettings, selectChannelByOffset]);
+  }, [activeChannel.id, channels, closeTransientOverlays, lockApp, openPalette, openSettings, selectChannelByOffset]);
 
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
@@ -848,6 +869,16 @@ export function App() {
         },
       },
       {
+        id: "cmd-lock-app",
+        group: "Commands",
+        label: "Lock app",
+        detail: "Ctrl + Shift + L",
+        run: () => {
+          lockApp();
+          closePalette();
+        },
+      },
+      {
         id: "cmd-mention-feed",
         group: "Navigation",
         label: "Open mention feed",
@@ -954,7 +985,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
+  }, [clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");
@@ -1601,6 +1632,7 @@ export function App() {
       {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} /> : null}
       {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onReportUser={handleReportUser} isBlocked={blockedUserIds.includes(profile.member.userId)} onToggleBlock={handleToggleBlockUser} /> : null}
       {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
+      {isAppLocked ? <AppLockScreen currentUser={displayedCurrentUser} onUnlock={unlockApp} onLogout={logoutFromLockScreen} /> : null}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>
   );
