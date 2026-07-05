@@ -83,6 +83,10 @@ Function-specific environment variables are documented in `docs/edge-function-en
 - Edge Function secrets do not use `VITE_` and must stay in Supabase secret storage or local function-only `.env` files.
 - Add a variable to the function matrix before making a function depend on it.
 
+## Staging deployment
+
+Staging deployment assumptions, verification steps, and rollback notes are documented in `docs/edge-functions-staging-deploy.md`.
+
 ## Local invocation
 
 When the Supabase CLI is available:
