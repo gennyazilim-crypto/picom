@@ -41,6 +41,8 @@ Task 255 records the current packaging hardening posture for Picom's Electron de
 
 Artifact names include the Picom product name, package version, target platform, and architecture to keep smoke-test outputs easy to identify.
 
+Windows local builds use `requestedExecutionLevel: asInvoker` and the assisted NSIS installer mode so smoke tests do not require forced elevation by default.
+
 ## Icon and metadata checks
 
 - Windows icon: `assets/brand/app-icon.ico`
