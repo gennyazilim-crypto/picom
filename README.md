@@ -42,6 +42,11 @@ npm run dev
 
 Open the local Vite URL and use a desktop viewport such as `1440x900`.
 
+## Beta environment
+
+Use `.env.beta.example` as the template for beta smoke testing against Supabase and LiveKit placeholders.
+See `docs/beta-environment.md` for the secret-safety rules and manual setup steps.
+
 ## Packaging
 
 Picom uses `electron-builder` for Windows, Linux, and macOS package preparation.
