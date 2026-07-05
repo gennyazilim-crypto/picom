@@ -28,6 +28,18 @@ function findMemberForParticipant(community: Community, participant: VoicePartic
   return community.members.find((member) => member.userId === participant.identity || member.displayName === participant.name);
 }
 
+function getParticipantStatus(participant: VoiceParticipant): string {
+  if (!participant.isMicrophoneEnabled) {
+    return participant.isLocal ? "You · muted" : "Muted";
+  }
+
+  if (participant.isSpeaking) {
+    return "Speaking";
+  }
+
+  return participant.isLocal ? "You" : "Connected";
+}
+
 export function VoiceRoomView({
   community,
   channel,
@@ -100,12 +112,19 @@ export function VoiceRoomView({
             <div className="voice-participant-list">
               {snapshot.participants.map((participant) => {
                 const member = findMemberForParticipant(community, participant);
+                const rowState = [
+                  "voice-participant-row",
+                  participant.isSpeaking ? "is-speaking" : "",
+                  !participant.isMicrophoneEnabled ? "is-muted" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
                 return (
-                  <div className={`voice-participant-row ${participant.isSpeaking ? "is-speaking" : ""}`} key={participant.identity}>
+                  <div className={rowState} key={participant.identity}>
                     <MemberAvatar member={member} label={participant.name} size={38} />
                     <span>
                       <strong>{member?.displayName ?? participant.name}</strong>
-                      <small>{participant.isSpeaking ? "Speaking" : participant.isLocal ? "You" : "Connected"}</small>
+                      <small>{getParticipantStatus(participant)}</small>
                     </span>
                   </div>
                 );

@@ -86,6 +86,14 @@ Leaving a room must release local capture resources before disconnecting:
 - Speaking state is cleared on participant disconnect, room disconnect, leave, and reconnect cleanup paths.
 - No audio samples, device identifiers, tokens, or secrets are logged or persisted.
 
+## Participant list behavior
+
+- The participant list is read from the active LiveKit room in renderer memory.
+- The list includes the local user first, then remote connected participants.
+- Track mute/unmute, publish/unpublish, name changes, active speaker changes, and participant join/leave events refresh the list.
+- Rows show compact states for local user, connected users, muted microphones, and speaking users.
+- The list does not expose device IDs, tokens, IP addresses, or raw LiveKit secrets.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.

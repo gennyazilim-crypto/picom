@@ -21,6 +21,7 @@ export type VoiceParticipant = Readonly<{
   name: string;
   isLocal: boolean;
   isSpeaking: boolean;
+  isMicrophoneEnabled: boolean;
 }>;
 
 export type VoiceServiceSnapshot = Readonly<{
@@ -80,6 +81,7 @@ function mapParticipant(participant: RemoteParticipant): VoiceParticipant {
     name: participant.name || participant.identity,
     isLocal: false,
     isSpeaking: speakingIdentities.has(participant.identity),
+    isMicrophoneEnabled: participant.isMicrophoneEnabled,
   };
 }
 
@@ -92,9 +94,14 @@ function getParticipants(activeRoom: Room): VoiceParticipant[] {
       name: activeRoom.localParticipant.name || activeRoom.localParticipant.identity,
       isLocal: true,
       isSpeaking: speakingIdentities.has(activeRoom.localParticipant.identity),
+      isMicrophoneEnabled: activeRoom.localParticipant.isMicrophoneEnabled,
     },
     ...remoteParticipants,
   ];
+}
+
+function emitParticipants(activeRoom: Room): void {
+  emit({ participants: getParticipants(activeRoom) });
 }
 
 function applyRemoteAudioSubscription(activeRoom: Room, subscribed: boolean): void {
@@ -126,16 +133,23 @@ function bindRoomEvents(activeRoom: Room): void {
     })
     .on(RoomEvent.ParticipantConnected, () => {
       if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
-      emit({ participants: getParticipants(activeRoom) });
+      emitParticipants(activeRoom);
     })
     .on(RoomEvent.ParticipantDisconnected, (participant) => {
       speakingIdentities.delete(participant.identity);
-      emit({ participants: getParticipants(activeRoom) });
+      emitParticipants(activeRoom);
     })
     .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
       speakingIdentities = new Set(speakers.map((speaker) => speaker.identity));
-      emit({ participants: getParticipants(activeRoom) });
+      emitParticipants(activeRoom);
     })
+    .on(RoomEvent.ParticipantNameChanged, () => emitParticipants(activeRoom))
+    .on(RoomEvent.TrackMuted, () => emitParticipants(activeRoom))
+    .on(RoomEvent.TrackUnmuted, () => emitParticipants(activeRoom))
+    .on(RoomEvent.TrackPublished, () => emitParticipants(activeRoom))
+    .on(RoomEvent.TrackUnpublished, () => emitParticipants(activeRoom))
+    .on(RoomEvent.LocalTrackPublished, () => emitParticipants(activeRoom))
+    .on(RoomEvent.LocalTrackUnpublished, () => emitParticipants(activeRoom))
     .on(RoomEvent.Disconnected, () => {
       speakingIdentities = new Set<string>();
       emit({ status: "disconnected", participants: [], roomName: null });
@@ -255,6 +269,7 @@ export const voiceService = {
       emit({
         muted,
         error: null,
+        participants: getParticipants(room),
         status: room.state === ConnectionState.Reconnecting ? "reconnecting" : "connected",
       });
       return { ok: true, data: snapshot };
