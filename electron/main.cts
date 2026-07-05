@@ -9,6 +9,7 @@ import {
   Tray,
   nativeImage,
   dialog,
+  clipboard,
   type OpenDialogOptions,
   type SaveDialogOptions
 } from "electron";
@@ -228,6 +229,7 @@ const imageMimeByExtension = new Map([
   [".gif", "image/gif"]
 ]);
 const maxNativePickedImageBytes = 10 * 1024 * 1024;
+const maxClipboardTextLength = 1024 * 1024;
 
 function sanitizeDefaultFileName(value: unknown): string {
   const fallback = "picom-export.txt";
@@ -250,6 +252,14 @@ function parseSaveTextPayload(value: unknown): { defaultPath: string; content: s
     defaultPath: sanitizeDefaultFileName(record.defaultPath),
     content: record.content.slice(0, 2 * 1024 * 1024)
   };
+}
+
+function parseClipboardWritePayload(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  return value.slice(0, maxClipboardTextLength);
 }
 
 function sendWindowMaximizeState(window: BrowserWindow): void {
@@ -460,6 +470,32 @@ function registerIpcHandlers(): void {
       return { ok: true, native: true, canceled: false } as const;
     } catch {
       return { ok: false, native: true, error: "SAVE_TEXT_FAILED" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.clipboardReadText, () => {
+    try {
+      return {
+        ok: true,
+        native: true,
+        text: clipboard.readText().slice(0, maxClipboardTextLength)
+      } as const;
+    } catch {
+      return { ok: false, native: true, error: "CLIPBOARD_READ_FAILED" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.clipboardWriteText, (_event, payload: unknown) => {
+    const safeText = parseClipboardWritePayload(payload);
+    if (safeText === null) {
+      return { ok: false, native: true, error: "INVALID_CLIPBOARD_TEXT" } as const;
+    }
+
+    try {
+      clipboard.writeText(safeText);
+      return { ok: true, native: true } as const;
+    } catch {
+      return { ok: false, native: true, error: "CLIPBOARD_WRITE_FAILED" } as const;
     }
   });
 }

@@ -76,3 +76,28 @@ Manual verification:
 3. Confirm the native image picker opens and returns selected image files without exposing paths.
 4. Trigger `fileService.saveText("picom-test.txt", "Picom file bridge test")`.
 5. Confirm the native save dialog opens and writes the selected file.
+
+## Clipboard bridge
+
+- Renderer entry point: `src/services/clipboardService.ts`
+- Preload bridge: `window.picomDesktop.clipboard`
+- IPC channels:
+  - `picom:clipboard-read-text`
+  - `picom:clipboard-write-text`
+- Main process API: Electron `clipboard`
+
+Safety rules:
+
+- React components should call `clipboardService`, not Electron APIs.
+- Clipboard text payloads are validated and capped before the main process writes them.
+- Clipboard reads return text only and never expose native clipboard objects.
+- The service falls back to the browser Clipboard API when the Electron bridge is unavailable.
+- Clipboard payloads should not include passwords, auth tokens, Supabase keys, LiveKit tokens, or other secrets.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Trigger `clipboardService.copyText("Picom clipboard bridge test")`.
+3. Paste into a safe text field and confirm the text appears.
+4. Copy text from another app, trigger `clipboardService.readText()`, and confirm text is returned.
+5. Run the same calls in browser dev mode and confirm fallback behavior is safe.

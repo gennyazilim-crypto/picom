@@ -182,6 +182,18 @@ const bridge = Object.freeze({
         | { ok: true; native: true; canceled: boolean }
         | { ok: false; native: true; error: string }
       >
+  },
+  clipboard: {
+    readText: () =>
+      invokeWhitelisted(IPC_CHANNELS.clipboardReadText) as Promise<
+        | { ok: true; native: true; text: string }
+        | { ok: false; native: true; error: string }
+      >,
+    writeText: (text: string) =>
+      invokeWhitelisted(IPC_CHANNELS.clipboardWriteText, text) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >
   }
 });
 

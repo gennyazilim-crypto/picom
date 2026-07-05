@@ -95,6 +95,18 @@ declare global {
           | { ok: false; native: true; error: string }
         >;
       };
+      clipboard?: {
+        readText: () => Promise<
+          | { ok: true; native: true; text: string }
+          | { ok: false; native: true; error: string }
+        >;
+        writeText: (
+          text: string
+        ) => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+      };
     };
   }
 }
