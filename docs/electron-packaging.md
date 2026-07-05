@@ -82,6 +82,12 @@ Before final release, generate platform-native icon formats if needed:
 6. On macOS, run `npm run package:mac` on macOS.
 7. Confirm the packaged app opens, shows the custom Picom titlebar, and keeps the 4-column desktop layout.
 
+Platform smoke-test checklists:
+
+- `docs/windows-smoke-test.md`
+- `docs/linux-smoke-test.md`
+- `docs/macos-smoke-test.md`
+
 ## Known local Windows packaging issue
 
 On the current Windows workstation, `npm run package` successfully runs the renderer/Electron build and loads `electron-builder.yml`, but the unpacked smoke package can fail at Electron's temporary folder rename step:
