@@ -177,3 +177,24 @@ Manual verification:
 3. Call `deepLinkService.simulateDeepLink("picom://community/demo/channel/general/message/msg-1")`.
 4. Confirm the result includes community, channel, and message identifiers.
 5. Call `deepLinkService.simulateDeepLink("javascript:alert(1)")` and confirm it is rejected.
+
+## Update service placeholder
+
+- Renderer entry point: `src/services/updateService.ts`
+- Native updater integration: intentionally disabled for the MVP
+- Future integration point: Electron updater or a signed, provider-backed update flow
+
+Safety rules:
+
+- Production auto-update downloads are not enabled in the MVP.
+- The service exposes typed status values for Settings/Diagnostics without contacting an updater endpoint.
+- Update errors are represented as placeholder states so future UI can show clear recovery messages.
+- No signing keys, updater secrets, or production endpoints are stored in the app.
+
+Manual verification:
+
+1. Call `updateService.getState()` and confirm `autoUpdateEnabled` is `false`.
+2. Call `updateService.checkForUpdatesPlaceholder()`.
+3. Confirm the state transitions to `checking` and then `not_available`.
+4. Call `updateService.setDownloadFailedPlaceholder()` and confirm the status becomes `download_failed`.
+5. Confirm no network request or update download is attempted.
