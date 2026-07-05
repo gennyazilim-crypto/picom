@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
+import type { CommunityAccess } from "../types/communityAccess";
 import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
+import { getComposerDisabledReason } from "../services/permissions/communityPermissions";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { MessageComposer } from "./MessageComposer";
@@ -22,6 +24,7 @@ const initialVoiceSnapshot: VoiceServiceSnapshot = {
 
 type ChatMainProps = {
   community: Community;
+  access: CommunityAccess;
   channel: Channel;
   messages: Message[];
   realtimeStatus: RealtimeConnectionStatus;
@@ -46,11 +49,13 @@ type ChatMainProps = {
   onDeleteMessage: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
   blockedUserIds?: string[];
+  onOpenJoinCommunity: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
 export function ChatMain({
   community,
+  access,
   channel,
   messages,
   realtimeStatus,
@@ -75,17 +80,13 @@ export function ChatMain({
   onDeleteMessage,
   onToggleReaction,
   blockedUserIds = [],
+  onOpenJoinCommunity,
   pushToast,
 }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
   const replyToMember = replyToMessage ? community.members.find((member) => member.userId === replyToMessage.authorId) : undefined;
   const currentMember = useMemo(() => community.members.find((member) => member.userId === currentUserId), [community.members, currentUserId]);
-  const currentRole = useMemo(() => community.roles.find((role) => role.id === currentMember?.roleId), [community.roles, currentMember?.roleId]);
-  const composerDisabledReason = useMemo(() => {
-    if (!currentMember) return "You need to be a community member to send messages in this channel.";
-    if ((currentRole?.level ?? 0) < 10) return "You do not have permission to send messages in this channel.";
-    return undefined;
-  }, [currentMember, currentRole?.level]);
+  const composerDisabledReason = useMemo(() => getComposerDisabledReason(access, channel), [access, channel]);
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
 
   useEffect(() => {
@@ -213,6 +214,8 @@ export function ChatMain({
             onTypingStop={onTypingStop}
             pushToast={pushToast}
             disabledReason={composerDisabledReason}
+            disabledActionLabel={access.isVisitor ? "Join Community" : undefined}
+            onDisabledAction={access.isVisitor ? onOpenJoinCommunity : undefined}
           />
         </>
       )}

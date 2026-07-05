@@ -25,6 +25,7 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
         type: channel.type,
         topic: channel.topic ?? summary.description ?? template.welcomeMessage,
         isPrivate: channel.isPrivate,
+        publicReadEnabled: !channel.isPrivate,
         position: channelIndex,
       })),
     };
@@ -32,9 +33,13 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
 
   return {
     id: summary.id,
+    ownerId: summary.ownerId ?? undefined,
     name: summary.name,
     icon: getIcon(summary.name),
     accentColor: summary.accentColor || template.accentColor,
+    description: summary.description,
+    visibility: summary.visibility,
+    publicReadEnabled: summary.publicReadEnabled,
     roles: mockRoles,
     members: [
       {

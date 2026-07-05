@@ -12,6 +12,7 @@ import type { FriendState } from "./types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import type { ProfileActivityItem } from "./types/profile";
 import type { CommunityTemplateId } from "./types/communityTemplates";
+import type { CommunityAccess } from "./types/communityAccess";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
@@ -49,6 +50,7 @@ import { maintenanceStatusService } from "./services/maintenanceStatusService";
 import { statusPageService } from "./services/statusPageService";
 import { authService } from "./services/authService";
 import { communityService } from "./services/communityService";
+import { communityMembershipService } from "./services/community/communityMembershipService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
 import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
@@ -68,8 +70,21 @@ import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
 import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
 import { createCommunityFromSummary } from "./utils/communityFactory";
 import { messageMentionsUser } from "./utils/mentionUtils";
+import { canSendMessage, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
 
 const overlayIcons = mvpUiIconMap.overlays;
+
+const fallbackCurrentUser: Member = {
+  id: "local-current-user",
+  userId: currentUserId,
+  displayName: "Picom Pilot",
+  username: "picom.pilot",
+  avatarSeed: "picom-pilot",
+  status: "online",
+  statusText: "Viewing Picom",
+  roleId: "member",
+  bio: "Local Picom desktop user.",
+};
 
 function getLocalMentionCount(body: string, currentUser: Member): number {
   return messageMentionsUser(body, currentUser.username, currentUser.displayName) ? 1 : 0;
@@ -286,7 +301,10 @@ export function App() {
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
-  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? activeCommunity.members[0];
+  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? fallbackCurrentUser;
+  const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
+  const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
+  const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
   const supabaseCommunitiesLoadedRef = useRef(false);
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
@@ -432,12 +450,13 @@ export function App() {
         };
       }),
     };
-  }, [activeCommunity, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings, trayPresenceStatus]);
+    return filterCommunityForAccess(baseCommunity, communityAccess);
+  }, [activeCommunity, communityAccess, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings, trayPresenceStatus]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const replyToMessage = useMemo(
-    () => displayedActiveCommunity.messages.find((message) => message.id === replyToMessageId && message.channelId === activeChannel.id) ?? null,
-    [activeChannel.id, displayedActiveCommunity.messages, replyToMessageId],
+    () => displayedActiveCommunity.messages.find((message) => message.id === replyToMessageId && message.channelId === displayedActiveChannel.id) ?? null,
+    [displayedActiveChannel.id, displayedActiveCommunity.messages, replyToMessageId],
   );
   const selectedProfileMember = useMemo(() => {
     if (!activeProfileUserId) return null;
@@ -461,6 +480,12 @@ export function App() {
   useEffect(() => {
     clearChannelUnread({ communityId: activeCommunity.id, channelId: activeChannel.id });
   }, [activeChannel.id, activeCommunity.id, clearChannelUnread]);
+
+  useEffect(() => {
+    if (!visibleChannels.length) return;
+    if (visibleChannels.some((channel) => channel.id === activeChannel.id)) return;
+    setActiveChannelId(visibleChannels[0].id);
+  }, [activeChannel.id, setActiveChannelId, visibleChannels]);
 
   const refreshMaintenanceStatus = useCallback(() => {
     void maintenanceStatusService.refresh().then(setMaintenanceStatus);
@@ -1219,6 +1244,11 @@ export function App() {
   };
 
   const sendMessage = async (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => {
+    if (!canSendMessage(communityAccess, displayedActiveChannel)) {
+      pushToast(communityAccess.isVisitor ? "Join this community to send messages." : "You do not have permission to send messages here.", "error");
+      return;
+    }
+
     const moderation = messageModerationFilterService.checkMessage(activeCommunity.id, body);
     if (!moderation.allowed) {
       pushToast(moderation.reason ?? "Message blocked by moderation filters.", "error");
@@ -1227,7 +1257,7 @@ export function App() {
     const clientMessageId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const result = await messageService.sendMessage({
       communityId: activeCommunity.id,
-      channelId: activeChannel.id,
+      channelId: displayedActiveChannel.id,
       authorId: currentUser.userId,
       body,
       clientMessageId,
@@ -1247,7 +1277,7 @@ export function App() {
       id: result.data.id,
       clientMessageId,
       communityId: activeCommunity.id,
-      channelId: activeChannel.id,
+      channelId: displayedActiveChannel.id,
       authorId: result.data.authorId,
       body: result.data.body,
       createdAt: result.data.createdAt,
@@ -1271,7 +1301,7 @@ export function App() {
 
     editLocalMessage({
       communityId: activeCommunity.id,
-      channelId: activeChannel.id,
+      channelId: message.channelId,
       id: message.id,
       body,
     });
@@ -1293,7 +1323,7 @@ export function App() {
 
     deleteLocalMessage({
       communityId: activeCommunity.id,
-      channelId: activeChannel.id,
+      channelId: message.channelId,
       id: message.id,
     });
 
@@ -1303,9 +1333,14 @@ export function App() {
   };
 
   const handleToggleMessageReaction = (message: Message, emoji: string) => {
+    if (!canSendMessage(communityAccess, displayedActiveChannel)) {
+      pushToast(communityAccess.isVisitor ? "Join this community to react to messages." : "You do not have permission to react here.", "error");
+      return;
+    }
+
     toggleLocalReaction({
       communityId: activeCommunity.id,
-      channelId: activeChannel.id,
+      channelId: message.channelId,
       id: message.id,
       emoji,
     });
@@ -1314,7 +1349,7 @@ export function App() {
   const handleReportMessage = (message: Message) => {
     const result = reportService.submitReport({
       communityId: activeCommunity.id,
-      channelId: activeChannel.id,
+      channelId: message.channelId,
       reporterId: currentUser.userId,
       targetType: "message",
       targetId: message.id,
@@ -1347,6 +1382,40 @@ export function App() {
     const result = userBlockingService.toggleBlockedUser(member);
     setBlockedUserVersion((version) => version + 1);
     pushToast(result.blocked ? `${member.displayName} blocked locally.` : `${member.displayName} unblocked locally.`, result.blocked ? "info" : "success");
+  };
+
+  const handleJoinCommunity = async () => {
+    const result = await communityMembershipService.joinCommunity({
+      community: activeCommunity,
+      currentUser,
+      isAuthenticated: Boolean(authSession),
+    });
+
+    if (!result.ok) {
+      pushToast(result.error.message, "error");
+      return;
+    }
+
+    replaceCommunityMembers(activeCommunity.id, [
+      ...activeCommunity.members.filter((member) => member.userId !== result.data.userId),
+      result.data,
+    ]);
+    pushToast(`Joined ${activeCommunity.name}.`, "success");
+  };
+
+  const handleLeaveCommunity = async () => {
+    const result = await communityMembershipService.leaveCommunity({
+      community: activeCommunity,
+      currentUserId,
+    });
+
+    if (!result.ok) {
+      pushToast(result.error.message, "error");
+      return;
+    }
+
+    replaceCommunityMembers(activeCommunity.id, activeCommunity.members.filter((member) => member.userId !== currentUserId));
+    pushToast(`Left ${activeCommunity.name}.`, "info");
   };
 
   const handleCreateCommunity = async (name: string, description?: string, templateId?: CommunityTemplateId) => {
@@ -1385,6 +1454,7 @@ export function App() {
       type: result.data.type,
       topic: result.data.topic,
       isPrivate: result.data.isPrivate,
+      publicReadEnabled: result.data.publicReadEnabled,
       position: result.data.position,
     });
 
@@ -1520,8 +1590,10 @@ export function App() {
             <>
               <CommunitySidebar
                 community={displayedActiveCommunity}
-                activeChannelId={activeChannel.id}
+                access={communityAccess}
+                activeChannelId={displayedActiveChannel.id}
                 currentUser={displayedCurrentUser}
+                isAuthenticated={Boolean(authSession)}
                 onSelectChannel={(channel) => {
                   setActiveChannelId(channel.id);
                   clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
@@ -1529,6 +1601,9 @@ export function App() {
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onOpenSettings={openSettings}
                 onLogout={handleLogout}
+                onJoinCommunity={handleJoinCommunity}
+                onLeaveCommunity={handleLeaveCommunity}
+                onPlaceholderAction={(message) => pushToast(message, "info")}
                 onCreateCategory={(name) => {
                   const category = addCategory({ communityId: activeCommunity.id, name });
                   pushToast(`${category.name} category created locally.`, "success");
@@ -1569,7 +1644,8 @@ export function App() {
               />
               <ChatMain
                 community={displayedActiveCommunity}
-                channel={activeChannel}
+                access={communityAccess}
+                channel={displayedActiveChannel}
                 messages={displayedActiveCommunity.messages}
                 realtimeStatus={realtimeStatus}
                 typingNames={typingBroadcast.typingNames}
@@ -1587,12 +1663,12 @@ export function App() {
                   openContext(event, [
                     {
                       label: "Reply",
-                      disabled: Boolean(message.deletedAt),
+                      disabled: Boolean(message.deletedAt) || !canSendMessage(communityAccess, displayedActiveChannel),
                       onSelect: () => setReplyToMessageId(message.id),
                     },
                     {
                       label: "React with 👍",
-                      disabled: Boolean(message.deletedAt),
+                      disabled: Boolean(message.deletedAt) || !canSendMessage(communityAccess, displayedActiveChannel),
                       onSelect: () => handleToggleMessageReaction(message, "👍"),
                     },
                     {
@@ -1625,6 +1701,7 @@ export function App() {
                 onSaveEditMessage={handleSaveMessageEdit}
                 onDeleteMessage={handleDeleteMessage}
                 onToggleReaction={handleToggleMessageReaction}
+                onOpenJoinCommunity={handleJoinCommunity}
                 pushToast={pushToast}
               />
               {membersVisible ? (

@@ -4,7 +4,7 @@ import type { ChannelType } from "../types/community";
 import type { ChannelSummary } from "./channelService";
 import type { Database } from "./supabase/database.types";
 
-export const CHANNEL_LIST_SELECT = "id, community_id, category_id, name, type, topic, is_private, position, created_at, updated_at" as const;
+export const CHANNEL_LIST_SELECT = "id, community_id, category_id, name, type, topic, is_private, public_read_enabled, position, created_at, updated_at" as const;
 
 export type ChannelListRow = Readonly<{
   id: string;
@@ -14,6 +14,7 @@ export type ChannelListRow = Readonly<{
   type: ChannelType;
   topic: string | null;
   is_private: boolean;
+  public_read_enabled: boolean;
   position: number;
   created_at: string;
   updated_at: string;
@@ -33,6 +34,7 @@ export function mapChannelListRow(row: ChannelListRow): ChannelSummary {
     type: row.type,
     topic: row.topic,
     isPrivate: row.is_private,
+    publicReadEnabled: row.public_read_enabled,
     position: row.position,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -52,6 +54,7 @@ export function listMockChannelSummaries(communityId: string): ChannelSummary[] 
       type: channel.type,
       topic: channel.topic ?? null,
       isPrivate: Boolean(channel.isPrivate),
+      publicReadEnabled: channel.publicReadEnabled ?? !channel.isPrivate,
       position: channel.position ?? 0,
       createdAt: null,
       updatedAt: null,

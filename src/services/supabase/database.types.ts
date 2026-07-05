@@ -32,6 +32,8 @@ export type Database = {
           description: string | null;
           icon_url: string | null;
           accent_color: string;
+          visibility: "public" | "private";
+          public_read_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -88,6 +90,7 @@ export type Database = {
           type: "text" | "voice";
           topic: string | null;
           is_private: boolean;
+          public_read_enabled: boolean;
           position: number;
           created_at: string;
           updated_at: string;

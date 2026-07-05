@@ -76,6 +76,7 @@ export interface Channel {
   type: ChannelType;
   topic?: string;
   isPrivate?: boolean;
+  publicReadEnabled?: boolean;
   unread?: boolean;
   mentions?: number;
   categoryId?: CategoryId;
@@ -92,9 +93,13 @@ export interface ChannelCategory {
 
 export interface Community {
   id: CommunityId;
+  ownerId?: UserId;
   name: string;
   icon: string;
   accentColor: string;
+  description?: string | null;
+  visibility?: "public" | "private";
+  publicReadEnabled?: boolean;
   categories: ChannelCategory[];
   roles: Role[];
   members: Member[];

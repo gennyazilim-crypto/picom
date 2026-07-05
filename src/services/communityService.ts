@@ -9,6 +9,8 @@ export type CommunitySummary = Readonly<{
   description: string | null;
   iconUrl: string | null;
   accentColor: string;
+  visibility: "public" | "private";
+  publicReadEnabled: boolean;
   templateId?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -157,6 +159,8 @@ export const communityService = {
           description: input.description?.trim() || null,
           iconUrl: null,
           accentColor: input.accentColor ?? "#007571",
+          visibility: "public",
+          publicReadEnabled: true,
           templateId: input.templateId ?? "custom",
           createdAt: now,
           updatedAt: now,
@@ -181,6 +185,8 @@ export const communityService = {
         name,
         description: input.description?.trim() || null,
         accent_color: input.accentColor ?? "#007571",
+        visibility: "public",
+        public_read_enabled: true,
       })
       .select(COMMUNITY_LIST_SELECT)
       .single();
@@ -210,6 +216,8 @@ export const communityService = {
           description: input.description?.trim() || null,
           iconUrl: null,
           accentColor: input.accentColor ?? "#007571",
+          visibility: "public",
+          publicReadEnabled: true,
           createdAt: now,
           updatedAt: now,
         },

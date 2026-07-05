@@ -11,6 +11,7 @@ export type ChannelSummary = Readonly<{
   type: ChannelType;
   topic: string | null;
   isPrivate: boolean;
+  publicReadEnabled: boolean;
   position: number;
   createdAt: string | null;
   updatedAt: string | null;
@@ -151,6 +152,7 @@ export const channelService = {
           type,
           topic: input.topic?.trim() || null,
           isPrivate: Boolean(input.isPrivate),
+          publicReadEnabled: !input.isPrivate,
           position: 0,
           createdAt: now,
           updatedAt: now,
@@ -170,6 +172,7 @@ export const channelService = {
         type,
         topic: input.topic?.trim() || null,
         is_private: Boolean(input.isPrivate),
+        public_read_enabled: !input.isPrivate,
       })
       .select(CHANNEL_LIST_SELECT)
       .single();

@@ -1,6 +1,8 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { MouseEvent } from "react";
 import type { Channel, Community, Member } from "../types/community";
+import type { CommunityAccess } from "../types/communityAccess";
+import { canManageChannels } from "../services/permissions/communityPermissions";
 import { CommunityHeader } from "./CommunityHeader";
 import { ChannelCategory } from "./ChannelCategory";
 import { UserMiniCard } from "./UserMiniCard";
@@ -9,11 +11,14 @@ import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPan
 import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
 import { CommunityCategoryManagementPanel } from "./CommunityCategoryManagementPanel";
 import { MessageModerationFiltersPanel } from "./MessageModerationFiltersPanel";
+import { CommunityAdminPanel, CommunityJoinModal, CommunityLeaveModal, CommunityMemberPanel, CommunityModeratorPanel, CommunityVisitorPanel } from "./CommunityMenu";
 
 type CommunitySidebarProps = {
   community: Community;
+  access: CommunityAccess;
   activeChannelId: string;
   currentUser: Member;
+  isAuthenticated: boolean;
   onSelectChannel: (channel: Channel) => void;
   onCreateChannel: (categoryId: string) => void;
   onOpenSettings: () => void;
@@ -23,28 +28,52 @@ type CommunitySidebarProps = {
   onRenameCategory: (categoryId: string, name: string) => void;
   onDeleteCategory: (categoryId: string) => void;
   onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void;
+  onJoinCommunity: () => void | Promise<void>;
+  onLeaveCommunity: () => void | Promise<void>;
+  onPlaceholderAction: (message: string) => void;
 };
 
-export function CommunitySidebar({ community, activeChannelId, currentUser, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel }: CommunitySidebarProps) {
+type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | null;
+
+export function CommunitySidebar({ community, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, onPlaceholderAction }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
-  const currentRole = community.roles.find((role) => role.id === currentUser.roleId);
-  const canViewOnboardingChecklist = Boolean(currentRole && (currentRole.name === "Owner" || currentRole.name === "Admin" || currentRole.level >= 80));
-  const canReorderChannels = canViewOnboardingChecklist;
+  const [openPanel, setOpenPanel] = useState<OpenCommunityPanel>(null);
+  const canReorderChannels = canManageChannels(access);
+  const adminTools = (
+    <div className="community-admin-tools-stack">
+      <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />
+      <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />
+      <MessageModerationFiltersPanel community={community} currentUser={currentUser} />
+      {access.isOwner ? <CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /> : null}
+      {access.isOwner ? <CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /> : null}
+    </div>
+  );
 
   return (
     <aside className="community-sidebar">
-      <CommunityHeader community={community} onOpenMenu={onOpenSettings} />
+      <CommunityHeader
+        community={community}
+        access={access}
+        onOpenAdminPanel={() => setOpenPanel("admin")}
+        onOpenModeratorPanel={() => setOpenPanel("moderator")}
+        onOpenMemberPanel={() => setOpenPanel(access.isVisitor ? "visitor" : "member")}
+        onOpenVisitorPanel={() => setOpenPanel("visitor")}
+        onOpenJoinCommunity={() => setOpenPanel("join")}
+        onOpenLeaveCommunity={() => setOpenPanel("leave")}
+        onPlaceholderAction={onPlaceholderAction}
+      />
 
       <div className="channel-scroll">
-        {canViewOnboardingChecklist ? <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} /> : null}
-        <CommunityOwnershipTransferPanel community={community} currentUser={currentUser} />
-        <CommunityDeleteSafetyPanel community={community} currentUser={currentUser} />
-        <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />
-        <MessageModerationFiltersPanel community={community} currentUser={currentUser} />
+        {access.isVisitor ? (
+          <div className="community-readonly-notice">
+            <strong>Viewing public content</strong>
+            <span>Join this community to send messages, react, upload, and see member-only spaces.</span>
+          </div>
+        ) : null}
 
-        {community.categories.map((category) => (
+        {community.categories.length ? community.categories.map((category) => (
           <ChannelCategory
             key={category.id}
             category={category}
@@ -54,13 +83,21 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
             onCreateChannel={onCreateChannel}
             onSelectChannel={onSelectChannel}
             onChannelContextMenu={onChannelContextMenu}
+            canCreateChannel={canReorderChannels}
             showReorderControls={canReorderChannels}
             onMoveChannel={onMoveChannel}
           />
-        ))}
+        )) : <div className="empty-state compact">No public channels are visible.</div>}
       </div>
 
       <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />
+
+      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} adminTools={adminTools} /> : null}
+      {openPanel === "moderator" ? <CommunityModeratorPanel community={community} onClose={() => setOpenPanel(null)} /> : null}
+      {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} /> : null}
+      {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} /> : null}
+      {openPanel === "join" ? <CommunityJoinModal community={community} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onJoinCommunity(); setOpenPanel(null); }} /> : null}
+      {openPanel === "leave" ? <CommunityLeaveModal community={community} access={access} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onLeaveCommunity(); setOpenPanel(null); }} /> : null}
     </aside>
   );
 }

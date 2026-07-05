@@ -157,6 +157,7 @@ type AddLocalChannelInput = {
   type: ChannelType;
   topic?: string | null;
   isPrivate?: boolean;
+  publicReadEnabled?: boolean;
   position?: number;
 };
 
@@ -498,6 +499,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       type: input.type,
       topic: input.topic ?? undefined,
       isPrivate: input.isPrivate,
+      publicReadEnabled: input.publicReadEnabled,
       categoryId: input.categoryId ?? undefined,
       position: input.position,
     };

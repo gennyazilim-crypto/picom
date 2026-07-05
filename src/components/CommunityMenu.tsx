@@ -1,0 +1,312 @@
+﻿import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import type { Community, Member } from "../types/community";
+import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescriptor } from "../types/communityAccess";
+import { getCommunityMenuItems } from "../services/community/communityMenuService";
+import { AppIcon } from "./AppIcon";
+
+type MenuCallbacks = {
+  onOpenAdminPanel: () => void;
+  onOpenModeratorPanel: () => void;
+  onOpenMemberPanel: () => void;
+  onOpenVisitorPanel: () => void;
+  onOpenJoinCommunity: () => void;
+  onOpenLeaveCommunity: () => void;
+  onPlaceholderAction: (message: string) => void;
+};
+
+type CommunityMenuProps = {
+  community: Community;
+  access: CommunityAccess;
+  callbacks: MenuCallbacks;
+  onClose: () => void;
+};
+
+export function PermissionGate({ allowed, children, fallback = null }: { allowed: boolean; children: ReactNode; fallback?: ReactNode }) {
+  return allowed ? <>{children}</> : <>{fallback}</>;
+}
+
+export function CommunityRoleBadge({ access }: { access: CommunityAccess }) {
+  return <span className={`community-role-badge ${access.status}`}>{access.status}</span>;
+}
+
+export function JoinCommunityButton({ onClick, disabled = false }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <button className="join-community-button" type="button" onClick={onClick} disabled={disabled}>
+      <AppIcon name="plus" size="sm" />
+      Join Community
+    </button>
+  );
+}
+
+function actionDescription(item: CommunityMenuItemDescriptor, access: CommunityAccess): string | undefined {
+  if (item.description) return item.description;
+  if (item.permission && !access.permissions.includes(item.permission)) return "Permission required.";
+  return undefined;
+}
+
+function handleCommunityAction(item: CommunityMenuItemDescriptor, callbacks: MenuCallbacks, close: () => void) {
+  const actionMap: Partial<Record<CommunityMenuActionId, () => void>> = {
+    "community-settings": callbacks.onOpenAdminPanel,
+    "admin-panel": callbacks.onOpenAdminPanel,
+    "manage-channels": callbacks.onOpenAdminPanel,
+    "manage-roles": callbacks.onOpenAdminPanel,
+    "manage-members": callbacks.onOpenAdminPanel,
+    "audit-log": callbacks.onOpenAdminPanel,
+    "transfer-ownership": callbacks.onOpenAdminPanel,
+    "delete-community": callbacks.onOpenAdminPanel,
+    "moderator-panel": callbacks.onOpenModeratorPanel,
+    "community-info": callbacks.onOpenMemberPanel,
+    "notification-settings": callbacks.onOpenMemberPanel,
+    "join-community": callbacks.onOpenJoinCommunity,
+    "leave-community": callbacks.onOpenLeaveCommunity,
+    "invite-people": () => callbacks.onPlaceholderAction("Invite people placeholder opened from the community menu."),
+    "copy-community-link": () => callbacks.onPlaceholderAction("Community link placeholder copied locally."),
+    "report-community": () => callbacks.onPlaceholderAction("Report community placeholder opened locally."),
+  };
+
+  actionMap[item.id]?.();
+  close();
+}
+
+export function CommunityMenuItem({ item, access, onSelect }: { item: CommunityMenuItemDescriptor; access: CommunityAccess; onSelect: () => void }) {
+  const disabled = item.disabled || Boolean(item.permission && !access.permissions.includes(item.permission));
+  const description = actionDescription(item, access);
+
+  return (
+    <button className={`community-menu-item ${item.tone === "danger" ? "danger" : ""}`} type="button" disabled={disabled} onClick={onSelect}>
+      <span>{item.label}</span>
+      {description ? <small>{description}</small> : null}
+    </button>
+  );
+}
+
+export function CommunityMemberMenu({ community, access }: { community: Community; access: CommunityAccess }) {
+  return (
+    <div className="community-menu-info-card">
+      <strong>{community.name}</strong>
+      <span>{community.description ?? "Picom community workspace."}</span>
+      <small>{access.status === "visitor" ? "Public preview" : "Member tools"}</small>
+    </div>
+  );
+}
+
+export function CommunityVisitorMenu({ community, access, onJoin }: { community: Community; access: CommunityAccess; onJoin: () => void }) {
+  return (
+    <div className="community-menu-info-card visitor">
+      <strong>{community.name}</strong>
+      <span>You can view public content, but join to participate.</span>
+      <small>{access.visibility === "public" ? "Public community" : "Private community"}</small>
+      <JoinCommunityButton onClick={onJoin} disabled={!access.canJoin} />
+    </div>
+  );
+}
+
+export function CommunityMenu({ community, access, callbacks, onClose }: CommunityMenuProps) {
+  const items = getCommunityMenuItems(access);
+
+  useEffect(() => {
+    const close = () => onClose();
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <section className="community-menu-popover" role="menu" aria-label={`${community.name} menu`} onPointerDown={(event) => event.stopPropagation()}>
+      <header>
+        <div className="community-menu-mark" style={{ background: community.accentColor }}>{community.icon}</div>
+        <div>
+          <strong>{community.name}</strong>
+          <span>{access.isVisitor ? "Visitor preview" : "Community controls"}</span>
+        </div>
+        <CommunityRoleBadge access={access} />
+      </header>
+
+      {access.isVisitor ? <CommunityVisitorMenu community={community} access={access} onJoin={callbacks.onOpenJoinCommunity} /> : <CommunityMemberMenu community={community} access={access} />}
+
+      <div className="community-menu-list">
+        {items.map((item) => (
+          <CommunityMenuItem key={item.id} item={item} access={access} onSelect={() => handleCommunityAction(item, callbacks, onClose)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ModalShell({ title, eyebrow, onClose, children }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <section className="community-access-modal" role="dialog" aria-modal="true" aria-labelledby="community-access-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+        <button className="icon-button modal-close" type="button" aria-label="Close" onClick={onClose}>
+          <AppIcon name="close" size="lg" />
+        </button>
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 id="community-access-modal-title">{title}</h2>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+export function CommunityAdminPanel({ community, access, onClose, adminTools }: { community: Community; access: CommunityAccess; onClose: () => void; adminTools?: ReactNode }) {
+  const [activeSection, setActiveSection] = useState("overview");
+  const sections = [
+    "Overview",
+    "Community Settings",
+    "Channels",
+    "Roles",
+    "Members",
+    "Invites",
+    "Moderation",
+    "Audit Log",
+    "Danger Zone",
+  ];
+
+  return (
+    <ModalShell title={`${community.name} admin panel`} eyebrow="Community administration" onClose={onClose}>
+      <div className="community-admin-panel">
+        <nav aria-label="Community admin sections">
+          {sections.map((section) => {
+            const ownerOnly = section === "Danger Zone";
+            const disabled = ownerOnly && !access.isOwner;
+            return (
+              <button key={section} className={activeSection === section.toLowerCase().replace(/\s+/g, "-") ? "active" : ""} disabled={disabled} onClick={() => setActiveSection(section.toLowerCase().replace(/\s+/g, "-"))}>
+                {section}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="community-admin-content">
+          <div className="community-panel-hero">
+            <strong>{activeSection.replace(/-/g, " ")}</strong>
+            <span>{access.isOwner ? "Owner access" : "Admin access with owner-only actions hidden."}</span>
+          </div>
+          {adminTools ?? null}
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+export function CommunityModeratorPanel({ community, onClose }: { community: Community; onClose: () => void }) {
+  return (
+    <ModalShell title={`${community.name} moderator panel`} eyebrow="Moderation" onClose={onClose}>
+      <div className="moderator-panel-grid">
+        {["Reports placeholder", "Recent flagged messages placeholder", "Member moderation placeholder", "Message moderation placeholder", "Moderation log placeholder"].map((item) => (
+          <article key={item}>
+            <AppIcon name="bell" size="lg" />
+            <strong>{item}</strong>
+            <span>Moderator-only operational surface prepared for the MVP.</span>
+          </article>
+        ))}
+      </div>
+    </ModalShell>
+  );
+}
+
+export function CommunityMemberPanel({ community, access, onClose, onOpenLeave }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenLeave: () => void }) {
+  return (
+    <ModalShell title={`${community.name} member menu`} eyebrow="Community menu" onClose={onClose}>
+      <div className="community-confirm-panel">
+        <CommunityMemberMenu community={community} access={access} />
+        <div className="community-panel-list">
+          <article><strong>Notification settings</strong><span>Local notification preferences placeholder.</span></article>
+          <article><strong>Invite people</strong><span>Invite placeholder respects createInvites permission later.</span></article>
+          <article><strong>Report community</strong><span>Report placeholder prepared without exposing private content.</span></article>
+        </div>
+        <div className="modal-actions-row">
+          <button className="secondary-action" type="button" onClick={onClose}>Close</button>
+          <button className="danger-action" type="button" disabled={!access.canLeave} onClick={onOpenLeave}>Leave community</button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void }) {
+  return (
+    <ModalShell title={`${community.name} public preview`} eyebrow="Visitor menu" onClose={onClose}>
+      <div className="community-confirm-panel">
+        <CommunityVisitorMenu community={community} access={access} onJoin={onOpenJoin} />
+        <div className="community-panel-list">
+          <article><strong>Public channels visible</strong><span>Private channels and member-only data stay hidden.</span></article>
+          <article><strong>Join to participate</strong><span>Visitors cannot send messages, react, or upload attachments.</span></article>
+          <article><strong>{isAuthenticated ? "Ready to join" : "Sign in required"}</strong><span>{isAuthenticated ? "Confirm the join flow to become a member." : "Sign in or register before joining."}</span></article>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+export function CommunityJoinModal({ community, isAuthenticated, onClose, onConfirm }: { community: Community; isAuthenticated: boolean; onClose: () => void; onConfirm: () => void | Promise<void> }) {
+  const [joining, setJoining] = useState(false);
+
+  return (
+    <ModalShell title={`Join ${community.name}`} eyebrow="Community access" onClose={onClose}>
+      <div className="community-confirm-panel">
+        <p>{community.description ?? "Join this Picom community to participate in public channels."}</p>
+        <dl>
+          <div><dt>Members</dt><dd>{community.members.length}</dd></div>
+          <div><dt>Visibility</dt><dd>{community.visibility ?? "private"}</dd></div>
+          <div><dt>Rules</dt><dd>Rules placeholder will be shown here.</dd></div>
+        </dl>
+        {!isAuthenticated ? <div className="auth-error">Sign in or register before joining.</div> : null}
+        <div className="modal-actions-row">
+          <button className="secondary-action" type="button" onClick={onClose}>Cancel</button>
+          <button
+            className="send-button"
+            type="button"
+            disabled={!isAuthenticated || joining}
+            onClick={async () => {
+              setJoining(true);
+              await onConfirm();
+              setJoining(false);
+            }}
+          >
+            <AppIcon name="plus" size="sm" />
+            {joining ? "Joining..." : "Join"}
+          </button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+export function CommunityLeaveModal({ community, access, onClose, onConfirm }: { community: Community; access: CommunityAccess; onClose: () => void; onConfirm: () => void | Promise<void> }) {
+  const [leaving, setLeaving] = useState(false);
+
+  return (
+    <ModalShell title={`Leave ${community.name}`} eyebrow="Leave community" onClose={onClose}>
+      <div className="community-confirm-panel">
+        <p>Leaving removes your membership locally. If the community is public, you may still see public read-only content.</p>
+        {access.isOwner ? <div className="auth-error">Owners must transfer ownership before leaving.</div> : null}
+        <div className="modal-actions-row">
+          <button className="secondary-action" type="button" onClick={onClose}>Cancel</button>
+          <button
+            className="danger-action"
+            type="button"
+            disabled={!access.canLeave || leaving}
+            onClick={async () => {
+              setLeaving(true);
+              await onConfirm();
+              setLeaving(false);
+            }}
+          >
+            Leave community
+          </button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}

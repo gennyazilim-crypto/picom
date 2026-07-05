@@ -36,11 +36,13 @@ type MessageComposerProps = {
   onTypingStop: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
   disabledReason?: string;
+  disabledActionLabel?: string;
+  onDisabledAction?: () => void;
 };
 
 const composerEmojiOptions = ["👍", "❤️", "😂", "🔥", "👀"];
 
-export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast, disabledReason }: MessageComposerProps) {
+export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast, disabledReason, disabledActionLabel, onDisabledAction }: MessageComposerProps) {
   const [body, setBody] = useState(() => messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<LocalAttachmentPreview[]>([]);
@@ -294,7 +296,12 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           </button>
         </div>
       ) : null}
-      {disabledReason ? <div className="composer-permission-hint" role="status">{disabledReason}</div> : null}
+      {disabledReason ? (
+        <div className="composer-permission-hint" role="status">
+          <span>{disabledReason}</span>
+          {disabledActionLabel && onDisabledAction ? <button type="button" onClick={onDisabledAction}>{disabledActionLabel}</button> : null}
+        </div>
+      ) : null}
       <div className="composer-bar">
         <input
           ref={fileInputRef}

@@ -14,6 +14,7 @@ type ChannelCategoryProps = {
   onCreateChannel: (categoryId: string) => void;
   onSelectChannel: (channel: Channel) => void;
   onChannelContextMenu: (event: MouseEvent, channel: Channel) => void;
+  canCreateChannel?: boolean;
   showReorderControls?: boolean;
   onMoveChannel?: (categoryId: string, channelId: string, direction: "up" | "down") => void;
 };
@@ -26,6 +27,7 @@ export function ChannelCategory({
   onCreateChannel,
   onSelectChannel,
   onChannelContextMenu,
+  canCreateChannel = true,
   showReorderControls = false,
   onMoveChannel,
 }: ChannelCategoryProps) {
@@ -37,9 +39,11 @@ export function ChannelCategory({
           <strong>{category.name}</strong>
           <em>{category.channels.length}</em>
         </button>
-        <button className="category-add-button" type="button" aria-label={`Create channel in ${category.name}`} onClick={() => onCreateChannel(category.id)}>
-          <AppIcon name="plus" size="xs" />
-        </button>
+        {canCreateChannel ? (
+          <button className="category-add-button" type="button" aria-label={`Create channel in ${category.name}`} onClick={() => onCreateChannel(category.id)}>
+            <AppIcon name="plus" size="xs" />
+          </button>
+        ) : null}
       </div>
       {!collapsed
         ? category.channels.map((channel, index) => (
