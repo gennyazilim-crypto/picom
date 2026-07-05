@@ -91,7 +91,8 @@
     "feature-flags:smoke": "node scripts/feature-flags-smoke-test.mjs",
     "remote-config:smoke": "node scripts/remote-config-smoke-test.mjs",
     "version-compatibility:smoke": "node scripts/version-compatibility-smoke-test.mjs",
-    "realtime-scaling:smoke": "node scripts/realtime-scaling-smoke-test.mjs"
+    "realtime-scaling:smoke": "node scripts/realtime-scaling-smoke-test.mjs",
+    "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
