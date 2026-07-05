@@ -1,3 +1,5 @@
+import { loggingService } from "./loggingService";
+
 export type TrayAction = "open" | "settings" | "mute" | "quit" | "online" | "idle" | "dnd" | "invisible";
 export type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 
@@ -39,7 +41,7 @@ export const trayService = {
   },
 
   simulate(action: TrayAction) {
-    console.info(`[picom tray placeholder] ${action}`);
+    loggingService.logInfo("Tray placeholder action simulated", { action }, "tray");
     return { ok: true, native: false, action };
   }
 };

@@ -26,6 +26,7 @@ import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { ProfileView } from "./components/ProfileView";
 import { clipboardService } from "./services/clipboardService";
+import { loggingService } from "./services/loggingService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { communityService } from "./services/communityService";
@@ -717,7 +718,7 @@ export function App() {
     clearChannelUnread({ communityId: item.communityId, channelId: item.channelId });
     setMentionItems((current) => current.map((candidate) => (candidate.id === item.id ? { ...candidate, isUnread: false } : candidate)));
     closeTransientOverlays();
-    console.info("[Picom mention feed] Message highlight placeholder prepared.", { messageId: item.messageId });
+    loggingService.logInfo("Mention feed message highlight placeholder prepared", { messageId: item.messageId }, "mention-feed");
   }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
 
   const openProfilePage = useCallback((member: Member) => {
@@ -731,7 +732,7 @@ export function App() {
     switchCommunity(activity.community.id, activity.channel.id);
     clearChannelUnread({ communityId: activity.community.id, channelId: activity.channel.id });
     closeTransientOverlays();
-    console.info("[Picom profile] Activity highlight placeholder prepared.", { messageId: activity.message.id });
+    loggingService.logInfo("Profile activity highlight placeholder prepared", { messageId: activity.message.id }, "profile");
   }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
 
   if (!authReady || !authSession) {

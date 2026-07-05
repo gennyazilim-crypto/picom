@@ -198,3 +198,25 @@ Manual verification:
 3. Confirm the state transitions to `checking` and then `not_available`.
 4. Call `updateService.setDownloadFailedPlaceholder()` and confirm the status becomes `download_failed`.
 5. Confirm no network request or update download is attempted.
+
+## Logging service
+
+- Renderer entry point: `src/services/loggingService.ts`
+- Storage behavior: in-memory redacted ring buffer for MVP diagnostics
+- Native persistence: intentionally deferred until the diagnostics/export task needs it
+
+Safety rules:
+
+- All app logs should go through `loggingService`.
+- Passwords, tokens, cookies, authorization headers, sessions, API keys, service-role keys, JWT-like values, and bearer values are redacted.
+- User-facing errors should use friendly copy; developer details stay in diagnostics/logs.
+- Logs should avoid message content, LiveKit tokens, Supabase service keys, and raw private data.
+- The service supports debug/info/warn/error levels, recent-log reads, export, clear, and subscriptions.
+
+Manual verification:
+
+1. Call `loggingService.logInfo("Test log", { token: "secret" })`.
+2. Call `loggingService.getLogs()` and confirm the token value is `[redacted]`.
+3. Call `loggingService.captureException(new Error("token=secret"))`.
+4. Confirm the stored message/stack is redacted.
+5. Call `loggingService.clearLogs()` and confirm the in-memory buffer is empty.
