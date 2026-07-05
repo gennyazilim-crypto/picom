@@ -229,9 +229,14 @@ export const voiceService = {
 
     try {
       await room.localParticipant.setMicrophoneEnabled(!muted);
-      emit({ muted });
+      emit({
+        muted,
+        error: null,
+        status: room.state === ConnectionState.Reconnecting ? "reconnecting" : "connected",
+      });
       return { ok: true, data: snapshot };
     } catch {
+      emit({ muted: true });
       return voiceError("VOICE_PERMISSION_DENIED", "Microphone permission was denied or unavailable.");
     }
   },

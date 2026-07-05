@@ -63,6 +63,13 @@ Leaving a room must release local capture resources before disconnecting:
 - Clear participants, muted/deafened state, room name, and user-facing errors.
 - Future screen-share tracks should use the same cleanup path.
 
+## Microphone mute behavior
+
+- Muting disables the local microphone track through LiveKit.
+- Unmuting enables the local microphone track and may trigger OS/browser permission checks.
+- If unmute fails, Picom keeps the user muted and shows a permission/device warning.
+- Successful mute/unmute clears stale microphone errors.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.
