@@ -1089,6 +1089,13 @@ body{
 .settings-profile-form input,.settings-profile-form textarea{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text-primary);padding:10px 12px;outline:0;font:inherit}
 .settings-profile-form textarea{resize:vertical;min-height:92px}
 .settings-profile-form input:focus,.settings-profile-form textarea:focus{box-shadow:var(--focus-ring);border-color:var(--picom-aqua)}
+
+/* Task 285 account security settings */
+.security-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.security-card{border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:14px;display:grid;gap:5px}
+.security-card span{color:var(--text-muted);text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:900}
+.security-card strong{color:var(--text-primary)}
+.security-card small{color:var(--text-muted);line-height:1.45}
 .profile-left-card,
 .profile-main-panel{
   min-width:0;

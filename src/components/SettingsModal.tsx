@@ -119,6 +119,37 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                 <small>Charcoal shell with separated surfaces.</small>
               </button>
             </div>
+          ) : active === "Account" ? (
+            <div className="placeholder-panel action-panel">
+              <strong>Account security foundation</strong>
+              <p>Security controls are prepared as beta placeholders. Supabase Auth remains the source of truth for production account actions.</p>
+              <div className="security-card-grid">
+                <article className="security-card">
+                  <span>Session</span>
+                  <strong>Current desktop session</strong>
+                  <small>Session restore is handled by the auth data source. Raw tokens are never shown here.</small>
+                </article>
+                <article className="security-card">
+                  <span>Password</span>
+                  <strong>Password reset placeholder</strong>
+                  <small>Future flow should use Supabase Auth and never reveal whether an email exists.</small>
+                </article>
+                <article className="security-card">
+                  <span>2FA</span>
+                  <strong>Two-factor placeholder</strong>
+                  <small>Architecture is reserved for later; no secrets or recovery codes are generated in this MVP placeholder.</small>
+                </article>
+                <article className="security-card">
+                  <span>Logs</span>
+                  <strong>Redacted diagnostics</strong>
+                  <small>Support payloads are routed through loggingService redaction before export.</small>
+                </article>
+              </div>
+              <div className="settings-actions-row">
+                <button onClick={() => pushToast("Security settings placeholder reviewed.", "info")}>Review placeholder</button>
+                <button onClick={() => pushToast("Password reset is not enabled in this beta placeholder.", "info")}>Password reset placeholder</button>
+              </div>
+            </div>
           ) : active === "Profile" ? (
             <div className="placeholder-panel action-panel">
               <strong>Local profile editing</strong>
