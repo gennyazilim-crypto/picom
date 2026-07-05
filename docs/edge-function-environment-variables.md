@@ -21,6 +21,19 @@ Purpose:
 - Create a Supabase client scoped to the caller's JWT.
 - Preserve RLS behavior for function-side data checks.
 
+## Function variable matrix
+
+| Function | JWT required | Required environment variables | Notes |
+| --- | --- | --- | --- |
+| `health` | No | none | Public non-sensitive health response only. |
+| `livekit-token` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit API credentials stay server-side only. |
+| `accept-invite` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder currently uses caller-scoped Supabase auth only. |
+| `moderation-helper` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder only; future privileged actions may require documented service-role use. |
+| `notification-fanout` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder only; future fanout must respect notification preferences. |
+| `validate-file` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Metadata validation only; does not read or store uploaded bytes. |
+
+Keep this matrix updated before adding a new Edge Function or a new required secret.
+
 ## LiveKit function secrets
 
 Required by `livekit-token`:
@@ -79,10 +92,23 @@ supabase secrets set LIVEKIT_API_SECRET=replace-with-local-dev-secret
 
 Do not commit the real output of these commands.
 
+For local `.env` files used by `supabase functions serve`, keep the same placeholder discipline:
+
+```env
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=replace-with-local-anon-key
+LIVEKIT_URL=https://your-livekit-host.example
+LIVEKIT_API_KEY=replace-with-local-dev-key
+LIVEKIT_API_SECRET=replace-with-local-dev-secret
+```
+
+Never copy these server-only names into Vite variables unless they are explicitly renderer-safe and prefixed with `VITE_`.
+
 ## Verification checklist
 
 - Search the repository for real secret values before committing.
 - Confirm `.env.example` contains only renderer-safe placeholders.
 - Confirm Edge Function docs show placeholder names, not real values.
 - Confirm protected functions use `requireSupabaseUser()` before privileged work.
+- Confirm every new required variable is listed in the function matrix.
 - Confirm function logs do not print tokens, authorization headers, passwords, or provider secrets.

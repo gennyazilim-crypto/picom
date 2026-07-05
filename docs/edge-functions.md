@@ -75,6 +75,14 @@ supabase/functions/_shared/
 - Responses should use `{ code, message, details? }` for errors.
 - Do not log authorization headers, JWTs, passwords, service-role keys, or LiveKit secrets.
 
+## Environment variables
+
+Function-specific environment variables are documented in `docs/edge-function-environment-variables.md`.
+
+- Renderer-safe values use `VITE_` prefixes and may be bundled into the Electron renderer.
+- Edge Function secrets do not use `VITE_` and must stay in Supabase secret storage or local function-only `.env` files.
+- Add a variable to the function matrix before making a function depend on it.
+
 ## Local invocation
 
 When the Supabase CLI is available:
