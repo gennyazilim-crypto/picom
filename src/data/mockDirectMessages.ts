@@ -31,7 +31,7 @@ export const mockDirectConversations: DirectConversation[] = [
         id: "dm-naines-3",
         conversationId: "dm-naines",
         authorId: "u-naines",
-        body: "Perfect. No mobile layout, no production DM claims yet.",
+        body: "Perfect. Desktop-only scope, no production DM claims yet.",
         createdAt: "2026-07-04T12:24:00.000Z",
         isPlaceholder: true,
       },

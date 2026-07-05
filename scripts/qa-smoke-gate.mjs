@@ -9,6 +9,7 @@ const checks = [
   ["run", "secrets:smoke"],
   ["run", "renderer:native:smoke"],
   ["run", "branding:smoke"],
+  ["run", "desktop:smoke"],
   ["run", "mock:smoke"]
 ];
 

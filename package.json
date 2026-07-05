@@ -30,6 +30,7 @@
     "secrets:smoke": "node scripts/secret-exposure-smoke-test.mjs",
     "renderer:native:smoke": "node scripts/renderer-native-api-smoke-test.mjs",
     "branding:smoke": "node scripts/branding-smoke-test.mjs",
+    "desktop:smoke": "node scripts/desktop-only-smoke-test.mjs",
     "qa:smoke": "node scripts/qa-smoke-gate.mjs",
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
