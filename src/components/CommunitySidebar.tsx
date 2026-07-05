@@ -4,6 +4,7 @@ import type { Channel, Community, Member } from "../types/community";
 import { CommunityHeader } from "./CommunityHeader";
 import { ChannelCategory } from "./ChannelCategory";
 import { UserMiniCard } from "./UserMiniCard";
+import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
 
 type CommunitySidebarProps = {
   community: Community;
@@ -20,12 +21,16 @@ export function CommunitySidebar({ community, activeChannelId, currentUser, onSe
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
+  const currentRole = community.roles.find((role) => role.id === currentUser.roleId);
+  const canViewOnboardingChecklist = Boolean(currentRole && (currentRole.name === "Owner" || currentRole.name === "Admin" || currentRole.level >= 80));
 
   return (
     <aside className="community-sidebar">
       <CommunityHeader community={community} onOpenMenu={onOpenSettings} />
 
       <div className="channel-scroll">
+        {canViewOnboardingChecklist ? <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} /> : null}
+
         {community.categories.map((category) => (
           <ChannelCategory
             key={category.id}
