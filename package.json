@@ -1,37 +1,38 @@
 {
-    "name":  "picom",
-    "version":  "0.1.0",
-    "private":  true,
-    "type":  "module",
-    "scripts":  {
-                    "dev":  "npm run electron:dev",
-                    "renderer:dev":  "vite --host 127.0.0.1",
-                    "web:dev":  "vite --host 127.0.0.1",
-                    "electron:build":  "tsc -p tsconfig.electron.json",
-                    "electron:dev":  "npm run electron:build && node scripts/electron-dev.mjs",
-                    "typecheck":  "tsc --noEmit",
-                    "build":  "npm run typecheck \u0026\u0026 npm run electron:build \u0026\u0026 vite build",
-                    "preview":  "vite preview --host 127.0.0.1",
-                    "supabase:types":  "supabase gen types typescript --local --schema public \u003e src/services/supabase/database.types.ts",
-                    "supabase:smoke":  "node scripts/supabase-schema-smoke-test.mjs",
-                    "mock:smoke":  "node scripts/mock-mode-smoke-test.mjs",
-                    "supabase:api-regression":  "node scripts/supabase-api-mode-regression.mjs"
-                },
-    "dependencies":  {
-                         "@supabase/supabase-js":  "^2.110.0",
-                         "@vitejs/plugin-react":  "latest",
-                         "react":  "latest",
-                         "react-dom":  "latest",
-                         "typescript":  "latest",
-                         "vite":  "latest"
-                     },
-    "devDependencies":  {
-                            "@types/node":  "^26.1.0",
-                            "@types/react":  "^19.2.17",
-                            "@types/react-dom":  "^19.2.3",
-                            "concurrently":  "^10.0.3",
-                            "electron":  "^43.0.0",
-                            "wait-on":  "^9.0.10"
-                        },
-    "main":  "dist-electron/main.cjs"
+  "name": "picom",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run electron:dev",
+    "renderer:dev": "vite --host 127.0.0.1",
+    "web:dev": "vite --host 127.0.0.1",
+    "electron:build": "tsc -p tsconfig.electron.json",
+    "electron:dev": "npm run electron:build && node scripts/electron-dev.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && npm run electron:build && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
+    "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
+    "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
+    "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.0",
+    "@vitejs/plugin-react": "latest",
+    "livekit-client": "^2.20.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "concurrently": "^10.0.3",
+    "electron": "^43.0.0",
+    "wait-on": "^9.0.10"
+  },
+  "main": "dist-electron/main.cjs"
 }
