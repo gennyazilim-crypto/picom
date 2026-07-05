@@ -36,6 +36,7 @@ assertCondition(packageJson.scripts?.["package:mac"], "macOS package script is m
 
 assertIncludes(builderConfig, "appId: com.picom.desktop", "electron-builder appId");
 assertIncludes(builderConfig, "productName: Picom", "electron-builder productName");
+assertIncludes(builderConfig, "copyright: Copyright (c) 2026 Picom", "ASCII-safe copyright metadata");
 assertIncludes(builderConfig, "target: nsis", "Windows NSIS target");
 assertIncludes(builderConfig, "target: AppImage", "Linux AppImage target");
 assertIncludes(builderConfig, "target: deb", "Linux deb target");
@@ -71,5 +72,10 @@ assertFile("assets/brand/icons/128x128.png");
 assertFile("assets/brand/icons/256x256.png");
 assertFile("assets/brand/icons/512x512.png");
 assertFile("assets/brand/icons/1024x1024.png");
+assertFile("docs/windows-smoke-test.md");
+assertFile("docs/linux-smoke-test.md");
+assertFile("docs/macos-smoke-test.md");
+assertFile("docs/electron-packaging.md");
+assertFile("docs/packaging-hardening.md");
 
 console.log("Electron packaging config verification passed.");

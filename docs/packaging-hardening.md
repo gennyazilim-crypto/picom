@@ -59,7 +59,7 @@ Run the lightweight packaging config check before platform packaging smoke tests
 npm run package:verify
 ```
 
-This command validates the expected Picom package identity, platform targets, window sizing, Electron security posture, and required icon asset paths without building installers.
+This command validates the expected Picom package identity, platform targets, window sizing, Electron security posture, ASCII-safe packaging metadata, required icon asset paths, and platform smoke-test documentation without building installers.
 
 ## Known local limitation
 
