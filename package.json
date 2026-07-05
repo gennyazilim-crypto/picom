@@ -80,7 +80,8 @@
     "slow-mode:placeholder:smoke": "node scripts/slow-mode-placeholder-smoke-test.mjs",
     "message:search-jump:smoke": "node scripts/message-search-jump-smoke-test.mjs",
     "notifications:routing:smoke": "node scripts/advanced-notification-routing-smoke-test.mjs",
-    "account-switcher:smoke": "node scripts/multi-account-placeholder-smoke-test.mjs"
+    "account-switcher:smoke": "node scripts/multi-account-placeholder-smoke-test.mjs",
+    "workspace:export-import:smoke": "node scripts/workspace-export-import-placeholder-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
