@@ -2031,6 +2031,134 @@ body{
 .message-search-highlight{border-radius:18px;animation:message-search-highlight 2.1s var(--motion-ease)}
 @keyframes message-search-highlight{0%{background:color-mix(in srgb,var(--picom-aqua) 18%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-aqua) 28%,transparent)}55%{background:color-mix(in srgb,var(--picom-aqua) 10%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-aqua) 16%,transparent)}100%{background:transparent;box-shadow:none}}
 
+/* Mention Feed social proof footer */
+.mention-card-footer{
+  justify-content:space-between;
+  align-items:center;
+  padding-top:4px;
+}
+.mention-footer-stats{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.mention-footer-pill{
+  min-height:30px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--surface-soft) 78%,transparent);
+  color:var(--text-muted);
+  padding:0 10px;
+  line-height:1;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 16%,transparent);
+}
+.mention-footer-pill strong{
+  color:var(--text-primary);
+  font-weight:850;
+}
+.mention-footer-pill.active{
+  border-color:color-mix(in srgb,var(--accent) 42%,var(--border));
+  background:var(--accent-soft);
+  color:var(--accent);
+}
+.emoji-summary-icons{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  font-size:14px;
+}
+.mention-comment-stack{
+  display:inline-flex;
+  align-items:center;
+  min-height:30px;
+  padding:0 8px 0 2px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--surface-soft) 78%,transparent);
+}
+.mention-comment-stack button{
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  padding:0;
+  cursor:pointer;
+}
+.mention-comment-stack button+button{
+  margin-left:-7px;
+}
+.mention-comment-stack .generated-avatar{
+  box-shadow:0 0 0 2px var(--surface),var(--shadow-soft);
+}
+.mention-comment-stack button:hover .generated-avatar{
+  transform:translateY(-1px);
+  box-shadow:0 0 0 2px var(--accent-soft),var(--shadow-soft);
+}
+.mention-comment-overflow{
+  min-width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  margin-left:-5px;
+  border-radius:999px;
+  background:var(--surface);
+  color:var(--text-secondary);
+  font-size:10px;
+  font-weight:850;
+  box-shadow:0 0 0 2px var(--surface);
+}
+.mention-card-actions button.active{
+  border-color:color-mix(in srgb,var(--accent) 44%,var(--border));
+  background:var(--accent-soft);
+  color:var(--accent);
+}
+.mention-comment-preview{
+  display:grid;
+  gap:6px;
+  margin-top:-4px;
+  padding:10px 12px;
+  border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--surface-soft) 64%,transparent);
+}
+.mention-comment-preview p{
+  margin:0;
+  display:flex;
+  gap:6px;
+  min-width:0;
+  color:var(--text-secondary);
+  font-size:12px;
+  line-height:1.4;
+}
+.mention-comment-preview strong{
+  flex:0 0 auto;
+  color:var(--text-primary);
+}
+.mention-comment-preview span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.mention-comment-preview button{
+  width:max-content;
+  border:0;
+  background:transparent;
+  color:var(--accent);
+  font-size:12px;
+  font-weight:800;
+  padding:0;
+  cursor:pointer;
+}
+
 /* Task 373: App lock / quick lock */
 .app-lock-backdrop{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:color-mix(in srgb,var(--bg-outer) 72%,rgba(16,32,51,.46));backdrop-filter:blur(18px);padding:32px;color:var(--text-primary)}
 .app-lock-card{width:min(460px,calc(100vw - 64px));display:grid;gap:18px;border:1px solid var(--border);border-radius:28px;background:var(--surface);box-shadow:var(--shadow);padding:24px}

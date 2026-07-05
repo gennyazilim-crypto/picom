@@ -1053,7 +1053,7 @@ export function App() {
       current.map((item) => {
         if (item.id !== id) return item;
 
-        const [primaryReaction, ...rest] = item.reactions ?? [{ emoji: "Like", count: 0 }];
+        const [primaryReaction, ...rest] = item.reactions ?? [{ emoji: "👍", count: 0 }];
         const reactedByCurrentUser = Boolean(primaryReaction.reactedByCurrentUser);
         const nextPrimaryReaction = {
           ...primaryReaction,

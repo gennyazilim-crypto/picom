@@ -5,7 +5,7 @@ import { dateTimeService } from "../services/dateTimeService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
-import { MentionReactionPill } from "./MentionReactionPill";
+import { MentionFeedFooter } from "./MentionFeedFooter";
 
 type MentionFeedCardProps = {
   item: MentionItem;
@@ -13,6 +13,8 @@ type MentionFeedCardProps = {
   community?: Community;
   channel?: Channel;
   mentionedMembers: Member[];
+  commenters: Member[];
+  commentPreviewMembers: Record<string, Member | undefined>;
   onOpenImage: (attachment: Attachment) => void;
   onOpenInChannel: (item: MentionItem) => void;
   onToggleReaction: (id: string) => void;
@@ -49,6 +51,8 @@ export function MentionFeedCard({
   community,
   channel,
   mentionedMembers,
+  commenters,
+  commentPreviewMembers,
   onOpenImage,
   onOpenInChannel,
   onToggleReaction,
@@ -57,7 +61,6 @@ export function MentionFeedCard({
   onOpenProfile,
   onOpenMore,
 }: MentionFeedCardProps) {
-  const reactionTotal = item.reactions?.reduce((sum, reaction) => sum + reaction.count, 0) ?? 0;
   const authorLabel = author?.displayName ?? "Picom member";
 
   return (
@@ -96,35 +99,16 @@ export function MentionFeedCard({
         {item.attachments?.length ? <AttachmentGrid attachments={item.attachments} onOpenImage={onOpenImage} /> : null}
       </div>
 
-      <footer className="mention-card-footer">
-        <MentionReactionPill reactions={item.reactions} />
-        <span>
-          <AppIcon name="users" size="xs" />
-          {item.viewCount ?? 0} views
-        </span>
-        <span>
-          <AppIcon name="reply" size="xs" />
-          {item.commentCount ?? 0} replies
-        </span>
-        <span>
-          <AppIcon name="smile" size="xs" />
-          {reactionTotal}
-        </span>
-        <div className="mention-card-actions">
-          <button type="button" onClick={() => onToggleReaction(item.id)}>
-            {item.reactions?.some((reaction) => reaction.reactedByCurrentUser) ? "Reacted" : "Like"}
-          </button>
-          <button type="button" onClick={() => onToggleSaved(item.id)}>
-            {item.isSaved ? "Saved" : "Save"}
-          </button>
-          <button type="button" disabled={!item.isUnread} onClick={() => onMarkRead(item.id)}>
-            {item.isUnread ? "Mark read" : "Read"}
-          </button>
-          <button type="button" onClick={() => onOpenInChannel(item)}>
-            Open in channel
-          </button>
-        </div>
-      </footer>
+      <MentionFeedFooter
+        item={item}
+        commenters={commenters}
+        commentPreviewMembers={commentPreviewMembers}
+        onToggleReaction={onToggleReaction}
+        onToggleSaved={onToggleSaved}
+        onMarkRead={onMarkRead}
+        onOpenInChannel={onOpenInChannel}
+        onOpenProfile={onOpenProfile}
+      />
     </article>
   );
 }

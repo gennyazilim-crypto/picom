@@ -27,6 +27,10 @@ function getMember(communities: Community[], userId: string): Member | undefined
   return communities.flatMap((community) => community.members).find((member) => member.userId === userId);
 }
 
+function getMembers(communities: Community[], userIds: string[] = []): Member[] {
+  return userIds.map((userId) => getMember(communities, userId)).filter((member): member is Member => Boolean(member));
+}
+
 export function MentionFeedList({
   items,
   communities,
@@ -54,6 +58,10 @@ export function MentionFeedList({
         const channel = getChannel(community, item);
         const author = getMember(communities, item.authorId);
         const mentionedMembers = item.mentionedUserIds.map((userId) => getMember(communities, userId)).filter(Boolean) as Member[];
+        const commenters = getMembers(communities, item.commenterIds);
+        const commentPreviewMembers = Object.fromEntries(
+          (item.commentPreview ?? []).map((comment) => [comment.authorId, getMember(communities, comment.authorId)])
+        );
 
         return (
           <MentionFeedCard
@@ -63,6 +71,8 @@ export function MentionFeedList({
             community={community}
             channel={channel}
             mentionedMembers={mentionedMembers}
+            commenters={commenters}
+            commentPreviewMembers={commentPreviewMembers}
             onOpenImage={onOpenImage}
             onOpenInChannel={onOpenInChannel}
             onToggleReaction={onToggleReaction}
