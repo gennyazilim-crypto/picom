@@ -449,6 +449,10 @@ function configureWebContents(window: BrowserWindow): void {
     event.preventDefault();
     openExternalSafely(url);
   });
+
+  window.webContents.on("will-attach-webview", (event) => {
+    event.preventDefault();
+  });
 }
 
 function registerWindowStateForwarding(window: BrowserWindow): void {
