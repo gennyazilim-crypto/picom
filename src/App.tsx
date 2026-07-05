@@ -47,6 +47,7 @@ import { authService } from "./services/authService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
+import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
 import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
 import { reportService } from "./services/reportService";
@@ -1246,6 +1247,10 @@ export function App() {
       isPrivate: result.data.isPrivate,
       position: result.data.position,
     });
+
+    if (value.isPrivate) {
+      privateChannelPermissionService.saveChannelPermissions(channel.id, value.allowedRoleIds);
+    }
 
     setActiveChannelId(channel.id);
     clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });

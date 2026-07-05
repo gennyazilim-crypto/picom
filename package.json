@@ -58,6 +58,7 @@
     "privacy:data-export:smoke": "node scripts/data-export-placeholder-smoke-test.mjs",
     "community:ownership-transfer:smoke": "node scripts/community-ownership-transfer-smoke-test.mjs",
     "community:delete-safety:smoke": "node scripts/community-delete-safety-smoke-test.mjs",
+    "channel:private-permissions:smoke": "node scripts/private-channel-permissions-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {

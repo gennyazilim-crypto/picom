@@ -10,6 +10,7 @@ export type CreateChannelFormValue = {
   type: ChannelType;
   categoryId: string | null;
   isPrivate: boolean;
+  allowedRoleIds: string[];
 };
 
 type CreateChannelModalProps = {
@@ -29,6 +30,8 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
   const [type, setType] = useState<ChannelType>("text");
   const [categoryId, setCategoryId] = useState<string | null>(defaultCategoryId ?? firstCategoryId);
   const [isPrivate, setIsPrivate] = useState(false);
+  const permissionRoles = useMemo(() => community.roles.filter((role) => role.name === "Owner" || role.name === "Admin" || role.name === "Moderator"), [community.roles]);
+  const [allowedRoleIds, setAllowedRoleIds] = useState<string[]>(() => permissionRoles.map((role) => role.id));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const normalizedName = useMemo(() => normalizePreview(name), [name]);
@@ -38,6 +41,10 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  const toggleAllowedRole = (roleId: string) => {
+    setAllowedRoleIds((current) => current.includes(roleId) ? current.filter((id) => id !== roleId) : [...current, roleId]);
+  };
 
   const submit = async () => {
     if (!normalizedName) {
@@ -49,7 +56,7 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
     setError(null);
 
     try {
-      await onSubmit({ name: normalizedName, type, categoryId, isPrivate });
+      await onSubmit({ name: normalizedName, type, categoryId, isPrivate, allowedRoleIds: isPrivate ? allowedRoleIds : [] });
     } catch {
       setError("Could not create channel. Please try again.");
     } finally {
@@ -103,6 +110,21 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
             <em>Hidden from normal participants until backend permissions are connected.</em>
           </span>
         </label>
+
+        {isPrivate ? (
+          <div className="private-channel-permissions" aria-label="Private channel role permissions placeholder">
+            <span>Allowed roles placeholder</span>
+            <p>Backend RLS will remain the source of truth later. This local setup records which roles should be allowed.</p>
+            <div>
+              {permissionRoles.map((role) => (
+                <label key={role.id}>
+                  <input type="checkbox" checked={allowedRoleIds.includes(role.id)} onChange={() => toggleAllowedRole(role.id)} />
+                  <strong>{role.name}</strong>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {error ? <div className="auth-error">{error}</div> : null}
 
