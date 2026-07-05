@@ -101,7 +101,8 @@
     "startup:smoke": "node scripts/launch-on-startup-smoke-test.mjs",
     "app-lock:smoke": "node scripts/app-lock-smoke-test.mjs",
     "e2ee:architecture:smoke": "node scripts/e2ee-architecture-smoke-test.mjs",
-    "compliance:export-deletion:smoke": "node scripts/compliance-export-deletion-smoke-test.mjs"
+    "compliance:export-deletion:smoke": "node scripts/compliance-export-deletion-smoke-test.mjs",
+    "localization:qa:smoke": "node scripts/localization-qa-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
