@@ -1,3 +1,5 @@
+import { formatUserFacingError } from "./errorCodes";
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export type LogEntry = {
@@ -145,7 +147,7 @@ export const loggingService = {
     };
   },
 
-  formatUserError(_error: unknown, fallbackMessage = "Something went wrong. Please try again."): string {
-    return fallbackMessage;
+  formatUserError(error: unknown, fallbackMessage = "Something went wrong. Please try again."): string {
+    return formatUserFacingError(error, fallbackMessage);
   }
 };
