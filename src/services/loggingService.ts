@@ -11,10 +11,11 @@ export type LogEntry = {
 
 type LogListener = (entry: LogEntry) => void;
 
-const SENSITIVE_KEY_PATTERN = /(password|passcode|token|cookie|authorization|secret|session|jwt|api[-_]?key|service[-_]?role)/i;
+const SENSITIVE_KEY_PATTERN = /(password|passcode|token|cookie|authorization|secret|session|jwt|api[-_]?key|service[-_]?role|livekit|supabase|signing|private[-_]?key|access[-_]?token|refresh[-_]?token)/i;
 const BEARER_PATTERN = /Bearer\s+[a-zA-Z0-9._-]+/g;
 const JWT_PATTERN = /\b[a-zA-Z0-9_-]{12,}\.[a-zA-Z0-9_-]{12,}\.[a-zA-Z0-9_-]{12,}\b/g;
-const KEY_VALUE_SECRET_PATTERN = /\b(password|token|secret|authorization|cookie|api_key|apikey|session)=([^&\s]+)/gi;
+const KEY_VALUE_SECRET_PATTERN = /\b(password|token|secret|authorization|cookie|api_key|apikey|service_role|livekit_secret|signing_key|access_token|refresh_token|session)=([^&\s]+)/gi;
+const SUPABASE_SERVICE_ROLE_PATTERN = /\beyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b/g;
 const logs: LogEntry[] = [];
 const listeners = new Set<LogListener>();
 const MAX_LOGS = 250;
@@ -24,6 +25,7 @@ function redactString(value: string): string {
   const redacted = value
     .replace(BEARER_PATTERN, "Bearer [redacted]")
     .replace(JWT_PATTERN, "[redacted-jwt]")
+    .replace(SUPABASE_SERVICE_ROLE_PATTERN, "[redacted-jwt]")
     .replace(KEY_VALUE_SECRET_PATTERN, "$1=[redacted]");
 
   return redacted.length > 1200 ? `${redacted.slice(0, 1200)}...[truncated]` : redacted;

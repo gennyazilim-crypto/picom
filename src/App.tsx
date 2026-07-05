@@ -33,6 +33,7 @@ import { DirectMessagesView } from "./components/DirectMessagesView";
 import { FriendsView } from "./components/FriendsView";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
+import { diagnosticsService } from "./services/diagnosticsService";
 import { feedbackService } from "./services/feedbackService";
 import { loggingService } from "./services/loggingService";
 import { menuService, type MenuActionPayload } from "./services/menuService";
@@ -350,6 +351,9 @@ export function App() {
     avatarUrl: currentUser.avatarUrl,
     status: currentUser.status,
   });
+  useEffect(() => {
+    diagnosticsService.setRealtimeStatus(realtimeStatus);
+  }, [realtimeStatus]);
   const displayedActiveCommunity = useMemo<Community>(() => {
     const baseCommunity = !presenceChannel.onlineUserIds.length ? activeCommunity : {
       ...activeCommunity,

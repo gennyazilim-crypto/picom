@@ -1,4 +1,4 @@
-import { appConfig } from "../config/appConfig";
+import { diagnosticsService } from "./diagnosticsService";
 import { fileService } from "./fileService";
 import { loggingService, type LogEntry } from "./loggingService";
 
@@ -23,6 +23,7 @@ export type SupportDiagnosticsPayload = Readonly<{
   app: {
     name: string;
     identifier: string;
+    version: string;
     environment: string;
     releaseChannel: string;
     dataSource: string;
@@ -33,6 +34,15 @@ export type SupportDiagnosticsPayload = Readonly<{
     platform: string;
     language: string;
     online: boolean;
+  };
+  serviceStatus: {
+    realtimeStatus: string;
+    lastApiError: null | {
+      id: string;
+      timestamp: string;
+      message: string;
+      source?: string;
+    };
   };
   feedback?: FeedbackDraft;
   recentLogs: LogEntry[];
@@ -70,22 +80,13 @@ function browserDownload(defaultPath: string, content: string): SupportLogExport
 
 export const feedbackService = {
   createDiagnosticsPayload(feedback?: FeedbackDraft): SupportDiagnosticsPayload {
+    const diagnostics = diagnosticsService.getSnapshot();
+
     return {
       createdAt: new Date().toISOString(),
-      app: {
-        name: appConfig.name,
-        identifier: appConfig.identifier,
-        environment: appConfig.environment,
-        releaseChannel: appConfig.releaseChannel,
-        dataSource: appConfig.dataSource,
-        runtimeTarget: appConfig.runtimeTarget
-      },
-      runtime: {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        online: navigator.onLine
-      },
+      app: diagnostics.app,
+      runtime: diagnostics.runtime,
+      serviceStatus: diagnostics.serviceStatus,
       feedback,
       recentLogs: feedback?.includeLogs ? loggingService.getRecentLogs(75) : [],
       note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, service-role keys, or private secrets."
