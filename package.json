@@ -33,6 +33,7 @@
     "desktop:smoke": "node scripts/desktop-only-smoke-test.mjs",
     "electron:security:smoke": "node scripts/electron-security-smoke-test.mjs",
     "settings:diagnostics:smoke": "node scripts/settings-diagnostics-smoke-test.mjs",
+    "livekit:smoke": "node scripts/livekit-smoke-test.mjs",
     "qa:smoke": "node scripts/qa-smoke-gate.mjs",
     "qa:supabase": "node scripts/supabase-qa-gate.mjs",
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
