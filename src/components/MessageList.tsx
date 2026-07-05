@@ -8,6 +8,7 @@ type MessageListProps = {
   community: Community;
   messages: Message[];
   currentUserId: string;
+  highlightedMessageId?: string | null;
   editingMessageId: string | null;
   typingNames: string[];
   onContextMenu: (event: MouseEvent, message: Message) => void;
@@ -36,6 +37,7 @@ export function MessageList({
   community,
   messages,
   currentUserId,
+  highlightedMessageId,
   editingMessageId,
   typingNames,
   onContextMenu,
@@ -61,6 +63,18 @@ export function MessageList({
     return () => window.cancelAnimationFrame(frame);
   }, [lastMessageId]);
 
+  useEffect(() => {
+    if (!highlightedMessageId) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const target = Array.from(listRef.current?.querySelectorAll<HTMLElement>("[data-message-id]") ?? [])
+        .find((element) => element.dataset.messageId === highlightedMessageId);
+      target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlightedMessageId, messages.length]);
+
   if (!messages.length) {
     return (
       <div className="message-list empty-state">
@@ -82,7 +96,7 @@ export function MessageList({
 
         if (blockedUserMessage) {
           return (
-            <div key={message.id}>
+            <div key={message.id} data-message-id={message.id} className={message.id === highlightedMessageId ? "message-search-highlight" : undefined}>
               {index === Math.max(1, Math.floor(messages.length / 2)) ? <UnreadDivider /> : null}
               <div className="blocked-message-placeholder">
                 <strong>Blocked user message</strong>
@@ -93,7 +107,7 @@ export function MessageList({
         }
 
         return (
-          <div key={message.id}>
+          <div key={message.id} data-message-id={message.id} className={message.id === highlightedMessageId ? "message-search-highlight" : undefined}>
             {index === Math.max(1, Math.floor(messages.length / 2)) ? <UnreadDivider /> : null}
             <MessageItem
               message={message}

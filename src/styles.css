@@ -2026,3 +2026,7 @@ body{
 .message-composer.is-disabled .composer-bar{background:color-mix(in srgb,var(--surface-soft) 72%,var(--bg-chat));border-style:dashed}
 .composer-bar textarea:disabled{color:var(--text-muted);cursor:not-allowed}
 .composer-tool:disabled{opacity:.45;cursor:not-allowed}
+
+/* Task 352: Message search result jump highlight */
+.message-search-highlight{border-radius:18px;animation:message-search-highlight 2.1s var(--motion-ease)}
+@keyframes message-search-highlight{0%{background:color-mix(in srgb,var(--picom-aqua) 18%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-aqua) 28%,transparent)}55%{background:color-mix(in srgb,var(--picom-aqua) 10%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-aqua) 16%,transparent)}100%{background:transparent;box-shadow:none}}

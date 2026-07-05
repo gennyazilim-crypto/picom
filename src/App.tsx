@@ -194,6 +194,7 @@ export function App() {
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
@@ -771,6 +772,15 @@ export function App() {
     return menuService.onAction(handleMenuAction);
   }, [closeTransientOverlays, directConversations, openPalette, openSettings, openSystemStatusPage, pushToast]);
 
+  const jumpToMessage = useCallback((community: Community, message: Message) => {
+    setActiveView("community");
+    switchCommunity(community.id, message.channelId);
+    setActiveChannelId(message.channelId);
+    clearChannelUnread({ communityId: community.id, channelId: message.channelId });
+    setHighlightedMessageId(message.id);
+    window.setTimeout(() => setHighlightedMessageId((current) => (current === message.id ? null : current)), 2200);
+  }, [clearChannelUnread, setActiveChannelId, switchCommunity]);
+
   const paletteResults = useMemo<PaletteResult[]>(() => {
     const q = paletteQuery.toLowerCase();
     const all: PaletteResult[] = [
@@ -890,11 +900,9 @@ export function App() {
           label: message.body.slice(0, 54),
           detail: community.name,
           run: () => {
-            switchCommunity(community.id);
-            setActiveChannelId(message.channelId);
-            clearChannelUnread({ communityId: community.id, channelId: message.channelId });
+            jumpToMessage(community, message);
             closePalette();
-            pushToast("Message channel opened. Highlight placeholder is pending.", "info");
+            pushToast("Opened message in channel.", "success");
           },
         }),
       );
@@ -903,7 +911,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
+  }, [clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");
@@ -1455,6 +1463,7 @@ export function App() {
                 onTypingStop={typingBroadcast.sendTypingStop}
                 onSendMessage={sendMessage}
                 currentUserId={currentUser.userId}
+                highlightedMessageId={highlightedMessageId}
                 replyToMessage={replyToMessage}
                 editingMessageId={editingMessageId}
                 onCancelReply={() => setReplyToMessageId(null)}

@@ -29,6 +29,7 @@ type ChatMainProps = {
   onTypingStart: () => void;
   onTypingStop: () => void;
   currentUserId: string;
+  highlightedMessageId?: string | null;
   replyToMessage?: Message | null;
   editingMessageId: string | null;
   onCancelReply: () => void;
@@ -57,6 +58,7 @@ export function ChatMain({
   onTypingStart,
   onTypingStop,
   currentUserId,
+  highlightedMessageId,
   replyToMessage,
   editingMessageId,
   onCancelReply,
@@ -185,6 +187,7 @@ export function ChatMain({
             community={community}
             messages={channelMessages}
             currentUserId={currentUserId}
+            highlightedMessageId={highlightedMessageId}
             editingMessageId={editingMessageId}
             typingNames={typingNames}
             onContextMenu={onMessageContextMenu}
