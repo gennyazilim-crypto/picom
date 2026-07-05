@@ -114,7 +114,9 @@
     "architecture:long-term:smoke": "node scripts/long-term-architecture-review-smoke-test.mjs",
     "roadmap:smoke": "node scripts/roadmap-smoke-test.mjs",
     "adr:smoke": "node scripts/adr-smoke-test.mjs",
-    "package-boundaries:smoke": "node scripts/package-boundaries-smoke-test.mjs"
+    "package-boundaries:smoke": "node scripts/package-boundaries-smoke-test.mjs",
+    "shared:types:check": "tsc -p packages/shared/tsconfig.json",
+    "shared:types:smoke": "node scripts/shared-types-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

@@ -8,3 +8,5 @@ release/
 .DS_Store
 Thumbs.db
 dist-electron/
+
+packages/shared/dist/
