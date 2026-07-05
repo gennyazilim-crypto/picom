@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Community, Member } from "../types/community";
+import { dateTimeService } from "../services/dateTimeService";
 import { messageModerationFilterService } from "../services/messageModerationFilterService";
 import { AppIcon } from "./AppIcon";
 
@@ -53,7 +54,7 @@ export function MessageModerationFiltersPanel({ community, currentUser }: Messag
         <input type="number" min={1} max={50} value={maxMentions} onChange={(event) => setMaxMentions(Number(event.target.value))} />
       </label>
       <button type="button" onClick={saveFilters}>Save filters</button>
-      <small className="moderation-filter-status">{savedAt ? `Saved ${new Date(savedAt).toLocaleTimeString()}` : "Not configured"}</small>
+      <small className="moderation-filter-status">{savedAt ? `Saved ${dateTimeService.formatMessageTime(savedAt)}` : "Not configured"}</small>
     </section>
   );
 }

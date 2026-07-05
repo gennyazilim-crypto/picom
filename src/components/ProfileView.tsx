@@ -1,4 +1,5 @@
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
+import { dateTimeService } from "../services/dateTimeService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
@@ -56,15 +57,6 @@ function getSkills(member: Member, roleName: string) {
   if (roleName === "Admin") return ["Operations", "Member care", ...base];
   if (roleName === "Moderator") return ["Moderation", "Signal boost", ...base];
   return base;
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 export function ProfileView({
@@ -172,7 +164,7 @@ export function ProfileView({
               <button key={activity.message.id} className="profile-activity-card" type="button" onClick={() => onOpenActivity(activity)}>
                 <span>
                   <strong>{activity.community.name}</strong>
-                  <small>#{activity.channel.name} / {formatDate(activity.message.createdAt)}</small>
+                  <small>#{activity.channel.name} / {dateTimeService.formatCompactDateTime(activity.message.createdAt)}</small>
                 </span>
                 <p>{activity.message.body}</p>
               </button>

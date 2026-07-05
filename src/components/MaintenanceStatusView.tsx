@@ -1,4 +1,5 @@
 import type { MaintenanceStatusSnapshot } from "../services/maintenanceStatusService";
+import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon } from "./AppIcon";
 
 type MaintenanceStatusViewProps = {
@@ -17,7 +18,7 @@ export function MaintenanceStatusView({ status, onRetry, onOpenStatusPage }: Mai
         <p className="eyebrow">Scheduled maintenance</p>
         <h1>Picom is temporarily unavailable</h1>
         <p>{status.message || "We are performing scheduled service maintenance. Please retry in a moment."}</p>
-        {status.estimatedEndAt ? <small>Estimated end: {new Date(status.estimatedEndAt).toLocaleString()}</small> : null}
+        {status.estimatedEndAt ? <small>Estimated end: {dateTimeService.formatFullTimestamp(status.estimatedEndAt)}</small> : null}
         <div className="maintenance-actions">
           <button type="button" onClick={onRetry}>
             Retry status check

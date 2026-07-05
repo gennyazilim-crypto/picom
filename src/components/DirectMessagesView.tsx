@@ -1,4 +1,5 @@
 import type { DirectConversation } from "../types/directMessages";
+import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon } from "./AppIcon";
 
 type DirectMessagesViewProps = {
@@ -9,10 +10,6 @@ type DirectMessagesViewProps = {
   onBackToCommunity: () => void;
   onOpenProfile: (userId: string) => void;
 };
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
-}
 
 export function DirectMessagesView({
   conversations,
@@ -75,7 +72,7 @@ export function DirectMessagesView({
                 return (
                   <article key={message.id} className={`direct-message ${own ? "own" : ""}`}>
                     <span>{message.body}</span>
-                    <small>{message.isPlaceholder ? "Placeholder - " : ""}{formatTime(message.createdAt)}</small>
+                    <small>{message.isPlaceholder ? "Placeholder - " : ""}{dateTimeService.formatMessageTime(message.createdAt)}</small>
                   </article>
                 );
               })}

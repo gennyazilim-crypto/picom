@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { Attachment, Member, Message, Role } from "../types/community";
+import { dateTimeService } from "../services/dateTimeService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { MemberAvatar } from "./MemberAvatar";
 import { MessageHoverActions } from "./MessageHoverActions";
@@ -87,7 +88,7 @@ export function MessageItem({
         <div className="message-meta">
           <strong>{member.displayName}</strong>
           {role ? <span className="role-label" style={{ color: role.color }}>{role.name}</span> : null}
-          <time>{new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
+          <time title={dateTimeService.formatFullTimestamp(message.createdAt)}>{dateTimeService.formatMessageTime(message.createdAt)}</time>
           {message.editedAt && !deleted ? <span className="message-edited-label">edited</span> : null}
           {message.authorId === currentUserId ? <span className="message-own-label">you</span> : null}
         </div>

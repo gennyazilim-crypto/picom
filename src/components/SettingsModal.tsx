@@ -13,6 +13,7 @@ import { appLockService } from "../services/appLockService";
 import { shortcutService } from "../services/shortcutService";
 import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
+import { dateTimeService } from "../services/dateTimeService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -328,8 +329,8 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
                       <small>{session.email ?? session.displayName ?? "Current Picom account"}</small>
                     </div>
                     <span className={`session-status ${session.status}`}>{session.current ? "Current" : session.status}</span>
-                    <small>Provider: {session.provider}. Last checked: {new Date(session.lastUsedAt).toLocaleString()}.</small>
-                    {session.expiresAt ? <small>Expires: {new Date(session.expiresAt).toLocaleString()}.</small> : <small>Mock/local sessions do not expose an expiry.</small>}
+                    <small>Provider: {session.provider}. Last checked: {dateTimeService.formatFullTimestamp(session.lastUsedAt)}.</small>
+                    {session.expiresAt ? <small>Expires: {dateTimeService.formatFullTimestamp(session.expiresAt)}.</small> : <small>Mock/local sessions do not expose an expiry.</small>}
                   </article>
                 ))}
               </div>

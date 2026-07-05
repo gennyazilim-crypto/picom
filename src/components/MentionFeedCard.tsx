@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member } from "../types/community";
 import type { MentionItem } from "../types/mentions";
+import { dateTimeService } from "../services/dateTimeService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
@@ -20,15 +21,6 @@ type MentionFeedCardProps = {
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenMore: (event: MouseEvent, item: MentionItem) => void;
 };
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-}
 
 function renderMentionBody(body: string, mentionedMembers: Member[]) {
   const mentionNames = new Set(mentionedMembers.map((member) => `@${member.displayName}`));
@@ -82,7 +74,7 @@ export function MentionFeedCard({
         <div className="mention-author-copy">
           <strong>{authorLabel}</strong>
           <span>
-            {community?.name ?? "Visible community"} / #{channel?.name ?? "channel"} / {formatTime(item.createdAt)}
+            {community?.name ?? "Visible community"} / #{channel?.name ?? "channel"} / {dateTimeService.formatCompactDateTime(item.createdAt)}
           </span>
         </div>
         {item.isUnread ? <span className="mention-unread-badge">Unread</span> : null}
