@@ -41,6 +41,7 @@ import { loggingService } from "./services/loggingService";
 import { menuService, type MenuActionPayload } from "./services/menuService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
+import { trayService, type TrayStatus } from "./services/trayService";
 import { maintenanceStatusService } from "./services/maintenanceStatusService";
 import { statusPageService } from "./services/statusPageService";
 import { authService } from "./services/authService";
@@ -68,6 +69,17 @@ const overlayIcons = mvpUiIconMap.overlays;
 
 function getLocalMentionCount(body: string, currentUser: Member): number {
   return messageMentionsUser(body, currentUser.username, currentUser.displayName) ? 1 : 0;
+}
+
+const trayPresenceLabels: Record<TrayStatus, string> = {
+  online: "Online now",
+  idle: "Idle now",
+  dnd: "Do not disturb",
+  invisible: "Invisible",
+};
+
+function mapTrayStatusToMemberStatus(status: TrayStatus): Member["status"] {
+  return status === "invisible" ? "offline" : status;
 }
 
 type PaletteResult = {
@@ -183,6 +195,7 @@ export function App() {
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
   const [maintenanceStatus, setMaintenanceStatus] = useState(() => maintenanceStatusService.getSnapshot());
   const [profileSettings, setProfileSettings] = useState(saved.profileSettings);
+  const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>("online");
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [activeView, setActiveView] = useState<ActiveView>("community");
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
@@ -403,12 +416,13 @@ export function App() {
         return {
           ...member,
           displayName: profileSettings.displayName || member.displayName,
-          statusText: profileSettings.statusText || member.statusText,
+          status: mapTrayStatusToMemberStatus(trayPresenceStatus),
+          statusText: profileSettings.statusText || trayPresenceLabels[trayPresenceStatus] || member.statusText,
           bio: profileSettings.bio || member.bio,
         };
       }),
     };
-  }, [activeCommunity, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings]);
+  }, [activeCommunity, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings, trayPresenceStatus]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const replyToMessage = useMemo(
@@ -771,6 +785,35 @@ export function App() {
 
     return menuService.onAction(handleMenuAction);
   }, [closeTransientOverlays, directConversations, openPalette, openSettings, openSystemStatusPage, pushToast]);
+
+  useEffect(() => {
+    const handleTrayAction = (payload: PicomTrayActionPayload) => {
+      if (payload.action === "open") {
+        pushToast("Picom restored from the system tray.", "info");
+        return;
+      }
+
+      if (payload.action === "settings") {
+        closeTransientOverlays();
+        openSettings();
+        pushToast("Opened settings from the system tray.", "info");
+        return;
+      }
+
+      if (payload.action === "mute") {
+        settingsService.updateNotificationSettings({ muted: payload.muted });
+        pushToast(payload.muted ? "Notifications muted from the system tray." : "Notifications unmuted from the system tray.", "info");
+        return;
+      }
+
+      if (payload.action === "online" || payload.action === "idle" || payload.action === "dnd" || payload.action === "invisible") {
+        setTrayPresenceStatus(payload.action);
+        pushToast(`Status set to ${trayPresenceLabels[payload.action]}.`, "info");
+      }
+    };
+
+    return trayService.onAction(handleTrayAction);
+  }, [closeTransientOverlays, openSettings, pushToast]);
 
   const jumpToMessage = useCallback((community: Community, message: Message) => {
     setActiveView("community");

@@ -96,7 +96,8 @@
     "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs",
     "attachment-delivery:smoke": "node scripts/attachment-delivery-smoke-test.mjs",
     "protocol-handler:smoke": "node scripts/protocol-handler-smoke-test.mjs",
-    "native-notifications:smoke": "node scripts/native-notifications-smoke-test.mjs"
+    "native-notifications:smoke": "node scripts/native-notifications-smoke-test.mjs",
+    "tray:integration:smoke": "node scripts/tray-integration-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
