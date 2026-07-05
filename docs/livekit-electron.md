@@ -188,3 +188,26 @@ Expected Windows results:
 - If Windows privacy settings block capture, Picom shows a safe screen-share error.
 - The app does not expose source thumbnails, tokens, or screen content in logs.
 - Voice mute/deafen and participant list remain usable while sharing.
+
+## Linux screen share test
+
+Use this test on Linux before marking screen share ready:
+
+1. Test at least one X11 session and one Wayland session when practical.
+2. Confirm PipeWire and desktop portal packages are available for Wayland screen capture.
+3. Start Picom in Electron dev mode or from a packaged Linux build.
+4. Sign in with a test account and open a community voice channel.
+5. Join the voice room and confirm microphone state is clear.
+6. Click `Choose source` and confirm the source picker returns screens/windows.
+7. Select a source and click `Start sharing`.
+8. Confirm the local screen-share viewer renders the selected source.
+9. Join from a second client and confirm the remote viewer renders.
+10. Click `Stop sharing`, then leave the room and confirm capture stops.
+
+Expected Linux results:
+
+- On Wayland, missing portal/PipeWire setup can prevent source listing or capture; Picom should show a safe error.
+- On X11, screen/window capture should work when Electron and the desktop environment expose capturable sources.
+- If thumbnails are blank, the app should still avoid crashes and keep voice controls usable.
+- No source thumbnails, screen content, tokens, or device identifiers should be written to logs.
+- Voice mute/deafen, connected users, and speaking indicators should remain responsive while sharing.
