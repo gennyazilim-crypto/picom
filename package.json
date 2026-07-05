@@ -44,6 +44,7 @@
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
+    "jobs:smoke": "node scripts/job-queue-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs"
   },
   "dependencies": {
