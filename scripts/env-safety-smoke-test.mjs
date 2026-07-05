@@ -31,6 +31,7 @@ const allowedViteNames = new Set([
   "VITE_SUPABASE_URL",
   "VITE_SUPABASE_ANON_KEY",
   "VITE_LIVEKIT_URL",
+  "VITE_STATUS_PAGE_URL",
   "VITE_DEV_SERVER_URL"
 ]);
 

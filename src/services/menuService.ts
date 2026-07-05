@@ -6,6 +6,7 @@ export type MenuAction =
   | "open-friends"
   | "open-help"
   | "open-about"
+  | "open-system-status"
   | "send-feedback"
   | "export-diagnostics"
   | "quit";
@@ -32,6 +33,7 @@ const menuLabels: Record<MenuAction, string> = {
   "open-friends": "Open Friends",
   "open-help": "Open Help",
   "open-about": "Open About",
+  "open-system-status": "Open System Status",
   "send-feedback": "Send Feedback",
   "export-diagnostics": "Export Diagnostics",
   quit: "Quit Picom"

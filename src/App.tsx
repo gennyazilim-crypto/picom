@@ -42,6 +42,7 @@ import { menuService, type MenuActionPayload } from "./services/menuService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
 import { maintenanceStatusService } from "./services/maintenanceStatusService";
+import { statusPageService } from "./services/statusPageService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
@@ -420,6 +421,15 @@ export function App() {
   const refreshMaintenanceStatus = useCallback(() => {
     void maintenanceStatusService.refresh().then(setMaintenanceStatus);
   }, []);
+  const openSystemStatusPage = useCallback(async () => {
+    const result = await statusPageService.openStatusPage();
+    if (result.ok) {
+      pushToast(`Opened system status: ${statusPageService.getDisplayDomain()}.`, "success");
+      return;
+    }
+
+    pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
+  }, [pushToast]);
 
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
@@ -704,6 +714,11 @@ export function App() {
         return;
       }
 
+      if (payload.action === "open-system-status") {
+        void openSystemStatusPage();
+        return;
+      }
+
       if (payload.action === "export-diagnostics") {
         void feedbackService.exportSupportDiagnostics({
           issueType: "other",
@@ -734,7 +749,7 @@ export function App() {
     };
 
     return menuService.onAction(handleMenuAction);
-  }, [closeTransientOverlays, directConversations, openPalette, openSettings, pushToast]);
+  }, [closeTransientOverlays, directConversations, openPalette, openSettings, openSystemStatusPage, pushToast]);
 
   const paletteResults = useMemo<PaletteResult[]>(() => {
     const q = paletteQuery.toLowerCase();
@@ -1034,7 +1049,7 @@ export function App() {
         <DesktopAppShell>
           <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
           {maintenanceStatus.status === "maintenance" ? (
-            <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
+            <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} onOpenStatusPage={openSystemStatusPage} />
           ) : authView === "login" ? (
             <LoginScreen
               theme={theme}
@@ -1235,7 +1250,7 @@ export function App() {
       <DesktopAppShell>
         <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={openPalette} />
         {maintenanceStatus.status === "maintenance" ? (
-          <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
+          <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} onOpenStatusPage={openSystemStatusPage} />
         ) : (
         <div className="desktop-frame">
           <MaintenanceStatusBanner status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />

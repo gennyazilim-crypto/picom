@@ -4,9 +4,10 @@ import { AppIcon } from "./AppIcon";
 type MaintenanceStatusViewProps = {
   status: MaintenanceStatusSnapshot;
   onRetry: () => void;
+  onOpenStatusPage?: () => void;
 };
 
-export function MaintenanceStatusView({ status, onRetry }: MaintenanceStatusViewProps) {
+export function MaintenanceStatusView({ status, onRetry, onOpenStatusPage }: MaintenanceStatusViewProps) {
   return (
     <main className="maintenance-screen" aria-live="polite">
       <section className="maintenance-card">
@@ -17,9 +18,16 @@ export function MaintenanceStatusView({ status, onRetry }: MaintenanceStatusView
         <h1>Picom is temporarily unavailable</h1>
         <p>{status.message || "We are performing scheduled service maintenance. Please retry in a moment."}</p>
         {status.estimatedEndAt ? <small>Estimated end: {new Date(status.estimatedEndAt).toLocaleString()}</small> : null}
-        <button type="button" onClick={onRetry}>
-          Retry status check
-        </button>
+        <div className="maintenance-actions">
+          <button type="button" onClick={onRetry}>
+            Retry status check
+          </button>
+          {onOpenStatusPage ? (
+            <button type="button" onClick={onOpenStatusPage}>
+              System status
+            </button>
+          ) : null}
+        </div>
       </section>
     </main>
   );

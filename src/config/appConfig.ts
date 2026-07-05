@@ -21,6 +21,7 @@ export const appConfig = Object.freeze({
   environment,
   releaseChannel: getReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment),
   dataSource: getDataSourceMode(import.meta.env.VITE_DATA_SOURCE),
+  statusPageUrl: import.meta.env.VITE_STATUS_PAGE_URL ?? "",
   runtimeTarget: "electron" as const,
   supportedPlatforms: ["windows", "linux", "macos"] as const,
   supabase: Object.freeze({

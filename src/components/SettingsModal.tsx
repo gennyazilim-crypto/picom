@@ -3,6 +3,7 @@ import { notificationService } from "../services/notificationService";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { menuService } from "../services/menuService";
 import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
+import { statusPageService } from "../services/statusPageService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
@@ -87,6 +88,15 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
     }
 
     pushToast(result.reason, "error");
+  };
+  const openSystemStatus = async () => {
+    const result = await statusPageService.openStatusPage();
+    if (result.ok) {
+      pushToast(`Opened system status: ${statusPageService.getDisplayDomain()}.`, "success");
+      return;
+    }
+
+    pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
   };
 
   return (
@@ -230,6 +240,12 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
               <div className="settings-actions-row">
                 <button onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
                 <button onClick={() => menuService.triggerPlaceholderAction("export-diagnostics")}>Simulate menu diagnostics</button>
+                <button onClick={openSystemStatus}>Open system status</button>
+              </div>
+              <div className="settings-status-card" aria-label="System status page placeholder">
+                <span>System status</span>
+                <strong>{statusPageService.isConfigured() ? statusPageService.getDisplayDomain() : "Not configured"}</strong>
+                <small>Future production deployments can point `VITE_STATUS_PAGE_URL` to a public non-sensitive status page.</small>
               </div>
               <div className="settings-status-card" aria-label="Beta feedback and logs placeholder">
                 <span>Beta support</span>

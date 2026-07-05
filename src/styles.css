@@ -414,6 +414,13 @@ html,body,#root,.picom-root,.desktop-app-shell,.desktop-frame{max-width:100%;ove
   color: var(--text-muted);
 }
 
+.maintenance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
 .maintenance-card button,
 .maintenance-banner button {
   height: 36px;
