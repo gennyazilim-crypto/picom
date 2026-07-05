@@ -3,6 +3,7 @@ import type { VoiceParticipant, VoiceServiceSnapshot } from "../services/voiceSe
 import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { ScreenSharePicker } from "./voice/ScreenSharePicker";
+import { ScreenShareViewer } from "./voice/ScreenShareViewer";
 
 type VoiceRoomViewProps = {
   community: Community;
@@ -34,7 +35,7 @@ function findMemberForParticipant(community: Community, participant: VoicePartic
 
 function getParticipantStatus(participant: VoiceParticipant): string {
   if (!participant.isMicrophoneEnabled) {
-    return participant.isLocal ? "You · muted" : "Muted";
+    return participant.isLocal ? "You - muted" : "Muted";
   }
 
   if (participant.isSpeaking) {
@@ -75,6 +76,8 @@ export function VoiceRoomView({
           {statusLabels[snapshot.status]}
         </span>
       </div>
+
+      <ScreenShareViewer shares={snapshot.screenShares} />
 
       <div className="voice-room-grid">
         <article className="voice-room-card">

@@ -15,6 +15,7 @@ const initialVoiceSnapshot: VoiceServiceSnapshot = {
   muted: false,
   deafened: false,
   screenSharing: false,
+  screenShares: [],
   participants: [],
   error: null,
 };

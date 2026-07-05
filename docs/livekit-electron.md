@@ -133,6 +133,14 @@ Leaving a room must release local capture resources before disconnecting:
 - If LiveKit unpublish fails, Picom still stops the local media track and clears the UI sharing state.
 - Leaving the voice room also stops any active local screen-share track.
 
+## Screen share viewer behavior
+
+- Active local and remote screen-share video tracks are represented in the voice service snapshot as in-memory `MediaStream` references.
+- The viewer attaches those streams to `<video>` elements with `srcObject`; streams are detached on component cleanup.
+- The local preview is muted to avoid feedback loops.
+- Remote screen-share tracks are added on LiveKit `TrackSubscribed` events and removed on `TrackUnsubscribed`.
+- No screen frames are persisted, logged, or sent through diagnostics.
+
 ## Platform notes
 
 - Windows: microphone access depends on Windows privacy settings.
