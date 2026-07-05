@@ -1,5 +1,6 @@
 import { platformService } from "./platformService";
 import { settingsService, type NotificationSettings, type QuietHoursSettings } from "./settingsService";
+import { notificationDigestService } from "./notificationDigestService";
 
 export type NotificationPermissionState = NotificationPermission | "unsupported";
 export type NotificationCategory = "system" | "mention" | "message";
@@ -103,6 +104,10 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
 
   if (settings.mentionsOnly && context.category === "message" && !isMention) {
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Only mention notifications are enabled." };
+  }
+
+  if (notificationDigestService.shouldDigestNotification(settings, context.category, isMention)) {
+    return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Notification digest placeholder grouped this normal message." };
   }
 
   if ((context.channelMuted || context.communityMuted) && !isMention) {

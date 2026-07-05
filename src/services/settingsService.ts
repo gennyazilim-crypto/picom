@@ -1,4 +1,5 @@
 export type ThemeMode = "light" | "dark";
+import type { NotificationDigestMode } from "./notificationDigestService";
 export type QuietHoursApplyMode = "all_notifications" | "normal_messages_only" | "sounds_only_placeholder";
 export interface QuietHoursSettings {
   enabled: boolean;
@@ -11,6 +12,7 @@ export interface NotificationSettings {
   enabled: boolean;
   muted: boolean;
   mentionsOnly: boolean;
+  digestMode: NotificationDigestMode;
   quietHours: QuietHoursSettings;
 }
 export interface ProfileSettings { displayName: string; statusText: string; bio: string; }
@@ -33,6 +35,7 @@ const defaults: PicomSettings = {
     enabled: true,
     muted: false,
     mentionsOnly: false,
+    digestMode: "off",
     quietHours: {
       enabled: false,
       startTime: "22:00",

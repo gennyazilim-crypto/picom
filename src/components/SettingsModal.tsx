@@ -17,6 +17,7 @@ import { dateTimeService } from "../services/dateTimeService";
 import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";
 import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";
 import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
+import { notificationDigestService } from "../services/notificationDigestService";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -617,6 +618,17 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                   <small>Future notification routing can use this preference.</small>
                 </span>
                 <input type="checkbox" checked={notificationSettings.mentionsOnly} onChange={(event) => updateNotifications({ mentionsOnly: event.target.checked })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Notification digest placeholder</strong>
+                  <small>{notificationDigestService.getDigestModeLabel(notificationSettings.digestMode)} groups lower-priority message notifications later.</small>
+                </span>
+                <select value={notificationSettings.digestMode} onChange={(event) => updateNotifications({ digestMode: event.target.value as typeof notificationSettings.digestMode })}>
+                  <option value="off">Off</option>
+                  <option value="hourly_placeholder">Hourly placeholder</option>
+                  <option value="daily_placeholder">Daily placeholder</option>
+                </select>
               </label>
               <div className="settings-status-card" aria-label="Quiet Hours notification setting">
                 <span>Quiet Hours</span>
