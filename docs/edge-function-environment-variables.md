@@ -31,6 +31,7 @@ Purpose:
 | `moderation-helper` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder only; future privileged actions may require documented service-role use. |
 | `notification-fanout` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder only; future fanout must respect notification preferences. |
 | `validate-file` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Metadata validation only; does not read or store uploaded bytes. |
+| Email service placeholder | N/A | `EMAIL_PROVIDER` | Shared helper only. `log` mode records safe email intent metadata; SMTP remains a placeholder. |
 
 Keep this matrix updated before adding a new Edge Function or a new required secret.
 
@@ -57,7 +58,6 @@ Future Edge Functions may need:
 
 ```env
 SUPABASE_SERVICE_ROLE_KEY=
-EMAIL_PROVIDER_API_KEY=
 STORAGE_SCANNER_API_KEY=
 ```
 
@@ -101,6 +101,11 @@ SUPABASE_ANON_KEY=replace-with-local-anon-key
 LIVEKIT_URL=https://your-livekit-host.example
 LIVEKIT_API_KEY=replace-with-local-dev-key
 LIVEKIT_API_SECRET=replace-with-local-dev-secret
+EMAIL_PROVIDER=log
+SMTP_HOST_PLACEHOLDER=
+SMTP_PORT_PLACEHOLDER=
+SMTP_USER_PLACEHOLDER=
+SMTP_PASS_PLACEHOLDER=
 ```
 
 Never copy these server-only names into Vite variables unless they are explicitly renderer-safe and prefixed with `VITE_`.
