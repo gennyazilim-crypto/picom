@@ -13,7 +13,8 @@ export const IPC_CHANNELS = Object.freeze({
   fileSaveText: "picom:file-save-text",
   clipboardReadText: "picom:clipboard-read-text",
   clipboardWriteText: "picom:clipboard-write-text",
-  externalOpenUrl: "picom:external-open-url"
+  externalOpenUrl: "picom:external-open-url",
+  deepLinkOpen: "picom:deep-link-open"
 });
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

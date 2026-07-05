@@ -178,6 +178,27 @@ Manual verification:
 4. Confirm the result includes community, channel, and message identifiers.
 5. Call `deepLinkService.simulateDeepLink("javascript:alert(1)")` and confirm it is rejected.
 
+## Single instance lock
+
+- Main process API: Electron `app.requestSingleInstanceLock()`
+- Renderer event path: `window.picomDesktop.deepLinks.onOpen()`
+- Service integration: `deepLinkService.startNativeListener()`
+
+Behavior:
+
+- A second Picom launch focuses/restores the existing main window.
+- If the second launch includes a safe `picom://` URL, the URL is forwarded to the renderer.
+- The renderer validates the URL again through `deepLinkService` before emitting an app action.
+- Browser/Vite dev mode remains safe because the deep-link bridge is optional.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Try launching a second Electron instance.
+3. Confirm the existing window is focused/restored instead of creating a second main window.
+4. Launch with a safe argument such as `picom://settings` if your local command path supports args.
+5. Confirm the renderer receives the URL through `deepLinkService` without crashing.
+
 ## Update service placeholder
 
 - Renderer entry point: `src/services/updateService.ts`

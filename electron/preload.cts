@@ -77,6 +77,18 @@ function invokeWhitelisted(channel: string, ...args: unknown[]): Promise<unknown
   return ipcRenderer.invoke(channel, ...args);
 }
 
+function isSafeDeepLink(value: unknown): value is string {
+  if (typeof value !== "string" || !value || value.length > 512) {
+    return false;
+  }
+
+  try {
+    return new URL(value).protocol === "picom:";
+  } catch {
+    return false;
+  }
+}
+
 const runtimeInfo: PicomRuntimeInfo = Object.freeze({
   runtime: "electron",
   platform: process.platform,
@@ -201,6 +213,21 @@ const bridge = Object.freeze({
         | { ok: true; native: true; url: string }
         | { ok: false; native: true; error: string }
       >
+  },
+  deepLinks: {
+    onOpen: (callback: (url: string) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (isSafeDeepLink(value)) {
+          callback(value);
+        }
+      };
+
+      ipcRenderer.on(IPC_CHANNELS.deepLinkOpen, listener);
+
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.deepLinkOpen, listener);
+      };
+    }
   }
 });
 

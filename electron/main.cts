@@ -46,6 +46,7 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let trayStatus: TrayStatus = "online";
 let trayMuted = false;
+const pendingDeepLinks: string[] = [];
 
 function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";
@@ -110,6 +111,48 @@ function focusMainWindow(): void {
 
   mainWindow.show();
   mainWindow.focus();
+}
+
+function isSafeDeepLink(value: string): boolean {
+  if (!value || value.length > 512) {
+    return false;
+  }
+
+  try {
+    return new URL(value).protocol === "picom:";
+  } catch {
+    return false;
+  }
+}
+
+function extractDeepLinkFromArgs(args: string[]): string | null {
+  return args.find((arg) => isSafeDeepLink(arg)) ?? null;
+}
+
+function sendDeepLinkToRenderer(deepLink: string): void {
+  if (!isSafeDeepLink(deepLink)) {
+    return;
+  }
+
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoadingMainFrame()) {
+    pendingDeepLinks.push(deepLink);
+    return;
+  }
+
+  mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
+}
+
+function flushPendingDeepLinks(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  while (pendingDeepLinks.length > 0) {
+    const deepLink = pendingDeepLinks.shift();
+    if (deepLink) {
+      mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
+    }
+  }
 }
 
 function sendTrayAction(action: TrayAction): void {
@@ -312,6 +355,7 @@ function registerWindowStateForwarding(window: BrowserWindow): void {
   window.on("enter-full-screen", forwardState);
   window.on("leave-full-screen", forwardState);
   window.webContents.on("did-finish-load", forwardState);
+  window.webContents.on("did-finish-load", flushPendingDeepLinks);
 }
 
 function registerIpcHandlers(): void {
@@ -581,18 +625,38 @@ async function createMainWindow(): Promise<void> {
 
 app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
 
-app.whenReady().then(() => {
-  Menu.setApplicationMenu(null);
-  registerIpcHandlers();
-  void createMainWindow();
-  createTray();
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      void createMainWindow();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, argv) => {
+    const deepLink = extractDeepLinkFromArgs(argv);
+    focusMainWindow();
+    if (deepLink) {
+      sendDeepLinkToRenderer(deepLink);
     }
   });
-});
+
+  app.whenReady().then(() => {
+    Menu.setApplicationMenu(null);
+    registerIpcHandlers();
+
+    const initialDeepLink = extractDeepLinkFromArgs(process.argv);
+    if (initialDeepLink) {
+      pendingDeepLinks.push(initialDeepLink);
+    }
+
+    void createMainWindow();
+    createTray();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        void createMainWindow();
+      }
+    });
+  });
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

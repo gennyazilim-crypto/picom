@@ -11,6 +11,7 @@ export type DeepLinkParseResult =
 type DeepLinkListener = (action: DeepLinkAction) => void;
 
 const listeners = new Set<DeepLinkListener>();
+let nativeCleanup: (() => void) | null = null;
 const maxDeepLinkLength = 512;
 const safeSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 
@@ -93,8 +94,35 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
   return { ok: false, reason: "UNSUPPORTED_DEEP_LINK_ROUTE" };
 }
 
+function dispatchDeepLink(value: string): DeepLinkParseResult {
+  const result = parseDeepLink(value);
+  if (result.ok) {
+    for (const listener of listeners) {
+      listener(result.action);
+    }
+  }
+
+  return result;
+}
+
 export const deepLinkService = {
   parseDeepLink,
+
+  startNativeListener(): () => void {
+    if (nativeCleanup) {
+      return nativeCleanup;
+    }
+
+    const bridge = window.picomDesktop?.deepLinks;
+    if (!bridge) {
+      nativeCleanup = () => undefined;
+      return nativeCleanup;
+    }
+
+    nativeCleanup = bridge.onOpen((url) => dispatchDeepLink(url));
+
+    return nativeCleanup;
+  },
 
   onDeepLink(listener: DeepLinkListener): () => void {
     listeners.add(listener);
@@ -105,17 +133,10 @@ export const deepLinkService = {
   },
 
   handleDeepLink(value: string): DeepLinkParseResult {
-    const result = parseDeepLink(value);
-    if (result.ok) {
-      for (const listener of listeners) {
-        listener(result.action);
-      }
-    }
-
-    return result;
+    return dispatchDeepLink(value);
   },
 
   simulateDeepLink(value: string): DeepLinkParseResult {
-    return this.handleDeepLink(value);
+    return dispatchDeepLink(value);
   }
 };

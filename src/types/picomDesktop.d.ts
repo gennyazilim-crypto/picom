@@ -115,6 +115,9 @@ declare global {
           | { ok: false; native: true; error: string }
         >;
       };
+      deepLinks?: {
+        onOpen: (callback: (url: string) => void) => () => void;
+      };
     };
   }
 }

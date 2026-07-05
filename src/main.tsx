@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import { DesktopStartupErrorBoundary } from "./components/DesktopStartupErrorBoundary";
+import { deepLinkService } from "./services/deepLinkService";
 import "./styles.css";
 
 function markRuntime(): void {
@@ -28,6 +29,7 @@ function getRootElement(): HTMLElement {
 
 function bootstrapRenderer(): void {
   markRuntime();
+  deepLinkService.startNativeListener();
 
   ReactDOM.createRoot(getRootElement()).render(
     <React.StrictMode>
