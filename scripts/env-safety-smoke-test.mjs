@@ -25,6 +25,7 @@ const forbiddenEnvNames = [
 const allowedViteNames = new Set([
   "VITE_APP_ENV",
   "VITE_RELEASE_CHANNEL",
+  "VITE_FEATURE_FLAGS",
   "VITE_APP_NAME",
   "VITE_APP_IDENTIFIER",
   "VITE_DATA_SOURCE",

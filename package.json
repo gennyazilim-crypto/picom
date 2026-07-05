@@ -87,7 +87,8 @@
     "developer-portal:placeholder:smoke": "node scripts/developer-portal-placeholder-smoke-test.mjs",
     "community-discovery:plan:smoke": "node scripts/community-discovery-plan-smoke-test.mjs",
     "analytics:placeholder:smoke": "node scripts/analytics-placeholder-smoke-test.mjs",
-    "data-migration:strategy:smoke": "node scripts/data-migration-strategy-smoke-test.mjs"
+    "data-migration:strategy:smoke": "node scripts/data-migration-strategy-smoke-test.mjs",
+    "feature-flags:smoke": "node scripts/feature-flags-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
