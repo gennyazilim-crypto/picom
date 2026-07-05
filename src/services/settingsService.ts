@@ -1,8 +1,13 @@
 export type ThemeMode = "light" | "dark";
 export interface NotificationSettings { enabled: boolean; muted: boolean; mentionsOnly: boolean; }
-export interface PicomSettings { theme: ThemeMode; notificationSettings: NotificationSettings; }
+export interface ProfileSettings { displayName: string; statusText: string; bio: string; }
+export interface PicomSettings { theme: ThemeMode; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; }
 const key = "picom-settings";
-const defaults: PicomSettings = { theme: "light", notificationSettings: { enabled: true, muted: false, mentionsOnly: false } };
+const defaults: PicomSettings = {
+  theme: "light",
+  notificationSettings: { enabled: true, muted: false, mentionsOnly: false },
+  profileSettings: { displayName: "", statusText: "", bio: "" },
+};
 export const settingsService = {
   getSettings(): PicomSettings {
     try {
@@ -13,6 +18,10 @@ export const settingsService = {
         notificationSettings: {
           ...defaults.notificationSettings,
           ...(parsed.notificationSettings ?? {}),
+        },
+        profileSettings: {
+          ...defaults.profileSettings,
+          ...(parsed.profileSettings ?? {}),
         },
       };
     } catch { return defaults; }
@@ -27,6 +36,15 @@ export const settingsService = {
     return this.updateSettings({
       notificationSettings: {
         ...current.notificationSettings,
+        ...partial,
+      },
+    });
+  },
+  updateProfileSettings(partial: Partial<ProfileSettings>) {
+    const current = this.getSettings();
+    return this.updateSettings({
+      profileSettings: {
+        ...current.profileSettings,
         ...partial,
       },
     });

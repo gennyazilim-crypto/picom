@@ -168,6 +168,7 @@ function CommandPalette({
 export function App() {
   const saved = settingsService.getSettings();
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
+  const [profileSettings, setProfileSettings] = useState(saved.profileSettings);
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [activeView, setActiveView] = useState<ActiveView>("community");
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
@@ -347,9 +348,7 @@ export function App() {
     status: currentUser.status,
   });
   const displayedActiveCommunity = useMemo<Community>(() => {
-    if (!presenceChannel.onlineUserIds.length) return activeCommunity;
-
-    return {
+    const baseCommunity = !presenceChannel.onlineUserIds.length ? activeCommunity : {
       ...activeCommunity,
       members: activeCommunity.members.map((member) => {
         const presence = presenceChannel.presenceByUserId[member.userId];
@@ -366,7 +365,21 @@ export function App() {
         };
       }),
     };
-  }, [activeCommunity, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId]);
+
+    return {
+      ...baseCommunity,
+      members: baseCommunity.members.map((member) => {
+        if (member.userId !== currentUserId) return member;
+
+        return {
+          ...member,
+          displayName: profileSettings.displayName || member.displayName,
+          statusText: profileSettings.statusText || member.statusText,
+          bio: profileSettings.bio || member.bio,
+        };
+      }),
+    };
+  }, [activeCommunity, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
   const replyToMessage = useMemo(
     () => displayedActiveCommunity.messages.find((message) => message.id === replyToMessageId && message.channelId === activeChannel.id) ?? null,
@@ -1224,7 +1237,7 @@ export function App() {
           onSubmit={handleCreateChannel}
         />
       ) : null}
-      {settingsOpen ? <SettingsModal theme={theme} onThemeChange={setTheme} onClose={closeSettings} pushToast={pushToast} /> : null}
+      {settingsOpen ? <SettingsModal theme={theme} profileSettings={profileSettings} onThemeChange={setTheme} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
       {paletteOpen ? (
         <CommandPalette
           communities={communities}

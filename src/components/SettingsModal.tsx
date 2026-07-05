@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { notificationService } from "../services/notificationService";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
-import { settingsService, type NotificationSettings } from "../services/settingsService";
+import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
 import { shortcutService } from "../services/shortcutService";
 import { trayService } from "../services/trayService";
 import { AppIcon } from "./AppIcon";
@@ -12,14 +12,17 @@ type ToastTone = "info" | "error" | "success";
 
 type SettingsModalProps = {
   theme: "light" | "dark";
+  profileSettings: ProfileSettings;
   onThemeChange: (theme: "light" | "dark") => void;
+  onProfileSettingsChange: (settings: ProfileSettings) => void;
   onClose: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
 };
 
-export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: SettingsModalProps) {
+export function SettingsModal({ theme, profileSettings, onThemeChange, onProfileSettingsChange, onClose, pushToast }: SettingsModalProps) {
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
+  const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
   const [feedbackIssueType, setFeedbackIssueType] = useState<FeedbackIssueType>("bug");
   const [feedbackTitle, setFeedbackTitle] = useState("Beta feedback placeholder");
   const [feedbackDescription, setFeedbackDescription] = useState("");
@@ -33,6 +36,10 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  useEffect(() => {
+    setProfileDraft(profileSettings);
+  }, [profileSettings]);
+
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
     pushToast(result.ok ? "Notification placeholder sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
@@ -42,6 +49,21 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
     const next = settingsService.updateNotificationSettings(partial).notificationSettings;
     setNotificationSettings(next);
     pushToast("Notification setting saved locally.", "success");
+  };
+  const saveProfileSettings = () => {
+    const next = settingsService.updateProfileSettings({
+      displayName: profileDraft.displayName.trim(),
+      statusText: profileDraft.statusText.trim(),
+      bio: profileDraft.bio.trim(),
+    }).profileSettings;
+    onProfileSettingsChange(next);
+    pushToast("Profile changes saved locally.", "success");
+  };
+  const resetProfileSettings = () => {
+    const next = settingsService.updateProfileSettings({ displayName: "", statusText: "", bio: "" }).profileSettings;
+    setProfileDraft(next);
+    onProfileSettingsChange(next);
+    pushToast("Profile changes reset locally.", "info");
   };
   const createFeedbackDraft = () => ({
     issueType: feedbackIssueType,
@@ -96,6 +118,29 @@ export function SettingsModal({ theme, onThemeChange, onClose, pushToast }: Sett
                 <strong>Dark Theme</strong>
                 <small>Charcoal shell with separated surfaces.</small>
               </button>
+            </div>
+          ) : active === "Profile" ? (
+            <div className="placeholder-panel action-panel">
+              <strong>Local profile editing</strong>
+              <p>Changes apply to this desktop profile immediately. Supabase profile persistence is a future backend step.</p>
+              <div className="settings-profile-form">
+                <label>
+                  <span>Display name</span>
+                  <input value={profileDraft.displayName} onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })} placeholder="Use mock profile name" />
+                </label>
+                <label>
+                  <span>Status text</span>
+                  <input value={profileDraft.statusText} onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })} placeholder="Use mock status text" />
+                </label>
+                <label>
+                  <span>Bio</span>
+                  <textarea value={profileDraft.bio} onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })} placeholder="Write a short desktop profile bio" rows={4} />
+                </label>
+              </div>
+              <div className="settings-actions-row">
+                <button onClick={saveProfileSettings}>Save profile locally</button>
+                <button onClick={resetProfileSettings}>Reset local profile</button>
+              </div>
             </div>
           ) : active === "Notifications" ? (
             <div className="placeholder-panel action-panel">
