@@ -25,6 +25,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
+import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { MentionFeedMain } from "./components/MentionFeedMain";
@@ -40,6 +41,7 @@ import { loggingService } from "./services/loggingService";
 import { menuService, type MenuActionPayload } from "./services/menuService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
+import { maintenanceStatusService } from "./services/maintenanceStatusService";
 import { communityService } from "./services/communityService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
@@ -174,6 +176,7 @@ function CommandPalette({
 export function App() {
   const saved = settingsService.getSettings();
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
+  const [maintenanceStatus, setMaintenanceStatus] = useState(() => maintenanceStatusService.getSnapshot());
   const [profileSettings, setProfileSettings] = useState(saved.profileSettings);
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [activeView, setActiveView] = useState<ActiveView>("community");
@@ -356,6 +359,12 @@ export function App() {
   useEffect(() => {
     diagnosticsService.setRealtimeStatus(realtimeStatus);
   }, [realtimeStatus]);
+  useEffect(() => {
+    const unsubscribe = maintenanceStatusService.subscribe(setMaintenanceStatus);
+    void maintenanceStatusService.refresh().then(setMaintenanceStatus);
+
+    return unsubscribe;
+  }, []);
   const displayedActiveCommunity = useMemo<Community>(() => {
     const baseCommunity = !presenceChannel.onlineUserIds.length ? activeCommunity : {
       ...activeCommunity,
@@ -407,6 +416,10 @@ export function App() {
   useEffect(() => {
     clearChannelUnread({ communityId: activeCommunity.id, channelId: activeChannel.id });
   }, [activeChannel.id, activeCommunity.id, clearChannelUnread]);
+
+  const refreshMaintenanceStatus = useCallback(() => {
+    void maintenanceStatusService.refresh().then(setMaintenanceStatus);
+  }, []);
 
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
@@ -1020,7 +1033,9 @@ export function App() {
       <>
         <DesktopAppShell>
           <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
-          {authView === "login" ? (
+          {maintenanceStatus.status === "maintenance" ? (
+            <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
+          ) : authView === "login" ? (
             <LoginScreen
               theme={theme}
               loading={!authReady || authLoading}
@@ -1219,7 +1234,11 @@ export function App() {
     <>
       <DesktopAppShell>
         <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={openPalette} />
+        {maintenanceStatus.status === "maintenance" ? (
+          <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
+        ) : (
         <div className="desktop-frame">
+          <MaintenanceStatusBanner status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
           <ServerRail
             communities={communities}
             activeCommunityId={activeCommunityId}
@@ -1431,6 +1450,7 @@ export function App() {
             </>
           )}
         </div>
+        )}
       </DesktopAppShell>
 
       {createCommunityOpen ? <CreateCommunityModal onClose={() => setCreateCommunityOpen(false)} onSubmit={handleCreateCommunity} /> : null}

@@ -11,6 +11,10 @@ Deno.serve((request: Request) => {
 
   return jsonResponse({
     ok: true,
+    status: "operational",
+    message: "Picom services are operational.",
+    startedAt: null,
+    estimatedEndAt: null,
     service: "picom-edge-functions",
     function: "health",
     timestamp: new Date().toISOString(),

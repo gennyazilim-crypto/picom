@@ -353,6 +353,109 @@ html,body,#root,.picom-root,.desktop-app-shell,.desktop-frame{max-width:100%;ove
   white-space: nowrap;
 }
 
+/* Task 319 scheduled maintenance mode foundation. */
+.maintenance-screen {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 36% 18%, color-mix(in srgb, var(--picom-aqua) 12%, transparent), transparent 32%),
+    var(--bg-frame);
+}
+
+.maintenance-card {
+  width: min(560px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--surface), var(--surface-soft));
+  box-shadow: var(--shadow);
+  padding: 34px;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.maintenance-mark {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  color: var(--picom-orange);
+  background: color-mix(in srgb, var(--picom-orange) 14%, transparent);
+}
+
+.maintenance-card .eyebrow {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.maintenance-card h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -.04em;
+}
+
+.maintenance-card p:not(.eyebrow) {
+  max-width: 440px;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.maintenance-card small {
+  color: var(--text-muted);
+}
+
+.maintenance-card button,
+.maintenance-banner button {
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.maintenance-card button:hover,
+.maintenance-banner button:hover {
+  background: var(--surface-hover);
+}
+
+.maintenance-banner {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  z-index: 12;
+  max-width: min(620px, calc(100% - 48px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--warning) 42%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--warning));
+  box-shadow: var(--shadow-soft);
+  color: var(--text-secondary);
+  padding: 8px 10px 8px 14px;
+  font-size: 12px;
+}
+
+.maintenance-banner span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .channel-item,
 .member-row,
 .message-item,
