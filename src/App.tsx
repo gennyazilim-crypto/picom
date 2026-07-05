@@ -3,7 +3,9 @@ import type { MouseEvent } from "react";
 import { currentUserId, mockCommunities } from "./data/mockCommunities";
 import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
 import { mockMentionItems } from "./data/mockMentions";
+import { mockDirectConversations } from "./data/mockDirectMessages";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
+import type { DirectConversation } from "./types/directMessages";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
@@ -25,6 +27,7 @@ import { CreateChannelModal, type CreateChannelFormValue } from "./components/Cr
 import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { ProfileView } from "./components/ProfileView";
+import { DirectMessagesView } from "./components/DirectMessagesView";
 import { clipboardService } from "./services/clipboardService";
 import { loggingService } from "./services/loggingService";
 import { dataSourceService } from "./services/dataSourceService";
@@ -59,7 +62,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "mentionFeed" | "profile";
+type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages";
 
 type CommandPaletteProps = {
   communities: Community[];
@@ -169,6 +172,8 @@ export function App() {
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [directConversations] = useState<DirectConversation[]>(mockDirectConversations);
+  const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
@@ -727,6 +732,18 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays]);
 
+  const openDirectMessages = useCallback((userId?: string) => {
+    if (userId) {
+      const conversation = directConversations.find((candidate) => candidate.participantUserId === userId);
+      if (conversation) {
+        setActiveDirectConversationId(conversation.id);
+      }
+    }
+
+    setActiveView("directMessages");
+    closeTransientOverlays();
+  }, [closeTransientOverlays, directConversations]);
+
   const openProfileActivity = useCallback((activity: { community: Community; channel: { id: string }; message: { id: string } }) => {
     setActiveView("community");
     switchCommunity(activity.community.id, activity.channel.id);
@@ -984,6 +1001,18 @@ export function App() {
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
             />
+          ) : activeView === "directMessages" ? (
+            <DirectMessagesView
+              conversations={directConversations}
+              activeConversationId={activeDirectConversationId}
+              currentUserId={currentUserId}
+              onSelectConversation={setActiveDirectConversationId}
+              onBackToCommunity={() => setActiveView("community")}
+              onOpenProfile={(userId) => {
+                const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+                if (member) openProfilePage(member);
+              }}
+            />
           ) : (
             <>
               <CommunitySidebar
@@ -1078,11 +1107,11 @@ export function App() {
                   community={displayedActiveCommunity}
                   onOpenProfile={openProfile}
                   onMemberContextMenu={(event, member) =>
-                    openContext(event, [
-                      { label: `View ${member.displayName}` },
-                      { label: "Message placeholder" },
-                      { label: "Moderation placeholder", disabled: true },
-                    ])
+                  openContext(event, [
+                    { label: `View ${member.displayName}` },
+                    { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
+                    { label: "Moderation placeholder", disabled: true },
+                  ])
                   }
                 />
               ) : null}
