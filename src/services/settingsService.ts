@@ -1,5 +1,18 @@
 export type ThemeMode = "light" | "dark";
-export interface NotificationSettings { enabled: boolean; muted: boolean; mentionsOnly: boolean; }
+export type QuietHoursApplyMode = "all_notifications" | "normal_messages_only" | "sounds_only_placeholder";
+export interface QuietHoursSettings {
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+  applyTo: QuietHoursApplyMode;
+  allowMentions: boolean;
+}
+export interface NotificationSettings {
+  enabled: boolean;
+  muted: boolean;
+  mentionsOnly: boolean;
+  quietHours: QuietHoursSettings;
+}
 export interface ProfileSettings { displayName: string; statusText: string; bio: string; }
 export interface AccessibilitySettings { highContrast: boolean; reducedMotion: boolean; largerText: boolean; focusRingStrong: boolean; }
 export interface PicomSettings { schemaVersion: number; theme: ThemeMode; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; accessibilitySettings: AccessibilitySettings; }
@@ -16,7 +29,18 @@ const currentSchemaVersion = 2;
 const defaults: PicomSettings = {
   schemaVersion: currentSchemaVersion,
   theme: "light",
-  notificationSettings: { enabled: true, muted: false, mentionsOnly: false },
+  notificationSettings: {
+    enabled: true,
+    muted: false,
+    mentionsOnly: false,
+    quietHours: {
+      enabled: false,
+      startTime: "22:00",
+      endTime: "07:00",
+      applyTo: "normal_messages_only",
+      allowMentions: true,
+    },
+  },
   profileSettings: { displayName: "", statusText: "", bio: "" },
   accessibilitySettings: { highContrast: false, reducedMotion: false, largerText: false, focusRingStrong: false },
 };
@@ -57,6 +81,10 @@ function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
     notificationSettings: {
       ...defaults.notificationSettings,
       ...(settings.notificationSettings ?? {}),
+      quietHours: {
+        ...defaults.notificationSettings.quietHours,
+        ...((settings.notificationSettings as Partial<NotificationSettings> | undefined)?.quietHours ?? {}),
+      },
     },
     profileSettings: {
       ...defaults.profileSettings,

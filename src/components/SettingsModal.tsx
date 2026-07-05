@@ -618,6 +618,50 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </span>
                 <input type="checkbox" checked={notificationSettings.mentionsOnly} onChange={(event) => updateNotifications({ mentionsOnly: event.target.checked })} />
               </label>
+              <div className="settings-status-card" aria-label="Quiet Hours notification setting">
+                <span>Quiet Hours</span>
+                <strong>{notificationSettings.quietHours.enabled ? `${notificationSettings.quietHours.startTime} - ${notificationSettings.quietHours.endTime}` : "Disabled"}</strong>
+                <small>Uses your system timezone. Notification inbox can still record suppressed notifications later.</small>
+              </div>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Enable Quiet Hours</strong>
+                  <small>Silence notification interruptions during scheduled hours.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.quietHours.enabled} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, enabled: event.target.checked } })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Start time</strong>
+                  <small>Local desktop time when Quiet Hours begin.</small>
+                </span>
+                <input type="time" value={notificationSettings.quietHours.startTime} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, startTime: event.target.value } })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>End time</strong>
+                  <small>Local desktop time when Quiet Hours end.</small>
+                </span>
+                <input type="time" value={notificationSettings.quietHours.endTime} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, endTime: event.target.value } })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Apply to</strong>
+                  <small>Choose whether Quiet Hours suppress all notifications, normal messages, or sounds only.</small>
+                </span>
+                <select value={notificationSettings.quietHours.applyTo} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, applyTo: event.target.value as typeof notificationSettings.quietHours.applyTo } })}>
+                  <option value="all_notifications">All notifications</option>
+                  <option value="normal_messages_only">Normal messages only</option>
+                  <option value="sounds_only_placeholder">Sounds only placeholder</option>
+                </select>
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Allow mentions during Quiet Hours</strong>
+                  <small>Mentions can still notify if this placeholder remains enabled.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.quietHours.allowMentions} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, allowMentions: event.target.checked } })} />
+              </label>
               <button onClick={testNotification}>Send test notification</button>
             </div>
           ) : active === "Keyboard Shortcuts" ? (

@@ -1,5 +1,5 @@
 import { platformService } from "./platformService";
-import { settingsService, type NotificationSettings } from "./settingsService";
+import { settingsService, type NotificationSettings, type QuietHoursSettings } from "./settingsService";
 
 export type NotificationPermissionState = NotificationPermission | "unsupported";
 export type NotificationCategory = "system" | "mention" | "message";
@@ -39,6 +39,43 @@ export interface NotificationRouteDecision {
   reason: string;
 }
 
+function parseMinutes(value: string): number | null {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+export function isQuietHoursActive(quietHours: QuietHoursSettings, now = new Date()): boolean {
+  if (!quietHours.enabled) return false;
+
+  const start = parseMinutes(quietHours.startTime);
+  const end = parseMinutes(quietHours.endTime);
+
+  if (start === null || end === null || start === end) return false;
+
+  const current = now.getHours() * 60 + now.getMinutes();
+
+  if (start < end) {
+    return current >= start && current < end;
+  }
+
+  return current >= start || current < end;
+}
+
+function quietHoursSuppressesDesktop(settings: NotificationSettings, isMention: boolean, category: NotificationCategory, now = new Date()): boolean {
+  if (!isQuietHoursActive(settings.quietHours, now)) return false;
+  if (isMention && settings.quietHours.allowMentions) return false;
+  if (settings.quietHours.applyTo === "all_notifications") return true;
+  if (settings.quietHours.applyTo === "normal_messages_only") return category === "message" && !isMention;
+  return false;
+}
+
+function quietHoursShouldSilence(settings: NotificationSettings, isMention: boolean, now = new Date()): boolean {
+  return isQuietHoursActive(settings.quietHours, now)
+    && settings.quietHours.applyTo === "sounds_only_placeholder"
+    && !(isMention && settings.quietHours.allowMentions);
+}
+
 function getNotificationConstructor(): typeof Notification | null {
   return typeof window !== "undefined" && "Notification" in window ? window.Notification : null;
 }
@@ -58,6 +95,10 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
 
   if (settings.muted || context.doNotDisturb) {
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Notifications are currently muted." };
+  }
+
+  if (quietHoursSuppressesDesktop(settings, isMention, context.category)) {
+    return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Quiet Hours suppressed this desktop notification." };
   }
 
   if (settings.mentionsOnly && context.category === "message" && !isMention) {
@@ -128,6 +169,9 @@ export const notificationService = {
   async showNotification(payload: NativeNotificationPayload): Promise<NotificationServiceResult> {
     const category = payload.category ?? "system";
     const route = decideNotificationRoute({ ...(payload.routing ?? {}), category });
+    const settings = settingsService.getSettings().notificationSettings;
+    const isMention = Boolean(payload.routing?.isMention || category === "mention");
+    const quietHoursSilent = quietHoursShouldSilence(settings, isMention);
 
     if (!route.desktop) {
       return { ok: false, reason: route.reason, permission: this.getPermission() };
@@ -140,7 +184,7 @@ export const notificationService = {
           title: payload.title,
           body: payload.body,
           tag: payload.tag,
-          silent: payload.silent,
+          silent: payload.silent ?? quietHoursSilent,
         });
 
         return {
@@ -166,7 +210,7 @@ export const notificationService = {
       new NativeNotification(payload.title, {
         body: payload.body,
         tag: payload.tag,
-        silent: payload.silent,
+        silent: payload.silent ?? quietHoursSilent,
       });
       return { ok: true, permission: NativeNotification.permission };
     } catch {
