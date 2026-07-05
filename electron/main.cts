@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, shell, desktopCapturer, Notification } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, shell, desktopCapturer, Notification, Tray, nativeImage } from "electron";
 import path from "node:path";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
@@ -18,11 +18,20 @@ type SafeNotificationPayload = Readonly<{
   body?: string;
   silent?: boolean;
 }>;
+type TrayStatus = "online" | "idle" | "dnd" | "invisible";
+type TrayAction = "open" | "settings" | "mute" | "quit" | "online" | "idle" | "dnd" | "invisible";
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+let trayStatus: TrayStatus = "online";
+let trayMuted = false;
 
 function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";
+}
+
+function isTrayStatus(status: unknown): status is TrayStatus {
+  return status === "online" || status === "idle" || status === "dnd" || status === "invisible";
 }
 
 function isSafeExternalUrl(url: string): boolean {
@@ -48,6 +57,116 @@ function openExternalSafely(url: string): void {
   }
 
   shell.openExternal(url).catch(() => undefined);
+}
+
+function focusMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    void createMainWindow();
+    return;
+  }
+
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function sendTrayAction(action: TrayAction): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  mainWindow.webContents.send(IPC_CHANNELS.trayAction, {
+    action,
+    status: trayStatus,
+    muted: trayMuted
+  });
+}
+
+function createTrayMenu(): Electron.Menu {
+  return Menu.buildFromTemplate([
+    {
+      label: "Open Picom",
+      click: () => {
+        focusMainWindow();
+        sendTrayAction("open");
+      }
+    },
+    { type: "separator" },
+    {
+      label: "Set Status",
+      submenu: [
+        { label: "Online", type: "radio", checked: trayStatus === "online", click: () => updateTrayStatus("online") },
+        { label: "Idle", type: "radio", checked: trayStatus === "idle", click: () => updateTrayStatus("idle") },
+        { label: "Do Not Disturb", type: "radio", checked: trayStatus === "dnd", click: () => updateTrayStatus("dnd") },
+        { label: "Invisible", type: "radio", checked: trayStatus === "invisible", click: () => updateTrayStatus("invisible") }
+      ]
+    },
+    {
+      label: "Mute Notifications",
+      type: "checkbox",
+      checked: trayMuted,
+      click: () => updateTrayMuted(!trayMuted)
+    },
+    { type: "separator" },
+    {
+      label: "Settings",
+      click: () => {
+        focusMainWindow();
+        sendTrayAction("settings");
+      }
+    },
+    {
+      label: "Quit",
+      click: () => {
+        sendTrayAction("quit");
+        app.quit();
+      }
+    }
+  ]);
+}
+
+function refreshTray(): void {
+  if (!tray) {
+    return;
+  }
+
+  tray.setToolTip(`Picom - ${trayStatus}${trayMuted ? " - muted" : ""}`);
+  tray.setContextMenu(createTrayMenu());
+}
+
+function updateTrayStatus(status: TrayStatus): void {
+  trayStatus = status;
+  refreshTray();
+  sendTrayAction(status);
+}
+
+function updateTrayMuted(muted: boolean): void {
+  trayMuted = muted;
+  refreshTray();
+  sendTrayAction("mute");
+}
+
+function createTray(): void {
+  if (tray) {
+    return;
+  }
+
+  const iconPath = path.join(__dirname, "..", "assets", "brand", "app-icon.png");
+  const icon = nativeImage.createFromPath(iconPath);
+
+  try {
+    tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
+    tray.on("click", () => {
+      focusMainWindow();
+      sendTrayAction("open");
+    });
+    refreshTray();
+  } catch {
+    tray = null;
+  }
 }
 
 function sanitizeText(value: unknown, maxLength: number): string | undefined {
@@ -200,6 +319,34 @@ function registerIpcHandlers(): void {
       return { ok: false, native: true, error: "NOTIFICATION_SHOW_FAILED" } as const;
     }
   });
+
+  ipcMain.handle(IPC_CHANNELS.traySetStatus, (_event, status: unknown) => {
+    if (!isTrayStatus(status)) {
+      return { ok: false, native: true, error: "INVALID_TRAY_STATUS" } as const;
+    }
+
+    updateTrayStatus(status);
+    return { ok: true, native: true, status } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.traySetMuted, (_event, muted: unknown) => {
+    if (typeof muted !== "boolean") {
+      return { ok: false, native: true, error: "INVALID_TRAY_MUTED_STATE" } as const;
+    }
+
+    updateTrayMuted(muted);
+    return { ok: true, native: true, muted } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.trayShowWindow, () => {
+    focusMainWindow();
+    return { ok: true, native: true } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.trayQuit, () => {
+    app.quit();
+    return { ok: true, native: true } as const;
+  });
 }
 
 async function createMainWindow(): Promise<void> {
@@ -255,6 +402,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   registerIpcHandlers();
   void createMainWindow();
+  createTray();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

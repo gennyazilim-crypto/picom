@@ -8,6 +8,13 @@ declare global {
     tag?: string;
     silent?: boolean;
   };
+  type PicomTrayStatus = "online" | "idle" | "dnd" | "invisible";
+  type PicomTrayAction = "open" | "settings" | "mute" | "quit" | PicomTrayStatus;
+  type PicomTrayActionPayload = {
+    action: PicomTrayAction;
+    status: PicomTrayStatus;
+    muted: boolean;
+  };
   type PicomScreenCaptureSource = {
     id: string;
     name: string;
@@ -46,6 +53,29 @@ declare global {
           | { ok: true; native: true; sources: PicomScreenCaptureSource[] }
           | { ok: false; native: true; error: string }
         >;
+      };
+      tray?: {
+        setStatus: (
+          status: PicomTrayStatus
+        ) => Promise<
+          | { ok: true; native: true; status: PicomTrayStatus }
+          | { ok: false; native: true; error: string }
+        >;
+        setMuted: (
+          muted: boolean
+        ) => Promise<
+          | { ok: true; native: true; muted: boolean }
+          | { ok: false; native: true; error: string }
+        >;
+        showWindow: () => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        quit: () => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        onAction: (callback: (payload: PicomTrayActionPayload) => void) => () => void;
       };
     };
   }

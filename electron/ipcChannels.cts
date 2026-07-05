@@ -3,7 +3,12 @@ export const IPC_CHANNELS = Object.freeze({
   windowIsMaximized: "picom:window-is-maximized",
   windowMaximizeStateChanged: "picom:window-maximize-state-changed",
   screenCaptureGetSources: "picom:screen-capture-get-sources",
-  notificationShow: "picom:notification-show"
+  notificationShow: "picom:notification-show",
+  traySetStatus: "picom:tray-set-status",
+  traySetMuted: "picom:tray-set-muted",
+  trayShowWindow: "picom:tray-show-window",
+  trayQuit: "picom:tray-quit",
+  trayAction: "picom:tray-action"
 });
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

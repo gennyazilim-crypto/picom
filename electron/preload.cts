@@ -16,6 +16,13 @@ type NativeNotificationPayload = Readonly<{
   tag?: string;
   silent?: boolean;
 }>;
+type TrayStatus = "online" | "idle" | "dnd" | "invisible";
+type TrayAction = "open" | "settings" | "mute" | "quit" | TrayStatus;
+type TrayActionPayload = Readonly<{
+  action: TrayAction;
+  status: TrayStatus;
+  muted: boolean;
+}>;
 
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
@@ -29,6 +36,27 @@ type PicomRuntimeInfo = Readonly<{
 
 function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";
+}
+
+function isTrayStatus(status: unknown): status is TrayStatus {
+  return status === "online" || status === "idle" || status === "dnd" || status === "invisible";
+}
+
+function isTrayActionPayload(value: unknown): value is TrayActionPayload {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const action = record.action;
+  const actionValid =
+    action === "open" ||
+    action === "settings" ||
+    action === "mute" ||
+    action === "quit" ||
+    isTrayStatus(action);
+
+  return actionValid && isTrayStatus(record.status) && typeof record.muted === "boolean";
 }
 
 function invokeWhitelisted(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -92,7 +120,47 @@ const bridge = Object.freeze({
     invokeWhitelisted(IPC_CHANNELS.notificationShow, payload) as Promise<
       | { ok: true; native: true }
       | { ok: false; native: true; error: string }
-    >
+    >,
+  tray: {
+    setStatus: (status: TrayStatus) => {
+      if (!isTrayStatus(status)) {
+        return Promise.resolve({ ok: false, native: true, error: "INVALID_TRAY_STATUS" } as const);
+      }
+
+      return invokeWhitelisted(IPC_CHANNELS.traySetStatus, status) as Promise<
+        | { ok: true; native: true; status: TrayStatus }
+        | { ok: false; native: true; error: string }
+      >;
+    },
+    setMuted: (muted: boolean) =>
+      invokeWhitelisted(IPC_CHANNELS.traySetMuted, muted) as Promise<
+        | { ok: true; native: true; muted: boolean }
+        | { ok: false; native: true; error: string }
+      >,
+    showWindow: () =>
+      invokeWhitelisted(IPC_CHANNELS.trayShowWindow) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    quit: () =>
+      invokeWhitelisted(IPC_CHANNELS.trayQuit) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    onAction: (callback: (payload: TrayActionPayload) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (isTrayActionPayload(value)) {
+          callback(value);
+        }
+      };
+
+      ipcRenderer.on(IPC_CHANNELS.trayAction, listener);
+
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.trayAction, listener);
+      };
+    }
+  }
 });
 
 contextBridge.exposeInMainWorld("picomDesktop", bridge);

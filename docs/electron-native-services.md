@@ -23,3 +23,31 @@ Manual verification:
 3. Trigger the test notification through `notificationService.showTestNotification()`.
 4. Confirm a native desktop notification appears on Windows, Linux, or macOS.
 5. Disable notifications in settings and confirm the service suppresses the notification.
+
+## Tray bridge
+
+- Renderer entry point: `src/services/trayService.ts`
+- Preload bridge: `window.picomDesktop.tray`
+- IPC channels:
+  - `picom:tray-set-status`
+  - `picom:tray-set-muted`
+  - `picom:tray-show-window`
+  - `picom:tray-quit`
+  - `picom:tray-action`
+- Main process APIs: Electron `Tray`, `Menu`, and `BrowserWindow`
+
+Safety rules:
+
+- React components should call `trayService`, not Electron APIs.
+- Tray action payloads are validated in preload before reaching renderer callbacks.
+- The tray menu can open/focus Picom, change presence placeholder status, toggle muted state, open settings placeholder action, or quit.
+- The bridge does not expose raw Electron objects.
+
+Manual verification:
+
+1. Start Picom in Electron dev mode.
+2. Confirm the Picom tray icon appears where the OS exposes tray icons.
+3. Click `Open Picom` and confirm the window focuses/restores.
+4. Change each status and confirm the action is sent through the bridge.
+5. Toggle `Mute Notifications` and confirm the tray tooltip/menu state changes.
+6. Confirm `Quit` exits the app.
