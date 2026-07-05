@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, shell, desktopCapturer } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, shell, desktopCapturer, Notification } from "electron";
 import path from "node:path";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
@@ -12,6 +12,11 @@ type SafeScreenCaptureSource = Readonly<{
   type: "screen" | "window";
   thumbnailDataUrl: string | null;
   appIconDataUrl: string | null;
+}>;
+type SafeNotificationPayload = Readonly<{
+  title: string;
+  body?: string;
+  silent?: boolean;
 }>;
 
 let mainWindow: BrowserWindow | null = null;
@@ -43,6 +48,37 @@ function openExternalSafely(url: string): void {
   }
 
   shell.openExternal(url).catch(() => undefined);
+}
+
+function sanitizeText(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return trimmed.slice(0, maxLength);
+}
+
+function parseNotificationPayload(value: unknown): SafeNotificationPayload | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const title = sanitizeText(record.title, 120);
+  if (!title) {
+    return null;
+  }
+
+  return {
+    title,
+    body: sanitizeText(record.body, 240),
+    silent: typeof record.silent === "boolean" ? record.silent : undefined
+  };
 }
 
 function sendWindowMaximizeState(window: BrowserWindow): void {
@@ -139,6 +175,29 @@ function registerIpcHandlers(): void {
       return { ok: true, native: true, sources: safeSources } as const;
     } catch {
       return { ok: false, native: true, error: "SCREEN_CAPTURE_SOURCES_UNAVAILABLE" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.notificationShow, (_event, payload: unknown) => {
+    const safePayload = parseNotificationPayload(payload);
+    if (!safePayload) {
+      return { ok: false, native: true, error: "INVALID_NOTIFICATION_PAYLOAD" } as const;
+    }
+
+    if (!Notification.isSupported()) {
+      return { ok: false, native: true, error: "NOTIFICATIONS_UNSUPPORTED" } as const;
+    }
+
+    try {
+      const notification = new Notification({
+        title: safePayload.title,
+        body: safePayload.body,
+        silent: safePayload.silent
+      });
+      notification.show();
+      return { ok: true, native: true } as const;
+    } catch {
+      return { ok: false, native: true, error: "NOTIFICATION_SHOW_FAILED" } as const;
     }
   });
 }

@@ -10,6 +10,12 @@ type SafeScreenCaptureSource = Readonly<{
   thumbnailDataUrl: string | null;
   appIconDataUrl: string | null;
 }>;
+type NativeNotificationPayload = Readonly<{
+  title: string;
+  body?: string;
+  tag?: string;
+  silent?: boolean;
+}>;
 
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
@@ -81,7 +87,12 @@ const bridge = Object.freeze({
         | { ok: true; native: true; sources: SafeScreenCaptureSource[] }
         | { ok: false; native: true; error: string }
       >
-  }
+  },
+  showNotification: (payload: NativeNotificationPayload) =>
+    invokeWhitelisted(IPC_CHANNELS.notificationShow, payload) as Promise<
+      | { ok: true; native: true }
+      | { ok: false; native: true; error: string }
+    >
 });
 
 contextBridge.exposeInMainWorld("picomDesktop", bridge);
