@@ -1,5 +1,5 @@
 import type { Attachment } from "../types/community";
-import { attachmentScanService } from "../services/attachmentScanService";
+import { attachmentQuarantineService } from "../services/attachmentQuarantineService";
 
 type AttachmentGridProps = {
   attachments: Attachment[];
@@ -12,14 +12,14 @@ export function AttachmentGrid({ attachments, onOpenImage }: AttachmentGridProps
   return (
     <div className={`attachment-grid count-${Math.min(attachments.length, 4)}`}>
       {visibleAttachments.map((attachment) => {
-        const scan = attachmentScanService.getScanStatus(attachment.scanStatus);
+        const access = attachmentQuarantineService.getAccessDecision(attachment);
         const imageUrl = attachment.thumbnailUrl || attachment.publicUrl || attachment.url;
 
-        if (!scan.safeToRender) {
+        if (!access.canRender) {
           return (
-            <div key={attachment.id} className="attachment-card attachment-card-blocked" role="status" aria-label={scan.reason}>
-              <strong>Attachment unavailable</strong>
-              <span>{scan.reason}</span>
+            <div key={attachment.id} className="attachment-card attachment-card-blocked" role="status" aria-label={access.message}>
+              <strong>{access.title}</strong>
+              <span>{access.message}</span>
             </div>
           );
         }

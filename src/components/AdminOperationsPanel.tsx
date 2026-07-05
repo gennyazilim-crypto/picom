@@ -1,5 +1,6 @@
 import { appConfig } from "../config/appConfig";
 import { reportService } from "../services/reportService";
+import { attachmentQuarantineService } from "../services/attachmentQuarantineService";
 
 const adminSections = [
   {
@@ -38,6 +39,8 @@ const adminSections = [
 
 export function AdminOperationsPanel() {
   const reportSummary = reportService.getSummary();
+  const quarantineSummary = attachmentQuarantineService.getAdminSummaryPlaceholder();
+  const quarantineRoutes = attachmentQuarantineService.getReviewRoutePlaceholders();
 
   return (
     <section className="settings-status-card" aria-label="Admin operations placeholder">
@@ -61,6 +64,11 @@ export function AdminOperationsPanel() {
           <span>Reports</span>
           <strong>{reportSummary.open} open</strong>
           <small>{reportSummary.reviewed} reviewed, {reportSummary.dismissed} dismissed, {reportSummary.action_taken} action taken.</small>
+        </article>
+        <article className="security-card">
+          <span>Attachment quarantine</span>
+          <strong>{quarantineSummary.quarantinedCount} blocked</strong>
+          <small>{quarantineSummary.needsReviewCount} needing review. Routes prepared: {quarantineRoutes.list}; {quarantineRoutes.review}.</small>
         </article>
       </div>
       <div className="security-card-grid">
