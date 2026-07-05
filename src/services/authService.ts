@@ -6,6 +6,7 @@ export type AuthServiceUser = Readonly<{
   id: string;
   email: string | null;
   displayName: string | null;
+  emailVerifiedAt?: string | null;
 }>;
 
 export type AuthServiceSession = Readonly<{
@@ -15,6 +16,11 @@ export type AuthServiceSession = Readonly<{
 }>;
 
 export type PasswordResetRequestSummary = Readonly<{
+  provider: "mock" | "supabase";
+  message: string;
+}>;
+
+export type EmailVerificationRequestSummary = Readonly<{
   provider: "mock" | "supabase";
   message: string;
 }>;
@@ -69,6 +75,7 @@ function mapUser(user: User | null): AuthServiceUser | null {
     id: user.id,
     email: user.email ?? null,
     displayName,
+    emailVerifiedAt: user.email_confirmed_at ?? null,
   };
 }
 
@@ -86,16 +93,21 @@ function getMockSession(email = "mock@picom.local"): AuthServiceSession {
   return {
     provider: "mock",
     expiresAt: null,
-    user: {
-      id: "mock-current-user",
-      email,
-      displayName: "Picom Mock User",
-    },
+      user: {
+        id: "mock-current-user",
+        email,
+        displayName: "Picom Mock User",
+        emailVerifiedAt: null,
+      },
   };
 }
 
 function getPasswordResetSafeMessage(): string {
   return "If an account exists for that email, password reset instructions will be prepared.";
+}
+
+function getEmailVerificationSafeMessage(): string {
+  return "If verification is available for this account, email verification instructions will be prepared.";
 }
 
 function getConfiguredClient() {
@@ -212,6 +224,51 @@ export const authService = {
       ok: true,
       data: {
         message: "Password reset confirmation placeholder is prepared for a future deep link flow.",
+      },
+    };
+  },
+
+  async requestEmailVerification(email?: string): Promise<AuthServiceResult<EmailVerificationRequestSummary>> {
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+
+    if (!configured.data) {
+      return {
+        ok: true,
+        data: {
+          provider: "mock",
+          message: getEmailVerificationSafeMessage(),
+        },
+      };
+    }
+
+    const targetEmail = normalizeEmail(email ?? "");
+    const currentUserEmail = (await configured.data.auth.getUser()).data.user?.email ?? "";
+    const emailForResend = targetEmail || currentUserEmail;
+    if (!emailForResend) {
+      return authError("AUTH_INVALID_INPUT", "Email is required.");
+    }
+
+    await configured.data.auth.resend({ type: "signup", email: emailForResend }).catch(() => null);
+
+    return {
+      ok: true,
+      data: {
+        provider: "supabase",
+        message: getEmailVerificationSafeMessage(),
+      },
+    };
+  },
+
+  async confirmEmailVerificationPlaceholder(token: string): Promise<AuthServiceResult<{ message: string }>> {
+    if (!token.trim()) {
+      return authError("AUTH_INVALID_INPUT", "Verification token is required.");
+    }
+
+    return {
+      ok: true,
+      data: {
+        message: "Email verification confirmation placeholder is prepared for a future deep link flow.",
       },
     };
   },

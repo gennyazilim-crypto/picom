@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { notificationService } from "../services/notificationService";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
+import { authService } from "../services/authService";
 import { menuService } from "../services/menuService";
 import { settingsService, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
 import { statusPageService } from "../services/statusPageService";
@@ -31,6 +32,7 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [includeDiagnostics, setIncludeDiagnostics] = useState(true);
   const [includeLogs, setIncludeLogs] = useState(false);
+  const [emailVerificationMessage, setEmailVerificationMessage] = useState<string | null>(null);
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
   const sections = ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
 
@@ -98,6 +100,17 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
 
     pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
   };
+  const requestEmailVerification = async () => {
+    const result = await authService.requestEmailVerification();
+    if (!result.ok) {
+      setEmailVerificationMessage(result.error.message);
+      pushToast(result.error.message, "error");
+      return;
+    }
+
+    setEmailVerificationMessage(result.data.message);
+    pushToast(result.data.message, "success");
+  };
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -136,6 +149,11 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
             <div className="placeholder-panel action-panel">
               <strong>Account security foundation</strong>
               <p>Security controls are prepared as beta placeholders. Supabase Auth remains the source of truth for production account actions.</p>
+              <div className="settings-status-card" aria-label="Email verification placeholder">
+                <span>Email verification</span>
+                <strong>Verification placeholder</strong>
+                <small>{emailVerificationMessage ?? "Email verification is prepared but not required for MVP login."}</small>
+              </div>
               <div className="security-card-grid">
                 <article className="security-card">
                   <span>Session</span>
@@ -161,6 +179,7 @@ export function SettingsModal({ theme, profileSettings, onThemeChange, onProfile
               <div className="settings-actions-row">
                 <button onClick={() => pushToast("Security settings placeholder reviewed.", "info")}>Review placeholder</button>
                 <button onClick={() => pushToast("Password reset is not enabled in this beta placeholder.", "info")}>Password reset placeholder</button>
+                <button onClick={requestEmailVerification}>Resend verification placeholder</button>
               </div>
             </div>
           ) : active === "Profile" ? (
