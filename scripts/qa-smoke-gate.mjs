@@ -5,6 +5,7 @@ const npmCommand = npmCliPath ? process.execPath : process.platform === "win32" 
 const checks = [
   ["run", "env:smoke"],
   ["run", "qa:output:smoke"],
+  ["run", "react:hooks:smoke"],
   ["run", "logs:smoke"],
   ["run", "diagnostics:smoke"],
   ["run", "errors:smoke"],
