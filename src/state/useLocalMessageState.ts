@@ -57,6 +57,21 @@ function isSameMessage(message: Message, id: string, clientMessageId?: string | 
   return message.id === id || Boolean(clientMessageId && message.clientMessageId === clientMessageId);
 }
 
+function getMessageFreshnessTimestamp(message: Pick<Message, "createdAt" | "editedAt" | "deletedAt">): number {
+  const parsed = Date.parse(message.deletedAt ?? message.editedAt ?? message.createdAt);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function shouldKeepDeletedMessage(existing: Message, incoming: Message): boolean {
+  if (!existing.deletedAt || incoming.deletedAt) return false;
+
+  const deletedAt = Date.parse(existing.deletedAt);
+  const incomingTimestamp = getMessageFreshnessTimestamp(incoming);
+
+  if (!Number.isFinite(deletedAt) || incomingTimestamp <= 0) return false;
+  return incomingTimestamp <= deletedAt;
+}
+
 function updateChannelUnreadState(
   communities: Community[],
   { communityId, channelId, mentionCount }: ChannelUnreadInput,
@@ -201,7 +216,9 @@ export function useLocalMessageState(initialCommunities: Community[]) {
         const messages = exists
           ? community.messages.map((item) =>
               isSameMessage(item, id, clientMessageId)
-                ? { ...item, ...message, reactions: item.reactions ?? [], attachments: item.attachments ?? message.attachments }
+                ? shouldKeepDeletedMessage(item, message)
+                  ? item
+                  : { ...item, ...message, reactions: item.reactions ?? [], attachments: item.attachments ?? message.attachments }
                 : item,
             )
           : [...community.messages, message];

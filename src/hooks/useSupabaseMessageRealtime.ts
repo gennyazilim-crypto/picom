@@ -4,10 +4,14 @@ import { loggingService } from "../services/loggingService";
 import { mapMessageRow, type MessageRow, type MessageSummary } from "../services/messageService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../services/supabase/supabaseClient";
 import {
+  createRealtimeEventId,
+  createRealtimeEventOrderingGuard,
   createRealtimeMessageDeduper,
   mapRealtimeSubscriptionStatus,
   realtimeChannelNames,
+  type OrderedRealtimeEventType,
   type RealtimeConnectionStatus,
+  type RealtimeEventOrderingMetadata,
 } from "../services/supabase/realtimeService";
 
 type UseSupabaseMessageRealtimeInput = Readonly<{
@@ -21,6 +25,41 @@ type UseSupabaseMessageRealtimeInput = Readonly<{
 
 export type { RealtimeConnectionStatus } from "../services/supabase/realtimeService";
 
+type RealtimePayloadTimestamp = Readonly<{
+  commit_timestamp?: string | null;
+}>;
+
+function getPayloadServerTimestamp(payload: RealtimePayloadTimestamp, fallback?: string | null): string {
+  return payload.commit_timestamp ?? fallback ?? new Date().toISOString();
+}
+
+function getMessageOrderingTimestamp(message: MessageSummary): string {
+  return message.deletedAt ?? message.editedAt ?? message.createdAt;
+}
+
+function createMessageOrderingMetadata(
+  type: OrderedRealtimeEventType,
+  message: MessageSummary,
+  serverTimestamp: string,
+): RealtimeEventOrderingMetadata {
+  return {
+    eventId: createRealtimeEventId({
+      type,
+      communityId: message.communityId,
+      channelId: message.channelId,
+      messageId: message.id,
+      serverTimestamp,
+      clientMessageId: message.clientMessageId,
+    }),
+    type,
+    communityId: message.communityId,
+    channelId: message.channelId,
+    messageId: message.id,
+    serverTimestamp,
+    sequence: null,
+  };
+}
+
 export function useSupabaseMessageRealtime({
   enabled,
   communityId,
@@ -31,6 +70,7 @@ export function useSupabaseMessageRealtime({
 }: UseSupabaseMessageRealtimeInput): RealtimeConnectionStatus {
   const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("idle");
   const insertDeduperRef = useRef(createRealtimeMessageDeduper());
+  const eventOrderingRef = useRef(createRealtimeEventOrderingGuard());
 
   useEffect(() => {
     if (!enabled || !dataSourceService.getStatus().isSupabase) {
@@ -54,6 +94,7 @@ export function useSupabaseMessageRealtime({
 
     setConnectionStatus("connecting");
     insertDeduperRef.current.clear();
+    eventOrderingRef.current.clear();
     let hasConnected = false;
     let canceled = false;
 
@@ -64,6 +105,21 @@ export function useSupabaseMessageRealtime({
         { event: "INSERT", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
           const message = mapMessageRow(payload.new as MessageRow);
+          const serverTimestamp = getPayloadServerTimestamp(payload, message.createdAt);
+          const orderingDecision = eventOrderingRef.current.shouldProcessEvent(
+            createMessageOrderingMetadata("message:new", message, serverTimestamp),
+          );
+
+          if (!orderingDecision.shouldProcess) {
+            loggingService.logInfo("Supabase out-of-order realtime insert ignored", {
+              reason: orderingDecision.reason,
+              messageId: message.id,
+              clientMessageId: message.clientMessageId,
+              communityId,
+              channelId,
+            });
+            return;
+          }
 
           if (!insertDeduperRef.current.shouldProcessInsert(message)) {
             loggingService.logInfo("Supabase duplicate realtime message ignored", {
@@ -81,7 +137,26 @@ export function useSupabaseMessageRealtime({
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
-        (payload) => onUpdate(mapMessageRow(payload.new as MessageRow)),
+        (payload) => {
+          const message = mapMessageRow(payload.new as MessageRow);
+          const eventType: OrderedRealtimeEventType = message.deletedAt ? "message:delete" : "message:update";
+          const serverTimestamp = getPayloadServerTimestamp(payload, getMessageOrderingTimestamp(message));
+          const orderingDecision = eventOrderingRef.current.shouldProcessEvent(
+            createMessageOrderingMetadata(eventType, message, serverTimestamp),
+          );
+
+          if (!orderingDecision.shouldProcess) {
+            loggingService.logInfo("Supabase out-of-order realtime update ignored", {
+              reason: orderingDecision.reason,
+              messageId: message.id,
+              communityId,
+              channelId,
+            });
+            return;
+          }
+
+          onUpdate(message);
+        },
       )
       .on(
         "postgres_changes",
@@ -89,6 +164,33 @@ export function useSupabaseMessageRealtime({
         (payload) => {
           const oldRow = payload.old as Partial<MessageRow>;
           if (oldRow.id) {
+            const serverTimestamp = getPayloadServerTimestamp(payload, new Date().toISOString());
+            const orderingDecision = eventOrderingRef.current.shouldProcessEvent({
+              eventId: createRealtimeEventId({
+                type: "message:delete",
+                communityId,
+                channelId,
+                messageId: oldRow.id,
+                serverTimestamp,
+              }),
+              type: "message:delete",
+              communityId,
+              channelId,
+              messageId: oldRow.id,
+              serverTimestamp,
+              sequence: null,
+            });
+
+            if (!orderingDecision.shouldProcess) {
+              loggingService.logInfo("Supabase out-of-order realtime delete ignored", {
+                reason: orderingDecision.reason,
+                messageId: oldRow.id,
+                communityId,
+                channelId,
+              });
+              return;
+            }
+
             onDelete(oldRow.id);
             return;
           }
