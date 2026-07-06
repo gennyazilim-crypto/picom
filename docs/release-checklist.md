@@ -8,6 +8,8 @@ Picom is an Electron desktop app for Windows, Linux, and macOS. This checklist d
 
 - [ ] Release version is selected.
 - [ ] Release channel is selected: `dev`, `beta`, or `stable`.
+- [ ] Safe rollout ring is selected and documented using `docs/safe-rollout.md`.
+- [ ] Rollback or rollout pause criteria are reviewed before promotion.
 - [ ] Scope matches the active Electron + Supabase + LiveKit MVP task track.
 - [ ] No mobile UI, mobile navigation, or web-first responsive shell was added.
 - [ ] No Discord branding, logos, copied assets, copied icons, or exact Discord colors are present.
