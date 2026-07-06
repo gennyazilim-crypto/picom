@@ -87,6 +87,7 @@ Useful docs:
 
 - `docs/beta-environment.md`
 - `docs/environment-qa-gate.md`
+- `docs/secrets-management.md`
 
 ## Quality gates
 
