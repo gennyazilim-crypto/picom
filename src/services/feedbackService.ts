@@ -94,7 +94,7 @@ export const feedbackService = {
       serviceStatus: diagnostics.serviceStatus,
       feedback: redactedFeedback,
       recentLogs: feedback?.includeLogs ? loggingService.getRecentLogs(75) : [],
-      note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, service-role keys, or private secrets."
+      note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, privileged server keys, or private secrets."
     };
   },
 

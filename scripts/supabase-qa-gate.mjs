@@ -4,6 +4,7 @@ const npmCliPath = process.env.npm_execpath;
 const npmCommand = npmCliPath ? process.execPath : process.platform === "win32" ? "npm.cmd" : "npm";
 const checks = [
   ["run", "supabase:smoke"],
+  ["run", "supabase:rls:smoke"],
   ["run", "supabase:api-regression"]
 ];
 

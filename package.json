@@ -93,6 +93,8 @@
     "privacy:blocking:smoke": "node scripts/user-blocking-placeholder-smoke-test.mjs",
     "bots:foundation:smoke": "node scripts/bot-system-foundation-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs",
+    "supabase:rls:smoke": "node scripts/supabase-rls-smoke.mjs",
+    "supabase:rls:test": "node scripts/supabase-rls-smoke.mjs --run",
     "webhooks:foundation:smoke": "node scripts/webhook-foundation-smoke-test.mjs",
     "slash:commands:smoke": "node scripts/slash-commands-placeholder-smoke-test.mjs",
     "emoji:custom:smoke": "node scripts/custom-emoji-foundation-smoke-test.mjs",
