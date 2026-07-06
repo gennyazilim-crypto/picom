@@ -132,6 +132,7 @@
     "attachment-delivery:smoke": "node scripts/attachment-delivery-smoke-test.mjs",
     "protocol-handler:smoke": "node scripts/protocol-handler-smoke-test.mjs",
     "native-notifications:smoke": "node scripts/native-notifications-smoke-test.mjs",
+    "notifications:permission-onboarding:smoke": "node scripts/notification-permission-onboarding-smoke-test.mjs",
     "notifications:quiet-hours:smoke": "node scripts/quiet-hours-smoke-test.mjs",
     "notifications:digest:smoke": "node scripts/notification-digest-smoke-test.mjs",
     "tray:integration:smoke": "node scripts/tray-integration-smoke-test.mjs",

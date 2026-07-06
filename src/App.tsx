@@ -43,6 +43,7 @@ import { DirectMessagesView } from "./components/DirectMessagesView";
 import { FriendsView } from "./components/FriendsView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
 import { CrashRecoveryDialog } from "./components/CrashRecoveryDialog";
+import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
 import { diagnosticsService } from "./services/diagnosticsService";
@@ -70,6 +71,12 @@ import { offlineSyncConflictService } from "./services/offlineSyncConflictServic
 import { reportService } from "./services/reportService";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
+import { notificationService } from "./services/notificationService";
+import {
+  notificationPermissionOnboardingService,
+  type NotificationPermissionOnboardingTrigger,
+  type NotificationPermissionPrompt as NotificationPermissionPromptData,
+} from "./services/notificationPermissionOnboardingService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
@@ -261,6 +268,7 @@ export function App() {
   const [isAppLocked, setIsAppLocked] = useState(false);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
+  const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
   const {
     communities,
     appendLocalMessage,
@@ -821,6 +829,20 @@ export function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [activeChannel.id, channels, closeTransientOverlays, lockApp, openPalette, openSettings, selectChannelByOffset]);
+
+  const maybeShowNotificationPermissionPrompt = useCallback((trigger: NotificationPermissionOnboardingTrigger) => {
+    const prompt = notificationPermissionOnboardingService.getPrompt(trigger);
+    if (!prompt) return;
+
+    notificationPermissionOnboardingService.markPrompted(trigger);
+    setNotificationPermissionPrompt(prompt);
+  }, []);
+
+  useEffect(() => {
+    if (settingsOpen) {
+      maybeShowNotificationPermissionPrompt("notification_settings_opened");
+    }
+  }, [maybeShowNotificationPermissionPrompt, settingsOpen]);
 
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
@@ -1435,6 +1457,7 @@ export function App() {
       attachments,
     });
 
+    maybeShowNotificationPermissionPrompt("first_message_sent");
     setReplyToMessageId(null);
   };
 
@@ -1579,6 +1602,7 @@ export function App() {
     const community = addCommunity(createCommunityFromSummary(result.data));
     switchCommunity(community.id);
     setCreateCommunityOpen(false);
+    maybeShowNotificationPermissionPrompt("community_created");
     pushToast(`${community.name} created.`, "success");
   };
 
@@ -1923,6 +1947,29 @@ export function App() {
         />
       ) : null}
       {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
+      {notificationPermissionPrompt ? (
+        <NotificationPermissionPrompt
+          prompt={notificationPermissionPrompt}
+          onAllow={() => {
+            void notificationService.requestPermission().then((result) => {
+              notificationPermissionOnboardingService.markPermissionRequested(
+                notificationService.getStatus().permission,
+                notificationPermissionPrompt.trigger,
+              );
+              setNotificationPermissionPrompt(null);
+              pushToast(
+                result.ok ? "Notification permission enabled." : result.reason ?? "Notification permission was not granted.",
+                result.ok ? "success" : "info",
+              );
+            });
+          }}
+          onDismiss={() => {
+            notificationPermissionOnboardingService.dismiss(notificationPermissionPrompt.trigger);
+            setNotificationPermissionPrompt(null);
+            pushToast("Notification permission prompt dismissed.", "info");
+          }}
+        />
+      ) : null}
       {paletteOpen ? (
         <CommandPalette
           communities={communities}

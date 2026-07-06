@@ -3977,3 +3977,90 @@ body{
 .crash-recovery-backdrop{position:fixed;inset:0;z-index:58;display:grid;place-items:center;background:rgba(20,28,38,.26);backdrop-filter:blur(10px)}
 .crash-recovery-dialog{width:min(620px,calc(100vw - 96px));display:grid;gap:14px;border:1px solid var(--border);border-radius:24px;background:var(--surface);box-shadow:var(--shadow);padding:26px;color:var(--text-primary)}
 .crash-recovery-mark{width:46px;height:46px;display:grid;place-items:center;border-radius:16px;background:color-mix(in srgb,var(--warning) 18%,var(--surface));color:var(--warning);font-weight:900}.crash-recovery-dialog h2{margin:0;font-size:23px;letter-spacing:-.04em}.crash-recovery-dialog p{margin:0;color:var(--text-secondary);line-height:1.55}.crash-recovery-dialog>small{color:var(--text-muted);line-height:1.45}.crash-recovery-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}.crash-recovery-meta div{min-width:0;border:1px solid var(--border);border-radius:14px;background:var(--surface-soft);padding:10px}.crash-recovery-meta dt{color:var(--text-muted);font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.crash-recovery-meta dd{margin:4px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);font-size:12px;font-weight:800}.crash-recovery-actions{display:flex;flex-wrap:wrap;gap:9px}.crash-recovery-actions button{height:36px;border:1px solid var(--border);border-radius:12px;background:var(--surface-soft);color:var(--text-primary);padding:0 13px;cursor:pointer;font-weight:800}.crash-recovery-actions button:hover{background:var(--surface-hover)}.crash-recovery-actions button.primary{border-color:transparent;background:linear-gradient(135deg,var(--picom-teal),var(--picom-aqua));color:white}
+
+/* Task 441: notification permission onboarding */
+.notification-permission-prompt {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 70;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  width: min(430px, calc(100vw - 56px));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-app);
+  color: var(--text-primary);
+  padding: 14px;
+}
+
+.notification-permission-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-soft));
+  color: var(--accent);
+}
+
+.notification-permission-copy {
+  min-width: 0;
+}
+
+.notification-permission-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.notification-permission-copy p {
+  margin: 4px 0 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.notification-permission-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.notification-permission-benefits span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.notification-permission-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.notification-permission-actions button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.notification-permission-actions .ghost-button {
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+}
+
+.notification-permission-actions .primary-button {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
