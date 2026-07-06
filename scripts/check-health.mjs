@@ -5,5 +5,6 @@ requireDevelopmentDefault("check-health");
 printMaintenanceResult("Backend health check placeholder", {
   mode: "read_only_placeholder",
   apiUrl: process.env.VITE_API_URL || process.env.PICOM_API_URL || "mock_mode",
-  checks: ["app_config", "database_placeholder", "storage_placeholder", "realtime_placeholder"],
+  endpoints: ["/health", "/health/live", "/health/ready"],
+  checks: ["liveness", "readiness", "database_placeholder", "storage_placeholder", "realtime_placeholder"],
 });

@@ -43,7 +43,7 @@ Use Edge Functions for trusted or privileged work:
 - `moderation-helper`: placeholder for privileged moderation decisions.
 - `notification-fanout`: placeholder for server-side notification routing.
 - `validate-file`: validates upload metadata without exposing privileged configuration.
-- `health`: public non-sensitive health check.
+- `health`: public non-sensitive health, liveness, and readiness check.
 
 ## Shared function modules
 
@@ -71,6 +71,7 @@ supabase/functions/_shared/
 - Protected functions require `Authorization: Bearer <user-jwt>`.
 - Protected functions verify Supabase JWT before reading user-specific data.
 - Public health functions are the only functions that should use `verify_jwt = false`.
+- Health supports `/functions/v1/health`, `/functions/v1/health/live`, and `/functions/v1/health/ready`.
 - Functions should import auth from `_shared/auth.ts` rather than directly from `_shared/supabase-auth.ts`.
 - Service-role access is allowed only inside trusted functions and only when RLS-safe client access is not enough.
 - Request bodies must be validated before use.

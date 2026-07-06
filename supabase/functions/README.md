@@ -12,7 +12,7 @@ This directory contains Supabase Edge Function code for trusted server-side MVP 
 ## Current structure
 
 - `_shared/` - reusable auth, HTTP, typed error, CORS, LiveKit, and validation helpers.
-- `health/` - safe unauthenticated placeholder function for local structure checks.
+- `health/` - safe unauthenticated health, liveness, and readiness function for local structure checks.
 - `livekit-token/` - protected LiveKit token function; secrets stay server-side.
 - `accept-invite/` - protected invite acceptance boundary.
 - `moderation-helper/` - protected moderation placeholder boundary.
@@ -32,4 +32,6 @@ Then call:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:54321/functions/v1/health
+Invoke-RestMethod http://127.0.0.1:54321/functions/v1/health/live
+Invoke-RestMethod http://127.0.0.1:54321/functions/v1/health/ready
 ```
