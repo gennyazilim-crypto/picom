@@ -1,4 +1,4 @@
-# Dependency Audit and Update Plan
+﻿# Dependency Audit and Update Plan
 
 Picom uses a small Electron + React + TypeScript stack with Supabase and LiveKit MVP integrations. Dependency changes should be deliberate, reviewed, and tested against the desktop shell before release.
 
@@ -76,6 +76,6 @@ Before shipping:
 
 ## Known limitations
 
-- This plan does not replace a future CI secret scanner or dependency vulnerability policy.
+- This plan works with `docs/secret-scanning.md` and `docs/dependency-vulnerability-policy.md` for CI/security review.
 - `npm audit` can report build-only issues that require human triage.
 - Some vulnerabilities may require waiting for upstream fixes.
