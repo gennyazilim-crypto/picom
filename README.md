@@ -165,6 +165,22 @@ npm run qa:supabase
 
 This gate checks schema/API-mode readiness without production secrets. A missing local Supabase CLI may produce a setup warning for reset workflows, but it should not block renderer mock-mode development.
 
+## Development tools
+
+Run a safe in-memory realtime load simulation:
+
+```bash
+npm run realtime:load:simulate
+```
+
+Useful custom run:
+
+```bash
+npm run realtime:load:simulate -- --clients=10 --messages=5 --delayMs=25 --channelId=general
+```
+
+The simulation is development-only, defaults to dry-run mode, does not connect to Supabase, and must not be used as a production load test. See `docs/realtime-load-simulation.md`.
+
 ## LiveKit
 
 LiveKit/WebRTC is the MVP foundation for:
