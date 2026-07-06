@@ -1,8 +1,10 @@
 ﻿import { useEffect, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { Attachment, Member, Message, Role } from "../types/community";
+import { clipboardService } from "../services/clipboardService";
 import { dateTimeService } from "../services/dateTimeService";
 import { externalLinkService } from "../services/desktop/externalLinkService";
+import { messageDeliveryReceiptService } from "../services/messageDeliveryReceiptService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { MemberAvatar } from "./MemberAvatar";
 import { MessageHoverActions } from "./MessageHoverActions";
@@ -118,6 +120,11 @@ export function MessageItem({
   const [draft, setDraft] = useState(message.body);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const deleted = Boolean(message.deletedAt);
+  const ownMessage = message.authorId === currentUserId;
+  const deliveryStatus = messageDeliveryReceiptService.normalize(message.localStatus);
+  const deliveryTone = messageDeliveryReceiptService.getTone(deliveryStatus);
+  const showDeliveryStatus = ownMessage && !deleted;
+  const showRecoveryActions = showDeliveryStatus && messageDeliveryReceiptService.isRecoverable(deliveryStatus);
 
   useEffect(() => {
     if (editing) setDraft(message.body);
@@ -138,6 +145,11 @@ export function MessageItem({
     if (!result.ok) {
       pushToast?.(externalLinkService.getUserFriendlyError(result.reason), "error");
     }
+  };
+
+  const copyMessageBody = async () => {
+    const result = await clipboardService.copyText(message.body);
+    pushToast?.(result.ok ? "Message text copied." : result.reason, result.ok ? "success" : "error");
   };
 
   const onEditKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -165,7 +177,16 @@ export function MessageItem({
           {role ? <span className="role-label" style={{ color: role.color }}>{role.name}</span> : null}
           <time title={dateTimeService.formatFullTimestamp(message.createdAt)}>{dateTimeService.formatMessageTime(message.createdAt)}</time>
           {message.editedAt && !deleted ? <span className="message-edited-label">edited</span> : null}
-          {message.authorId === currentUserId ? <span className="message-own-label">you</span> : null}
+          {ownMessage ? <span className="message-own-label">you</span> : null}
+          {showDeliveryStatus ? (
+            <span
+              className={`message-delivery-status status-${deliveryStatus}`}
+              data-tone={deliveryTone}
+              title={messageDeliveryReceiptService.getDescription(deliveryStatus)}
+            >
+              {messageDeliveryReceiptService.getLabel(deliveryStatus)}
+            </span>
+          ) : null}
         </div>
         {message.replyToMessageId ? (
           <div className="message-reply-preview">
@@ -200,6 +221,13 @@ export function MessageItem({
                 {reaction.emoji} {reaction.count}
               </button>
             ))}
+          </div>
+        ) : null}
+        {showRecoveryActions ? (
+          <div className="message-delivery-actions" aria-label="Message delivery recovery actions">
+            <button type="button" onClick={() => pushToast?.("Retry placeholder is ready for the offline queue.", "info")}>Retry placeholder</button>
+            <button type="button" onClick={() => void copyMessageBody()}>Copy text</button>
+            <button type="button" onClick={() => pushToast?.("Remove placeholder is ready for failed local messages.", "info")}>Remove placeholder</button>
           </div>
         ) : null}
         {!deleted && reactionPickerOpen ? (

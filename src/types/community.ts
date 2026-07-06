@@ -11,6 +11,7 @@ export type UserStatus = "online" | "idle" | "dnd" | "offline";
 export type ChannelType = "text" | "voice";
 export type AttachmentType = "image";
 export type AttachmentScanStatus = "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
+export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "failed" | "queued_offline";
 export type RoleName = "Owner" | "Admin" | "Moderator" | "Member" | "Guest";
 
 export interface Role {
@@ -67,7 +68,7 @@ export interface Message {
   replyToMessageId?: MessageId | null;
   attachments?: Attachment[];
   reactions?: Reaction[];
-  localStatus?: "sent" | "sending" | "failed";
+  localStatus?: MessageDeliveryStatus;
 }
 
 export interface Channel {

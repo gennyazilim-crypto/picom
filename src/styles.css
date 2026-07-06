@@ -2263,6 +2263,47 @@ body{
   padding:1px 6px;
   background:var(--surface-soft);
 }
+.message-delivery-status{
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:1px 7px;
+  background:var(--surface-soft);
+  color:var(--text-muted);
+  font-size:11px;
+  font-weight:800;
+}
+.message-delivery-status.status-sent,
+.message-delivery-status.status-delivered{
+  color:var(--success);
+}
+.message-delivery-status.status-failed{
+  color:var(--danger);
+  border-color:color-mix(in srgb,var(--danger) 35%,var(--border));
+}
+.message-delivery-status.status-queued_offline{
+  color:var(--warning);
+  border-color:color-mix(in srgb,var(--warning) 35%,var(--border));
+}
+.message-delivery-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+}
+.message-delivery-actions button{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--surface-soft);
+  color:var(--text-secondary);
+  padding:4px 8px;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+.message-delivery-actions button:hover{
+  background:var(--surface);
+  color:var(--text-primary);
+}
 .message-reply-preview,
 .composer-reply-preview{
   border:1px solid var(--border);
