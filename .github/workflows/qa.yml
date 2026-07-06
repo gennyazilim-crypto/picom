@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Secret exposure smoke
+        run: npm run secrets:smoke
+
       - name: Run QA smoke gate
         run: npm run qa:smoke
 
