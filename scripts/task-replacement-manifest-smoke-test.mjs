@@ -11,7 +11,8 @@ const requiredFiles = [
   `${base}/task_127_ADDENDUM_first_run_onboarding.txt`,
 ];
 const missingFiles = requiredFiles.filter((file) => !fs.existsSync(file));
-const metadata = JSON.parse(fs.readFileSync(`${base}/tasks_replacement_metadata.json`, "utf8"));
+const metadataText = fs.readFileSync(`${base}/tasks_replacement_metadata.json`, "utf8").replace(/^\uFEFF/, "");
+const metadata = JSON.parse(metadataText);
 const index = fs.readFileSync(`${base}/TASKS_TO_REPLACE_INDEX.txt`, "utf8");
 const missingTaskFiles = metadata
   .map((entry) => `${base}/task_${String(entry.task).padStart(3, "0")}.txt`)
