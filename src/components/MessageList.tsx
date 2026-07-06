@@ -10,6 +10,7 @@ type MessageListProps = {
   community: Community;
   messages: Message[];
   currentUserId: string;
+  readReceiptsEnabled: boolean;
   highlightedMessageId?: string | null;
   editingMessageId: string | null;
   typingNames: string[];
@@ -40,6 +41,7 @@ export function MessageList({
   community,
   messages,
   currentUserId,
+  readReceiptsEnabled,
   highlightedMessageId,
   editingMessageId,
   typingNames,
@@ -120,6 +122,7 @@ export function MessageList({
               replyToMessage={replyToMessage}
               replyToMember={replyToMember}
               currentUserId={currentUserId}
+              readReceiptsEnabled={readReceiptsEnabled}
               canEdit={ownMessage && !message.deletedAt}
               canDelete={(ownMessage || canModerate(currentRole?.level)) && !message.deletedAt}
               editing={editingMessageId === message.id}

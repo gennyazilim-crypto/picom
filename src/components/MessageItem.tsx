@@ -81,6 +81,7 @@ type MessageItemProps = {
   replyToMessage?: Message | null;
   replyToMember?: Member;
   currentUserId: string;
+  readReceiptsEnabled: boolean;
   canEdit: boolean;
   canDelete: boolean;
   editing: boolean;
@@ -103,6 +104,7 @@ export function MessageItem({
   replyToMessage,
   replyToMember,
   currentUserId,
+  readReceiptsEnabled,
   canEdit,
   canDelete,
   editing,
@@ -178,6 +180,11 @@ export function MessageItem({
           <time title={dateTimeService.formatFullTimestamp(message.createdAt)}>{dateTimeService.formatMessageTime(message.createdAt)}</time>
           {message.editedAt && !deleted ? <span className="message-edited-label">edited</span> : null}
           {ownMessage ? <span className="message-own-label">you</span> : null}
+          {ownMessage && !deleted && readReceiptsEnabled ? (
+            <span className="message-read-receipt-placeholder" title="Read receipts placeholder is enabled. Detailed reader lists are not shown.">
+              Reads on
+            </span>
+          ) : null}
           {showDeliveryStatus ? (
             <span
               className={`message-delivery-status status-${deliveryStatus}`}

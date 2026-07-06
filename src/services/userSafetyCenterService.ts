@@ -11,6 +11,8 @@ export type UserSafetySettings = Readonly<{
 }>;
 
 const STORAGE_KEY = "picom.userSafetyCenter.v1";
+type UserSafetySettingsListener = (settings: UserSafetySettings) => void;
+const listeners = new Set<UserSafetySettingsListener>();
 const defaults: UserSafetySettings = {
   schemaVersion: 1,
   whoCanDmMe: "community_members",
@@ -50,6 +52,14 @@ function writeSettings(next: UserSafetySettings): void {
   } catch {
     // Local storage can be unavailable in restricted desktop fallback contexts.
   }
+
+  emit(next);
+}
+
+function emit(next: UserSafetySettings): void {
+  for (const listener of listeners) {
+    listener(next);
+  }
 }
 
 export const userSafetyCenterService = {
@@ -66,6 +76,13 @@ export const userSafetyCenterService = {
   resetSettings(): UserSafetySettings {
     writeSettings(defaults);
     return defaults;
+  },
+
+  subscribe(listener: UserSafetySettingsListener): () => void {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
   },
 
   getPrivacySummary(blockedCount: number): string {

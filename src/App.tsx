@@ -69,6 +69,7 @@ import { messageModerationFilterService } from "./services/messageModerationFilt
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
 import { reportService } from "./services/reportService";
 import { userBlockingService } from "./services/userBlockingService";
+import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
@@ -252,6 +253,7 @@ export function App() {
     isDeafened: false,
     isScreenSharing: false,
   });
+  const [userSafetySettings, setUserSafetySettings] = useState(() => userSafetyCenterService.getSettings());
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
@@ -334,6 +336,10 @@ export function App() {
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    return userSafetyCenterService.subscribe(setUserSafetySettings);
+  }, []);
 
   useEffect(() => {
     const stableTimer = window.setTimeout(() => {
@@ -1834,6 +1840,7 @@ export function App() {
                 onTypingStop={typingBroadcast.sendTypingStop}
                 onSendMessage={sendMessage}
                 currentUserId={currentUser.userId}
+                readReceiptsEnabled={userSafetySettings.enableReadReceipts}
                 highlightedMessageId={highlightedMessageId}
                 replyToMessage={replyToMessage}
                 editingMessageId={editingMessageId}

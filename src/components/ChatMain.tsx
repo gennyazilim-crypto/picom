@@ -32,6 +32,7 @@ type ChatMainProps = {
   onTypingStart: () => void;
   onTypingStop: () => void;
   currentUserId: string;
+  readReceiptsEnabled: boolean;
   highlightedMessageId?: string | null;
   replyToMessage?: Message | null;
   editingMessageId: string | null;
@@ -63,6 +64,7 @@ export function ChatMain({
   onTypingStart,
   onTypingStop,
   currentUserId,
+  readReceiptsEnabled,
   highlightedMessageId,
   replyToMessage,
   editingMessageId,
@@ -188,6 +190,7 @@ export function ChatMain({
             community={community}
             messages={channelMessages}
             currentUserId={currentUserId}
+            readReceiptsEnabled={readReceiptsEnabled}
             highlightedMessageId={highlightedMessageId}
             editingMessageId={editingMessageId}
             typingNames={typingNames}
