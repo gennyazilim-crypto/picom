@@ -108,6 +108,7 @@
     "message:search-jump:smoke": "node scripts/message-search-jump-smoke-test.mjs",
     "message:delivery-receipts:smoke": "node scripts/message-delivery-receipts-smoke-test.mjs",
     "read-receipts:smoke": "node scripts/read-receipts-placeholder-smoke-test.mjs",
+    "message:send-queue:smoke": "node scripts/message-send-queue-ordering-smoke-test.mjs",
     "notifications:routing:smoke": "node scripts/advanced-notification-routing-smoke-test.mjs",
     "account-switcher:smoke": "node scripts/multi-account-placeholder-smoke-test.mjs",
     "workspace:export-import:smoke": "node scripts/workspace-export-import-placeholder-smoke-test.mjs",

@@ -9,6 +9,7 @@ type AppendLocalMessageInput = {
   authorId: UserId;
   body: string;
   sequence?: number | null;
+  localOrder?: number;
   createdAt?: string;
   replyToMessageId?: string | null;
   attachments?: Attachment[];
@@ -81,6 +82,12 @@ function compareMessagesByDisplayOrder(left: Message, right: Message): number {
     left.sequence !== right.sequence
   ) {
     return left.sequence - right.sequence;
+  }
+
+  if (left.channelId === right.channelId && (typeof left.localOrder === "number" || typeof right.localOrder === "number")) {
+    const leftOrder = left.localOrder ?? 0;
+    const rightOrder = right.localOrder ?? 0;
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
   }
 
   const createdAtOrder = left.createdAt.localeCompare(right.createdAt);
@@ -164,12 +171,13 @@ type AddLocalChannelInput = {
 export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
-  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, createdAt, replyToMessageId, attachments }: AppendLocalMessageInput) => {
+  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, replyToMessageId, attachments }: AppendLocalMessageInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
       id: id ?? `local-${idSuffix}`,
       clientMessageId: clientMessageId ?? null,
       sequence: sequence ?? null,
+      localOrder,
       channelId,
       authorId,
       body,
@@ -208,13 +216,14 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     return message;
   }, []);
 
-  const upsertLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, createdAt, editedAt, deletedAt, attachments }: UpsertLocalMessageInput) => {
+  const upsertLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, editedAt, deletedAt, attachments }: UpsertLocalMessageInput) => {
     if (!id || deletedAt) return null;
 
     const message: Message = {
       id,
       clientMessageId: clientMessageId ?? null,
       sequence: sequence ?? null,
+      localOrder,
       channelId,
       authorId,
       body,

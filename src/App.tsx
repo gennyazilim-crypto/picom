@@ -65,6 +65,7 @@ import { channelCategoryService } from "./services/channelCategoryService";
 import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
 import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
+import { messageSendQueueService } from "./services/messageSendQueueService";
 import { messageHistoryExportService } from "./services/messageHistoryExportService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
@@ -1427,12 +1428,14 @@ export function App() {
       return;
     }
     const clientMessageId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const result = await messageService.sendMessage({
+    const localOrder = messageSendQueueService.nextLocalOrder(activeCommunity.id, displayedActiveChannel.id);
+    const result = await messageSendQueueService.enqueue({
       communityId: activeCommunity.id,
       channelId: displayedActiveChannel.id,
       authorId: currentUser.userId,
       body,
       clientMessageId,
+      localOrder,
     });
 
     if (!result.ok) {
@@ -1452,6 +1455,7 @@ export function App() {
       channelId: displayedActiveChannel.id,
       authorId: result.data.authorId,
       body: result.data.body,
+      localOrder,
       createdAt: result.data.createdAt,
       replyToMessageId,
       attachments,

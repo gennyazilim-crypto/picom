@@ -59,6 +59,7 @@ export interface Message {
   id: MessageId;
   clientMessageId?: string | null;
   sequence?: number | null;
+  localOrder?: number;
   channelId: ChannelId;
   authorId: UserId;
   body: string;
