@@ -177,6 +177,7 @@
     "api:sdk:smoke": "node scripts/api-sdk-generation-smoke-test.mjs",
     "api:pagination:smoke": "node scripts/api-pagination-smoke-test.mjs",
     "api:idempotency:smoke": "node scripts/api-idempotency-smoke-test.mjs",
+    "api:timeout-retry:smoke": "node scripts/api-timeout-retry-smoke-test.mjs",
     "desktop:ipc:security:smoke": "node scripts/desktop-ipc-security-audit-smoke-test.mjs",
     "csp:smoke": "node scripts/content-security-policy-smoke-test.mjs",
     "external-links:smoke": "node scripts/external-link-service-smoke-test.mjs",
