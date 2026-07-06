@@ -7,6 +7,9 @@ const packageJson = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8
 const appShell = readFileSync(resolve(root, "src/App.tsx"), "utf8");
 const voiceService = readFileSync(resolve(root, "src/services/voiceService.ts"), "utf8");
 const voiceRoomView = readFileSync(resolve(root, "src/components/VoiceRoomView.tsx"), "utf8");
+const screenSourcePicker = readFileSync(resolve(root, "src/components/voice/ScreenSourcePicker.tsx"), "utf8");
+const screenShareControls = readFileSync(resolve(root, "src/components/voice/ScreenShareControls.tsx"), "utf8");
+const screenSharePreview = readFileSync(resolve(root, "src/components/voice/ScreenSharePreview.tsx"), "utf8");
 const livekitService = readFileSync(resolve(root, "src/services/livekit/livekitService.ts"), "utf8");
 const voiceRoomService = readFileSync(resolve(root, "src/services/livekit/voiceRoomService.ts"), "utf8");
 const livekitTypes = readFileSync(resolve(root, "src/services/livekit/livekitTypes.ts"), "utf8");
@@ -15,8 +18,10 @@ const livekitFunction = readFileSync(resolve(root, "supabase/functions/livekit-t
 const livekitTokenHelper = readFileSync(resolve(root, "supabase/functions/_shared/livekit-token.ts"), "utf8");
 const edgeRoomNaming = readFileSync(resolve(root, "supabase/functions/_shared/livekit-room.ts"), "utf8");
 const screenCaptureService = readFileSync(resolve(root, "src/services/screenCaptureService.ts"), "utf8");
+const screenShareService = readFileSync(resolve(root, "src/services/desktop/screenShareService.ts"), "utf8");
 const electronMain = readFileSync(resolve(root, "electron/main.cts"), "utf8");
 const preload = readFileSync(resolve(root, "electron/preload.cts"), "utf8");
+const ipcChannels = readFileSync(resolve(root, "electron/ipcChannels.cts"), "utf8");
 
 if (!packageJson.dependencies?.["livekit-client"]) {
   throw new Error("Missing livekit-client dependency.");
@@ -120,8 +125,29 @@ for (const term of screenCaptureRequired) {
   }
 }
 
+const screenShareRequired = [
+  [screenSourcePicker, "ScreenSharePicker", "ScreenSourcePicker wrapper"],
+  [screenShareControls, "ScreenSharePicker", "ScreenShareControls wrapper"],
+  [screenSharePreview, "ScreenShareViewer", "ScreenSharePreview wrapper"],
+  [screenShareService, "screenCaptureService.listSources", "desktop screenShareService source listing"],
+  [voiceRoomView, "ScreenShareControls", "VoiceRoomView screen-share controls"],
+  [voiceRoomView, "ScreenSharePreview", "VoiceRoomView screen-share preview"],
+  [voiceService, "publishTrack", "LiveKit publish screen track"],
+  [voiceService, "unpublishTrack", "LiveKit unpublish screen track"]
+];
+
+for (const [contents, term, label] of screenShareRequired) {
+  if (!contents.includes(term)) {
+    throw new Error(`Missing screen share MVP wiring: ${label}`);
+  }
+}
+
 if (!electronMain.includes("desktopCapturer.getSources") || !preload.includes("screenCapture")) {
   throw new Error("Missing Electron screen capture bridge.");
+}
+
+if (!ipcChannels.includes("picom:screen-capture-get-sources") || !preload.includes("invokeWhitelisted")) {
+  throw new Error("Screen capture IPC must stay whitelisted through preload.");
 }
 
 console.log("OK LiveKit dependency and renderer service");
@@ -129,4 +155,5 @@ console.log("OK LiveKit VoiceRoomView UI wiring");
 console.log("OK deterministic LiveKit voice room naming");
 console.log("OK Supabase LiveKit token Edge Function");
 console.log("OK Electron screen share bridge");
+console.log("OK Screen share MVP controls and preview");
 console.log("OK LiveKit smoke test completed");
