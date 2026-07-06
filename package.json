@@ -206,7 +206,8 @@
     "enterprise:deployment-model:smoke": "node scripts/enterprise-deployment-model-smoke-test.mjs",
     "enterprise:admin-console:smoke": "node scripts/enterprise-admin-console-smoke-test.mjs",
     "enterprise:billing:smoke": "node scripts/enterprise-billing-smoke-test.mjs",
-    "enterprise:support:smoke": "node scripts/enterprise-support-runbook-smoke-test.mjs"
+    "enterprise:support:smoke": "node scripts/enterprise-support-runbook-smoke-test.mjs",
+    "enterprise:operations:audit:smoke": "node scripts/final-enterprise-operations-audit-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
