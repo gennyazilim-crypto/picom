@@ -16,6 +16,11 @@ function readMaxUploadBytes(): number {
   return Number.isFinite(value) && value > 0 ? Math.min(value, 50 * 1024 * 1024) : 10 * 1024 * 1024;
 }
 
+function readPublicBooleanEnv(name: string, fallback = false): boolean {
+  const value = readPublicEnv(name, fallback ? "true" : "false").toLowerCase();
+  return value === "1" || value === "true" || value === "on" || value === "enabled" || value === "yes";
+}
+
 Deno.serve((request: Request) => {
   const preflight = handleCorsPreflight(request);
   if (preflight) return preflight;
@@ -49,6 +54,18 @@ Deno.serve((request: Request) => {
       enableForumChannels: false,
       enableAnnouncementChannels: false,
       enableSavedMessages: false,
+    },
+    killSwitches: {
+      disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),
+      disableUploads: readPublicBooleanEnv("PICOM_DISABLE_UPLOADS"),
+      disableVoiceRooms: readPublicBooleanEnv("PICOM_DISABLE_VOICE_ROOMS"),
+      disableDiscovery: readPublicBooleanEnv("PICOM_DISABLE_DISCOVERY"),
+      disableWebhooks: readPublicBooleanEnv("PICOM_DISABLE_WEBHOOKS"),
+      disableBots: readPublicBooleanEnv("PICOM_DISABLE_BOTS"),
+      disableNativeNotifications: readPublicBooleanEnv("PICOM_DISABLE_NATIVE_NOTIFICATIONS"),
+      disableAutoUpdate: readPublicBooleanEnv("PICOM_DISABLE_AUTO_UPDATE"),
+      disableMessageEditing: readPublicBooleanEnv("PICOM_DISABLE_MESSAGE_EDITING"),
+      disableInvites: readPublicBooleanEnv("PICOM_DISABLE_INVITES"),
     },
     maintenance: {
       status: readPublicEnv("PICOM_MAINTENANCE_STATUS", "operational"),

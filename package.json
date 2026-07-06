@@ -27,6 +27,7 @@
     "generate-provenance": "node scripts/generate-release-provenance.mjs",
     "release:provenance:smoke": "node scripts/release-provenance-smoke-test.mjs",
     "safe-rollout:smoke": "node scripts/safe-rollout-smoke-test.mjs",
+    "emergency:kill-switches:smoke": "node scripts/emergency-kill-switches-smoke-test.mjs",
     "package:verify": "node scripts/verify-electron-packaging.mjs",
     "packaging:smoke": "node scripts/verify-electron-packaging.mjs",
     "preview": "vite preview --host 127.0.0.1",

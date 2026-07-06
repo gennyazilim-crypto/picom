@@ -111,6 +111,12 @@ or:
 featureFlagService.getAvailability("enableDiscovery")
 ```
 
+For features that may need emergency rollout shutdown, use the kill-switch-aware helper instead:
+
+```ts
+emergencyKillSwitchService.getFeatureAvailability("enableRealtime")
+```
+
 Disabled features should show one of these safe behaviors:
 
 - entry point hidden

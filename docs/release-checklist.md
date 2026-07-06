@@ -108,6 +108,7 @@ Picom is an Electron desktop app for Windows, Linux, and macOS. This checklist d
 
 ## Security and privacy
 
+- [ ] `npm run emergency:kill-switches:smoke` passes.
 - [ ] `npm run secrets:smoke` passes.
 - [ ] `npm run env:smoke` passes.
 - [ ] Logs do not expose passwords, tokens, cookies, authorization headers, Supabase service-role keys, LiveKit API secrets, or signing keys.

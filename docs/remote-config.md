@@ -19,6 +19,7 @@ export type ClientRemoteConfig = {
   latestVersion: string;
   releaseChannel: 'dev' | 'beta' | 'stable';
   featureFlags: Partial<Record<FeatureFlagKey, boolean>>;
+  killSwitches: Partial<Record<EmergencyKillSwitchKey, boolean>>;
   maintenance: {
     status: 'operational' | 'degraded' | 'maintenance';
     message: string;
@@ -64,6 +65,16 @@ The Edge Function may read public operational values such as:
 - `PICOM_STATUS_PAGE_URL`
 - `PICOM_SUPPORT_URL`
 - `PICOM_DOCS_URL`
+- `PICOM_DISABLE_REALTIME`
+- `PICOM_DISABLE_UPLOADS`
+- `PICOM_DISABLE_VOICE_ROOMS`
+- `PICOM_DISABLE_DISCOVERY`
+- `PICOM_DISABLE_WEBHOOKS`
+- `PICOM_DISABLE_BOTS`
+- `PICOM_DISABLE_NATIVE_NOTIFICATIONS`
+- `PICOM_DISABLE_AUTO_UPDATE`
+- `PICOM_DISABLE_MESSAGE_EDITING`
+- `PICOM_DISABLE_INVITES`
 
 Do not put Supabase service role keys, LiveKit secrets, signing keys, passwords, auth tokens, or private admin config in remote config.
 
@@ -81,11 +92,16 @@ If remote config is unavailable, the renderer service:
 
 Remote feature flags are passed through `featureFlagService.applyRemoteConfig()`, which accepts only known typed keys and boolean-like values. Feature flags hide or disable UI entry points only. Backend/Supabase RLS and LiveKit token authorization remain mandatory.
 
+## Emergency kill switches
+
+Remote kill switches are passed through `emergencyKillSwitchService.applyRemoteConfig()`, which accepts only known typed keys and boolean-like values. Kill switches can temporarily hide or block degraded features during incidents or rollout pauses. They must not be used as the only security boundary.
+
 ## Security rules
 
 - Remote config must be public and non-sensitive.
 - Unknown fields are ignored by the renderer service.
 - Unknown feature flag keys are ignored.
+- Unknown kill switch keys are ignored.
 - Upload limits are clamped to safe bounds.
 - Supabase anon key may be used to call the public Edge Function; service-role keys are never used in the renderer.
 

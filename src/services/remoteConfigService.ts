@@ -1,5 +1,6 @@
 ﻿import { appConfig, type ReleaseChannel } from "../config/appConfig";
 import { dataSourceService } from "./dataSourceService";
+import { emergencyKillSwitchService, type EmergencyKillSwitchOverrides } from "./emergencyKillSwitchService";
 import { FEATURE_FLAG_KEYS, featureFlagService, type FeatureFlagOverrides } from "./featureFlagService";
 import { loggingService } from "./loggingService";
 
@@ -28,6 +29,7 @@ export type ClientRemoteConfig = Readonly<{
   latestVersion: string;
   releaseChannel: ReleaseChannel;
   featureFlags: FeatureFlagOverrides;
+  killSwitches: EmergencyKillSwitchOverrides;
   maintenance: RemoteMaintenanceConfig;
   uploadLimits: RemoteUploadLimits;
   urls: RemoteSupportUrls;
@@ -54,6 +56,7 @@ function createDefaultRemoteConfig(source: RemoteConfigSource): ClientRemoteConf
     latestVersion: appConfig.version,
     releaseChannel: appConfig.releaseChannel,
     featureFlags: {},
+    killSwitches: {},
     maintenance: Object.freeze({
       status: "operational",
       message: "Picom services are operating normally.",
@@ -123,6 +126,10 @@ function toFeatureFlags(value: unknown): FeatureFlagOverrides {
   return next;
 }
 
+function toKillSwitches(value: unknown): EmergencyKillSwitchOverrides {
+  return Object.freeze(emergencyKillSwitchService.sanitizeOverrides(value, "remote"));
+}
+
 function sanitizeRemoteConfig(input: unknown, source: RemoteConfigSource): ClientRemoteConfig {
   const defaults = createDefaultRemoteConfig(source);
   if (!isPlainObject(input)) {
@@ -138,6 +145,7 @@ function sanitizeRemoteConfig(input: unknown, source: RemoteConfigSource): Clien
     latestVersion: toStringValue(input.latestVersion, defaults.latestVersion),
     releaseChannel: toReleaseChannel(input.releaseChannel, defaults.releaseChannel),
     featureFlags: Object.freeze(toFeatureFlags(input.featureFlags)),
+    killSwitches: toKillSwitches(input.killSwitches),
     maintenance: Object.freeze({
       status: toMaintenanceStatus(maintenanceInput.status),
       message: toStringValue(maintenanceInput.message, defaults.maintenance.message),
@@ -218,6 +226,7 @@ function readCachedConfig(): ClientRemoteConfig | null {
 function emit(config: ClientRemoteConfig): ClientRemoteConfig {
   currentConfig = config;
   featureFlagService.applyRemoteConfig(config.featureFlags);
+  emergencyKillSwitchService.applyRemoteConfig(config.killSwitches);
   for (const listener of listeners) {
     listener(currentConfig);
   }
