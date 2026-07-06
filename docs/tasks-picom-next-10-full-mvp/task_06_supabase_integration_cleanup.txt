@@ -1,0 +1,127 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 06: Supabase Auth/Profile/Community/Channel/Message Integration Cleanup
+
+CONTEXT
+Supabase foundations exist, but Full MVP requires clean end-to-end data integration across Auth, Profile, Community, Channel, Message, Upload, and Realtime without breaking mock mode.
+
+GOAL
+Clean and verify Supabase integration for core Full MVP flows.
+
+DO NOT
+- redesign UI
+- add mobile UI
+- expose service role key to renderer
+- bypass RLS
+- remove mock mode
+- touch LiveKit/screen share
+
+CREATE OR UPDATE
+- src/lib/supabaseClient.ts
+- src/services/supabase/authService.ts
+- src/services/supabase/profileService.ts
+- src/services/supabase/communityService.ts
+- src/services/supabase/channelService.ts
+- src/services/supabase/messageService.ts
+- src/services/supabase/uploadService.ts
+- src/services/supabase/realtimeService.ts
+- data source switch files
+- docs/supabase-integration.md
+- docs/task-checkpoints/task-supabase-core-integration-cleanup.md
+
+CHECK FLOWS
+Auth:
+- register
+- profile created after signup
+- login
+- session restore
+- logout
+- no null session crash
+
+Profile:
+- fetch current profile
+- profile display name/avatar used in UI
+- profile update if already within scope
+- protected route handles missing profile safely
+
+Community:
+- list communities
+- create community
+- switch community
+- owner/member relation correct
+- visitor/public behavior not broken
+
+Channel:
+- list visible channels
+- private channels hidden if no permission
+- create channel if user can manage channels
+- active channel fallback safe
+
+Messages:
+- fetch messages
+- send message
+- optimistic message reconciliation
+- edit/delete if implemented
+- reactions if implemented
+- reply fields if implemented
+- message author/profile join works
+
+Upload:
+- upload image to Storage
+- create attachment metadata
+- render uploaded image
+- errors shown cleanly
+
+Realtime:
+- subscribe to active channel
+- cleanup subscription on channel change
+- no duplicate listeners
+- insert/update/delete events update UI
+- reconnect status if available
+
+Mock/API switch:
+- mock mode still works without Supabase
+- API/Supabase mode uses services
+- components do not call supabase.from directly unless justified
+
+ENV
+Verify .env.example includes:
+- VITE_SUPABASE_URL
+- VITE_SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY only for Edge Functions/server-side docs
+- LiveKit env docs if already present
+
+ACCEPTANCE CRITERIA
+- Core Supabase flows are clean and documented.
+- Mock mode remains working.
+- No direct database password in Electron renderer.
+- No service role key in frontend.
+- Components use service layer.
+- Backend/Supabase errors handled gracefully.
+- Typecheck, mock smoke, build pass.
+- Supabase smoke run or honest limitation documented.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run supabase:smoke if available
+- npm run build
+
+COMMIT
+git add -A
+git commit -m "chore clean supabase core integration"
+

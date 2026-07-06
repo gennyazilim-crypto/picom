@@ -1,0 +1,113 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 08: Screen Share MVP
+
+CONTEXT
+LiveKit voice MVP should be completed first. Full MVP requires screen sharing in Electron using desktopCapturer and LiveKit screen share track.
+
+GOAL
+Implement screen share MVP:
+- Electron screen/window source picker
+- safe preload IPC
+- start screen share
+- stop screen share
+- participant screen share state
+- macOS/Windows/Linux permission notes and QA
+
+DO NOT
+- redesign voice UI from scratch
+- redesign app layout
+- add mobile UI
+- expose raw Electron APIs to renderer
+- bypass preload security
+- expose LiveKit secrets in renderer
+
+CREATE OR UPDATE
+- electron/main screen source handler
+- electron/preload screen capture bridge
+- src/services/desktop/screenShareService.ts
+- ScreenSourcePicker
+- ScreenShareControls
+- ScreenSharePreview
+- LiveKit screen share integration in voice service
+- docs/screen-share-mvp.md
+- docs/task-checkpoints/task-screen-share-mvp.md
+
+ELECTRON SECURITY
+- Renderer must not import Electron directly.
+- Use contextBridge/preload.
+- contextIsolation remains true.
+- nodeIntegration remains false.
+- IPC channels whitelisted.
+- Validate source selection payload.
+- Do not allow arbitrary screen/file access.
+
+SOURCE PICKER
+- List available screens/windows via desktopCapturer through main/preload.
+- UI shows:
+  - source thumbnail
+  - source name
+  - screen/window type if available
+- user selects source
+- cancel closes picker
+- no mobile UI
+
+LIVEKIT
+- Start screen share publishes screen track to current LiveKit room.
+- Stop screen share unpublishes track.
+- Remote participant screen share state displayed if feasible.
+- Current user card shows screen sharing active state.
+- VoiceMiniControlCard can show screen share placeholder state if already integrated.
+
+PERMISSIONS / PLATFORM
+Document and handle:
+- macOS screen recording permission required
+- macOS microphone permission already for voice
+- Windows screen source behavior
+- Linux limitations depending on desktop environment/Wayland/X11
+
+UI STATES
+- screen sharing available
+- selecting source
+- sharing
+- stopping
+- permission denied
+- source unavailable
+- error
+
+ACCEPTANCE CRITERIA
+- ScreenSourcePicker opens in Electron.
+- User can select a screen/window.
+- Start screen share publishes track to LiveKit when connected.
+- Stop screen share works.
+- UI shows sharing state.
+- Error/permission states clear.
+- No raw Electron API in renderer.
+- Voice MVP remains stable.
+- Typecheck, mock smoke, build pass.
+- Manual QA steps documented for Windows/Linux/macOS.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+- npm run livekit:smoke if available
+
+COMMIT
+git add -A
+git commit -m "feat implement screen share mvp"
+

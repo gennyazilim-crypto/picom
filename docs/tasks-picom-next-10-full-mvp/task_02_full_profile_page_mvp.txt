@@ -1,0 +1,239 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 02: Full Profile Page MVP
+
+CONTEXT
+User avatars/names currently open a popover or placeholder. Full MVP requires a full profile page inspired by the uploaded profile reference image.
+
+GOAL
+Clicking a user avatar/name navigates to a full ProfileView. The profile page must have:
+- left profile card
+- main profile content
+- media gallery
+- stats
+- bio
+- details grid
+- skills/tags
+- recent activity
+- shared media
+
+IMPORTANT
+Use the uploaded profile image as structural inspiration only. Do not copy it exactly. Adapt it to Picom community/chat identity.
+
+APP VIEW STATE
+activeView:
+- "community"
+- "mentionFeed"
+- "profile"
+
+Add:
+- activeProfileUserId
+- previousViewBeforeProfile optional
+
+Behavior:
+- Clicking user avatar/name sets activeView = "profile" and activeProfileUserId.
+- Clicking Back returns to previousViewBeforeProfile if available; otherwise mentionFeed.
+- Clicking Home/Picom returns to mentionFeed.
+- Clicking community icon returns to community layout and updates activeCommunityId/activeChannelId.
+
+CLICKABLE ENTRY POINTS
+- MemberSidebar member avatar
+- MemberSidebar member row
+- MessageItem avatar
+- MessageItem author name
+- MentionFeedCard author avatar/name
+- Popular People / Following rows in MentionRightPanel or FeedCompanionRail
+- UserProfilePopover View profile action if it exists
+
+CREATE OR UPDATE
+- src/types/profile.ts
+- src/data/mockProfiles.ts
+- ProfileView
+- ProfileLeftCard
+- ProfileMainPanel
+- ProfileHeroGallery
+- ProfileStats
+- ProfileBio
+- ProfileDetailsGrid
+- ProfileSkillsTags
+- ProfileActivityList
+- ProfileSharedMedia
+- ProfileActionButtons
+- docs/task-checkpoints/task-full-profile-page-mvp.md
+
+PROFILE MODE LAYOUT
+- ServerRail remains visible.
+- ProfileView uses rest of window width.
+- Do not render CommunitySidebar, MemberSidebar, ChatMain, or MentionFeedMain.
+- Full desktop profile layout.
+- Internal two-column content:
+  1. ProfileLeftCard: 280px–320px
+  2. ProfileMainPanel: flexible
+- Profile page scrolls independently if tall.
+- Titlebar remains unchanged.
+
+PROFILE LEFT CARD
+Show:
+- large avatar/portrait area
+- cover/gradient area
+- display name
+- username
+- status/status text
+- location placeholder
+- joined date
+- role badges
+- skills/tags
+- status/availability card
+- action buttons:
+  - Message placeholder
+  - Follow/Unfollow
+  - Add Friend placeholder
+  - More
+
+Current user:
+- show Edit Profile instead of Add Friend
+- hide Follow if appropriate
+
+Other user:
+- show Message, Follow/Unfollow, Add Friend placeholder, More
+
+PROFILE MAIN PANEL
+Include:
+1. ProfileHeroGallery
+2. ProfileStats
+3. ProfileBio
+4. ProfileDetailsGrid
+5. ProfileSkillsTags
+6. ProfileActivityList
+7. ProfileSharedMedia
+
+Do not copy irrelevant reference fields like height/weight/eye color/hair color.
+Use Picom-relevant fields:
+- Status
+- Location
+- Timezone
+- Joined
+- Main community
+- Top role
+- Activity score
+- Preferred language
+
+PROFILE HERO GALLERY
+- horizontal media gallery
+- first item can be larger
+- supports image and video_placeholder
+- shows photo/video counts
+- image click opens ImagePreviewModal if available
+- no copyrighted external assets
+
+PROFILE STATS
+- Communities
+- Posts
+- Mentions
+- Reactions
+- Followers
+- Following
+- Roles
+
+PROFILE ACTIVITY LIST
+Activity types:
+- mention
+- reply
+- reaction
+- media_share
+- voice_join
+- message_post
+
+Each activity:
+- icon
+- title
+- preview
+- community/channel context
+- timestamp
+- Open in channel action if possible
+
+TYPE EXAMPLE
+export type ProfileStatus = "online" | "idle" | "busy" | "offline";
+
+export type UserProfile = {
+  id: string;
+  displayName: string;
+  username: string;
+  avatarUrl?: string;
+  coverUrl?: string;
+  status: ProfileStatus;
+  statusText?: string;
+  location?: string;
+  timezone?: string;
+  joinedAt: string;
+  bio: string;
+  roles: string[];
+  tags: string[];
+  mainCommunityId?: string;
+  topRole?: string;
+  preferredLanguage?: string;
+  activityScore?: number;
+  isCurrentUser?: boolean;
+  isFollowing?: boolean;
+  stats: {
+    communities: number;
+    posts: number;
+    mentions: number;
+    reactions: number;
+    followers: number;
+    following: number;
+    roles: number;
+  };
+  media: ProfileMediaItem[];
+  activities: ProfileActivityItem[];
+};
+
+MOCK DATA
+- Add profiles for at least 12 users.
+- Include current user, owner/admin, moderator, normal member, offline user, popular people, followed users.
+- Use existing mock users/communities/channels/messages/attachments.
+- Do not use copyrighted external assets.
+
+INTERACTIONS
+- Back returns to previous view.
+- Follow/unfollow toggles local state.
+- Message/Add Friend safe placeholder.
+- More opens DesktopContextMenu if available.
+- Open in channel from activity switches to community.
+- Image click opens ImagePreviewModal.
+
+ACCEPTANCE CRITERIA
+- Clicking avatar/name opens full ProfileView from all listed entry points.
+- Profile structure matches reference-inspired layout.
+- Left profile card, gallery, stats, bio, details, tags, activity, media render.
+- Back navigation works.
+- Follow/unfollow works locally.
+- Open in channel works.
+- Mention Feed and community chat remain unchanged.
+- Titlebar/window controls remain stable.
+- No mobile UI.
+- Typecheck, mock smoke, and build pass.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+
+COMMIT
+git add -A
+git commit -m "feat implement full profile page mvp"
+

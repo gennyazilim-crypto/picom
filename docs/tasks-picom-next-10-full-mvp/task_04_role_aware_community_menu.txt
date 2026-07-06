@@ -1,0 +1,193 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 04: Role-Aware Community Menu + Join / Visitor Read-Only Full MVP
+
+CONTEXT
+CommunityHeader has a menu button. Community settings/actions must move into this menu. Menu content must depend on user relationship/role.
+
+GOAL
+Implement production-level CommunityHeader menu behavior for:
+- Owner
+- Admin
+- Moderator
+- Member
+- Visitor / Non-member
+
+Visitors may read public/non-private content if community/channel allows public read, but cannot send, react, upload, or see private channels.
+
+DO NOT
+- break existing community chat layout
+- break Mention Feed/Profile
+- connect unstable backend outside current service boundaries
+- add mobile UI
+- use Discord assets/colors
+
+CREATE OR UPDATE
+- CommunityHeader
+- CommunityMenu
+- CommunityAdminPanel
+- CommunityModeratorPanel
+- CommunityMemberMenu
+- CommunityVisitorMenu
+- JoinCommunityButton
+- CommunityJoinModal
+- CommunityLeaveModal
+- CommunityRoleBadge
+- CommunityMenuItem
+- PermissionGate or Can component if useful
+- src/services/permissions/communityPermissions.ts
+- src/services/community/communityMembershipService.ts
+- src/services/community/communityMenuService.ts
+- src/types/communityAccess.ts
+- docs/task-checkpoints/task-community-menu-role-access-full-mvp.md
+
+ACCESS STATES
+- owner
+- admin
+- moderator
+- member
+- visitor
+
+MENU CONTENT
+Owner:
+- Community settings
+- Admin panel
+- Manage channels
+- Manage roles
+- Invite people
+- Audit log placeholder
+- Transfer ownership placeholder
+- Delete community danger action
+- Leave disabled/requires transfer
+
+Admin:
+- Community settings
+- Admin panel
+- Manage channels
+- Manage members
+- Manage roles if permitted
+- Invite people
+- Audit log if permitted
+- Leave community
+
+Moderator:
+- Moderator panel
+- Reports placeholder
+- Manage messages placeholder
+- Timeout/kick placeholder if permitted
+- Invite people if permitted
+- Notification settings
+- Leave community
+
+Member:
+- Community info
+- Notification settings
+- Invite people if allowed
+- Copy community link placeholder
+- Leave community
+- Report community placeholder
+
+Visitor:
+- Community info
+- Join Community button
+- Copy community link placeholder
+- Report community placeholder
+- Sign in required hint if unauthenticated
+
+JOIN FLOW
+Authenticated visitor:
+- JoinCommunityModal
+- shows name, description, member count, public/private status, rules placeholder
+- join creates local/mock membership or calls existing service if available
+- default role Member
+- after join:
+  - access becomes member
+  - composer enabled if allowed
+  - MemberSidebar updates
+  - menu becomes member menu
+
+Unauthenticated visitor:
+- prompt sign in/register
+- do not create membership
+
+LEAVE FLOW
+- member/admin/mod can leave
+- owner cannot leave without transfer placeholder
+- confirmation required
+- after leave:
+  - access becomes visitor if community public
+  - or community removed/inaccessible if private
+  - composer disabled
+  - private channels hidden
+
+VISITOR READ-ONLY MODE
+Visitor:
+- sees only public/non-private channels if public read enabled
+- cannot see private channels
+- can read public channel messages if allowed
+- composer disabled with:
+  “Join this community to send messages.”
+- Join Community button near composer/header
+- reply/reaction/upload disabled
+- context menu limited
+
+SUPABASE/RLS REQUIREMENTS
+If schema/policies exist, extend safely:
+- communities.visibility public/private
+- communities.public_read_enabled boolean
+- channels.is_private boolean
+- channels.public_read_enabled boolean
+- community_members unique (community_id, user_id)
+- roles permissions
+- RLS must enforce visitor/member/admin boundaries
+If not possible in this task, add exact SQL TODO doc, but do not fake security.
+
+FRONTEND HELPERS
+- isCommunityOwner
+- getUserCommunityRole
+- hasCommunityPermission
+- canManageCommunity
+- canManageChannels
+- canManageMembers
+- canModerateMessages
+- canViewChannel
+- canSendMessage
+- isVisitor
+
+ACCEPTANCE CRITERIA
+- Community settings/actions are moved into CommunityHeader menu.
+- Owner/Admin/Moderator/Member/Visitor see different menus.
+- Owner/Admin can open admin panel.
+- Moderator opens moderator panel.
+- Member opens member menu.
+- Visitor sees Join Community.
+- Visitors can read only public content if allowed.
+- Visitors cannot send/react/upload.
+- Private channels hidden from visitors.
+- Join/leave works in mock mode.
+- Existing layout and Mention Feed/Profile stable.
+- Typecheck, mock smoke, and build pass.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+
+COMMIT
+git add -A
+git commit -m "feat implement role aware community menu access"
+

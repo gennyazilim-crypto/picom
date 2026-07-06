@@ -1,0 +1,166 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 10: Full MVP Final Audit
+
+CONTEXT
+This is the final audit gate before beta/staging/live decisions.
+
+GOAL
+Audit whether Picom Full MVP is ready for beta. Fix only small obvious blockers. Do not add new features.
+
+DO NOT
+- redesign UI
+- add advanced post-MVP features
+- add mobile UI
+- use Discord assets/colors
+- fake test success
+- skip known blockers
+
+CHECK AREAS
+
+1. Electron shell
+- custom titlebar
+- native menu hidden
+- window controls
+- maximize/frame behavior
+- safe preload IPC
+- contextIsolation true
+- nodeIntegration false
+
+2. UI
+- ServerRail
+- CommunitySidebar
+- ChatMain
+- MemberSidebar
+- Mention Feed
+- story header
+- FeedCompanionRail
+- Full Profile Page
+- Settings
+- ContextMenu
+- ImagePreview
+- light/dark
+- Coolicons
+
+3. Messaging
+- send/fetch
+- edit/delete
+- emoji picker
+- reactions
+- reply preview
+- attachments
+- image preview
+- typing/presence if implemented
+- unread/mention foundation
+
+4. Community access
+- role-aware community menu
+- owner/admin/mod/member/visitor states
+- join community
+- leave community
+- visitor read-only
+- private channel hiding
+- composer permission states
+
+5. Supabase
+- Auth
+- profiles
+- communities
+- channels
+- messages
+- attachments
+- reactions/replies
+- RLS policies
+- Storage
+- Realtime
+- Edge Functions
+- no service role key in renderer
+- smoke tests honest
+
+6. LiveKit
+- token function
+- join/leave voice
+- mute/deafen
+- participants
+- speaking indicator
+- screen share picker
+- start/stop screen share
+- platform permission docs
+
+7. Cross-platform package
+- Windows smoke doc/result
+- Linux smoke doc/result
+- macOS smoke doc/result
+- app metadata/icons
+- environment config
+- no secrets
+
+8. Security
+- no token/password logging
+- unsafe links blocked if implemented
+- RLS not bypassed
+- upload validation
+- private channel leaks prevented
+- Electron IPC safe
+
+9. Performance/stability
+- typecheck
+- mock smoke
+- Supabase smoke
+- build
+- bundle warning documented
+- no obvious memory/listener leaks
+
+REQUIRED REPORT
+Return:
+1. Full MVP readiness:
+   - Ready for beta
+   - Ready with non-blockers
+   - Not ready
+2. Completed areas
+3. Partial areas
+4. Critical blockers
+5. Non-blocking known issues
+6. Required manual tests
+7. Exact next fixes if not ready
+8. Commands run
+9. Changed files if any
+10. Commit hash
+
+CREATE OR UPDATE
+- docs/full-mvp-final-audit.md
+- docs/task-checkpoints/task-full-mvp-final-audit.md
+
+ACCEPTANCE CRITERIA
+- Honest final audit exists.
+- Critical blockers listed.
+- No fake success.
+- Typecheck, mock smoke, build pass.
+- Small obvious blockers fixed only if safe.
+- Beta/live next step is clear.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run supabase:smoke if available
+- npm run build
+- any livekit/package smoke scripts if available
+
+COMMIT
+git add -A
+git commit -m "audit full mvp readiness"
+

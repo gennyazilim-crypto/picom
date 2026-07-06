@@ -1,0 +1,123 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 05: Supabase RLS Real Tests
+
+CONTEXT
+Supabase schema/RLS foundation exists, but audit reported Supabase CLI missing and real RLS tests were not verified. Full MVP requires real access-boundary validation.
+
+GOAL
+Add and run real Supabase RLS tests if Supabase CLI is available. If CLI is unavailable, add exact setup/test docs and smoke scripts that fail clearly instead of faking success.
+
+DO NOT
+- change UI
+- add mobile UI
+- weaken RLS
+- expose service role key in Electron/renderer
+- connect production Supabase accidentally
+
+CREATE OR UPDATE
+- supabase/tests/rls/*.sql or appropriate test files
+- scripts/supabase-rls-smoke.mjs if suitable
+- docs/supabase-rls-test-plan.md
+- docs/task-checkpoints/task-supabase-rls-real-tests.md
+
+TEST SCENARIOS
+1. Anonymous user
+- cannot read private data
+- can read public community metadata only if policy allows
+- cannot insert messages
+- cannot join community without auth
+
+2. Visitor / non-member authenticated user
+- can read public community if visibility public
+- can read public non-private channels if public_read_enabled true
+- can read messages only in public non-private channels if allowed
+- cannot read private channels
+- cannot send messages
+- cannot upload attachments
+- cannot react
+- cannot access private attachments
+
+3. Member
+- can read joined community
+- can read permitted channels
+- can send messages in allowed channels
+- can react if allowed
+- can upload images if allowed
+- cannot manage channels unless permission
+
+4. Moderator
+- member permissions
+- can delete/moderate messages if permission allows
+- cannot manage owner/admin-only settings
+
+5. Admin
+- can manage channels/members/roles according to permission
+- cannot transfer ownership unless owner
+
+6. Owner
+- full community access
+- can manage community and roles
+- can delete/transfer placeholder if implemented
+
+7. Private channel
+- hidden from unauthorized users
+- messages not visible
+- attachments not visible
+- mention feed must not leak private content
+
+8. Message ownership
+- author can edit own message
+- other member cannot edit
+- mod/admin can delete if permission allows
+
+9. Storage policies
+- attachment read follows message/channel visibility
+- upload allowed only for permitted senders
+- invalid access denied
+
+SUPABASE CLI
+Check for Supabase CLI.
+If available:
+- run local Supabase start/reset as project scripts allow
+- apply migrations
+- run tests
+If unavailable:
+- document installation command and exact test commands
+- ensure npm script reports clear message and exits non-zero or skip with explicit warning based on existing convention
+- do not fake pass
+
+ACCEPTANCE CRITERIA
+- RLS test plan exists.
+- RLS smoke script or SQL tests exist.
+- If CLI available, tests run and results documented.
+- If CLI unavailable, exact manual/CI setup is documented.
+- No service role key exposed in frontend.
+- Typecheck, mock smoke, and build pass.
+- Supabase smoke script behavior is honest.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+- npm run supabase:smoke if available
+- new RLS test command if added
+
+COMMIT
+git add -A
+git commit -m "test add supabase rls real access checks"
+

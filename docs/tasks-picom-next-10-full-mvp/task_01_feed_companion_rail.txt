@@ -1,0 +1,180 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 01: Feed Companion Rail — Voice Mini Card + Friends + Upcoming Events
+
+CONTEXT
+Mention Feed already exists. Mention cards already render. The next requirement is to add a separate right-side companion column aligned with the mention cards.
+
+GOAL
+Create a new right-side companion column for Mention Feed cards. It must contain:
+1. VoiceMiniControlCard
+2. FriendsStatusSection
+3. UpcomingEventsSection
+
+CRITICAL LAYOUT RULE
+The new column must start at the same vertical position as the first mention card.
+It must NOT start next to the Electron titlebar.
+It must NOT start next to the story/header/cards area.
+It must NOT be placed above the feed.
+It must be placed to the right of the mention cards.
+
+REQUIRED STRUCTURE
+Inside MentionFeedMain, below story cards and Feed/Takip Ettiğin Kişiler tabs:
+
+<MentionFeedBodyGrid>
+  <MentionFeedList />
+  <FeedCompanionRail />
+</MentionFeedBodyGrid>
+
+If existing MentionRightPanel also exists, keep it stable. FeedCompanionRail should be immediately to the right of MentionFeedList. If there is not enough width, collapse/hide FeedCompanionRail first on medium desktop widths. Do not create mobile UI.
+
+CREATE OR UPDATE
+- FeedCompanionRail
+- VoiceMiniControlCard
+- FriendsStatusSection
+- FriendStatusRow
+- UpcomingEventsSection
+- UpcomingEventMiniCard
+- src/data/mockFriends.ts
+- src/data/mockEvents.ts
+- src/types/friends.ts if needed
+- src/types/events.ts if needed
+- src/types/voice.ts if needed
+- docs/task-checkpoints/task-feed-companion-rail-voice-friends-events.md
+
+LAYOUT REQUIREMENTS
+MentionFeedBodyGrid:
+- display: grid
+- grid-template-columns: minmax(0, 1fr) 280px
+- gap: 16px or design token spacing
+- align-items: start
+- min-height: 0
+
+FeedCompanionRail:
+- width around 280px
+- min-width: 0
+- align-self: start
+- uses same vertical rhythm as MentionFeedCards
+- uses design tokens
+- supports light/dark mode
+
+VoiceMiniControlCard:
+- appears only when mock voice state says user is connected
+- sticky at top of FeedCompanionRail
+- compact elevated surface
+- shows room name, community name, connected status, participant count
+- buttons:
+  - mute/unmute
+  - deafen/undeafen
+  - leave voice
+  - screen share placeholder if already available
+- uses Coolicons/AppIcon
+- all icon buttons require aria-label
+- no LiveKit connection in this task
+
+Mock voice state:
+type MockVoiceState = {
+  isInVoiceRoom: boolean;
+  roomName: string;
+  communityName: string;
+  participantCount: number;
+  isMuted: boolean;
+  isDeafened: boolean;
+  isScreenSharing?: boolean;
+};
+
+Voice interactions:
+- mute toggles local isMuted
+- deafen toggles local isDeafened
+- leave sets isInVoiceRoom false and hides the card
+- screen share is safe placeholder only
+
+FriendsStatusSection:
+- title: Friends
+- online count
+- offline count
+- sections: Online / Offline
+- each row:
+  - avatar
+  - display name
+  - username or status text
+  - online/offline/idle/busy dot
+- at least 6 online friends, 6 offline friends, 2 idle/busy friends if status type exists
+- clicking friend can open existing profile placeholder/popover if available
+- do not implement Full ProfileView here
+
+Friend type:
+type FriendStatus = {
+  id: string;
+  userId: string;
+  displayName: string;
+  username: string;
+  avatarUrl?: string;
+  status: "online" | "idle" | "busy" | "offline";
+  statusText?: string;
+};
+
+UpcomingEventsSection:
+- title: Upcoming Events
+- small stacked event cards
+- each card:
+  - event title
+  - community name
+  - startsAt formatted label
+  - attendee count placeholder
+  - event type icon
+  - Details/Join placeholder if space allows
+- at least 5 upcoming events
+
+Event type:
+type UpcomingEvent = {
+  id: string;
+  communityId: string;
+  title: string;
+  startsAt: string;
+  attendeeCount?: number;
+  type: "meeting" | "voice" | "release" | "review" | "social";
+};
+
+ACCEPTANCE CRITERIA
+- FeedCompanionRail exists.
+- It starts at the same vertical position as the first mention card.
+- It is placed to the right of MentionFeedCards.
+- VoiceMiniControlCard appears only when user is in voice.
+- Mute/deafen/leave controls work locally.
+- Leave voice hides the voice card.
+- Friends section shows online/offline users.
+- Upcoming events section shows small event cards.
+- Feed / Takip Ettiğin Kişiler tabs still work.
+- Mention cards still work.
+- Open in channel still works.
+- Community chat layout remains stable.
+- Titlebar/window controls remain stable.
+- Native Electron menu does not return.
+- Light/dark mode works.
+- No mobile UI.
+- Typecheck, mock smoke, and build pass.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+
+COMMIT
+git add -A
+git commit -m "feat add feed companion rail voice friends events"
+

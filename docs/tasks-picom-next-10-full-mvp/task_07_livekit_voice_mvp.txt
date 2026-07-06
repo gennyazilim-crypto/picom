@@ -1,0 +1,126 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 07: LiveKit Voice MVP
+
+CONTEXT
+LiveKit token Edge Function exists, but renderer voice UI/connection is incomplete. Full MVP requires actual voice room MVP.
+
+GOAL
+Implement voice chat MVP:
+- voice room UI
+- join/leave
+- mute/deafen
+- speaking indicator
+- participant list
+- LiveKit token fetch
+- basic connection state
+
+DO NOT
+- implement screen share in this task
+- redesign community chat
+- add mobile UI
+- expose LiveKit API secret in renderer
+- connect service role in renderer
+
+CREATE OR UPDATE
+- src/services/livekit/liveKitService.ts
+- src/services/livekit/voiceRoomService.ts
+- VoiceRoomView
+- VoiceParticipantList
+- VoiceControls
+- SpeakingIndicator
+- VoiceConnectionStatus
+- relevant hooks/store
+- docs/livekit-voice-mvp.md
+- docs/task-checkpoints/task-livekit-voice-mvp.md
+
+DEPENDENCY
+- Ensure livekit-client is installed.
+- If not installed, add it safely.
+- Do not add unrelated packages.
+
+TOKEN
+- Fetch token from Supabase Edge Function livekit-token.
+- Token must be generated server-side only.
+- Renderer sends authenticated request.
+- Room name must be deterministic:
+  community:{communityId}:voice:{channelId}
+- Participant identity = current profile/user id.
+
+UI
+Clicking a voice channel opens VoiceRoomView.
+VoiceRoomView shows:
+- room name
+- community name
+- connection state:
+  - disconnected
+  - connecting
+  - connected
+  - reconnecting
+  - error
+- connected participants
+- speaking indicator
+- controls:
+  - join
+  - leave
+  - mute/unmute
+  - deafen/undeafen
+- no real screen share here
+
+VOICE BEHAVIOR
+- Join connects to LiveKit room.
+- Leave disconnects.
+- Mute disables local audio track.
+- Deafen disables remote audio playback if feasible or local state with TODO.
+- Speaking indicator listens to active speakers.
+- Participant list updates on join/leave.
+- errors show clean UI.
+
+PERMISSIONS
+- user must be community member or allowed to access voice channel
+- if not allowed, show disabled state
+- do not rely only on UI for future security; document RLS/Edge check
+
+MANUAL QA
+- two windows/users can join the same room
+- mute works
+- leave works
+- participant list updates
+- no token secret exposed
+- no crash if LiveKit env missing; show clear error
+
+ACCEPTANCE CRITERIA
+- Voice channel opens VoiceRoomView.
+- Join/leave works with LiveKit when env/token function configured.
+- Mute/unmute works.
+- Participant list updates.
+- Speaking indicator works or documented if blocked.
+- Error states are clear.
+- Community chat remains stable.
+- Typecheck, mock smoke, build pass.
+- LiveKit smoke passes if script exists.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+- npm run livekit:smoke if available
+
+COMMIT
+git add -A
+git commit -m "feat implement livekit voice mvp"
+

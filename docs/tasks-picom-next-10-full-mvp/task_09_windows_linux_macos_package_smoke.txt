@@ -1,0 +1,119 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 09: Windows/Linux/macOS Package Smoke
+
+CONTEXT
+Core Full MVP features should be implemented before package smoke. This task verifies desktop packaging readiness.
+
+GOAL
+Prepare and run package smoke for:
+- Windows
+- Linux
+- macOS
+
+DO NOT
+- add new product features
+- redesign UI
+- skip honest reporting
+- add signing certificates or secrets
+
+CREATE OR UPDATE
+- docs/windows-smoke-test.md
+- docs/linux-smoke-test.md
+- docs/macos-smoke-test.md
+- docs/package-smoke-summary.md
+- docs/task-checkpoints/task-cross-platform-package-smoke.md
+- package scripts if safely missing
+
+CHECK ELECTRON CONFIG
+- productName original
+- appId original
+- default size 1440x900
+- min size 1100x700
+- custom titlebar
+- native menu disabled
+- contextIsolation true
+- nodeIntegration false
+- preload path valid
+- icon paths valid
+- app metadata valid
+
+WINDOWS
+- build target exists (NSIS/MSI or chosen)
+- app launches
+- titlebar works
+- mock mode works
+- Supabase env can be configured
+- no File/Edit/View menu
+- no mobile UI
+
+LINUX
+- AppImage/deb/rpm target if configured
+- desktop entry metadata
+- icon
+- app launches
+- titlebar works
+- mock mode works
+- known Linux dependencies documented
+
+MACOS
+- dmg/zip target if configured
+- icon
+- app launches
+- titlebar/chrome acceptable
+- microphone permission notes
+- screen recording permission notes
+- signing/notarization placeholder documented
+- unsigned local build limitations documented
+
+SMOKE FLOW
+For each platform or documented manual test:
+- launch app
+- login/mock login
+- open community
+- send message
+- open mention feed
+- open profile
+- open voice room if available
+- screen source picker if available
+- theme toggle
+- close/reopen
+
+IF CURRENT ENV CANNOT BUILD ALL PLATFORMS
+- do not fake success
+- document commands to run on each platform
+- document current platform result
+- document gaps
+
+ACCEPTANCE CRITERIA
+- Packaging config is internally consistent.
+- Platform smoke docs exist.
+- Build scripts documented.
+- No secrets committed.
+- Typecheck/build pass.
+- Remaining platform blockers listed.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+- package scripts available for current environment
+
+COMMIT
+git add -A
+git commit -m "test add cross platform package smoke"
+

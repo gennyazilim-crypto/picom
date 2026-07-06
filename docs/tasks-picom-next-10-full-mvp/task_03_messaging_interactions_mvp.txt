@@ -1,0 +1,146 @@
+﻿GLOBAL RULES
+- This is Picom, an Electron desktop app for Windows, Linux, and macOS.
+- Do exactly one task only.
+- Do not redesign unrelated working UI.
+- Do not create mobile UI.
+- Do not create web-first responsive UI.
+- Do not use Discord branding, logo, copied assets, or exact Discord colors.
+- Keep Picom visual identity, design tokens, and Coolicons/AppIcon.
+- Keep custom Electron titlebar/window controls stable.
+- Do not re-enable native Electron File/Edit/View menu.
+- Do not delete previous work.
+- Do not refactor unrelated code.
+- Use mock/local data unless this task explicitly says Supabase or LiveKit integration.
+- After finishing, list changed files, commands run, test results, remaining issues, and create the requested checkpoint.
+- Commit after success.
+
+TASK 03: Messaging Interactions MVP — EmojiPicker + Reactions + Reply + Edit/Delete
+
+CONTEXT
+Message UI exists. Local/mock message sending exists. Some hover/context actions are placeholders. Full MVP requires real messaging interactions.
+
+GOAL
+Implement MVP-level:
+1. EmojiPicker
+2. Message reaction add/remove
+3. Full reply system
+4. Edit own message
+5. Delete own message
+6. Moderator/admin delete permission UI
+7. Composer reply preview
+8. Message reply preview
+9. Deleted reply fallback
+
+DO NOT
+- connect Supabase in this task unless existing service already supports it
+- break local/mock flow
+- add mobile UI
+- redesign chat layout
+- touch Electron titlebar/window controls
+
+CREATE OR UPDATE
+- EmojiPicker
+- MessageReactionBar
+- MessageReplyPreview
+- ComposerReplyPreview
+- MessageInlineEditor
+- MessageDeleteConfirmModal if needed
+- messaging helper/store files following project conventions
+- docs/task-checkpoints/task-messaging-interactions-mvp.md
+
+EMOJI PICKER
+- Opens from MessageComposer emoji button.
+- Opens from MessageItem react action.
+- Desktop popover style.
+- Categories:
+  - Frequently Used
+  - Smileys
+  - Gestures
+  - Objects
+  - Symbols
+- Search input.
+- Built-in MVP emoji list.
+- Clicking emoji from composer inserts into input.
+- Clicking emoji from message adds reaction.
+- Close on Escape/outside click.
+- Stay within viewport.
+- Support light/dark mode.
+
+REACTIONS
+- Add reaction to message.
+- Remove own reaction by clicking existing reaction.
+- Prevent duplicate same emoji by same user.
+- Show emoji and count.
+- If current user reacted, show subtle active state.
+- Use local/mock state.
+- Realtime/Supabase connection can be TODO if not already present.
+
+REPLY SYSTEM
+Data:
+- Add replyToMessageId to local message type if not present.
+- Reply target must be in same channel.
+- Store reply metadata enough for preview.
+
+Composer:
+- Clicking Reply on a message sets reply target.
+- Composer shows reply preview:
+  - author name
+  - short message preview
+  - cancel button
+- Sending includes replyToMessageId.
+- Cancel clears reply target.
+
+MessageItem:
+- If message is reply, show MessageReplyPreview:
+  - “Replying to author”
+  - target preview
+- Clicking reply preview can scroll/highlight target if present.
+- If target deleted/unavailable:
+  - show “Original message was deleted” safe fallback.
+
+EDIT MESSAGE
+- Edit own message only.
+- Inline editor or modal.
+- Enter saves.
+- Escape cancels.
+- Shift+Enter newline.
+- Shows edited indicator.
+- Empty edited message blocked unless attachments remain.
+
+DELETE MESSAGE
+- Delete own message.
+- Moderator/admin/owner can delete others if permission helper exists.
+- Show confirmation for delete.
+- Use soft deleted placeholder or remove consistently with existing design.
+- Deleted message reply targets must show fallback.
+
+PERMISSIONS
+- Frontend hides actions if not allowed.
+- Backend enforcement is future/Supabase; add TODO if needed.
+- Do not rely on frontend only in docs.
+
+ACCEPTANCE CRITERIA
+- EmojiPicker works from composer and message react action.
+- User can insert emoji into message.
+- User can add/remove reactions.
+- Reaction counts update.
+- User can reply to a message.
+- Composer reply preview appears/can be canceled.
+- Sent reply renders with reply preview.
+- Deleted/unavailable reply target fallback works.
+- User can edit own message.
+- User can delete own message.
+- Unauthorized edit/delete actions hidden/disabled.
+- Existing MessageList/Composer layout remains stable.
+- Mention Feed/Profile unaffected.
+- Typecheck, mock smoke, and build pass.
+
+COMMANDS TO RUN
+- npm run typecheck
+- npm run mock:smoke
+- npm run build
+
+COMMIT
+git add -A
+git commit -m "feat implement messaging interactions mvp"
+
