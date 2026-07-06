@@ -107,7 +107,7 @@ Do not deploy with production secrets in local files. Do not run production migr
 - [ ] `[BLOCKER]` Database rollback limitations reviewed.
 - [ ] `[BLOCKER]` Emergency kill switches are ready for risky feature disablement.
 - [ ] `[VERIFY]` Desktop client/server compatibility checked before rollback.
-- [ ] `[INFO]` Rollback runbook placeholder should be used once created.
+- [ ] `[INFO]` Rollback runbook reviewed: `docs/rollback-runbook.md`.
 
 ## Desktop client compatibility
 
