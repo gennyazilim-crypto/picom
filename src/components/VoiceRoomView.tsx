@@ -45,6 +45,94 @@ function getParticipantStatus(participant: VoiceParticipant): string {
   return participant.isLocal ? "You" : "Connected";
 }
 
+export function VoiceConnectionStatus({ status }: { status: VoiceServiceSnapshot["status"] }) {
+  return (
+    <span className={`voice-status-pill ${status}`}>
+      <i />
+      {statusLabels[status]}
+    </span>
+  );
+}
+
+export function SpeakingIndicator({ participant }: { participant: VoiceParticipant }) {
+  return participant.isSpeaking ? <AppIcon name="voice" size="xs" /> : null;
+}
+
+export function VoiceControls({
+  connected,
+  joining,
+  muted,
+  deafened,
+  onJoin,
+  onLeave,
+  onToggleMute,
+  onToggleDeafen,
+}: {
+  connected: boolean;
+  joining: boolean;
+  muted: boolean;
+  deafened: boolean;
+  onJoin?: () => void;
+  onLeave?: () => void;
+  onToggleMute?: () => void;
+  onToggleDeafen?: () => void;
+}) {
+  return (
+    <div className="voice-control-row">
+      <button className="voice-primary-action" type="button" onClick={connected ? onLeave : onJoin} disabled={joining}>
+        <AppIcon name={connected ? "close" : "voice"} size="sm" />
+        {connected ? "Leave room" : joining ? "Joining..." : "Join room"}
+      </button>
+      <button type="button" onClick={onToggleMute} disabled={!connected} aria-pressed={muted}>
+        <AppIcon name="microphone" size="sm" />
+        {muted ? "Unmute" : "Mute"}
+      </button>
+      <button type="button" onClick={onToggleDeafen} disabled={!connected} aria-pressed={deafened}>
+        <AppIcon name="headphones" size="sm" />
+        {deafened ? "Undeafen" : "Deafen"}
+      </button>
+    </div>
+  );
+}
+
+export function VoiceParticipantList({ community, participants }: { community: Community; participants: VoiceParticipant[] }) {
+  if (!participants.length) {
+    return (
+      <div className="voice-empty-panel">
+        <strong>No one is connected yet</strong>
+        <span>Join the room to start a LiveKit voice session.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="voice-participant-list">
+      {participants.map((participant) => {
+        const member = findMemberForParticipant(community, participant);
+        const rowState = [
+          "voice-participant-row",
+          participant.isSpeaking ? "is-speaking" : "",
+          !participant.isMicrophoneEnabled ? "is-muted" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return (
+          <div className={rowState} key={participant.identity}>
+            <MemberAvatar member={member} label={participant.name} size={38} />
+            <span>
+              <strong>{member?.displayName ?? participant.name}</strong>
+              <small>
+                {getParticipantStatus(participant)}
+                <SpeakingIndicator participant={participant} />
+              </small>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function VoiceRoomView({
   community,
   channel,
@@ -71,10 +159,7 @@ export function VoiceRoomView({
           <h2>{channel.name}</h2>
           <p>{channel.topic || `${community.name} members can join this room when LiveKit is configured.`}</p>
         </div>
-        <span className={`voice-status-pill ${snapshot.status}`}>
-          <i />
-          {statusLabels[snapshot.status]}
-        </span>
+        <VoiceConnectionStatus status={snapshot.status} />
       </div>
 
       <ScreenShareViewer shares={snapshot.screenShares} />
@@ -89,20 +174,16 @@ export function VoiceRoomView({
             <small>{participantCount} participant{participantCount === 1 ? "" : "s"}</small>
           </header>
 
-          <div className="voice-control-row">
-            <button className="voice-primary-action" type="button" onClick={connected ? onLeave : onJoin} disabled={joining}>
-              <AppIcon name={connected ? "close" : "voice"} size="sm" />
-              {connected ? "Leave room" : joining ? "Joining..." : "Join room"}
-            </button>
-            <button type="button" onClick={onToggleMute} disabled={!connected} aria-pressed={snapshot.muted}>
-              <AppIcon name="microphone" size="sm" />
-              {snapshot.muted ? "Unmute" : "Mute"}
-            </button>
-            <button type="button" onClick={onToggleDeafen} disabled={!connected} aria-pressed={snapshot.deafened}>
-              <AppIcon name="headphones" size="sm" />
-              {snapshot.deafened ? "Undeafen" : "Deafen"}
-            </button>
-          </div>
+          <VoiceControls
+            connected={connected}
+            joining={joining}
+            muted={snapshot.muted}
+            deafened={snapshot.deafened}
+            onJoin={onJoin}
+            onLeave={onLeave}
+            onToggleMute={onToggleMute}
+            onToggleDeafen={onToggleDeafen}
+          />
 
           {snapshot.error ? <p className="voice-room-error">{snapshot.error}</p> : null}
           <p className="voice-room-note">LiveKit tokens are requested through the Supabase Edge Function. Secrets never enter the renderer.</p>
@@ -144,34 +225,7 @@ export function VoiceRoomView({
             <AppIcon name="users" size="lg" />
           </header>
 
-          {snapshot.participants.length ? (
-            <div className="voice-participant-list">
-              {snapshot.participants.map((participant) => {
-                const member = findMemberForParticipant(community, participant);
-                const rowState = [
-                  "voice-participant-row",
-                  participant.isSpeaking ? "is-speaking" : "",
-                  !participant.isMicrophoneEnabled ? "is-muted" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-                return (
-                  <div className={rowState} key={participant.identity}>
-                    <MemberAvatar member={member} label={participant.name} size={38} />
-                    <span>
-                      <strong>{member?.displayName ?? participant.name}</strong>
-                      <small>{getParticipantStatus(participant)}</small>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="voice-empty-panel">
-              <strong>No one is connected yet</strong>
-              <span>Join the room to start a LiveKit voice session.</span>
-            </div>
-          )}
+          <VoiceParticipantList community={community} participants={snapshot.participants} />
         </article>
       </div>
     </section>

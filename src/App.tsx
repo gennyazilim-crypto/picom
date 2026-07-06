@@ -41,6 +41,7 @@ import { MentionRightPanel } from "./components/MentionRightPanel";
 import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
 import { FriendsView } from "./components/FriendsView";
+import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
 import { CrashRecoveryDialog } from "./components/CrashRecoveryDialog";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
@@ -73,6 +74,7 @@ import { reportService } from "./services/reportService";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
+import type { VoiceServiceSnapshot } from "./services/voiceService";
 import {
   notificationPermissionOnboardingService,
   type NotificationPermissionOnboardingTrigger,
@@ -128,6 +130,17 @@ type PaletteResult = {
 };
 
 type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages" | "friends";
+
+const initialVoiceSnapshot: VoiceServiceSnapshot = {
+  status: "idle",
+  roomName: null,
+  muted: false,
+  deafened: false,
+  screenSharing: false,
+  screenShares: [],
+  participants: [],
+  error: null,
+};
 
 type CommandPaletteProps = {
   communities: Community[];
@@ -261,6 +274,7 @@ export function App() {
     isDeafened: false,
     isScreenSharing: false,
   });
+  const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
   const [userSafetySettings, setUserSafetySettings] = useState(() => userSafetyCenterService.getSettings());
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
@@ -348,6 +362,21 @@ export function App() {
 
   useEffect(() => {
     return userSafetyCenterService.subscribe(setUserSafetySettings);
+  }, []);
+
+  useEffect(() => {
+    let canceled = false;
+    let unsubscribe: (() => void) | undefined;
+
+    void import("./services/voiceService").then(({ voiceService }) => {
+      if (canceled) return;
+      unsubscribe = voiceService.subscribe(setVoiceSnapshot);
+    });
+
+    return () => {
+      canceled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -1244,6 +1273,66 @@ export function App() {
     pushToast("Screen share controls are prepared for LiveKit, but stay local in this task.", "info");
   }, [pushToast]);
 
+  const joinActiveVoiceRoom = useCallback(() => {
+    if (displayedActiveChannel.type !== "voice") {
+      pushToast("Select a voice channel before joining voice.", "info");
+      return;
+    }
+
+    if (communityAccess.isVisitor || !authSession) {
+      pushToast(communityAccess.isVisitor ? "Join this community before entering voice." : "Sign in before entering voice.", "error");
+      return;
+    }
+
+    void import("./services/voiceService").then(({ voiceService }) =>
+      voiceService.join({
+        communityId: activeCommunity.id,
+        channelId: displayedActiveChannel.id,
+        participantName: displayedCurrentUser.displayName,
+        intent: "voice",
+      }).then((result) => {
+        if (!result.ok) {
+          pushToast(result.error.message, "error");
+        }
+      }),
+    );
+  }, [activeCommunity.id, authSession, communityAccess.isVisitor, displayedActiveChannel.id, displayedActiveChannel.type, displayedCurrentUser.displayName, pushToast]);
+
+  const leaveActiveVoiceRoom = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.leave());
+  }, []);
+
+  const toggleActiveVoiceMute = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) =>
+      voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
+        if (!result.ok) pushToast(result.error.message, "error");
+      }),
+    );
+  }, [pushToast, voiceSnapshot.muted]);
+
+  const toggleActiveVoiceDeafen = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) => {
+      const result = voiceService.setDeafened(!voiceSnapshot.deafened);
+      if (!result.ok) pushToast(result.error.message, "error");
+    });
+  }, [pushToast, voiceSnapshot.deafened]);
+
+  const startActiveVoiceScreenShare = useCallback((sourceId: string) => {
+    void import("./services/voiceService").then(({ voiceService }) =>
+      voiceService.startScreenShare(sourceId).then((result) => {
+        if (!result.ok) pushToast(result.error.message, "error");
+      }),
+    );
+  }, [pushToast]);
+
+  const stopActiveVoiceScreenShare = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) =>
+      voiceService.stopScreenShare().then((result) => {
+        if (!result.ok) pushToast(result.error.message, "error");
+      }),
+    );
+  }, [pushToast]);
+
   const openFeedEventCommunity = useCallback((communityId: string) => {
     const targetCommunity = communities.find((community) => community.id === communityId);
     if (!targetCommunity) {
@@ -1857,6 +1946,19 @@ export function App() {
                   ])
                 }
               />
+              {displayedActiveChannel.type === "voice" ? (
+                <VoiceRoomView
+                  community={displayedActiveCommunity}
+                  channel={displayedActiveChannel}
+                  snapshot={voiceSnapshot}
+                  onJoin={joinActiveVoiceRoom}
+                  onLeave={leaveActiveVoiceRoom}
+                  onToggleMute={toggleActiveVoiceMute}
+                  onToggleDeafen={toggleActiveVoiceDeafen}
+                  onStartScreenShare={startActiveVoiceScreenShare}
+                  onStopScreenShare={stopActiveVoiceScreenShare}
+                />
+              ) : (
               <ChatMain
                 community={displayedActiveCommunity}
                 access={communityAccess}
@@ -1920,6 +2022,7 @@ export function App() {
                 onOpenJoinCommunity={handleJoinCommunity}
                 pushToast={pushToast}
               />
+              )}
               {membersVisible ? (
                 <MemberSidebar
                   community={displayedActiveCommunity}

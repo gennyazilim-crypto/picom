@@ -1,9 +1,10 @@
-export const liveKitRoomPrefix = "picom";
+export const liveKitRoomPrefix = "community";
 
 export function createPicomLiveKitRoomName(communityId: string, channelId: string): string {
-  return `${liveKitRoomPrefix}:${communityId}:${channelId}`;
+  return `${liveKitRoomPrefix}:${communityId}:voice:${channelId}`;
 }
 
 export function isPicomLiveKitRoomName(roomName: string): boolean {
-  return roomName.startsWith(`${liveKitRoomPrefix}:`) && roomName.split(":").length === 3;
+  const parts = roomName.split(":");
+  return parts.length === 4 && parts[0] === liveKitRoomPrefix && parts[2] === "voice";
 }
