@@ -6,6 +6,7 @@ import { loggingService } from "../services/loggingService";
 import { messageDraftService } from "../services/messageDraftService";
 import { uploadService } from "../services/uploadService";
 import { AppIcon } from "./AppIcon";
+import { EmojiPicker } from "./EmojiPicker";
 import { mvpUiIconMap } from "./iconRegistry";
 
 type ToastTone = "info" | "error" | "success";
@@ -39,8 +40,6 @@ type MessageComposerProps = {
   disabledActionLabel?: string;
   onDisabledAction?: () => void;
 };
-
-const composerEmojiOptions = ["👍", "❤️", "😂", "🔥", "👀"];
 
 type ComposerUploadStatus = "pending" | "uploading" | "uploaded" | "failed" | "canceled";
 
@@ -430,22 +429,17 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         </div>
       ) : null}
       {emojiPickerOpen ? (
-        <div className="composer-emoji-picker" role="menu" aria-label="Choose emoji">
-          {composerEmojiOptions.map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => {
-                const nextBody = `${body}${emoji}`;
-                setBody(nextBody);
-                messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
-                setEmojiPickerOpen(false);
-              }}
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
+        <EmojiPicker
+          className="composer-emoji-picker"
+          label="Choose emoji for message"
+          onClose={() => setEmojiPickerOpen(false)}
+          onSelect={(emoji) => {
+            const nextBody = `${body}${emoji}`;
+            setBody(nextBody);
+            messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
+            setEmojiPickerOpen(false);
+          }}
+        />
       ) : null}
       {dragging ? <div className="drop-hint"><AppIcon name={composerIcons.image} /> Drop images to attach</div> : null}
     </footer>

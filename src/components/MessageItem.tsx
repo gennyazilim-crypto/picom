@@ -6,10 +6,10 @@ import { dateTimeService } from "../services/dateTimeService";
 import { externalLinkService } from "../services/desktop/externalLinkService";
 import { messageDeliveryReceiptService } from "../services/messageDeliveryReceiptService";
 import { AttachmentGrid } from "./AttachmentGrid";
+import { EmojiPicker } from "./EmojiPicker";
 import { MemberAvatar } from "./MemberAvatar";
 import { MessageHoverActions } from "./MessageHoverActions";
 
-const reactionOptions = ["ğŸ‘", "â¤ï¸", "ğŸ˜‚", "ğŸ”¥", "ğŸ‘€"];
 const messageUrlPattern = /(https?:\/\/[^\s<>"]+)/gi;
 const trailingUrlPunctuationPattern = /[),.!?;:]+$/;
 type ToastTone = "info" | "error" | "success";
@@ -238,20 +238,15 @@ export function MessageItem({
           </div>
         ) : null}
         {!deleted && reactionPickerOpen ? (
-          <div className="message-reaction-picker" role="menu" aria-label="Choose reaction">
-            {reactionOptions.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={() => {
-                  onToggleReaction(message, emoji);
-                  setReactionPickerOpen(false);
-                }}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
+          <EmojiPicker
+            className="message-reaction-picker"
+            label="Choose reaction"
+            onClose={() => setReactionPickerOpen(false)}
+            onSelect={(emoji) => {
+              onToggleReaction(message, emoji);
+              setReactionPickerOpen(false);
+            }}
+          />
         ) : null}
         {!deleted ? (
           <MessageHoverActions

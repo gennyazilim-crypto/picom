@@ -2372,9 +2372,7 @@ body{
   display:flex;
   gap:8px;
 }
-.message-edit-box button,
-.message-reaction-picker button,
-.composer-emoji-picker button{
+.message-edit-box button{
   border:1px solid var(--border);
   border-radius:10px;
   background:var(--surface);
@@ -2386,9 +2384,7 @@ body{
   padding:0 10px;
   font-weight:800;
 }
-.message-edit-box button:hover,
-.message-reaction-picker button:hover,
-.composer-emoji-picker button:hover{
+.message-edit-box button:hover{
   background:var(--surface-hover);
 }
 .message-edit-box small{
@@ -2399,26 +2395,85 @@ body{
   background:var(--accent-soft);
   color:var(--accent);
 }
-.message-reaction-picker,
-.composer-emoji-picker{
-  display:inline-flex;
-  gap:6px;
-  width:max-content;
-  max-width:100%;
+.emoji-picker{
+  display:grid;
+  gap:9px;
+  width:min(320px,100%);
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:18px;
   background:var(--surface);
   box-shadow:var(--shadow-soft);
-  padding:6px;
+  padding:10px;
 }
 .message-reaction-picker{
   margin-top:8px;
 }
-.message-reaction-picker button,
-.composer-emoji-picker button{
-  width:32px;
+.composer-emoji-picker{
+  margin-left:68px;
+}
+.emoji-picker-search{
+  display:grid;
+  grid-template-columns:16px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface-soft);
+  color:var(--text-muted);
+  padding:7px 9px;
+}
+.emoji-picker-search input{
+  min-width:0;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--text-primary);
+  font:inherit;
+  font-size:12px;
+}
+.emoji-picker-tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.emoji-picker-tabs button{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--surface-soft);
+  color:var(--text-secondary);
+  padding:5px 8px;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+.emoji-picker-tabs button.active,
+.emoji-picker-tabs button:hover{
+  border-color:color-mix(in srgb,var(--accent) 34%,var(--border));
+  background:var(--accent-soft);
+  color:var(--accent);
+}
+.emoji-picker-grid{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:5px;
+}
+.emoji-picker-grid button{
+  width:100%;
   height:32px;
-  font-size:16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+  color:var(--text-primary);
+  font-size:17px;
+  cursor:pointer;
+}
+.emoji-picker-grid button:hover{
+  background:var(--surface-hover);
+}
+.emoji-picker-empty{
+  margin:0;
+  color:var(--text-muted);
+  font-size:12px;
 }
 .composer-reply-preview{
   display:grid;
