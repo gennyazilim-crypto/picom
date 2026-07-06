@@ -202,7 +202,8 @@
     "enterprise:scim:smoke": "node scripts/scim-provisioning-smoke-test.mjs",
     "enterprise:audit-export:smoke": "node scripts/enterprise-audit-export-smoke-test.mjs",
     "enterprise:data-retention:smoke": "node scripts/enterprise-data-retention-policy-smoke-test.mjs",
-    "enterprise:legal-hold:smoke": "node scripts/enterprise-legal-hold-smoke-test.mjs"
+    "enterprise:legal-hold:smoke": "node scripts/enterprise-legal-hold-smoke-test.mjs",
+    "enterprise:deployment-model:smoke": "node scripts/enterprise-deployment-model-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
