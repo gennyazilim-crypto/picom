@@ -1,40 +1,76 @@
-# Linux Packaging Smoke Test
+# Linux Package Smoke Test
 
-Task 254 hardens the Linux packaging verification path for Picom.
+Picom supports Linux desktop packaging for the MVP Electron shell. This document defines the Linux smoke path without claiming success from a non-Linux host.
 
-## Preconditions
+## Prerequisites
 
-- Run on Linux or Linux CI.
-- Install dependencies with `npm install`.
-- Ensure AppImage/deb build dependencies are available for the runner.
+- Linux desktop environment with AppImage support, or a Debian-based environment for `.deb`.
+- Node dependencies installed with `npm install`.
+- No production secrets in `.env`.
+- Build artifacts are generated under `release/`, which is ignored by git.
 
-## Commands
+## Build commands
 
 ```bash
+npm run typecheck
+npm run mock:smoke
 npm run build
+npm run package:verify
+npm run package:linux
+```
+
+Target-specific commands:
+
+```bash
 npm run package:linux:appimage
 npm run package:linux:deb
 ```
 
-## AppImage checks
+## Configuration checks
 
-- AppImage artifact is created under `release/`.
-- Artifact name starts with `Picom-`.
-- App launches after `chmod +x Picom-*.AppImage`.
-- Custom Picom titlebar is visible.
-- No native File/Edit/View menu appears.
-- Fixed 4-column desktop layout remains stable.
-- Native service fallbacks do not crash when tray/notifications are unavailable.
+- Linux target includes `AppImage`.
+- Linux target includes `deb`.
+- Linux executable name is `Picom`.
+- Linux category is `Network`.
+- Linux icon directory is `assets/brand/icons`.
+- Desktop entry uses Picom identity.
+- Native File/Edit/View menu remains disabled.
+- Custom titlebar is used.
+- `contextIsolation` is enabled.
+- `nodeIntegration` is disabled.
 
-## deb checks
+## Runtime smoke checklist
 
-- `.deb` artifact is created under `release/`.
-- Debian package category is `net`.
-- Install succeeds with `sudo apt install ./Picom-*.deb` or `sudo dpkg -i Picom-*.deb`.
-- Picom launches from the app menu or terminal.
-- Uninstall succeeds with `sudo apt remove picom`.
+- Launch the AppImage or installed deb package.
+- Confirm no native File/Edit/View/Window menu is visible.
+- Confirm the custom Picom titlebar is visible.
+- Confirm window controls work for the active Linux window manager where supported.
+- Confirm titlebar drag area works.
+- Confirm search and theme buttons remain clickable.
+- Confirm normal window mode keeps the rounded premium frame.
+- Confirm maximized mode removes outer padding/radius.
+- Confirm the app background is fully painted and not leaking black/purple bands.
+- Confirm the 4-column layout renders without horizontal overflow.
+- Confirm Home/Mention Feed still opens.
+- Confirm community/channel switching works.
+- Confirm mock message sending works.
+- Confirm light/dark theme toggles.
+- Confirm no mobile UI appears.
 
-## Icon checks
+## Supabase mode notes
 
-- Linux packaging uses `assets/brand/icons/`.
-- Desktop entry shows the Picom placeholder icon where the desktop environment supports it.
+- The package should start without Supabase env values.
+- With Supabase env values, auth/session restore should fail gracefully if the backend is unavailable.
+
+## Pass criteria
+
+- AppImage or deb launches on Linux.
+- MVP mock UI remains usable.
+- No native menu or duplicate titlebar appears.
+- No desktop shell crash occurs.
+
+## Known limitations
+
+- Linux tray, notification, microphone, and screen-share behavior can vary by desktop environment.
+- Package signing is not covered by this local smoke test.
+- rpm packaging is not configured in the current Electron builder config.

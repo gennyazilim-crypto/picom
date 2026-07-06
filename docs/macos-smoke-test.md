@@ -1,43 +1,73 @@
-# macOS Packaging Smoke Test
+# macOS Package Smoke Test
 
-Task 254 hardens the macOS packaging verification path for Picom.
+Picom supports macOS desktop packaging in the MVP scope. This checklist is intentionally platform-specific and must be run on macOS for a real pass.
 
-## Preconditions
+## Prerequisites
 
-- Run on macOS or macOS CI.
-- Install dependencies with `npm install`.
-- Local builds are unsigned.
+- macOS development machine.
+- Node dependencies installed with `npm install`.
+- No production secrets in `.env`.
+- Build artifacts are generated under `release/`, which is ignored by git.
 
-## Commands
+## Build commands
 
 ```bash
+npm run typecheck
+npm run mock:smoke
 npm run build
+npm run package:verify
+npm run package:mac
+```
+
+Target-specific commands:
+
+```bash
 npm run package:mac:dmg
 npm run package:mac:zip
 ```
 
-## Checks
+## Configuration checks
 
-- dmg and/or zip artifacts are created under `release/`.
-- Artifact names start with `Picom-`.
-- Product name is `Picom`.
-- App ID is `com.picom.desktop`.
-- Custom Picom titlebar is visible.
-- No native File/Edit/View menu appears inside the app window.
-- Default window size is 1440 x 900.
-- Minimum window size is 1100 x 700.
-- Voice microphone permission text appears only when joining voice.
-- Screen recording permission text appears only when starting screen share.
-- The 4-column desktop layout remains stable.
+- macOS targets include `dmg` and `zip`.
+- macOS category is `public.app-category.social-networking`.
+- macOS icon path is `assets/brand/app-icon.png`.
+- Microphone permission text is present.
+- Screen capture permission text is present.
+- Unsigned local packaging limitations are documented.
+- Native File/Edit/View menu remains disabled in the app window.
+- `contextIsolation` is enabled.
+- `nodeIntegration` is disabled.
 
-## Signing and notarization placeholders
+## Runtime smoke checklist
 
-Production macOS release still needs:
+- Launch the `.app` from the zip or dmg.
+- Confirm the app opens without a renderer crash.
+- Confirm no duplicate native chrome appears inside the app window.
+- Confirm the custom Picom titlebar is visible and compact.
+- Confirm window controls behave safely on macOS.
+- Confirm normal window mode keeps the premium frame.
+- Confirm maximized/zoomed mode does not leave accidental outer padding.
+- Confirm the 4-column desktop layout renders.
+- Confirm Home/Mention Feed opens.
+- Confirm community/channel switching works.
+- Confirm mock message sending works.
+- Confirm light/dark theme toggles.
+- Confirm no mobile UI appears.
 
-- Apple Developer signing certificate
-- hardened runtime review
-- entitlements review
-- notarization workflow
-- CI secret placeholders
+## Voice and screen share permission notes
 
-Do not commit certificates, Apple credentials, app-specific passwords, or notarization secrets.
+- Microphone permission prompt should use the configured Picom explanation.
+- Screen recording permission may require System Settings approval and app restart.
+- LiveKit server connectivity is not required for this package smoke unless specifically testing voice.
+
+## Pass criteria
+
+- macOS package launches.
+- MVP shell remains usable.
+- No native menu/chrome regression is visible.
+- Permission prompts are understandable and Picom-branded.
+
+## Known limitations
+
+- Signing and notarization are placeholders in local development.
+- Gatekeeper behavior for unsigned builds is outside this local smoke test.
