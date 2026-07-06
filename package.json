@@ -196,7 +196,8 @@
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",
     "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",
     "quality:fast": "npm run qa:smoke && npm run typecheck",
-    "quality:gate": "npm run qa:smoke && npm run typecheck && npm run build"
+    "quality:gate": "npm run qa:smoke && npm run typecheck && npm run build",
+    "production:launch:audit:smoke": "node scripts/final-production-launch-audit-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
@@ -218,5 +219,3 @@
   },
   "main": "dist-electron/main.cjs"
 }
-
-
