@@ -139,6 +139,7 @@
     "database:transactions:smoke": "node scripts/database-transaction-consistency-smoke-test.mjs",
     "database:integrity:smoke": "node scripts/database-integrity-smoke-test.mjs",
     "database:restore-drill:smoke": "node scripts/database-restore-drill-smoke-test.mjs",
+    "database:pooling:smoke": "node scripts/database-connection-pooling-smoke-test.mjs",
     "deletion:policy:smoke": "node scripts/deletion-policy-smoke-test.mjs",
     "data:integrity:check": "node scripts/check-data-integrity.mjs",
     "data:integrity:smoke": "node scripts/check-data-integrity.mjs --smoke",
