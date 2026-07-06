@@ -200,7 +200,8 @@
     "production:launch:audit:smoke": "node scripts/final-production-launch-audit-smoke-test.mjs",
     "enterprise:sso-saml:smoke": "node scripts/enterprise-sso-saml-smoke-test.mjs",
     "enterprise:scim:smoke": "node scripts/scim-provisioning-smoke-test.mjs",
-    "enterprise:audit-export:smoke": "node scripts/enterprise-audit-export-smoke-test.mjs"
+    "enterprise:audit-export:smoke": "node scripts/enterprise-audit-export-smoke-test.mjs",
+    "enterprise:data-retention:smoke": "node scripts/enterprise-data-retention-policy-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
