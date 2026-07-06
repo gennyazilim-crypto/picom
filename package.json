@@ -138,6 +138,8 @@
     "database:integrity:smoke": "node scripts/database-integrity-smoke-test.mjs",
     "database:restore-drill:smoke": "node scripts/database-restore-drill-smoke-test.mjs",
     "deletion:policy:smoke": "node scripts/deletion-policy-smoke-test.mjs",
+    "data:integrity:check": "node scripts/check-data-integrity.mjs",
+    "data:integrity:smoke": "node scripts/check-data-integrity.mjs --smoke",
     "message:history-export:smoke": "node scripts/message-history-export-smoke-test.mjs",
     "audit-logs:immutability:smoke": "node scripts/audit-log-immutability-smoke-test.mjs",
     "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs",
