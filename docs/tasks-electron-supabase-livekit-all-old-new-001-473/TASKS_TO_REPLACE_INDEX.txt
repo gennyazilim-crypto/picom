@@ -1,0 +1,158 @@
+﻿CHANGED TASKS INDEX
+
+Replace these files in the existing 001-473 task pack.
+These are the tasks that were too vague/general and should be overwritten before giving them to Codex.
+
+task_103.txt | P0 | Install and configure Supabase client
+task_104.txt | P0 | Create Supabase environment variables
+task_105.txt | P0 | Supabase local development setup
+task_106.txt | P0 | Create database migration baseline
+task_107.txt | P0 | Create schema for profiles table
+task_108.txt | P0 | Create schema for communities table
+task_109.txt | P0 | Create schema for community_members table
+task_110.txt | P0 | Create schema for roles table
+task_111.txt | P0 | Create schema for channel_categories table
+task_112.txt | P0 | Create schema for channels table
+task_113.txt | P0 | Create schema for messages table
+task_114.txt | P0 | Create schema for message_attachments table
+task_115.txt | P0 | Create schema for message_reactions table
+task_116.txt | P0 | Create schema for read_states table
+task_117.txt | P0 | Create indexes for chat queries
+task_118.txt | P0 | Create seed data for Supabase
+task_119.txt | P0 | Create Supabase type generation workflow
+task_120.txt | P0 | Supabase schema QA
+task_121.txt | P0 | Supabase SQL connection smoke test
+task_130.txt | P0 | Create RLS policy for profiles
+task_131.txt | P0 | Create RLS policy for communities
+task_132.txt | P0 | Create RLS policy for community_members
+task_133.txt | P0 | Create RLS policy for channels
+task_134.txt | P0 | Create RLS policy for messages
+task_135.txt | P0 | Create RLS and Storage policy for attachments
+task_136.txt | P0 | Create RLS policy for reactions
+task_137.txt | P0 | Test member-only community access
+task_138.txt | P0 | Test private channel access boundaries
+task_139.txt | P0 | Test insert/update/delete RLS policies
+task_140.txt | P0 | Anonymous user access lockdown
+task_141.txt | P0 | Auth and RLS integration test
+task_142.txt | P0 | Create data source switch mock vs Supabase
+task_143.txt | P0 | Create community service
+task_144.txt | P0 | Create community list query
+task_145.txt | P0 | Create create community flow
+task_146.txt | P0 | Create update and leave community flow
+task_147.txt | P0 | Create channel service
+task_148.txt | P0 | Create channel list query
+task_149.txt | P0 | Create create channel flow
+task_150.txt | P0 | Create update/delete channel flow
+task_151.txt | P0 | Create message service
+task_152.txt | P0 | Create message fetch query with pagination placeholder
+task_153.txt | P0 | Create message send mutation
+task_154.txt | P0 | Create message edit/delete mutations
+task_155.txt | P0 | Create optimistic message reconciliation
+task_156.txt | P0 | Create reactions service
+task_157.txt | P0 | Create members service
+task_164.txt | P0 | Create Supabase Storage bucket plan
+task_165.txt | P0 | Create image upload bucket
+task_166.txt | P0 | Create Storage RLS policy for attachments
+task_167.txt | P0 | Create upload service wrapper
+task_168.txt | P0 | Validate image file types
+task_169.txt | P0 | Validate max file size
+task_170.txt | P0 | Create attachment preview pipeline
+task_171.txt | P0 | Upload image before sending message
+task_172.txt | P0 | Persist attachment metadata
+task_173.txt | P0 | Render uploaded images in AttachmentGrid
+task_174.txt | P0 | Upload progress and failure states
+task_175.txt | P0 | Attachment delete and cleanup placeholder
+task_176.txt | P0 | Storage path and access helpers
+task_177.txt | P0 | Upload mock/API mode test
+task_178.txt | P0 | Attachment upload security QA
+task_179.txt | P0 | Enable Supabase Realtime for messages
+task_180.txt | P0 | Subscribe to active channel messages
+task_181.txt | P0 | Handle realtime message insert
+task_182.txt | P0 | Handle realtime message update
+task_183.txt | P0 | Handle realtime message delete
+task_184.txt | P0 | Prevent duplicate optimistic messages
+task_185.txt | P0 | Implement realtime reconnect status
+task_186.txt | P0 | Create typing indicator via broadcast
+task_187.txt | P0 | Create presence channel for online status
+task_188.txt | P0 | Update MemberSidebar presence dots
+task_189.txt | P0 | Create unread state foundation
+task_190.txt | P0 | Create mention badge foundation
+task_195.txt | P0 | Define microservice boundaries on Supabase
+task_196.txt | P0 | Create Edge Function project structure
+task_197.txt | P0 | Create LiveKit token Edge Function
+task_198.txt | P0 | Create invite acceptance Edge Function placeholder
+task_199.txt | P0 | Create moderation helper Edge Function placeholder
+task_200.txt | P0 | Create notification fanout Edge Function placeholder
+task_201.txt | P0 | Create file validation Edge Function placeholder
+task_202.txt | P0 | Secure Edge Functions with Supabase JWT
+task_203.txt | P0 | Add Edge Function environment variable docs
+task_214.txt | P1 | Fetch LiveKit token from Edge Function
+task_215.txt | P1 | Join voice room
+task_216.txt | P1 | Leave voice room cleanly
+task_217.txt | P1 | Mute and unmute microphone
+task_218.txt | P1 | Deafen audio output
+task_219.txt | P1 | Speaking indicator
+task_220.txt | P1 | Voice room participant list
+task_221.txt | P1 | Audio device selection placeholder
+task_222.txt | P1 | Voice connection error states
+task_223.txt | P1 | Electron desktop screen capture source picker
+task_224.txt | P1 | Start screen share in LiveKit room
+task_225.txt | P1 | Stop screen share cleanly
+task_226.txt | P1 | Screen share viewer UI
+task_227.txt | P1 | macOS microphone permission notes
+task_228.txt | P1 | macOS screen recording permission notes
+task_254.txt | P1 | Electron packaging hardening step 254
+task_255.txt | P1 | Electron packaging hardening step 255
+task_256.txt | P1 | Electron packaging hardening step 256
+task_257.txt | P1 | Electron packaging hardening step 257
+task_258.txt | P1 | Electron packaging hardening step 258
+task_259.txt | P1 | Electron packaging hardening step 259
+task_260.txt | P1 | Electron packaging hardening step 260
+task_261.txt | P1 | Electron packaging hardening step 261
+task_262.txt | P1 | Electron packaging hardening step 262
+task_263.txt | P1 | Electron packaging hardening step 263
+task_264.txt | P1 | Electron packaging hardening step 264
+task_265.txt | P1 | Electron packaging hardening step 265
+task_266.txt | P1 | Electron packaging hardening step 266
+task_267.txt | P1 | Electron packaging hardening step 267
+task_268.txt | P1 | Electron packaging hardening step 268
+task_269.txt | P1 | Electron packaging hardening step 269
+task_270.txt | P1 | Electron packaging hardening step 270
+task_271.txt | P1 | Electron packaging hardening step 271
+task_272.txt | P1 | Electron packaging hardening step 272
+task_273.txt | P1 | Electron packaging hardening step 273
+task_274.txt | P1 | Electron packaging hardening step 274
+task_275.txt | P1 | Electron packaging hardening step 275
+task_290.txt | P1 | Diagnostics, logs, test, and QA hardening step 290
+task_291.txt | P1 | Diagnostics, logs, test, and QA hardening step 291
+task_292.txt | P1 | Diagnostics, logs, test, and QA hardening step 292
+task_293.txt | P1 | Diagnostics, logs, test, and QA hardening step 293
+task_294.txt | P1 | Diagnostics, logs, test, and QA hardening step 294
+task_295.txt | P1 | Diagnostics, logs, test, and QA hardening step 295
+task_296.txt | P1 | Diagnostics, logs, test, and QA hardening step 296
+task_297.txt | P1 | Diagnostics, logs, test, and QA hardening step 297
+task_298.txt | P1 | Diagnostics, logs, test, and QA hardening step 298
+task_299.txt | P1 | Diagnostics, logs, test, and QA hardening step 299
+task_300.txt | P1 | Diagnostics, logs, test, and QA hardening step 300
+task_301.txt | P1 | Diagnostics, logs, test, and QA hardening step 301
+task_302.txt | P1 | Diagnostics, logs, test, and QA hardening step 302
+task_303.txt | P1 | Diagnostics, logs, test, and QA hardening step 303
+task_304.txt | P1 | Diagnostics, logs, test, and QA hardening step 304
+task_305.txt | P1 | Diagnostics, logs, test, and QA hardening step 305
+task_306.txt | P1 | Diagnostics, logs, test, and QA hardening step 306
+task_307.txt | P1 | Diagnostics, logs, test, and QA hardening step 307
+task_308.txt | P1 | Diagnostics, logs, test, and QA hardening step 308
+task_309.txt | P1 | Diagnostics, logs, test, and QA hardening step 309
+task_310.txt | P1 | Diagnostics, logs, test, and QA hardening step 310
+task_362.txt | P2 | Feature Flags Foundation
+task_363.txt | P2 | Remote Config Foundation
+task_364.txt | P2 | Client/Server Version Compatibility
+task_365.txt | P2 | Realtime Horizontal Scaling Preparation
+task_393.txt | P2 | Safe External Link Service
+task_457.txt | P2 | API Request Timeout and Retry Policy
+task_458.txt | P2 | Realtime Backpressure Policy
+task_459.txt | P2 | Message Send Queue Ordering
+task_460.txt | P2 | Desktop Update Failure Recovery
+
+EXTRA ADDENDUM FILES
+- extra_recommended_additions/task_127_ADDENDUM_first_run_onboarding.txt

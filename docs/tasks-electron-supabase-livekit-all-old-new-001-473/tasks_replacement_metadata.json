@@ -1,0 +1,902 @@
+﻿[
+  {
+    "task": 103,
+    "title": "Install and configure Supabase client",
+    "priority": "P0",
+    "file": "replacements/task_103.txt"
+  },
+  {
+    "task": 104,
+    "title": "Create Supabase environment variables",
+    "priority": "P0",
+    "file": "replacements/task_104.txt"
+  },
+  {
+    "task": 105,
+    "title": "Supabase local development setup",
+    "priority": "P0",
+    "file": "replacements/task_105.txt"
+  },
+  {
+    "task": 106,
+    "title": "Create database migration baseline",
+    "priority": "P0",
+    "file": "replacements/task_106.txt"
+  },
+  {
+    "task": 107,
+    "title": "Create schema for profiles table",
+    "priority": "P0",
+    "file": "replacements/task_107.txt"
+  },
+  {
+    "task": 108,
+    "title": "Create schema for communities table",
+    "priority": "P0",
+    "file": "replacements/task_108.txt"
+  },
+  {
+    "task": 109,
+    "title": "Create schema for community_members table",
+    "priority": "P0",
+    "file": "replacements/task_109.txt"
+  },
+  {
+    "task": 110,
+    "title": "Create schema for roles table",
+    "priority": "P0",
+    "file": "replacements/task_110.txt"
+  },
+  {
+    "task": 111,
+    "title": "Create schema for channel_categories table",
+    "priority": "P0",
+    "file": "replacements/task_111.txt"
+  },
+  {
+    "task": 112,
+    "title": "Create schema for channels table",
+    "priority": "P0",
+    "file": "replacements/task_112.txt"
+  },
+  {
+    "task": 113,
+    "title": "Create schema for messages table",
+    "priority": "P0",
+    "file": "replacements/task_113.txt"
+  },
+  {
+    "task": 114,
+    "title": "Create schema for message_attachments table",
+    "priority": "P0",
+    "file": "replacements/task_114.txt"
+  },
+  {
+    "task": 115,
+    "title": "Create schema for message_reactions table",
+    "priority": "P0",
+    "file": "replacements/task_115.txt"
+  },
+  {
+    "task": 116,
+    "title": "Create schema for read_states table",
+    "priority": "P0",
+    "file": "replacements/task_116.txt"
+  },
+  {
+    "task": 117,
+    "title": "Create indexes for chat queries",
+    "priority": "P0",
+    "file": "replacements/task_117.txt"
+  },
+  {
+    "task": 118,
+    "title": "Create seed data for Supabase",
+    "priority": "P0",
+    "file": "replacements/task_118.txt"
+  },
+  {
+    "task": 119,
+    "title": "Create Supabase type generation workflow",
+    "priority": "P0",
+    "file": "replacements/task_119.txt"
+  },
+  {
+    "task": 120,
+    "title": "Supabase schema QA",
+    "priority": "P0",
+    "file": "replacements/task_120.txt"
+  },
+  {
+    "task": 121,
+    "title": "Supabase SQL connection smoke test",
+    "priority": "P0",
+    "file": "replacements/task_121.txt"
+  },
+  {
+    "task": 130,
+    "title": "Create RLS policy for profiles",
+    "priority": "P0",
+    "file": "replacements/task_130.txt"
+  },
+  {
+    "task": 131,
+    "title": "Create RLS policy for communities",
+    "priority": "P0",
+    "file": "replacements/task_131.txt"
+  },
+  {
+    "task": 132,
+    "title": "Create RLS policy for community_members",
+    "priority": "P0",
+    "file": "replacements/task_132.txt"
+  },
+  {
+    "task": 133,
+    "title": "Create RLS policy for channels",
+    "priority": "P0",
+    "file": "replacements/task_133.txt"
+  },
+  {
+    "task": 134,
+    "title": "Create RLS policy for messages",
+    "priority": "P0",
+    "file": "replacements/task_134.txt"
+  },
+  {
+    "task": 135,
+    "title": "Create RLS and Storage policy for attachments",
+    "priority": "P0",
+    "file": "replacements/task_135.txt"
+  },
+  {
+    "task": 136,
+    "title": "Create RLS policy for reactions",
+    "priority": "P0",
+    "file": "replacements/task_136.txt"
+  },
+  {
+    "task": 137,
+    "title": "Test member-only community access",
+    "priority": "P0",
+    "file": "replacements/task_137.txt"
+  },
+  {
+    "task": 138,
+    "title": "Test private channel access boundaries",
+    "priority": "P0",
+    "file": "replacements/task_138.txt"
+  },
+  {
+    "task": 139,
+    "title": "Test insert/update/delete RLS policies",
+    "priority": "P0",
+    "file": "replacements/task_139.txt"
+  },
+  {
+    "task": 140,
+    "title": "Anonymous user access lockdown",
+    "priority": "P0",
+    "file": "replacements/task_140.txt"
+  },
+  {
+    "task": 141,
+    "title": "Auth and RLS integration test",
+    "priority": "P0",
+    "file": "replacements/task_141.txt"
+  },
+  {
+    "task": 142,
+    "title": "Create data source switch mock vs Supabase",
+    "priority": "P0",
+    "file": "replacements/task_142.txt"
+  },
+  {
+    "task": 143,
+    "title": "Create community service",
+    "priority": "P0",
+    "file": "replacements/task_143.txt"
+  },
+  {
+    "task": 144,
+    "title": "Create community list query",
+    "priority": "P0",
+    "file": "replacements/task_144.txt"
+  },
+  {
+    "task": 145,
+    "title": "Create create community flow",
+    "priority": "P0",
+    "file": "replacements/task_145.txt"
+  },
+  {
+    "task": 146,
+    "title": "Create update and leave community flow",
+    "priority": "P0",
+    "file": "replacements/task_146.txt"
+  },
+  {
+    "task": 147,
+    "title": "Create channel service",
+    "priority": "P0",
+    "file": "replacements/task_147.txt"
+  },
+  {
+    "task": 148,
+    "title": "Create channel list query",
+    "priority": "P0",
+    "file": "replacements/task_148.txt"
+  },
+  {
+    "task": 149,
+    "title": "Create create channel flow",
+    "priority": "P0",
+    "file": "replacements/task_149.txt"
+  },
+  {
+    "task": 150,
+    "title": "Create update/delete channel flow",
+    "priority": "P0",
+    "file": "replacements/task_150.txt"
+  },
+  {
+    "task": 151,
+    "title": "Create message service",
+    "priority": "P0",
+    "file": "replacements/task_151.txt"
+  },
+  {
+    "task": 152,
+    "title": "Create message fetch query with pagination placeholder",
+    "priority": "P0",
+    "file": "replacements/task_152.txt"
+  },
+  {
+    "task": 153,
+    "title": "Create message send mutation",
+    "priority": "P0",
+    "file": "replacements/task_153.txt"
+  },
+  {
+    "task": 154,
+    "title": "Create message edit/delete mutations",
+    "priority": "P0",
+    "file": "replacements/task_154.txt"
+  },
+  {
+    "task": 155,
+    "title": "Create optimistic message reconciliation",
+    "priority": "P0",
+    "file": "replacements/task_155.txt"
+  },
+  {
+    "task": 156,
+    "title": "Create reactions service",
+    "priority": "P0",
+    "file": "replacements/task_156.txt"
+  },
+  {
+    "task": 157,
+    "title": "Create members service",
+    "priority": "P0",
+    "file": "replacements/task_157.txt"
+  },
+  {
+    "task": 164,
+    "title": "Create Supabase Storage bucket plan",
+    "priority": "P0",
+    "file": "replacements/task_164.txt"
+  },
+  {
+    "task": 165,
+    "title": "Create image upload bucket",
+    "priority": "P0",
+    "file": "replacements/task_165.txt"
+  },
+  {
+    "task": 166,
+    "title": "Create Storage RLS policy for attachments",
+    "priority": "P0",
+    "file": "replacements/task_166.txt"
+  },
+  {
+    "task": 167,
+    "title": "Create upload service wrapper",
+    "priority": "P0",
+    "file": "replacements/task_167.txt"
+  },
+  {
+    "task": 168,
+    "title": "Validate image file types",
+    "priority": "P0",
+    "file": "replacements/task_168.txt"
+  },
+  {
+    "task": 169,
+    "title": "Validate max file size",
+    "priority": "P0",
+    "file": "replacements/task_169.txt"
+  },
+  {
+    "task": 170,
+    "title": "Create attachment preview pipeline",
+    "priority": "P0",
+    "file": "replacements/task_170.txt"
+  },
+  {
+    "task": 171,
+    "title": "Upload image before sending message",
+    "priority": "P0",
+    "file": "replacements/task_171.txt"
+  },
+  {
+    "task": 172,
+    "title": "Persist attachment metadata",
+    "priority": "P0",
+    "file": "replacements/task_172.txt"
+  },
+  {
+    "task": 173,
+    "title": "Render uploaded images in AttachmentGrid",
+    "priority": "P0",
+    "file": "replacements/task_173.txt"
+  },
+  {
+    "task": 174,
+    "title": "Upload progress and failure states",
+    "priority": "P0",
+    "file": "replacements/task_174.txt"
+  },
+  {
+    "task": 175,
+    "title": "Attachment delete and cleanup placeholder",
+    "priority": "P0",
+    "file": "replacements/task_175.txt"
+  },
+  {
+    "task": 176,
+    "title": "Storage path and access helpers",
+    "priority": "P0",
+    "file": "replacements/task_176.txt"
+  },
+  {
+    "task": 177,
+    "title": "Upload mock/API mode test",
+    "priority": "P0",
+    "file": "replacements/task_177.txt"
+  },
+  {
+    "task": 178,
+    "title": "Attachment upload security QA",
+    "priority": "P0",
+    "file": "replacements/task_178.txt"
+  },
+  {
+    "task": 179,
+    "title": "Enable Supabase Realtime for messages",
+    "priority": "P0",
+    "file": "replacements/task_179.txt"
+  },
+  {
+    "task": 180,
+    "title": "Subscribe to active channel messages",
+    "priority": "P0",
+    "file": "replacements/task_180.txt"
+  },
+  {
+    "task": 181,
+    "title": "Handle realtime message insert",
+    "priority": "P0",
+    "file": "replacements/task_181.txt"
+  },
+  {
+    "task": 182,
+    "title": "Handle realtime message update",
+    "priority": "P0",
+    "file": "replacements/task_182.txt"
+  },
+  {
+    "task": 183,
+    "title": "Handle realtime message delete",
+    "priority": "P0",
+    "file": "replacements/task_183.txt"
+  },
+  {
+    "task": 184,
+    "title": "Prevent duplicate optimistic messages",
+    "priority": "P0",
+    "file": "replacements/task_184.txt"
+  },
+  {
+    "task": 185,
+    "title": "Implement realtime reconnect status",
+    "priority": "P0",
+    "file": "replacements/task_185.txt"
+  },
+  {
+    "task": 186,
+    "title": "Create typing indicator via broadcast",
+    "priority": "P0",
+    "file": "replacements/task_186.txt"
+  },
+  {
+    "task": 187,
+    "title": "Create presence channel for online status",
+    "priority": "P0",
+    "file": "replacements/task_187.txt"
+  },
+  {
+    "task": 188,
+    "title": "Update MemberSidebar presence dots",
+    "priority": "P0",
+    "file": "replacements/task_188.txt"
+  },
+  {
+    "task": 189,
+    "title": "Create unread state foundation",
+    "priority": "P0",
+    "file": "replacements/task_189.txt"
+  },
+  {
+    "task": 190,
+    "title": "Create mention badge foundation",
+    "priority": "P0",
+    "file": "replacements/task_190.txt"
+  },
+  {
+    "task": 195,
+    "title": "Define microservice boundaries on Supabase",
+    "priority": "P0",
+    "file": "replacements/task_195.txt"
+  },
+  {
+    "task": 196,
+    "title": "Create Edge Function project structure",
+    "priority": "P0",
+    "file": "replacements/task_196.txt"
+  },
+  {
+    "task": 197,
+    "title": "Create LiveKit token Edge Function",
+    "priority": "P0",
+    "file": "replacements/task_197.txt"
+  },
+  {
+    "task": 198,
+    "title": "Create invite acceptance Edge Function placeholder",
+    "priority": "P0",
+    "file": "replacements/task_198.txt"
+  },
+  {
+    "task": 199,
+    "title": "Create moderation helper Edge Function placeholder",
+    "priority": "P0",
+    "file": "replacements/task_199.txt"
+  },
+  {
+    "task": 200,
+    "title": "Create notification fanout Edge Function placeholder",
+    "priority": "P0",
+    "file": "replacements/task_200.txt"
+  },
+  {
+    "task": 201,
+    "title": "Create file validation Edge Function placeholder",
+    "priority": "P0",
+    "file": "replacements/task_201.txt"
+  },
+  {
+    "task": 202,
+    "title": "Secure Edge Functions with Supabase JWT",
+    "priority": "P0",
+    "file": "replacements/task_202.txt"
+  },
+  {
+    "task": 203,
+    "title": "Add Edge Function environment variable docs",
+    "priority": "P0",
+    "file": "replacements/task_203.txt"
+  },
+  {
+    "task": 214,
+    "title": "Fetch LiveKit token from Edge Function",
+    "priority": "P1",
+    "file": "replacements/task_214.txt"
+  },
+  {
+    "task": 215,
+    "title": "Join voice room",
+    "priority": "P1",
+    "file": "replacements/task_215.txt"
+  },
+  {
+    "task": 216,
+    "title": "Leave voice room cleanly",
+    "priority": "P1",
+    "file": "replacements/task_216.txt"
+  },
+  {
+    "task": 217,
+    "title": "Mute and unmute microphone",
+    "priority": "P1",
+    "file": "replacements/task_217.txt"
+  },
+  {
+    "task": 218,
+    "title": "Deafen audio output",
+    "priority": "P1",
+    "file": "replacements/task_218.txt"
+  },
+  {
+    "task": 219,
+    "title": "Speaking indicator",
+    "priority": "P1",
+    "file": "replacements/task_219.txt"
+  },
+  {
+    "task": 220,
+    "title": "Voice room participant list",
+    "priority": "P1",
+    "file": "replacements/task_220.txt"
+  },
+  {
+    "task": 221,
+    "title": "Audio device selection placeholder",
+    "priority": "P1",
+    "file": "replacements/task_221.txt"
+  },
+  {
+    "task": 222,
+    "title": "Voice connection error states",
+    "priority": "P1",
+    "file": "replacements/task_222.txt"
+  },
+  {
+    "task": 223,
+    "title": "Electron desktop screen capture source picker",
+    "priority": "P1",
+    "file": "replacements/task_223.txt"
+  },
+  {
+    "task": 224,
+    "title": "Start screen share in LiveKit room",
+    "priority": "P1",
+    "file": "replacements/task_224.txt"
+  },
+  {
+    "task": 225,
+    "title": "Stop screen share cleanly",
+    "priority": "P1",
+    "file": "replacements/task_225.txt"
+  },
+  {
+    "task": 226,
+    "title": "Screen share viewer UI",
+    "priority": "P1",
+    "file": "replacements/task_226.txt"
+  },
+  {
+    "task": 227,
+    "title": "macOS microphone permission notes",
+    "priority": "P1",
+    "file": "replacements/task_227.txt"
+  },
+  {
+    "task": 228,
+    "title": "macOS screen recording permission notes",
+    "priority": "P1",
+    "file": "replacements/task_228.txt"
+  },
+  {
+    "task": 254,
+    "title": "Electron packaging hardening step 254",
+    "priority": "P1",
+    "file": "replacements/task_254.txt"
+  },
+  {
+    "task": 255,
+    "title": "Electron packaging hardening step 255",
+    "priority": "P1",
+    "file": "replacements/task_255.txt"
+  },
+  {
+    "task": 256,
+    "title": "Electron packaging hardening step 256",
+    "priority": "P1",
+    "file": "replacements/task_256.txt"
+  },
+  {
+    "task": 257,
+    "title": "Electron packaging hardening step 257",
+    "priority": "P1",
+    "file": "replacements/task_257.txt"
+  },
+  {
+    "task": 258,
+    "title": "Electron packaging hardening step 258",
+    "priority": "P1",
+    "file": "replacements/task_258.txt"
+  },
+  {
+    "task": 259,
+    "title": "Electron packaging hardening step 259",
+    "priority": "P1",
+    "file": "replacements/task_259.txt"
+  },
+  {
+    "task": 260,
+    "title": "Electron packaging hardening step 260",
+    "priority": "P1",
+    "file": "replacements/task_260.txt"
+  },
+  {
+    "task": 261,
+    "title": "Electron packaging hardening step 261",
+    "priority": "P1",
+    "file": "replacements/task_261.txt"
+  },
+  {
+    "task": 262,
+    "title": "Electron packaging hardening step 262",
+    "priority": "P1",
+    "file": "replacements/task_262.txt"
+  },
+  {
+    "task": 263,
+    "title": "Electron packaging hardening step 263",
+    "priority": "P1",
+    "file": "replacements/task_263.txt"
+  },
+  {
+    "task": 264,
+    "title": "Electron packaging hardening step 264",
+    "priority": "P1",
+    "file": "replacements/task_264.txt"
+  },
+  {
+    "task": 265,
+    "title": "Electron packaging hardening step 265",
+    "priority": "P1",
+    "file": "replacements/task_265.txt"
+  },
+  {
+    "task": 266,
+    "title": "Electron packaging hardening step 266",
+    "priority": "P1",
+    "file": "replacements/task_266.txt"
+  },
+  {
+    "task": 267,
+    "title": "Electron packaging hardening step 267",
+    "priority": "P1",
+    "file": "replacements/task_267.txt"
+  },
+  {
+    "task": 268,
+    "title": "Electron packaging hardening step 268",
+    "priority": "P1",
+    "file": "replacements/task_268.txt"
+  },
+  {
+    "task": 269,
+    "title": "Electron packaging hardening step 269",
+    "priority": "P1",
+    "file": "replacements/task_269.txt"
+  },
+  {
+    "task": 270,
+    "title": "Electron packaging hardening step 270",
+    "priority": "P1",
+    "file": "replacements/task_270.txt"
+  },
+  {
+    "task": 271,
+    "title": "Electron packaging hardening step 271",
+    "priority": "P1",
+    "file": "replacements/task_271.txt"
+  },
+  {
+    "task": 272,
+    "title": "Electron packaging hardening step 272",
+    "priority": "P1",
+    "file": "replacements/task_272.txt"
+  },
+  {
+    "task": 273,
+    "title": "Electron packaging hardening step 273",
+    "priority": "P1",
+    "file": "replacements/task_273.txt"
+  },
+  {
+    "task": 274,
+    "title": "Electron packaging hardening step 274",
+    "priority": "P1",
+    "file": "replacements/task_274.txt"
+  },
+  {
+    "task": 275,
+    "title": "Electron packaging hardening step 275",
+    "priority": "P1",
+    "file": "replacements/task_275.txt"
+  },
+  {
+    "task": 290,
+    "title": "Diagnostics, logs, test, and QA hardening step 290",
+    "priority": "P1",
+    "file": "replacements/task_290.txt"
+  },
+  {
+    "task": 291,
+    "title": "Diagnostics, logs, test, and QA hardening step 291",
+    "priority": "P1",
+    "file": "replacements/task_291.txt"
+  },
+  {
+    "task": 292,
+    "title": "Diagnostics, logs, test, and QA hardening step 292",
+    "priority": "P1",
+    "file": "replacements/task_292.txt"
+  },
+  {
+    "task": 293,
+    "title": "Diagnostics, logs, test, and QA hardening step 293",
+    "priority": "P1",
+    "file": "replacements/task_293.txt"
+  },
+  {
+    "task": 294,
+    "title": "Diagnostics, logs, test, and QA hardening step 294",
+    "priority": "P1",
+    "file": "replacements/task_294.txt"
+  },
+  {
+    "task": 295,
+    "title": "Diagnostics, logs, test, and QA hardening step 295",
+    "priority": "P1",
+    "file": "replacements/task_295.txt"
+  },
+  {
+    "task": 296,
+    "title": "Diagnostics, logs, test, and QA hardening step 296",
+    "priority": "P1",
+    "file": "replacements/task_296.txt"
+  },
+  {
+    "task": 297,
+    "title": "Diagnostics, logs, test, and QA hardening step 297",
+    "priority": "P1",
+    "file": "replacements/task_297.txt"
+  },
+  {
+    "task": 298,
+    "title": "Diagnostics, logs, test, and QA hardening step 298",
+    "priority": "P1",
+    "file": "replacements/task_298.txt"
+  },
+  {
+    "task": 299,
+    "title": "Diagnostics, logs, test, and QA hardening step 299",
+    "priority": "P1",
+    "file": "replacements/task_299.txt"
+  },
+  {
+    "task": 300,
+    "title": "Diagnostics, logs, test, and QA hardening step 300",
+    "priority": "P1",
+    "file": "replacements/task_300.txt"
+  },
+  {
+    "task": 301,
+    "title": "Diagnostics, logs, test, and QA hardening step 301",
+    "priority": "P1",
+    "file": "replacements/task_301.txt"
+  },
+  {
+    "task": 302,
+    "title": "Diagnostics, logs, test, and QA hardening step 302",
+    "priority": "P1",
+    "file": "replacements/task_302.txt"
+  },
+  {
+    "task": 303,
+    "title": "Diagnostics, logs, test, and QA hardening step 303",
+    "priority": "P1",
+    "file": "replacements/task_303.txt"
+  },
+  {
+    "task": 304,
+    "title": "Diagnostics, logs, test, and QA hardening step 304",
+    "priority": "P1",
+    "file": "replacements/task_304.txt"
+  },
+  {
+    "task": 305,
+    "title": "Diagnostics, logs, test, and QA hardening step 305",
+    "priority": "P1",
+    "file": "replacements/task_305.txt"
+  },
+  {
+    "task": 306,
+    "title": "Diagnostics, logs, test, and QA hardening step 306",
+    "priority": "P1",
+    "file": "replacements/task_306.txt"
+  },
+  {
+    "task": 307,
+    "title": "Diagnostics, logs, test, and QA hardening step 307",
+    "priority": "P1",
+    "file": "replacements/task_307.txt"
+  },
+  {
+    "task": 308,
+    "title": "Diagnostics, logs, test, and QA hardening step 308",
+    "priority": "P1",
+    "file": "replacements/task_308.txt"
+  },
+  {
+    "task": 309,
+    "title": "Diagnostics, logs, test, and QA hardening step 309",
+    "priority": "P1",
+    "file": "replacements/task_309.txt"
+  },
+  {
+    "task": 310,
+    "title": "Diagnostics, logs, test, and QA hardening step 310",
+    "priority": "P1",
+    "file": "replacements/task_310.txt"
+  },
+  {
+    "task": 362,
+    "title": "Feature Flags Foundation",
+    "priority": "P2",
+    "file": "replacements/task_362.txt"
+  },
+  {
+    "task": 363,
+    "title": "Remote Config Foundation",
+    "priority": "P2",
+    "file": "replacements/task_363.txt"
+  },
+  {
+    "task": 364,
+    "title": "Client/Server Version Compatibility",
+    "priority": "P2",
+    "file": "replacements/task_364.txt"
+  },
+  {
+    "task": 365,
+    "title": "Realtime Horizontal Scaling Preparation",
+    "priority": "P2",
+    "file": "replacements/task_365.txt"
+  },
+  {
+    "task": 393,
+    "title": "Safe External Link Service",
+    "priority": "P2",
+    "file": "replacements/task_393.txt"
+  },
+  {
+    "task": 457,
+    "title": "API Request Timeout and Retry Policy",
+    "priority": "P2",
+    "file": "replacements/task_457.txt"
+  },
+  {
+    "task": 458,
+    "title": "Realtime Backpressure Policy",
+    "priority": "P2",
+    "file": "replacements/task_458.txt"
+  },
+  {
+    "task": 459,
+    "title": "Message Send Queue Ordering",
+    "priority": "P2",
+    "file": "replacements/task_459.txt"
+  },
+  {
+    "task": 460,
+    "title": "Desktop Update Failure Recovery",
+    "priority": "P2",
+    "file": "replacements/task_460.txt"
+  }
+]
