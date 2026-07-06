@@ -197,7 +197,8 @@
     "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",
     "quality:fast": "npm run qa:smoke && npm run typecheck",
     "quality:gate": "npm run qa:smoke && npm run typecheck && npm run build",
-    "production:launch:audit:smoke": "node scripts/final-production-launch-audit-smoke-test.mjs"
+    "production:launch:audit:smoke": "node scripts/final-production-launch-audit-smoke-test.mjs",
+    "enterprise:sso-saml:smoke": "node scripts/enterprise-sso-saml-smoke-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
