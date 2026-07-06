@@ -29,7 +29,7 @@ Do not deploy with production secrets in local files. Do not run production migr
 ## Database backup verified
 
 - [ ] `[BLOCKER]` Fresh production backup completed before risky migration.
-- [ ] `[BLOCKER]` Backup verification or restore drill completed recently.
+- [ ] `[BLOCKER]` Backup verification or restore drill completed recently; see `docs/backup-verification.md`.
 - [ ] `[VERIFY]` Backup location and retention are documented without exposing credentials.
 - [ ] `[INFO]` Restore owner and approval path are known.
 

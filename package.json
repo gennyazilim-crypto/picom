@@ -56,6 +56,8 @@
     "maintenance:scripts:smoke": "node scripts/maintenance-scripts-smoke-test.mjs",
     "db:backup:placeholder": "node scripts/db-backup-placeholder.mjs",
     "db:restore:placeholder": "node scripts/db-restore-placeholder.mjs",
+    "backup:verify:placeholder": "node scripts/verify-backup-placeholder.mjs",
+    "backup:verify:smoke": "node scripts/verify-backup-placeholder.mjs --smoke",
     "invites:cleanup:dry-run": "node scripts/cleanup-expired-invites.mjs",
     "invites:cleanup:smoke": "node scripts/expired-invites-cleanup-smoke-test.mjs",
     "uploads:cleanup:dry-run": "node scripts/cleanup-orphaned-uploads.mjs",
