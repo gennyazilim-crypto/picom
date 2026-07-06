@@ -1,0 +1,39 @@
+﻿ADDENDUM FOR TASK 127: First-run onboarding after signup
+
+GLOBAL RULES
+- This is an Electron desktop app for Windows, Linux, and macOS.
+- Do not create mobile UI or web-first responsive UI.
+- Do not use Discord branding, Discord logo, copied assets, copied brand icons, or exact Discord colors.
+- Keep the reference-image premium desktop UI direction stable.
+- Use Coolicons through AppIcon for UI icons when icons are needed.
+- Do exactly this task only.
+- Do not refactor unrelated working code.
+- Do not delete previous work.
+- Do not expose Supabase service_role, LiveKit secrets, signing keys, auth tokens, or passwords in the renderer or repository.
+- After finishing, list changed files, commands run, and exact test steps.
+- Commit after this task with: git add -A && git commit -m "task-127 <short description>".
+
+OBJECTIVE
+Strengthen the existing signup/profile creation task with a first-run onboarding flow.
+
+REQUIREMENTS
+- After successful Supabase signup, create or verify public.profiles row.
+- If user has no communities, show onboarding modal.
+- Onboarding options:
+  - Create a community
+  - Join with invite code placeholder
+  - Continue with demo/mock community in mock mode only
+- Let user choose or confirm:
+  - display name
+  - username
+  - avatar placeholder
+  - theme light/dark
+- Store onboarding_completed in profiles or local settings.
+- After onboarding, open DesktopAppShell.
+- Do not block login if onboarding save fails; show recoverable error.
+
+ACCEPTANCE CRITERIA
+- New user is not dropped into an empty broken app.
+- Existing users skip onboarding.
+- Mock and Supabase modes both behave safely.
+
