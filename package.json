@@ -116,6 +116,7 @@
     "performance:budget:smoke": "node scripts/performance-budget-smoke-test.mjs",
     "bundle:size:audit": "node scripts/bundle-size-audit.mjs",
     "bundle:size:smoke": "node scripts/bundle-size-audit.mjs --smoke",
+    "slo:smoke": "node scripts/slo-plan-smoke-test.mjs",
     "feature-flags:smoke": "node scripts/feature-flags-smoke-test.mjs",
     "remote-config:smoke": "node scripts/remote-config-smoke-test.mjs",
     "version-compatibility:smoke": "node scripts/version-compatibility-smoke-test.mjs",
