@@ -1,3 +1,6 @@
+import { getSupabaseClient } from "./supabaseClient";
+import { mapMessageRow, type MessageRow, type MessageSummary } from "../messageService";
+
 export type RealtimeConnectionStatus = "idle" | "connecting" | "connected" | "disconnected" | "reconnecting";
 
 export const REALTIME_TYPING_THROTTLE_MS = 1200;
@@ -159,4 +162,73 @@ export function createRealtimeEventOrderingGuard(maxEntries = 1000) {
 
 export function shouldThrottleRealtimeSend(lastSentAt: number, now = Date.now(), throttleMs = REALTIME_TYPING_THROTTLE_MS) {
   return lastSentAt > 0 && now - lastSentAt < throttleMs;
+}
+
+export type SubscribeToChannelMessagesInput = Readonly<{
+  communityId: string;
+  channelId: string;
+  onInsert?: (message: MessageSummary) => void;
+  onUpdate?: (message: MessageSummary) => void;
+  onDelete?: (message: MessageSummary) => void;
+  onStatusChange?: (status: RealtimeConnectionStatus) => void;
+  onError?: (message: string) => void;
+}>;
+
+export function subscribeToChannelMessages(input: SubscribeToChannelMessagesInput): () => void {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    input.onStatusChange?.("disconnected");
+    input.onError?.("Supabase Realtime is unavailable because the Supabase client is not configured.");
+    return () => undefined;
+  }
+
+  let hasConnected = false;
+  input.onStatusChange?.("connecting");
+
+  const channel = client
+    .channel(realtimeChannelNames.messages(input.communityId, input.channelId))
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `channel_id=eq.${input.channelId}`,
+      },
+      (payload) => input.onInsert?.(mapMessageRow(payload.new as MessageRow)),
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "messages",
+        filter: `channel_id=eq.${input.channelId}`,
+      },
+      (payload) => input.onUpdate?.(mapMessageRow(payload.new as MessageRow)),
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "DELETE",
+        schema: "public",
+        table: "messages",
+        filter: `channel_id=eq.${input.channelId}`,
+      },
+      (payload) => input.onDelete?.(mapMessageRow(payload.old as MessageRow)),
+    )
+    .subscribe((status) => {
+      const mappedStatus = mapRealtimeSubscriptionStatus(status, hasConnected);
+      if (mappedStatus === "connected") {
+        hasConnected = true;
+      }
+      if (mappedStatus) {
+        input.onStatusChange?.(mappedStatus);
+      }
+    });
+
+  return () => {
+    void channel.unsubscribe();
+  };
 }
