@@ -64,6 +64,7 @@ import { channelCategoryService } from "./services/channelCategoryService";
 import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
 import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
+import { messageHistoryExportService } from "./services/messageHistoryExportService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
 import { reportService } from "./services/reportService";
@@ -1787,6 +1788,24 @@ export function App() {
                     {
                       label: "Copy channel ID",
                       onSelect: () => clipboardService.copyText(channel.id).then(() => pushToast("Channel ID copied.", "success")),
+                    },
+                    {
+                      label: "Export message history placeholder",
+                      disabled: !communityAccess.isOwner && !communityAccess.permissions.includes("manageCommunity"),
+                      onSelect: () => {
+                        const result = messageHistoryExportService.requestChannelExportPlaceholder({
+                          communityId: activeCommunity.id,
+                          channelId: channel.id,
+                          requestedById: currentUser.userId,
+                          format: "json",
+                          canExport: communityAccess.isOwner || communityAccess.permissions.includes("manageCommunity"),
+                        });
+
+                        pushToast(
+                          result.ok ? `Message export placeholder queued: ${result.data.exportId}.` : result.error.message,
+                          result.ok ? "info" : "error",
+                        );
+                      },
                     },
                     {
                       label: "Edit channel placeholder",

@@ -113,6 +113,7 @@
     "database:transactions:smoke": "node scripts/database-transaction-consistency-smoke-test.mjs",
     "database:integrity:smoke": "node scripts/database-integrity-smoke-test.mjs",
     "deletion:policy:smoke": "node scripts/deletion-policy-smoke-test.mjs",
+    "message:history-export:smoke": "node scripts/message-history-export-smoke-test.mjs",
     "audit-logs:immutability:smoke": "node scripts/audit-log-immutability-smoke-test.mjs",
     "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs",
     "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs",
