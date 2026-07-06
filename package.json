@@ -63,6 +63,7 @@
     "storage:check": "node scripts/check-storage.mjs",
     "health:check": "node scripts/check-health.mjs",
     "backend:health:smoke": "node scripts/backend-health-split-smoke-test.mjs",
+    "backend:degradation:smoke": "node scripts/backend-graceful-degradation-smoke-test.mjs",
     "admin:bootstrap:smoke": "node scripts/admin-bootstrap-smoke-test.mjs",
     "create-admin-user": "node scripts/create-admin-user-placeholder.mjs",
     "admin:create:placeholder": "node scripts/create-admin-user-placeholder.mjs",

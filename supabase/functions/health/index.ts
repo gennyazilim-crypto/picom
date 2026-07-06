@@ -78,6 +78,10 @@ function isReady(dependencies: readonly HealthDependency[]): boolean {
   return dependencies.every((item) => !item.required || (item.status !== "unavailable" && item.status !== "degraded"));
 }
 
+function hasDependencyDegradation(dependencies: readonly HealthDependency[]): boolean {
+  return dependencies.some((item) => item.status === "unavailable" || item.status === "degraded");
+}
+
 function liveResponse(): Response {
   return jsonResponse({
     ok: true,
@@ -99,14 +103,19 @@ function liveResponse(): Response {
 function readyResponse(): Response {
   const dependencies = getDependencies();
   const ready = isReady(dependencies);
+  const degraded = hasDependencyDegradation(dependencies);
 
   return jsonResponse(
     {
       ok: ready,
       status: ready ? "ready" : "not_ready",
+      degraded,
       service: serviceName,
       function: functionName,
       dependencies,
+      message: ready
+        ? "Required dependencies are ready. Optional dependencies can be degraded while readiness remains successful."
+        : "A required dependency is not ready.",
       timestamp: now(),
     },
     { status: ready ? 200 : 503 },
@@ -116,11 +125,17 @@ function readyResponse(): Response {
 function combinedHealthResponse(): Response {
   const dependencies = getDependencies();
   const ready = isReady(dependencies);
+  const degraded = hasDependencyDegradation(dependencies);
+  const status = ready ? (degraded ? "degraded" : "operational") : "degraded";
 
   return jsonResponse({
     ok: true,
-    status: ready ? "operational" : "degraded",
-    message: ready ? "Picom services are operational." : "Picom readiness checks are degraded.",
+    status,
+    message: ready && !degraded
+      ? "Picom services are operational."
+      : ready
+        ? "Picom required services are ready, but one or more optional services are degraded."
+        : "Picom readiness checks are degraded.",
     startedAt: null,
     estimatedEndAt: null,
     service: serviceName,
@@ -132,6 +147,7 @@ function combinedHealthResponse(): Response {
     ready: {
       ok: ready,
       status: ready ? "ready" : "not_ready",
+      degraded,
     },
     dependencies,
     endpoints: ["/health", "/health/live", "/health/ready"],

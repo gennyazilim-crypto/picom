@@ -81,3 +81,4 @@ The final request should return HTTP `503` with a safe `not_ready` body.
 - Alert on repeated readiness failure before promoting a release ring.
 - Do not expose secrets in health responses or logs.
 
+Graceful degradation policy and critical/optional service definitions are documented in `docs/backend-graceful-degradation.md`.
