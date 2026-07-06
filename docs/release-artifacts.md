@@ -57,7 +57,9 @@ Before publishing beta/stable packages:
 - Build the Linux deb package.
 - Build rpm only if rpm packaging is enabled.
 - Run `npm run generate-checksums`.
+- Run `npm run generate-provenance`.
 - Upload artifacts and `SHA256SUMS.txt` together.
+- Upload `provenance.json` with package artifacts.
 - Verify at least one checksum on each target platform.
 
 ## Verification commands
@@ -92,4 +94,3 @@ The QA workflow runs `npm run release:checksums:smoke` to verify the checksum ge
 - Local unsigned packages remain expected until production signing is configured.
 - The current task does not publish artifacts.
 - The current task does not add update metadata or auto-update signing.
-

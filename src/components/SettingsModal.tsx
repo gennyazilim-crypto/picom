@@ -19,6 +19,7 @@ import { userBlockingService, type BlockedUserRecord } from "../services/userBlo
 import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
 import { notificationDigestService } from "../services/notificationDigestService";
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
+import { appConfig } from "../config/appConfig";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -716,6 +717,11 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
             <div className="placeholder-panel action-panel">
               <strong>Desktop service placeholders</strong>
               <p>Tray, window controls, file handling and clipboard are routed through safe services.</p>
+              <div className="settings-status-card" aria-label="About Picom build metadata">
+                <span>About Picom</span>
+                <strong>{appConfig.name} {appConfig.version} ({appConfig.releaseChannel})</strong>
+                <small>Build: {appConfig.build.date}. Commit: {appConfig.build.commitShort}. Runtime: {appConfig.build.desktopRuntime}. API compatibility: {appConfig.build.backendApiCompatibilityVersion}.</small>
+              </div>
               <button onClick={() => { trayService.simulate("settings"); pushToast("Tray settings action simulated.", "info"); }}>Simulate tray settings</button>
               <div className="settings-status-card" aria-label="Native app menu foundation">
                 <span>Native app menu</span>

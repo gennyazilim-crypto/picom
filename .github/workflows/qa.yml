@@ -44,3 +44,6 @@ jobs:
 
       - name: Verify release checksum generator
         run: npm run release:checksums:smoke
+
+      - name: Verify release provenance generator
+        run: npm run release:provenance:smoke

@@ -89,6 +89,8 @@ Picom is an Electron desktop app for Windows, Linux, and macOS. This checklist d
 - [ ] macOS dmg command is reviewed: `npm run package:mac:dmg`.
 - [ ] Release checksums are generated: `npm run generate-checksums`.
 - [ ] `release/SHA256SUMS.txt` is uploaded with package artifacts.
+- [ ] Release provenance is generated: `npm run generate-provenance`.
+- [ ] `release/provenance.json` matches the release version and commit.
 - [ ] Output directory is `release/`.
 - [ ] Local builds remain unsigned unless production signing is explicitly configured later.
 - [ ] No signing certificates, private keys, signing passwords, or notarization credentials are committed.

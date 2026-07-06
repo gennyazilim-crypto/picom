@@ -11,6 +11,8 @@ export type DiagnosticsSnapshot = Readonly<{
     version: string;
     environment: string;
     releaseChannel: string;
+    buildDate: string;
+    commitShort: string;
     dataSource: string;
     runtimeTarget: string;
   };
@@ -74,6 +76,8 @@ export const diagnosticsService = {
         version: import.meta.env.VITE_APP_VERSION ?? "0.1.0",
         environment: appConfig.environment,
         releaseChannel: appConfig.releaseChannel,
+        buildDate: appConfig.build.date,
+        commitShort: appConfig.build.commitShort,
         dataSource: appConfig.dataSource,
         runtimeTarget: appConfig.runtimeTarget
       },
