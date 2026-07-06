@@ -22,6 +22,8 @@
     "package:mac:dmg": "npm run build && electron-builder --mac dmg --x64",
     "package:mac:zip": "npm run build && electron-builder --mac zip --x64",
     "package:mac": "npm run build && electron-builder --mac --x64",
+    "generate-checksums": "node scripts/generate-checksums.mjs",
+    "release:checksums:smoke": "node scripts/release-artifact-checksums-smoke-test.mjs",
     "package:verify": "node scripts/verify-electron-packaging.mjs",
     "packaging:smoke": "node scripts/verify-electron-packaging.mjs",
     "preview": "vite preview --host 127.0.0.1",

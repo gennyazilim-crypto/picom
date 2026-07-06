@@ -87,6 +87,8 @@ Picom is an Electron desktop app for Windows, Linux, and macOS. This checklist d
 - [ ] Linux AppImage command is reviewed: `npm run package:linux:appimage`.
 - [ ] Linux deb command is reviewed: `npm run package:linux:deb`.
 - [ ] macOS dmg command is reviewed: `npm run package:mac:dmg`.
+- [ ] Release checksums are generated: `npm run generate-checksums`.
+- [ ] `release/SHA256SUMS.txt` is uploaded with package artifacts.
 - [ ] Output directory is `release/`.
 - [ ] Local builds remain unsigned unless production signing is explicitly configured later.
 - [ ] No signing certificates, private keys, signing passwords, or notarization credentials are committed.

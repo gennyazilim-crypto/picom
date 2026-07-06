@@ -41,3 +41,6 @@ jobs:
 
       - name: Build renderer and Electron main
         run: npm run build
+
+      - name: Verify release checksum generator
+        run: npm run release:checksums:smoke
