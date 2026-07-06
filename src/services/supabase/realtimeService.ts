@@ -1,6 +1,7 @@
 export type RealtimeConnectionStatus = "idle" | "connecting" | "connected" | "disconnected" | "reconnecting";
 
 export const REALTIME_TYPING_THROTTLE_MS = 1200;
+export const REALTIME_PRESENCE_TRACK_THROTTLE_MS = 2000;
 
 export type OrderedRealtimeEventType =
   | "message:new"

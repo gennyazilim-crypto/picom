@@ -1,10 +1,16 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { UserStatus } from "../types/community";
 import { dataSourceService } from "../services/dataSourceService";
 import { loggingService } from "../services/loggingService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../services/supabase/supabaseClient";
-import { mapRealtimeSubscriptionStatus, realtimeChannelNames, type RealtimeConnectionStatus } from "../services/supabase/realtimeService";
+import {
+  mapRealtimeSubscriptionStatus,
+  REALTIME_PRESENCE_TRACK_THROTTLE_MS,
+  realtimeChannelNames,
+  shouldThrottleRealtimeSend,
+  type RealtimeConnectionStatus,
+} from "../services/supabase/realtimeService";
 
 type PresencePayload = Readonly<{
   userId: string;
@@ -75,6 +81,8 @@ export function useSupabasePresenceChannel({
   const [connectionStatus, setConnectionStatus] = useState<RealtimeConnectionStatus>("idle");
   const channelRef = useRef<RealtimeChannel | null>(null);
   const subscribedRef = useRef(false);
+  const lastPresenceTrackAtRef = useRef(0);
+  const pendingPresenceTrackTimerRef = useRef<number | null>(null);
   const safeStatus = status === "offline" ? "online" : status;
   const presencePayloadRef = useRef<PresencePayload>({
     userId: currentUserId,
@@ -83,6 +91,30 @@ export function useSupabasePresenceChannel({
     status: safeStatus,
     lastSeen: new Date().toISOString(),
   });
+
+  const trackPresenceSafely = useCallback(() => {
+    const channel = channelRef.current;
+    if (!subscribedRef.current || !channel) return;
+
+    const now = Date.now();
+    const sendPresence = () => {
+      lastPresenceTrackAtRef.current = Date.now();
+      void channel.track(presencePayloadRef.current);
+    };
+
+    if (shouldThrottleRealtimeSend(lastPresenceTrackAtRef.current, now, REALTIME_PRESENCE_TRACK_THROTTLE_MS)) {
+      if (pendingPresenceTrackTimerRef.current == null) {
+        const delay = Math.max(0, REALTIME_PRESENCE_TRACK_THROTTLE_MS - (now - lastPresenceTrackAtRef.current));
+        pendingPresenceTrackTimerRef.current = window.setTimeout(() => {
+          pendingPresenceTrackTimerRef.current = null;
+          sendPresence();
+        }, delay);
+      }
+      return;
+    }
+
+    sendPresence();
+  }, []);
 
   useEffect(() => {
     presencePayloadRef.current = {
@@ -93,10 +125,8 @@ export function useSupabasePresenceChannel({
       lastSeen: new Date().toISOString(),
     };
 
-    if (subscribedRef.current && channelRef.current) {
-      void channelRef.current.track(presencePayloadRef.current);
-    }
-  }, [avatarUrl, currentUserId, displayName, safeStatus]);
+    trackPresenceSafely();
+  }, [avatarUrl, currentUserId, displayName, safeStatus, trackPresenceSafely]);
 
   useEffect(() => {
     if (!enabled || !dataSourceService.getStatus().isSupabase) return;
@@ -105,13 +135,11 @@ export function useSupabasePresenceChannel({
     const retrackPresence = () => {
       setConnectionStatus((current) => (current === "disconnected" ? "reconnecting" : current));
 
-      if (subscribedRef.current && channelRef.current) {
-        presencePayloadRef.current = {
-          ...presencePayloadRef.current,
-          lastSeen: new Date().toISOString(),
-        };
-        void channelRef.current.track(presencePayloadRef.current);
-      }
+      presencePayloadRef.current = {
+        ...presencePayloadRef.current,
+        lastSeen: new Date().toISOString(),
+      };
+      trackPresenceSafely();
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") retrackPresence();
@@ -132,12 +160,17 @@ export function useSupabasePresenceChannel({
       window.removeEventListener("focus", retrackPresence);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [enabled]);
+  }, [enabled, trackPresenceSafely]);
 
   useEffect(() => {
     setPresenceByUserId({});
     setConnectionStatus("idle");
     subscribedRef.current = false;
+    lastPresenceTrackAtRef.current = 0;
+    if (pendingPresenceTrackTimerRef.current != null) {
+      window.clearTimeout(pendingPresenceTrackTimerRef.current);
+      pendingPresenceTrackTimerRef.current = null;
+    }
 
     if (!enabled || !dataSourceService.getStatus().isSupabase) return;
 
@@ -202,6 +235,7 @@ export function useSupabasePresenceChannel({
             ...presencePayloadRef.current,
             lastSeen: new Date().toISOString(),
           };
+          lastPresenceTrackAtRef.current = Date.now();
           await channel.track(presencePayloadRef.current);
           return;
         }
@@ -219,8 +253,13 @@ export function useSupabasePresenceChannel({
 
     return () => {
       canceled = true;
+      if (pendingPresenceTrackTimerRef.current != null) {
+        window.clearTimeout(pendingPresenceTrackTimerRef.current);
+        pendingPresenceTrackTimerRef.current = null;
+      }
       channelRef.current = null;
       subscribedRef.current = false;
+      lastPresenceTrackAtRef.current = 0;
       setConnectionStatus("disconnected");
       void channel.untrack();
       void client.removeChannel(channel);
