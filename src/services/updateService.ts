@@ -5,6 +5,7 @@ export type UpdateStatus =
   | "available_placeholder"
   | "download_failed"
   | "install_failed"
+  | "rollback_available_placeholder"
   | "disabled";
 
 export type UpdateServiceState = Readonly<{
@@ -79,6 +80,13 @@ export const updateService = {
     return setState({
       status: "install_failed",
       message: "Update install failed placeholder. Restart Picom normally or use Safe Mode if needed."
+    });
+  },
+
+  setRollbackAvailablePlaceholder(): UpdateServiceState {
+    return setState({
+      status: "rollback_available_placeholder",
+      message: "Rollback placeholder is available. Production updater is not enabled for this MVP build."
     });
   }
 };

@@ -13,6 +13,7 @@ import { appLockService } from "../services/appLockService";
 import { shortcutService } from "../services/shortcutService";
 import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
+import { updateService } from "../services/updateService";
 import { dateTimeService } from "../services/dateTimeService";
 import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";
 import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";
@@ -72,6 +73,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
   const [appLockSettings, setAppLockSettings] = useState(() => appLockService.getSettings());
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
+  const [updateState, setUpdateState] = useState(() => updateService.getState());
   const [cacheSummary, setCacheSummary] = useState<CacheSummary | null>(null);
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
@@ -88,6 +90,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   useEffect(() => {
     setProfileDraft(profileSettings);
   }, [profileSettings]);
+
+  useEffect(() => updateService.onStateChange(setUpdateState), []);
 
   const refreshActiveSessions = useCallback(async () => {
     const result = await sessionManagementService.getActiveSessions();
@@ -209,6 +213,20 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     const next = appLockService.updateSettings({ lockAfterInactivityEnabled: enabled });
     setAppLockSettings(next);
     pushToast(enabled ? "Inactivity lock placeholder enabled locally." : "Inactivity lock placeholder disabled locally.", "info");
+  };
+  const checkForUpdatesPlaceholder = async () => {
+    const next = await updateService.checkForUpdatesPlaceholder();
+    setUpdateState(next);
+    pushToast(next.message, next.status === "download_failed" || next.status === "install_failed" ? "error" : "info");
+  };
+  const simulateUpdateFailure = (kind: "download" | "install" | "rollback") => {
+    const next = kind === "download"
+      ? updateService.setDownloadFailedPlaceholder()
+      : kind === "install"
+        ? updateService.setInstallFailedPlaceholder()
+        : updateService.setRollbackAvailablePlaceholder();
+    setUpdateState(next);
+    pushToast(next.message, next.status === "download_failed" || next.status === "install_failed" ? "error" : "info");
   };
   const runCacheAction = async (action: () => Promise<{ message: string; summary: CacheSummary }>) => {
     const result = await action();
@@ -732,6 +750,18 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <button onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
                 <button onClick={() => menuService.triggerPlaceholderAction("export-diagnostics")}>Simulate menu diagnostics</button>
                 <button onClick={openSystemStatus}>Open system status</button>
+              </div>
+              <div className="settings-status-card" aria-label="Desktop update recovery placeholder">
+                <span>Desktop updates</span>
+                <strong>{updateState.status.split("_").join(" ")}</strong>
+                <small>{updateState.message}</small>
+                <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Production auto-update remains disabled for MVP.</small>
+              </div>
+              <div className="settings-actions-row">
+                <button onClick={() => void checkForUpdatesPlaceholder()}>Check update placeholder</button>
+                <button onClick={() => simulateUpdateFailure("download")}>Simulate download failure</button>
+                <button onClick={() => simulateUpdateFailure("install")}>Simulate install failure</button>
+                <button onClick={() => simulateUpdateFailure("rollback")}>Rollback placeholder</button>
               </div>
               <div className="settings-status-card" aria-label="System status page placeholder">
                 <span>System status</span>
