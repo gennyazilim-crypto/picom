@@ -6,6 +6,7 @@ export type DirectMessage = Readonly<{
   authorId: string;
   body: string;
   createdAt: string;
+  clientMessageId?: string;
   isPlaceholder?: boolean;
 }>;
 

@@ -12,6 +12,7 @@ type ProfileViewProps = {
   currentUserId: string;
   onBack: () => void;
   onToggleFollow: (userId: string) => void;
+  onMessage?: (userId: string) => void;
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
   onPlaceholderAction?: (message: string) => void;
@@ -22,6 +23,7 @@ type ProfileActionButtonsProps = {
   profile: UserProfile;
   isCurrentUser: boolean;
   onToggleFollow: (userId: string) => void;
+  onMessage?: (userId: string) => void;
   onPlaceholderAction?: (message: string) => void;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
 };
@@ -58,7 +60,7 @@ function getActivityIcon(type: ProfileActivityItem["type"]): IconName {
   return "hash";
 }
 
-function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onPlaceholderAction, onOpenMore }: ProfileActionButtonsProps) {
+function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onPlaceholderAction, onOpenMore }: ProfileActionButtonsProps) {
   if (isCurrentUser) {
     return (
       <div className="profile-action-buttons">
@@ -76,7 +78,7 @@ function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onPlaceh
 
   return (
     <div className="profile-action-buttons">
-      <button type="button" className="profile-primary-button" onClick={() => onPlaceholderAction?.("Message placeholder is ready for the future DM flow.")}>
+      <button type="button" className="profile-primary-button" onClick={() => onMessage?.(profile.id)}>
         <AppIcon name="send" size="sm" />
         Message
       </button>
@@ -101,6 +103,7 @@ export function ProfileLeftCard({
   isCurrentUser,
   onBack,
   onToggleFollow,
+  onMessage,
   onPlaceholderAction,
   onOpenMore,
 }: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
@@ -127,6 +130,7 @@ export function ProfileLeftCard({
           profile={profile}
           isCurrentUser={isCurrentUser}
           onToggleFollow={onToggleFollow}
+          onMessage={onMessage}
           onPlaceholderAction={onPlaceholderAction}
           onOpenMore={onOpenMore}
         />
@@ -397,6 +401,7 @@ export function ProfileView({
   currentUserId,
   onBack,
   onToggleFollow,
+  onMessage,
   onOpenActivity,
   onOpenImage,
   onPlaceholderAction,
@@ -413,6 +418,7 @@ export function ProfileView({
           isCurrentUser={isCurrentUser}
           onBack={onBack}
           onToggleFollow={onToggleFollow}
+          onMessage={onMessage}
           onPlaceholderAction={onPlaceholderAction}
           onOpenMore={onOpenMore}
         />

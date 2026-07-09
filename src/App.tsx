@@ -267,7 +267,7 @@ export function App() {
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
-  const [directConversations] = useState<DirectConversation[]>(mockDirectConversations);
+  const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
   const [feedVoiceState, setFeedVoiceState] = useState<MockVoiceState>({
@@ -1397,15 +1397,34 @@ export function App() {
 
   const openDirectMessages = useCallback((userId?: string) => {
     if (userId) {
-      const conversation = directConversations.find((candidate) => candidate.participantUserId === userId);
-      if (conversation) {
-        setActiveDirectConversationId(conversation.id);
+      const existing = directConversations.find((candidate) => candidate.participantUserId === userId);
+      if (existing) {
+        setActiveDirectConversationId(existing.id);
+      } else {
+        const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+        if (member) {
+          const conversation: DirectConversation = {
+            id: `dm-${userId}`, participantUserId: userId, participantName: member.displayName, participantUsername: member.username,
+            participantStatus: member.status, participantStatusText: member.statusText, lastMessagePreview: "Start a conversation",
+            updatedAt: new Date().toISOString(), unreadCount: 0, messages: [],
+          };
+          setDirectConversations((current) => [conversation, ...current]);
+          setActiveDirectConversationId(conversation.id);
+        }
       }
     }
-
     setActiveView("directMessages");
     closeTransientOverlays();
-  }, [closeTransientOverlays, directConversations]);
+  }, [closeTransientOverlays, communities, directConversations]);
+
+  const sendDirectMessageLocal = useCallback((conversationId: string, body: string) => {
+    const createdAt = new Date().toISOString();
+    const clientMessageId = `dm-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? {
+      ...conversation, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0,
+      messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: currentUserId, body, createdAt }],
+    } : conversation));
+  }, []);
 
   const openFriends = useCallback(() => {
     setActiveView("friends");
@@ -1936,6 +1955,7 @@ export function App() {
               currentUserId={currentUserId}
               onBack={closeProfileView}
               onToggleFollow={toggleFollowUser}
+              onMessage={openDirectMessages}
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
               onPlaceholderAction={(message) => pushToast(message, "info")}
@@ -1951,6 +1971,7 @@ export function App() {
               activeConversationId={activeDirectConversationId}
               currentUserId={currentUserId}
               onSelectConversation={setActiveDirectConversationId}
+              onSendMessage={sendDirectMessageLocal}
               onBackToCommunity={() => setActiveView("community")}
               onOpenProfile={(userId) => {
                 const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
