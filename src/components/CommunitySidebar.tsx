@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import type { MouseEvent } from "react";
+import { useEffect } from "react";
 import type { Channel, Community, Member } from "../types/community";
 import type { CommunityAccess } from "../types/communityAccess";
 import { canManageChannels } from "../services/permissions/communityPermissions";
@@ -12,9 +13,11 @@ import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
 import { CommunityCategoryManagementPanel } from "./CommunityCategoryManagementPanel";
 import { MessageModerationFiltersPanel } from "./MessageModerationFiltersPanel";
 import { CommunityAdminPanel, CommunityJoinModal, CommunityLeaveModal, CommunityMemberPanel, CommunityModeratorPanel, CommunityVisitorPanel } from "./CommunityMenu";
+import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals";
 
 type CommunitySidebarProps = {
   community: Community;
+  communities: Community[];
   access: CommunityAccess;
   activeChannelId: string;
   currentUser: Member;
@@ -30,16 +33,20 @@ type CommunitySidebarProps = {
   onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void;
   onJoinCommunity: () => void | Promise<void>;
   onLeaveCommunity: () => void | Promise<void>;
+  pendingInviteCode?: string | null;
+  onClearPendingInviteCode: () => void;
+  onInviteAccepted: (communityId: string, member: Member) => void;
   onPlaceholderAction: (message: string) => void;
 };
 
-type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | null;
+type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | null;
 
-export function CommunitySidebar({ community, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, onPlaceholderAction }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onPlaceholderAction }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
   const [openPanel, setOpenPanel] = useState<OpenCommunityPanel>(null);
+  useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
   const canReorderChannels = canManageChannels(access);
   const adminTools = (
     <div className="community-admin-tools-stack">
@@ -92,12 +99,14 @@ export function CommunitySidebar({ community, access, activeChannelId, currentUs
 
       <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />
 
-      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} adminTools={adminTools} /> : null}
-      {openPanel === "moderator" ? <CommunityModeratorPanel community={community} onClose={() => setOpenPanel(null)} /> : null}
-      {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} /> : null}
-      {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} /> : null}
+      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} adminTools={adminTools} /> : null}
+      {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} /> : null}
+      {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} onOpenInvite={() => setOpenPanel("invite")} /> : null}
+      {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} onOpenJoinWithInvite={() => setOpenPanel("joinInvite")} /> : null}
       {openPanel === "join" ? <CommunityJoinModal community={community} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onJoinCommunity(); setOpenPanel(null); }} /> : null}
       {openPanel === "leave" ? <CommunityLeaveModal community={community} access={access} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onLeaveCommunity(); setOpenPanel(null); }} /> : null}
+      {openPanel === "invite" ? <InvitePeopleModal community={community} currentUserId={currentUser.userId} canCreate={access.permissions.includes("createInvites")} onClose={() => setOpenPanel(null)} /> : null}
+      {openPanel === "joinInvite" ? <JoinWithInviteModal initialCode={pendingInviteCode ?? ""} isAuthenticated={isAuthenticated} communities={communities} currentUser={currentUser} onClose={() => { setOpenPanel(null); onClearPendingInviteCode(); }} onAccepted={onInviteAccepted} /> : null}
     </aside>
   );
 }

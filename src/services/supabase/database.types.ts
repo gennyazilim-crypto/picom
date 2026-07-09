@@ -163,6 +163,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["read_states"]["Row"]>;
         Relationships: [];
       };
+      community_invites: {
+        Row: { id: string; community_id: string; code: string; created_by: string; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["community_invites"]["Row"]> & Pick<Database["public"]["Tables"]["community_invites"]["Row"], "community_id" | "code" | "created_by">;
+        Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: {
       message_attachments: {
@@ -170,7 +176,12 @@ export type Database = {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      accept_community_invite: {
+        Args: { invite_code: string };
+        Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

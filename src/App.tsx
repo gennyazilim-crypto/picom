@@ -289,6 +289,7 @@ export function App() {
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
   const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
+  const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
   const {
     communities,
@@ -923,7 +924,9 @@ export function App() {
       }
 
       if (action.type === "invite") {
-        pushToast(`Invite deep link received: ${action.code}. Invite acceptance is a placeholder.`, "info");
+        setPendingInviteCode(action.code);
+        setActiveView("community");
+        pushToast("Invite received. Review it before joining.", "info");
         return;
       }
 
@@ -1513,7 +1516,7 @@ export function App() {
       setActiveView("community");
     } else {
       setActiveView("mentionFeed");
-      if (completion.startChoice === "joinInvite") pushToast("Your invite is ready for the community join flow.", "info");
+      if (completion.startChoice === "joinInvite" && completion.inviteCode) setPendingInviteCode(completion.inviteCode);
     }
     pushToast("Picom setup completed.", "success");
   }, [profileSettings, pushToast]);
@@ -1771,6 +1774,21 @@ export function App() {
     pushToast(`Left ${activeCommunity.name}.`, "info");
   };
 
+  const handleInviteAccepted = (communityId: string, member: Member) => {
+    const target = communities.find((community) => community.id === communityId);
+    if (!target) {
+      pushToast("Joined successfully. Refresh communities to load the invited workspace.", "success");
+      setPendingInviteCode(null);
+      return;
+    }
+
+    replaceCommunityMembers(communityId, [...target.members.filter((candidate) => candidate.userId !== member.userId), member]);
+    switchCommunity(communityId);
+    setActiveView("community");
+    setPendingInviteCode(null);
+    pushToast(`Joined ${target.name} with invite.`, "success");
+  };
+
   const handleCreateCommunity = async (name: string, description?: string, templateId?: CommunityTemplateId) => {
     const result = await communityService.createCommunity({ name, description, templateId });
 
@@ -1963,6 +1981,7 @@ export function App() {
             <>
               <CommunitySidebar
                 community={displayedActiveCommunity}
+                communities={communities}
                 access={communityAccess}
                 activeChannelId={displayedActiveChannel.id}
                 currentUser={displayedCurrentUser}
@@ -1976,6 +1995,9 @@ export function App() {
                 onLogout={handleLogout}
                 onJoinCommunity={handleJoinCommunity}
                 onLeaveCommunity={handleLeaveCommunity}
+                pendingInviteCode={pendingInviteCode}
+                onClearPendingInviteCode={() => setPendingInviteCode(null)}
+                onInviteAccepted={handleInviteAccepted}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
                 onCreateCategory={(name) => {
                   const category = addCategory({ communityId: activeCommunity.id, name });

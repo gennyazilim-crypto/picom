@@ -12,6 +12,7 @@ type MenuCallbacks = {
   onOpenVisitorPanel: () => void;
   onOpenJoinCommunity: () => void;
   onOpenLeaveCommunity: () => void;
+  onOpenInvitePeople: () => void;
   onPlaceholderAction: (message: string) => void;
 };
 
@@ -60,7 +61,7 @@ function handleCommunityAction(item: CommunityMenuItemDescriptor, callbacks: Men
     "notification-settings": callbacks.onOpenMemberPanel,
     "join-community": callbacks.onOpenJoinCommunity,
     "leave-community": callbacks.onOpenLeaveCommunity,
-    "invite-people": () => callbacks.onPlaceholderAction("Invite people placeholder opened from the community menu."),
+    "invite-people": callbacks.onOpenInvitePeople,
     "copy-community-link": () => callbacks.onPlaceholderAction("Community link placeholder copied locally."),
     "report-community": () => callbacks.onPlaceholderAction("Report community placeholder opened locally."),
   };
@@ -159,7 +160,7 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
   );
 }
 
-export function CommunityAdminPanel({ community, access, onClose, adminTools }: { community: Community; access: CommunityAccess; onClose: () => void; adminTools?: ReactNode }) {
+export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, adminTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; adminTools?: ReactNode }) {
   const [activeSection, setActiveSection] = useState("overview");
   const sections = [
     "Overview",
@@ -191,6 +192,7 @@ export function CommunityAdminPanel({ community, access, onClose, adminTools }: 
           <div className="community-panel-hero">
             <strong>{activeSection.replace(/-/g, " ")}</strong>
             <span>{access.isOwner ? "Owner access" : "Admin access with owner-only actions hidden."}</span>
+            {access.permissions.includes("createInvites") ? <button type="button" className="secondary-action" onClick={onOpenInvite}><AppIcon name="users" size="sm" /> Invite people</button> : null}
           </div>
           {adminTools ?? null}
         </div>
@@ -199,7 +201,7 @@ export function CommunityAdminPanel({ community, access, onClose, adminTools }: 
   );
 }
 
-export function CommunityModeratorPanel({ community, onClose }: { community: Community; onClose: () => void }) {
+export function CommunityModeratorPanel({ community, access, onClose, onOpenInvite }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void }) {
   return (
     <ModalShell title={`${community.name} moderator panel`} eyebrow="Moderation" onClose={onClose}>
       <div className="moderator-panel-grid">
@@ -211,18 +213,19 @@ export function CommunityModeratorPanel({ community, onClose }: { community: Com
           </article>
         ))}
       </div>
+      {access.permissions.includes("createInvites") ? <div className="modal-actions-row"><button type="button" className="secondary-action" onClick={onOpenInvite}><AppIcon name="users" size="sm" /> Invite people</button></div> : null}
     </ModalShell>
   );
 }
 
-export function CommunityMemberPanel({ community, access, onClose, onOpenLeave }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenLeave: () => void }) {
+export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, onOpenInvite }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenLeave: () => void; onOpenInvite: () => void }) {
   return (
     <ModalShell title={`${community.name} member menu`} eyebrow="Community menu" onClose={onClose}>
       <div className="community-confirm-panel">
         <CommunityMemberMenu community={community} access={access} />
         <div className="community-panel-list">
           <article><strong>Notification settings</strong><span>Local notification preferences placeholder.</span></article>
-          <article><strong>Invite people</strong><span>Invite placeholder respects createInvites permission later.</span></article>
+          {access.permissions.includes("createInvites") ? <button type="button" className="community-panel-action" onClick={onOpenInvite}><strong>Invite people</strong><span>Create a limited Picom invite link.</span></button> : null}
           <article><strong>Report community</strong><span>Report placeholder prepared without exposing private content.</span></article>
         </div>
         <div className="modal-actions-row">
@@ -234,7 +237,7 @@ export function CommunityMemberPanel({ community, access, onClose, onOpenLeave }
   );
 }
 
-export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void }) {
+export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin, onOpenJoinWithInvite }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void; onOpenJoinWithInvite: () => void }) {
   return (
     <ModalShell title={`${community.name} public preview`} eyebrow="Visitor menu" onClose={onClose}>
       <div className="community-confirm-panel">
@@ -244,6 +247,7 @@ export function CommunityVisitorPanel({ community, access, isAuthenticated, onCl
           <article><strong>Join to participate</strong><span>Visitors cannot send messages, react, or upload attachments.</span></article>
           <article><strong>{isAuthenticated ? "Ready to join" : "Sign in required"}</strong><span>{isAuthenticated ? "Confirm the join flow to become a member." : "Sign in or register before joining."}</span></article>
         </div>
+        <div className="modal-actions-row"><button type="button" className="secondary-action" disabled={!isAuthenticated} onClick={onOpenJoinWithInvite}>Join with invite</button></div>
       </div>
     </ModalShell>
   );

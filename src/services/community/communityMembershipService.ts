@@ -24,6 +24,7 @@ export type JoinCommunityInput = {
   community: Community;
   currentUser: Member;
   isAuthenticated: boolean;
+  inviteValidated?: boolean;
 };
 
 export type LeaveCommunityInput = {
@@ -77,8 +78,8 @@ export const communityMembershipService = {
       return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before joining a community." } };
     }
 
-    if (input.community.visibility === "private") {
-      return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require an invite placeholder." } };
+    if (input.community.visibility === "private" && !input.inviteValidated) {
+      return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require a valid invite." } };
     }
 
     if (input.community.members.some((member) => member.userId === input.currentUser.userId)) {
