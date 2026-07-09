@@ -3,6 +3,7 @@ import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
+import { LoginBackgroundAnimation } from "./auth/LoginBackgroundAnimation";
 
 type LoginScreenProps = {
   theme: "light" | "dark";
@@ -42,6 +43,7 @@ export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, on
 
   return (
     <main className="auth-desktop-frame" aria-label="Picom sign in">
+      <LoginBackgroundAnimation theme={theme} />
       <section className="auth-hero" aria-hidden="true">
         <div className="auth-logo-orb">
           <img src={logoUrl} alt="" />
