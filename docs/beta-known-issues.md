@@ -38,6 +38,17 @@ This list describes current beta limitations. It must not be interpreted as a pr
 - No mobile UI is supported.
 - Bot marketplace, production webhooks, plugins, enterprise features, SSO/SCIM, billing, public discovery, production auto-update, and production E2EE are intentionally excluded.
 
+## Stable RC blockers
+
+- Live Supabase migration/RLS/Storage/Realtime and Edge Function verification has not been completed in a production-like staging project.
+- Historical private attachment rendering needs authenticated signed-URL refresh after reload.
+- Native Linux AppImage/deb and macOS dmg/zip/sign/notarize permission smoke are outstanding.
+- Windows stable signing/timestamp and clean-host lifecycle smoke are outstanding.
+- LiveKit production two-user voice/screen-share tests are outstanding.
+- A real backup restore drill and legal/policy approval are outstanding.
+
+These do not block private mock/static beta development, but they block stable public release.
+
 ## Reporting a new known issue
 
 Use the workflow in [Beta Feedback Intake](./beta-feedback-intake.md) and track confirmed reports with the [Beta Triage Board](./beta-triage-board.md). Create a beta report with category, severity, platform, app version, mode, reproduction steps, expected result, actual result, and optional redacted diagnostics. Security or private-channel isolation concerns must be treated as release blockers and escalated immediately.
