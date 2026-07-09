@@ -6,7 +6,7 @@ A canonical Full MVP beta decision checklist now separates blockers, verificatio
 
 ## Current status
 
-The current record remains `NO-GO`. Windows packaging now succeeds, but clean-account package launch plus live Supabase/RLS/LiveKit validation remains incomplete. This status avoids a false beta-readiness claim.
+The current record remains `NO-GO`. Windows packaging now succeeds for artifact SHA-256 `208BB16DE5A32D097017E727E83C36134C4DD22B7EBF5880004063862C44ADB3`, but clean-account package launch, native Linux/macOS launch, and live Supabase/RLS/LiveKit validation remain incomplete. The checklist now provides the exact closure order.
 
 ## Files
 

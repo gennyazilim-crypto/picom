@@ -17,13 +17,23 @@ An unverified blocker is treated as failed. Documentation of a platform gap does
 | Field | Value |
 | --- | --- |
 | Decision | `NO-GO` |
-| Date | 2026-07-09 |
+| Date | 2026-07-10 |
 | Version | `0.1.0-beta` placeholder |
 | Channel | Beta |
 | Reason | Windows installer now builds, but clean-account package launch plus Supabase staging/RLS, LiveKit two-client voice, and screen-share checks remain unverified |
+| Current Windows artifact | `Picom-0.1.0-Windows-x64.exe` / SHA-256 `208BB16DE5A32D097017E727E83C36134C4DD22B7EBF5880004063862C44ADB3` |
 | Decision owner | Pending |
 
 This record must be updated by the release owner after all required evidence is attached.
+
+## Exact next action
+
+1. Install the current Windows artifact on a clean test account and complete launch/login/onboarding/chat/restart/uninstall smoke testing.
+2. Build and launch the Linux AppImage/deb on a supported native Linux host.
+3. Build and launch the macOS dmg/zip and complete microphone/screen-recording permission checks on native macOS.
+4. Configure Supabase staging, apply migrations, and pass separate-account RLS tests for public/private community, channel, message, attachment, membership, and invite boundaries.
+5. Deploy the LiveKit token function and pass two-client voice plus remote screen-share smoke testing.
+6. Re-run this checklist; choose `GO WITH NON-BLOCKERS` only if every blocker passes and remaining limitations have owners/workarounds.
 
 ## Product
 
