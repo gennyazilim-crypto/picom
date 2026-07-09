@@ -129,12 +129,22 @@ function isSafeDeepLinkSegment(value: string | undefined): value is string {
 }
 
 function isSupportedPicomDeepLink(parsed: URL): boolean {
-  if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.search || parsed.hash) {
+  if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.hash) {
     return false;
   }
 
   const route = parsed.hostname;
   const segments = parsed.pathname.split("/").filter(Boolean);
+
+  if (route === "auth" && segments.length === 1 && segments[0] === "callback") {
+    const allowedKeys = new Set(["code", "error", "error_description"]);
+    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
+    const code = parsed.searchParams.get("code");
+    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
+    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+  }
+
+  if (parsed.search) return false;
 
   if (route === "invite") {
     return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
@@ -159,7 +169,7 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
 }
 
 function isSafeDeepLink(value: unknown): value is string {
-  if (typeof value !== "string" || !value || value.length > 512) {
+  if (typeof value !== "string" || !value || value.length > 2048) {
     return false;
   }
 

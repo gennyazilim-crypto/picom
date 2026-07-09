@@ -1,6 +1,7 @@
 export type DeepLinkAction =
   | { type: "invite"; code: string }
   | { type: "community"; communityId: string; channelId?: string; messageId?: string }
+  | { type: "authCallback"; code?: string; error?: string }
   | { type: "settings" }
   | { type: "friends" };
 
@@ -12,7 +13,7 @@ type DeepLinkListener = (action: DeepLinkAction) => void;
 
 const listeners = new Set<DeepLinkListener>();
 let nativeCleanup: (() => void) | null = null;
-const maxDeepLinkLength = 512;
+const maxDeepLinkLength = 2048;
 const safeSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function isSafeSegment(value: string | undefined): value is string {
@@ -71,6 +72,16 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   const route = parsed.hostname;
   const segments = parsed.pathname.split("/").filter(Boolean);
+
+  if (route === "auth" && segments.length === 1 && segments[0] === "callback" && !parsed.hash) {
+    const allowedKeys = new Set(["code", "error", "error_description"]);
+    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+    const code = parsed.searchParams.get("code") ?? undefined;
+    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+    if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: raw, action: { type: "authCallback", code } };
+    if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: "authCallback", error } };
+    return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+  }
 
   if (route === "invite") {
     const [code] = segments;

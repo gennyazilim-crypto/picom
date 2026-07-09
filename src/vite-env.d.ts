@@ -7,6 +7,9 @@ interface ImportMetaEnv {
   readonly VITE_DATA_SOURCE?: "mock" | "supabase" | string;
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;
+  readonly VITE_SUPABASE_OAUTH_REDIRECT_URL?: string;
+  readonly VITE_SUPABASE_GOOGLE_OAUTH_ENABLED?: string;
+  readonly VITE_SUPABASE_APPLE_OAUTH_ENABLED?: string;
   readonly VITE_LIVEKIT_URL?: string;
   readonly VITE_DEV_SERVER_URL?: string;
 }

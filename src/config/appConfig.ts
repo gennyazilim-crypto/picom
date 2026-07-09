@@ -13,6 +13,10 @@ function getReleaseChannel(value: string | undefined, environment: string): Rele
   return environment === "beta" ? "beta" : "dev";
 }
 
+function getBooleanFlag(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === "true";
+}
+
 const environment = import.meta.env.VITE_APP_ENV ?? "development";
 const gitCommit = import.meta.env.VITE_GIT_COMMIT ?? "local";
 
@@ -38,7 +42,10 @@ export const appConfig = Object.freeze({
   }),
   supabase: Object.freeze({
     url: import.meta.env.VITE_SUPABASE_URL ?? "",
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? ""
+    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? "",
+    oauthRedirectUrl: import.meta.env.VITE_SUPABASE_OAUTH_REDIRECT_URL ?? "picom://auth/callback",
+    googleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_GOOGLE_OAUTH_ENABLED),
+    appleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_APPLE_OAUTH_ENABLED)
   }),
   liveKit: Object.freeze({
     url: import.meta.env.VITE_LIVEKIT_URL ?? ""

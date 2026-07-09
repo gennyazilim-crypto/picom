@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
+import { SocialLoginButtons } from "./auth/SocialLoginButtons";
 
 type LoginScreenProps = {
   theme: "light" | "dark";
@@ -66,6 +67,8 @@ export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, on
           </div>
           <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         </div>
+
+        <SocialLoginButtons disabled={loading} />
 
         <label className="auth-field">
           <span>Email</span>

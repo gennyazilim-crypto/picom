@@ -62,6 +62,7 @@ import { crashRecoveryService, type CrashRecoveryRecord } from "./services/crash
 import { safeModeService, type SafeModeState } from "./services/safeModeService";
 import { statusPageService } from "./services/statusPageService";
 import { authService } from "./services/authService";
+import { socialAuthService } from "./services/auth/socialAuthService";
 import { onboardingService } from "./services/onboarding/onboardingService";
 import { communityService } from "./services/communityService";
 import { communityMembershipService } from "./services/community/communityMembershipService";
@@ -896,6 +897,18 @@ export function App() {
 
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
+      if (action.type === "authCallback") {
+        if (!action.code) {
+          pushToast(action.error || "Social sign in was canceled.", "error");
+          return;
+        }
+
+        void socialAuthService.completeOAuthCallback(action.code).then((result) => {
+          pushToast(result.ok ? "Social sign in completed." : result.error, result.ok ? "success" : "error");
+        });
+        return;
+      }
+
       if (action.type === "settings") {
         openSettings();
         pushToast("Opened settings from deep link.", "info");
