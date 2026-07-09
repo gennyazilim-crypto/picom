@@ -7,6 +7,9 @@ export type DirectMessage = Readonly<{
   body: string;
   createdAt: string;
   clientMessageId?: string;
+  editedAt?: string;
+  deletedAt?: string;
+  reactions?: ReadonlyArray<Readonly<{ emoji: string; count: number; reactedByCurrentUser?: boolean }>>;
   isPlaceholder?: boolean;
 }>;
 

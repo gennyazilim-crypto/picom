@@ -86,7 +86,7 @@ export function DirectChatMain({ conversation, currentUserId, onBack, onOpenProf
       <div className="direct-message-list" aria-live="polite">
         {conversation.messages.length ? conversation.messages.map((message) => {
           const own = message.authorId === currentUserId;
-          return <article key={message.id} className={`direct-message ${own ? "own" : ""}`}><span>{message.body}</span><small>{dateTimeService.formatMessageTime(message.createdAt)}</small></article>;
+          return <article key={message.id} className={`direct-message ${own ? "own" : ""}`}><span>{message.deletedAt ? "Message deleted" : message.body}</span><small>{dateTimeService.formatMessageTime(message.createdAt)}{message.editedAt && !message.deletedAt ? " ? edited" : ""}</small></article>;
         }) : <div className="direct-chat-empty"><strong>Start a direct message</strong><span>Messages here are visible only to conversation members.</span></div>}
       </div>
       <DirectMessageComposer conversationId={conversation.id} onSendMessage={onSendMessage} />

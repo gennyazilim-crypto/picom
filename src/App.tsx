@@ -43,6 +43,8 @@ import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
+import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
+import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { FriendsView } from "./components/FriendsView";
 import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
@@ -1425,6 +1427,49 @@ export function App() {
       messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: currentUserId, body, createdAt }],
     } : conversation));
   }, []);
+
+  const handleDirectRealtimeInsert = useCallback((message: DirectConversation["messages"][number]) => {
+    setDirectConversations((current) => current.map((conversation) => {
+      if (conversation.id !== message.conversationId) return conversation;
+      const index = conversation.messages.findIndex((candidate) => candidate.id === message.id || Boolean(message.clientMessageId && candidate.clientMessageId === message.clientMessageId));
+      const messages = [...conversation.messages];
+      if (index >= 0) messages[index] = message; else messages.push(message);
+      const active = activeView === "directMessages" && activeDirectConversationId === conversation.id;
+      return { ...conversation, messages, lastMessagePreview: message.deletedAt ? "Message deleted" : message.body, updatedAt: message.createdAt, unreadCount: message.authorId === currentUserId || active ? 0 : conversation.unreadCount + (index >= 0 ? 0 : 1) };
+    }));
+  }, [activeDirectConversationId, activeView]);
+
+  const handleDirectRealtimeUpdate = useCallback((message: DirectConversation["messages"][number]) => {
+    setDirectConversations((current) => current.map((conversation) => conversation.id === message.conversationId ? { ...conversation, messages: conversation.messages.map((candidate) => candidate.id === message.id ? { ...candidate, ...message } : candidate), lastMessagePreview: message.deletedAt ? "Message deleted" : message.body } : conversation));
+  }, []);
+
+  const handleDirectRealtimeDelete = useCallback((conversationId: string, messageId: string) => {
+    setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, messages: conversation.messages.map((message) => message.id === messageId ? { ...message, body: "", deletedAt: new Date().toISOString() } : message), lastMessagePreview: "Message deleted" } : conversation));
+  }, []);
+
+  const handleDirectRealtimeReaction = useCallback((type: "add" | "remove", reaction: DirectReactionRow) => {
+    setDirectConversations((current) => current.map((conversation) => ({ ...conversation, messages: conversation.messages.map((message) => {
+      if (message.id !== reaction.message_id) return message;
+      const reactions = [...(message.reactions ?? [])];
+      const index = reactions.findIndex((item) => item.emoji === reaction.emoji);
+      const delta = type === "add" ? 1 : -1;
+      if (index >= 0) { const next = reactions[index].count + delta; if (next > 0) reactions[index] = { ...reactions[index], count: next, reactedByCurrentUser: reaction.user_id === currentUserId ? type === "add" : reactions[index].reactedByCurrentUser }; else reactions.splice(index, 1); }
+      else if (type === "add") reactions.push({ emoji: reaction.emoji, count: 1, reactedByCurrentUser: reaction.user_id === currentUserId });
+      return { ...message, reactions };
+    }) })));
+  }, []);
+
+  useDirectMessageRealtime({
+    enabled: true,
+    conversationIds: directConversations.map((conversation) => conversation.id),
+    activeConversationId: activeDirectConversationId,
+    currentUserId,
+    isDirectMessagesViewActive: activeView === "directMessages",
+    onInsert: handleDirectRealtimeInsert,
+    onUpdate: handleDirectRealtimeUpdate,
+    onDelete: handleDirectRealtimeDelete,
+    onReaction: handleDirectRealtimeReaction,
+  });
 
   const openFriends = useCallback(() => {
     setActiveView("friends");
