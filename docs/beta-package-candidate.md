@@ -1,0 +1,109 @@
+# Picom Beta Package Candidate
+
+## Candidate status
+
+Picom `0.1.0` is source- and configuration-ready for an unsigned local beta candidate. TypeScript, mock-mode smoke, renderer/Electron production build, and the packaging configuration verifier pass on Windows.
+
+The Windows installer was not produced during the 2026-07-09 run because Windows denied electron-builder's final directory rename with `EPERM`. The same failure occurred in both `release/win-unpacked` and a fresh `release-beta-candidate/win-unpacked` output, so this is recorded as a local filesystem, antivirus, or Controlled Folder Access blocker rather than a source/configuration failure. No partial `.tmp` directory is a distributable artifact.
+
+## Verified metadata and security
+
+| Item | Verified value |
+| --- | --- |
+| Package name/version | `picom` / `0.1.0` |
+| Product name | `Picom` |
+| Application ID | `com.picom.desktop` |
+| Main entry | `dist-electron/main.cjs` |
+| Packaged preload | `dist-electron/preload.cjs` via `path.join(__dirname, "preload.cjs")` |
+| Renderer output | `dist/**` |
+| Context isolation | enabled |
+| Node integration | disabled |
+| Renderer sandbox | enabled |
+| ASAR | enabled |
+| Protocol | `picom://` |
+| Native menu | disabled by Electron main process |
+
+The configured brand assets exist:
+
+- `assets/brand/app-icon.ico`
+- `assets/brand/app-icon.png`
+- `assets/brand/app-icon.svg`
+- `assets/brand/icons/`
+
+## Package targets and commands
+
+Run all commands from the repository root.
+
+### Windows x64
+
+```powershell
+npm run package:win
+```
+
+Expected output:
+
+- `release/Picom-0.1.0-Windows-x64.exe`
+- `release/win-unpacked/`
+
+If `EPERM` occurs during the `win-unpacked.tmp` rename:
+
+1. Close every running Picom/Electron process and File Explorer window showing the output directory.
+2. Confirm Windows Security Controlled Folder Access or antivirus is not quarantining electron-builder operations.
+3. Remove only the incomplete `.tmp` output after confirming no Picom process is using it.
+4. Run `npm run package:win` again from a normal PowerShell terminal.
+
+The local beta may remain unsigned. Windows SmartScreen warnings are expected until code signing is configured; certificates and passwords must never be committed.
+
+### Linux x64
+
+Run on a Linux build host:
+
+```bash
+npm ci
+npm run package:linux:appimage
+npm run package:linux:deb
+```
+
+Expected outputs are `Picom-0.1.0-Linux-x86_64.AppImage` and a Debian package in `release/`. Linux artifacts are not claimed from the Windows run.
+
+### macOS x64
+
+Run on a macOS build host:
+
+```bash
+npm ci
+npm run package:mac:dmg
+npm run package:mac:zip
+```
+
+Expected outputs are `Picom-0.1.0-macOS-x64.dmg` and `.zip` in `release/`. macOS packaging, signing, notarization, microphone permission, and screen-recording permission checks require macOS hardware or a macOS CI runner.
+
+## Beta environment
+
+- Package creation does not embed production secrets.
+- Configure staging values through the documented local/CI environment for Supabase and LiveKit.
+- Never commit a populated `.env` file, Supabase service-role key, LiveKit secret, signing certificate, or certificate password.
+- Run `npm run env:smoke` and the staging smoke check before distributing a candidate built with staging connectivity.
+
+## Candidate gate
+
+Before distribution:
+
+1. `npm ci`
+2. `npm run typecheck`
+3. `npm run mock:smoke`
+4. `npm run build`
+5. `npm run package:verify`
+6. Run the package command on the target operating system.
+7. Install and launch the artifact on a clean test account.
+8. Verify the custom titlebar, preload bridge, login/session startup, mock mode, and staging mode.
+9. Generate checksums and provenance only after final artifacts exist.
+
+## Current gaps
+
+- Windows artifact creation is blocked locally by an `EPERM` rename denial; no valid installer was produced in this run.
+- Linux AppImage/deb must be generated and smoke-tested on Linux.
+- macOS dmg/zip must be generated and smoke-tested on macOS.
+- Signing/notarization is intentionally not required for this local beta candidate and remains a release-readiness item.
+- Vite reports non-blocking chunks over 500 kB; bundle splitting is a later optimization and does not block this packaging gate.
+
