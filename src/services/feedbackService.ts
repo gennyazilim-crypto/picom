@@ -13,12 +13,6 @@ export type FeedbackDraft = Readonly<{
   includeLogs: boolean;
 }>;
 
-export type FeedbackPlaceholderResult = Readonly<{
-  ok: true;
-  referenceId: string;
-  message: string;
-}>;
-
 export type SupportDiagnosticsPayload = Readonly<{
   createdAt: string;
   app: {
@@ -40,6 +34,7 @@ export type SupportDiagnosticsPayload = Readonly<{
     realtimeStatus: string;
     supabaseHost: string | null;
     liveKitStatus: string;
+    authState: "authenticated" | "signed_out";
     activeView: string;
     activeCommunityId: string | null;
     activeChannelId: string | null;
@@ -58,10 +53,6 @@ export type SupportDiagnosticsPayload = Readonly<{
 export type SupportLogExportResult =
   | Readonly<{ ok: true; method: "native" | "browser"; canceled?: boolean }>
   | Readonly<{ ok: false; reason: string }>;
-
-function createReferenceId(): string {
-  return `feedback-${Date.now().toString(36)}`;
-}
 
 function createFileSafeTimestamp(): string {
   return new Date().toISOString().replace(/[:.]/g, "-");
@@ -101,33 +92,6 @@ export const feedbackService = {
       feedback: redactedFeedback,
       recentLogs: feedback?.includeLogs ? loggingService.getRecentLogs(75) : [],
       note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, privileged server keys, or private secrets."
-    };
-  },
-
-  submitPlaceholder(feedback: FeedbackDraft): FeedbackPlaceholderResult {
-    const referenceId = createReferenceId();
-    const diagnostics = feedback.includeDiagnostics ? this.createDiagnosticsPayload(feedback) : undefined;
-
-    loggingService.logInfo("Feedback placeholder captured locally.", {
-      referenceId,
-      issueType: feedback.issueType,
-      title: feedback.title,
-      includeDiagnostics: feedback.includeDiagnostics,
-      includeLogs: feedback.includeLogs,
-      diagnosticsSummary: diagnostics
-        ? {
-            environment: diagnostics.app.environment,
-            releaseChannel: diagnostics.app.releaseChannel,
-            dataSource: diagnostics.app.dataSource,
-            logCount: diagnostics.recentLogs.length
-          }
-        : undefined
-    }, "feedback");
-
-    return {
-      ok: true,
-      referenceId,
-      message: "Feedback placeholder saved locally. No report was sent yet."
     };
   },
 

@@ -27,6 +27,7 @@ export type DiagnosticsSnapshot = Readonly<{
     realtimeStatus: DiagnosticsRealtimeStatus;
     supabaseHost: string | null;
     liveKitStatus: "configured" | "not_configured";
+    authState: "authenticated" | "signed_out";
     activeView: string;
     activeCommunityId: string | null;
     activeChannelId: string | null;
@@ -40,7 +41,7 @@ export type DiagnosticsSnapshot = Readonly<{
 }>;
 
 let realtimeStatus: DiagnosticsRealtimeStatus = "unknown";
-let appContext = { activeView: "startup", activeCommunityId: null as string | null, activeChannelId: null as string | null };
+let appContext = { activeView: "startup", activeCommunityId: null as string | null, activeChannelId: null as string | null, authState: "signed_out" as "authenticated" | "signed_out" };
 
 function safeUrlHost(value: string): string | null {
   if (!value) return null;
@@ -80,8 +81,8 @@ export const diagnosticsService = {
     realtimeStatus = status;
   },
 
-  setAppContext(context: { activeView: string; activeCommunityId?: string | null; activeChannelId?: string | null }): void {
-    appContext = { activeView: context.activeView, activeCommunityId: context.activeCommunityId ?? null, activeChannelId: context.activeChannelId ?? null };
+  setAppContext(context: { activeView: string; activeCommunityId?: string | null; activeChannelId?: string | null; authState?: "authenticated" | "signed_out" }): void {
+    appContext = { activeView: context.activeView, activeCommunityId: context.activeCommunityId ?? null, activeChannelId: context.activeChannelId ?? null, authState: context.authState ?? appContext.authState };
   },
 
   getSnapshot(): DiagnosticsSnapshot {
@@ -108,6 +109,7 @@ export const diagnosticsService = {
         realtimeStatus,
         supabaseHost: safeUrlHost(appConfig.supabase.url),
         liveKitStatus: appConfig.liveKit.url ? "configured" : "not_configured",
+        authState: appContext.authState,
         activeView: appContext.activeView,
         activeCommunityId: appContext.activeCommunityId,
         activeChannelId: appContext.activeChannelId,

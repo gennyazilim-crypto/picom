@@ -378,8 +378,8 @@ export function App() {
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
   useEffect(() => {
-    diagnosticsService.setAppContext({ activeView, activeCommunityId: activeCommunity.id, activeChannelId: displayedActiveChannel.id });
-  }, [activeChannel.id, activeCommunity.id, activeView, displayedActiveChannel.id]);
+    diagnosticsService.setAppContext({ activeView, activeCommunityId: activeCommunity.id, activeChannelId: displayedActiveChannel.id, authState: authSession?.user ? "authenticated" : "signed_out" });
+  }, [activeChannel.id, activeCommunity.id, activeView, authSession, displayedActiveChannel.id]);
   const supabaseCommunitiesLoadedRef = useRef(false);
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());

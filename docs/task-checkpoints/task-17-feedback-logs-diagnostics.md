@@ -7,8 +7,9 @@ Implemented beta-ready local feedback, diagnostics, and logs surfaces.
 ## Delivered
 
 - Structured Feedback modal with all Full MVP issue categories.
-- Copy report and local submit placeholder actions.
+- Copy-only report flow; no backend submission is claimed or simulated.
 - Diagnostics copy/export with app, runtime, backend host-only, realtime, LiveKit, and active-view context.
+- Authentication is summarized only as `authenticated` or `signed_out`; no session or token data is included.
 - Redacted log viewer with level/source/text filters, copy, export, and clear.
 - Compatibility re-exports under `services/logging` and `services/diagnostics`.
 - No external support backend or analytics integration.

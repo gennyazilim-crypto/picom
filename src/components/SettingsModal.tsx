@@ -183,9 +183,9 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     includeDiagnostics,
     includeLogs
   });
-  const submitFeedbackPlaceholder = () => {
-    const result = feedbackService.submitPlaceholder(createFeedbackDraft());
-    pushToast(`${result.message} Ref: ${result.referenceId}`, "success");
+  const copyFeedbackReport = async () => {
+    const result = await feedbackService.copyReport(createFeedbackDraft());
+    pushToast(result.ok ? "Redacted feedback report copied. No report was sent." : result.reason, result.ok ? "success" : "error");
   };
   const exportDiagnostics = async () => {
     const result = await feedbackService.exportSupportDiagnostics(createFeedbackDraft());
@@ -894,7 +894,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <input type="checkbox" checked={includeLogs} onChange={(event) => setIncludeLogs(event.target.checked)} />
               </label>
               <div className="settings-actions-row">
-                <button onClick={submitFeedbackPlaceholder}>Save feedback placeholder</button>
+                <button onClick={() => void copyFeedbackReport()}>Copy feedback report</button>
                 <button onClick={exportDiagnostics}>Export diagnostics JSON</button>
               </div>
               {showAdminOperationsPlaceholder ? <AdminOperationsPanel /> : null}
