@@ -24,6 +24,14 @@ function readLocalRecord(userId: string): OnboardingRecord | null {
       followedUserIds: Array.isArray(parsed.followedUserIds)
         ? parsed.followedUserIds.filter((value): value is string => typeof value === "string")
         : [],
+      profile:
+        parsed.profile && typeof parsed.profile === "object"
+          ? {
+              displayName: typeof parsed.profile.displayName === "string" ? parsed.profile.displayName : "",
+              username: typeof parsed.profile.username === "string" ? parsed.profile.username : "",
+              statusText: typeof parsed.profile.statusText === "string" ? parsed.profile.statusText : "",
+            }
+          : null,
       provider: parsed.provider === "supabase" ? "supabase" : "mock",
     };
   } catch {
@@ -48,7 +56,7 @@ export const onboardingService = {
     if (source.isMock) {
       return {
         ok: true,
-        data: localRecord ?? { completed: false, completedAt: null, followedUserIds: [], provider: "mock" },
+        data: localRecord ?? { completed: false, completedAt: null, followedUserIds: [], profile: null, provider: "mock" },
       };
     }
 
@@ -57,7 +65,7 @@ export const onboardingService = {
 
     const { data, error } = await client
       .from("profiles")
-      .select("onboarding_completed,onboarding_completed_at")
+      .select("onboarding_completed,onboarding_completed_at,display_name,username,status_text")
       .eq("id", userId)
       .maybeSingle();
 
@@ -70,6 +78,11 @@ export const onboardingService = {
       completed: data.onboarding_completed,
       completedAt: data.onboarding_completed_at,
       followedUserIds: localRecord?.followedUserIds ?? [],
+      profile: {
+        displayName: data.display_name,
+        username: data.username,
+        statusText: data.status_text,
+      },
       provider: "supabase",
     };
     writeLocalRecord(userId, record);
@@ -79,6 +92,7 @@ export const onboardingService = {
   async complete(userId: string, input: OnboardingCompletion): Promise<OnboardingServiceResult<OnboardingRecord>> {
     const displayName = input.profile.displayName.trim();
     if (!displayName) return { ok: false, error: "Display name is required." };
+    const username = input.profile.username.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 32);
 
     const completedAt = new Date().toISOString();
     const source = dataSourceService.getStatus();
@@ -86,6 +100,7 @@ export const onboardingService = {
       completed: true,
       completedAt,
       followedUserIds: [...new Set(input.followedUserIds)],
+      profile: { ...input.profile, displayName, username },
       provider: source.isSupabase ? "supabase" : "mock",
     };
 
@@ -97,6 +112,7 @@ export const onboardingService = {
         .from("profiles")
         .update({
           display_name: displayName,
+          ...(username ? { username } : {}),
           status_text: input.profile.statusText.trim(),
           onboarding_completed: true,
           onboarding_completed_at: completedAt,

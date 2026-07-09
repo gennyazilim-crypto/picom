@@ -1,10 +1,11 @@
 import type { ThemeMode } from "../services/settingsService";
 
-export type OnboardingStepId = "welcome" | "profile" | "start" | "follow" | "theme" | "finish";
-export type OnboardingStartChoice = "createCommunity" | "joinInvite" | "mentionFeed" | "demoCommunity";
+export type OnboardingStepId = "profile" | "theme" | "community" | "follow" | "finish";
+export type OnboardingStartChoice = "createCommunity" | "joinInvite" | "mentionFeed";
 
 export type OnboardingProfileBasics = Readonly<{
   displayName: string;
+  username: string;
   statusText: string;
 }>;
 
@@ -20,5 +21,7 @@ export type OnboardingRecord = Readonly<{
   completed: boolean;
   completedAt: string | null;
   followedUserIds: string[];
+  profile: OnboardingProfileBasics | null;
   provider: "mock" | "supabase";
 }>;
+

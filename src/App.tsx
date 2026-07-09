@@ -34,7 +34,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
-import { FirstRunOnboarding } from "./components/onboarding/FirstRunOnboarding";
+import { OnboardingFlow } from "./components/onboarding/OnboardingFlow";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
@@ -1512,15 +1512,7 @@ export function App() {
     settingsService.updateSettings({ theme: completion.theme, profileSettings: nextProfileSettings });
     setOnboardingPhase("complete");
 
-    if (completion.startChoice === "createCommunity") {
-      setActiveView("community");
-      setCreateCommunityOpen(true);
-    } else if (completion.startChoice === "demoCommunity") {
-      setActiveView("community");
-    } else {
-      setActiveView("mentionFeed");
-      if (completion.startChoice === "joinInvite" && completion.inviteCode) setPendingInviteCode(completion.inviteCode);
-    }
+    setActiveView("mentionFeed");
     pushToast("Picom setup completed.", "success");
   }, [profileSettings, pushToast]);
 
@@ -1577,9 +1569,10 @@ export function App() {
       <>
         <DesktopAppShell>
           <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
-          <FirstRunOnboarding
+          <OnboardingFlow
             userId={authSession.user.id}
             initialDisplayName={authSession.user.displayName || profileSettings.displayName || currentUser.displayName}
+            initialUsername={currentUser.username}
             initialStatusText={profileSettings.statusText || currentUser.statusText}
             initialFollowedUserIds={followedUserIds}
             suggestions={mockFollowSuggestions}
