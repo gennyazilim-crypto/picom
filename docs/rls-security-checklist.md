@@ -4,7 +4,7 @@ Use this checklist before enabling API mode against Supabase environments beyond
 
 ## Scope
 
-This checklist applies to Picom's Supabase Auth, Postgres RLS, future Storage policies, and future Realtime subscriptions.
+This checklist applies to Picom's Supabase Auth, Postgres RLS, Storage policies, and Realtime subscriptions.
 
 ## Required checks
 
@@ -27,7 +27,7 @@ This checklist applies to Picom's Supabase Auth, Postgres RLS, future Storage po
 - [ ] Reaction inserts/deletes are limited to `user_id = auth.uid()`.
 - [ ] Manual member-only community access test has been run.
 - [ ] Manual private channel boundary test has been run.
-- [ ] Supabase Storage bucket policies are added before real file uploads are enabled.
+- [ ] Supabase Storage bucket policies are deployed and verified before real file uploads are enabled.
 - [ ] Realtime subscriptions reuse channel/message visibility rules.
 - [ ] Search endpoints do not return private channel messages to unauthorized users.
 - [ ] Logs and diagnostics redact tokens, auth headers, cookies, and session values.
@@ -49,10 +49,13 @@ This checklist applies to Picom's Supabase Auth, Postgres RLS, future Storage po
 
 ## Remaining MVP risks
 
-- Role-aware private channel permissions are not implemented yet.
-- Storage bucket policies are not implemented yet.
-- Realtime authorization still needs dedicated room/subscription checks.
-- Supabase CLI is not installed in the current local environment, so SQL tests are prepared but not automatically executed here.
+- Static policy files and smoke tests do not prove the deployed environment matches the repository.
+- Role permission JSON and hierarchy require live owner/admin/moderator/member tests.
+- Storage direct-object access and Realtime private-row denial require dedicated staging/production-safe checks.
+- Mention Feed/profile aggregation must preserve source channel visibility.
+- Supabase CLI is not installed in the current local environment, so prepared pgTAP SQL has not been executed here.
+
+Use `docs/production-rls-verification.md` for the current production-safe matrix and evidence rules.
 
 ## Release gate
 

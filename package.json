@@ -100,6 +100,7 @@
     "bots:foundation:smoke": "node scripts/bot-system-foundation-smoke-test.mjs",
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs",
     "supabase:rls:smoke": "node scripts/supabase-rls-smoke.mjs",
+    "supabase:rls:production-safe": "node scripts/rls-smoke-production-safe.mjs",
     "supabase:rls:test": "node scripts/supabase-rls-smoke.mjs --run",
     "webhooks:foundation:smoke": "node scripts/webhook-foundation-smoke-test.mjs",
     "slash:commands:smoke": "node scripts/slash-commands-placeholder-smoke-test.mjs",
