@@ -7,6 +7,7 @@ import { getMockProfileForMember } from "./data/mockProfiles";
 import { mockDirectConversations } from "./data/mockDirectMessages";
 import { mockFriendState } from "./data/mockFriends";
 import { mockUpcomingEvents } from "./data/mockEvents";
+import { communityEventService, type CreateCommunityEventInput } from "./services/communityEventService";
 import { mockFollowedUserStories } from "./data/mockStories";
 import { mockFollowSuggestions } from "./data/mockFollowSuggestions";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
@@ -279,6 +280,7 @@ export function App() {
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
   const [savedMessages, setSavedMessages] = useState<SavedMessageRecord[]>(() => savedMessageService.listSavedMessages());
+  const [communityEvents, setCommunityEvents] = useState(mockUpcomingEvents);
   const [feedVoiceState, setFeedVoiceState] = useState<MockVoiceState>({
     isInVoiceRoom: true,
     roomName: "Focus Room",
@@ -1473,6 +1475,9 @@ export function App() {
     pushToast(item.title, "info");
   }, [openDirectMessages, pushToast, switchCommunity]);
 
+  const createCommunityEvent = useCallback(async (input: CreateCommunityEventInput) => { const event=await communityEventService.createEvent(input);if(event){setCommunityEvents((current)=>[event,...current]);pushToast("Event created.","success");}else pushToast("Event could not be created.","error"); },[pushToast]);
+  const cancelCommunityEvent = useCallback(async (eventId:string) => { if(await communityEventService.cancelEvent(eventId)){setCommunityEvents((current)=>current.map((event)=>event.id===eventId?{...event,cancelledAt:new Date().toISOString()}:event));pushToast("Event cancelled.","success");} },[pushToast]);
+
   const openFriends = useCallback(() => {
     setActiveView("friends");
     closeTransientOverlays();
@@ -1958,7 +1963,7 @@ export function App() {
                 items={mentionItems}
                 communities={communities}
                 friends={friendState.friends}
-                events={mockUpcomingEvents}
+                events={communityEvents}
                 stories={storyItems}
                 voiceState={feedVoiceState}
                 followedUserIds={followedUserIds}
@@ -2080,6 +2085,9 @@ export function App() {
                 onClearPendingInviteCode={() => setPendingInviteCode(null)}
                 onInviteAccepted={handleInviteAccepted}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
+                events={communityEvents}
+                onCreateEvent={(input) => void createCommunityEvent(input)}
+                onCancelEvent={(eventId) => void cancelCommunityEvent(eventId)}
                 onCreateCategory={(name) => {
                   const category = addCategory({ communityId: activeCommunity.id, name });
                   pushToast(`${category.name} category created locally.`, "success");

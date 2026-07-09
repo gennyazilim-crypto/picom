@@ -5,7 +5,7 @@ import { reportService } from "../../services/reportService";
 import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 
-export type AdminSectionId = "overview" | "community-settings" | "channels" | "roles" | "members" | "invites" | "moderation" | "audit-log" | "danger-zone";
+export type AdminSectionId = "overview" | "community-settings" | "channels" | "roles" | "members" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
 
 export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string; permission?: CommunityAccess["permissions"][number]; ownerOnly?: boolean; icon: IconName }> = [
@@ -15,6 +15,7 @@ export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string;
   { id: "roles", label: "Roles", permission: "manageRoles", icon: "lock" },
   { id: "members", label: "Members", permission: "manageMembers", icon: "users" },
   { id: "invites", label: "Invites", permission: "createInvites", icon: "send" },
+  { id: "events", label: "Events", permission: "manageCommunity", icon: "bell" },
   { id: "moderation", label: "Moderation", permission: "moderateMessages", icon: "bell" },
   { id: "audit-log", label: "Audit Log", permission: "viewAuditLog", icon: "inbox" },
   { id: "danger-zone", label: "Danger Zone", ownerOnly: true, icon: "trash" },

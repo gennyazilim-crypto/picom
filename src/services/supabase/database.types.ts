@@ -151,6 +151,11 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["message_reactions"]["Row"]>;
         Relationships: [];
       };
+      community_events: {
+        Row: { id:string;community_id:string;channel_id:string|null;title:string;description:string;starts_at:string;ends_at:string|null;created_by:string;cancelled_at:string|null;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["community_events"]["Row"]> & Pick<Database["public"]["Tables"]["community_events"]["Row"],"community_id"|"title"|"starts_at"|"created_by">;
+        Update: Partial<Database["public"]["Tables"]["community_events"]["Row"]>;Relationships:[];
+      };
       saved_messages: {
         Row: { id: string; user_id: string; message_id: string; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["saved_messages"]["Row"]> & Pick<Database["public"]["Tables"]["saved_messages"]["Row"], "user_id" | "message_id">;
