@@ -4,10 +4,10 @@
 
 | Field | Value |
 | --- | --- |
-| Version | `0.1.0-beta` placeholder |
+| Version | `0.1.1-beta.1` |
 | Channel | Beta |
 | Product | Picom desktop community chat |
-| Build | Unsigned local/test candidate |
+| Build | Unsigned private beta patch candidate |
 
 ## Supported platforms
 
@@ -140,4 +140,3 @@ Never include passwords, authorization headers, session tokens, Supabase service
 - [Windows smoke test](windows-smoke-test.md)
 - [Linux smoke test](linux-smoke-test.md)
 - [macOS smoke test](macos-smoke-test.md)
-

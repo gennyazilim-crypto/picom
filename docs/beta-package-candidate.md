@@ -2,23 +2,23 @@
 
 ## Candidate status
 
-Picom `0.1.0` is source-, configuration-, and Windows-package-ready for an unsigned local beta candidate. TypeScript, mock-mode smoke, renderer/Electron production build, packaging configuration verification, and Windows NSIS packaging pass on Windows.
+Picom `0.1.1-beta.1` is source-, configuration-, and Windows-package-ready as an unsigned private beta patch candidate. TypeScript, targeted blocker smoke tests, mock-mode smoke, renderer/Electron production build, packaging configuration verification, and Windows NSIS packaging pass on Windows.
 
 The initial 2026-07-09 package attempt was blocked by stale Picom Vite/Electron processes holding the electron-builder output. After those project-specific processes and incomplete `.tmp` directories were closed/cleared, the standard `npm run package:win` command completed successfully.
 
 Windows candidate:
 
-- Installer: `release/Picom-0.1.0-Windows-x64.exe`
-- Installer size: `120374587` bytes
-- SHA-256: `2461CE1C18CEEFD0003FB85B4212BB1DE084AAAC2E3BAE9BE6F77B98CC63230C`
-- Block map: `release/Picom-0.1.0-Windows-x64.exe.blockmap`
+- Installer: `release/Picom-0.1.1-beta.1-Windows-x64.exe`
+- Installer size: `120375860` bytes
+- SHA-256: `35B558C25F6BC6F0E2BAE812A707655B051995B83028B9E2D7567137A806AFA0`
+- Block map: `release/Picom-0.1.1-beta.1-Windows-x64.exe.blockmap`
 - Unpacked executable: `release/win-unpacked/Picom.exe`
 
 ## Verified metadata and security
 
 | Item | Verified value |
 | --- | --- |
-| Package name/version | `picom` / `0.1.0` |
+| Package name/version | `picom` / `0.1.1-beta.1` |
 | Product name | `Picom` |
 | Application ID | `com.picom.desktop` |
 | Main entry | `dist-electron/main.cjs` |
@@ -59,7 +59,7 @@ npm run package:windows
 
 Expected output:
 
-- `release/Picom-0.1.0-Windows-x64.exe`
+- `release/Picom-0.1.1-beta.1-Windows-x64.exe`
 - `release/win-unpacked/`
 
 If `EPERM` occurs during the `win-unpacked.tmp` rename:
@@ -81,7 +81,7 @@ npm run package:linux:appimage
 npm run package:linux:deb
 ```
 
-Expected outputs are `Picom-0.1.0-Linux-x86_64.AppImage` and a Debian package in `release/`. Linux artifacts are not claimed from the Windows run.
+Expected outputs are `Picom-0.1.1-beta.1-Linux-x86_64.AppImage` and a Debian package in `release/`. Linux artifacts are not claimed from the Windows run.
 
 ### macOS x64
 
@@ -93,7 +93,7 @@ npm run package:mac:dmg
 npm run package:mac:zip
 ```
 
-Expected outputs are `Picom-0.1.0-macOS-x64.dmg` and `.zip` in `release/`. macOS packaging, signing, notarization, microphone permission, and screen-recording permission checks require macOS hardware or a macOS CI runner.
+Expected outputs are `Picom-0.1.1-beta.1-macOS-x64.dmg` and `.zip` in `release/`. macOS packaging, signing, notarization, microphone permission, and screen-recording permission checks require macOS hardware or a macOS CI runner.
 
 ## Beta environment
 

@@ -22,7 +22,7 @@ const gitCommit = import.meta.env.VITE_GIT_COMMIT ?? "local";
 
 export const appConfig = Object.freeze({
   name: import.meta.env.VITE_APP_NAME ?? "Picom",
-  version: import.meta.env.VITE_APP_VERSION ?? "0.1.0",
+  version: import.meta.env.VITE_APP_VERSION ?? "0.1.1-beta.1",
   identifier: import.meta.env.VITE_APP_IDENTIFIER ?? "com.picom.desktop",
   environment,
   releaseChannel: getReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment),
