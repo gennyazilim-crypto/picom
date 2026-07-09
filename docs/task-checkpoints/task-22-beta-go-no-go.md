@@ -6,7 +6,7 @@ A canonical Full MVP beta decision checklist now separates blockers, verificatio
 
 ## Current status
 
-The current record remains `NO-GO`. Windows packaging now succeeds for artifact SHA-256 `208BB16DE5A32D097017E727E83C36134C4DD22B7EBF5880004063862C44ADB3`, but clean-account package launch, native Linux/macOS launch, and live Supabase/RLS/LiveKit validation remain incomplete. The checklist now provides the exact closure order.
+The current record remains `NO-GO`. Windows packaging now succeeds for the new-icon artifact SHA-256 `2461CE1C18CEEFD0003FB85B4212BB1DE084AAAC2E3BAE9BE6F77B98CC63230C`, but clean-account package launch, native Linux/macOS launch, and live Supabase/RLS/LiveKit validation remain incomplete. The checklist now provides the exact closure order.
 
 ## Files
 

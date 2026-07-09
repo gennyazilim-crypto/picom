@@ -21,7 +21,7 @@ An unverified blocker is treated as failed. Documentation of a platform gap does
 | Version | `0.1.0-beta` placeholder |
 | Channel | Beta |
 | Reason | Windows installer now builds, but clean-account package launch plus Supabase staging/RLS, LiveKit two-client voice, and screen-share checks remain unverified |
-| Current Windows artifact | `Picom-0.1.0-Windows-x64.exe` / SHA-256 `208BB16DE5A32D097017E727E83C36134C4DD22B7EBF5880004063862C44ADB3` |
+| Current Windows artifact | `Picom-0.1.0-Windows-x64.exe` / SHA-256 `2461CE1C18CEEFD0003FB85B4212BB1DE084AAAC2E3BAE9BE6F77B98CC63230C` |
 | Decision owner | Pending |
 
 This record must be updated by the release owner after all required evidence is attached.

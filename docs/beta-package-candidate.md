@@ -9,8 +9,8 @@ The initial 2026-07-09 package attempt was blocked by stale Picom Vite/Electron 
 Windows candidate:
 
 - Installer: `release/Picom-0.1.0-Windows-x64.exe`
-- Installer size: `120817642` bytes
-- SHA-256: `208BB16DE5A32D097017E727E83C36134C4DD22B7EBF5880004063862C44ADB3`
+- Installer size: `120374587` bytes
+- SHA-256: `2461CE1C18CEEFD0003FB85B4212BB1DE084AAAC2E3BAE9BE6F77B98CC63230C`
 - Block map: `release/Picom-0.1.0-Windows-x64.exe.blockmap`
 - Unpacked executable: `release/win-unpacked/Picom.exe`
 
