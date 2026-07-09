@@ -46,6 +46,7 @@ import { DirectMessagesView } from "./components/DirectMessagesView";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { relationshipService } from "./services/relationshipService";
+import { advancedSearchService } from "./services/advancedSearchService";
 import { FriendsView } from "./components/FriendsView";
 import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
@@ -1168,68 +1169,27 @@ export function App() {
       },
     ];
 
-    communities.forEach((community) => {
+    const searchResults = advancedSearchService.searchLocal(paletteQuery, communities, mentionItems, currentUserId);
+    for (const result of searchResults) {
       all.push({
-        id: `community-${community.id}`,
-        group: "Communities",
-        label: community.name,
-        detail: "Switch community",
+        id: result.id, group: result.category, label: result.label, detail: result.detail,
         run: () => {
-          switchCommunity(community.id);
+          if (result.category === "People" && result.userId) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
+          else if (result.category === "Communities" && result.communityId) { setActiveView("community"); switchCommunity(result.communityId); }
+          else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Media")) {
+            const community = communities.find((item) => item.id === result.communityId);
+            const message = community?.messages.find((item) => item.id === result.messageId);
+            if (community && message) jumpToMessage(community, message); else { setActiveView("community"); switchCommunity(result.communityId, result.channelId); setActiveChannelId(result.channelId); }
+          } else if (result.communityId && result.channelId) { setActiveView("community"); switchCommunity(result.communityId, result.channelId); setActiveChannelId(result.channelId); clearChannelUnread({ communityId: result.communityId, channelId: result.channelId }); }
           closePalette();
         },
       });
-
-      community.categories
-        .flatMap((category) => category.channels)
-        .forEach((channel) =>
-          all.push({
-            id: `channel-${channel.id}`,
-            group: "Channels",
-            label: `#${channel.name}`,
-            detail: community.name,
-            run: () => {
-              switchCommunity(community.id);
-              setActiveChannelId(channel.id);
-              clearChannelUnread({ communityId: community.id, channelId: channel.id });
-              closePalette();
-            },
-          }),
-        );
-
-      community.members.forEach((member) =>
-        all.push({
-          id: `member-${community.id}-${member.id}`,
-          group: "Members",
-          label: member.displayName,
-          detail: `@${member.username}`,
-          run: () => {
-            switchCommunity(community.id);
-            closePalette();
-            pushToast(`${member.displayName} profile can be opened from the member list.`, "info");
-          },
-        }),
-      );
-
-      community.messages.slice(0, 12).forEach((message) =>
-        all.push({
-          id: `message-${community.id}-${message.id}`,
-          group: "Messages",
-          label: message.body.slice(0, 54),
-          detail: community.name,
-          run: () => {
-            jumpToMessage(community, message);
-            closePalette();
-            pushToast("Opened message in channel.", "success");
-          },
-        }),
-      );
-    });
+    }
 
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, openSettings, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
+  }, [activeView, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, mentionItems, openSettings, paletteQuery, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");
