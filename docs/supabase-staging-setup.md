@@ -19,6 +19,11 @@ Server/Edge Function secrets only:
 - `LIVEKIT_API_KEY`
 - `LIVEKIT_API_SECRET`
 
+CLI/operator values only:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_REF`
+
 The service-role key, database password, LiveKit API key, and LiveKit secret must never use a `VITE_` prefix, enter Electron renderer code, appear in logs, or be committed.
 
 ## 1. Install and authenticate the CLI
@@ -28,6 +33,7 @@ Install the open-source Supabase CLI using an official supported method for the 
 ```powershell
 supabase --version
 supabase login
+npm run supabase:status
 ```
 
 If the CLI is unavailable, stop at documentation/static smoke checks. Do not claim migrations, RLS, Storage, Realtime, or functions were deployed.
@@ -52,6 +58,7 @@ Review migrations and create a staging backup/snapshot before future destructive
 ```powershell
 supabase db push
 supabase migration list
+npm run supabase:db:push
 ```
 
 The current migration chain covers profiles, communities, roles, membership, channels, messages, attachments, reactions, read state, RLS, Storage, Realtime publication, public visitor boundaries, first-run onboarding, and community invites.
@@ -115,9 +122,12 @@ supabase functions deploy validate-file
 supabase functions deploy moderation-helper
 supabase functions deploy notification-fanout
 supabase functions deploy client-config
+npm run supabase:functions:deploy
 ```
 
 Confirm `livekit-token`, invite, upload-validation, moderation, notification, and client config functions reject unauthenticated or unauthorized requests as designed.
+
+The package script deploys only `livekit-token` as the Full MVP staging token function. Deploy any additional reviewed function explicitly; do not turn an undocumented bulk deployment into a release step.
 
 ## 9. Generate TypeScript types
 

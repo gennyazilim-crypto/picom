@@ -11,6 +11,7 @@ Prepared the staging runbook and secret-safe environment examples. No remote Sup
 - Renderer/public versus Edge/server secret boundary.
 - `picom://auth/callback` local Supabase config allowlist.
 - Server-only `supabase/.env.example` with empty placeholders.
+- CLI-only access token/project-ref placeholders and safe `supabase:status`, `supabase:db:push`, and LiveKit-token deploy scripts.
 
 ## Manual work remaining
 
