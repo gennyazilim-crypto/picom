@@ -11,6 +11,7 @@ Implemented product-level legal placeholders and beta acceptance UI.
 - Settings > Legal document index.
 - Terms, Privacy, Community Guidelines, Acceptable Use, and legal-review-required documents.
 - Explicit non-final, non-legal-advice labeling throughout.
+- Canonical `*-draft.md` documents and international legal-review notes for GDPR, DSA, age, copyright/DMCA, jurisdiction, retention, export, and deletion questions.
 
 ## Deferred intentionally
 
