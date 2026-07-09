@@ -57,20 +57,23 @@ Use read-only checks unless explicitly approved otherwise.
 
 ```sql
 -- Core table existence placeholders
-select count(*) from users;
-select count(*) from communities;
-select count(*) from channels;
-select count(*) from messages;
-select count(*) from attachments;
-select count(*) from roles;
-select count(*) from community_members;
-select count(*) from audit_logs;
+select count(*) from auth.users;
+select count(*) from public.profiles;
+select count(*) from public.communities;
+select count(*) from public.channels;
+select count(*) from public.messages;
+select count(*) from public.attachments;
+select count(*) from public.roles;
+select count(*) from public.community_members;
+
+-- Optional/future tables must be detected before querying.
+select to_regclass('public.audit_logs') as audit_logs_table;
 
 -- Relationship checks placeholders
-select count(*) from messages m left join channels c on c.id = m.channel_id where c.id is null;
-select count(*) from channels ch left join communities co on co.id = ch.community_id where co.id is null;
-select count(*) from community_members cm left join users u on u.id = cm.user_id where u.id is null;
-select count(*) from attachments a left join messages m on m.id = a.message_id where m.id is null;
+select count(*) from public.messages m left join public.channels c on c.id = m.channel_id where c.id is null;
+select count(*) from public.channels ch left join public.communities co on co.id = ch.community_id where co.id is null;
+select count(*) from public.community_members cm left join auth.users u on u.id = cm.user_id where u.id is null;
+select count(*) from public.attachments a left join public.messages m on m.id = a.message_id where m.id is null;
 ```
 
 Adapt table names to the active Supabase schema if names differ.
@@ -83,7 +86,7 @@ Adapt table names to the active Supabase schema if names differ.
 - Recent messages load.
 - Upload metadata exists.
 - Roles/permissions load.
-- Audit logs load and remain immutable.
+- Audit logs load and remain immutable if that optional table is deployed.
 - Community members point to valid users.
 - Messages point to valid channels.
 - Attachments point to valid messages.
@@ -106,6 +109,7 @@ Run against the restored staging environment:
 11. Windows desktop app connects to restored staging API.
 12. Linux desktop app connects to restored staging API.
 13. macOS desktop app connects if macOS release is in scope.
+14. Storage object existence/private access is verified separately from attachment metadata.
 
 ## Rollback if restore fails
 

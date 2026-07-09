@@ -144,6 +144,36 @@ Kill switches are not a substitute for permissions or RLS. They are a fast avail
 - Do not delete uploaded objects during incident response unless explicitly approved.
 - If malware/quarantine status is involved, keep suspicious files blocked.
 - Verify signed/public URL behavior after policy rollback.
+- Database restore does not restore missing Storage object bytes; use the separate object recovery plan.
+- Preserve object writes/evidence before changing policies or lifecycle rules.
+
+## Edge Function rollback
+
+1. Identify the failing function and deployed version/source commit.
+2. Confirm its database/RLS/secret contract remains compatible with the previous bundle.
+3. Redeploy the previous reviewed function bundle from protected release source.
+4. Do not copy old secrets from logs; use current approved secret store values or rotate them.
+5. Re-run JWT denial, authorization, CORS, redaction, and functional smoke.
+6. Keep dependent desktop feature disabled/unavailable until verification passes.
+
+## LiveKit configuration rollback
+
+1. Disable voice/screen-share entry points if token/room authorization or provider connectivity is unsafe.
+2. Revert Function/provider configuration to the last documented known-good values through protected control planes.
+3. Rotate LiveKit API credentials immediately for suspected exposure.
+4. Verify room naming, Supabase identity, token TTL/grants, two-user audio, screen share, and leave cleanup.
+5. Core text chat must remain available or clearly degraded while LiveKit is disabled.
+
+Live rooms/media are ephemeral; database restore does not restore an active voice room.
+
+## Known bad desktop build response
+
+1. Pause the affected release ring/channel and remove the bad artifact from normal download surfaces without destroying evidence.
+2. Publish a clear status notice with platform/version/symptom and whether user action is required.
+3. Verify the previous artifact checksum/provenance and backend minimum-version compatibility.
+4. Provide manual uninstall/reinstall instructions because production auto-update is not part of Full MVP.
+5. Do not ask users to delete local data unless corruption is proven and recovery impact is explained.
+6. Monitor remaining bad-version sessions/reports and prepare a hotfix if rollback cannot reach users safely.
 
 ## Realtime compatibility considerations
 
@@ -184,3 +214,6 @@ Avoid speculating about root cause until confirmed.
 - `docs/production-deployment-checklist.md`
 - `docs/staging-smoke-test.md`
 - `docs/postmortem-template.md`
+- `docs/backup-restore-runbook.md`
+- `docs/database-restore-drill.md`
+- `docs/release-rollback-checklist.md`
