@@ -41,7 +41,8 @@ npm run package:linux:deb
 
 ## Runtime smoke checklist
 
-- Launch the AppImage or installed deb package.
+- Launch AppImage from a terminal and then through desktop integration if enabled.
+- Install deb on a disposable host; launch from terminal and the desktop application menu.
 - Confirm no native File/Edit/View/Window menu is visible.
 - Confirm the custom Picom titlebar is visible.
 - Confirm window controls work for the active Linux window manager where supported.
@@ -56,6 +57,18 @@ npm run package:linux:deb
 - Confirm mock message sending works.
 - Confirm light/dark theme toggles.
 - Confirm no mobile UI appears.
+- Confirm the Picom desktop entry, Network category, and icon are correct.
+- Run microphone and screen-share tests under each approved X11/Wayland session.
+- Quit and confirm no audio/screen capture remains.
+
+## Install and uninstall
+
+- Inspect deb metadata/contents before installation.
+- Verify clean install and prior-beta upgrade.
+- Identify the real package name, uninstall through the distro package manager, and verify desktop entry/binaries are removed.
+- Confirm unrelated user files are untouched and record retained Picom user data/cache.
+- Reinstall the prior approved artifact to prove manual rollback.
+- AppImage removal must delete only the artifact and explicit user-created integration entry.
 
 ## Supabase mode notes
 
@@ -74,3 +87,4 @@ npm run package:linux:deb
 - Linux tray, notification, microphone, and screen-share behavior can vary by desktop environment.
 - Package signing is not covered by this local smoke test.
 - rpm packaging is not configured in the current Electron builder config.
+- arm64, repository publishing/signing, AppStream metadata, and a final supported distro matrix are not configured.
