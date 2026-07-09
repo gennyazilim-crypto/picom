@@ -377,6 +377,9 @@ export function App() {
   const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
+  useEffect(() => {
+    diagnosticsService.setAppContext({ activeView, activeCommunityId: activeCommunity.id, activeChannelId: displayedActiveChannel.id });
+  }, [activeChannel.id, activeCommunity.id, activeView, displayedActiveChannel.id]);
   const supabaseCommunitiesLoadedRef = useRef(false);
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());

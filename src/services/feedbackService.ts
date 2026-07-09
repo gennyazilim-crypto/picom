@@ -1,8 +1,9 @@
 import { diagnosticsService } from "./diagnosticsService";
 import { fileService } from "./fileService";
 import { loggingService, type LogEntry } from "./loggingService";
+import { clipboardService } from "./clipboardService";
 
-export type FeedbackIssueType = "bug" | "crash" | "login" | "message" | "upload" | "voice" | "packaging" | "other";
+export type FeedbackIssueType = "crash" | "login_auth" | "messaging" | "upload" | "realtime" | "voice" | "screen_share" | "ui_layout" | "performance" | "packaging_install" | "security_concern" | "other" | "bug" | "login" | "message" | "packaging";
 
 export type FeedbackDraft = Readonly<{
   issueType: FeedbackIssueType;
@@ -37,6 +38,11 @@ export type SupportDiagnosticsPayload = Readonly<{
   };
   serviceStatus: {
     realtimeStatus: string;
+    supabaseHost: string | null;
+    liveKitStatus: string;
+    activeView: string;
+    activeCommunityId: string | null;
+    activeChannelId: string | null;
     lastApiError: null | {
       id: string;
       timestamp: string;
@@ -123,6 +129,17 @@ export const feedbackService = {
       referenceId,
       message: "Feedback placeholder saved locally. No report was sent yet."
     };
+  },
+
+  createReportText(feedback: FeedbackDraft): string {
+    const payload = feedback.includeDiagnostics
+      ? this.createDiagnosticsPayload(feedback)
+      : loggingService.redactDiagnosticsValue({ createdAt: new Date().toISOString(), feedback, recentLogs: feedback.includeLogs ? loggingService.getRecentLogs(75) : [] });
+    return JSON.stringify(payload, null, 2);
+  },
+
+  async copyReport(feedback: FeedbackDraft): Promise<{ ok: true } | { ok: false; reason: string }> {
+    return clipboardService.copyText(this.createReportText(feedback));
   },
 
   async exportSupportDiagnostics(feedback?: FeedbackDraft): Promise<SupportLogExportResult> {

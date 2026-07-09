@@ -26,6 +26,9 @@ import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { legalDocumentOrder, legalDocuments, type LegalDocumentId } from "../data/legalDocuments";
+import { FeedbackSection } from "./settings/FeedbackSection";
+import { DiagnosticsSection } from "./settings/DiagnosticsSection";
+import { LogsViewer } from "./settings/LogsViewer";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
@@ -82,7 +85,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [accountActivities, setAccountActivities] = useState<AccountActivityRecord[]>(() => accountActivityService.listRecent());
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
-  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Legal", "Advanced"];
+  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"];
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -734,6 +737,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                   <span>{binding.action}</span>
                 </div>
               ))}
+            </div>
+          ) : active === "Diagnostics" ? (
+            <div className="settings-diagnostics-stack">
+              <FeedbackSection onNotice={pushToast} />
+              <DiagnosticsSection onNotice={pushToast} />
+              <LogsViewer onNotice={pushToast} />
             </div>
           ) : active === "Legal" ? (
             <div className="legal-settings-panel">

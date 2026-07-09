@@ -19,11 +19,17 @@ export type DiagnosticsSnapshot = Readonly<{
   runtime: {
     userAgent: string;
     platform: string;
+    electronVersion: string | null;
     language: string;
     online: boolean;
   };
   serviceStatus: {
     realtimeStatus: DiagnosticsRealtimeStatus;
+    supabaseHost: string | null;
+    liveKitStatus: "configured" | "not_configured";
+    activeView: string;
+    activeCommunityId: string | null;
+    activeChannelId: string | null;
     lastApiError: null | {
       id: string;
       timestamp: string;
@@ -34,6 +40,12 @@ export type DiagnosticsSnapshot = Readonly<{
 }>;
 
 let realtimeStatus: DiagnosticsRealtimeStatus = "unknown";
+let appContext = { activeView: "startup", activeCommunityId: null as string | null, activeChannelId: null as string | null };
+
+function safeUrlHost(value: string): string | null {
+  if (!value) return null;
+  try { return new URL(value).host; } catch { return null; }
+}
 
 function safeNavigatorValue<K extends keyof Navigator>(key: K, fallback: string): string {
   if (typeof navigator === "undefined") return fallback;
@@ -68,6 +80,10 @@ export const diagnosticsService = {
     realtimeStatus = status;
   },
 
+  setAppContext(context: { activeView: string; activeCommunityId?: string | null; activeChannelId?: string | null }): void {
+    appContext = { activeView: context.activeView, activeCommunityId: context.activeCommunityId ?? null, activeChannelId: context.activeChannelId ?? null };
+  },
+
   getSnapshot(): DiagnosticsSnapshot {
     return {
       app: {
@@ -84,11 +100,17 @@ export const diagnosticsService = {
       runtime: {
         userAgent: safeNavigatorValue("userAgent", "unknown"),
         platform: safeNavigatorValue("platform", "unknown"),
+        electronVersion: typeof window === "undefined" ? null : window.picomDesktop?.getRuntimeInfo().versions.electron ?? null,
         language: safeNavigatorValue("language", "en"),
         online: isOnline()
       },
       serviceStatus: {
         realtimeStatus,
+        supabaseHost: safeUrlHost(appConfig.supabase.url),
+        liveKitStatus: appConfig.liveKit.url ? "configured" : "not_configured",
+        activeView: appContext.activeView,
+        activeCommunityId: appContext.activeCommunityId,
+        activeChannelId: appContext.activeChannelId,
         lastApiError: getLastApiError()
       }
     };

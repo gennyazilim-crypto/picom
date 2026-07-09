@@ -1,0 +1,14 @@
+import { useState } from "react";
+import { diagnosticsService } from "../../services/diagnosticsService";
+import { feedbackService, type FeedbackDraft } from "../../services/feedbackService";
+import { clipboardService } from "../../services/clipboardService";
+import { AppIcon } from "../AppIcon";
+
+const diagnosticsDraft: FeedbackDraft = { issueType: "other", title: "Picom diagnostics", description: "User-requested diagnostics export.", includeDiagnostics: true, includeLogs: true };
+
+export function DiagnosticsSection({ onNotice }: { onNotice: (message: string, tone?: "info" | "success" | "error") => void }) {
+  const [snapshot, setSnapshot] = useState(() => diagnosticsService.getSnapshot());
+  const copy = async () => { const result = await clipboardService.copyText(JSON.stringify(feedbackService.createDiagnosticsPayload(diagnosticsDraft), null, 2)); onNotice(result.ok ? "Diagnostics copied." : result.reason, result.ok ? "success" : "error"); };
+  const exportFile = async () => { const result = await feedbackService.exportSupportDiagnostics(diagnosticsDraft); onNotice(result.ok ? (result.canceled ? "Diagnostics export canceled." : `Diagnostics exported via ${result.method}.`) : result.reason, result.ok && !result.canceled ? "success" : "info"); };
+  return <section className="diagnostics-section"><header><div><p className="eyebrow">Support snapshot</p><h3>Diagnostics</h3></div><button type="button" onClick={() => setSnapshot(diagnosticsService.getSnapshot())}>Refresh</button></header><div className="diagnostics-grid"><article><span>Version</span><strong>{snapshot.app.version} · {snapshot.app.releaseChannel}</strong></article><article><span>Platform</span><strong>{snapshot.runtime.platform}</strong></article><article><span>Electron</span><strong>{snapshot.runtime.electronVersion ?? "Browser fallback"}</strong></article><article><span>Data source</span><strong>{snapshot.app.dataSource}</strong></article><article><span>Supabase host</span><strong>{snapshot.serviceStatus.supabaseHost ?? "Not configured"}</strong></article><article><span>Realtime</span><strong>{snapshot.serviceStatus.realtimeStatus}</strong></article><article><span>LiveKit</span><strong>{snapshot.serviceStatus.liveKitStatus}</strong></article><article><span>Current view</span><strong>{snapshot.serviceStatus.activeView}</strong></article></div><p className="diagnostics-privacy-note"><AppIcon name="lock" size="sm" /> Secrets, passwords, tokens, cookies, private keys, and authorization headers are excluded.</p><div className="settings-actions-row"><button type="button" onClick={() => void copy()}>Copy diagnostics</button><button type="button" onClick={() => void exportFile()}>Export diagnostics</button></div></section>;
+}
