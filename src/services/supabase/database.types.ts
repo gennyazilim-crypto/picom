@@ -151,6 +151,11 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["message_reactions"]["Row"]>;
         Relationships: [];
       };
+      blocked_users: {
+        Row: { id: string; blocker_id: string; blocked_user_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["blocked_users"]["Row"]> & Pick<Database["public"]["Tables"]["blocked_users"]["Row"], "blocker_id" | "blocked_user_id">;
+        Update: Partial<Database["public"]["Tables"]["blocked_users"]["Row"]>; Relationships: [];
+      };
       user_follows: {
         Row: { id: string; follower_id: string; followed_id: string; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["user_follows"]["Row"]> & Pick<Database["public"]["Tables"]["user_follows"]["Row"], "follower_id" | "followed_id">;
@@ -222,6 +227,7 @@ export type Database = {
       };
     };
     Functions: {
+      users_are_blocked: { Args: { first_user_id: string; second_user_id: string }; Returns: boolean };
       respond_friend_request: { Args: { target_request_id: string; accept_request: boolean }; Returns: boolean };
       remove_friend: { Args: { other_user_id: string }; Returns: boolean };
       create_direct_conversation: { Args: { other_user_id: string }; Returns: string };

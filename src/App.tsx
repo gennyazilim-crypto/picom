@@ -1404,6 +1404,7 @@ export function App() {
   }, [activeView, closeTransientOverlays]);
 
   const openDirectMessages = useCallback((userId?: string) => {
+    if (userId && !userBlockingService.canMessageUser(userId)) { pushToast("Unblock this user before opening a direct message.", "error"); return; }
     if (userId) {
       const existing = directConversations.find((candidate) => candidate.participantUserId === userId);
       if (existing) {
@@ -1423,16 +1424,18 @@ export function App() {
     }
     setActiveView("directMessages");
     closeTransientOverlays();
-  }, [closeTransientOverlays, communities, directConversations]);
+  }, [closeTransientOverlays, communities, directConversations, pushToast]);
 
   const sendDirectMessageLocal = useCallback((conversationId: string, body: string) => {
+    const conversation = directConversations.find((candidate) => candidate.id === conversationId);
+    if (conversation && !userBlockingService.canMessageUser(conversation.participantUserId)) { pushToast("Direct messages with this blocked user are disabled.", "error"); return; }
     const createdAt = new Date().toISOString();
     const clientMessageId = `dm-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? {
       ...conversation, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0,
       messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: currentUserId, body, createdAt }],
     } : conversation));
-  }, []);
+  }, [directConversations, pushToast]);
 
   const handleDirectRealtimeInsert = useCallback((message: DirectConversation["messages"][number]) => {
     setDirectConversations((current) => current.map((conversation) => {
@@ -2027,6 +2030,7 @@ export function App() {
               onOpenMore={(event, profile) => openContext(event, [
                 { label: profile.isCurrentUser ? "Edit profile placeholder" : "Message placeholder" },
                 { label: profile.isFollowing ? "Unfollow locally" : "Follow locally", onSelect: () => toggleFollowUser(profile.id), disabled: profile.isCurrentUser },
+                { label: blockedUserIds.includes(profile.id) ? "Unblock user" : "Block user", onSelect: () => { if (selectedProfileMember) handleToggleBlockUser(selectedProfileMember); }, disabled: profile.isCurrentUser },
                 { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
               ])}
             />

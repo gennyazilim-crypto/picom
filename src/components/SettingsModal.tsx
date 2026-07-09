@@ -528,7 +528,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <article className="security-card">
                   <span>Blocked users</span>
                   <strong>{blockedUsers.length}</strong>
-                  <small>Messages from blocked users can be collapsed later. DMs and friend requests are backend TODOs.</small>
+                  <small>Community messages are collapsed and direct messages are disabled for blocked users.</small>
                 </article>
                 <article className="security-card">
                   <span>Online status</span>
@@ -548,8 +548,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Who can DM me placeholder</strong>
-                  <small>Prepared for future direct messages; no DM backend is enabled by this setting.</small>
+                  <strong>Who can message me</strong>
+                  <small>Controls who may start a private conversation. Backend RLS remains authoritative.</small>
                 </span>
                 <select value={safetySettings.whoCanDmMe} onChange={(event) => updateSafetySettings({ whoCanDmMe: event.target.value as UserSafetySettings["whoCanDmMe"] })}>
                   <option value="everyone">Everyone</option>
@@ -560,13 +560,13 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Who can send friend requests placeholder</strong>
-                  <small>Prepared for future friends backend; existing community chat is unchanged.</small>
+                  <strong>Who can send friend requests</strong>
+                  <small>Controls incoming friend requests while preserving existing community access.</small>
                 </span>
                 <select value={safetySettings.whoCanSendFriendRequests} onChange={(event) => updateSafetySettings({ whoCanSendFriendRequests: event.target.value as UserSafetySettings["whoCanSendFriendRequests"] })}>
                   <option value="everyone">Everyone</option>
                   <option value="community_members">Community members</option>
-                  <option value="friends_of_friends_placeholder">Friends of friends placeholder</option>
+                  <option value="friends_of_friends_placeholder">Friends of friends</option>
                   <option value="nobody">Nobody</option>
                 </select>
               </label>
@@ -587,7 +587,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               <div className="settings-status-card" aria-label="Blocked users list">
                 <span>Blocked users</span>
                 <strong>{blockedUsers.length ? "Manage locally" : "No blocked users"}</strong>
-                <small>Blocking is local placeholder state until Supabase-backed safety rules are enabled.</small>
+                <small>Blocked users are enforced locally and synchronized through Supabase RLS when connected.</small>
                 <div className="session-list">
                   {blockedUsers.length ? blockedUsers.map((blockedUser) => (
                     <article key={blockedUser.userId} className="session-card">
