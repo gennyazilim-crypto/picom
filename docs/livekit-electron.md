@@ -30,7 +30,7 @@ src/services/voiceService.ts
 
 - `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` stay in Supabase function secret storage.
 - Tokens are runtime values only and should not be stored in local settings, diagnostics, logs, or screenshots.
-- Room names use `picom:{communityId}:{channelId}` and must not include private user data.
+- Room names use `community:{communityId}:voice:{channelId}` and must not include private user data.
 - Screen capture must use a future Electron preload/main bridge. React components must not call `desktopCapturer` directly.
 
 ## Failure handling
