@@ -47,6 +47,8 @@ import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { relationshipService } from "./services/relationshipService";
 import { advancedSearchService } from "./services/advancedSearchService";
+import { savedMessageService, type SavedMessageRecord } from "./services/savedMessageService";
+import { SavedMessagesView } from "./components/SavedMessagesView";
 import { FriendsView } from "./components/FriendsView";
 import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
@@ -140,7 +142,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages" | "friends";
+type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages";
 
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
   status: "idle",
@@ -276,6 +278,7 @@ export function App() {
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
+  const [savedMessages, setSavedMessages] = useState<SavedMessageRecord[]>(() => savedMessageService.listSavedMessages());
   const [feedVoiceState, setFeedVoiceState] = useState<MockVoiceState>({
     isInVoiceRoom: true,
     roomName: "Focus Room",
@@ -1157,6 +1160,7 @@ export function App() {
           closePalette();
         },
       },
+      { id: "cmd-saved-messages", group: "Navigation", label: "Open saved messages", detail: "Private bookmarks", run: () => { setActiveView("savedMessages"); closeTransientOverlays(); closePalette(); } },
       {
         id: "cmd-create-community",
         group: "Actions",
@@ -1230,9 +1234,19 @@ export function App() {
     );
   }, []);
 
+  const toggleSavedMessage = useCallback((community: Community, message: Message) => {
+    const saved = savedMessageService.isMessageSaved(message.id);
+    if (saved) void savedMessageService.unsaveMessage(message.id);
+    else void savedMessageService.saveMessage(message.id,{communityId:community.id,channelId:message.channelId,authorId:message.authorId,preview:message.body.slice(0,220),messageCreatedAt:message.createdAt});
+    setSavedMessages(savedMessageService.listSavedMessages());
+    pushToast(saved ? "Message removed from Saved Messages." : "Message saved.", "success");
+  }, [pushToast]);
+
   const toggleMentionSaved = useCallback((id: string) => {
-    setMentionItems((current) => current.map((item) => (item.id === id ? { ...item, isSaved: !item.isSaved } : item)));
-  }, []);
+    const item=mentionItems.find((candidate)=>candidate.id===id);const community=item?communities.find((candidate)=>candidate.id===item.communityId):undefined;const message=community?.messages.find((candidate)=>candidate.id===item?.messageId);
+    if(community&&message)toggleSavedMessage(community,message);
+    setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, isSaved: !candidate.isSaved } : candidate));
+  }, [communities, mentionItems, toggleSavedMessage]);
 
   const markMentionRead = useCallback((id: string) => {
     setMentionItems((current) => current.map((item) => (item.id === id ? { ...item, isUnread: false } : item)));
@@ -2013,6 +2027,8 @@ export function App() {
                 { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
               ])}
             />
+          ) : activeView === "savedMessages" ? (
+            <SavedMessagesView items={savedMessages} communities={communities} onBack={() => setActiveView("community")} onOpen={(item) => { const community=communities.find((candidate)=>candidate.id===item.communityId);const message=community?.messages.find((candidate)=>candidate.id===item.messageId);if(community&&message)jumpToMessage(community,message);else pushToast("This saved message is unavailable or inaccessible.","error"); }} />
           ) : activeView === "directMessages" ? (
             <DirectMessagesView
               conversations={directConversations}
@@ -2174,6 +2190,7 @@ export function App() {
                       disabled: Boolean(message.deletedAt) || (message.authorId !== currentUser.userId && !canCurrentUserModerate()),
                       onSelect: () => handleDeleteMessage(message),
                     },
+                    { label: savedMessageService.isMessageSaved(message.id) ? "Unsave message" : "Save message", onSelect: () => toggleSavedMessage(displayedActiveCommunity, message) },
                     {
                       label: "Report message",
                       disabled: Boolean(message.deletedAt) || message.authorId === currentUser.userId,

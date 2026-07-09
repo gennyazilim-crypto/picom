@@ -69,7 +69,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableStickers: false,
     enableForumChannels: false,
     enableAnnouncementChannels: false,
-    enableSavedMessages: false,
+    enableSavedMessages: true,
   });
 }
 

@@ -151,6 +151,11 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["message_reactions"]["Row"]>;
         Relationships: [];
       };
+      saved_messages: {
+        Row: { id: string; user_id: string; message_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["saved_messages"]["Row"]> & Pick<Database["public"]["Tables"]["saved_messages"]["Row"], "user_id" | "message_id">;
+        Update: Partial<Database["public"]["Tables"]["saved_messages"]["Row"]>; Relationships: [];
+      };
       blocked_users: {
         Row: { id: string; blocker_id: string; blocked_user_id: string; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["blocked_users"]["Row"]> & Pick<Database["public"]["Tables"]["blocked_users"]["Row"], "blocker_id" | "blocked_user_id">;

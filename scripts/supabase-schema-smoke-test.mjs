@@ -40,6 +40,7 @@ const requiredMigrationPrefixes = [
   "20260710003000_direct_messages_realtime",
   "20260710003100_social_relationships",
   "20260710003200_user_blocking_privacy",
+  "20260710003300_saved_messages",
 ];
 
 function fail(message) {
