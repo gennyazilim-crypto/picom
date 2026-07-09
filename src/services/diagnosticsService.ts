@@ -22,6 +22,11 @@ export type DiagnosticsSnapshot = Readonly<{
     electronVersion: string | null;
     language: string;
     online: boolean;
+    window: {
+      width: number | null;
+      height: number | null;
+      focused: boolean;
+    };
   };
   serviceStatus: {
     realtimeStatus: DiagnosticsRealtimeStatus;
@@ -103,7 +108,12 @@ export const diagnosticsService = {
         platform: safeNavigatorValue("platform", "unknown"),
         electronVersion: typeof window === "undefined" ? null : window.picomDesktop?.getRuntimeInfo().versions.electron ?? null,
         language: safeNavigatorValue("language", "en"),
-        online: isOnline()
+        online: isOnline(),
+        window: {
+          width: typeof window === "undefined" ? null : window.innerWidth,
+          height: typeof window === "undefined" ? null : window.innerHeight,
+          focused: typeof document === "undefined" ? false : document.hasFocus()
+        }
       },
       serviceStatus: {
         realtimeStatus,

@@ -59,8 +59,14 @@ export type SupportDiagnosticsPayload = Readonly<{
   runtime: {
     userAgent: string;
     platform: string;
+    electronVersion: string | null;
     language: string;
     online: boolean;
+    window: {
+      width: number | null;
+      height: number | null;
+      focused: boolean;
+    };
   };
   serviceStatus: {
     realtimeStatus: string;
