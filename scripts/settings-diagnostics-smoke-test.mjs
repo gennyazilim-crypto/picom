@@ -11,7 +11,7 @@ const requiredSettingsText = [
   "Include recent redacted logs",
   "Export diagnostics JSON",
   "feedbackService.exportSupportDiagnostics",
-  "feedbackService.submitPlaceholder"
+  "feedbackService.copyReport"
 ];
 
 for (const text of requiredSettingsText) {
