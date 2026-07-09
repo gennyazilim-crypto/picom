@@ -29,6 +29,16 @@ Set them with `supabase secrets set`. Never expose the API key/secret through `V
 
 The token expires after one hour and grants room join, subscribe, publish, and data publish capabilities. Current MVP publishing supports microphone audio and screen-share tracks. If future policy requires per-source grants, tighten the server grant before exposing new UI.
 
+Expected grant review:
+
+- `roomJoin: true`
+- `room` exactly matches the server-derived community/channel room
+- `canSubscribe: true`
+- `canPublish: true` for microphone and screen-share tracks
+- `canPublishData: true` for bounded room-control/presence data
+
+The renderer cannot select an arbitrary identity or room name. Participant identity is the authenticated Supabase user ID.
+
 ## Deploy
 
 ```powershell

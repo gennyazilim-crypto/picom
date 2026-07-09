@@ -11,6 +11,7 @@ Prepared the LiveKit staging and manual voice/screen-share QA runbook. No remote
 - Two-user voice and full screen-share manual test sequence.
 - Windows, Linux, and macOS permission/QA notes.
 - Token function README and troubleshooting guide.
+- Renderer-safe `VITE_LIVEKIT_ENABLED` flag plus a separate two-client/platform smoke checklist.
 
 ## Manual work remaining
 

@@ -12,9 +12,12 @@ Edge/server only:
 
 Renderer/public only when needed:
 
+- `VITE_LIVEKIT_ENABLED=true` exposes the configured beta voice entry points; it is not a security boundary.
 - `VITE_LIVEKIT_URL` may contain the public `wss://` endpoint.
 
 The renderer must never generate LiveKit JWTs or receive the API secret. Tokens come only from the authenticated Supabase `livekit-token` Edge Function.
+
+Feature visibility flags do not replace token authorization, channel visibility, membership checks, or LiveKit grants.
 
 ## 1. Create staging infrastructure
 

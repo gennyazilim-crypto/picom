@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_GOOGLE_OAUTH_ENABLED?: string;
   readonly VITE_SUPABASE_APPLE_OAUTH_ENABLED?: string;
   readonly VITE_LIVEKIT_URL?: string;
+  readonly VITE_LIVEKIT_ENABLED?: string;
   readonly VITE_DEV_SERVER_URL?: string;
 }
 

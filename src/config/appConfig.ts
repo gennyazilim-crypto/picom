@@ -48,6 +48,7 @@ export const appConfig = Object.freeze({
     appleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_APPLE_OAUTH_ENABLED)
   }),
   liveKit: Object.freeze({
+    enabled: getBooleanFlag(import.meta.env.VITE_LIVEKIT_ENABLED),
     url: import.meta.env.VITE_LIVEKIT_URL ?? ""
   })
 });
