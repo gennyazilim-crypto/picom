@@ -8,6 +8,8 @@ The beta release notes now describe the completed Full MVP surfaces, explicit ex
 
 - `docs/beta-release-notes.md`
 - `docs/beta-known-issues.md`
+- `docs/known-issues.md`
+- `docs/beta-test-flows.md`
 - `docs/task-checkpoints/task-21-beta-release-notes.md`
 
 ## Validation

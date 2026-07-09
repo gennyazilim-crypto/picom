@@ -12,19 +12,19 @@ This document tracks known issues for the Picom beta readiness phase.
 
 ## Current known issues
 
-### KI-001: Local Windows unpacked packaging can fail with EPERM
+### KI-001: Stale Picom development processes can lock Windows package output
 
-- Status: `major`
+- Status: `minor`
 - Area: Electron packaging
 - Platforms: Windows
 - Symptom: `electron-builder --dir` can fail when renaming `release/win-unpacked.tmp` to `release/win-unpacked`.
-- Impact: Blocks local unpacked package smoke test on affected workstation.
+- Impact: Packaging pauses until project-specific Vite/Electron processes release the output directory. The current Windows NSIS candidate was produced successfully after targeted cleanup.
 - Workaround:
   - Close running Picom/Electron processes.
   - Delete `release/win-unpacked.tmp`.
-  - Retry from an elevated terminal or a folder not blocked by antivirus/Controlled Folder Access.
+  - Retry `npm run package:windows`; elevation is not normally required.
 - Reference: `docs/electron-packaging.md`
-- Next step: Re-test on a clean Windows VM or CI runner.
+- Next step: Complete clean-account installer launch/uninstall smoke testing.
 
 ### KI-002: Production build emits large chunk warning
 
