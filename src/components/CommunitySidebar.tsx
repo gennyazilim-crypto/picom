@@ -48,15 +48,12 @@ export function CommunitySidebar({ community, communities, access, activeChannel
   const [openPanel, setOpenPanel] = useState<OpenCommunityPanel>(null);
   useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
   const canReorderChannels = canManageChannels(access);
-  const adminTools = (
-    <div className="community-admin-tools-stack">
-      <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />
-      <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />
-      <MessageModerationFiltersPanel community={community} currentUser={currentUser} />
-      {access.isOwner ? <CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /> : null}
-      {access.isOwner ? <CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /> : null}
-    </div>
-  );
+  const adminSectionTools = {
+    overview: <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />,
+    channels: <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />,
+    moderation: <MessageModerationFiltersPanel community={community} currentUser={currentUser} />,
+    "danger-zone": access.isOwner ? <div className="community-admin-tools-stack"><CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /></div> : null,
+  };
 
   return (
     <aside className="community-sidebar">
@@ -99,7 +96,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
 
       <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />
 
-      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} adminTools={adminTools} /> : null}
+      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onCreateChannel={onCreateChannel} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
       {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} /> : null}
       {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} onOpenInvite={() => setOpenPanel("invite")} /> : null}
       {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} onOpenJoinWithInvite={() => setOpenPanel("joinInvite")} /> : null}

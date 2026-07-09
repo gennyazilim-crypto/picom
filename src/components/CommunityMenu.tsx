@@ -4,6 +4,25 @@ import type { Community, Member } from "../types/community";
 import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescriptor } from "../types/communityAccess";
 import { getCommunityMenuItems } from "../services/community/communityMenuService";
 import { AppIcon } from "./AppIcon";
+import {
+  adminSectionDefinitions,
+  moderatorSectionDefinitions,
+  CommunityAdminOverview,
+  CommunityAuditLogPlaceholder,
+  CommunityChannelsSection,
+  CommunityDangerZone,
+  CommunityInvitesSection,
+  CommunityMembersSection,
+  CommunityModerationSection,
+  CommunityRolesSection,
+  CommunitySettingsSection,
+  ModeratorLogPlaceholder,
+  ModeratorMembersSection,
+  ModeratorMessagesSection,
+  ModeratorReportsSection,
+  type AdminSectionId,
+  type ModeratorSectionId,
+} from "./community/CommunityAdminSections";
 
 type MenuCallbacks = {
   onOpenAdminPanel: () => void;
@@ -160,41 +179,44 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
   );
 }
 
-export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, adminTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; adminTools?: ReactNode }) {
-  const [activeSection, setActiveSection] = useState("overview");
-  const sections = [
-    "Overview",
-    "Community Settings",
-    "Channels",
-    "Roles",
-    "Members",
-    "Invites",
-    "Moderation",
-    "Audit Log",
-    "Danger Zone",
-  ];
+export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onCreateChannel, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onCreateChannel: (categoryId: string) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
+  const [activeSection, setActiveSection] = useState<AdminSectionId>("overview");
+  const sections = adminSectionDefinitions.filter((section) => {
+    if (section.ownerOnly) return access.isOwner;
+    return !section.permission || access.permissions.includes(section.permission);
+  });
+
+  if (!access.canOpenAdminPanel) {
+    return <ModalShell title="Community management unavailable" eyebrow="Permission denied" onClose={onClose}><div className="auth-error">Owner or admin access is required.</div></ModalShell>;
+  }
+
+  const sectionContent = (() => {
+    if (activeSection === "overview") return <CommunityAdminOverview community={community} access={access} />;
+    if (activeSection === "community-settings") return <CommunitySettingsSection community={community} onPlaceholderAction={onPlaceholderAction} />;
+    if (activeSection === "channels") return <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
+    if (activeSection === "roles") return <CommunityRolesSection community={community} />;
+    if (activeSection === "members") return <CommunityMembersSection community={community} />;
+    if (activeSection === "invites") return <CommunityInvitesSection onOpenInvite={onOpenInvite} />;
+    if (activeSection === "moderation") return <CommunityModerationSection>{sectionTools?.moderation}</CommunityModerationSection>;
+    if (activeSection === "audit-log") return <CommunityAuditLogPlaceholder />;
+    return <CommunityDangerZone>{sectionTools?.["danger-zone"]}</CommunityDangerZone>;
+  })();
 
   return (
     <ModalShell title={`${community.name} management center`} eyebrow="Community administration" onClose={onClose} className="community-management-modal">
       <div className="community-admin-panel">
         <nav aria-label="Community admin sections">
           {sections.map((section) => {
-            const ownerOnly = section === "Danger Zone";
-            const disabled = ownerOnly && !access.isOwner;
             return (
-              <button key={section} className={activeSection === section.toLowerCase().replace(/\s+/g, "-") ? "active" : ""} disabled={disabled} onClick={() => setActiveSection(section.toLowerCase().replace(/\s+/g, "-"))}>
-                {section}
+              <button key={section.id} className={activeSection === section.id ? "active" : ""} onClick={() => setActiveSection(section.id)}>
+                <AppIcon name={section.icon} size="sm" /> {section.label}
               </button>
             );
           })}
         </nav>
         <div className="community-admin-content">
-          <div className="community-panel-hero">
-            <strong>{activeSection.replace(/-/g, " ")}</strong>
-            <span>{access.isOwner ? "Owner access" : "Admin access with owner-only actions hidden."}</span>
-            {access.permissions.includes("createInvites") ? <button type="button" className="secondary-action" onClick={onOpenInvite}><AppIcon name="users" size="sm" /> Invite people</button> : null}
-          </div>
-          {adminTools ?? null}
+          {sectionContent}
+          {activeSection !== "moderation" && activeSection !== "danger-zone" ? sectionTools?.[activeSection] : null}
         </div>
       </div>
     </ModalShell>
@@ -202,18 +224,31 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
 }
 
 export function CommunityModeratorPanel({ community, access, onClose, onOpenInvite }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void }) {
+  const [activeSection, setActiveSection] = useState<ModeratorSectionId>("reports");
+
+  if (!access.canOpenModeratorPanel) {
+    return <ModalShell title="Moderator panel unavailable" eyebrow="Permission denied" onClose={onClose}><div className="auth-error">Moderator access is required.</div></ModalShell>;
+  }
+
+  const content = activeSection === "reports"
+    ? <ModeratorReportsSection />
+    : activeSection === "flagged-messages"
+      ? <ModeratorMessagesSection community={community} title="Flagged messages" />
+      : activeSection === "member-moderation"
+        ? <ModeratorMembersSection community={community} />
+        : activeSection === "message-moderation"
+          ? <ModeratorMessagesSection community={community} />
+          : <ModeratorLogPlaceholder />;
+
   return (
-    <ModalShell title={`${community.name} moderator panel`} eyebrow="Moderation" onClose={onClose}>
-      <div className="moderator-panel-grid">
-        {["Reports placeholder", "Recent flagged messages placeholder", "Member moderation placeholder", "Message moderation placeholder", "Moderation log placeholder"].map((item) => (
-          <article key={item}>
-            <AppIcon name="bell" size="lg" />
-            <strong>{item}</strong>
-            <span>Moderator-only operational surface prepared for the MVP.</span>
-          </article>
-        ))}
+    <ModalShell title={`${community.name} moderator panel`} eyebrow="Moderation" onClose={onClose} className="community-management-modal">
+      <div className="community-admin-panel moderator-admin-panel">
+        <nav aria-label="Moderator sections">
+          {moderatorSectionDefinitions.map((section) => <button key={section.id} className={activeSection === section.id ? "active" : ""} onClick={() => setActiveSection(section.id)}><AppIcon name={section.icon} size="sm" /> {section.label}</button>)}
+        </nav>
+        <div className="community-admin-content">{content}</div>
       </div>
-      {access.permissions.includes("createInvites") ? <div className="modal-actions-row"><button type="button" className="secondary-action" onClick={onOpenInvite}><AppIcon name="users" size="sm" /> Invite people</button></div> : null}
+      {access.permissions.includes("createInvites") ? <button type="button" className="moderator-invite-action" onClick={onOpenInvite}><AppIcon name="users" size="sm" /> Invite people</button> : null}
     </ModalShell>
   );
 }
