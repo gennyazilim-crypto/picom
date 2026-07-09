@@ -3,6 +3,8 @@ import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
+import { LegalDocumentModal } from "./legal/LegalDocumentModal";
+import type { LegalDocumentId } from "../data/legalDocuments";
 
 type RegisterScreenProps = {
   theme: "light" | "dark";
@@ -19,10 +21,17 @@ export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit,
   const [password, setPassword] = useState("PicomDev123!");
   const [confirmPassword, setConfirmPassword] = useState("PicomDev123!");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLocalError(null);
+
+    if (!acceptedLegal) {
+      setLocalError("Accept the Terms of Service and Privacy Policy to create an account.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setLocalError("Passwords do not match.");
@@ -65,7 +74,7 @@ export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit,
           <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         </div>
 
-        <SocialLoginButtons disabled={loading} />
+        <SocialLoginButtons disabled={loading || !acceptedLegal} />
 
         <label className="auth-field">
           <span>Display name</span>
@@ -115,9 +124,15 @@ export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit,
           />
         </label>
 
+        <label className="legal-acceptance-row">
+          <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} required />
+          <span>I agree to the <button type="button" onClick={() => setOpenLegalDocument("terms")}>Terms of Service</button> and <button type="button" onClick={() => setOpenLegalDocument("privacy")}>Privacy Policy</button>.</span>
+        </label>
+        <p className="auth-note">Acceptance is held in this registration form. TODO: persist `terms_accepted_at` after the production legal schema is approved.</p>
+
         {localError || error ? <div className="auth-error" role="alert">{localError ?? error}</div> : null}
 
-        <button className="auth-submit" type="submit" disabled={loading}>
+        <button className="auth-submit" type="submit" disabled={loading || !acceptedLegal}>
           {loading ? "Creating account..." : "Create account"}
           <AppIcon name="send" size="sm" />
         </button>
@@ -130,6 +145,7 @@ export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit,
           Registration uses the centralized auth wrapper. Passwords are passed to Supabase Auth only and are not logged.
         </p>
       </form>
+      {openLegalDocument ? <LegalDocumentModal documentId={openLegalDocument} onClose={() => setOpenLegalDocument(null)} /> : null}
     </main>
   );
 }

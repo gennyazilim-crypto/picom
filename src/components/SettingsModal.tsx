@@ -24,6 +24,8 @@ import { appConfig } from "../config/appConfig";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
+import { LegalDocumentModal } from "./legal/LegalDocumentModal";
+import { legalDocumentOrder, legalDocuments, type LegalDocumentId } from "../data/legalDocuments";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
@@ -78,8 +80,9 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
   const [accountActivities, setAccountActivities] = useState<AccountActivityRecord[]>(() => accountActivityService.listRecent());
+  const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
   const showAdminOperationsPlaceholder = import.meta.env.DEV;
-  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Advanced"];
+  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Legal", "Advanced"];
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -336,6 +339,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   };
 
   return (
+    <>
     <div className="modal-backdrop" onMouseDown={onClose}>
       <section className="settings-modal" onMouseDown={(event) => event.stopPropagation()}>
         <aside className="settings-nav">
@@ -731,6 +735,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </div>
               ))}
             </div>
+          ) : active === "Legal" ? (
+            <div className="legal-settings-panel">
+              <div className="settings-status-card"><span>Beta legal status</span><strong>Professional review required</strong><small>These documents are product placeholders and are not final legal advice.</small></div>
+              {legalDocumentOrder.map((documentId) => <button type="button" key={documentId} onClick={() => setOpenLegalDocument(documentId)}><span><strong>{legalDocuments[documentId].title}</strong><small>{legalDocuments[documentId].updatedLabel}</small></span><AppIcon name="chevronRight" size="sm" /></button>)}
+              <small>Picom {appConfig.version} · {appConfig.releaseChannel} channel</small>
+            </div>
           ) : active === "Advanced" ? (
             <div className="placeholder-panel action-panel">
               <strong>Desktop service placeholders</strong>
@@ -889,6 +899,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
         </main>
       </section>
     </div>
+    {openLegalDocument ? <LegalDocumentModal documentId={openLegalDocument} onClose={() => setOpenLegalDocument(null)} /> : null}
+    </>
   );
 }
 
