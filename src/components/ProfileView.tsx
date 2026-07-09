@@ -13,6 +13,7 @@ type ProfileViewProps = {
   onBack: () => void;
   onToggleFollow: (userId: string) => void;
   onMessage?: (userId: string) => void;
+  onFriendAction?: (userId: string) => void;
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
   onPlaceholderAction?: (message: string) => void;
@@ -24,6 +25,7 @@ type ProfileActionButtonsProps = {
   isCurrentUser: boolean;
   onToggleFollow: (userId: string) => void;
   onMessage?: (userId: string) => void;
+  onFriendAction?: (userId: string) => void;
   onPlaceholderAction?: (message: string) => void;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
 };
@@ -60,7 +62,7 @@ function getActivityIcon(type: ProfileActivityItem["type"]): IconName {
   return "hash";
 }
 
-function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onPlaceholderAction, onOpenMore }: ProfileActionButtonsProps) {
+function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onFriendAction, onPlaceholderAction, onOpenMore }: ProfileActionButtonsProps) {
   if (isCurrentUser) {
     return (
       <div className="profile-action-buttons">
@@ -86,9 +88,9 @@ function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessag
         <AppIcon name="user" size="sm" />
         {profile.isFollowing ? "Unfollow" : "Follow"}
       </button>
-      <button type="button" onClick={() => onPlaceholderAction?.("Add friend placeholder created locally.")}>
-        <AppIcon name="plus" size="sm" />
-        Add Friend
+      <button type="button" disabled={profile.friendshipStatus === "friends" || profile.friendshipStatus === "outgoing"} onClick={() => onFriendAction?.(profile.id)}>
+        <AppIcon name={profile.friendshipStatus === "friends" ? "users" : "plus"} size="sm" />
+        {profile.friendshipStatus === "friends" ? "Friends" : profile.friendshipStatus === "outgoing" ? "Request sent" : profile.friendshipStatus === "incoming" ? "Review request" : "Add Friend"}
       </button>
       <button type="button" aria-label="More profile actions" onClick={(event) => onOpenMore?.(event, profile)}>
         <AppIcon name="more" size="sm" />
@@ -104,6 +106,7 @@ export function ProfileLeftCard({
   onBack,
   onToggleFollow,
   onMessage,
+  onFriendAction,
   onPlaceholderAction,
   onOpenMore,
 }: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
@@ -131,6 +134,7 @@ export function ProfileLeftCard({
           isCurrentUser={isCurrentUser}
           onToggleFollow={onToggleFollow}
           onMessage={onMessage}
+          onFriendAction={onFriendAction}
           onPlaceholderAction={onPlaceholderAction}
           onOpenMore={onOpenMore}
         />
@@ -402,6 +406,7 @@ export function ProfileView({
   onBack,
   onToggleFollow,
   onMessage,
+  onFriendAction,
   onOpenActivity,
   onOpenImage,
   onPlaceholderAction,
@@ -419,6 +424,7 @@ export function ProfileView({
           onBack={onBack}
           onToggleFollow={onToggleFollow}
           onMessage={onMessage}
+          onFriendAction={onFriendAction}
           onPlaceholderAction={onPlaceholderAction}
           onOpenMore={onOpenMore}
         />

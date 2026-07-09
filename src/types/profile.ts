@@ -54,6 +54,7 @@ export type UserProfile = {
   activityScore?: number;
   isCurrentUser?: boolean;
   isFollowing?: boolean;
+  friendshipStatus?: "none" | "incoming" | "outgoing" | "friends";
   stats: ProfileStats;
   media: ProfileMediaItem[];
   activities: ProfileActivityItem[];

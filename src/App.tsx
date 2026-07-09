@@ -45,6 +45,7 @@ import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
+import { relationshipService } from "./services/relationshipService";
 import { FriendsView } from "./components/FriendsView";
 import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
@@ -581,8 +582,11 @@ export function App() {
 
   const selectedUserProfile = useMemo(() => {
     if (!selectedProfileMember) return null;
-    return getMockProfileForMember(selectedProfileMember, communities, { currentUserId, followedUserIds });
-  }, [communities, followedUserIds, selectedProfileMember]);
+    const profile = getMockProfileForMember(selectedProfileMember, communities, { currentUserId, followedUserIds });
+    const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
+    const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
+    return { ...profile, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
+  }, [communities, followedUserIds, friendState.friends, friendState.requests, selectedProfileMember]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1235,9 +1239,11 @@ export function App() {
   const toggleFollowUser = useCallback((userId: string) => {
     if (userId === currentUserId) return;
 
-    setFollowedUserIds((current) =>
-      current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId],
-    );
+    setFollowedUserIds((current) => {
+      const following = current.includes(userId);
+      void (following ? relationshipService.unfollowUser(userId) : relationshipService.followUser(userId));
+      return following ? current.filter((id) => id !== userId) : [...current, userId];
+    });
   }, []);
 
   const toggleMentionReaction = useCallback((id: string) => {
@@ -1505,6 +1511,7 @@ export function App() {
         ],
       };
     });
+    void relationshipService.acceptFriendRequest(requestId);
     pushToast("Friend request accepted locally.", "success");
   }, [pushToast]);
 
@@ -1513,8 +1520,20 @@ export function App() {
       ...current,
       requests: current.requests.filter((request) => request.id !== requestId),
     }));
+    void relationshipService.declineFriendRequest(requestId);
     pushToast("Friend request dismissed locally.", "info");
   }, [pushToast]);
+
+  const requestFriendFromProfile = useCallback((userId: string) => {
+    const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+    if (!member) return;
+    setFriendState((current) => {
+      if (current.friends.some((friend) => friend.userId === userId) || current.requests.some((request) => request.userId === userId)) return current;
+      return { ...current, requests: [...current.requests, { id: `friend-request-${userId}`, userId, displayName: member.displayName, username: member.username, direction: "outgoing", note: "Sent from profile", createdAt: new Date().toISOString() }] };
+    });
+    void relationshipService.sendFriendRequest(userId);
+    pushToast("Friend request sent.", "success");
+  }, [communities, pushToast]);
 
   const sendFriendRequestPlaceholder = useCallback((userId: string) => {
     setFriendState((current) => {
@@ -2001,6 +2020,7 @@ export function App() {
               onBack={closeProfileView}
               onToggleFollow={toggleFollowUser}
               onMessage={openDirectMessages}
+              onFriendAction={requestFriendFromProfile}
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
               onPlaceholderAction={(message) => pushToast(message, "info")}

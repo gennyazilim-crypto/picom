@@ -151,6 +151,21 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["message_reactions"]["Row"]>;
         Relationships: [];
       };
+      user_follows: {
+        Row: { id: string; follower_id: string; followed_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["user_follows"]["Row"]> & Pick<Database["public"]["Tables"]["user_follows"]["Row"], "follower_id" | "followed_id">;
+        Update: Partial<Database["public"]["Tables"]["user_follows"]["Row"]>; Relationships: [];
+      };
+      friend_requests: {
+        Row: { id: string; sender_id: string; recipient_id: string; status: "pending" | "accepted" | "declined"; created_at: string; responded_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["friend_requests"]["Row"]> & Pick<Database["public"]["Tables"]["friend_requests"]["Row"], "sender_id" | "recipient_id">;
+        Update: Partial<Database["public"]["Tables"]["friend_requests"]["Row"]>; Relationships: [];
+      };
+      friendships: {
+        Row: { id: string; user_low_id: string; user_high_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["friendships"]["Row"]> & Pick<Database["public"]["Tables"]["friendships"]["Row"], "user_low_id" | "user_high_id">;
+        Update: Partial<Database["public"]["Tables"]["friendships"]["Row"]>; Relationships: [];
+      };
       direct_conversations: {
         Row: { id: string; type: "direct"; created_by: string; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversations"]["Row"], "created_by">;
@@ -207,6 +222,8 @@ export type Database = {
       };
     };
     Functions: {
+      respond_friend_request: { Args: { target_request_id: string; accept_request: boolean }; Returns: boolean };
+      remove_friend: { Args: { other_user_id: string }; Returns: boolean };
       create_direct_conversation: { Args: { other_user_id: string }; Returns: string };
       accept_community_invite: {
         Args: { invite_code: string };
