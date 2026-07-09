@@ -17,15 +17,17 @@ Picom is desktop-only for this MVP track.
 
 Do not add mobile UI, mobile navigation, web-first responsive layouts, Discord branding, Discord logos, copied Discord assets, copied Discord icons, or exact Discord colors.
 
-## Active task source
+## Current project status
 
-The active task pack is:
+- Full MVP/beta foundations and next-phase Tasks 24-45 are documented and checkpointed.
+- Current source version: `0.1.1-beta.1`.
+- Windows private beta installer can be built locally; stable release is **No-Go**.
+- Stable blockers include deployed Supabase/RLS/Storage/Realtime/Edge verification, private attachment signed-URL reload, LiveKit native two-client verification, native Linux/macOS artifacts, stable signing/notarization, real restore drill, and legal approval.
+- No stable/public artifact or production auto-update is authorized.
 
-```text
-C:\Users\ACER\Desktop\electron_supabase_livekit_all_old_new_tasks_001_473_txt.zip
-```
+See `docs/stable-go-no-go.md`, `docs/developer-handoff.md`, and `docs/mvp-plus-scope.md` before starting new work.
 
-Older task packs are archive material only. New implementation work should follow the 001-473 Electron + Supabase + LiveKit sequence, one task at a time.
+Task archives are historical inputs, not an instruction to enable every placeholder. Work one approved scoped task at a time, test, checkpoint, commit, and push.
 
 ## Brand inputs
 
@@ -38,8 +40,10 @@ Older task packs are archive material only. New implementation work should follo
 ## Install
 
 ```bash
-npm install
+npm ci
 ```
+
+Use `npm install` only when intentionally changing dependencies/lockfile.
 
 ## Run locally
 
@@ -209,6 +213,11 @@ npm run livekit:smoke
 
 See `docs/livekit-qa-gate.md` for the current checks.
 
+Production preparation:
+
+- `docs/livekit-production-setup.md`
+- `docs/livekit-production-smoke-test.md`
+
 ## Packaging
 
 Picom uses `electron-builder` for desktop package preparation.
@@ -240,7 +249,7 @@ Packaging notes:
 - Windows target: unsigned NSIS x64
 - Linux targets: AppImage x64 and deb x64
 - macOS targets: unsigned dmg x64 and zip x64 placeholders
-- Signing and notarization are intentionally not configured yet
+- Signing and notarization are intentionally not configured yet; stable remains No-Go
 - Do not commit certificates, private keys, signing keys, or notarization credentials
 
 Useful docs:
@@ -250,6 +259,9 @@ Useful docs:
 - `docs/windows-smoke-test.md`
 - `docs/linux-smoke-test.md`
 - `docs/macos-smoke-test.md`
+- `docs/windows-release-build.md`
+- `docs/linux-release-build.md`
+- `docs/macos-release-build.md`
 
 ## Manual UI smoke test
 
@@ -268,9 +280,19 @@ Useful docs:
 
 ## Workflow
 
-1. Follow one task file at a time from the active 001-473 pack.
+1. Confirm the approved current scope and stable blocker/backlog status.
 2. Keep changes scoped to the task.
 3. Run the smallest relevant checks.
-4. Run `npm run qa:smoke`, `npm run typecheck`, and `npm run build` for checkpoints.
-5. Commit stable task checkpoints.
+4. Run `npm run qa:smoke`, `npm run typecheck`, `npm run mock:smoke`, and `npm run build` for implementation checkpoints.
+5. Create/update the task checkpoint, commit with the requested message, and push.
 6. If build/typecheck breaks, stop feature work and fix the blocker first.
+
+## Developer documentation
+
+- `docs/developer-handoff.md`
+- `docs/project-structure.md`
+- `docs/common-commands.md`
+- `docs/troubleshooting.md`
+- `docs/supabase-production-setup.md`
+- `docs/production-rls-verification.md`
+- `docs/secrets-management.md`
