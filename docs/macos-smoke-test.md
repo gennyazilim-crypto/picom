@@ -67,7 +67,15 @@ npm run package:mac:zip
 - No native menu/chrome regression is visible.
 - Permission prompts are understandable and Picom-branded.
 
+## Release lifecycle and security
+
+- Run dmg and zip clean-install, prior-beta upgrade, uninstall/remove, reinstall, and manual rollback checks from `docs/macos-release-build.md`.
+- Run denial/grant/restart tests in `docs/macos-permissions.md` on the final bundle identity.
+- For stable candidates, require the signing/notarization/staple/Gatekeeper checks in `docs/macos-notarization.md`.
+- Record whether the candidate is x64, arm64, or universal; current config produces x64 only.
+
 ## Known limitations
 
 - Signing and notarization are placeholders in local development.
 - Gatekeeper behavior for unsigned builds is outside this local smoke test.
+- Windows source/build success is not a macOS package, signing, notarization, or native permission pass.
