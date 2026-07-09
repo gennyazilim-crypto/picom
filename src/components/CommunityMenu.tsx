@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { Community, Member } from "../types/community";
 import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescriptor } from "../types/communityAccess";
 import { getCommunityMenuItems } from "../services/community/communityMenuService";
+import { clipboardService } from "../services/clipboardService";
 import { AppIcon } from "./AppIcon";
 import {
   adminSectionDefinitions,
@@ -65,7 +66,7 @@ function actionDescription(item: CommunityMenuItemDescriptor, access: CommunityA
   return undefined;
 }
 
-function handleCommunityAction(item: CommunityMenuItemDescriptor, callbacks: MenuCallbacks, close: () => void) {
+function handleCommunityAction(item: CommunityMenuItemDescriptor, community: Community, callbacks: MenuCallbacks, close: () => void) {
   const actionMap: Partial<Record<CommunityMenuActionId, () => void>> = {
     "community-settings": callbacks.onOpenAdminPanel,
     "admin-panel": callbacks.onOpenAdminPanel,
@@ -81,8 +82,12 @@ function handleCommunityAction(item: CommunityMenuItemDescriptor, callbacks: Men
     "join-community": callbacks.onOpenJoinCommunity,
     "leave-community": callbacks.onOpenLeaveCommunity,
     "invite-people": callbacks.onOpenInvitePeople,
-    "copy-community-link": () => callbacks.onPlaceholderAction("Community link placeholder copied locally."),
-    "report-community": () => callbacks.onPlaceholderAction("Report community placeholder opened locally."),
+    "copy-community-link": () => {
+      void clipboardService.copyText(`picom://community/${community.id}`).then((result) => {
+        callbacks.onPlaceholderAction(result.ok ? "Community link copied." : result.reason);
+      });
+    },
+    "report-community": () => callbacks.onPlaceholderAction("Use Settings > Privacy & Safety to report this community."),
   };
 
   actionMap[item.id]?.();
@@ -151,7 +156,7 @@ export function CommunityMenu({ community, access, callbacks, onClose }: Communi
 
       <div className="community-menu-list">
         {items.map((item) => (
-          <CommunityMenuItem key={item.id} item={item} access={access} onSelect={() => handleCommunityAction(item, callbacks, onClose)} />
+          <CommunityMenuItem key={item.id} item={item} access={access} onSelect={() => handleCommunityAction(item, community, callbacks, onClose)} />
         ))}
       </div>
     </section>
@@ -259,9 +264,9 @@ export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, 
       <div className="community-confirm-panel">
         <CommunityMemberMenu community={community} access={access} />
         <div className="community-panel-list">
-          <article><strong>Notification settings</strong><span>Local notification preferences placeholder.</span></article>
+          <article><strong>Notification settings</strong><span>Notification preferences are managed locally in this beta.</span></article>
           {access.permissions.includes("createInvites") ? <button type="button" className="community-panel-action" onClick={onOpenInvite}><strong>Invite people</strong><span>Create a limited Picom invite link.</span></button> : null}
-          <article><strong>Report community</strong><span>Report placeholder prepared without exposing private content.</span></article>
+          <article><strong>Report community</strong><span>Submit reports from Settings &gt; Privacy &amp; Safety without exposing unrelated private content.</span></article>
         </div>
         <div className="modal-actions-row">
           <button className="secondary-action" type="button" onClick={onClose}>Close</button>
@@ -298,7 +303,7 @@ export function CommunityJoinModal({ community, isAuthenticated, onClose, onConf
         <dl>
           <div><dt>Members</dt><dd>{community.members.length}</dd></div>
           <div><dt>Visibility</dt><dd>{community.visibility ?? "private"}</dd></div>
-          <div><dt>Rules</dt><dd>Rules placeholder will be shown here.</dd></div>
+          <div><dt>Rules</dt><dd>Community rules are not published for this beta.</dd></div>
         </dl>
         {!isAuthenticated ? <div className="auth-error">Sign in or register before joining.</div> : null}
         <div className="modal-actions-row">

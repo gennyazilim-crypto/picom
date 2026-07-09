@@ -12,6 +12,7 @@ Implemented the Full MVP invite, join, leave, and visitor read-only flow.
 - Invite entry points for permitted owner/admin/moderator surfaces.
 - Existing public visitor read-only, private-channel filtering, and disabled composer behavior preserved.
 - Owner leave remains blocked until ownership transfer.
+- Community links now copy through `clipboardService`; raw placeholder toasts were removed from visitor/member actions.
 
 ## Validation
 

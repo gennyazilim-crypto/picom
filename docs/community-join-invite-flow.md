@@ -10,6 +10,8 @@ Visitors can read public, non-private channels when both community and channel p
 
 Owners, admins, and moderators with `createInvites` can create bounded invite codes. The MVP supports an optional use limit and expiry. Invite links use `picom://invite/{code}` and are copied through `clipboardService`.
 
+The community menu also copies `picom://community/{communityId}` through the same centralized clipboard service. It does not claim success when native/browser clipboard access fails.
+
 The frontend permission check is UX only. Supabase RLS calls `can_create_community_invite`, which checks ownership, role level, or the role permission JSON.
 
 ## Invite acceptance
