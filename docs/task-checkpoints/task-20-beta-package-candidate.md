@@ -4,6 +4,8 @@
 
 Packaging metadata, icon paths, packaged entry/preload paths, Electron renderer security settings, and Windows/Linux/macOS target commands were verified and documented.
 
+Standard `build:desktop` and `package:windows` aliases now map to the existing verified build/package commands without changing dev mode.
+
 ## Validation
 
 - `npm run typecheck`: pass
@@ -16,7 +18,7 @@ Packaging metadata, icon paths, packaged entry/preload paths, Electron renderer 
 
 ## Artifact status
 
-The Windows NSIS candidate exists at `release/Picom-0.1.0-Windows-x64.exe` with SHA-256 `2E4E48B6C7F1689F1C3C4E8C5BCC0A75EF4463FFEC53257E84248E68889DEDAA`. The renderer now uses relative Vite asset paths so packaged `file://` loading does not produce a white screen. Linux and macOS artifacts still require native target build hosts.
+The refreshed Windows NSIS candidate exists at `release/Picom-0.1.0-Windows-x64.exe` with SHA-256 `208BB16DE5A32D097017E727E83C36134C4DD22B7EBF5880004063862C44ADB3`. The renderer uses relative Vite asset paths so packaged `file://` loading does not produce a white screen. Linux and macOS artifacts still require native target build hosts.
 
 ## Safety
 

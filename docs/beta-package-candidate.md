@@ -9,8 +9,8 @@ The initial 2026-07-09 package attempt was blocked by stale Picom Vite/Electron 
 Windows candidate:
 
 - Installer: `release/Picom-0.1.0-Windows-x64.exe`
-- Installer size: `120816662` bytes
-- SHA-256: `2E4E48B6C7F1689F1C3C4E8C5BCC0A75EF4463FFEC53257E84248E68889DEDAA`
+- Installer size: `120817642` bytes
+- SHA-256: `208BB16DE5A32D097017E727E83C36134C4DD22B7EBF5880004063862C44ADB3`
 - Block map: `release/Picom-0.1.0-Windows-x64.exe.blockmap`
 - Unpacked executable: `release/win-unpacked/Picom.exe`
 
@@ -43,10 +43,18 @@ The configured brand assets exist:
 
 Run all commands from the repository root.
 
+Common desktop build:
+
+```powershell
+npm run build:desktop
+```
+
 ### Windows x64
 
 ```powershell
 npm run package:win
+# Equivalent release alias:
+npm run package:windows
 ```
 
 Expected output:
