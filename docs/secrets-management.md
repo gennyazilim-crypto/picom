@@ -33,6 +33,8 @@ Renderer-safe values such as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` ar
 | Production | Production secret manager placeholder | Access limited to operations/security owners. |
 | Desktop renderer | Public `VITE_` values only | Anything here is bundled and visible to users. |
 
+`.env.production.example` is a cross-environment inventory, not a file to copy wholesale into Vite. Its `VITE_` section is public renderer configuration. Its blank CI/operator and Edge Function sections identify values that must be injected through masked CI variables, Supabase Function secrets, or the approved production secret manager.
+
 ## Rotation process
 
 1. Identify secret owner and dependent services.
@@ -76,8 +78,11 @@ Manual checks:
 
 ```bash
 git status --short
+npm run env:placeholders:check
 npm run secrets:smoke
 ```
+
+The placeholder check requires server/CI values to remain empty, rejects server-only names with a `VITE_` prefix, detects common token/private-key/credentialed-database patterns, and verifies `.env.local`/`.env.production` ignore rules.
 
 Recommended future checks:
 
@@ -107,6 +112,17 @@ Recommended future checks:
 - Screenshots and diagnostics can accidentally reveal local env files.
 - Manual emergency fixes can bypass normal secret-review steps under pressure.
 - Provider dashboards and CI logs need separate access controls outside this repository.
+
+## Production secret ownership matrix
+
+| Secret | Store | Minimum access | Rotation trigger |
+| --- | --- | --- | --- |
+| Supabase access token | Protected CI/operator secret | Deployment maintainers | Operator change, suspected leak, scheduled review |
+| Supabase service-role key | Supabase/server secret store | Reviewed backend functions only | Suspected leak or project key rotation |
+| Database password | Production secret manager | Database operations | Suspected leak, owner change, scheduled review |
+| LiveKit API key/secret | Supabase Function/production secret store | Token function and realtime operators | Suspected leak or LiveKit project rotation |
+| OAuth client secrets | Supabase provider settings | Auth administrators | Provider incident, owner change, scheduled review |
+| Signing/notarization credentials | Release CI secret store | Release/signing maintainers | Suspected leak, certificate renewal, maintainer change |
 
 ## Related documents
 

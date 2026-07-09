@@ -52,3 +52,4 @@
 - [ ] Project admin membership follows least privilege and MFA.
 - [ ] `npm run secrets:smoke`, `npm run supabase:smoke`, and real RLS tests pass.
 - [ ] No populated `.env.production` or secret file is committed.
+- [ ] `npm run env:placeholders:check` passes for all committed environment examples.

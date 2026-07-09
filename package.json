@@ -35,6 +35,7 @@
     "packaging:smoke": "node scripts/verify-electron-packaging.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "env:smoke": "node scripts/env-safety-smoke-test.mjs",
+    "env:placeholders:check": "node scripts/check-env-placeholders.mjs",
     "qa:output:smoke": "node scripts/qa-output-smoke-test.mjs",
     "react:hooks:smoke": "node scripts/react-hook-order-smoke-test.mjs",
     "logs:smoke": "node scripts/logging-service-smoke-test.mjs",

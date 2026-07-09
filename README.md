@@ -81,13 +81,22 @@ Default local mode:
 VITE_DATA_SOURCE=mock
 ```
 
-Use `.env.beta.example` for beta smoke testing against Supabase and LiveKit placeholders. Only renderer-safe `VITE_` values belong in Vite env files. Never commit Supabase service-role keys, LiveKit API secrets, signing keys, auth tokens, passwords, cookies, or database credentials.
+Use `.env.beta.example` for beta smoke testing against Supabase and LiveKit placeholders. `.env.production.example` is an inventory that deliberately separates renderer-safe values from empty CI/server placeholders; never copy its server section into a Vite environment file. Only renderer-safe `VITE_` values belong in Electron renderer builds. Never commit Supabase service-role keys, LiveKit API secrets, signing keys, auth tokens, passwords, cookies, or database credentials.
+
+Validate committed examples before a release:
+
+```bash
+npm run env:placeholders:check
+npm run env:smoke
+npm run secrets:smoke
+```
 
 Useful docs:
 
 - `docs/beta-environment.md`
 - `docs/environment-qa-gate.md`
 - `docs/secrets-management.md`
+- `docs/supabase-production-setup.md`
 
 ## Quality gates
 
