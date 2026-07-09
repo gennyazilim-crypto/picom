@@ -1,10 +1,13 @@
 # Picom Beta Release Notes
 
-## Beta version
+## Release identity
 
-- Version: `0.1.0-beta` placeholder
-- Release channel: `beta`
-- Build type: unsigned local/test desktop build
+| Field | Value |
+| --- | --- |
+| Version | `0.1.0-beta` placeholder |
+| Channel | Beta |
+| Product | Picom desktop community chat |
+| Build | Unsigned local/test candidate |
 
 ## Supported platforms
 
@@ -12,116 +15,129 @@
 - Linux desktop
 - macOS desktop
 
-Picom is an Electron desktop app. Mobile apps and mobile layouts are not part of this beta.
+Picom is desktop-only. A mobile app and mobile layout are not part of this beta.
 
-## Included in this beta
+## Included Full MVP features
 
-- Premium desktop chat shell with custom Electron titlebar
-- Four-column community layout:
-  - Server rail
-  - Community sidebar
-  - Chat main
-  - Member sidebar
-- Light and dark theme support
-- Coolicons/AppIcon icon system
-- Mock mode for local UI testing
-- Supabase mode foundation for backend testing
-- Login/register/session foundation
-- Community and channel navigation foundation
-- Local message sending foundation
-- Message list, composer, attachment grid, image preview modal
-- Settings modal foundation
-- Member search and profile popover foundation
-- Electron packaging configuration for Windows, Linux, and macOS
-- Packaging verification command: `npm run package:verify`
+### Desktop experience
 
-## Beta backend scope
+- Electron desktop shell with a custom titlebar and safe preload bridge
+- Premium Server Rail, Community Sidebar, Chat Main, Member Sidebar, and pinned composer
+- Light and dark themes using Picom design tokens
+- Coolicons through the reusable `AppIcon` system
+- Settings, context menus, image preview, diagnostics, logs, and feedback surfaces
 
-Supabase is the MVP backend direction:
+### Account and identity
 
-- Supabase Auth
-- Supabase Postgres
-- Supabase RLS
-- Supabase Storage
-- Supabase Realtime
-- Edge Functions where needed
+- Email login, registration, logout, and session restore
+- Google and Apple OAuth PKCE flows when their Supabase providers are configured
+- First-run onboarding and profile completion
+- Full Profile Page with local follow and activity navigation behavior
 
-Beta testers should use `.env.beta.example` as the safe environment template and must never put service-role keys or private secrets in renderer-visible env variables.
+### Communities and chat
 
-## Beta voice/screen-share scope
+- Community and channel navigation
+- Community/channel creation paths included in the MVP service architecture
+- Message send, edit, and delete behavior
+- Emoji, reactions, replies, image attachments, attachment grid, and image preview
+- Role-aware community menu for owner, admin, moderator, member, and visitor states
+- Public visitor read-only and public-community join/leave flows
+- Private-channel visibility and send restrictions remain backend/RLS enforced in Supabase mode
 
-LiveKit/WebRTC is the MVP media direction:
+### Home and social discovery inside Picom
 
-- Voice room foundation
-- Screen-share foundation
-- Platform QA notes for Windows, Linux, and macOS
+- Mention Feed with `Feed` and `Takip Ettiğin Kişiler` tabs
+- Followed People Stories with local seen/unseen state
+- Feed Companion Rail with local voice controls, friend presence, and upcoming events
+- Mention social proof footer with views, emoji summary, commenters, and comments
 
-Voice and screen-share should be treated as beta test areas until the full two-client and permission smoke tests are complete.
+### Backend and realtime
 
-## Not included in this beta
+- Mock mode for deterministic local desktop testing
+- Supabase Auth, Postgres, RLS, Storage, and Realtime integration paths
+- Staging configuration and migration runbooks
+- Optimistic/realtime message reconciliation and duplicate-prevention foundations
 
-- Mobile app
-- Web-first responsive layout
-- Discord branding, logos, copied assets, or exact colors
+### Voice and screen share
+
+- LiveKit voice-room UI and service integration path
+- Join, leave, mute, deafen, participant, and speaking states
+- Electron desktop-capture source picker and screen-share controls
+- LiveKit token Edge Function contract and staging setup instructions
+
+## Not included
+
+- Mobile application or mobile UI
 - Bot marketplace
-- Webhook production system
+- Production webhook system
 - Plugin runtime
-- Enterprise admin console
+- Enterprise console
 - SSO or SCIM
 - Billing
-- Public discovery marketplace
 - Production auto-update
-- Production E2EE
-- Advanced analytics
+- Production end-to-end encryption
+- Public discovery marketplace
 
-## Known beta limitations
+## Before installing
 
-- Local Windows unpacked packaging can hit an `EPERM` rename error on some workstations when `release/win-unpacked.tmp` is locked by the OS, antivirus, or Controlled Folder Access.
-- Vite currently reports a large chunk warning after production builds.
-- Supabase CLI may be required for local Supabase schema/type workflows.
-- macOS signing and notarization are placeholders only.
-- Windows package signing is not configured for local beta builds.
-- Some beta flows may still require mock mode if Supabase/LiveKit beta services are not configured.
+1. Confirm the artifact comes from the approved beta build location.
+2. Verify its checksum when checksums are supplied.
+3. Expect an unsigned-app warning for local beta artifacts.
+4. Do not disable operating-system security globally to install Picom.
+5. Use only staging Supabase and LiveKit credentials for connected beta testing.
 
-## Required beta test flows
+## Register and sign in
 
-1. Start the app in mock mode.
-2. Switch light and dark themes.
-3. Navigate communities and channels.
-4. Send a local message.
-5. Open settings, context menu, profile popover, and image preview.
-6. Run `npm run package:verify`.
-7. Run `npm run typecheck`.
-8. Run `npm run build`.
-9. Configure `.env.local` from `.env.beta.example`.
-10. Start Supabase mode and verify login/register/session behavior.
-11. Run two-window realtime smoke testing when Supabase Realtime is configured.
-12. Run voice/screen-share smoke testing when LiveKit beta credentials are configured.
-13. Run platform package smoke tests using:
-    - `docs/windows-smoke-test.md`
-    - `docs/linux-smoke-test.md`
-    - `docs/macos-smoke-test.md`
+1. Launch Picom.
+2. Select Register and create a beta account, or use the provided staging tester account.
+3. Complete first-run onboarding.
+4. For Google or Apple, confirm the corresponding Supabase provider and `picom://auth/callback` redirect are configured first.
+5. Confirm a restored session reaches the desktop shell after restarting the app.
 
-## How to report bugs
+## Required tester flows
 
-For each beta bug report, include:
+1. Launch, register/sign in, restart, and confirm session restore.
+2. Complete onboarding and edit profile details.
+3. Switch light/dark themes and maximize/restore the custom Electron window.
+4. Switch communities/channels and exercise owner, admin, moderator, member, and visitor menus.
+5. Join a public community and verify visitor read-only restrictions before joining.
+6. Send, edit, delete, reply to, and react to a message.
+7. Upload a valid image and open it in Image Preview.
+8. Test Mention Feed tabs, stories, social footer, companion rail, and Full Profile Page.
+9. In Supabase staging, run a two-window realtime test and verify private-channel isolation.
+10. In LiveKit staging, join with two clients and test mute, deafen, speaking, leave, and screen share.
+11. Export redacted diagnostics and submit feedback from the in-app support surfaces.
+12. Run the platform-specific install/uninstall smoke checklist.
 
-- Platform: Windows, Linux, or macOS
-- App version and release channel
-- Environment mode: mock or Supabase
-- Steps to reproduce
-- Expected result
-- Actual result
-- Screenshots or short screen recording if useful
-- Redacted logs only; never include passwords, auth tokens, Supabase service-role keys, LiveKit secrets, or signing keys
+## Reporting an issue
 
-## Installation notes
+Include:
 
-- Local beta builds are unsigned.
-- Windows may show an unsigned app warning.
-- macOS may require manual permission approval for unsigned local builds.
-- Linux package behavior depends on the AppImage/deb target and distro.
+- Picom version and beta channel
+- Windows, Linux, or macOS version
+- Mock, Supabase staging, or LiveKit staging mode
+- Reproduction steps
+- Expected and actual result
+- Screenshot or short recording when useful
+- Redacted diagnostics export
 
-## Uninstall notes placeholder
+Never include passwords, authorization headers, session tokens, Supabase service-role keys, LiveKit secrets, signing credentials, or private message content not required to reproduce the issue.
 
-Final uninstall instructions will be completed after platform package smoke tests. For beta, uninstall behavior should be verified as part of the Windows, Linux, and macOS smoke-test checklists.
+## Exporting diagnostics
+
+1. Open Settings.
+2. Open Advanced or Diagnostics.
+3. Review the redacted diagnostic summary.
+4. Use Export Diagnostics or Export Logs.
+5. Inspect the file before attaching it to a report.
+
+## Related documents
+
+- [Known issues](beta-known-issues.md)
+- [Beta package candidate](beta-package-candidate.md)
+- [Supabase staging setup](supabase-staging-setup.md)
+- [LiveKit staging setup](livekit-staging-setup.md)
+- [Windows smoke test](windows-smoke-test.md)
+- [Linux smoke test](linux-smoke-test.md)
+- [macOS smoke test](macos-smoke-test.md)
+
