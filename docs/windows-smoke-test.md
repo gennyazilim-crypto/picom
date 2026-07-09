@@ -66,7 +66,15 @@ Use `npm run package:win` only when an installer artifact is needed.
 - No mobile UI appears.
 - MVP mock mode is usable.
 
+## Installer lifecycle
+
+- Run clean install, prior-beta upgrade, launch, close/tray exit, uninstall, and reinstall checks from `docs/windows-release-build.md`.
+- Verify Desktop/Start Menu shortcuts and uninstall entry use Picom identity.
+- Record whether local user-data/cache remains; normal uninstall must not delete unrelated files.
+- For signed stable candidates, run the Authenticode and timestamp checks in `docs/windows-code-signing.md`.
+
 ## Known limitations
 
 - This smoke test does not validate code signing.
 - Installer reputation and SmartScreen behavior are outside this local smoke test.
+- The current local `0.1.1-beta.1` candidate is unsigned; stable signing remains a separate release gate.
