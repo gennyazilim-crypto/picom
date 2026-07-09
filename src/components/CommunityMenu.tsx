@@ -230,18 +230,20 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
 
 export function CommunityModeratorPanel({ community, access, onClose, onOpenInvite }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void }) {
   const [activeSection, setActiveSection] = useState<ModeratorSectionId>("reports");
+  const sections = moderatorSectionDefinitions.filter((section) => access.permissions.includes(section.permission));
+  const selectedSection = sections.some((section) => section.id === activeSection) ? activeSection : sections[0]?.id ?? "reports";
 
   if (!access.canOpenModeratorPanel) {
     return <ModalShell title="Moderator panel unavailable" eyebrow="Permission denied" onClose={onClose}><div className="auth-error">Moderator access is required.</div></ModalShell>;
   }
 
-  const content = activeSection === "reports"
+  const content = selectedSection === "reports"
     ? <ModeratorReportsSection />
-    : activeSection === "flagged-messages"
+    : selectedSection === "flagged-messages"
       ? <ModeratorMessagesSection community={community} title="Flagged messages" />
-      : activeSection === "member-moderation"
+      : selectedSection === "member-moderation"
         ? <ModeratorMembersSection community={community} />
-        : activeSection === "message-moderation"
+        : selectedSection === "message-moderation"
           ? <ModeratorMessagesSection community={community} />
           : <ModeratorLogPlaceholder />;
 
@@ -249,7 +251,7 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
     <ModalShell title={`${community.name} moderator panel`} eyebrow="Moderation" onClose={onClose} className="community-management-modal">
       <div className="community-admin-panel moderator-admin-panel">
         <nav aria-label="Moderator sections">
-          {moderatorSectionDefinitions.map((section) => <button key={section.id} className={activeSection === section.id ? "active" : ""} onClick={() => setActiveSection(section.id)}><AppIcon name={section.icon} size="sm" /> {section.label}</button>)}
+          {sections.map((section) => <button key={section.id} className={selectedSection === section.id ? "active" : ""} onClick={() => setActiveSection(section.id)}><AppIcon name={section.icon} size="sm" /> {section.label}</button>)}
         </nav>
         <div className="community-admin-content">{content}</div>
       </div>

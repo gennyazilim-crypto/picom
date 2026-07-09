@@ -20,12 +20,12 @@ export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string;
   { id: "danger-zone", label: "Danger Zone", ownerOnly: true, icon: "trash" },
 ];
 
-export const moderatorSectionDefinitions: Array<{ id: ModeratorSectionId; label: string; icon: IconName }> = [
-  { id: "reports", label: "Reports", icon: "bell" },
-  { id: "flagged-messages", label: "Flagged messages", icon: "inbox" },
-  { id: "member-moderation", label: "Member moderation", icon: "users" },
-  { id: "message-moderation", label: "Message moderation", icon: "hash" },
-  { id: "moderation-log", label: "Moderation log", icon: "settings" },
+export const moderatorSectionDefinitions: Array<{ id: ModeratorSectionId; label: string; permission: CommunityAccess["permissions"][number]; icon: IconName }> = [
+  { id: "reports", label: "Reports", permission: "moderateMessages", icon: "bell" },
+  { id: "flagged-messages", label: "Flagged messages", permission: "moderateMessages", icon: "inbox" },
+  { id: "member-moderation", label: "Member moderation", permission: "manageMembers", icon: "users" },
+  { id: "message-moderation", label: "Message moderation", permission: "moderateMessages", icon: "hash" },
+  { id: "moderation-log", label: "Moderation log", permission: "moderateMessages", icon: "settings" },
 ];
 
 function SectionShell({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children: ReactNode }) {

@@ -99,7 +99,7 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
     isMember: !isVisitor,
     isVisitor,
     canOpenAdminPanel: status === "owner" || status === "admin",
-    canOpenModeratorPanel: status === "moderator",
+    canOpenModeratorPanel: status === "owner" || status === "admin" || status === "moderator",
     canJoin: isVisitor && visibility === "public",
     canLeave: !isVisitor && status !== "owner",
     canViewPublicContent,
