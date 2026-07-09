@@ -17,3 +17,6 @@ Status: Complete
 
 ## Manual test
 Open another user's profile, choose Message, send a message, switch conversations, and confirm Home/community navigation remains unchanged.
+
+## Validation correction
+The initial validation caught an invalid AppIcon key. It was replaced with the approved Coolicons paperclip key before the task was closed; the final typecheck and build passed.

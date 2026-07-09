@@ -68,7 +68,7 @@ function DirectMessageComposer({ conversationId, onSendMessage }: { conversation
 
   return (
     <form className="direct-composer" onSubmit={submit}>
-      <button type="button" aria-label="Attach file" disabled><AppIcon name="attachment" size="sm" /></button>
+      <button type="button" aria-label="Attach file" disabled><AppIcon name="paperclip" size="sm" /></button>
       <textarea value={body} onChange={(event) => setBody(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Message privately" rows={1} maxLength={4000} />
       <button type="submit" className="direct-send" aria-label="Send direct message" disabled={!body.trim()}><AppIcon name="send" size="sm" /></button>
     </form>
@@ -103,3 +103,4 @@ export function DirectMessagesView({ conversations, activeConversationId, curren
     </section>
   );
 }
+
