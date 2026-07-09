@@ -1,5 +1,7 @@
 # Beta Go / No-Go Checklist
 
+> Legacy checklist: use [Beta Go / No-Go](beta-go-no-go.md) as the canonical Full MVP beta release decision record.
+
 Use this checklist before distributing a Picom beta build to testers.
 
 ## Decision options
