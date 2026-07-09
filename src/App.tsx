@@ -51,6 +51,8 @@ import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
 import { CrashRecoveryDialog } from "./components/CrashRecoveryDialog";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
+import { NotificationCenterPopover } from "./components/NotificationCenterPopover";
+import { notificationCenterService, type NotificationCenterItem } from "./services/notificationCenterService";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
 import { diagnosticsService } from "./services/diagnosticsService";
@@ -291,6 +293,8 @@ export function App() {
   const [isAppLocked, setIsAppLocked] = useState(false);
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [notificationCenterItems, setNotificationCenterItems] = useState(() => notificationCenterService.list());
   const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
@@ -587,6 +591,8 @@ export function App() {
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
     return { ...profile, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
   }, [communities, followedUserIds, friendState.friends, friendState.requests, selectedProfileMember]);
+
+  useEffect(() => notificationCenterService.subscribe(setNotificationCenterItems), []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1480,6 +1486,19 @@ export function App() {
     onReaction: handleDirectRealtimeReaction,
   });
 
+  const openNotificationSource = useCallback((item: NotificationCenterItem) => {
+    notificationCenterService.markRead(item.id);
+    setNotificationCenterOpen(false);
+    if (item.context.kind === "dm" && item.context.userId) { openDirectMessages(item.context.userId); return; }
+    if (item.context.kind === "community" && item.context.communityId) {
+      setActiveView("community"); switchCommunity(item.context.communityId);
+      if (item.context.channelId) setActiveChannelId(item.context.channelId);
+      if (item.context.messageId) setHighlightedMessageId(item.context.messageId);
+      return;
+    }
+    pushToast(item.title, "info");
+  }, [openDirectMessages, pushToast, switchCommunity]);
+
   const openFriends = useCallback(() => {
     setActiveView("friends");
     closeTransientOverlays();
@@ -1929,7 +1948,7 @@ export function App() {
   return (
     <>
       <DesktopAppShell>
-        <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={openPalette} />
+        <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={openPalette} onOpenNotifications={() => setNotificationCenterOpen((open) => !open)} notificationUnreadCount={notificationCenterItems.filter((item) => !item.readAt).length} />
         {maintenanceStatus.status === "maintenance" ? (
           <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} onOpenStatusPage={openSystemStatusPage} />
         ) : (
@@ -2272,7 +2291,8 @@ export function App() {
           }}
         />
       ) : null}
-      {paletteOpen ? (
+      {notificationCenterOpen ? <NotificationCenterPopover items={notificationCenterItems} onClose={() => setNotificationCenterOpen(false)} onOpenSource={openNotificationSource} /> : null}
+            {paletteOpen ? (
         <CommandPalette
           communities={communities}
           query={paletteQuery}

@@ -9,11 +9,13 @@ type WindowTitleBarProps = {
   theme: "light" | "dark";
   onToggleTheme: () => void;
   onOpenSearch: () => void;
+  onOpenNotifications?: () => void;
+  notificationUnreadCount?: number;
 };
 
 const titleBarIcons = mvpUiIconMap.windowTitleBar;
 
-export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch }: WindowTitleBarProps) {
+export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotifications, notificationUnreadCount = 0 }: WindowTitleBarProps) {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch }: WindowTit
         <span className="connection-pill">
           <span />Mock online
         </span>
+        {onOpenNotifications ? <button className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}><AppIcon name="bell" size="sm" />{notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}</button> : null}
         <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         <button className="window-control" aria-label="Minimize window" onClick={() => void windowService.run("minimize")}>
           <AppIcon name={titleBarIcons.minimize} size="sm" />
