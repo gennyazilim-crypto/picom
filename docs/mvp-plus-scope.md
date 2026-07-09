@@ -1,127 +1,65 @@
-# Picom MVP+ Scope Lock
+﻿# Picom MVP+ Scope Lock
 
 ## Status
 
-**Proposed/locked planning scope; implementation is not authorized by this document.**
-
-MVP+ begins only after the Full MVP stable blockers in `docs/stable-go-no-go.md` are closed and a new stable release decision approves forward product work. Existing placeholder/foundation code does not prove a feature is production-ready or automatically include it in a release.
+**Locked for implementation by the approved Tasks 46-75 pack.** MVP+ development may proceed one task at a time, but this authorization does not change the current stable release decision in `docs/stable-go-no-go.md`. Stable publication remains blocked until its external, native, security, legal, and operational evidence is complete.
 
 ## Product direction
 
-- Desktop-only Electron app for Windows, Linux, and macOS.
-- Preserve Picom custom chrome, premium desktop information density, design tokens, light/dark themes, and Coolicons/AppIcon.
-- Supabase remains the primary Auth/Postgres/RLS/Storage/Realtime/Edge backend.
-- LiveKit remains the approved voice/screen-share boundary.
-- Backend/RLS authorization remains authoritative; UI gating is UX only.
+- Electron desktop app for Windows, Linux, and macOS only.
+- Preserve Picom custom chrome, premium desktop density, design tokens, light/dark themes, and Coolicons/AppIcon.
+- Supabase remains the Auth/Postgres/RLS/Storage/Realtime/Edge boundary.
+- LiveKit remains the approved voice and screen-share boundary.
+- Backend and RLS authorization remain authoritative; UI gating is UX only.
 - No mobile or browser-first layout.
 
-## Phase 0 - stable blocker closure
+## Branch strategy
 
-Not MVP+ feature work. Must complete first:
+- `main`: stable, reviewed integration history and release-ready checkpoints.
+- `develop`: active MVP+ integration after task-level validation.
+- `feature/task-<number>-<slug>`: one bounded task at a time.
+- `release/<version>`: immutable release-candidate stabilization only.
 
-1. Live Supabase migration/RLS/Storage/Realtime/Edge verification.
-2. Historical private attachment signed-URL refresh.
-3. LiveKit deployed/native two-client verification.
-4. Native Linux/macOS packaging and stable signing/notarization.
-5. Stable Windows signing/lifecycle smoke.
-6. Real backup restore drill.
-7. Legal/privacy/publisher/support sign-off.
+Each task requires a checkpoint, relevant tests, a task-scoped commit, and review before promotion. Urgent P0 security or data-loss fixes may interrupt the queue but must remain isolated.
 
-## MVP+ priority sequence
+## Included Tasks 46-75
 
-### MVP+ A - account, safety, and reliability
+- Direct Messages schema, RLS, desktop UI, realtime, unread, and notification foundations.
+- Friends/follow hardening and privacy controls including user blocking.
+- Advanced notification center and access-safe search.
+- Saved messages and per-channel/per-DM drafts.
+- Community events, discovery, and invite onboarding polish.
+- Reports, moderation queue/filters, and audit-log UI/export.
+- Constrained bot, webhook, and built-in slash-command foundations.
+- Community custom emoji, local stickers, polls, threads, forum, and announcement channel foundations.
+- Restricted app-level operations panel.
+- Privacy-friendly analytics abstraction with no provider by default.
+- Beta auto-update architecture without production credentials or endpoint.
+- Disabled-by-default crash-reporting abstraction.
+- User data export and deletion-request workflows.
+- MVP+ security hardening and final audit.
 
-Candidate scope:
+## Explicit exclusions
 
-- Password reset and email verification hardening.
-- User blocking with backend/RLS enforcement.
-- Full notification routing/preference reliability.
-- Slow mode enforcement and polished countdown/error states.
-- Saved messages with access-safe jump behavior.
-- Delivery status and privacy-respecting read receipt opt-in.
-
-Why first: these improve account recovery, abuse protection, and daily reliability without creating a second major communication graph.
-
-Required gate:
-
-- Final data models/RLS, abuse/privacy policy, error taxonomy, migration/backward compatibility, offline/realtime behavior, and native notification QA.
-
-### MVP+ B - friends and Direct Messages
-
-Candidate scope:
-
-- Friends requests/accept/remove/block integration.
-- Who-can-request/who-can-DM privacy controls.
-- One-to-one Direct Messages.
-- DM unread/notification/draft/search/attachment behavior.
-
-Required gate:
-
-- Explicit social graph and DM threat model.
-- New schema/RLS isolation tests, report/block/spam/rate limits, retention/deletion/export behavior, attachment visibility, Realtime rooms, notification privacy, and moderation/support policy.
-- DM content must not leak into community feed/search/profile activity.
-
-Friends/DM must ship together with safety controls, not as a UI-only social surface.
-
-### MVP+ C - advanced moderation
-
-Candidate scope:
-
-- Expanded reports/appeals/moderation queue.
-- Blocked-word/rate-limit signal integration.
-- Timeouts/kick/ban/message actions with immutable audit events.
-- Permission hierarchy and evidence-safe moderation context.
-
-Required gate:
-
-- Clear policies, appeals, audit immutability, role hierarchy/RLS, data minimization, retention, abuse prevention, and moderator UX/native QA.
-
-### MVP+ D - bot and webhook foundations
-
-Candidate scope:
-
-- Server-side bot identity/token lifecycle and constrained permissions.
-- Inbound webhooks with one-time token display, hashing/revocation, rate limits, audit logs, and safe message marking.
-- Slash command registration contract for approved server-side integrations.
-
-Required gate:
-
-- Separate Bot API security review, quotas, token rotation, abuse controls, audit logging, developer terms, versioning, and no arbitrary desktop code execution.
-- Webhooks never become a bypass around community/channel permissions, attachment validation, or moderation.
-
-No marketplace or plugin runtime is included.
-
-### MVP+ E - evaluated expansion candidates
-
-Require separate product evidence and approval after A-D:
-
-- Public community discovery with listing moderation/report/age/region/privacy/anti-spam controls.
-- Steam/Epic login after provider policy, desktop OAuth/deep-link, account-linking, recovery, privacy, and support review.
-- Additional receipt/notification/community management refinements driven by measured feedback.
-
-Public discovery is not approved merely because a placeholder view exists.
+- Mobile application or mobile UI.
+- Enterprise SSO, SCIM, billing, or enterprise control plane.
+- Plugin runtime capable of executing arbitrary code.
+- Production E2EE rollout or encryption claims.
+- Public bot/plugin marketplace.
+- Production analytics provider without privacy/legal approval.
+- Production auto-update rollout before signing, metadata, rollback, and channel gates pass.
+- Discord branding, logos, copied assets, icons, or exact colors.
 
 ## Cross-cutting definition of done
 
-Every implemented MVP+ feature requires:
+- Safe schema and forward-only migration where data changes are required.
+- RLS tests or honest static/runbook evidence when live Supabase is unavailable.
+- No service-role, LiveKit, webhook, bot, updater, or provider secrets in renderer code.
+- Access-safe search/feed/profile/activity and attachment behavior.
+- Mock mode and Supabase mode remain usable.
+- No regressions to titlebar, Mention Feed, ProfileView, community chat, voice, or packaging.
+- Typecheck, relevant smoke checks, production build, checkpoint, and task commit.
 
-- Product brief and explicit inclusion decision.
-- Safe shared DTO/schema/migration and backward compatibility.
-- Supabase RLS/Storage/Realtime/Edge authorization tests.
-- Privacy/security/abuse/data retention/deletion/export review.
-- Offline/idempotency/optimistic/reconnect/conflict behavior.
-- Error/diagnostics redaction and monitoring/rollback plan.
-- Windows/Linux/macOS desktop UX and package smoke.
-- Typecheck, QA/static tests, build, checkpoint, commit, and staged rollout evidence.
-- Updated user-facing Terms/Privacy/help where behavior changes.
+## Release boundary
 
-## Priority authority
-
-- P0 security/data loss/core availability defects interrupt all MVP+ work.
-- P1 next-patch reliability can interrupt planned feature work with release owner approval.
-- New product scope cannot be smuggled through a bugfix or placeholder completion.
-- One bounded task/commit/checkpoint at a time remains the execution model.
-
-## Review cadence
-
-Review after stable launch evidence and each minor release. Changes require a dated scope decision with rationale, dependencies, risks, exclusions, and owner sign-off.
+MVP+ completion is not a stable-release approval. A new Go/No-Go review must separately close live Supabase/RLS, private attachment signed-URL reload, LiveKit/native tests, target-platform packaging/signing, restore-drill, and legal/privacy blockers.
