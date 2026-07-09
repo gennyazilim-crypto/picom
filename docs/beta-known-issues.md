@@ -40,4 +40,4 @@ This list describes current beta limitations. It must not be interpreted as a pr
 
 ## Reporting a new known issue
 
-Create a beta report with severity, platform, app version, mode, reproduction steps, expected result, actual result, and redacted diagnostics. Security or private-channel isolation concerns must be treated as release blockers and escalated immediately.
+Use the workflow in [Beta Feedback Intake](./beta-feedback-intake.md) and track confirmed reports with the [Beta Triage Board](./beta-triage-board.md). Create a beta report with category, severity, platform, app version, mode, reproduction steps, expected result, actual result, and optional redacted diagnostics. Security or private-channel isolation concerns must be treated as release blockers and escalated immediately.

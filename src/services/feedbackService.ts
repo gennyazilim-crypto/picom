@@ -3,12 +3,44 @@ import { fileService } from "./fileService";
 import { loggingService, type LogEntry } from "./loggingService";
 import { clipboardService } from "./clipboardService";
 
-export type FeedbackIssueType = "crash" | "login_auth" | "messaging" | "upload" | "realtime" | "voice" | "screen_share" | "ui_layout" | "performance" | "packaging_install" | "security_concern" | "other" | "bug" | "login" | "message" | "packaging";
+export type FeedbackIssueType =
+  | "install_package"
+  | "startup_crash"
+  | "login_auth"
+  | "community_channel"
+  | "messaging"
+  | "upload"
+  | "mention_feed"
+  | "profile_page"
+  | "permissions_rls"
+  | "voice"
+  | "screen_share"
+  | "performance"
+  | "ui_layout"
+  | "accessibility"
+  | "security_privacy"
+  | "legal_policy"
+  | "other"
+  | "crash"
+  | "realtime"
+  | "packaging_install"
+  | "security_concern"
+  | "bug"
+  | "login"
+  | "message"
+  | "packaging";
+
+export type FeedbackSeverity = "blocker" | "critical" | "major" | "minor" | "suggestion";
 
 export type FeedbackDraft = Readonly<{
   issueType: FeedbackIssueType;
+  severity?: FeedbackSeverity;
   title: string;
   description: string;
+  stepsToReproduce?: string;
+  expectedResult?: string;
+  actualResult?: string;
+  screenshotReference?: string;
   includeDiagnostics: boolean;
   includeLogs: boolean;
 }>;
@@ -44,6 +76,10 @@ export type SupportDiagnosticsPayload = Readonly<{
       message: string;
       source?: string;
     };
+  };
+  environments: {
+    supabase: string;
+    liveKit: string;
   };
   feedback?: FeedbackDraft;
   recentLogs: LogEntry[];
@@ -89,6 +125,12 @@ export const feedbackService = {
       app: diagnostics.app,
       runtime: diagnostics.runtime,
       serviceStatus: diagnostics.serviceStatus,
+      environments: {
+        supabase: diagnostics.serviceStatus.supabaseHost
+          ? `${diagnostics.app.environment}:${diagnostics.serviceStatus.supabaseHost}`
+          : `${diagnostics.app.environment}:not_configured`,
+        liveKit: `${diagnostics.app.environment}:${diagnostics.serviceStatus.liveKitStatus}`
+      },
       feedback: redactedFeedback,
       recentLogs: feedback?.includeLogs ? loggingService.getRecentLogs(75) : [],
       note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, privileged server keys, or private secrets."
