@@ -1,0 +1,58 @@
+.auth-desktop-frame{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+.auth-hero,.auth-card{
+  position:relative;
+  z-index:2;
+}
+.auth-card{
+  background:color-mix(in srgb,var(--surface) 90%,transparent);
+  backdrop-filter:blur(18px);
+}
+
+.login-background-animation-v3{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+  color:var(--picom-teal);
+  background:linear-gradient(180deg,var(--bg-chat) 0%,var(--surface-soft) 55%,var(--bg-outer) 100%);
+}
+.login-background-animation-v3.is-dark{background:linear-gradient(180deg,var(--bg-outer) 0%,var(--bg-sidebar) 55%,var(--bg-chat) 100%)}
+.login-v3-glows{position:absolute;inset:0;animation:picom-login-breathe 24s ease-in-out infinite}
+.login-v3-glows i{position:absolute;display:block;border-radius:50%;filter:blur(38px)}
+.login-v3-glows i:first-child{left:50%;top:58%;width:1400px;height:700px;translate:-50% -50%;background:radial-gradient(ellipse,color-mix(in srgb,var(--picom-teal) 15%,transparent),color-mix(in srgb,var(--picom-teal) 4%,transparent) 42%,transparent 68%)}
+.login-v3-glows i:last-child{left:72%;top:30%;width:700px;height:500px;translate:-50% -50%;background:radial-gradient(ellipse,color-mix(in srgb,var(--picom-orange) 10%,transparent),transparent 66%);animation:picom-login-breathe 32s ease-in-out infinite -10s}
+.login-v3-grid{position:absolute;inset:0;background-image:linear-gradient(color-mix(in srgb,var(--text-muted) 8%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--text-muted) 8%,transparent) 1px,transparent 1px);background-size:88px 88px;mask-image:radial-gradient(ellipse at center,#000 15%,transparent 80%)}
+.login-v3-waves{position:absolute;inset:0;width:100%;height:100%;animation:picom-login-wave-float 40s ease-in-out infinite}
+.login-v3-dash{fill:none;stroke-width:1.4;stroke-dasharray:90 510;animation:picom-login-wave-dash 22s linear infinite}
+.login-v3-dash.dash-accent{stroke:var(--picom-aqua)}
+.login-v3-dash.dash-warm{stroke:var(--picom-orange);stroke-dasharray:70 530;animation-duration:30s;animation-delay:-14s}
+.login-v3-dash.dash-neutral{stroke:var(--text-muted);stroke-dasharray:55 545;animation-duration:38s;animation-delay:-7s;opacity:.55}
+.login-v3-particles{position:absolute;inset:0}
+.login-v3-particles i{position:absolute;display:block;border-radius:50%;offset-rotate:0deg;animation:picom-login-travel linear infinite}
+.login-v3-particles .particle-accent{width:8px;height:8px;background:var(--picom-aqua);box-shadow:0 0 16px 4px color-mix(in srgb,var(--picom-aqua) 48%,transparent);offset-path:path("M-100 620 C 250 520, 480 720, 800 600 S 1350 420, 1700 540");animation-duration:26s}
+.login-v3-particles .particle-warm{width:6px;height:6px;background:var(--picom-orange);box-shadow:0 0 14px 3px color-mix(in srgb,var(--picom-orange) 40%,transparent);offset-path:path("M-100 300 C 300 380, 600 220, 950 320 S 1450 420, 1700 340");animation-duration:34s;animation-delay:-16s}
+.login-v3-particles .particle-neutral{width:5px;height:5px;background:var(--text-muted);box-shadow:0 0 12px 3px color-mix(in srgb,var(--text-muted) 32%,transparent);offset-path:path("M-100 480 C 350 420, 650 540, 1000 460 S 1480 380, 1700 440");animation-duration:42s;animation-delay:-8s}
+.login-v3-network{position:absolute;inset:0;width:100%;height:100%}
+.login-v3-network path{stroke:color-mix(in srgb,var(--text-muted) 23%,transparent);stroke-width:1;vector-effect:non-scaling-stroke;stroke-dasharray:2 5}
+.login-v3-chips{position:absolute;inset:0}
+.login-v3-chip{position:absolute;width:46px;height:46px;display:grid;place-items:center;translate:-50% -50%;border:1px solid color-mix(in srgb,var(--border) 76%,transparent);border-radius:12px;background:color-mix(in srgb,var(--surface) 82%,transparent);box-shadow:0 14px 36px color-mix(in srgb,var(--text-primary) 13%,transparent);color:var(--text-secondary);backdrop-filter:blur(12px);animation:picom-login-chip 26s ease-in-out infinite var(--chip-delay)}
+.login-v3-chip:nth-child(2n){animation-direction:reverse;animation-duration:29s}
+.login-v3-chip.accent{border-color:color-mix(in srgb,var(--picom-aqua) 28%,var(--border));color:var(--picom-teal);box-shadow:0 14px 36px color-mix(in srgb,var(--text-primary) 12%,transparent),0 0 24px color-mix(in srgb,var(--picom-aqua) 11%,transparent)}
+.login-v3-chip.warm{border-color:color-mix(in srgb,var(--picom-orange) 32%,var(--border));color:var(--picom-orange)}
+.login-v3-chip b{font-size:20px;font-weight:700}
+.login-v3-specks{position:absolute;inset:0}
+.login-v3-specks i{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--picom-aqua);animation:picom-login-speck 9s ease-in-out infinite}
+.login-v3-specks i:nth-child(1){left:19%;top:42%}.login-v3-specks i:nth-child(2){left:63%;top:10%;background:var(--text-muted);animation-delay:-4s}.login-v3-specks i:nth-child(3){left:90%;top:40%;width:4px;height:4px;background:var(--picom-orange);animation-delay:-2s}.login-v3-specks i:nth-child(4){left:27%;top:84%;animation-delay:-3s}.login-v3-specks i:nth-child(5){left:74%;top:88%;background:var(--text-muted);animation-delay:-7s}
+.login-v3-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 43%,color-mix(in srgb,var(--bg-outer) 58%,transparent) 100%)}
+@keyframes picom-login-wave-dash{to{stroke-dashoffset:-600}}
+@keyframes picom-login-wave-float{0%,100%{translate:0 0}50%{translate:0 -30px}}
+@keyframes picom-login-travel{0%{offset-distance:0%;opacity:0}6%,90%{opacity:1}100%{offset-distance:100%;opacity:0}}
+@keyframes picom-login-breathe{0%,100%{scale:1;opacity:.5}50%{scale:1.06;opacity:.9}}
+@keyframes picom-login-chip{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes picom-login-speck{0%,100%{opacity:.22}50%{opacity:.9}}
+@media (prefers-reduced-motion:reduce){.login-background-animation-v3 *{animation:none!important}}
