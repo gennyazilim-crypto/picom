@@ -42,6 +42,7 @@ const requiredMigrationPrefixes = [
   "20260710003200_user_blocking_privacy",
   "20260710003300_saved_messages",
   "20260710003400_community_events",
+  "20260710003500_community_discovery",
 ];
 
 function fail(message) {

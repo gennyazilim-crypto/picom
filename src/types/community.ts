@@ -102,6 +102,8 @@ export interface Community {
   description?: string | null;
   visibility?: "public" | "private";
   publicReadEnabled?: boolean;
+  discoveryListed?: boolean;
+  discoveryCategory?: "development" | "design" | "gaming" | "music" | "study" | "work";
   categories: ChannelCategory[];
   roles: Role[];
   members: Member[];

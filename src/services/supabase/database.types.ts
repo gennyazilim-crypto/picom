@@ -36,6 +36,8 @@ export type Database = {
           accent_color: string;
           visibility: "public" | "private";
           public_read_enabled: boolean;
+          discovery_listed: boolean;
+          category: "development" | "design" | "gaming" | "music" | "study" | "work" | null;
           created_at: string;
           updated_at: string;
         };

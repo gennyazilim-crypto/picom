@@ -50,6 +50,7 @@ import { relationshipService } from "./services/relationshipService";
 import { advancedSearchService } from "./services/advancedSearchService";
 import { savedMessageService, type SavedMessageRecord } from "./services/savedMessageService";
 import { SavedMessagesView } from "./components/SavedMessagesView";
+import { DiscoveryView } from "./components/DiscoveryView";
 import { FriendsView } from "./components/FriendsView";
 import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
@@ -143,7 +144,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages";
+type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
 
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
   status: "idle",
@@ -1944,7 +1945,9 @@ export function App() {
             communities={communities}
             activeCommunityId={activeCommunityId}
             homeActive={activeView === "mentionFeed"}
+            discoveryActive={activeView === "discovery"}
             onOpenHome={openMentionFeed}
+            onOpenDiscovery={() => { setActiveView("discovery"); closeTransientOverlays(); }}
             onSelectCommunity={openCommunityFromRail}
             onOpenSettings={openSettings}
             onUtilityAction={(message) => {
@@ -1957,7 +1960,31 @@ export function App() {
             }}
             onContextMenu={(event, label) => openContext(event, [{ label }, { label: "Context placeholder" }])}
           />
-          {activeView === "mentionFeed" ? (
+          {activeView === "discovery" ? (
+            <DiscoveryView
+              communities={communities}
+              currentUserId={currentUserId}
+              onView={openCommunityFromRail}
+              onJoin={async (communityId) => {
+                const community = communities.find((item) => item.id === communityId);
+                if (!community) return;
+
+                const result = await communityMembershipService.joinCommunity({
+                  community,
+                  currentUser,
+                  isAuthenticated: Boolean(authSession),
+                });
+
+                if (result.ok) {
+                  replaceCommunityMembers(community.id, [...community.members, result.data]);
+                  openCommunityFromRail(community.id);
+                  pushToast(`Joined ${community.name}.`, "success");
+                } else {
+                  pushToast(result.error.message, "error");
+                }
+              }}
+            />
+          ) : activeView === "mentionFeed" ? (
             <div className="mention-feed-shell">
               <MentionFeedMain
                 items={mentionItems}

@@ -11,14 +11,16 @@ type ServerRailProps = {
   communities: Community[];
   activeCommunityId: string;
   homeActive?: boolean;
+  discoveryActive?: boolean;
   onSelectCommunity: (id: string) => void;
   onOpenHome: () => void;
+  onOpenDiscovery: () => void;
   onOpenSettings: () => void;
   onUtilityAction?: (label: string) => void;
   onContextMenu: (event: MouseEvent, label: string) => void;
 };
 
-export function ServerRail({ communities, activeCommunityId, homeActive = false, onSelectCommunity, onOpenHome, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
+export function ServerRail({ communities, activeCommunityId, homeActive = false, discoveryActive = false, onSelectCommunity, onOpenHome, onOpenDiscovery, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
   return (
     <nav className="server-rail" aria-label="Communities">
       <button className={`server-home ${homeActive ? "active" : ""}`} aria-label="Open mention feed" aria-current={homeActive ? "page" : undefined} onClick={onOpenHome}>
@@ -46,7 +48,7 @@ export function ServerRail({ communities, activeCommunityId, homeActive = false,
         <button className="server-button utility" aria-label="Add community" onClick={() => onUtilityAction?.("create-community")}>
           <AppIcon name={railIcons.addCommunity} size="lg" />
         </button>
-        <button className="server-button utility" aria-label="Discover communities placeholder" onClick={() => onUtilityAction?.("Discover communities placeholder opened.")}>
+        <button className={`server-button utility ${discoveryActive ? "active" : ""}`} aria-label="Discover communities" onClick={onOpenDiscovery}>
           <AppIcon name={railIcons.discover} size="lg" />
         </button>
       </div>

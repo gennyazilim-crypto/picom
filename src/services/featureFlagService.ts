@@ -55,7 +55,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableVoiceRooms: true,
     enableDirectMessages: false,
     enableFriends: false,
-    enableDiscovery: false,
+    enableDiscovery: true,
     enableBots: false,
     enableWebhooks: false,
     enableThreads: false,
