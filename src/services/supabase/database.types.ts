@@ -17,6 +17,8 @@ export type Database = {
           status_text: string;
           bio: string | null;
           accent_color: string | null;
+          onboarding_completed: boolean;
+          onboarding_completed_at: string | null;
           created_at: string;
           updated_at: string;
         };

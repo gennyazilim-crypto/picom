@@ -8,6 +8,7 @@ import { mockDirectConversations } from "./data/mockDirectMessages";
 import { mockFriendState } from "./data/mockFriends";
 import { mockUpcomingEvents } from "./data/mockEvents";
 import { mockFollowedUserStories } from "./data/mockStories";
+import { mockFollowSuggestions } from "./data/mockFollowSuggestions";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import type { DirectConversation } from "./types/directMessages";
 import type { FriendState } from "./types/friends";
@@ -16,6 +17,7 @@ import type { ProfileActivityItem } from "./types/profile";
 import type { FollowedUserStory } from "./types/stories";
 import type { CommunityTemplateId } from "./types/communityTemplates";
 import type { CommunityAccess } from "./types/communityAccess";
+import type { OnboardingCompletion } from "./types/onboarding";
 import type { MockVoiceState } from "./types/voice";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
@@ -32,6 +34,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
+import { FirstRunOnboarding } from "./components/onboarding/FirstRunOnboarding";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
@@ -59,6 +62,7 @@ import { crashRecoveryService, type CrashRecoveryRecord } from "./services/crash
 import { safeModeService, type SafeModeState } from "./services/safeModeService";
 import { statusPageService } from "./services/statusPageService";
 import { authService } from "./services/authService";
+import { onboardingService } from "./services/onboarding/onboardingService";
 import { communityService } from "./services/communityService";
 import { communityMembershipService } from "./services/community/communityMembershipService";
 import { channelService } from "./services/channelService";
@@ -284,6 +288,7 @@ export function App() {
   const [createCommunityOpen, setCreateCommunityOpen] = useState(false);
   const [createChannelCategoryId, setCreateChannelCategoryId] = useState<string | null>(null);
   const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
+  const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
   const {
     communities,
     appendLocalMessage,
@@ -350,6 +355,21 @@ export function App() {
     clearError: clearAuthError,
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
+  const onboardingUserId = authSession?.user?.id ?? null;
+  useEffect(() => {
+    if (!onboardingUserId) {
+      setOnboardingPhase("checking");
+      return;
+    }
+
+    let canceled = false;
+    setOnboardingPhase("checking");
+    void onboardingService.getState(onboardingUserId).then((result) => {
+      if (canceled) return;
+      setOnboardingPhase(result.ok && result.data.completed ? "complete" : "required");
+    });
+    return () => { canceled = true; };
+  }, [onboardingUserId]);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? fallbackCurrentUser;
   const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
@@ -1461,6 +1481,30 @@ export function App() {
     loggingService.logInfo("Profile activity highlight placeholder prepared", { messageId: activity.messageId }, "profile");
   }, [clearChannelUnread, closeTransientOverlays, pushToast, switchCommunity]);
 
+  const finishFirstRunOnboarding = useCallback((completion: OnboardingCompletion) => {
+    const nextProfileSettings = {
+      ...profileSettings,
+      displayName: completion.profile.displayName,
+      statusText: completion.profile.statusText,
+    };
+    setProfileSettings(nextProfileSettings);
+    setFollowedUserIds(completion.followedUserIds);
+    setTheme(completion.theme);
+    settingsService.updateSettings({ theme: completion.theme, profileSettings: nextProfileSettings });
+    setOnboardingPhase("complete");
+
+    if (completion.startChoice === "createCommunity") {
+      setActiveView("community");
+      setCreateCommunityOpen(true);
+    } else if (completion.startChoice === "demoCommunity") {
+      setActiveView("community");
+    } else {
+      setActiveView("mentionFeed");
+      if (completion.startChoice === "joinInvite") pushToast("Your invite is ready for the community join flow.", "info");
+    }
+    pushToast("Picom setup completed.", "success");
+  }, [profileSettings, pushToast]);
+
   if (!authReady || !authSession) {
     return (
       <>
@@ -1494,6 +1538,36 @@ export function App() {
               }}
             />
           )}
+        </DesktopAppShell>
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
+
+  if (onboardingPhase === "checking" && authSession.user) {
+    return (
+      <DesktopAppShell>
+        <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
+        <main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="home" size="xl" /></span><strong>Preparing your Picom workspace…</strong></main>
+      </DesktopAppShell>
+    );
+  }
+
+  if (onboardingPhase === "required" && authSession.user) {
+    return (
+      <>
+        <DesktopAppShell>
+          <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
+          <FirstRunOnboarding
+            userId={authSession.user.id}
+            initialDisplayName={authSession.user.displayName || profileSettings.displayName || currentUser.displayName}
+            initialStatusText={profileSettings.statusText || currentUser.statusText}
+            initialFollowedUserIds={followedUserIds}
+            suggestions={mockFollowSuggestions}
+            theme={theme}
+            onThemeChange={setTheme}
+            onComplete={finishFirstRunOnboarding}
+          />
         </DesktopAppShell>
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
