@@ -81,6 +81,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
           <ChannelCategory
             key={category.id}
             category={category}
+            communityId={community.id}
             collapsed={Boolean(collapsed[category.id])}
             activeChannelId={activeChannelId}
             onToggle={() => setCollapsed((current) => ({ ...current, [category.id]: !current[category.id] }))}

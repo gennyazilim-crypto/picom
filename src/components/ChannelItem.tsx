@@ -11,9 +11,10 @@ type ChannelItemProps = {
   active: boolean;
   onSelect: (channel: Channel) => void;
   onContextMenu: (event: MouseEvent, channel: Channel) => void;
+  hasDraft?: boolean;
 };
 
-export function ChannelItem({ channel, active, onSelect, onContextMenu }: ChannelItemProps) {
+export function ChannelItem({ channel, active, onSelect, onContextMenu, hasDraft = false }: ChannelItemProps) {
   const icon = channel.type === "voice" ? sidebarIcons.voiceChannel : sidebarIcons.textChannel;
   const mentionCount = normalizeMentionCount(channel.mentions);
   const mentionLabel = formatMentionBadge(mentionCount);
@@ -29,7 +30,7 @@ export function ChannelItem({ channel, active, onSelect, onContextMenu }: Channe
       <AppIcon name={icon} size="sm" />
       <span className="channel-name">{channel.name}</span>
       {channel.isPrivate ? <AppIcon name={sidebarIcons.privateChannel} size="xs" /> : null}
-      {channel.unread ? <span className="channel-unread" aria-label="Unread channel" /> : null}
+      {channel.unread ? <span className="channel-unread" aria-label="Unread channel" /> : hasDraft ? <span className="channel-draft-indicator">Draft</span> : null}
       {mentionCount ? (
         <span className="mention-badge" aria-label={mentionBadgeLabel} title={mentionBadgeLabel}>
           {mentionLabel}

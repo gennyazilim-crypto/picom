@@ -1,85 +1,13 @@
-const STORAGE_KEY = "picom.messageDrafts.v1";
-
-type DraftRecord = {
-  text: string;
-  updatedAt: string;
-};
-
+﻿const STORAGE_KEY = "picom.messageDrafts.v1";
+export type DraftRecord = Readonly<{ text: string; updatedAt: string }>;
 type DraftMap = Record<string, DraftRecord>;
-
-type DraftContext = {
-  communityId: string;
-  channelId: string;
-};
-
-function getStorage(): Storage | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function getDraftKey(context: DraftContext): string {
-  return `${context.communityId}:${context.channelId}`;
-}
-
-function readDrafts(): DraftMap {
-  const storage = getStorage();
-  if (!storage) return {};
-
-  try {
-    const raw = storage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as DraftMap;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeDrafts(drafts: DraftMap): void {
-  const storage = getStorage();
-  if (!storage) return;
-
-  try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(drafts));
-  } catch {
-    // Draft persistence is best-effort. It must never block message sending.
-  }
-}
-
-export const messageDraftService = {
-  getDraft(context: DraftContext): DraftRecord | null {
-    return readDrafts()[getDraftKey(context)] ?? null;
-  },
-
-  saveDraft(context: DraftContext, text: string): void {
-    const drafts = readDrafts();
-    const key = getDraftKey(context);
-    const value = text.trimEnd();
-
-    if (!value.trim()) {
-      delete drafts[key];
-      writeDrafts(drafts);
-      return;
-    }
-
-    drafts[key] = {
-      text,
-      updatedAt: new Date().toISOString(),
-    };
-    writeDrafts(drafts);
-  },
-
-  clearDraft(context: DraftContext): void {
-    const drafts = readDrafts();
-    delete drafts[getDraftKey(context)];
-    writeDrafts(drafts);
-  },
-
-  getStorageKey(): string {
-    return STORAGE_KEY;
-  },
-};
+export type DraftContext = Readonly<{ communityId: string; channelId: string; directConversationId?: never } | { directConversationId: string; communityId?: never; channelId?: never }>;
+function storage():Storage|null{if(typeof window==="undefined")return null;try{return window.localStorage}catch{return null}}
+function key(context:DraftContext){return context.directConversationId?`dm:${context.directConversationId}`:`community:${context.communityId}:channel:${context.channelId}`}
+function legacyKey(context:DraftContext){return context.directConversationId?null:`${context.communityId}:${context.channelId}`}
+function read():DraftMap{const target=storage();if(!target)return{};try{const parsed=JSON.parse(target.getItem(STORAGE_KEY)??"{}") as DraftMap;return parsed&&typeof parsed==="object"?parsed:{}}catch{return{}}}
+function write(items:DraftMap){const target=storage();if(!target)return;try{target.setItem(STORAGE_KEY,JSON.stringify(items))}catch{/* best-effort; sending must not fail */}}
+function getDraft(context:DraftContext):DraftRecord|null{const items=read();const current=items[key(context)];if(current)return current;const legacy=legacyKey(context);if(legacy&&items[legacy]){items[key(context)]=items[legacy];delete items[legacy];write(items);return items[key(context)]}return null}
+function setDraft(context:DraftContext,text:string){const items=read();const target=key(context);if(!text.trim()){delete items[target];const legacy=legacyKey(context);if(legacy)delete items[legacy];write(items);return}items[target]={text,updatedAt:new Date().toISOString()};write(items)}
+function clearDraft(context:DraftContext){const items=read();delete items[key(context)];const legacy=legacyKey(context);if(legacy)delete items[legacy];write(items)}
+export const messageDraftService={getDraft,setDraft,saveDraft:setDraft,clearDraft,hasDraft(context:DraftContext){return Boolean(getDraft(context)?.text.trim())},getStorageKey(){return STORAGE_KEY}};

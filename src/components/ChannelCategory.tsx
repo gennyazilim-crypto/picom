@@ -3,11 +3,13 @@ import type { Channel, ChannelCategory as ChannelCategoryType } from "../types/c
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { ChannelItem } from "./ChannelItem";
+import { messageDraftService } from "../services/messageDraftService";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
 
 type ChannelCategoryProps = {
   category: ChannelCategoryType;
+  communityId: string;
   collapsed: boolean;
   activeChannelId: string;
   onToggle: () => void;
@@ -21,6 +23,7 @@ type ChannelCategoryProps = {
 
 export function ChannelCategory({
   category,
+  communityId,
   collapsed,
   activeChannelId,
   onToggle,
@@ -53,6 +56,7 @@ export function ChannelCategory({
                 active={channel.id === activeChannelId}
                 onSelect={onSelectChannel}
                 onContextMenu={onChannelContextMenu}
+                hasDraft={messageDraftService.hasDraft({ communityId, channelId: channel.id })}
               />
               {showReorderControls ? (
                 <span className="channel-reorder-controls" aria-label={`Reorder ${channel.name}`}>

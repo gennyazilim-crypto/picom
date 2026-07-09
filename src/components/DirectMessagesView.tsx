@@ -2,6 +2,7 @@
 import type { DirectConversation } from "../types/directMessages";
 import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon } from "./AppIcon";
+import { messageDraftService } from "../services/messageDraftService";
 
 type DirectMessagesViewProps = {
   conversations: DirectConversation[];
@@ -26,7 +27,7 @@ export function DirectConversationList({ conversations, activeConversationId, on
         <button key={conversation.id} className={`direct-conversation ${conversation.id === activeConversationId ? "active" : ""}`} onClick={() => onSelectConversation(conversation.id)}>
           <span className={`direct-avatar status-${conversation.participantStatus}`}>{conversation.participantName.slice(0, 1)}</span>
           <span className="direct-copy"><strong>{conversation.participantName}</strong><small>{conversation.lastMessagePreview || "Start a conversation"}</small></span>
-          {conversation.unreadCount ? <em aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</em> : null}
+          {conversation.unreadCount ? <em aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</em> : messageDraftService.hasDraft({ directConversationId: conversation.id }) ? <i className="direct-draft-indicator">Draft</i> : null}
         </button>
       ))}
     </div>
@@ -55,21 +56,22 @@ export function DirectConversationHeader({ conversation, onBack, onOpenProfile }
 }
 
 function DirectMessageComposer({ conversationId, onSendMessage }: { conversationId: string; onSendMessage: (conversationId: string, body: string) => void }) {
-  const [body, setBody] = useState("");
-  useEffect(() => setBody(""), [conversationId]);
+  const [body, setBody] = useState(() => messageDraftService.getDraft({ directConversationId: conversationId })?.text ?? "");
+  useEffect(() => setBody(messageDraftService.getDraft({ directConversationId: conversationId })?.text ?? ""), [conversationId]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const value = body.trim();
     if (!value) return;
     onSendMessage(conversationId, value);
+    messageDraftService.clearDraft({ directConversationId: conversationId });
     setBody("");
   };
 
   return (
     <form className="direct-composer" onSubmit={submit}>
       <button type="button" aria-label="Attach file" disabled><AppIcon name="paperclip" size="sm" /></button>
-      <textarea value={body} onChange={(event) => setBody(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Message privately" rows={1} maxLength={4000} />
+      <textarea value={body} onChange={(event) => { setBody(event.target.value); messageDraftService.setDraft({ directConversationId: conversationId }, event.target.value); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Message privately" rows={1} maxLength={4000} />
       <button type="submit" className="direct-send" aria-label="Send direct message" disabled={!body.trim()}><AppIcon name="send" size="sm" /></button>
     </form>
   );
