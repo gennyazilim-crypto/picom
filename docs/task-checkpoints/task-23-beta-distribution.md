@@ -7,6 +7,9 @@ A controlled beta distribution plan now defines internal-first release rings, ta
 ## Files
 
 - `docs/beta-distribution-plan.md`
+- `docs/beta-distribution.md`
+- `docs/beta-installation-guide.md`
+- `docs/beta-feedback-triage.md`
 - `docs/task-checkpoints/task-23-beta-distribution.md`
 
 ## Safety
