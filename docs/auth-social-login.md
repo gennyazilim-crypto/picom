@@ -27,6 +27,20 @@ The flow uses PKCE: Picom asks Supabase for an authorization URL, opens it in th
 
 When Apple is not configured, Picom keeps the Apple button visible but disabled with a setup explanation.
 
+## Account linking
+
+- Supabase Auth identities remain the source of truth for linked Google/Apple identities.
+- Picom must not silently merge two existing accounts only because provider metadata contains the same display name.
+- Email-based automatic linking is allowed only when Supabase has verified the provider email and the project linking policy explicitly permits it.
+- A future account-settings linking action must require an active session and recent authentication before adding or removing an identity.
+- Test account recovery before enabling a provider for external beta users; users must retain at least one working sign-in method.
+
+## Steam and Epic scope
+
+- Steam login is MVP+ work requiring a custom OpenID flow and a trusted backend or Supabase Edge Function. It is not implemented in the Full MVP social login.
+- Epic login is MVP+ work requiring custom OAuth/Epic Online Services integration and server-side credential handling. It is not implemented in the Full MVP social login.
+- Picom does not expose disabled Steam/Epic buttons or claim these providers are available in this beta.
+
 ## Local development
 
 - Use a development Supabase project and the same `picom://auth/callback` allowlist entry.
