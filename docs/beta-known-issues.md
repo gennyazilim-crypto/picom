@@ -6,7 +6,7 @@ This list describes current beta limitations. It must not be interpreted as a pr
 
 | Issue | Impact | Workaround / status |
 | --- | --- | --- |
-| Windows electron-builder can fail with `EPERM` while renaming `win-unpacked.tmp` | Installer is not produced on the affected workstation | Close Picom/Electron and Explorer handles, review Controlled Folder Access/antivirus, remove only incomplete `.tmp` output, then rebuild |
+| Stale Picom Vite/Electron processes can lock electron-builder output and cause `EPERM` | Packaging stops before the installer is produced | Resolved for the current candidate by closing project-specific processes and clearing only incomplete `.tmp` output before rebuilding |
 | Local beta artifacts are unsigned | Windows SmartScreen or macOS Gatekeeper may warn | Use approved internal artifacts; signing/notarization is a later release gate |
 | Linux and macOS artifacts cannot be validated from Windows | Cross-platform package quality remains unconfirmed | Build and smoke-test on native Linux/macOS hosts or dedicated CI runners |
 | Vite reports chunks over 500 kB | Startup/download performance may be lower than target | Non-blocking for this beta; code splitting remains a tracked optimization |
@@ -41,4 +41,3 @@ This list describes current beta limitations. It must not be interpreted as a pr
 ## Reporting a new known issue
 
 Create a beta report with severity, platform, app version, mode, reproduction steps, expected result, actual result, and redacted diagnostics. Security or private-channel isolation concerns must be treated as release blockers and escalated immediately.
-

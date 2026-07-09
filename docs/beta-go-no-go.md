@@ -20,7 +20,7 @@ An unverified blocker is treated as failed. Documentation of a platform gap does
 | Date | 2026-07-09 |
 | Version | `0.1.0-beta` placeholder |
 | Channel | Beta |
-| Reason | Windows installer creation is blocked by local `EPERM`; native package launch, Supabase staging/RLS, LiveKit two-client voice, and screen-share checks remain unverified |
+| Reason | Windows installer now builds, but clean-account package launch plus Supabase staging/RLS, LiveKit two-client voice, and screen-share checks remain unverified |
 | Decision owner | Pending |
 
 This record must be updated by the release owner after all required evidence is attached.
@@ -91,7 +91,7 @@ This record must be updated by the release owner after all required evidence is 
 ## Packaging
 
 - [x] `[VERIFY]` `npm run typecheck`, `npm run mock:smoke`, `npm run build`, and `npm run package:verify` pass on the current Windows source checkout.
-- [ ] `[BLOCKER]` Windows beta artifact is produced, installed, launched, and uninstalled on a clean test account.
+- [ ] `[BLOCKER]` Windows beta artifact is installed, launched, and uninstalled on a clean test account. Artifact production passes.
 - [ ] `[BLOCKER]` Linux beta artifact is produced, installed, launched, and uninstalled on a supported distribution.
 - [ ] `[BLOCKER]` macOS artifact is produced, launched, and permission-tested if macOS is included in this beta ring.
 - [ ] `[VERIFY]` App metadata, icons, custom protocol, packaged preload, and staging configuration are correct in each artifact.
@@ -111,7 +111,7 @@ This record must be updated by the release owner after all required evidence is 
 
 ## Known issues
 
-- [x] Windows electron-builder `EPERM` package blocker is recorded.
+- [x] Windows electron-builder `EPERM` process-lock issue is resolved for the current candidate and documented.
 - [x] Unsigned build warning is recorded.
 - [x] Vite chunk-size warning is recorded as non-critical.
 - [x] Supabase CLI/staging and LiveKit staging requirements are recorded.
@@ -163,4 +163,3 @@ These may support `GO WITH NON-BLOCKERS` only after all blockers pass:
 - Evidence links:
 - Non-blockers accepted:
 - Rollback/withdrawal owner:
-

@@ -6,7 +6,7 @@ A canonical Full MVP beta decision checklist now separates blockers, verificatio
 
 ## Current status
 
-The initial record is `NO-GO`. Windows packaging is blocked by a local electron-builder `EPERM`, and native package launch plus live Supabase/RLS/LiveKit validation remains incomplete. This status avoids a false beta-readiness claim.
+The current record remains `NO-GO`. Windows packaging now succeeds, but clean-account package launch plus live Supabase/RLS/LiveKit validation remains incomplete. This status avoids a false beta-readiness claim.
 
 ## Files
 

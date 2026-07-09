@@ -10,12 +10,13 @@ Packaging metadata, icon paths, packaged entry/preload paths, Electron renderer 
 - `npm run mock:smoke`: pass
 - `npm run build`: pass with the existing non-blocking Vite chunk-size warning
 - `npm run package:verify`: pass
-- `npm run package:win`: blocked by Windows `EPERM` while renaming `release/win-unpacked.tmp`
-- isolated output retry: blocked by the same `EPERM` while renaming `release-beta-candidate/win-unpacked.tmp`
+- Initial `npm run package:win`: blocked by stale Picom Vite/Electron processes holding the output directory
+- Isolated output retry: confirmed the same process-lock symptom
+- Final `npm run package:win` after targeted process cleanup: pass
 
 ## Artifact status
 
-No distributable installer was produced. The generated `.tmp` directories are incomplete and must not be distributed. Linux and macOS artifacts require native target build hosts.
+The Windows NSIS candidate exists at `release/Picom-0.1.0-Windows-x64.exe` with SHA-256 `BCF30CA769548E70938B81C219998CE33F5D5C3CACA379A48CAC9BD8EC55117B`. Linux and macOS artifacts still require native target build hosts.
 
 ## Safety
 
@@ -25,4 +26,4 @@ No distributable installer was produced. The generated `.tmp` directories are in
 
 ## Follow-up
 
-Resolve the local Windows filesystem/antivirus lock, rerun `npm run package:win`, then complete clean-machine smoke testing before calling the build a beta candidate.
+Complete clean-account Windows install/launch/uninstall smoke testing, then build and test Linux/macOS candidates on native hosts.

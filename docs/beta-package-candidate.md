@@ -2,9 +2,17 @@
 
 ## Candidate status
 
-Picom `0.1.0` is source- and configuration-ready for an unsigned local beta candidate. TypeScript, mock-mode smoke, renderer/Electron production build, and the packaging configuration verifier pass on Windows.
+Picom `0.1.0` is source-, configuration-, and Windows-package-ready for an unsigned local beta candidate. TypeScript, mock-mode smoke, renderer/Electron production build, packaging configuration verification, and Windows NSIS packaging pass on Windows.
 
-The Windows installer was not produced during the 2026-07-09 run because Windows denied electron-builder's final directory rename with `EPERM`. The same failure occurred in both `release/win-unpacked` and a fresh `release-beta-candidate/win-unpacked` output, so this is recorded as a local filesystem, antivirus, or Controlled Folder Access blocker rather than a source/configuration failure. No partial `.tmp` directory is a distributable artifact.
+The initial 2026-07-09 package attempt was blocked by stale Picom Vite/Electron processes holding the electron-builder output. After those project-specific processes and incomplete `.tmp` directories were closed/cleared, the standard `npm run package:win` command completed successfully.
+
+Windows candidate:
+
+- Installer: `release/Picom-0.1.0-Windows-x64.exe`
+- Installer size: `120816642` bytes
+- SHA-256: `BCF30CA769548E70938B81C219998CE33F5D5C3CACA379A48CAC9BD8EC55117B`
+- Block map: `release/Picom-0.1.0-Windows-x64.exe.blockmap`
+- Unpacked executable: `release/win-unpacked/Picom.exe`
 
 ## Verified metadata and security
 
@@ -101,9 +109,8 @@ Before distribution:
 
 ## Current gaps
 
-- Windows artifact creation is blocked locally by an `EPERM` rename denial; no valid installer was produced in this run.
+- Windows installer creation now passes; clean-account install, launch, uninstall, protocol, and staging-connectivity smoke tests remain required.
 - Linux AppImage/deb must be generated and smoke-tested on Linux.
 - macOS dmg/zip must be generated and smoke-tested on macOS.
 - Signing/notarization is intentionally not required for this local beta candidate and remains a release-readiness item.
 - Vite reports non-blocking chunks over 500 kB; bundle splitting is a later optimization and does not block this packaging gate.
-
