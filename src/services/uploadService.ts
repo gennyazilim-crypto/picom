@@ -206,10 +206,10 @@ export const uploadService = {
       return uploadError("UPLOAD_FAILED", "Could not upload attachment.");
     }
 
-    const { data: publicUrlData } = configured.data.storage
+    const { data: signedUrlData, error: signedUrlError } = await configured.data.storage
       .from(MESSAGE_ATTACHMENTS_BUCKET)
-      .getPublicUrl(storagePath);
-    const publicUrl = publicUrlData.publicUrl || null;
+      .createSignedUrl(storagePath, 60 * 60);
+    const publicUrl = signedUrlError ? null : signedUrlData.signedUrl;
     const thumbnail = attachmentThumbnailService.createThumbnailPlaceholder({
       storagePath,
       publicUrl,

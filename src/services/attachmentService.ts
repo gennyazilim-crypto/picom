@@ -158,8 +158,9 @@ export const attachmentService = {
         mime_type: upload.mimeType,
         size_bytes: upload.sizeBytes,
         attachment_type: "image",
-        public_url: upload.publicUrl,
-        thumbnail_url: upload.thumbnailUrl,
+        // The bucket is private. Persist the storage path, never an expiring signed URL.
+        public_url: null,
+        thumbnail_url: null,
         width: upload.width,
         height: upload.height,
         status: "pending",
@@ -171,6 +172,14 @@ export const attachmentService = {
       return attachmentError("ATTACHMENT_METADATA_CREATE_FAILED", "Could not save attachment metadata.");
     }
 
-    return { ok: true, data: { ...mapAttachmentMetadataRow(data), scanStatus: upload.scanStatus } };
+    return {
+      ok: true,
+      data: {
+        ...mapAttachmentMetadataRow(data),
+        publicUrl: upload.publicUrl,
+        thumbnailUrl: upload.thumbnailUrl,
+        scanStatus: upload.scanStatus,
+      },
+    };
   },
 };
