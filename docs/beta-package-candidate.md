@@ -9,8 +9,8 @@ The initial 2026-07-09 package attempt was blocked by stale Picom Vite/Electron 
 Windows candidate:
 
 - Installer: `release/Picom-0.1.0-Windows-x64.exe`
-- Installer size: `120816642` bytes
-- SHA-256: `BCF30CA769548E70938B81C219998CE33F5D5C3CACA379A48CAC9BD8EC55117B`
+- Installer size: `120816662` bytes
+- SHA-256: `2E4E48B6C7F1689F1C3C4E8C5BCC0A75EF4463FFEC53257E84248E68889DEDAA`
 - Block map: `release/Picom-0.1.0-Windows-x64.exe.blockmap`
 - Unpacked executable: `release/win-unpacked/Picom.exe`
 
@@ -24,6 +24,7 @@ Windows candidate:
 | Main entry | `dist-electron/main.cjs` |
 | Packaged preload | `dist-electron/preload.cjs` via `path.join(__dirname, "preload.cjs")` |
 | Renderer output | `dist/**` |
+| Packaged renderer asset base | relative `./` paths for `file://` loading |
 | Context isolation | enabled |
 | Node integration | disabled |
 | Renderer sandbox | enabled |

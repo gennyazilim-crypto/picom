@@ -16,7 +16,7 @@ Packaging metadata, icon paths, packaged entry/preload paths, Electron renderer 
 
 ## Artifact status
 
-The Windows NSIS candidate exists at `release/Picom-0.1.0-Windows-x64.exe` with SHA-256 `BCF30CA769548E70938B81C219998CE33F5D5C3CACA379A48CAC9BD8EC55117B`. Linux and macOS artifacts still require native target build hosts.
+The Windows NSIS candidate exists at `release/Picom-0.1.0-Windows-x64.exe` with SHA-256 `2E4E48B6C7F1689F1C3C4E8C5BCC0A75EF4463FFEC53257E84248E68889DEDAA`. The renderer now uses relative Vite asset paths so packaged `file://` loading does not produce a white screen. Linux and macOS artifacts still require native target build hosts.
 
 ## Safety
 
