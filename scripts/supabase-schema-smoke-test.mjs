@@ -36,6 +36,7 @@ const requiredMigrationPrefixes = [
   "20260704002100_reactions_rls",
   "20260704002200_storage_message_attachments_bucket",
   "20260704002300_storage_message_attachments_policies",
+  "20260710002900_direct_messages_schema_rls",
 ];
 
 function fail(message) {

@@ -151,6 +151,36 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["message_reactions"]["Row"]>;
         Relationships: [];
       };
+      direct_conversations: {
+        Row: { id: string; type: "direct"; created_by: string; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversations"]["Row"], "created_by">;
+        Update: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]>;
+        Relationships: [];
+      };
+      direct_conversation_members: {
+        Row: { id: string; conversation_id: string; user_id: string; joined_at: string; last_read_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["direct_conversation_members"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversation_members"]["Row"], "conversation_id" | "user_id">;
+        Update: Partial<Database["public"]["Tables"]["direct_conversation_members"]["Row"]>;
+        Relationships: [];
+      };
+      direct_messages: {
+        Row: { id: string; conversation_id: string; author_id: string; body: string; client_message_id: string | null; created_at: string; updated_at: string; edited_at: string | null; deleted_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["direct_messages"]["Row"]> & Pick<Database["public"]["Tables"]["direct_messages"]["Row"], "conversation_id" | "author_id" | "body">;
+        Update: Partial<Database["public"]["Tables"]["direct_messages"]["Row"]>;
+        Relationships: [];
+      };
+      direct_message_reactions: {
+        Row: { id: string; message_id: string; user_id: string; emoji: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["direct_message_reactions"]["Row"]> & Pick<Database["public"]["Tables"]["direct_message_reactions"]["Row"], "message_id" | "user_id" | "emoji">;
+        Update: Partial<Database["public"]["Tables"]["direct_message_reactions"]["Row"]>;
+        Relationships: [];
+      };
+      direct_message_attachments: {
+        Row: { id: string; message_id: string; uploader_id: string; storage_path: string; file_name: string; mime_type: string; size_bytes: number; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["direct_message_attachments"]["Row"]> & Pick<Database["public"]["Tables"]["direct_message_attachments"]["Row"], "message_id" | "uploader_id" | "storage_path" | "file_name" | "mime_type" | "size_bytes">;
+        Update: Partial<Database["public"]["Tables"]["direct_message_attachments"]["Row"]>;
+        Relationships: [];
+      };
       read_states: {
         Row: {
           id: string;
@@ -177,6 +207,7 @@ export type Database = {
       };
     };
     Functions: {
+      create_direct_conversation: { Args: { other_user_id: string }; Returns: string };
       accept_community_invite: {
         Args: { invite_code: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;
