@@ -6,6 +6,7 @@ import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescripto
 import { getCommunityMenuItems } from "../services/community/communityMenuService";
 import { clipboardService } from "../services/clipboardService";
 import { communityRulesService } from "../services/communityRulesService";
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 import "../communityGuidelines.css";
 import { CommunityInsightsView } from "./CommunityInsightsView";
@@ -169,16 +170,12 @@ export function CommunityMenu({ community, access, callbacks, onClose }: Communi
 }
 
 function ModalShell({ title, eyebrow, onClose, children, className = "" }: { title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <section className={`community-access-modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="community-access-modal-title" onMouseDown={(event) => event.stopPropagation()}>
-        <button className="icon-button modal-close" type="button" aria-label="Close" onClick={onClose}>
+      <section ref={dialogRef} tabIndex={-1} className={`community-access-modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="community-access-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+        <button className="icon-button modal-close" type="button" aria-label={`Close ${title}`} onClick={onClose}>
           <AppIcon name="close" size="lg" />
         </button>
         <p className="eyebrow">{eyebrow}</p>

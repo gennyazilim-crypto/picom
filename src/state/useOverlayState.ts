@@ -42,25 +42,47 @@ export function useOverlayState() {
     toastTimeoutsRef.current.clear();
   }, []);
 
-  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const openSettings = useCallback(() => {
+    setPaletteOpen(false);
+    setMenu(null);
+    setProfile(null);
+    setPreview(null);
+    setSettingsOpen(true);
+  }, []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
-  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const openPalette = useCallback(() => {
+    setSettingsOpen(false);
+    setMenu(null);
+    setProfile(null);
+    setPreview(null);
+    setPaletteOpen(true);
+  }, []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
   const closeMenu = useCallback(() => setMenu(null), []);
   const closeProfile = useCallback(() => setProfile(null), []);
   const closePreview = useCallback(() => setPreview(null), []);
 
   const openContextMenu = useCallback((x: number, y: number, items: OverlayMenuItem[]) => {
+    setPaletteOpen(false);
     setProfile(null);
+    setPreview(null);
     setMenu({ x, y, items });
   }, []);
 
   const openProfile = useCallback((member: Member, x: number, y: number) => {
+    setPaletteOpen(false);
     setMenu(null);
+    setPreview(null);
     setProfile({ member, x, y });
   }, []);
 
-  const openPreview = useCallback((attachment: Attachment) => setPreview(attachment), []);
+  const openPreview = useCallback((attachment: Attachment) => {
+    setSettingsOpen(false);
+    setPaletteOpen(false);
+    setMenu(null);
+    setProfile(null);
+    setPreview(attachment);
+  }, []);
 
   const closeTransientOverlays = useCallback(() => {
     setMenu(null);

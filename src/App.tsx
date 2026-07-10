@@ -431,6 +431,21 @@ export function App() {
     dismissToast,
     pushToast,
   } = useOverlayState();
+  const externalBlockingOverlayOpen = Boolean(
+    createCommunityOpen
+    || createChannelCategoryId
+    || editingChannel
+    || deletingChannel
+    || reportTarget
+    || memberModerationTarget
+    || composerInviteOpen
+    || pollCreateOpen
+    || crashRecoveryRecord
+    || isAppLocked,
+  );
+  useEffect(() => {
+    if (externalBlockingOverlayOpen) closeTransientOverlays();
+  }, [closeTransientOverlays, externalBlockingOverlayOpen]);
   const {
     ready: authReady,
     loading: authLoading,
