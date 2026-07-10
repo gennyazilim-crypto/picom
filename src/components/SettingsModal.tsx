@@ -335,7 +335,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     pushToast("Account deletion placeholder canceled.", "info");
   };
   const requestDataExportPlaceholder = async () => {
-    const result = await dataExportService.requestExportPlaceholder();
+    const result = await dataExportService.requestExport(profileDraft);
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -345,19 +345,13 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     pushToast(result.data.message, "success");
   };
   const downloadDataExportPlaceholder = () => {
-    const payload = dataExportService.buildPlaceholderPayload(profileDraft);
-    if (!payload.ok) {
-      pushToast(payload.message, "error");
-      return;
-    }
-
-    const result = dataExportService.downloadPlaceholderJson(payload.data);
+    const result = dataExportService.downloadExportJson();
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
     }
 
-    pushToast(`Data export placeholder downloaded: ${result.data.fileName}.`, "success");
+    pushToast(`Data export downloaded: ${result.data.fileName}.`, "success");
   };
 
   return (
@@ -511,14 +505,14 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <button onClick={disableTwoFactorPlaceholder}>Disable 2FA placeholder</button>
                 <button onClick={regenerateRecoveryCodesPlaceholder}>Recovery codes placeholder</button>
               </div>
-              <div className="settings-status-card" aria-label="User data export placeholder">
+              <div className="settings-status-card" aria-label="User data export">
                 <span>Data export</span>
-                <strong>{dataExportStatus.status === "ready_placeholder" ? "Ready safety preview" : dataExportStatus.status === "requested" ? "Request queued" : "Not requested"}</strong>
+                <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Generating export" : dataExportStatus.status === "failed" ? "Export failed" : "Not requested"}</strong>
                 <small>{dataExportStatus.message}</small>
               </div>
               <div className="settings-actions-row">
                 <button onClick={() => void requestDataExportPlaceholder()}>Request data export</button>
-                <button onClick={downloadDataExportPlaceholder}>Download safe local preview</button>
+                <button disabled={!dataExportStatus.canDownload} onClick={downloadDataExportPlaceholder}>Download JSON export</button>
               </div>
               <div className="danger-zone-card" aria-label="Account deletion danger zone">
                 <span>Danger Zone</span>
@@ -561,7 +555,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </article>
                 <article className="security-card">
                   <span>Account data</span>
-                  <strong>{dataExportStatus.status === "ready_placeholder" ? "Export ready" : "Export not requested"}</strong>
+                  <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Export processing" : "Export not requested"}</strong>
                   <small>{accountDeletionStatus.requested ? "Deletion request placeholder recorded." : "No deletion request active."}</small>
                 </article>
               </div>
@@ -633,7 +627,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <small>Do not share passwords, tokens, recovery codes, or private invite links. Report suspicious behavior from message/member context actions.</small>
               </div>
               <div className="settings-actions-row">
-                <button onClick={requestDataExportPlaceholder}>Request data export placeholder</button>
+                <button onClick={requestDataExportPlaceholder}>Request data export</button>
                 <button onClick={() => pushToast(accountDeletionStatus.message, accountDeletionStatus.requested ? "info" : "success")}>Account deletion status placeholder</button>
                 <button onClick={() => { setActive("Advanced"); pushToast("Open Beta support to report a problem.", "info"); }}>Report a problem</button>
                 <button onClick={() => updateSafetySettings(userSafetyCenterService.resetSettings())}>Reset safety settings</button>

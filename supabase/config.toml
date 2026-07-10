@@ -65,3 +65,6 @@ verify_jwt = true
 
 [functions.webhook-message]
 verify_jwt = false
+
+[functions.user-data-export]
+verify_jwt = true

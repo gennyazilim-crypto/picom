@@ -1,19 +1,128 @@
+import { currentUserId, mockCommunities } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
+import { savedMessageService } from "./savedMessageService";
+import { settingsService, type PicomSettings } from "./settingsService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
-const STORAGE_KEY = "picom.dataExportPlaceholder.v2";
-const excluded = ["password hashes", "session tokens", "auth and refresh tokens", "cookies", "service keys", "LiveKit credentials", "signing keys", "raw IP addresses", "private data the user cannot access", "audit logs not owned by the user"];
-type Stored = { exportId: string | null; requestedAt: string | null; status: "not_requested" | "requested" | "ready_placeholder" };
-export type DataExportStatus = Stored & { message: string };
-export type DataExportPayload = Readonly<{ exportId: string; generatedAt: string; format: "json_placeholder"; profile: { displayName: string | null; statusText: string | null; bio: string | null }; included: string[]; excluded: string[]; safety: { rendererGenerated: true; containsCredentials: false; containsServerSecrets: false; requiresBackendVerification: true }; notes: string }>;
-export type DataExportResult<T> = { ok: true; data: T } | { ok: false; message: string };
+
+const STORAGE_KEY = "picom.dataExport.v3";
+const excluded = ["password hashes", "session tokens", "auth and refresh tokens", "cookies", "authorization headers", "service keys", "LiveKit credentials", "signing keys", "raw storage paths", "raw IP addresses", "audit logs", "other users' private data"];
+
+type Stored = { exportId: string | null; requestedAt: string | null; status: "not_requested" | "processing" | "ready" | "failed" };
+export type DataExportStatus = Stored & { message: string; canDownload: boolean };
 export type DataExportProfileInput = { displayName?: string; statusText?: string; bio?: string };
-function read(): Stored { try { const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<Stored>; return { exportId: typeof value.exportId === "string" ? value.exportId : null, requestedAt: typeof value.requestedAt === "string" ? value.requestedAt : null, status: value.status === "requested" || value.status === "ready_placeholder" ? value.status : "not_requested" }; } catch { return { exportId: null, requestedAt: null, status: "not_requested" }; } }
-function write(value: Stored): void { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch { /* restricted fallback */ } }
-function status(value: Stored): DataExportStatus { return { ...value, message: value.status === "requested" ? "Export request queued for backend processing." : value.status === "ready_placeholder" ? "Safe local placeholder export is ready." : "No data export has been requested." }; }
-function safe(value?: string): string | null { const normalized = value?.replace(/[\u0000-\u001f\u007f]/g, " ").trim(); return normalized ? normalized.slice(0, 500) : null; }
+export type DataExportPayload = Readonly<{
+  schemaVersion: number;
+  exportId: string;
+  requestedAt: string;
+  generatedAt: string;
+  expiresAt: string | null;
+  profile: unknown;
+  communityMemberships: unknown[];
+  ownMessages: unknown[];
+  attachmentMetadata: unknown[];
+  follows: unknown[];
+  savedMessages: unknown[];
+  localDesktopSettings: PicomSettings;
+  truncated: Record<string, boolean>;
+  excluded: string[];
+  note: string;
+}>;
+export type DataExportResult<T> = { ok: true; data: T } | { ok: false; message: string };
+
+let latestPayload: DataExportPayload | null = null;
+
+function read(): Stored {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<Stored>;
+    const validStatus = value.status === "processing" || value.status === "ready" || value.status === "failed" ? value.status : "not_requested";
+    return { exportId: typeof value.exportId === "string" ? value.exportId : null, requestedAt: typeof value.requestedAt === "string" ? value.requestedAt : null, status: validStatus };
+  } catch { return { exportId: null, requestedAt: null, status: "not_requested" }; }
+}
+
+function write(value: Stored): void {
+  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch { /* restricted fallback */ }
+}
+
+function status(value: Stored): DataExportStatus {
+  const message = value.status === "processing" ? "Export is being generated under your account permissions." : value.status === "ready" ? latestPayload ? "Your export is ready for this session." : "A previous export expired from memory. Request a fresh export to download." : value.status === "failed" ? "The last export failed safely. You can try again." : "No data export has been requested.";
+  return { ...value, message, canDownload: value.status === "ready" && latestPayload !== null };
+}
+
+function safe(value?: string): string | null {
+  const normalized = value?.replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+  return normalized ? normalized.slice(0, 500) : null;
+}
+
+function buildMockPayload(profile: DataExportProfileInput, exportId: string, requestedAt: string): DataExportPayload {
+  const memberships = mockCommunities.filter((community) => community.members.some((member) => member.userId === currentUserId));
+  const ownMessages = memberships.flatMap((community) => community.messages.filter((message) => message.authorId === currentUserId).map((message) => ({ id: message.id, communityId: community.id, channelId: message.channelId, body: message.body, createdAt: message.createdAt, editedAt: message.editedAt ?? null })));
+  const attachmentMetadata = memberships.flatMap((community) => community.messages.filter((message) => message.authorId === currentUserId).flatMap((message) => (message.attachments ?? []).map((attachment) => ({ id: attachment.id, messageId: message.id, type: attachment.type, width: attachment.width ?? null, height: attachment.height ?? null }))));
+  return {
+    schemaVersion: 1,
+    exportId,
+    requestedAt,
+    generatedAt: new Date().toISOString(),
+    expiresAt: null,
+    profile: { id: currentUserId, displayName: safe(profile.displayName), statusText: safe(profile.statusText), bio: safe(profile.bio) },
+    communityMemberships: memberships.map((community) => ({ communityId: community.id, roleId: community.members.find((member) => member.userId === currentUserId)?.roleId ?? null })),
+    ownMessages,
+    attachmentMetadata,
+    follows: [],
+    savedMessages: savedMessageService.listSavedMessages().map((item) => ({ id: item.id, messageId: item.messageId, createdAt: item.createdAt })),
+    localDesktopSettings: settingsService.getSettings(),
+    truncated: { communityMemberships: false, ownMessages: false, attachmentMetadata: false, follows: false, savedMessages: false },
+    excluded: [...excluded],
+    note: "Mock-mode export generated locally from the current Picom test identity. No credentials are included.",
+  };
+}
+
 export const dataExportService = {
   getStatus(): DataExportStatus { return status(read()); },
-  async requestExportPlaceholder(): Promise<DataExportResult<DataExportStatus>> { const requestedAt = new Date().toISOString(); if (dataSourceService.getStatus().isMock) { const next: Stored = { exportId: `export_${crypto.randomUUID()}`, requestedAt, status: "ready_placeholder" }; write(next); return { ok: true, data: status(next) }; } const client = getSupabaseClient(); if (!client) return { ok: false, message: "Data export requests are unavailable." }; const { data: user } = await client.auth.getUser(); if (!user.user) return { ok: false, message: "Sign in before requesting an export." }; const { data, error } = await client.from("data_export_requests").insert({ user_id: user.user.id, status: "requested" }).select("id,requested_at,status").single(); if (error || !data) return { ok: false, message: "Picom could not queue your data export." }; const next: Stored = { exportId: data.id, requestedAt: data.requested_at, status: "requested" }; write(next); return { ok: true, data: status(next) }; },
-  buildPlaceholderPayload(profile: DataExportProfileInput): DataExportResult<DataExportPayload> { const current = read(); if (!current.exportId) return { ok: false, message: "Request a data export before downloading the local safety preview." }; return { ok: true, data: { exportId: current.exportId, generatedAt: new Date().toISOString(), format: "json_placeholder", profile: { displayName: safe(profile.displayName), statusText: safe(profile.statusText), bio: safe(profile.bio) }, included: ["profile fields", "own settings summary", "membership references", "own message references", "attachment metadata references"], excluded, safety: { rendererGenerated: true, containsCredentials: false, containsServerSecrets: false, requiresBackendVerification: true }, notes: "This is a renderer safety preview. A production export must be generated server-side under RLS and ownership checks." } }; },
-  downloadPlaceholderJson(payload: DataExportPayload): DataExportResult<{ fileName: string }> { const fileName = `picom-data-export-${payload.exportId}.json`; const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = fileName; anchor.rel = "noopener"; anchor.click(); URL.revokeObjectURL(url); return { ok: true, data: { fileName } }; },
+
+  async requestExport(profile: DataExportProfileInput): Promise<DataExportResult<DataExportStatus>> {
+    const requestedAt = new Date().toISOString();
+    latestPayload = null;
+    write({ exportId: null, requestedAt, status: "processing" });
+
+    if (dataSourceService.getStatus().isMock) {
+      const exportId = `export_${crypto.randomUUID()}`;
+      latestPayload = buildMockPayload(profile, exportId, requestedAt);
+      const next: Stored = { exportId, requestedAt, status: "ready" };
+      write(next);
+      return { ok: true, data: status(next) };
+    }
+
+    const client = getSupabaseClient();
+    if (!client) {
+      const failed: Stored = { exportId: null, requestedAt, status: "failed" };
+      write(failed);
+      return { ok: false, message: "Data export is unavailable." };
+    }
+    const { data, error } = await client.functions.invoke("user-data-export", { body: {} });
+    if (error || !data || typeof data !== "object") {
+      const failed: Stored = { exportId: null, requestedAt, status: "failed" };
+      write(failed);
+      return { ok: false, message: "Picom could not generate your data export." };
+    }
+
+    const server = data as Omit<DataExportPayload, "localDesktopSettings">;
+    latestPayload = { ...server, localDesktopSettings: settingsService.getSettings(), excluded: Array.isArray(server.excluded) ? server.excluded : [...excluded] };
+    const next: Stored = { exportId: latestPayload.exportId, requestedAt: latestPayload.requestedAt, status: "ready" };
+    write(next);
+    return { ok: true, data: status(next) };
+  },
+
+  downloadExportJson(): DataExportResult<{ fileName: string }> {
+    if (!latestPayload) return { ok: false, message: "Request a fresh data export before downloading." };
+    const fileName = `picom-data-export-${latestPayload.exportId}.json`;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(latestPayload, null, 2)], { type: "application/json" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.rel = "noopener";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    return { ok: true, data: { fileName } };
+  },
 };
+
