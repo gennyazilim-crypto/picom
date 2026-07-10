@@ -124,7 +124,9 @@ export function MessageList({
   return (
     <div className={`message-list ${announcement ? "announcement-message-list" : ""}`} ref={listRef} onScroll={handleScroll}>
       {messages.map((message, index) => {
-        const member = memberByUserId.get(message.authorId) ?? community.members[0];
+        const resolvedMember = memberByUserId.get(message.authorId);
+        const member: Member = resolvedMember ?? { id: `deleted-${message.authorId}`, userId: message.authorId, displayName: "Deleted User", username: "deleted-account", avatarSeed: "deleted-user", status: "offline", statusText: "Account deleted", roleId: "member" };
+        const profileUnavailable = !resolvedMember || member.displayName.trim().toLowerCase() === "deleted user";
         const role = roleById.get(member.roleId);
         const replyToMessage = message.replyToMessageId ? messageById.get(message.replyToMessageId) ?? null : null;
         const replyToMember = replyToMessage ? memberByUserId.get(replyToMessage.authorId) : undefined;
@@ -148,6 +150,7 @@ export function MessageList({
             {index === Math.max(1, Math.floor(messages.length / 2)) ? <UnreadDivider /> : null}
             <MessageItem
               communityId={community.id}
+              profileUnavailable={profileUnavailable}
               message={message}
               member={member}
               role={role}

@@ -653,6 +653,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                   )}
                 </div>
               </div>
+              <div className="settings-status-card retention-user-notice" aria-label="Content deletion and retention information">
+                <span>Content deletion and retention</span>
+                <strong>Deletion hides content; retention periods are not yet enforced</strong>
+                <small>Deleted messages appear as placeholders and their content, reactions, and attachments are hidden. Picom does not currently run an automatic production purge. Limited tombstones, moderation records, immutable audit events, and backups follow separate review and retention paths. Deleted accounts use a “Deleted User” fallback where historical context must remain.</small>
+                <small>Final retention periods and legal copy are pending privacy/legal approval. Clearing desktop cache does not delete server data; use Account data controls for export or deletion requests.</small>
+              </div>
               <label className="settings-toggle-row"><span><strong>Mute all notifications</strong><small>Suppress desktop alerts while keeping the inbox available. This does not hide moderation-required content.</small></span><input type="checkbox" checked={notificationSettings.muted} onChange={(event) => updateNotifications({ muted: event.target.checked })} /></label>
               <div className="settings-status-card" aria-label="Muted communities and channels">
                 <span>Muted scopes</span>

@@ -8,7 +8,7 @@ Picom must treat message and attachment retention as a production safety feature
 - Production destructive purge: disabled by default
 - Current behavior: existing messages and attachments remain unchanged
 - Scope: Supabase Postgres message data, attachment metadata, and future storage cleanup coordination
-- Desktop UI changes: none
+- Desktop UI: Privacy & Safety shows an informational retention notice; deleted messages render content-free tombstones
 
 ## Goals
 
@@ -117,16 +117,16 @@ Retention jobs should run server-side with controlled privileges, not from the E
 
 RLS remains required for normal user access. Administrative retention jobs must be isolated from user-facing APIs.
 
-## Desktop UI placeholder
+## Desktop UI messaging
 
-Future Community Settings > Privacy/Safety or Advanced may show read-only retention information:
+Settings > Privacy & Safety now shows read-only retention information:
 
 - current retention policy placeholder
 - deleted message retention note
 - attachment retention note
 - contact/support note for data requests
 
-This task does not add UI. The current desktop layout remains unchanged.
+This notice does not claim a final period or active destructive job. It distinguishes message visibility, account anonymization, immutable audit records, moderation context, backups, and local cache clearing. Community-specific retention controls remain unavailable until the backend policy and legal/privacy review are complete.
 
 ## Staging verification
 

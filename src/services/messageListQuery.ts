@@ -116,7 +116,6 @@ export async function listSupabaseMessageSummaries(client: SupabaseClient<Databa
     .eq("community_id", input.communityId)
     .eq("channel_id", input.channelId)
     .is("thread_id", null)
-    .is("deleted_at", null)
     .order("sequence", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit + 1);

@@ -25,7 +25,7 @@ Picom is a Windows/Linux/macOS Electron desktop community chat app backed by Sup
 
 | Entity | Policy | Restore placeholder | Current implementation notes |
 | --- | --- | --- | --- |
-| Messages | Soft-delete | Yes | Active Supabase path sets `messages.deleted_at`; normal fetch excludes deleted rows. Local mock mode renders a deleted message placeholder. |
+| Messages | Soft-delete | Yes | Active Supabase path sets `messages.deleted_at`; authorized fetches retain content-free tombstones so replies/order stay understandable. Local mock mode uses the same placeholder. |
 | Channels | Archive or soft-delete preferred | Yes | Current update/delete service is placeholder-only. Existing DB cascade only applies if a community is destructively deleted. |
 | Communities | Soft-delete preferred | Yes | Current UI exposes owner-only delete safety placeholder and requires explicit name confirmation. Future schema should add `deleted_at`. |
 | Users/profiles | Anonymize or mark deleted | Limited | Supabase Auth deletion can cascade profile rows, but production account deletion should anonymize before destructive auth deletion. |
@@ -41,7 +41,7 @@ Picom is a Windows/Linux/macOS Electron desktop community chat app backed by Sup
 Current behavior:
 
 - `messageDeleteMutation` updates `deleted_at`.
-- `messageListQuery` filters `deleted_at is null`.
+- `messageListQuery` includes authorized tombstones; the renderer never displays deleted body, reactions, polls, or attachments.
 - Realtime treats soft-delete updates as delete events.
 - Older realtime updates must not restore a deleted message.
 
@@ -171,7 +171,7 @@ Restore actions should:
 - `deleted_at` is active for messages only.
 - Community soft-delete schema is not active yet.
 - Channel archive/soft-delete schema is not active yet.
-- User anonymization table/fields are not active yet.
+- Account deletion anonymization fields/workflow exist, while hosted verification and final retention/legal approval remain required.
 - Production invite, report, notification, and audit log tables are not active yet.
 - Restore APIs are placeholders only.
 
@@ -182,4 +182,3 @@ Restore actions should:
 3. Confirm community delete UI remains owner-only and confirmation-gated.
 4. Confirm account deletion placeholder says no renderer-side data has been deleted.
 5. Confirm audit log docs state normal flows cannot delete audit entries.
-

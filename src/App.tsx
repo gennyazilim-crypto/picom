@@ -2097,7 +2097,7 @@ export function App() {
     }
 
     const needsConfirmation = message.body.length > 80 || Boolean(message.attachments?.length);
-    if (needsConfirmation && !window.confirm("Delete this message? It will be replaced with a deleted message placeholder.")) {
+    if (needsConfirmation && !window.confirm("Delete this message? Its content and attachments will be hidden. A limited deletion record may remain under Picom's retention and moderation policies.")) {
       return;
     }
 
@@ -2111,6 +2111,7 @@ export function App() {
       channelId: message.channelId,
       id: message.id,
     });
+    pushToast("Message deleted. Its content is hidden; the deletion marker remains in the conversation.", "success");
 
     if (replyToMessageId === message.id) {
       setReplyToMessageId(null);

@@ -13,6 +13,7 @@ import { MessageHoverActions } from "./MessageHoverActions";
 import { StickerMessage } from "./StickerMessage";
 import { customEmojiService } from "../services/customEmojiService";
 import { PollMessageCard } from "./PollMessageCard";
+import "../contentDeletionMessaging.css";
 
 const messageUrlPattern = /(https?:\/\/[^\s<>"]+)/gi;
 const trailingUrlPunctuationPattern = /[),.!?;:]+$/;
@@ -102,6 +103,7 @@ type MessageItemProps = {
   onRemoveFailed: (message: Message) => void;
   pushToast?: (message: string, tone?: ToastTone) => void;
   communityId: string;
+  profileUnavailable?: boolean;
 };
 
 export function MessageItem({
@@ -128,6 +130,7 @@ export function MessageItem({
   onRemoveFailed,
   pushToast,
   communityId,
+  profileUnavailable = false,
 }: MessageItemProps) {
   const [draft, setDraft] = useState(message.body);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
@@ -180,12 +183,12 @@ export function MessageItem({
 
   return (
     <article className="message-item" onContextMenu={(event) => onContextMenu(event, message)}>
-      <button className="avatar-button" onClick={(event) => onOpenProfile(event, member)} aria-label={`Open ${member.displayName} profile`}>
+      <button className="avatar-button" disabled={profileUnavailable} onClick={(event) => onOpenProfile(event, member)} aria-label={profileUnavailable ? "Deleted user profile unavailable" : `Open ${member.displayName} profile`}>
         <MemberAvatar member={member} size={42} />
       </button>
       <div className="message-content">
         <div className="message-meta">
-          <button className="message-author-button" type="button" onClick={(event) => onOpenProfile(event, member)}>
+          <button className="message-author-button" type="button" disabled={profileUnavailable} onClick={(event) => onOpenProfile(event, member)}>
             {member.displayName}
           </button>
           {member.isBot ? <span className="bot-badge">BOT</span> : null}
@@ -216,7 +219,7 @@ export function MessageItem({
           </div>
         ) : null}
         {deleted ? (
-          <p className="message-deleted-placeholder">Message deleted.</p>
+          <div className="message-deleted-placeholder" role="note"><strong>Message deleted</strong><span>Its content, reactions, and attachments are no longer visible.</span></div>
         ) : editing ? (
           <div className="message-edit-box">
             <textarea value={draft} autoFocus rows={2} onChange={(event) => setDraft(event.target.value)} onKeyDown={onEditKeyDown} />
