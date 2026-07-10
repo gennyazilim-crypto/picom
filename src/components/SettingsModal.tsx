@@ -23,6 +23,7 @@ import { accountActivityService, type AccountActivityRecord } from "../services/
 import { appConfig } from "../config/appConfig";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
+import { analyticsService } from "../services/analyticsService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
@@ -86,6 +87,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [accountActivities, setAccountActivities] = useState<AccountActivityRecord[]>(() => accountActivityService.listRecent());
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
   const [adminOperationsAccess, setAdminOperationsAccess] = useState<AdminOperationsAccess>({ allowed: false, source: "none" });
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(() => analyticsService.isEnabled());
   const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"];
 
   useEffect(() => {
@@ -586,6 +588,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </span>
                 <input type="checkbox" checked={safetySettings.enableReadReceipts} onChange={(event) => updateSafetySettings({ enableReadReceipts: event.target.checked })} />
               </label>
+              <label className="settings-toggle-row"><span><strong>Share anonymous usage diagnostics</strong><small>Off by default. Records feature counts and app health locally; never message content, passwords, tokens, channel names, or attachment contents.</small></span><input type="checkbox" checked={analyticsEnabled} onChange={(event) => { const enabled = analyticsService.setEnabled(event.target.checked); setAnalyticsEnabled(enabled); pushToast(enabled ? "Anonymous diagnostics enabled locally." : "Anonymous diagnostics disabled and local queue cleared.", "success"); }} /></label>
               <div className="settings-status-card" aria-label="Blocked users list">
                 <span>Blocked users</span>
                 <strong>{blockedUsers.length ? "Manage locally" : "No blocked users"}</strong>

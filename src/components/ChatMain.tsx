@@ -12,6 +12,7 @@ import { MessageComposer } from "./MessageComposer";
 import { VoiceRoomView } from "./VoiceRoomView";
 import { ForumChannelView } from "./ForumChannelView";
 import { canSendMessage } from "../services/permissions/communityPermissions";
+import { analyticsService } from "../services/analyticsService";
 
 type ToastTone = "info" | "error" | "success";
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
@@ -125,7 +126,7 @@ export function ChatMain({
           intent: "voice",
         })
         .then((result) => {
-          if (!result.ok) pushToast(result.error.message, "error");
+          if (!result.ok) pushToast(result.error.message, "error"); else analyticsService.trackEvent("voice_joined", { mode: "desktop" });
         });
     });
   };
@@ -160,6 +161,7 @@ export function ChatMain({
         }
 
         pushToast("Screen sharing started.", "success");
+        analyticsService.trackEvent("screen_share_started", { mode: "desktop" });
       });
     });
   };

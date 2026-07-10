@@ -12,6 +12,7 @@ import { slashCommandService, type SlashCommand } from "../services/slashCommand
 import { SlashCommandPopover } from "./SlashCommandPopover";
 import { StickerPicker } from "./StickerPicker";
 import type { CreatePollDraft } from "../types/polls";
+import { analyticsService } from "../services/analyticsService";
 
 type ToastTone = "info" | "error" | "success";
 const composerIcons = mvpUiIconMap.messageComposer;
@@ -287,6 +288,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     };
 
     updatePreview(preview.id, { status: "uploaded", progress: 100, attachment, error: undefined });
+    analyticsService.trackEvent("upload_success", { kind: "image", sizeBucket: preview.size < 1024 * 1024 ? "under_1mb" : "1mb_plus" });
     return attachment;
   };
 

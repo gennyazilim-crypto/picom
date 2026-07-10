@@ -63,7 +63,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableAdvancedModeration: false,
     enableDiagnostics: developmentDiagnostics,
     enableAutoUpdate: false,
-    enableAnalyticsPlaceholder: false,
+    enableAnalyticsPlaceholder: true,
     enableDeveloperPortal: false,
     enableCustomEmoji: false,
     enableStickers: false,

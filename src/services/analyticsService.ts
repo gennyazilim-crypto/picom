@@ -1,0 +1,13 @@
+export type AnalyticsEventName = "app_started" | "login_success" | "community_created" | "message_sent_count_only" | "upload_success" | "voice_joined" | "screen_share_started" | "settings_opened";
+export type AnalyticsEvent = Readonly<{ id: string; name: AnalyticsEventName; timestamp: string; metadata: Record<string, string | number | boolean> }>;
+const ENABLED_KEY = "picom.analytics.enabled.v1"; const QUEUE_KEY = "picom.analytics.localQueue.v1"; const SENSITIVE = /(message|body|password|token|secret|channel|attachment|email|username|user_id|session|authorization)/i;
+const allowedMetadata: Record<AnalyticsEventName, readonly string[]> = { app_started: ["runtime", "releaseChannel"], login_success: ["mode"], community_created: ["mode"], message_sent_count_only: ["count", "mode"], upload_success: ["kind", "sizeBucket"], voice_joined: ["mode"], screen_share_started: ["mode"], settings_opened: ["section"] };
+function readQueue(): AnalyticsEvent[] { try { const parsed = JSON.parse(window.localStorage.getItem(QUEUE_KEY) ?? "[]") as AnalyticsEvent[]; return Array.isArray(parsed) ? parsed : []; } catch { return []; } }
+function sanitize(name: AnalyticsEventName, metadata: Record<string, unknown>): Record<string, string | number | boolean> { const allow = new Set(allowedMetadata[name]); return Object.fromEntries(Object.entries(metadata).filter(([key, value]) => allow.has(key) && !SENSITIVE.test(key) && ["string", "number", "boolean"].includes(typeof value)).map(([key, value]) => [key, typeof value === "string" ? value.slice(0, 40) : value as number | boolean])) as Record<string, string | number | boolean>; }
+export const analyticsService = {
+  isEnabled(): boolean { try { return window.localStorage.getItem(ENABLED_KEY) === "true"; } catch { return false; } },
+  setEnabled(enabled: boolean): boolean { try { window.localStorage.setItem(ENABLED_KEY, String(enabled)); if (!enabled) window.localStorage.removeItem(QUEUE_KEY); } catch { return false; } return enabled; },
+  trackEvent(name: AnalyticsEventName, metadata: Record<string, unknown> = {}): AnalyticsEvent | null { if (!this.isEnabled()) return null; const event: AnalyticsEvent = { id: `analytics-${crypto.randomUUID()}`, name, timestamp: new Date().toISOString(), metadata: sanitize(name, metadata) }; try { window.localStorage.setItem(QUEUE_KEY, JSON.stringify([...readQueue(), event].slice(-100))); } catch { return null; } return event; },
+  identifyUserPlaceholder(): { identified: false; reason: string } { return { identified: false, reason: "Picom analytics does not identify users in the placeholder implementation." }; },
+  getLocalQueue(): AnalyticsEvent[] { return readQueue().map((event) => ({ ...event, metadata: { ...event.metadata } })); },
+};

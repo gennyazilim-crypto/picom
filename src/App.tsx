@@ -93,6 +93,7 @@ import { pollService } from "./services/pollService";
 import { threadService } from "./services/threadService";
 import type { ThreadRecord } from "./types/threads";
 import { ThreadPanel } from "./components/ThreadPanel";
+import { analyticsService } from "./services/analyticsService";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
@@ -924,8 +925,17 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    analyticsService.trackEvent("app_started", { runtime: "electron", releaseChannel: "beta" });
+  }, []);
+
+  useEffect(() => {
+    if (authSession?.user) analyticsService.trackEvent("login_success", { mode: dataSourceService.getStatus().mode });
+  }, [authSession?.user?.id]);
+
+  useEffect(() => {
     if (settingsOpen) {
       maybeShowNotificationPermissionPrompt("notification_settings_opened");
+      analyticsService.trackEvent("settings_opened", { section: "settings" });
     }
   }, [maybeShowNotificationPermissionPrompt, settingsOpen]);
 
@@ -1722,6 +1732,7 @@ export function App() {
 
     const pollResult = pollDraft ? await pollService.create({ ...pollDraft, messageId: result.data.id }) : null;
     if (pollResult && !pollResult.ok) pushToast(pollResult.message, "error");
+    analyticsService.trackEvent("message_sent_count_only", { count: 1, mode: dataSourceService.getStatus().mode });
     messageModerationFilterService.recordMessageSent(activeCommunity.id, displayedActiveChannel.id, currentUser.userId);
     appendLocalMessage({
       id: result.data.id,
@@ -1881,6 +1892,7 @@ export function App() {
     }
 
     const community = addCommunity(createCommunityFromSummary(result.data));
+    analyticsService.trackEvent("community_created", { mode: dataSourceService.getStatus().mode });
     switchCommunity(community.id);
     setCreateCommunityOpen(false);
     maybeShowNotificationPermissionPrompt("community_created");

@@ -168,3 +168,10 @@ If analytics causes privacy or stability concerns:
 - Add local user preference only after Settings copy is ready.
 - Add redaction tests for all event payloads.
 - Add provider only after privacy review and dependency-size review.
+
+## MVP+ implementation status
+
+Picom now includes an opt-in, provider-free `analyticsService` abstraction. It is disabled by default, uses an event-specific metadata whitelist, keeps at most 100 count-only events locally, and clears that queue when the user disables the setting. `identifyUserPlaceholder()` intentionally does not identify or persist a user.
+
+Implemented event names are `app_started`, `login_success`, `community_created`, `message_sent_count_only`, `upload_success`, `voice_joined`, `screen_share_started`, and `settings_opened`. No analytics network provider is configured.
+
