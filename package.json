@@ -210,6 +210,7 @@
     "screen-share:quality:test": "node scripts/screen-share-quality-test.mjs",
     "stories:header:smoke": "node scripts/followed-people-stories-header-smoke-test.mjs",
     "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs",
+    "attachments:scan:production:test": "node scripts/attachment-scanning-production-test.mjs",
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",
     "upload:ux:test": "node scripts/media-upload-ux-test.mjs",
     "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",
