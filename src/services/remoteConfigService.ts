@@ -44,6 +44,9 @@ type RefreshOptions = Readonly<{
 }>;
 
 const CACHE_KEY = "picom.remoteConfig.v1";
+const CACHE_SCHEMA_VERSION = 1;
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const MAX_RESPONSE_BYTES = 64 * 1024;
 const DEFAULT_MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const DEFAULT_ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"] as const;
 const listeners = new Set<RemoteConfigListener>();
@@ -79,8 +82,24 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function toStringValue(value: unknown, fallback: string): string {
-  return typeof value === "string" ? value : fallback;
+function toBoundedString(value: unknown, fallback: string, maximumLength = 240): string {
+  return typeof value === "string" ? value.trim().slice(0, maximumLength) : fallback;
+}
+
+function toVersion(value: unknown, fallback: string): string {
+  const candidate = toBoundedString(value, fallback, 64);
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(candidate) ? candidate : fallback;
+}
+
+function toPublicUrl(value: unknown, fallback: string): string {
+  const candidate = toBoundedString(value, fallback, 2048);
+  if (!candidate) return fallback;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function toReleaseChannel(value: unknown, fallback: ReleaseChannel): ReleaseChannel {
@@ -101,7 +120,7 @@ function toUploadLimits(value: unknown): RemoteUploadLimits {
     : DEFAULT_MAX_UPLOAD_BYTES;
 
   const allowedMimeTypes = Array.isArray(value.allowedMimeTypes)
-    ? value.allowedMimeTypes.filter((item): item is string => typeof item === "string" && item.includes("/"))
+    ? value.allowedMimeTypes.filter((item): item is string => typeof item === "string" && /^[a-z0-9.+-]{1,64}\/[a-z0-9.+-]{1,64}$/i.test(item)).slice(0, 16)
     : [...DEFAULT_ALLOWED_MIME_TYPES];
 
   return Object.freeze({
@@ -140,21 +159,21 @@ function sanitizeRemoteConfig(input: unknown, source: RemoteConfigSource): Clien
   const urlsInput = isPlainObject(input.urls) ? input.urls : {};
 
   return Object.freeze({
-    minimumSupportedVersion: toStringValue(input.minimumSupportedVersion, defaults.minimumSupportedVersion),
-    recommendedClientVersion: toStringValue(input.recommendedClientVersion, defaults.recommendedClientVersion),
-    latestVersion: toStringValue(input.latestVersion, defaults.latestVersion),
+    minimumSupportedVersion: toVersion(input.minimumSupportedVersion, defaults.minimumSupportedVersion),
+    recommendedClientVersion: toVersion(input.recommendedClientVersion, defaults.recommendedClientVersion),
+    latestVersion: toVersion(input.latestVersion, defaults.latestVersion),
     releaseChannel: toReleaseChannel(input.releaseChannel, defaults.releaseChannel),
     featureFlags: Object.freeze(toFeatureFlags(input.featureFlags)),
     killSwitches: toKillSwitches(input.killSwitches),
     maintenance: Object.freeze({
       status: toMaintenanceStatus(maintenanceInput.status),
-      message: toStringValue(maintenanceInput.message, defaults.maintenance.message),
+      message: toBoundedString(maintenanceInput.message, defaults.maintenance.message),
     }),
     uploadLimits: toUploadLimits(input.uploadLimits),
     urls: Object.freeze({
-      statusPageUrl: toStringValue(urlsInput.statusPageUrl, defaults.urls.statusPageUrl),
-      supportUrl: toStringValue(urlsInput.supportUrl, defaults.urls.supportUrl),
-      docsUrl: toStringValue(urlsInput.docsUrl, defaults.urls.docsUrl),
+      statusPageUrl: toPublicUrl(urlsInput.statusPageUrl, defaults.urls.statusPageUrl),
+      supportUrl: toPublicUrl(urlsInput.supportUrl, defaults.urls.supportUrl),
+      docsUrl: toPublicUrl(urlsInput.docsUrl, defaults.urls.docsUrl),
     }),
     source,
     fetchedAt: new Date().toISOString(),
@@ -162,17 +181,22 @@ function sanitizeRemoteConfig(input: unknown, source: RemoteConfigSource): Clien
 }
 
 function getRemoteConfigUrl(): string | null {
-  if (appConfig.remoteConfigUrl) {
-    return appConfig.remoteConfigUrl;
+  let candidate = appConfig.remoteConfigUrl;
+
+  if (!candidate) {
+    const dataSource = dataSourceService.getStatus();
+    if (!dataSource.isSupabase || !dataSource.configured) return null;
+    const supabase = dataSourceService.getSupabaseConfig();
+    candidate = `${supabase.url.replace(/\/+$/, "")}/functions/v1/client-config`;
   }
 
-  const dataSource = dataSourceService.getStatus();
-  if (!dataSource.isSupabase || !dataSource.configured) {
+  try {
+    const parsed = new URL(candidate);
+    const isLocalHttp = parsed.protocol === "http:" && ["127.0.0.1", "localhost"].includes(parsed.hostname);
+    return parsed.protocol === "https:" || isLocalHttp ? parsed.toString() : null;
+  } catch {
     return null;
   }
-
-  const supabase = dataSourceService.getSupabaseConfig();
-  return `${supabase.url.replace(/\/+$/, "")}/functions/v1/client-config`;
 }
 
 function getFetchHeaders(): HeadersInit {
@@ -206,7 +230,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
 
 function persistCache(config: ClientRemoteConfig): void {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(config));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ schemaVersion: CACHE_SCHEMA_VERSION, cachedAt: Date.now(), config }));
   } catch (error) {
     loggingService.logWarn("Failed to cache remote config", { error }, "remote-config");
   }
@@ -216,11 +240,30 @@ function readCachedConfig(): ClientRemoteConfig | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    return sanitizeRemoteConfig(JSON.parse(raw) as unknown, "cache");
+    const parsed = JSON.parse(raw) as unknown;
+    if (isPlainObject(parsed) && parsed.schemaVersion === CACHE_SCHEMA_VERSION && typeof parsed.cachedAt === "number") {
+      if (!Number.isFinite(parsed.cachedAt) || Date.now() - parsed.cachedAt > CACHE_MAX_AGE_MS || !isPlainObject(parsed.config)) return null;
+      return sanitizeRemoteConfig(parsed.config, "cache");
+    }
+    if (isPlainObject(parsed) && typeof parsed.fetchedAt === "string") {
+      const legacyFetchedAt = Date.parse(parsed.fetchedAt);
+      if (Number.isFinite(legacyFetchedAt) && Date.now() - legacyFetchedAt <= CACHE_MAX_AGE_MS) return sanitizeRemoteConfig(parsed, "cache");
+    }
+    return null;
   } catch (error) {
     loggingService.logWarn("Failed to read cached remote config", { error }, "remote-config");
     return null;
   }
+}
+
+async function readRemoteConfigResponse(response: Response): Promise<unknown> {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) throw new Error("Remote config response exceeds the safe size limit");
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  if (contentType && !contentType.includes("application/json")) throw new Error("Remote config response is not JSON");
+  const text = await response.text();
+  if (new TextEncoder().encode(text).byteLength > MAX_RESPONSE_BYTES) throw new Error("Remote config response exceeds the safe size limit");
+  return JSON.parse(text) as unknown;
 }
 
 function emit(config: ClientRemoteConfig): ClientRemoteConfig {
@@ -277,7 +320,7 @@ export const remoteConfigService = {
         throw new Error(`Remote config request failed with ${response.status}`);
       }
 
-      const body = await response.json().catch(() => ({}));
+      const body = await readRemoteConfigResponse(response);
       return this.applyConfig(body, "remote");
     } catch (error) {
       loggingService.logWarn("Remote config refresh failed; using cached/default config", { error }, "remote-config");

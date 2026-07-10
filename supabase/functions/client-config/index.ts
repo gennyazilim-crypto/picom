@@ -1,9 +1,25 @@
 ﻿import { handleCorsPreflight } from "../_shared/cors.ts";
 import { jsonResponse, methodNotAllowed } from "../_shared/http.ts";
 
-function readPublicEnv(name: string, fallback = ""): string {
+function readPublicEnv(name: string, fallback = "", maximumLength = 240): string {
   const value = Deno.env.get(name);
-  return value && value.trim().length > 0 ? value.trim() : fallback;
+  return value && value.trim().length > 0 ? value.trim().slice(0, maximumLength) : fallback;
+}
+
+function readPublicVersion(name: string, fallback: string): string {
+  const value = readPublicEnv(name, fallback, 64);
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(value) ? value : fallback;
+}
+
+function readPublicUrl(name: string): string {
+  const value = readPublicEnv(name, "", 2048);
+  if (!value) return "";
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : "";
+  } catch {
+    return "";
+  }
 }
 
 function readReleaseChannel(): "dev" | "beta" | "stable" {
@@ -30,13 +46,14 @@ Deno.serve((request: Request) => {
   }
 
   return jsonResponse({
-    minimumSupportedVersion: readPublicEnv("PICOM_MINIMUM_SUPPORTED_VERSION", "0.1.0"),
-    recommendedClientVersion: readPublicEnv("PICOM_RECOMMENDED_CLIENT_VERSION", "0.1.0"),
-    latestVersion: readPublicEnv("PICOM_LATEST_VERSION", "0.1.0"),
+    minimumSupportedVersion: readPublicVersion("PICOM_MINIMUM_SUPPORTED_VERSION", "0.1.0"),
+    recommendedClientVersion: readPublicVersion("PICOM_RECOMMENDED_CLIENT_VERSION", "0.1.0"),
+    latestVersion: readPublicVersion("PICOM_LATEST_VERSION", "0.1.0"),
     releaseChannel: readReleaseChannel(),
     featureFlags: {
       enableRealtime: true,
       enableVoiceRooms: true,
+      enableScreenShare: false,
       enableDirectMessages: false,
       enableFriends: false,
       enableDiscovery: false,
@@ -48,6 +65,7 @@ Deno.serve((request: Request) => {
       enableDiagnostics: false,
       enableAutoUpdate: false,
       enableAnalyticsPlaceholder: false,
+      enableAdminOperations: false,
       enableDeveloperPortal: false,
       enableCustomEmoji: false,
       enableStickers: false,
@@ -69,16 +87,16 @@ Deno.serve((request: Request) => {
     },
     maintenance: {
       status: readPublicEnv("PICOM_MAINTENANCE_STATUS", "operational"),
-      message: readPublicEnv("PICOM_MAINTENANCE_MESSAGE", "Picom services are operating normally."),
+      message: readPublicEnv("PICOM_MAINTENANCE_MESSAGE", "Picom services are operating normally.", 240),
     },
     uploadLimits: {
       maxUploadBytes: readMaxUploadBytes(),
       allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
     },
     urls: {
-      statusPageUrl: readPublicEnv("PICOM_STATUS_PAGE_URL"),
-      supportUrl: readPublicEnv("PICOM_SUPPORT_URL"),
-      docsUrl: readPublicEnv("PICOM_DOCS_URL"),
+      statusPageUrl: readPublicUrl("PICOM_STATUS_PAGE_URL"),
+      supportUrl: readPublicUrl("PICOM_SUPPORT_URL"),
+      docsUrl: readPublicUrl("PICOM_DOCS_URL"),
     },
   });
 });

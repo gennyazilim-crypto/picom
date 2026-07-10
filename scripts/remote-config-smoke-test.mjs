@@ -18,13 +18,19 @@ const required = {
     'featureFlagService.applyRemoteConfig',
     'sanitizeRemoteConfig',
     'loadCachedConfig',
-    'DEFAULT_MAX_UPLOAD_BYTES'
+    'DEFAULT_MAX_UPLOAD_BYTES',
+    'CACHE_MAX_AGE_MS',
+    'MAX_RESPONSE_BYTES',
+    'toPublicUrl',
+    'readRemoteConfigResponse'
   ],
   edge: [
     'Deno.serve',
     'minimumSupportedVersion',
     'featureFlags',
     'uploadLimits',
+    'enableScreenShare',
+    'enableAdminOperations',
     'PICOM_MINIMUM_SUPPORTED_VERSION'
   ],
   doc: [
