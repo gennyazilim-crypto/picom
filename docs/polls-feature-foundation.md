@@ -1,112 +1,29 @@
-﻿# Polls Feature Foundation
+# Polls Production Model
 
-Status: post-MVP foundation
+Picom polls support creation, voting, closing, and realtime result refresh while preserving channel visibility and send permissions.
 
-Polls are planned as a future message-adjacent feature for Picom channels. This foundation captures the data model, permissions, realtime behavior, and UI direction without enabling poll creation in the current MVP runtime.
+## Write model
 
-## MVP stance
+- Poll creation and options are inserted by one atomic database RPC after verifying the caller authored the message and can send in its channel.
+- Vote toggles are serialized per poll/user with a transaction advisory lock.
+- Direct table writes are revoked; the RPC prevents duplicate and conflicting single-choice votes.
+- Poll authors and community moderators may close a poll. Closed or expired polls reject votes.
+- Poll state returns aggregate counts and the current user's selections without exposing voter identity lists.
 
-- Poll creation, voting, and poll rendering are not enabled in the current MVP runtime.
-- Existing message sending, replies, reactions, attachments, and realtime message flow remain unchanged.
-- Polls should be enabled only when Supabase schema, RLS, and realtime reconciliation are ready.
+## Visibility and realtime
 
-## Future data model placeholder
+Poll reads follow the underlying message and channel visibility policy. Voting additionally requires authenticated send permission, so public visitors cannot vote. Vote and close changes trigger a bounded poll snapshot refresh through Supabase Realtime; subscriptions are removed when the card unmounts.
 
-Potential tables:
+## Validation
 
-### `polls`
+Questions are 1-240 characters, polls contain 2-10 unique options, and each option is at most 100 characters. Optional close time must be in the future.
 
-- `id`
-- `message_id`
-- `community_id`
-- `channel_id`
-- `question`
-- `allow_multiple`
-- `closes_at`
-- `created_by_id`
-- `created_at`
-- `deleted_at`
+## manual checklist
 
-### `poll_options`
-
-- `id`
-- `poll_id`
-- `text`
-- `position`
-
-### `poll_votes`
-
-- `id`
-- `poll_id`
-- `option_id`
-- `user_id`
-- `created_at`
-
-Constraints should prevent duplicate votes for single-choice polls and keep option order stable.
-
-## Future Supabase/RLS rules
-
-- Users can view polls only if they can view the channel.
-- Users can vote only if they are authenticated members with channel access.
-- Users can create polls only if they can send messages in the channel.
-- Users can edit/delete only their own poll if allowed, or moderators/admins with message moderation permissions.
-- Private channel polls must not appear in search or notification surfaces for unauthorized users.
-
-## Future service methods
-
-Potential typed methods:
-
-- `createPoll(channelId, payload)`
-- `voteOnPoll(pollId, optionId)`
-- `removePollVote(pollId, optionId)`
-- `fetchPollResults(pollId)`
-
-Poll writes should use idempotency keys where possible to avoid duplicate poll creation after retries.
-
-## Future UI placeholder
-
-Future desktop UI surfaces:
-
-- MessageComposer plus menu > Create Poll
-- Slash command `/poll` when slash commands are enabled
-- Poll card inside MessageList
-- Compact vote bars and counts
-- Closed poll state
-- Deleted poll fallback
-
-No mobile bottom sheet or web-first layout should be introduced.
-
-## Realtime behavior
-
-Future realtime events should reconcile safely:
-
-- `poll:created`
-- `poll:updated`
-- `poll:deleted`
-- `poll:vote_added`
-- `poll:vote_removed`
-
-Clients should deduplicate events by `eventId` and avoid overwriting newer local state with older vote snapshots.
-
-## Validation rules
-
-- Poll question is required.
-- At least two options are required.
-- Option text must be bounded and non-empty.
-- Maximum option count should be configured.
-- Closing time must be in the future if provided.
-- Message content analytics must not collect poll question or option text.
-
-## Feature flag behavior
-
-A future `enablePolls` flag should hide poll entry points when disabled. Backend permission and RLS rules remain mandatory even if frontend flags hide UI.
-
-## Implementation decision
-
-This task is documentation-first. Runtime poll UI, Supabase migrations, and message rendering changes are intentionally deferred to avoid destabilizing the current MVP chat flow.
-
-## Manual verification
-
-- Confirm existing message sending still works.
-- Confirm no poll creation button appears in the MVP composer.
-- Confirm this document is used before future poll schema/runtime work begins.
+1. Create a poll in a writable text channel and confirm all options appear.
+2. Attempt creation in a channel without send permission and confirm rejection.
+3. Vote twice on the same choice and confirm the second click removes the vote.
+4. Change a single-choice vote and confirm only one selection remains.
+5. Open two desktop windows and confirm vote counts refresh.
+6. Close as author/moderator and confirm further voting is disabled.
+7. Verify a visitor/private-channel user cannot vote or read inaccessible poll data.

@@ -366,7 +366,7 @@ export type Database = {
         Relationships: [];
       };
       polls: {
-        Row: { id: string; message_id: string; question: string; allow_multiple: boolean; closes_at: string | null; created_at: string };
+        Row: { id: string; message_id: string; question: string; allow_multiple: boolean; closes_at: string | null; closed_at: string | null; closed_by: string | null; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["polls"]["Row"]> & Pick<Database["public"]["Tables"]["polls"]["Row"], "message_id" | "question">;
         Update: Partial<Database["public"]["Tables"]["polls"]["Row"]>;
         Relationships: [];
@@ -435,6 +435,10 @@ export type Database = {
       rotate_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ raw_token: string; token_prefix: string; created_at: string }> };
       create_channel_webhook: { Args: { target_community_id: string; target_channel_id: string; target_webhook_name: string; webhook_avatar_url: string | null }; Returns: Array<{ webhook_id: string; community_id: string; channel_id: string; webhook_name: string; avatar_url: string | null; created_by: string; revoked_at: string | null; created_at: string; updated_at: string; token_once: string }> };
       revoke_channel_webhook: { Args: { target_webhook_id: string }; Returns: Array<{ webhook_id: string; community_id: string; channel_id: string; webhook_name: string; avatar_url: string | null; created_by: string; revoked_at: string | null; created_at: string; updated_at: string }> };
+      create_poll_atomic: { Args: { target_message_id: string; poll_question: string; option_texts: string[]; allow_multiple_choices: boolean; poll_closes_at: string | null }; Returns: Json };
+      get_poll_state: { Args: { target_poll_id: string }; Returns: Json };
+      toggle_poll_vote: { Args: { target_poll_id: string; target_option_id: string }; Returns: Json };
+      close_poll: { Args: { target_poll_id: string }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -1,20 +1,10 @@
-﻿import fs from "node:fs";
-
+import fs from "node:fs";
+const service = fs.readFileSync("src/services/pollService.ts", "utf8");
+const migration = fs.readFileSync("supabase/migrations/20260710180000_polls_production.sql", "utf8");
+const card = fs.readFileSync("src/components/PollMessageCard.tsx", "utf8");
 const doc = fs.readFileSync("docs/polls-feature-foundation.md", "utf8");
-const required = [
-  "post-MVP foundation",
-  "polls",
-  "poll_options",
-  "poll_votes",
-  "RLS",
-  "enablePolls",
-  "documentation-first"
-];
-
-const missing = required.filter((needle) => !doc.includes(needle));
-if (missing.length) {
-  console.error(`Polls foundation doc is missing: ${missing.join(", ")}`);
-  process.exit(1);
-}
-
-console.log("Polls feature foundation smoke passed.");
+for (const marker of ["create_poll_atomic", "toggle_poll_vote", "close_poll", "subscribe", "get_poll_state"]) if (!service.includes(marker)) throw new Error(`Poll service missing ${marker}`);
+for (const marker of ["pg_advisory_xact_lock", "can_send_message_to_channel", "revoke insert, update, delete", "POLL_DUPLICATE_OPTIONS", "supabase_realtime add table public.polls"]) if (!migration.includes(marker)) throw new Error(`Poll production migration missing ${marker}`);
+if (!card.includes("Close poll") || !card.includes("pollService.subscribe")) throw new Error("Poll card close/realtime behavior missing.");
+for (const marker of ["atomic", "duplicate", "channel visibility", "manual checklist"]) if (!doc.includes(marker)) throw new Error(`Poll docs missing ${marker}`);
+console.log("Polls production smoke passed.");

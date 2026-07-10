@@ -227,7 +227,7 @@ export function MessageItem({
           /^\[sticker:([a-z0-9-]+)\]$/.test(message.body) ? <StickerMessage stickerId={/^\[sticker:([a-z0-9-]+)\]$/.exec(message.body)?.[1] ?? ""} /> : <p className="message-text">{renderMessageText(message.body, (url) => { void openMessageLink(url); })}</p>
         )}
         {!deleted && message.attachments?.length ? <AttachmentGrid attachments={message.attachments} onOpenImage={onOpenImage} /> : null}
-        {!deleted && message.poll ? <PollMessageCard initialPoll={message.poll} currentUserId={currentUserId} onNotice={pushToast} /> : null}
+        {!deleted && message.poll ? <PollMessageCard initialPoll={message.poll} currentUserId={currentUserId} canClose={canDelete} onNotice={pushToast} /> : null}
         {!deleted && message.reactions?.length ? (
           <div className="reaction-row">
             {message.reactions.map((reaction) => (
