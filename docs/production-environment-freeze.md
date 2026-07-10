@@ -64,3 +64,7 @@ These belong in protected CI, Supabase/Edge secret storage, or an approved produ
 No stable artifact may be produced from handwritten local secret files. A release operator must fill renderer-safe values from the approved environment, inject server-only values through protected stores, run all environment/secret/hosted gates, and record owner/sign-off without committing values.
 
 RB-09 remains open.
+
+## Task 403 ownership update
+
+Environment/placeholder/secret-boundary checks passed on 2026-07-10, but no named production owners or approved final values were supplied. `docs/production-ownership-matrix.md` therefore records every critical system as `UNASSIGNED`; the freeze remains incomplete under `docs/production-change-control.md`.
