@@ -10,7 +10,8 @@ const sourceDir = join(root, "src");
 const requiredFiles = [
   "community_access_boundaries.sql",
   "message_ownership_and_storage.sql",
-  "direct_messages.sql"
+  "direct_messages.sql",
+  "verification_security.sql"
 ];
 
 const requiredScenarioSnippets = [
@@ -28,7 +29,10 @@ const requiredScenarioSnippets = [
   "non-member cannot read direct participants",
   "non-member cannot read direct attachments",
   "non-member cannot read direct reactions",
-  "blocked participant cannot send direct messages"
+  "blocked participant cannot send direct messages",
+  "user cannot self-approve verification",
+  "approved verification is readable",
+  "non-reviewer cannot review verification"
 ];
 
 function fail(message) {

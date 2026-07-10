@@ -57,6 +57,7 @@ const requiredMigrationPrefixes = [
   "20260710004600_admin_operations_access",
   "20260710004700_data_export_account_deletion",
   "20260710004800_mvp_plus_security_hardening",
+  "20260710249000_verification_schema_security",
 ];
 
 function fail(message) {
