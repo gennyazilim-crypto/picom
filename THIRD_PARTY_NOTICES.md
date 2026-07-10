@@ -4,15 +4,17 @@ This project is a Windows/Linux/macOS Electron desktop community chat app. It do
 
 ## Coolicons
 
-Attribution for the approved MVP icon system:
-
-- Name: Coolicons
-- Creator: Kryston Schwarze
-- License: CC BY 4.0
-- Source: https://github.com/krystonschwarze/coolicons
+- Project: Coolicons Free
+- Source repository: https://github.com/krystonschwarze/coolicons
 - Figma community file: https://www.figma.com/community/file/800815864899415771/coolicons-free-iconset
+- Creator: Kryston Schwarze
+- License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/
+- Usage in Picom: Approved free MVP icon source and semantic icon direction used through the centralized `AppIcon` boundary.
+- Modifications: Icons may be normalized for SVG/component use, semantic naming, sizing, and `currentColor` theme inheritance. Picom does not claim ownership of the original Coolicons artwork.
 
-Picom uses Coolicons as the approved MVP icon direction. Only the free Coolicons set is approved for this project unless a separate PRO license is purchased and documented before use.
+Only the free Coolicons set is approved. Coolicons PRO is not approved unless a separate valid license is purchased and documented before use.
+
+The upstream repository publishes its license statement in the README and links to CC BY 4.0; it does not currently provide a standalone `LICENSE` file. This notice preserves creator, source, license link, usage, and modification attribution without inventing an upstream license file.
 
 ## Brand and asset guardrail
 
