@@ -52,6 +52,9 @@ type ChatMainProps = {
   blockedUserIds?: string[];
   onOpenJoinCommunity: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
+  onOpenInvite: () => void;
+  onOpenTopic: () => void;
+  onOpenPoll: () => void;
 };
 
 export function ChatMain({
@@ -84,6 +87,9 @@ export function ChatMain({
   blockedUserIds = [],
   onOpenJoinCommunity,
   pushToast,
+  onOpenInvite,
+  onOpenTopic,
+  onOpenPoll,
 }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
   const replyToMember = replyToMessage ? community.members.find((member) => member.userId === replyToMessage.authorId) : undefined;
@@ -219,6 +225,12 @@ export function ChatMain({
             disabledReason={composerDisabledReason}
             disabledActionLabel={access.isVisitor ? "Join Community" : undefined}
             onDisabledAction={access.isVisitor ? onOpenJoinCommunity : undefined}
+            canInvite={access.permissions.includes("createInvites")}
+            canEditTopic={access.permissions.includes("manageChannels")}
+            canCreatePoll={access.permissions.includes("sendMessages")}
+            onOpenInvite={onOpenInvite}
+            onOpenTopic={onOpenTopic}
+            onOpenPoll={onOpenPoll}
           />
         </>
       )}

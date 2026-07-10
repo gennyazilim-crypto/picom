@@ -8,6 +8,8 @@ import { uploadService } from "../services/uploadService";
 import { AppIcon } from "./AppIcon";
 import { EmojiPicker } from "./EmojiPicker";
 import { mvpUiIconMap } from "./iconRegistry";
+import { slashCommandService, type SlashCommand } from "../services/slashCommandService";
+import { SlashCommandPopover } from "./SlashCommandPopover";
 
 type ToastTone = "info" | "error" | "success";
 const composerIcons = mvpUiIconMap.messageComposer;
@@ -39,6 +41,12 @@ type MessageComposerProps = {
   disabledReason?: string;
   disabledActionLabel?: string;
   onDisabledAction?: () => void;
+  canInvite?: boolean;
+  canEditTopic?: boolean;
+  canCreatePoll?: boolean;
+  onOpenInvite?: () => void;
+  onOpenTopic?: () => void;
+  onOpenPoll?: () => void;
 };
 
 type ComposerUploadStatus = "pending" | "uploading" | "uploaded" | "failed" | "canceled";
@@ -62,12 +70,14 @@ function createComposerAttachmentItem(preview: LocalAttachmentPreview): Composer
   return { ...preview, status: "pending", progress: 0 };
 }
 
-export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast, disabledReason, disabledActionLabel, onDisabledAction }: MessageComposerProps) {
+export function MessageComposer({ communityId, channel, replyToMessage, replyToMember, onCancelReply, onSendMessage, onTypingStart, onTypingStop, pushToast, disabledReason, disabledActionLabel, onDisabledAction, canInvite = false, canEditTopic = false, canCreatePoll = false, onOpenInvite, onOpenTopic, onOpenPoll }: MessageComposerProps) {
   const [body, setBody] = useState(() => messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   const [dragging, setDragging] = useState(false);
   const [previews, setPreviews] = useState<ComposerAttachmentItem[]>([]);
   const [sending, setSending] = useState(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+  const [slashDismissed, setSlashDismissed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewsRef = useRef<ComposerAttachmentItem[]>([]);
   const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -76,6 +86,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   const onTypingStopRef = useRef(onTypingStop);
   const previousChannelIdRef = useRef(channel.id);
   const previousCommunityIdRef = useRef(communityId);
+  const slashSuggestions = slashDismissed ? [] : slashCommandService.getSuggestions(body);
 
   useEffect(() => {
     previewsRef.current = previews;
@@ -114,6 +125,8 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     previewsRef.current = [];
     setPreviews([]);
     setEmojiPickerOpen(false);
+    setSlashDismissed(false);
+    setSlashSelectedIndex(0);
     setBody(messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   }, [channel.id, communityId]);
 
@@ -286,7 +299,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
       return;
     }
 
-    const value = body.trim();
+    const value = slashCommandService.transformBeforeSend(body.trim());
     if ((!value && !previews.length) || sending) return;
 
     setSending(true);
@@ -311,6 +324,15 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     setPreviews([]);
     setEmojiPickerOpen(false);
     setSending(false);
+  };
+
+  const applySlashCommand = (command: SlashCommand) => {
+    if (command.name === "help") { pushToast("Built-ins: /help /invite /me /shrug /tableflip /topic /poll", "info"); setBody(""); }
+    else if (command.name === "invite") { if (canInvite && onOpenInvite) onOpenInvite(); else pushToast("You do not have permission to create invites.", "error"); setBody(""); }
+    else if (command.name === "topic") { if (canEditTopic && onOpenTopic) onOpenTopic(); else pushToast("You do not have permission to edit this channel topic.", "error"); setBody(""); }
+    else if (command.name === "poll") { if (canCreatePoll && onOpenPoll) onOpenPoll(); else pushToast("Poll creation is not available in this channel.", "info"); setBody(""); }
+    else { const text = slashCommandService.applyTextCommand(command.name); if (text !== null) setBody(text); }
+    setSlashDismissed(true); setSlashSelectedIndex(0); messageDraftService.saveDraft({ communityId, channelId: channel.id }, command.name === "me" ? "/me " : slashCommandService.applyTextCommand(command.name) ?? "");
   };
 
   return (
@@ -382,6 +404,8 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           onChange={(event) => {
             const nextBody = event.target.value;
             setBody(nextBody);
+            setSlashDismissed(false);
+            setSlashSelectedIndex(0);
             messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
             notifyTyping(nextBody);
           }}
@@ -396,6 +420,10 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           }}
           onKeyDown={(event) => {
             if (disabledReason) return;
+            if (slashSuggestions.length && event.key === "ArrowDown") { event.preventDefault(); setSlashSelectedIndex((index) => (index + 1) % slashSuggestions.length); return; }
+            if (slashSuggestions.length && event.key === "ArrowUp") { event.preventDefault(); setSlashSelectedIndex((index) => (index - 1 + slashSuggestions.length) % slashSuggestions.length); return; }
+            if (slashSuggestions.length && event.key === "Escape") { event.preventDefault(); setSlashDismissed(true); return; }
+            if (slashSuggestions.length && event.key === "Enter" && !event.shiftKey) { event.preventDefault(); applySlashCommand(slashSuggestions[Math.min(slashSelectedIndex, slashSuggestions.length - 1)]); return; }
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               send();
@@ -410,6 +438,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
         </button>
       </div>
+      <SlashCommandPopover commands={slashSuggestions} selectedIndex={Math.min(slashSelectedIndex, Math.max(0, slashSuggestions.length - 1))} onSelect={applySlashCommand} />
       {previews.length ? (
         <div className="composer-previews">
           {previews.map((preview) => (

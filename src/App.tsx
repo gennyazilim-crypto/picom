@@ -86,6 +86,7 @@ import { messageHistoryExportService } from "./services/messageHistoryExportServ
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
 import { ReportModal, type ReportModalTarget } from "./components/ReportModal";
+import { InvitePeopleModal } from "./components/CommunityInviteModals";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
@@ -305,6 +306,7 @@ export function App() {
   const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
+  const [composerInviteOpen, setComposerInviteOpen] = useState(false);
   const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
   const {
     communities,
@@ -2179,6 +2181,9 @@ export function App() {
                 onTypingStart={typingBroadcast.sendTypingStart}
                 onTypingStop={typingBroadcast.sendTypingStop}
                 onSendMessage={sendMessage}
+                onOpenInvite={() => setComposerInviteOpen(true)}
+                onOpenTopic={() => pushToast("Channel topic editing is prepared in the channel settings foundation.", "info")}
+                onOpenPoll={() => pushToast("Poll creation opens in the next MVP+ task.", "info")}
                 currentUserId={currentUser.userId}
                 readReceiptsEnabled={userSafetySettings.enableReadReceipts}
                 highlightedMessageId={highlightedMessageId}
@@ -2266,6 +2271,7 @@ export function App() {
       ) : null}
       {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
+      {composerInviteOpen ? <InvitePeopleModal community={displayedActiveCommunity} currentUserId={currentUser.userId} canCreate={communityAccess.permissions.includes("createInvites")} onClose={() => setComposerInviteOpen(false)} /> : null}
       {notificationPermissionPrompt ? (
         <NotificationPermissionPrompt
           prompt={notificationPermissionPrompt}
