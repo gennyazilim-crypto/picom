@@ -873,6 +873,16 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               {import.meta.env.DEV ? <div className="settings-actions-row">
                 <button onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
                 <button onClick={() => menuService.triggerPlaceholderAction("export-diagnostics")}>Simulate menu diagnostics</button>
+                <button
+                  type="button"
+                  aria-label="Reset first launch setup for development testing"
+                  onClick={() => {
+                    settingsService.resetFirstLaunchSetup();
+                    pushToast("First-launch setup reset. Restart Picom to test it again; account and local data were preserved.", "success");
+                  }}
+                >
+                  Reset first-launch setup
+                </button>
               </div> : null}
               <button onClick={openSystemStatus}>Open system status</button>
               <div className="settings-status-card" aria-label="Desktop update recovery status">
