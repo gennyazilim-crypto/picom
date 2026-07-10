@@ -1,0 +1,45 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 4
+    labels:
+      - dependencies
+      - maintenance
+    commit-message:
+      prefix: deps
+    groups:
+      routine-patches:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - electron
+          - "@electron/*"
+          - "@supabase/*"
+          - livekit-client
+        update-types:
+          - patch
+      electron-patches:
+        patterns:
+          - electron
+          - "@electron/*"
+        update-types:
+          - patch
+      supabase-patches:
+        patterns:
+          - "@supabase/*"
+        update-types:
+          - patch
+      livekit-patches:
+        patterns:
+          - livekit-client
+        update-types:
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-major

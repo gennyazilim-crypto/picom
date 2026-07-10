@@ -205,6 +205,7 @@
     "api:compatibility:smoke": "node scripts/api-compatibility-smoke-test.mjs",
     "isolation:multi-tenant:smoke": "node scripts/multi-tenant-isolation-review-smoke-test.mjs",
     "deps:management:smoke": "node scripts/dependency-management-smoke-test.mjs",
+    "dependency:update:train:smoke": "node scripts/dependency-update-train-smoke-test.mjs",
     "deps:vulnerability:smoke": "node scripts/dependency-vulnerability-policy-smoke-test.mjs",
     "licenses:smoke": "node scripts/license-notices-smoke-test.mjs",
     "licenses:generate": "node scripts/generate-third-party-licenses.mjs",

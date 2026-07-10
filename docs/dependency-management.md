@@ -33,6 +33,8 @@ Do not commit audit output if it contains local paths or private environment det
 - Do not run broad automatic upgrades without a dedicated task.
 - Do not add large UI, charting, markdown, syntax highlighting, analytics, or plugin dependencies for placeholders.
 
+Recurring patch updates follow `docs/dependency-update-train.md`. Dependabot opens bounded monthly patch PRs only; automatic minor/major updates and automatic merge are disabled. Electron, Supabase and LiveKit patches remain separate risk groups.
+
 ## Security response
 
 1. Identify package, severity, exploitability, and affected runtime.

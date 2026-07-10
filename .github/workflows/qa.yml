@@ -36,6 +36,9 @@ jobs:
       - name: Verify third-party license inventory
         run: npm run licenses:check
 
+      - name: Verify dependency update train policy
+        run: npm run dependency:update:train:smoke
+
       - name: Run QA smoke gate
         run: npm run qa:smoke
 
