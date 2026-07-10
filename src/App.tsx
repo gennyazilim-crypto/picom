@@ -14,7 +14,7 @@ import type { Attachment, ChannelCategory, Community, Member, Message } from "./
 import type { DirectConversation } from "./types/directMessages";
 import type { FriendState } from "./types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
-import type { ProfileActivityItem } from "./types/profile";
+import type { ProfileActivityItem, UserProfile } from "./types/profile";
 import type { FollowedUserStory } from "./types/stories";
 import type { CommunityTemplateId } from "./types/communityTemplates";
 import type { CommunityAccess } from "./types/communityAccess";
@@ -53,6 +53,7 @@ import { mentionFeedService } from "./services/mentionFeedService";
 import { storyService } from "./services/storyService";
 import { profileVerificationService } from "./services/profileVerificationService";
 import { defaultProfilePrivacyProjection,profilePrivacyService,restrictedProfilePrivacyProjection } from "./services/profilePrivacyService";
+import { profileActivityService } from "./services/profileActivityService";
 import type { ProfilePrivacyProjection } from "./types/profilePrivacy";
 import type { VerificationBadge } from "./types/verification";
 import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
@@ -300,6 +301,8 @@ export function App() {
   const [profileVerificationBadges, setProfileVerificationBadges] = useState<VerificationBadge[]>([]);
   const [profilePrivacyProjection,setProfilePrivacyProjection]=useState<ProfilePrivacyProjection>(defaultProfilePrivacyProjection);
   const [profilePrivacySubjectId,setProfilePrivacySubjectId]=useState<string|null>(null);
+  const [remoteUserProfile,setRemoteUserProfile]=useState<UserProfile|null>(null);
+  const [remoteProfileSubjectId,setRemoteProfileSubjectId]=useState<string|null>(null);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
@@ -723,14 +726,37 @@ export function App() {
     return communities.flatMap((community) => community.members).find((member) => member.userId === activeProfileUserId) ?? null;
   }, [activeProfileUserId, communities]);
 
+  useEffect(() => {
+    if (!activeProfileUserId || !selectedProfileMember || !dataSourceService.getStatus().isSupabase) {
+      setRemoteUserProfile(null);
+      setRemoteProfileSubjectId(null);
+      return;
+    }
+    const subjectId = activeProfileUserId;
+    let active = true;
+    setRemoteUserProfile(null);
+    setRemoteProfileSubjectId(null);
+    void profileActivityService.load({ member: selectedProfileMember, communities, viewerUserId: directMessageUserId, followedUserIds }).then((result) => {
+      if (!active || subjectId !== activeProfileUserId) return;
+      setRemoteProfileSubjectId(subjectId);
+      if (result.ok) setRemoteUserProfile(result.data);
+      else pushToast(result.error.message, "error");
+    });
+    return () => { active = false; };
+  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, pushToast, selectedProfileMember]);
+
   const selectedUserProfile = useMemo(() => {
     if (!selectedProfileMember) return null;
     const projection=profilePrivacySubjectId===activeProfileUserId?profilePrivacyProjection:restrictedProfilePrivacyProjection;
-    const profile = profilePrivacyService.applyProjection(getMockProfileForMember(selectedProfileMember, communities, { currentUserId, followedUserIds }),projection);
+    const mockProfile=getMockProfileForMember(selectedProfileMember,communities,{currentUserId:directMessageUserId,followedUserIds});
+    const sourceProfile=dataSourceService.getStatus().isSupabase
+      ? remoteProfileSubjectId===activeProfileUserId&&remoteUserProfile?remoteUserProfile:profileActivityService.emptyProductionProfile(mockProfile)
+      : mockProfile;
+    const profile = profilePrivacyService.applyProjection(sourceProfile,projection);
     const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
     return { ...profile, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
-  }, [activeProfileUserId, communities, followedUserIds, friendState.friends, friendState.requests, profilePrivacyProjection, profilePrivacySubjectId, profileVerificationBadges, selectedProfileMember]);
+  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, profilePrivacyProjection, profilePrivacySubjectId, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember]);
 
   useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
   useEffect(()=>{if(!activeProfileUserId){setProfilePrivacyProjection(defaultProfilePrivacyProjection);setProfilePrivacySubjectId(null);return;}const subjectId=activeProfileUserId;const viewerId=directMessageUserId;const hasSharedCommunity=communities.some((community)=>community.members.some((member)=>member.userId===viewerId)&&community.members.some((member)=>member.userId===subjectId));const isFriend=friendState.friends.some((friend)=>friend.userId===subjectId);let active=true;void profilePrivacyService.getProjection({targetUserId:subjectId,viewerUserId:viewerId,hasSharedCommunity,isFriend}).then((projection)=>{if(active){setProfilePrivacyProjection(projection);setProfilePrivacySubjectId(subjectId)}});return()=>{active=false};},[activeProfileUserId,communities,directMessageUserId,friendState.friends]);
@@ -2109,7 +2135,7 @@ export function App() {
           {activeView === "discovery" ? (
             <DiscoveryView
               communities={communities}
-              currentUserId={currentUserId}
+              currentUserId={directMessageUserId}
               onView={openCommunityFromRail}
               onJoin={async (communityId) => {
                 const community = communities.find((item) => item.id === communityId);

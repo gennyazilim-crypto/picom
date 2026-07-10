@@ -78,6 +78,7 @@
     "onboarding:experiments:smoke": "node scripts/onboarding-experiments-smoke-test.mjs",
     "verification:badges:smoke": "node scripts/profile-verification-badges-smoke-test.mjs",
     "profile:privacy:smoke": "node scripts/profile-privacy-controls-smoke-test.mjs",
+    "profile:activity:supabase:smoke": "node scripts/profile-activity-supabase-smoke.mjs",
     "community:insights:v2:smoke": "node scripts/community-insights-v2-smoke-test.mjs",
     "admin:operations:v2:smoke": "node scripts/admin-operations-v2-smoke-test.mjs",
     "jobs:smoke": "node scripts/job-queue-smoke-test.mjs",
