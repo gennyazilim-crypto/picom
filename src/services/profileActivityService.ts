@@ -88,7 +88,7 @@ async function load(input: ProfileLoadInput): Promise<ProfileLoadResult> {
   if (dataSourceService.getStatus().isMock) return { ok: true, data: base };
   const client = getSupabaseClient();
   if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Profile activity is unavailable until Picom reconnects." } };
-  const { data, error } = await client.rpc("get_profile_activity_v2", { target_user_id: input.member.userId, result_limit: 30 });
+  const { data, error } = await client.rpc("get_profile_activity_v3", { target_user_id: input.member.userId, result_limit: 30 });
   if (error || !data) return { ok: false, error: { code: "PROFILE_ACTIVITY_LOAD_FAILED", message: "Picom could not load this profile's activity." } };
   return { ok: true, data: mapPayload(data, base) };
 }

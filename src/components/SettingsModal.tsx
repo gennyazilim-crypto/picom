@@ -602,9 +602,9 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               <label className="settings-toggle-row">
                 <span>
                   <strong>Show online status</strong>
-                  <small>Controls the local placeholder preference for presence visibility.</small>
+                  <small>Hide your online status and status text from other profile viewers.</small>
                 </span>
-                <input type="checkbox" checked={safetySettings.showOnlineStatus} onChange={(event) => updateSafetySettings({ showOnlineStatus: event.target.checked })} />
+                <input type="checkbox" checked={profilePrivacy.showOnlineStatus} onChange={(event) => { const enabled=event.target.checked;updateSafetySettings({showOnlineStatus:enabled});updateProfilePrivacy({showOnlineStatus:enabled}); }} />
               </label>
               <label className="settings-toggle-row"><span><strong>Profile audience</strong><small>Private-channel activity is always filtered by channel access, regardless of this choice.</small></span><select value={profilePrivacy.visibility} onChange={(event)=>updateProfilePrivacy({visibility:event.target.value as ProfilePrivacySettings["visibility"]})}><option value="everyone">Everyone</option><option value="shared_communities">Shared communities</option><option value="friends">Friends only</option></select></label>
               <label className="settings-toggle-row"><span><strong>Show location</strong><small>Hide your location from profile viewers.</small></span><input type="checkbox" checked={profilePrivacy.showLocation} onChange={(event)=>updateProfilePrivacy({showLocation:event.target.checked})} /></label>

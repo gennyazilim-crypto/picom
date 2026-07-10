@@ -509,6 +509,9 @@ export type Database = {
       get_own_profile_privacy:{Args:Record<string,never>;Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean}>};
       update_profile_privacy:{Args:{next_visibility:string;next_show_location:boolean;next_show_timezone:boolean;next_show_activity:boolean;next_show_media:boolean};Returns:boolean};
       get_profile_privacy_projection:{Args:{target_user_id:string};Returns:Array<{can_view_profile:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;location:string|null;timezone:string|null}>};
+      get_own_profile_privacy_v2:{Args:Record<string,never>;Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean}>};
+      update_profile_privacy_v2:{Args:{next_visibility:string;next_show_online_status:boolean;next_show_location:boolean;next_show_timezone:boolean;next_show_activity:boolean;next_show_media:boolean};Returns:boolean};
+      get_profile_privacy_projection_v2:{Args:{target_user_id:string};Returns:Array<{can_view_profile:boolean;show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;location:string|null;timezone:string|null}>};
       get_trust_safety_summary: {
         Args: Record<string, never>;
         Returns: Json;
@@ -536,6 +539,7 @@ export type Database = {
       list_accessible_saved_messages: { Args: { result_limit?: number }; Returns: Array<{ id: string; message_id: string; community_id: string; channel_id: string; author_id: string; preview: string; message_created_at: string; created_at: string }> };
       get_community_insights_v2: { Args: { target_community_id: string; window_days?: number }; Returns: Json };
       get_profile_activity_v2: { Args: { target_user_id: string; result_limit?: number }; Returns: Json };
+      get_profile_activity_v3: { Args: { target_user_id: string; result_limit?: number }; Returns: Json };
       follow_user: { Args: { target_user_id: string }; Returns: boolean };
       unfollow_user: { Args: { target_user_id: string }; Returns: boolean };
       list_mention_feed: {
