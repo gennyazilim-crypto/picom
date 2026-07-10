@@ -1165,13 +1165,19 @@ export function App() {
   }, [closeTransientOverlays, openSettings, pushToast, safeMode.active]);
 
   const jumpToMessage = useCallback((community: Community, message: Message) => {
+    const access = getCommunityAccess(currentUserId, community);
+    const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === message.channelId);
+    if (!channel || !canViewChannel(access, channel) || message.deletedAt) {
+      pushToast("This message is no longer available or you do not have access.", "error");
+      return;
+    }
     setActiveView("community");
     switchCommunity(community.id, message.channelId);
     setActiveChannelId(message.channelId);
     clearChannelUnread({ communityId: community.id, channelId: message.channelId });
     setHighlightedMessageId(message.id);
     window.setTimeout(() => setHighlightedMessageId((current) => (current === message.id ? null : current)), 2200);
-  }, [clearChannelUnread, setActiveChannelId, switchCommunity]);
+  }, [clearChannelUnread, pushToast, setActiveChannelId, switchCommunity]);
 
   const paletteResults = useMemo<PaletteResult[]>(() => {
     const q = paletteQuery.toLowerCase();
@@ -1261,9 +1267,8 @@ export function App() {
           if (result.category === "People" && result.userId) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
           else if (result.category === "Communities" && result.communityId) { setActiveView("community"); switchCommunity(result.communityId); }
           else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
-            const community = communities.find((item) => item.id === result.communityId);
-            const message = community?.messages.find((item) => item.id === result.messageId);
-            if (community && message) jumpToMessage(community, message); else { setActiveView("community"); switchCommunity(result.communityId, result.channelId); setActiveChannelId(result.channelId); }
+            const target = advancedSearchService.resolveMessageJumpTarget(result, communities, currentUserId);
+            if (target.ok) jumpToMessage(target.community, target.message); else pushToast(target.reason, "error");
           } else if (result.communityId && result.channelId) { setActiveView("community"); switchCommunity(result.communityId, result.channelId); setActiveChannelId(result.channelId); clearChannelUnread({ communityId: result.communityId, channelId: result.channelId }); }
           closePalette();
         },
@@ -1273,7 +1278,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [activeView, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, mentionItems, openSettings, paletteQuery, savedMessages, setActiveChannelId, switchCommunity, theme]);
+  }, [activeView, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, mentionItems, openSettings, paletteQuery, pushToast, savedMessages, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");

@@ -1,4 +1,4 @@
-import type { Community } from "../types/community";
+import type { Channel, Community, Message } from "../types/community";
 import type { MentionItem } from "../types/mentions";
 import type { SavedMessageRecord } from "./savedMessageService";
 import { canViewChannel, getCommunityAccess } from "./permissions/communityPermissions";
@@ -18,6 +18,9 @@ export type AdvancedSearchResult = Readonly<{
 }>;
 
 export type RemoteSearchCategory = "community" | "channel" | "member" | "message" | "mention" | "saved_message";
+export type MessageJumpResolution =
+  | Readonly<{ ok: true; community: Community; channel: Channel; message: Message }>
+  | Readonly<{ ok: false; reason: string }>;
 
 function includes(value: string | null | undefined, query: string): boolean {
   return Boolean(value?.toLocaleLowerCase().includes(query));
@@ -42,6 +45,7 @@ export function searchLocal(queryInput: string, communities: Community[], mentio
     if (access.canViewMemberList) for (const member of community.members) if (!seenUsers.has(member.userId) && (!query || includes(member.displayName, query) || includes(member.username, query))) { seenUsers.add(member.userId); results.push({ id: `search-person-${member.userId}`, category: "People", label: member.displayName, detail: `@${member.username}`, userId: member.userId, communityId: community.id }); }
     for (const message of community.messages) {
       if (!visibleIds.has(message.channelId)) continue;
+      if (message.deletedAt) continue;
       if (!query || includes(message.body, query)) results.push({ id: `search-message-${message.id}`, category: "Messages", label: message.body.slice(0, 72) || "Message", detail: community.name, communityId: community.id, channelId: message.channelId, messageId: message.id });
       for (const attachment of message.attachments ?? []) if (!query || includes(attachment.alt, query)) results.push({ id: `search-media-${attachment.id}`, category: "Media", label: attachment.alt ?? "Shared image", detail: community.name, communityId: community.id, channelId: message.channelId, messageId: message.id, attachmentId: attachment.id });
     }
@@ -66,6 +70,18 @@ export function searchLocal(queryInput: string, communities: Community[], mentio
   }
 
   return results.slice(0, 80);
+}
+
+export function resolveMessageJumpTarget(result: AdvancedSearchResult, communities: Community[], currentUserId: string): MessageJumpResolution {
+  if (!result.communityId || !result.channelId || !result.messageId) return { ok: false, reason: "This message is no longer available or you do not have access." };
+  const community = communities.find((item) => item.id === result.communityId);
+  if (!community) return { ok: false, reason: "This message is no longer available or you do not have access." };
+  const access = getCommunityAccess(currentUserId, community);
+  const channel = community.categories.flatMap((category) => category.channels).find((item) => item.id === result.channelId);
+  if (!channel || !canViewChannel(access, channel)) return { ok: false, reason: "This message is no longer available or you do not have access." };
+  const message = community.messages.find((item) => item.id === result.messageId && item.channelId === channel.id);
+  if (!message || message.deletedAt) return { ok: false, reason: "This message is no longer available or you do not have access." };
+  return { ok: true, community, channel, message };
 }
 
 export async function searchRemote(queryInput: string, category: RemoteSearchCategory | null = null, limit = 40): Promise<AdvancedSearchResult[]> {
@@ -94,5 +110,4 @@ export const searchCommunities = (query: string) => searchRemote(query, "communi
 export const searchMentions = (query: string) => searchRemote(query, "mention", 30);
 export const searchSavedMessages = (query: string) => searchRemote(query, "saved_message", 30);
 
-export const advancedSearchService = { searchLocal, searchRemote, searchMessages, searchPeople, searchChannels, searchCommunities, searchMentions, searchSavedMessages };
-
+export const advancedSearchService = { searchLocal, searchRemote, searchMessages, searchPeople, searchChannels, searchCommunities, searchMentions, searchSavedMessages, resolveMessageJumpTarget };
