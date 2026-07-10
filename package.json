@@ -201,6 +201,7 @@
     "startup:smoke": "node scripts/launch-on-startup-smoke-test.mjs",
     "update:failure:smoke": "node scripts/update-failure-recovery-smoke-test.mjs",
     "update:beta:rollout:smoke": "node scripts/desktop-auto-update-beta-rollout-smoke-test.mjs",
+    "update:rollback:simulate": "node scripts/update-rollback-simulation.mjs",
     "app-lock:smoke": "node scripts/app-lock-smoke-test.mjs",
     "e2ee:architecture:smoke": "node scripts/e2ee-architecture-smoke-test.mjs",
     "compliance:export-deletion:smoke": "node scripts/compliance-export-deletion-smoke-test.mjs",

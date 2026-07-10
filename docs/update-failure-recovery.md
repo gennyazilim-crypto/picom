@@ -99,3 +99,4 @@ Pause rollout when:
 - `updateService` can represent `download_failed`, `install_failed`, and `rollback_available_placeholder`.
 - Settings > Advanced shows current update placeholder status and simulation actions.
 - No real updater endpoint is required or enabled for MVP.
+- The latest non-destructive rollback drill and its unresolved real-package blockers are recorded in `docs/drills/update-rollback-simulation-2026-07-10.md`.
