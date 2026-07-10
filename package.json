@@ -61,6 +61,7 @@
     "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
+    "dm:production:smoke": "node scripts/direct-messages-production-smoke-test.mjs",
     "jobs:smoke": "node scripts/job-queue-smoke-test.mjs",
     "maintenance:scripts:smoke": "node scripts/maintenance-scripts-smoke-test.mjs",
     "db:backup:placeholder": "node scripts/db-backup-placeholder.mjs",

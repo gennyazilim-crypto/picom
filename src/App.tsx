@@ -47,6 +47,7 @@ import { ProfileView } from "./components/ProfileView";
 import { DirectMessagesView } from "./components/DirectMessagesView";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
+import { directMessageService } from "./services/supabase/directMessageService";
 import { relationshipService } from "./services/relationshipService";
 import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
 import { advancedSearchService } from "./services/advancedSearchService";
@@ -390,6 +391,8 @@ export function App() {
     clearError: clearAuthError,
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
+  const directMessageUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? currentUserId : currentUserId;
+  useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations(result.data); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
   const [legalAcceptancePhase, setLegalAcceptancePhase] = useState<"checking" | "accepted" | "required">("checking");
   const [legalAcceptanceLoading, setLegalAcceptanceLoading] = useState(false);
   const [legalAcceptanceError, setLegalAcceptanceError] = useState<string | null>(null);
@@ -1486,6 +1489,8 @@ export function App() {
       const existing = directConversations.find((candidate) => candidate.participantUserId === userId);
       if (existing) {
         setActiveDirectConversationId(existing.id);
+      } else if (dataSourceService.getStatus().isSupabase) {
+        void directMessageService.createDirectConversation(userId).then(async (created) => { if (!created.ok) { pushToast(created.error.message, "error"); return; } const loaded = await directMessageService.loadDirectConversations(); if (loaded.ok) { setDirectConversations(loaded.data); setActiveDirectConversationId(created.data); } else pushToast(loaded.error.message, "error"); });
       } else {
         const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
         if (member) {
@@ -1510,9 +1515,10 @@ export function App() {
     const clientMessageId = `dm-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? {
       ...conversation, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0,
-      messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: currentUserId, body, createdAt }],
+      messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: directMessageUserId, body, createdAt }],
     } : conversation));
-  }, [directConversations, pushToast]);
+    if (dataSourceService.getStatus().isSupabase) void directMessageService.sendDirectMessage({ conversationId, body, clientMessageId }).then((result) => { if (result.ok) handleDirectRealtimeInsert(result.data); else { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.filter((message) => message.clientMessageId !== clientMessageId) } : item)); pushToast(result.error.message, "error"); } });
+  }, [directConversations, directMessageUserId, pushToast]);
 
   const handleDirectRealtimeInsert = useCallback((message: DirectConversation["messages"][number]) => {
     setDirectConversations((current) => current.map((conversation) => {
@@ -1549,7 +1555,7 @@ export function App() {
     enabled: true,
     conversationIds: directConversations.map((conversation) => conversation.id),
     activeConversationId: activeDirectConversationId,
-    currentUserId,
+    currentUserId: directMessageUserId,
     isDirectMessagesViewActive: activeView === "directMessages",
     onInsert: handleDirectRealtimeInsert,
     onUpdate: handleDirectRealtimeUpdate,
@@ -2203,8 +2209,8 @@ export function App() {
             <DirectMessagesView
               conversations={directConversations}
               activeConversationId={activeDirectConversationId}
-              currentUserId={currentUserId}
-              onSelectConversation={setActiveDirectConversationId}
+              currentUserId={directMessageUserId}
+              onSelectConversation={(conversationId) => { setActiveDirectConversationId(conversationId); setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item)); if (dataSourceService.getStatus().isSupabase) void directMessageService.markDirectConversationRead(conversationId); }}
               onSendMessage={sendDirectMessageLocal}
               onBackToCommunity={() => setActiveView("community")}
               onOpenProfile={(userId) => {

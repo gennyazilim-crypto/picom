@@ -25,6 +25,7 @@ export type Database = {
           terms_accepted_at: string | null;
           accepted_privacy_version: string | null;
           privacy_accepted_at: string | null;
+          dm_privacy: "everyone" | "friends" | "no_one";
           created_at: string;
           updated_at: string;
         };
@@ -434,6 +435,9 @@ export type Database = {
       respond_friend_request: { Args: { target_request_id: string; accept_request: boolean }; Returns: boolean };
       remove_friend: { Args: { other_user_id: string }; Returns: boolean };
       create_direct_conversation: { Args: { other_user_id: string }; Returns: string };
+      list_direct_conversations: { Args: { result_limit?: number }; Returns: Array<{ id: string; participant_user_id: string; participant_name: string; participant_username: string; participant_status: string; participant_status_text: string; last_message_preview: string; updated_at: string; unread_count: number }> };
+      send_direct_message: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
+      mark_direct_conversation_read: { Args: { target_conversation_id: string }; Returns: boolean };
       accept_community_invite: {
         Args: { invite_code: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;
