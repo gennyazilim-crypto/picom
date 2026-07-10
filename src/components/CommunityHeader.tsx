@@ -2,7 +2,6 @@
 import type { CommunityAccess } from "../types/communityAccess";
 import { getCommunityIconLabel } from "../utils/generatedIdentity";
 import { AppIcon } from "./AppIcon";
-import { CommunityRoleBadge } from "./CommunityMenu";
 import { mvpUiIconMap } from "./iconRegistry";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
@@ -52,7 +51,6 @@ export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenMod
         <strong>{community.name}</strong>
         <span>{access.isVisitor ? "Public preview" : "Desktop community"}</span>
       </div>
-      <CommunityRoleBadge access={access} />
       <button className="icon-button" aria-label="Open community management center" title="Open community management center" onClick={openManagementCenter}>
         <AppIcon name={sidebarIcons.expand} size="sm" />
       </button>

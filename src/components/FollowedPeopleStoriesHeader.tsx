@@ -58,7 +58,7 @@ export function StoryCard({ story, author, onOpenStory }: { story: FollowedUserS
         <i className="story-line" />
       </span>
       <span className="story-user-pill">
-        <MemberAvatar member={author} size={30} />
+        <MemberAvatar member={author} size={20} />
         <span>
           <strong>{author.displayName}</strong>
           <small>@{author.username}</small>

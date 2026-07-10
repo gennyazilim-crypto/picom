@@ -1968,8 +1968,10 @@ export function App() {
             communities={communities}
             activeCommunityId={activeCommunityId}
             homeActive={activeView === "mentionFeed"}
+            directMessagesActive={activeView === "directMessages"}
             discoveryActive={activeView === "discovery"}
             onOpenHome={openMentionFeed}
+            onOpenDirectMessages={() => openDirectMessages()}
             onOpenDiscovery={() => { setActiveView("discovery"); closeTransientOverlays(); }}
             onSelectCommunity={openCommunityFromRail}
             onOpenSettings={openSettings}

@@ -11,21 +11,34 @@ type ServerRailProps = {
   communities: Community[];
   activeCommunityId: string;
   homeActive?: boolean;
+  directMessagesActive?: boolean;
   discoveryActive?: boolean;
   onSelectCommunity: (id: string) => void;
   onOpenHome: () => void;
+  onOpenDirectMessages: () => void;
   onOpenDiscovery: () => void;
   onOpenSettings: () => void;
   onUtilityAction?: (label: string) => void;
   onContextMenu: (event: MouseEvent, label: string) => void;
 };
 
-export function ServerRail({ communities, activeCommunityId, homeActive = false, discoveryActive = false, onSelectCommunity, onOpenHome, onOpenDiscovery, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
+export function ServerRail({ communities, activeCommunityId, homeActive = false, directMessagesActive = false, discoveryActive = false, onSelectCommunity, onOpenHome, onOpenDirectMessages, onOpenDiscovery, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
   return (
     <nav className="server-rail" aria-label="Communities">
       <button className={`server-home ${homeActive ? "active" : ""}`} aria-label="Open mention feed" aria-current={homeActive ? "page" : undefined} onClick={onOpenHome}>
         <img src={logoUrl} alt="" />
         {homeActive ? <span className="active-rail" /> : null}
+      </button>
+      <button
+        className={`server-button utility server-dm ${directMessagesActive ? "active" : ""}`}
+        type="button"
+        title="Direct messages"
+        aria-label="Direct messages"
+        aria-current={directMessagesActive ? "page" : undefined}
+        onClick={onOpenDirectMessages}
+      >
+        <span className="active-rail" />
+        <AppIcon name="inbox" size="lg" />
       </button>
       <span className="rail-separator" />
       <div className="server-stack">

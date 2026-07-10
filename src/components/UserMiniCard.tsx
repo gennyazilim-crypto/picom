@@ -15,9 +15,9 @@ export function UserMiniCard({ member, onOpenSettings, onLogout }: UserMiniCardP
   return (
     <footer className="user-mini-card">
       <MemberAvatar member={member} size={38} />
-      <button className="user-mini-main" onClick={onOpenSettings}>
-        <strong>{member.displayName}</strong>
-        <span>{member.statusText}</span>
+      <button className="user-mini-main" title={`${member.displayName} - ${member.statusText}`} onClick={onOpenSettings}>
+        <strong title={member.displayName}>{member.displayName}</strong>
+        <span title={member.statusText}>{member.statusText}</span>
       </button>
       <button className="mini-action" aria-label="Mute">
         <AppIcon name={sidebarIcons.mute} size="sm" />
