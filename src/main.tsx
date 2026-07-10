@@ -7,6 +7,7 @@ import { safeModeService } from "./services/safeModeService";
 import { sleepWakeResumeService } from "./services/sleepWakeResumeService";
 import { crashReporterService } from "./services/crashReporterService";
 import "./styles.css";
+import "./screenShareQuality.css";
 
 function markRuntime(): void {
   const runtimeInfo = window.picomDesktop?.getRuntimeInfo();

@@ -3,6 +3,7 @@ import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
 import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality, type VoiceDurationBucket } from "../utils/voiceQualityMetrics";
+import { getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 
 export type VoiceConnectionStatus =
   | "idle"
@@ -490,7 +491,7 @@ export const voiceService = {
     return { ok: true, data: snapshot };
   },
 
-  async startScreenShare(sourceId: string): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+  async startScreenShare(sourceId: string, preset: ScreenShareQualityPresetId = "balanced"): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");
     }
@@ -505,6 +506,10 @@ export const voiceService = {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia(createElectronScreenShareConstraints(sourceId));
+      const captureTrack = stream.getVideoTracks()[0];
+      if (captureTrack) {
+        await captureTrack.applyConstraints(getScreenShareTrackConstraints(preset)).catch(() => undefined);
+      }
       const [track] = stream.getVideoTracks();
       if (!track) {
         stream.getTracks().forEach((mediaTrack) => mediaTrack.stop());

@@ -13,6 +13,7 @@ import { VoiceRoomView } from "./VoiceRoomView";
 import { ForumChannelView } from "./ForumChannelView";
 import { canSendMessage } from "../services/permissions/communityPermissions";
 import { analyticsService } from "../services/analyticsService";
+import type { ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 
 type ToastTone = "info" | "error" | "success";
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
@@ -157,9 +158,9 @@ export function ChatMain({
     });
   };
 
-  const handleStartScreenShare = (sourceId: string) => {
+  const handleStartScreenShare = (sourceId: string, preset: ScreenShareQualityPresetId) => {
     void import("../services/voiceService").then(({ voiceService }) => {
-      void voiceService.startScreenShare(sourceId).then((result) => {
+      void voiceService.startScreenShare(sourceId, preset).then((result) => {
         if (!result.ok) {
           pushToast(result.error.message, "error");
           return;

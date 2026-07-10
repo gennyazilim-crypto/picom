@@ -1,0 +1,30 @@
+.screen-share-quality-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, auto);
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.screen-share-quality-control select {
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 9px;
+  font: inherit;
+}
+
+.screen-share-quality-control select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.screen-share-quality-control select:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}

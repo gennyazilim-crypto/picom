@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { AppIcon } from "../AppIcon";
 import { screenCaptureService, type ScreenCaptureSource } from "../../services/screenCaptureService";
+import { screenShareQualityPresets, type ScreenShareQualityPresetId } from "../../utils/screenShareQuality";
 
 type PickerStatus = "idle" | "loading" | "ready" | "error";
 
 type ScreenSharePickerProps = {
   connected: boolean;
   screenSharing: boolean;
-  onStart?: (sourceId: string) => void;
+  onStart?: (sourceId: string, preset: ScreenShareQualityPresetId) => void;
   onStop?: () => void;
 };
 
@@ -15,6 +16,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
   const [status, setStatus] = useState<PickerStatus>("idle");
   const [sources, setSources] = useState<ScreenCaptureSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  const [qualityPreset, setQualityPreset] = useState<ScreenShareQualityPresetId>("balanced");
   const [error, setError] = useState<string | null>(null);
 
   async function loadSources(): Promise<void> {
@@ -55,6 +57,15 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
 
       {error ? <p className="screen-share-picker-error">{error}</p> : null}
 
+      <label className="screen-share-quality-control">
+        <span>Share quality</span>
+        <select value={qualityPreset} onChange={(event) => setQualityPreset(event.target.value as ScreenShareQualityPresetId)} disabled={screenSharing}>
+          {screenShareQualityPresets.map((preset) => (
+            <option key={preset.id} value={preset.id}>{preset.label} - {preset.description}</option>
+          ))}
+        </select>
+      </label>
+
       {sources.length ? (
         <>
           <div className="screen-source-grid" aria-label="Available screen capture sources">
@@ -82,7 +93,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
                 onStop?.();
                 return;
               }
-              if (selectedSourceId) onStart?.(selectedSourceId);
+              if (selectedSourceId) onStart?.(selectedSourceId, qualityPreset);
             }}
           >
             {screenSharing ? "Stop sharing" : connected ? "Start sharing" : "Join room to share"}

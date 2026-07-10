@@ -4,6 +4,7 @@ import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { ScreenShareControls } from "./voice/ScreenShareControls";
 import { ScreenSharePreview } from "./voice/ScreenSharePreview";
+import type { ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 
 type VoiceRoomViewProps = {
   community: Community;
@@ -13,7 +14,7 @@ type VoiceRoomViewProps = {
   onLeave?: () => void;
   onToggleMute?: () => void;
   onToggleDeafen?: () => void;
-  onStartScreenShare?: (sourceId: string) => void;
+  onStartScreenShare?: (sourceId: string, preset: ScreenShareQualityPresetId) => void;
   onStopScreenShare?: () => void;
 };
 
