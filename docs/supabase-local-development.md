@@ -24,19 +24,44 @@ VITE_SUPABASE_ANON_KEY=local-anon-key-from-supabase-status
 
 The exact local URL and anon key should come from the local Supabase CLI output.
 
-## Local Supabase workflow placeholder
+## CLI prerequisites and installation
 
-When the Supabase CLI/project scaffold is added later, the expected flow is:
+The Supabase CLI npm path requires Node.js 20 or later. Local services also require Docker Desktop or
+another Docker-compatible container runtime. Prefer a project dev dependency so contributors use a
+reviewed version:
 
 ```powershell
-supabase start
-supabase status
-supabase db reset
-supabase db diff
-supabase db push
+npm install supabase --save-dev
+npx supabase --version
 ```
 
-Do not run destructive reset commands against staging or production.
+Installing the dependency changes `package.json` and the lockfile and should be reviewed as a normal
+dependency update. A contributor may instead use an officially supported platform installer. Run
+`npm run supabase:cli:check` to detect availability without blocking UI development; add `-- --require`
+in database CI where absence must fail.
+
+Official references:
+
+- <https://supabase.com/docs/guides/local-development/cli/getting-started>
+- <https://supabase.com/docs/guides/local-development/overview>
+
+## Local reset, migrate, and seed workflow
+
+The committed `supabase/` directory is already the project scaffold. From the Picom repository root:
+
+```powershell
+npx supabase start
+npx supabase status
+npx supabase db reset
+npx supabase migration up --local
+npm run supabase:rls:test
+```
+
+`db reset` recreates the local database, applies `supabase/migrations` in order, and applies configured
+seed data. It is the normal clean-state migrate/seed command. `migration up --local` applies pending
+migrations without a full reset. Use `npx supabase stop` when finished. Never run destructive reset or
+down commands against staging or production. Linking and `db push` require a reviewed deployment step,
+backup verification, and the correct project ref.
 
 ## Renderer safety
 
@@ -60,6 +85,43 @@ For every table exposed to the renderer:
 4. Test as a non-member.
 5. Test private channel denial.
 6. Confirm denied queries fail cleanly and do not leak data.
+
+Real local execution is:
+
+```powershell
+npx supabase start
+npx supabase db reset
+npm run supabase:rls:test
+```
+
+`npm run supabase:rls:smoke` is structural only and remains safe when the CLI is absent.
+
+## Hosted-only fallback when CLI/Docker is unavailable
+
+1. Keep desktop UI work in `VITE_DATA_SOURCE=mock`; CLI absence must not block `npm run dev`,
+   `npm run mock:smoke`, typecheck, or renderer builds.
+2. Use a dedicated staging Supabase project, never production, and verify the target project name/ref.
+3. In Dashboard SQL Editor, review and apply committed files from `supabase/migrations` in filename order.
+   Record each applied filename/commit. Do not paste unreviewed destructive SQL.
+4. Add development-only fixture rows/users manually or with reviewed seed SQL. Never copy production data.
+5. Inspect that every exposed `public` table has RLS enabled and expected policies. SQL Editor runs with
+   privileged access, so successful SQL Editor queries do **not** prove RLS behavior.
+6. Configure an ignored staging env with only URL + anon/publishable key, run
+   `node scripts/validate-supabase-environment.mjs --target staging --file <env-file>`, then test through
+   Picom/the public client.
+7. Run the manual RLS matrix below and retain redacted evidence. Mark local pgTAP as not run; never report
+   a structural smoke or Dashboard query as a real RLS pass.
+
+### Manual hosted RLS matrix
+
+- Create two ordinary test accounts A and B; do not use service-role credentials.
+- A creates/joins community A and sends a public-channel message; B verifies only policy-allowed reads.
+- A creates/uses a private channel; B must not list the channel, message, or attachment metadata.
+- B attempts message insert/update/delete and membership/role changes in community A; each unauthorized
+  operation must be denied without returning private row data.
+- A verifies own permitted edit/delete and upload paths; B verifies those objects remain inaccessible.
+- Sign out and repeat public/visitor reads with the anon role where public access is intentionally enabled.
+- Capture status/error codes and row counts only; redact emails, tokens, authorization headers, and content.
 
 ## Local data strategy
 

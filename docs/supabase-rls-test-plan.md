@@ -59,6 +59,11 @@ If the CLI is unavailable:
 
 This is intentional. A structural smoke pass is not a claim that live RLS tests executed.
 
+If Docker/CLI cannot be installed, follow the hosted-only staging and two-user manual matrix in
+`docs/supabase-local-development.md`. Dashboard SQL Editor may deploy/inspect policy SQL, but because it
+uses privileged access it cannot prove anon/authenticated RLS enforcement. Record hosted manual evidence
+separately and keep local pgTAP status explicitly `not run`.
+
 ## Storage notes
 
 The MVP stores attachment metadata in `public.attachments` and files in the private `message-attachments` bucket. SQL tests cover attachment metadata visibility because it is directly queried by the desktop app. Full storage object policy verification should be run with local Supabase Storage after `supabase start` and must confirm:
