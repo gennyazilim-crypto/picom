@@ -20,7 +20,16 @@ The authenticated `account-deletion` Edge Function verifies the JWT, invokes the
 
 ## Final anonymization policy
 
-Finalization is intentionally a trusted operator/background-worker responsibility and is not implemented as an automatic migration or renderer action. A reviewed implementation should:
+Finalization is a trusted operator/background-worker responsibility and is never a renderer action. Picom now provides an idempotent two-stage implementation, but it remains disabled by default pending legal/operations approval and staging evidence:
+
+1. `prepare_account_deletion_anonymization` rechecks the due grace period, completed global session revocation, active request, and zero owned communities in a locked transaction.
+2. It removes membership/social convenience rows, replaces public profile fields with a stable deleted identity, marks the profile deleted, preserves messages and append-only audit/security events, and moves the request to `reviewing`.
+3. The internal `account-deletion-finalize` worker requires `ACCOUNT_DELETION_FINALIZATION_ENABLED=true` plus a dedicated worker secret, then calls Supabase Auth soft delete.
+4. Success marks the request completed and appends an account security event. Auth failure leaves a retryable `auth_soft_delete_failed` state instead of claiming completion.
+
+The worker has no schedule in source control. Legal approval, restore/retention validation, staging evidence, secret provisioning, on-call ownership, and an explicit deployment decision are required before scheduling it.
+
+The reviewed process must continue to:
 
 1. Recheck that the grace period elapsed and the request was not canceled.
 2. Revoke sessions again and disconnect realtime sockets.
@@ -29,7 +38,11 @@ Finalization is intentionally a trusted operator/background-worker responsibilit
 5. Preserve message/thread continuity using the anonymized author identity where legally permitted.
 6. Preserve append-only community audit and security events without tokens, passwords, raw IP addresses, or message content.
 7. Apply attachment retention and legal-hold rules separately.
-8. Delete or disable the Supabase Auth identity only after relational and restore implications are verified.
+8. Soft-delete the Supabase Auth identity only after relational and restore implications are verified.
+
+## Legal and release gate
+
+Counsel must approve the 14-day period, data-category deletion/anonymization matrix, message/audit preservation, backup/legal-hold treatment, user notices, response deadlines, and regional obligations. Until that approval is recorded, finalization stays disabled even though request/cancel/session-revoke flows remain available.
 
 ## Failure behavior
 

@@ -71,3 +71,6 @@ verify_jwt = true
 
 [functions.account-deletion]
 verify_jwt = true
+
+[functions.account-deletion-finalize]
+verify_jwt = false

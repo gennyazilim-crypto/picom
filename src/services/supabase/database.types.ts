@@ -283,7 +283,7 @@ export type Database = {
         Relationships: [];
       };
       account_deletion_requests: {
-        Row: { id: string; user_id: string; status: "requested" | "reviewing" | "canceled" | "completed"; requested_at: string; canceled_at: string | null; completed_at: string | null; anonymize_after: string | null; sessions_revoked_at: string | null; session_revocation_status: "pending" | "completed" | "failed" };
+        Row: { id: string; user_id: string; status: "requested" | "reviewing" | "canceled" | "completed"; requested_at: string; canceled_at: string | null; completed_at: string | null; anonymize_after: string | null; sessions_revoked_at: string | null; session_revocation_status: "pending" | "completed" | "failed"; finalization_status: "pending" | "profile_anonymized" | "auth_soft_delete_failed" | "completed" };
         Insert: Partial<Database["public"]["Tables"]["account_deletion_requests"]["Row"]> & Pick<Database["public"]["Tables"]["account_deletion_requests"]["Row"], "user_id">;
         Update: never;
         Relationships: [];
