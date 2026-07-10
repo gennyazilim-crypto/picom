@@ -15,6 +15,7 @@ export type ReportRecord = Readonly<{
   createdAt: string;
   updatedAt: string;
   reviewedById?: string;
+  reviewedAt?: string;
 }>;
 
 export type CreateReportInput = Readonly<{
@@ -30,5 +31,6 @@ export type CreateReportInput = Readonly<{
 export type UpdateReportStatusInput = Readonly<{
   reportId: string;
   status: ReportStatus;
+  canReview: boolean;
   reviewedById?: string;
 }>;
