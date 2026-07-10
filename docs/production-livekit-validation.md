@@ -52,3 +52,7 @@ All local voice/device/recovery/mini-card/discovery contracts passed on 2026-07-
 ## Task 407 real execution
 
 Hosted two-client execution was **BLOCKED**. No staging token endpoint, LiveKit project, protected credentials, synthetic accounts, or isolated clients were available. No real media or authorization result is claimed; see `docs/hosted-livekit-two-client-execution.md`.
+
+## Task 422 rerun
+
+Local voice/device/reconnect/mini-card/discovery/build contracts passed on 2026-07-11. No provider credentials, deployed token endpoint, account pair, or isolated clients were available, so hosted token, media, authorization, reconnect, and cleanup remain **BLOCKED**. RB-04 stays open.

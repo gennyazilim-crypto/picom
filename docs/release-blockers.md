@@ -123,3 +123,7 @@ The release-scoped `livekit-token` source and local JWT/CORS/method/secret contr
 ## Task 421 hosted Supabase final closure
 
 Local Supabase/RLS/API/secret/build/QA gates passed. Earlier real migration/Auth/core RLS/private Storage results remain valid, but private Presence, deployed Edge Functions, broader lost-access, and historical Storage lifecycle evidence remain incomplete. Hosted status is **PARTIAL / BLOCKED**; RB-01, RB-02, and RB-03 stay open.
+
+## Task 422 hosted LiveKit two-client
+
+Local voice/device/reconnect/Connected Voice contracts passed, but no deployed token endpoint, provider credentials, account pair, or two isolated media clients were available. No real token/audio/reconnect evidence exists. RB-04 remains **BLOCKED**.

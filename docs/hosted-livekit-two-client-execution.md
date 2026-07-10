@@ -20,3 +20,9 @@ No hosted LiveKit project, deployed staging token function, protected LiveKit cr
 Deterministic service and UI smoke evidence remains in `docs/hosted-livekit-two-client-validation.md`; it is not real media evidence. No token, audio, identity, secret, URL, screenshot, or private room detail was recorded.
 
 RB-04 remains open. Recommendation: **Not ready**.
+
+## Task 422 execution attempt
+
+Result on 2026-07-11: **BLOCKED**.
+
+The LiveKit, device-selection, reconnect/recovery, Connected Voice, active-room, TypeScript, and build contracts passed. The Edge runner completed preflight only and made no network request. This operator session had no hosted LiveKit URL/key/secret, deployed staging token function, protected synthetic accounts, or two isolated clients. No token or media packet was produced, and the prior BLOCKED result remains authoritative.
