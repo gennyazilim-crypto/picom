@@ -330,6 +330,7 @@
     "safe-mode:smoke": "node scripts/safe-mode-smoke-test.mjs",
     "safe-mode:production:test": "node scripts/safe-mode-recovery-production-test.mjs",
     "safe-mode:final:test": "node scripts/safe-mode-final-test.mjs",
+    "backlog:final:audit": "node scripts/final-long-term-backlog-audit.mjs",
     "feed:companion:smoke": "node scripts/feed-companion-rail-smoke-test.mjs",
     "mentions:ranking:test": "node scripts/mention-feed-ranking-v2-test.mjs",
     "mentions:supabase:smoke": "node scripts/mention-feed-supabase-smoke.mjs",
