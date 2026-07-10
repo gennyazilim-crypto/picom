@@ -6,6 +6,8 @@ const requiredFiles = [
   "assets/installer/shared/picom-installer-mark.placeholder.svg",
   "assets/installer/shared/picom-wordmark.placeholder.svg",
   "assets/installer/windows/README.md",
+  "assets/installer/windows/installer-header.bmp",
+  "assets/installer/windows/installer-sidebar.bmp",
   "assets/installer/macos/README.md",
   "assets/installer/linux/README.md",
   "docs/installer-branding.md",
@@ -19,6 +21,9 @@ if (pkg.name !== "picom" || pkg.desktopName !== "Picom") throw new Error("Packag
 const builder = readFileSync("electron-builder.yml", "utf8");
 for (const marker of ["appId: com.picom.desktop", "productName: Picom", "installerIcon: assets/brand/app-icon.ico", "createDesktopShortcut: true", "createStartMenuShortcut: true", "target: AppImage", "target: deb", "target: dmg"]) {
   if (!builder.includes(marker)) throw new Error(`Missing package branding marker: ${marker}`);
+}
+for (const marker of ["oneClick: false", "perMachine: false", "allowElevation: false", "runAfterFinish: true", "deleteAppDataOnUninstall: false", "installerHeader: assets/installer/windows/installer-header.bmp", "installerSidebar: assets/installer/windows/installer-sidebar.bmp"]) {
+  if (!builder.includes(marker)) throw new Error(`Missing safe Windows installer marker: ${marker}`);
 }
 
 const setup = readFileSync("src/components/firstLaunch/FirstLaunchSetup.tsx", "utf8");

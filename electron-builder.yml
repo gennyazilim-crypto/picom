@@ -45,9 +45,15 @@ win:
 nsis:
   installerIcon: assets/brand/app-icon.ico
   uninstallerIcon: assets/brand/app-icon.ico
+  installerHeader: assets/installer/windows/installer-header.bmp
+  installerSidebar: assets/installer/windows/installer-sidebar.bmp
+  uninstallerSidebar: assets/installer/windows/installer-sidebar.bmp
   oneClick: false
   perMachine: false
+  allowElevation: false
   allowToChangeInstallationDirectory: true
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Picom
