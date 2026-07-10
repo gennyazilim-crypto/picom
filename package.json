@@ -118,6 +118,7 @@
     "audio:podcast:smoke": "node scripts/audio-podcast-detail-smoke.mjs",
     "audio:schema:smoke": "node scripts/audio-schema-rls-smoke.mjs",
     "audio:service:smoke": "node scripts/audio-service-layer-smoke.mjs",
+    "audio:mvp:qa": "node scripts/audio-mvp-final-qa.mjs",
     "friends:production:smoke": "node scripts/friend-requests-production-smoke-test.mjs",
     "blocking:privacy:smoke": "node scripts/blocking-privacy-enforcement-smoke-test.mjs",
     "discovery:public:smoke": "node scripts/community-discovery-public-listing-smoke-test.mjs",
