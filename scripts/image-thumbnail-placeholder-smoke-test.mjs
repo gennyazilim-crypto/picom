@@ -1,6 +1,7 @@
 ﻿import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import ts from "typescript";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const files = {
@@ -32,6 +33,17 @@ const checks = [
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);
 if (failed.length > 0) {
   throw new Error(`Image thumbnail placeholder smoke test failed: ${failed.join(", ")}`);
+}
+
+const compiled = ts.transpileModule(files.thumbnailService, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const thumbnailModule = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+if (thumbnailModule.createThumbnailStoragePath("communities/c1/channels/ch1/pending/u1/image.png") !== "communities/c1/channels/ch1/pending/u1/thumbnails/image.png.webp") {
+  throw new Error("Image thumbnail placeholder smoke test failed: deterministic sibling object path");
+}
+if (thumbnailModule.createThumbnailStoragePath("../private/image.png") !== null) {
+  throw new Error("Image thumbnail placeholder smoke test failed: traversal-safe object path");
 }
 
 console.log("Image thumbnail generation placeholder smoke test passed.");

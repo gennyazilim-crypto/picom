@@ -95,6 +95,8 @@ Future thumbnail generation should:
 - avoid processing unsupported MIME types
 - avoid logging image contents or raw paths beyond safe metadata
 
+The prepared object-key convention is `<original-directory>/thumbnails/<original-file-name>.webp`. It remains in the same private community/channel/user namespace as the source object; it is never promoted to a public bucket by naming alone. See [Attachment thumbnail pipeline](attachment-thumbnail-pipeline.md).
+
 ## Validation and scanning
 
 Before public or signed delivery:
