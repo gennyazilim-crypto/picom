@@ -176,6 +176,7 @@ export function MessageItem({
           <button className="message-author-button" type="button" onClick={(event) => onOpenProfile(event, member)}>
             {member.displayName}
           </button>
+          {member.isBot ? <span className="bot-badge">BOT</span> : null}
           {role ? <span className="role-label" style={{ color: role.color }}>{role.name}</span> : null}
           <time title={dateTimeService.formatFullTimestamp(message.createdAt)}>{dateTimeService.formatMessageTime(message.createdAt)}</time>
           {message.editedAt && !deleted ? <span className="message-edited-label">edited</span> : null}

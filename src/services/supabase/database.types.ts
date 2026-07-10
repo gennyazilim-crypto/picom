@@ -19,6 +19,7 @@ export type Database = {
           accent_color: string | null;
           onboarding_completed: boolean;
           onboarding_completed_at: string | null;
+          is_bot: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -229,6 +230,18 @@ export type Database = {
         Row: { id: string; community_id: string; code: string; created_by: string; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["community_invites"]["Row"]> & Pick<Database["public"]["Tables"]["community_invites"]["Row"], "community_id" | "code" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
+        Relationships: [];
+      };
+      bots: {
+        Row: { id: string; profile_id: string; owner_id: string; display_name: string; avatar_url: string | null; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      community_bots: {
+        Row: { community_id: string; bot_id: string; role_id: string; installed_by: string; installed_at: string };
+        Insert: Partial<Database["public"]["Tables"]["community_bots"]["Row"]> & Pick<Database["public"]["Tables"]["community_bots"]["Row"], "community_id" | "bot_id" | "role_id" | "installed_by">;
+        Update: Partial<Database["public"]["Tables"]["community_bots"]["Row"]>;
         Relationships: [];
       };
       reports: {

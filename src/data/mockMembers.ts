@@ -54,16 +54,18 @@ export function createMockMembers(prefix: string, offset: number): Member[] {
     const roleId = index === 0 ? "owner" : index === 1 ? "admin" : index === 2 ? "mod" : index > 9 ? "guest" : "member";
     const status = index % 7 === 0 ? "offline" : index % 5 === 0 ? "idle" : index % 6 === 0 ? "dnd" : "online";
 
+    const isBot = index === 8;
     return {
       id: `${prefix}-member-${index}`,
       userId: index === 0 ? currentUserId : `${prefix}-user-${index}`,
-      displayName: index === 0 ? "Picom Pilot" : name,
-      username: index === 0 ? "picom.pilot" : `${name.toLowerCase()}.${prefix}`,
+      displayName: index === 0 ? "Picom Pilot" : isBot ? "Picom Helper" : name,
+      username: index === 0 ? "picom.pilot" : isBot ? `helper.${prefix}` : `${name.toLowerCase()}.${prefix}`,
       avatarSeed: `${prefix}-${name}-${index}`,
       status,
-      statusText: status === "offline" ? "Offline" : index % 3 === 0 ? "Designing channels" : "Available on desktop",
+      statusText: isBot ? "Community automation" : status === "offline" ? "Offline" : index % 3 === 0 ? "Designing channels" : "Available on desktop",
       roleId,
-      bio: index === 0 ? "Building the first Picom desktop community." : "Community member placeholder profile.",
+      bio: index === 0 ? "Building the first Picom desktop community." : isBot ? "A safe mock bot identity with no executable runtime." : "Community member placeholder profile.",
+      isBot,
     };
   });
 }

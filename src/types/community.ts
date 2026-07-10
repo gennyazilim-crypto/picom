@@ -32,6 +32,7 @@ export interface Member {
   statusText: string;
   roleId: RoleId;
   bio?: string;
+  isBot?: boolean;
 }
 
 export interface Reaction {

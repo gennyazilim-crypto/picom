@@ -18,6 +18,7 @@ import type { CreateCommunityEventInput } from "../services/communityEventServic
 import type { UpcomingEvent } from "../types/events";
 import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals";
 import { ReportModal } from "./ReportModal";
+import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
 
 type CommunitySidebarProps = {
   community: Community;
@@ -60,6 +61,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
     channels: <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />,
     events: <CommunityEventsAdminSection community={community} events={events} onCreate={onCreateEvent} onCancel={onCancelEvent} />,
     moderation: <MessageModerationFiltersPanel community={community} currentUser={currentUser} />,
+    bots: <CommunityBotsAdminSection communityId={community.id} ownerId={community.ownerId ?? currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />,
     "danger-zone": access.isOwner ? <div className="community-admin-tools-stack"><CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /></div> : null,
   };
 

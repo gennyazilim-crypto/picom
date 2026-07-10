@@ -45,7 +45,7 @@ const MemberRow = memo(function MemberRow({ member, role, onOpenProfile, onMembe
         />
       </span>
       <span className="member-copy">
-        <strong>{member.displayName}</strong>
+        <strong>{member.displayName}{member.isBot ? <span className="bot-badge">BOT</span> : null}</strong>
         <small>{presenceLabel}</small>
       </span>
       {role && role.name !== "Member" ? <em style={{ color: role.color }}>{role.name}</em> : null}
