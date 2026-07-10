@@ -2,6 +2,7 @@ import { ConnectionState, Room, RoomEvent, Track, type RemoteParticipant } from 
 import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
+import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality, type VoiceDurationBucket } from "../utils/voiceQualityMetrics";
 
 export type VoiceConnectionStatus =
   | "idle"
@@ -69,12 +70,26 @@ export type VoiceSessionDiagnosticsSummary = Readonly<{
   screenSharing: boolean;
   remoteScreenShareCount: number;
   lastErrorCode: VoiceServiceErrorCode | null;
+  connectionQuality: VoiceConnectionQuality;
+  reconnectCount: number;
+  joinAttemptCount: number;
+  joinFailureCount: number;
+  deviceErrorCount: number;
+  sessionDurationBucket: VoiceDurationBucket;
 }>;
 
 let room: Room | null = null;
 let speakingIdentities = new Set<string>();
 let screenShareMediaTrack: MediaStreamTrack | null = null;
 let screenShares: VoiceScreenShare[] = [];
+let connectionQuality: VoiceConnectionQuality = "unknown";
+let reconnectCount = 0;
+let joinAttemptCount = 0;
+let joinFailureCount = 0;
+let deviceErrorCount = 0;
+let sessionStartedAtMs: number | null = null;
+let lastSessionDurationMs: number | null = null;
+let reconnectingActive = false;
 let snapshot: VoiceServiceSnapshot = {
   status: "idle",
   roomName: null,
@@ -207,17 +222,25 @@ function bindRoomEvents(activeRoom: Room): void {
   activeRoom
     .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
       if (state === ConnectionState.Connected) {
+        sessionStartedAtMs ??= Date.now();
+        reconnectingActive = false;
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
         emit({ status: "connected", participants: getParticipants(activeRoom), error: null, errorCode: null });
         return;
       }
 
       if (state === ConnectionState.Reconnecting) {
+        if (!reconnectingActive) reconnectCount += 1;
+        reconnectingActive = true;
         emit({ status: "reconnecting" });
         return;
       }
 
       if (state === ConnectionState.Disconnected) {
+        if (sessionStartedAtMs) lastSessionDurationMs = Date.now() - sessionStartedAtMs;
+        sessionStartedAtMs = null;
+        reconnectingActive = false;
+        connectionQuality = "unknown";
         speakingIdentities = new Set<string>();
         emit({ status: "disconnected" });
       }
@@ -233,6 +256,9 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
       speakingIdentities = new Set(speakers.map((speaker) => speaker.identity));
       emitParticipants(activeRoom);
+    })
+    .on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+      if (participant.isLocal) connectionQuality = normalizeVoiceConnectionQuality(quality);
     })
     .on(RoomEvent.ParticipantNameChanged, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackMuted, () => emitParticipants(activeRoom))
@@ -263,6 +289,10 @@ function bindRoomEvents(activeRoom: Room): void {
       }
     })
     .on(RoomEvent.Disconnected, () => {
+      if (sessionStartedAtMs) lastSessionDurationMs = Date.now() - sessionStartedAtMs;
+      sessionStartedAtMs = null;
+      reconnectingActive = false;
+      connectionQuality = "unknown";
       speakingIdentities = new Set<string>();
       screenShareMediaTrack = null;
       screenShares = [];
@@ -322,6 +352,7 @@ async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceService
       await activeRoom.localParticipant.setMicrophoneEnabled(true);
     } catch {
       microphoneEnabled = false;
+      deviceErrorCount += 1;
     }
 
     room = activeRoom;
@@ -361,6 +392,12 @@ export const voiceService = {
       screenSharing: snapshot.screenSharing,
       remoteScreenShareCount: snapshot.screenShares.filter((share) => !share.isLocal).length,
       lastErrorCode: snapshot.errorCode,
+      connectionQuality,
+      reconnectCount,
+      joinAttemptCount,
+      joinFailureCount,
+      deviceErrorCount,
+      sessionDurationBucket: getVoiceDurationBucket(sessionStartedAtMs ? Date.now() - sessionStartedAtMs : lastSessionDurationMs),
     };
   },
 
@@ -378,6 +415,7 @@ export const voiceService = {
   },
 
   async join(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    joinAttemptCount += 1;
     if (room) {
       room.disconnect();
       room = null;
@@ -388,9 +426,14 @@ export const voiceService = {
     emit({ error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
 
     const token = await requestToken(request);
-    if (!token.ok) return token;
+    if (!token.ok) {
+      joinFailureCount += 1;
+      return token;
+    }
 
-    return connectWithToken(token.data);
+    const result = await connectWithToken(token.data);
+    if (!result.ok) joinFailureCount += 1;
+    return result;
   },
 
   async leave(): Promise<void> {
@@ -431,6 +474,7 @@ export const voiceService = {
       return { ok: true, data: snapshot };
     } catch {
       emit({ muted: true });
+      deviceErrorCount += 1;
       return voiceError("VOICE_PERMISSION_DENIED", "Microphone permission was denied or unavailable.");
     }
   },

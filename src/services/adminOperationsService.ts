@@ -9,6 +9,7 @@ import { loggingService } from "./loggingService";
 import { networkStatusService } from "./networkStatusService";
 import { reportService } from "./reportService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
+import { voiceService } from "./voiceService";
 
 export type AdminOperationsAccess = Readonly<{ allowed: boolean; source: "development" | "app_admin" | "none" }>;
 
@@ -30,6 +31,7 @@ export const adminOperationsService = {
     const network = networkStatusService.getSnapshot();
     const abuse = abuseEventService.getAdminSummary();
     const diagnostics = diagnosticsService.getSnapshot();
+    const voiceQuality = voiceService.getDiagnosticsSummary();
     const recentErrors = logs.filter((entry) => entry.level === "error").slice(-12).reverse();
     const recentWarnings = logs.filter((entry) => entry.level === "warn").slice(-12).reverse();
     const apiStatus = dataSourceService.getStatus().isMock
@@ -69,6 +71,11 @@ export const adminOperationsService = {
         realtimeStatus: network.state === "online" ? "available" : network.state,
         uploadStatus,
         voiceStatus: diagnostics.serviceStatus.liveKitStatus,
+        voiceConnectionQuality: voiceQuality.connectionQuality,
+        voiceReconnectCount: voiceQuality.reconnectCount,
+        voiceJoinFailureCount: voiceQuality.joinFailureCount,
+        voiceDeviceErrorCount: voiceQuality.deviceErrorCount,
+        voiceSessionDurationBucket: voiceQuality.sessionDurationBucket,
         errorCount: recentErrors.length,
         warningCount: recentWarnings.length,
         crashReportCount: crashReporterService.getStatus().queuedLocalRecords,
