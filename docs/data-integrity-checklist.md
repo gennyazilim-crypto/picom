@@ -17,3 +17,7 @@ Run read-only by default against an isolated restored staging database.
 - Desktop smoke verifies auth, community/channel/message, upload metadata, profile/feed, DM, Realtime, and Edge contracts.
 
 Any mismatch stops promotion. Auto-fix is forbidden without a reviewed change record, backup, owner, test plan, and rollback/forward-fix strategy.
+
+## Task 414 execution status
+
+Not executed against a complete restored target. The checklist remains mandatory; no row-count, Auth-link, RLS, Storage-object, DM, verification, or audio integrity result is claimed.

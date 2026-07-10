@@ -105,3 +105,6 @@ No authorized reviewer, immutable approved policy versions, jurisdiction decisio
 ## Task 413 production ownership and custody
 
 A value-free custody matrix now exists, but every accountable owner/store/rotation/recovery field remains unassigned. Task 406 staging credentials are not production custody. RB-09 remains open.
+## Task 414 real backup/restore drill
+
+A real hosted staging export and checksum manifest were produced. Restore failed on managed Auth schema compatibility and the alternative local target was blocked by an unrelated active port. No destructive lifecycle test ran. RB-11 remains open.

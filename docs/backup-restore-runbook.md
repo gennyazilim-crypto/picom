@@ -105,3 +105,7 @@ Production restore can cause data loss since the restore point. Incident leaders
 ## Task 404 drill update
 
 Guarded backup/restore tooling, maintenance safety, PITR review, and migration recovery contracts passed on 2026-07-10. No staging database was opened, backed up, restored, migrated, or destructively modified. The real drill remains blocked; use `docs/backup-restore-destructive-lifecycle-drill.md` and `docs/data-integrity-checklist.md` for execution.
+
+## Task 414 real drill result
+
+A real synthetic staging export was created with schema/public/Auth-Storage/role dumps and a SHA-256 manifest. Restore did not complete: a raw Supabase Postgres image lacked a compatible managed Auth schema, and the local Supabase target port was occupied by an unrelated project that was intentionally left untouched. Treat provider-managed Auth/Storage schema version compatibility and circular message/DM/thread foreign keys as required restore-plan items.
