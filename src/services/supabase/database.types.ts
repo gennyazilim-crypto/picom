@@ -348,7 +348,7 @@ export type Database = {
         Relationships: [];
       };
       community_emojis: {
-        Row: { id: string; community_id: string; name: string; image_url: string; created_by: string; created_at: string; deleted_at: string | null };
+        Row: { id: string; community_id: string; name: string; image_url: string; storage_path: string | null; created_by: string; created_at: string; moderation_status: "active" | "disabled"; disabled_at: string | null; deleted_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["community_emojis"]["Row"]> & Pick<Database["public"]["Tables"]["community_emojis"]["Row"], "community_id" | "name" | "image_url" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["community_emojis"]["Row"]>;
         Relationships: [];

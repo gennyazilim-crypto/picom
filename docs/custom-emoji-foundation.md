@@ -1,120 +1,28 @@
-﻿# Custom Emoji Foundation
+# Custom Emoji Moderation and Storage
 
-Status: post-MVP foundation
-
-Custom community emoji are planned as a future extension of Picom reactions and the EmojiPicker. This foundation documents the safe path without changing the current MVP emoji/runtime behavior.
-
-## MVP stance
-
-- Current MVP keeps the existing standard emoji/reaction behavior.
-- Community custom emoji upload and management UI are not enabled yet.
-- No marketplace, copyrighted assets, or third-party sticker/emoji packs are introduced.
-- No production storage path is required beyond existing attachment upload behavior.
-
-## Future data model placeholder
-
-A future `community_emojis` table can use safe fields:
-
-- `id`
-- `community_id`
-- `name`
-- `image_url`
-- `storage_path`
-- `created_by_id`
-- `created_at`
-- `deleted_at`
-
-Do not store secrets, upload tokens, local file paths, or raw private metadata in emoji DTOs.
-
-## Name normalization
-
-Emoji names should be normalized before storage:
-
-- lowercase
-- spaces become underscores
-- remove unsupported characters
-- enforce `^[a-z0-9_]{2,32}$`
-- unique per community
-
-Examples:
-
-- `Party Parrot` -> `party_parrot`
-- `Picom Fire!` -> `picom_fire`
+Picom supports community-scoped custom emoji through a permission-controlled service and a private bucket in Supabase Storage.
 
 ## Upload validation
 
-Custom emoji upload must reuse the existing attachment validation principles:
+- Names are normalized to 2-32 lowercase letters, digits, and underscores and are unique per community.
+- PNG, JPEG, WEBP, and GIF are allowed; SVG and arbitrary remote URLs are rejected.
+- Files are limited to 512 KB and both MIME/extension and binary signature are validated before upload.
+- Storage paths are generated from trusted community and random emoji IDs. Original file names never become object paths.
+- The `community-emojis` bucket is private. Authorized clients receive short-lived signed URLs.
 
-- allow safe image types only: png, jpg, jpeg, webp, gif
-- reject SVG unless a dedicated sanitizer is added later
-- enforce max file size from config
-- verify MIME type and extension
-- sanitize file names and storage paths
-- block suspicious or failed scan states if attachment scanning is enabled later
+## Permission and moderation
 
-## Supabase storage placeholder
+Only users with community management permission may upload, disable, re-enable, or delete emoji. Renderer checks improve UX, while table and storage RLS enforce the boundary. Names remain unique per community at the database layer.
 
-Future storage path pattern:
+Unsafe emoji can be disabled immediately without destroying moderation evidence. Disabled and soft-deleted emoji are excluded from normal selection and rendering. Managers can review disabled records. A delete action soft-deletes metadata; later retention cleanup may remove the private object after the audit window.
 
-`communities/{communityId}/emojis/{emojiId}/{safeFileName}`
+## Asset policy
 
-RLS/storage policies must ensure:
+Picom provides only original generated placeholders in mock mode. No copyrighted default assets, marketplace packs, Discord assets, or third-party emoji packs are bundled.
 
-- only permitted users can upload/delete community emoji
-- users can only read emojis for communities they can access if emoji privacy becomes scoped
-- deleted emoji are not returned by active emoji list queries
+## Operational notes
 
-## Future routes/service methods
-
-Potential service methods:
-
-- `listCommunityEmojis(communityId)`
-- `createCommunityEmoji(communityId, file, name)`
-- `deleteCommunityEmoji(emojiId)`
-
-Potential API/Edge Function routes if needed:
-
-- `GET /communities/:communityId/emojis`
-- `POST /communities/:communityId/emojis`
-- `DELETE /emojis/:emojiId`
-
-## Permissions
-
-Managing custom emoji should require a future permission such as:
-
-- `manageEmojis`
-- `manageCommunity`
-- owner/admin override
-
-Emoji use in messages/reactions should still respect channel visibility and message permissions.
-
-## EmojiPicker integration placeholder
-
-Future EmojiPicker grouping:
-
-- Standard emoji
-- Community emoji
-- Recently used placeholder
-
-Custom emoji reaction payloads should use a stable format, for example:
-
-- standard emoji: `{ type: "unicode", value: "🔥" }`
-- custom emoji: `{ type: "custom", emojiId: "...", name: "picom_fire" }`
-
-## Security notes
-
-- Do not allow arbitrary remote image URLs as trusted emoji assets.
-- Do not execute or embed unsafe uploaded content.
-- Do not expose storage provider secrets to the renderer.
-- Do not log raw upload payloads.
-- Do not track emoji image content in analytics.
-
-## Implementation decision
-
-This task is documentation-first. Runtime UI and Supabase schema are intentionally unchanged until custom emoji become an active milestone.
-
-## Manual verification
-
-- Confirm standard emoji/reaction behavior still works.
-- Confirm no custom emoji management UI appears in MVP surfaces.
-- Confirm future implementation follows storage validation and permission rules in this document.
+- Production migrations must be applied with the Supabase CLI before API-mode testing.
+- Existing legacy rows may have a null `storage_path`; new uploads always provide one.
+- Malware scanning can be added before activation; until then strict image validation and management-only upload are required.
+- Storage object removal is intentionally separate from soft deletion to preserve safe rollback and review.
