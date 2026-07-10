@@ -107,7 +107,7 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
     canJoin: isVisitor && visibility === "public",
     canLeave: !isVisitor && status !== "owner",
     canViewPublicContent,
-    canViewMemberList: !isVisitor || canViewPublicContent,
+    canViewMemberList: !isVisitor,
     readonlyReason: isVisitor ? "Viewing public content. Join to participate." : undefined,
   };
 }
@@ -175,11 +175,19 @@ export function filterCommunityForAccess(community: Community, access: Community
     }))
     .filter((category) => category.channels.length > 0);
   const visibleChannelIds = new Set(categories.flatMap((category) => category.channels.map((channel) => channel.id)));
+  const visibleMessages = community.messages.filter((message) => visibleChannelIds.has(message.channelId));
+  const visibleAuthorIds = new Set(visibleMessages.map((message) => message.authorId));
+  const visibleMembers = access.canViewMemberList
+    ? community.members
+    : community.members
+        .filter((member) => visibleAuthorIds.has(member.userId))
+        .map((member): Member => ({ ...member, status: "offline", statusText: "", bio: "" }));
 
   return {
     ...community,
     categories,
-    messages: community.messages.filter((message) => visibleChannelIds.has(message.channelId)),
-    members: access.canViewMemberList ? community.members : [],
+    messages: visibleMessages,
+    members: visibleMembers,
+    roles: access.canViewMemberList ? community.roles : community.roles.filter((role) => role.name === "Member"),
   };
 }

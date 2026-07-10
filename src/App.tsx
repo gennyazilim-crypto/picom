@@ -2342,8 +2342,8 @@ export function App() {
                 replyToMessage={replyToMessage}
                 editingMessageId={editingMessageId}
                 onCancelReply={() => setReplyToMessageId(null)}
-                membersVisible={membersVisible}
-                onToggleMembers={toggleMembersVisible}
+                membersVisible={membersVisible && communityAccess.canViewMemberList}
+                onToggleMembers={communityAccess.canViewMemberList ? toggleMembersVisible : () => pushToast("Join this community to view its member directory.", "info")}
                 onMessageContextMenu={(event, message) =>
                   openContext(event, [
                     {
@@ -2395,7 +2395,7 @@ export function App() {
                 pushToast={pushToast}
               />
               )}
-              {membersVisible ? (
+              {membersVisible && communityAccess.canViewMemberList ? (
                 <MemberSidebar
                   community={displayedActiveCommunity}
                   onOpenProfile={openProfile}
