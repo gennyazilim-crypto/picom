@@ -125,6 +125,7 @@ export type Database = {
           created_at: string;
           edited_at: string | null;
           deleted_at: string | null;
+          reply_to_message_id: string | null;
           thread_id: string | null;
           webhook_id: string | null;
           webhook_name: string | null;

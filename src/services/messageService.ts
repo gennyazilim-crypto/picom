@@ -8,7 +8,7 @@ import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseC
 import type { Database } from "./supabase/database.types";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
-export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, thread_id, webhook_id, webhook_name" as const;
+export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, reply_to_message_id, thread_id, webhook_id, webhook_name" as const;
 
 export type MessageRow = Readonly<{
   id: string;
@@ -21,6 +21,7 @@ export type MessageRow = Readonly<{
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
+  reply_to_message_id: string | null;
   thread_id?: string | null;
   webhook_id?: string | null;
   webhook_name?: string | null;
@@ -37,6 +38,7 @@ export type MessageSummary = Readonly<{
   createdAt: string;
   editedAt: string | null;
   deletedAt: string | null;
+  replyToMessageId: string | null;
   webhookId?: string;
   webhookName?: string;
 }>;
@@ -47,6 +49,7 @@ export type SendMessageInput = Readonly<{
   body: string;
   authorId?: string;
   clientMessageId?: string | null;
+  replyToMessageId?: string | null;
 }>;
 
 export type EditMessageInput = Readonly<{
@@ -91,6 +94,7 @@ export function mapMessageRow(row: MessageRow): MessageSummary {
     createdAt: row.created_at,
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
+    replyToMessageId: row.reply_to_message_id,
     webhookId: row.webhook_id ?? undefined,
     webhookName: row.webhook_name ?? undefined,
   };

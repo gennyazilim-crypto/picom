@@ -1863,6 +1863,7 @@ export function App() {
       authorId: currentUser.userId,
       body,
       clientMessageId,
+      replyToMessageId,
       localOrder,
     });
 
@@ -1891,7 +1892,7 @@ export function App() {
       body: result.data.body,
       localOrder,
       createdAt: result.data.createdAt,
-      replyToMessageId,
+      replyToMessageId: result.data.replyToMessageId,
       attachments,
       poll: pollResult?.ok ? pollResult.data : undefined,
       localStatus: "sent",
@@ -1905,7 +1906,7 @@ export function App() {
     if (!message.clientMessageId || (message.localStatus !== "failed" && message.localStatus !== "queued_offline")) return;
     const localStatus = typeof navigator !== "undefined" && !navigator.onLine ? "queued_offline" : "sending";
     setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus });
-    const result = await messageSendQueueService.enqueue({ communityId: activeCommunity.id, channelId: message.channelId, authorId: message.authorId, body: message.body, clientMessageId: message.clientMessageId, localOrder: message.localOrder ?? messageSendQueueService.nextLocalOrder(activeCommunity.id, message.channelId) });
+    const result = await messageSendQueueService.enqueue({ communityId: activeCommunity.id, channelId: message.channelId, authorId: message.authorId, body: message.body, clientMessageId: message.clientMessageId, replyToMessageId: message.replyToMessageId, localOrder: message.localOrder ?? messageSendQueueService.nextLocalOrder(activeCommunity.id, message.channelId) });
     if (!result.ok) {
       if (result.error.code === "QUEUE_CANCELED") return;
       setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus: "failed" });
@@ -1913,7 +1914,7 @@ export function App() {
       pushToast(conflict.userMessage, "error");
       return;
     }
-    appendLocalMessage({ id: result.data.id, clientMessageId: message.clientMessageId, communityId: activeCommunity.id, channelId: message.channelId, authorId: result.data.authorId, body: result.data.body, localOrder: message.localOrder, createdAt: result.data.createdAt, replyToMessageId: message.replyToMessageId, attachments: message.attachments, localStatus: "sent" });
+    appendLocalMessage({ id: result.data.id, clientMessageId: message.clientMessageId, communityId: activeCommunity.id, channelId: message.channelId, authorId: result.data.authorId, body: result.data.body, localOrder: message.localOrder, createdAt: result.data.createdAt, replyToMessageId: result.data.replyToMessageId, attachments: message.attachments, localStatus: "sent" });
     pushToast("Message sent after retry.", "success");
   };
 
