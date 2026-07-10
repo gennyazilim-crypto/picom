@@ -101,3 +101,7 @@ Production restore can cause data loss since the restore point. Incident leaders
 - At least quarterly after launch, or the stricter approved policy.
 - After provider/tier/region/tooling/schema ownership changes.
 - After any failed backup or restore evidence.
+
+## Task 404 drill update
+
+Guarded backup/restore tooling, maintenance safety, PITR review, and migration recovery contracts passed on 2026-07-10. No staging database was opened, backed up, restored, migrated, or destructively modified. The real drill remains blocked; use `docs/backup-restore-destructive-lifecycle-drill.md` and `docs/data-integrity-checklist.md` for execution.

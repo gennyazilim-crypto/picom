@@ -62,3 +62,7 @@ Legal-flow engineering contracts passed and diagnostics/audio drafts were comple
 ## Task 403 evidence update
 
 Environment and secret-management contracts passed without exposing values. Critical production systems still have no named owner or approved frozen value, so RB-09 remains open.
+
+## Task 404 evidence update
+
+Backup, PITR, maintenance, and migration recovery safety contracts passed without opening a database. No staging restore or destructive lifecycle drill ran, so RB-11 remains open.
