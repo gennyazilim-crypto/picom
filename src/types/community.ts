@@ -12,6 +12,7 @@ export type ChannelType = "text" | "voice";
 export type AttachmentType = "image";
 export type AttachmentScanStatus = "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
 export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "failed" | "queued_offline";
+import type { PollData } from "./polls";
 export type RoleName = "Owner" | "Admin" | "Moderator" | "Member" | "Guest";
 
 export interface Role {
@@ -73,6 +74,7 @@ export interface Message {
   attachments?: Attachment[];
   reactions?: Reaction[];
   localStatus?: MessageDeliveryStatus;
+  poll?: PollData;
 }
 
 export interface Channel {

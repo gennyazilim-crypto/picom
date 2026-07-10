@@ -274,6 +274,24 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_stickers"]["Row"]>;
         Relationships: [];
       };
+      polls: {
+        Row: { id: string; message_id: string; question: string; allow_multiple: boolean; closes_at: string | null; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["polls"]["Row"]> & Pick<Database["public"]["Tables"]["polls"]["Row"], "message_id" | "question">;
+        Update: Partial<Database["public"]["Tables"]["polls"]["Row"]>;
+        Relationships: [];
+      };
+      poll_options: {
+        Row: { id: string; poll_id: string; text: string; position: number };
+        Insert: Partial<Database["public"]["Tables"]["poll_options"]["Row"]> & Pick<Database["public"]["Tables"]["poll_options"]["Row"], "poll_id" | "text" | "position">;
+        Update: Partial<Database["public"]["Tables"]["poll_options"]["Row"]>;
+        Relationships: [];
+      };
+      poll_votes: {
+        Row: { id: string; poll_id: string; option_id: string; user_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["poll_votes"]["Row"]> & Pick<Database["public"]["Tables"]["poll_votes"]["Row"], "poll_id" | "option_id" | "user_id">;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: {
       message_attachments: {

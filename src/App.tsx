@@ -87,6 +87,9 @@ import { messageModerationFilterService } from "./services/messageModerationFilt
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
 import { ReportModal, type ReportModalTarget } from "./components/ReportModal";
 import { InvitePeopleModal } from "./components/CommunityInviteModals";
+import { CreatePollModal } from "./components/CreatePollModal";
+import type { CreatePollDraft } from "./types/polls";
+import { pollService } from "./services/pollService";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
@@ -307,6 +310,7 @@ export function App() {
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
   const [composerInviteOpen, setComposerInviteOpen] = useState(false);
+  const [pollCreateOpen, setPollCreateOpen] = useState(false);
   const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
   const {
     communities,
@@ -1680,7 +1684,7 @@ export function App() {
     openContextMenu(event.clientX, event.clientY, items);
   };
 
-  const sendMessage = async (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => {
+  const sendMessage = async (body: string, attachments?: Attachment[], replyToMessageId?: string | null, pollDraft?: CreatePollDraft) => {
     if (!canSendMessage(communityAccess, displayedActiveChannel)) {
       pushToast(communityAccess.isVisitor ? "Join this community to send messages." : "You do not have permission to send messages here.", "error");
       return;
@@ -1712,6 +1716,8 @@ export function App() {
       return;
     }
 
+    const pollResult = pollDraft ? await pollService.create({ ...pollDraft, messageId: result.data.id }) : null;
+    if (pollResult && !pollResult.ok) pushToast(pollResult.message, "error");
     messageModerationFilterService.recordMessageSent(activeCommunity.id, displayedActiveChannel.id, currentUser.userId);
     appendLocalMessage({
       id: result.data.id,
@@ -1724,6 +1730,7 @@ export function App() {
       createdAt: result.data.createdAt,
       replyToMessageId,
       attachments,
+      poll: pollResult?.ok ? pollResult.data : undefined,
     });
 
     maybeShowNotificationPermissionPrompt("first_message_sent");
@@ -2183,7 +2190,7 @@ export function App() {
                 onSendMessage={sendMessage}
                 onOpenInvite={() => setComposerInviteOpen(true)}
                 onOpenTopic={() => pushToast("Channel topic editing is prepared in the channel settings foundation.", "info")}
-                onOpenPoll={() => pushToast("Poll creation opens in the next MVP+ task.", "info")}
+                onOpenPoll={() => setPollCreateOpen(true)}
                 currentUserId={currentUser.userId}
                 readReceiptsEnabled={userSafetySettings.enableReadReceipts}
                 highlightedMessageId={highlightedMessageId}
@@ -2272,6 +2279,7 @@ export function App() {
       {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {composerInviteOpen ? <InvitePeopleModal community={displayedActiveCommunity} currentUserId={currentUser.userId} canCreate={communityAccess.permissions.includes("createInvites")} onClose={() => setComposerInviteOpen(false)} /> : null}
+      {pollCreateOpen ? <CreatePollModal channelName={displayedActiveChannel.name} onClose={() => setPollCreateOpen(false)} onCreate={(draft) => sendMessage(draft.question, undefined, null, draft)} /> : null}
       {notificationPermissionPrompt ? (
         <NotificationPermissionPrompt
           prompt={notificationPermissionPrompt}

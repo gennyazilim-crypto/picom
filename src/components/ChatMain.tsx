@@ -4,6 +4,7 @@ import type { Attachment, Channel, Community, Member, Message } from "../types/c
 import type { CommunityAccess } from "../types/communityAccess";
 import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
+import type { CreatePollDraft } from "../types/polls";
 import { getComposerDisabledReason } from "../services/permissions/communityPermissions";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
@@ -37,7 +38,7 @@ type ChatMainProps = {
   replyToMessage?: Message | null;
   editingMessageId: string | null;
   onCancelReply: () => void;
-  onSendMessage: (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => void | Promise<void>;
+  onSendMessage: (body: string, attachments?: Attachment[], replyToMessageId?: string | null, poll?: CreatePollDraft) => void | Promise<void>;
   onToggleMembers: () => void;
   membersVisible: boolean;
   onMessageContextMenu: (event: MouseEvent, message: Message) => void;

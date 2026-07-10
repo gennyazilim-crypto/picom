@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type { Attachment, Channel, ChannelCategory, ChannelId, ChannelType, Community, Member, Message, UserId } from "../types/community";
+import type { PollData } from "../types/polls";
 
 type AppendLocalMessageInput = {
   id?: string;
@@ -13,6 +14,7 @@ type AppendLocalMessageInput = {
   createdAt?: string;
   replyToMessageId?: string | null;
   attachments?: Attachment[];
+  poll?: PollData;
 };
 
 type UpsertLocalMessageInput = AppendLocalMessageInput & {
@@ -171,7 +173,7 @@ type AddLocalChannelInput = {
 export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
-  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, replyToMessageId, attachments }: AppendLocalMessageInput) => {
+  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, replyToMessageId, attachments, poll }: AppendLocalMessageInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
       id: id ?? `local-${idSuffix}`,
@@ -184,6 +186,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       createdAt: createdAt ?? new Date().toISOString(),
       replyToMessageId: replyToMessageId ?? null,
       attachments,
+      poll,
       reactions: [],
       localStatus: "sent",
     };

@@ -11,6 +11,7 @@ import { mvpUiIconMap } from "./iconRegistry";
 import { slashCommandService, type SlashCommand } from "../services/slashCommandService";
 import { SlashCommandPopover } from "./SlashCommandPopover";
 import { StickerPicker } from "./StickerPicker";
+import type { CreatePollDraft } from "../types/polls";
 
 type ToastTone = "info" | "error" | "success";
 const composerIcons = mvpUiIconMap.messageComposer;
@@ -35,7 +36,7 @@ type MessageComposerProps = {
   replyToMessage?: Message | null;
   replyToMember?: Member;
   onCancelReply: () => void;
-  onSendMessage: (body: string, attachments?: Attachment[], replyToMessageId?: string | null) => void | Promise<void>;
+  onSendMessage: (body: string, attachments?: Attachment[], replyToMessageId?: string | null, poll?: CreatePollDraft) => void | Promise<void>;
   onTypingStart: () => void;
   onTypingStop: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
@@ -438,6 +439,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         </button>
         <button className="composer-tool text-tool" aria-label="GIF placeholder" disabled={Boolean(disabledReason)}>GIF</button>
         <button className="composer-tool text-tool" aria-label="Stickers" disabled={Boolean(disabledReason)} onClick={() => setStickerPickerOpen((current) => !current)}>Sticker</button>
+        <button className="composer-tool text-tool" aria-label="Create poll" disabled={Boolean(disabledReason) || !canCreatePoll} onClick={onOpenPoll}>Poll</button>
         <button className="send-button" disabled={Boolean(disabledReason) || sending || previews.some((preview) => preview.status === "uploading") || (!body.trim() && !previews.length)} onClick={send}>
           <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
         </button>
