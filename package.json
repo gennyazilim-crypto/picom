@@ -150,6 +150,7 @@
     "plugins:marketplace:policy:smoke": "node scripts/marketplace-plugin-policy-smoke-test.mjs",
     "plugins:sandbox:prototype": "node scripts/plugin-sandbox-prototype.mjs",
     "bot-api:smoke": "node scripts/bot-api-architecture-smoke-test.mjs",
+    "developer:docs:bot-webhook:smoke": "node scripts/bot-webhook-docs-publication-smoke-test.mjs",
     "developer-portal:placeholder:smoke": "node scripts/developer-portal-placeholder-smoke-test.mjs",
     "developer:portal:beta:smoke": "node scripts/developer-portal-beta-smoke-test.mjs",
     "community-discovery:plan:smoke": "node scripts/community-discovery-plan-smoke-test.mjs",
