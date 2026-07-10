@@ -4,6 +4,7 @@ import type { AudioPlayableItem, PodcastEpisode, RadioSession } from "../../type
 import { mockPodcastEpisodes, mockRadioSessions } from "../../data/mockAudio";
 import { AppIcon } from "../AppIcon";
 import { AudioMiniPlayer } from "./AudioMiniPlayer";
+import { RadioPanel } from "./RadioPanel";
 
 type CommunityAudioTab = "live" | "podcasts" | "scheduled";
 
@@ -172,6 +173,7 @@ function toPodcastPlayable(episode: PodcastEpisode, contextLabel: string): Audio
 export function CommunityAudioView({ community, canManageAudio, onPlaceholderAction }: CommunityAudioViewProps) {
   const [activeTab, setActiveTab] = useState<CommunityAudioTab>("live");
   const [nowPlaying, setNowPlaying] = useState<AudioPlayableItem | null>(null);
+  const [selectedRadioSession, setSelectedRadioSession] = useState<RadioSession | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
   const [reminderIds, setReminderIds] = useState<Set<string>>(() => new Set());
   const radioSessions = useMemo(() => mockRadioSessions.filter((session) => session.communityId === community.id), [community.id]);
@@ -180,14 +182,26 @@ export function CommunityAudioView({ community, canManageAudio, onPlaceholderAct
   const toggleSaved = (id: string) => setSavedIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const toggleReminder = (id: string) => setReminderIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
 
+  if (selectedRadioSession) {
+    return <RadioPanel
+      session={selectedRadioSession}
+      communityName={community.name}
+      host={community.members.find((member) => member.userId === selectedRadioSession.hostUserId)}
+      listeners={community.members.filter((member) => member.status !== "offline")}
+      canHost={canManageAudio}
+      onClose={() => setSelectedRadioSession(null)}
+      onOpenCommunity={() => setSelectedRadioSession(null)}
+    />;
+  }
+
   return <main className="community-audio-view">
     <CommunityAudioHeader communityName={community.name} activeTab={activeTab} canManageAudio={canManageAudio} onSelectTab={setActiveTab} onPlaceholderAction={onPlaceholderAction} />
     <div className="community-audio-scroll">
-      {activeTab === "live" ? <CommunityRadioSection sessions={radioSessions.filter((session) => session.status === "live")} reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={(session) => setNowPlaying(toRadioPlayable(session, community.name))} onToggleReminder={toggleReminder} /> : null}
+      {activeTab === "live" ? <CommunityRadioSection sessions={radioSessions.filter((session) => session.status === "live")} reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={setSelectedRadioSession} onToggleReminder={toggleReminder} /> : null}
       {activeTab === "podcasts" ? <CommunityPodcastSection episodes={podcastEpisodes.filter((episode) => episode.status === "published")} savedIds={savedIds} getUserLabel={getUserLabel} onPlay={(episode) => setNowPlaying(toPodcastPlayable(episode, community.name))} onToggleSaved={toggleSaved} /> : null}
       {activeTab === "scheduled" ? <section className="community-audio-section" aria-labelledby="community-scheduled-title">
         <div className="community-audio-section-title"><div><span>COMING UP</span><h2 id="community-scheduled-title">Scheduled Radio</h2></div><p>Preview upcoming sessions and keep local reminders.</p></div>
-        <RadioSessionList sessions={radioSessions.filter((session) => session.status === "scheduled")} scheduled reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={(session) => setNowPlaying(toRadioPlayable(session, community.name))} onToggleReminder={toggleReminder} />
+        <RadioSessionList sessions={radioSessions.filter((session) => session.status === "scheduled")} scheduled reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={setSelectedRadioSession} onToggleReminder={toggleReminder} />
       </section> : null}
     </div>
     {nowPlaying ? <div className="community-audio-player-dock"><AudioMiniPlayer item={nowPlaying} onClose={() => setNowPlaying(null)} /></div> : null}

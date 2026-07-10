@@ -7,13 +7,14 @@ import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import type { AudioFeedItem, AudioPlayableItem } from "../types/audio";
-import { mockAudioFeedItems } from "../data/mockAudio";
+import { mockAudioFeedItems, mockRadioSessions } from "../data/mockAudio";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
 import { MentionFeedHeader } from "./MentionFeedHeader";
 import { MentionFeedList } from "./MentionFeedList";
 import { AudioFeedSection } from "./audio/AudioFeedSection";
+import { RadioPanel } from "./audio/RadioPanel";
 
 type MentionFeedMainProps = {
   items: MentionItem[];
@@ -89,6 +90,7 @@ export function MentionFeedMain({
 }: MentionFeedMainProps) {
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
+  const [selectedRadioSessionId, setSelectedRadioSessionId] = useState<string | null>(null);
   const [savedAudioIds, setSavedAudioIds] = useState<Set<string>>(() => new Set(mockAudioFeedItems.filter((item) => item.isSaved).map((item) => item.id)));
   const [audioReminderIds, setAudioReminderIds] = useState<Set<string>>(() => new Set());
   const rankingNowMs = useMemo(() => Date.now(), []);
@@ -99,9 +101,16 @@ export function MentionFeedMain({
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
   const visibleAudioItems = useMemo(() => activeTab === "feed" ? mockAudioFeedItems.slice(0, 6) : mockAudioFeedItems.filter((item) => followedUserIds.includes(item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [activeTab, followedUserIds]);
   const selectAudio = (item: AudioFeedItem) => {
+    if (item.type === "radio_live" || item.type === "radio_scheduled") {
+      const session = mockRadioSessions.find((candidate) => candidate.id === item.id.replace(/^feed-/, ""));
+      if (session) setSelectedRadioSessionId(session.id);
+      return;
+    }
     const communityName = communities.find((community) => community.id === item.communityId)?.name ?? "Picom community";
     setSelectedAudio({ id: item.id, type: item.type, title: item.title, contextLabel: `${communityName} / ${item.type === "podcast_episode" ? "Podcast" : "Community radio"}`, coverUrl: item.coverUrl, durationSeconds: item.durationSeconds ?? 3600 });
   };
+  const selectedRadioSession = mockRadioSessions.find((session) => session.id === selectedRadioSessionId) ?? null;
+  const selectedRadioCommunity = selectedRadioSession ? communities.find((community) => community.id === selectedRadioSession.communityId) : undefined;
   const toggleAudioSet = (setter: (value: Set<string>) => void, current: Set<string>, id: string) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); setter(next); };
   const openStory = (storyId: string) => {
     setActiveStoryId(storyId);
@@ -169,6 +178,19 @@ export function MentionFeedMain({
           onCloseAudio={() => setSelectedAudio(null)}
         />
       </div>
+      {selectedRadioSession ? <div className="radio-panel-modal-backdrop" role="presentation" onMouseDown={() => setSelectedRadioSessionId(null)}>
+        <div className="radio-panel-modal" role="dialog" aria-modal="true" aria-label={`${selectedRadioSession.title} radio panel`} onMouseDown={(event) => event.stopPropagation()}>
+          <RadioPanel
+            session={selectedRadioSession}
+            communityName={selectedRadioCommunity?.name ?? "Picom community"}
+            host={selectedRadioCommunity?.members.find((member) => member.userId === selectedRadioSession.hostUserId)}
+            listeners={selectedRadioCommunity?.members.filter((member) => member.status !== "offline") ?? []}
+            canHost={false}
+            onClose={() => setSelectedRadioSessionId(null)}
+            onOpenCommunity={() => { setSelectedRadioSessionId(null); onOpenEventCommunity(selectedRadioSession.communityId); }}
+          />
+        </div>
+      </div> : null}
     </main>
   );
 }
