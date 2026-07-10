@@ -6,6 +6,8 @@ export type NotificationPolicyState = Readonly<{
 
 const STORAGE_KEY = "picom.notificationPolicyState.v1";
 const defaults: NotificationPolicyState = { doNotDisturb: false, mutedCommunityIds: [], mutedChannelIds: [] };
+type NotificationPolicyListener = (state: NotificationPolicyState) => void;
+const listeners = new Set<NotificationPolicyListener>();
 
 function normalizeIds(value: unknown): string[] {
   return Array.isArray(value) ? [...new Set(value.filter((item): item is string => typeof item === "string" && item.length > 0))].slice(0, 500) : [];
@@ -28,6 +30,7 @@ function read(): NotificationPolicyState {
 
 function write(next: NotificationPolicyState): NotificationPolicyState {
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* restricted desktop fallback */ }
+  listeners.forEach((listener) => listener(next));
   return next;
 }
 
@@ -53,5 +56,9 @@ export const notificationPolicyStateService = {
   },
   isChannelMuted(channelId?: string | null): boolean {
     return Boolean(channelId && read().mutedChannelIds.includes(channelId));
+  },
+  subscribe(listener: NotificationPolicyListener): () => void {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
   },
 };

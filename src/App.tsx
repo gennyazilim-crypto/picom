@@ -333,6 +333,8 @@ export function App() {
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
   const [userSafetySettings, setUserSafetySettings] = useState(() => userSafetyCenterService.getSettings());
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
+  const [notificationPolicyState, setNotificationPolicyState] = useState(() => notificationPolicyStateService.getSnapshot());
+  useEffect(() => notificationPolicyStateService.subscribe(setNotificationPolicyState), []);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -512,14 +514,17 @@ export function App() {
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const visibleMentionItems = useMemo(() => mentionItems.filter((item) => {
     if (blockedUserIds.includes(item.authorId)) return false;
+    if (notificationPolicyState.mutedCommunityIds.includes(item.communityId) || notificationPolicyState.mutedChannelIds.includes(item.channelId)) return false;
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
     const access = getCommunityAccess(currentUserId, community);
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
-  }), [blockedUserIds, communities, mentionItems]);
+  }), [blockedUserIds, communities, mentionItems, notificationPolicyState]);
   const visibleStoryItems = useMemo(() => storyItems.filter((item) => {
     if (blockedUserIds.includes(item.authorId)) return false;
+    if (item.communityId && notificationPolicyState.mutedCommunityIds.includes(item.communityId)) return false;
+    if (item.channelId && notificationPolicyState.mutedChannelIds.includes(item.channelId)) return false;
     if (!item.communityId) return true;
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
@@ -527,15 +532,17 @@ export function App() {
     if (!item.channelId) return access.isMember || access.canViewPublicContent;
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
-  }), [blockedUserIds, communities, storyItems]);
+  }), [blockedUserIds, communities, notificationPolicyState, storyItems]);
   const visibleCommunityEvents = useMemo(() => communityEvents.filter((item) => {
+    if (notificationPolicyState.mutedCommunityIds.includes(item.communityId)) return false;
+    if (item.channelId && notificationPolicyState.mutedChannelIds.includes(item.channelId)) return false;
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
     const access = getCommunityAccess(currentUserId, community);
     if (!item.channelId) return access.isMember || access.canViewPublicContent;
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
-  }), [communities, communityEvents]);
+  }), [communities, communityEvents, notificationPolicyState]);
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
   const latestActiveMessageId = useMemo(() => {
@@ -2229,7 +2236,14 @@ export function App() {
 
               pushToast(message, "info");
             }}
-            onContextMenu={(event, label) => openContext(event, [{ label }, { label: "Context placeholder" }])}
+            onContextMenu={(event, community) => {
+              const muted = notificationPolicyState.mutedCommunityIds.includes(community.id);
+              openContext(event, [
+                { label: community.name, disabled: true },
+                { label: muted ? "Unmute community" : "Mute community", onSelect: () => { notificationPolicyStateService.setCommunityMuted(community.id, !muted); pushToast(muted ? `${community.name} notifications and feed items unmuted.` : `${community.name} notifications and feed items muted.`, "success"); } },
+                { label: "Copy community ID", onSelect: () => void clipboardService.copyText(community.id).then(() => pushToast("Community ID copied.", "success")) },
+              ]);
+            }}
           />
           {activeView === "discovery" ? (
             <DiscoveryView
@@ -2419,6 +2433,14 @@ export function App() {
                       onSelect: () => clipboardService.copyText(channel.id).then(() => pushToast("Channel ID copied.", "success")),
                     },
                     {
+                      label: notificationPolicyState.mutedChannelIds.includes(channel.id) ? "Unmute channel" : "Mute channel",
+                      onSelect: () => {
+                        const muted = notificationPolicyState.mutedChannelIds.includes(channel.id);
+                        notificationPolicyStateService.setChannelMuted(channel.id, !muted);
+                        pushToast(muted ? `#${channel.name} notifications and feed items unmuted.` : `#${channel.name} notifications and feed items muted.`, "success");
+                      },
+                    },
+                    {
                       label: "Export message history placeholder",
                       disabled: !communityAccess.isOwner && !communityAccess.permissions.includes("manageCommunity"),
                       onSelect: () => {
@@ -2584,7 +2606,7 @@ export function App() {
           pushToast("Channel deleted.", "success");
         }}
       /> : null}
-      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /> : null}
+      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {memberModerationTarget ? <MemberModerationModal
         member={memberModerationTarget.member}

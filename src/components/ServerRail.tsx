@@ -19,7 +19,7 @@ type ServerRailProps = {
   onOpenDiscovery: () => void;
   onOpenSettings: () => void;
   onUtilityAction?: (label: string) => void;
-  onContextMenu: (event: MouseEvent, label: string) => void;
+  onContextMenu: (event: MouseEvent, community: Community) => void;
 };
 
 export function ServerRail({ communities, activeCommunityId, homeActive = false, directMessagesActive = false, discoveryActive = false, onSelectCommunity, onOpenHome, onOpenDirectMessages, onOpenDiscovery, onOpenSettings, onUtilityAction, onContextMenu }: ServerRailProps) {
@@ -51,7 +51,7 @@ export function ServerRail({ communities, activeCommunityId, homeActive = false,
             aria-label={`Open ${community.name}`}
             aria-current={community.id === activeCommunityId ? "page" : undefined}
             onClick={() => onSelectCommunity(community.id)}
-            onContextMenu={(event) => onContextMenu(event, community.name)}
+            onContextMenu={(event) => onContextMenu(event, community)}
           >
             <span className="active-rail" />
             <span>{getCommunityIconLabel(community.name, community.icon)}</span>

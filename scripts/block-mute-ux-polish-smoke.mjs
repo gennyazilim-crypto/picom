@@ -1,0 +1,12 @@
+import fs from "node:fs";
+const app = fs.readFileSync("src/App.tsx", "utf8");
+const policy = fs.readFileSync("src/services/notificationPolicyStateService.ts", "utf8");
+const blocking = fs.readFileSync("src/services/userBlockingService.ts", "utf8");
+const settings = fs.readFileSync("src/components/SettingsModal.tsx", "utf8");
+for (const needle of ["subscribe", "setCommunityMuted", "setChannelMuted", "mutedCommunityIds", "mutedChannelIds"]) if (!policy.includes(needle)) throw new Error(`Notification policy state is missing ${needle}`);
+for (const needle of ["visibleMentionItems", "visibleStoryItems", "visibleCommunityEvents", "mutedCommunityIds.includes", "mutedChannelIds.includes"]) if (!app.includes(needle)) throw new Error(`Mention Feed mute filtering is missing ${needle}`);
+for (const needle of ["Mute community", "Mute channel", "notificationPolicyStateService"]) if (!app.includes(needle)) throw new Error(`Mute context action is missing ${needle}`);
+for (const needle of ["setBlockedUser", "refreshRemoteBlocks", "listBlockedUsers"]) if (!blocking.includes(needle)) throw new Error(`Block behavior is missing ${needle}`);
+for (const needle of ["Blocked users", "Muted scopes", "Mute all notifications", "Unmute"]) if (!settings.includes(needle)) throw new Error(`Safety settings are missing ${needle}`);
+if (/filterCommunityForAccess\([^)]*notificationPolicy/.test(app)) throw new Error("Mute preference must not remove moderation/community source data.");
+console.log("Block and mute UX polish smoke passed.");

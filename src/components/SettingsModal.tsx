@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { notificationService } from "../services/notificationService";
+import { notificationPolicyStateService, type NotificationPolicyState } from "../services/notificationPolicyStateService";
+import type { Community } from "../types/community";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { authService } from "../services/authService";
 import { menuService } from "../services/menuService";
@@ -62,6 +64,7 @@ type SettingsModalProps = {
   theme: "light" | "dark";
   accessibilitySettings: AccessibilitySettings;
   profileSettings: ProfileSettings;
+  communities: Community[];
   onThemeChange: (theme: "light" | "dark") => void;
   onAccessibilitySettingsChange: (settings: AccessibilitySettings) => void;
   onProfileSettingsChange: (settings: ProfileSettings) => void;
@@ -79,7 +82,7 @@ type SettingsModalProps = {
   };
 };
 
-export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, developerPortalContext }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, developerPortalContext }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
@@ -105,6 +108,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
   const [profilePrivacy,setProfilePrivacy]=useState<ProfilePrivacySettings>(()=>profilePrivacyService.getLocalSettings());
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
+  const [notificationPolicyState, setNotificationPolicyState] = useState<NotificationPolicyState>(() => notificationPolicyStateService.getSnapshot());
   const [accountActivities, setAccountActivities] = useState<AccountActivityRecord[]>(() => accountActivityService.listRecent());
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
   const [adminOperationsAccess, setAdminOperationsAccess] = useState<AdminOperationsAccess>({ allowed: false, source: "none" });
@@ -155,6 +159,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   useEffect(() => {
     if (active === "Privacy & Safety") {
       setBlockedUsers(userBlockingService.listBlockedUsers());
+      setNotificationPolicyState(notificationPolicyStateService.getSnapshot());
       setSafetySettings(userSafetyCenterService.getSettings());
       void profilePrivacyService.getOwnSettings().then(setProfilePrivacy);
     }
@@ -640,6 +645,16 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                       </div>
                     </article>
                   )}
+                </div>
+              </div>
+              <label className="settings-toggle-row"><span><strong>Mute all notifications</strong><small>Suppress desktop alerts while keeping the inbox available. This does not hide moderation-required content.</small></span><input type="checkbox" checked={notificationSettings.muted} onChange={(event) => updateNotifications({ muted: event.target.checked })} /></label>
+              <div className="settings-status-card" aria-label="Muted communities and channels">
+                <span>Muted scopes</span>
+                <strong>{notificationPolicyState.mutedCommunityIds.length + notificationPolicyState.mutedChannelIds.length ? "Manage notification and feed mutes" : "No muted communities or channels"}</strong>
+                <small>Muted scopes suppress native notifications and normal Mention Feed items. Community chat and moderator queues stay accessible.</small>
+                <div className="mute-scope-list">
+                  {notificationPolicyState.mutedCommunityIds.map((communityId) => { const community = communities.find((candidate) => candidate.id === communityId); return <article key={`community-${communityId}`}><div><strong>{community?.name ?? "Unavailable community"}</strong><small>Community mute</small></div><button type="button" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setCommunityMuted(communityId, false))}>Unmute</button></article>; })}
+                  {notificationPolicyState.mutedChannelIds.map((channelId) => { const community = communities.find((candidate) => candidate.categories.some((category) => category.channels.some((channel) => channel.id === channelId))); const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === channelId); return <article key={`channel-${channelId}`}><div><strong>#{channel?.name ?? "unavailable-channel"}</strong><small>{community?.name ?? "Unavailable community"} / channel mute</small></div><button type="button" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setChannelMuted(channelId, false))}>Unmute</button></article>; })}
                 </div>
               </div>
               <div className="settings-status-card" aria-label="Safety tips">

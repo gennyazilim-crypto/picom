@@ -6,6 +6,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "block:mute:ux:test": "node scripts/block-mute-ux-polish-smoke.mjs",
     "content:reporting:ux:test": "node scripts/content-reporting-ux-polish-smoke.mjs",
     "policy:versioning:test": "node scripts/policy-versioning-smoke.mjs",
     "legal:acceptance:test": "node scripts/legal-acceptance-tracking-smoke.mjs",
