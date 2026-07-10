@@ -245,6 +245,16 @@ const bridge = Object.freeze({
       };
     }
   },
+  startup: {
+    getState: () => invokeWhitelisted(IPC_CHANNELS.startupGetState) as Promise<
+      | { ok: true; native: true; supported: boolean; enabled: boolean }
+      | { ok: false; native: true; error: string }
+    >,
+    setEnabled: (enabled: boolean) => invokeWhitelisted(IPC_CHANNELS.startupSetEnabled, enabled) as Promise<
+      | { ok: true; native: true; supported: true; enabled: boolean }
+      | { ok: false; native: true; error: string }
+    >
+  },
   file: {
     pickImages: () =>
       invokeWhitelisted(IPC_CHANNELS.filePickImages) as Promise<

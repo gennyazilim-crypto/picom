@@ -116,6 +116,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   }, [profileSettings]);
 
   useEffect(() => updateService.onStateChange(setUpdateState), []);
+  useEffect(() => { void startupService.refreshNativeState().then(setStartupSettings); }, []);
   useEffect(() => { let active = true; void adminOperationsService.getAccess().then((access) => { if (active) setAdminOperationsAccess(access); }); return () => { active = false; }; }, []);
 
   const refreshActiveSessions = useCallback(async () => {
@@ -224,15 +225,15 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
 
     pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
   };
-  const updateLaunchOnStartup = (enabled: boolean) => {
-    const next = startupService.setLaunchOnStartupEnabled(enabled);
+  const updateLaunchOnStartup = async (enabled: boolean) => {
+    const next = await startupService.setLaunchOnStartupEnabled(enabled);
     setStartupSettings(next);
-    pushToast(enabled ? "Launch on startup placeholder enabled locally." : "Launch on startup placeholder disabled locally.", "info");
+    pushToast(next.error ? "Launch on startup is unavailable in this build or platform." : next.launchOnStartup ? "Picom will launch when you sign in." : "Launch on startup disabled.", next.error ? "error" : "success");
   };
-  const updateStartMinimizedToTray = (enabled: boolean) => {
-    const next = startupService.setStartMinimizedToTray(enabled);
+  const updateStartMinimizedToTray = async (enabled: boolean) => {
+    const next = await startupService.setStartMinimizedToTray(enabled);
     setStartupSettings(next);
-    pushToast(enabled ? "Start minimized to tray placeholder enabled locally." : "Start minimized to tray placeholder disabled locally.", "info");
+    pushToast(next.startMinimizedToTray === enabled ? "Start-minimized preference saved." : "Start minimized requires supported launch-at-startup.", next.startMinimizedToTray === enabled ? "info" : "error");
   };
   const updateLockAfterInactivity = (enabled: boolean) => {
     const next = appLockService.updateSettings({ lockAfterInactivityEnabled: enabled });
@@ -822,24 +823,24 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <strong>{statusPageService.isConfigured() ? statusPageService.getDisplayDomain() : "Not configured"}</strong>
                 <small>Future production deployments can point `VITE_STATUS_PAGE_URL` to a public non-sensitive status page.</small>
               </div>
-              <div className="settings-status-card" aria-label="Launch on startup placeholder">
+              <div className="settings-status-card" aria-label="Launch on startup">
                 <span>Launch on startup</span>
-                <strong>{startupSettings.launchOnStartup ? "Prepared locally" : "Disabled"}</strong>
-                <small>Mode: {startupSettings.mode}. Native OS registration is intentionally deferred until packaging/signing is finalized.</small>
+                <strong>{startupSettings.launchOnStartup ? "Enabled" : "Disabled"}</strong>
+                <small>Mode: {startupSettings.mode}. Windows/macOS registration is available only in packaged builds; Linux remains unsupported safely.</small>
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Launch Picom on startup placeholder</strong>
-                  <small>Saves the preference locally without creating OS startup entries yet.</small>
+                  <strong>Launch Picom on startup</strong>
+                  <small>Registers Picom only after you enable it. Disabled by default.</small>
                 </span>
-                <input type="checkbox" checked={startupSettings.launchOnStartup} onChange={(event) => updateLaunchOnStartup(event.target.checked)} />
+                <input type="checkbox" checked={startupSettings.launchOnStartup} onChange={(event) => void updateLaunchOnStartup(event.target.checked)} />
               </label>
               <label className="settings-toggle-row">
                 <span>
                   <strong>Start minimized to tray placeholder</strong>
                   <small>Prepared for future tray startup behavior; currently stored as a local preference.</small>
                 </span>
-                <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => updateStartMinimizedToTray(event.target.checked)} />
+                <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => void updateStartMinimizedToTray(event.target.checked)} />
               </label>
               <label className="settings-toggle-row">
                 <span>

@@ -2,7 +2,8 @@
   launchOnStartup: boolean;
   startMinimizedToTray: boolean;
   nativeAvailable: boolean;
-  mode: "placeholder" | "native_ready";
+  mode: "placeholder" | "native_ready" | "unsupported";
+  error?: string;
 }
 
 const startupSettingsKey = "picom-startup-settings";
@@ -23,10 +24,12 @@ function readStoredSettings(): Partial<StartupSettings> {
 }
 
 function persist(settings: StartupSettings): StartupSettings {
-  localStorage.setItem(startupSettingsKey, JSON.stringify({
-    launchOnStartup: settings.launchOnStartup,
-    startMinimizedToTray: settings.startMinimizedToTray,
-  }));
+  try {
+    localStorage.setItem(startupSettingsKey, JSON.stringify({
+      launchOnStartup: settings.launchOnStartup,
+      startMinimizedToTray: settings.startMinimizedToTray,
+    }));
+  } catch { /* safe restricted fallback */ }
 
   return settings;
 }
@@ -34,11 +37,14 @@ function persist(settings: StartupSettings): StartupSettings {
 export const startupService = {
   getState(): StartupSettings {
     const stored = readStoredSettings();
+    const nativeAvailable = Boolean(window.picomDesktop?.startup);
 
     return {
       ...defaults,
       launchOnStartup: Boolean(stored.launchOnStartup),
       startMinimizedToTray: Boolean(stored.startMinimizedToTray),
+      nativeAvailable,
+      mode: nativeAvailable ? "native_ready" : "placeholder",
     };
   },
 
@@ -46,30 +52,40 @@ export const startupService = {
     return this.getState().launchOnStartup;
   },
 
-  setLaunchOnStartupEnabled(enabled: boolean): StartupSettings {
+  async refreshNativeState(): Promise<StartupSettings> {
     const current = this.getState();
-    return persist({
-      ...current,
-      launchOnStartup: enabled,
-      startMinimizedToTray: enabled ? current.startMinimizedToTray : false,
-    });
+    const bridge = window.picomDesktop?.startup;
+    if (!bridge) return current;
+    const result = await bridge.getState().catch(() => ({ ok: false as const, native: true as const, error: "STARTUP_STATE_UNAVAILABLE" }));
+    if (!result.ok || !result.supported) return persist({ ...current, launchOnStartup: false, startMinimizedToTray: false, nativeAvailable: false, mode: "unsupported", error: result.ok ? "STARTUP_UNSUPPORTED" : result.error });
+    return persist({ ...current, launchOnStartup: result.enabled, startMinimizedToTray: result.enabled && current.startMinimizedToTray, nativeAvailable: true, mode: "native_ready", error: undefined });
   },
 
-  toggleLaunchOnStartup(): StartupSettings {
+  async setLaunchOnStartupEnabled(enabled: boolean): Promise<StartupSettings> {
+    const current = this.getState();
+    const bridge = window.picomDesktop?.startup;
+    if (!bridge) return persist({ ...current, launchOnStartup: enabled, startMinimizedToTray: enabled ? current.startMinimizedToTray : false, mode: "placeholder" });
+    const result = await bridge.setEnabled(enabled).catch(() => ({ ok: false as const, native: true as const, error: "STARTUP_UPDATE_FAILED" }));
+    if (!result.ok) return persist({ ...current, launchOnStartup: false, startMinimizedToTray: false, nativeAvailable: false, mode: "unsupported", error: result.error });
+    return persist({ ...current, launchOnStartup: result.enabled, startMinimizedToTray: result.enabled ? current.startMinimizedToTray : false, nativeAvailable: true, mode: "native_ready", error: undefined });
+  },
+
+  toggleLaunchOnStartup(): Promise<StartupSettings> {
     return this.setLaunchOnStartupEnabled(!this.isLaunchOnStartupEnabled());
   },
 
-  setStartMinimizedToTray(enabled: boolean): StartupSettings {
-    const current = this.getState();
+  async setStartMinimizedToTray(enabled: boolean): Promise<StartupSettings> {
+    let current = this.getState();
+    if (enabled && !current.launchOnStartup) current = await this.setLaunchOnStartupEnabled(true);
+    if (enabled && !current.launchOnStartup) return current;
     return persist({
       ...current,
-      launchOnStartup: enabled ? true : current.launchOnStartup,
       startMinimizedToTray: enabled,
     });
   },
 
-  reset(): StartupSettings {
+  async reset(): Promise<StartupSettings> {
     localStorage.removeItem(startupSettingsKey);
-    return this.getState();
+    return this.setLaunchOnStartupEnabled(false);
   },
 };

@@ -89,6 +89,16 @@ declare global {
         >;
         onAction: (callback: (payload: PicomTrayActionPayload) => void) => () => void;
       };
+      startup?: {
+        getState: () => Promise<
+          | { ok: true; native: true; supported: boolean; enabled: boolean }
+          | { ok: false; native: true; error: string }
+        >;
+        setEnabled: (enabled: boolean) => Promise<
+          | { ok: true; native: true; supported: true; enabled: boolean }
+          | { ok: false; native: true; error: string }
+        >;
+      };
       file?: {
         pickImages: () => Promise<
           | { ok: true; native: true; canceled: boolean; files: PicomPickedImageFile[] }

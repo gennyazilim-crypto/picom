@@ -10,6 +10,8 @@ export const IPC_CHANNELS = Object.freeze({
   trayShowWindow: "picom:tray-show-window",
   trayQuit: "picom:tray-quit",
   trayAction: "picom:tray-action",
+  startupGetState: "picom:startup-get-state",
+  startupSetEnabled: "picom:startup-set-enabled",
   filePickImages: "picom:file-pick-images",
   fileSaveText: "picom:file-save-text",
   clipboardReadText: "picom:clipboard-read-text",

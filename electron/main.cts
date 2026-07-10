@@ -677,6 +677,29 @@ function registerIpcHandlers(): void {
     return { ok: true, native: true } as const;
   });
 
+  ipcMain.handle(IPC_CHANNELS.startupGetState, (event) => {
+    if (!isTrustedAppUrl(event.sender.getURL())) return { ok: false, native: true, error: "UNTRUSTED_STARTUP_SENDER" } as const;
+    const supported = app.isPackaged && (process.platform === "win32" || process.platform === "darwin");
+    if (!supported) return { ok: true, native: true, supported: false, enabled: false } as const;
+    try {
+      return { ok: true, native: true, supported: true, enabled: app.getLoginItemSettings().openAtLogin } as const;
+    } catch {
+      return { ok: false, native: true, error: "STARTUP_STATE_UNAVAILABLE" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.startupSetEnabled, (event, enabled: unknown) => {
+    if (!isTrustedAppUrl(event.sender.getURL()) || typeof enabled !== "boolean") return { ok: false, native: true, error: "INVALID_STARTUP_STATE" } as const;
+    if (!app.isPackaged) return { ok: false, native: true, error: "STARTUP_REQUIRES_PACKAGED_APP" } as const;
+    if (process.platform !== "win32" && process.platform !== "darwin") return { ok: false, native: true, error: "STARTUP_UNSUPPORTED" } as const;
+    try {
+      app.setLoginItemSettings({ openAtLogin: enabled, path: process.execPath });
+      return { ok: true, native: true, supported: true, enabled: app.getLoginItemSettings().openAtLogin } as const;
+    } catch {
+      return { ok: false, native: true, error: "STARTUP_UPDATE_FAILED" } as const;
+    }
+  });
+
   ipcMain.handle(IPC_CHANNELS.filePickImages, async (event) => {
     const window = BrowserWindow.fromWebContents(event.sender) ?? mainWindow ?? undefined;
     const options: OpenDialogOptions = {

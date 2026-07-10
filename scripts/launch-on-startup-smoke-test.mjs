@@ -3,8 +3,11 @@
 const files = {
   service: "src/services/startupService.ts",
   settings: "src/components/SettingsModal.tsx",
-  docs: "docs/launch-on-startup.md",
-  checkpoint: "docs/task-checkpoints/task-372-launch-on-startup-placeholder.md",
+  main: "electron/main.cts",
+  preload: "electron/preload.cts",
+  types: "src/types/picomDesktop.d.ts",
+  docs: "docs/desktop/launch-at-startup-production.md",
+  checkpoint: "docs/task-checkpoints/task-136-launch-at-startup-production.md",
 };
 
 function read(path) {
@@ -25,6 +28,9 @@ function assertNotIncludes(text, needle, label) {
 
 const service = read(files.service);
 const settings = read(files.settings);
+const main = read(files.main);
+const preload = read(files.preload);
+const types = read(files.types);
 const docs = read(files.docs);
 const checkpoint = read(files.checkpoint);
 
@@ -36,6 +42,8 @@ const checkpoint = read(files.checkpoint);
   "setLaunchOnStartupEnabled(enabled: boolean)",
   "toggleLaunchOnStartup()",
   "setStartMinimizedToTray(enabled: boolean)",
+  "refreshNativeState()",
+  "window.picomDesktop?.startup",
   "localStorage.setItem(startupSettingsKey",
 ].forEach((needle) => assertIncludes(service, needle, `startup service ${needle}`));
 
@@ -44,25 +52,28 @@ const checkpoint = read(files.checkpoint);
   "const [startupSettings, setStartupSettings]",
   "updateLaunchOnStartup",
   "updateStartMinimizedToTray",
-  "Launch Picom on startup placeholder",
+  "Launch Picom on startup",
   "Start minimized to tray placeholder",
 ].forEach((needle) => assertIncludes(settings, needle, `settings startup UI ${needle}`));
 
 [
-  "Launch on Startup Placeholder",
-  "app.setLoginItemSettings()",
-  "No login item, registry key, launch agent, or autostart desktop entry is written",
-  "The renderer does not call Electron APIs directly.",
+  "Launch at Startup Production",
+  "disabled by default",
+  "Linux",
+  "No React component imports Electron",
 ].forEach((needle) => assertIncludes(docs, needle, `startup docs ${needle}`));
 
-assertIncludes(checkpoint, "Task 372 - Launch on startup placeholder", "checkpoint title");
+assertIncludes(checkpoint, "Task 136 - Launch at Startup Production", "checkpoint title");
+
+["app.setLoginItemSettings", "app.getLoginItemSettings", "IPC_CHANNELS.startupGetState", "IPC_CHANNELS.startupSetEnabled"].forEach((needle) => assertIncludes(main, needle, `main startup integration ${needle}`));
+["startup: {", "getState: ()", "setEnabled: (enabled: boolean)"].forEach((needle) => assertIncludes(preload, needle, `preload startup bridge ${needle}`));
+assertIncludes(types, "startup?: {", "startup global type");
 
 const forbiddenRuntimePatterns = [
   "from \"electron\"",
   "from 'electron'",
   "require(\"electron\")",
   "require('electron')",
-  "setLoginItemSettings",
   "HKEY_CURRENT_USER",
   "LaunchAgents",
   "autostart",
@@ -72,4 +83,4 @@ const forbiddenRuntimePatterns = [
   forbiddenRuntimePatterns.forEach((pattern) => assertNotIncludes(text, pattern, "direct startup OS registration in renderer/service"));
 });
 
-console.log("Launch on startup placeholder smoke test passed.");
+console.log("Launch on startup production smoke test passed.");
