@@ -30,3 +30,7 @@ Stable decision: **No-Go until all mandatory blockers are closed**
 ## Reclassification rule
 
 A blocker may move to non-blocker only with a written risk acceptance, named owner, user-facing limitation, rollback/kill-switch path, and evidence that core privacy/security/data integrity is unaffected. Missing evidence alone is never justification for reclassification.
+
+## Task 396 evidence update
+
+Local Supabase/RLS/API/secret-boundary and build gates passed on 2026-07-10. Hosted staging was not configured or authenticated, so RB-01, RB-02, and RB-03 remain open without reclassification.

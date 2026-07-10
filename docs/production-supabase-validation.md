@@ -47,3 +47,7 @@ Do not place the Supabase service-role key in Electron/Vite variables. The rende
 ## Release decision impact
 
 RB-01, RB-02, and RB-03 remain open. Stable distribution is No-Go until hosted evidence is archived and reviewed.
+
+## Task 396 closure attempt
+
+The 2026-07-10 blocker-closure pass reconfirmed all local/static Supabase, RLS, secret-boundary, TypeScript, mock, and build gates. Hosted execution remained blocked because no approved staging project, operator authentication, synthetic role fixtures, or protected test variables were available. See `docs/hosted-supabase-evidence-closure.md`; no remote result is claimed.
