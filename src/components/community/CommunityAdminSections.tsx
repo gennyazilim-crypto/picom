@@ -3,6 +3,7 @@ import type { Community } from "../../types/community";
 import type { CommunityAccess } from "../../types/communityAccess";
 import { reportService } from "../../services/reportService";
 import { messageModerationFilterService } from "../../services/messageModerationFilterService";
+import { dateTimeService } from "../../services/dateTimeService";
 import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
@@ -118,12 +119,12 @@ export function ModeratorReportsSection({ communityId, canReview }: { communityI
 }
 
 export function ModeratorMessagesSection({ community, title = "Message moderation" }: { community: Community; title?: string }) {
-  return <SectionShell eyebrow="Message safety" title={title} description="Recent message context for permitted moderation actions."><div className="community-admin-list">{community.messages.slice(-6).reverse().map((message) => <article key={message.id}><div><strong>{message.deletedAt ? "Deleted message" : message.body.slice(0, 90) || "Attachment message"}</strong><span>{message.channelId} · {message.createdAt}</span></div><button type="button" disabled title="Requires a confirmed moderation reason">Delete with reason</button></article>)}</div></SectionShell>;
+  return <SectionShell eyebrow="Message safety" title={title} description="Recent message context for permitted moderation actions."><div className="community-admin-list">{community.messages.slice(-6).reverse().map((message) => <article key={message.id}><div><strong>{message.deletedAt ? "Deleted message" : message.body.slice(0, 90) || "Attachment message"}</strong><span>{message.channelId} · {dateTimeService.formatCompactDateTime(message.createdAt)}</span></div><button type="button" disabled title="Requires a confirmed moderation reason">Delete with reason</button></article>)}</div></SectionShell>;
 }
 
 export function ModeratorBlockedItemsSection({ communityId }: { communityId: string }) {
   const items = messageModerationFilterService.getRecentBlockedItems(communityId);
-  return <SectionShell eyebrow="Prevented activity" title="Recent blocked items" description="Rule metadata only; blocked message content is not retained.">{items.length ? <div className="community-admin-list">{items.map((item) => <article key={item.id}><div><strong>{item.rule.replace(/_/g, " ")}</strong><span>{item.reason} · {item.createdAt}</span></div><button type="button" disabled>Timeout placeholder</button></article>)}</div> : <div className="community-admin-empty"><AppIcon name="lock" size="lg" /><strong>No blocked items</strong><span>Blocked-word, mention, link, and slow-mode events will appear here without message content.</span></div>}</SectionShell>;
+  return <SectionShell eyebrow="Prevented activity" title="Recent blocked items" description="Rule metadata only; blocked message content is not retained.">{items.length ? <div className="community-admin-list">{items.map((item) => <article key={item.id}><div><strong>{item.rule.replace(/_/g, " ")}</strong><span>{item.reason} · {dateTimeService.formatCompactDateTime(item.createdAt)}</span></div><button type="button" disabled>Timeout placeholder</button></article>)}</div> : <div className="community-admin-empty"><AppIcon name="lock" size="lg" /><strong>No blocked items</strong><span>Blocked-word, mention, link, and slow-mode events will appear here without message content.</span></div>}</SectionShell>;
 }
 
 export function ModeratorMembersSection({ community }: { community: Community }) {

@@ -3,6 +3,7 @@ import type { Community, Member, UserStatus } from "../types/community";
 import type { UpcomingEvent, UpcomingEventType } from "../types/events";
 import type { FriendConnection } from "../types/friends";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
+import { dateTimeService } from "../services/dateTimeService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
@@ -34,14 +35,6 @@ function getCommunityName(communities: Community[], communityId: string) {
 function getStatusLabel(status: UserStatus) {
   if (status === "dnd") return "Busy";
   return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-function formatEventTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 function getEventIcon(type: UpcomingEventType): IconName {
@@ -220,7 +213,7 @@ function UpcomingEventMiniCard({
         <button type="button" onClick={() => onOpenCommunity(event.communityId)}>
           {communityName}
         </button>
-        <small>{formatEventTime(event.startsAt)} - {event.attendeeCount ?? 0} interested</small>
+        <small>{dateTimeService.formatCompactDateTime(event.startsAt)} - {event.attendeeCount ?? 0} interested</small>
       </div>
       <button className="event-mini-action" type="button" aria-label={`Open ${event.title} details`} onClick={() => onEventDetails(event)}>
         <AppIcon name="chevronRight" size="sm" />

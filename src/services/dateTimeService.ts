@@ -80,11 +80,11 @@ export const dateTimeService = {
   parseDate,
 
   formatMessageTime(value: DateTimeInput, options?: DateTimeFormatOptions): string {
-    return formatWith(value, { hour: "2-digit", minute: "2-digit" }, "Invalid time", options);
+    return formatWith(value, { hour: "2-digit", minute: "2-digit" }, "—", options);
   },
 
   formatCompactDateTime(value: DateTimeInput, options?: DateTimeFormatOptions): string {
-    return formatWith(value, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }, "Invalid date", options);
+    return formatWith(value, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }, "—", options);
   },
 
   formatFullTimestamp(value: DateTimeInput, options?: DateTimeFormatOptions): string {
@@ -99,7 +99,7 @@ export const dateTimeService = {
         second: "2-digit",
         timeZoneName: "short",
       },
-      "Invalid date",
+      "—",
       options,
     );
   },
@@ -107,7 +107,7 @@ export const dateTimeService = {
   formatRelativeTime(value: DateTimeInput, options: DateTimeFormatOptions = {}): string {
     const date = parseDate(value);
     if (!date) {
-      return "Invalid date";
+      return "—";
     }
 
     const now = options.now ?? new Date();
@@ -115,7 +115,7 @@ export const dateTimeService = {
     try {
       return new Intl.RelativeTimeFormat(getLocale(options.locale), { numeric: "auto" }).format(relativeValue, unit);
     } catch {
-      return "Invalid date";
+      return "—";
     }
   },
 
@@ -130,7 +130,7 @@ export const dateTimeService = {
   formatEventRange(start: DateTimeInput, end?: DateTimeInput, options?: DateTimeFormatOptions): string {
     const startDate = parseDate(start);
     if (!startDate) {
-      return "Invalid date";
+      return "—";
     }
 
     const endDate = parseDate(end);
