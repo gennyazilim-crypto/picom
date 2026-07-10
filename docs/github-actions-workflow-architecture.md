@@ -79,3 +79,25 @@ separate evidence.
 The repository has no engines or version-manager declaration. Existing Picom
 workflows use Node.js 24, which remains the CI runtime. All workflows use
 `actions/setup-node` npm caching with `package-lock.json`, followed by `npm ci`.
+
+## Task 417 remaining-gate integration
+
+The required `Picom QA` workflow runs these safe, deterministic contracts after the renderer performance gate:
+
+- Visual regression coverage contract
+- E2E core-flow coverage contract
+- Release checksum generator smoke contract
+- Release provenance generator smoke contract
+
+These checks validate committed coverage manifests and temporary fixtures. They do not capture production screenshots, execute hosted services, package native installers, publish artifacts, or claim signed/notarized release evidence.
+
+The `Renderer Performance Budget` workflow remains a manual/release-ref Windows and Ubuntu matrix. It runs the performance budget and the same four contracts to provide cross-platform path and fixture evidence without duplicating the full matrix on every ordinary pull request.
+
+GitHub-hosted JavaScript actions use official Node 24 runtime releases:
+
+- `actions/checkout@v7`
+- `actions/setup-node@v6`
+
+`actions/upload-artifact@v4` remains unchanged because it was not implicated in the verified Node-runtime warning.
+
+Visual and E2E contracts remain truthfully classified as contract coverage. Pixel-diff visual execution and browser/Electron-driven E2E execution require separate runner activation and must not be inferred from a green contract result.

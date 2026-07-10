@@ -28,6 +28,8 @@ for (const [key, expected] of Object.entries({
   productName: "Picom",
   releaseChannel: "beta",
   buildDate: "2026-07-06T00:00:00.000Z",
+  platform: process.platform,
+  architecture: process.arch,
   desktopRuntime: "electron",
   frontendBuildHash: "smoke-build",
   backendApiCompatibilityVersion: "mvp-smoke",

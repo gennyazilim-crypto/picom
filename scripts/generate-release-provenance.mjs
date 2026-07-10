@@ -90,6 +90,8 @@ const provenance = {
   gitCommitShort: gitCommit === "unknown" ? "unknown" : gitCommit.slice(0, 12),
   buildDate: process.env.VITE_BUILD_DATE ?? new Date().toISOString(),
   buildMachine: process.env.CI ? "ci" : "local",
+  platform: process.platform,
+  architecture: process.arch,
   desktopRuntime: "electron",
   electronVersion,
   nodeVersion: process.version,

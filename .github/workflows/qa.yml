@@ -21,10 +21,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -59,6 +59,18 @@ jobs:
 
       - name: Run static Supabase contract gate
         run: npm run qa:supabase
+
+      - name: Verify visual regression coverage contract
+        run: npm run visual:regression:contract
+
+      - name: Verify E2E core-flow coverage contract
+        run: npm run e2e:coverage:contract
+
+      - name: Verify release checksum generator contract
+        run: npm run release:checksums:smoke
+
+      - name: Verify release provenance generator contract
+        run: npm run release:provenance:smoke
 
       - name: Validate GitHub Actions contracts
         run: npm run ci:workflow:smoke

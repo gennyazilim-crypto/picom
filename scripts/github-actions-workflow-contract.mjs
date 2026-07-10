@@ -40,6 +40,9 @@ for (const workflow of Object.keys(files)) {
   requireText(workflow, /timeout-minutes:/, "a job timeout");
   forbidText(workflow, /continue-on-error:/, "continue-on-error");
   forbidText(workflow, /service[_-]?role/i, "a Supabase service-role credential");
+  requireText(workflow, /actions\/checkout@v7/, "the official Node.js 24 checkout action");
+  requireText(workflow, /actions\/setup-node@v6/, "the official Node.js 24 setup-node action");
+  forbidText(workflow, /actions\/(?:checkout|setup-node)@v4/, "a deprecated Node.js 20 action runtime");
 }
 
 for (const command of [
@@ -48,6 +51,10 @@ for (const command of [
   "npm run mock:smoke",
   "npm run build",
   "npm run qa:smoke",
+  "npm run visual:regression:contract",
+  "npm run e2e:coverage:contract",
+  "npm run release:checksums:smoke",
+  "npm run release:provenance:smoke",
 ]) {
   requireText("qa", new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), command);
 }
@@ -98,6 +105,9 @@ requireText("performance", /ubuntu-latest/, "Ubuntu performance evidence");
 requireText("performance", /windows-latest/, "Windows performance evidence");
 requireText("performance", /npm run build/, "a production renderer build");
 requireText("performance", /npm run performance:budget:ci/, "the renderer performance budget gate");
+for (const command of ["visual:regression:contract", "e2e:coverage:contract", "release:checksums:smoke", "release:provenance:smoke"]) {
+  requireText("performance", new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), command);
+}
 
 if (failures.length > 0) {
   console.error("GitHub Actions workflow contract failed:");
