@@ -1,0 +1,32 @@
+# Stable Release Blockers
+
+Status: **Open**  
+Stable decision: **No-Go until all mandatory blockers are closed**
+
+## Critical release blockers
+
+| ID | Blocker | Required closure evidence | Owner |
+| --- | --- | --- | --- |
+| RB-01 | Hosted Supabase role/isolation matrix has not run against an approved staging/production-like project | Anonymous/visitor/member/mod/admin/owner tests pass for private/public communities, channels, messages, attachments, profile activity, Mention Feed, and DMs | Security/backend owner |
+| RB-02 | Private Storage and historical attachment signed-URL refresh are not production-proven | Unauthorized reads fail; authorized reload/refresh/download works without public-path leakage | Storage owner |
+| RB-03 | Hosted Realtime and Edge Functions are not production-proven | Two-client insert/update/delete/deduplication and Edge token/auth tests pass without service-role exposure | Backend owner |
+| RB-04 | LiveKit voice is not certified with real clients/devices | Two clients join, mute/deafen/speaking/reconnect/leave pass; unauthorized room joins fail | Realtime owner |
+| RB-05 | Screen sharing is not certified on all promised platforms | Explicit source selection, permission denial/retry, remote display, stop, and cleanup pass on Windows/Linux/macOS | Desktop owner |
+| RB-06 | Windows clean-machine installer evidence is missing | Install, first launch, core flow, reinstall, uninstall, checksum, and unsigned/signed behavior recorded | Release owner |
+| RB-07 | Linux native packages are not built/smoked on Linux | AppImage and deb install/launch/core-flow/uninstall pass on supported distributions | Linux release owner |
+| RB-08 | macOS artifacts are not built, signed, notarized, and smoked on macOS | DMG/zip, Gatekeeper, microphone/screen-recording permissions, launch/core-flow/uninstall pass | macOS release owner |
+| RB-09 | Production environment and secret ownership are not frozen | Named owner, protected stores, approved renderer-safe values, deployed targets, and rotation/rollback path recorded | Operations owner |
+| RB-10 | Legal/privacy documents lack final legal sign-off | Terms, Privacy, Guidelines, AUP, support/reporting, deletion/export wording, versions, and in-app links approved | Legal/product owner |
+| RB-11 | Backup/restore and destructive data lifecycle are not production-proven | Staging restore drill passes; deletion/export paths have legal/operations approval | Database/privacy owner |
+
+## High-priority non-blockers
+
+- Initial renderer chunk remains above the preferred bundle warning threshold.
+- Some native accessibility, multi-monitor, DPI, memory, and cold-start evidence remains manual.
+- OAuth providers, 2FA, Steam, and Epic remain disabled or deferred and must not be advertised.
+- Production auto-update remains outside stable scope.
+- Unsigned local artifacts are suitable only for internal testing.
+
+## Reclassification rule
+
+A blocker may move to non-blocker only with a written risk acceptance, named owner, user-facing limitation, rollback/kill-switch path, and evidence that core privacy/security/data integrity is unaffected. Missing evidence alone is never justification for reclassification.
