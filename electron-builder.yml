@@ -104,5 +104,15 @@ mac:
 
 dmg:
   title: Picom ${version}
+  background: assets/installer/macos/dmg-background.png
+  iconSize: 104
+  contents:
+    - x: 176
+      y: 224
+      type: file
+    - x: 484
+      y: 224
+      type: link
+      path: /Applications
 
 publish: null

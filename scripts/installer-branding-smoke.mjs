@@ -9,6 +9,7 @@ const requiredFiles = [
   "assets/installer/windows/installer-header.bmp",
   "assets/installer/windows/installer-sidebar.bmp",
   "assets/installer/macos/README.md",
+  "assets/installer/macos/dmg-background.png",
   "assets/installer/linux/README.md",
   "docs/installer-branding.md",
   "docs/legal/installer-license.md",
@@ -24,6 +25,9 @@ for (const marker of ["appId: com.picom.desktop", "productName: Picom", "install
 }
 for (const marker of ["oneClick: false", "perMachine: false", "allowElevation: false", "runAfterFinish: true", "deleteAppDataOnUninstall: false", "installerHeader: assets/installer/windows/installer-header.bmp", "installerSidebar: assets/installer/windows/installer-sidebar.bmp"]) {
   if (!builder.includes(marker)) throw new Error(`Missing safe Windows installer marker: ${marker}`);
+}
+for (const marker of ["background: assets/installer/macos/dmg-background.png", "path: /Applications", "NSMicrophoneUsageDescription", "NSScreenCaptureUsageDescription"]) {
+  if (!builder.includes(marker)) throw new Error(`Missing macOS installer marker: ${marker}`);
 }
 
 const setup = readFileSync("src/components/firstLaunch/FirstLaunchSetup.tsx", "utf8");

@@ -1,3 +1,9 @@
 # macOS installer assets
 
-Placeholder source artwork is original Picom artwork under `../shared`. Final DMG background preparation and layout are handled in Task 374.
+`dmg-background.png` is original Picom release-candidate artwork for the DMG window. It provides:
+
+- Picom product heading.
+- "Drag Picom to Applications" instruction.
+- Visual direction from the app position to the Applications shortcut.
+
+Final public distribution still requires visual approval, signed/notarized packaging, and macOS Gatekeeper/permission QA.
