@@ -1,11 +1,13 @@
 ﻿import type { Community, Member } from "../../types/community";
 import { dataSourceService } from "../dataSourceService";
+import type { CommunityRulesAcceptanceInput } from "../../types/communityRules";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
 
 export type CommunityMembershipServiceErrorCode =
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
   | "JOIN_NOT_ALLOWED"
+  | "RULES_ACCEPTANCE_REQUIRED"
   | "JOIN_FAILED"
   | "LEAVE_NOT_ALLOWED"
   | "LEAVE_FAILED"
@@ -28,6 +30,7 @@ export type JoinCommunityInput = {
   currentUser: Member;
   isAuthenticated: boolean;
   inviteValidated?: boolean;
+  rulesAcceptance?: CommunityRulesAcceptanceInput | null;
 };
 
 export type LeaveCommunityInput = {
@@ -81,6 +84,7 @@ function mapPublicJoinError(message?: string): CommunityMembershipServiceResult<
   if (message?.includes("JOIN_BANNED")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "You cannot join this community." } };
   if (message?.includes("COMMUNITY_NOT_FOUND")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "This community is unavailable." } };
   if (message?.includes("DEFAULT_ROLE_MISSING")) return { ok: false, error: { code: "JOIN_FAILED", message: "This community is not ready to accept members." } };
+  if (message?.includes("RULES_ACCEPTANCE_REQUIRED")) return { ok: false, error: { code: "RULES_ACCEPTANCE_REQUIRED", message: "Review and accept the current community rules before joining." } };
   return { ok: false, error: { code: "JOIN_FAILED", message: "Could not join this community." } };
 }
 
@@ -97,6 +101,14 @@ export const communityMembershipService = {
     const existingMember = input.community.members.find((member) => member.userId === input.currentUser.userId);
     if (existingMember) return { ok: true, data: { member: existingMember, status: "already_member" } };
 
+    if (input.community.rulesEnabled !== false) {
+      const acceptance = input.rulesAcceptance;
+      const expectedVersion = input.community.rulesVersion ?? "1";
+      if (!acceptance || acceptance.rulesVersion !== expectedVersion || !Number.isFinite(Date.parse(acceptance.acceptedAt))) {
+        return { ok: false, error: { code: "RULES_ACCEPTANCE_REQUIRED", message: "Review and accept the current community rules before joining." } };
+      }
+    }
+
     const dataSource = dataSourceService.getStatus();
     if (dataSource.isMock) {
       return { ok: true, data: { member: createMockMember(input.community, input.currentUser), status: "joined" } };
@@ -106,7 +118,7 @@ export const communityMembershipService = {
     if (!configured.ok) return configured;
 
     if (input.community.visibility !== "public") return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require an invite or approval." } };
-    const { data, error } = await configured.data.rpc("join_public_community", { target_community_id: input.community.id });
+    const { data, error } = await configured.data.rpc("join_public_community", { target_community_id: input.community.id, accepted_rules_version: input.rulesAcceptance?.rulesVersion ?? null });
     const membership = data?.[0];
     if (error || !membership) return mapPublicJoinError(error?.message);
 

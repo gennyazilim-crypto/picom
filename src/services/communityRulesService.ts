@@ -1,5 +1,7 @@
 import type { CommunityRule, CommunityRulesAcceptance, CommunityRulesSummary } from "../types/communityRules";
+import { dataSourceService } from "./dataSourceService";
 import { loggingService } from "./loggingService";
+import { getSupabaseClient } from "./supabase/supabaseClient";
 
 const storageKey = "picom.communityRules.acceptance.v1";
 
@@ -15,7 +17,9 @@ function getLocalStorage(): Storage | null {
   }
 }
 
-function readAcceptanceRecords(): Record<string, string> {
+type StoredAcceptance = Readonly<{ acceptedAt: string; rulesVersion: string }>;
+
+function readAcceptanceRecords(): Record<string, StoredAcceptance> {
   const storage = getLocalStorage();
   if (!storage) return {};
 
@@ -23,14 +27,22 @@ function readAcceptanceRecords(): Record<string, string> {
     const raw = storage.getItem(storageKey);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return typeof parsed === "object" && parsed !== null ? parsed as Record<string, string> : {};
+    if (typeof parsed !== "object" || parsed === null) return {};
+    return Object.fromEntries(Object.entries(parsed as Record<string, unknown>).flatMap(([key, value]) => {
+      if (typeof value === "string") return [[key, { acceptedAt: value, rulesVersion: "legacy" }]];
+      if (!value || typeof value !== "object") return [];
+      const candidate = value as Partial<StoredAcceptance>;
+      return typeof candidate.acceptedAt === "string" && typeof candidate.rulesVersion === "string"
+        ? [[key, { acceptedAt: candidate.acceptedAt, rulesVersion: candidate.rulesVersion }]]
+        : [];
+    }));
   } catch {
     loggingService.logWarn("Community rules acceptance cache reset", undefined, "community-rules");
     return {};
   }
 }
 
-function writeAcceptanceRecords(records: Record<string, string>): void {
+function writeAcceptanceRecords(records: Record<string, StoredAcceptance>): void {
   const storage = getLocalStorage();
   if (!storage) return;
 
@@ -83,20 +95,32 @@ export const communityRulesService = {
     ];
   },
 
+  async loadPublishedRules(communityId: string): Promise<{ ok: true; rules: CommunityRule[] } | { ok: false; message: string }> {
+    if (dataSourceService.getStatus().isMock) return { ok: true, rules: this.getDefaultRules(communityId) };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, message: "Community rules are unavailable. Try again later." };
+    const { data, error } = await client.from("community_rules").select("id, community_id, title, body, position, required, created_at, updated_at").eq("community_id", communityId).eq("published", true).order("position", { ascending: true });
+    if (error) {
+      loggingService.logWarn("Community rules could not be loaded", { communityId }, "community-rules");
+      return { ok: false, message: "Community rules could not be loaded. Joining is paused for safety." };
+    }
+    return { ok: true, rules: (data ?? []).map((row) => ({ id: row.id, communityId: row.community_id, title: row.title, body: row.body, position: row.position, required: row.required, createdAt: row.created_at, updatedAt: row.updated_at })) };
+  },
+
   getAcceptance(communityId: string, userId: string): CommunityRulesAcceptance {
     const records = readAcceptanceRecords();
 
     return {
       communityId,
       userId,
-      rulesAcceptedAt: records[acceptanceKey(communityId, userId)] ?? null
+      rulesAcceptedAt: records[acceptanceKey(communityId, userId)]?.acceptedAt ?? null,
+      rulesVersion: records[acceptanceKey(communityId, userId)]?.rulesVersion ?? null
     };
   },
 
-  acceptRules(communityId: string, userId: string): CommunityRulesAcceptance {
+  acceptRules(communityId: string, userId: string, rulesVersion = "1", acceptedAt = now()): CommunityRulesAcceptance {
     const records = readAcceptanceRecords();
-    const acceptedAt = now();
-    records[acceptanceKey(communityId, userId)] = acceptedAt;
+    records[acceptanceKey(communityId, userId)] = { acceptedAt, rulesVersion };
     writeAcceptanceRecords(records);
 
     loggingService.logInfo("Community rules accepted locally", {
@@ -107,7 +131,8 @@ export const communityRulesService = {
     return {
       communityId,
       userId,
-      rulesAcceptedAt: acceptedAt
+      rulesAcceptedAt: acceptedAt,
+      rulesVersion
     };
   },
 
@@ -119,7 +144,8 @@ export const communityRulesService = {
       communityId,
       requiredRuleCount: rules.filter((rule) => rule.required).length,
       accepted: Boolean(acceptance.rulesAcceptedAt),
-      acceptedAt: acceptance.rulesAcceptedAt
+      acceptedAt: acceptance.rulesAcceptedAt,
+      acceptedVersion: acceptance.rulesVersion
     };
   },
 

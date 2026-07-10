@@ -66,6 +66,8 @@ const makeCommunity = ({ id, name, icon, accentColor, offset, currentUserRole, v
     description,
     visibility,
     publicReadEnabled,
+    rulesEnabled: true,
+    rulesVersion: "1",
     roles: mockRoles,
     members,
     categories,

@@ -3,6 +3,7 @@ import type { MouseEvent } from "react";
 import { useEffect } from "react";
 import type { Channel, Community, Member } from "../types/community";
 import type { CommunityAccess } from "../types/communityAccess";
+import type { CommunityRulesAcceptanceInput } from "../types/communityRules";
 import { canManageChannels } from "../services/permissions/communityPermissions";
 import { CommunityHeader } from "./CommunityHeader";
 import { ChannelCategory } from "./ChannelCategory";
@@ -41,7 +42,7 @@ type CommunitySidebarProps = {
   onRenameCategory: (categoryId: string, name: string) => void;
   onDeleteCategory: (categoryId: string) => void;
   onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void;
-  onJoinCommunity: () => void | Promise<void>;
+  onJoinCommunity: (acceptance: CommunityRulesAcceptanceInput | null) => Promise<boolean>;
   onLeaveCommunity: () => void | Promise<void>;
   pendingInviteCode?: string | null;
   onClearPendingInviteCode: () => void;
@@ -123,7 +124,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
       {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} /> : null}
       {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}
       {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} onOpenJoinWithInvite={() => setOpenPanel("joinInvite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}
-      {openPanel === "join" ? <CommunityJoinModal community={community} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onJoinCommunity(); setOpenPanel(null); }} /> : null}
+      {openPanel === "join" ? <CommunityJoinModal community={community} currentUserId={currentUser.userId} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onConfirm={async (acceptance) => { const joined = await onJoinCommunity(acceptance); if (joined) setOpenPanel(null); return joined; }} /> : null}
       {openPanel === "leave" ? <CommunityLeaveModal community={community} access={access} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onLeaveCommunity(); setOpenPanel(null); }} /> : null}
       {openPanel === "invite" ? <InvitePeopleModal community={community} currentUserId={currentUser.userId} canCreate={access.permissions.includes("createInvites")} onClose={() => setOpenPanel(null)} /> : null}
       {openPanel === "joinInvite" ? <JoinWithInviteModal initialCode={pendingInviteCode ?? ""} isAuthenticated={isAuthenticated} communities={communities} currentUser={currentUser} onClose={() => { setOpenPanel(null); onClearPendingInviteCode(); }} onAccepted={onInviteAccepted} /> : null}

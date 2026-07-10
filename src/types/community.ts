@@ -108,6 +108,8 @@ export interface Community {
   description?: string | null;
   visibility?: "public" | "private";
   publicReadEnabled?: boolean;
+  rulesEnabled?: boolean;
+  rulesVersion?: string;
   discoveryListed?: boolean;
   discoveryCategory?: "development" | "design" | "gaming" | "music" | "study" | "work";
   discoveryJoinPolicy?: "open" | "request";

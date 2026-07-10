@@ -1,10 +1,13 @@
 ﻿import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Community, Member } from "../types/community";
+import type { CommunityRule, CommunityRulesAcceptanceInput } from "../types/communityRules";
 import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescriptor } from "../types/communityAccess";
 import { getCommunityMenuItems } from "../services/community/communityMenuService";
 import { clipboardService } from "../services/clipboardService";
+import { communityRulesService } from "../services/communityRulesService";
 import { AppIcon } from "./AppIcon";
+import "../communityGuidelines.css";
 import { CommunityInsightsView } from "./CommunityInsightsView";
 import {
   adminSectionDefinitions,
@@ -307,9 +310,28 @@ export function CommunityVisitorPanel({ community, access, isAuthenticated, onCl
   );
 }
 
-export function CommunityJoinModal({ community, isAuthenticated, onClose, onConfirm }: { community: Community; isAuthenticated: boolean; onClose: () => void; onConfirm: () => void | Promise<void> }) {
+export function CommunityJoinModal({ community, currentUserId, isAuthenticated, onClose, onConfirm }: { community: Community; currentUserId: string; isAuthenticated: boolean; onClose: () => void; onConfirm: (acceptance: CommunityRulesAcceptanceInput | null) => Promise<boolean> }) {
   const [joining, setJoining] = useState(false);
+  const [rules, setRules] = useState<CommunityRule[]>([]);
+  const [rulesLoading, setRulesLoading] = useState(community.rulesEnabled !== false);
+  const [rulesError, setRulesError] = useState<string | null>(null);
+  const [rulesAccepted, setRulesAccepted] = useState(false);
   const inviteRequired = community.visibility !== "public";
+  const rulesEnabled = community.rulesEnabled !== false;
+  const rulesVersion = community.rulesVersion ?? "1";
+  const requiredRules = rules.filter((rule) => rule.required);
+
+  useEffect(() => {
+    if (!rulesEnabled) { setRulesLoading(false); return; }
+    let active = true;
+    void communityRulesService.loadPublishedRules(community.id).then((result) => {
+      if (!active) return;
+      if (result.ok && result.rules.length) setRules(result.rules);
+      else setRulesError(result.ok ? "No published rules are available. Joining is paused for safety." : result.message);
+      setRulesLoading(false);
+    });
+    return () => { active = false; };
+  }, [community.id, rulesEnabled]);
 
   return (
     <ModalShell title={`Join ${community.name}`} eyebrow="Community access" onClose={onClose}>
@@ -318,8 +340,15 @@ export function CommunityJoinModal({ community, isAuthenticated, onClose, onConf
         <dl>
           <div><dt>Members</dt><dd>{community.members.length}</dd></div>
           <div><dt>Visibility</dt><dd>{community.visibility ?? "private"}</dd></div>
-          <div><dt>Rules</dt><dd>Community rules are not published for this beta.</dd></div>
+          <div><dt>Rules</dt><dd>{rulesEnabled ? `${requiredRules.length} required - version ${rulesVersion}` : "Acceptance not required"}</dd></div>
         </dl>
+        {rulesEnabled ? <section className="community-join-rules" aria-labelledby="community-join-rules-title">
+          <div className="community-join-rules-heading"><div><strong id="community-join-rules-title">Community rules</strong><span>Owner-authored rules. Legal review marker: pending final policy approval.</span></div><AppIcon name="lock" size="md" /></div>
+          {rulesLoading ? <p className="community-rules-status">Loading published rules...</p> : null}
+          {rulesError ? <p className="auth-error" role="alert">{rulesError}</p> : null}
+          {!rulesLoading && !rulesError ? <ol>{rules.map((rule) => <li key={rule.id}><div><strong>{rule.title}</strong>{rule.required ? <span>Required</span> : null}</div><p>{rule.body}</p></li>)}</ol> : null}
+          {!rulesLoading && !rulesError ? <label className="community-rules-acceptance"><input type="checkbox" checked={rulesAccepted} onChange={(event) => setRulesAccepted(event.target.checked)} /><span>I have read and agree to follow the required community rules.</span></label> : null}
+        </section> : null}
         {!isAuthenticated ? <div className="auth-error">Sign in or register before joining.</div> : null}
         {inviteRequired ? <div className="auth-error">This private community requires an invite or approval. Use Join with invite from the visitor menu.</div> : null}
         <div className="modal-actions-row">
@@ -327,10 +356,13 @@ export function CommunityJoinModal({ community, isAuthenticated, onClose, onConf
           <button
             className="send-button"
             type="button"
-            disabled={!isAuthenticated || joining || inviteRequired}
+            disabled={!isAuthenticated || joining || inviteRequired || (rulesEnabled && (rulesLoading || Boolean(rulesError) || !rulesAccepted))}
             onClick={async () => {
               setJoining(true);
-              await onConfirm();
+              const acceptedAt = new Date().toISOString();
+              const acceptance = rulesEnabled ? { rulesVersion, acceptedAt } : null;
+              const joined = await onConfirm(acceptance);
+              if (joined && acceptance) communityRulesService.acceptRules(community.id, currentUserId, rulesVersion, acceptedAt);
               setJoining(false);
             }}
           >

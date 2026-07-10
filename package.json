@@ -136,6 +136,7 @@
     "admin:create:placeholder": "node scripts/create-admin-user-placeholder.mjs",
     "abuse:events:smoke": "node scripts/abuse-event-logging-smoke-test.mjs",
     "abuse:dashboard:polish:test": "node scripts/abuse-event-dashboard-polish-test.mjs",
+    "community:guidelines:acceptance:test": "node scripts/community-guidelines-acceptance-flow-test.mjs",
     "abuse:rate-limit:tuning:smoke": "node scripts/abuse-rate-limit-tuning-smoke-test.mjs",
     "rate-limit:staging:preflight": "node scripts/hosted-staging-rate-limit-validation.mjs",
     "rate-limit:staging:test": "node scripts/hosted-staging-rate-limit-validation.mjs --run",

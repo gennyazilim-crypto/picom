@@ -44,6 +44,8 @@ export type Database = {
           accent_color: string;
           visibility: "public" | "private";
           public_read_enabled: boolean;
+          rules_enabled: boolean;
+          rules_version: string;
           discovery_listed: boolean;
           discovery_join_policy: "open" | "request";
           category: "development" | "design" | "gaming" | "music" | "study" | "work" | null;
@@ -77,9 +79,17 @@ export type Database = {
           user_id: string;
           role_id: string | null;
           joined_at: string;
+          rules_accepted_at: string | null;
+          rules_version_accepted: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["community_members"]["Row"]> & Pick<Database["public"]["Tables"]["community_members"]["Row"], "community_id" | "user_id">;
         Update: Partial<Database["public"]["Tables"]["community_members"]["Row"]>;
+        Relationships: [];
+      };
+      community_rules: {
+        Row: { id: string; community_id: string; title: string; body: string; position: number; required: boolean; published: boolean; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["community_rules"]["Row"]> & Pick<Database["public"]["Tables"]["community_rules"]["Row"], "community_id" | "title" | "body">;
+        Update: Partial<Database["public"]["Tables"]["community_rules"]["Row"]>;
         Relationships: [];
       };
       channel_categories: {
@@ -520,7 +530,7 @@ export type Database = {
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string; joined_at: string; acceptance_status: "joined" | "already_member" }>;
       };
       join_public_community: {
-        Args: { target_community_id: string };
+        Args: { target_community_id: string; accepted_rules_version?: string | null };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string; join_status: "joined" | "already_member" }>;
       };
       assign_community_member_role: {

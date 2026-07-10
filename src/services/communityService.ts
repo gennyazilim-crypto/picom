@@ -11,6 +11,8 @@ export type CommunitySummary = Readonly<{
   accentColor: string;
   visibility: "public" | "private";
   publicReadEnabled: boolean;
+  rulesEnabled: boolean;
+  rulesVersion: string;
   templateId?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -169,6 +171,8 @@ export const communityService = {
           accentColor: input.accentColor ?? "#007571",
           visibility: "public",
           publicReadEnabled: true,
+          rulesEnabled: true,
+          rulesVersion: "1",
           templateId: input.templateId ?? "custom",
           createdAt: now,
           updatedAt: now,
@@ -226,6 +230,8 @@ export const communityService = {
           accentColor: input.accentColor ?? "#007571",
           visibility: input.visibility ?? "public",
           publicReadEnabled: input.visibility === "private" ? false : input.publicReadEnabled ?? true,
+          rulesEnabled: false,
+          rulesVersion: "1",
           createdAt: now,
           updatedAt: now,
         },

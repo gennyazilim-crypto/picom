@@ -3,7 +3,7 @@ import { mockCommunities } from "../data/mockCommunities";
 import type { CommunitySummary } from "./communityService";
 import type { Database } from "./supabase/database.types";
 
-export const COMMUNITY_LIST_SELECT = "id, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, created_at, updated_at" as const;
+export const COMMUNITY_LIST_SELECT = "id, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
 
 export type CommunityListRow = Readonly<{
   id: string;
@@ -14,6 +14,8 @@ export type CommunityListRow = Readonly<{
   accent_color: string;
   visibility: "public" | "private";
   public_read_enabled: boolean;
+  rules_enabled: boolean;
+  rules_version: string;
   created_at: string;
   updated_at: string;
 }>;
@@ -33,6 +35,8 @@ export function mapCommunityListRow(row: CommunityListRow): CommunitySummary {
     accentColor: row.accent_color,
     visibility: row.visibility,
     publicReadEnabled: row.public_read_enabled,
+    rulesEnabled: row.rules_enabled,
+    rulesVersion: row.rules_version,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -48,6 +52,8 @@ export function listMockCommunitySummaries(): CommunitySummary[] {
     accentColor: community.accentColor,
     visibility: community.visibility ?? "private",
     publicReadEnabled: community.publicReadEnabled ?? false,
+    rulesEnabled: community.rulesEnabled ?? false,
+    rulesVersion: community.rulesVersion ?? "1",
     createdAt: null,
     updatedAt: null,
   }));

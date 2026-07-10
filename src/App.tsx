@@ -2179,16 +2179,17 @@ export function App() {
     pushToast(blocked ? `${member.displayName} blocked.` : `${member.displayName} unblocked.`, blocked ? "info" : "success");
   };
 
-  const handleJoinCommunity = async () => {
+  const handleJoinCommunity = async (rulesAcceptance: { rulesVersion: string; acceptedAt: string } | null) => {
     const result = await communityMembershipService.joinCommunity({
       community: activeCommunity,
       currentUser,
       isAuthenticated: Boolean(authSession),
+      rulesAcceptance,
     });
 
     if (!result.ok) {
       pushToast(result.error.message, "error");
-      return;
+      return false;
     }
 
     replaceCommunityMembers(activeCommunity.id, [
@@ -2196,6 +2197,7 @@ export function App() {
       result.data.member,
     ]);
     pushToast(result.data.status === "already_member" ? `You are already a member of ${activeCommunity.name}.` : `Joined ${activeCommunity.name}.`, "success");
+    return true;
   };
 
   const handleLeaveCommunity = async () => {
@@ -2337,20 +2339,8 @@ export function App() {
               onJoin={async (communityId) => {
                 const community = communities.find((item) => item.id === communityId);
                 if (!community) return;
-
-                const result = await communityMembershipService.joinCommunity({
-                  community,
-                  currentUser,
-                  isAuthenticated: Boolean(authSession),
-                });
-
-                if (result.ok) {
-                  replaceCommunityMembers(community.id, [...community.members.filter((member) => member.userId !== result.data.member.userId), result.data.member]);
-                  openCommunityFromRail(community.id);
-                  pushToast(result.data.status === "already_member" ? `You are already a member of ${community.name}.` : `Joined ${community.name}.`, "success");
-                } else {
-                  pushToast(result.error.message, "error");
-                }
+                openCommunityFromRail(community.id);
+                pushToast(`Review ${community.name}'s rules from the community menu before joining.`, "info");
               }}
               onReport={(community) => setReportTarget({ targetType: "community", targetId: community.id, communityId: community.id, label: community.name })}
             />
@@ -2630,7 +2620,7 @@ export function App() {
                 onRetryMessage={(message) => void retryFailedMessage(message)}
                 onRemoveFailedMessage={removeFailedMessage}
                 blockedUserIds={blockedUserIds}
-                onOpenJoinCommunity={handleJoinCommunity}
+                onOpenJoinCommunity={() => pushToast("Review and accept the community rules from the community menu before joining.", "info")}
                 pushToast={pushToast}
               />
               )}
