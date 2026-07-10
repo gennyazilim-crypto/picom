@@ -191,6 +191,7 @@
     "notification-inbox:smoke": "node scripts/notification-inbox-production-smoke.mjs",
     "notifications:quiet-dnd:enforcement:test": "node scripts/quiet-hours-dnd-enforcement-test.mjs",
     "invites:acceptance:production:test": "node scripts/community-invite-acceptance-production-test.mjs",
+    "community:public-join:production:test": "node scripts/public-community-join-production-test.mjs",
     "realtime:load:simulate": "node scripts/realtime-load-simulation.mjs",
     "realtime:load:smoke": "node scripts/realtime-load-simulation-smoke-test.mjs",
     "realtime:backpressure:smoke": "node scripts/realtime-backpressure-smoke-test.mjs",

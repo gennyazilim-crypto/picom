@@ -166,7 +166,7 @@ export const communityInviteService = {
       if (!joined.ok) return { ok: false, error: joined.error };
       writeMockStore({ records: store.records.map((record) => record.id === invite.id ? { ...record, uses: record.uses + 1 } : record) });
       await auditLogService.append({ communityId: community.id, actorId: input.currentUser.userId, actionType: "invite_accept", targetType: "invite", targetId: invite.id, reason: "Invite accepted" });
-      return { ok: true, data: { communityId: community.id, member: joined.data, status: "joined" } };
+      return { ok: true, data: { communityId: community.id, member: joined.data.member, status: "joined" } };
     }
 
     const client = getSupabaseClient();

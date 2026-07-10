@@ -30,7 +30,8 @@ for (const component of ["CommunityMenu", "CommunityAdminPanel", "CommunityModer
   assertIncludes(menu, component, `component ${component}`);
 }
 
-assertIncludes(header, "CommunityMenu", "header menu integration");
+assertIncludes(header, "openManagementCenter", "header role-aware management integration");
+assertIncludes(sidebar, 'setOpenPanel("visitor")', "sidebar visitor panel routing");
 assertIncludes(sidebar, "community-readonly-notice", "visitor read-only notice");
 assertIncludes(rls, "can_read_public_channel", "RLS public channel helper");
 assertIncludes(rls, "community_members_insert_owner_or_public_self_join", "RLS public self join policy");

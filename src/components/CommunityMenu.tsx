@@ -309,6 +309,7 @@ export function CommunityVisitorPanel({ community, access, isAuthenticated, onCl
 
 export function CommunityJoinModal({ community, isAuthenticated, onClose, onConfirm }: { community: Community; isAuthenticated: boolean; onClose: () => void; onConfirm: () => void | Promise<void> }) {
   const [joining, setJoining] = useState(false);
+  const inviteRequired = community.visibility !== "public";
 
   return (
     <ModalShell title={`Join ${community.name}`} eyebrow="Community access" onClose={onClose}>
@@ -320,12 +321,13 @@ export function CommunityJoinModal({ community, isAuthenticated, onClose, onConf
           <div><dt>Rules</dt><dd>Community rules are not published for this beta.</dd></div>
         </dl>
         {!isAuthenticated ? <div className="auth-error">Sign in or register before joining.</div> : null}
+        {inviteRequired ? <div className="auth-error">This private community requires an invite or approval. Use Join with invite from the visitor menu.</div> : null}
         <div className="modal-actions-row">
           <button className="secondary-action" type="button" onClick={onClose}>Cancel</button>
           <button
             className="send-button"
             type="button"
-            disabled={!isAuthenticated || joining}
+            disabled={!isAuthenticated || joining || inviteRequired}
             onClick={async () => {
               setJoining(true);
               await onConfirm();
@@ -333,7 +335,7 @@ export function CommunityJoinModal({ community, isAuthenticated, onClose, onConf
             }}
           >
             <AppIcon name="plus" size="sm" />
-            {joining ? "Joining..." : "Join"}
+            {inviteRequired ? "Invite required" : joining ? "Joining..." : "Join"}
           </button>
         </div>
       </div>

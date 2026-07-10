@@ -2090,10 +2090,10 @@ export function App() {
     }
 
     replaceCommunityMembers(activeCommunity.id, [
-      ...activeCommunity.members.filter((member) => member.userId !== result.data.userId),
-      result.data,
+      ...activeCommunity.members.filter((member) => member.userId !== result.data.member.userId),
+      result.data.member,
     ]);
-    pushToast(`Joined ${activeCommunity.name}.`, "success");
+    pushToast(result.data.status === "already_member" ? `You are already a member of ${activeCommunity.name}.` : `Joined ${activeCommunity.name}.`, "success");
   };
 
   const handleLeaveCommunity = async () => {
@@ -2235,9 +2235,9 @@ export function App() {
                 });
 
                 if (result.ok) {
-                  replaceCommunityMembers(community.id, [...community.members, result.data]);
+                  replaceCommunityMembers(community.id, [...community.members.filter((member) => member.userId !== result.data.member.userId), result.data.member]);
                   openCommunityFromRail(community.id);
-                  pushToast(`Joined ${community.name}.`, "success");
+                  pushToast(result.data.status === "already_member" ? `You are already a member of ${community.name}.` : `Joined ${community.name}.`, "success");
                 } else {
                   pushToast(result.error.message, "error");
                 }

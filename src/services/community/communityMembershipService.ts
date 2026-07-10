@@ -20,6 +20,9 @@ export type CommunityMembershipServiceResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: CommunityMembershipServiceError };
 
+export type CommunityJoinStatus = "joined" | "already_member";
+export type CommunityJoinOutcome = Readonly<{ member: Member; status: CommunityJoinStatus }>;
+
 export type JoinCommunityInput = {
   community: Community;
   currentUser: Member;
@@ -72,8 +75,17 @@ function createMockMember(community: Community, currentUser: Member): Member {
   };
 }
 
+function mapPublicJoinError(message?: string): CommunityMembershipServiceResult<never> {
+  if (message?.includes("AUTH_REQUIRED")) return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before joining a community." } };
+  if (message?.includes("PRIVATE_COMMUNITY_INVITE_REQUIRED")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require an invite or approval." } };
+  if (message?.includes("JOIN_BANNED")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "You cannot join this community." } };
+  if (message?.includes("COMMUNITY_NOT_FOUND")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "This community is unavailable." } };
+  if (message?.includes("DEFAULT_ROLE_MISSING")) return { ok: false, error: { code: "JOIN_FAILED", message: "This community is not ready to accept members." } };
+  return { ok: false, error: { code: "JOIN_FAILED", message: "Could not join this community." } };
+}
+
 export const communityMembershipService = {
-  async joinCommunity(input: JoinCommunityInput): Promise<CommunityMembershipServiceResult<Member>> {
+  async joinCommunity(input: JoinCommunityInput): Promise<CommunityMembershipServiceResult<CommunityJoinOutcome>> {
     if (!input.isAuthenticated) {
       return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before joining a community." } };
     }
@@ -82,64 +94,36 @@ export const communityMembershipService = {
       return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require a valid invite." } };
     }
 
-    if (input.community.members.some((member) => member.userId === input.currentUser.userId)) {
-      return { ok: false, error: { code: "VALIDATION_ERROR", message: "You are already a member of this community." } };
-    }
+    const existingMember = input.community.members.find((member) => member.userId === input.currentUser.userId);
+    if (existingMember) return { ok: true, data: { member: existingMember, status: "already_member" } };
 
     const dataSource = dataSourceService.getStatus();
     if (dataSource.isMock) {
-      return { ok: true, data: createMockMember(input.community, input.currentUser) };
+      return { ok: true, data: { member: createMockMember(input.community, input.currentUser), status: "joined" } };
     }
 
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data: userData, error: userError } = await configured.data.auth.getUser();
-    const userId = userData.user?.id;
-
-    if (userError || !userId) {
-      return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before joining a community." } };
-    }
-
-    const { data: roleData, error: roleError } = await configured.data
-      .from("roles")
-      .select("id")
-      .eq("community_id", input.community.id)
-      .eq("name", "Member")
-      .maybeSingle();
-
-    if (roleError) {
-      return { ok: false, error: { code: "JOIN_FAILED", message: "Could not find the default member role." } };
-    }
-
-    const { data, error } = await configured.data
-      .from("community_members")
-      .insert({
-        community_id: input.community.id,
-        user_id: userId,
-        role_id: roleData?.id ?? null,
-      })
-      .select("id, community_id, user_id, role_id, joined_at")
-      .single();
-
-    if (error || !data) {
-      return { ok: false, error: { code: "JOIN_FAILED", message: "Could not join this community." } };
-    }
+    if (input.community.visibility !== "public") return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require an invite or approval." } };
+    const { data, error } = await configured.data.rpc("join_public_community", { target_community_id: input.community.id });
+    const membership = data?.[0];
+    if (error || !membership) return mapPublicJoinError(error?.message);
 
     return {
       ok: true,
-      data: {
-        id: data.id,
-        userId: data.user_id,
+      data: { status: membership.join_status, member: {
+        id: membership.id,
+        userId: membership.user_id,
         displayName: input.currentUser.displayName,
         username: input.currentUser.username,
         avatarSeed: input.currentUser.avatarSeed,
         avatarUrl: input.currentUser.avatarUrl,
         status: input.currentUser.status,
-        statusText: "Joined this community",
-        roleId: data.role_id ?? "member",
+        statusText: membership.join_status === "already_member" ? "Already a community member" : "Joined this community",
+        roleId: membership.role_id ?? "member",
         bio: input.currentUser.bio,
-      },
+      } },
     };
   },
 
