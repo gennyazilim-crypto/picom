@@ -88,6 +88,7 @@ import { crashRecoveryService, type CrashRecoveryRecord } from "./services/crash
 import { safeModeService, type SafeModeState } from "./services/safeModeService";
 import { statusPageService } from "./services/statusPageService";
 import { authService } from "./services/authService";
+import { appConfig } from "./config/appConfig";
 import { socialAuthService } from "./services/auth/socialAuthService";
 import { onboardingService } from "./services/onboarding/onboardingService";
 import { communityService } from "./services/communityService";
@@ -1228,6 +1229,11 @@ export function App() {
           setPasswordRecoveryMessage(result.data.message);
           setPasswordRecoveryMode(true);
         });
+        return;
+      }
+      if (action.type === "emailVerification") {
+        if (!action.code) { pushToast(action.error || "This email verification link is invalid or expired.", "error"); return; }
+        void authService.confirmEmailVerification(action.code).then((result) => pushToast(result.ok ? result.data.message : result.error.message, result.ok ? "success" : "error"));
         return;
       }
       if (action.type === "authCallback") {
@@ -2708,7 +2714,7 @@ export function App() {
           pushToast("Channel deleted.", "success");
         }}
       /> : null}
-      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /> : null}
+      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {memberModerationTarget ? <MemberModerationModal
         member={memberModerationTarget.member}

@@ -8,6 +8,8 @@ import { appConfig } from "../config/appConfig";
 
 let lastPasswordResetRequestAt = 0;
 const PASSWORD_RESET_COOLDOWN_MS = 60_000;
+let lastEmailVerificationRequestAt = 0;
+const EMAIL_VERIFICATION_COOLDOWN_MS = 60_000;
 
 export type AuthServiceUser = Readonly<{
   id: string;
@@ -292,7 +294,12 @@ export const authService = {
       return authError("AUTH_INVALID_INPUT", "Email is required.");
     }
 
-    await configured.data.auth.resend({ type: "signup", email: emailForResend }).catch(() => null);
+    const now = Date.now();
+    if (now - lastEmailVerificationRequestAt < EMAIL_VERIFICATION_COOLDOWN_MS) return authError("AUTH_RATE_LIMITED", "Please wait before requesting another verification email.");
+    lastEmailVerificationRequestAt = now;
+
+    const { error } = await configured.data.auth.resend({ type: "signup", email: emailForResend, options: { emailRedirectTo: appConfig.supabase.emailVerificationRedirectUrl } });
+    if (error && isRateLimitError(error)) return authError("AUTH_RATE_LIMITED", rateLimitUserMessage);
 
     return {
       ok: true,
@@ -303,17 +310,16 @@ export const authService = {
     };
   },
 
-  async confirmEmailVerificationPlaceholder(token: string): Promise<AuthServiceResult<{ message: string }>> {
-    if (!token.trim()) {
-      return authError("AUTH_INVALID_INPUT", "Verification token is required.");
-    }
-
-    return {
-      ok: true,
-      data: {
-        message: "Email verification confirmation placeholder is prepared for a future deep link flow.",
-      },
-    };
+  async confirmEmailVerification(code: string): Promise<AuthServiceResult<{ message: string; verifiedAt: string | null }>> {
+    if (!/^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return authError("AUTH_INVALID_INPUT", "This email verification link is invalid or expired.");
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+    if (!configured.data) return { ok: true, data: { message: "Mock email verification completed.", verifiedAt: new Date().toISOString() } };
+    const { error } = await configured.data.auth.exchangeCodeForSession(code);
+    if (error) return authError("AUTH_SESSION_EXPIRED", "This email verification link is invalid or expired. Request a new one.");
+    const { data, error: userError } = await configured.data.auth.getUser();
+    if (userError || !data.user?.email_confirmed_at) return authError("AUTH_PROVIDER_ERROR", "Email verification could not be confirmed. Request a new link.");
+    return { ok: true, data: { message: "Email address verified.", verifiedAt: data.user.email_confirmed_at } };
   },
 
   async getCurrentSession(): Promise<AuthServiceResult<AuthServiceSession | null>> {

@@ -39,6 +39,8 @@ export const appConfig = Object.freeze({
     anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? "",
     oauthRedirectUrl: import.meta.env.VITE_SUPABASE_OAUTH_REDIRECT_URL ?? "picom://auth/callback",
     passwordResetRedirectUrl: import.meta.env.VITE_SUPABASE_PASSWORD_RESET_REDIRECT_URL ?? "picom://auth/reset-password",
+    emailVerificationRedirectUrl: import.meta.env.VITE_SUPABASE_EMAIL_VERIFICATION_REDIRECT_URL ?? "picom://auth/verify-email",
+    requireEmailVerification: getBooleanFlag(import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION),
     googleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_GOOGLE_OAUTH_ENABLED),
     appleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_APPLE_OAUTH_ENABLED)
   }),

@@ -76,6 +76,8 @@ type SettingsModalProps = {
   onAccountDeletionRequested: () => void;
   currentUsername: string;
   ownedCommunityCount: number;
+  currentEmailVerifiedAt?: string | null;
+  requireEmailVerification?: boolean;
   developerPortalContext: {
     communityId: string;
     communityName: string;
@@ -85,7 +87,7 @@ type SettingsModalProps = {
   };
 };
 
-export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, developerPortalContext }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
@@ -472,8 +474,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               <p>Review session, verification, export, and deletion controls. Supabase Auth remains the source of truth for account actions.</p>
               <div className="settings-status-card" aria-label="Email verification controls">
                 <span>Email verification</span>
-                <strong>Verification controls</strong>
-                <small>{emailVerificationMessage ?? "Request a verification email when Supabase Auth supports it for this account."}</small>
+                <strong>{currentEmailVerifiedAt ? "Email verified" : requireEmailVerification ? "Verification required" : "Verification recommended"}</strong>
+                <small>{emailVerificationMessage ?? (currentEmailVerifiedAt ? `Verified ${dateTimeService.formatFullTimestamp(currentEmailVerifiedAt)}.` : requireEmailVerification ? "Verify your email before the production policy is enforced. Resend uses a cooldown and a neutral response." : "Verification is available but not required by this build.")}</small>
               </div>
               <div className="security-card-grid">
                 <article className="security-card">
@@ -542,7 +544,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               <div className="settings-actions-row">
                 <button onClick={() => setActive("Diagnostics")}>Open Diagnostics</button>
                 <button onClick={() => pushToast("Sign out and use password reset from the sign-in screen.", "info")}>Password reset guidance</button>
-                <button onClick={requestEmailVerification}>Resend verification</button>
+                <button disabled={Boolean(currentEmailVerifiedAt)} onClick={requestEmailVerification}>{currentEmailVerifiedAt ? "Email verified" : "Resend verification"}</button>
                 <button onClick={refreshActiveSessions}>Refresh sessions</button>
                 <button onClick={revokeOtherSessions}>Revoke other sessions</button>
                 <button onClick={prepareTwoFactorPlaceholder}>Enable 2FA (Coming soon)</button>
