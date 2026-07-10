@@ -43,6 +43,19 @@ const requiredMigrationPrefixes = [
   "20260710003300_saved_messages",
   "20260710003400_community_events",
   "20260710003500_community_discovery",
+  "20260710003600_invite_links_hardening",
+  "20260710003700_reports_moderation_queue",
+  "20260710003800_advanced_moderation_filters",
+  "20260710003900_audit_log_ui_export",
+  "20260710004000_bot_system_foundation",
+  "20260710004100_webhook_foundation",
+  "20260710004200_custom_emoji_stickers",
+  "20260710004300_polls",
+  "20260710004400_threads",
+  "20260710004500_forum_announcement_channels",
+  "20260710004600_admin_operations_access",
+  "20260710004700_data_export_account_deletion",
+  "20260710004800_mvp_plus_security_hardening",
 ];
 
 function fail(message) {

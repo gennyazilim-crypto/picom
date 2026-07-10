@@ -21,17 +21,21 @@ const accountDeletion = read("src/services/accountDeletionService.ts");
 const logging = read("src/services/loggingService.ts");
 const doc = read("docs/compliance-export-deletion-hardening.md");
 
-assertIncludes(dataExport, "excludedSensitiveFields", "data export service");
+assertIncludes(dataExport, "const excluded", "data export service");
 assertIncludes(dataExport, "containsCredentials: false", "data export service");
 assertIncludes(dataExport, "containsServerSecrets: false", "data export service");
 assertIncludes(dataExport, "requiresBackendVerification: true", "data export service");
-assertIncludes(dataExport, "sanitizeExportText", "data export service");
-assertIncludes(dataExport, "maxExportTextLength", "data export service");
+assertIncludes(dataExport, "data_export_requests", "data export service");
+assertIncludes(dataExport, "function safe", "data export service");
 
 assertIncludes(accountDeletion, "destructiveActionPerformed: false", "account deletion service");
 assertIncludes(accountDeletion, "requiresBackendConfirmation: true", "account deletion service");
 assertIncludes(accountDeletion, "sessionsRevoked: false", "account deletion service");
 assertIncludes(accountDeletion, "ownedCommunitiesRequireTransfer: true", "account deletion service");
+assertIncludes(accountDeletion, "expectedUsername", "account deletion service");
+assertIncludes(accountDeletion, "ownedCommunityCount", "account deletion service");
+assertIncludes(accountDeletion, "account_deletion_requests", "account deletion service");
+assertIncludes(accountDeletion, "deletion_requested_at", "account deletion service");
 
 assertIncludes(logging, "SENSITIVE_KEY_PATTERN", "logging service");
 assertIncludes(logging, "BEARER_PATTERN", "logging service");
