@@ -1,13 +1,13 @@
 ﻿# Community Discovery Production Plan
 
-Community Discovery is a post-MVP production capability for helping users find public Picom communities. It is intentionally not part of the current desktop chat MVP and must stay disabled until moderation, privacy, ranking, and abuse controls are ready.
+Community Discovery is a post-MVP production capability for helping users find approved public Picom communities. The desktop implementation and backend review gate now exist, but rollout remains feature-flagged and requires an actively operated moderation queue.
 
 ## Current status
 
-- Runtime feature: not implemented
+- Runtime feature: implemented behind the existing Discovery availability controls
 - MVP status: excluded from first release
-- Access model: future feature flag only
-- Production readiness: not ready
+- Access model: approved public profiles only; private and unreviewed communities are excluded by the database RPC
+- Production readiness: technically prepared; operational moderation approval remains required before broad rollout
 - Desktop scope: Windows, Linux, and macOS desktop only
 
 ## Product goals
@@ -236,10 +236,18 @@ If discovery causes privacy, abuse, or stability issues:
 - Report workflows can expose private context if payloads are too broad.
 - Discovery can distract from the MVP if implemented before core chat stability.
 
-## Implementation TODOs
+## Implemented production path
 
-- Add `enableDiscovery` feature flag only when runtime work starts.
-- Add public profile schema with strict RLS.
-- Add moderation review queue before beta exposure.
-- Add report community endpoint with rate limiting.
-- Add desktop DiscoveryView only after MVP flows are stable.
+- `DiscoveryView` provides desktop search, curated category filters, public cards, join/request access, report, loading, and empty states.
+- `list_public_discovery_communities` returns only approved, listed, public communities with public reading enabled and exposes aggregate member counts rather than member identities.
+- `join_or_request_discovery_community` distinguishes open join from moderated access requests and requires authentication.
+- `community_discovery_reviews` is the mandatory listing approval gate; the renderer cannot self-approve a listing.
+- Community reports use the restricted report workflow and contain only selected reason/description metadata.
+- Detailed implementation and review operations are documented in `docs/discovery/production-v1.md` and `docs/discovery/moderation-review-queue.md`.
+
+## Remaining rollout TODOs
+
+- Keep `enableDiscovery` and emergency disable controls off until moderator staffing and staging privacy checks are complete.
+- Apply and verify all discovery migrations in staging with Supabase CLI or SQL tooling.
+- Run private-community non-disclosure tests against authenticated and anonymous clients.
+- Establish moderation response SLAs before beta exposure.
