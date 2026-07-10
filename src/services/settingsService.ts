@@ -18,7 +18,7 @@ export interface NotificationSettings {
 }
 export interface ProfileSettings { displayName: string; statusText: string; bio: string; }
 export interface AccessibilitySettings { highContrast: boolean; reducedMotion: boolean; largerText: boolean; focusRingStrong: boolean; }
-export interface PicomSettings { schemaVersion: number; theme: ThemeMode; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; accessibilitySettings: AccessibilitySettings; }
+export interface PicomSettings { schemaVersion: number; theme: ThemeMode; firstLaunchSetupCompleted: boolean; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; accessibilitySettings: AccessibilitySettings; }
 type StoredPicomSettings = Partial<PicomSettings> & Record<string, unknown>;
 type LocalSettingsMigration = {
   fromVersion: number;
@@ -28,10 +28,11 @@ type LocalSettingsMigration = {
 
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
-const currentSchemaVersion = 4;
+const currentSchemaVersion = 5;
 const defaults: PicomSettings = {
   schemaVersion: currentSchemaVersion,
   theme: "light",
+  firstLaunchSetupCompleted: false,
   notificationSettings: {
     enabled: true,
     muted: false,
@@ -100,6 +101,15 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
       },
     }),
   },
+  {
+    fromVersion: 4,
+    toVersion: 5,
+    migrate: (settings) => ({
+      ...settings,
+      schemaVersion: 5,
+      firstLaunchSetupCompleted: false,
+    }),
+  },
 ];
 
 function getStoredSchemaVersion(settings: StoredPicomSettings): number {
@@ -112,6 +122,7 @@ function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
     ...settings,
     schemaVersion: currentSchemaVersion,
     theme: settings.theme === "dark" ? "dark" : "light",
+    firstLaunchSetupCompleted: settings.firstLaunchSetupCompleted === true,
     notificationSettings: {
       ...defaults.notificationSettings,
       ...(settings.notificationSettings ?? {}),
@@ -223,6 +234,12 @@ export const settingsService = {
         ...partial,
       },
     });
+  },
+  completeFirstLaunchSetup(theme: ThemeMode) {
+    return this.updateSettings({ theme, firstLaunchSetupCompleted: true });
+  },
+  resetFirstLaunchSetup() {
+    return this.updateSettings({ firstLaunchSetupCompleted: false });
   },
   resetSettings() { localStorage.removeItem(key); return defaults; }
 };

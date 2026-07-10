@@ -34,6 +34,7 @@ import { TermsReacceptPrompt } from "./components/legal/TermsReacceptPrompt";
 import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
+import { FirstLaunchSetup } from "./components/firstLaunch/FirstLaunchSetup";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
@@ -324,6 +325,7 @@ export function App() {
   });
   const [safeMode, setSafeMode] = useState<SafeModeState>(startupSafeMode);
   const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
+  const [firstLaunchSetupCompleted, setFirstLaunchSetupCompleted] = useState(saved.firstLaunchSetupCompleted);
   const [accessibilitySettings, setAccessibilitySettings] = useState(saved.accessibilitySettings);
   const [maintenanceStatus, setMaintenanceStatus] = useState(() => maintenanceStatusService.getSnapshot());
   const [profileSettings, setProfileSettings] = useState(saved.profileSettings);
@@ -1948,6 +1950,20 @@ export function App() {
     setActiveView("mentionFeed");
     pushToast("Picom setup completed.", "success");
   }, [profileSettings, pushToast]);
+
+  const finishDesktopFirstLaunchSetup = useCallback(() => {
+    const next = settingsService.completeFirstLaunchSetup(theme);
+    setFirstLaunchSetupCompleted(next.firstLaunchSetupCompleted);
+  }, [theme]);
+
+  if (!safeMode.active && !firstLaunchSetupCompleted) {
+    return (
+      <DesktopAppShell>
+        <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
+        <FirstLaunchSetup theme={theme} onThemeChange={setTheme} onComplete={finishDesktopFirstLaunchSetup} />
+      </DesktopAppShell>
+    );
+  }
 
   if (passwordRecoveryMode || !authReady || !authSession) {
     return (

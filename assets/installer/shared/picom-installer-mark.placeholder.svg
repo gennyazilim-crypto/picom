@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Picom installer placeholder mark</title><desc id="desc">Original Picom P ribbon placeholder for installer previews.</desc>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#36b9a5"/><stop offset=".55" stop-color="#238ea6"/><stop offset="1" stop-color="#5767c8"/></linearGradient></defs>
+  <rect width="512" height="512" rx="116" fill="#eef4f4"/><path d="M148 396V116h142c79 0 128 42 128 110 0 69-50 112-130 112h-59v58h-81Zm81-132h61c31 0 48-14 48-38 0-23-17-36-48-36h-61v74Z" fill="url(#g)"/>
+</svg>
