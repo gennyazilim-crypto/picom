@@ -609,7 +609,11 @@ function registerIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.notificationShow, (_event, payload: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.notificationShow, (event, payload: unknown) => {
+    if (!isTrustedAppUrl(event.sender.getURL())) {
+      return { ok: false, native: true, error: "UNTRUSTED_NOTIFICATION_SENDER" } as const;
+    }
+
     const safePayload = parseNotificationPayload(payload);
     if (!safePayload) {
       return { ok: false, native: true, error: "INVALID_NOTIFICATION_PAYLOAD" } as const;

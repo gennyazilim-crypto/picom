@@ -1,6 +1,7 @@
 import { platformService } from "./platformService";
 import { settingsService, type NotificationSettings, type QuietHoursSettings } from "./settingsService";
 import { notificationDigestService } from "./notificationDigestService";
+import { emergencyKillSwitchService } from "./emergencyKillSwitchService";
 
 export type NotificationPermissionState = NotificationPermission | "unsupported";
 export type NotificationCategory = "system" | "mention" | "message";
@@ -172,6 +173,10 @@ export const notificationService = {
   },
 
   async showNotification(payload: NativeNotificationPayload): Promise<NotificationServiceResult> {
+    if (emergencyKillSwitchService.isActive("disableNativeNotifications")) {
+      return { ok: false, reason: "Native notifications are temporarily unavailable.", permission: this.getPermission() };
+    }
+
     const category = payload.category ?? "system";
     const route = decideNotificationRoute({ ...(payload.routing ?? {}), category });
     const settings = settingsService.getSettings().notificationSettings;
