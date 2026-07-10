@@ -55,3 +55,15 @@ Packaging, signing-process, first-launch, and installer-branding controls passed
 ## Task 411 real execution
 
 Trusted signing and clean-machine release execution remained **BLOCKED**. No signed stable installer, post-signing checksum, trusted publisher result, or clean Windows test exists. See `docs/windows-trusted-signing-clean-machine.md`.
+
+## Task 423 clean internal candidate
+
+Task 423 produced a clean-worktree Windows x64 internal beta candidate from commit `1f2ad0e8df7d6458af815afb25a290a8b34dc93e`.
+
+- Installer: `Picom-0.1.1-beta.1-beta-Windows-x64.exe`
+- Size: 121,205,443 bytes
+- SHA-256: `61301CB0E9BF74F91A29DC36BF29F4F4F9DB49DA24FEDCCEB305BAFC4923ADD0`
+- Signature: NotSigned
+- Unpacked startup: process alive after 8 seconds
+
+This improves build evidence but does not replace clean-machine install, trusted signing, or remote screen-share certification.

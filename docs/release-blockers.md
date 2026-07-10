@@ -127,3 +127,7 @@ Local Supabase/RLS/API/secret/build/QA gates passed. Earlier real migration/Auth
 ## Task 422 hosted LiveKit two-client
 
 Local voice/device/reconnect/Connected Voice contracts passed, but no deployed token endpoint, provider credentials, account pair, or two isolated media clients were available. No real token/audio/reconnect evidence exists. RB-04 remains **BLOCKED**.
+
+## Task 423 Windows native screen share/package
+
+A clean-source Windows x64 NSIS/unpacked internal beta candidate was generated, hashed, and startup-smoked. It is unsigned and no clean install, interactive picker, remote view, or real media cleanup ran. RB-05 remains **BLOCKED**; RB-06 gains package evidence but remains open.

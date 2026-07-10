@@ -51,6 +51,10 @@ Permission recovery, preview/stop, preload contract, and invalid-payload tests p
 
 Windows certification was **BLOCKED** because no trusted exact RC, clean Windows test target, hosted voice room, or remote client was available. See `docs/windows-screen-share-certification.md`; structural tests are not presented as packaged remote-view proof.
 
+## Task 423 Windows package evidence
+
+A clean-worktree Windows x64 NSIS/unpacked beta candidate was built and hashed on 2026-07-11, and the unpacked process remained alive after startup. Structural screen-share contracts passed. No clean-machine install, interactive source selection, hosted publication, or remote-client view ran, so Windows screen-share certification remains **PARTIAL / BLOCKED**.
+
 ## Task 409 Linux real execution
 
 Linux certification was **BLOCKED** because no native runner or verifiable Linux CI environment was available. X11/Wayland, PipeWire portal, package, audio, and remote-view behavior remain untested.
