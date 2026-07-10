@@ -5,6 +5,7 @@ import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
 import { TrustSafetyDashboardView } from "./TrustSafetyDashboardView";
 import { DiscoveryReviewQueue } from "./DiscoveryReviewQueue";
+import { ProfileVerificationAdmin } from "./ProfileVerificationAdmin";
 
 type SectionId = "productHealth" | "system" | "observability" | "trustSafety" | "discoveryReview" | "users" | "communities" | "reports" | "abuse" | "storage" | "realtime" | "errors";
 
@@ -38,7 +39,7 @@ export function AdminOperationsPanel({ access }: { access: AdminOperationsAccess
         : active === "discoveryReview"
           ? <DiscoveryReviewQueue access={access} />
           : active === "users"
-        ? <div className="admin-ops-detail"><strong>{snapshot.visibleUsers} visible mock/local users</strong><p>Aggregate only. Passwords, sessions, email addresses, and private profile data are excluded.</p></div>
+        ? <><div className="admin-ops-detail"><strong>{snapshot.visibleUsers} visible mock/local users</strong><p>Aggregate only. Passwords, sessions, email addresses, and private profile data are excluded.</p></div><ProfileVerificationAdmin access={access} /></>
         : active === "communities"
           ? <div className="admin-ops-detail"><strong>{snapshot.visibleCommunities} visible mock/local communities</strong><p>No private message content or invite secrets are loaded into this operations summary.</p></div>
           : active === "reports"

@@ -49,6 +49,8 @@ import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { directMessageService } from "./services/supabase/directMessageService";
 import { relationshipService } from "./services/relationshipService";
+import { profileVerificationService } from "./services/profileVerificationService";
+import type { VerificationBadge } from "./types/verification";
 import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
 import { advancedSearchService } from "./services/advancedSearchService";
 import { termsAcceptanceService } from "./services/termsAcceptanceService";
@@ -290,6 +292,7 @@ export function App() {
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
+  const [profileVerificationBadges, setProfileVerificationBadges] = useState<VerificationBadge[]>([]);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
@@ -704,8 +707,10 @@ export function App() {
     const profile = getMockProfileForMember(selectedProfileMember, communities, { currentUserId, followedUserIds });
     const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
-    return { ...profile, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
-  }, [communities, followedUserIds, friendState.friends, friendState.requests, selectedProfileMember]);
+    return { ...profile, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
+  }, [communities, followedUserIds, friendState.friends, friendState.requests, profileVerificationBadges, selectedProfileMember]);
+
+  useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
 
   useEffect(() => notificationCenterService.subscribe(setNotificationCenterItems), []);
 

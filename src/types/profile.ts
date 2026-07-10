@@ -1,5 +1,7 @@
 ﻿import type { ChannelId, CommunityId, MessageId, UserId } from "./community";
 
+import type { VerificationBadge } from "./verification";
+
 export type ProfileStatus = "online" | "idle" | "busy" | "offline";
 
 export type ProfileMediaItem = {
@@ -55,6 +57,7 @@ export type UserProfile = {
   isCurrentUser?: boolean;
   isFollowing?: boolean;
   friendshipStatus?: "none" | "incoming" | "outgoing" | "friends";
+  verificationBadges?: VerificationBadge[];
   stats: ProfileStats;
   media: ProfileMediaItem[];
   activities: ProfileActivityItem[];

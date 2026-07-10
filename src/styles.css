@@ -3273,6 +3273,7 @@ body{
 .profile-role-row {
   margin-top: 14px;
 }
+.verification-badge-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.verification-badge{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:0 9px;border:1px solid color-mix(in srgb,var(--accent) 34%,var(--border));border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--surface));color:var(--text-secondary);font-size:10px;font-weight:800}.verification-badge.community_official{border-color:color-mix(in srgb,var(--success) 34%,var(--border))}.verification-badge.role_managed{border-color:color-mix(in srgb,var(--warning) 34%,var(--border))}
 
 .profile-role-row strong,
 .profile-skills-tags span {

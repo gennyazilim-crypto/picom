@@ -4,6 +4,7 @@ import type { ProfileActivityItem, ProfileMediaItem, UserProfile } from "../type
 import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
+import { VerificationBadgeList } from "./VerificationBadgeList";
 
 type ProfileViewProps = {
   profile: UserProfile;
@@ -129,6 +130,7 @@ export function ProfileLeftCard({
             <strong key={role}>{role}</strong>
           ))}
         </div>
+        <VerificationBadgeList badges={profile.verificationBadges ?? []} />
         <ProfileActionButtons
           profile={profile}
           isCurrentUser={isCurrentUser}

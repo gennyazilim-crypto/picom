@@ -266,6 +266,9 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      verification_badges: {
+        Row:{id:string;subject_type:"user"|"community"|"role";subject_id:string;badge_kind:"profile_reviewed"|"community_official"|"role_managed";label:string;scope_note:string;granted_by:string;granted_at:string;revoked_at:string|null;revoked_by:string|null};Insert:never;Update:never;Relationships:[];
+      };
       data_export_requests: {
         Row: { id: string; user_id: string; status: "requested" | "processing" | "ready" | "failed"; requested_at: string; completed_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["data_export_requests"]["Row"]> & Pick<Database["public"]["Tables"]["data_export_requests"]["Row"], "user_id">;
@@ -465,6 +468,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      list_active_verification_badges:{Args:{target_subject_type:string;target_subject_id:string};Returns:Array<{id:string;subject_type:string;subject_id:string;badge_kind:string;label:string;scope_note:string;granted_at:string;revoked_at:null}>};
+      list_recent_verification_badges:{Args:{result_limit?:number};Returns:Array<{id:string;subject_type:string;subject_id:string;badge_kind:string;label:string;scope_note:string;granted_at:string;revoked_at:string|null}>};
+      grant_verification_badge:{Args:{target_subject_type:string;target_subject_id:string;target_badge_kind:string;target_label:string;target_scope_note:string;grant_reason:string};Returns:Array<{id:string;subject_type:string;subject_id:string;badge_kind:string;label:string;scope_note:string;granted_at:string;revoked_at:null}>};
+      revoke_verification_badge:{Args:{target_badge_id:string;revoke_reason:string};Returns:boolean};
       get_trust_safety_summary: {
         Args: Record<string, never>;
         Returns: Json;
