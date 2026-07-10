@@ -23,6 +23,10 @@ function escapeCell(value) {
   return String(value).replaceAll("|", "\\|").replaceAll("\r", " ").replaceAll("\n", " ");
 }
 
+function normalizeLineEndings(value) {
+  return value.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+}
+
 const packages = Object.entries(lock.packages ?? {}).flatMap(([path, metadata]) => {
   if (!path || !path.includes("node_modules/")) return [];
   const name = packageName(path, metadata);
@@ -67,7 +71,7 @@ if (checkOnly) {
   let current = "";
   try { current = await readFile(REPORT_PATH, "utf8"); } catch { /* Report absence is a check failure below. */ }
   const failures = [];
-  if (current !== report) failures.push("Generated license report is missing or stale. Run npm run licenses:generate.");
+  if (normalizeLineEndings(current) !== normalizeLineEndings(report)) failures.push("Generated license report is missing or stale. Run npm run licenses:generate.");
   if (missing.length) failures.push(`${missing.length} package entries have missing license metadata.`);
   if (blocked.length) failures.push(`${blocked.length} package entries use explicitly blocked/proprietary license metadata.`);
   if (failures.length) { for (const failure of failures) console.error(`FAIL: ${failure}`); process.exit(1); }
