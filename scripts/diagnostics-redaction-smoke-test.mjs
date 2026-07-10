@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const loggingSource = readFileSync(resolve(root, "src/services/logging/loggingService.ts"), "utf8");
+const redactionSource = readFileSync(resolve(root, "src/services/logging/logRedaction.ts"), "utf8");
 const diagnosticsSource = readFileSync(resolve(root, "src/services/diagnostics/diagnosticsService.ts"), "utf8");
 const feedbackSource = readFileSync(resolve(root, "src/services/feedbackService.ts"), "utf8");
 
@@ -20,7 +21,7 @@ const requiredRedactionTerms = [
 ];
 
 for (const term of requiredRedactionTerms) {
-  if (!loggingSource.toLowerCase().includes(term.toLowerCase())) {
+  if (!`${loggingSource}\n${redactionSource}`.toLowerCase().includes(term.toLowerCase())) {
     throw new Error(`Missing diagnostics redaction term: ${term}`);
   }
 }

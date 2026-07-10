@@ -1,4 +1,5 @@
 import { createSafeAppError, formatUserFacingError, type AppErrorCode } from "../errorCodes";
+import { redactLogString, redactLogValue } from "./logRedaction";
 
 export const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
 export const MAX_RETAINED_LOGS = 250;
@@ -35,63 +36,18 @@ type CaptureUserErrorOptions = {
   context?: unknown;
 };
 
-const SENSITIVE_KEY_PATTERN = /(password|passcode|token|cookie|authorization|secret|session|jwt|api[-_]?key|service[-_]?role|livekit|supabase|signing|private[-_]?key|access[-_]?token|refresh[-_]?token)/i;
-const BEARER_PATTERN = /Bearer\s+[a-zA-Z0-9._-]+/g;
-const JWT_PATTERN = /\b[a-zA-Z0-9_-]{12,}\.[a-zA-Z0-9_-]{12,}\.[a-zA-Z0-9_-]{12,}\b/g;
-const KEY_VALUE_SECRET_PATTERN = /\b(password|passcode|token|secret|authorization|cookie|api_key|apikey|service_role|livekit_secret|signing_key|private_key|access_token|refresh_token|session)=([^&\s]+)/gi;
-const BOT_TOKEN_PATTERN = /\bpicom_bot_[a-zA-Z0-9_-]{6,}_[a-zA-Z0-9_-]{20,}\b/g;
 const logs: LogEntry[] = [];
 const listeners = new Set<LogListener>();
 let logCounter = 0;
-
-function redactString(value: string): string {
-  const redacted = value
-    .replace(BEARER_PATTERN, "Bearer [redacted]")
-    .replace(JWT_PATTERN, "[redacted-jwt]")
-    .replace(BOT_TOKEN_PATTERN, "[redacted-bot-token]")
-    .replace(KEY_VALUE_SECRET_PATTERN, "$1=[redacted]");
-
-  return redacted.length > 1200 ? `${redacted.slice(0, 1200)}...[truncated]` : redacted;
-}
-
-function redactValue(value: unknown, seen = new WeakSet<object>()): unknown {
-  if (value instanceof Error) {
-    return {
-      name: redactString(value.name),
-      message: redactString(value.message),
-      stack: value.stack ? redactString(value.stack) : undefined,
-    };
-  }
-
-  if (value && typeof value === "object") {
-    if (seen.has(value)) {
-      return "[circular]";
-    }
-    seen.add(value);
-
-    if (Array.isArray(value)) {
-      return value.map((item) => redactValue(item, seen));
-    }
-
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
-        key,
-        SENSITIVE_KEY_PATTERN.test(key) ? "[redacted]" : redactValue(nestedValue, seen),
-      ]),
-    );
-  }
-
-  return typeof value === "string" ? redactString(value) : value;
-}
 
 function pushLog(level: LogLevel, message: string, metadata?: unknown, source?: string): LogEntry {
   const entry: LogEntry = {
     id: `log-${Date.now()}-${logCounter++}`,
     timestamp: new Date().toISOString(),
     level,
-    message: redactString(message),
-    source: source ? redactString(source) : undefined,
-    metadata: metadata === undefined ? undefined : redactValue(metadata),
+    message: redactLogString(message),
+    source: source ? redactLogString(source) : undefined,
+    metadata: metadata === undefined ? undefined : redactLogValue(metadata),
   };
 
   logs.push(entry);
@@ -149,7 +105,7 @@ export const loggingService = {
     return format === "text" ? formatLogsAsText(entries) : JSON.stringify(entries, null, 2);
   },
   redactDiagnosticsValue<T>(value: T): T {
-    return redactValue(value) as T;
+    return redactLogValue(value) as T;
   },
   captureUserError(error: unknown, options: CaptureUserErrorOptions = {}): UserErrorNotice {
     const safeError = createSafeAppError(error, options.fallbackCode);

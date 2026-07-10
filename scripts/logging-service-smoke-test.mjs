@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const loggingFacadePath = resolve(root, "src/services/loggingService.ts");
 const loggingPath = resolve(root, "src/services/logging/loggingService.ts");
+const redactionPath = resolve(root, "src/services/logging/logRedaction.ts");
 
 if (!existsSync(loggingPath)) {
   throw new Error("Missing central logging service implementation.");
@@ -15,6 +16,8 @@ if (!existsSync(loggingFacadePath)) {
 }
 
 const implementation = readFileSync(loggingPath, "utf8");
+const redaction = readFileSync(redactionPath, "utf8");
+const combinedImplementation = `${implementation}\n${redaction}`;
 const facade = readFileSync(loggingFacadePath, "utf8");
 
 if (!facade.includes('export * from "./logging/loggingService"')) throw new Error("Missing logging facade re-export.");
@@ -52,7 +55,7 @@ const redactionTerms = [
 ];
 
 for (const term of redactionTerms) {
-  if (!implementation.toLowerCase().includes(term.toLowerCase())) {
+  if (!combinedImplementation.toLowerCase().includes(term.toLowerCase())) {
     throw new Error(`Missing logging redaction coverage for: ${term}`);
   }
 }
@@ -68,7 +71,7 @@ const behaviorChecks = [
 ];
 
 for (const [label, needle] of behaviorChecks) {
-  if (!implementation.includes(needle)) {
+  if (!combinedImplementation.includes(needle)) {
     throw new Error(`Missing logging behavior: ${label}`);
   }
 }

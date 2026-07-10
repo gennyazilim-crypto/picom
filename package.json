@@ -63,6 +63,7 @@
     "qa:output:smoke": "node scripts/qa-output-smoke-test.mjs",
     "react:hooks:smoke": "node scripts/react-hook-order-smoke-test.mjs",
     "logs:smoke": "node scripts/logging-service-smoke-test.mjs",
+    "logs:redaction:regression:test": "node scripts/log-redaction-regression-test.mjs",
     "diagnostics:smoke": "node scripts/diagnostics-redaction-smoke-test.mjs",
     "support:diagnostics:final:test": "node scripts/support-diagnostics-ux-final-smoke.mjs",
     "errors:smoke": "node scripts/error-codes-smoke-test.mjs",
