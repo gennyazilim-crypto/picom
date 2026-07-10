@@ -37,9 +37,10 @@ type IdleWindow = Window & typeof globalThis & {
 
 function scheduleOptionalRendererServices(safeModeActive: boolean): void {
   const start = () => {
+    if (safeModeActive) return;
     crashReporterService.initialize();
     void import("./services/sleepWakeResumeService").then((sleepWakeModule) => {
-      if (!safeModeActive) sleepWakeModule.sleepWakeResumeService.start();
+      sleepWakeModule.sleepWakeResumeService.start();
     }).catch(() => {
       console.warn("Optional renderer services could not start; the desktop shell remains available.");
     });

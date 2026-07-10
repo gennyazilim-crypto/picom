@@ -468,7 +468,7 @@ export function App() {
   const directMessageUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? currentUserId : currentUserId;
   useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations(result.data); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
   useEffect(() => {
-    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
     let active = true;
     void Promise.all([mentionFeedService.listPage({ limit: 60 }), relationshipService.getFollowing(), storyService.listPage({ limit: 40 })]).then(([feed, following, stories]) => {
       if (!active) return;
@@ -641,9 +641,13 @@ export function App() {
     let active = true;
     void userBlockingService.refreshRemoteBlocks().then(() => { if (active) setBlockedUserVersion((version) => version + 1); });
     return () => { active = false; };
-  }, [authSession?.user?.id]);
+  }, [authSession?.user?.id, safeMode.active]);
 
   useEffect(() => {
+    if (safeMode.active) {
+      setVoiceSnapshot(initialVoiceSnapshot);
+      return;
+    }
     let canceled = false;
     let unsubscribe: (() => void) | undefined;
 
@@ -1236,7 +1240,7 @@ export function App() {
 
   useEffect(() => {
     analyticsService.trackEvent("app_started", { runtime: "electron", releaseChannel: "beta" });
-  }, []);
+  }, [safeMode.active]);
 
   useEffect(() => {
     if (authSession?.user) analyticsService.trackEvent("login_success", { mode: dataSourceService.getStatus().mode });

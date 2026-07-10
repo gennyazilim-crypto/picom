@@ -329,6 +329,7 @@
     "disk-cache:smoke": "node scripts/disk-cache-management-smoke-test.mjs",
     "safe-mode:smoke": "node scripts/safe-mode-smoke-test.mjs",
     "safe-mode:production:test": "node scripts/safe-mode-recovery-production-test.mjs",
+    "safe-mode:final:test": "node scripts/safe-mode-final-test.mjs",
     "feed:companion:smoke": "node scripts/feed-companion-rail-smoke-test.mjs",
     "mentions:ranking:test": "node scripts/mention-feed-ranking-v2-test.mjs",
     "mentions:supabase:smoke": "node scripts/mention-feed-supabase-smoke.mjs",

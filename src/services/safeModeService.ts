@@ -33,6 +33,7 @@ const disabledServices = [
   "Notifications paused",
   "Updates paused",
   "Remote config skipped",
+  "Voice paused",
   "Custom themes disabled",
   "Heavy diagnostics paused",
 ];

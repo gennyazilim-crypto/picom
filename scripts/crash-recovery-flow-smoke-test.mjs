@@ -5,6 +5,7 @@ const dialog = readFileSync("src/components/CrashRecoveryDialog.tsx", "utf8");
 const boundary = readFileSync("src/components/DesktopStartupErrorBoundary.tsx", "utf8");
 const app = readFileSync("src/App.tsx", "utf8");
 const logging = readFileSync("src/services/logging/loggingService.ts", "utf8");
+const redaction = readFileSync("src/services/logging/logRedaction.ts", "utf8");
 const styles = readFileSync("src/styles.css", "utf8");
 
 const checks = [
@@ -25,8 +26,8 @@ const checks = [
   [app.includes("<CrashRecoveryDialog"), "app renders recovery dialog"],
   [app.includes("recordStartupOpened"), "app starts recovery tracking"],
   [app.includes("recordCleanShutdown"), "app records clean shutdown"],
-  [logging.includes("SENSITIVE_KEY_PATTERN"), "central secret redaction"],
-  [logging.includes("authorization"), "auth header redaction"],
+  [logging.includes("redactLogValue") && redaction.includes("SENSITIVE_KEY_PATTERN"), "central secret redaction"],
+  [redaction.includes("authorization") && redaction.includes("BEARER_PATTERN"), "auth header redaction"],
   [styles.includes(".crash-recovery-dialog"), "desktop recovery styling"],
 ];
 
