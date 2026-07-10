@@ -98,3 +98,7 @@ Windows trusted signing and clean-machine execution were BLOCKED by absent certi
 ## Task 406 hosted execution superseding update
 
 A dedicated `eu-west-1` staging project was created and migrations, Auth, the role RLS matrix, and private Storage boundaries produced real PASS evidence. Private Realtime Presence still returned `Unauthorized`, Edge Functions were not deployed, and broader lost-access/DM/profile/signed-URL cases remain incomplete. RB-01, RB-02, and RB-03 stay open with narrower scope; no hosted result is overstated.
+
+## Task 412 authorized legal closure
+
+No authorized reviewer, immutable approved policy versions, jurisdiction decision, or project-license grant was supplied. Engineering drafts and smoke tests are not legal approval. RB-10 remains open and stable distribution remains No-Go.

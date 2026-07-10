@@ -49,3 +49,7 @@ RB-10 remains open. Stable distribution is No-Go until approved documents and in
 ## Task 402 closure attempt
 
 Policy versioning, acceptance, community-guideline gating, and deletion/retention messaging passed on 2026-07-10. Diagnostics and audio-content drafts were added. The root license and all user-facing policies remain unapproved by an authorized reviewer, so RB-10 remains open. See `docs/final-legal-project-license-approval.md`.
+
+## Task 412 gate result
+
+**BLOCKED.** Technical policy/versioning flows can be tested, but there is no authorized sign-off for Terms, Privacy, Guidelines, AUP, diagnostics, voice/screen-share consent, deletion/export, or radio/podcast copyright obligations. No compliance or legal approval is claimed.
