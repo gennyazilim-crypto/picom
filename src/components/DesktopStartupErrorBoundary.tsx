@@ -3,6 +3,7 @@ import { clipboardService } from "../services/clipboardService";
 import { crashRecoveryService, type CrashRecoveryRecord } from "../services/crashRecoveryService";
 import { loggingService } from "../services/loggingService";
 import { safeModeService } from "../services/safeModeService";
+import { crashReporterService } from "../services/crashReporterService";
 
 type DesktopStartupErrorBoundaryProps = {
   children: ReactNode;
@@ -40,6 +41,7 @@ export class DesktopStartupErrorBoundary extends Component<
       componentStack: errorInfo.componentStack,
       source: "DesktopStartupErrorBoundary"
     });
+    crashReporterService.captureException(error, { componentStack: errorInfo.componentStack, source: "DesktopStartupErrorBoundary" });
 
     this.setState({
       recoveryRecord: crashRecoveryService.recordCrash(error, logEntry)

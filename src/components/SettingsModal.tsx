@@ -24,6 +24,7 @@ import { appConfig } from "../config/appConfig";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
 import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
 import { analyticsService } from "../services/analyticsService";
+import { crashReporterService } from "../services/crashReporterService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
@@ -88,6 +89,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
   const [adminOperationsAccess, setAdminOperationsAccess] = useState<AdminOperationsAccess>({ allowed: false, source: "none" });
   const [analyticsEnabled, setAnalyticsEnabled] = useState(() => analyticsService.isEnabled());
+  const [crashReportingEnabled, setCrashReportingEnabled] = useState(() => crashReporterService.getStatus().enabled);
   const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"];
 
   useEffect(() => {
@@ -782,6 +784,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Production auto-update remains disabled until a signed endpoint is configured.</small>
                 {updateState.progress !== null ? <small>Simulation progress: {updateState.progress}%</small> : null}
               </div>
+              <label className="settings-toggle-row"><span><strong>Enable diagnostic reports</strong><small>Off by default. Stores a bounded redacted local crash envelope; no provider or DSN is configured.</small></span><input type="checkbox" checked={crashReportingEnabled} onChange={(event) => { const enabled = crashReporterService.setEnabled(event.target.checked); setCrashReportingEnabled(enabled); pushToast(enabled ? "Diagnostic reports enabled locally." : "Diagnostic reports disabled and local queue cleared.", "success"); }} /></label>
+              {import.meta.env.DEV ? <div className="settings-actions-row"><button onClick={() => { const record = crashReporterService.captureException(new Error("Picom development crash report test"), { source: "settings-test", authorization: "Bearer redaction-test" }); pushToast(record ? "Redacted test error captured locally." : "Enable diagnostic reports before capturing a test error.", record ? "success" : "info"); }}>Capture test error safely</button><button onClick={() => { const status = crashReporterService.getStatus(); pushToast(`${status.queuedLocalRecords} redacted crash records queued locally.`, "info"); }}>Show crash report status</button></div> : null}
               <div className="settings-actions-row">
                 <button onClick={() => void checkForUpdatesPlaceholder()}>Check for updates</button>
                 <button onClick={() => setUpdateState(updateService.setAvailablePlaceholder())}>Simulate available</button>

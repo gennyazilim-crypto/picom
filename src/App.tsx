@@ -94,6 +94,7 @@ import { threadService } from "./services/threadService";
 import type { ThreadRecord } from "./types/threads";
 import { ThreadPanel } from "./components/ThreadPanel";
 import { analyticsService } from "./services/analyticsService";
+import { crashReporterService } from "./services/crashReporterService";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
@@ -930,6 +931,7 @@ export function App() {
 
   useEffect(() => {
     if (authSession?.user) analyticsService.trackEvent("login_success", { mode: dataSourceService.getStatus().mode });
+    if (authSession?.user) crashReporterService.setUserContext(authSession.user.id); else crashReporterService.clearUserContext();
   }, [authSession?.user?.id]);
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import { DesktopStartupErrorBoundary } from "./components/DesktopStartupErrorBou
 import { deepLinkService } from "./services/deepLinkService";
 import { safeModeService } from "./services/safeModeService";
 import { sleepWakeResumeService } from "./services/sleepWakeResumeService";
+import { crashReporterService } from "./services/crashReporterService";
 import "./styles.css";
 
 function markRuntime(): void {
@@ -31,6 +32,7 @@ function getRootElement(): HTMLElement {
 
 function bootstrapRenderer(): void {
   markRuntime();
+  crashReporterService.initialize();
   const safeMode = safeModeService.getStartupState();
 
   if (!safeMode.active) {
