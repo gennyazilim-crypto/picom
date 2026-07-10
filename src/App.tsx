@@ -614,6 +614,14 @@ export function App() {
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
+  const messageHighlightTimerRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (messageHighlightTimerRef.current !== null) {
+      window.clearTimeout(messageHighlightTimerRef.current);
+      messageHighlightTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     return userSafetyCenterService.subscribe(setUserSafetySettings);
@@ -1432,7 +1440,11 @@ export function App() {
     setActiveChannelId(message.channelId);
     clearChannelUnread({ communityId: community.id, channelId: message.channelId });
     setHighlightedMessageId(message.id);
-    window.setTimeout(() => setHighlightedMessageId((current) => (current === message.id ? null : current)), 2200);
+    if (messageHighlightTimerRef.current !== null) window.clearTimeout(messageHighlightTimerRef.current);
+    messageHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedMessageId((current) => (current === message.id ? null : current));
+      messageHighlightTimerRef.current = null;
+    }, 2200);
   }, [clearChannelUnread, pushToast, setActiveChannelId, switchCommunity]);
 
   const paletteResults = useMemo<PaletteResult[]>(() => {

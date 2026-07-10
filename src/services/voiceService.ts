@@ -307,8 +307,9 @@ function bindRoomEvents(activeRoom: Room): void {
       reconnectingActive = false;
       connectionQuality = "unknown";
       speakingIdentities = new Set<string>();
-      screenShareMediaTrack = null;
-      screenShares = [];
+      stopLocalTracks(activeRoom);
+      activeRoom.removeAllListeners();
+      if (room === activeRoom) room = null;
       emit({ status: "disconnected", participants: [], roomName: null, screenSharing: false, screenShares: [] });
     });
 }

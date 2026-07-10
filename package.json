@@ -81,6 +81,7 @@
     "desktop:smoke": "node scripts/desktop-only-smoke-test.mjs",
     "desktop:display:qa": "node scripts/desktop-display-scaling-smoke-test.mjs",
     "overlay:stack:audit": "node scripts/overlay-stack-final-audit-smoke-test.mjs",
+    "memory:leak:extended:audit": "node scripts/memory-leak-extended-audit-smoke-test.mjs",
     "electron:security:smoke": "node scripts/electron-security-smoke-test.mjs",
     "electron:preload-contract:test": "node scripts/electron-preload-contract-test.mjs",
     "electron:ipc-fuzz:test": "node scripts/ipc-invalid-payload-fuzz-test.mjs",
