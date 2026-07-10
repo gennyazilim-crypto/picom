@@ -139,3 +139,7 @@ Linux packaging and screen-share structural contracts passed, but no native work
 ## Task 425 macOS notarization/screen share
 
 Protected workflow and local signing/permission contracts passed, but dispatch was denied and no Apple credentials/native runner were available. No signed/notarized/stapled artifact or real macOS media evidence exists. RB-05 and RB-08 remain **BLOCKED**.
+
+## Task 426 trusted Windows/clean machine
+
+Signing and package controls passed, but protected dispatch was denied and no certificate or clean target exists. No signed installer, trusted publisher/timestamp, post-signing hash, or clean-machine matrix was produced. RB-06 remains **BLOCKED**.

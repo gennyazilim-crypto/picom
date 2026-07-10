@@ -67,3 +67,7 @@ Task 423 produced a clean-worktree Windows x64 internal beta candidate from comm
 - Unpacked startup: process alive after 8 seconds
 
 This improves build evidence but does not replace clean-machine install, trusted signing, or remote screen-share certification.
+
+## Task 426 trusted candidate attempt
+
+The signing workflow remains correctly fail-closed, but could not be dispatched with the available GitHub permissions and no certificate was available. No trusted candidate supersedes the unsigned Task 423 beta artifact. Windows stable candidacy remains **BLOCKED**.

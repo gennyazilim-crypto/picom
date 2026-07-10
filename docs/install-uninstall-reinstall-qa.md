@@ -107,3 +107,7 @@ No trusted signed installer was tested on a clean Windows machine. Install, publ
 ## Task 424 Linux update
 
 No native package workflow could be started with the available GitHub permissions. AppImage execution/removal and DEB install/launch/remove/reinstall were not performed. Structural packaging contracts pass, but native lifecycle evidence remains blocked.
+
+## Task 426 Windows update
+
+No trusted signed installer or clean Windows test target was available. Install, publisher display, first launch, functional matrix, restart, uninstall, retention, and reinstall remain blocked for the exact final bytes.

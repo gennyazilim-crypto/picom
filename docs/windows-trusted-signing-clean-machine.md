@@ -19,3 +19,9 @@ No trusted code-signing certificate or protected signing environment was availab
 The existing unsigned beta candidate is excluded. Signing workflow smoke and packaging configuration are not a trusted signature or SmartScreen result. No certificate, key, password, or private publisher material was accessed.
 
 RB-06 remains open. Recommendation: **Not ready**.
+
+## Task 426 execution attempt
+
+Result on 2026-07-11: **BLOCKED**.
+
+Signing-control, fail-closed verification, packaging, installer, release-channel, TypeScript, and build contracts passed. No trusted certificate or clean-machine target exists, and protected workflow dispatch returned HTTP 403. No signed bytes, publisher/timestamp verification, post-signing checksum, or clean-machine result was produced.
