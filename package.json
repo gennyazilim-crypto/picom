@@ -49,6 +49,7 @@
     "entity-store:smoke": "node scripts/entity-store-normalization-smoke-test.mjs",
     "crash:smoke": "node scripts/crash-diagnostics-smoke-test.mjs",
     "crash:recovery:smoke": "node scripts/crash-recovery-flow-smoke-test.mjs",
+    "crash:provider:final:smoke": "node scripts/crash-provider-final-smoke-test.mjs",
     "secrets:smoke": "node scripts/secret-exposure-smoke-test.mjs",
     "secrets:management:smoke": "node scripts/secrets-management-smoke-test.mjs",
     "secrets:ci:smoke": "node scripts/secret-scanning-ci-smoke-test.mjs",

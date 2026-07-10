@@ -3,8 +3,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const loggingSource = readFileSync(resolve(root, "src/services/loggingService.ts"), "utf8");
-const diagnosticsSource = readFileSync(resolve(root, "src/services/diagnosticsService.ts"), "utf8");
+const loggingSource = readFileSync(resolve(root, "src/services/logging/loggingService.ts"), "utf8");
+const diagnosticsSource = readFileSync(resolve(root, "src/services/diagnostics/diagnosticsService.ts"), "utf8");
 const feedbackSource = readFileSync(resolve(root, "src/services/feedbackService.ts"), "utf8");
 
 const requiredRedactionTerms = [

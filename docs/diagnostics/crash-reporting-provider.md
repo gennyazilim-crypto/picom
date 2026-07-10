@@ -90,3 +90,4 @@ If native crash dumps are considered later:
 
 Until all gates pass, Picom remains provider-ready but provider-disabled.
 
+The final enablement decision, source-map privacy controls and executable proof requirements are tracked in `docs/diagnostics/crash-provider-enablement-final.md`.
