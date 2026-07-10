@@ -84,6 +84,7 @@
     "memory:leak:extended:audit": "node scripts/memory-leak-extended-audit-smoke-test.mjs",
     "startup:performance:audit": "node scripts/startup-performance-final-smoke-test.mjs",
     "bundle:size": "node scripts/bundle-size-audit.mjs",
+    "bundle:splitting:audit": "node scripts/bundle-splitting-lazy-loading-smoke-test.mjs",
     "electron:security:smoke": "node scripts/electron-security-smoke-test.mjs",
     "electron:preload-contract:test": "node scripts/electron-preload-contract-test.mjs",
     "electron:ipc-fuzz:test": "node scripts/ipc-invalid-payload-fuzz-test.mjs",

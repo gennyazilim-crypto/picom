@@ -3,32 +3,16 @@ import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
 import type { CommunityAccess } from "../types/communityAccess";
 import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
-import type { VoiceServiceSnapshot } from "../services/voiceService";
 import type { CreatePollDraft } from "../types/polls";
 import { getComposerDisabledReason } from "../services/permissions/communityPermissions";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { MessageComposer } from "./MessageComposer";
-import { VoiceRoomView } from "./VoiceRoomView";
 import { ForumChannelView } from "./ForumChannelView";
 import { canSendMessage } from "../services/permissions/communityPermissions";
-import { analyticsService } from "../services/analyticsService";
-import type { ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 import { announcementChannelService } from "../services/announcementChannelService";
 
 type ToastTone = "info" | "error" | "success";
-const initialVoiceSnapshot: VoiceServiceSnapshot = {
-  status: "idle",
-  roomName: null,
-  muted: false,
-  deafened: false,
-  screenSharing: false,
-  screenShares: [],
-  participants: [],
-  error: null,
-  errorCode: null,
-};
-
 type ChatMainProps = {
   community: Community;
   access: CommunityAccess;
@@ -108,7 +92,6 @@ export function ChatMain({
   const replyToMember = replyToMessage ? community.members.find((member) => member.userId === replyToMessage.authorId) : undefined;
   const currentMember = useMemo(() => community.members.find((member) => member.userId === currentUserId), [community.members, currentUserId]);
   const composerDisabledReason = useMemo(() => getComposerDisabledReason(access, channel), [access, channel]);
-  const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
   const [announcementFollowing, setAnnouncementFollowing] = useState(false);
 
   useEffect(() => {
@@ -118,101 +101,11 @@ export function ChatMain({
     return () => { active = false; };
   }, [channel.id, channel.type, currentUserId]);
 
-  useEffect(() => {
-    let cleanup: (() => void) | undefined;
-    let active = true;
-
-    void import("../services/voiceService").then(({ voiceService }) => {
-      if (!active) return;
-      cleanup = voiceService.subscribe(setVoiceSnapshot);
-    });
-
-    return () => {
-      active = false;
-      cleanup?.();
-    };
-  }, []);
-
-  const handleJoinVoice = () => {
-    void import("../services/voiceService").then(({ voiceService }) => {
-      void voiceService
-        .join({
-          communityId: community.id,
-          channelId: channel.id,
-          participantName: currentMember?.displayName ?? "Picom member",
-          intent: "voice",
-        })
-        .then((result) => {
-          if (!result.ok) pushToast(result.error.message, "error"); else analyticsService.trackEvent("voice_joined", { mode: "desktop" });
-        });
-    });
-  };
-
-  const handleLeaveVoice = () => {
-    void import("../services/voiceService").then(({ voiceService }) => {
-      void voiceService.leave();
-    });
-  };
-
-  const handleToggleMute = () => {
-    void import("../services/voiceService").then(({ voiceService }) => {
-      void voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
-        if (!result.ok) pushToast(result.error.message, "error");
-      })
-    });
-  };
-
-  const handleToggleDeafen = () => {
-    void import("../services/voiceService").then(({ voiceService }) => {
-      const result = voiceService.setDeafened(!voiceSnapshot.deafened);
-      if (!result.ok) pushToast(result.error.message, "error");
-    });
-  };
-
-  const handleStartScreenShare = (sourceId: string, preset: ScreenShareQualityPresetId) => {
-    void import("../services/voiceService").then(({ voiceService }) => {
-      void voiceService.startScreenShare(sourceId, preset).then((result) => {
-        if (!result.ok) {
-          pushToast(result.error.message, "error");
-          return;
-        }
-
-        pushToast("Screen sharing started.", "success");
-        analyticsService.trackEvent("screen_share_started", { mode: "desktop" });
-      });
-    });
-  };
-
-  const handleStopScreenShare = () => {
-    void import("../services/voiceService").then(({ voiceService }) => {
-      void voiceService.stopScreenShare().then((result) => {
-        if (!result.ok) {
-          pushToast(result.error.message, "error");
-          return;
-        }
-
-        pushToast("Screen sharing stopped.", "success");
-      });
-    });
-  };
-
   return (
     <main className="chat-main">
       <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} announcementFollowing={announcementFollowing} announcementReadOnly={access.isVisitor} onToggleAnnouncementFollowing={channel.type === "announcement" && !access.isVisitor ? () => { void announcementChannelService.setFollowing({ channelId: channel.id, userId: currentUserId, following: !announcementFollowing, canFollow: !access.isVisitor }).then((result) => { if (result.ok) { setAnnouncementFollowing(result.data); pushToast(result.data ? "Following announcements." : "Announcement follow disabled.", "success"); } else pushToast(result.message, "error"); }); } : undefined} />
 
-      {channel.type === "voice" ? (
-        <VoiceRoomView
-          community={community}
-          channel={channel}
-          snapshot={voiceSnapshot}
-          onJoin={handleJoinVoice}
-          onLeave={handleLeaveVoice}
-          onToggleMute={handleToggleMute}
-          onToggleDeafen={handleToggleDeafen}
-          onStartScreenShare={handleStartScreenShare}
-          onStopScreenShare={handleStopScreenShare}
-        />
-      ) : channel.type === "forum" ? (
+      {channel.type === "forum" ? (
         <ForumChannelView community={community} channel={channel} currentMember={currentMember} canCreate={canSendMessage(access, { ...channel, type: "text" })} onNotice={pushToast} />
       ) : (
         <>

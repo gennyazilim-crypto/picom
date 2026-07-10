@@ -35,7 +35,6 @@ import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
-import { VoiceRoomView } from "./components/VoiceRoomView";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { DeleteChannelModal, EditChannelModal, type EditChannelFormValue } from "./components/ChannelManagementModals";
@@ -139,6 +138,7 @@ const DirectMessagesView = lazy(() => import("./components/DirectMessagesView").
 const SavedMessagesView = lazy(() => import("./components/SavedMessagesView").then((module) => ({ default: module.SavedMessagesView })));
 const DiscoveryView = lazy(() => import("./components/DiscoveryView").then((module) => ({ default: module.DiscoveryView })));
 const FriendsView = lazy(() => import("./components/FriendsView").then((module) => ({ default: module.FriendsView })));
+const VoiceRoomView = lazy(() => import("./components/VoiceRoomView").then((module) => ({ default: module.VoiceRoomView })));
 
 const overlayIcons = mvpUiIconMap.overlays;
 

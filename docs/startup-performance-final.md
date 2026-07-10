@@ -6,7 +6,7 @@ Picom now applies the saved light/dark theme through a CSP-compatible early them
 
 Optional services no longer execute before the first React render. Crash reporting and sleep/wake resume handling start during an idle callback with a bounded timeout; the safe native deep-link listener remains synchronous because it is a small routing primitive that must not miss a launch URL. Failure to initialize an optional service leaves the basic shell available and logs only a redacted warning.
 
-Heavy, non-core surfaces are lazy loaded behind Suspense boundaries: Settings, first-run onboarding, Mention Feed, profiles, direct messages, saved messages, discovery and friends. The community shell, titlebar, ServerRail, CommunitySidebar, text chat, voice-room composition and auth screens remain on the immediate path so existing desktop interactions do not depend on a delayed chunk. VoiceRoomView was deliberately kept static because ChatMain also composes it; presenting that shared module as lazy produced an ineffective-import warning without removing it from startup.
+Heavy, non-core surfaces are lazy loaded behind Suspense boundaries: Settings, first-run onboarding, Mention Feed, profiles, direct messages, saved messages, discovery and friends. Task 347 removed ChatMain's unreachable duplicate voice composition, so VoiceRoomView now also loads from App as a real deferred chunk. The community shell, titlebar, ServerRail, CommunitySidebar, text chat and auth screens remain on the immediate path so existing desktop interactions do not depend on a delayed chunk.
 
 ## Bundle warning review
 

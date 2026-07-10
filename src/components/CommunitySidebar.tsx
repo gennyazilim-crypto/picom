@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import type { MouseEvent } from "react";
+import { lazy, Suspense } from "react";
 import { useEffect } from "react";
 import type { Channel, Community, Member } from "../types/community";
 import type { CommunityAccess } from "../types/communityAccess";
@@ -8,23 +9,15 @@ import { canManageChannels } from "../services/permissions/communityPermissions"
 import { CommunityHeader } from "./CommunityHeader";
 import { ChannelCategory } from "./ChannelCategory";
 import { UserMiniCard } from "./UserMiniCard";
-import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
-import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
-import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
-import { CommunityCategoryManagementPanel } from "./CommunityCategoryManagementPanel";
-import { MessageModerationFiltersPanel } from "./MessageModerationFiltersPanel";
 import { CommunityAdminPanel, CommunityJoinModal, CommunityLeaveModal, CommunityMemberPanel, CommunityModeratorPanel, CommunityVisitorPanel } from "./CommunityMenu";
-import { CommunityEventsAdminSection } from "./CommunityEventsAdminSection";
 import type { CreateCommunityEventInput, UpdateCommunityEventInput } from "../services/communityEventService";
 import type { UpcomingEvent } from "../types/events";
 import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals";
 import type { InviteAcceptanceStatus } from "../services/community/communityInviteService";
 import { ReportModal } from "./ReportModal";
-import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
-import { CommunityWebhooksAdminSection } from "./CommunityWebhooksAdminSection";
-import { CommunityEmojisAdminSection } from "./CommunityEmojisAdminSection";
-import { CommunityStickersAdminSection } from "./CommunityStickersAdminSection";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
+
+const CommunityAdminDeferredSection = lazy(() => import("./CommunityAdminDeferredSection").then((module) => ({ default: module.CommunityAdminDeferredSection })));
 
 type CommunitySidebarProps = {
   community: Community;
@@ -66,16 +59,21 @@ export function CommunitySidebar({ community, communities, access, activeChannel
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
   useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
   const canReorderChannels = canManageChannels(access);
+  const deferredAdminSection = (section: import("./CommunityAdminDeferredSection").CommunityAdminDeferredSectionId) => (
+    <Suspense fallback={<div className="empty-state compact" role="status">Opening admin tools...</div>}>
+      <CommunityAdminDeferredSection section={section} community={community} currentUser={currentUser} access={access} events={events} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onCancelEvent={onCancelEvent} />
+    </Suspense>
+  );
   const adminSectionTools = {
-    overview: <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />,
-    channels: <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />,
-    events: <CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} />,
-    moderation: <MessageModerationFiltersPanel community={community} currentUser={currentUser} />,
-    bots: <CommunityBotsAdminSection communityId={community.id} ownerId={community.ownerId ?? currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />,
-    webhooks: <CommunityWebhooksAdminSection community={community} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageChannels")} />,
-    emojis: <CommunityEmojisAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />,
-    stickers: <CommunityStickersAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />,
-    "danger-zone": access.isOwner ? <div className="community-admin-tools-stack"><CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /></div> : null,
+    overview: deferredAdminSection("overview"),
+    channels: deferredAdminSection("channels"),
+    events: deferredAdminSection("events"),
+    moderation: deferredAdminSection("moderation"),
+    bots: deferredAdminSection("bots"),
+    webhooks: deferredAdminSection("webhooks"),
+    emojis: deferredAdminSection("emojis"),
+    stickers: deferredAdminSection("stickers"),
+    "danger-zone": access.isOwner ? deferredAdminSection("danger-zone") : null,
   };
 
   return (
