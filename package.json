@@ -203,6 +203,7 @@
     "safe-mode:smoke": "node scripts/safe-mode-smoke-test.mjs",
     "feed:companion:smoke": "node scripts/feed-companion-rail-smoke-test.mjs",
     "mentions:ranking:test": "node scripts/mention-feed-ranking-v2-test.mjs",
+    "follow:suggestions:test": "node scripts/follow-suggestions-v2-test.mjs",
     "stories:header:smoke": "node scripts/followed-people-stories-header-smoke-test.mjs",
     "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs",
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",

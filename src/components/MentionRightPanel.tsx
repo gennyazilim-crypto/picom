@@ -8,6 +8,8 @@ type MentionRightPanelProps = {
   communities: Community[];
   popularUserIds: string[];
   followedUserIds: string[];
+  suggestedUserIds: string[];
+  blockedUserIds: string[];
   activeFilter: MentionQuickFilter | null;
   onFilterChange: (filter: MentionQuickFilter) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
@@ -38,6 +40,8 @@ export function MentionRightPanel({
   communities,
   popularUserIds,
   followedUserIds,
+  suggestedUserIds,
+  blockedUserIds,
   activeFilter,
   onFilterChange,
   onOpenProfile,
@@ -46,8 +50,10 @@ export function MentionRightPanel({
   const followingCount = items.filter((item) => item.source === "following").length;
   const unreadCount = items.filter((item) => item.isUnread).length;
   const savedCount = items.filter((item) => item.isSaved).length;
-  const popularPeople = getMembers(communities, popularUserIds).slice(0, 8);
-  const followedPeople = getMembers(communities, followedUserIds).slice(0, 6);
+  const blocked = new Set(blockedUserIds);
+  const popularPeople = getMembers(communities, popularUserIds.filter((userId) => !blocked.has(userId))).slice(0, 8);
+  const followedPeople = getMembers(communities, followedUserIds.filter((userId) => !blocked.has(userId))).slice(0, 6);
+  const suggestedPeople = getMembers(communities, suggestedUserIds.filter((userId) => !blocked.has(userId))).slice(0, 4);
   const filters: Array<{ id: MentionQuickFilter; label: string }> = [
     { id: "today", label: "Today" },
     { id: "week", label: "This week" },
@@ -73,6 +79,13 @@ export function MentionRightPanel({
           {popularPeople.map((member) => <PanelMemberButton key={`popular-${member.userId}`} member={member} onOpenProfile={onOpenProfile} />)}
         </div>
       </section>
+
+      {suggestedPeople.length ? <section className="mention-panel-card">
+        <p className="eyebrow">Suggested follows</p>
+        <div className="mention-panel-list">
+          {suggestedPeople.map((member) => <PanelMemberButton key={`suggested-${member.userId}`} member={member} onOpenProfile={onOpenProfile} />)}
+        </div>
+      </section> : null}
 
       <section className="mention-panel-card">
         <p className="eyebrow">Following</p>

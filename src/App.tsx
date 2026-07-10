@@ -48,6 +48,7 @@ import { DirectMessagesView } from "./components/DirectMessagesView";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { relationshipService } from "./services/relationshipService";
+import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
 import { advancedSearchService } from "./services/advancedSearchService";
 import { termsAcceptanceService } from "./services/termsAcceptanceService";
 import { savedMessageService, type SavedMessageRecord } from "./services/savedMessageService";
@@ -647,6 +648,15 @@ export function App() {
   }, [activeCommunity, communityAccess, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings, trayPresenceStatus]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
+  const followSuggestionsV2 = useMemo(() => rankFollowSuggestions({
+    candidates: communities.flatMap((community) => community.members),
+    communities,
+    accessibleMentions: visibleMentionItems,
+    currentUserId,
+    followedUserIds,
+    blockedUserIds,
+    limit: 10,
+  }), [blockedUserIds, communities, followedUserIds, visibleMentionItems]);
   const replyToMessage = useMemo(
     () => displayedActiveCommunity.messages.find((message) => message.id === replyToMessageId && message.channelId === displayedActiveChannel.id) ?? null,
     [displayedActiveChannel.id, displayedActiveCommunity.messages, replyToMessageId],
@@ -1751,7 +1761,7 @@ export function App() {
             initialUsername={currentUser.username}
             initialStatusText={profileSettings.statusText || currentUser.statusText}
             initialFollowedUserIds={followedUserIds}
-            suggestions={mockFollowSuggestions}
+            suggestions={followSuggestionsV2.length ? followSuggestionsV2.map((suggestion) => suggestion.member) : mockFollowSuggestions.filter((member) => !blockedUserIds.includes(member.userId) && !followedUserIds.includes(member.userId))}
             theme={theme}
             onThemeChange={setTheme}
             onComplete={finishFirstRunOnboarding}
@@ -2156,6 +2166,8 @@ export function App() {
                 communities={communities}
                 popularUserIds={[...mockPopularUserIds]}
                 followedUserIds={followedUserIds}
+                suggestedUserIds={followSuggestionsV2.map((suggestion) => suggestion.member.userId)}
+                blockedUserIds={blockedUserIds}
                 activeFilter={mentionQuickFilter}
                 onFilterChange={toggleMentionFilter}
                 onOpenProfile={openProfile}
