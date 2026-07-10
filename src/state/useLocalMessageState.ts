@@ -57,6 +57,11 @@ type ToggleLocalReactionInput = {
   emoji: string;
 };
 
+type SetLocalReactionSummaryInput = ToggleLocalReactionInput & {
+  count: number;
+  reactedByCurrentUser: boolean;
+};
+
 type ChannelUnreadInput = {
   communityId: string;
   channelId: string;
@@ -381,6 +386,18 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
+  const setLocalReactionSummary = useCallback(({ communityId, channelId, id, emoji, count, reactedByCurrentUser }: SetLocalReactionSummaryInput) => {
+    setCommunities((current) => current.map((community) => community.id !== communityId ? community : {
+      ...community,
+      messages: community.messages.map((message) => {
+        if (message.id !== id || message.channelId !== channelId || message.deletedAt) return message;
+        const remaining = (message.reactions ?? []).filter((reaction) => reaction.emoji !== emoji);
+        const next = count > 0 ? [...remaining, { emoji, count, reactedByCurrentUser }] : remaining;
+        return { ...message, reactions: next.sort((left, right) => right.count - left.count || left.emoji.localeCompare(right.emoji)).slice(0, 8) };
+      }),
+    }));
+  }, []);
+
   const markChannelUnread = useCallback((input: ChannelUnreadInput) => {
     setCommunities((current) => updateChannelUnreadState(current, input, true));
   }, []);
@@ -560,6 +577,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     editLocalMessage,
     deleteLocalMessage,
     toggleLocalReaction,
+    setLocalReactionSummary,
     markChannelUnread,
     clearChannelUnread,
     addCommunity,

@@ -76,7 +76,7 @@ function mapReactions(value: Json): Reaction[] {
     const count = numberValue(row.count);
     if (!emoji || count === undefined) return [];
     return [{ emoji, count: Math.max(0, count), reactedByCurrentUser: row.reacted_by_current_user === true }];
-  });
+  }).filter((reaction) => reaction.count > 0).sort((left, right) => right.count - left.count || left.emoji.localeCompare(right.emoji)).slice(0, 4);
 }
 
 function mapRow(row: MentionFeedRow): MentionItem {

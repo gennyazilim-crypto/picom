@@ -7,6 +7,8 @@ import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutatio
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
+import { reactionService } from "./reactionService";
+import type { Reaction } from "../types/community";
 
 export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, reply_to_message_id, thread_id, webhook_id, webhook_name" as const;
 
@@ -39,6 +41,7 @@ export type MessageSummary = Readonly<{
   editedAt: string | null;
   deletedAt: string | null;
   replyToMessageId: string | null;
+  reactions?: Reaction[];
   webhookId?: string;
   webhookName?: string;
 }>;
@@ -210,7 +213,18 @@ export const messageService = {
       return messageError("MESSAGE_LIST_FAILED", "Could not load messages.");
     }
 
-    return { ok: true, data: result.data };
+    const reactionResult = await reactionService.listSummaries(result.data.items.map((message) => message.id));
+    if (!reactionResult.ok) return { ok: true, data: result.data };
+    const byMessage = new Map<string, Reaction[]>();
+    for (const summary of reactionResult.data) {
+      const reactions = byMessage.get(summary.messageId) ?? [];
+      reactions.push({ emoji: summary.emoji, count: summary.count, reactedByCurrentUser: summary.reactedByCurrentUser });
+      byMessage.set(summary.messageId, reactions);
+    }
+    return {
+      ok: true,
+      data: { ...result.data, items: result.data.items.map((message) => ({ ...message, reactions: byMessage.get(message.id) ?? [] })) },
+    };
   },
 
   async sendMessage(input: SendMessageInput): Promise<MessageServiceResult<MessageSummary>> {

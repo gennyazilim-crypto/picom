@@ -79,7 +79,7 @@ try {
   assertContains("src/services/uploadService.ts", ".storage", "Supabase storage upload path");
   assertContains("src/services/attachmentService.ts", ".from(\"attachments\")", "attachment metadata API path");
   assertContains("src/services/membersService.ts", ".from(\"community_members\")", "members API path");
-  assertContains("src/services/reactionService.ts", ".from(\"message_reactions\")", "reactions API path");
+  assertContains("src/services/reactionService.ts", 'rpc("set_message_reaction"', "aggregate-safe reactions API path");
   assertContains("src/services/supabase/realtimeService.ts", "postgres_changes", "Supabase realtime postgres_changes path");
   assertContains(".env.example", "VITE_SUPABASE_URL", "Supabase URL env example");
   assertContains(".env.example", "VITE_SUPABASE_ANON_KEY", "Supabase anon key env example");

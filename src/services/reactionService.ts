@@ -1,215 +1,106 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
-import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import type { Database } from "./supabase/database.types";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
-
-export const REACTION_SELECT = "id, message_id, user_id, emoji, created_at" as const;
-
-export type ReactionRow = Readonly<{
-  id: string;
-  message_id: string;
-  user_id: string;
-  emoji: string;
-  created_at: string;
-}>;
+import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 
 export type ReactionSummary = Readonly<{
-  id: string;
   messageId: string;
-  userId: string;
   emoji: string;
-  createdAt: string;
+  count: number;
+  reactedByCurrentUser: boolean;
 }>;
 
-export type AddReactionInput = Readonly<{
+export type ReactionMutationInput = Readonly<{
   messageId: string;
   emoji: string;
-  userId?: string;
-}>;
-
-export type RemoveReactionInput = Readonly<{
-  messageId: string;
-  emoji: string;
-  userId?: string;
-}>;
-
-export type RemovedReactionSummary = Readonly<{
-  messageId: string;
-  userId: string;
-  emoji: string;
-  removed: true;
 }>;
 
 export type ReactionServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
-  | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
   | "RATE_LIMITED"
-  | "REACTION_ADD_FAILED"
-  | "REACTION_REMOVE_FAILED";
-
-export type ReactionServiceError = Readonly<{
-  code: ReactionServiceErrorCode;
-  message: string;
-}>;
+  | "REACTION_MUTATION_FAILED"
+  | "REACTION_SUMMARY_FAILED";
 
 export type ReactionServiceResult<T> =
   | Readonly<{ ok: true; data: T }>
-  | Readonly<{ ok: false; error: ReactionServiceError }>;
+  | Readonly<{ ok: false; error: Readonly<{ code: ReactionServiceErrorCode; message: string }> }>;
 
-function reactionError(code: ReactionServiceErrorCode, message: string): ReactionServiceResult<never> {
+type ReactionSummaryRow = Readonly<{
+  message_id: string;
+  emoji: string;
+  reaction_count: number;
+  reacted_by_current_user: boolean;
+}>;
+
+function failure(code: ReactionServiceErrorCode, message: string): ReactionServiceResult<never> {
   return { ok: false, error: { code, message } };
 }
 
-function mapReactionRow(row: ReactionRow): ReactionSummary {
-  return {
-    id: row.id,
-    messageId: row.message_id,
-    userId: row.user_id,
-    emoji: row.emoji,
-    createdAt: row.created_at,
-  };
-}
-
-function validateReactionInput(input: AddReactionInput | RemoveReactionInput): ReactionServiceError | null {
-  if (!input.messageId.trim()) {
-    return { code: "VALIDATION_ERROR", message: "Message ID is required." };
-  }
-
-  if (!input.emoji.trim()) {
-    return { code: "VALIDATION_ERROR", message: "Reaction emoji is required." };
-  }
-
-  if (input.emoji.length > 32) {
-    return { code: "VALIDATION_ERROR", message: "Reaction emoji is too long." };
-  }
-
-  return null;
-}
-
-function getConfiguredSupabaseClient() {
+function configuredClient() {
   const status = getSupabaseClientStatus();
-
-  if (!status.configured) {
-    return reactionError("DATA_SOURCE_NOT_CONFIGURED", status.reason ?? "Supabase data source is not configured.");
-  }
-
   const client = getSupabaseClient();
-
-  if (!client) {
-    return reactionError("DATA_SOURCE_NOT_CONFIGURED", "Supabase client is unavailable.");
-  }
-
+  if (!status.configured || !client) return failure("DATA_SOURCE_NOT_CONFIGURED", status.reason ?? "Supabase is not configured.");
   return { ok: true as const, data: client };
 }
 
-async function getReactionUserId(client: SupabaseClient<Database>, explicitUserId?: string): Promise<ReactionServiceResult<string>> {
-  if (explicitUserId?.trim()) {
-    return { ok: true, data: explicitUserId.trim() };
+function validate(input: ReactionMutationInput): ReactionServiceResult<true> {
+  if (!input.messageId.trim()) return failure("VALIDATION_ERROR", "Message ID is required.");
+  if (!input.emoji.trim() || input.emoji.length > 64) return failure("VALIDATION_ERROR", "Choose a valid reaction emoji.");
+  return { ok: true, data: true };
+}
+
+function mapSummary(row: ReactionSummaryRow): ReactionSummary {
+  return {
+    messageId: row.message_id,
+    emoji: row.emoji,
+    count: Math.max(0, Number(row.reaction_count) || 0),
+    reactedByCurrentUser: row.reacted_by_current_user === true,
+  };
+}
+
+async function setReaction(input: ReactionMutationInput, reacted: boolean): Promise<ReactionServiceResult<ReactionSummary>> {
+  const validation = validate(input);
+  if (!validation.ok) return validation;
+  const emoji = input.emoji.trim();
+
+  const dataSource = dataSourceService.getStatus();
+  if (dataSource.isMock) {
+    return { ok: true, data: { messageId: input.messageId, emoji, count: reacted ? 1 : 0, reactedByCurrentUser: reacted } };
   }
 
-  const { data, error } = await client.auth.getUser();
-
-  if (error || !data.user) {
-    return reactionError("AUTH_REQUIRED", "Sign in before reacting to messages.");
+  const configured = configuredClient();
+  if (!configured.ok) return configured;
+  const { data, error } = await configured.data.rpc("set_message_reaction", {
+    target_message_id: input.messageId,
+    target_emoji: emoji,
+    target_reacted: reacted,
+  });
+  const row = data?.[0] as ReactionSummaryRow | undefined;
+  if (error || !row) {
+    if (isRateLimitError(error)) return failure("RATE_LIMITED", rateLimitUserMessage);
+    return failure("REACTION_MUTATION_FAILED", "Picom could not update this reaction.");
   }
-
-  return { ok: true, data: data.user.id };
+  return { ok: true, data: mapSummary(row) };
 }
 
 export const reactionService = {
-  async addReaction(input: AddReactionInput): Promise<ReactionServiceResult<ReactionSummary>> {
-    const validationError = validateReactionInput(input);
-    if (validationError) return { ok: false, error: validationError };
-
-    const emoji = input.emoji.trim();
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      return {
-        ok: true,
-        data: {
-          id: `mock-reaction-${idSuffix}`,
-          messageId: input.messageId,
-          userId: input.userId ?? currentUserId,
-          emoji,
-          createdAt: new Date().toISOString(),
-        },
-      };
-    }
-
-    const configured = getConfiguredSupabaseClient();
-    if (!configured.ok) return configured;
-
-    const user = await getReactionUserId(configured.data, input.userId);
-    if (!user.ok) return user;
-
-    const { data, error } = await configured.data
-      .from("message_reactions")
-      .insert({
-        message_id: input.messageId,
-        user_id: user.data,
-        emoji,
-      })
-      .select(REACTION_SELECT)
-      .single();
-
-    if (error || !data) {
-      if (isRateLimitError(error)) return reactionError("RATE_LIMITED", rateLimitUserMessage);
-      return reactionError("REACTION_ADD_FAILED", "Could not add reaction.");
-    }
-
-    return { ok: true, data: mapReactionRow(data) };
+  addReaction(input: ReactionMutationInput): Promise<ReactionServiceResult<ReactionSummary>> {
+    return setReaction(input, true);
   },
 
-  async removeReaction(input: RemoveReactionInput): Promise<ReactionServiceResult<RemovedReactionSummary>> {
-    const validationError = validateReactionInput(input);
-    if (validationError) return { ok: false, error: validationError };
+  removeReaction(input: ReactionMutationInput): Promise<ReactionServiceResult<ReactionSummary>> {
+    return setReaction(input, false);
+  },
 
-    const emoji = input.emoji.trim();
+  async listSummaries(messageIds: readonly string[]): Promise<ReactionServiceResult<ReactionSummary[]>> {
+    const ids = [...new Set(messageIds.filter(Boolean))].slice(0, 100);
+    if (!ids.length) return { ok: true, data: [] };
     const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      return {
-        ok: true,
-        data: {
-          messageId: input.messageId,
-          userId: input.userId ?? currentUserId,
-          emoji,
-          removed: true,
-        },
-      };
-    }
-
-    const configured = getConfiguredSupabaseClient();
+    if (dataSource.isMock) return { ok: true, data: [] };
+    const configured = configuredClient();
     if (!configured.ok) return configured;
-
-    const user = await getReactionUserId(configured.data, input.userId);
-    if (!user.ok) return user;
-
-    const { error } = await configured.data
-      .from("message_reactions")
-      .delete()
-      .eq("message_id", input.messageId)
-      .eq("user_id", user.data)
-      .eq("emoji", emoji);
-
-    if (error) {
-      if (isRateLimitError(error)) return reactionError("RATE_LIMITED", rateLimitUserMessage);
-      return reactionError("REACTION_REMOVE_FAILED", "Could not remove reaction.");
-    }
-
-    return {
-      ok: true,
-      data: {
-        messageId: input.messageId,
-        userId: user.data,
-        emoji,
-        removed: true,
-      },
-    };
+    const { data, error } = await configured.data.rpc("list_message_reaction_summaries", { target_message_ids: ids });
+    if (error) return failure("REACTION_SUMMARY_FAILED", "Picom could not load reaction summaries.");
+    return { ok: true, data: ((data ?? []) as ReactionSummaryRow[]).map(mapSummary) };
   },
 };

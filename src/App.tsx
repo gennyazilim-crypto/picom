@@ -93,6 +93,7 @@ import { channelCategoryService } from "./services/channelCategoryService";
 import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
 import { membersService } from "./services/membersService";
 import { messageService, type MessageSummary } from "./services/messageService";
+import { reactionService } from "./services/reactionService";
 import { messageSendQueueService } from "./services/messageSendQueueService";
 import { messageHistoryExportService } from "./services/messageHistoryExportService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
@@ -348,6 +349,7 @@ export function App() {
     editLocalMessage,
     deleteLocalMessage,
     toggleLocalReaction,
+    setLocalReactionSummary,
     markChannelUnread,
     clearChannelUnread,
     addCommunity,
@@ -583,7 +585,7 @@ export function App() {
     createdAt: message.createdAt,
     editedAt: message.editedAt ?? undefined,
     attachments: [],
-    reactions: [],
+    reactions: message.reactions ?? [],
     localStatus: "sent",
   }), []);
 
@@ -1969,17 +1971,36 @@ export function App() {
     }
   };
 
-  const handleToggleMessageReaction = (message: Message, emoji: string) => {
+  const handleToggleMessageReaction = async (message: Message, emoji: string) => {
     if (!canSendMessage(communityAccess, displayedActiveChannel)) {
       pushToast(communityAccess.isVisitor ? "Join this community to react to messages." : "You do not have permission to react here.", "error");
       return;
     }
 
+    const currentlyReacted = Boolean(message.reactions?.find((reaction) => reaction.emoji === emoji)?.reactedByCurrentUser);
     toggleLocalReaction({
       communityId: activeCommunity.id,
       channelId: message.channelId,
       id: message.id,
       emoji,
+    });
+
+    if (dataSourceService.getStatus().isMock) return;
+    const result = currentlyReacted
+      ? await reactionService.removeReaction({ messageId: message.id, emoji })
+      : await reactionService.addReaction({ messageId: message.id, emoji });
+    if (!result.ok) {
+      toggleLocalReaction({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, emoji });
+      pushToast(result.error.message, "error");
+      return;
+    }
+    setLocalReactionSummary({
+      communityId: activeCommunity.id,
+      channelId: message.channelId,
+      id: message.id,
+      emoji: result.data.emoji,
+      count: result.data.count,
+      reactedByCurrentUser: result.data.reactedByCurrentUser,
     });
   };
 

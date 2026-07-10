@@ -99,6 +99,7 @@ export function listMockMessageSummaries(input: ListMessagesInput): MessagePage 
       editedAt: message.editedAt ?? null,
       deletedAt: null,
       replyToMessageId: message.replyToMessageId ?? null,
+      reactions: message.reactions,
       webhookId: message.webhookId,
       webhookName: message.webhookName,
     }))
