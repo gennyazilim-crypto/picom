@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "first-launch:smoke": "node scripts/first-launch-setup-smoke.mjs",
+    "installer:branding:smoke": "node scripts/installer-branding-smoke.mjs",
     "settings:completeness:test": "node scripts/settings-menu-completeness-smoke.mjs",
     "voice:devices:test": "node scripts/voice-device-selection-smoke.mjs",
     "voice:recovery:test": "node scripts/voice-reconnect-recovery-smoke.mjs",
