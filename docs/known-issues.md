@@ -2,6 +2,8 @@
 
 This document tracks known issues for the Picom beta readiness phase.
 
+Tester downloads, reporting, withdrawal, and rollback follow the [Beta distribution portal/process](beta-distribution-portal.md).
+
 ## Status labels
 
 - `blocker`: must be fixed before beta distribution

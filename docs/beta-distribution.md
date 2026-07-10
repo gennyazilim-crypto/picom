@@ -2,6 +2,8 @@
 
 Picom beta is a controlled Windows, Linux, and macOS desktop test. It is not a production release or public open beta.
 
+Tester entry point and candidate lifecycle: [Beta distribution portal/process](beta-distribution-portal.md).
+
 ## Audience and channel
 
 - Release channel: `beta`
@@ -17,7 +19,7 @@ Do not distribute electron-builder `.tmp` folders, `.env` files, source secrets,
 
 ## Platform packages
 
-- Windows: NSIS installer, currently `Picom-0.1.0-Windows-x64.exe`
+- Windows: NSIS installer, `Picom-<version>-<channel>-Windows-<arch>.exe`
 - Linux: AppImage and/or deb produced and tested on Linux
 - macOS: dmg and/or zip produced and tested on macOS
 
@@ -56,6 +58,6 @@ Picom does not automatically send feedback/logs in this MVP. Never attach passwo
 - [Beta release notes](beta-release-notes.md)
 - [Beta Go / No-Go](beta-go-no-go.md)
 - [Detailed distribution plan](beta-distribution-plan.md)
+- [Beta distribution portal/process](beta-distribution-portal.md)
 
 Do not test or expect mobile apps, bot marketplace, production webhooks, plugin runtime, enterprise SSO/SCIM, billing, production auto-update, production E2EE, or public discovery marketplace.
-
