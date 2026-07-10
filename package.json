@@ -9,6 +9,7 @@
     "settings:completeness:test": "node scripts/settings-menu-completeness-smoke.mjs",
     "voice:devices:test": "node scripts/voice-device-selection-smoke.mjs",
     "voice:recovery:test": "node scripts/voice-reconnect-recovery-smoke.mjs",
+    "screen-share:recovery:test": "node scripts/screen-share-permission-recovery-smoke.mjs",
     "keyboard:shortcuts:final:test": "node scripts/keyboard-shortcut-finalization-smoke.mjs",
     "search:palette:production:test": "node scripts/search-command-palette-production-smoke.mjs",
     "block:mute:ux:test": "node scripts/block-mute-ux-polish-smoke.mjs",

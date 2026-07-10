@@ -57,7 +57,7 @@ declare global {
       screenCapture?: {
         getSources: () => Promise<
           | { ok: true; native: true; sources: PicomScreenCaptureSource[] }
-          | { ok: false; native: true; error: string }
+          | { ok: false; native: true; error: string; platform?: string }
         >;
       };
       tray?: {

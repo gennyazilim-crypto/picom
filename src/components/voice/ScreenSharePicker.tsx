@@ -18,16 +18,22 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [qualityPreset, setQualityPreset] = useState<ScreenShareQualityPresetId>("balanced");
   const [error, setError] = useState<string | null>(null);
+  const [guidance, setGuidance] = useState<string | null>(null);
+  const [retryable, setRetryable] = useState(false);
 
   async function loadSources(): Promise<void> {
     setStatus("loading");
     setError(null);
+    setGuidance(null);
+    setRetryable(false);
 
     const result = await screenCaptureService.listSources();
     if (!result.ok) {
       setSources([]);
       setSelectedSourceId(null);
       setError(result.message);
+      setGuidance(result.guidance);
+      setRetryable(result.retryable);
       setStatus("error");
       return;
     }
@@ -48,14 +54,20 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
         </span>
         <div>
           <strong>Screen share source</strong>
-          <small>{selectedSource ? selectedSource.name : "Electron source picker placeholder"}</small>
+          <small>{selectedSource ? selectedSource.name : "Choose a screen or application window"}</small>
         </div>
         <button type="button" onClick={loadSources} disabled={status === "loading"}>
           {status === "loading" ? "Loading..." : "Choose source"}
         </button>
       </div>
 
-      {error ? <p className="screen-share-picker-error">{error}</p> : null}
+      {error ? (
+        <div className="screen-share-picker-error" role="alert">
+          <strong>{error}</strong>
+          {guidance ? <span>{guidance}</span> : null}
+          {retryable ? <button type="button" onClick={() => void loadSources()} disabled={status === "loading"}>Try again</button> : null}
+        </div>
+      ) : null}
 
       <label className="screen-share-quality-control">
         <span>Share quality</span>

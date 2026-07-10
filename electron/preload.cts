@@ -192,7 +192,7 @@ const bridge = Object.freeze({
     getSources: () =>
       invokeWhitelisted(IPC_CHANNELS.screenCaptureGetSources) as Promise<
         | { ok: true; native: true; sources: SafeScreenCaptureSource[] }
-        | { ok: false; native: true; error: string }
+        | { ok: false; native: true; error: string; platform?: string }
       >
   },
   showNotification: (payload: NativeNotificationPayload) =>

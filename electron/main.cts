@@ -5,6 +5,7 @@ import {
   ipcMain,
   shell,
   desktopCapturer,
+  systemPreferences,
   Notification,
   Tray,
   nativeImage,
@@ -590,8 +591,19 @@ function registerIpcHandlers(): void {
     } as const;
   });
 
-  ipcMain.handle(IPC_CHANNELS.screenCaptureGetSources, async () => {
+  ipcMain.handle(IPC_CHANNELS.screenCaptureGetSources, async (event) => {
+    if (!isTrustedAppUrl(event.sender.getURL())) {
+      return { ok: false, native: true, error: "UNTRUSTED_SCREEN_CAPTURE_SENDER", platform: process.platform } as const;
+    }
+
     try {
+      if (process.platform === "darwin") {
+        const permission = systemPreferences.getMediaAccessStatus("screen");
+        if (permission === "denied" || permission === "restricted") {
+          return { ok: false, native: true, error: "SCREEN_CAPTURE_PERMISSION_DENIED", platform: process.platform } as const;
+        }
+      }
+
       const sources = await desktopCapturer.getSources({
         types: ["screen", "window"],
         thumbnailSize: { width: 320, height: 180 },
@@ -606,9 +618,13 @@ function registerIpcHandlers(): void {
         appIconDataUrl: source.appIcon?.isEmpty() ? null : source.appIcon?.toDataURL() ?? null
       }));
 
+      if (safeSources.length === 0) {
+        return { ok: false, native: true, error: "SCREEN_CAPTURE_NO_SOURCES", platform: process.platform } as const;
+      }
+
       return { ok: true, native: true, sources: safeSources } as const;
     } catch {
-      return { ok: false, native: true, error: "SCREEN_CAPTURE_SOURCES_UNAVAILABLE" } as const;
+      return { ok: false, native: true, error: "SCREEN_CAPTURE_SOURCES_UNAVAILABLE", platform: process.platform } as const;
     }
   });
 
