@@ -53,6 +53,18 @@ Deno.serve(async (request: Request) => {
   const auth = await requireSupabaseUser(request);
   if (!auth.ok) return auth.response;
 
+  const { data: limitRows, error: limitError } = await auth.supabase.rpc("consume_current_user_action_rate_limit", {
+    target_action: "livekit_token",
+  });
+  if (limitError) {
+    return errorResponse("INTERNAL_ERROR", "Voice authorization is temporarily unavailable.", 503, undefined, { "Retry-After": "30" });
+  }
+  const limit = Array.isArray(limitRows) ? limitRows[0] as { is_allowed?: boolean; retry_after_seconds?: number } | undefined : undefined;
+  if (!limit?.is_allowed) {
+    const retryAfter = Math.min(Math.max(Number(limit?.retry_after_seconds) || 60, 1), 3600);
+    return errorResponse("RATE_LIMITED", "Too many voice token requests. Please wait and try again.", 429, undefined, { "Retry-After": String(retryAfter) });
+  }
+
   const livekitUrl = getRequiredEnv("LIVEKIT_URL");
   const livekitApiKey = getRequiredEnv("LIVEKIT_API_KEY");
   const livekitApiSecret = getRequiredEnv("LIVEKIT_API_SECRET");

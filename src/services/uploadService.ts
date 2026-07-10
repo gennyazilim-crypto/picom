@@ -4,6 +4,7 @@ import { fileService } from "./fileService";
 import { attachmentThumbnailService } from "./attachmentThumbnailService";
 import { attachmentScanService, type AttachmentScanStatus } from "./attachmentScanService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
+import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
 export const MESSAGE_ATTACHMENTS_BUCKET = "message-attachments" as const;
 
@@ -35,6 +36,7 @@ export type UploadServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
+  | "RATE_LIMITED"
   | "UPLOAD_CANCELED"
   | "UPLOAD_FAILED";
 
@@ -206,6 +208,7 @@ export const uploadService = {
     if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
 
     if (error) {
+      if (isRateLimitError(error)) return uploadError("RATE_LIMITED", rateLimitUserMessage);
       return uploadError("UPLOAD_FAILED", "Could not upload attachment.");
     }
 

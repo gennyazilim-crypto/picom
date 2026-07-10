@@ -3,6 +3,7 @@ import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { AttachmentScanStatus } from "./attachmentScanService";
 import type { UploadedAttachmentSummary } from "./uploadService";
+import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
 export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, status, created_at" as const;
 
@@ -50,6 +51,7 @@ export type AttachmentServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
+  | "RATE_LIMITED"
   | "ATTACHMENT_METADATA_CREATE_FAILED";
 
 export type AttachmentServiceError = Readonly<{
@@ -169,6 +171,7 @@ export const attachmentService = {
       .single();
 
     if (error || !data) {
+      if (isRateLimitError(error)) return attachmentError("RATE_LIMITED", rateLimitUserMessage);
       return attachmentError("ATTACHMENT_METADATA_CREATE_FAILED", "Could not save attachment metadata.");
     }
 

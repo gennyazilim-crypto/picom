@@ -3,6 +3,7 @@ import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import { legalConfig } from "../config/legalConfig";
 import { termsAcceptanceService } from "./termsAcceptanceService";
+import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
 export type AuthServiceUser = Readonly<{
   id: string;
@@ -32,6 +33,7 @@ export type AuthServiceErrorCode =
   | "AUTH_NOT_CONFIGURED"
   | "AUTH_INVALID_INPUT"
   | "AUTH_INVALID_CREDENTIALS"
+  | "AUTH_RATE_LIMITED"
   | "AUTH_SESSION_EXPIRED"
   | "AUTH_PROVIDER_ERROR";
 
@@ -56,6 +58,10 @@ function authError(code: AuthServiceErrorCode, message: string): AuthServiceResu
 
 function mapSupabaseError(error: AuthError): AuthServiceError {
   const status = error.status ?? 0;
+
+  if (isRateLimitError(error)) {
+    return { code: "AUTH_RATE_LIMITED", message: rateLimitUserMessage };
+  }
 
   if (status === 400 || status === 401) {
     return { code: "AUTH_INVALID_CREDENTIALS", message: "Email or password is incorrect." };

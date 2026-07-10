@@ -3,6 +3,7 @@ import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
+import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
 export const REACTION_SELECT = "id, message_id, user_id, emoji, created_at" as const;
 
@@ -45,6 +46,7 @@ export type ReactionServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
+  | "RATE_LIMITED"
   | "REACTION_ADD_FAILED"
   | "REACTION_REMOVE_FAILED";
 
@@ -156,6 +158,7 @@ export const reactionService = {
       .single();
 
     if (error || !data) {
+      if (isRateLimitError(error)) return reactionError("RATE_LIMITED", rateLimitUserMessage);
       return reactionError("REACTION_ADD_FAILED", "Could not add reaction.");
     }
 
@@ -195,6 +198,7 @@ export const reactionService = {
       .eq("emoji", emoji);
 
     if (error) {
+      if (isRateLimitError(error)) return reactionError("RATE_LIMITED", rateLimitUserMessage);
       return reactionError("REACTION_REMOVE_FAILED", "Could not remove reaction.");
     }
 

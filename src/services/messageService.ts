@@ -6,6 +6,7 @@ import { listMockMessageSummaries, listSupabaseMessageSummaries, type ListMessag
 import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutation";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
+import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
 export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, webhook_id, webhook_name" as const;
 
@@ -61,6 +62,7 @@ export type MessageServiceErrorCode =
   | "DATA_SOURCE_NOT_CONFIGURED"
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
+  | "RATE_LIMITED"
   | "MESSAGE_SEND_FAILED"
   | "MESSAGE_LIST_FAILED"
   | "MESSAGE_EDIT_FAILED"
@@ -225,6 +227,7 @@ export const messageService = {
     const { data, error } = await sendSupabaseMessage(configured.data, input, author.data, body);
 
     if (error || !data) {
+      if (isRateLimitError(error)) return messageError("RATE_LIMITED", rateLimitUserMessage);
       return messageError("MESSAGE_SEND_FAILED", "Could not send message.");
     }
 
