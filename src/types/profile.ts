@@ -1,6 +1,6 @@
 ﻿import type { ChannelId, CommunityId, MessageId, UserId } from "./community";
 
-import type { VerificationBadge } from "./verification";
+import type { VerificationBadge, VerificationSummary } from "./verification";
 
 export type ProfileStatus = "online" | "idle" | "busy" | "offline";
 
@@ -57,6 +57,7 @@ export type UserProfile = {
   isCurrentUser?: boolean;
   isFollowing?: boolean;
   friendshipStatus?: "none" | "incoming" | "outgoing" | "friends";
+  verification?: VerificationSummary;
   verificationBadges?: VerificationBadge[];
   privacyRestricted?: boolean;
   stats: ProfileStats;

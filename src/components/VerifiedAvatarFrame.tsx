@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Member } from "../types/community";
-import type { VerificationBadgeVariant } from "../utils/verificationHelpers";
+import type { VerificationSummary } from "../types/verification";
+import { getVerificationType } from "../utils/verificationHelpers";
 import { MemberAvatar } from "./MemberAvatar";
 import { ProfileEditCameraButton } from "./ProfileEditCameraButton";
 import { VerifiedAvatarRing } from "./VerifiedAvatarRing";
@@ -16,7 +17,7 @@ type VerifiedAvatarFrameProps = {
   avatarSeed?: string;
   size?: VerifiedAvatarFrameSize;
   avatarSize?: number;
-  verifiedType?: VerificationBadgeVariant | null;
+  verification?: VerificationSummary | null;
   isCurrentUser?: boolean;
   showEditButton?: boolean;
   onEditAvatar?: () => void;
@@ -43,7 +44,7 @@ export function VerifiedAvatarFrame({
   avatarSeed,
   size = "compact",
   avatarSize,
-  verifiedType,
+  verification,
   isCurrentUser = false,
   showEditButton = false,
   onEditAvatar,
@@ -51,6 +52,7 @@ export function VerifiedAvatarFrame({
 }: VerifiedAvatarFrameProps) {
   const resolvedLabel = label ?? user?.displayName ?? "Picom user";
   const pixelSize = avatarSize ?? avatarSizes[size];
+  const verifiedType = getVerificationType(verification);
   const verified = Boolean(verifiedType);
   const style = { "--verified-avatar-size": `${pixelSize}px` } as CSSProperties;
 
@@ -62,7 +64,7 @@ export function VerifiedAvatarFrame({
       style={style}
       data-user-id={userId ?? user?.userId}
     >
-      {verifiedType && <VerifiedAvatarRing variant={verifiedType} profile={size === "profile"} />}
+      {verifiedType && size === "profile" && <VerifiedAvatarRing variant={verifiedType} profile />}
       <MemberAvatar
         member={user}
         label={resolvedLabel}
@@ -72,9 +74,9 @@ export function VerifiedAvatarFrame({
         imageAlt={`${resolvedLabel} avatar`}
         className="verified-avatar-image"
       />
-      {verifiedType && (
+      {verifiedType && size === "profile" && (
         <VerifiedBadge
-          variant={verifiedType}
+          verification={verification}
           size={badgeSizes[size]}
           className="verified-avatar-badge"
         />

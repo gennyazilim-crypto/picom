@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import type { Community, Member } from "../types/community";
 import { clampOverlayPosition } from "../utils/desktopDisplayBounds";
-import { MemberAvatar } from "./MemberAvatar";
+import { getUserVerificationSummary } from "../utils/verificationHelpers";
+import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 type UserProfilePopoverProps = { member: Member; community: Community; x: number; y: number; onClose: () => void; onViewProfile?: (member: Member) => void; onReportUser?: (member: Member) => void; isBlocked?: boolean; onToggleBlock?: (member: Member) => void };
 
@@ -22,6 +24,7 @@ export function UserProfilePopover({ member, community, x, y, onClose, onViewPro
   }, [onClose]);
 
   const role = community.roles.find((candidate) => candidate.id === member.roleId);
+  const verification = getUserVerificationSummary(member.userId, [], member.verification);
   const { left, top } = clampOverlayPosition({
     x,
     y,
@@ -34,9 +37,9 @@ export function UserProfilePopover({ member, community, x, y, onClose, onViewPro
   return <section ref={popoverRef} className="profile-popover" role="dialog" aria-label={`${member.displayName} profile preview`} tabIndex={-1} style={{ left, top }} onPointerDown={(event) => event.stopPropagation()}>
     <div className="profile-cover" aria-hidden="true" />
     <div className="profile-body">
-      <MemberAvatar member={member} size={72} />
-      <h3>{member.displayName}</h3><p>@{member.username}</p>
-      <div className="profile-meta"><span className={`status-dot ${member.status}`} aria-hidden="true" /><span>{member.statusText}</span></div>
+      <VerifiedAvatarFrame user={member} size="medium" avatarSize={72} verification={verification} />
+      <h3 className="profile-popover-name"><span>{member.displayName}</span><VerifiedBadge verification={verification} size="sm" /></h3><p>@{member.username}</p>
+      <div className="profile-meta"><span className={`status-dot ${member.status}`} role="img" aria-label={`${member.displayName} is ${member.status}`} /><span>{member.statusText}</span></div>
       {role ? <span className="role-pill" style={{ color: role.color }}>{role.name}</span> : null}
       <p className="profile-bio">{member.bio}</p>
       <div className="profile-actions">

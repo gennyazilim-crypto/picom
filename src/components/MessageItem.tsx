@@ -9,7 +9,8 @@ import { messageDeliveryReceiptService } from "../services/messageDeliveryReceip
 import { AttachmentGrid } from "./AttachmentGrid";
 import { EmojiPicker } from "./EmojiPicker";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
-import { getUserVerificationVariant } from "../utils/verificationHelpers";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { MessageHoverActions } from "./MessageHoverActions";
 import { StickerMessage } from "./StickerMessage";
 import { customEmojiService } from "../services/customEmojiService";
@@ -190,13 +191,14 @@ export function MessageItem({
             label={member?.displayName}
             size="medium"
             avatarSize={42}
-            verifiedType={getUserVerificationVariant(member?.userId ?? message.authorId)}
+            verification={getUserVerificationSummary(member?.userId ?? message.authorId, [], member?.verification)}
           />
       </button>
       <div className="message-content">
         <div className="message-meta">
           <button className="message-author-button" type="button" disabled={profileUnavailable} onClick={(event) => onOpenProfile(event, member)}>
             <span>{member.displayName}</span>
+            <VerifiedBadge verification={getUserVerificationSummary(member.userId, [], member.verification)} size="xs" />
           </button>
           {member.isBot ? <span className="bot-badge">BOT</span> : null}
           {message.webhookId ? <span className="webhook-badge" title={message.webhookName ?? "Webhook message"}>WEBHOOK</span> : null}

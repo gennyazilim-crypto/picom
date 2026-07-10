@@ -1,38 +1,40 @@
-import { useId } from "react";
-import type { VerificationBadgeVariant } from "../utils/verificationHelpers";
+import { useId, useState } from "react";
+import type { VerificationSummary } from "../types/verification";
+import { getVerificationLabel, getVerificationType } from "../utils/verificationHelpers";
 import { VerificationBadgeTooltip } from "./VerificationBadgeTooltip";
 
 export type VerifiedBadgeSize = "xs" | "sm" | "md" | "lg";
 
-const labels: Record<VerificationBadgeVariant, string> = {
-  verified_user: "Verified user",
-  official_community: "Official community",
-  picom_staff: "Picom staff",
-  verified_bot: "Verified bot",
-};
-
 export function VerifiedBadge({
-  variant,
+  verification,
   size = "sm",
   className = "",
 }: {
-  variant?: VerificationBadgeVariant | null;
+  verification?: VerificationSummary | null;
   size?: VerifiedBadgeSize;
   className?: string;
 }) {
   const tooltipId = useId();
-  if (!variant) return null;
-  const label = labels[variant];
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const type = getVerificationType(verification);
+  if (!type) return null;
+  const label = getVerificationLabel(type);
   return (
     <span
-      className={`verified-badge verified-badge-${size} ${variant} ${className}`.trim()}
+      className={`verified-badge verified-badge-${size} ${type} ${tooltipVisible ? "is-tooltip-visible" : ""} ${className}`.trim()}
       role="img"
       aria-label={label}
-      aria-describedby={tooltipId}
-      title={label}
+      aria-describedby={tooltipVisible ? tooltipId : undefined}
       tabIndex={0}
+      onMouseEnter={() => setTooltipVisible(true)}
+      onMouseLeave={() => setTooltipVisible(false)}
+      onFocus={() => setTooltipVisible(true)}
+      onBlur={() => setTooltipVisible(false)}
+      onKeyDown={(event) => event.key === "Escape" && setTooltipVisible(false)}
     >
-      <span className="verified-badge-glyph" aria-hidden="true" />
+      <svg className="verified-badge-glyph" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+        <path d="M2.4 6.2 4.9 8.5 9.7 3.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
       <VerificationBadgeTooltip id={tooltipId} label={label} />
     </span>
   );

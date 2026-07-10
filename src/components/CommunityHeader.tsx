@@ -4,7 +4,7 @@ import { getCommunityIconLabel } from "../utils/generatedIdentity";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { VerifiedBadge } from "./VerifiedBadge";
-import { getCommunityVerificationVariant } from "../utils/verificationHelpers";
+import { getCommunityVerificationSummary } from "../utils/verificationHelpers";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
 
@@ -50,7 +50,7 @@ export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenMod
         {getCommunityIconLabel(community.name, community.icon)}
       </div>
       <div className="community-header-copy">
-        <strong className="community-name-with-verification"><span>{community.name}</span><VerifiedBadge variant={getCommunityVerificationVariant(community.id)} /></strong>
+        <strong className="community-name-with-verification"><span>{community.name}</span><VerifiedBadge verification={getCommunityVerificationSummary(community.id, [], community.verification)} /></strong>
         <span>{access.isVisitor ? "Public preview" : "Desktop community"}</span>
       </div>
       <button className="icon-button" aria-label="Open community management center" title="Open community management center" onClick={openManagementCenter}>

@@ -48,7 +48,6 @@ export type DirectConversation = Readonly<{
   participantName: string;
   participantUsername: string;
   participantAvatarUrl?: string;
-  participantVerified?: boolean;
   participantStatus: UserStatus;
   participantStatusText: string;
   lastMessagePreview: string;

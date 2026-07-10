@@ -1,3 +1,5 @@
+import type { VerificationSummary } from "./verification";
+
 export type CommunityId = string;
 export type ChannelId = string;
 export type CategoryId = string;
@@ -29,6 +31,7 @@ export interface Member {
   username: string;
   avatarSeed: string;
   avatarUrl?: string;
+  verification?: VerificationSummary;
   status: UserStatus;
   statusText: string;
   roleId: RoleId;
@@ -105,6 +108,7 @@ export interface Community {
   name: string;
   icon: string;
   accentColor: string;
+  verification?: VerificationSummary;
   description?: string | null;
   visibility?: "public" | "private";
   publicReadEnabled?: boolean;

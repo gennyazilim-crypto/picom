@@ -6,7 +6,7 @@ import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
 import { VerifiedProfileAvatar } from "./VerifiedProfileAvatar";
 import { VerificationBadgeList } from "./VerificationBadgeList";
-import { getUserVerificationVariant } from "../utils/verificationHelpers";
+import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { useAudioCatalog } from "../hooks/useAudioCatalog";
 import { ProfileAudioSections } from "./audio/ProfileAudioSections";
 
@@ -116,6 +116,7 @@ export function ProfileLeftCard({
   onPlaceholderAction,
   onOpenMore,
 }: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
+  const verification = getUserVerificationSummary(member.userId, profile.verificationBadges ?? [], profile.verification ?? member.verification);
   return (
     <aside className="profile-left-card" aria-label="Profile summary">
       <button className="profile-back-button" type="button" onClick={onBack}>
@@ -128,7 +129,7 @@ export function ProfileLeftCard({
         <VerifiedProfileAvatar
           member={member}
           displayName={profile.displayName}
-          verifiedType={getUserVerificationVariant(member.userId, profile.verificationBadges ?? [])}
+          verification={verification}
           isCurrentUser={isCurrentUser}
           onEditAvatar={() => onPlaceholderAction?.("Profile photo editing will use the profile service.")}
         />

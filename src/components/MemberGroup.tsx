@@ -2,7 +2,8 @@ import { memo, useMemo } from "react";
 import type { MouseEvent } from "react";
 import type { Member, Role, UserStatus } from "../types/community";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
-import { getUserVerificationVariant } from "../utils/verificationHelpers";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { getUserVerificationSummary } from "../utils/verificationHelpers";
 
 type MemberGroupProps = {
   name: string;
@@ -28,6 +29,7 @@ type MemberRowProps = {
 
 const MemberRow = memo(function MemberRow({ member, role, onOpenProfile, onMemberContextMenu }: MemberRowProps) {
   const presenceLabel = member.statusText || presenceLabels[member.status];
+  const verification = getUserVerificationSummary(member.userId, [], member.verification);
 
   return (
     <button
@@ -41,7 +43,7 @@ const MemberRow = memo(function MemberRow({ member, role, onOpenProfile, onMembe
               <VerifiedAvatarFrame
                 user={member}
                 size="compact"
-                verifiedType={getUserVerificationVariant(member.userId)}
+                verification={verification}
               />
         <i
           className={`status-dot ${member.status}`}
@@ -50,7 +52,7 @@ const MemberRow = memo(function MemberRow({ member, role, onOpenProfile, onMembe
         />
       </span>
       <span className="member-copy">
-        <strong><span>{member.displayName}</span>{member.isBot ? <span className="bot-badge">BOT</span> : null}</strong>
+        <strong><span>{member.displayName}</span><VerifiedBadge verification={verification} size="xs" />{member.isBot ? <span className="bot-badge">BOT</span> : null}</strong>
         <small>{presenceLabel}</small>
       </span>
       {role && role.name !== "Member" ? <em style={{ color: role.color }}>{role.name}</em> : null}

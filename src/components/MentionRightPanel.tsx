@@ -2,7 +2,8 @@ import type { MouseEvent } from "react";
 import type { Community, Member } from "../types/community";
 import type { MentionItem, MentionQuickFilter } from "../types/mentions";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
-import { getUserVerificationVariant } from "../utils/verificationHelpers";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { getUserVerificationSummary } from "../utils/verificationHelpers";
 
 type MentionRightPanelProps = {
   items: MentionItem[];
@@ -25,15 +26,16 @@ function getMembers(communities: Community[], userIds: string[]) {
 }
 
 function PanelMemberButton({ member, onOpenProfile }: { member: Member; onOpenProfile: (event: MouseEvent, member: Member) => void }) {
+  const verification = getUserVerificationSummary(member.userId, [], member.verification);
   return (
     <button className="mention-panel-member" type="button" onClick={(event) => onOpenProfile(event, member)}>
       <VerifiedAvatarFrame
         user={member}
         size="compact"
-        verifiedType={getUserVerificationVariant(member.userId)}
+        verification={verification}
       />
       <span>
-        <strong>{member.displayName}</strong>
+        <strong><span>{member.displayName}</span><VerifiedBadge verification={verification} size="xs" /></strong>
         <small>@{member.username}</small>
       </span>
     </button>

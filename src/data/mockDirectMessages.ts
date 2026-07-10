@@ -12,7 +12,7 @@ const workspaceNotes: DirectMessageAttachment = { id: "dm-media-workspace-notes"
 
 export const mockDirectConversations: DirectConversation[] = [
   {
-    id: "dm-naines", participantUserId: "u-naines", participantName: "Nainesh Selarka", participantUsername: "nainesh", participantVerified: true,
+    id: "dm-naines", participantUserId: "u-naines", participantName: "Nainesh Selarka", participantUsername: "nainesh",
     participantStatus: "online", participantStatusText: "Designing on Figma", lastMessagePreview: "The review board is ready.", updatedAt: "2026-07-04T12:24:00.000Z", unreadCount: 2,
     mutualCommunities: [{ id: "aurora", name: "Aurora Studio" }, { id: "makers", name: "Makers Hub" }], sharedMedia: [designReview, releaseBoard],
     messages: [

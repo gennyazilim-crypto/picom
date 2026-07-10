@@ -5,8 +5,9 @@ import { dateTimeService } from "../services/dateTimeService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { AppIcon } from "./AppIcon";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
+import { VerifiedBadge } from "./VerifiedBadge";
 import { MentionFeedFooter } from "./MentionFeedFooter";
-import { getUserVerificationVariant } from "../utils/verificationHelpers";
+import { getUserVerificationSummary } from "../utils/verificationHelpers";
 
 type MentionFeedCardProps = {
   item: MentionItem;
@@ -63,6 +64,7 @@ export function MentionFeedCard({
   onOpenMore,
 }: MentionFeedCardProps) {
   const authorLabel = author?.displayName ?? "Picom member";
+  const verification = getUserVerificationSummary(author?.userId ?? item.authorId, [], author?.verification);
 
   return (
     <article className={`mention-card${item.isUnread ? " unread" : ""}`}>
@@ -78,7 +80,7 @@ export function MentionFeedCard({
             label={authorLabel}
             size="medium"
             avatarSize={42}
-            verifiedType={getUserVerificationVariant(author?.userId ?? item.authorId)}
+            verification={verification}
           />
         </button>
         <div className="mention-author-copy">
@@ -89,6 +91,7 @@ export function MentionFeedCard({
             disabled={!author}
           >
             <span>{authorLabel}</span>
+            <VerifiedBadge verification={verification} size="xs" />
           </button>
           <span>
             {community?.name ?? "Visible community"} / #{channel?.name ?? "channel"} / {dateTimeService.formatCompactDateTime(item.createdAt)}
