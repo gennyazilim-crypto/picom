@@ -7,7 +7,7 @@ import { notificationService } from "../services/notificationService";
 import { directMessageRealtimeService, mapDirectMessageRow, type DirectMessageRealtimeEvent, type DirectReactionRow } from "../services/supabase/directMessageRealtimeService";
 import type { Database } from "../services/supabase/database.types";
 import { getSupabaseClient, getSupabaseClientStatus } from "../services/supabase/supabaseClient";
-import { createRealtimeMessageDeduper, mapRealtimeSubscriptionStatus, type RealtimeConnectionStatus } from "../services/supabase/realtimeService";
+import { createRealtimeEventDeduper, createRealtimeMessageDeduper, mapRealtimeSubscriptionStatus, realtimeChannelNames, type RealtimeConnectionStatus } from "../services/supabase/realtimeService";
 
 type DirectMessageRow = Database["public"]["Tables"]["direct_messages"]["Row"];
 
@@ -27,6 +27,7 @@ export function useDirectMessageRealtime(input: Input): RealtimeConnectionStatus
   const [status, setStatus] = useState<RealtimeConnectionStatus>("idle");
   const callbacksRef = useRef(input);
   const deduperRef = useRef(createRealtimeMessageDeduper());
+  const eventDeduperRef = useRef(createRealtimeEventDeduper());
   const conversationKey = [...input.conversationIds].sort().join("|");
 
   useEffect(() => { callbacksRef.current = input; }, [input]);
@@ -34,10 +35,11 @@ export function useDirectMessageRealtime(input: Input): RealtimeConnectionStatus
   useEffect(() => {
     if (!input.enabled || !dataSourceService.getStatus().isMock) return;
     setStatus("connected");
+    eventDeduperRef.current.clear();
     const allowed = new Set(input.conversationIds);
     return directMessageRealtimeService.subscribeMock((event) => {
       if (("message" in event && allowed.has(event.message.conversationId)) || ("conversationId" in event && allowed.has(event.conversationId)) || event.type.startsWith("direct_reaction")) {
-        dispatchEvent(event);
+        dispatchEventOnce(event);
       }
     });
   }, [conversationKey, input.enabled]);
@@ -54,9 +56,10 @@ export function useDirectMessageRealtime(input: Input): RealtimeConnectionStatus
     let canceled = false;
     const channels: RealtimeChannel[] = [];
     deduperRef.current.clear();
+    eventDeduperRef.current.clear();
     setStatus("connecting");
 
-    const dispatchMessage = (event: DirectMessageRealtimeEvent) => dispatchEvent(event);
+    const dispatchMessage = (event: DirectMessageRealtimeEvent) => dispatchEventOnce(event);
     void (async () => {
       const { data, error } = await client.from("direct_conversation_members").select("conversation_id").eq("user_id", input.currentUserId).in("conversation_id", input.conversationIds);
       if (canceled) return;
@@ -66,7 +69,7 @@ export function useDirectMessageRealtime(input: Input): RealtimeConnectionStatus
 
       for (const conversationId of allowedIds) {
         let connected = false;
-        const channel = client.channel(`dm:conversation:${conversationId}`)
+        const channel = client.channel(realtimeChannelNames.directMessages(conversationId))
           .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `conversation_id=eq.${conversationId}` }, (payload) => {
             const message = mapDirectMessageRow(payload.new as DirectMessageRow);
             if (deduperRef.current.shouldProcessInsert(message)) dispatchMessage({ type: "direct_message:insert", message });
@@ -84,15 +87,40 @@ export function useDirectMessageRealtime(input: Input): RealtimeConnectionStatus
         channels.push(channel);
       }
 
-      const reactionChannel = client.channel(`dm:reactions:${input.currentUserId}`)
+      const reactionChannel = client.channel(realtimeChannelNames.directReactions(input.currentUserId))
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_message_reactions" }, (payload) => dispatchMessage({ type: "direct_reaction:add", reaction: payload.new as DirectReactionRow }))
         .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_message_reactions" }, (payload) => dispatchMessage({ type: "direct_reaction:remove", reaction: payload.old as DirectReactionRow }))
         .subscribe();
       channels.push(reactionChannel);
+      loggingService.logDebug("DM realtime subscriptions active", {
+        conversationSubscriptions: allowedIds.length,
+        reactionSubscriptions: 1,
+        totalSubscriptions: channels.length,
+      }, "dm-realtime");
     })();
 
-    return () => { canceled = true; for (const channel of channels) void client.removeChannel(channel); };
+    return () => {
+      canceled = true;
+      const removedSubscriptions = channels.length;
+      for (const channel of channels) void client.removeChannel(channel);
+      eventDeduperRef.current.clear();
+      deduperRef.current.clear();
+      loggingService.logDebug("DM realtime subscriptions removed", { removedSubscriptions }, "dm-realtime");
+    };
   }, [conversationKey, input.currentUserId, input.enabled]);
+
+  function dispatchEventOnce(event: DirectMessageRealtimeEvent) {
+    const eventId = "message" in event
+      ? `${event.type}:${event.message.id}:${event.message.editedAt ?? event.message.deletedAt ?? event.message.createdAt}`
+      : "reaction" in event
+        ? `${event.type}:${event.reaction.id}:${event.reaction.created_at}`
+        : `${event.type}:${event.conversationId}:${event.messageId}`;
+    if (!eventDeduperRef.current.shouldProcess(eventId)) {
+      loggingService.logDebug("Duplicate DM realtime event ignored", { eventType: event.type }, "dm-realtime");
+      return;
+    }
+    dispatchEvent(event);
+  }
 
   function dispatchEvent(event: DirectMessageRealtimeEvent) {
     const current = callbacksRef.current;

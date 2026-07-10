@@ -32,6 +32,8 @@ export const realtimeChannelNames = {
   messages: (communityId: string, channelId: string) => `room:community:${communityId}:channel:${channelId}`,
   presence: (communityId: string) => `presence:community:${communityId}`,
   typing: (communityId: string, channelId: string) => `typing:community:${communityId}:channel:${channelId}`,
+  directMessages: (conversationId: string) => `dm:conversation:${conversationId}`,
+  directReactions: (userId: string) => `dm:reactions:${userId}`,
 } as const;
 
 export function mapRealtimeSubscriptionStatus(status: string, hasConnected: boolean): RealtimeConnectionStatus | null {
@@ -91,6 +93,26 @@ export function createRealtimeMessageDeduper(maxEntries = 500) {
       }
 
       return true;
+    },
+  };
+}
+
+export function createRealtimeEventDeduper(maxEntries = 1000) {
+  const eventIds: string[] = [];
+  const seenEventIds = new Set<string>();
+
+  return {
+    clear() {
+      eventIds.length = 0;
+      seenEventIds.clear();
+    },
+    shouldProcess(eventId: string) {
+      if (!eventId || seenEventIds.has(eventId)) return false;
+      rememberBoundedValue(eventIds, seenEventIds, eventId, maxEntries);
+      return true;
+    },
+    size() {
+      return seenEventIds.size;
     },
   };
 }
