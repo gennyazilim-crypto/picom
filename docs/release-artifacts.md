@@ -99,6 +99,10 @@ Before publishing beta/stable packages:
 - Upload `provenance.json` with package artifacts.
 - Verify at least one checksum on each target platform.
 
+Installer-specific ordering, collision handling, and candidate directory rules
+are defined in `docs/installer-artifacts.md`. That document is operational
+guidance; this file remains the canonical artifact naming and SHA256 contract.
+
 ## Verification commands
 
 Linux/macOS:
