@@ -43,7 +43,7 @@ export function AdminOperationsPanel({ access }: { access: AdminOperationsAccess
             : active === "abuse"
               ? <div className="admin-ops-detail"><strong>{snapshot.abuse.total} redacted local events</strong><p>{snapshot.abuse.critical} critical - {snapshot.abuse.warning} warnings. Raw IPs and message content are not retained.</p></div>
               : active === "storage"
-                ? <div className="admin-ops-detail"><strong>{snapshot.quarantine.quarantinedCount} quarantined attachments</strong><p>{snapshot.storageStatus}. {snapshot.quarantine.needsReviewCount} items need review.</p></div>
+                ? <div className="admin-ops-detail"><strong>Attachment quarantine</strong><p>{snapshot.quarantine.quarantinedCount} blocked items; {snapshot.quarantine.needsReviewCount} need restricted review. {snapshot.storageStatus}. No file path or object URL is exposed.</p></div>
                 : active === "realtime"
                   ? <div className="admin-ops-detail"><strong>{snapshot.realtimeStatus}</strong><p>Browser online: {String(snapshot.network.browserOnline)} - Backend reachable: {String(snapshot.network.backendReachable)}</p></div>
                   : <div className="admin-ops-log-list">{snapshot.recentErrors.length ? snapshot.recentErrors.map((entry) => <article key={entry.id}><div><strong>{entry.message}</strong><span>{entry.source ?? "client"}</span></div><time>{dateTimeService.formatFullTimestamp(entry.timestamp)}</time></article>) : <div className="admin-ops-detail"><strong>No recent redacted errors</strong><p>Only loggingService output can appear here.</p></div>}</div>;

@@ -21,7 +21,7 @@ const quarantinedStatuses = new Set<AttachmentScanStatus>(["suspicious", "failed
 
 export const attachmentQuarantineService = {
   isQuarantined(status: AttachmentScanStatus | null | undefined): boolean {
-    return quarantinedStatuses.has(status ?? "skipped_development");
+    return quarantinedStatuses.has(status ?? "pending");
   },
 
   getAccessDecision(attachment: Pick<Attachment, "scanStatus">): AttachmentAccessDecision {

@@ -5,7 +5,7 @@ import type { AttachmentScanStatus } from "./attachmentScanService";
 import type { UploadedAttachmentSummary } from "./uploadService";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
-export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, status, created_at" as const;
+export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, scan_status, status, created_at" as const;
 
 export type AttachmentMetadataRow = Readonly<{
   id: string;
@@ -20,6 +20,7 @@ export type AttachmentMetadataRow = Readonly<{
   thumbnail_url: string | null;
   width: number | null;
   height: number | null;
+  scan_status: AttachmentScanStatus;
   status: "pending" | "attached" | "failed";
   created_at: string;
 }>;
@@ -82,7 +83,7 @@ function mapAttachmentMetadataRow(row: AttachmentMetadataRow): AttachmentMetadat
     width: row.width,
     height: row.height,
     blurhashPlaceholder: null,
-    scanStatus: "skipped_development",
+    scanStatus: row.scan_status,
     status: row.status,
     createdAt: row.created_at,
   };
@@ -177,12 +178,7 @@ export const attachmentService = {
 
     return {
       ok: true,
-      data: {
-        ...mapAttachmentMetadataRow(data),
-        publicUrl: upload.publicUrl,
-        thumbnailUrl: upload.thumbnailUrl,
-        scanStatus: upload.scanStatus,
-      },
+      data: mapAttachmentMetadataRow(data),
     };
   },
 };

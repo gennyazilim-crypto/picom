@@ -145,6 +145,7 @@ export type Database = {
           height: number | null;
           public_url: string | null;
           thumbnail_url: string | null;
+          scan_status: "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
           status: "pending" | "attached" | "failed";
           created_at: string;
         };

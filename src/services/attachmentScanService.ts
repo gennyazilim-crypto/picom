@@ -32,7 +32,7 @@ export const attachmentScanService = {
   },
 
   getScanStatus(status: AttachmentScanStatus | null | undefined): AttachmentScanResult {
-    const normalized = status ?? "skipped_development";
+    const normalized = status ?? "pending";
 
     if (renderableStatuses.has(normalized)) {
       return {

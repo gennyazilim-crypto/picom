@@ -8,6 +8,7 @@ const files = {
   attachmentGrid: readFileSync(resolve(root, "src/components/AttachmentGrid.tsx"), "utf8"),
   adminPanel: readFileSync(resolve(root, "src/components/AdminOperationsPanel.tsx"), "utf8"),
   doc: readFileSync(resolve(root, "docs/attachment-quarantine-system.md"), "utf8"),
+  migration: readFileSync(resolve(root, "supabase/migrations/20260710139000_attachment_scanning_quarantine.sql"), "utf8"),
 };
 
 const checks = [
@@ -20,6 +21,8 @@ const checks = [
   [files.adminPanel.includes("Attachment quarantine"), "Admin Operations quarantine summary"],
   [files.doc.includes("Signed URLs must not be issued for quarantined files"), "server-side signed URL rule documented"],
   [files.doc.includes("Normal users must not access quarantined objects directly"), "normal user access restriction documented"],
+  [files.migration.includes("message attachments read scanned visible object"), "Storage scan gate"],
+  [files.migration.includes("attachment.scan_status in ('clean','skipped_development')"), "only safe scan states served"],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);

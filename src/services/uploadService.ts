@@ -212,22 +212,12 @@ export const uploadService = {
       return uploadError("UPLOAD_FAILED", "Could not upload attachment.");
     }
 
-    const { data: signedUrlData, error: signedUrlError } = await configured.data.storage
-      .from(MESSAGE_ATTACHMENTS_BUCKET)
-      .createSignedUrl(storagePath, 60 * 60);
-    const publicUrl = signedUrlError ? null : signedUrlData.signedUrl;
     const thumbnail = attachmentThumbnailService.createThumbnailPlaceholder({
       storagePath,
-      publicUrl,
+      publicUrl: null,
       mimeType: input.file.type,
       sizeBytes: input.file.size,
     });
-    const scan = attachmentScanService.scanFilePlaceholder({
-      fileName: input.file.name,
-      mimeType: input.file.type,
-      sizeBytes: input.file.size,
-    });
-
     return {
       ok: true,
       data: {
@@ -237,13 +227,13 @@ export const uploadService = {
         fileName: sanitizeUploadFileName(input.file.name),
         mimeType: input.file.type,
         sizeBytes: input.file.size,
-        publicUrl,
+        publicUrl: null,
         thumbnailUrl: thumbnail.thumbnailUrl,
         thumbnailStoragePath: thumbnail.thumbnailStoragePath,
         width: thumbnail.width,
         height: thumbnail.height,
         blurhashPlaceholder: thumbnail.blurhashPlaceholder,
-        scanStatus: scan.status,
+        scanStatus: "pending",
       },
     };
   },
