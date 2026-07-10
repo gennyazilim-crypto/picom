@@ -28,7 +28,10 @@ type MessageListProps = {
   pushToast: (message: string, tone?: ToastTone) => void;
   blockedUserIds?: string[];
   announcement?: boolean;
+  onNearBottomChange?: (nearBottom: boolean) => void;
 };
+
+const READ_BOTTOM_THRESHOLD_PX = 96;
 
 function formatTypingNames(names: string[]): string {
   if (names.length === 1) return `${names[0]} is typing...`;
@@ -62,8 +65,10 @@ export function MessageList({
   pushToast,
   blockedUserIds = [],
   announcement = false,
+  onNearBottomChange,
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
+  const nearBottomRef = useRef(true);
   const lastMessageId = messages[messages.length - 1]?.id;
   const memberByUserId = useMemo(() => new Map(community.members.map((member) => [member.userId, member])), [community.members]);
   const roleById = useMemo(() => new Map(community.roles.map((role) => [role.id, role])), [community.roles]);
@@ -74,10 +79,26 @@ export function MessageList({
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
+      if (!nearBottomRef.current) return;
       listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+      onNearBottomChange?.(true);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [lastMessageId]);
+  }, [lastMessageId, onNearBottomChange]);
+
+  useEffect(() => {
+    nearBottomRef.current = true;
+    onNearBottomChange?.(true);
+  }, [community.id, onNearBottomChange]);
+
+  const handleScroll = () => {
+    const element = listRef.current;
+    if (!element) return;
+    const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight <= READ_BOTTOM_THRESHOLD_PX;
+    if (nearBottomRef.current === nearBottom) return;
+    nearBottomRef.current = nearBottom;
+    onNearBottomChange?.(nearBottom);
+  };
 
   useEffect(() => {
     if (!highlightedMessageId) return;
@@ -101,7 +122,7 @@ export function MessageList({
   }
 
   return (
-    <div className={`message-list ${announcement ? "announcement-message-list" : ""}`} ref={listRef}>
+    <div className={`message-list ${announcement ? "announcement-message-list" : ""}`} ref={listRef} onScroll={handleScroll}>
       {messages.map((message, index) => {
         const member = memberByUserId.get(message.authorId) ?? community.members[0];
         const role = roleById.get(member.roleId);

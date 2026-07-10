@@ -547,6 +547,11 @@ export type Database = {
       list_message_reaction_summaries: { Args: { target_message_ids: string[] }; Returns: Array<{ message_id: string; emoji: string; reaction_count: number; reacted_by_current_user: boolean }> };
       edit_message_with_version: { Args: { target_message_id: string; next_body: string; expected_edited_at: string | null }; Returns: Array<{ id: string; body: string; edited_at: string; deleted_at: string | null }> };
       delete_message_with_version: { Args: { target_message_id: string; expected_edited_at: string | null }; Returns: Array<{ id: string; deleted_at: string }> };
+      mark_channel_read: { Args: { target_channel_id: string; target_last_read_message_id: string | null }; Returns: boolean };
+      get_my_community_unread_state: {
+        Args: { target_community_id: string };
+        Returns: Array<{ channel_id: string; unread_count: number; mention_count: number; last_message_id: string | null; last_read_message_id: string | null }>;
+      };
       list_mention_feed: {
         Args: { cursor_created_at?: string | null; cursor_message_id?: string | null; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["mention_feed_view"]["Row"]>;

@@ -64,6 +64,7 @@ type ChatMainProps = {
   onOpenInvite: () => void;
   onOpenTopic: () => void;
   onOpenPoll: () => void;
+  onMessageListNearBottomChange?: (nearBottom: boolean) => void;
 };
 
 export function ChatMain({
@@ -101,6 +102,7 @@ export function ChatMain({
   onOpenInvite,
   onOpenTopic,
   onOpenPoll,
+  onMessageListNearBottomChange,
 }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
   const replyToMember = replyToMessage ? community.members.find((member) => member.userId === replyToMessage.authorId) : undefined;
@@ -215,6 +217,7 @@ export function ChatMain({
       ) : (
         <>
           <MessageList
+            key={channel.id}
             community={community}
             messages={channelMessages}
             currentUserId={currentUserId}
@@ -236,6 +239,7 @@ export function ChatMain({
             pushToast={pushToast}
             blockedUserIds={blockedUserIds}
             announcement={channel.type === "announcement"}
+            onNearBottomChange={onMessageListNearBottomChange}
           />
           <MessageComposer
             communityId={community.id}

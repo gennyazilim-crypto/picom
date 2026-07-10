@@ -18,6 +18,7 @@ type UseSupabaseMessageRealtimeInput = Readonly<{
   enabled: boolean;
   communityId: string;
   channelId: string;
+  subscribeCommunityWide?: boolean;
   onInsert: (message: MessageSummary) => void;
   onUpdate: (message: MessageSummary) => void;
   onDelete: (messageId: string) => void;
@@ -69,6 +70,7 @@ export function useSupabaseMessageRealtime({
   enabled,
   communityId,
   channelId,
+  subscribeCommunityWide = false,
   onInsert,
   onUpdate,
   onDelete,
@@ -132,17 +134,18 @@ export function useSupabaseMessageRealtime({
     insertDeduperRef.current.clear();
     eventOrderingRef.current.clear();
     const generation = ++subscriptionGenerationRef.current;
-    const scope = `${diagnosticReference(communityId)}:${diagnosticReference(channelId)}`;
+    const scope = `${diagnosticReference(communityId)}:${subscribeCommunityWide ? "all-visible-channels" : diagnosticReference(channelId)}`;
+    const insertFilter = subscribeCommunityWide ? `community_id=eq.${communityId}` : `channel_id=eq.${channelId}`;
     const diagnostics = { delivered: 0, duplicate: 0, stale: 0 };
     let hasConnected = false;
     let canceled = false;
     const isCurrentSubscription = () => !canceled && subscriptionGenerationRef.current === generation;
 
     const channel = client
-      .channel(realtimeChannelNames.messages(communityId, channelId))
+      .channel(realtimeChannelNames.messages(communityId, subscribeCommunityWide ? "all-visible-channels" : channelId))
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
+        { event: "INSERT", schema: "public", table: "messages", filter: insertFilter },
         (payload) => {
           if (!isCurrentSubscription()) return;
           if ((payload.new as MessageRow).thread_id) return;
@@ -282,7 +285,7 @@ export function useSupabaseMessageRealtime({
       }, "realtime-deduplication");
       void client.removeChannel(channel);
     };
-  }, [channelId, communityId, enabled]);
+  }, [channelId, communityId, enabled, subscribeCommunityWide]);
 
   return connectionStatus;
 }

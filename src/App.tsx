@@ -125,6 +125,7 @@ import { useProtectedDesktopSession } from "./hooks/useProtectedDesktopSession";
 import { useSupabaseMessageRealtime } from "./hooks/useSupabaseMessageRealtime";
 import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
 import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
+import { readStateService } from "./services/supabase/readStateService";
 import { createCommunityFromSummary } from "./utils/communityFactory";
 import { messageMentionsUser } from "./utils/mentionUtils";
 import { canSendMessage, canViewChannel, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
@@ -293,6 +294,7 @@ export function App() {
   const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>("online");
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [activeView, setActiveView] = useState<ActiveView>("community");
+  const [isActiveMessageListNearBottom, setIsActiveMessageListNearBottom] = useState(true);
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
   const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(mockFollowedUserStories);
   const [mentionTab, setMentionTab] = useState<MentionFeedTab>("feed");
@@ -352,6 +354,7 @@ export function App() {
     setLocalReactionSummary,
     markChannelUnread,
     clearChannelUnread,
+    setCommunityUnreadState,
     addCommunity,
     addCategory,
     renameCategory,
@@ -525,6 +528,10 @@ export function App() {
   }), [communities, communityEvents]);
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
+  const latestActiveMessageId = useMemo(() => {
+    const channelMessages = activeCommunity.messages.filter((message) => message.channelId === displayedActiveChannel.id && !message.deletedAt);
+    return channelMessages[channelMessages.length - 1]?.id ?? null;
+  }, [activeCommunity.messages, displayedActiveChannel.id]);
   useEffect(() => {
     diagnosticsService.setAppContext({ activeView, activeCommunityId: activeCommunity.id, activeChannelId: displayedActiveChannel.id, authState: authSession?.user ? "authenticated" : "signed_out" });
   }, [activeChannel.id, activeCommunity.id, activeView, authSession, displayedActiveChannel.id]);
@@ -605,14 +612,15 @@ export function App() {
       deletedAt: message.deletedAt,
     });
 
-    if (message.channelId !== activeChannel.id && message.authorId !== currentUser.userId) {
+    const isActivelyRead = activeView === "community" && message.channelId === activeChannel.id && isActiveMessageListNearBottom;
+    if (!isActivelyRead && message.authorId !== currentUser.userId) {
       markChannelUnread({
         communityId: message.communityId,
         channelId: message.channelId,
         mentionCount: getLocalMentionCount(message.body, currentUser),
       });
     }
-  }, [activeChannel.id, activeCommunity.id, currentUser, markChannelUnread, upsertLocalMessage]);
+  }, [activeChannel.id, activeCommunity.id, activeView, currentUser, isActiveMessageListNearBottom, markChannelUnread, upsertLocalMessage]);
 
   const handleRealtimeMessageUpdate = useCallback((message: MessageSummary) => {
     if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;
@@ -654,6 +662,7 @@ export function App() {
     enabled: Boolean(authSession) && !safeMode.active && activeView === "community",
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
+    subscribeCommunityWide: true,
     onInsert: handleRealtimeMessageInsert,
     onUpdate: handleRealtimeMessageUpdate,
     onDelete: handleRealtimeMessageDelete,
@@ -788,8 +797,28 @@ export function App() {
   }, [accessibilitySettings, theme]);
 
   useEffect(() => {
-    clearChannelUnread({ communityId: activeCommunity.id, channelId: activeChannel.id });
-  }, [activeChannel.id, activeCommunity.id, clearChannelUnread]);
+    setIsActiveMessageListNearBottom(true);
+  }, [activeChannel.id, activeCommunity.id]);
+
+  useEffect(() => {
+    if (activeView !== "community" || !isActiveMessageListNearBottom) return;
+    clearChannelUnread({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id });
+    void readStateService.markChannelRead({ channelId: displayedActiveChannel.id, lastReadMessageId: latestActiveMessageId });
+  }, [activeCommunity.id, activeView, clearChannelUnread, displayedActiveChannel.id, isActiveMessageListNearBottom, latestActiveMessageId]);
+
+  useEffect(() => {
+    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
+    let canceled = false;
+    void readStateService.listCommunityUnread(activeCommunity.id).then((result) => {
+      if (canceled || !result.ok) return;
+      setCommunityUnreadState(activeCommunity.id, result.data.map((summary) => ({
+        channelId: summary.channelId,
+        unread: summary.unreadCount > 0,
+        mentionCount: summary.mentionCount,
+      })));
+    });
+    return () => { canceled = true; };
+  }, [activeCommunity.id, authSession, safeMode.active, setCommunityUnreadState]);
 
   useEffect(() => {
     if (!visibleChannels.length) return;
@@ -2432,6 +2461,7 @@ export function App() {
                 onOpenInvite={() => setComposerInviteOpen(true)}
                 onOpenTopic={() => pushToast("Channel topic editing is prepared in the channel settings foundation.", "info")}
                 onOpenPoll={() => setPollCreateOpen(true)}
+                onMessageListNearBottomChange={setIsActiveMessageListNearBottom}
                 currentUserId={currentUser.userId}
                 readReceiptsEnabled={userSafetySettings.enableReadReceipts}
                 highlightedMessageId={highlightedMessageId}

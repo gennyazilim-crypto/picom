@@ -69,6 +69,12 @@ type ChannelUnreadInput = {
   mentionCount?: number;
 };
 
+export type ChannelUnreadSnapshot = {
+  channelId: string;
+  unread: boolean;
+  mentionCount: number;
+};
+
 function isSameMessage(message: Message, id: string, clientMessageId?: string | null): boolean {
   return message.id === id || Boolean(clientMessageId && message.clientMessageId === clientMessageId);
 }
@@ -111,7 +117,7 @@ function updateChannelUnreadState(
       channels: category.channels.map((channel) => {
         if (channel.id !== channelId) return channel;
 
-        const nextMentions = unread ? mentionCount ?? channel.mentions ?? 0 : 0;
+        const nextMentions = unread ? Math.max(0, (channel.mentions ?? 0) + (mentionCount ?? 0)) : 0;
         if (channel.unread === unread && (channel.mentions ?? 0) === nextMentions) return channel;
 
         changed = true;
@@ -395,6 +401,22 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     setCommunities((current) => updateChannelUnreadState(current, input, false));
   }, []);
 
+  const setCommunityUnreadState = useCallback((communityId: string, snapshots: ChannelUnreadSnapshot[]) => {
+    const snapshotByChannelId = new Map(snapshots.map((snapshot) => [snapshot.channelId, snapshot]));
+    setCommunities((current) => current.map((community) => community.id !== communityId ? community : {
+      ...community,
+      categories: community.categories.map((category) => ({
+        ...category,
+        channels: category.channels.map((channel) => {
+          const snapshot = snapshotByChannelId.get(channel.id);
+          if (!snapshot) return channel;
+          if (channel.unread === snapshot.unread && (channel.mentions ?? 0) === snapshot.mentionCount) return channel;
+          return { ...channel, unread: snapshot.unread, mentions: snapshot.mentionCount };
+        }),
+      })),
+    }));
+  }, []);
+
   const addCommunity = useCallback((community: Community) => {
     setCommunities((current) => current.some((item) => item.id === community.id) ? current : [...current, community]);
     return community;
@@ -569,6 +591,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     setLocalReactionSummary,
     markChannelUnread,
     clearChannelUnread,
+    setCommunityUnreadState,
     addCommunity,
     addCategory,
     renameCategory,
