@@ -7,7 +7,7 @@ import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import type { AudioFeedItem, AudioPlayableItem } from "../types/audio";
-import { mockAudioFeedItems, mockRadioSessions } from "../data/mockAudio";
+import { mockAudioFeedItems, mockPodcastEpisodes, mockRadioSessions } from "../data/mockAudio";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
@@ -15,6 +15,7 @@ import { MentionFeedHeader } from "./MentionFeedHeader";
 import { MentionFeedList } from "./MentionFeedList";
 import { AudioFeedSection } from "./audio/AudioFeedSection";
 import { RadioPanel } from "./audio/RadioPanel";
+import { PodcastEpisodeDetail } from "./audio/PodcastEpisodeDetail";
 
 type MentionFeedMainProps = {
   items: MentionItem[];
@@ -91,6 +92,7 @@ export function MentionFeedMain({
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
   const [selectedRadioSessionId, setSelectedRadioSessionId] = useState<string | null>(null);
+  const [selectedPodcastEpisodeId, setSelectedPodcastEpisodeId] = useState<string | null>(null);
   const [savedAudioIds, setSavedAudioIds] = useState<Set<string>>(() => new Set(mockAudioFeedItems.filter((item) => item.isSaved).map((item) => item.id)));
   const [audioReminderIds, setAudioReminderIds] = useState<Set<string>>(() => new Set());
   const rankingNowMs = useMemo(() => Date.now(), []);
@@ -106,11 +108,14 @@ export function MentionFeedMain({
       if (session) setSelectedRadioSessionId(session.id);
       return;
     }
+    setSelectedPodcastEpisodeId(item.id.replace(/^feed-/, ""));
     const communityName = communities.find((community) => community.id === item.communityId)?.name ?? "Picom community";
     setSelectedAudio({ id: item.id, type: item.type, title: item.title, contextLabel: `${communityName} / ${item.type === "podcast_episode" ? "Podcast" : "Community radio"}`, coverUrl: item.coverUrl, durationSeconds: item.durationSeconds ?? 3600 });
   };
   const selectedRadioSession = mockRadioSessions.find((session) => session.id === selectedRadioSessionId) ?? null;
   const selectedRadioCommunity = selectedRadioSession ? communities.find((community) => community.id === selectedRadioSession.communityId) : undefined;
+  const selectedPodcastEpisode = mockPodcastEpisodes.find((episode) => episode.id === selectedPodcastEpisodeId) ?? null;
+  const selectedPodcastCommunity = selectedPodcastEpisode ? communities.find((community) => community.id === selectedPodcastEpisode.communityId) : undefined;
   const toggleAudioSet = (setter: (value: Set<string>) => void, current: Set<string>, id: string) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); setter(next); };
   const openStory = (storyId: string) => {
     setActiveStoryId(storyId);
@@ -191,6 +196,7 @@ export function MentionFeedMain({
           />
         </div>
       </div> : null}
+      {selectedPodcastEpisode ? <div className="podcast-detail-modal-backdrop" role="presentation" onMouseDown={() => setSelectedPodcastEpisodeId(null)}><div className="podcast-detail-modal" role="dialog" aria-modal="true" aria-label={`${selectedPodcastEpisode.title} podcast detail`} onMouseDown={(event) => event.stopPropagation()}><PodcastEpisodeDetail episode={selectedPodcastEpisode} communityName={selectedPodcastCommunity?.name ?? "Picom community"} author={selectedPodcastCommunity?.members.find((member) => member.userId === selectedPodcastEpisode.authorUserId)} relatedEpisodes={mockPodcastEpisodes.filter((episode) => episode.communityId === selectedPodcastEpisode.communityId && episode.status === "published")} getCommentAuthorLabel={(authorId) => selectedPodcastCommunity?.members.find((member) => member.userId === authorId)?.displayName ?? "Community member"} onClose={() => setSelectedPodcastEpisodeId(null)} onOpenCommunity={() => { setSelectedPodcastEpisodeId(null); onOpenEventCommunity(selectedPodcastEpisode.communityId); }} onOpenAuthor={onOpenProfile} onSelectEpisode={(episode) => setSelectedPodcastEpisodeId(episode.id)} /></div></div> : null}
     </main>
   );
 }

@@ -2651,6 +2651,7 @@ export function App() {
                     community={displayedActiveCommunity}
                     canManageAudio={communityAccess.isOwner || communityAccess.permissions.some((permission) => ["manageCommunity", "manageChannels", "moderateMessages"].includes(permission))}
                     onPlaceholderAction={(message) => pushToast(message, "info")}
+                    onOpenProfile={openProfilePage}
                   />
                 </DeferredViewBoundary>
               ) : displayedActiveChannel.type === "voice" ? (
