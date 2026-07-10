@@ -1,30 +1,34 @@
-﻿# Message Drafts Per Channel
+# Message Drafts and Cross-Device Sync Policy
 
-Status: implemented as local MVP-safe foundation
+Status: local-only production default. Cross-device sync is disabled pending explicit user consent, privacy review, retention rules, and a reviewed encrypted-at-rest backend design.
 
-Picom now preserves composer text per community/channel using local client storage. This is intentionally limited to text drafts so stale file object URLs or sensitive binary data are not persisted.
+## Current behavior
 
-## Behavior
-
-- Draft key scope: `communityId + channelId`.
-- Composer text is saved locally while typing.
-- Switching channels restores that channel's saved draft.
-- Sending a message clears the active channel draft.
-- Empty drafts are removed from local storage.
-- Attachment previews are not persisted.
-- Attachment object URLs are revoked when switching channels.
+- Community drafts use `community:{communityId}:channel:{channelId}`.
+- Direct-message drafts use `dm:{conversationId}`.
+- Only text up to 4,000 characters is persisted in local client storage.
+- Switching channels/conversations restores the scoped draft.
+- Successful send clears the exact channel or DM draft.
+- Empty drafts are removed; corrupted storage falls back safely.
 
 ## Safety boundaries
 
-- No auth tokens, passwords, session data, files, or binary attachment data are stored.
-- Draft persistence is best-effort and never blocks message sending.
-- Corrupted draft data falls back to an empty draft.
-- Drafts are local to the desktop client and are not synced through Supabase.
+- No auth tokens, passwords, session data, authorization headers, or credentials are intentionally stored.
+- Never sync files, attachment previews, object URLs, image bytes, clipboard contents, or native file paths.
+- Attachment previews are not persisted and object URLs are revoked.
+- `prepareRemoteSync()` fails closed and contains no Supabase/API write path.
 
-## Manual verification
+## Future opt-in design
 
-1. Type text in one channel without sending.
-2. Switch to another channel and type different text.
-3. Switch back to the first channel and confirm the first draft is restored.
-4. Send the message and confirm the draft clears.
-5. Attach an image, switch channels, and confirm stale previews are not restored.
+A future setting must default off and explain that draft text is uploaded. Server rows must be user-owned, per-channel/DM keyed, encrypted at rest, retention bounded, excluded from logs/analytics/export diagnostics, and removed on send/logout/account deletion as policy requires. Channel membership must be rechecked before restoring a community draft.
+
+## conflict behavior
+
+If opt-in sync is approved, compare trusted server timestamps. Newer `updatedAt` wins. Equal or invalid timestamps preserve the local draft to avoid silent local data loss. A successful send writes a tombstone/version before remote deletion so an older device cannot restore the sent text. Files are never part of conflict resolution.
+
+## Manual checks
+
+1. Type different drafts in two channels and one DM; switch between them.
+2. Send each draft and confirm only that key clears.
+3. Attach a file, switch channels, and confirm no attachment returns.
+4. Confirm `getSyncPolicy().remoteEnabled` is false and no network request occurs.
