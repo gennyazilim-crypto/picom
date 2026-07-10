@@ -22,6 +22,7 @@ import { notificationDigestService } from "../services/notificationDigestService
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
 import { appConfig } from "../config/appConfig";
 import { AdminOperationsPanel } from "./AdminOperationsPanel";
+import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
@@ -84,7 +85,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
   const [accountActivities, setAccountActivities] = useState<AccountActivityRecord[]>(() => accountActivityService.listRecent());
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
-  const showAdminOperationsPlaceholder = import.meta.env.DEV;
+  const [adminOperationsAccess, setAdminOperationsAccess] = useState<AdminOperationsAccess>({ allowed: false, source: "none" });
   const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"];
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   }, [profileSettings]);
 
   useEffect(() => updateService.onStateChange(setUpdateState), []);
+  useEffect(() => { let active = true; void adminOperationsService.getAccess().then((access) => { if (active) setAdminOperationsAccess(access); }); return () => { active = false; }; }, []);
 
   const refreshActiveSessions = useCallback(async () => {
     const result = await sessionManagementService.getActiveSessions();
@@ -897,7 +899,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <button onClick={() => void copyFeedbackReport()}>Copy feedback report</button>
                 <button onClick={exportDiagnostics}>Export diagnostics JSON</button>
               </div>
-              {showAdminOperationsPlaceholder ? <AdminOperationsPanel /> : null}
+              {adminOperationsAccess.allowed ? <AdminOperationsPanel access={adminOperationsAccess} /> : null}
             </div>
           ) : (
             <div className="placeholder-panel">

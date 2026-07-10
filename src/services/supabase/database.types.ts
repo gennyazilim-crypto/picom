@@ -233,6 +233,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
         Relationships: [];
       };
+      app_admins: {
+        Row: { user_id: string; granted_by: string | null; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       threads: {
         Row: { id: string; community_id: string; channel_id: string; parent_message_id: string; name: string; created_by: string; created_at: string; archived_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["threads"]["Row"]> & Pick<Database["public"]["Tables"]["threads"]["Row"], "community_id" | "channel_id" | "parent_message_id" | "name" | "created_by">;
@@ -324,6 +330,10 @@ export type Database = {
       append_community_audit_log: {
         Args: { target_community_id: string; event_action_type: string; event_target_type: string; event_target_id: string | null; event_reason: string | null };
         Returns: string;
+      };
+      is_app_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
       };
     };
     Enums: Record<string, never>;
