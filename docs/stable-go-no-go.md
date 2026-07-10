@@ -54,3 +54,20 @@ Real Task 406 evidence closed migration/Auth/basic RLS/private Storage uncertain
 ## Task 421 hosted Supabase closure decision
 
 Decision remains **NO-GO**. Task 421 confirms a `PARTIAL / BLOCKED` hosted Supabase result: local gates and earlier Auth/core RLS/private Storage evidence pass, but private Presence and the release-scoped Edge Function are not proven. No artifact publication is authorized.
+# Task 430 immutable RC decision (2026-07-11)
+
+## Final decision: NO-GO
+
+The deterministic local quality gates and required GitHub Picom QA run `29129185936` are green. This is necessary but not sufficient for a stable release. The release guard correctly refuses promotion while the following evidence is incomplete:
+
+- Hosted Supabase private Presence authorization, Edge Function deployment, and remaining Storage/lifecycle matrix.
+- Hosted LiveKit two-client audio, reconnect, and cleanup evidence.
+- Native screen-share certification on supported operating systems.
+- Trusted Windows signing and clean-machine installation.
+- Native Linux AppImage/DEB installation and screen-share certification.
+- macOS signing, notarization, stapling, Gatekeeper, and native screen-share certification.
+- Named production owners, secret custodians, rotation owners, and recovery approvers.
+- Authorized legal/license review and sign-off.
+- Complete isolated backup restore plus integrity and destructive-lifecycle validation.
+
+No immutable stable artifacts, final checksums, final provenance, release publication, rollout, or post-release monitoring were initiated. Required product, engineering, security, operations, and support sign-offs remain unapproved.

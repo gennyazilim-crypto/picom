@@ -75,3 +75,13 @@ The blocker-closure pass completed on 2026-07-10 with a **No-Go** decision. Loca
 ## Task 415 release status
 
 The stable decision remains **No-Go**. These notes describe an internal beta candidate only. No public stable Windows, Linux, or macOS artifact, checksum set, provenance statement, or download location is authorized.
+# Task 430 distribution notice (2026-07-11)
+
+Picom has **not** been approved for stable public distribution. These notes remain pre-release/internal material for version `0.1.1-beta.1`.
+
+- Do not publish a stable GitHub Release.
+- Do not distribute the unsigned Windows beta as trusted software.
+- Do not claim Linux certification, macOS notarization, or production service certification.
+- Do not announce stable availability until every blocker in `docs/release-blockers.md` is closed and the release guard returns success against approved evidence.
+
+Deterministic QA is green, including GitHub Actions run `29129185936`, but external production and native-platform gates remain open.

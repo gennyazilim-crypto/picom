@@ -155,3 +155,20 @@ Secret/env/CI controls pass, and the ownership inventory now explicitly separate
 ## Task 429 isolated restore/destructive lifecycle
 
 Backup hashes matched and isolated random-port Docker attempts were cleaned safely. Restore progressed beyond the previous Auth collision in a fresh DB but stopped at missing `extensions.gin_trgm_ops`; no complete data load or destructive lifecycle ran. Soft-delete/export/ownership-transfer contracts were remediated and pass. RB-11 remains **BLOCKED**.
+# Task 430 open blocker snapshot (2026-07-11)
+
+| ID | Blocker | Current evidence | Closure requirement |
+| --- | --- | --- | --- |
+| RB-01 | Hosted Supabase final matrix | Core Auth/RLS evidence exists; final hosted matrix remains partial | Execute protected staging RLS matrix with approved accounts |
+| RB-02 | Private realtime Presence | Static contract passes; no hosted private-channel run | Execute two authorized clients plus unauthorized subscriber denial |
+| RB-03 | Hosted Edge Functions and Storage lifecycle | Local contracts pass; protected deployment/config absent | Deploy release-scoped function and run hosted Storage lifecycle checks |
+| RB-04 | Hosted LiveKit | Local contracts pass; hosted credentials/token endpoint unavailable | Complete two-client audio/reconnect/cleanup matrix |
+| RB-05 | Native screen share | Structural contracts pass; interactive cross-client evidence incomplete | Certify picker, publish, remote view, stop, and cleanup on each platform |
+| RB-06 | Trusted Windows release | Unsigned beta smoke exists | Sign with trusted certificate and validate on a clean Windows machine |
+| RB-07 | Linux native release | Local contracts pass; no native artifact evidence | Build/install AppImage and DEB on Linux and certify runtime behavior |
+| RB-08 | macOS native release | Local contracts pass; no signed/notarized artifact | Sign, notarize, staple, Gatekeeper-check, install, and certify |
+| RB-09 | Production ownership/freeze | Roles and custodians remain unassigned | Record named accountable owners and approved freeze evidence |
+| RB-10 | Authorized legal approval | Documents remain engineering drafts | Obtain authorized jurisdiction-specific approval and sign-off |
+| RB-11 | Isolated restore drill | Backup hashes verified; restore blocked by Supabase image/schema mismatch | Restore compatible backup fully, validate integrity, then run guarded lifecycle checks |
+
+All blockers remain release-blocking. None may be converted to PASS by a local contract, missing-secret skip, placeholder owner, or unsigned artifact.
