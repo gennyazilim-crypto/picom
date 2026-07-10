@@ -11,4 +11,10 @@ build/
 Thumbs.db
 dist-electron/
 
+# Disposable local task extraction and Electron dev output.
+/.tmp/
+/tmp/
+/tmp-electron-dev.err
+/tmp-electron-dev.out
+
 packages/shared/dist/
