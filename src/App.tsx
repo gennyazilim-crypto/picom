@@ -32,6 +32,7 @@ import { ImagePreviewModal } from "./components/ImagePreviewModal";
 import { UserProfilePopover } from "./components/UserProfilePopover";
 import { DesktopContextMenu } from "./components/DesktopContextMenu";
 import { SettingsModal } from "./components/SettingsModal";
+import { TermsReacceptPrompt } from "./components/legal/TermsReacceptPrompt";
 import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
@@ -48,6 +49,7 @@ import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { relationshipService } from "./services/relationshipService";
 import { advancedSearchService } from "./services/advancedSearchService";
+import { termsAcceptanceService } from "./services/termsAcceptanceService";
 import { savedMessageService, type SavedMessageRecord } from "./services/savedMessageService";
 import { SavedMessagesView } from "./components/SavedMessagesView";
 import { DiscoveryView } from "./components/DiscoveryView";
@@ -385,6 +387,30 @@ export function App() {
     clearError: clearAuthError,
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
+  const [legalAcceptancePhase, setLegalAcceptancePhase] = useState<"checking" | "accepted" | "required">("checking");
+  const [legalAcceptanceLoading, setLegalAcceptanceLoading] = useState(false);
+  const [legalAcceptanceError, setLegalAcceptanceError] = useState<string | null>(null);
+  const legalAcceptanceUserId = authSession?.user?.id ?? null;
+  useEffect(() => {
+    if (!legalAcceptanceUserId) { setLegalAcceptancePhase("checking"); return; }
+    let canceled = false;
+    setLegalAcceptancePhase("checking");
+    setLegalAcceptanceError(null);
+    void termsAcceptanceService.getStatus(legalAcceptanceUserId).then((status) => {
+      if (!canceled) setLegalAcceptancePhase(status.accepted ? "accepted" : "required");
+    });
+    return () => { canceled = true; };
+  }, [legalAcceptanceUserId]);
+  const acceptUpdatedLegalTerms = useCallback(async () => {
+    if (!legalAcceptanceUserId) return;
+    setLegalAcceptanceLoading(true);
+    setLegalAcceptanceError(null);
+    const result = await termsAcceptanceService.acceptCurrent(legalAcceptanceUserId);
+    setLegalAcceptanceLoading(false);
+    if (!result.ok) { setLegalAcceptanceError(result.message); return; }
+    setLegalAcceptancePhase("accepted");
+    pushToast("Current Picom terms accepted.", "success");
+  }, [legalAcceptanceUserId, pushToast]);
   const onboardingUserId = authSession?.user?.id ?? null;
   useEffect(() => {
     if (!onboardingUserId) {
@@ -1670,6 +1696,14 @@ export function App() {
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
     );
+  }
+
+  if (legalAcceptancePhase === "checking" && authSession.user) {
+    return <DesktopAppShell><WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} /><main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="lock" size="xl" /></span><strong>Checking policy version...</strong></main></DesktopAppShell>;
+  }
+
+  if (legalAcceptancePhase === "required" && authSession.user) {
+    return <DesktopAppShell><WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} /><TermsReacceptPrompt loading={legalAcceptanceLoading} error={legalAcceptanceError} onAccept={() => void acceptUpdatedLegalTerms()} onSignOut={() => void handleLogout()} /></DesktopAppShell>;
   }
 
   if (onboardingPhase === "checking" && authSession.user) {

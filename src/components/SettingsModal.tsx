@@ -21,6 +21,7 @@ import { userSafetyCenterService, type UserSafetySettings } from "../services/us
 import { notificationDigestService } from "../services/notificationDigestService";
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
 import { appConfig } from "../config/appConfig";
+import { legalConfig } from "../config/legalConfig";
 import { AdminOperationsView } from "./AdminOperationsView";
 import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
 import { analyticsService } from "../services/analyticsService";
@@ -762,7 +763,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
             </div>
           ) : active === "Legal" ? (
             <div className="legal-settings-panel">
-              <div className="settings-status-card"><span>Beta legal status</span><strong>Professional review required</strong><small>These documents are product placeholders and are not final legal advice.</small></div>
+              <div className="settings-status-card"><span>Legal version {legalConfig.currentVersion}</span><strong>Professional review required</strong><small>Terms and privacy links below match the version recorded during registration or re-acceptance. These drafts are not final legal advice.</small></div>
               {legalDocumentOrder.map((documentId) => <button type="button" key={documentId} onClick={() => setOpenLegalDocument(documentId)}><span><strong>{legalDocuments[documentId].title}</strong><small>{legalDocuments[documentId].updatedLabel}</small></span><AppIcon name="chevronRight" size="sm" /></button>)}
               <small>Picom {appConfig.version} · {appConfig.releaseChannel} channel</small>
             </div>

@@ -5,13 +5,14 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import type { LegalDocumentId } from "../data/legalDocuments";
+import { legalConfig } from "../config/legalConfig";
 
 type RegisterScreenProps = {
   theme: "light" | "dark";
   loading: boolean;
   error: string | null;
   onToggleTheme: () => void;
-  onSubmit: (email: string, password: string, displayName: string) => Promise<void>;
+  onSubmit: (email: string, password: string, displayName: string, acceptedLegalVersion: string) => Promise<void>;
   onSwitchToLogin: () => void;
 };
 
@@ -43,7 +44,7 @@ export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit,
       return;
     }
 
-    await onSubmit(email, password, displayName);
+    await onSubmit(email, password, displayName, legalConfig.currentVersion);
   };
 
   return (
@@ -128,7 +129,7 @@ export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit,
           <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} required />
           <span>I agree to the <button type="button" onClick={() => setOpenLegalDocument("terms")}>Terms of Service</button> and <button type="button" onClick={() => setOpenLegalDocument("privacy")}>Privacy Policy</button>.</span>
         </label>
-        <p className="auth-note">Acceptance is held in this registration form. TODO: persist `terms_accepted_at` after the production legal schema is approved.</p>
+        <p className="auth-note">Acceptance version {legalConfig.currentVersion} and its server timestamp are recorded with your profile.</p>
 
         {localError || error ? <div className="auth-error" role="alert">{localError ?? error}</div> : null}
 

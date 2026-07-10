@@ -1,6 +1,8 @@
 import type { AuthError, Session, User } from "@supabase/supabase-js";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
+import { legalConfig } from "../config/legalConfig";
+import { termsAcceptanceService } from "./termsAcceptanceService";
 
 export type AuthServiceUser = Readonly<{
   id: string;
@@ -157,24 +159,27 @@ export const authService = {
     return { ok: true, data: mapSession(data.session) ?? getMockSession(normalizedEmail) };
   },
 
-  async signUpWithEmailPassword(email: string, password: string, displayName?: string): Promise<AuthServiceResult<AuthServiceSession>> {
+  async signUpWithEmailPassword(email: string, password: string, displayName: string | undefined, acceptedLegalVersion: string): Promise<AuthServiceResult<AuthServiceSession>> {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !password) {
       return authError("AUTH_INVALID_INPUT", "Email and password are required.");
     }
+    if (acceptedLegalVersion !== legalConfig.currentVersion) return authError("AUTH_INVALID_INPUT", "Accept the current Terms of Service and Privacy Notice before registering.");
 
     const configured = getConfiguredClient();
     if (!configured.ok) return configured;
 
     if (!configured.data) {
-      return { ok: true, data: getMockSession(normalizedEmail) };
+      const session = getMockSession(normalizedEmail);
+      if (session.user) termsAcceptanceService.recordMockRegistrationAcceptance(session.user.id);
+      return { ok: true, data: session };
     }
 
     const { data, error } = await configured.data.auth.signUp({
       email: normalizedEmail,
       password,
       options: {
-        data: displayName ? { display_name: displayName } : undefined,
+        data: { ...(displayName ? { display_name: displayName } : {}), accepted_terms_version: legalConfig.termsVersion, accepted_privacy_version: legalConfig.privacyVersion },
       },
     });
 

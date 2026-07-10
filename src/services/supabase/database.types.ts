@@ -21,6 +21,10 @@ export type Database = {
           onboarding_completed_at: string | null;
           is_bot: boolean;
           deletion_requested_at: string | null;
+          accepted_terms_version: string | null;
+          terms_accepted_at: string | null;
+          accepted_privacy_version: string | null;
+          privacy_accepted_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -262,6 +266,14 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      legal_policy_versions: {
+        Row: { policy_key: "terms" | "privacy"; current_version: string; effective_at: string; requires_reaccept: boolean; updated_at: string };
+        Insert: never; Update: never; Relationships: [];
+      };
+      legal_acceptance_events: {
+        Row: { id: string; user_id: string; terms_version: string; privacy_version: string; accepted_at: string; source: "registration" | "reaccept" };
+        Insert: never; Update: never; Relationships: [];
+      };
       threads: {
         Row: { id: string; community_id: string; channel_id: string; parent_message_id: string; name: string; created_by: string; created_at: string; archived_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["threads"]["Row"]> & Pick<Database["public"]["Tables"]["threads"]["Row"], "community_id" | "channel_id" | "parent_message_id" | "name" | "created_by">;
@@ -342,6 +354,7 @@ export type Database = {
       };
     };
     Functions: {
+      accept_current_legal_terms: { Args: Record<string, never>; Returns: Array<{ terms_version: string; privacy_version: string; accepted_at: string }> };
       request_current_user_account_deletion: { Args: { confirmation_username: string }; Returns: Array<{ request_id: string; requested_at: string; anonymize_after: string }> };
       cancel_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; canceled_at: string }> };
       list_public_discovery_communities: {

@@ -108,11 +108,11 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
     setLoading(false);
   }, [notify]);
 
-  const register = useCallback(async (email: string, password: string, displayName: string) => {
+  const register = useCallback(async (email: string, password: string, displayName: string, acceptedLegalVersion: string) => {
     setLoading(true);
     setError(null);
 
-    const result = await authService.signUpWithEmailPassword(email, password, displayName);
+    const result = await authService.signUpWithEmailPassword(email, password, displayName, acceptedLegalVersion);
     if (result.ok) {
       setSession(result.data);
       accountActivityService.recordActivity({
