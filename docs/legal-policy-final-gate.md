@@ -53,3 +53,7 @@ Policy versioning, acceptance, community-guideline gating, and deletion/retentio
 ## Task 412 gate result
 
 **BLOCKED.** Technical policy/versioning flows can be tested, but there is no authorized sign-off for Terms, Privacy, Guidelines, AUP, diagnostics, voice/screen-share consent, deletion/export, or radio/podcast copyright obligations. No compliance or legal approval is claimed.
+
+## Task 427 result
+
+The technical policy and license gates pass, but the sign-off table remains empty and no qualified approval package was provided. Legal/project-license status remains **BLOCKED**. Engineering evidence must not be represented as counsel approval.

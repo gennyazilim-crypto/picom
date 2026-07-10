@@ -143,3 +143,7 @@ Protected workflow and local signing/permission contracts passed, but dispatch w
 ## Task 426 trusted Windows/clean machine
 
 Signing and package controls passed, but protected dispatch was denied and no certificate or clean target exists. No signed installer, trusted publisher/timestamp, post-signing hash, or clean-machine matrix was produced. RB-06 remains **BLOCKED**.
+
+## Task 427 authorized legal/license approval
+
+Engineering policy, acceptance, audio, Coolicons, and dependency-license gates passed. No authorized reviewer, project-license grant, immutable policy approval, jurisdiction/effective-date/contact decision, or audio-rights approval exists. RB-10 remains **BLOCKED** and stable distribution remains No-Go.
