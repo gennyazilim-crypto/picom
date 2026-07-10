@@ -486,6 +486,9 @@ export type Database = {
         Args: Record<string, never>;
         Returns: Json;
       };
+      get_admin_system_status_v2: { Args: Record<string, never>; Returns: Json };
+      list_admin_operations_v2: { Args: { section_name: string; page_cursor_created_at?: string | null; page_cursor_id?: string | null; page_limit?: number }; Returns: Json };
+      append_admin_operations_audit: { Args: { admin_action_type: string; admin_target_type: string; admin_target_id?: string | null }; Returns: number };
       can_manage_community_bots: { Args: { target_community_id: string }; Returns: boolean };
       issue_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ raw_token: string; token_prefix: string; created_at: string }> };
       revoke_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: boolean };

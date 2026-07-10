@@ -1,4 +1,4 @@
-# Admin Operations Panel v1
+# Admin Operations Panel v2
 
 ## Purpose
 
@@ -40,13 +40,14 @@ Frontend hiding is defense in depth. Future admin data APIs must enforce the app
 
 ### Users and communities
 
-- Mock/local visible entity counts only.
+- App-admin-only cursor-paginated safe metadata lists in API mode.
+- Redacted local lists in development/mock mode.
 - No email, profile-private data, session, role token, or private content.
 
 ### Reports and abuse
 
-- Aggregate report-state counts.
-- Aggregate redacted abuse-event counts and severity summary.
+- Cursor-paginated report type/status metadata without reporter, target, reason, or description content.
+- Cursor-paginated content-free abuse event type/reason-code/severity metadata.
 - No raw IP or message content.
 
 ### Storage
@@ -73,12 +74,20 @@ Frontend hiding is defense in depth. Future admin data APIs must enforce the app
 - Keep operations access separate from community Owner/Admin/Moderator roles.
 - Log access-denied/backend failures through the redacted logging pipeline without revealing privilege data.
 
+## V2 backend boundary
+
+- `get_admin_system_status_v2()` returns safe aggregate counts only.
+- `list_admin_operations_v2()` accepts an allowlisted section and bounded cursor page.
+- `append_admin_operations_audit()` records action type, target type, optional bounded target ID, actor, and timestamp only.
+- Every RPC independently calls `is_app_admin()`; renderer access flags are not authorization.
+- Direct table access to `admin_operations_audit` is revoked from renderer roles.
+
 ## Current limitations
 
 - System metrics are local/session-bounded, not a production observability backend.
 - Supabase, LiveKit, and storage health are configuration/status placeholders rather than active provider probes.
 - The app-admin RPC must exist and be protected in the target Supabase environment.
-- No remote administrative mutation actions are included in v1.
+- No destructive remote administrative mutation actions are included in v2.
 - There is no public or normal-user route to this panel.
 
 ## Future safe expansion
@@ -88,4 +97,3 @@ Frontend hiding is defense in depth. Future admin data APIs must enforce the app
 - Add explicit audit events for sensitive operator actions before enabling mutations.
 - Keep moderation content access in a distinct permissioned workflow.
 - Require security review for every new data field or operation.
-
