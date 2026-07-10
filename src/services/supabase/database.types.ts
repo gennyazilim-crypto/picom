@@ -20,6 +20,7 @@ export type Database = {
           onboarding_completed: boolean;
           onboarding_completed_at: string | null;
           is_bot: boolean;
+          deletion_requested_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -237,6 +238,18 @@ export type Database = {
         Row: { user_id: string; granted_by: string | null; created_at: string };
         Insert: never;
         Update: never;
+        Relationships: [];
+      };
+      data_export_requests: {
+        Row: { id: string; user_id: string; status: "requested" | "processing" | "ready" | "failed"; requested_at: string; completed_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["data_export_requests"]["Row"]> & Pick<Database["public"]["Tables"]["data_export_requests"]["Row"], "user_id">;
+        Update: never;
+        Relationships: [];
+      };
+      account_deletion_requests: {
+        Row: { id: string; user_id: string; status: "requested" | "reviewing" | "canceled" | "completed"; requested_at: string; canceled_at: string | null; completed_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["account_deletion_requests"]["Row"]> & Pick<Database["public"]["Tables"]["account_deletion_requests"]["Row"], "user_id">;
+        Update: Partial<Database["public"]["Tables"]["account_deletion_requests"]["Row"]>;
         Relationships: [];
       };
       threads: {

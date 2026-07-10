@@ -60,9 +60,11 @@ type SettingsModalProps = {
   onProfileSettingsChange: (settings: ProfileSettings) => void;
   onClose: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
+  currentUsername: string;
+  ownedCommunityCount: number;
 };
 
-export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, currentUsername, ownedCommunityCount }: SettingsModalProps) {
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
@@ -298,9 +300,9 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     setTwoFactorMessage(result.data.message);
     pushToast(result.data.message, "info");
   };
-  const accountDeletionConfirmationText = profileDraft.displayName.trim() || "Picom Mock User";
-  const requestAccountDeletionPlaceholder = () => {
-    const result = accountDeletionService.requestDeletionPlaceholder(accountDeletionConfirmText, accountDeletionConfirmationText);
+  const accountDeletionConfirmationText = currentUsername;
+  const requestAccountDeletionPlaceholder = async () => {
+    const result = await accountDeletionService.requestDeletionPlaceholder({ confirmationText: accountDeletionConfirmText, expectedUsername: accountDeletionConfirmationText, ownedCommunityCount });
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -310,8 +312,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     setAccountDeletionConfirmText("");
     pushToast(result.data.message, "success");
   };
-  const cancelAccountDeletionPlaceholder = () => {
-    const result = accountDeletionService.cancelDeletionPlaceholder();
+  const cancelAccountDeletionPlaceholder = async () => {
+    const result = await accountDeletionService.cancelDeletionPlaceholder();
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -321,8 +323,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     setAccountDeletionConfirmText("");
     pushToast("Account deletion placeholder canceled.", "info");
   };
-  const requestDataExportPlaceholder = () => {
-    const result = dataExportService.requestExportPlaceholder();
+  const requestDataExportPlaceholder = async () => {
+    const result = await dataExportService.requestExportPlaceholder();
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -500,24 +502,24 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               </div>
               <div className="settings-status-card" aria-label="User data export placeholder">
                 <span>Data export</span>
-                <strong>{dataExportStatus.status === "ready_placeholder" ? "Ready placeholder" : "Not requested"}</strong>
+                <strong>{dataExportStatus.status === "ready_placeholder" ? "Ready safety preview" : dataExportStatus.status === "requested" ? "Request queued" : "Not requested"}</strong>
                 <small>{dataExportStatus.message}</small>
               </div>
               <div className="settings-actions-row">
-                <button onClick={requestDataExportPlaceholder}>Request data export placeholder</button>
-                <button onClick={downloadDataExportPlaceholder}>Download export JSON placeholder</button>
+                <button onClick={() => void requestDataExportPlaceholder()}>Request data export</button>
+                <button onClick={downloadDataExportPlaceholder}>Download safe local preview</button>
               </div>
               <div className="danger-zone-card" aria-label="Account deletion danger zone">
                 <span>Danger Zone</span>
-                <strong>Delete account request placeholder</strong>
-                <small>{accountDeletionStatus.message} Community ownership transfer and data retention review must happen before any real deletion.</small>
+                <strong>Request account deletion</strong>
+                <small>{accountDeletionStatus.message} {ownedCommunityCount ? `You own ${ownedCommunityCount} communit${ownedCommunityCount === 1 ? "y" : "ies"}; transfer ownership first.` : "No immediate hard delete is performed."}</small>
                 <label>
-                  <small>Type <b>{accountDeletionConfirmationText}</b> to request account deletion placeholder.</small>
+                  <small>Type username <b>{accountDeletionConfirmationText}</b> to confirm the request.</small>
                   <input value={accountDeletionConfirmText} onChange={(event) => setAccountDeletionConfirmText(event.target.value)} placeholder={accountDeletionConfirmationText} />
                 </label>
                 <div className="settings-actions-row">
-                  <button disabled={accountDeletionConfirmText.trim() !== accountDeletionConfirmationText} onClick={requestAccountDeletionPlaceholder}>Request deletion placeholder</button>
-                  <button onClick={cancelAccountDeletionPlaceholder}>Cancel deletion placeholder</button>
+                  <button disabled={accountDeletionConfirmText.trim().toLowerCase() !== accountDeletionConfirmationText.toLowerCase() || ownedCommunityCount > 0} onClick={() => void requestAccountDeletionPlaceholder()}>Request deletion</button>
+                  <button onClick={() => void cancelAccountDeletionPlaceholder()}>Cancel request</button>
                 </div>
               </div>
             </div>

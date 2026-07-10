@@ -2300,7 +2300,7 @@ export function App() {
           onSubmit={handleCreateChannel}
         />
       ) : null}
-      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
+      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} /> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {composerInviteOpen ? <InvitePeopleModal community={displayedActiveCommunity} currentUserId={currentUser.userId} canCreate={communityAccess.permissions.includes("createInvites")} onClose={() => setComposerInviteOpen(false)} /> : null}
       {pollCreateOpen ? <CreatePollModal channelName={displayedActiveChannel.name} onClose={() => setPollCreateOpen(false)} onCreate={(draft) => sendMessage(draft.question, undefined, null, draft)} /> : null}

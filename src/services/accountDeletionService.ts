@@ -1,119 +1,14 @@
-const STORAGE_KEY = "picom.accountDeletionPlaceholder.v1";
-const SCHEMA_VERSION = 1;
-
-type StoredDeletionState = Readonly<{
-  schemaVersion: typeof SCHEMA_VERSION;
-  deletionRequestedAt: string | null;
-  deletionMode: "none" | "soft_delete_placeholder" | "scheduled_delete_placeholder";
-}>;
-
-export type AccountDeletionStatus = Readonly<{
-  requested: boolean;
-  deletionRequestedAt: string | null;
-  deletionMode: StoredDeletionState["deletionMode"];
-  safety: {
-    destructiveActionPerformed: false;
-    requiresBackendConfirmation: true;
-    sessionsRevoked: false;
-    ownedCommunitiesRequireTransfer: true;
-  };
-  message: string;
-}>;
-
-export type AccountDeletionResult<T> =
-  | Readonly<{ ok: true; data: T }>
-  | Readonly<{ ok: false; message: string }>;
-
-function getDefaultState(): StoredDeletionState {
-  return {
-    schemaVersion: SCHEMA_VERSION,
-    deletionRequestedAt: null,
-    deletionMode: "none",
-  };
-}
-
-function readState(): StoredDeletionState {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return getDefaultState();
-
-    const parsed = JSON.parse(raw) as Partial<StoredDeletionState>;
-    if (parsed.schemaVersion !== SCHEMA_VERSION) return getDefaultState();
-
-    return {
-      schemaVersion: SCHEMA_VERSION,
-      deletionRequestedAt: typeof parsed.deletionRequestedAt === "string" ? parsed.deletionRequestedAt : null,
-      deletionMode: parsed.deletionMode === "soft_delete_placeholder" || parsed.deletionMode === "scheduled_delete_placeholder" ? parsed.deletionMode : "none",
-    };
-  } catch {
-    return getDefaultState();
-  }
-}
-
-function writeState(next: StoredDeletionState): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // Local storage can be unavailable in restricted desktop fallback contexts.
-  }
-}
-
-function buildDeletionSafety() {
-  return {
-    destructiveActionPerformed: false,
-    requiresBackendConfirmation: true,
-    sessionsRevoked: false,
-    ownedCommunitiesRequireTransfer: true,
-  } as const;
-}
-
-function toStatus(state: StoredDeletionState): AccountDeletionStatus {
-  const requested = Boolean(state.deletionRequestedAt);
-
-  return {
-    requested,
-    deletionRequestedAt: state.deletionRequestedAt,
-    deletionMode: state.deletionMode,
-    safety: buildDeletionSafety(),
-    message: requested
-      ? "Account deletion request placeholder is recorded locally. No data has been deleted."
-      : "No account deletion request is active.",
-  };
-}
-
+import { dataSourceService } from "./dataSourceService";
+import { getSupabaseClient } from "./supabase/supabaseClient";
+const STORAGE_KEY = "picom.accountDeletionPlaceholder.v2";
+type Stored = { deletionRequestedAt: string | null; deletionMode: "none" | "scheduled_delete_placeholder" };
+export type AccountDeletionStatus = Readonly<{ requested: boolean; deletionRequestedAt: string | null; deletionMode: Stored["deletionMode"]; safety: { destructiveActionPerformed: false; requiresBackendConfirmation: true; sessionsRevoked: false; ownedCommunitiesRequireTransfer: true }; message: string }>;
+export type AccountDeletionResult<T> = { ok: true; data: T } | { ok: false; message: string };
+function read(): Stored { try { const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<Stored>; return { deletionRequestedAt: typeof value.deletionRequestedAt === "string" ? value.deletionRequestedAt : null, deletionMode: value.deletionMode === "scheduled_delete_placeholder" ? value.deletionMode : "none" }; } catch { return { deletionRequestedAt: null, deletionMode: "none" }; } }
+function write(value: Stored): void { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value)); } catch { /* restricted fallback */ } }
+function toStatus(value: Stored): AccountDeletionStatus { return { requested: Boolean(value.deletionRequestedAt), deletionRequestedAt: value.deletionRequestedAt, deletionMode: value.deletionMode, safety: { destructiveActionPerformed: false, requiresBackendConfirmation: true, sessionsRevoked: false, ownedCommunitiesRequireTransfer: true }, message: value.deletionRequestedAt ? "Account deletion request is scheduled for operator review. No data has been hard-deleted." : "No account deletion request is active." }; }
 export const accountDeletionService = {
-  getStatus(): AccountDeletionStatus {
-    return toStatus(readState());
-  },
-
-  requestDeletionPlaceholder(confirmationText: string, expectedText: string): AccountDeletionResult<AccountDeletionStatus> {
-    if (confirmationText.trim() !== expectedText.trim()) {
-      return {
-        ok: false,
-        message: "Type the exact confirmation text before requesting account deletion.",
-      };
-    }
-
-    const next: StoredDeletionState = {
-      schemaVersion: SCHEMA_VERSION,
-      deletionRequestedAt: new Date().toISOString(),
-      deletionMode: "scheduled_delete_placeholder",
-    };
-    writeState(next);
-
-    return {
-      ok: true,
-      data: toStatus(next),
-    };
-  },
-
-  cancelDeletionPlaceholder(): AccountDeletionResult<AccountDeletionStatus> {
-    const next = getDefaultState();
-    writeState(next);
-
-    return {
-      ok: true,
-      data: toStatus(next),
-    };
-  },
+  getStatus(): AccountDeletionStatus { return toStatus(read()); },
+  async requestDeletionPlaceholder(input: { confirmationText: string; expectedUsername: string; ownedCommunityCount: number }): Promise<AccountDeletionResult<AccountDeletionStatus>> { if (input.confirmationText.trim().toLowerCase() !== input.expectedUsername.trim().toLowerCase()) return { ok: false, message: "Type your exact username before requesting account deletion." }; if (input.ownedCommunityCount > 0) return { ok: false, message: `Transfer ownership of ${input.ownedCommunityCount} communit${input.ownedCommunityCount === 1 ? "y" : "ies"} before requesting deletion.` }; const requestedAt = new Date().toISOString(); if (!dataSourceService.getStatus().isMock) { const client = getSupabaseClient(); if (!client) return { ok: false, message: "Account deletion requests are unavailable." }; const { data: user } = await client.auth.getUser(); if (!user.user) return { ok: false, message: "Sign in before requesting deletion." }; const { error: requestError } = await client.from("account_deletion_requests").insert({ user_id: user.user.id, status: "requested" }); const { error: profileError } = await client.from("profiles").update({ deletion_requested_at: requestedAt }).eq("id", user.user.id); if (requestError || profileError) return { ok: false, message: "Picom could not record the deletion request." }; } const next: Stored = { deletionRequestedAt: requestedAt, deletionMode: "scheduled_delete_placeholder" }; write(next); return { ok: true, data: toStatus(next) }; },
+  async cancelDeletionPlaceholder(): Promise<AccountDeletionResult<AccountDeletionStatus>> { if (!dataSourceService.getStatus().isMock) { const client = getSupabaseClient(); if (!client) return { ok: false, message: "Account deletion requests are unavailable." }; const { data: user } = await client.auth.getUser(); if (!user.user) return { ok: false, message: "Sign in before canceling deletion." }; const { error } = await client.from("profiles").update({ deletion_requested_at: null }).eq("id", user.user.id); if (error) return { ok: false, message: "Picom could not cancel the deletion request." }; await client.from("account_deletion_requests").update({ status: "canceled", canceled_at: new Date().toISOString() }).eq("user_id", user.user.id).eq("status", "requested"); } const next: Stored = { deletionRequestedAt: null, deletionMode: "none" }; write(next); return { ok: true, data: toStatus(next) }; },
 };
