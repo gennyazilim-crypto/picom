@@ -18,6 +18,11 @@ const targets = {
 };
 
 const forbiddenRendererName = /VITE_.*(?:SERVICE_ROLE|ACCESS_TOKEN|API_SECRET|DATABASE_URL|PASSWORD|SIGNING|PRIVATE_KEY|JWT_SECRET|OAUTH.*SECRET)/i;
+const rendererSafeRedirectNames = new Set([
+  "VITE_SUPABASE_PASSWORD_RESET_REDIRECT_URL",
+  "VITE_SUPABASE_EMAIL_VERIFICATION_REDIRECT_URL",
+  "VITE_SUPABASE_OAUTH_REDIRECT_URL",
+]);
 const secretLikeValue = /(?:sb_secret_[A-Za-z0-9_-]{8,}|service[_-]?role|-----BEGIN [A-Z ]+PRIVATE KEY-----|postgres(?:ql)?:\/\/[^\s:]+:[^\s@]+@)/i;
 const sourceExtensions = new Set([".ts", ".tsx", ".js", ".mjs", ".cts", ".mts"]);
 
@@ -59,7 +64,7 @@ function validateTarget(target, configuredFile) {
   const example = filePath.endsWith(".example");
 
   for (const [name, value] of entries) {
-    if (name.startsWith("VITE_") && forbiddenRendererName.test(name)) {
+    if (name.startsWith("VITE_") && forbiddenRendererName.test(name) && !rendererSafeRedirectNames.has(name)) {
       throw new Error(`${target}: renderer variable ${name} is server-only.`);
     }
     if (example && value && secretLikeValue.test(value)) {
