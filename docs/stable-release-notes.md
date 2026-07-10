@@ -71,3 +71,7 @@ No public stable distribution is authorized by these notes. Publication requires
 ## Task 405 release-candidate status
 
 The blocker-closure pass completed on 2026-07-10 with a **No-Go** decision. Local deterministic gates passed, but hosted, native-platform, legal, ownership, and restore evidence remain incomplete. No new stable download, checksum, provenance claim, or release announcement was produced.
+
+## Task 415 release status
+
+The stable decision remains **No-Go**. These notes describe an internal beta candidate only. No public stable Windows, Linux, or macOS artifact, checksum set, provenance statement, or download location is authorized.

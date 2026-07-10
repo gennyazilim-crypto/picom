@@ -44,3 +44,9 @@ Do not distribute stable artifacts. Close `docs/release-blockers.md` with archiv
 ## Task 405 final review
 
 Decision remains **No-Go**. Tasks 396-404 improved and archived deterministic local evidence, but did not produce hosted Supabase/LiveKit proof, native platform certification, legal approval, named production ownership, or a real restore drill. Consequently no final immutable artifact set, post-signing checksums, or release provenance exists. Distribution and post-launch monitoring must not start.
+
+## Task 415 final decision record
+
+Decision: **NO-GO**.
+
+Real Task 406 evidence closed migration/Auth/basic RLS/private Storage uncertainty but did not close private Realtime Presence or Edge validation. Tasks 407-411 remain blocked for hosted LiveKit and native trusted platform evidence. Task 412 lacks authorized legal approval, Task 413 lacks accountable owners/custody, and Task 414 lacks a successful isolated restore/destructive drill. No stable artifact publication, checksum announcement, rollout, or post-launch monitoring is authorized.

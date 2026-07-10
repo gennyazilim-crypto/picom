@@ -108,3 +108,6 @@ A value-free custody matrix now exists, but every accountable owner/store/rotati
 ## Task 414 real backup/restore drill
 
 A real hosted staging export and checksum manifest were produced. Restore failed on managed Auth schema compatibility and the alternative local target was blocked by an unrelated active port. No destructive lifecycle test ran. RB-11 remains open.
+## Task 415 final immutable RC decision
+
+Decision: **No-Go**. Real hosted Supabase migration/Auth/basic RLS/private Storage evidence exists, but RB-01 through RB-11 are not all closed. No final signed/notarized/native artifact set was generated or published, and no checksum/provenance claim was fabricated.
