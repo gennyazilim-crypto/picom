@@ -1207,14 +1207,14 @@ export function App() {
       },
     ];
 
-    const searchResults = advancedSearchService.searchLocal(paletteQuery, communities, mentionItems, currentUserId);
+    const searchResults = advancedSearchService.searchLocal(paletteQuery, communities, mentionItems, currentUserId, savedMessages);
     for (const result of searchResults) {
       all.push({
         id: result.id, group: result.category, label: result.label, detail: result.detail,
         run: () => {
           if (result.category === "People" && result.userId) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
           else if (result.category === "Communities" && result.communityId) { setActiveView("community"); switchCommunity(result.communityId); }
-          else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Media")) {
+          else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
             const community = communities.find((item) => item.id === result.communityId);
             const message = community?.messages.find((item) => item.id === result.messageId);
             if (community && message) jumpToMessage(community, message); else { setActiveView("community"); switchCommunity(result.communityId, result.channelId); setActiveChannelId(result.channelId); }
@@ -1227,7 +1227,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [activeView, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, mentionItems, openSettings, paletteQuery, setActiveChannelId, switchCommunity, theme]);
+  }, [activeView, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, mentionItems, openSettings, paletteQuery, savedMessages, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");

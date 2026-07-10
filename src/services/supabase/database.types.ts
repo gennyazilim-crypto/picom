@@ -121,6 +121,7 @@ export type Database = {
           thread_id: string | null;
           webhook_id: string | null;
           webhook_name: string | null;
+          search_vector: unknown;
         };
         Insert: Partial<Database["public"]["Tables"]["messages"]["Row"]> & Pick<Database["public"]["Tables"]["messages"]["Row"], "community_id" | "channel_id" | "author_id">;
         Update: Partial<Database["public"]["Tables"]["messages"]["Row"]>;
@@ -345,6 +346,10 @@ export type Database = {
         Returns: Array<{ community_id: string; community_name: string; description: string | null; icon_url: string | null; category: string | null; review_status: "pending" | "approved" | "rejected" | "hidden" | "suspended"; report_count: number; submitted_at: string; reviewed_at: string | null }>;
       };
       review_discovery_listing: { Args: { target_community_id: string; next_status: string; review_reason?: string | null }; Returns: boolean };
+      search_accessible_entities: {
+        Args: { query_text: string; category_filter?: string | null; result_limit?: number };
+        Returns: Array<{ result_type: "community" | "channel" | "member" | "message" | "mention" | "saved_message"; entity_id: string; label: string; detail: string; community_id: string | null; channel_id: string | null; message_id: string | null; user_id: string | null; created_at: string; rank: number }>;
+      };
       users_are_blocked: { Args: { first_user_id: string; second_user_id: string }; Returns: boolean };
       respond_friend_request: { Args: { target_request_id: string; accept_request: boolean }; Returns: boolean };
       remove_friend: { Args: { other_user_id: string }; Returns: boolean };
