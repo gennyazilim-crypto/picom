@@ -1,0 +1,11 @@
+{
+  "$schema": "https://picom.invalid/schemas/update-manifest-v1.json",
+  "version": "0.0.0-placeholder",
+  "channel": "dev",
+  "platform": "windows-x64",
+  "artifactUrl": "https://updates.example.invalid/picom/dev/Picom-placeholder.exe",
+  "sha256": "PLACEHOLDER_SHA256_NOT_A_REAL_ARTIFACT_HASH",
+  "releaseNotesUrl": "https://updates.example.invalid/picom/dev/release-notes-placeholder",
+  "minSupportedVersion": "0.0.0-placeholder",
+  "rolloutPercent": 0
+}

@@ -1,10 +1,12 @@
-export type ReleaseChannel = "dev" | "beta" | "stable";
+import { appConfig } from "../config/appConfig";
+import type { ReleaseChannel } from "../config/releaseChannel";
+
+export type { ReleaseChannel } from "../config/releaseChannel";
 export type UpdateStatus = "idle" | "checking" | "available" | "downloading" | "download_failed" | "ready_to_install" | "install_failed" | "up_to_date" | "error" | "rollback_available_placeholder";
 export type UpdateServiceState = Readonly<{ status: UpdateStatus; appVersion: string; releaseChannel: ReleaseChannel; autoUpdateEnabled: false; message: string; checkedAt: string | null; progress: number | null }>;
 type UpdateListener = (state: UpdateServiceState) => void;
 const listeners = new Set<UpdateListener>();
-function releaseChannel(): ReleaseChannel { const value = import.meta.env.VITE_RELEASE_CHANNEL; return value === "beta" || value === "stable" ? value : "dev"; }
-let state: UpdateServiceState = { status: "idle", appVersion: import.meta.env.VITE_APP_VERSION ?? "0.1.0", releaseChannel: releaseChannel(), autoUpdateEnabled: false, message: "Updater is idle. No production endpoint or signing credential is configured.", checkedAt: null, progress: null };
+let state: UpdateServiceState = { status: "idle", appVersion: appConfig.version, releaseChannel: appConfig.releaseChannel, autoUpdateEnabled: false, message: "Updater is idle. No production endpoint or signing credential is configured.", checkedAt: null, progress: null };
 function setState(partial: Partial<UpdateServiceState>): UpdateServiceState { state = { ...state, ...partial }; listeners.forEach((listener) => listener(state)); return state; }
 
 export const updateService = {

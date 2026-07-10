@@ -1,16 +1,10 @@
+import { resolveReleaseChannel, type ReleaseChannel } from "./releaseChannel";
+
 export type DataSourceMode = "mock" | "supabase";
-export type ReleaseChannel = "dev" | "beta" | "stable";
+export type { ReleaseChannel } from "./releaseChannel";
 
 function getDataSourceMode(value: string | undefined): DataSourceMode {
   return value === "supabase" ? "supabase" : "mock";
-}
-
-function getReleaseChannel(value: string | undefined, environment: string): ReleaseChannel {
-  if (value === "beta" || value === "stable" || value === "dev") {
-    return value;
-  }
-
-  return environment === "beta" ? "beta" : "dev";
 }
 
 function getBooleanFlag(value: string | undefined): boolean {
@@ -25,7 +19,7 @@ export const appConfig = Object.freeze({
   version: import.meta.env.VITE_APP_VERSION ?? "0.1.1-beta.1",
   identifier: import.meta.env.VITE_APP_IDENTIFIER ?? "com.picom.desktop",
   environment,
-  releaseChannel: getReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment),
+  releaseChannel: resolveReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment) satisfies ReleaseChannel,
   dataSource: getDataSourceMode(import.meta.env.VITE_DATA_SOURCE),
   statusPageUrl: import.meta.env.VITE_STATUS_PAGE_URL ?? "",
   remoteConfigUrl: import.meta.env.VITE_REMOTE_CONFIG_URL ?? "",
