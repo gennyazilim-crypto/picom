@@ -1,83 +1,45 @@
-# Picom Stable RC Smoke Test
+# Stable Release Candidate Smoke Test
 
-Use one evidence record per exact artifact/platform. Mark `Not run` rather than inferring a pass from another host.
+Status date: 2026-07-10  
+Overall result: **Not ready**
 
-## Candidate identity
+## Artifact matrix
 
-- Version:
-- Release channel:
-- Source commit:
-- Migration/function versions:
-- Platform/architecture:
-- Artifact filename/bytes/SHA-256:
-- Signature/notarization/provenance:
-- Tester/date/environment:
+| Platform | Artifact | Result |
+| --- | --- | --- |
+| Windows x64 | Unpacked app and NSIS installer generated in local temp | Build passed; clean-machine/UI smoke pending |
+| Linux x64 | AppImage/deb | Not produced; native Linux host required |
+| macOS x64 | DMG/zip | Not produced; macOS build/sign/notarization host required |
 
-## Source gates
+## Windows candidate evidence
 
-- [ ] Clean checkout and `npm ci`.
-- [ ] `npm run env:placeholders:check`.
-- [ ] `npm run qa:smoke`.
-- [ ] `npm run qa:supabase`.
-- [ ] `npm run typecheck`.
-- [ ] `npm run mock:smoke`.
-- [ ] `npm run build`.
-- [ ] Dependency/license/secret/package verification.
-- [ ] Known issues and blocker triage reviewed.
+- File: `Picom-0.1.1-beta.1-beta-Windows-x64.exe`
+- Size: `121158333` bytes
+- SHA-256: `3C38726EF2989049B37FB956E3452D93AF1E8C97BD57BEBF27E17D7DBA8A6248`
+- Status: local unsigned beta-channel candidate, not a stable public artifact.
 
-## Supabase staging
+The unpacked executable handed off to an existing Picom dev instance through the single-instance lock and exited with code 0. This is not a clean-machine launch certification.
 
-- [ ] Production migration set applies from previous-release staging schema.
-- [ ] Real pgTAP and owner/admin/moderator/member/visitor matrix pass.
-- [ ] Auth register/login/verify/reset/session restore pass.
-- [ ] Community/channel/message/reaction flows pass.
-- [ ] Private channel/message/attachment and Mention Feed isolation pass.
-- [ ] Private Storage MIME/size/path/signed URL refresh/access-loss pass.
-- [ ] Realtime two-window insert/update/delete/reconnect/cleanup/duplicate prevention pass.
-- [ ] Required Edge Functions enforce JWT/resource permissions/redacted errors.
+## Release pipeline checks
 
-## LiveKit staging
+- Artifact naming contract: Passed.
+- Checksum generation/verification contract: Passed.
+- Provenance contract: Passed.
+- RC dry-run contract: Passed.
+- Consolidated local QA gate: Passed.
+- TypeScript/mock/build: Passed in this release execution sequence.
 
-- [ ] Two users join one permitted room with correct identity/room/TTL.
-- [ ] Unauthorized/text/mismatched room requests are denied.
-- [ ] Mute/unmute, deafen/undeafen, speaking, participant state pass.
-- [ ] Source picker, local/remote share, stop/leave cleanup pass.
-- [ ] Network reconnect/degraded text chat behavior pass.
-- [ ] No token, device, audio, or screen content appears in logs.
+## Core-flow status
 
-## Windows artifact
+Local/static contracts cover auth/session, onboarding, Mention Feed, profile, community/channel/message, permissions, emoji/replies, upload architecture, DM, settings, diagnostics, voice, and screen-share controls. The following artifact-level checks were not run:
 
-- [ ] Signed/timestamped stable artifact verifies as Valid.
-- [ ] Clean install, prior-version upgrade, launch, protocol, uninstall, reinstall/rollback pass.
-- [ ] Custom titlebar/window controls/normal-maximized frame pass.
-- [ ] Auth, chat, Settings/diagnostics, voice/share smoke pass.
+- Installed login/register/logout against approved hosted Supabase.
+- Installed upload/private access and two-window Realtime.
+- Real LiveKit join/mute/deafen/speaking/reconnect.
+- Remote screen-share start/stop.
+- Windows clean-machine install/reinstall/uninstall.
+- Linux/macOS install/launch/uninstall and native permissions.
 
-## Linux artifacts
+## Decision
 
-- [ ] Native AppImage and deb build and content inspection pass.
-- [ ] Terminal and desktop menu launch pass.
-- [ ] Install/upgrade/uninstall/reinstall pass for deb.
-- [ ] Approved distro X11/Wayland microphone/share/tray/notification checks pass.
-
-## macOS artifacts
-
-- [ ] Native dmg and zip build pass for approved architecture.
-- [ ] Developer ID signature, hardened runtime, notarization, staple, Gatekeeper pass.
-- [ ] Clean install/upgrade/remove/reinstall/rollback pass.
-- [ ] Final bundle microphone/Screen Recording denial/grant/restart pass.
-
-## Legal/privacy/support
-
-- [ ] `docs/legal-release-checklist.md` approved.
-- [ ] Terms/Privacy versions and consent record behavior approved.
-- [ ] Third-party notices/licenses/artwork rights approved.
-- [ ] Feedback, diagnostics, status, support, incident, rollback owners ready.
-- [ ] Backup/restore drill evidence accepted.
-
-## Result
-
-- [ ] PASS - eligible for go/no-go review, not automatically published.
-- [ ] FAIL - defect evidence linked.
-- [ ] BLOCKED - missing external/sign-off evidence linked.
-
-Current repository result for `0.1.1-beta.1`: **BLOCKED**.
+The RC is **Not ready**. Missing platform artifacts and hosted/private-access evidence are release blockers, not non-blockers. No distribution may occur from this result.
