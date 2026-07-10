@@ -6,7 +6,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const runtimeRoots = ["src", "electron"];
 const allowedRedactionFiles = new Set([
   "src\\services\\loggingService.ts",
-  "src/services/loggingService.ts"
+  "src/services/loggingService.ts",
+  "src\\services\\logging\\loggingService.ts",
+  "src/services/logging/loggingService.ts"
 ]);
 const scannedExtensions = new Set([".ts", ".tsx", ".cts", ".mts", ".js", ".mjs"]);
 const dangerousPatterns = [

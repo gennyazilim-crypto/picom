@@ -128,6 +128,7 @@ Recommended future checks:
 
 - `.env.example`
 - `README.md`
+- `docs/drills/secrets-rotation-drill-2026-07-10.md`
 - `docs/production-deployment-checklist.md`
 - `docs/incident-response.md`
 - `docs/rollback-runbook.md`
