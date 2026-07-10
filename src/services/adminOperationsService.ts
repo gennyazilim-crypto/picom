@@ -12,6 +12,19 @@ import { getSupabaseClient } from "./supabase/supabaseClient";
 import { voiceService } from "./voiceService";
 
 export type AdminOperationsAccess = Readonly<{ allowed: boolean; source: "development" | "app_admin" | "none" }>;
+export type TrustSafetySummary = Readonly<{
+  openReports: number;
+  suspiciousUploads: number;
+  pendingUploadReviews: number;
+  abuseEvents: number;
+  criticalAbuseEvents: number;
+  rateLimitEvents: number;
+  recentBans: number | null;
+  recentKicks: number | null;
+  windowHours: number;
+  checkedAt: string;
+  source: "local_aggregate" | "app_admin_rpc";
+}>;
 
 function countLogMatches(
   logs: ReturnType<typeof loggingService.getRecentLogs>,
@@ -23,8 +36,38 @@ function countLogMatches(
   }).length;
 }
 
+function asCount(value: unknown): number { return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0; }
+
+function getLocalTrustSafetySummary(): TrustSafetySummary {
+  const abuse = abuseEventService.getAdminSummary();
+  const quarantine = attachmentQuarantineService.getAdminSummaryPlaceholder();
+  return {
+    openReports: reportService.getSummary().open,
+    suspiciousUploads: Math.max(abuse.byType.suspicious_attachment ?? 0, quarantine.quarantinedCount),
+    pendingUploadReviews: quarantine.needsReviewCount,
+    abuseEvents: abuse.total,
+    criticalAbuseEvents: abuse.critical,
+    rateLimitEvents: abuse.byType.rate_limit_exceeded ?? 0,
+    recentBans: null,
+    recentKicks: null,
+    windowHours: 0,
+    checkedAt: new Date().toISOString(),
+    source: "local_aggregate",
+  };
+}
+
 export const adminOperationsService = {
   async getAccess(): Promise<AdminOperationsAccess> { if (import.meta.env.DEV) return { allowed: true, source: "development" }; const client = getSupabaseClient(); if (!client) return { allowed: false, source: "none" }; const { data, error } = await client.rpc("is_app_admin"); return !error && data ? { allowed: true, source: "app_admin" } : { allowed: false, source: "none" }; },
+  getLocalTrustSafetySummary,
+  async getTrustSafetySummary(access: AdminOperationsAccess): Promise<{ ok: true; data: TrustSafetySummary } | { ok: false; message: string }> {
+    if (!access.allowed || (access.source !== "development" && access.source !== "app_admin")) return { ok: false, message: "App admin or development access is required." };
+    if (access.source === "development" || dataSourceService.getStatus().isMock) return { ok: true, data: getLocalTrustSafetySummary() };
+    const client = getSupabaseClient(); if (!client) return { ok: false, message: "Trust & Safety summary is unavailable." };
+    const { data, error } = await client.rpc("get_trust_safety_summary");
+    if (error || !data || typeof data !== "object" || Array.isArray(data)) return { ok: false, message: "Picom could not load the restricted safety summary." };
+    const row = data as Record<string, unknown>;
+    return { ok: true, data: { openReports: asCount(row.openReports), suspiciousUploads: asCount(row.suspiciousUploads), pendingUploadReviews: asCount(row.pendingUploadReviews), abuseEvents: asCount(row.abuseEvents), criticalAbuseEvents: asCount(row.criticalAbuseEvents), rateLimitEvents: asCount(row.rateLimitEvents), recentBans: asCount(row.recentBans), recentKicks: asCount(row.recentKicks), windowHours: asCount(row.windowHours) || 24, checkedAt: typeof row.checkedAt === "string" ? row.checkedAt : new Date().toISOString(), source: "app_admin_rpc" } };
+  },
   getSnapshot() {
     const users = new Set(mockCommunities.flatMap((community) => community.members.map((member) => member.userId)));
     const logs = loggingService.getRecentLogs(80);

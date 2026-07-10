@@ -317,6 +317,12 @@ export type Database = {
         Update: Pick<Partial<Database["public"]["Tables"]["moderation_appeals"]["Row"]>, "status" | "decision_note" | "reviewed_by" | "updated_at">;
         Relationships: [];
       };
+      abuse_events: {
+        Row: { id: number; event_type: string; severity: "info" | "warning" | "critical"; community_id: string | null; reason_code: string; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       audit_log: {
         Row: { id: string; community_id: string; actor_id: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; created_at: string };
         Insert: never;
@@ -399,6 +405,10 @@ export type Database = {
       is_app_admin: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      get_trust_safety_summary: {
+        Args: Record<string, never>;
+        Returns: Json;
       };
     };
     Enums: Record<string, never>;

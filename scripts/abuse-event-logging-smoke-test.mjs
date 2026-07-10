@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 
 const service = readFileSync("src/services/abuseEventService.ts", "utf8");
-const logging = readFileSync("src/services/loggingService.ts", "utf8");
-const adminPanel = readFileSync("src/components/AdminOperationsPanel.tsx", "utf8");
+const logging = readFileSync("src/services/logging/loggingService.ts", "utf8");
+const adminService = readFileSync("src/services/adminOperationsService.ts", "utf8");
+const trustSafetyView = readFileSync("src/components/TrustSafetyDashboardView.tsx", "utf8");
 const docs = readFileSync("docs/abuse-event-logging.md", "utf8");
 
 const checks = [
@@ -14,8 +15,8 @@ const checks = [
   [service.includes("unauthorized_private_channel_access"), "private channel abuse event exists"],
   [service.includes("suspicious_attachment"), "suspicious attachment event exists"],
   [logging.includes("authorization") && logging.includes("cookie") && logging.includes("password"), "central redaction covers sensitive fields"],
-  [adminPanel.includes("abuseEventService.getAdminSummary"), "Admin Operations uses abuse summary"],
-  [adminPanel.includes("private content is not stored"), "Admin Operations copy avoids sensitive detail"],
+  [adminService.includes("abuseEventService.getAdminSummary"), "Admin Operations service uses abuse summary"],
+  [trustSafetyView.includes("Private messages") && trustSafetyView.includes("secrets are excluded"), "Trust and Safety copy avoids sensitive detail"],
   [docs.includes("Do not store") && docs.includes("message content"), "docs ban private content"],
   [docs.includes("Future Supabase implementation"), "docs describe backend path"],
 ];
