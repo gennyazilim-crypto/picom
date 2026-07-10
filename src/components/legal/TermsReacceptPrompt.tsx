@@ -9,7 +9,7 @@ export function TermsReacceptPrompt({ loading, error, onAccept, onSignOut }: Pro
   const [confirmed, setConfirmed] = useState(false);
   const [openDocument, setOpenDocument] = useState<LegalDocumentId | null>(null);
   return <main className="first-run-onboarding legal-reaccept-view" aria-label="Updated Picom terms">
-    <section className="legal-reaccept-card" role="dialog" aria-modal="true" aria-labelledby="legal-reaccept-title">
+    <section className="legal-reaccept-card" aria-labelledby="legal-reaccept-title">
       <span className="onboarding-welcome-orb"><AppIcon name="lock" size="xl" /></span>
       <p className="eyebrow">Policy update</p><h1 id="legal-reaccept-title">Review Picom's updated terms</h1>
       <p>Your previous acceptance does not cover version <strong>{legalConfig.currentVersion}</strong>. Review the beta legal drafts before continuing.</p>

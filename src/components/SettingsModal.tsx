@@ -35,6 +35,7 @@ import { DiagnosticsSection } from "./settings/DiagnosticsSection";
 import { LogsViewer } from "./settings/LogsViewer";
 import { DeveloperPortalView } from "./DeveloperPortalView";
 import { featureFlagService } from "../services/featureFlagService";
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
@@ -76,6 +77,7 @@ type SettingsModalProps = {
 };
 
 export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, developerPortalContext }: SettingsModalProps) {
+  const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
@@ -106,12 +108,6 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [developerPortalOpen, setDeveloperPortalOpen] = useState(false);
   const developerPortalAvailable = featureFlagService.shouldShowEntryPoint("enableDeveloperPortal") && (developerPortalContext.canManageBots || developerPortalContext.canManageWebhooks);
   const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"];
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   useEffect(() => {
     setProfileDraft(profileSettings);
@@ -360,10 +356,10 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   return (
     <>
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <section className="settings-modal" onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={dialogRef} className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
         <aside className="settings-nav">
           <span className="eyebrow">Settings</span>
-          <h2>Picom Desktop</h2>
+          <h2 id="settings-modal-title">Picom Desktop</h2>
           <div className="settings-tabs">
             {sections.map((section) => (
               <button key={section} className={active === section ? "active" : ""} onClick={() => setActive(section)}>
