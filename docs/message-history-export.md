@@ -2,6 +2,8 @@
 
 Picom prepares a controlled message history export path without enabling production downloads yet. The current MVP only creates a safe placeholder request from the desktop UI/service layer.
 
+The authoritative production approval boundary is [Message export admin policy](message-export-policy.md). This placeholder is not approval to export content.
+
 ## Status
 
 - Runtime export generation: not enabled
@@ -29,10 +31,7 @@ HTML export remains a placeholder because it needs careful sanitization, attachm
 
 ## Permission model
 
-Message history export should require one of:
-
-- `manageCommunity`
-- future `exportMessages`
+Production message history export requires a dedicated backend-enforced `exportMessages` permission. The current placeholder may use `manageCommunity` only to demonstrate where a future action could appear; that permission is not sufficient to generate or download a real export.
 
 Frontend checks are only UX. Supabase RLS and a trusted backend/Edge Function must enforce export eligibility.
 
@@ -91,4 +90,3 @@ The channel context menu can queue a local export placeholder for users with com
 3. Confirm a toast says the export placeholder was queued.
 4. Switch to a lower-permission/visitor scenario and confirm the service returns a permission message when export is not allowed.
 5. Confirm no message content is written into diagnostics/logs by this placeholder.
-
