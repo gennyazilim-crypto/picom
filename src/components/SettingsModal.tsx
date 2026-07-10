@@ -102,6 +102,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const [twoFactorMessage, setTwoFactorMessage] = useState(twoFactorStatus.message);
   const [accountDeletionStatus, setAccountDeletionStatus] = useState(() => accountDeletionService.getStatus());
   const [accountDeletionConfirmText, setAccountDeletionConfirmText] = useState("");
+  const [accountDeletionPassword, setAccountDeletionPassword] = useState("");
+  const [accountDeletionBusy, setAccountDeletionBusy] = useState(false);
   const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
   const [appLockSettings, setAppLockSettings] = useState(() => appLockService.getSettings());
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
@@ -149,6 +151,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     if (active === "Account") {
       void refreshActiveSessions();
       void dataExportService.refreshStatus().then(setDataExportStatus);
+      void accountDeletionService.refreshStatus().then(setAccountDeletionStatus);
       setAccountActivities(accountActivityService.listRecent());
     }
   }, [active, refreshActiveSessions]);
@@ -332,7 +335,17 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   };
   const accountDeletionConfirmationText = currentUsername;
   const requestAccountDeletion = async () => {
+    if (accountDeletionBusy) return;
+    setAccountDeletionBusy(true);
+    const reauthentication = await authService.reauthenticateCurrentUser(accountDeletionPassword);
+    setAccountDeletionPassword("");
+    if (!reauthentication.ok) {
+      setAccountDeletionBusy(false);
+      pushToast(reauthentication.error.message, "error");
+      return;
+    }
     const result = await accountDeletionService.requestDeletion({ confirmationText: accountDeletionConfirmText, expectedUsername: accountDeletionConfirmationText, ownedCommunityCount });
+    setAccountDeletionBusy(false);
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -554,8 +567,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                   <small>Type username <b>{accountDeletionConfirmationText}</b> to confirm the request.</small>
                   <input value={accountDeletionConfirmText} onChange={(event) => setAccountDeletionConfirmText(event.target.value)} placeholder={accountDeletionConfirmationText} />
                 </label>
+                <label>
+                  <small>Re-enter your current password. Picom sends it only to Supabase Auth for re-authentication and never stores or logs it.</small>
+                  <input type="password" autoComplete="current-password" value={accountDeletionPassword} onChange={(event) => setAccountDeletionPassword(event.target.value)} placeholder="Current password" />
+                </label>
                 <div className="settings-actions-row">
-                  <button disabled={accountDeletionConfirmText.trim().toLowerCase() !== accountDeletionConfirmationText.toLowerCase() || ownedCommunityCount > 0 || accountDeletionStatus.requested} onClick={() => void requestAccountDeletion()}>Request deletion and sign out</button>
+                  <button disabled={accountDeletionConfirmText.trim().toLowerCase() !== accountDeletionConfirmationText.toLowerCase() || accountDeletionPassword.length < 8 || ownedCommunityCount > 0 || accountDeletionStatus.requested || accountDeletionBusy} onClick={() => void requestAccountDeletion()}>{accountDeletionBusy ? "Verifying account..." : "Request deletion and sign out"}</button>
                   <button disabled={!accountDeletionStatus.requested} onClick={() => void cancelAccountDeletion()}>Cancel request</button>
                 </div>
               </div>

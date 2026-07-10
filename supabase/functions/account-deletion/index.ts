@@ -17,6 +17,7 @@ function safeDatabaseMessage(message: string | undefined): string {
   if (message?.includes("OWNERSHIP_TRANSFER_REQUIRED")) return "Transfer ownership of every community before deleting your account.";
   if (message?.includes("CONFIRMATION_MISMATCH")) return "Type your exact username to confirm account deletion.";
   if (message?.includes("NO_ACTIVE_DELETION_REQUEST")) return "No active account deletion request was found.";
+  if (message?.includes("REAUTH_REQUIRED")) return "Re-enter your password and try again. Account deletion requires a recent sign-in.";
   return "Picom could not update the account deletion request safely.";
 }
 

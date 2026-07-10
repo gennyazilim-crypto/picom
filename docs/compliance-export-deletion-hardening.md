@@ -1,6 +1,6 @@
 # Compliance Export and Deletion Hardening
 
-Picom currently exposes privacy workflow placeholders for the desktop MVP. These flows are intentionally conservative: the renderer can prepare safe local UX, but production-grade export and deletion must be authorized and executed by the backend.
+Picom exposes conservative backend-authorized export and staged account-deletion implementations. Hosted deployment, final legal/privacy approval and destructive-worker operations remain gated; the renderer never performs final deletion.
 
 ## Data export safety rules
 
@@ -13,7 +13,7 @@ Picom currently exposes privacy workflow placeholders for the desktop MVP. These
 ## Account deletion safety rules
 
 - No hard deletion is performed by the renderer.
-- The current placeholder stores only a local deletion-request state for UX testing.
+- Mock mode stores local request state for UX testing; Supabase mode creates a user-owned backend request, globally revokes sessions, and observes a 14-day grace period.
 - Production deletion must run on the backend, revoke sessions, preserve audit log integrity, and handle owned communities safely.
 - Owned communities should require transfer, archival, or a reviewed owner-deletion policy before any destructive account action.
 - Deleted users should be anonymized or soft-deleted until the final retention policy is approved.

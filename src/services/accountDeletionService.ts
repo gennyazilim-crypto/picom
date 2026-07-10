@@ -4,7 +4,7 @@ import { getSupabaseClient } from "./supabase/supabaseClient";
 const STORAGE_KEY = "picom.accountDeletion.v3";
 
 type Stored = {
-  status: "none" | "requested" | "canceled" | "failed";
+  status: "none" | "requested" | "reviewing" | "canceled" | "completed" | "failed";
   requestId: string | null;
   deletionRequestedAt: string | null;
   anonymizeAfter: string | null;
@@ -50,7 +50,7 @@ function read(): Stored {
   try {
     const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<Stored>;
     return {
-      status: value.status === "requested" || value.status === "canceled" || value.status === "failed" ? value.status : "none",
+      status: value.status === "requested" || value.status === "reviewing" || value.status === "canceled" || value.status === "completed" || value.status === "failed" ? value.status : "none",
       requestId: typeof value.requestId === "string" ? value.requestId : null,
       deletionRequestedAt: typeof value.deletionRequestedAt === "string" ? value.deletionRequestedAt : null,
       anonymizeAfter: typeof value.anonymizeAfter === "string" ? value.anonymizeAfter : null,
@@ -70,10 +70,12 @@ function write(value: Stored): void {
 }
 
 function toStatus(value: Stored): AccountDeletionStatus {
-  const requested = value.status === "requested";
+  const requested = value.status === "requested" || value.status === "reviewing";
   const message = requested
     ? `Deletion requested. Your account is protected by a 14-day review period${value.sessionsRevoked ? " and all sessions were revoked" : ""}.`
-    : value.status === "canceled"
+      : value.status === "reviewing" ? "Account anonymization is under final operator review. This request can no longer be canceled."
+      : value.status === "completed" ? "Account anonymization and Auth soft deletion completed."
+      : value.status === "canceled"
       ? "The account deletion request was canceled."
       : value.status === "failed"
         ? "The account deletion request needs support review. No destructive action was performed."
@@ -98,6 +100,17 @@ function toStatus(value: Stored): AccountDeletionStatus {
 export const accountDeletionService = {
   getStatus(): AccountDeletionStatus {
     return toStatus(read());
+  },
+
+  async refreshStatus(): Promise<AccountDeletionStatus> {
+    if (dataSourceService.getStatus().isMock) return toStatus(read());
+    const client = getSupabaseClient();
+    if (!client) return toStatus(read());
+    const { data, error } = await client.from("account_deletion_requests").select("id,status,requested_at,anonymize_after,sessions_revoked_at,session_revocation_status").order("requested_at", { ascending: false }).limit(1).maybeSingle();
+    if (error || !data) return toStatus(read());
+    const next: Stored = { status: data.status, requestId: data.id, deletionRequestedAt: data.requested_at, anonymizeAfter: data.anonymize_after, sessionsRevoked: data.session_revocation_status === "completed" && Boolean(data.sessions_revoked_at) };
+    write(next);
+    return toStatus(next);
   },
 
   async requestDeletion(input: {

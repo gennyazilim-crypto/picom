@@ -1,0 +1,9 @@
+# Account deletion production implementation
+
+Picom's destructive account workflow is a staged request, grace period and anonymization process, not an immediate renderer delete. The desktop requires the exact username and current password. The password is sent only to Supabase Auth `signInWithPassword`, is cleared immediately, and is never passed to the deletion service/Edge Function, local storage, logs or database. The request RPC independently requires a JWT issued within five minutes.
+
+The backend rejects users who still own communities. On request it appends a content-free account security event, records a 14-day grace deadline and globally revokes sessions. A user who signs in during the grace period may cancel while status is `requested`; cancellation is audited. Settings can reload only the current user's request status under RLS.
+
+After the 14-day window, a separately authorized worker may run only when `ACCOUNT_DELETION_FINALIZATION_ENABLED=true` and its worker secret is configured. The idempotent database stage rechecks the deadline, completed session revocation and ownership, removes relationship/membership/saved references, anonymizes the profile as `Deleted User`, and preserves messages plus audit/security evidence. The worker then performs Supabase Auth soft deletion and records completion. Worker/service-role secrets remain server-only and never enter the Electron bundle.
+
+Production enablement still requires hosted migration/RLS tests, scheduler/queue ownership, retry and alerting, backup/restore behavior, retention/legal-hold decisions, data-subject notice, support escalation and privacy/legal/security approval. Repository smoke tests do not prove global logout or Auth soft deletion against hosted Supabase. Until those gates pass, finalization remains disabled even though the implementation path exists.

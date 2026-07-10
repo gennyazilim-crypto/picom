@@ -154,6 +154,7 @@
     "auth:account-deletion:smoke": "node scripts/account-deletion-smoke-test.mjs",
     "privacy:data-export:smoke": "node scripts/data-export-placeholder-smoke-test.mjs",
     "privacy:data-export:real:test": "node scripts/data-export-real-implementation-test.mjs",
+    "privacy:account-deletion:real:test": "node scripts/account-deletion-real-implementation-test.mjs",
     "community:ownership-transfer:smoke": "node scripts/community-ownership-transfer-smoke-test.mjs",
     "community:delete-safety:smoke": "node scripts/community-delete-safety-smoke-test.mjs",
     "channel:private-permissions:smoke": "node scripts/private-channel-permissions-smoke-test.mjs",

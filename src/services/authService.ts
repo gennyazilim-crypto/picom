@@ -28,6 +28,8 @@ export type EmailVerificationRequestSummary = Readonly<{
   message: string;
 }>;
 
+export type ReauthenticationSummary = Readonly<{ reauthenticatedAt: string; provider: "mock" | "supabase" }>;
+
 export type AuthServiceErrorCode =
   | "AUTH_DISABLED"
   | "AUTH_NOT_CONFIGURED"
@@ -144,6 +146,19 @@ function getConfiguredClient() {
 }
 
 export const authService = {
+  async reauthenticateCurrentUser(password: string): Promise<AuthServiceResult<ReauthenticationSummary>> {
+    if (password.length < 8) return authError("AUTH_INVALID_INPUT", "Enter your current password to continue.");
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+    if (!configured.data) return { ok: true, data: { reauthenticatedAt: new Date().toISOString(), provider: "mock" } };
+    const { data: current, error: currentError } = await configured.data.auth.getUser();
+    const email = current.user?.email;
+    if (currentError || !email) return authError("AUTH_SESSION_EXPIRED", "Sign in again before deleting your account.");
+    const { data, error } = await configured.data.auth.signInWithPassword({ email, password });
+    if (error || !data.session) return error ? { ok: false, error: mapSupabaseError(error) } : authError("AUTH_INVALID_CREDENTIALS", "Your current password could not be verified.");
+    return { ok: true, data: { reauthenticatedAt: new Date().toISOString(), provider: "supabase" } };
+  },
+
   async signInWithEmailPassword(email: string, password: string): Promise<AuthServiceResult<AuthServiceSession>> {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !password) {
