@@ -1,114 +1,25 @@
-﻿# Community Events and Scheduled Sessions Foundation
+# Community Events, RSVP, and Reminders
 
-Status: post-MVP foundation
+Picom community managers can create, edit, and cancel scheduled desktop events. Members can choose `interested`, `going`, or `not_going`; the backend keeps one RSVP per event/user and requires active community membership.
 
-Community events and scheduled sessions are planned as a future layer for announcements, voice sessions, meetings, and community activities. This foundation documents the safe Supabase and LiveKit path without adding runtime UI to the MVP desktop app.
+## Reminders and notification preferences
 
-## MVP stance
+Reminders are opt-in per event and only available for interested or going users. Desktop scheduling passes through `notificationService`, so notification preferences, muted state, mentions-only mode, DND routing, quiet hours, and native permission remain authoritative. Cancelled events clear local timers. Production delivery can later use a trusted scheduled worker that reads only enabled reminder records and re-checks membership and preferences.
 
-- Scheduled community events are not enabled in the current MVP runtime.
-- Existing community, channel, message, and LiveKit voice room behavior remains unchanged.
-- No calendar integrations, public discovery listings, or automated reminders are introduced yet.
+## Access and privacy
 
-## Future data model placeholder
+Event reads use existing community visibility rules. Management updates require owner/admin access through RLS. RSVP details are self-readable; other users receive no RSVP identity list from this feature. Audit/logging must not include private descriptions, tokens, or session values.
 
-A future `community_events` table can use safe fields:
+## Calendar boundary
 
-- `id`
-- `community_id`
-- `channel_id` optional
-- `title`
-- `description`
-- `starts_at`
-- `ends_at` optional
-- `event_type` such as `voice_session`, `meeting`, `announcement`, `social`
-- `created_by_id`
-- `created_at`
-- `updated_at`
-- `cancelled_at`
+No external calendar integration, OAuth grant, calendar write, ICS publishing, or third-party webhook is included. Future calendar sync requires explicit user approval, minimal scopes, revocation, provider review, and a separate security assessment.
 
-A future `community_event_rsvps` table can use:
+## manual checklist
 
-- `id`
-- `event_id`
-- `user_id`
-- `status` such as `interested`, `going`, `not_going`
-- `created_at`
-- `updated_at`
-
-## Supabase Auth and RLS expectations
-
-- All event reads require authenticated session and community access.
-- Private channel events require private channel visibility.
-- Creating/editing/canceling events requires a permission such as `manageEvents` or `manageCommunity`.
-- RSVP writes require membership in the target community.
-- Expired or revoked sessions must fail safely and return an auth/session error, not partial event data.
-
-## Scheduled LiveKit session placeholder
-
-For future voice sessions:
-
-- Event can reference a channel or voice room placeholder.
-- LiveKit token Edge Function remains the authority for joining actual rooms.
-- Event visibility must not grant voice access by itself.
-- Joining a scheduled voice session still requires channel permission and a valid Supabase session.
-
-## Future UI surfaces
-
-Potential desktop UI entry points:
-
-- CommunitySidebar Events item, hidden behind a future flag
-- Community Settings > Events
-- Create Event modal
-- Event detail modal/popover
-- RSVP controls
-- Reminder notification placeholder
-
-These surfaces should remain compact and desktop-native with no mobile bottom sheets.
-
-## Notification placeholder
-
-Future event reminders should respect:
-
-- notification settings
-- DND
-- muted community/channel settings
-- quiet hours
-- revoked/expired sessions
-
-Reminder logs must never include passwords, auth tokens, authorization headers, or private event details beyond safe metadata.
-
-## Validation rules
-
-- Title is required and bounded.
-- Start time is required.
-- End time must be after start time when provided.
-- Description is bounded.
-- Channel must belong to the community when provided.
-- Cancelled events should remain available for audit/history where appropriate.
-
-## Audit and privacy
-
-Audit entries for event changes should store safe metadata only:
-
-- event id
-- community id
-- actor id
-- action
-- timestamp
-
-Do not log passwords, tokens, authorization headers, raw session values, or unnecessary private descriptions.
-
-## Feature flag behavior
-
-A future `enableCommunityEvents` flag should hide entry points while disabled. Backend RLS and permissions remain mandatory; feature flags are not security enforcement.
-
-## Implementation decision
-
-This task is documentation-first. Runtime event UI, Supabase migrations, and LiveKit scheduling behavior are intentionally deferred to avoid destabilizing MVP chat and voice flows.
-
-## Manual verification
-
-- Confirm existing voice room behavior still works.
-- Confirm no new events UI appears in the current desktop shell.
-- Confirm this document is used before future event schema/runtime implementation.
+1. Create an event with valid local times, then edit its title/time.
+2. Confirm invalid end-before-start input is rejected.
+3. Set each RSVP state and confirm only one current state remains.
+4. Enable a reminder for Going/Interested; confirm Not going disables it.
+5. Confirm notification mute/mentions-only/quiet-hours suppress or silence delivery.
+6. Cancel an event and confirm it leaves the active list and its timer is cleared.
+7. Confirm a visitor cannot RSVP and a non-manager cannot edit/cancel.

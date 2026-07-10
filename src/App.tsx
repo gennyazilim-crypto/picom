@@ -7,7 +7,7 @@ import { getMockProfileForMember } from "./data/mockProfiles";
 import { mockDirectConversations } from "./data/mockDirectMessages";
 import { mockFriendState } from "./data/mockFriends";
 import { mockUpcomingEvents } from "./data/mockEvents";
-import { communityEventService, type CreateCommunityEventInput } from "./services/communityEventService";
+import { communityEventService, type CreateCommunityEventInput, type UpdateCommunityEventInput } from "./services/communityEventService";
 import { mockFollowedUserStories } from "./data/mockStories";
 import { mockFollowSuggestions } from "./data/mockFollowSuggestions";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
@@ -1569,6 +1569,7 @@ export function App() {
   }, [openDirectMessages, pushToast, switchCommunity]);
 
   const createCommunityEvent = useCallback(async (input: CreateCommunityEventInput) => { const event=await communityEventService.createEvent(input);if(event){setCommunityEvents((current)=>[event,...current]);pushToast("Event created.","success");}else pushToast("Event could not be created.","error"); },[pushToast]);
+  const updateCommunityEvent = useCallback(async (eventId: string, input: UpdateCommunityEventInput) => { const event = await communityEventService.updateEvent(eventId, input); if (event) { setCommunityEvents((current) => current.map((item) => item.id === eventId ? event : item)); pushToast("Event updated.", "success"); } else pushToast("Event could not be updated.", "error"); }, [pushToast]);
   const cancelCommunityEvent = useCallback(async (eventId:string) => { if(await communityEventService.cancelEvent(eventId)){setCommunityEvents((current)=>current.map((event)=>event.id===eventId?{...event,cancelledAt:new Date().toISOString()}:event));pushToast("Event cancelled.","success");} },[pushToast]);
 
   const openFriends = useCallback(() => {
@@ -2249,6 +2250,7 @@ export function App() {
                 onPlaceholderAction={(message) => pushToast(message, "info")}
                 events={communityEvents}
                 onCreateEvent={(input) => void createCommunityEvent(input)}
+                onUpdateEvent={(eventId, input) => void updateCommunityEvent(eventId, input)}
                 onCancelEvent={(eventId) => void cancelCommunityEvent(eventId)}
                 onCreateCategory={(name) => {
                   const category = addCategory({ communityId: activeCommunity.id, name });

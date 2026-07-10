@@ -1,4 +1,5 @@
 export type UpcomingEventType = "meeting" | "voice" | "release" | "review" | "social";
+export type EventRsvpStatus = "interested" | "going" | "not_going";
 
 export type UpcomingEvent = Readonly<{
   id: string;
@@ -14,4 +15,5 @@ export type UpcomingEvent = Readonly<{
   cancelledAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  currentUserRsvp?: EventRsvpStatus;
 }>;

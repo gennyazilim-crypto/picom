@@ -14,7 +14,7 @@ import { CommunityCategoryManagementPanel } from "./CommunityCategoryManagementP
 import { MessageModerationFiltersPanel } from "./MessageModerationFiltersPanel";
 import { CommunityAdminPanel, CommunityJoinModal, CommunityLeaveModal, CommunityMemberPanel, CommunityModeratorPanel, CommunityVisitorPanel } from "./CommunityMenu";
 import { CommunityEventsAdminSection } from "./CommunityEventsAdminSection";
-import type { CreateCommunityEventInput } from "../services/communityEventService";
+import type { CreateCommunityEventInput, UpdateCommunityEventInput } from "../services/communityEventService";
 import type { UpcomingEvent } from "../types/events";
 import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals";
 import { ReportModal } from "./ReportModal";
@@ -47,12 +47,13 @@ type CommunitySidebarProps = {
   onPlaceholderAction: (message: string) => void;
   events: UpcomingEvent[];
   onCreateEvent: (input: CreateCommunityEventInput) => void;
+  onUpdateEvent: (eventId: string, input: UpdateCommunityEventInput) => void;
   onCancelEvent: (eventId: string) => void;
 };
 
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
-export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onPlaceholderAction, events, onCreateEvent, onCancelEvent }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -62,7 +63,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
   const adminSectionTools = {
     overview: <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />,
     channels: <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />,
-    events: <CommunityEventsAdminSection community={community} events={events} onCreate={onCreateEvent} onCancel={onCancelEvent} />,
+    events: <CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} />,
     moderation: <MessageModerationFiltersPanel community={community} currentUser={currentUser} />,
     bots: <CommunityBotsAdminSection communityId={community.id} ownerId={community.ownerId ?? currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />,
     webhooks: <CommunityWebhooksAdminSection community={community} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageChannels")} />,

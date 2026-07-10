@@ -166,9 +166,19 @@ export type Database = {
         Relationships: [];
       };
       community_events: {
-        Row: { id:string;community_id:string;channel_id:string|null;title:string;description:string;starts_at:string;ends_at:string|null;created_by:string;cancelled_at:string|null;created_at:string;updated_at:string };
+        Row: { id:string;community_id:string;channel_id:string|null;title:string;description:string;starts_at:string;ends_at:string|null;event_type:"meeting"|"voice"|"release"|"review"|"social";created_by:string;cancelled_at:string|null;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["community_events"]["Row"]> & Pick<Database["public"]["Tables"]["community_events"]["Row"],"community_id"|"title"|"starts_at"|"created_by">;
         Update: Partial<Database["public"]["Tables"]["community_events"]["Row"]>;Relationships:[];
+      };
+      community_event_rsvps: {
+        Row: { id:string;event_id:string;user_id:string;status:"interested"|"going"|"not_going";created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["community_event_rsvps"]["Row"]> & Pick<Database["public"]["Tables"]["community_event_rsvps"]["Row"],"event_id"|"user_id"|"status">;
+        Update: Partial<Database["public"]["Tables"]["community_event_rsvps"]["Row"]>;Relationships:[];
+      };
+      community_event_reminders: {
+        Row: { id:string;event_id:string;user_id:string;minutes_before:number;enabled:boolean;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["community_event_reminders"]["Row"]> & Pick<Database["public"]["Tables"]["community_event_reminders"]["Row"],"event_id"|"user_id">;
+        Update: Partial<Database["public"]["Tables"]["community_event_reminders"]["Row"]>;Relationships:[];
       };
       saved_messages: {
         Row: { id: string; user_id: string; message_id: string; created_at: string };
@@ -439,6 +449,7 @@ export type Database = {
       get_poll_state: { Args: { target_poll_id: string }; Returns: Json };
       toggle_poll_vote: { Args: { target_poll_id: string; target_option_id: string }; Returns: Json };
       close_poll: { Args: { target_poll_id: string }; Returns: Json };
+      set_community_event_rsvp: { Args: { target_event_id: string; next_status: "interested" | "going" | "not_going" }; Returns: boolean };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
