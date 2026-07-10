@@ -147,6 +147,7 @@
     "account-switcher:smoke": "node scripts/multi-account-placeholder-smoke-test.mjs",
     "workspace:export-import:smoke": "node scripts/workspace-export-import-placeholder-smoke-test.mjs",
     "plugin-system:smoke": "node scripts/plugin-system-architecture-smoke-test.mjs",
+    "plugins:marketplace:policy:smoke": "node scripts/marketplace-plugin-policy-smoke-test.mjs",
     "bot-api:smoke": "node scripts/bot-api-architecture-smoke-test.mjs",
     "developer-portal:placeholder:smoke": "node scripts/developer-portal-placeholder-smoke-test.mjs",
     "community-discovery:plan:smoke": "node scripts/community-discovery-plan-smoke-test.mjs",
