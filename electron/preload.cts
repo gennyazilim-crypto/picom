@@ -157,6 +157,7 @@ const runtimeInfo: PicomRuntimeInfo = Object.freeze({
 });
 
 const bridge = Object.freeze({
+  contractVersion: 1 as const,
   getRuntimeInfo: (): PicomRuntimeInfo => runtimeInfo,
   windowControl: (action: WindowAction) => {
     if (!isWindowAction(action)) {

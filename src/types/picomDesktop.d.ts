@@ -31,6 +31,7 @@ declare global {
 
   interface Window {
     picomDesktop?: {
+      contractVersion: 1;
       getRuntimeInfo: () => {
         runtime: "electron";
         platform: string;

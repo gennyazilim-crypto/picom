@@ -131,6 +131,10 @@ function isSafeDeepLinkSegment(value: string | undefined): value is string {
   return Boolean(value && safeDeepLinkSegmentPattern.test(value));
 }
 
+function isTrustedIpcEvent(event: Electron.IpcMainInvokeEvent): boolean {
+  return isTrustedAppUrl(event.sender.getURL());
+}
+
 function isSupportedPicomDeepLink(parsed: URL): boolean {
   if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.hash) {
     return false;
@@ -552,6 +556,7 @@ function registerWindowStateForwarding(window: BrowserWindow): void {
 
 function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.windowControl, (event, action: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     if (!isWindowAction(action)) {
       return { ok: false, native: true, error: "INVALID_WINDOW_ACTION" } as const;
     }
@@ -582,6 +587,7 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.windowIsMaximized, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const window = BrowserWindow.fromWebContents(event.sender);
 
     return {
@@ -592,7 +598,7 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.screenCaptureGetSources, async (event) => {
-    if (!isTrustedAppUrl(event.sender.getURL())) {
+    if (!isTrustedIpcEvent(event)) {
       return { ok: false, native: true, error: "UNTRUSTED_SCREEN_CAPTURE_SENDER", platform: process.platform } as const;
     }
 
@@ -629,7 +635,7 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.notificationShow, (event, payload: unknown) => {
-    if (!isTrustedAppUrl(event.sender.getURL())) {
+    if (!isTrustedIpcEvent(event)) {
       return { ok: false, native: true, error: "UNTRUSTED_NOTIFICATION_SENDER" } as const;
     }
 
@@ -655,7 +661,8 @@ function registerIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.traySetStatus, (_event, status: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.traySetStatus, (event, status: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     if (!isTrayStatus(status)) {
       return { ok: false, native: true, error: "INVALID_TRAY_STATUS" } as const;
     }
@@ -664,7 +671,8 @@ function registerIpcHandlers(): void {
     return { ok: true, native: true, status } as const;
   });
 
-  ipcMain.handle(IPC_CHANNELS.traySetMuted, (_event, muted: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.traySetMuted, (event, muted: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     if (typeof muted !== "boolean") {
       return { ok: false, native: true, error: "INVALID_TRAY_MUTED_STATE" } as const;
     }
@@ -674,7 +682,7 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.traySetCloseToTray, (event, enabled: unknown) => {
-    if (!isTrustedAppUrl(event.sender.getURL()) || typeof enabled !== "boolean") {
+    if (!isTrustedIpcEvent(event) || typeof enabled !== "boolean") {
       return { ok: false, native: true, error: "INVALID_CLOSE_TO_TRAY_STATE" } as const;
     }
 
@@ -682,19 +690,21 @@ function registerIpcHandlers(): void {
     return { ok: true, native: true, enabled, supported: Boolean(tray) } as const;
   });
 
-  ipcMain.handle(IPC_CHANNELS.trayShowWindow, () => {
+  ipcMain.handle(IPC_CHANNELS.trayShowWindow, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     focusMainWindow();
     return { ok: true, native: true } as const;
   });
 
-  ipcMain.handle(IPC_CHANNELS.trayQuit, () => {
+  ipcMain.handle(IPC_CHANNELS.trayQuit, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     isQuitting = true;
     app.quit();
     return { ok: true, native: true } as const;
   });
 
   ipcMain.handle(IPC_CHANNELS.startupGetState, (event) => {
-    if (!isTrustedAppUrl(event.sender.getURL())) return { ok: false, native: true, error: "UNTRUSTED_STARTUP_SENDER" } as const;
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_STARTUP_SENDER" } as const;
     const supported = app.isPackaged && (process.platform === "win32" || process.platform === "darwin");
     if (!supported) return { ok: true, native: true, supported: false, enabled: false } as const;
     try {
@@ -705,7 +715,7 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.startupSetEnabled, (event, enabled: unknown) => {
-    if (!isTrustedAppUrl(event.sender.getURL()) || typeof enabled !== "boolean") return { ok: false, native: true, error: "INVALID_STARTUP_STATE" } as const;
+    if (!isTrustedIpcEvent(event) || typeof enabled !== "boolean") return { ok: false, native: true, error: "INVALID_STARTUP_STATE" } as const;
     if (!app.isPackaged) return { ok: false, native: true, error: "STARTUP_REQUIRES_PACKAGED_APP" } as const;
     if (process.platform !== "win32" && process.platform !== "darwin") return { ok: false, native: true, error: "STARTUP_UNSUPPORTED" } as const;
     try {
@@ -717,6 +727,7 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.filePickImages, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const window = BrowserWindow.fromWebContents(event.sender) ?? mainWindow ?? undefined;
     const options: OpenDialogOptions = {
       title: "Choose images",
@@ -754,6 +765,7 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.fileSaveText, async (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const safePayload = parseSaveTextPayload(payload);
     if (!safePayload) {
       return { ok: false, native: true, error: "INVALID_SAVE_TEXT_PAYLOAD" } as const;
@@ -779,7 +791,8 @@ function registerIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.clipboardReadText, () => {
+  ipcMain.handle(IPC_CHANNELS.clipboardReadText, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     try {
       return {
         ok: true,
@@ -791,7 +804,8 @@ function registerIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.clipboardWriteText, (_event, payload: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.clipboardWriteText, (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const safeText = parseClipboardWritePayload(payload);
     if (safeText === null) {
       return { ok: false, native: true, error: "INVALID_CLIPBOARD_TEXT" } as const;
@@ -805,7 +819,8 @@ function registerIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.externalOpenUrl, async (_event, payload: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.externalOpenUrl, async (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const safeUrl = normalizeExternalUrl(payload);
     if (!safeUrl) {
       return { ok: false, native: true, error: "UNSAFE_EXTERNAL_URL" } as const;

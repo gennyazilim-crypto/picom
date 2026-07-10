@@ -78,6 +78,7 @@
     "branding:smoke": "node scripts/branding-smoke-test.mjs",
     "desktop:smoke": "node scripts/desktop-only-smoke-test.mjs",
     "electron:security:smoke": "node scripts/electron-security-smoke-test.mjs",
+    "electron:preload-contract:test": "node scripts/electron-preload-contract-test.mjs",
     "security:pentest:prep:smoke": "node scripts/penetration-test-preparation-smoke-test.mjs",
     "security:external-review:smoke": "node scripts/external-security-review-smoke-test.mjs",
     "settings:diagnostics:smoke": "node scripts/settings-diagnostics-smoke-test.mjs",
