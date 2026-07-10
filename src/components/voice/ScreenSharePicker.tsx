@@ -8,7 +8,7 @@ type PickerStatus = "idle" | "loading" | "ready" | "error";
 type ScreenSharePickerProps = {
   connected: boolean;
   screenSharing: boolean;
-  onStart?: (sourceId: string, preset: ScreenShareQualityPresetId) => void;
+  onStart?: (sourceId: string, preset: ScreenShareQualityPresetId, sourceLabel?: string) => void;
   onStop?: () => void;
 };
 
@@ -56,8 +56,8 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
           <strong>Screen share source</strong>
           <small>{selectedSource ? selectedSource.name : "Choose a screen or application window"}</small>
         </div>
-        <button type="button" onClick={loadSources} disabled={status === "loading"}>
-          {status === "loading" ? "Loading..." : "Choose source"}
+        <button type="button" onClick={screenSharing ? onStop : loadSources} disabled={status === "loading"}>
+          {screenSharing ? "Stop sharing" : status === "loading" ? "Loading..." : "Choose source"}
         </button>
       </div>
 
@@ -105,7 +105,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
                 onStop?.();
                 return;
               }
-              if (selectedSourceId) onStart?.(selectedSourceId, qualityPreset);
+              if (selectedSourceId) onStart?.(selectedSourceId, qualityPreset, selectedSource?.name);
             }}
           >
             {screenSharing ? "Stop sharing" : connected ? "Start sharing" : "Join room to share"}

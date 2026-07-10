@@ -4,7 +4,7 @@ import type { ScreenShareQualityPresetId } from "../../utils/screenShareQuality"
 type ScreenShareControlsProps = {
   connected: boolean;
   screenSharing: boolean;
-  onStart?: (sourceId: string, preset: ScreenShareQualityPresetId) => void;
+  onStart?: (sourceId: string, preset: ScreenShareQualityPresetId, sourceLabel?: string) => void;
   onStop?: () => void;
 };
 

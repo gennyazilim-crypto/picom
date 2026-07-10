@@ -34,6 +34,7 @@ export type VoiceScreenShare = Readonly<{
   participantName: string;
   isLocal: boolean;
   stream: MediaStream;
+  sourceLabel?: string;
 }>;
 
 export type VoiceServiceSnapshot = Readonly<{
@@ -291,6 +292,7 @@ function bindRoomEvents(activeRoom: Room): void {
           participantName: participant.name || participant.identity,
           isLocal: false,
           stream: new MediaStream([track.mediaStreamTrack]),
+          sourceLabel: "Shared screen",
         });
       }
     })
@@ -536,7 +538,7 @@ export const voiceService = {
     return { ok: true, data: snapshot };
   },
 
-  async startScreenShare(sourceId: string, preset: ScreenShareQualityPresetId = "balanced"): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+  async startScreenShare(sourceId: string, preset: ScreenShareQualityPresetId = "balanced", sourceLabel?: string): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");
     }
@@ -578,6 +580,7 @@ export const voiceService = {
         participantName: room.localParticipant.name || room.localParticipant.identity,
         isLocal: true,
         stream: new MediaStream([track]),
+        sourceLabel: sourceLabel?.trim().slice(0, 80) || "Your shared screen",
       });
 
       track.onended = () => {

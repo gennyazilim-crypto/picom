@@ -4,13 +4,15 @@ import type { VoiceScreenShare } from "../../services/voiceService";
 
 type ScreenShareViewerProps = {
   shares: VoiceScreenShare[];
+  onStop?: () => void;
 };
 
 type ScreenShareVideoProps = {
   share: VoiceScreenShare;
+  onStop?: () => void;
 };
 
-function ScreenShareVideo({ share }: ScreenShareVideoProps) {
+function ScreenShareVideo({ share, onStop }: ScreenShareVideoProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -33,14 +35,15 @@ function ScreenShareVideo({ share }: ScreenShareVideoProps) {
       <footer>
         <span>
           <strong>{share.participantName}</strong>
-          <small>{share.isLocal ? "Your screen" : "Screen sharing"}</small>
+          <small>{share.sourceLabel ?? (share.isLocal ? "Your screen" : "Screen sharing")}</small>
         </span>
+        {share.isLocal && onStop ? <button type="button" className="screen-share-stop-button" onClick={onStop} aria-label="Stop sharing your screen"><AppIcon name="close" size="sm" /> Stop sharing</button> : null}
       </footer>
     </article>
   );
 }
 
-export function ScreenShareViewer({ shares }: ScreenShareViewerProps) {
+export function ScreenShareViewer({ shares, onStop }: ScreenShareViewerProps) {
   if (!shares.length) {
     return (
       <section className="screen-share-viewer is-empty" aria-label="Screen share viewer">
@@ -58,7 +61,7 @@ export function ScreenShareViewer({ shares }: ScreenShareViewerProps) {
   return (
     <section className="screen-share-viewer" aria-label="Active screen shares">
       {shares.map((share) => (
-        <ScreenShareVideo key={share.id} share={share} />
+        <ScreenShareVideo key={share.id} share={share} onStop={onStop} />
       ))}
     </section>
   );

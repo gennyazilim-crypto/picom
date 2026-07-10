@@ -14,7 +14,7 @@ type VoiceRoomViewProps = {
   onLeave?: () => void;
   onToggleMute?: () => void;
   onToggleDeafen?: () => void;
-  onStartScreenShare?: (sourceId: string, preset: ScreenShareQualityPresetId) => void;
+  onStartScreenShare?: (sourceId: string, preset: ScreenShareQualityPresetId, sourceLabel?: string) => void;
   onStopScreenShare?: () => void;
 };
 
@@ -165,7 +165,7 @@ export function VoiceRoomView({
         <VoiceConnectionStatus status={snapshot.status} />
       </div>
 
-      <ScreenSharePreview shares={snapshot.screenShares} />
+      <ScreenSharePreview shares={snapshot.screenShares} onStop={onStopScreenShare} />
 
       <div className="voice-room-grid">
         <article className="voice-room-card">

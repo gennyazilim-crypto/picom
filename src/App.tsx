@@ -1682,9 +1682,9 @@ export function App() {
     });
   }, [pushToast, voiceSnapshot.deafened]);
 
-  const startActiveVoiceScreenShare = useCallback((sourceId: string, preset: "presentation" | "balanced" | "performance") => {
+  const startActiveVoiceScreenShare = useCallback((sourceId: string, preset: "presentation" | "balanced" | "performance", sourceLabel?: string) => {
     void import("./services/voiceService").then(({ voiceService }) =>
-      voiceService.startScreenShare(sourceId, preset).then((result) => {
+      voiceService.startScreenShare(sourceId, preset, sourceLabel).then((result) => {
         if (!result.ok) pushToast(result.error.message, "error");
       }),
     );
