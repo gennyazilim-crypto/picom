@@ -110,6 +110,7 @@ export interface Community {
   publicReadEnabled?: boolean;
   discoveryListed?: boolean;
   discoveryCategory?: "development" | "design" | "gaming" | "music" | "study" | "work";
+  discoveryJoinPolicy?: "open" | "request";
   categories: ChannelCategory[];
   roles: Role[];
   members: Member[];

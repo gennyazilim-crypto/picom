@@ -2009,6 +2009,7 @@ export function App() {
                   pushToast(result.error.message, "error");
                 }
               }}
+              onReport={(community) => setReportTarget({ targetType: "community", targetId: community.id, communityId: community.id, label: community.name })}
             />
           ) : activeView === "mentionFeed" ? (
             <div className="mention-feed-shell">

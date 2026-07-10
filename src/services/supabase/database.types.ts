@@ -39,6 +39,7 @@ export type Database = {
           visibility: "public" | "private";
           public_read_enabled: boolean;
           discovery_listed: boolean;
+          discovery_join_policy: "open" | "request";
           category: "development" | "design" | "gaming" | "music" | "study" | "work" | null;
           created_at: string;
           updated_at: string;
@@ -334,6 +335,11 @@ export type Database = {
       };
     };
     Functions: {
+      list_public_discovery_communities: {
+        Args: { search_text?: string | null; category_filter?: string | null; result_limit?: number };
+        Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request" }>;
+      };
+      join_or_request_discovery_community: { Args: { target_community_id: string }; Returns: "joined" | "requested" | "already_member" };
       users_are_blocked: { Args: { first_user_id: string; second_user_id: string }; Returns: boolean };
       respond_friend_request: { Args: { target_request_id: string; accept_request: boolean }; Returns: boolean };
       remove_friend: { Args: { other_user_id: string }; Returns: boolean };
