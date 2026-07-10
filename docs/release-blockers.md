@@ -34,3 +34,7 @@ A blocker may move to non-blocker only with a written risk acceptance, named own
 ## Task 396 evidence update
 
 Local Supabase/RLS/API/secret-boundary and build gates passed on 2026-07-10. Hosted staging was not configured or authenticated, so RB-01, RB-02, and RB-03 remain open without reclassification.
+
+## Task 397 evidence update
+
+LiveKit service, device, reconnect, mini-card, discovery, and diagnostics contracts passed locally. No hosted token or two-client media session ran, so RB-04 remains open.
