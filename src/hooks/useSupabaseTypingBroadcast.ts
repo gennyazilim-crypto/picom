@@ -121,7 +121,7 @@ export function useSupabaseTypingBroadcast({
     let canceled = false;
     const channel = client
       .channel(realtimeChannelNames.typing(communityId, channelId), {
-        config: { broadcast: { self: false } },
+        config: { private: true, broadcast: { self: false } },
       })
       .on("broadcast", { event: "typing" }, ({ payload }) => {
         const parsed = parseTypingPayload(payload as TypingPayload);

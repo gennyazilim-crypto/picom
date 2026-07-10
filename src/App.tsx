@@ -436,6 +436,23 @@ export function App() {
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
   }), [communities, mentionItems]);
+  const visibleStoryItems = useMemo(() => storyItems.filter((item) => {
+    if (!item.communityId) return true;
+    const community = communities.find((candidate) => candidate.id === item.communityId);
+    if (!community) return false;
+    const access = getCommunityAccess(currentUserId, community);
+    if (!item.channelId) return access.isMember || access.canViewPublicContent;
+    const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
+    return Boolean(channel && canViewChannel(access, channel));
+  }), [communities, storyItems]);
+  const visibleCommunityEvents = useMemo(() => communityEvents.filter((item) => {
+    const community = communities.find((candidate) => candidate.id === item.communityId);
+    if (!community) return false;
+    const access = getCommunityAccess(currentUserId, community);
+    if (!item.channelId) return access.isMember || access.canViewPublicContent;
+    const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
+    return Boolean(channel && canViewChannel(access, channel));
+  }), [communities, communityEvents]);
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
   useEffect(() => {
@@ -2051,8 +2068,8 @@ export function App() {
                 items={visibleMentionItems}
                 communities={communities}
                 friends={friendState.friends}
-                events={communityEvents}
-                stories={storyItems}
+                events={visibleCommunityEvents}
+                stories={visibleStoryItems}
                 voiceState={feedVoiceState}
                 followedUserIds={followedUserIds}
                 activeTab={mentionTab}

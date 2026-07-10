@@ -192,6 +192,7 @@ export function useSupabasePresenceChannel({
     const channel = client
       .channel(realtimeChannelNames.presence(communityId), {
         config: {
+          private: true,
           presence: {
             key: currentUserId,
           },
