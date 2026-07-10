@@ -17,7 +17,7 @@ export function mapDirectMessageRow(row: DirectMessageRow): DirectMessage {
     id: row.id,
     conversationId: row.conversation_id,
     authorId: row.author_id,
-    body: row.body,
+    body: row.body ?? "",
     clientMessageId: row.client_message_id ?? undefined,
     createdAt: row.created_at,
     editedAt: row.edited_at ?? undefined,

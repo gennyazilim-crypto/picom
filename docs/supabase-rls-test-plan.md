@@ -14,6 +14,8 @@ Picom validates Supabase access boundaries with local pgTAP SQL tests plus a Nod
 - Owner channel-management and message-delete access.
 - Message ownership edit boundaries.
 - Attachment metadata visibility following message/channel visibility.
+- Direct conversation metadata, participant, message, attachment, and reaction isolation.
+- Direct message author/reaction ownership and blocked-participant write denial.
 
 ## Commands
 
@@ -41,6 +43,7 @@ npm run qa:supabase
 
 - `supabase/tests/rls/community_access_boundaries.sql`
 - `supabase/tests/rls/message_ownership_and_storage.sql`
+- `supabase/tests/rls/direct_messages.sql`
 
 Each test file:
 
@@ -72,6 +75,12 @@ The MVP stores attachment metadata in `public.attachments` and files in the priv
 - pending files are readable only by the uploader,
 - attached files are readable only when the linked message is visible,
 - private channel attachments are denied to visitors and unauthorized members.
+
+Direct Message attachment metadata follows participant-only RLS. Storage object policies and signed URL issuance must repeat the conversation-participant check; DM objects must never be served from a public bucket.
+
+## Direct Messages privacy boundary
+
+The canonical DM suite verifies that non-participants cannot read conversation metadata, participant rows, messages, attachments, or reactions. Participants can mutate only their own messages/reactions, and a participant with `blocked_at` cannot send. Global search and Mention Feed must not query private DM tables.
 
 ## Security constraints
 

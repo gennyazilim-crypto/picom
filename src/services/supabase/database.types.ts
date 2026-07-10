@@ -230,20 +230,20 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["friendships"]["Row"]>; Relationships: [];
       };
       direct_conversations: {
-        Row: { id: string; type: "direct"; created_by: string; created_at: string; updated_at: string };
+        Row: { id: string; type: "direct"; created_by: string; created_at: string; updated_at: string; last_message_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversations"]["Row"], "created_by">;
         Update: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]>;
         Relationships: [];
       };
-      direct_conversation_members: {
-        Row: { id: string; conversation_id: string; user_id: string; joined_at: string; last_read_at: string | null };
-        Insert: Partial<Database["public"]["Tables"]["direct_conversation_members"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversation_members"]["Row"], "conversation_id" | "user_id">;
-        Update: Partial<Database["public"]["Tables"]["direct_conversation_members"]["Row"]>;
+      direct_conversation_participants: {
+        Row: { id: string; conversation_id: string; user_id: string; joined_at: string; last_read_at: string | null; muted_until: string | null; archived_at: string | null; blocked_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["direct_conversation_participants"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversation_participants"]["Row"], "conversation_id" | "user_id">;
+        Update: Partial<Database["public"]["Tables"]["direct_conversation_participants"]["Row"]>;
         Relationships: [];
       };
       direct_messages: {
-        Row: { id: string; conversation_id: string; author_id: string; body: string; client_message_id: string | null; created_at: string; updated_at: string; edited_at: string | null; deleted_at: string | null };
-        Insert: Partial<Database["public"]["Tables"]["direct_messages"]["Row"]> & Pick<Database["public"]["Tables"]["direct_messages"]["Row"], "conversation_id" | "author_id" | "body">;
+        Row: { id: string; conversation_id: string; author_id: string; body: string | null; reply_to_message_id: string | null; client_message_id: string | null; created_at: string; updated_at: string; edited_at: string | null; deleted_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["direct_messages"]["Row"]> & Pick<Database["public"]["Tables"]["direct_messages"]["Row"], "conversation_id" | "author_id">;
         Update: Partial<Database["public"]["Tables"]["direct_messages"]["Row"]>;
         Relationships: [];
       };
@@ -254,8 +254,8 @@ export type Database = {
         Relationships: [];
       };
       direct_message_attachments: {
-        Row: { id: string; message_id: string; uploader_id: string; storage_path: string; file_name: string; mime_type: string; size_bytes: number; created_at: string };
-        Insert: Partial<Database["public"]["Tables"]["direct_message_attachments"]["Row"]> & Pick<Database["public"]["Tables"]["direct_message_attachments"]["Row"], "message_id" | "uploader_id" | "storage_path" | "file_name" | "mime_type" | "size_bytes">;
+        Row: { id: string; message_id: string; url: string; file_name: string | null; mime_type: string | null; file_size: number | null; width: number | null; height: number | null; uploader_id: string | null; storage_path: string | null; size_bytes: number | null; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["direct_message_attachments"]["Row"]> & Pick<Database["public"]["Tables"]["direct_message_attachments"]["Row"], "message_id" | "url">;
         Update: Partial<Database["public"]["Tables"]["direct_message_attachments"]["Row"]>;
         Relationships: [];
       };

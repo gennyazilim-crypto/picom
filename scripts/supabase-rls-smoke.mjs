@@ -23,7 +23,12 @@ const requiredScenarioSnippets = [
   "author can edit own message",
   "other member cannot edit another user message",
   "owner can delete visible community message",
-  "non-member cannot read direct messages"
+  "non-member cannot read direct messages",
+  "non-member cannot read direct conversation metadata",
+  "non-member cannot read direct participants",
+  "non-member cannot read direct attachments",
+  "non-member cannot read direct reactions",
+  "blocked participant cannot send direct messages"
 ];
 
 function fail(message) {

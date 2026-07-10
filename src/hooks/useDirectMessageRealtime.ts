@@ -61,7 +61,7 @@ export function useDirectMessageRealtime(input: Input): RealtimeConnectionStatus
 
     const dispatchMessage = (event: DirectMessageRealtimeEvent) => dispatchEventOnce(event);
     void (async () => {
-      const { data, error } = await client.from("direct_conversation_members").select("conversation_id").eq("user_id", input.currentUserId).in("conversation_id", input.conversationIds);
+      const { data, error } = await client.from("direct_conversation_participants").select("conversation_id").eq("user_id", input.currentUserId).in("conversation_id", input.conversationIds);
       if (canceled) return;
       if (error) { loggingService.logWarn("DM realtime membership verification failed", { code: error.code }, "dm-realtime"); setStatus("disconnected"); return; }
       const allowedIds = [...new Set((data ?? []).map((row) => row.conversation_id))];

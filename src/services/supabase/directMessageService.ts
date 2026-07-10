@@ -10,12 +10,12 @@ export type SendDirectMessageInput = Readonly<{ conversationId: string; body: st
 function failure(code: DirectMessageErrorCode, message: string): DirectMessageServiceResult<never> { return { ok: false, error: { code, message } }; }
 function configuredClient() { const status = getSupabaseClientStatus(); const client = getSupabaseClient(); if (!status.configured || !client) return failure("NOT_CONFIGURED", status.reason ?? "Supabase is not configured."); return { ok: true as const, data: client }; }
 async function currentUserId(): Promise<DirectMessageServiceResult<string>> { const configured = configuredClient(); if (!configured.ok) return configured; const { data, error } = await configured.data.auth.getUser(); if (error || !data.user) return failure("AUTH_REQUIRED", "Sign in to use direct messages."); return { ok: true, data: data.user.id }; }
-function mapMessage(row: MessageRow): DirectMessage { return { id: row.id, conversationId: row.conversation_id, authorId: row.author_id, body: row.body, clientMessageId: row.client_message_id ?? undefined, createdAt: row.created_at, editedAt: row.edited_at ?? undefined, deletedAt: row.deleted_at ?? undefined }; }
+function mapMessage(row: MessageRow): DirectMessage { return { id: row.id, conversationId: row.conversation_id, authorId: row.author_id, body: row.body ?? "", clientMessageId: row.client_message_id ?? undefined, createdAt: row.created_at, editedAt: row.edited_at ?? undefined, deletedAt: row.deleted_at ?? undefined }; }
 
 export async function getDirectMessages(conversationId: string): Promise<DirectMessageServiceResult<DirectMessage[]>> {
   if (!conversationId.trim()) return failure("VALIDATION_ERROR", "Conversation ID is required.");
   const configured = configuredClient(); if (!configured.ok) return configured;
-  const { data, error } = await configured.data.from("direct_messages").select("id,conversation_id,author_id,body,client_message_id,created_at,updated_at,edited_at,deleted_at").eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(100);
+  const { data, error } = await configured.data.from("direct_messages").select("id,conversation_id,author_id,body,reply_to_message_id,client_message_id,created_at,updated_at,edited_at,deleted_at").eq("conversation_id", conversationId).order("created_at", { ascending: false }).limit(100);
   if (error) return failure("REQUEST_FAILED", "Could not load direct messages.");
   return { ok: true, data: (data ?? []).reverse().map(mapMessage) };
 }

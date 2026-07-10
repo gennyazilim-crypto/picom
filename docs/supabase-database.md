@@ -16,6 +16,7 @@ The database foundation covers the MVP community chat data model:
 - Message attachments.
 - Message reactions.
 - Read states.
+- Direct conversations, participants, messages, attachments, and reactions.
 
 Advanced roadmap areas such as bots, marketplace discovery, plugins, analytics, and production auto-update are intentionally out of scope for this database foundation.
 
@@ -52,6 +53,7 @@ The current schema is built through SQL migrations in `supabase/migrations`:
 - `20260704001000_message_reactions_schema.sql`: reaction validation and indexes.
 - `20260704001100_read_states_schema.sql`: read marker consistency.
 - `20260704001200_chat_query_indexes.sql`: targeted chat query indexes.
+- `20260710248000_direct_messages_schema_rls_foundation.sql`: canonical DM participant schema, indexes, helper functions, and participant-only RLS.
 
 ## Seed data
 
@@ -87,7 +89,7 @@ The committed placeholder keeps builds stable before Supabase CLI is available. 
 
 ## RLS model
 
-All public MVP tables have RLS enabled. Current policies cover profiles, communities, community members, channels, messages, attachments, and reactions.
+All public MVP tables have RLS enabled. Current policies cover profiles, communities, community members, channels, messages, attachments, reactions, and participant-scoped Direct Messages.
 
 See `docs/rls-policies.md` for the current policy matrix, helper functions, security notes, and manual verification steps.
 
@@ -129,3 +131,4 @@ The schema is prepared for Supabase Realtime on chat tables, but publication/pol
 - `docs/supabase-seed-data.md`
 - `docs/supabase-type-generation.md`
 - `docs/rls-policies.md`
+- `docs/direct-messages-schema-rls.md`
