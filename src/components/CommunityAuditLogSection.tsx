@@ -16,6 +16,7 @@ const actions: Array<{ value: "all" | AuditActionType; label: string }> = [
   { value: "moderation_action", label: "Moderation actions" },
   { value: "invite_create", label: "Invite created" },
   { value: "invite_revoke", label: "Invite revoked" },
+  { value: "invite_accept", label: "Invite accepted" },
 ];
 
 export function CommunityAuditLogSection({ communityId, canView }: { communityId: string; canView: boolean }) {

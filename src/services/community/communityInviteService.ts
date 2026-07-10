@@ -18,6 +18,7 @@ export type CommunityInvite = Readonly<{
   lastUsedAt: string | null;
 }>;
 export type InviteCampaignSummary = Omit<CommunityInvite, "code"> & Readonly<{ creatorName: string }>;
+export type InviteAcceptanceStatus = "joined" | "already_member";
 
 type InviteResult<T> = { ok: true; data: T } | { ok: false; error: { code: string; message: string } };
 type MockInviteStore = { records: CommunityInvite[] };
@@ -47,7 +48,21 @@ function generateCode(): string {
 function normalizeCode(value: string): string {
   const trimmed = value.trim();
   const deepLinkMatch = /^picom:\/\/invite\/([a-zA-Z0-9_-]{8,64})\/?$/i.exec(trimmed);
-  return deepLinkMatch?.[1] ?? trimmed;
+  return (deepLinkMatch?.[1] ?? trimmed).toLowerCase();
+}
+
+function mapInviteAcceptanceError(message?: string): InviteResult<never> {
+  const mappings = [
+    ["AUTH_REQUIRED", "AUTH_REQUIRED", "Sign in before accepting an invite."],
+    ["INVITE_BANNED", "INVITE_BANNED", "You cannot join this community."],
+    ["INVITE_EXPIRED", "INVITE_EXPIRED", "This invite has expired."],
+    ["INVITE_REVOKED", "INVITE_REVOKED", "This invite has been revoked."],
+    ["INVITE_EXHAUSTED", "INVITE_EXHAUSTED", "This invite has reached its use limit."],
+    ["DEFAULT_ROLE_MISSING", "INVITE_UNAVAILABLE", "This community is not ready to accept members."],
+    ["INVITE_INVALID", "INVITE_INVALID", "That invite code is invalid."],
+  ] as const;
+  const match = mappings.find(([marker]) => message?.includes(marker));
+  return { ok: false, error: { code: match?.[1] ?? "INVITE_ACCEPT_FAILED", message: match?.[2] ?? "This invite is invalid, expired, revoked, or exhausted." } };
 }
 
 function mapInvite(row: {
@@ -131,7 +146,7 @@ export const communityInviteService = {
     return {ok:true,data:(data??[]).map((row)=>({id:row.id,communityId:row.community_id,createdBy:row.created_by,creatorName:row.creator_name,maxUses:row.max_uses,uses:row.uses,expiresAt:row.expires_at,revokedAt:row.revoked_at,createdAt:row.created_at,campaignLabel:row.campaign_label,lastUsedAt:row.last_used_at}))};
   },
 
-  async acceptInvite(input: { code: string; communities: Community[]; currentUser: Member; isAuthenticated: boolean; bannedUserIds?: string[] }): Promise<InviteResult<{ communityId: string; member: Member }>> {
+  async acceptInvite(input: { code: string; communities: Community[]; currentUser: Member; isAuthenticated: boolean; bannedUserIds?: string[] }): Promise<InviteResult<{ communityId: string; member: Member; status: InviteAcceptanceStatus }>> {
     const code = normalizeCode(input.code);
     if (!input.isAuthenticated) return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before accepting an invite." } };
     if (!/^[a-zA-Z0-9_-]{8,64}$/.test(code)) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite code is invalid." } };
@@ -146,18 +161,19 @@ export const communityInviteService = {
       if (!community) return { ok: false, error: { code: "COMMUNITY_NOT_FOUND", message: "The invited community is unavailable." } };
       if (input.bannedUserIds?.includes(input.currentUser.userId)) return { ok: false, error: { code: "INVITE_BANNED", message: "You cannot join this community." } };
       const existingMember = community.members.find((member) => member.userId === input.currentUser.userId);
-      if (existingMember) return { ok: true, data: { communityId: community.id, member: existingMember } };
+      if (existingMember) return { ok: true, data: { communityId: community.id, member: existingMember, status: "already_member" } };
       const joined = await communityMembershipService.joinCommunity({ community, currentUser: input.currentUser, isAuthenticated: true, inviteValidated: true });
       if (!joined.ok) return { ok: false, error: joined.error };
       writeMockStore({ records: store.records.map((record) => record.id === invite.id ? { ...record, uses: record.uses + 1 } : record) });
-      return { ok: true, data: { communityId: community.id, member: joined.data } };
+      await auditLogService.append({ communityId: community.id, actorId: input.currentUser.userId, actionType: "invite_accept", targetType: "invite", targetId: invite.id, reason: "Invite accepted" });
+      return { ok: true, data: { communityId: community.id, member: joined.data, status: "joined" } };
     }
 
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
-    const { data, error } = await client.rpc("accept_community_invite", { invite_code: code });
+    const { data, error } = await client.rpc("accept_community_invite_v2", { invite_code: code });
     const membership = data?.[0];
-    if (error || !membership) return { ok: false, error: { code: error?.message.includes("banned") ? "INVITE_BANNED" : "INVITE_ACCEPT_FAILED", message: error?.message.includes("banned") ? "You cannot join this community." : error?.message.includes("expired") ? "This invite has expired." : "This invite is invalid, expired, revoked, or exhausted." } };
-    return { ok: true, data: { communityId: membership.community_id, member: { id: membership.id, userId: membership.user_id, displayName: input.currentUser.displayName, username: input.currentUser.username, avatarSeed: input.currentUser.avatarSeed, avatarUrl: input.currentUser.avatarUrl, status: input.currentUser.status, statusText: "Joined with an invite", roleId: membership.role_id ?? "member", bio: input.currentUser.bio } } };
+    if (error || !membership) return mapInviteAcceptanceError(error?.message);
+    return { ok: true, data: { communityId: membership.community_id, status: membership.acceptance_status, member: { id: membership.id, userId: membership.user_id, displayName: input.currentUser.displayName, username: input.currentUser.username, avatarSeed: input.currentUser.avatarSeed, avatarUrl: input.currentUser.avatarUrl, status: input.currentUser.status, statusText: membership.acceptance_status === "already_member" ? "Already a community member" : "Joined with an invite", roleId: membership.role_id, bio: input.currentUser.bio } } };
   },
 };

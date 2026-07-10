@@ -17,6 +17,7 @@ import { CommunityEventsAdminSection } from "./CommunityEventsAdminSection";
 import type { CreateCommunityEventInput, UpdateCommunityEventInput } from "../services/communityEventService";
 import type { UpcomingEvent } from "../types/events";
 import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals";
+import type { InviteAcceptanceStatus } from "../services/community/communityInviteService";
 import { ReportModal } from "./ReportModal";
 import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
 import { CommunityWebhooksAdminSection } from "./CommunityWebhooksAdminSection";
@@ -44,7 +45,7 @@ type CommunitySidebarProps = {
   onLeaveCommunity: () => void | Promise<void>;
   pendingInviteCode?: string | null;
   onClearPendingInviteCode: () => void;
-  onInviteAccepted: (communityId: string, member: Member) => void;
+  onInviteAccepted: (communityId: string, member: Member, status: InviteAcceptanceStatus) => void;
   onPlaceholderAction: (message: string) => void;
   events: UpcomingEvent[];
   onCreateEvent: (input: CreateCommunityEventInput) => void;

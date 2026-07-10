@@ -2111,10 +2111,10 @@ export function App() {
     pushToast(`Left ${activeCommunity.name}.`, "info");
   };
 
-  const handleInviteAccepted = (communityId: string, member: Member) => {
+  const handleInviteAccepted = (communityId: string, member: Member, status: import("./services/community/communityInviteService").InviteAcceptanceStatus) => {
     const target = communities.find((community) => community.id === communityId);
     if (!target) {
-      pushToast("Joined successfully. Refresh communities to load the invited workspace.", "success");
+      pushToast(status === "already_member" ? "You are already a member. Refresh communities to load the workspace." : "Joined successfully. Refresh communities to load the invited workspace.", "success");
       setPendingInviteCode(null);
       return;
     }
@@ -2123,7 +2123,7 @@ export function App() {
     switchCommunity(communityId);
     setActiveView("community");
     setPendingInviteCode(null);
-    pushToast(`Joined ${target.name} with invite.`, "success");
+    pushToast(status === "already_member" ? `You are already a member of ${target.name}.` : `Joined ${target.name} with invite.`, "success");
   };
 
   const handleCreateCommunity = async (name: string, description?: string, templateId?: CommunityTemplateId) => {

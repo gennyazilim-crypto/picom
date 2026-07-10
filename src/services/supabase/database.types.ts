@@ -515,6 +515,10 @@ export type Database = {
         Args: { invite_code: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;
       };
+      accept_community_invite_v2: {
+        Args: { invite_code: string };
+        Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string; joined_at: string; acceptance_status: "joined" | "already_member" }>;
+      };
       create_community_invite: { Args: { target_community_id: string; target_max_uses?: number | null; target_expires_at?: string | null; target_campaign_label?: string | null }; Returns: Array<Database["public"]["Tables"]["community_invites"]["Row"]> };
       revoke_community_invite: { Args: { target_invite_id: string }; Returns: Array<Database["public"]["Tables"]["community_invites"]["Row"]> };
       list_community_invite_campaigns: { Args: { target_community_id: string }; Returns: Array<{ id: string; community_id: string; created_by: string; creator_name: string; campaign_label: string | null; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; last_used_at: string | null; created_at: string }> };
