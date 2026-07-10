@@ -63,6 +63,8 @@ export type MessageServiceErrorCode =
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
   | "RATE_LIMITED"
+  | "QUEUE_FULL"
+  | "QUEUE_CANCELED"
   | "MESSAGE_SEND_FAILED"
   | "MESSAGE_LIST_FAILED"
   | "MESSAGE_EDIT_FAILED"

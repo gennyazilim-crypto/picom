@@ -182,6 +182,7 @@
     "realtime:backpressure:smoke": "node scripts/realtime-backpressure-smoke-test.mjs",
     "messages:sequence:smoke": "node scripts/message-sequence-numbers-smoke-test.mjs",
     "offline:conflicts:smoke": "node scripts/offline-sync-conflict-smoke-test.mjs",
+    "offline:cache-sync:hardening:test": "node scripts/offline-cache-sync-hardening-test.mjs",
     "database:transactions:smoke": "node scripts/database-transaction-consistency-smoke-test.mjs",
     "database:integrity:smoke": "node scripts/database-integrity-smoke-test.mjs",
     "database:restore-drill:smoke": "node scripts/database-restore-drill-smoke-test.mjs",

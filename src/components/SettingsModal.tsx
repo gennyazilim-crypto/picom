@@ -892,8 +892,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </article>
                 <article className="security-card">
                   <span>Offline data</span>
-                  <strong>{cacheSummary?.offlineDataStatus.replace(/_/g, " ") ?? "placeholder"}</strong>
-                  <small>No offline action queue is cleared in this MVP placeholder.</small>
+                  <strong>{cacheSummary ? `${cacheSummary.pendingQueuedMessages} queued` : "memory only"}</strong>
+                  <small>Pending messages stay in memory and are preserved by cache clearing.</small>
                 </article>
               </div>
               <div className="settings-actions-row">

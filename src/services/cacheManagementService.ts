@@ -1,5 +1,6 @@
 import { imageCacheService } from "./imageCacheService";
 import { loggingService } from "./loggingService";
+import { messageSendQueueService } from "./messageSendQueueService";
 
 export type CacheSummary = Readonly<{
   estimatedUsageBytes: number | null;
@@ -9,6 +10,7 @@ export type CacheSummary = Readonly<{
   recentLogEntries: number;
   messageCacheStatus: "not_persisted";
   offlineDataStatus: "memory_only_queue";
+  pendingQueuedMessages: number;
   notes: string[];
 }>;
 
@@ -37,6 +39,7 @@ async function estimateBrowserStorage(): Promise<Pick<CacheSummary, "estimatedUs
 async function buildSummary(): Promise<CacheSummary> {
   const storage = await estimateBrowserStorage();
   const imageSummary = imageCacheService.getSummary();
+  const queueSummary = messageSendQueueService.getGlobalSnapshot();
 
   return {
     ...storage,
@@ -45,11 +48,13 @@ async function buildSummary(): Promise<CacheSummary> {
     recentLogEntries: loggingService.getLogs().length,
     messageCacheStatus: "not_persisted",
     offlineDataStatus: "memory_only_queue",
+    pendingQueuedMessages: queueSummary.totalPending,
     notes: [
       "Auth sessions are not cleared by cache actions.",
       "Drafts are not cleared by cache actions.",
       "Browser HTTP cache is managed by Electron/Chromium.",
       "Queued message content is kept in memory only and is not written to disk.",
+      "Cache clearing preserves pending queued messages unless the user removes a message explicitly.",
     ],
   };
 }

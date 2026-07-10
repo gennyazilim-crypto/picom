@@ -10,6 +10,7 @@ export type OfflineSyncConflictCode =
   | "duplicate_client_message"
   | "slow_mode"
   | "rate_limited"
+  | "queue_full"
   | "unknown";
 
 export type OfflineSyncResolutionAction = "retry" | "remove" | "copy_text" | "wait" | "reopen_channel" | "sign_in";
@@ -39,6 +40,7 @@ const conflictMessageByCode: Record<OfflineSyncConflictCode, string> = {
   duplicate_client_message: "This message already reached the server, so Picom will not send it again.",
   slow_mode: "Slow mode is active. Wait a moment before retrying.",
   rate_limited: "Picom is limiting this action for a moment. Wait and try again.",
+  queue_full: "The offline queue is full. Copy this message and retry after Picom reconnects.",
   unknown: "Picom could not sync this action. You can retry or remove it.",
 };
 
@@ -59,6 +61,7 @@ function inferConflictCode(input: ClassifyOfflineConflictInput): OfflineSyncConf
   if (browserOnline === false) return "offline";
   if (errorCode.includes("network") || errorMessage.includes("failed to fetch") || errorMessage.includes("network")) return "backend_unreachable";
   if (errorCode.includes("rate") || errorMessage.includes("rate limit")) return "rate_limited";
+  if (errorCode.includes("queue_full") || errorMessage.includes("queue is full")) return "queue_full";
   if (errorCode.includes("slow") || errorMessage.includes("slow mode")) return "slow_mode";
   if (errorCode.includes("permission") || errorCode.includes("forbidden") || errorMessage.includes("permission") || errorMessage.includes("forbidden")) return "permission_lost";
   if (errorCode.includes("channel_not_found") || (errorMessage.includes("channel") && errorMessage.includes("not found"))) return "channel_deleted";
@@ -75,6 +78,7 @@ function getResolutionActions(code: OfflineSyncConflictCode, actionType: Offline
   if (code === "message_deleted") return ["remove", "copy_text"];
   if (code === "duplicate_client_message") return ["remove"];
   if (code === "slow_mode" || code === "rate_limited") return ["wait", "retry", "copy_text"];
+  if (code === "queue_full") return ["copy_text", "remove", "wait"];
   if (code === "attachment_failed") return ["retry", "remove"];
   if (actionType === "sendMessage" || actionType === "editMessage") return ["retry", "copy_text", "remove"];
   return ["retry", "remove"];

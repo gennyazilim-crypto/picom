@@ -1806,6 +1806,7 @@ export function App() {
     });
 
     if (!result.ok) {
+      if (result.error.code === "QUEUE_CANCELED") return;
       setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id, id: optimisticId, clientMessageId, localStatus: "failed" });
       const conflict = offlineSyncConflictService.classify({
         actionType: "sendMessage",
@@ -1845,6 +1846,7 @@ export function App() {
     setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus });
     const result = await messageSendQueueService.enqueue({ communityId: activeCommunity.id, channelId: message.channelId, authorId: message.authorId, body: message.body, clientMessageId: message.clientMessageId, localOrder: message.localOrder ?? messageSendQueueService.nextLocalOrder(activeCommunity.id, message.channelId) });
     if (!result.ok) {
+      if (result.error.code === "QUEUE_CANCELED") return;
       setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus: "failed" });
       const conflict = offlineSyncConflictService.classify({ actionType: "sendMessage", errorCode: result.error.code, errorMessage: result.error.message });
       pushToast(conflict.userMessage, "error");
@@ -1856,6 +1858,7 @@ export function App() {
 
   const removeFailedMessage = (message: Message) => {
     if (message.localStatus !== "failed" && message.localStatus !== "queued_offline") return;
+    if (message.clientMessageId) messageSendQueueService.cancelPending(message.clientMessageId);
     removeLocalMessage({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id });
     pushToast("Local failed message removed.", "info");
   };

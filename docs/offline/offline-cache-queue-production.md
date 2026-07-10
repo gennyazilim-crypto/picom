@@ -8,12 +8,15 @@ Outgoing messages receive a stable `clientMessageId` and per-channel `localOrder
 
 Server/realtime confirmation reconciles by `clientMessageId`, preventing a second visible message and replacing the optimistic ID/state. Sequence is preferred when available, then local order, then creation time.
 
+The v2 hardening pass returns the same in-flight promise when the same `clientMessageId` is queued again, caps pending sends at 25 per channel and 100 per renderer, and rejects excess work with a recoverable queue-full state. Removing a queued local message marks its pending operation canceled so it cannot silently send after reconnect.
+
 ## Recovery
 
 - **Queued offline:** Retry remains available; automatic in-memory flush starts on `online`.
 - **Failed send:** Retry reuses the same `clientMessageId` and local order, reducing duplicates when the original server response was lost.
 - **Copy text:** uses `clipboardService`; no direct native API.
 - **Remove:** deletes only the failed/queued local record, never a confirmed server message.
+- **Queue capacity:** preserve/copy text and wait for pending work to settle; Picom does not evict older sends silently.
 - **Permission/channel deletion/slow mode/rate limit/duplicate:** `offlineSyncConflictService` supplies bounded, actionable copy.
 - **Failed uploads:** composer retains retry/remove controls; send waits for successful uploads.
 
@@ -22,6 +25,8 @@ Subsequent messages continue after a failed message instead of being permanently
 ## Privacy and storage
 
 The queue is memory-only by design because message text and attachment references are private content. It is lost when Picom exits or crashes; users can copy failed text before removal/restart. Auth sessions and drafts are not cleared by cache actions. Chromium HTTP/image cache remains browser-managed.
+
+Cache settings report the number of memory-only pending sends. Image/log/message-cache actions preserve auth sessions, drafts, and pending sends; only an explicit message Remove action cancels a queued send. No token, password, authorization header, session payload, or private message body is written by Picom's custom cache layer.
 
 A future durable queue requires encrypted OS-backed storage, account/tenant partitioning, bounded retention/size, logout/session-revocation wipe, attachment staging rules, migration/corruption recovery, and a privacy/security review. LocalStorage is not approved for durable message queue content.
 
