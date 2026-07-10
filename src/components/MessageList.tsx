@@ -25,6 +25,7 @@ type MessageListProps = {
   onToggleReaction: (message: Message, emoji: string) => void;
   pushToast: (message: string, tone?: ToastTone) => void;
   blockedUserIds?: string[];
+  announcement?: boolean;
 };
 
 function formatTypingNames(names: string[]): string {
@@ -56,6 +57,7 @@ export function MessageList({
   onToggleReaction,
   pushToast,
   blockedUserIds = [],
+  announcement = false,
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const lastMessageId = messages[messages.length - 1]?.id;
@@ -91,7 +93,7 @@ export function MessageList({
   }
 
   return (
-    <div className="message-list" ref={listRef}>
+    <div className={`message-list ${announcement ? "announcement-message-list" : ""}`} ref={listRef}>
       {messages.map((message, index) => {
         const member = community.members.find((candidate) => candidate.userId === message.authorId) ?? community.members[0];
         const role = community.roles.find((candidate) => candidate.id === member.roleId);

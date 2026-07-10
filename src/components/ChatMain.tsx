@@ -10,6 +10,8 @@ import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { MessageComposer } from "./MessageComposer";
 import { VoiceRoomView } from "./VoiceRoomView";
+import { ForumChannelView } from "./ForumChannelView";
+import { canSendMessage } from "../services/permissions/communityPermissions";
 
 type ToastTone = "info" | "error" | "success";
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
@@ -191,6 +193,8 @@ export function ChatMain({
           onStartScreenShare={handleStartScreenShare}
           onStopScreenShare={handleStopScreenShare}
         />
+      ) : channel.type === "forum" ? (
+        <ForumChannelView community={community} channel={channel} currentMember={currentMember} canCreate={canSendMessage(access, { ...channel, type: "text" })} onNotice={pushToast} />
       ) : (
         <>
           <MessageList
@@ -212,6 +216,7 @@ export function ChatMain({
             onToggleReaction={onToggleReaction}
             pushToast={pushToast}
             blockedUserIds={blockedUserIds}
+            announcement={channel.type === "announcement"}
           />
           <MessageComposer
             communityId={community.id}

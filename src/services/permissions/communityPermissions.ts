@@ -9,6 +9,7 @@ const OWNER_PERMISSIONS: CommunityPermissionKey[] = [
   "moderateMessages",
   "deleteAnyMessage",
   "sendMessages",
+  "sendAnnouncements",
   "viewPrivateChannels",
   "createInvites",
   "viewAuditLog",
@@ -22,6 +23,7 @@ const ADMIN_PERMISSIONS: CommunityPermissionKey[] = [
   "moderateMessages",
   "deleteAnyMessage",
   "sendMessages",
+  "sendAnnouncements",
   "viewPrivateChannels",
   "createInvites",
   "viewAuditLog",
@@ -144,6 +146,7 @@ export function canViewChannel(access: CommunityAccess, channel: Channel): boole
 export function canSendMessage(access: CommunityAccess, channel: Channel): boolean {
   if (!canViewChannel(access, channel)) return false;
   if (access.isVisitor) return false;
+  if (channel.type === "announcement") return hasCommunityPermission(access, "sendAnnouncements");
   if (channel.type !== "text") return false;
   return hasCommunityPermission(access, "sendMessages");
 }
@@ -151,7 +154,9 @@ export function canSendMessage(access: CommunityAccess, channel: Channel): boole
 export function getComposerDisabledReason(access: CommunityAccess, channel: Channel): string | undefined {
   if (!canViewChannel(access, channel)) return "You do not have access to this channel.";
   if (access.isVisitor) return "Join this community to send messages.";
-  if (channel.type !== "text") return "Voice channels do not support text messages here.";
+  if (channel.type === "announcement" && !hasCommunityPermission(access, "sendAnnouncements")) return "This announcement channel is read-only.";
+  if (channel.type === "forum") return "Create or open a forum post to participate.";
+  if (channel.type === "voice") return "Voice channels do not support text messages here.";
   if (!hasCommunityPermission(access, "sendMessages")) return "You do not have permission to send messages in this channel.";
   return undefined;
 }

@@ -15,14 +15,14 @@ type ChannelItemProps = {
 };
 
 export function ChannelItem({ channel, active, onSelect, onContextMenu, hasDraft = false }: ChannelItemProps) {
-  const icon = channel.type === "voice" ? sidebarIcons.voiceChannel : sidebarIcons.textChannel;
+  const icon = channel.type === "voice" ? sidebarIcons.voiceChannel : channel.type === "announcement" ? "bell" : channel.type === "forum" ? "inbox" : sidebarIcons.textChannel;
   const mentionCount = normalizeMentionCount(channel.mentions);
   const mentionLabel = formatMentionBadge(mentionCount);
   const mentionBadgeLabel = formatMentionLabel(mentionCount);
 
   return (
     <button
-      className={`channel-item ${active ? "active" : ""} ${mentionCount ? "has-mentions" : ""}`}
+      className={`channel-item channel-type-${channel.type} ${active ? "active" : ""} ${mentionCount ? "has-mentions" : ""}`}
       aria-current={active ? "page" : undefined}
       onClick={() => onSelect(channel)}
       onContextMenu={(event) => onContextMenu(event, channel)}

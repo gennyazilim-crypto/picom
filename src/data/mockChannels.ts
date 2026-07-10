@@ -8,7 +8,7 @@ export function createMockCategories(id: CommunityId, generalId = `${id}-general
       position: 1,
       channels: [
         { id: `${id}-welcome`, categoryId: `${id}-info`, name: "welcome", type: "text", topic: "Start here", unread: true, position: 1 },
-        { id: `${id}-announcements`, categoryId: `${id}-info`, name: "announcements", type: "text", topic: "Important updates", mentions: id === "aurora" ? 2 : 0, position: 2 },
+        { id: `${id}-announcements`, categoryId: `${id}-info`, name: "announcements", type: "announcement", topic: "Important updates", mentions: id === "aurora" ? 2 : 0, position: 2 },
       ],
     },
     {
@@ -17,7 +17,7 @@ export function createMockCategories(id: CommunityId, generalId = `${id}-general
       position: 2,
       channels: [
         { id: generalId, categoryId: `${id}-channels`, name: "general-text", type: "text", topic: "Everyday community chat", position: 1 },
-        { id: `${id}-showcase`, categoryId: `${id}-channels`, name: "showcase", type: "text", topic: "Share polished work", position: 2 },
+        { id: `${id}-showcase`, categoryId: `${id}-channels`, name: "showcase", type: "forum", topic: "Share polished work", position: 2 },
         { id: `${id}-private`, categoryId: `${id}-channels`, name: "team-room", type: "text", topic: "Private channel placeholder", isPrivate: true, position: 3 },
       ],
     },

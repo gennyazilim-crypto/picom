@@ -80,7 +80,7 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
         </label>
 
         <div className="channel-name-preview">
-          <AppIcon name={type === "voice" ? "voice" : "hash"} size="sm" />
+          <AppIcon name={type === "voice" ? "voice" : type === "announcement" ? "bell" : type === "forum" ? "inbox" : "hash"} size="sm" />
           <span>{normalizedName || "channel-name"}</span>
         </div>
 
@@ -89,6 +89,8 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
           <select value={type} onChange={(event) => setType(event.target.value as ChannelType)}>
             <option value="text">Text</option>
             <option value="voice">Voice placeholder</option>
+            <option value="forum">Forum</option>
+            <option value="announcement">Announcement</option>
           </select>
         </label>
 

@@ -22,10 +22,11 @@ const realtimeLabels: Record<RealtimeConnectionStatus, string> = {
 };
 
 export function ChatHeader({ channel, realtimeStatus, membersVisible, onToggleMembers }: ChatHeaderProps) {
+  const channelIcon = channel.type === "voice" ? channelIcons.voiceChannel : channel.type === "announcement" ? "bell" : channel.type === "forum" ? "inbox" : channelIcons.textChannel;
   return (
     <header className="chat-header">
       <div className="chat-title">
-        <AppIcon name={channel.type === "voice" ? channelIcons.voiceChannel : channelIcons.textChannel} size="lg" />
+        <AppIcon name={channelIcon} size="lg" />
         <div>
           <strong>{channel.name}</strong>
           <span>{channel.topic ?? "Picom desktop channel"}</span>

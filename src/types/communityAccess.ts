@@ -10,6 +10,7 @@ export type CommunityPermissionKey =
   | "moderateMessages"
   | "deleteAnyMessage"
   | "sendMessages"
+  | "sendAnnouncements"
   | "viewPrivateChannels"
   | "createInvites"
   | "viewAuditLog";

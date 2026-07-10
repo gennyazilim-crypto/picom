@@ -8,7 +8,7 @@ export type RoleId = string;
 export type AttachmentId = string;
 
 export type UserStatus = "online" | "idle" | "dnd" | "offline";
-export type ChannelType = "text" | "voice";
+export type ChannelType = "text" | "voice" | "forum" | "announcement";
 export type AttachmentType = "image";
 export type AttachmentScanStatus = "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
 export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "failed" | "queued_offline";

@@ -92,7 +92,7 @@ export type Database = {
           community_id: string;
           category_id: string | null;
           name: string;
-          type: "text" | "voice";
+          type: "text" | "voice" | "forum" | "announcement";
           topic: string | null;
           is_private: boolean;
           public_read_enabled: boolean;
@@ -237,6 +237,12 @@ export type Database = {
         Row: { id: string; community_id: string; channel_id: string; parent_message_id: string; name: string; created_by: string; created_at: string; archived_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["threads"]["Row"]> & Pick<Database["public"]["Tables"]["threads"]["Row"], "community_id" | "channel_id" | "parent_message_id" | "name" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["threads"]["Row"]>;
+        Relationships: [];
+      };
+      forum_posts: {
+        Row: { id: string; channel_id: string; title: string; author_id: string; tags: string[]; status: "open" | "resolved"; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["forum_posts"]["Row"]> & Pick<Database["public"]["Tables"]["forum_posts"]["Row"], "channel_id" | "title" | "author_id">;
+        Update: Partial<Database["public"]["Tables"]["forum_posts"]["Row"]>;
         Relationships: [];
       };
       bots: {
