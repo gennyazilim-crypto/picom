@@ -2,6 +2,8 @@
 
 Use this checklist before promoting a Picom beta or stable release. Picom is an Electron desktop app for Windows, Linux, and macOS.
 
+The current stable v2 decision snapshot is `docs/release/stable-v2-go-no-go.md`; it is No-Go until its evidence blockers close.
+
 Mobile release readiness is out of scope. Do not approve release if mobile UI, Discord branding/assets/exact colors, or unreviewed advanced features appear.
 
 ## Decision options

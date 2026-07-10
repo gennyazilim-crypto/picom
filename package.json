@@ -173,6 +173,7 @@
     "production:deployment:smoke": "node scripts/production-deployment-checklist-smoke-test.mjs",
     "rollback:smoke": "node scripts/rollback-runbook-smoke-test.mjs",
     "go-no-go:smoke": "node scripts/go-no-go-checklist-smoke-test.mjs",
+    "release:v2:go-no-go:smoke": "node scripts/stable-v2-go-no-go-smoke-test.mjs",
     "feature-flags:smoke": "node scripts/feature-flags-smoke-test.mjs",
     "remote-config:smoke": "node scripts/remote-config-smoke-test.mjs",
     "version-compatibility:smoke": "node scripts/version-compatibility-smoke-test.mjs",
