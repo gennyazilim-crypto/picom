@@ -256,6 +256,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
         Relationships: [];
       };
+      community_voice_usage_daily: {
+        Row: { community_id: string; usage_date: string; session_count: number; participant_minutes: number; peak_concurrent: number; updated_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       friend_request_notifications: {
         Row: { id: string; recipient_id: string; actor_id: string; request_id: string | null; event_type: "request_sent" | "request_accepted"; created_at: string; read_at: string | null };
         Insert: never; Update: Pick<Database["public"]["Tables"]["friend_request_notifications"]["Row"], "read_at">; Relationships: [];
@@ -498,6 +504,7 @@ export type Database = {
       mark_thread_read: { Args: { target_thread_id: string }; Returns: boolean };
       create_forum_post: { Args: { target_community_id: string; target_channel_id: string; post_title: string; post_body: string; post_tags: string[] }; Returns: Json };
       list_accessible_saved_messages: { Args: { result_limit?: number }; Returns: Array<{ id: string; message_id: string; community_id: string; channel_id: string; author_id: string; preview: string; message_created_at: string; created_at: string }> };
+      get_community_insights_v2: { Args: { target_community_id: string; window_days?: number }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

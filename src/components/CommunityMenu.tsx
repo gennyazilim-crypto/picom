@@ -5,6 +5,7 @@ import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescripto
 import { getCommunityMenuItems } from "../services/community/communityMenuService";
 import { clipboardService } from "../services/clipboardService";
 import { AppIcon } from "./AppIcon";
+import { CommunityInsightsView } from "./CommunityInsightsView";
 import {
   adminSectionDefinitions,
   moderatorSectionDefinitions,
@@ -198,6 +199,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
 
   const sectionContent = (() => {
     if (activeSection === "overview") return <CommunityAdminOverview community={community} access={access} />;
+    if (activeSection === "insights") return <CommunityInsightsView community={community} access={access} />;
     if (activeSection === "community-settings") return <CommunitySettingsSection community={community} onPlaceholderAction={onPlaceholderAction} />;
     if (activeSection === "channels") return <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
     if (activeSection === "roles") return <CommunityRolesSection community={community} />;

@@ -12,6 +12,7 @@ const OWNER_PERMISSIONS: CommunityPermissionKey[] = [
   "sendAnnouncements",
   "viewPrivateChannels",
   "createInvites",
+  "viewInsights",
   "viewAuditLog",
 ];
 
@@ -26,6 +27,7 @@ const ADMIN_PERMISSIONS: CommunityPermissionKey[] = [
   "sendAnnouncements",
   "viewPrivateChannels",
   "createInvites",
+  "viewInsights",
   "viewAuditLog",
 ];
 

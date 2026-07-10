@@ -7,11 +7,12 @@ import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 
-export type AdminSectionId = "overview" | "community-settings" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
+export type AdminSectionId = "overview" | "insights" | "community-settings" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
 
 export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string; permission?: CommunityAccess["permissions"][number]; ownerOnly?: boolean; icon: IconName }> = [
   { id: "overview", label: "Overview", icon: "home" },
+  { id: "insights", label: "Insights", permission: "viewInsights", icon: "inbox" },
   { id: "community-settings", label: "Community Settings", permission: "manageCommunity", icon: "settings" },
   { id: "channels", label: "Channels", permission: "manageChannels", icon: "hash" },
   { id: "roles", label: "Roles", permission: "manageRoles", icon: "lock" },

@@ -13,6 +13,7 @@ export type CommunityPermissionKey =
   | "sendAnnouncements"
   | "viewPrivateChannels"
   | "createInvites"
+  | "viewInsights"
   | "viewAuditLog";
 
 export type CommunityAccess = {
