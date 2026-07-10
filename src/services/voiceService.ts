@@ -91,6 +91,8 @@ let deviceErrorCount = 0;
 let sessionStartedAtMs: number | null = null;
 let lastSessionDurationMs: number | null = null;
 let reconnectingActive = false;
+let joinInFlight = false;
+let lastJoinRequest: VoiceTokenRequest | null = null;
 let snapshot: VoiceServiceSnapshot = {
   status: "idle",
   roomName: null,
@@ -135,8 +137,7 @@ function mapParticipant(participant: RemoteParticipant): VoiceParticipant {
 
 function getParticipants(activeRoom: Room): VoiceParticipant[] {
   const remoteParticipants = Array.from(activeRoom.remoteParticipants.values()).map(mapParticipant);
-
-  return [
+  const participants = [
     {
       identity: activeRoom.localParticipant.identity,
       name: activeRoom.localParticipant.name || activeRoom.localParticipant.identity,
@@ -146,6 +147,8 @@ function getParticipants(activeRoom: Room): VoiceParticipant[] {
     },
     ...remoteParticipants,
   ];
+
+  return Array.from(new Map(participants.map((participant) => [participant.identity, participant])).values());
 }
 
 function emitParticipants(activeRoom: Room): void {
@@ -223,9 +226,16 @@ function bindRoomEvents(activeRoom: Room): void {
   activeRoom
     .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
       if (state === ConnectionState.Connected) {
+        const restoredFromReconnect = reconnectingActive;
         sessionStartedAtMs ??= Date.now();
         reconnectingActive = false;
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
+        if (restoredFromReconnect) {
+          void activeRoom.localParticipant.setMicrophoneEnabled(!snapshot.muted).catch(() => {
+            deviceErrorCount += 1;
+            emit({ muted: true, error: "Microphone state could not be restored after reconnect.", errorCode: "VOICE_PERMISSION_DENIED" });
+          });
+        }
         emit({ status: "connected", participants: getParticipants(activeRoom), error: null, errorCode: null });
         return;
       }
@@ -336,7 +346,11 @@ async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceRes
   return { ok: true, data: token.data };
 }
 
-async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+async function connectWithToken(
+  token: VoiceTokenResponse,
+  desiredMuted: boolean,
+  desiredDeafened: boolean,
+): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
   emit({ status: "connecting", roomName: token.roomName, error: null, errorCode: null });
 
   const activeRoom = new Room({
@@ -345,23 +359,25 @@ async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceService
   });
 
   try {
+    room = activeRoom;
     bindRoomEvents(activeRoom);
     await activeRoom.connect(token.url, token.token);
 
     let microphoneEnabled = true;
     try {
-      await activeRoom.localParticipant.setMicrophoneEnabled(true);
+      await activeRoom.localParticipant.setMicrophoneEnabled(!desiredMuted);
     } catch {
       microphoneEnabled = false;
       deviceErrorCount += 1;
     }
 
-    room = activeRoom;
+    if (desiredDeafened) applyRemoteAudioSubscription(activeRoom, false);
     emit({
       status: "connected",
       roomName: token.roomName,
       participants: getParticipants(activeRoom),
-      muted: !microphoneEnabled,
+      muted: desiredMuted || !microphoneEnabled,
+      deafened: desiredDeafened,
       screenSharing: Boolean(screenShareMediaTrack),
       screenShares,
       error: microphoneEnabled ? null : "Microphone permission was denied or no input device is available.",
@@ -370,7 +386,9 @@ async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceService
 
     return { ok: true, data: snapshot };
   } catch (error) {
+    activeRoom.removeAllListeners();
     activeRoom.disconnect();
+    if (room === activeRoom) room = null;
     loggingService.logWarn("LiveKit room connection failed", {
       errorName: error instanceof Error ? error.name : "UnknownError",
     }, "voice");
@@ -416,8 +434,18 @@ export const voiceService = {
   },
 
   async join(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    if (joinInFlight) {
+      return { ok: true, data: snapshot };
+    }
+
+    joinInFlight = true;
     joinAttemptCount += 1;
+    lastJoinRequest = request;
+    const desiredMuted = snapshot.muted;
+    const desiredDeafened = snapshot.deafened;
     if (room) {
+      stopLocalTracks(room);
+      room.removeAllListeners();
       room.disconnect();
       room = null;
     }
@@ -426,23 +454,40 @@ export const voiceService = {
     screenShares = [];
     emit({ error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
 
-    const token = await requestToken(request);
-    if (!token.ok) {
-      joinFailureCount += 1;
-      return token;
-    }
+    try {
+      const token = await requestToken(request);
+      if (!token.ok) {
+        joinFailureCount += 1;
+        return token;
+      }
 
-    const result = await connectWithToken(token.data);
-    if (!result.ok) joinFailureCount += 1;
-    return result;
+      const result = await connectWithToken(token.data, desiredMuted, desiredDeafened);
+      if (!result.ok) joinFailureCount += 1;
+      return result;
+    } finally {
+      joinInFlight = false;
+    }
+  },
+
+  async reconnect(): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    if (!lastJoinRequest) {
+      return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before trying to reconnect.");
+    }
+    return this.join(lastJoinRequest);
   },
 
   async leave(): Promise<void> {
     if (room) {
       stopLocalTracks(room);
+      room.removeAllListeners();
       room.disconnect();
       room = null;
     }
+    joinInFlight = false;
+    lastJoinRequest = null;
+    reconnectingActive = false;
+    sessionStartedAtMs = null;
+    connectionQuality = "unknown";
     speakingIdentities = new Set<string>();
 
     emit({

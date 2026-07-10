@@ -62,6 +62,7 @@ export function SpeakingIndicator({ participant }: { participant: VoiceParticipa
 export function VoiceControls({
   connected,
   joining,
+  disconnected,
   muted,
   deafened,
   onJoin,
@@ -71,6 +72,7 @@ export function VoiceControls({
 }: {
   connected: boolean;
   joining: boolean;
+  disconnected: boolean;
   muted: boolean;
   deafened: boolean;
   onJoin?: () => void;
@@ -82,7 +84,7 @@ export function VoiceControls({
     <div className="voice-control-row">
       <button className="voice-primary-action" type="button" onClick={connected ? onLeave : onJoin} disabled={joining}>
         <AppIcon name={connected ? "close" : "voice"} size="sm" />
-        {connected ? "Leave room" : joining ? "Joining..." : "Join room"}
+        {connected ? "Leave room" : joining ? "Joining..." : disconnected ? "Reconnect" : "Join room"}
       </button>
       <button type="button" onClick={onToggleMute} disabled={!connected} aria-pressed={muted}>
         <AppIcon name="microphone" size="sm" />
@@ -178,6 +180,7 @@ export function VoiceRoomView({
           <VoiceControls
             connected={connected}
             joining={joining}
+            disconnected={snapshot.status === "disconnected"}
             muted={snapshot.muted}
             deafened={snapshot.deafened}
             onJoin={onJoin}
