@@ -4,9 +4,8 @@ import type { MentionItem } from "../types/mentions";
 import { dateTimeService } from "../services/dateTimeService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { AppIcon } from "./AppIcon";
-import { MemberAvatar } from "./MemberAvatar";
+import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { MentionFeedFooter } from "./MentionFeedFooter";
-import { VerifiedBadge } from "./VerifiedBadge";
 import { getUserVerificationVariant } from "../utils/verificationHelpers";
 
 type MentionFeedCardProps = {
@@ -74,7 +73,13 @@ export function MentionFeedCard({
           onClick={(event) => author && onOpenProfile(event, author)}
           aria-label={`Open ${authorLabel} profile preview`}
         >
-          <MemberAvatar member={author} label={authorLabel} size={42} />
+          <VerifiedAvatarFrame
+            user={author}
+            label={authorLabel}
+            size="medium"
+            avatarSize={42}
+            verifiedType={getUserVerificationVariant(author?.userId ?? item.authorId)}
+          />
         </button>
         <div className="mention-author-copy">
           <button
@@ -83,7 +88,7 @@ export function MentionFeedCard({
             onClick={(event) => author && onOpenProfile(event, author)}
             disabled={!author}
           >
-            <span>{authorLabel}</span><VerifiedBadge variant={author ? getUserVerificationVariant(author.userId) : null} />
+            <span>{authorLabel}</span>
           </button>
           <span>
             {community?.name ?? "Visible community"} / #{channel?.name ?? "channel"} / {dateTimeService.formatCompactDateTime(item.createdAt)}

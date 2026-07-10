@@ -8,8 +8,7 @@ import { externalLinkService } from "../services/desktop/externalLinkService";
 import { messageDeliveryReceiptService } from "../services/messageDeliveryReceiptService";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { EmojiPicker } from "./EmojiPicker";
-import { MemberAvatar } from "./MemberAvatar";
-import { VerifiedBadge } from "./VerifiedBadge";
+import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { getUserVerificationVariant } from "../utils/verificationHelpers";
 import { MessageHoverActions } from "./MessageHoverActions";
 import { StickerMessage } from "./StickerMessage";
@@ -186,12 +185,18 @@ export function MessageItem({
   return (
     <article className="message-item" onContextMenu={(event) => onContextMenu(event, message)}>
       <button className="avatar-button" disabled={profileUnavailable} onClick={(event) => onOpenProfile(event, member)} aria-label={profileUnavailable ? "Deleted user profile unavailable" : `Open ${member.displayName} profile`}>
-        <MemberAvatar member={member} size={42} />
+          <VerifiedAvatarFrame
+            user={member}
+            label={member?.displayName}
+            size="medium"
+            avatarSize={42}
+            verifiedType={getUserVerificationVariant(member?.userId ?? message.authorId)}
+          />
       </button>
       <div className="message-content">
         <div className="message-meta">
           <button className="message-author-button" type="button" disabled={profileUnavailable} onClick={(event) => onOpenProfile(event, member)}>
-            <span>{member.displayName}</span><VerifiedBadge variant={getUserVerificationVariant(member.userId)} />
+            <span>{member.displayName}</span>
           </button>
           {member.isBot ? <span className="bot-badge">BOT</span> : null}
           {message.webhookId ? <span className="webhook-badge" title={message.webhookName ?? "Webhook message"}>WEBHOOK</span> : null}

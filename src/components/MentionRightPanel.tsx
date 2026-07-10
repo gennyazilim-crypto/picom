@@ -1,7 +1,8 @@
 import type { MouseEvent } from "react";
 import type { Community, Member } from "../types/community";
 import type { MentionItem, MentionQuickFilter } from "../types/mentions";
-import { MemberAvatar } from "./MemberAvatar";
+import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
+import { getUserVerificationVariant } from "../utils/verificationHelpers";
 
 type MentionRightPanelProps = {
   items: MentionItem[];
@@ -26,7 +27,11 @@ function getMembers(communities: Community[], userIds: string[]) {
 function PanelMemberButton({ member, onOpenProfile }: { member: Member; onOpenProfile: (event: MouseEvent, member: Member) => void }) {
   return (
     <button className="mention-panel-member" type="button" onClick={(event) => onOpenProfile(event, member)}>
-      <MemberAvatar member={member} size={34} />
+      <VerifiedAvatarFrame
+        user={member}
+        size="compact"
+        verifiedType={getUserVerificationVariant(member.userId)}
+      />
       <span>
         <strong>{member.displayName}</strong>
         <small>@{member.username}</small>

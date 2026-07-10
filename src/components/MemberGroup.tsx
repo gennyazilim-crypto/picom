@@ -1,8 +1,7 @@
 import { memo, useMemo } from "react";
 import type { MouseEvent } from "react";
 import type { Member, Role, UserStatus } from "../types/community";
-import { MemberAvatar } from "./MemberAvatar";
-import { VerifiedBadge } from "./VerifiedBadge";
+import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { getUserVerificationVariant } from "../utils/verificationHelpers";
 
 type MemberGroupProps = {
@@ -39,7 +38,11 @@ const MemberRow = memo(function MemberRow({ member, role, onOpenProfile, onMembe
       onContextMenu={(event) => onMemberContextMenu(event, member)}
     >
       <span className="member-avatar-wrap">
-        <MemberAvatar member={member} size={34} />
+              <VerifiedAvatarFrame
+                user={member}
+                size="compact"
+                verifiedType={getUserVerificationVariant(member.userId)}
+              />
         <i
           className={`status-dot ${member.status}`}
           aria-label={`${member.displayName} status: ${presenceLabel}`}
@@ -47,7 +50,7 @@ const MemberRow = memo(function MemberRow({ member, role, onOpenProfile, onMembe
         />
       </span>
       <span className="member-copy">
-        <strong><span>{member.displayName}</span><VerifiedBadge variant={getUserVerificationVariant(member.userId)} />{member.isBot ? <span className="bot-badge">BOT</span> : null}</strong>
+        <strong><span>{member.displayName}</span>{member.isBot ? <span className="bot-badge">BOT</span> : null}</strong>
         <small>{presenceLabel}</small>
       </span>
       {role && role.name !== "Member" ? <em style={{ color: role.color }}>{role.name}</em> : null}

@@ -3,9 +3,8 @@ import type { Attachment, Community, Member } from "../types/community";
 import type { ProfileActivityItem, ProfileMediaItem, UserProfile } from "../types/profile";
 import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
-import { MemberAvatar } from "./MemberAvatar";
+import { VerifiedProfileAvatar } from "./VerifiedProfileAvatar";
 import { VerificationBadgeList } from "./VerificationBadgeList";
-import { VerifiedBadge } from "./VerifiedBadge";
 import { getUserVerificationVariant } from "../utils/verificationHelpers";
 
 type ProfileViewProps = {
@@ -122,9 +121,15 @@ export function ProfileLeftCard({
 
       <div className="profile-portrait-panel">
         <div className="profile-cover-art" style={{ backgroundImage: `url(${profile.coverUrl})` }} />
-        <MemberAvatar member={member} label={profile.displayName} size={104} className="profile-page-avatar" />
+        <VerifiedProfileAvatar
+          member={member}
+          displayName={profile.displayName}
+          verifiedType={getUserVerificationVariant(member.userId, profile.verificationBadges ?? [])}
+          isCurrentUser={isCurrentUser}
+          onEditAvatar={() => onPlaceholderAction?.("Profile photo editing will use the profile service.")}
+        />
         <span className={`profile-status-chip ${profile.status}`}>{profile.status}</span>
-        <h1 className="profile-name-with-verification"><span>{profile.displayName}</span><VerifiedBadge variant={getUserVerificationVariant(member.userId, profile.verificationBadges ?? [])} /></h1>
+        <h1 className="profile-name-with-verification"><span>{profile.displayName}</span></h1>
         <p>@{profile.username}</p>
         <span className="profile-status-text">{profile.statusText ?? "Picom member"}</span>
         <div className="profile-role-row">

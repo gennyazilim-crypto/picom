@@ -8,20 +8,34 @@ type MemberAvatarProps = {
   label?: string;
   size?: number;
   className?: string;
+  avatarUrl?: string;
+  avatarSeed?: string;
+  imageAlt?: string;
 };
 
-export function MemberAvatar({ member, label, size = 36, className = "" }: MemberAvatarProps) {
+export function MemberAvatar({
+  member,
+  label,
+  size = 36,
+  className = "",
+  avatarUrl: avatarUrlOverride,
+  avatarSeed,
+  imageAlt = "",
+}: MemberAvatarProps) {
   const text = label ?? member?.displayName ?? "P";
   const initials = getInitials(text, "P");
-  const background = getIdentityGradient(member?.avatarSeed ?? text);
-  const avatarUrl = useMemo(() => avatarService.getAvatarForMember(member), [member?.userId, member?.avatarUrl]);
+  const background = getIdentityGradient(avatarSeed ?? member?.avatarSeed ?? text);
+  const avatarUrl = useMemo(
+    () => avatarUrlOverride ?? avatarService.getAvatarForMember(member),
+    [avatarUrlOverride, member?.userId, member?.avatarUrl],
+  );
 
   return (
     <span
       className={`generated-avatar ${avatarUrl ? "has-avatar-image" : ""} ${className}`.trim()}
       style={{ width: size, height: size, background }}
     >
-      {avatarUrl ? <img src={avatarUrl} alt="" loading="lazy" /> : initials}
+      {avatarUrl ? <img src={avatarUrl} alt={imageAlt} loading="lazy" /> : initials}
     </span>
   );
 }
