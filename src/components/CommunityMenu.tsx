@@ -186,7 +186,7 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
   );
 }
 
-export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onCreateChannel, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onCreateChannel: (categoryId: string) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
+export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("overview");
   const sections = adminSectionDefinitions.filter((section) => {
     if (section.ownerOnly) return access.isOwner;
@@ -226,6 +226,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
               </button>
             );
           })}
+          <button type="button" onClick={onOpenGuidelines}>Community Guidelines</button>
         </nav>
         <div className="community-admin-content">
           {sectionContent}
@@ -236,7 +237,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
   );
 }
 
-export function CommunityModeratorPanel({ community, access, onClose, onOpenInvite }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void }) {
+export function CommunityModeratorPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void }) {
   const [activeSection, setActiveSection] = useState<ModeratorSectionId>("reports");
   const sections = moderatorSectionDefinitions.filter((section) => access.permissions.includes(section.permission));
   const selectedSection = sections.some((section) => section.id === activeSection) ? activeSection : sections[0]?.id ?? "reports";
@@ -260,6 +261,7 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
       <div className="community-admin-panel moderator-admin-panel">
         <nav aria-label="Moderator sections">
           {sections.map((section) => <button key={section.id} className={selectedSection === section.id ? "active" : ""} onClick={() => setActiveSection(section.id)}><AppIcon name={section.icon} size="sm" /> {section.label}</button>)}
+          <button type="button" onClick={onOpenGuidelines}>Community Guidelines</button>
         </nav>
         <div className="community-admin-content">{content}</div>
       </div>
@@ -268,7 +270,7 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
   );
 }
 
-export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, onOpenInvite, onReport }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenLeave: () => void; onOpenInvite: () => void; onReport: () => void }) {
+export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, onOpenInvite, onOpenGuidelines, onReport }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenLeave: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onReport: () => void }) {
   return (
     <ModalShell title={`${community.name} member menu`} eyebrow="Community menu" onClose={onClose}>
       <div className="community-confirm-panel">
@@ -276,6 +278,7 @@ export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, 
         <div className="community-panel-list">
           <article><strong>Notification settings</strong><span>Notification preferences are managed locally in this beta.</span></article>
           {access.permissions.includes("createInvites") ? <button type="button" className="community-panel-action" onClick={onOpenInvite}><strong>Invite people</strong><span>Create a limited Picom invite link.</span></button> : null}
+          <button type="button" className="community-panel-action" onClick={onOpenGuidelines}><strong>Community Guidelines</strong><span>Review Picom's current legal-review draft before reporting.</span></button>
           <button type="button" className="community-panel-action" onClick={onReport}><strong>Report community</strong><span>Send this community to the moderator review queue.</span></button>
         </div>
         <div className="modal-actions-row">
@@ -287,7 +290,7 @@ export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, 
   );
 }
 
-export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin, onOpenJoinWithInvite, onReport }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void; onOpenJoinWithInvite: () => void; onReport: () => void }) {
+export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin, onOpenJoinWithInvite, onOpenGuidelines, onReport }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void; onOpenJoinWithInvite: () => void; onOpenGuidelines: () => void; onReport: () => void }) {
   return (
     <ModalShell title={`${community.name} public preview`} eyebrow="Visitor menu" onClose={onClose}>
       <div className="community-confirm-panel">
@@ -296,6 +299,7 @@ export function CommunityVisitorPanel({ community, access, isAuthenticated, onCl
           <article><strong>Public channels visible</strong><span>Private channels and member-only data stay hidden.</span></article>
           <article><strong>Join to participate</strong><span>Visitors cannot send messages, react, or upload attachments.</span></article>
           <article><strong>{isAuthenticated ? "Ready to join" : "Sign in required"}</strong><span>{isAuthenticated ? "Confirm the join flow to become a member." : "Sign in or register before joining."}</span></article>
+          <button type="button" className="community-panel-action" onClick={onOpenGuidelines}><strong>Community Guidelines</strong><span>Review the current legal-review draft and reporting expectations.</span></button>
         </div>
         <div className="modal-actions-row"><button type="button" className="secondary-action" disabled={!isAuthenticated} onClick={onReport}>Report community</button><button type="button" className="secondary-action" disabled={!isAuthenticated} onClick={onOpenJoinWithInvite}>Join with invite</button></div>
       </div>

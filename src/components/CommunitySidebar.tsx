@@ -22,6 +22,7 @@ import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
 import { CommunityWebhooksAdminSection } from "./CommunityWebhooksAdminSection";
 import { CommunityEmojisAdminSection } from "./CommunityEmojisAdminSection";
 import { CommunityStickersAdminSection } from "./CommunityStickersAdminSection";
+import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 
 type CommunitySidebarProps = {
   community: Community;
@@ -58,6 +59,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
   const [openPanel, setOpenPanel] = useState<OpenCommunityPanel>(null);
+  const [guidelinesOpen, setGuidelinesOpen] = useState(false);
   useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
   const canReorderChannels = canManageChannels(access);
   const adminSectionTools = {
@@ -114,15 +116,16 @@ export function CommunitySidebar({ community, communities, access, activeChannel
 
       <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />
 
-      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onCreateChannel={onCreateChannel} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
-      {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} /> : null}
-      {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} onOpenInvite={() => setOpenPanel("invite")} onReport={() => setOpenPanel("report")} /> : null}
-      {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} onOpenJoinWithInvite={() => setOpenPanel("joinInvite")} onReport={() => setOpenPanel("report")} /> : null}
+      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onCreateChannel={onCreateChannel} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
+      {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} /> : null}
+      {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}
+      {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} onOpenJoinWithInvite={() => setOpenPanel("joinInvite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}
       {openPanel === "join" ? <CommunityJoinModal community={community} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onJoinCommunity(); setOpenPanel(null); }} /> : null}
       {openPanel === "leave" ? <CommunityLeaveModal community={community} access={access} onClose={() => setOpenPanel(null)} onConfirm={async () => { await onLeaveCommunity(); setOpenPanel(null); }} /> : null}
       {openPanel === "invite" ? <InvitePeopleModal community={community} currentUserId={currentUser.userId} canCreate={access.permissions.includes("createInvites")} onClose={() => setOpenPanel(null)} /> : null}
       {openPanel === "joinInvite" ? <JoinWithInviteModal initialCode={pendingInviteCode ?? ""} isAuthenticated={isAuthenticated} communities={communities} currentUser={currentUser} onClose={() => { setOpenPanel(null); onClearPendingInviteCode(); }} onAccepted={onInviteAccepted} /> : null}
       {openPanel === "report" ? <ReportModal target={{ targetType: "community", targetId: community.id, communityId: community.id, label: community.name }} reporterId={currentUser.userId} onClose={() => setOpenPanel(null)} onResult={(message, ok) => onPlaceholderAction(`${ok ? "Success" : "Error"}: ${message}`)} /> : null}
+      {guidelinesOpen ? <LegalDocumentModal documentId="guidelines" onClose={() => setGuidelinesOpen(false)} /> : null}
     </aside>
   );
 }

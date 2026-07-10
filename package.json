@@ -188,6 +188,7 @@
     "audit-logs:immutability:smoke": "node scripts/audit-log-immutability-smoke-test.mjs",
     "audit-logs:admin-review:test": "node scripts/audit-log-admin-review-test.mjs",
     "reports:production:test": "node scripts/reports-production-workflow-test.mjs",
+    "guidelines:enforcement:ui:smoke": "node scripts/community-guidelines-enforcement-ui-smoke-test.mjs",
     "appeals:production:test": "node scripts/appeals-production-workflow-test.mjs",
     "trust-safety:production:test": "node scripts/trust-safety-dashboard-production-test.mjs",
     "bots:production:test": "node scripts/bot-system-production-test.mjs",
