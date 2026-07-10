@@ -7,7 +7,7 @@ import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import type { AudioFeedItem, AudioPlayableItem } from "../types/audio";
-import { mockAudioFeedItems, mockPodcastEpisodes, mockRadioSessions } from "../data/mockAudio";
+import { useAudioCatalog } from "../hooks/useAudioCatalog";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
@@ -89,11 +89,12 @@ export function MentionFeedMain({
   onOpenEventCommunity,
   onEventDetails,
 }: MentionFeedMainProps) {
+  const audioCatalog = useAudioCatalog();
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
   const [selectedRadioSessionId, setSelectedRadioSessionId] = useState<string | null>(null);
   const [selectedPodcastEpisodeId, setSelectedPodcastEpisodeId] = useState<string | null>(null);
-  const [savedAudioIds, setSavedAudioIds] = useState<Set<string>>(() => new Set(mockAudioFeedItems.filter((item) => item.isSaved).map((item) => item.id)));
+  const [savedAudioIds, setSavedAudioIds] = useState<Set<string>>(() => new Set(audioCatalog.feedItems.filter((item) => item.isSaved).map((item) => item.id)));
   const [audioReminderIds, setAudioReminderIds] = useState<Set<string>>(() => new Set());
   const rankingNowMs = useMemo(() => Date.now(), []);
   const feedItems = useMemo(() => rankMentionFeedItems(items, { tab: "feed", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
@@ -101,10 +102,10 @@ export function MentionFeedMain({
   const visibleItems = useMemo(() => applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter), [activeFilter, activeTab, feedItems, followingItems]);
   const storyIds = useMemo(() => stories.map((story) => story.id), [stories]);
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
-  const visibleAudioItems = useMemo(() => activeTab === "feed" ? mockAudioFeedItems.slice(0, 6) : mockAudioFeedItems.filter((item) => followedUserIds.includes(item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [activeTab, followedUserIds]);
+  const visibleAudioItems = useMemo(() => activeTab === "feed" ? audioCatalog.feedItems.slice(0, 6) : audioCatalog.feedItems.filter((item) => followedUserIds.includes(item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [activeTab, audioCatalog.feedItems, followedUserIds]);
   const selectAudio = (item: AudioFeedItem) => {
     if (item.type === "radio_live" || item.type === "radio_scheduled") {
-      const session = mockRadioSessions.find((candidate) => candidate.id === item.id.replace(/^feed-/, ""));
+      const session = audioCatalog.radioSessions.find((candidate) => candidate.id === item.id.replace(/^feed-/, ""));
       if (session) setSelectedRadioSessionId(session.id);
       return;
     }
@@ -112,9 +113,9 @@ export function MentionFeedMain({
     const communityName = communities.find((community) => community.id === item.communityId)?.name ?? "Picom community";
     setSelectedAudio({ id: item.id, type: item.type, title: item.title, contextLabel: `${communityName} / ${item.type === "podcast_episode" ? "Podcast" : "Community radio"}`, coverUrl: item.coverUrl, durationSeconds: item.durationSeconds ?? 3600 });
   };
-  const selectedRadioSession = mockRadioSessions.find((session) => session.id === selectedRadioSessionId) ?? null;
+  const selectedRadioSession = audioCatalog.radioSessions.find((session) => session.id === selectedRadioSessionId) ?? null;
   const selectedRadioCommunity = selectedRadioSession ? communities.find((community) => community.id === selectedRadioSession.communityId) : undefined;
-  const selectedPodcastEpisode = mockPodcastEpisodes.find((episode) => episode.id === selectedPodcastEpisodeId) ?? null;
+  const selectedPodcastEpisode = audioCatalog.podcastEpisodes.find((episode) => episode.id === selectedPodcastEpisodeId) ?? null;
   const selectedPodcastCommunity = selectedPodcastEpisode ? communities.find((community) => community.id === selectedPodcastEpisode.communityId) : undefined;
   const toggleAudioSet = (setter: (value: Set<string>) => void, current: Set<string>, id: string) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); setter(next); };
   const openStory = (storyId: string) => {
@@ -196,7 +197,7 @@ export function MentionFeedMain({
           />
         </div>
       </div> : null}
-      {selectedPodcastEpisode ? <div className="podcast-detail-modal-backdrop" role="presentation" onMouseDown={() => setSelectedPodcastEpisodeId(null)}><div className="podcast-detail-modal" role="dialog" aria-modal="true" aria-label={`${selectedPodcastEpisode.title} podcast detail`} onMouseDown={(event) => event.stopPropagation()}><PodcastEpisodeDetail episode={selectedPodcastEpisode} communityName={selectedPodcastCommunity?.name ?? "Picom community"} author={selectedPodcastCommunity?.members.find((member) => member.userId === selectedPodcastEpisode.authorUserId)} relatedEpisodes={mockPodcastEpisodes.filter((episode) => episode.communityId === selectedPodcastEpisode.communityId && episode.status === "published")} getCommentAuthorLabel={(authorId) => selectedPodcastCommunity?.members.find((member) => member.userId === authorId)?.displayName ?? "Community member"} onClose={() => setSelectedPodcastEpisodeId(null)} onOpenCommunity={() => { setSelectedPodcastEpisodeId(null); onOpenEventCommunity(selectedPodcastEpisode.communityId); }} onOpenAuthor={onOpenProfile} onSelectEpisode={(episode) => setSelectedPodcastEpisodeId(episode.id)} /></div></div> : null}
+      {selectedPodcastEpisode ? <div className="podcast-detail-modal-backdrop" role="presentation" onMouseDown={() => setSelectedPodcastEpisodeId(null)}><div className="podcast-detail-modal" role="dialog" aria-modal="true" aria-label={`${selectedPodcastEpisode.title} podcast detail`} onMouseDown={(event) => event.stopPropagation()}><PodcastEpisodeDetail episode={selectedPodcastEpisode} communityName={selectedPodcastCommunity?.name ?? "Picom community"} author={selectedPodcastCommunity?.members.find((member) => member.userId === selectedPodcastEpisode.authorUserId)} relatedEpisodes={audioCatalog.podcastEpisodes.filter((episode) => episode.communityId === selectedPodcastEpisode.communityId && episode.status === "published")} getCommentAuthorLabel={(authorId) => selectedPodcastCommunity?.members.find((member) => member.userId === authorId)?.displayName ?? "Community member"} onClose={() => setSelectedPodcastEpisodeId(null)} onOpenCommunity={() => { setSelectedPodcastEpisodeId(null); onOpenEventCommunity(selectedPodcastEpisode.communityId); }} onOpenAuthor={onOpenProfile} onSelectEpisode={(episode) => setSelectedPodcastEpisodeId(episode.id)} /></div></div> : null}
     </main>
   );
 }

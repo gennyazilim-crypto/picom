@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Community, Member } from "../../types/community";
 import type { PodcastEpisode, RadioSession } from "../../types/audio";
-import { mockPodcastEpisodes, mockRadioSessions } from "../../data/mockAudio";
+import { useAudioCatalog } from "../../hooks/useAudioCatalog";
 import { AppIcon } from "../AppIcon";
 import { RadioPanel } from "./RadioPanel";
 import { PodcastEpisodeDetail } from "./PodcastEpisodeDetail";
@@ -164,13 +164,14 @@ export function CommunityPodcastSection(props: PodcastEpisodeListProps) {
 }
 
 export function CommunityAudioView({ community, canManageAudio, onPlaceholderAction, onOpenProfile }: CommunityAudioViewProps) {
+  const audioCatalog = useAudioCatalog();
   const [activeTab, setActiveTab] = useState<CommunityAudioTab>("live");
   const [selectedRadioSession, setSelectedRadioSession] = useState<RadioSession | null>(null);
   const [selectedPodcastEpisode, setSelectedPodcastEpisode] = useState<PodcastEpisode | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
   const [reminderIds, setReminderIds] = useState<Set<string>>(() => new Set());
-  const radioSessions = useMemo(() => mockRadioSessions.filter((session) => session.communityId === community.id), [community.id]);
-  const podcastEpisodes = useMemo(() => mockPodcastEpisodes.filter((episode) => episode.communityId === community.id), [community.id]);
+  const radioSessions = useMemo(() => audioCatalog.radioSessions.filter((session) => session.communityId === community.id), [audioCatalog.radioSessions, community.id]);
+  const podcastEpisodes = useMemo(() => audioCatalog.podcastEpisodes.filter((episode) => episode.communityId === community.id), [audioCatalog.podcastEpisodes, community.id]);
   const getUserLabel = (userId: string) => community.members.find((member) => member.userId === userId)?.displayName ?? "Picom creator";
   const toggleSaved = (id: string) => setSavedIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const toggleReminder = (id: string) => setReminderIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });

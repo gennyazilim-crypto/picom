@@ -467,6 +467,42 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      radio_sessions: {
+        Row: { id: string; community_id: string; channel_id: string | null; host_user_id: string; title: string; description: string; status: "scheduled" | "live" | "ended" | "cancelled"; starts_at: string; ended_at: string | null; cover_url: string | null; listener_count: number; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_sessions"]["Row"]> & Pick<Database["public"]["Tables"]["radio_sessions"]["Row"], "community_id" | "host_user_id" | "title" | "starts_at">;
+        Update: Partial<Database["public"]["Tables"]["radio_sessions"]["Row"]>;
+        Relationships: [];
+      };
+      radio_listeners: {
+        Row: { id: string; radio_session_id: string; user_id: string; joined_at: string; left_at: string | null; muted: boolean };
+        Insert: Partial<Database["public"]["Tables"]["radio_listeners"]["Row"]> & Pick<Database["public"]["Tables"]["radio_listeners"]["Row"], "radio_session_id" | "user_id">;
+        Update: Partial<Database["public"]["Tables"]["radio_listeners"]["Row"]>;
+        Relationships: [];
+      };
+      podcast_episodes: {
+        Row: { id: string; community_id: string; author_user_id: string; title: string; description: string; cover_url: string | null; audio_url: string | null; duration_seconds: number; status: "draft" | "published" | "archived"; published_at: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["podcast_episodes"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_episodes"]["Row"], "community_id" | "author_user_id" | "title">;
+        Update: Partial<Database["public"]["Tables"]["podcast_episodes"]["Row"]>;
+        Relationships: [];
+      };
+      podcast_episode_reactions: {
+        Row: { id: string; episode_id: string; user_id: string; emoji: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["podcast_episode_reactions"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_episode_reactions"]["Row"], "episode_id" | "user_id" | "emoji">;
+        Update: Partial<Database["public"]["Tables"]["podcast_episode_reactions"]["Row"]>;
+        Relationships: [];
+      };
+      podcast_episode_comments: {
+        Row: { id: string; episode_id: string; author_id: string | null; body: string; created_at: string; updated_at: string; deleted_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["podcast_episode_comments"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_episode_comments"]["Row"], "episode_id" | "body">;
+        Update: Partial<Database["public"]["Tables"]["podcast_episode_comments"]["Row"]>;
+        Relationships: [];
+      };
+      saved_audio_items: {
+        Row: { id: string; user_id: string; item_type: "radio_session" | "podcast_episode"; item_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["saved_audio_items"]["Row"]> & Pick<Database["public"]["Tables"]["saved_audio_items"]["Row"], "user_id" | "item_type" | "item_id">;
+        Update: Partial<Database["public"]["Tables"]["saved_audio_items"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: {
       message_attachments: {

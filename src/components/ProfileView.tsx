@@ -1,4 +1,4 @@
-﻿import type { MouseEvent } from "react";
+import type { MouseEvent } from "react";
 import type { Attachment, Community, Member } from "../types/community";
 import type { ProfileActivityItem, ProfileMediaItem, UserProfile } from "../types/profile";
 import { dateTimeService } from "../services/dateTimeService";
@@ -6,7 +6,7 @@ import { AppIcon, type IconName } from "./AppIcon";
 import { VerifiedProfileAvatar } from "./VerifiedProfileAvatar";
 import { VerificationBadgeList } from "./VerificationBadgeList";
 import { getUserVerificationVariant } from "../utils/verificationHelpers";
-import { mockPodcastEpisodes, mockRadioSessions } from "../data/mockAudio";
+import { useAudioCatalog } from "../hooks/useAudioCatalog";
 import { ProfileAudioSections } from "./audio/ProfileAudioSections";
 
 type ProfileViewProps = {
@@ -402,12 +402,13 @@ export function ProfileMainPanel({
   onOpenImage: (attachment: Attachment) => void;
   onOpenCommunity?: (communityId: string) => void;
 }) {
+  const audioCatalog = useAudioCatalog();
   if(profile.privacyRestricted)return <section className="profile-main-panel" aria-label="Private profile"><div className="profile-section profile-empty-panel"><AppIcon name="lock" size="lg" /><strong>Limited profile</strong><p>This person shares profile details only with their selected audience.</p></div></section>;
   const visibleCommunityIds = new Set(communities.map((community) => community.id));
-  const hostedRadio = mockRadioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId));
-  const podcastEpisodes = mockPodcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
-  const savedRadio = mockRadioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId));
-  const savedPodcasts = mockPodcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
+  const hostedRadio = audioCatalog.radioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId));
+  const podcastEpisodes = audioCatalog.podcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
+  const savedRadio = audioCatalog.radioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId));
+  const savedPodcasts = audioCatalog.podcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
   const audioStats = { radioSessions: hostedRadio.length, podcastEpisodes: podcastEpisodes.length, audioListeners: [...hostedRadio, ...podcastEpisodes].reduce((total, item) => total + item.listenerCount, 0) };
   return (
     <section className="profile-main-panel" aria-label="Profile details">
