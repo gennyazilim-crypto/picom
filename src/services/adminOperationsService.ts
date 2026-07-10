@@ -30,6 +30,20 @@ export const adminOperationsService = {
     const network = networkStatusService.getSnapshot();
     const abuse = abuseEventService.getAdminSummary();
     const diagnostics = diagnosticsService.getSnapshot();
+    const recentErrors = logs.filter((entry) => entry.level === "error").slice(-12).reverse();
+    const recentWarnings = logs.filter((entry) => entry.level === "warn").slice(-12).reverse();
+    const apiStatus = dataSourceService.getStatus().isMock
+      ? "mock"
+      : network.state === "online" && network.backendReachable === true
+        ? "operational"
+        : network.state === "checking"
+          ? "checking"
+          : network.state;
+    const uploadStatus = dataSourceService.getStatus().isMock
+      ? "development"
+      : diagnostics.serviceStatus.supabaseStatus !== "configured"
+        ? "unavailable"
+        : "unverified";
 
     return {
       dataSource: dataSourceService.getStatus().mode,
@@ -48,6 +62,19 @@ export const adminOperationsService = {
         releaseChannel: diagnostics.app.releaseChannel,
         version: diagnostics.app.version,
       }),
+      productHealth: Object.freeze({
+        version: diagnostics.app.version,
+        releaseChannel: diagnostics.app.releaseChannel,
+        apiStatus,
+        realtimeStatus: network.state === "online" ? "available" : network.state,
+        uploadStatus,
+        voiceStatus: diagnostics.serviceStatus.liveKitStatus,
+        errorCount: recentErrors.length,
+        warningCount: recentWarnings.length,
+        crashReportCount: crashReporterService.getStatus().queuedLocalRecords,
+        checkedAt: network.checkedAt,
+        source: "local_aggregate" as const,
+      }),
       observability: Object.freeze({
         appStarts: countLogMatches(logs, [/app[- ]started/i, /startup complete/i]),
         authFailures: countLogMatches(logs, [/auth.*fail/i, /login.*fail/i]),
@@ -63,8 +90,8 @@ export const adminOperationsService = {
         platform: `${appConfig.runtimeTarget} - ${navigator.platform || "unknown"}`,
         sampleWindow: logs.length,
       }),
-      recentErrors: logs.filter((entry) => entry.level === "error").slice(-12).reverse(),
-      recentWarnings: logs.filter((entry) => entry.level === "warn").slice(-12).reverse(),
+      recentErrors,
+      recentWarnings,
     };
   },
 };
