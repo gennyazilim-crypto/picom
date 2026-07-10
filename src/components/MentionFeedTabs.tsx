@@ -17,18 +17,19 @@ export function MentionFeedTabs({ activeTab, feedCount, followingCount, onTabCha
         aria-selected={activeTab === "feed"}
         onClick={() => onTabChange("feed")}
       >
-        Feed
-        <span>{feedCount}</span>
+        <span className="mention-tab-label">Feed</span>
+        <span className="mention-tab-count">{feedCount}</span>
       </button>
       <button
         className={activeTab === "following" ? "active" : ""}
         type="button"
         role="tab"
         aria-selected={activeTab === "following"}
+        title="Takip Ettiğin Kişiler"
         onClick={() => onTabChange("following")}
       >
-        Takip Ettiğin Kişiler
-        <span>{followingCount}</span>
+        <span className="mention-tab-label">Takip Ettiğin Kişiler</span>
+        <span className="mention-tab-count">{followingCount}</span>
       </button>
     </div>
   );

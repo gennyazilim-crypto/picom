@@ -2,6 +2,10 @@
 
 Picom is a desktop-first Electron app for Windows, Linux, and macOS. This QA checklist keeps English and Turkish copy stable without introducing mobile UI or changing the premium desktop layout.
 
+## Current implementation status
+
+Picom does not yet have a complete central runtime message catalog or language selector, so it does not claim full English/Turkish localization. Existing Turkish product labels must remain valid UTF-8, locale-sensitive dates use `dateTimeService`, and any future extraction must follow the approved catalog/review plan. Where no i18n catalog exists, English source copy is tracked as an explicit migration backlog rather than presented as translated UI.
+
 ## Scope
 
 - Languages: English (`en`) and Turkish (`tr`).
@@ -29,6 +33,7 @@ Picom is a desktop-first Electron app for Windows, Linux, and macOS. This QA che
 ## Turkish layout checks
 
 - Longer Turkish labels must truncate or wrap without causing horizontal overflow.
+- Mention Feed tab labels use a dedicated truncating text span while their count remains visible.
 - Sidebar labels must stay inside fixed desktop columns.
 - Buttons should not grow enough to break modal layouts.
 - Titlebar actions and search input must remain clickable and not overlap window controls.
@@ -49,6 +54,15 @@ Picom is a desktop-first Electron app for Windows, Linux, and macOS. This QA che
 - Avoid final legal/compliance claims unless reviewed.
 - Prefer clear placeholders for incomplete production systems.
 - Keep Turkish copy natural and concise, not word-for-word mechanical translation.
+- Never translate user-generated messages, community/channel names, profile bios, status text, attachment captions, or moderation evidence automatically.
+
+## UTF-8 and future-locale checks
+
+- Source, scripts, packaged assets, diagnostics, and support exports must preserve UTF-8; reject replacement glyphs or mojibake sequences.
+- Use BCP 47 locale tags and deterministic English fallback only after the central catalog is approved.
+- A future pseudo-locale should expand labels by 30-40% and preserve interpolation markers without changing user content.
+- Turkish casing must not be implemented with English-only string assumptions; search/collation behavior needs locale-specific product approval before changing identifiers.
+- Legal, safety, consent, deletion, and moderation copy requires human translation and version-level review; machine output is not production approval.
 
 ## Manual QA pass
 
@@ -62,14 +76,16 @@ Picom is a desktop-first Electron app for Windows, Linux, and macOS. This QA che
 8. Search members with a long Turkish query and confirm no sidebar overflow.
 9. Open message/profile/image overlays and confirm Escape closes the topmost overlay.
 10. Confirm no mobile navigation or web-first responsive replacement appears.
+11. Restart with Windows/Linux/macOS locale set to `tr-TR`, then `en-US`, and verify message, notification, audit, event, and session timestamps change through `Intl` without changing stored content.
+12. Exercise deliberately long Turkish labels at 1100x700 and confirm ellipsis/wrapping preserves every critical action and count.
 
 ## Known gaps
 
-- Full app-wide i18n key extraction is not yet complete.
+- Full app-wide i18n key extraction and a runtime language selector are not approved or complete.
 - Some MVP placeholders may still use English-only copy until the localization pass reaches that surface.
 - Turkish date/time formatting depends on the current date/time service coverage.
 - Supabase and LiveKit provider errors may still need user-friendly localized mappings.
 
 ## Release expectation
 
-Before beta, English and Turkish must be checked on the primary MVP desktop flows. Any hardcoded critical-path copy should either be moved into the localization layer or documented as a temporary MVP exception.
+Before a localized release, English and Turkish must be checked on the primary desktop flows. Any hardcoded critical-path copy must be moved into the approved localization layer or recorded in a temporary exception register with owner and target release. Current beta copy remains English-first with selected reviewed Turkish product labels.

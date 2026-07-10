@@ -7,15 +7,14 @@ type DateTimeFormatOptions = Readonly<{
 }>;
 
 function getLocale(locale?: string): string | undefined {
-  if (locale) {
-    return locale;
+  const candidate = locale
+    ?? (typeof navigator !== "undefined" ? navigator.languages?.[0] ?? navigator.language : undefined);
+  if (!candidate) return undefined;
+  try {
+    return new Intl.DateTimeFormat(candidate).resolvedOptions().locale;
+  } catch {
+    return undefined;
   }
-
-  if (typeof navigator !== "undefined" && navigator.language) {
-    return navigator.language;
-  }
-
-  return undefined;
 }
 
 function parseDate(value: DateTimeInput): Date | null {
@@ -42,10 +41,18 @@ function formatWith(
     return fallback;
   }
 
-  return new Intl.DateTimeFormat(getLocale(formatOptions.locale), {
-    ...options,
-    timeZone: formatOptions.timeZone,
-  }).format(date);
+  try {
+    return new Intl.DateTimeFormat(getLocale(formatOptions.locale), {
+      ...options,
+      timeZone: formatOptions.timeZone,
+    }).format(date);
+  } catch {
+    try {
+      return new Intl.DateTimeFormat(getLocale(formatOptions.locale), options).format(date);
+    } catch {
+      return fallback;
+    }
+  }
 }
 
 function getRelativeUnit(deltaMs: number): { value: number; unit: Intl.RelativeTimeFormatUnit } {
@@ -105,7 +112,11 @@ export const dateTimeService = {
 
     const now = options.now ?? new Date();
     const { value: relativeValue, unit } = getRelativeUnit(date.getTime() - now.getTime());
-    return new Intl.RelativeTimeFormat(getLocale(options.locale), { numeric: "auto" }).format(relativeValue, unit);
+    try {
+      return new Intl.RelativeTimeFormat(getLocale(options.locale), { numeric: "auto" }).format(relativeValue, unit);
+    } catch {
+      return "Invalid date";
+    }
   },
 
   formatAuditTimestamp(value: DateTimeInput, options?: DateTimeFormatOptions): string {
@@ -127,14 +138,17 @@ export const dateTimeService = {
       return this.formatCompactDateTime(startDate, options);
     }
 
-    const formatter = new Intl.DateTimeFormat(getLocale(options?.locale), {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: options?.timeZone,
-    });
-
-    return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
+    try {
+      const formatter = new Intl.DateTimeFormat(getLocale(options?.locale), {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: options?.timeZone,
+      });
+      return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
+    } catch {
+      return `${this.formatCompactDateTime(startDate, { locale: options?.locale })} - ${this.formatCompactDateTime(endDate, { locale: options?.locale })}`;
+    }
   },
 };

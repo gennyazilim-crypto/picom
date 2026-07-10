@@ -6,9 +6,10 @@ Picom formats user-facing timestamps through `dateTimeService` so Windows, Linux
 
 - Use the built-in `Intl.DateTimeFormat` and `Intl.RelativeTimeFormat` APIs.
 - Do not add a date library for the MVP.
-- Use the browser/Electron renderer locale (`navigator.language`) unless a caller passes an explicit locale.
+- Use the browser/Electron renderer locale (`navigator.languages[0]`, then `navigator.language`) unless a caller passes an explicit locale.
 - Use the system timezone by default unless a caller passes an explicit timezone.
 - Keep invalid timestamp output safe and non-crashing.
+- Resolve malformed locale input safely and fall back to the runtime locale; an invalid explicit timezone falls back to the system timezone.
 
 ## Supported formatting helpers
 
