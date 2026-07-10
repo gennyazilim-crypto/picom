@@ -31,6 +31,10 @@ const voiceRequired = [
   "Room",
   "RoomEvent",
   "VOICE_TOKEN_FAILED",
+  "errorCode",
+  "getDiagnosticsSummary",
+  "VoiceSessionDiagnosticsSummary",
+  "Picom could not connect to this voice room",
   "setMuted",
   "setDeafened",
   "ActiveSpeakersChanged",
@@ -156,4 +160,5 @@ console.log("OK deterministic LiveKit voice room naming");
 console.log("OK Supabase LiveKit token Edge Function");
 console.log("OK Electron screen share bridge");
 console.log("OK Screen share MVP controls and preview");
+console.log("OK standardized voice errors and diagnostics summary");
 console.log("OK LiveKit smoke test completed");

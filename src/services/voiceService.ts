@@ -1,4 +1,5 @@
 import { ConnectionState, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
+import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
 
@@ -42,6 +43,7 @@ export type VoiceServiceSnapshot = Readonly<{
   screenShares: VoiceScreenShare[];
   participants: VoiceParticipant[];
   error: string | null;
+  errorCode: VoiceServiceErrorCode | null;
 }>;
 
 export type VoiceServiceErrorCode =
@@ -58,6 +60,17 @@ export type VoiceServiceResult<T> =
 
 export type VoiceStateListener = (snapshot: VoiceServiceSnapshot) => void;
 
+export type VoiceSessionDiagnosticsSummary = Readonly<{
+  status: VoiceConnectionStatus;
+  connected: boolean;
+  participantCount: number;
+  muted: boolean;
+  deafened: boolean;
+  screenSharing: boolean;
+  remoteScreenShareCount: number;
+  lastErrorCode: VoiceServiceErrorCode | null;
+}>;
+
 let room: Room | null = null;
 let speakingIdentities = new Set<string>();
 let screenShareMediaTrack: MediaStreamTrack | null = null;
@@ -71,6 +84,7 @@ let snapshot: VoiceServiceSnapshot = {
   screenShares: [],
   participants: [],
   error: null,
+  errorCode: null,
 };
 
 const listeners = new Set<VoiceStateListener>();
@@ -86,6 +100,7 @@ function voiceError(code: VoiceServiceErrorCode, message: string): VoiceServiceR
 
   emit({
     error: message,
+    errorCode: code,
     status,
   });
 
@@ -166,7 +181,7 @@ async function stopScreenShareInternal(activeRoom: Room): Promise<VoiceServiceRe
       await activeRoom.localParticipant.unpublishTrack(track, true);
       track.stop();
       setScreenShares(screenShares.filter((share) => !share.isLocal));
-      emit({ screenSharing: false, error: null, participants: getParticipants(activeRoom) });
+      emit({ screenSharing: false, error: null, errorCode: null, participants: getParticipants(activeRoom) });
       return { ok: true, data: snapshot };
     } catch {
       track.stop();
@@ -175,6 +190,7 @@ async function stopScreenShareInternal(activeRoom: Room): Promise<VoiceServiceRe
         screenSharing: false,
         participants: getParticipants(activeRoom),
       error: "Screen sharing stopped locally, but LiveKit unpublish failed.",
+      errorCode: "VOICE_SCREEN_SHARE_FAILED",
     });
     return {
       ok: false,
@@ -192,7 +208,7 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
       if (state === ConnectionState.Connected) {
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
-        emit({ status: "connected", participants: getParticipants(activeRoom), error: null });
+        emit({ status: "connected", participants: getParticipants(activeRoom), error: null, errorCode: null });
         return;
       }
 
@@ -278,7 +294,7 @@ function createElectronScreenShareConstraints(sourceId: string): MediaStreamCons
 }
 
 async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
-  emit({ status: "requesting_token", error: null });
+  emit({ status: "requesting_token", error: null, errorCode: null });
 
   const token = await liveKitService.fetchToken(request);
   if (!token.ok) {
@@ -290,7 +306,7 @@ async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceRes
 }
 
 async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
-  emit({ status: "connecting", roomName: token.roomName, error: null });
+  emit({ status: "connecting", roomName: token.roomName, error: null, errorCode: null });
 
   const activeRoom = new Room({
     adaptiveStream: true,
@@ -317,19 +333,35 @@ async function connectWithToken(token: VoiceTokenResponse): Promise<VoiceService
       screenSharing: Boolean(screenShareMediaTrack),
       screenShares,
       error: microphoneEnabled ? null : "Microphone permission was denied or no input device is available.",
+      errorCode: microphoneEnabled ? null : "VOICE_PERMISSION_DENIED",
     });
 
     return { ok: true, data: snapshot };
   } catch (error) {
     activeRoom.disconnect();
-    const message = error instanceof Error ? error.message : "Could not join the voice room.";
-    return voiceError("VOICE_CONNECTION_FAILED", message);
+    loggingService.logWarn("LiveKit room connection failed", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    }, "voice");
+    return voiceError("VOICE_CONNECTION_FAILED", "Picom could not connect to this voice room. Check your network and try again.");
   }
 }
 
 export const voiceService = {
   getSnapshot(): VoiceServiceSnapshot {
     return snapshot;
+  },
+
+  getDiagnosticsSummary(): VoiceSessionDiagnosticsSummary {
+    return {
+      status: snapshot.status,
+      connected: snapshot.status === "connected" || snapshot.status === "reconnecting",
+      participantCount: snapshot.participants.length,
+      muted: snapshot.muted,
+      deafened: snapshot.deafened,
+      screenSharing: snapshot.screenSharing,
+      remoteScreenShareCount: snapshot.screenShares.filter((share) => !share.isLocal).length,
+      lastErrorCode: snapshot.errorCode,
+    };
   },
 
   subscribe(listener: VoiceStateListener): () => void {
@@ -353,7 +385,7 @@ export const voiceService = {
     speakingIdentities = new Set<string>();
     screenShareMediaTrack = null;
     screenShares = [];
-    emit({ error: null, participants: [], screenSharing: false, screenShares: [] });
+    emit({ error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
 
     const token = await requestToken(request);
     if (!token.ok) return token;
@@ -378,6 +410,7 @@ export const voiceService = {
       screenSharing: false,
       screenShares: [],
       error: null,
+      errorCode: null,
     });
   },
 
@@ -391,6 +424,7 @@ export const voiceService = {
       emit({
         muted,
         error: null,
+        errorCode: null,
         participants: getParticipants(room),
         status: room.state === ConnectionState.Reconnecting ? "reconnecting" : "connected",
       });
@@ -408,7 +442,7 @@ export const voiceService = {
 
     applyRemoteAudioSubscription(room, !deafened);
 
-    emit({ deafened, error: null });
+    emit({ deafened, error: null, errorCode: null });
     return { ok: true, data: snapshot };
   },
 
@@ -458,10 +492,14 @@ export const voiceService = {
         }
       };
 
-      emit({ screenSharing: true, error: null, participants: getParticipants(room) });
+      emit({ screenSharing: true, error: null, errorCode: null, participants: getParticipants(room) });
       return { ok: true, data: snapshot };
     } catch (error) {
       const denied = error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "SecurityError");
+      loggingService.logWarn("LiveKit screen share start failed", {
+        errorName: error instanceof Error ? error.name : "UnknownError",
+        permissionDenied: denied,
+      }, "voice");
       return voiceError(
         denied ? "VOICE_PERMISSION_DENIED" : "VOICE_SCREEN_SHARE_FAILED",
         denied ? "Screen recording permission was denied." : "Could not start screen sharing."

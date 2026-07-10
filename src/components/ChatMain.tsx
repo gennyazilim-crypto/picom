@@ -24,6 +24,7 @@ const initialVoiceSnapshot: VoiceServiceSnapshot = {
   screenShares: [],
   participants: [],
   error: null,
+  errorCode: null,
 };
 
 type ChatMainProps = {
