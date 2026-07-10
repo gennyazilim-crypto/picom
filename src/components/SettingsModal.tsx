@@ -22,6 +22,7 @@ import { userSafetyCenterService, type UserSafetySettings } from "../services/us
 import { profilePrivacyService } from "../services/profilePrivacyService";
 import { profileService } from "../services/profileService";
 import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
+import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";
 import type { ProfilePrivacySettings } from "../types/profilePrivacy";
 import { notificationDigestService } from "../services/notificationDigestService";
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
@@ -802,7 +803,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <article className="security-card"><span>Screen share</span><strong>{voiceSettingsSnapshot.screenSharing ? "Sharing" : "Not sharing"}</strong><small>Source selection is available from an active voice room.</small></article>
               </div>
               <div className="settings-actions-row"><button disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => void voiceService.setMuted(!voiceSettingsSnapshot.muted)}>Toggle microphone</button><button disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => { const result = voiceService.setDeafened(!voiceSettingsSnapshot.deafened); if (!result.ok) pushToast(result.error.message, "error"); }}>Toggle deafen</button></div>
-              <div className="settings-status-card"><span>Input and output devices</span><strong>System default (Coming soon)</strong><small>Per-device selection and test playback require approved native device enumeration; no raw device labels are collected here.</small></div>
+              <VoiceDeviceSelection />
             </div>
           ) : active === "Keyboard Shortcuts" ? (
             <KeyboardShortcutsSection />
