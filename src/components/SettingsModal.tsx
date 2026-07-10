@@ -21,7 +21,7 @@ import { userSafetyCenterService, type UserSafetySettings } from "../services/us
 import { notificationDigestService } from "../services/notificationDigestService";
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
 import { appConfig } from "../config/appConfig";
-import { AdminOperationsPanel } from "./AdminOperationsPanel";
+import { AdminOperationsView } from "./AdminOperationsView";
 import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
 import { analyticsService } from "../services/analyticsService";
 import { crashReporterService } from "../services/crashReporterService";
@@ -914,7 +914,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <button onClick={() => void copyFeedbackReport()}>Copy feedback report</button>
                 <button onClick={exportDiagnostics}>Export diagnostics JSON</button>
               </div>
-              {adminOperationsAccess.allowed ? <AdminOperationsPanel access={adminOperationsAccess} /> : null}
+              <AdminOperationsView access={adminOperationsAccess} />
             </div>
           ) : (
             <div className="placeholder-panel">

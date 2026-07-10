@@ -4,6 +4,7 @@ import { attachmentQuarantineService } from "./attachmentQuarantineService";
 import { abuseEventService } from "./abuseEventService";
 import { crashReporterService } from "./crashReporterService";
 import { dataSourceService } from "./dataSourceService";
+import { diagnosticsService } from "./diagnosticsService";
 import { loggingService } from "./loggingService";
 import { networkStatusService } from "./networkStatusService";
 import { reportService } from "./reportService";
@@ -28,6 +29,7 @@ export const adminOperationsService = {
     const logs = loggingService.getRecentLogs(80);
     const network = networkStatusService.getSnapshot();
     const abuse = abuseEventService.getAdminSummary();
+    const diagnostics = diagnosticsService.getSnapshot();
 
     return {
       dataSource: dataSourceService.getStatus().mode,
@@ -39,6 +41,13 @@ export const adminOperationsService = {
       storageStatus: "Supabase Storage health requires backend diagnostics",
       network,
       realtimeStatus: network.state === "online" ? "available" : network.state,
+      serviceHealth: Object.freeze({
+        supabase: diagnostics.serviceStatus.supabaseStatus,
+        supabaseHost: diagnostics.serviceStatus.supabaseHost,
+        liveKit: diagnostics.serviceStatus.liveKitStatus,
+        releaseChannel: diagnostics.app.releaseChannel,
+        version: diagnostics.app.version,
+      }),
       observability: Object.freeze({
         appStarts: countLogMatches(logs, [/app[- ]started/i, /startup complete/i]),
         authFailures: countLogMatches(logs, [/auth.*fail/i, /login.*fail/i]),
