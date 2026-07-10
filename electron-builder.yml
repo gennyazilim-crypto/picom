@@ -75,8 +75,14 @@ deb:
 mac:
   icon: assets/brand/app-icon.png
   category: public.app-category.social-networking
+  # Safe local/unsigned package defaults. Protected macOS release CI must override
+  # hardenedRuntime/notarize and reference the reviewed entitlements templates.
+  # See docs/release/macos-signing-notarization-final.md.
   hardenedRuntime: false
   gatekeeperAssess: false
+  # notarize: true
+  # entitlements: assets/brand/entitlements.mac.plist
+  # entitlementsInherit: assets/brand/entitlements.mac.inherit.plist
   extendInfo:
     NSMicrophoneUsageDescription: Picom uses microphone access for MVP voice rooms when you join a voice channel.
     NSScreenCaptureUsageDescription: Picom uses screen recording access only when you choose to share your screen.
