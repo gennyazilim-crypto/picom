@@ -10,7 +10,7 @@ const checks = [
   [composer.includes("composer-permission-hint"), "permission hint"],
   [composer.includes("disabled={Boolean(disabledReason)}"), "disabled controls"],
   [chatMain.includes("composerDisabledReason"), "ChatMain permission reason"],
-  [chatMain.includes("role.id === currentMember?.roleId"), "role lookup"],
+  [chatMain.includes("getComposerDisabledReason(access, channel)"), "central permission lookup"],
   [css.includes(".message-composer.is-disabled"), "disabled composer CSS"],
   [doc.includes("Backend/Supabase permissions remain the source of truth"), "permission boundary doc"]
 ];
