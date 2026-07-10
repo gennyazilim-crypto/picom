@@ -3,17 +3,20 @@ import type { Community, Member, UserStatus } from "../types/community";
 import type { UpcomingEvent, UpcomingEventType } from "../types/events";
 import type { FriendConnection } from "../types/friends";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
+import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 
 type FeedCompanionRailProps = {
   voiceState: VoiceServiceSnapshot;
+  activeVoiceRooms: ActiveVoiceRoomSummary[];
   friends: FriendConnection[];
   events: UpcomingEvent[];
   communities: Community[];
   onToggleMute: () => void;
   onToggleDeafen: () => void;
   onLeaveVoice: () => void;
+  onOpenVoiceRoom: (room: ActiveVoiceRoomSummary) => void;
   onScreenSharePlaceholder: () => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenEventCommunity: (communityId: string) => void;
@@ -168,6 +171,34 @@ function FriendsStatusSection({
   );
 }
 
+function ActiveVoiceRoomsSection({ rooms, onOpenVoiceRoom }: { rooms: ActiveVoiceRoomSummary[]; onOpenVoiceRoom: (room: ActiveVoiceRoomSummary) => void }) {
+  if (!rooms.length) return null;
+
+  return (
+    <section className="feed-rail-card" aria-label="Active voice rooms">
+      <header className="feed-rail-section-header">
+        <div><p className="eyebrow">Live now</p><strong>Active voice rooms</strong></div>
+        <span>{rooms.length}</span>
+      </header>
+      <div className="upcoming-events-list">
+        {rooms.slice(0, 5).map((room) => (
+          <article className="upcoming-event-mini-card" key={`${room.communityId}:${room.channelId}`}>
+            <span className="event-mini-icon"><AppIcon name={room.isPrivate ? "lock" : "voice"} size="sm" /></span>
+            <div>
+              <strong>{room.channelName}</strong>
+              <small>{room.communityName} · {room.participantCount} connected</small>
+              {room.participantNames.length ? <small>{room.participantNames.join(", ")}</small> : null}
+            </div>
+            <button className="event-mini-action" type="button" disabled={!room.canJoin} aria-label={room.canJoin ? `Open ${room.channelName} voice room` : room.joinBlockedReason} title={room.joinBlockedReason} onClick={() => onOpenVoiceRoom(room)}>
+              <AppIcon name={room.canJoin ? "chevronRight" : "lock"} size="sm" />
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function UpcomingEventMiniCard({
   event,
   communityName,
@@ -230,12 +261,14 @@ function UpcomingEventsSection({
 
 export function FeedCompanionRail({
   voiceState,
+  activeVoiceRooms,
   friends,
   events,
   communities,
   onToggleMute,
   onToggleDeafen,
   onLeaveVoice,
+  onOpenVoiceRoom,
   onScreenSharePlaceholder,
   onOpenProfile,
   onOpenEventCommunity,
@@ -250,6 +283,7 @@ export function FeedCompanionRail({
         onLeaveVoice={onLeaveVoice}
         onScreenSharePlaceholder={onScreenSharePlaceholder}
       />
+      <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} />
       <FriendsStatusSection friends={friends} communities={communities} onOpenProfile={onOpenProfile} />
       <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} />
     </aside>

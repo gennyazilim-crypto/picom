@@ -116,6 +116,8 @@ import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
 import type { VoiceServiceSnapshot } from "./services/voiceService";
+import type { ActiveVoiceRoomSummary } from "./types/voiceDiscovery";
+import { activeVoiceRoomDiscoveryService } from "./services/activeVoiceRoomDiscoveryService";
 import {
   notificationPermissionOnboardingService,
   type NotificationPermissionOnboardingTrigger,
@@ -397,6 +399,10 @@ export function App() {
     switchCommunity,
     selectChannelByOffset,
   } = useMvpAppState(communities);
+  const activeVoiceRooms = useMemo(
+    () => activeVoiceRoomDiscoveryService.getVisibleRooms({ communities, currentUserId, voiceSnapshot }),
+    [communities, voiceSnapshot],
+  );
   const {
     settingsOpen,
     paletteOpen,
@@ -1614,6 +1620,24 @@ export function App() {
     pushToast("Screen share controls are prepared for LiveKit, but stay local in this task.", "info");
   }, [pushToast]);
 
+  const openDiscoveredVoiceRoom = useCallback((room: ActiveVoiceRoomSummary) => {
+    const community = communities.find((candidate) => candidate.id === room.communityId);
+    const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === room.channelId);
+    if (!community || !channel) {
+      pushToast("This voice room is no longer available.", "error");
+      return;
+    }
+    const access = getCommunityAccess(currentUserId, community);
+    if (!canViewChannel(access, channel) || !room.canJoin) {
+      pushToast(room.joinBlockedReason ?? "You cannot join this voice room.", "info");
+      return;
+    }
+    setActiveView("community");
+    switchCommunity(community.id, channel.id);
+    setActiveChannelId(channel.id);
+    pushToast(`Opened ${channel.name}. Use Join room to connect.`, "info");
+  }, [communities, pushToast, setActiveChannelId, switchCommunity]);
+
   const joinActiveVoiceRoom = useCallback(() => {
     if (displayedActiveChannel.type !== "voice") {
       pushToast("Select a voice channel before joining voice.", "info");
@@ -2339,6 +2363,7 @@ export function App() {
                 events={visibleCommunityEvents}
                 stories={visibleStoryItems}
                 voiceState={voiceSnapshot}
+                activeVoiceRooms={activeVoiceRooms}
                 followedUserIds={followedUserIds}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
@@ -2354,6 +2379,7 @@ export function App() {
                 onToggleVoiceMute={toggleFeedVoiceMute}
                 onToggleVoiceDeafen={toggleFeedVoiceDeafen}
                 onLeaveVoice={leaveFeedVoice}
+                onOpenVoiceRoom={openDiscoveredVoiceRoom}
                 onScreenSharePlaceholder={showScreenSharePlaceholder}
                 onOpenEventCommunity={openFeedEventCommunity}
                 onEventDetails={showFeedEventDetails}

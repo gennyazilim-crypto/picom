@@ -5,6 +5,7 @@ import type { FriendConnection } from "../types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "../types/mentions";
 import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
+import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
@@ -18,6 +19,7 @@ type MentionFeedMainProps = {
   events: UpcomingEvent[];
   stories: FollowedUserStory[];
   voiceState: VoiceServiceSnapshot;
+  activeVoiceRooms: ActiveVoiceRoomSummary[];
   followedUserIds: string[];
   activeTab: MentionFeedTab;
   activeFilter: MentionQuickFilter | null;
@@ -34,6 +36,7 @@ type MentionFeedMainProps = {
   onToggleVoiceMute: () => void;
   onToggleVoiceDeafen: () => void;
   onLeaveVoice: () => void;
+  onOpenVoiceRoom: (room: ActiveVoiceRoomSummary) => void;
   onScreenSharePlaceholder: () => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
@@ -59,6 +62,7 @@ export function MentionFeedMain({
   events,
   stories,
   voiceState,
+  activeVoiceRooms,
   followedUserIds,
   activeTab,
   activeFilter,
@@ -75,6 +79,7 @@ export function MentionFeedMain({
   onToggleVoiceMute,
   onToggleVoiceDeafen,
   onLeaveVoice,
+  onOpenVoiceRoom,
   onScreenSharePlaceholder,
   onOpenEventCommunity,
   onEventDetails,
@@ -133,12 +138,14 @@ export function MentionFeedMain({
         />
         <FeedCompanionRail
           voiceState={voiceState}
+          activeVoiceRooms={activeVoiceRooms}
           friends={friends}
           events={events}
           communities={communities}
           onToggleMute={onToggleVoiceMute}
           onToggleDeafen={onToggleVoiceDeafen}
           onLeaveVoice={onLeaveVoice}
+          onOpenVoiceRoom={onOpenVoiceRoom}
           onScreenSharePlaceholder={onScreenSharePlaceholder}
           onOpenProfile={onOpenProfile}
           onOpenEventCommunity={onOpenEventCommunity}
