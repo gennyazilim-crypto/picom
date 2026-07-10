@@ -1,5 +1,13 @@
 # Picom Social Login
 
+## Production finalization decision
+
+- **Google:** implementation prepared, production enablement **blocked** until a hosted staging and packaged Windows/Linux/macOS callback test passes. No provider configuration was verified by repository tests.
+- **Apple:** implementation prepared, production enablement **blocked** until Apple Services ID/key/domain configuration, hosted staging and packaged macOS plus Windows/Linux browser-return tests pass.
+- **Steam/Epic:** remain post-MVP/MVP+ decisions and are not approved or exposed.
+
+Provider flags are availability hints, not proof of configuration. Keep them false until provider console, Supabase dashboard, redirect allowlist, PKCE callback, account linking/recovery, rate/abuse behavior and support ownership are verified. After provider login, `ensureProfile` creates only an allowlisted Picom profile. The normal versioned Terms/Privacy acceptance gate still applies; provider consent never substitutes for Picom legal acceptance.
+
 Picom uses Supabase Auth OAuth for Google and Apple. The Electron renderer receives only the public Supabase URL and anon key. Provider client secrets stay in the Supabase dashboard.
 
 ## Shared configuration
@@ -54,6 +62,7 @@ When Apple is not configured, Picom keeps the Apple button visible but disabled 
 - Restrict OAuth domains and Supabase redirect URLs to known Picom environments.
 - Package metadata must retain the `picom` protocol registration.
 - Rotate provider secrets in Google/Apple and Supabase; never ship them in Electron assets.
+- Verify a newly authenticated provider user receives a profile, cannot bypass current Terms/Privacy acceptance, and can recover the account before enabling the provider flag.
 
 ## Troubleshooting
 
