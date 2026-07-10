@@ -74,6 +74,7 @@ import { loggingService } from "./services/loggingService";
 import { menuService, type MenuActionPayload } from "./services/menuService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService } from "./services/settingsService";
+import { shortcutService } from "./services/shortcutService";
 import { trayService, type TrayStatus } from "./services/trayService";
 import { maintenanceStatusService } from "./services/maintenanceStatusService";
 import { crashRecoveryService, type CrashRecoveryRecord } from "./services/crashRecoveryService";
@@ -984,37 +985,39 @@ export function App() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      const editing = shortcutService.isEditableTarget(event.target);
+
+      if (!editing && shortcutService.matchesEvent("commandPalette", event)) {
         event.preventDefault();
         openPalette();
         return;
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key === ",") {
+      if (!editing && shortcutService.matchesEvent("settings", event)) {
         event.preventDefault();
         openSettings();
         return;
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "l") {
+      if (!editing && shortcutService.matchesEvent("lockApp", event)) {
         event.preventDefault();
         lockApp();
         return;
       }
 
-      if (event.altKey && event.key === "ArrowUp") {
+      if (!editing && shortcutService.matchesEvent("previousChannel", event)) {
         event.preventDefault();
         selectChannelByOffset(-1);
         return;
       }
 
-      if (event.altKey && event.key === "ArrowDown") {
+      if (!editing && shortcutService.matchesEvent("nextChannel", event)) {
         event.preventDefault();
         selectChannelByOffset(1);
         return;
       }
 
-      if (event.key === "Escape") {
+      if (shortcutService.matchesEvent("escape", event)) {
         closeTransientOverlays();
       }
     };

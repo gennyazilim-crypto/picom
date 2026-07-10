@@ -10,7 +10,6 @@ import { twoFactorAuthService } from "../services/twoFactorAuthService";
 import { accountDeletionService } from "../services/accountDeletionService";
 import { dataExportService } from "../services/dataExportService";
 import { appLockService } from "../services/appLockService";
-import { shortcutService } from "../services/shortcutService";
 import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
 import { updateService } from "../services/updateService";
@@ -30,6 +29,7 @@ import { analyticsService } from "../services/analyticsService";
 import { crashReporterService } from "../services/crashReporterService";
 import { AppIcon } from "./AppIcon";
 import { HelpCenterView } from "./HelpCenterView";
+import { KeyboardShortcutsSection } from "./KeyboardShortcutsSection";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { legalDocumentOrder, legalDocuments, type LegalDocumentId } from "../data/legalDocuments";
@@ -765,14 +765,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               <button onClick={testNotification}>Send test notification</button>
             </div>
           ) : active === "Keyboard Shortcuts" ? (
-            <div className="shortcut-list">
-              {shortcutService.bindings.map((binding) => (
-                <div key={binding.action}>
-                  <strong>{binding.label}</strong>
-                  <span>{binding.action}</span>
-                </div>
-              ))}
-            </div>
+            <KeyboardShortcutsSection />
           ) : active === "Help Center" ? (
             <HelpCenterView />
           ) : active === "Diagnostics" ? (
