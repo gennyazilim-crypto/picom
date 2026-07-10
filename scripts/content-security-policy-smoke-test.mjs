@@ -1,58 +1,50 @@
-﻿import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const docPath = resolve(root, "docs/content-security-policy.md");
-
-if (!existsSync(docPath)) {
-  throw new Error("Missing docs/content-security-policy.md");
-}
+const viteConfigPath = resolve(root, "vite.config.ts");
+if (!existsSync(docPath)) throw new Error("Missing docs/content-security-policy.md");
 
 const doc = readFileSync(docPath, "utf8");
-const requiredDocPhrases = [
-  "default-src 'self'",
-  "object-src 'none'",
-  "frame-src 'none'",
-  "connect-src",
-  "Supabase",
-  "LiveKit",
-  "Do not enforce a production CSP in this task",
-];
-
-const missingDocPhrases = requiredDocPhrases.filter((phrase) => !doc.includes(phrase));
-if (missingDocPhrases.length > 0) {
-  throw new Error(`CSP document missing required coverage: ${missingDocPhrases.join(", ")}`);
+for (const phrase of ["Production enforcement", "default-src 'self'", "object-src 'none'", "frame-src 'none'", "VITE_SUPABASE_URL", "VITE_LIVEKIT_URL"]) {
+  if (!doc.includes(phrase)) throw new Error(`CSP document missing required coverage: ${phrase}`);
 }
 
-const sourceFiles = [
-  "index.html",
-  "src/main.tsx",
-  "src/App.tsx",
-];
+const sourceFiles = [];
+function collectSourceFiles(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = resolve(dir, entry.name);
+    if (entry.isDirectory()) collectSourceFiles(fullPath);
+    else if (/\.(?:ts|tsx)$/.test(entry.name)) sourceFiles.push(fullPath);
+  }
+}
+collectSourceFiles(resolve(root, "src"));
+sourceFiles.push(resolve(root, "index.html"));
 
 for (const file of sourceFiles) {
-  const source = readFileSync(resolve(root, file), "utf8");
-  if (source.includes("dangerouslySetInnerHTML")) {
-    throw new Error(`${file} uses dangerouslySetInnerHTML; update CSP review before allowing unsafe HTML.`);
-  }
-  if (source.includes("<webview") || source.includes("<iframe")) {
-    throw new Error(`${file} embeds remote frame/webview content; CSP must be updated before shipping.`);
-  }
+  const source = readFileSync(file, "utf8");
+  if (source.includes("dangerouslySetInnerHTML") || /\.innerHTML\s*=/.test(source)) throw new Error(`${relative(root, file)} uses unsafe HTML rendering`);
+  if ((file.endsWith(".tsx") || file.endsWith(".html")) && /<(?:webview|iframe|object)(?:\s|>)/i.test(source)) throw new Error(`${relative(root, file)} embeds forbidden content`);
 }
+
+const viteConfig = readFileSync(viteConfigPath, "utf8");
+for (const directive of ["default-src 'self'", "script-src 'self'", "object-src 'none'", "frame-src 'none'", "frame-ancestors 'none'", "connect-src 'self'", "form-action 'none'"]) {
+  if (!viteConfig.includes(directive)) throw new Error(`Production Vite CSP is missing ${directive}`);
+}
+for (const marker of ["VITE_SUPABASE_URL", "VITE_LIVEKIT_URL", "safeOrigin", "Content-Security-Policy", "SECURITY_HEADERS"]) {
+  if (!viteConfig.includes(marker)) throw new Error(`Vite CSP integration is missing ${marker}`);
+}
+const productionSection = viteConfig.slice(viteConfig.indexOf("CSP_PRODUCTION_DIRECTIVES"), viteConfig.indexOf("return CSP_PRODUCTION_DIRECTIVES"));
+if (productionSection.includes("unsafe-eval")) throw new Error("Production CSP must not allow unsafe-eval");
+
+const builtIndex = resolve(root, "dist/index.html");
+if (!existsSync(builtIndex) || !readFileSync(builtIndex, "utf8").includes("Content-Security-Policy")) throw new Error("Built renderer index is missing enforced CSP metadata; run npm run build first");
 
 const electronMain = readFileSync(resolve(root, "electron/main.cts"), "utf8");
-const requiredElectronGuards = [
-  "setWindowOpenHandler",
-  "will-navigate",
-  "will-attach-webview",
-  "allowRunningInsecureContent: false",
-  "webSecurity: true",
-];
-
-const missingElectronGuards = requiredElectronGuards.filter((guard) => !electronMain.includes(guard));
-if (missingElectronGuards.length > 0) {
-  throw new Error(`Electron navigation/content guards missing: ${missingElectronGuards.join(", ")}`);
+for (const guard of ["setWindowOpenHandler", "will-navigate", "will-attach-webview", "allowRunningInsecureContent: false", "webSecurity: true"]) {
+  if (!electronMain.includes(guard)) throw new Error(`Electron navigation/content guard missing: ${guard}`);
 }
 
-console.log("Content Security Policy smoke test passed.");
+console.log("Content Security Policy production smoke test passed.");

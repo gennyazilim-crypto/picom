@@ -1,143 +1,77 @@
-﻿# Content Security Policy Plan
+# Content Security Policy
 
-Picom is an Electron desktop app with a React/Vite renderer. This document defines the intended Content Security Policy posture for development, packaged desktop builds, backend/API access, uploaded attachments, and future object storage/CDN delivery.
+## Production enforcement
 
-## Goals
+Picom is an Electron desktop app with a React/Vite renderer. `vite.config.ts` injects a CSP meta tag into built HTML. Production permits bundled code and exact configured service origins; it does not permit `unsafe-eval`, remote scripts, frames, objects, unsafe message HTML, or arbitrary network hosts.
 
-- Reduce XSS and unsafe resource loading risk in the desktop renderer.
-- Keep Vite development mode usable without weakening packaged builds.
-- Ensure message rendering does not require unsafe HTML.
-- Route external navigation through native-safe link handling rather than embedded remote pages.
-- Prepare a stricter production CSP before public beta packaging.
-
-## Current state
-
-- `index.html` is minimal and does not include inline scripts.
-- React entrypoint is loaded with a module script from `/src/main.tsx` in development.
-- Electron blocks untrusted navigation and blocks webview attachment in `electron/main.cts`.
-- Renderer code search did not find `dangerouslySetInnerHTML`, direct `innerHTML`, iframes, or webviews in active source files.
-- A production CSP is not enforced yet because dev/HMR and packaged Electron behavior need separate policy testing.
-
-## Recommended CSP directives
-
-### Packaged desktop app target
+Production directives:
 
 ```text
 default-src 'self';
 base-uri 'none';
 object-src 'none';
 frame-src 'none';
+frame-ancestors 'none';
 script-src 'self';
 style-src 'self' 'unsafe-inline';
-img-src 'self' data: blob: https:;
+img-src 'self' data: blob: <validated Supabase Storage origin>;
 font-src 'self' data:;
-connect-src 'self' https: wss:;
-media-src 'self' blob: https:;
+connect-src 'self' <validated Supabase HTTPS/WSS, LiveKit, remote-config and status origins>;
+media-src 'self' blob: <validated Supabase Storage origin>;
 worker-src 'self' blob:;
+manifest-src 'self';
 form-action 'none';
-frame-ancestors 'none';
 upgrade-insecure-requests
 ```
 
-Notes:
+`VITE_SUPABASE_URL` contributes its validated HTTPS origin to API/Storage/image/media access and the equivalent WSS origin to Realtime. `VITE_LIVEKIT_URL`, `VITE_REMOTE_CONFIG_URL`, and `VITE_STATUS_PAGE_URL` contribute only validated `https:` or `wss:` origins where applicable. Missing/invalid values remain blocked rather than widening to all HTTPS/WSS hosts.
 
-- `style-src 'unsafe-inline'` may be needed for Vite-injected CSS or runtime style attributes. Remove it only after verifying the packaged renderer does not require it.
-- `img-src` allows `data:` and `blob:` for local previews and generated avatars; private production attachment rules should still be enforced by storage access controls.
-- `connect-src` allows HTTPS and WSS because Supabase, Realtime, and LiveKit/WebRTC signaling require network connections.
-- `frame-src 'none'` and `object-src 'none'` match Picom's no-embedded-remote-content posture.
+`style-src 'unsafe-inline'` remains because current React surfaces use inline style values. It does not allow inline scripts. Remove it only after a focused nonce/hash or style migration plus packaged regression testing.
 
-### Local development policy
+## Development policy
 
-Development mode needs looser rules for Vite HMR and local dev server connections:
+Local development uses the same base policy and adds only:
 
-```text
-default-src 'self' http://127.0.0.1:5173;
-script-src 'self' 'unsafe-eval' http://127.0.0.1:5173;
-style-src 'self' 'unsafe-inline' http://127.0.0.1:5173;
-img-src 'self' data: blob: https: http://127.0.0.1:5173;
-connect-src 'self' http://127.0.0.1:5173 ws://127.0.0.1:5173 https: wss:;
-object-src 'none';
-frame-src 'none';
-base-uri 'none'
-```
+- `http://127.0.0.1:5173` for the Vite module server.
+- `ws://127.0.0.1:5173` for HMR.
+- `script-src 'unsafe-eval'` for Vite development tooling.
 
-This policy is for local dev only and must not be copied into packaged production builds unchanged.
+Development removes `upgrade-insecure-requests`. These exceptions are selected by Vite's `serve` command and are absent from production builds.
 
-## Resource loading rules
+Vite dev/preview responses also set:
 
-### Scripts
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: no-referrer`
+- `X-Frame-Options: DENY`
+- restrictive `Permissions-Policy` for camera, geolocation, payment, and USB
 
-- Allow app-bundled scripts only in packaged builds.
-- Do not load third-party scripts in the renderer.
-- Do not use dynamic remote code loading.
-- Do not add plugin runtime script execution for MVP.
+Microphone and screen capture are controlled through explicit Electron/WebRTC permission flows, not a broad browser Permissions-Policy grant.
 
-### Styles
+## Resource rules
 
-- Prefer bundled CSS and design tokens.
-- Keep any inline style allowance documented and revisit before beta packaging.
-- Do not load remote CSS.
+- Scripts and CSS are bundled; no remote code or plugin runtime is loaded.
+- Local previews/generated artwork use `data:` or `blob:` images.
+- Production attachment images/media use the configured Supabase Storage origin and still require Storage/RLS authorization.
+- LiveKit WebRTC signaling uses the configured origin; media transport security and token authorization remain separate controls.
+- External pages never render in iframe/webview/object elements and open only through `externalLinkService` safe IPC.
+- Deep links route through `deepLinkService` validation.
 
-### Images
+## Message and preview safety
 
-Allowed image sources:
+User messages, profile text, comments, and link-preview copy render as React text nodes. The source gate rejects `dangerouslySetInnerHTML`, direct `innerHTML` assignment, iframe, webview, and object embedding. Do not weaken CSP to support untrusted provider HTML.
 
-- App-bundled assets.
-- `data:` and `blob:` for local previews/generated placeholders.
-- Supabase Storage/object storage URLs once access rules are configured.
+## Release verification
 
-Rejected image behavior:
-
-- Do not inject raw HTML for link previews.
-- Do not allow arbitrary `file:` image paths in renderer content.
-
-### Connections
-
-Allowed connection sources:
-
-- Local Vite dev server in development.
-- Supabase API and Realtime endpoints in API mode.
-- LiveKit signaling endpoint in voice/screen-share mode.
-- Future status/support URLs only through controlled service configuration.
-
-### Frames and objects
-
-- No iframes for MVP content.
-- No Electron webviews.
-- No object/embed loading.
-
-## Message and link rendering assumptions
-
-- User-generated message text should be rendered as text/React nodes, not unsafe HTML.
-- Link previews must not inject provider HTML.
-- External URLs should use `externalLinkService` and Electron's safe external open IPC path.
-- Deep links should use `deepLinkService`, not external link handling.
-
-## Implementation path
-
-1. Keep this policy documented while renderer and Supabase/LiveKit URLs stabilize.
-2. Add a production CSP injection point before public beta packaging:
-   - Option A: meta tag generated for packaged builds only.
-   - Option B: Electron response header injection for `file://`/local renderer content if practical.
-3. Add an automated packaged smoke test that verifies the CSP does not block boot.
-4. Tighten `style-src` and `img-src` once attachment delivery rules are finalized.
+1. Build with the exact approved public Supabase/LiveKit/remote-config/status URLs.
+2. Run `npm run build` followed by `npm run csp:smoke`.
+3. Inspect `dist/index.html`; production CSP must exist and must not include `unsafe-eval`.
+4. Run packaged startup, auth, message, upload, Realtime, voice, and screen-share smoke on Windows/Linux/macOS.
+5. Treat required-flow CSP violations as release blockers. Add only the exact reviewed origin/directive.
+6. Verify backend/API, Storage, and Edge Functions enforce their own CORS/security headers; renderer CSP is not backend authorization.
 
 ## Remaining risks
 
-- CSP is documented but not enforced yet.
-- Supabase/LiveKit host allowlists are not fully enumerated because environment URLs are configurable.
-- `style-src 'unsafe-inline'` may remain necessary until packaged build CSS is audited.
-- Image previews and uploaded attachments require storage access rules beyond CSP.
-
-## Required checks
-
-```bash
-npm run csp:smoke
-npm run electron:security:smoke
-npm run typecheck
-npm run build
-```
-
-## Decision
-
-Do not enforce a production CSP in this task. Keep the current app stable and add a documented CSP target plus a smoke test that prevents unsafe renderer patterns from being introduced silently.
+- Meta CSP protects the renderer document but cannot replace backend headers, RLS, Storage policy, token validation, or safe IPC.
+- Incorrect build-time endpoints intentionally break connected features and require a corrected rebuild.
+- Inline styles remain allowed until migrated.
+- External user-supplied image URLs outside approved Storage are intentionally blocked.
