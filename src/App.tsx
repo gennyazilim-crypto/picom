@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MouseEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { currentUserId, mockCommunities } from "./data/mockCommunities";
 import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
 import { mockMentionItems } from "./data/mockMentions";
@@ -30,13 +30,12 @@ import { MemberSidebar } from "./components/MemberSidebar";
 import { ImagePreviewModal } from "./components/ImagePreviewModal";
 import { UserProfilePopover } from "./components/UserProfilePopover";
 import { DesktopContextMenu } from "./components/DesktopContextMenu";
-import { SettingsModal } from "./components/SettingsModal";
 import { TermsReacceptPrompt } from "./components/legal/TermsReacceptPrompt";
 import { ToastStack } from "./components/ToastStack";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
-import { OnboardingFlow } from "./components/onboarding/OnboardingFlow";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
+import { VoiceRoomView } from "./components/VoiceRoomView";
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { DeleteChannelModal, EditChannelModal, type EditChannelFormValue } from "./components/ChannelManagementModals";
@@ -44,10 +43,7 @@ import { MemberModerationModal } from "./components/MemberModerationModal";
 import type { Channel } from "./types/community";
 import type { MemberModerationAction } from "./types/memberModeration";
 import { AppLockScreen } from "./components/AppLockScreen";
-import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
-import { ProfileView } from "./components/ProfileView";
-import { DirectMessagesView } from "./components/DirectMessagesView";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { directMessageService } from "./services/supabase/directMessageService";
@@ -63,10 +59,6 @@ import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
 import { advancedSearchService, type AdvancedSearchResult } from "./services/advancedSearchService";
 import { termsAcceptanceService } from "./services/termsAcceptanceService";
 import { savedMessageService, type SavedMessageRecord } from "./services/savedMessageService";
-import { SavedMessagesView } from "./components/SavedMessagesView";
-import { DiscoveryView } from "./components/DiscoveryView";
-import { FriendsView } from "./components/FriendsView";
-import { VoiceRoomView } from "./components/VoiceRoomView";
 import { SafeModeBanner } from "./components/SafeModeBanner";
 import { CrashRecoveryDialog } from "./components/CrashRecoveryDialog";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
@@ -139,6 +131,15 @@ import { canManageChannels, canSendMessage, canViewChannel, filterCommunityForAc
 import { canModerateCommunityMember } from "./services/permissions/communityPermissions";
 import { memberManagementService } from "./services/memberManagementService";
 
+const SettingsModal = lazy(() => import("./components/SettingsModal").then((module) => ({ default: module.SettingsModal })));
+const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
+const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
+const ProfileView = lazy(() => import("./components/ProfileView").then((module) => ({ default: module.ProfileView })));
+const DirectMessagesView = lazy(() => import("./components/DirectMessagesView").then((module) => ({ default: module.DirectMessagesView })));
+const SavedMessagesView = lazy(() => import("./components/SavedMessagesView").then((module) => ({ default: module.SavedMessagesView })));
+const DiscoveryView = lazy(() => import("./components/DiscoveryView").then((module) => ({ default: module.DiscoveryView })));
+const FriendsView = lazy(() => import("./components/FriendsView").then((module) => ({ default: module.FriendsView })));
+
 const overlayIcons = mvpUiIconMap.overlays;
 
 const fallbackCurrentUser: Member = {
@@ -189,6 +190,14 @@ const initialVoiceSnapshot: VoiceServiceSnapshot = {
   error: null,
   errorCode: null,
 };
+
+function DeferredViewBoundary({ children, label = "Opening Picom view" }: { children: ReactNode; label?: string }) {
+  return (
+    <Suspense fallback={<main className="deferred-view-fallback" role="status"><span><AppIcon name="home" size="lg" /></span><strong>{label}</strong></main>}>
+      {children}
+    </Suspense>
+  );
+}
 
 type CommandPaletteProps = {
   communities: Community[];
@@ -2001,6 +2010,7 @@ export function App() {
       <>
         <DesktopAppShell>
           <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
+          <DeferredViewBoundary label="Preparing onboarding">
           <OnboardingFlow
             userId={authSession.user.id}
             initialDisplayName={authSession.user.displayName || profileSettings.displayName || currentUser.displayName}
@@ -2012,6 +2022,7 @@ export function App() {
             onThemeChange={setTheme}
             onComplete={finishFirstRunOnboarding}
           />
+          </DeferredViewBoundary>
         </DesktopAppShell>
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
@@ -2391,6 +2402,7 @@ export function App() {
             }}
           />
           {activeView === "discovery" ? (
+            <DeferredViewBoundary label="Opening discovery">
             <DiscoveryView
               communities={communities}
               currentUserId={directMessageUserId}
@@ -2403,7 +2415,9 @@ export function App() {
               }}
               onReport={(community) => setReportTarget({ targetType: "community", targetId: community.id, communityId: community.id, label: community.name })}
             />
+            </DeferredViewBoundary>
           ) : activeView === "mentionFeed" ? (
+            <DeferredViewBoundary label="Opening Mention Feed">
             <div className="mention-feed-shell">
               <MentionFeedMain
                 items={visibleMentionItems}
@@ -2462,7 +2476,9 @@ export function App() {
                 onOpenProfile={openProfile}
               />
             </div>
+            </DeferredViewBoundary>
           ) : activeView === "profile" && selectedProfileMember && selectedUserProfile ? (
+            <DeferredViewBoundary label="Opening profile">
             <ProfileView
               member={selectedProfileMember}
               profile={selectedUserProfile}
@@ -2483,9 +2499,13 @@ export function App() {
                 { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
               ])}
             />
+            </DeferredViewBoundary>
           ) : activeView === "savedMessages" ? (
+            <DeferredViewBoundary label="Opening saved messages">
             <SavedMessagesView items={savedMessages} communities={communities} onBack={() => setActiveView("community")} onOpen={(item) => { const community=communities.find((candidate)=>candidate.id===item.communityId);const message=community?.messages.find((candidate)=>candidate.id===item.messageId);if(community&&message)jumpToMessage(community,message);else pushToast("This saved message is unavailable or inaccessible.","error"); }} onUnsave={(item) => { void savedMessageService.unsaveMessage(item.messageId).then(async (ok) => { if (ok) setSavedMessages(await savedMessageService.getSavedMessages()); else pushToast("Saved Messages could not be updated.", "error"); }); }} />
+            </DeferredViewBoundary>
           ) : activeView === "directMessages" ? (
+            <DeferredViewBoundary label="Opening direct messages">
             <DirectMessagesView
               conversations={directConversations}
               activeConversationId={activeDirectConversationId}
@@ -2498,7 +2518,9 @@ export function App() {
                 if (member) openProfilePage(member);
               }}
             />
+            </DeferredViewBoundary>
           ) : activeView === "friends" ? (
+            <DeferredViewBoundary label="Opening friends">
             <FriendsView
               friends={friendState.friends}
               requests={friendState.requests}
@@ -2517,6 +2539,7 @@ export function App() {
               onRemoveFriend={removeFriend}
               onBlockFriend={blockFriend}
             />
+            </DeferredViewBoundary>
           ) : (
             <>
               <CommunitySidebar
@@ -2598,6 +2621,7 @@ export function App() {
                 }
               />
               {displayedActiveChannel.type === "voice" ? (
+                <DeferredViewBoundary label="Opening voice room">
                 <VoiceRoomView
                   community={displayedActiveCommunity}
                   channel={displayedActiveChannel}
@@ -2609,6 +2633,7 @@ export function App() {
                   onStartScreenShare={startActiveVoiceScreenShare}
                   onStopScreenShare={stopActiveVoiceScreenShare}
                 />
+                </DeferredViewBoundary>
               ) : (
               <ChatMain
                 community={displayedActiveCommunity}
@@ -2741,7 +2766,7 @@ export function App() {
           pushToast("Channel deleted.", "success");
         }}
       /> : null}
-      {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /> : null}
+      {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /></Suspense> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {memberModerationTarget ? <MemberModerationModal
         member={memberModerationTarget.member}

@@ -4,7 +4,6 @@ import { App } from "./App";
 import { DesktopStartupErrorBoundary } from "./components/DesktopStartupErrorBoundary";
 import { deepLinkService } from "./services/deepLinkService";
 import { safeModeService } from "./services/safeModeService";
-import { sleepWakeResumeService } from "./services/sleepWakeResumeService";
 import { crashReporterService } from "./services/crashReporterService";
 import { localDataMigrationService } from "./services/localDataMigrationService";
 import "./styles.css";
@@ -32,16 +31,37 @@ function getRootElement(): HTMLElement {
   return rootElement;
 }
 
+type IdleWindow = Window & typeof globalThis & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+};
+
+function scheduleOptionalRendererServices(safeModeActive: boolean): void {
+  const start = () => {
+    crashReporterService.initialize();
+    void import("./services/sleepWakeResumeService").then((sleepWakeModule) => {
+      if (!safeModeActive) sleepWakeModule.sleepWakeResumeService.start();
+    }).catch(() => {
+      console.warn("Optional renderer services could not start; the desktop shell remains available.");
+    });
+  };
+
+  const idleWindow = window as IdleWindow;
+  if (idleWindow.requestIdleCallback) {
+    idleWindow.requestIdleCallback(start, { timeout: 1_200 });
+    return;
+  }
+
+  window.setTimeout(start, 0);
+}
+
 function bootstrapRenderer(): void {
   markRuntime();
   const migration = localDataMigrationService.migrateOnStartup();
   if (!migration.ok) safeModeService.enableSafeMode("local_data_migration_failed");
-  crashReporterService.initialize();
   const safeMode = safeModeService.getStartupState();
 
   if (!safeMode.active) {
     deepLinkService.startNativeListener();
-    sleepWakeResumeService.start();
   }
 
   ReactDOM.createRoot(getRootElement()).render(
@@ -51,6 +71,8 @@ function bootstrapRenderer(): void {
       </DesktopStartupErrorBoundary>
     </React.StrictMode>
   );
+
+  scheduleOptionalRendererServices(safeMode.active);
 }
 
 bootstrapRenderer();
