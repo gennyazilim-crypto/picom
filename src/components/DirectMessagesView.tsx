@@ -11,7 +11,7 @@ type DirectMessagesViewProps = {
   onSelectConversation: (conversationId: string) => void;
   onBackToCommunity: () => void;
   onOpenProfile: (userId: string) => void;
-  onSendMessage: (conversationId: string, body: string) => void;
+  onSendMessage: (conversationId: string, body: string) => Promise<boolean>;
 };
 
 type ConversationProps = Pick<DirectMessagesViewProps, "conversations" | "activeConversationId" | "onSelectConversation">;
@@ -55,29 +55,36 @@ export function DirectConversationHeader({ conversation, onBack, onOpenProfile }
   );
 }
 
-function DirectMessageComposer({ conversationId, onSendMessage }: { conversationId: string; onSendMessage: (conversationId: string, body: string) => void }) {
+function DirectMessageComposer({ conversationId, onSendMessage }: { conversationId: string; onSendMessage: (conversationId: string, body: string) => Promise<boolean> }) {
   const [body, setBody] = useState(() => messageDraftService.getDraft({ directConversationId: conversationId })?.text ?? "");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => setBody(messageDraftService.getDraft({ directConversationId: conversationId })?.text ?? ""), [conversationId]);
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const value = body.trim();
-    if (!value) return;
-    onSendMessage(conversationId, value);
+    if (!value || sending) return;
+    setSending(true);
+    setError(null);
+    const sent = await onSendMessage(conversationId, value);
+    setSending(false);
+    if (!sent) { setError("Message was not sent. Your draft is still here."); return; }
     messageDraftService.clearDraft({ directConversationId: conversationId });
     setBody("");
   };
 
   return (
-    <form className="direct-composer" onSubmit={submit}>
+    <form className="direct-composer" onSubmit={(event) => void submit(event)} aria-busy={sending}>
       <button type="button" aria-label="Attach file" disabled><AppIcon name="paperclip" size="sm" /></button>
-      <textarea value={body} onChange={(event) => { setBody(event.target.value); messageDraftService.setDraft({ directConversationId: conversationId }, event.target.value); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Message privately" rows={1} maxLength={4000} />
-      <button type="submit" className="direct-send" aria-label="Send direct message" disabled={!body.trim()}><AppIcon name="send" size="sm" /></button>
+      <textarea value={body} disabled={sending} onChange={(event) => { setBody(event.target.value); setError(null); messageDraftService.setDraft({ directConversationId: conversationId }, event.target.value); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Message privately" rows={1} maxLength={4000} />
+      <button type="submit" className="direct-send" aria-label="Send direct message" disabled={!body.trim() || sending}><AppIcon name="send" size="sm" /></button>
+      {error ? <span className="direct-composer-error" role="alert">{error}</span> : null}
     </form>
   );
 }
 
-export function DirectChatMain({ conversation, currentUserId, onBack, onOpenProfile, onSendMessage }: { conversation?: DirectConversation; currentUserId: string; onBack: () => void; onOpenProfile: (userId: string) => void; onSendMessage: (conversationId: string, body: string) => void }) {
+export function DirectChatMain({ conversation, currentUserId, onBack, onOpenProfile, onSendMessage }: { conversation?: DirectConversation; currentUserId: string; onBack: () => void; onOpenProfile: (userId: string) => void; onSendMessage: (conversationId: string, body: string) => Promise<boolean> }) {
   if (!conversation) {
     return <main className="direct-chat-panel"><div className="empty-state"><AppIcon name="inbox" size="xl" /><strong>Select a conversation</strong><p>Choose a recent conversation or start a direct message from a profile.</p></div></main>;
   }

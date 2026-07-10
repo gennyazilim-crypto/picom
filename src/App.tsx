@@ -1508,16 +1508,21 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, communities, directConversations, pushToast]);
 
-  const sendDirectMessageLocal = useCallback((conversationId: string, body: string) => {
+  const sendDirectMessageLocal = useCallback(async (conversationId: string, body: string): Promise<boolean> => {
     const conversation = directConversations.find((candidate) => candidate.id === conversationId);
-    if (conversation && !userBlockingService.canMessageUser(conversation.participantUserId)) { pushToast("Direct messages with this blocked user are disabled.", "error"); return; }
+    if (conversation && !userBlockingService.canMessageUser(conversation.participantUserId)) { pushToast("Direct messages with this blocked user are disabled.", "error"); return false; }
     const createdAt = new Date().toISOString();
     const clientMessageId = `dm-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? {
       ...conversation, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0,
       messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: directMessageUserId, body, createdAt }],
     } : conversation));
-    if (dataSourceService.getStatus().isSupabase) void directMessageService.sendDirectMessage({ conversationId, body, clientMessageId }).then((result) => { if (result.ok) handleDirectRealtimeInsert(result.data); else { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.filter((message) => message.clientMessageId !== clientMessageId) } : item)); pushToast(result.error.message, "error"); } });
+    if (dataSourceService.getStatus().isMock) return true;
+    const result = await directMessageService.sendDirectMessage({ conversationId, body, clientMessageId });
+    if (result.ok) { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? result.data : message), lastMessagePreview: result.data.body, updatedAt: result.data.createdAt } : item)); return true; }
+    setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.filter((message) => message.clientMessageId !== clientMessageId) } : item));
+    pushToast(result.error.message, "error");
+    return false;
   }, [directConversations, directMessageUserId, pushToast]);
 
   const handleDirectRealtimeInsert = useCallback((message: DirectConversation["messages"][number]) => {

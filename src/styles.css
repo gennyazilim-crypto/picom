@@ -4392,3 +4392,6 @@ body{
 
 /* Announcement following stays compact inside the desktop chat header. */
 .announcement-follow-button{height:30px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:9px;background:var(--surface-soft);color:var(--text-secondary);padding:0 9px;cursor:pointer;font-size:10px;font-weight:800}.announcement-follow-button:hover:not(:disabled){border-color:color-mix(in srgb,var(--warning) 45%,var(--border));color:var(--text-primary)}.announcement-follow-button.active{background:color-mix(in srgb,var(--warning) 12%,var(--surface));color:var(--warning)}.announcement-follow-button:disabled{cursor:not-allowed;opacity:.55}
+
+/* DM send failures stay compact and preserve the desktop composer layout. */
+.direct-composer-error{grid-column:2/-1;color:var(--danger);font-size:10px;line-height:1.35}
