@@ -297,6 +297,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["thread_read_states"]["Row"]>;
         Relationships: [];
       };
+      announcement_channel_followers: {
+        Row: { channel_id: string; user_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["announcement_channel_followers"]["Row"]> & Pick<Database["public"]["Tables"]["announcement_channel_followers"]["Row"], "channel_id" | "user_id">;
+        Update: never;
+        Relationships: [];
+      };
       forum_posts: {
         Row: { id: string; community_id: string; channel_id: string; parent_message_id: string; thread_id: string; title: string; body: string; author_id: string; tags: string[]; status: "open" | "resolved"; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["forum_posts"]["Row"]> & Pick<Database["public"]["Tables"]["forum_posts"]["Row"], "channel_id" | "title" | "author_id">;

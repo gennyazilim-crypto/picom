@@ -11,6 +11,9 @@ type ChatHeaderProps = {
   realtimeStatus: RealtimeConnectionStatus;
   membersVisible: boolean;
   onToggleMembers: () => void;
+  announcementFollowing?: boolean;
+  announcementReadOnly?: boolean;
+  onToggleAnnouncementFollowing?: () => void;
 };
 
 const realtimeLabels: Record<RealtimeConnectionStatus, string> = {
@@ -21,7 +24,7 @@ const realtimeLabels: Record<RealtimeConnectionStatus, string> = {
   disconnected: "Disconnected",
 };
 
-export function ChatHeader({ channel, realtimeStatus, membersVisible, onToggleMembers }: ChatHeaderProps) {
+export function ChatHeader({ channel, realtimeStatus, membersVisible, onToggleMembers, announcementFollowing = false, announcementReadOnly = false, onToggleAnnouncementFollowing }: ChatHeaderProps) {
   const channelIcon = channel.type === "voice" ? channelIcons.voiceChannel : channel.type === "announcement" ? "bell" : channel.type === "forum" ? "inbox" : channelIcons.textChannel;
   return (
     <header className="chat-header">
@@ -33,6 +36,7 @@ export function ChatHeader({ channel, realtimeStatus, membersVisible, onToggleMe
         </div>
       </div>
       <div className="chat-actions">
+        {channel.type === "announcement" ? <button type="button" className={`announcement-follow-button ${announcementFollowing ? "active" : ""}`} aria-pressed={announcementFollowing} disabled={!onToggleAnnouncementFollowing} title={announcementReadOnly ? "Join the community to follow announcements" : undefined} onClick={onToggleAnnouncementFollowing}><AppIcon name="bell" size="sm" />{announcementFollowing ? "Following" : "Follow"}</button> : null}
         <span className={`realtime-pill ${realtimeStatus}`} title={`Realtime status: ${realtimeLabels[realtimeStatus]}`}>
           <span aria-hidden="true" />
           {realtimeLabels[realtimeStatus]}

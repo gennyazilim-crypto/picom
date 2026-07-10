@@ -14,6 +14,7 @@ import { ForumChannelView } from "./ForumChannelView";
 import { canSendMessage } from "../services/permissions/communityPermissions";
 import { analyticsService } from "../services/analyticsService";
 import type { ScreenShareQualityPresetId } from "../utils/screenShareQuality";
+import { announcementChannelService } from "../services/announcementChannelService";
 
 type ToastTone = "info" | "error" | "success";
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
@@ -106,6 +107,14 @@ export function ChatMain({
   const currentMember = useMemo(() => community.members.find((member) => member.userId === currentUserId), [community.members, currentUserId]);
   const composerDisabledReason = useMemo(() => getComposerDisabledReason(access, channel), [access, channel]);
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
+  const [announcementFollowing, setAnnouncementFollowing] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (channel.type !== "announcement") { setAnnouncementFollowing(false); return () => { active = false; }; }
+    void announcementChannelService.isFollowing(channel.id, currentUserId).then((following) => { if (active) setAnnouncementFollowing(following); });
+    return () => { active = false; };
+  }, [channel.id, channel.type, currentUserId]);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -187,7 +196,7 @@ export function ChatMain({
 
   return (
     <main className="chat-main">
-      <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} />
+      <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} announcementFollowing={announcementFollowing} announcementReadOnly={access.isVisitor} onToggleAnnouncementFollowing={channel.type === "announcement" && !access.isVisitor ? () => { void announcementChannelService.setFollowing({ channelId: channel.id, userId: currentUserId, following: !announcementFollowing, canFollow: !access.isVisitor }).then((result) => { if (result.ok) { setAnnouncementFollowing(result.data); pushToast(result.data ? "Following announcements." : "Announcement follow disabled.", "success"); } else pushToast(result.message, "error"); }); } : undefined} />
 
       {channel.type === "voice" ? (
         <VoiceRoomView

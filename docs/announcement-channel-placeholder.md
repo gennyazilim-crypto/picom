@@ -1,70 +1,27 @@
-﻿# Announcement Channel Placeholder
+# Announcement Channels Production Behavior
 
-Status: post-MVP placeholder
+Announcement channels use Picom's normal message ordering, realtime, offline queue, and visibility rules with a stricter posting permission.
 
-Announcement channels are planned as future channels with restricted posting and clearer broadcast styling. This placeholder documents the safe path without changing current text channel behavior.
+## Posting and read-only behavior
 
-## MVP stance
+Only community owners, administrators, or roles with `sendAnnouncements` can post. Backend `can_send_message_to_channel` is authoritative and the Composer displays a clear read-only reason for everyone else. Visitors may read only when the channel/community public-read policy allows it; private announcement content remains protected by channel RLS.
 
-- Announcement channels are not enabled in the current MVP runtime.
-- Existing text and voice channels remain unchanged.
-- MessageComposer permission states are not changed by this task.
-- No new channel icon or sidebar behavior is added yet.
+## Following
 
-## Future channel fields
+Joined members can store a self-owned Follow/Following preference from the channel header. This preference prepares future notification fan-out but does not bypass muted channels, DND, quiet hours, notification permission, or membership checks. Visitors cannot follow until joining.
 
-A future channel record can include:
+## distinct styling
 
-- `is_announcement` boolean
-- `announcement_following_enabled` placeholder
-- `send_announcements_permission_key` placeholder
+Announcement channels use the Coolicons bell treatment, distinct styling through warning/design tokens, and subtle message borders without changing the desktop four-column layout. Normal text channels remain visually unchanged.
 
-This should not replace existing `sendMessages` checks until backend rules are ready.
+## Product boundary
 
-## Supabase/RLS expectations
+No cross-posting, external syndication, RSS publishing, webhook forwarding, or automatic copy into other communities is implemented. Any future distribution feature requires explicit authorization, per-target permission checks, audit logging, and abuse limits.
 
-- Users can view announcement channels only if they can view the channel.
-- Posting requires a future permission such as `sendAnnouncements` or `manageChannels`.
-- Unauthorized users should receive a consistent permission error.
-- Private announcement channels must not leak messages, previews, or search results.
+## RLS test checklist
 
-## Future UI behavior
-
-Potential desktop UI updates:
-
-- Channel icon variant for announcement channels using AppIcon/Coolicons only.
-- MessageComposer shows read-only state when user cannot post.
-- Channel settings can toggle announcement mode for permitted admins.
-- Announcement messages can use subtle special styling while keeping Picom design tokens.
-
-No mobile UI, bottom navigation, or web-first layout should be introduced.
-
-## Future notification behavior
-
-Announcement notifications should respect:
-
-- notification settings
-- muted communities/channels
-- DND
-- quiet hours
-- mention override settings if configured
-
-Notification payloads should use safe metadata and avoid tokens, authorization headers, or private raw diagnostics.
-
-## Realtime behavior
-
-Future announcement messages should use the normal message realtime pipeline so message ordering, duplicate prevention, and offline retry behavior stay consistent.
-
-## Feature flag behavior
-
-A future `enableAnnouncementChannels` flag should hide creation/toggle entry points. Backend permission checks and RLS remain mandatory.
-
-## Implementation decision
-
-This task is documentation-only. Runtime channel type changes, composer restrictions, and Supabase migrations are intentionally deferred.
-
-## Manual verification
-
-- Confirm existing channel switching still works.
-- Confirm MessageComposer still works in normal text channels.
-- Confirm no announcement channel UI appears in the current MVP shell.
+1. Owner/admin/`sendAnnouncements` role can post.
+2. Normal member and visitor inserts are rejected by message RLS.
+3. Private channel messages and follower rows are inaccessible across communities.
+4. A user can insert/delete only their own follow preference.
+5. Following does not change channel read permission or notification mute behavior.
