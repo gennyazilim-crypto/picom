@@ -35,6 +35,10 @@ win:
         - x64
   artifactName: Picom-${version}-Windows-${arch}.${ext}
   # Production code-signing placeholder. Do not commit certificate files or passwords.
+  # Local/internal builds remain intentionally unsigned. Protected release CI injects
+  # the approved managed-signing hook or electron-builder CSC_LINK/CSC_KEY_PASSWORD.
+  # Timestamp and publisher verification are release gates; see
+  # docs/release/windows-code-signing-final.md.
   # certificateFile: ${env.WINDOWS_CERTIFICATE_FILE}
   # certificatePassword: ${env.WINDOWS_CERTIFICATE_PASSWORD}
 
