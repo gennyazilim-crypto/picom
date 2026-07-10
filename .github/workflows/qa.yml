@@ -48,6 +48,9 @@ jobs:
       - name: Build renderer and Electron main
         run: npm run build
 
+      - name: Enforce renderer performance budgets
+        run: npm run performance:budget:ci
+
       - name: Verify release checksum generator
         run: npm run release:checksums:smoke
 

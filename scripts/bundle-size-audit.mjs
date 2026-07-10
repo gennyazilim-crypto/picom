@@ -16,7 +16,8 @@ if (isSmoke) {
     "Initial renderer JavaScript target",
     "npm run bundle:size:audit",
     "Heavy dependency watchlist",
-    "CI placeholder",
+    "CI enforcement",
+    "performance:budget:ci",
     "Vite currently reports a chunk-size warning",
   ];
   const missing = required.filter((item) => !doc.includes(item));

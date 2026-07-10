@@ -42,7 +42,7 @@ npm run build
 npm run bundle:size:audit
 ```
 
-The audit reads `dist/assets` and reports the largest generated files. It does not fail the build by default because current MVP chunks may exceed ideal targets while LiveKit and advanced views are still being split.
+The audit reads `dist/assets` and reports the largest generated files. CI additionally runs `npm run performance:budget:ci`: desired target overruns warn with a named exception, while hard caps fail the job.
 
 Use the output during release-candidate dry runs and compare it against `docs/performance-budget.md`.
 
@@ -66,15 +66,15 @@ Before adding a dependency, answer:
 - UI/image/chart/markdown/syntax libraries: avoid until they are real MVP requirements.
 - Avatar/image assets: optimize local assets and prefer generated placeholders where practical.
 
-## CI placeholder
+## CI enforcement
 
-Future CI should:
+CI now:
 
 1. Run `npm run build`.
-2. Run `npm run bundle:size:audit`.
-3. Store the audit output as a release artifact.
-4. Fail only on explicit release thresholds once enough baseline data exists.
-5. Link failures to `docs/performance-budget.md` and the release-candidate dry run.
+2. Run `npm run performance:budget:ci`.
+3. Fail on the explicit hard caps in `docs/performance-budget.md`.
+4. Warn and print owner/remediation for target overruns.
+5. Keep startup/render/memory timings in the release-candidate dry run until deterministic runners exist.
 
 ## Current known risk
 

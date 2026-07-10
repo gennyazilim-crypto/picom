@@ -55,17 +55,28 @@ Performance regressions should be treated as release blockers when any of these 
 
 Non-blocking regressions can ship only when documented in release notes with an owner and follow-up task.
 
-## CI placeholder
+## CI enforcement
 
-A future CI job should:
+Every Windows and Ubuntu QA job now:
 
 1. Run `npm run build`.
-2. Parse Vite output or inspect `dist/assets` sizes.
-3. Compare initial JS/CSS assets against the budgets above.
-4. Run mock smoke tests with reduced motion enabled.
-5. Upload timing and bundle-size artifacts with the release candidate.
+2. Run `npm run performance:budget:ci` against `dist/assets`.
+3. Fail above hard caps and warn above targets.
 
-Until automated CI exists, release candidates should run this checklist manually and record results in the RC dry run document.
+Current enforceable artifact policy:
+
+| Measurement | Target/warn | Hard fail | Temporary exception owner |
+| --- | ---: | ---: | --- |
+| Initial renderer JavaScript total | 1,200 KiB | 1,650 KiB | `desktop-frontend`: split LiveKit and optional admin/profile surfaces before stable |
+| CSS total | 180 KiB | 240 KiB | `design-system`: consolidate legacy component styles |
+| Largest generated image | 768 KiB | 1,024 KiB | `desktop-brand`: optimize logo/large artwork |
+| Total generated assets | 2,800 KiB | 3,500 KiB | `desktop-frontend`: monitor while chunks are split |
+
+Targets remain the desired budgets. Hard caps are temporary baseline protections, not permission for permanent growth. Raising a hard cap requires a measured report, owner, reason, expiry milestone, and review in the pull request. Lower caps as remediation lands.
+
+Startup, render, interaction and memory budgets remain release-candidate/manual measurements until a deterministic packaged Electron performance runner exists on each supported OS. Do not fail CI from noisy wall-clock timings on shared runners. Record Windows/Linux/macOS results in the RC dry run; threshold regressions remain release blockers.
+
+Visual regression is enforced separately when stable screenshot baselines/tooling are available; this task adds no browser dependency.
 
 ## Implementation guardrails
 

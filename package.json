@@ -143,6 +143,7 @@
     "analytics:placeholder:smoke": "node scripts/analytics-placeholder-smoke-test.mjs",
     "data-migration:strategy:smoke": "node scripts/data-migration-strategy-smoke-test.mjs",
     "performance:budget:smoke": "node scripts/performance-budget-smoke-test.mjs",
+    "performance:budget:ci": "node scripts/performance-budget-ci.mjs",
     "bundle:size:audit": "node scripts/bundle-size-audit.mjs",
     "bundle:size:smoke": "node scripts/bundle-size-audit.mjs --smoke",
     "slo:smoke": "node scripts/slo-plan-smoke-test.mjs",

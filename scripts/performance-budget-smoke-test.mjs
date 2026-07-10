@@ -17,7 +17,9 @@ const required = [
   "measurement flows",
   "Recommended tools",
   "Regression policy",
-  "CI placeholder",
+  "CI enforcement",
+  "performance:budget:ci",
+  "Hard fail",
 ];
 
 const missing = required.filter((item) => !doc.includes(item));
