@@ -9,6 +9,7 @@ Picom does not enable production auto-update downloads in the current MVP. The a
 - `checkForUpdatesPlaceholder()` can be called from future UI without downloading anything.
 - Failure states can be represented with `download_failed` and `install_failed` placeholders.
 - No update endpoint, signing certificate, or update manifest is committed.
+- The beta enablement decision and staged rings are enforced by `docs/desktop-auto-update-beta-rollout.md`; the current decision is blocked, not silently enabled.
 
 ## Future integration points
 

@@ -825,6 +825,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <button onClick={() => simulateUpdateFailure("download")}>Simulate download failure</button>
                 <button onClick={() => simulateUpdateFailure("install")}>Simulate install failure</button>
                 <button onClick={() => simulateUpdateFailure("error")}>Simulate error</button>
+                <button onClick={() => setUpdateState(updateService.setRollbackAvailablePlaceholder())}>Rollback placeholder</button>
                 <button onClick={() => setUpdateState(updateService.retry())}>Retry</button>
                 <button onClick={() => setUpdateState(updateService.clearError())}>Clear error</button>
               </div>

@@ -83,6 +83,8 @@ Pause rollout or roll back when any of these are confirmed:
 
 ## Remote config and updateService alignment
 
+The controlled desktop updater gate is defined in `docs/desktop-auto-update-beta-rollout.md`. No beta ring may enable downloads until its signing, immutable manifest, compatibility, recovery, monitoring, and explicit approval evidence is complete.
+
 Current state:
 
 - Remote config is a safe configuration placeholder.
@@ -151,4 +153,3 @@ Out of scope for this rollout plan:
 - Public discovery marketplace
 - E2EE production
 - Advanced analytics
-
