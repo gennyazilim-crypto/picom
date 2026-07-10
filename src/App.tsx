@@ -2060,7 +2060,9 @@ export function App() {
   };
 
   const handleReportMessage = (message: Message) => {
-    setReportTarget({ communityId: activeCommunity.id, channelId: message.channelId, targetType: "message", targetId: message.id, label: message.body.slice(0, 80) || "Attachment message" });
+    const channel = activeCommunity.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === message.channelId);
+    const author = activeCommunity.members.find((member) => member.userId === message.authorId);
+    setReportTarget({ communityId: activeCommunity.id, channelId: message.channelId, targetType: "message", targetId: message.id, label: `Message by ${author?.displayName ?? "a member"} in #${channel?.name ?? "channel"}` });
   };
 
   const handleOpenThread = async (message: Message) => {

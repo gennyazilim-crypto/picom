@@ -1,0 +1,11 @@
+import fs from "node:fs";
+const modal = fs.readFileSync("src/components/ReportModal.tsx", "utf8");
+const service = fs.readFileSync("src/services/reportService.ts", "utf8");
+const app = fs.readFileSync("src/App.tsx", "utf8");
+const rls = fs.readFileSync("supabase/migrations/20260710004800_mvp_plus_security_hardening.sql", "utf8");
+for (const needle of ["Spam or scam", "Harassment", "Unsafe content", "Additional details", "Report in good faith", "Report received"]) if (!modal.includes(needle)) throw new Error(`Report modal is missing ${needle}`);
+for (const needle of ["sanitizeDescription", "REPORT_SECRET_PATTERN", "listCommunityReports"]) if (!service.includes(needle)) throw new Error(`Report service is missing ${needle}`);
+if (app.includes('label: message.body.slice(0, 80)')) throw new Error("Message body is still copied into report modal metadata.");
+for (const needle of ["Report message", "Report user", 'targetType: "community"']) if (!app.includes(needle)) throw new Error(`Report entry point is missing ${needle}`);
+for (const needle of ["reports_submit_visible_target", "public.can_view_channel", "public.is_community_member"]) if (!rls.includes(needle)) throw new Error(`Report RLS is missing ${needle}`);
+console.log("Content reporting UX polish smoke passed.");
