@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import "./DirectMessagesView.css";
 import type { DirectConversation, DirectMessage, DirectMessageAttachment } from "../types/directMessages";
 import type { Attachment } from "../types/community";
 import { dateTimeService } from "../services/dateTimeService";

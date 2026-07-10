@@ -87,6 +87,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: "./",
     plugins: [cspPlugin(csp), react()],
+    build: { manifest: true, cssCodeSplit: true },
     server: { host: "127.0.0.1", port: 5173, strictPort: true, headers: SECURITY_HEADERS },
     preview: { host: "127.0.0.1", headers: SECURITY_HEADERS },
   };

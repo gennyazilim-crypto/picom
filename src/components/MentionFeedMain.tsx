@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from "react";
+import "./MentionFeedMain.css";
 import type { Attachment, Community, Member } from "../types/community";
 import type { UpcomingEvent } from "../types/events";
 import type { FriendConnection } from "../types/friends";

@@ -8,6 +8,7 @@ const files = {
   hosted: ".github/workflows/hosted-validation.yml",
   packages: ".github/workflows/package-matrix.yml",
   release: ".github/workflows/release-gate.yml",
+  performance: ".github/workflows/renderer-performance.yml",
 };
 
 const contents = Object.fromEntries(
@@ -91,6 +92,12 @@ for (const command of [
   requireText("release", new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), command);
 }
 forbidText("release", /npm publish|gh release create|softprops\/action-gh-release/, "artifact publication");
+
+requireText("performance", /workflow_dispatch:/, "a manual trigger");
+requireText("performance", /ubuntu-latest/, "Ubuntu performance evidence");
+requireText("performance", /windows-latest/, "Windows performance evidence");
+requireText("performance", /npm run build/, "a production renderer build");
+requireText("performance", /npm run performance:budget:ci/, "the renderer performance budget gate");
 
 if (failures.length > 0) {
   console.error("GitHub Actions workflow contract failed:");

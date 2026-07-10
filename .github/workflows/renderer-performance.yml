@@ -1,0 +1,47 @@
+name: Picom Renderer Performance
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/**
+    tags:
+      - v*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderer-performance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  performance-budget:
+    name: Renderer budget (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer and Electron bundles
+        run: npm run build
+
+      - name: Enforce renderer performance budgets
+        run: npm run performance:budget:ci

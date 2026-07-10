@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import "./ProfileView.css";
 import type { Attachment, Community, Member } from "../types/community";
 import type { ProfileActivityItem, ProfileMediaItem, UserProfile } from "../types/profile";
 import { dateTimeService } from "../services/dateTimeService";
