@@ -100,8 +100,8 @@ export function MentionFeedMain({
         .sort(sortFollowing),
     [followedSet, items],
   );
-  const visibleItems = applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter);
-  const storyIds = stories.map((story) => story.id);
+  const visibleItems = useMemo(() => applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter), [activeFilter, activeTab, feedItems, followingItems]);
+  const storyIds = useMemo(() => stories.map((story) => story.id), [stories]);
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
   const openStory = (storyId: string) => {
     setActiveStoryId(storyId);

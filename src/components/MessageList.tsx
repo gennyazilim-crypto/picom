@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Community, Member, Message } from "../types/community";
 import { MessageItem } from "./MessageItem";
@@ -61,8 +61,12 @@ export function MessageList({
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const lastMessageId = messages[messages.length - 1]?.id;
-  const currentMember = community.members.find((member) => member.userId === currentUserId);
-  const currentRole = community.roles.find((role) => role.id === currentMember?.roleId);
+  const memberByUserId = useMemo(() => new Map(community.members.map((member) => [member.userId, member])), [community.members]);
+  const roleById = useMemo(() => new Map(community.roles.map((role) => [role.id, role])), [community.roles]);
+  const messageById = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages]);
+  const blockedUserIdSet = useMemo(() => new Set(blockedUserIds), [blockedUserIds]);
+  const currentMember = memberByUserId.get(currentUserId);
+  const currentRole = roleById.get(currentMember?.roleId ?? "");
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -95,12 +99,12 @@ export function MessageList({
   return (
     <div className={`message-list ${announcement ? "announcement-message-list" : ""}`} ref={listRef}>
       {messages.map((message, index) => {
-        const member = community.members.find((candidate) => candidate.userId === message.authorId) ?? community.members[0];
-        const role = community.roles.find((candidate) => candidate.id === member.roleId);
-        const replyToMessage = message.replyToMessageId ? messages.find((candidate) => candidate.id === message.replyToMessageId) : null;
-        const replyToMember = replyToMessage ? community.members.find((candidate) => candidate.userId === replyToMessage.authorId) : undefined;
+        const member = memberByUserId.get(message.authorId) ?? community.members[0];
+        const role = roleById.get(member.roleId);
+        const replyToMessage = message.replyToMessageId ? messageById.get(message.replyToMessageId) ?? null : null;
+        const replyToMember = replyToMessage ? memberByUserId.get(replyToMessage.authorId) : undefined;
         const ownMessage = message.authorId === currentUserId;
-        const blockedUserMessage = !ownMessage && blockedUserIds.includes(member.userId);
+        const blockedUserMessage = !ownMessage && blockedUserIdSet.has(member.userId);
 
         if (blockedUserMessage) {
           return (
