@@ -73,6 +73,12 @@ declare global {
           | { ok: true; native: true; muted: boolean }
           | { ok: false; native: true; error: string }
         >;
+        setCloseToTray: (
+          enabled: boolean
+        ) => Promise<
+          | { ok: true; native: true; enabled: boolean; supported: boolean }
+          | { ok: false; native: true; error: string }
+        >;
         showWindow: () => Promise<
           | { ok: true; native: true }
           | { ok: false; native: true; error: string }

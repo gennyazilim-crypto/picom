@@ -97,6 +97,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
   const [appLockSettings, setAppLockSettings] = useState(() => appLockService.getSettings());
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
+  const [closeToTrayEnabled, setCloseToTrayEnabled] = useState(() => trayService.getCloseToTrayEnabled());
   const [updateState, setUpdateState] = useState(() => updateService.getState());
   const [cacheSummary, setCacheSummary] = useState<CacheSummary | null>(null);
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
@@ -322,6 +323,15 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     setAccountDeletionConfirmText("");
     pushToast(result.data.message, "success");
     onAccountDeletionRequested();
+  };
+  const updateCloseToTray = async (enabled: boolean) => {
+    const result = await trayService.setCloseToTrayEnabled(enabled);
+    if (!result.ok) {
+      pushToast("Close to tray could not be updated.", "error");
+      return;
+    }
+    setCloseToTrayEnabled(enabled);
+    pushToast(enabled ? "Close to tray enabled." : "Close to tray disabled.", "success");
   };
   const cancelAccountDeletion = async () => {
     const result = await accountDeletionService.cancelDeletion();
@@ -830,6 +840,13 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                   <small>Prepared for future tray startup behavior; currently stored as a local preference.</small>
                 </span>
                 <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => updateStartMinimizedToTray(event.target.checked)} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Close to tray</strong>
+                  <small>When supported, the close button hides Picom. Use Quit from the tray menu to exit completely.</small>
+                </span>
+                <input type="checkbox" checked={closeToTrayEnabled} onChange={(event) => void updateCloseToTray(event.target.checked)} />
               </label>
               <div className="settings-status-card" aria-label="App lock placeholder">
                 <span>App lock</span>

@@ -42,6 +42,10 @@ const docs = read(files.docs);
   "createTray();",
   "IPC_CHANNELS.traySetStatus",
   "IPC_CHANNELS.traySetMuted",
+  "IPC_CHANNELS.traySetCloseToTray",
+  'mainWindow.on("close"',
+  "closeToTrayEnabled && tray",
+  'app.on("before-quit"',
   "IPC_CHANNELS.trayAction",
 ].forEach((needle) => assertIncludes(main, needle, `main tray integration ${needle}`));
 
@@ -49,6 +53,7 @@ const docs = read(files.docs);
   "tray: {",
   "setStatus: (status: TrayStatus)",
   "setMuted: (muted: boolean)",
+  "setCloseToTray: (enabled: boolean)",
   "showWindow: ()",
   "quit: ()",
   "onAction: (callback: (payload: TrayActionPayload) => void)",
@@ -59,6 +64,8 @@ const docs = read(files.docs);
   "window.picomDesktop?.tray",
   "setStatus(status: TrayStatus)",
   "setMuted(muted: boolean)",
+  "setCloseToTrayEnabled(enabled: boolean)",
+  "syncCloseToTrayPreference()",
   "showWindow()",
   "quit()",
   "onAction(callback",

@@ -1133,6 +1133,8 @@ export function App() {
   useEffect(() => {
     if (safeMode.active) return;
 
+    void trayService.syncCloseToTrayPreference();
+
     const handleTrayAction = (payload: PicomTrayActionPayload) => {
       if (payload.action === "open") {
         pushToast("Picom restored from the system tray.", "info");

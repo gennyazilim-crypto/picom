@@ -55,6 +55,8 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let trayStatus: TrayStatus = "online";
 let trayMuted = false;
+let closeToTrayEnabled = false;
+let isQuitting = false;
 const pendingDeepLinks: string[] = [];
 let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null;
 const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
@@ -292,6 +294,7 @@ function createTrayMenu(): Electron.Menu {
       label: "Quit",
       click: () => {
         sendTrayAction("quit");
+        isQuitting = true;
         app.quit();
       }
     }
@@ -654,12 +657,22 @@ function registerIpcHandlers(): void {
     return { ok: true, native: true, muted } as const;
   });
 
+  ipcMain.handle(IPC_CHANNELS.traySetCloseToTray, (event, enabled: unknown) => {
+    if (!isTrustedAppUrl(event.sender.getURL()) || typeof enabled !== "boolean") {
+      return { ok: false, native: true, error: "INVALID_CLOSE_TO_TRAY_STATE" } as const;
+    }
+
+    closeToTrayEnabled = enabled;
+    return { ok: true, native: true, enabled, supported: Boolean(tray) } as const;
+  });
+
   ipcMain.handle(IPC_CHANNELS.trayShowWindow, () => {
     focusMainWindow();
     return { ok: true, native: true } as const;
   });
 
   ipcMain.handle(IPC_CHANNELS.trayQuit, () => {
+    isQuitting = true;
     app.quit();
     return { ok: true, native: true } as const;
   });
@@ -812,6 +825,13 @@ async function createMainWindow(): Promise<void> {
     }
   });
 
+  mainWindow.on("close", (event) => {
+    if (!isQuitting && closeToTrayEnabled && tray) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -853,13 +873,13 @@ if (!hasSingleInstanceLock) {
     void createMainWindow();
     createTray();
 
-    app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        void createMainWindow();
-      }
-    });
+    app.on("activate", focusMainWindow);
   });
 }
+
+app.on("before-quit", () => {
+  isQuitting = true;
+});
 
 app.on("open-url", (event, url) => {
   event.preventDefault();

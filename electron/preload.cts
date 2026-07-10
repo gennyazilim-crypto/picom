@@ -216,6 +216,11 @@ const bridge = Object.freeze({
         | { ok: true; native: true; muted: boolean }
         | { ok: false; native: true; error: string }
       >,
+    setCloseToTray: (enabled: boolean) =>
+      invokeWhitelisted(IPC_CHANNELS.traySetCloseToTray, enabled) as Promise<
+        | { ok: true; native: true; enabled: boolean; supported: boolean }
+        | { ok: false; native: true; error: string }
+      >,
     showWindow: () =>
       invokeWhitelisted(IPC_CHANNELS.trayShowWindow) as Promise<
         | { ok: true; native: true }

@@ -6,6 +6,7 @@ export const IPC_CHANNELS = Object.freeze({
   notificationShow: "picom:notification-show",
   traySetStatus: "picom:tray-set-status",
   traySetMuted: "picom:tray-set-muted",
+  traySetCloseToTray: "picom:tray-set-close-to-tray",
   trayShowWindow: "picom:tray-show-window",
   trayQuit: "picom:tray-quit",
   trayAction: "picom:tray-action",
