@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = readFileSync(resolve(root, "src/services/errorCodes.ts"), "utf8");
-const loggingSource = readFileSync(resolve(root, "src/services/loggingService.ts"), "utf8");
+const loggingSource = readFileSync(resolve(root, "src/services/logging/loggingService.ts"), "utf8");
 const boundarySource = readFileSync(resolve(root, "src/components/DesktopStartupErrorBoundary.tsx"), "utf8");
 
 const requiredCodes = [

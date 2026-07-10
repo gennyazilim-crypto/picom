@@ -12,6 +12,8 @@
 
 This record does not approve a public stable release. Source/build contracts and planning are mature enough for controlled staging/internal validation, but documentation or structural smoke is not production evidence.
 
+See the full Task 151-249 assessment in [final v2 readiness audit](final-v2-readiness-audit.md).
+
 ## Evidence currently available
 
 | Area | Status | Evidence | Interpretation |
