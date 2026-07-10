@@ -4442,3 +4442,4 @@ body{
 .member-moderation-target .avatar-fallback { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; background: color-mix(in srgb, var(--accent) 16%, var(--app-surface)); color: var(--accent); font-weight: 750; }
 .member-moderation-target div { min-width: 0; display: grid; gap: 2px; }
 .member-moderation-target small, .member-moderation-modal label small { color: var(--text-muted); }
+.audit-log-summary{display:flex;align-items:baseline;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface-soft);color:var(--text-secondary);font-size:11px}.audit-log-summary strong{color:var(--text-primary);font-size:15px}.audit-log-summary em{margin-left:auto;color:var(--text-muted);font-style:normal}.audit-log-list dd[title]{cursor:help}

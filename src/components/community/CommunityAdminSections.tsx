@@ -104,8 +104,8 @@ export function CommunityDangerZone({ children }: { children?: ReactNode }) {
   return <SectionShell eyebrow="Owner only" title="Danger zone" description="Destructive actions require explicit confirmation and remain auditable."><div className="community-danger-grid">{children}</div></SectionShell>;
 }
 
-export function CommunityAuditLogPlaceholder({ communityId, canView }: { communityId: string; canView: boolean }) {
-  return <CommunityAuditLogSection communityId={communityId} canView={canView} />;
+export function CommunityAuditLogPlaceholder({ community, canView }: { community: Community; canView: boolean }) {
+  return <CommunityAuditLogSection community={community} canView={canView} />;
 }
 
 export function ModeratorReportsSection({ communityId, canReview }: { communityId: string; canReview: boolean }) {
