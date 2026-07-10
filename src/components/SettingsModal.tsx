@@ -20,6 +20,8 @@ import { cacheManagementService, type CacheSummary } from "../services/cacheMana
 import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";
 import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
 import { profilePrivacyService } from "../services/profilePrivacyService";
+import { profileService } from "../services/profileService";
+import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
 import type { ProfilePrivacySettings } from "../types/profilePrivacy";
 import { notificationDigestService } from "../services/notificationDigestService";
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
@@ -88,7 +90,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
   const [feedbackIssueType, setFeedbackIssueType] = useState<FeedbackIssueType>("bug");
-  const [feedbackTitle, setFeedbackTitle] = useState("Beta feedback placeholder");
+  const [feedbackTitle, setFeedbackTitle] = useState("Picom beta feedback");
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [includeDiagnostics, setIncludeDiagnostics] = useState(true);
   const [includeLogs, setIncludeLogs] = useState(false);
@@ -108,6 +110,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
   const [profilePrivacy,setProfilePrivacy]=useState<ProfilePrivacySettings>(()=>profilePrivacyService.getLocalSettings());
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [voiceSettingsSnapshot, setVoiceSettingsSnapshot] = useState<VoiceServiceSnapshot>(() => voiceService.getSnapshot());
   const [notificationPolicyState, setNotificationPolicyState] = useState<NotificationPolicyState>(() => notificationPolicyStateService.getSnapshot());
   const [accountActivities, setAccountActivities] = useState<AccountActivityRecord[]>(() => accountActivityService.listRecent());
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
@@ -123,6 +127,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   }, [profileSettings]);
 
   useEffect(() => updateService.onStateChange(setUpdateState), []);
+  useEffect(() => voiceService.subscribe(setVoiceSettingsSnapshot), []);
   useEffect(() => { void startupService.refreshNativeState().then(setStartupSettings); }, []);
   useEffect(() => { let active = true; void adminOperationsService.getAccess().then((access) => { if (active) setAdminOperationsAccess(access); }); return () => { active = false; }; }, []);
 
@@ -167,7 +172,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
 
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
-    pushToast(result.ok ? "Notification placeholder sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
+    pushToast(result.ok ? "Test notification sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
   };
   const notificationStatus = notificationService.getStatus();
   const updateNotifications = (partial: Partial<NotificationSettings>) => {
@@ -190,24 +195,24 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     setBlockedUsers(userBlockingService.listBlockedUsers());
     pushToast(ok ? `${displayName} unblocked.` : `Could not unblock ${displayName}.`, ok ? "success" : "error");
   };
-  const saveProfileSettings = () => {
-    const next = settingsService.updateProfileSettings({
-      displayName: profileDraft.displayName.trim(),
-      statusText: profileDraft.statusText.trim(),
-      bio: profileDraft.bio.trim(),
-    }).profileSettings;
-    onProfileSettingsChange(next);
-    pushToast("Profile changes saved locally.", "success");
-  };
-  const resetProfileSettings = () => {
-    const next = settingsService.updateProfileSettings({ displayName: "", statusText: "", bio: "" }).profileSettings;
+  const saveProfileSettings = async () => {
+    if (profileSaving) return;
+    setProfileSaving(true);
+    const result = await profileService.updateCurrentProfile({ displayName: profileDraft.displayName, statusText: profileDraft.statusText, bio: profileDraft.bio });
+    setProfileSaving(false);
+    if (!result.ok) { pushToast(result.error.message, "error"); return; }
+    const next = settingsService.updateProfileSettings({ displayName: result.data.displayName, statusText: result.data.statusText, bio: result.data.bio ?? "" }).profileSettings;
     setProfileDraft(next);
     onProfileSettingsChange(next);
-    pushToast("Profile changes reset locally.", "info");
+    pushToast("Profile changes saved.", "success");
+  };
+  const resetProfileSettings = () => {
+    setProfileDraft(profileSettings);
+    pushToast("Unsaved profile changes discarded.", "info");
   };
   const createFeedbackDraft = () => ({
     issueType: feedbackIssueType,
-    title: feedbackTitle.trim() || "Beta feedback placeholder",
+    title: feedbackTitle.trim() || "Picom beta feedback",
     description: feedbackDescription.trim() || "No description provided.",
     includeDiagnostics,
     includeLogs
@@ -248,7 +253,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const updateLockAfterInactivity = (enabled: boolean) => {
     const next = appLockService.updateSettings({ lockAfterInactivityEnabled: enabled });
     setAppLockSettings(next);
-    pushToast(enabled ? "Inactivity lock placeholder enabled locally." : "Inactivity lock placeholder disabled locally.", "info");
+    pushToast(enabled ? "Coming soon: inactivity lock preference enabled locally." : "Inactivity lock preference disabled.", "info");
   };
   const checkForUpdatesPlaceholder = async () => {
     const next = await updateService.checkForUpdatesPlaceholder();
@@ -429,14 +434,14 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>Larger text placeholder</strong>
+                    <strong>Larger text</strong>
                     <small>Gently increases base desktop text scale without changing layout.</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.largerText} onChange={(event) => updateAccessibility({ largerText: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>Strong focus ring placeholder</strong>
+                    <strong>Strong focus ring</strong>
                     <small>Makes keyboard focus indicators more visible.</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.focusRingStrong} onChange={(event) => updateAccessibility({ focusRingStrong: event.target.checked })} />
@@ -445,12 +450,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
             </div>
           ) : active === "Account" ? (
             <div className="placeholder-panel action-panel">
-              <strong>Account security foundation</strong>
-              <p>Security controls are prepared as beta placeholders. Supabase Auth remains the source of truth for production account actions.</p>
-              <div className="settings-status-card" aria-label="Email verification placeholder">
+              <strong>Account security</strong>
+              <p>Review session, verification, export, and deletion controls. Supabase Auth remains the source of truth for account actions.</p>
+              <div className="settings-status-card" aria-label="Email verification controls">
                 <span>Email verification</span>
-                <strong>Verification placeholder</strong>
-                <small>{emailVerificationMessage ?? "Email verification is prepared but not required for MVP login."}</small>
+                <strong>Verification controls</strong>
+                <small>{emailVerificationMessage ?? "Request a verification email when Supabase Auth supports it for this account."}</small>
               </div>
               <div className="security-card-grid">
                 <article className="security-card">
@@ -460,12 +465,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 </article>
                 <article className="security-card">
                   <span>Password</span>
-                  <strong>Password reset placeholder</strong>
-                  <small>Future flow should use Supabase Auth and never reveal whether an email exists.</small>
+                  <strong>Available from sign-in</strong>
+                  <small>Password reset uses a non-enumerating Supabase Auth request from the sign-in screen.</small>
                 </article>
                 <article className="security-card">
                   <span>2FA</span>
-                  <strong>{twoFactorStatus.enabled ? "Prepared locally" : "Two-factor placeholder"}</strong>
+                  <strong>{twoFactorStatus.enabled ? "Local setup draft" : "Coming soon"}</strong>
                   <small>{twoFactorMessage}</small>
                 </article>
                 <article className="security-card">
@@ -495,7 +500,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               <div className="settings-status-card" aria-label="Account Activity section">
                 <span>Account Activity</span>
                 <strong>{accountActivities.length ? `${accountActivities.length} recent events` : "No recent activity"}</strong>
-                <small>Security history is local placeholder data. Raw IP addresses, passwords, tokens, cookies, and auth headers are not stored.</small>
+                <small>Security history is local-only in this beta. Raw IP addresses, passwords, tokens, cookies, and auth headers are not stored.</small>
               </div>
               <div className="session-list" aria-label="Account activity history">
                 {accountActivities.length ? accountActivities.map((activity) => (
@@ -517,14 +522,14 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 )}
               </div>
               <div className="settings-actions-row">
-                <button onClick={() => pushToast("Security settings placeholder reviewed.", "info")}>Review placeholder</button>
-                <button onClick={() => pushToast("Password reset is available from the login screen placeholder.", "info")}>Password reset placeholder</button>
-                <button onClick={requestEmailVerification}>Resend verification placeholder</button>
+                <button onClick={() => setActive("Diagnostics")}>Open Diagnostics</button>
+                <button onClick={() => pushToast("Sign out and use password reset from the sign-in screen.", "info")}>Password reset guidance</button>
+                <button onClick={requestEmailVerification}>Resend verification</button>
                 <button onClick={refreshActiveSessions}>Refresh sessions</button>
-                <button onClick={revokeOtherSessions}>Revoke other sessions placeholder</button>
-                <button onClick={prepareTwoFactorPlaceholder}>Enable 2FA placeholder</button>
-                <button onClick={disableTwoFactorPlaceholder}>Disable 2FA placeholder</button>
-                <button onClick={regenerateRecoveryCodesPlaceholder}>Recovery codes placeholder</button>
+                <button onClick={revokeOtherSessions}>Revoke other sessions</button>
+                <button onClick={prepareTwoFactorPlaceholder}>Enable 2FA (Coming soon)</button>
+                <button onClick={disableTwoFactorPlaceholder}>Disable 2FA draft</button>
+                <button onClick={regenerateRecoveryCodesPlaceholder}>Recovery codes (Coming soon)</button>
               </div>
               <div className="settings-status-card" aria-label="User data export">
                 <span>Data export</span>
@@ -566,12 +571,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 </article>
                 <article className="security-card">
                   <span>Online status</span>
-                  <strong>{safetySettings.showOnlineStatus ? "Visible" : "Hidden placeholder"}</strong>
-                  <small>Presence visibility is local for now and must be enforced server-side later.</small>
+                  <strong>{safetySettings.showOnlineStatus ? "Visible" : "Hidden"}</strong>
+                  <small>Profile visibility is synchronized when Supabase profile privacy is available.</small>
                 </article>
                 <article className="security-card">
                   <span>Read receipts</span>
-                  <strong>{safetySettings.enableReadReceipts ? "Enabled placeholder" : "Disabled"}</strong>
+                  <strong>{safetySettings.enableReadReceipts ? "Enabled" : "Disabled"}</strong>
                   <small>Read receipts remain opt-in and should not expose detailed reads in large communities.</small>
                 </article>
                 <article className="security-card">
@@ -618,7 +623,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               <label className="settings-toggle-row"><span><strong>Show shared media</strong><small>Only friends or shared-community members can see eligible media.</small></span><input type="checkbox" checked={profilePrivacy.showMedia} onChange={(event)=>updateProfilePrivacy({showMedia:event.target.checked})} /></label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Read receipts placeholder</strong>
+                  <strong>Read receipts</strong>
                   <small>Future read receipts should respect this privacy setting by default.</small>
                 </span>
                 <input type="checkbox" checked={safetySettings.enableReadReceipts} onChange={(event) => updateSafetySettings({ enableReadReceipts: event.target.checked })} />
@@ -671,30 +676,30 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
             </div>
           ) : active === "Profile" ? (
             <div className="placeholder-panel action-panel">
-              <strong>Local profile editing</strong>
-              <p>Changes apply to this desktop profile immediately. Supabase profile persistence is a future backend step.</p>
+              <strong>Profile editing</strong>
+              <p>Changes apply immediately and synchronize through the profile service in Supabase mode.</p>
               <div className="settings-profile-form">
                 <label>
                   <span>Display name</span>
-                  <input value={profileDraft.displayName} onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })} placeholder="Use mock profile name" />
+                  <input value={profileDraft.displayName} maxLength={80} onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })} placeholder="Display name" />
                 </label>
                 <label>
                   <span>Status text</span>
-                  <input value={profileDraft.statusText} onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })} placeholder="Use mock status text" />
+                  <input value={profileDraft.statusText} maxLength={120} onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })} placeholder="What are you working on?" />
                 </label>
                 <label>
                   <span>Bio</span>
-                  <textarea value={profileDraft.bio} onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })} placeholder="Write a short desktop profile bio" rows={4} />
+                  <textarea value={profileDraft.bio} maxLength={500} onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })} placeholder="Write a short profile bio" rows={4} />
                 </label>
               </div>
               <div className="settings-actions-row">
-                <button onClick={saveProfileSettings}>Save profile locally</button>
-                <button onClick={resetProfileSettings}>Reset local profile</button>
+                <button disabled={profileSaving || !profileDraft.displayName.trim()} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : "Save profile"}</button>
+                <button disabled={profileSaving} onClick={resetProfileSettings}>Discard changes</button>
               </div>
             </div>
           ) : active === "Notifications" ? (
             <div className="placeholder-panel action-panel">
-              <strong>Native notification foundation</strong>
+              <strong>Desktop notifications</strong>
               <p>Uses a safe browser/native fallback and never calls desktop APIs directly from React.</p>
               <div className="settings-status-card" aria-label="Notification runtime status">
                 <span>Runtime support</span>
@@ -704,33 +709,33 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               <label className="settings-toggle-row">
                 <span>
                   <strong>Enable desktop notifications</strong>
-                  <small>Allow Picom to show native desktop notification placeholders.</small>
+                  <small>Allow Picom to show native desktop notifications where the runtime supports them.</small>
                 </span>
                 <input type="checkbox" checked={notificationSettings.enabled} onChange={(event) => updateNotifications({ enabled: event.target.checked })} />
               </label>
               <label className="settings-toggle-row">
                 <span>
                   <strong>Mute notifications</strong>
-                  <small>Keep notifications quiet while preserving inbox foundations later.</small>
+                  <small>Keep desktop alerts quiet while preserving the notification inbox.</small>
                 </span>
                 <input type="checkbox" checked={notificationSettings.muted} onChange={(event) => updateNotifications({ muted: event.target.checked })} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Mentions only placeholder</strong>
-                  <small>Future notification routing can use this preference.</small>
+                  <strong>Mentions only</strong>
+                  <small>Suppress normal-message desktop alerts while preserving mentions and system notices.</small>
                 </span>
                 <input type="checkbox" checked={notificationSettings.mentionsOnly} onChange={(event) => updateNotifications({ mentionsOnly: event.target.checked })} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Notification digest placeholder</strong>
-                  <small>{notificationDigestService.getDigestModeLabel(notificationSettings.digestMode)} groups lower-priority message notifications later.</small>
+                  <strong>Notification digest (Coming soon)</strong>
+                  <small>{notificationDigestService.getDigestModeLabel(notificationSettings.digestMode)} prepares lower-priority grouping; scheduled delivery is not enabled.</small>
                 </span>
                 <select value={notificationSettings.digestMode} onChange={(event) => updateNotifications({ digestMode: event.target.value as typeof notificationSettings.digestMode })}>
                   <option value="off">Off</option>
-                  <option value="hourly_placeholder">Hourly placeholder</option>
-                  <option value="daily_placeholder">Daily placeholder</option>
+                  <option value="hourly_placeholder">Hourly (Coming soon)</option>
+                  <option value="daily_placeholder">Daily (Coming soon)</option>
                 </select>
               </label>
               <div className="settings-status-card" aria-label="Quiet Hours notification setting">
@@ -767,13 +772,13 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <select value={notificationSettings.quietHours.applyTo} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, applyTo: event.target.value as typeof notificationSettings.quietHours.applyTo } })}>
                   <option value="all_notifications">All notifications</option>
                   <option value="normal_messages_only">Normal messages only</option>
-                  <option value="sounds_only_placeholder">Sounds only placeholder</option>
+                  <option value="sounds_only_placeholder">Sounds only (Coming soon)</option>
                 </select>
               </label>
               <label className="settings-toggle-row">
                 <span>
                   <strong>Allow mentions during Quiet Hours</strong>
-                  <small>Mentions can still notify if this placeholder remains enabled.</small>
+                  <small>Mentions can still notify when this preference is enabled.</small>
                 </span>
                 <input type="checkbox" checked={notificationSettings.quietHours.allowMentions} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, allowMentions: event.target.checked } })} />
               </label>
@@ -785,6 +790,19 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <input type="checkbox" checked={notificationSettings.allowMentionsFromMutedScopes} onChange={(event) => updateNotifications({ allowMentionsFromMutedScopes: event.target.checked })} />
               </label>
               <button onClick={testNotification}>Send test notification</button>
+            </div>
+          ) : active === "Voice & Video" ? (
+            <div className="placeholder-panel action-panel">
+              <strong>Voice & Video</strong>
+              <p>Review current LiveKit connection and app-focused audio controls. Device selection remains system-default for this beta.</p>
+              <div className="security-card-grid">
+                <article className="security-card"><span>Connection</span><strong>{voiceSettingsSnapshot.status.replace(/_/g, " ")}</strong><small>{voiceSettingsSnapshot.roomName ? `Room: ${voiceSettingsSnapshot.roomName}` : "Join a voice channel to activate controls."}</small></article>
+                <article className="security-card"><span>Microphone</span><strong>{voiceSettingsSnapshot.muted ? "Muted" : "Unmuted"}</strong><small>Shortcut: Ctrl + Shift + M while connected.</small></article>
+                <article className="security-card"><span>Incoming audio</span><strong>{voiceSettingsSnapshot.deafened ? "Deafened" : "Listening"}</strong><small>Shortcut: Ctrl + Shift + D while connected.</small></article>
+                <article className="security-card"><span>Screen share</span><strong>{voiceSettingsSnapshot.screenSharing ? "Sharing" : "Not sharing"}</strong><small>Source selection is available from an active voice room.</small></article>
+              </div>
+              <div className="settings-actions-row"><button disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => void voiceService.setMuted(!voiceSettingsSnapshot.muted)}>Toggle microphone</button><button disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => { const result = voiceService.setDeafened(!voiceSettingsSnapshot.deafened); if (!result.ok) pushToast(result.error.message, "error"); }}>Toggle deafen</button></div>
+              <div className="settings-status-card"><span>Input and output devices</span><strong>System default (Coming soon)</strong><small>Per-device selection and test playback require approved native device enumeration; no raw device labels are collected here.</small></div>
             </div>
           ) : active === "Keyboard Shortcuts" ? (
             <KeyboardShortcutsSection />
@@ -804,7 +822,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
             </div>
           ) : active === "Advanced" ? (
             <div className="placeholder-panel action-panel">
-              <strong>Desktop service placeholders</strong>
+              <strong>Desktop services</strong>
               <p>Tray, window controls, file handling and clipboard are routed through safe services.</p>
               {developerPortalAvailable ? <div className="settings-status-card" aria-label="Developer Portal restricted beta"><span>Developer Portal</span><strong>Restricted beta</strong><small>Review safe bot/webhook metadata and developer guidance. No raw keys, application registration, or public publishing.</small><button type="button" onClick={() => setDeveloperPortalOpen(true)}>Open Developer Portal</button></div> : null}
               <div className="settings-status-card" aria-label="About Picom build metadata">
@@ -812,18 +830,18 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <strong>{appConfig.name} {appConfig.version} ({appConfig.releaseChannel})</strong>
                 <small>Build: {appConfig.build.date}. Commit: {appConfig.build.commitShort}. Runtime: {appConfig.build.desktopRuntime}. API compatibility: {appConfig.build.backendApiCompatibilityVersion}.</small>
               </div>
-              <button onClick={() => { trayService.simulate("settings"); pushToast("Tray settings action simulated.", "info"); }}>Simulate tray settings</button>
+              {import.meta.env.DEV ? <button onClick={() => { trayService.simulate("settings"); pushToast("Tray settings action simulated.", "info"); }}>Simulate tray settings</button> : null}
               <div className="settings-status-card" aria-label="Native app menu foundation">
                 <span>Native app menu</span>
                 <strong>Hidden chrome, safe actions</strong>
                 <small>The operating-system menu remains hidden for the custom Picom titlebar. Future menu entries route through menuService instead of direct Electron calls.</small>
               </div>
-              <div className="settings-actions-row">
+              {import.meta.env.DEV ? <div className="settings-actions-row">
                 <button onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
                 <button onClick={() => menuService.triggerPlaceholderAction("export-diagnostics")}>Simulate menu diagnostics</button>
-                <button onClick={openSystemStatus}>Open system status</button>
-              </div>
-              <div className="settings-status-card" aria-label="Desktop update recovery placeholder">
+              </div> : null}
+              <button onClick={openSystemStatus}>Open system status</button>
+              <div className="settings-status-card" aria-label="Desktop update recovery status">
                 <span>Desktop updates</span>
                 <strong>{updateState.status.split("_").join(" ")}</strong>
                 <small>{updateState.message}</small>
@@ -833,18 +851,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               <label className="settings-toggle-row"><span><strong>Enable diagnostic reports</strong><small>Off by default. Stores a bounded redacted local crash envelope; no provider or DSN is configured.</small></span><input type="checkbox" checked={crashReportingEnabled} onChange={(event) => { const enabled = crashReporterService.setEnabled(event.target.checked); setCrashReportingEnabled(enabled); pushToast(enabled ? "Diagnostic reports enabled locally." : "Diagnostic reports disabled and local queue cleared.", "success"); }} /></label>
               {import.meta.env.DEV ? <div className="settings-actions-row"><button onClick={() => { const record = crashReporterService.captureException(new Error("Picom development crash report test"), { source: "settings-test", authorization: "Bearer redaction-test" }); pushToast(record ? "Redacted test error captured locally." : "Enable diagnostic reports before capturing a test error.", record ? "success" : "info"); }}>Capture test error safely</button><button onClick={() => { const status = crashReporterService.getStatus(); pushToast(`${status.queuedLocalRecords} redacted crash records queued locally.`, "info"); }}>Show crash report status</button></div> : null}
               <div className="settings-actions-row">
-                <button onClick={() => void checkForUpdatesPlaceholder()}>Check for updates</button>
-                <button onClick={() => setUpdateState(updateService.setAvailablePlaceholder())}>Simulate available</button>
-                <button onClick={() => setUpdateState(updateService.startDownloadPlaceholder())}>Simulate download</button>
-                <button onClick={() => setUpdateState(updateService.setReadyToInstallPlaceholder())}>Simulate ready</button>
-                <button onClick={() => simulateUpdateFailure("download")}>Simulate download failure</button>
-                <button onClick={() => simulateUpdateFailure("install")}>Simulate install failure</button>
-                <button onClick={() => simulateUpdateFailure("error")}>Simulate error</button>
-                <button onClick={() => setUpdateState(updateService.setRollbackAvailablePlaceholder())}>Rollback placeholder</button>
+                <button onClick={() => void checkForUpdatesPlaceholder()}>Check for updates (Coming soon)</button>
+                {import.meta.env.DEV ? <><button onClick={() => setUpdateState(updateService.setAvailablePlaceholder())}>Simulate available</button><button onClick={() => setUpdateState(updateService.startDownloadPlaceholder())}>Simulate download</button><button onClick={() => setUpdateState(updateService.setReadyToInstallPlaceholder())}>Simulate ready</button><button onClick={() => simulateUpdateFailure("download")}>Simulate download failure</button><button onClick={() => simulateUpdateFailure("install")}>Simulate install failure</button><button onClick={() => simulateUpdateFailure("error")}>Simulate error</button><button onClick={() => setUpdateState(updateService.setRollbackAvailablePlaceholder())}>Simulate rollback</button></> : null}
                 <button onClick={() => setUpdateState(updateService.retry())}>Retry</button>
                 <button onClick={() => setUpdateState(updateService.clearError())}>Clear error</button>
               </div>
-              <div className="settings-status-card" aria-label="System status page placeholder">
+              <div className="settings-status-card" aria-label="System status page">
                 <span>System status</span>
                 <strong>{statusPageService.isConfigured() ? statusPageService.getDisplayDomain() : "Not configured"}</strong>
                 <small>Future production deployments can point `VITE_STATUS_PAGE_URL` to a public non-sensitive status page.</small>
@@ -863,7 +875,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Start minimized to tray placeholder</strong>
+                  <strong>Start minimized to tray (Coming soon)</strong>
                   <small>Prepared for future tray startup behavior; currently stored as a local preference.</small>
                 </span>
                 <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => void updateStartMinimizedToTray(event.target.checked)} />
@@ -875,14 +887,14 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 </span>
                 <input type="checkbox" checked={closeToTrayEnabled} onChange={(event) => void updateCloseToTray(event.target.checked)} />
               </label>
-              <div className="settings-status-card" aria-label="App lock placeholder">
+              <div className="settings-status-card" aria-label="App lock status">
                 <span>App lock</span>
                 <strong>Ctrl + Shift + L</strong>
-                <small>Quick lock hides chat content without storing a password locally. Future Supabase re-auth can replace the placeholder unlock.</small>
+                <small>Quick lock hides chat content without storing a password locally. Supabase re-auth unlock is coming later.</small>
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Lock app after inactivity placeholder</strong>
+                  <strong>Lock app after inactivity (Coming soon)</strong>
                   <small>Preference saved locally. Automatic idle locking is intentionally deferred until native idle detection is approved.</small>
                 </span>
                 <input type="checkbox" checked={appLockSettings.lockAfterInactivityEnabled} onChange={(event) => updateLockAfterInactivity(event.target.checked)} />
@@ -920,20 +932,20 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               </div>
               <div className="settings-actions-row">
                 <button onClick={refreshCacheSummary}>Refresh cache summary</button>
-                <button onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache())}>Clear image cache placeholder</button>
-                <button onClick={() => void runCacheAction(() => cacheManagementService.clearMessageCache())}>Clear message cache placeholder</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache())}>Clear image cache</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearMessageCache())}>Clear message cache</button>
                 <button onClick={() => void runCacheAction(() => cacheManagementService.clearLogs())}>Clear logs</button>
                 <button onClick={() => void runCacheAction(() => cacheManagementService.clearAllNonEssentialCache())}>Clear all non-essential cache</button>
               </div>
-              <div className="settings-status-card" aria-label="Beta feedback and logs placeholder">
+              <div className="settings-status-card" aria-label="Beta feedback and redacted logs">
                 <span>Beta support</span>
-                <strong>Feedback & logs placeholder</strong>
+                <strong>Feedback and redacted exports</strong>
                 <small>User-facing feedback stays separate from redacted developer diagnostics. No report is sent until a backend endpoint is added.</small>
               </div>
               <label className="settings-toggle-row">
                 <span>
                   <strong>Issue type</strong>
-                  <small>Used only in the local placeholder payload.</small>
+                  <small>Used only in the local export payload.</small>
                 </span>
                 <select value={feedbackIssueType} onChange={(event) => setFeedbackIssueType(event.target.value as FeedbackIssueType)}>
                   <option value="bug">Bug</option>
@@ -970,8 +982,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
             </div>
           ) : (
             <div className="placeholder-panel">
-              <strong>{active} placeholder</strong>
-              <p>This MVP keeps the section ready without advanced roadmap work.</p>
+              <strong>{active} (Coming soon)</strong>
+              <p>This section is not enabled in the current desktop release.</p>
             </div>
           )}
         </main>
