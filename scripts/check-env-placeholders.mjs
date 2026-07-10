@@ -12,6 +12,11 @@ const serverOnlyNames = new Set([
   "LIVEKIT_API_SECRET"
 ]);
 const forbiddenRendererName = /VITE_.*(?:SERVICE_ROLE|ACCESS_TOKEN|API_SECRET|DATABASE|PASSWORD|SIGNING|PRIVATE_KEY|OAUTH.*SECRET)/i;
+const rendererSafeRedirectNames = new Set([
+  "VITE_SUPABASE_PASSWORD_RESET_REDIRECT_URL",
+  "VITE_SUPABASE_EMAIL_VERIFICATION_REDIRECT_URL",
+  "VITE_SUPABASE_OAUTH_REDIRECT_URL",
+]);
 const secretLikeValues = [
   /\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\b/,
   /\bsb_secret_[a-zA-Z0-9_-]{12,}\b/i,
@@ -42,7 +47,7 @@ function parseExample(file) {
 
 for (const file of exampleFiles) {
   for (const { name, value } of parseExample(file)) {
-    if (forbiddenRendererName.test(name)) {
+    if (forbiddenRendererName.test(name) && !rendererSafeRedirectNames.has(name)) {
       throw new Error(`${file} exposes a server-only variable through the renderer prefix: ${name}`);
     }
 
