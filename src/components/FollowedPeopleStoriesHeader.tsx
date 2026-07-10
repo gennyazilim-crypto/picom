@@ -1,6 +1,7 @@
 import { useEffect, type MouseEvent } from "react";
 import type { Community, Member } from "../types/community";
 import type { FollowedUserStory } from "../types/stories";
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 
@@ -125,10 +126,10 @@ export function StoryViewerModal({
   communities: Community[];
 } & Pick<FollowedPeopleStoriesHeaderProps, "onCloseStory" | "onPreviousStory" | "onNextStory" | "onOpenStoryProfile" | "onOpenStoryInChannel">) {
   const channelName = getChannelName(communities, story);
+  const dialogRef = useDialogFocusTrap<HTMLElement>(onCloseStory);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCloseStory();
       if (event.key === "ArrowLeft") onPreviousStory();
       if (event.key === "ArrowRight") onNextStory();
     };
@@ -139,7 +140,7 @@ export function StoryViewerModal({
 
   return (
     <div className="story-viewer-backdrop" role="presentation" onMouseDown={onCloseStory}>
-      <section className="story-viewer-modal" role="dialog" aria-modal="true" aria-label={`${author.displayName} story`} onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={dialogRef} tabIndex={-1} className="story-viewer-modal" role="dialog" aria-modal="true" aria-label={`${author.displayName} story`} onMouseDown={(event) => event.stopPropagation()}>
         <StoryProgressBar stories={stories} activeStoryId={story.id} />
         <button className="story-viewer-close" type="button" aria-label="Close story viewer" onClick={onCloseStory}>
           <AppIcon name="close" size="md" />

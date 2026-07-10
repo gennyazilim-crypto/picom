@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import type { Channel, ChannelCategory, ChannelType } from "../types/community";
 import { AppIcon } from "./AppIcon";
 
@@ -22,15 +23,10 @@ export function EditChannelModal({ channel, categories, onClose, onSubmit }: Edi
   const [publicReadEnabled, setPublicReadEnabled] = useState(channel.publicReadEnabled ?? !channel.isPrivate);
   const [saving, setSaving] = useState(false);
   const normalizedName = useMemo(() => name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "").replace(/-+/g, "-").slice(0, 80), [name]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const dialogRef = useDialogFocusTrap<HTMLFormElement>(onClose);
 
   return <div className="channel-management-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <form className="channel-management-modal" role="dialog" aria-modal="true" aria-labelledby="edit-channel-title" onSubmit={async (event) => {
+    <form ref={dialogRef} tabIndex={-1} className="channel-management-modal" role="dialog" aria-modal="true" aria-labelledby="edit-channel-title" onSubmit={async (event) => {
       event.preventDefault();
       if (!normalizedName || saving) return;
       setSaving(true);
@@ -56,14 +52,10 @@ export function DeleteChannelModal({ channel, isLastChannel, onClose, onConfirm 
   const [confirmationName, setConfirmationName] = useState("");
   const [deleting, setDeleting] = useState(false);
   const matches = confirmationName.trim().toLowerCase() === channel.name.trim().toLowerCase();
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const dialogRef = useDialogFocusTrap<HTMLFormElement>(onClose);
 
   return <div className="channel-management-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <form className="channel-management-modal channel-management-modal--danger" role="alertdialog" aria-modal="true" aria-labelledby="delete-channel-title" onSubmit={async (event) => {
+    <form ref={dialogRef} tabIndex={-1} className="channel-management-modal channel-management-modal--danger" role="alertdialog" aria-modal="true" aria-labelledby="delete-channel-title" onSubmit={async (event) => {
       event.preventDefault();
       if (!matches || isLastChannel || deleting) return;
       setDeleting(true);

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ReportReason, ReportTargetType } from "../types/reports";
 import { reportService } from "../services/reportService";
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 
 export type ReportModalTarget = { targetType: ReportTargetType; targetId: string; label: string; communityId?: string; channelId?: string };
@@ -21,12 +22,8 @@ export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" && !busy) onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [busy, onClose]);
+  const close = useCallback(() => { if (!busy) onClose(); }, [busy, onClose]);
+  const dialogRef = useDialogFocusTrap<HTMLElement>(close);
 
   const submit = async () => {
     if (busy || submitted) return;
@@ -38,9 +35,9 @@ export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
     onResult("Report submitted for moderator review.", true);
   };
 
-  return <div className="modal-backdrop" onMouseDown={() => { if (!busy) onClose(); }}>
-    <section className="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-modal-title" onMouseDown={(event) => event.stopPropagation()}>
-      <header><div><p className="eyebrow">Safety report</p><h2 id="report-modal-title">Report {targetTitles[target.targetType]}</h2><span>{target.label}</span></div><button className="icon-button" type="button" aria-label="Close report" disabled={busy} onClick={onClose}><AppIcon name="close" size="lg" /></button></header>
+  return <div className="modal-backdrop" onMouseDown={close}>
+    <section ref={dialogRef} tabIndex={-1} className="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+      <header><div><p className="eyebrow">Safety report</p><h2 id="report-modal-title">Report {targetTitles[target.targetType]}</h2><span>{target.label}</span></div><button className="icon-button" type="button" aria-label="Close report" disabled={busy} onClick={close}><AppIcon name="close" size="lg" /></button></header>
       {submitted ? <div className="report-confirmation" role="status">
         <span className="report-confirmation-icon"><AppIcon name="inbox" size="xl" /></span>
         <h3>Report received</h3>
@@ -52,7 +49,7 @@ export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
         <aside className="report-abuse-warning"><AppIcon name="lock" size="sm" /><span><strong>Report in good faith.</strong> False, duplicate, or abusive reports can delay safety reviews and may be investigated.</span></aside>
         <small>Only authorized moderators, admins, and owners for this community can access the report queue. Target access remains permission checked.</small>
       </div>}
-      <footer>{submitted ? <button className="send-button" type="button" onClick={onClose}>Done</button> : <><button className="secondary-action" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="danger-action" type="button" disabled={busy} onClick={() => void submit()}><AppIcon name="bell" size="sm" />{busy ? "Submitting..." : "Submit report"}</button></>}</footer>
+      <footer>{submitted ? <button className="send-button" type="button" onClick={close}>Done</button> : <><button className="secondary-action" type="button" disabled={busy} onClick={close}>Cancel</button><button className="danger-action" type="button" disabled={busy} onClick={() => void submit()}><AppIcon name="bell" size="sm" />{busy ? "Submitting..." : "Submit report"}</button></>}</footer>
     </section>
   </div>;
 }

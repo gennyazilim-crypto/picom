@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import type { Community, Member } from "../types/community";
 import { communityInviteService, type CommunityInvite, type InviteAcceptanceStatus, type InviteCampaignSummary } from "../services/community/communityInviteService";
 import { clipboardService } from "../services/clipboardService";
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 
 function InviteModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  useEffect(() => { const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, [onClose]);
-  return <div className="modal-backdrop" onMouseDown={onClose}><section className="community-access-modal invite-flow-modal" role="dialog" aria-modal="true" aria-labelledby="invite-flow-title" onMouseDown={(event) => event.stopPropagation()}><button className="icon-button modal-close" type="button" aria-label="Close" onClick={onClose}><AppIcon name="close" size="lg" /></button><p className="eyebrow">Community invite</p><h2 id="invite-flow-title">{title}</h2>{children}</section></div>;
+  const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
+  return <div className="modal-backdrop" onMouseDown={onClose}><section ref={dialogRef} tabIndex={-1} className="community-access-modal invite-flow-modal" role="dialog" aria-modal="true" aria-labelledby="invite-flow-title" onMouseDown={(event) => event.stopPropagation()}><button className="icon-button modal-close" type="button" aria-label="Close community invite" onClick={onClose}><AppIcon name="close" size="lg" /></button><p className="eyebrow">Community invite</p><h2 id="invite-flow-title">{title}</h2>{children}</section></div>;
 }
 
 export function InvitePeopleModal({ community, currentUserId, canCreate, onClose }: { community: Community; currentUserId: string; canCreate: boolean; onClose: () => void }) {

@@ -289,6 +289,7 @@
     "localization:expansion:smoke": "node scripts/localization-expansion-smoke-test.mjs",
     "date-time:smoke": "node scripts/date-time-formatting-smoke-test.mjs",
     "accessibility:display:smoke": "node scripts/accessibility-display-smoke-test.mjs",
+    "accessibility:remediation:test": "node scripts/accessibility-remediation-smoke-test.mjs",
     "accessibility:external-audit:smoke": "node scripts/accessibility-external-audit-smoke-test.mjs",
     "shortcuts:customization:smoke": "node scripts/keyboard-shortcuts-customization-smoke-test.mjs",
     "local-data:migration:smoke": "node scripts/local-data-migration-smoke-test.mjs",

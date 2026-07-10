@@ -39,8 +39,8 @@ for (const expected of [
 for (const expected of [
   "High contrast mode",
   "Reduced motion",
-  "Larger text placeholder",
-  "Strong focus ring placeholder",
+  "Larger text",
+  "Strong focus ring",
 ]) {
   assertIncludes(settingsModal, expected, "SettingsModal accessibility controls");
 }

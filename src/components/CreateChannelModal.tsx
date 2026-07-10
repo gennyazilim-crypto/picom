@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ChannelType, Community } from "../types/community";
+import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 
@@ -37,12 +38,7 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const normalizedName = useMemo(() => normalizePreview(name), [name]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
 
   const toggleAllowedRole = (roleId: string) => {
     setAllowedRoleIds((current) => current.includes(roleId) ? current.filter((id) => id !== roleId) : [...current, roleId]);
@@ -68,17 +64,17 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <section className="create-community-modal" aria-modal="true" role="dialog" aria-labelledby="create-channel-title" onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={dialogRef} tabIndex={-1} className="create-community-modal" aria-modal="true" role="dialog" aria-labelledby="create-channel-title" aria-describedby="create-channel-description" onMouseDown={(event) => event.stopPropagation()}>
         <button className="icon-button modal-close" aria-label="Close create channel" onClick={onClose}>
           <AppIcon name={overlayIcons.close} size="lg" />
         </button>
         <span className="eyebrow">New channel</span>
         <h2 id="create-channel-title">Create a channel</h2>
-        <p>Add a focused space inside {community.name}. Channel names are normalized for clean URLs and future Supabase routing.</p>
+        <p id="create-channel-description">Add a focused space inside {community.name}. Channel names are normalized for clean URLs and future Supabase routing.</p>
 
         <label className="auth-field">
           Channel name
-          <input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} autoFocus placeholder="Design reviews" />
+          <input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} autoFocus data-dialog-initial-focus placeholder="Design reviews" />
         </label>
 
         <div className="channel-name-preview">
@@ -138,7 +134,7 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
           </div>
         ) : null}
 
-        {error ? <div className="auth-error">{error}</div> : null}
+        {error ? <div className="auth-error" role="alert">{error}</div> : null}
 
         <div className="modal-actions-row">
           <button className="secondary-action" onClick={onClose} disabled={saving}>Cancel</button>
