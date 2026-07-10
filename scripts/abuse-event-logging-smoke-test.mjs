@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const service = readFileSync("src/services/abuseEventService.ts", "utf8");
 const logging = readFileSync("src/services/logging/loggingService.ts", "utf8");
+const logRedaction = readFileSync("src/services/logging/logRedaction.ts", "utf8");
 const adminService = readFileSync("src/services/adminOperationsService.ts", "utf8");
 const trustSafetyView = readFileSync("src/components/TrustSafetyDashboardView.tsx", "utf8");
 const docs = readFileSync("docs/abuse-event-logging.md", "utf8");
@@ -14,7 +15,7 @@ const checks = [
   [service.includes("formatUserMessage"), "user-friendly error message helper exists"],
   [service.includes("unauthorized_private_channel_access"), "private channel abuse event exists"],
   [service.includes("suspicious_attachment"), "suspicious attachment event exists"],
-  [logging.includes("authorization") && logging.includes("cookie") && logging.includes("password"), "central redaction covers sensitive fields"],
+  [`${logging}\n${logRedaction}`.includes("authorization") && `${logging}\n${logRedaction}`.includes("cookie") && `${logging}\n${logRedaction}`.includes("password"), "central redaction covers sensitive fields"],
   [adminService.includes("abuseEventService.getAdminSummary"), "Admin Operations service uses abuse summary"],
   [trustSafetyView.includes("Private messages") && trustSafetyView.includes("secrets are excluded"), "Trust and Safety copy avoids sensitive detail"],
   [docs.includes("Do not store") && docs.includes("message content"), "docs ban private content"],
