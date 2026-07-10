@@ -127,6 +127,10 @@ A breaking schema change requires:
 
 ## Seed data policy
 
+The authoritative environment and production rules are in `docs/production-data-seeding-policy.md`.
+Production seed is empty; community defaults are transactional tenant creation, and app-admin bootstrap is a
+separate operator workflow.
+
 Seed data is for development and staging-like test environments only.
 
 Seed scripts must:

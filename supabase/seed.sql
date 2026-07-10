@@ -1,5 +1,7 @@
 -- Picom local Supabase seed data
 -- Development only. Do not use these credentials in production.
+-- LOCAL RESET ONLY: never deploy this file with `db push --include-seed` or paste it into a hosted SQL editor.
+-- Production starts with no synthetic users/communities/messages; defaults are created transactionally per community.
 
 -- Known local credentials:
 -- owner@picom.local / PicomDev123!

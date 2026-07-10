@@ -4,6 +4,7 @@ Picom needs an operator-only way to create the first app-level administrator lat
 
 ## Current status
 
+- Production data seed never creates app-admins; see `docs/production-data-seeding-policy.md`.
 - Bootstrap is a guarded placeholder script, not a production account creator.
 - Admin bootstrap must not run automatically in production or during normal app startup.
 - Command: `npm run create-admin-user -- --email=admin@example.com --confirm-create-admin`
