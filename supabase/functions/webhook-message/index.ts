@@ -15,8 +15,8 @@ function deliveryEnabled(): boolean {
   return Deno.env.get("PICOM_WEBHOOK_DELIVERY_ENABLED")?.trim().toLowerCase() === "true";
 }
 
-function getPresentedToken(request: Request, url: URL): string {
-  return request.headers.get("x-picom-webhook-token")?.trim() || url.searchParams.get("token")?.trim() || "";
+function getPresentedToken(request: Request): string {
+  return request.headers.get("x-picom-webhook-token")?.trim() || "";
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -84,7 +84,7 @@ Deno.serve(async (request: Request) => {
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id")?.trim() ?? "";
-  const token = getPresentedToken(request, url);
+  const token = getPresentedToken(request);
   const requestKey = request.headers.get("idempotency-key")?.trim() || null;
   if (!/^[0-9a-f-]{36}$/i.test(id) || !/^[0-9a-f]{64}$/i.test(token)) return errorResponse("WEBHOOK_INVALID", "Invalid or unavailable webhook.", 401);
   if (requestKey && !/^[A-Za-z0-9._:-]{8,80}$/.test(requestKey)) return errorResponse("VALIDATION_ERROR", "Idempotency-Key must contain 8 to 80 safe characters.", 400);

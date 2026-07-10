@@ -17,7 +17,7 @@ Community Admin > Webhooks supports permission-gated create, metadata list, one-
 ## Delivery architecture
 
 1. Caller sends `POST /functions/v1/webhook-message?id=<webhook-id>`.
-2. Token is supplied through `X-Picom-Webhook-Token` (preferred) or the one-time compatibility URL query parameter.
+2. Token is supplied only through `X-Picom-Webhook-Token`. Query-string credentials are rejected to avoid URL/history/proxy/log leakage.
 3. Edge Function validates method, feature enablement, ID/token shape, body, size, and optional `Idempotency-Key`.
 4. Token is SHA-256 hashed in memory; the raw value is never logged or passed to SQL.
 5. Service-role client calls the backend-only `deliver_webhook_message` RPC.
@@ -104,4 +104,3 @@ Message moderation triggers still validate blocked words, links, mentions, and s
 - No attachment/embed delivery.
 - No user/profile impersonation overrides.
 - No secret recovery or token listing.
-

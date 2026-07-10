@@ -343,8 +343,8 @@ export type Database = {
       };
       webhooks: {
         Row: { id: string; community_id: string; channel_id: string; name: string; avatar_url: string | null; token_hash: string; created_by: string; revoked_at: string | null; created_at: string; updated_at: string };
-        Insert: Partial<Database["public"]["Tables"]["webhooks"]["Row"]> & Pick<Database["public"]["Tables"]["webhooks"]["Row"], "community_id" | "channel_id" | "name" | "token_hash" | "created_by">;
-        Update: Partial<Database["public"]["Tables"]["webhooks"]["Row"]>;
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       community_emojis: {
@@ -427,6 +427,8 @@ export type Database = {
       revoke_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: boolean };
       get_community_bot_credential_status: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ bot_id: string; token_prefix: string; created_at: string; revoked_at: string | null; rate_limit_per_minute: number }> };
       rotate_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ raw_token: string; token_prefix: string; created_at: string }> };
+      create_channel_webhook: { Args: { target_community_id: string; target_channel_id: string; target_webhook_name: string; webhook_avatar_url: string | null }; Returns: Array<{ webhook_id: string; community_id: string; channel_id: string; webhook_name: string; avatar_url: string | null; created_by: string; revoked_at: string | null; created_at: string; updated_at: string; token_once: string }> };
+      revoke_channel_webhook: { Args: { target_webhook_id: string }; Returns: Array<{ webhook_id: string; community_id: string; channel_id: string; webhook_name: string; avatar_url: string | null; created_by: string; revoked_at: string | null; created_at: string; updated_at: string }> };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
