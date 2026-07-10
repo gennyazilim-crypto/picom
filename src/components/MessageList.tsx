@@ -23,6 +23,8 @@ type MessageListProps = {
   onSaveEdit: (message: Message, body: string) => void;
   onDelete: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
+  onRetrySend: (message: Message) => void;
+  onRemoveFailed: (message: Message) => void;
   pushToast: (message: string, tone?: ToastTone) => void;
   blockedUserIds?: string[];
   announcement?: boolean;
@@ -55,6 +57,8 @@ export function MessageList({
   onSaveEdit,
   onDelete,
   onToggleReaction,
+  onRetrySend,
+  onRemoveFailed,
   pushToast,
   blockedUserIds = [],
   announcement = false,
@@ -142,6 +146,8 @@ export function MessageList({
               onSaveEdit={onSaveEdit}
               onDelete={onDelete}
               onToggleReaction={onToggleReaction}
+              onRetrySend={onRetrySend}
+              onRemoveFailed={onRemoveFailed}
               pushToast={pushToast}
             />
           </div>

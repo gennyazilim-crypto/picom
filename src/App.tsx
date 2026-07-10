@@ -327,6 +327,7 @@ export function App() {
     upsertLocalMessage,
     updateLocalMessage,
     removeLocalMessage,
+    setLocalMessageDeliveryStatus,
     editLocalMessage,
     deleteLocalMessage,
     toggleLocalReaction,
@@ -1774,6 +1775,19 @@ export function App() {
     }
     const clientMessageId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const localOrder = messageSendQueueService.nextLocalOrder(activeCommunity.id, displayedActiveChannel.id);
+    const optimisticId = `local-${clientMessageId}`;
+    appendLocalMessage({
+      id: optimisticId,
+      clientMessageId,
+      communityId: activeCommunity.id,
+      channelId: displayedActiveChannel.id,
+      authorId: currentUser.userId,
+      body,
+      localOrder,
+      replyToMessageId,
+      attachments,
+      localStatus: typeof navigator !== "undefined" && !navigator.onLine ? "queued_offline" : "sending",
+    });
     const result = await messageSendQueueService.enqueue({
       communityId: activeCommunity.id,
       channelId: displayedActiveChannel.id,
@@ -1784,6 +1798,7 @@ export function App() {
     });
 
     if (!result.ok) {
+      setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id, id: optimisticId, clientMessageId, localStatus: "failed" });
       const conflict = offlineSyncConflictService.classify({
         actionType: "sendMessage",
         errorCode: result.error.code,
@@ -1809,10 +1824,32 @@ export function App() {
       replyToMessageId,
       attachments,
       poll: pollResult?.ok ? pollResult.data : undefined,
+      localStatus: "sent",
     });
 
     maybeShowNotificationPermissionPrompt("first_message_sent");
     setReplyToMessageId(null);
+  };
+
+  const retryFailedMessage = async (message: Message) => {
+    if (!message.clientMessageId || (message.localStatus !== "failed" && message.localStatus !== "queued_offline")) return;
+    const localStatus = typeof navigator !== "undefined" && !navigator.onLine ? "queued_offline" : "sending";
+    setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus });
+    const result = await messageSendQueueService.enqueue({ communityId: activeCommunity.id, channelId: message.channelId, authorId: message.authorId, body: message.body, clientMessageId: message.clientMessageId, localOrder: message.localOrder ?? messageSendQueueService.nextLocalOrder(activeCommunity.id, message.channelId) });
+    if (!result.ok) {
+      setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus: "failed" });
+      const conflict = offlineSyncConflictService.classify({ actionType: "sendMessage", errorCode: result.error.code, errorMessage: result.error.message });
+      pushToast(conflict.userMessage, "error");
+      return;
+    }
+    appendLocalMessage({ id: result.data.id, clientMessageId: message.clientMessageId, communityId: activeCommunity.id, channelId: message.channelId, authorId: result.data.authorId, body: result.data.body, localOrder: message.localOrder, createdAt: result.data.createdAt, replyToMessageId: message.replyToMessageId, attachments: message.attachments, localStatus: "sent" });
+    pushToast("Message sent after retry.", "success");
+  };
+
+  const removeFailedMessage = (message: Message) => {
+    if (message.localStatus !== "failed" && message.localStatus !== "queued_offline") return;
+    removeLocalMessage({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id });
+    pushToast("Local failed message removed.", "info");
   };
 
   const canCurrentUserModerate = () => {
@@ -2330,6 +2367,8 @@ export function App() {
                 onSaveEditMessage={handleSaveMessageEdit}
                 onDeleteMessage={handleDeleteMessage}
                 onToggleReaction={handleToggleMessageReaction}
+                onRetryMessage={(message) => void retryFailedMessage(message)}
+                onRemoveFailedMessage={removeFailedMessage}
                 onOpenJoinCommunity={handleJoinCommunity}
                 pushToast={pushToast}
               />

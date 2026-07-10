@@ -97,6 +97,8 @@ type MessageItemProps = {
   onSaveEdit: (message: Message, body: string) => void;
   onDelete: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
+  onRetrySend: (message: Message) => void;
+  onRemoveFailed: (message: Message) => void;
   pushToast?: (message: string, tone?: ToastTone) => void;
   communityId: string;
 };
@@ -121,6 +123,8 @@ export function MessageItem({
   onSaveEdit,
   onDelete,
   onToggleReaction,
+  onRetrySend,
+  onRemoveFailed,
   pushToast,
   communityId,
 }: MessageItemProps) {
@@ -240,9 +244,9 @@ export function MessageItem({
         ) : null}
         {showRecoveryActions ? (
           <div className="message-delivery-actions" aria-label="Message delivery recovery actions">
-            <button type="button" onClick={() => pushToast?.("Retry placeholder is ready for the offline queue.", "info")}>Retry placeholder</button>
+            <button type="button" onClick={() => onRetrySend(message)}>Retry</button>
             <button type="button" onClick={() => void copyMessageBody()}>Copy text</button>
-            <button type="button" onClick={() => pushToast?.("Remove placeholder is ready for failed local messages.", "info")}>Remove placeholder</button>
+            <button type="button" onClick={() => onRemoveFailed(message)}>Remove</button>
           </div>
         ) : null}
         {!deleted && reactionPickerOpen ? (

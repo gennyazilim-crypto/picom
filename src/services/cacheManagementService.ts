@@ -7,8 +7,8 @@ export type CacheSummary = Readonly<{
   imageCacheEntries: number;
   imageCacheMaxEntries: number;
   recentLogEntries: number;
-  messageCacheStatus: "browser_managed_placeholder";
-  offlineDataStatus: "not_enabled_placeholder";
+  messageCacheStatus: "not_persisted";
+  offlineDataStatus: "memory_only_queue";
   notes: string[];
 }>;
 
@@ -43,12 +43,13 @@ async function buildSummary(): Promise<CacheSummary> {
     imageCacheEntries: imageSummary.entries,
     imageCacheMaxEntries: imageSummary.maxEntries,
     recentLogEntries: loggingService.getLogs().length,
-    messageCacheStatus: "browser_managed_placeholder",
-    offlineDataStatus: "not_enabled_placeholder",
+    messageCacheStatus: "not_persisted",
+    offlineDataStatus: "memory_only_queue",
     notes: [
       "Auth sessions are not cleared by cache actions.",
       "Drafts are not cleared by cache actions.",
       "Browser HTTP cache is managed by Electron/Chromium.",
+      "Queued message content is kept in memory only and is not written to disk.",
     ],
   };
 }

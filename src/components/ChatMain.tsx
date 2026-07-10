@@ -54,6 +54,8 @@ type ChatMainProps = {
   onSaveEditMessage: (message: Message, body: string) => void;
   onDeleteMessage: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
+  onRetryMessage: (message: Message) => void;
+  onRemoveFailedMessage: (message: Message) => void;
   blockedUserIds?: string[];
   onOpenJoinCommunity: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
@@ -89,6 +91,8 @@ export function ChatMain({
   onSaveEditMessage,
   onDeleteMessage,
   onToggleReaction,
+  onRetryMessage,
+  onRemoveFailedMessage,
   blockedUserIds = [],
   onOpenJoinCommunity,
   pushToast,
@@ -217,6 +221,8 @@ export function ChatMain({
             onSaveEdit={onSaveEditMessage}
             onDelete={onDeleteMessage}
             onToggleReaction={onToggleReaction}
+            onRetrySend={onRetryMessage}
+            onRemoveFailed={onRemoveFailedMessage}
             pushToast={pushToast}
             blockedUserIds={blockedUserIds}
             announcement={channel.type === "announcement"}

@@ -15,6 +15,7 @@ type AppendLocalMessageInput = {
   replyToMessageId?: string | null;
   attachments?: Attachment[];
   poll?: PollData;
+  localStatus?: Message["localStatus"];
 };
 
 type UpsertLocalMessageInput = AppendLocalMessageInput & {
@@ -35,6 +36,11 @@ type RemoveLocalMessageInput = {
   communityId: string;
   channelId: string;
   id: string;
+};
+
+type SetLocalMessageDeliveryStatusInput = RemoveLocalMessageInput & {
+  clientMessageId?: string | null;
+  localStatus: NonNullable<Message["localStatus"]>;
 };
 
 type EditLocalMessageInput = {
@@ -173,7 +179,7 @@ type AddLocalChannelInput = {
 export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
-  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, replyToMessageId, attachments, poll }: AppendLocalMessageInput) => {
+  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, replyToMessageId, attachments, poll, localStatus }: AppendLocalMessageInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
       id: id ?? `local-${idSuffix}`,
@@ -188,7 +194,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       attachments,
       poll,
       reactions: [],
-      localStatus: "sent",
+      localStatus: localStatus ?? "sent",
     };
 
     setCommunities((current) =>
@@ -289,6 +295,13 @@ export function useLocalMessageState(initialCommunities: Community[]) {
           : community,
       ),
     );
+  }, []);
+
+  const setLocalMessageDeliveryStatus = useCallback(({ communityId, channelId, id, clientMessageId, localStatus }: SetLocalMessageDeliveryStatusInput) => {
+    setCommunities((current) => current.map((community) => community.id !== communityId ? community : {
+      ...community,
+      messages: community.messages.map((message) => message.channelId === channelId && isSameMessage(message, id, clientMessageId) ? { ...message, localStatus } : message),
+    }));
   }, []);
 
   const editLocalMessage = useCallback(({ communityId, channelId, id, body }: EditLocalMessageInput) => {
@@ -543,6 +556,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     upsertLocalMessage,
     updateLocalMessage,
     removeLocalMessage,
+    setLocalMessageDeliveryStatus,
     editLocalMessage,
     deleteLocalMessage,
     toggleLocalReaction,

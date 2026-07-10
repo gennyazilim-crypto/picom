@@ -15,6 +15,11 @@ type SendMessageFn = (input: QueuedSendMessageInput) => Promise<MessageServiceRe
 const queues = new Map<string, Promise<void>>();
 const localOrders = new Map<string, number>();
 
+function waitForBrowserOnline(): Promise<void> {
+  if (typeof navigator === "undefined" || navigator.onLine) return Promise.resolve();
+  return new Promise((resolve) => window.addEventListener("online", () => resolve(), { once: true }));
+}
+
 function getChannelKey(communityId: string, channelId: string): string {
   return `${communityId}:${channelId}`;
 }
@@ -44,7 +49,8 @@ export const messageSendQueueService = {
   enqueue(input: QueuedSendMessageInput, send: SendMessageFn = messageService.sendMessage): Promise<MessageServiceResult<MessageSummary>> {
     const key = getChannelKey(input.communityId, input.channelId);
     const previous = queues.get(key) ?? Promise.resolve();
-    const operation = previous.then(() => send(input), () => send(input));
+    const sendWhenOnline = async () => { await waitForBrowserOnline(); return send(input); };
+    const operation = previous.then(sendWhenOnline, sendWhenOnline);
 
     rememberQueue(key, operation);
     return operation;
