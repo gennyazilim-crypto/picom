@@ -1,5 +1,7 @@
 # Two-Factor Authentication Placeholder
 
+Production decision: deferred. See [Two-factor authentication production decision](two-factor-authentication-decision.md). This placeholder is not an authentication factor or security control.
+
 Picom prepares a future Supabase MFA flow without enabling production two-factor authentication yet. This placeholder is intentionally conservative: it does not generate shared secrets, QR codes, raw recovery codes, or backup codes in the renderer.
 
 ## Current behavior
