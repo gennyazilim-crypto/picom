@@ -298,7 +298,7 @@ export type Database = {
         Relationships: [];
       };
       forum_posts: {
-        Row: { id: string; channel_id: string; title: string; author_id: string; tags: string[]; status: "open" | "resolved"; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string; channel_id: string; parent_message_id: string; thread_id: string; title: string; body: string; author_id: string; tags: string[]; status: "open" | "resolved"; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["forum_posts"]["Row"]> & Pick<Database["public"]["Tables"]["forum_posts"]["Row"], "channel_id" | "title" | "author_id">;
         Update: Partial<Database["public"]["Tables"]["forum_posts"]["Row"]>;
         Relationships: [];
@@ -460,6 +460,7 @@ export type Database = {
       send_thread_message: { Args: { target_thread_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
       get_thread_summary: { Args: { target_thread_id: string }; Returns: Json };
       mark_thread_read: { Args: { target_thread_id: string }; Returns: boolean };
+      create_forum_post: { Args: { target_community_id: string; target_channel_id: string; post_title: string; post_body: string; post_tags: string[] }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
