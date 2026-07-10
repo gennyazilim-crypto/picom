@@ -1,6 +1,6 @@
-# Password Reset Flow Placeholder
+# Password reset compatibility note
 
-Picom now includes a safe desktop password reset placeholder.
+Picom now includes a production-oriented PKCE request/confirm implementation. See [Password reset production](password-reset-production.md) for the authoritative flow and hosted provider gates.
 
 ## Frontend behavior
 

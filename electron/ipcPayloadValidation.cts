@@ -41,6 +41,15 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
     return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
   }
+  if (route === "auth" && segments.length === 1 && segments[0] === "reset-password") {
+    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
+    const type = parsed.searchParams.get("type");
+    if (type && type !== "recovery") return false;
+    const code = parsed.searchParams.get("code");
+    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
+    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+  }
   if (parsed.search) return false;
   if (route === "invite") return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
   if (route === "community") {

@@ -319,6 +319,8 @@ export function App() {
   const [profileSettings, setProfileSettings] = useState(saved.profileSettings);
   const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>("online");
   const [authView, setAuthView] = useState<"login" | "register">("login");
+  const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
+  const [passwordRecoveryMessage, setPasswordRecoveryMessage] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("community");
   const [isActiveMessageListNearBottom, setIsActiveMessageListNearBottom] = useState(true);
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
@@ -953,6 +955,14 @@ export function App() {
     pushToast(result.data.message, "success");
     return result.data.message;
   }, [pushToast]);
+  const handlePasswordResetConfirm = useCallback(async (password: string) => {
+    const result = await authService.confirmPasswordReset(password);
+    if (!result.ok) return { ok: false, message: result.error.message };
+    setPasswordRecoveryMode(false);
+    setPasswordRecoveryMessage(null);
+    pushToast(result.data.message, "success");
+    return { ok: true, message: result.data.message };
+  }, [pushToast]);
   const lockApp = useCallback(() => {
     closeTransientOverlays();
     closePalette();
@@ -1209,6 +1219,17 @@ export function App() {
 
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
+      if (action.type === "passwordRecovery") {
+        if (!action.code) { setPasswordRecoveryMode(false); pushToast(action.error || "This password reset link is invalid or expired.", "error"); return; }
+        void authService.preparePasswordRecovery(action.code).then((result) => {
+          if (!result.ok) { setPasswordRecoveryMode(false); pushToast(result.error.message, "error"); return; }
+          clearAuthError();
+          setAuthView("login");
+          setPasswordRecoveryMessage(result.data.message);
+          setPasswordRecoveryMode(true);
+        });
+        return;
+      }
       if (action.type === "authCallback") {
         if (!action.code) {
           pushToast(action.error || "Social sign in was canceled.", "error");
@@ -1262,7 +1283,7 @@ export function App() {
     };
 
     return deepLinkService.onDeepLink(handleDeepLinkAction);
-  }, [clearChannelUnread, closeTransientOverlays, communities, openSettings, pushToast, switchCommunity]);
+  }, [clearAuthError, clearChannelUnread, closeTransientOverlays, communities, openSettings, pushToast, switchCommunity]);
 
   useEffect(() => {
     const handleMenuAction = (payload: MenuActionPayload) => {
@@ -1882,7 +1903,7 @@ export function App() {
     pushToast("Picom setup completed.", "success");
   }, [profileSettings, pushToast]);
 
-  if (!authReady || !authSession) {
+  if (passwordRecoveryMode || !authReady || !authSession) {
     return (
       <>
         <DesktopAppShell>
@@ -1897,6 +1918,10 @@ export function App() {
               onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")}
               onSubmit={handleLogin}
               onPasswordResetRequest={handlePasswordResetRequest}
+              recoveryMode={passwordRecoveryMode}
+              recoveryMessage={passwordRecoveryMessage}
+              onConfirmPasswordReset={handlePasswordResetConfirm}
+              onCancelPasswordRecovery={() => { setPasswordRecoveryMode(false); setPasswordRecoveryMessage(null); void authService.signOut(); }}
               onSwitchToRegister={() => {
                 clearAuthError();
                 setAuthView("register");

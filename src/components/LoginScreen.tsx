@@ -12,6 +12,10 @@ type LoginScreenProps = {
   onToggleTheme: () => void;
   onSubmit: (email: string, password: string) => Promise<void>;
   onPasswordResetRequest: (email: string) => Promise<string>;
+  recoveryMode?: boolean;
+  recoveryMessage?: string | null;
+  onConfirmPasswordReset?: (password: string) => Promise<{ ok: boolean; message: string }>;
+  onCancelPasswordRecovery?: () => void;
   onSwitchToRegister: () => void;
 };
 
@@ -20,13 +24,17 @@ const localSeed = {
   password: "PicomDev123!",
 };
 
-export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, onPasswordResetRequest, onSwitchToRegister }: LoginScreenProps) {
+export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, onPasswordResetRequest, recoveryMode = false, recoveryMessage, onConfirmPasswordReset, onCancelPasswordRecovery, onSwitchToRegister }: LoginScreenProps) {
   const [email, setEmail] = useState(localSeed.email);
   const [password, setPassword] = useState(localSeed.password);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState(localSeed.email);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [recoveryResult, setRecoveryResult] = useState<string | null>(null);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -40,6 +48,23 @@ export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, on
     setResetMessage(message);
     setResetLoading(false);
   };
+
+  if (recoveryMode) return (
+    <main className="auth-desktop-frame" aria-label="Picom password recovery">
+      <LoginBackgroundAnimation theme={theme} />
+      <section className="auth-hero" aria-hidden="true"><div className="auth-logo-orb"><img src={logoUrl} alt="" /></div><p className="eyebrow">Secure account recovery</p><h1>Choose a new password.</h1><p>Use a unique password you do not use elsewhere. Picom never displays, stores, or logs recovery codes.</p></section>
+      <form className="auth-card" onSubmit={(event) => { event.preventDefault(); void (async () => { if (newPassword !== confirmNewPassword) { setRecoveryResult("Passwords do not match."); return; } if (!onConfirmPasswordReset) return; setRecoveryLoading(true); const result = await onConfirmPasswordReset(newPassword); setRecoveryLoading(false); setRecoveryResult(result.message); if (result.ok) { setNewPassword(""); setConfirmNewPassword(""); } })(); }}>
+        <div className="auth-card-header"><div><p className="eyebrow">Password recovery</p><h2>Set new password</h2></div><ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact /></div>
+        <p className="auth-note">{recoveryMessage ?? "Recovery link accepted. Enter a new password."}</p>
+        <label className="auth-field"><span>New password</span><input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
+        <label className="auth-field"><span>Confirm new password</span><input type="password" autoComplete="new-password" minLength={12} value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} required /></label>
+        <small className="auth-note">Use at least 12 characters. All existing sessions are signed out after a successful reset.</small>
+        {error || recoveryResult ? <div className={recoveryResult?.startsWith("Password updated") ? "auth-success" : "auth-error"} role="status">{recoveryResult ?? error}</div> : null}
+        <button className="auth-submit" type="submit" disabled={recoveryLoading || newPassword.length < 12 || newPassword !== confirmNewPassword}>{recoveryLoading ? "Updating password..." : "Update password"}<AppIcon name="lock" size="sm" /></button>
+        <button className="auth-seed-button" type="button" disabled={recoveryLoading} onClick={onCancelPasswordRecovery}>Back to sign in</button>
+      </form>
+    </main>
+  );
 
   return (
     <main className="auth-desktop-frame" aria-label="Picom sign in">
@@ -104,7 +129,7 @@ export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, on
 
         {resetOpen ? (
           <div className="password-reset-panel">
-            <strong>Password reset placeholder</strong>
+            <strong>Reset your password</strong>
             <p>Enter your email. Picom will show the same safe response whether an account exists or not.</p>
             <label className="auth-field">
               <span>Reset email</span>
@@ -118,7 +143,7 @@ export function LoginScreen({ theme, loading, error, onToggleTheme, onSubmit, on
             </label>
             {resetMessage ? <div className="auth-success" role="status">{resetMessage}</div> : null}
             <button className="auth-seed-button" type="button" disabled={resetLoading} onClick={requestPasswordReset}>
-              {resetLoading ? "Preparing..." : "Request reset placeholder"}
+              {resetLoading ? "Sending..." : "Send reset email"}
             </button>
           </div>
         ) : null}

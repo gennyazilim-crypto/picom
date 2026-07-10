@@ -146,6 +146,7 @@
     "dev:reset-data": "node scripts/reset-dev-data.mjs",
     "email:smoke": "node scripts/email-service-smoke-test.mjs",
     "auth:password-reset:smoke": "node scripts/password-reset-smoke-test.mjs",
+    "auth:password-reset:production:test": "node scripts/password-reset-production-test.mjs",
     "auth:email-verification:smoke": "node scripts/email-verification-smoke-test.mjs",
     "auth:sessions:smoke": "node scripts/session-management-smoke-test.mjs",
     "auth:multi-client-sync:smoke": "node scripts/multi-client-session-sync-smoke-test.mjs",

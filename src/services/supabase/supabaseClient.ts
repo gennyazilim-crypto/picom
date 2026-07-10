@@ -36,6 +36,7 @@ export function getSupabaseClient(): SupabaseClient<Database> | null {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
+      flowType: "pkce",
     },
     realtime: {
       params: {

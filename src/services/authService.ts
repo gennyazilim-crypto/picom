@@ -4,6 +4,10 @@ import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseC
 import { legalConfig } from "../config/legalConfig";
 import { termsAcceptanceService } from "./termsAcceptanceService";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
+import { appConfig } from "../config/appConfig";
+
+let lastPasswordResetRequestAt = 0;
+const PASSWORD_RESET_COOLDOWN_MS = 60_000;
 
 export type AuthServiceUser = Readonly<{
   id: string;
@@ -220,6 +224,10 @@ export const authService = {
     const configured = getConfiguredClient();
     if (!configured.ok) return configured;
 
+    const now = Date.now();
+    if (now - lastPasswordResetRequestAt < PASSWORD_RESET_COOLDOWN_MS) return authError("AUTH_RATE_LIMITED", "Please wait before requesting another password reset email.");
+    lastPasswordResetRequestAt = now;
+
     if (!configured.data) {
       return {
         ok: true,
@@ -230,7 +238,8 @@ export const authService = {
       };
     }
 
-    await configured.data.auth.resetPasswordForEmail(normalizedEmail).catch(() => null);
+    const { error } = await configured.data.auth.resetPasswordForEmail(normalizedEmail, { redirectTo: appConfig.supabase.passwordResetRedirectUrl });
+    if (error && isRateLimitError(error)) return authError("AUTH_RATE_LIMITED", rateLimitUserMessage);
 
     return {
       ok: true,
@@ -241,17 +250,25 @@ export const authService = {
     };
   },
 
-  async confirmPasswordResetPlaceholder(newPassword: string): Promise<AuthServiceResult<{ message: string }>> {
-    if (newPassword.trim().length < 8) {
-      return authError("AUTH_INVALID_INPUT", "New password must be at least 8 characters.");
-    }
+  async preparePasswordRecovery(code: string): Promise<AuthServiceResult<{ message: string }>> {
+    if (!/^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return authError("AUTH_INVALID_INPUT", "This password reset link is invalid or expired.");
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+    if (!configured.data) return { ok: true, data: { message: "Mock password recovery is ready." } };
+    const { error } = await configured.data.auth.exchangeCodeForSession(code);
+    if (error) return authError("AUTH_SESSION_EXPIRED", "This password reset link is invalid or expired. Request a new one.");
+    return { ok: true, data: { message: "Choose a new password to finish recovery." } };
+  },
 
-    return {
-      ok: true,
-      data: {
-        message: "Password reset confirmation placeholder is prepared for a future deep link flow.",
-      },
-    };
+  async confirmPasswordReset(newPassword: string): Promise<AuthServiceResult<{ message: string }>> {
+    if (newPassword.length < 12) return authError("AUTH_INVALID_INPUT", "New password must be at least 12 characters.");
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+    if (!configured.data) return { ok: true, data: { message: "Password updated in mock recovery mode. Sign in again." } };
+    const { error } = await configured.data.auth.updateUser({ password: newPassword });
+    if (error) return { ok: false, error: mapSupabaseError(error) };
+    await configured.data.auth.signOut({ scope: "global" });
+    return { ok: true, data: { message: "Password updated. All sessions were signed out; sign in with your new password." } };
   },
 
   async requestEmailVerification(email?: string): Promise<AuthServiceResult<EmailVerificationRequestSummary>> {

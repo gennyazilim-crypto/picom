@@ -7,7 +7,7 @@ Task 285 adds account security settings placeholders for the beta desktop app.
 - Settings > Account shows security-oriented placeholder cards.
 - The UI separates user-facing account safety text from developer diagnostics.
 - No passwords, tokens, cookies, auth headers, service-role keys, signing keys, certificates, or production credentials are displayed.
-- Password reset and two-factor authentication are placeholders only.
+- Password reset has a PKCE request/confirm implementation; hosted SMTP, redirect and rate-limit validation remain pending. Two-factor authentication remains a placeholder.
 
 ## Security assumptions
 
@@ -18,7 +18,7 @@ Task 285 adds account security settings placeholders for the beta desktop app.
 
 ## Remaining risks
 
-- Password reset is not production-ready.
+- Password reset code is prepared, but production readiness remains blocked on hosted email/provider and cross-platform deep-link validation.
 - Two-factor authentication is not implemented.
 - Active session management is not implemented.
 - Account activity history is not implemented.

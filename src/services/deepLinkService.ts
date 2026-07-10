@@ -2,6 +2,7 @@ export type DeepLinkAction =
   | { type: "invite"; code: string }
   | { type: "community"; communityId: string; channelId?: string; messageId?: string }
   | { type: "authCallback"; code?: string; error?: string }
+  | { type: "passwordRecovery"; code?: string; error?: string }
   | { type: "settings" }
   | { type: "friends" };
 
@@ -81,6 +82,18 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
     if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: raw, action: { type: "authCallback", code } };
     if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: "authCallback", error } };
     return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+  }
+
+  if (route === "auth" && segments.length === 1 && segments[0] === "reset-password" && !parsed.hash) {
+    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_PASSWORD_RECOVERY_LINK" };
+    const type = parsed.searchParams.get("type");
+    if (type && type !== "recovery") return { ok: false, reason: "INVALID_PASSWORD_RECOVERY_LINK" };
+    const code = parsed.searchParams.get("code") ?? undefined;
+    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+    if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: "picom://auth/reset-password", action: { type: "passwordRecovery", code } };
+    if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: "picom://auth/reset-password", action: { type: "passwordRecovery", error } };
+    return { ok: false, reason: "INVALID_PASSWORD_RECOVERY_LINK" };
   }
 
   if (route === "invite") {
