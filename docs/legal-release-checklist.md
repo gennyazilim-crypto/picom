@@ -52,3 +52,5 @@ This is an engineering readiness checklist, not legal advice. Named legal/privac
 | Platform distribution | | | | |
 
 Any unresolved required approval blocks public stable release.
+
+GDPR/DSA counsel questions and product-workflow reconciliation are tracked in `docs/legal/gdpr-dsa-review-follow-up.md`; its review marker must be approved before final policy publication.
