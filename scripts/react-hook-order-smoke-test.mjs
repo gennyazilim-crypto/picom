@@ -15,7 +15,7 @@ if (appStart === -1) {
 }
 
 const appBody = appSource.slice(appStart);
-const authGuardIndex = appBody.indexOf("if (!authReady || !authSession)");
+const authGuardIndex = appBody.indexOf("if (passwordRecoveryMode || !authReady || !authSession)");
 if (authGuardIndex === -1) {
   throw new Error("Protected auth/session guard was not found in App.");
 }
