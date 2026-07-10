@@ -6,6 +6,8 @@ import { AppIcon, type IconName } from "./AppIcon";
 import { VerifiedProfileAvatar } from "./VerifiedProfileAvatar";
 import { VerificationBadgeList } from "./VerificationBadgeList";
 import { getUserVerificationVariant } from "../utils/verificationHelpers";
+import { mockPodcastEpisodes, mockRadioSessions } from "../data/mockAudio";
+import { ProfileAudioSections } from "./audio/ProfileAudioSections";
 
 type ProfileViewProps = {
   profile: UserProfile;
@@ -20,6 +22,7 @@ type ProfileViewProps = {
   onOpenImage: (attachment: Attachment) => void;
   onPlaceholderAction?: (message: string) => void;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
+  onOpenCommunity?: (communityId: string) => void;
 };
 
 type ProfileActionButtonsProps = {
@@ -223,7 +226,7 @@ export function ProfileHeroGallery({ media, onOpenImage }: { media: ProfileMedia
   );
 }
 
-export function ProfileStats({ profile }: { profile: UserProfile }) {
+export function ProfileStats({ profile, audioStats }: { profile: UserProfile; audioStats?: { radioSessions: number; podcastEpisodes: number; audioListeners: number } }) {
   const stats = [
     ["Communities", profile.stats.communities],
     ["Posts", profile.stats.posts],
@@ -232,6 +235,9 @@ export function ProfileStats({ profile }: { profile: UserProfile }) {
     ["Followers", profile.stats.followers],
     ["Following", profile.stats.following],
     ["Roles", profile.stats.roles],
+    ["Radio sessions", audioStats?.radioSessions ?? 0],
+    ["Podcast episodes", audioStats?.podcastEpisodes ?? 0],
+    ["Audio listeners", audioStats?.audioListeners ?? 0],
   ] as const;
 
   return (
@@ -388,22 +394,31 @@ export function ProfileMainPanel({
   communities,
   onOpenActivity,
   onOpenImage,
+  onOpenCommunity,
 }: {
   profile: UserProfile;
   communities: Community[];
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
+  onOpenCommunity?: (communityId: string) => void;
 }) {
   if(profile.privacyRestricted)return <section className="profile-main-panel" aria-label="Private profile"><div className="profile-section profile-empty-panel"><AppIcon name="lock" size="lg" /><strong>Limited profile</strong><p>This person shares profile details only with their selected audience.</p></div></section>;
+  const visibleCommunityIds = new Set(communities.map((community) => community.id));
+  const hostedRadio = mockRadioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId));
+  const podcastEpisodes = mockPodcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
+  const savedRadio = mockRadioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId));
+  const savedPodcasts = mockPodcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
+  const audioStats = { radioSessions: hostedRadio.length, podcastEpisodes: podcastEpisodes.length, audioListeners: [...hostedRadio, ...podcastEpisodes].reduce((total, item) => total + item.listenerCount, 0) };
   return (
     <section className="profile-main-panel" aria-label="Profile details">
       <ProfileHeroGallery media={profile.media} onOpenImage={onOpenImage} />
-      <ProfileStats profile={profile} />
+      <ProfileStats profile={profile} audioStats={audioStats} />
       <ProfileBio profile={profile} />
       <ProfileDetailsGrid profile={profile} communities={communities} />
       <ProfileSkillsTags profile={profile} />
       <ProfileActivityList activities={profile.activities} communities={communities} onOpenActivity={onOpenActivity} />
       <ProfileSharedMedia media={profile.media} onOpenImage={onOpenImage} />
+      <ProfileAudioSections hostedRadio={hostedRadio} podcastEpisodes={podcastEpisodes} savedRadio={savedRadio} savedPodcasts={savedPodcasts} communities={communities} isCurrentUser={Boolean(profile.isCurrentUser)} onOpenCommunity={onOpenCommunity} />
     </section>
   );
 }
@@ -421,6 +436,7 @@ export function ProfileView({
   onOpenImage,
   onPlaceholderAction,
   onOpenMore,
+  onOpenCommunity,
 }: ProfileViewProps) {
   const isCurrentUser = profile.isCurrentUser ?? profile.id === currentUserId;
 
@@ -438,7 +454,7 @@ export function ProfileView({
           onPlaceholderAction={onPlaceholderAction}
           onOpenMore={onOpenMore}
         />
-        <ProfileMainPanel profile={profile} communities={communities} onOpenActivity={onOpenActivity} onOpenImage={onOpenImage} />
+        <ProfileMainPanel profile={profile} communities={communities} onOpenActivity={onOpenActivity} onOpenImage={onOpenImage} onOpenCommunity={onOpenCommunity} />
       </div>
     </main>
   );

@@ -2510,6 +2510,7 @@ export function App() {
               onFriendAction={requestFriendFromProfile}
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
+              onOpenCommunity={openFeedEventCommunity}
               onPlaceholderAction={(message) => pushToast(message, "info")}
               onOpenMore={(event, profile) => openContext(event, [
                 { label: profile.isCurrentUser ? "Edit profile placeholder" : "Message placeholder" },
