@@ -5,8 +5,10 @@ import type { FriendConnection } from "../types/friends";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import { dateTimeService } from "../services/dateTimeService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
+import type { AudioPlayableItem } from "../types/audio";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
+import { AudioMiniPlayer } from "./audio/AudioMiniPlayer";
 
 type FeedCompanionRailProps = {
   voiceState: VoiceServiceSnapshot;
@@ -22,6 +24,8 @@ type FeedCompanionRailProps = {
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
+  audioItem?: AudioPlayableItem | null;
+  onCloseAudio: () => void;
 };
 
 function findMember(communities: Community[], userId: string) {
@@ -266,9 +270,12 @@ export function FeedCompanionRail({
   onOpenProfile,
   onOpenEventCommunity,
   onEventDetails,
+  audioItem,
+  onCloseAudio,
 }: FeedCompanionRailProps) {
   return (
     <aside className="feed-companion-rail" aria-label="Feed companion rail">
+      {audioItem ? <AudioMiniPlayer item={audioItem} onClose={onCloseAudio} /> : null}
       <VoiceMiniControlCard
         voiceState={voiceState}
         onToggleMute={onToggleMute}

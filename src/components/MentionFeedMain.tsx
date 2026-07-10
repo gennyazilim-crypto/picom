@@ -6,11 +6,14 @@ import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "../types/m
 import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
+import type { AudioFeedItem, AudioPlayableItem } from "../types/audio";
+import { mockAudioFeedItems } from "../data/mockAudio";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
 import { MentionFeedHeader } from "./MentionFeedHeader";
 import { MentionFeedList } from "./MentionFeedList";
+import { AudioFeedSection } from "./audio/AudioFeedSection";
 
 type MentionFeedMainProps = {
   items: MentionItem[];
@@ -85,12 +88,21 @@ export function MentionFeedMain({
   onEventDetails,
 }: MentionFeedMainProps) {
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
+  const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
+  const [savedAudioIds, setSavedAudioIds] = useState<Set<string>>(() => new Set(mockAudioFeedItems.filter((item) => item.isSaved).map((item) => item.id)));
+  const [audioReminderIds, setAudioReminderIds] = useState<Set<string>>(() => new Set());
   const rankingNowMs = useMemo(() => Date.now(), []);
   const feedItems = useMemo(() => rankMentionFeedItems(items, { tab: "feed", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
   const followingItems = useMemo(() => rankMentionFeedItems(items, { tab: "following", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
   const visibleItems = useMemo(() => applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter), [activeFilter, activeTab, feedItems, followingItems]);
   const storyIds = useMemo(() => stories.map((story) => story.id), [stories]);
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
+  const visibleAudioItems = useMemo(() => activeTab === "feed" ? mockAudioFeedItems.slice(0, 6) : mockAudioFeedItems.filter((item) => followedUserIds.includes(item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [activeTab, followedUserIds]);
+  const selectAudio = (item: AudioFeedItem) => {
+    const communityName = communities.find((community) => community.id === item.communityId)?.name ?? "Picom community";
+    setSelectedAudio({ id: item.id, type: item.type, title: item.title, contextLabel: `${communityName} / ${item.type === "podcast_episode" ? "Podcast" : "Community radio"}`, coverUrl: item.coverUrl, durationSeconds: item.durationSeconds ?? 3600 });
+  };
+  const toggleAudioSet = (setter: (value: Set<string>) => void, current: Set<string>, id: string) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); setter(next); };
   const openStory = (storyId: string) => {
     setActiveStoryId(storyId);
     onMarkStorySeen(storyId);
@@ -125,6 +137,8 @@ export function MentionFeedMain({
         onTabChange={onTabChange}
       />
       <div className="mention-feed-body-grid">
+        <div className="mention-feed-primary-list">
+        <AudioFeedSection items={visibleAudioItems} communities={communities} savedIds={savedAudioIds} reminderIds={audioReminderIds} onSelect={selectAudio} onToggleSaved={(id) => toggleAudioSet(setSavedAudioIds, savedAudioIds, id)} onToggleReminder={(id) => toggleAudioSet(setAudioReminderIds, audioReminderIds, id)} onOpenCommunity={onOpenEventCommunity} />
         <MentionFeedList
           items={visibleItems}
           communities={communities}
@@ -136,6 +150,7 @@ export function MentionFeedMain({
           onOpenProfile={onOpenProfile}
           onOpenMore={onOpenMore}
         />
+        </div>
         <FeedCompanionRail
           voiceState={voiceState}
           activeVoiceRooms={activeVoiceRooms}
@@ -150,6 +165,8 @@ export function MentionFeedMain({
           onOpenProfile={onOpenProfile}
           onOpenEventCommunity={onOpenEventCommunity}
           onEventDetails={onEventDetails}
+          audioItem={selectedAudio}
+          onCloseAudio={() => setSelectedAudio(null)}
         />
       </div>
     </main>
