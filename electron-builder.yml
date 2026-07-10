@@ -54,6 +54,7 @@ nsis:
 
 linux:
   icon: assets/brand/icons
+  syncDesktopName: true
   category: Network
   executableName: Picom
   maintainer: Picom Contributors
