@@ -116,6 +116,7 @@ export type Database = {
           created_at: string;
           edited_at: string | null;
           deleted_at: string | null;
+          thread_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["messages"]["Row"]> & Pick<Database["public"]["Tables"]["messages"]["Row"], "community_id" | "channel_id" | "author_id">;
         Update: Partial<Database["public"]["Tables"]["messages"]["Row"]>;
@@ -230,6 +231,12 @@ export type Database = {
         Row: { id: string; community_id: string; code: string; created_by: string; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["community_invites"]["Row"]> & Pick<Database["public"]["Tables"]["community_invites"]["Row"], "community_id" | "code" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
+        Relationships: [];
+      };
+      threads: {
+        Row: { id: string; community_id: string; channel_id: string; parent_message_id: string; name: string; created_by: string; created_at: string; archived_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["threads"]["Row"]> & Pick<Database["public"]["Tables"]["threads"]["Row"], "community_id" | "channel_id" | "parent_message_id" | "name" | "created_by">;
+        Update: Partial<Database["public"]["Tables"]["threads"]["Row"]>;
         Relationships: [];
       };
       bots: {

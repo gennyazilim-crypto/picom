@@ -20,6 +20,7 @@ export type MessageRow = Readonly<{
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
+  thread_id?: string | null;
 }>;
 
 export type MessageSummary = Readonly<{

@@ -134,6 +134,7 @@ export function useSupabaseMessageRealtime({
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
+          if ((payload.new as MessageRow).thread_id) return;
           const message = mapMessageRow(payload.new as MessageRow);
           const serverTimestamp = getPayloadServerTimestamp(payload, message.createdAt);
           const orderingDecision = eventOrderingRef.current.shouldProcessEvent(
@@ -168,6 +169,7 @@ export function useSupabaseMessageRealtime({
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
+          if ((payload.new as MessageRow).thread_id) return;
           const message = mapMessageRow(payload.new as MessageRow);
           const eventType: OrderedRealtimeEventType = message.deletedAt ? "message:delete" : "message:update";
           const serverTimestamp = getPayloadServerTimestamp(payload, getMessageOrderingTimestamp(message));
@@ -193,6 +195,7 @@ export function useSupabaseMessageRealtime({
         { event: "DELETE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
           const oldRow = payload.old as Partial<MessageRow>;
+          if (oldRow.thread_id) return;
           if (oldRow.id) {
             const serverTimestamp = getPayloadServerTimestamp(payload, new Date().toISOString());
             const orderingDecision = eventOrderingRef.current.shouldProcessEvent({

@@ -75,6 +75,7 @@ export interface Message {
   reactions?: Reaction[];
   localStatus?: MessageDeliveryStatus;
   poll?: PollData;
+  threadId?: string;
 }
 
 export interface Channel {

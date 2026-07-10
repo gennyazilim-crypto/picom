@@ -90,6 +90,9 @@ import { InvitePeopleModal } from "./components/CommunityInviteModals";
 import { CreatePollModal } from "./components/CreatePollModal";
 import type { CreatePollDraft } from "./types/polls";
 import { pollService } from "./services/pollService";
+import { threadService } from "./services/threadService";
+import type { ThreadRecord } from "./types/threads";
+import { ThreadPanel } from "./components/ThreadPanel";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
@@ -311,6 +314,7 @@ export function App() {
   const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
   const [composerInviteOpen, setComposerInviteOpen] = useState(false);
   const [pollCreateOpen, setPollCreateOpen] = useState(false);
+  const [activeThread, setActiveThread] = useState<{ thread: ThreadRecord; parentMessage: Message } | null>(null);
   const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
   const {
     communities,
@@ -1799,6 +1803,11 @@ export function App() {
     setReportTarget({ communityId: activeCommunity.id, channelId: message.channelId, targetType: "message", targetId: message.id, label: message.body.slice(0, 80) || "Attachment message" });
   };
 
+  const handleOpenThread = async (message: Message) => {
+    const result = await threadService.openOrCreate({ communityId: activeCommunity.id, channelId: message.channelId, parentMessageId: message.id, name: message.body.slice(0, 70) || "Attachment thread", createdBy: currentUser.userId, canCreate: canSendMessage(communityAccess, displayedActiveChannel) });
+    if (result.ok) setActiveThread({ thread: result.data, parentMessage: message }); else pushToast(result.message, "error");
+  };
+
   const handleReportUser = (member: Member) => {
     setReportTarget({ communityId: activeCommunity.id, targetType: "user", targetId: member.userId, label: `${member.displayName} (@${member.username})` });
   };
@@ -2228,6 +2237,7 @@ export function App() {
                       disabled: Boolean(message.deletedAt) || message.authorId === currentUser.userId,
                       onSelect: () => handleReportMessage(message),
                     },
+                    { label: "Start or open thread", disabled: Boolean(message.deletedAt), onSelect: () => void handleOpenThread(message) },
                     {
                       label: "Copy message ID",
                       onSelect: () => clipboardService.copyText(message.id).then(() => pushToast("Message ID copied.", "success")),
@@ -2280,6 +2290,7 @@ export function App() {
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {composerInviteOpen ? <InvitePeopleModal community={displayedActiveCommunity} currentUserId={currentUser.userId} canCreate={communityAccess.permissions.includes("createInvites")} onClose={() => setComposerInviteOpen(false)} /> : null}
       {pollCreateOpen ? <CreatePollModal channelName={displayedActiveChannel.name} onClose={() => setPollCreateOpen(false)} onCreate={(draft) => sendMessage(draft.question, undefined, null, draft)} /> : null}
+      {activeThread ? <ThreadPanel thread={activeThread.thread} parentMessage={activeThread.parentMessage} members={displayedActiveCommunity.members} currentUser={currentUser} canSend={canSendMessage(communityAccess, displayedActiveChannel)} onClose={() => setActiveThread(null)} onNotice={pushToast} /> : null}
       {notificationPermissionPrompt ? (
         <NotificationPermissionPrompt
           prompt={notificationPermissionPrompt}

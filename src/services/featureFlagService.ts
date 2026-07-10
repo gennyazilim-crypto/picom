@@ -58,7 +58,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableDiscovery: true,
     enableBots: false,
     enableWebhooks: true,
-    enableThreads: false,
+    enableThreads: true,
     enablePolls: true,
     enableAdvancedModeration: false,
     enableDiagnostics: developmentDiagnostics,
