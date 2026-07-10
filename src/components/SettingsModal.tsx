@@ -791,7 +791,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
             <div className="placeholder-panel action-panel">
               <strong>Desktop service placeholders</strong>
               <p>Tray, window controls, file handling and clipboard are routed through safe services.</p>
-              {developerPortalAvailable ? <div className="settings-status-card" aria-label="Developer Portal v1"><span>Developer Portal</span><strong>Restricted development foundation</strong><small>Manage safe bot/webhook metadata and review API placeholders. No raw keys or public publishing.</small><button type="button" onClick={() => setDeveloperPortalOpen(true)}>Open Developer Portal</button></div> : null}
+              {developerPortalAvailable ? <div className="settings-status-card" aria-label="Developer Portal restricted beta"><span>Developer Portal</span><strong>Restricted beta</strong><small>Review safe bot/webhook metadata and developer guidance. No raw keys, application registration, or public publishing.</small><button type="button" onClick={() => setDeveloperPortalOpen(true)}>Open Developer Portal</button></div> : null}
               <div className="settings-status-card" aria-label="About Picom build metadata">
                 <span>About Picom</span>
                 <strong>{appConfig.name} {appConfig.version} ({appConfig.releaseChannel})</strong>
