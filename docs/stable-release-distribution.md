@@ -1,104 +1,41 @@
-# Picom Stable Release Distribution
+# Stable Release Distribution
 
-## Current status
+Status date: 2026-07-10  
+Distribution status: **Blocked - no artifacts published**
 
-**Distribution is prepared but not authorized.** The latest decision in `docs/stable-go-no-go.md` is No-Go. No stable artifact, public download, release tag, or update feed exists.
+`docs/stable-go-no-go.md` records a No-Go decision. Under the release lock, Picom stable artifacts must not be uploaded, announced, or silently substituted while that decision is active.
 
-This runbook applies only after a future dated Go/Go-with-known-non-blockers decision identifies exact immutable signed/notarized artifacts.
+## Artifact inventory
 
-## Release artifact set
+| Platform | Local artifact state | Distribution state |
+| --- | --- | --- |
+| Windows x64 | Unsigned beta-channel NSIS candidate exists in user temp | Not published |
+| Linux x64 | No certified AppImage/deb | Not available |
+| macOS x64 | No signed/notarized DMG/zip | Not available |
 
-Use one stable semantic version consistently:
+## Local Windows evidence
 
-| Platform | Expected artifact |
-| --- | --- |
-| Windows x64 | `Picom-<version>-Windows-x64.exe` |
-| Linux x64 AppImage | `Picom-<version>-Linux-x86_64.AppImage` |
-| Linux x64 deb | generated Picom `<version>` x64 `.deb` filename recorded exactly |
-| macOS x64 dmg | `Picom-<version>-macOS-x64.dmg` |
-| macOS x64 zip | `Picom-<version>-macOS-x64.zip` |
+- Candidate name: `Picom-0.1.1-beta.1-beta-Windows-x64.exe`
+- SHA-256: `3C38726EF2989049B37FB956E3452D93AF1E8C97BD57BEBF27E17D7DBA8A6248`
+- This hash identifies only the local candidate from Task 357. It is not a public release checksum.
 
-Do not claim rpm, Linux arm64, macOS arm64/universal, mobile, or web distribution unless separately implemented and tested.
+## Missing distribution requirements
 
-## Artifact finalization
+- Final stable semver and channel metadata.
+- Clean Windows, native Linux, and signed/notarized macOS candidates.
+- Checksums generated together from the immutable final artifact set.
+- Provenance tied to the final source commit and CI run.
+- Approved release notes, known issues, legal links, and support URL.
+- Go sign-offs and rollback/hotfix owner.
 
-For each artifact record:
+## Distribution procedure after a future Go
 
-- Product/version/release channel and source commit.
-- Platform/architecture/format, bytes, and exact filename.
-- SHA-256 generated after final signing/notarization/stapling.
-- Signature publisher/certificate/timestamp or explicit approved unsigned-beta status.
-- Build date/runner/tool versions and provenance metadata.
-- Clean-host install/upgrade/uninstall/reinstall smoke result.
-- Known issues and rollback artifact/hash.
+1. Build immutable artifacts on approved platform runners.
+2. Verify install/launch/core-flow/uninstall evidence.
+3. Generate SHA-256 and provenance from the same artifact set.
+4. Attach release notes, known issues, support, and rollback instructions.
+5. Upload to the approved release location without replacing artifacts in place.
+6. Verify downloads and signatures/notarization from clean machines.
+7. Start rollout at the internal ring and follow `docs/safe-rollout.md`.
 
-Never replace an artifact in place while retaining its filename/hash/release record.
-
-## Distribution gate
-
-1. Close all `docs/stable-go-no-go.md` blockers.
-2. Produce a new immutable stable RC and pass `docs/stable-rc-smoke-test.md`.
-3. Obtain product, engineering, security/privacy, operations/release, legal, and support sign-offs.
-4. Verify checksums/provenance/signatures/notarization.
-5. Upload only to the approved controlled release location.
-6. Test each uploaded artifact by downloading it as a user would and comparing hash/signature.
-7. Publish final user-readable notes, known issues, install/uninstall/rollback, support, and status information together.
-8. Start the safe rollout ring and 72-hour watch.
-
-## Signing status policy
-
-- Windows stable public artifact: valid approved Authenticode publisher and timestamp required.
-- macOS stable public artifact: Developer ID signature, hardened runtime, notarization, staple, and Gatekeeper acceptance required.
-- Linux direct artifacts: checksum/provenance required; package/repository signing remains a separate approved decision.
-- Unsigned artifacts may be used only in explicitly private beta channels, never mislabeled stable.
-
-## Checksums and provenance
-
-After finalization:
-
-```powershell
-npm run generate-checksums -- --input release
-npm run generate-provenance
-```
-
-Verify scripts/output against the exact release directory and review before upload. Do not include signing secrets, CI tokens, local usernames, private paths, or environment dumps in provenance.
-
-## Release channel and auto-update
-
-Production auto-update is not approved in Full MVP. Stable distribution uses manual download/install instructions. Do not create or point an update feed at these artifacts. A future updater requires signed metadata, rollout rings, rollback, compatibility, and update-failure recovery approval.
-
-## Support and communication
-
-Release page/notes must provide:
-
-- Approved support/feedback channel.
-- Public status page only when configured.
-- Version/platform/hash collection guidance.
-- Redacted diagnostics instructions.
-- Known issues/workarounds.
-- Security/privacy reporting route.
-- Rollback/manual reinstall instructions.
-
-Never link private provider dashboards or expose project refs/secrets.
-
-## Rollback/manual reinstall
-
-Retain previous approved artifacts and hashes. On a known bad release, pause distribution, remove the bad artifact from normal surfaces without destroying evidence, confirm backend compatibility, communicate affected version/platform, and direct users through platform-specific uninstall/manual reinstall. Do not require local-data deletion unless necessary and clearly explained.
-
-## Publication record template
-
-```text
-Version:
-Decision/sign-off record:
-Source commit:
-Backend migration/function versions:
-Artifact inventory and hashes:
-Signing/notary results:
-Uploaded locations:
-Download verification:
-Known issues:
-Previous rollback artifacts:
-Support/status links:
-Rollout start/ring:
-72-hour watch owner:
-```
+No secrets, signing keys, private CI credentials, or artifacts were committed or published by this task.
