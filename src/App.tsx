@@ -294,6 +294,7 @@ export function App() {
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
   const [savedMessages, setSavedMessages] = useState<SavedMessageRecord[]>(() => savedMessageService.listSavedMessages());
+  useEffect(() => { let active = true; const refresh = () => { void savedMessageService.getSavedMessages().then((items) => { if (active) setSavedMessages(items); }); }; refresh(); const unsubscribe = savedMessageService.subscribe(refresh); return () => { active = false; unsubscribe(); }; }, []);
   const [communityEvents, setCommunityEvents] = useState(mockUpcomingEvents);
   const [feedVoiceState, setFeedVoiceState] = useState<MockVoiceState>({
     isInVoiceRoom: true,
@@ -1329,19 +1330,20 @@ export function App() {
     );
   }, []);
 
-  const toggleSavedMessage = useCallback((community: Community, message: Message) => {
+  const toggleSavedMessage = useCallback(async (community: Community, message: Message): Promise<boolean> => {
     const saved = savedMessageService.isMessageSaved(message.id);
-    if (saved) void savedMessageService.unsaveMessage(message.id);
-    else void savedMessageService.saveMessage(message.id,{communityId:community.id,channelId:message.channelId,authorId:message.authorId,preview:message.body.slice(0,220),messageCreatedAt:message.createdAt});
-    setSavedMessages(savedMessageService.listSavedMessages());
+    const ok = saved ? await savedMessageService.unsaveMessage(message.id) : await savedMessageService.saveMessage(message.id,{communityId:community.id,channelId:message.channelId,authorId:message.authorId,preview:message.body.slice(0,220),messageCreatedAt:message.createdAt});
+    if (!ok) { pushToast("Saved Messages could not be updated.", "error"); return saved; }
+    setSavedMessages(await savedMessageService.getSavedMessages());
     pushToast(saved ? "Message removed from Saved Messages." : "Message saved.", "success");
+    return !saved;
   }, [pushToast]);
 
   const toggleMentionSaved = useCallback((id: string) => {
     const item=mentionItems.find((candidate)=>candidate.id===id);const community=item?communities.find((candidate)=>candidate.id===item.communityId):undefined;const message=community?.messages.find((candidate)=>candidate.id===item?.messageId);
-    if(community&&message)toggleSavedMessage(community,message);
-    setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, isSaved: !candidate.isSaved } : candidate));
-  }, [communities, mentionItems, toggleSavedMessage]);
+    if (!item || !community) { pushToast("This mention is no longer accessible.", "error"); return; }
+    void (async () => { const nextSaved = message ? await toggleSavedMessage(community, message) : await (async () => { const saved = savedMessageService.isMessageSaved(item.messageId); const ok = saved ? await savedMessageService.unsaveMessage(item.messageId) : await savedMessageService.saveMessage(item.messageId, { communityId: item.communityId, channelId: item.channelId, authorId: item.authorId, preview: item.body.slice(0, 220), messageCreatedAt: item.createdAt }); if (!ok) { pushToast("Saved Messages could not be updated.", "error"); return saved; } setSavedMessages(await savedMessageService.getSavedMessages()); return !saved; })(); setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, isSaved: nextSaved } : candidate)); })();
+  }, [communities, mentionItems, pushToast, toggleSavedMessage]);
 
   const markMentionRead = useCallback((id: string) => {
     setMentionItems((current) => current.map((item) => (item.id === id ? { ...item, isUnread: false } : item)));
@@ -2196,7 +2198,7 @@ export function App() {
               ])}
             />
           ) : activeView === "savedMessages" ? (
-            <SavedMessagesView items={savedMessages} communities={communities} onBack={() => setActiveView("community")} onOpen={(item) => { const community=communities.find((candidate)=>candidate.id===item.communityId);const message=community?.messages.find((candidate)=>candidate.id===item.messageId);if(community&&message)jumpToMessage(community,message);else pushToast("This saved message is unavailable or inaccessible.","error"); }} />
+            <SavedMessagesView items={savedMessages} communities={communities} onBack={() => setActiveView("community")} onOpen={(item) => { const community=communities.find((candidate)=>candidate.id===item.communityId);const message=community?.messages.find((candidate)=>candidate.id===item.messageId);if(community&&message)jumpToMessage(community,message);else pushToast("This saved message is unavailable or inaccessible.","error"); }} onUnsave={(item) => { void savedMessageService.unsaveMessage(item.messageId).then(async (ok) => { if (ok) setSavedMessages(await savedMessageService.getSavedMessages()); else pushToast("Saved Messages could not be updated.", "error"); }); }} />
           ) : activeView === "directMessages" ? (
             <DirectMessagesView
               conversations={directConversations}
@@ -2365,7 +2367,7 @@ export function App() {
                       disabled: Boolean(message.deletedAt) || (message.authorId !== currentUser.userId && !canCurrentUserModerate()),
                       onSelect: () => handleDeleteMessage(message),
                     },
-                    { label: savedMessageService.isMessageSaved(message.id) ? "Unsave message" : "Save message", onSelect: () => toggleSavedMessage(displayedActiveCommunity, message) },
+                    { label: savedMessageService.isMessageSaved(message.id) ? "Unsave message" : "Save message", onSelect: () => void toggleSavedMessage(displayedActiveCommunity, message) },
                     {
                       label: "Report message",
                       disabled: Boolean(message.deletedAt) || message.authorId === currentUser.userId,

@@ -1,96 +1,27 @@
-﻿# Saved Messages Foundation
+# Saved Messages Sync
 
-Status: post-MVP foundation
+Picom Saved Messages is a private cross-session bookmark list backed by `saved_messages`. Message context menus and Mention Feed Save actions share the same service and Saved view.
 
-Saved messages are planned as a future personal utility feature for Picom. This foundation documents the safe architecture without changing the current MVP desktop layout, MessageList, context menus, or Home/Mention Feed behavior.
+## Access and membership loss
 
-## MVP stance
+Every snapshot joins the bookmark to a non-deleted message and rechecks `can_view_channel`. A private channel bookmark disappears after membership or channel access is lost; cached preview data is replaced by the authorized snapshot and the view independently refuses to render entries without a currently visible community/channel. Other users cannot select, insert, or delete a user's bookmarks.
 
-- Saved messages are not enabled in the current MVP runtime.
-- Existing MessageList, MessageComposer, context menus, and Home/Mention Feed remain unchanged.
-- No new sidebar item or view is added yet, so the 4-column desktop layout stays stable.
+## Sync behavior
 
-## Future data model placeholder
+Save is idempotent through `(user_id,message_id)`. Supabase Realtime watches only RLS-visible saved-row changes and reloads the authorized snapshot, enabling cross-session desktop sync. Mock mode retains a local fallback. Diagnostics and logs do not contain saved message content.
 
-A future `saved_messages` table can use safe fields:
+## Desktop surfaces
 
-- `id`
-- `user_id`
-- `message_id`
-- `created_at`
+- Message context menu: Save/Unsave.
+- Mention Feed cards: Save/Saved using the same message ID.
+- Saved Messages view: accessible rows, Jump, and Unsave.
+- Command Palette: open private Saved Messages view.
 
-Suggested constraints:
+## manual checklist
 
-- unique `(user_id, message_id)`
-- foreign key to message
-- access restricted to the saving user
-
-## Supabase/RLS expectations
-
-- A user can only list their own saved messages.
-- A user can only save messages they are allowed to view.
-- Private channel saved messages must not leak if the user later loses channel access.
-- Deleted messages should show a safe fallback.
-- Revoked or expired sessions must not return saved message data.
-
-## Future service methods
-
-Potential typed methods:
-
-- `listSavedMessages(cursor)`
-- `saveMessage(messageId)`
-- `unsaveMessage(messageId)`
-- `isMessageSaved(messageId)`
-
-Writes should be idempotent so repeated save requests do not create duplicates.
-
-## Future UI placeholder
-
-Potential desktop UI entry points:
-
-- Message context menu > Save message
-- Message context menu > Unsave message
-- Home area > Saved Messages view
-- Command Palette > Saved Messages
-
-Saved message rows should include:
-
-- community
-- channel
-- author
-- preview
-- timestamp
-- jump button placeholder
-
-All UI should use Picom design tokens and avoid mobile navigation.
-
-## Jump behavior placeholder
-
-Future jump to saved message should:
-
-- switch community
-- switch channel
-- fetch message context if needed
-- scroll and highlight message
-- show a clear error if deleted or inaccessible
-
-## Privacy and logging
-
-- Do not export saved message content in diagnostics by default.
-- Do not log message content when saving or unsaving.
-- Do not include tokens, authorization headers, passwords, or raw session values.
-- Saved messages are personal data and should be included only in a future user data export with proper access checks.
-
-## Feature flag behavior
-
-A future `enableSavedMessages` flag should hide entry points when disabled. Backend RLS remains mandatory.
-
-## Implementation decision
-
-This task is documentation-only. Runtime context menu actions, Supabase migrations, and Saved Messages view are intentionally deferred.
-
-## Manual verification
-
-- Confirm no Saved Messages view appears in the MVP UI.
-- Confirm message context menus behave as before.
-- Confirm the 4-column layout remains stable with no horizontal overflow.
+1. Save and unsave from a message context menu.
+2. Save the same message from Mention Feed and confirm one bookmark.
+3. Open two sessions and verify realtime save/unsave sync.
+4. Remove private channel membership and confirm its bookmark/content disappears.
+5. Delete a message and confirm it is absent from the next snapshot.
+6. Confirm Jump reports inaccessible instead of showing stale content.

@@ -467,6 +467,7 @@ export type Database = {
       get_thread_summary: { Args: { target_thread_id: string }; Returns: Json };
       mark_thread_read: { Args: { target_thread_id: string }; Returns: boolean };
       create_forum_post: { Args: { target_community_id: string; target_channel_id: string; post_title: string; post_body: string; post_tags: string[] }; Returns: Json };
+      list_accessible_saved_messages: { Args: { result_limit?: number }; Returns: Array<{ id: string; message_id: string; community_id: string; channel_id: string; author_id: string; preview: string; message_created_at: string; created_at: string }> };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
