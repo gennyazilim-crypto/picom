@@ -162,6 +162,8 @@
     "audit-logs:immutability:smoke": "node scripts/audit-log-immutability-smoke-test.mjs",
     "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs",
     "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs",
+    "retention:plan": "node scripts/data-retention-enforcement-placeholder.mjs",
+    "retention:enforcement:test": "node scripts/data-retention-enforcement-test.mjs",
     "attachment-delivery:smoke": "node scripts/attachment-delivery-smoke-test.mjs",
     "protocol-handler:smoke": "node scripts/protocol-handler-smoke-test.mjs",
     "native-notifications:smoke": "node scripts/native-notifications-smoke-test.mjs",
