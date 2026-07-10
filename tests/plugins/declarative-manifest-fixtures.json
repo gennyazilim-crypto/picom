@@ -1,0 +1,7 @@
+[
+  {"name":"safe-status-card","manifest":{"schemaVersion":1,"id":"dev.picom.safe-status","version":"0.0.1","capabilities":["ui:sidebar-card"],"contributions":[{"type":"status-card","title":"Synthetic status"}]},"valid":true},
+  {"name":"filesystem-denied","manifest":{"schemaVersion":1,"id":"dev.picom.files","version":"0.0.1","capabilities":["filesystem"],"contributions":[]},"valid":false},
+  {"name":"shell-denied","manifest":{"schemaVersion":1,"id":"dev.picom.shell","version":"0.0.1","capabilities":["shell"],"contributions":[]},"valid":false},
+  {"name":"code-field-denied","manifest":{"schemaVersion":1,"id":"dev.picom.code","version":"0.0.1","capabilities":[],"entrypoint":"remote.js","contributions":[]},"valid":false},
+  {"name":"wildcard-denied","manifest":{"schemaVersion":1,"id":"dev.picom.wildcard","version":"0.0.1","capabilities":["*"],"contributions":[]},"valid":false}
+]
