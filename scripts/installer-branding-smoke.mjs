@@ -12,6 +12,7 @@ const requiredFiles = [
   "assets/installer/macos/dmg-background.png",
   "assets/installer/linux/README.md",
   "docs/installer-branding.md",
+  "docs/installer-assets.md",
   "docs/legal/installer-license.md",
 ];
 for (const file of requiredFiles) if (!existsSync(file)) throw new Error(`Missing installer branding asset/doc: ${file}`);
@@ -32,6 +33,7 @@ for (const marker of ["background: assets/installer/macos/dmg-background.png", "
 for (const marker of ["synopsis: Desktop community workspace", "Comment: Desktop community workspace", "Categories: Network;Chat;Utility;", 'Terminal: "false"', "StartupWMClass: Picom"]) {
   if (!builder.includes(marker)) throw new Error(`Missing Linux installer marker: ${marker}`);
 }
+if (builder.includes(".placeholder.")) throw new Error("Placeholder installer artwork must not be referenced by packaging.");
 
 const setup = readFileSync("src/components/firstLaunch/FirstLaunchSetup.tsx", "utf8");
 if (/getUserMedia|desktopCapturer|requestPermission|startScreenShare/.test(setup)) throw new Error("Setup must not trigger permissions or capture.");

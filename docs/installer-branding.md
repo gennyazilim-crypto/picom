@@ -12,15 +12,20 @@ Picom's setup experience uses original desktop-focused artwork and the existing 
 ## Asset structure
 
 - `assets/installer/shared`: cross-platform source mark and wordmark placeholders.
-- `assets/installer/windows`: NSIS wizard assets and notes.
-- `assets/installer/macos`: DMG background and notes.
+- `assets/installer/windows`: final NSIS header/sidebar bitmaps and notes.
+- `assets/installer/macos`: final current DMG background and notes.
 - `assets/installer/linux`: package/desktop metadata notes.
 
 Files ending in `.placeholder.*` are not final release artwork. Packaging must reference final raster/vector variants only after visual and legal review.
 
+The current package configuration references only reviewed Picom raster/icon
+assets. Placeholder SVGs are source-direction aids and are intentionally absent
+from `electron-builder.yml`. See `docs/installer-assets.md` for dimensions,
+ownership, replacement rules, and the release inventory.
+
 ## Platform hooks
 
-- Windows: electron-builder NSIS assisted installer, Picom icons, desktop/Start Menu shortcuts, optional launch after install, and future branded header/sidebar bitmaps.
+- Windows: electron-builder NSIS assisted installer, Picom icons, desktop/Start Menu shortcuts, optional launch after install, and branded header/sidebar bitmaps.
 - macOS: DMG background, Picom app icon, Applications shortcut, and separate signing/notarization workflow.
 - Linux: Picom icon set, Network/Chat/Utility metadata, AppImage/deb targets, and native desktop-entry validation.
 
