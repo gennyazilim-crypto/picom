@@ -111,3 +111,7 @@ A real hosted staging export and checksum manifest were produced. Restore failed
 ## Task 415 final immutable RC decision
 
 Decision: **No-Go**. Real hosted Supabase migration/Auth/basic RLS/private Storage evidence exists, but RB-01 through RB-11 are not all closed. No final signed/notarized/native artifact set was generated or published, and no checksum/provenance claim was fabricated.
+
+## Task 419 hosted private Presence
+
+Client/topic/RLS contracts and local gates passed on 2026-07-11, but the protected staging matrix could not run without Supabase CLI linkage and `PICOM_REALTIME_*` credentials. The earlier authenticated private Presence `Unauthorized` result remains unresolved. RB-03 stays open; status is **BLOCKED**, not PASS.

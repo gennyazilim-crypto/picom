@@ -65,3 +65,9 @@ Auth/fixture proof scripts ran from a protected local staging directory and were
 RB-01 is narrowed but remains open for the broader lost-access/DM/profile matrix. RB-02 remains open for signed-URL refresh and historical object recovery despite the private-object boundary PASS. RB-03 remains open because private Realtime Presence and Edge Function validation did not pass.
 
 Recommendation: **Not ready**.
+
+## Task 419 rerun status
+
+Task 419 completed a fresh static and local contract review on 2026-07-11. Topic construction, private client configuration, JWT-subject RLS, cleanup, schema smoke, typecheck, build, and QA smoke passed.
+
+The hosted matrix was not rerun because the current operator session had no Supabase CLI/project link, no protected `PICOM_REALTIME_*` variables, and no connected browser automation interface. The prior private Presence `Unauthorized` failure therefore remains authoritative. No PASS was inferred from static checks.

@@ -45,3 +45,7 @@ Use only protected synthetic staging variables. Renderer builds may receive the 
 ## Release decision impact
 
 RB-01, RB-02, and RB-03 remain open with narrower evidence gaps. Stable distribution remains **No-Go**. See `docs/hosted-supabase-staging-execution.md`.
+
+## Task 419 private Presence status
+
+The canonical topic/client/policy contract passes locally, but protected hosted credentials and project linkage were unavailable for a rerun on 2026-07-11. Private Realtime Presence remains **BLOCKED** and the previous authenticated `Unauthorized` result is not replaced by local evidence.
