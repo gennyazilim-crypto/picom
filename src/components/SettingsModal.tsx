@@ -849,6 +849,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Production auto-update remains disabled until a signed endpoint is configured.</small>
                 {updateState.progress !== null ? <small>Simulation progress: {updateState.progress}%</small> : null}
               </div>
+              <div className="settings-status-card" aria-label="Support diagnostics export">
+                <span>Support diagnostics</span>
+                <strong>Redacted snapshot ready</strong>
+                <small>Review app/platform, data source, realtime, voice, recent errors, and redacted logs before sharing.</small>
+                <button type="button" onClick={() => setActive("Diagnostics")}>Open diagnostics</button>
+              </div>
               <label className="settings-toggle-row"><span><strong>Enable diagnostic reports</strong><small>Off by default. Stores a bounded redacted local crash envelope; no provider or DSN is configured.</small></span><input type="checkbox" checked={crashReportingEnabled} onChange={(event) => { const enabled = crashReporterService.setEnabled(event.target.checked); setCrashReportingEnabled(enabled); pushToast(enabled ? "Diagnostic reports enabled locally." : "Diagnostic reports disabled and local queue cleared.", "success"); }} /></label>
               {import.meta.env.DEV ? <div className="settings-actions-row"><button onClick={() => { const record = crashReporterService.captureException(new Error("Picom development crash report test"), { source: "settings-test", authorization: "Bearer redaction-test" }); pushToast(record ? "Redacted test error captured locally." : "Enable diagnostic reports before capturing a test error.", record ? "success" : "info"); }}>Capture test error safely</button><button onClick={() => { const status = crashReporterService.getStatus(); pushToast(`${status.queuedLocalRecords} redacted crash records queued locally.`, "info"); }}>Show crash report status</button></div> : null}
               <div className="settings-actions-row">

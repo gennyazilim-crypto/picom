@@ -1,6 +1,7 @@
 import { appConfig } from "../../config/appConfig";
 import { loggingService, type LogEntry } from "../logging/loggingService";
 import type { RealtimeConnectionStatus } from "../supabase/realtimeService";
+import { voiceService, type VoiceConnectionStatus } from "../voiceService";
 
 export type DiagnosticsRealtimeStatus = RealtimeConnectionStatus | "unknown";
 export type SupabaseDiagnosticsStatus = "mock" | "configured" | "not_configured";
@@ -37,6 +38,7 @@ export type DiagnosticsSnapshot = Readonly<{
     supabaseStatus: SupabaseDiagnosticsStatus;
     supabaseHost: string | null;
     liveKitStatus: "configured" | "not_configured";
+    voiceStatus: VoiceConnectionStatus;
     authState: "authenticated" | "signed_out";
     activeView: string;
     activeCommunityId: string | null;
@@ -101,6 +103,7 @@ function formatExportAsText(payload: DiagnosticsExportPayload): string {
     `Supabase: ${payload.serviceStatus.supabaseStatus}`,
     `Realtime: ${payload.serviceStatus.realtimeStatus}`,
     `LiveKit: ${payload.serviceStatus.liveKitStatus}`,
+    `Voice: ${payload.serviceStatus.voiceStatus}`,
     "",
     "Recent errors:",
     ...(payload.recentErrors.length ? payload.recentErrors.map((entry) => `${entry.timestamp} [${entry.source ?? "client"}] ${entry.message}`) : ["None"]),
@@ -149,6 +152,7 @@ export const diagnosticsService = {
         supabaseStatus: getSupabaseStatus(),
         supabaseHost,
         liveKitStatus: appConfig.liveKit.url ? "configured" : "not_configured",
+        voiceStatus: voiceService.getDiagnosticsSummary().status,
         authState: appContext.authState,
         activeView: appContext.activeView,
         activeCommunityId: appContext.activeCommunityId,
@@ -177,4 +181,3 @@ export const diagnosticsService = {
     return format === "text" ? formatExportAsText(payload) : JSON.stringify(payload, null, 2);
   },
 };
-
