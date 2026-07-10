@@ -18,6 +18,7 @@ import {
   CommunityRolesSection,
   CommunitySettingsSection,
   ModeratorLogPlaceholder,
+  ModeratorBlockedItemsSection,
   ModeratorMembersSection,
   ModeratorMessagesSection,
   ModeratorReportsSection,
@@ -241,7 +242,7 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
   const content = selectedSection === "reports"
     ? <ModeratorReportsSection communityId={community.id} canReview={access.permissions.includes("moderateMessages")} />
     : selectedSection === "flagged-messages"
-      ? <ModeratorMessagesSection community={community} title="Flagged messages" />
+      ? <ModeratorBlockedItemsSection communityId={community.id} />
       : selectedSection === "member-moderation"
         ? <ModeratorMembersSection community={community} />
         : selectedSection === "message-moderation"

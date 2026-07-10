@@ -1684,7 +1684,7 @@ export function App() {
       return;
     }
 
-    const moderation = messageModerationFilterService.checkMessage(activeCommunity.id, body);
+    const moderation = messageModerationFilterService.checkMessage(activeCommunity.id, body, currentUser.userId, displayedActiveChannel.id);
     if (!moderation.allowed) {
       pushToast(moderation.reason ?? "Message blocked by moderation filters.", "error");
       return;
@@ -1710,6 +1710,7 @@ export function App() {
       return;
     }
 
+    messageModerationFilterService.recordMessageSent(activeCommunity.id, displayedActiveChannel.id, currentUser.userId);
     appendLocalMessage({
       id: result.data.id,
       clientMessageId,
