@@ -6,6 +6,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "keyboard:shortcuts:final:test": "node scripts/keyboard-shortcut-finalization-smoke.mjs",
     "search:palette:production:test": "node scripts/search-command-palette-production-smoke.mjs",
     "block:mute:ux:test": "node scripts/block-mute-ux-polish-smoke.mjs",
     "content:reporting:ux:test": "node scripts/content-reporting-ux-polish-smoke.mjs",

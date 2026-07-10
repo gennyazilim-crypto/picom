@@ -40,7 +40,7 @@ export function KeyboardShortcutsSection() {
         {bindings.map((binding) => (
           <article key={binding.action}>
             <span><strong>{binding.actionLabel}</strong><small>{binding.description}</small></span>
-            <button type="button" className={recording === binding.action ? "recording" : ""} disabled={!binding.configurable} aria-label={binding.configurable ? `Change ${binding.actionLabel} shortcut` : `${binding.actionLabel} shortcut is fixed`} onClick={() => { setRecording(binding.action); setMessage(`Press a new combination for ${binding.actionLabel}. Escape cancels.`); }} onKeyDown={(event) => capture(event, binding.action)}>
+            <button type="button" className={recording === binding.action ? "recording" : ""} disabled={!binding.configurable} aria-label={binding.configurable ? `Change ${binding.actionLabel} shortcut. Current binding ${binding.label}.` : `${binding.actionLabel} shortcut is fixed to ${binding.label}.`} onClick={() => { setRecording(binding.action); setMessage(`Press a new combination for ${binding.actionLabel}. Escape cancels.`); }} onKeyDown={(event) => capture(event, binding.action)}>
               {recording === binding.action ? "Press keys..." : binding.label}
             </button>
           </article>

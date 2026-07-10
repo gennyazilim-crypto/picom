@@ -1,4 +1,4 @@
-export type ShortcutAction = "commandPalette" | "settings" | "previousChannel" | "nextChannel" | "lockApp" | "escape";
+export type ShortcutAction = "commandPalette" | "settings" | "previousChannel" | "nextChannel" | "voiceMute" | "voiceDeafen" | "lockApp" | "escape";
 
 export interface ShortcutBinding {
   action: ShortcutAction;
@@ -19,6 +19,8 @@ const defaults: ShortcutBinding[] = [
   { action: "settings", actionLabel: "Settings", description: "Open Picom settings.", label: "Ctrl + ,", configurable: true },
   { action: "previousChannel", actionLabel: "Previous channel", description: "Move to the previous visible channel.", label: "Alt + Up", configurable: true },
   { action: "nextChannel", actionLabel: "Next channel", description: "Move to the next visible channel.", label: "Alt + Down", configurable: true },
+  { action: "voiceMute", actionLabel: "Mute / unmute microphone", description: "Toggle your microphone while connected to voice.", label: "Ctrl + Shift + M", configurable: true },
+  { action: "voiceDeafen", actionLabel: "Deafen / undeafen", description: "Toggle incoming voice audio while connected.", label: "Ctrl + Shift + D", configurable: true },
   { action: "lockApp", actionLabel: "Lock app", description: "Hide sensitive content without ending the session.", label: "Ctrl + Shift + L", configurable: true },
   { action: "escape", actionLabel: "Close top overlay", description: "Close the topmost dialog, menu, or popover.", label: "Escape", configurable: false },
 ];
@@ -26,7 +28,8 @@ const defaults: ShortcutBinding[] = [
 const reserved = new Set([
   "Alt+F4", "Control+Alt+Delete", "Control+F4", "Control+N", "Control+Q", "Control+R",
   "Control+Shift+I", "Control+Shift+J", "Control+Shift+R", "Control+T", "Control+W",
-  "Meta+M", "Meta+N", "Meta+Q", "Meta+W",
+  "Alt+Tab", "Alt+Escape", "Control+Alt+Delete", "Control+Escape", "Control+Shift+Escape",
+  "Meta+D", "Meta+E", "Meta+L", "Meta+M", "Meta+N", "Meta+Q", "Meta+Space", "Meta+Tab", "Meta+W",
 ]);
 
 function normalizeKey(key: string): string {

@@ -1,0 +1,11 @@
+import fs from "node:fs";
+const service = fs.readFileSync("src/services/shortcutService.ts", "utf8");
+const app = fs.readFileSync("src/App.tsx", "utf8");
+const settings = fs.readFileSync("src/components/KeyboardShortcutsSection.tsx", "utf8");
+const docs = fs.readFileSync("docs/keyboard-shortcuts-customization.md", "utf8");
+for (const action of ["commandPalette", "settings", "previousChannel", "nextChannel", "voiceMute", "voiceDeafen", "lockApp", "escape"]) if (!service.includes(`\"${action}\"`)) throw new Error(`Shortcut action is missing ${action}`);
+for (const reserved of ["Alt+F4", "Alt+Tab", "Control+Shift+Escape", "Meta+Space", "Meta+Q"]) if (!service.includes(`\"${reserved}\"`)) throw new Error(`OS-reserved shortcut is missing ${reserved}`);
+for (const needle of ['voiceSnapshot.status === "connected"', 'matchesEvent("voiceMute"', 'matchesEvent("voiceDeafen"', "isEditableTarget"]) if (!app.includes(needle)) throw new Error(`Voice/global shortcut guard is missing ${needle}`);
+for (const needle of ["Current binding", "CONFLICT", "OS_RESERVED", "Reset defaults"]) if (!(settings + service).includes(needle)) throw new Error(`Shortcut settings are missing ${needle}`);
+for (const needle of ["Ctrl+K", "Ctrl+Shift+M", "Ctrl+Shift+D", "not system-wide global hotkeys"]) if (!docs.includes(needle)) throw new Error(`Shortcut documentation is missing ${needle}`);
+console.log("Keyboard shortcut finalization smoke passed.");

@@ -1166,6 +1166,18 @@ export function App() {
         return;
       }
 
+      if (!editing && voiceSnapshot.status === "connected" && shortcutService.matchesEvent("voiceMute", event)) {
+        event.preventDefault();
+        void import("./services/voiceService").then(({ voiceService }) => voiceService.setMuted(!voiceSnapshot.muted).then((result) => { if (!result.ok) pushToast(result.error.message, "error"); }));
+        return;
+      }
+
+      if (!editing && voiceSnapshot.status === "connected" && shortcutService.matchesEvent("voiceDeafen", event)) {
+        event.preventDefault();
+        void import("./services/voiceService").then(({ voiceService }) => { const result = voiceService.setDeafened(!voiceSnapshot.deafened); if (!result.ok) pushToast(result.error.message, "error"); });
+        return;
+      }
+
       if (shortcutService.matchesEvent("escape", event)) {
         closeTransientOverlays();
       }
@@ -1173,7 +1185,7 @@ export function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeChannel.id, channels, closeTransientOverlays, lockApp, openPalette, openSettings, selectChannelByOffset]);
+  }, [activeChannel.id, channels, closeTransientOverlays, lockApp, openPalette, openSettings, pushToast, selectChannelByOffset, voiceSnapshot.deafened, voiceSnapshot.muted, voiceSnapshot.status]);
 
   const maybeShowNotificationPermissionPrompt = useCallback((trigger: NotificationPermissionOnboardingTrigger) => {
     const prompt = notificationPermissionOnboardingService.getPrompt(trigger);
