@@ -299,6 +299,18 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_bots"]["Row"]>;
         Relationships: [];
       };
+      bot_credentials: {
+        Row: { id: string; bot_id: string; token_prefix: string; token_hash: string; created_by: string; created_at: string; last_used_at: string | null; revoked_at: string | null };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      bot_action_rate_limits: {
+        Row: { credential_id: string; action_key: "api_request" | "message_send" | "reaction_write" | "event_delivery" | "command_invoke"; window_started_at: string; request_count: number; denied_count: number; updated_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       reports: {
         Row: { id: string; community_id: string | null; reporter_id: string; target_type: "message" | "user" | "community"; target_id: string; reason: "spam" | "harassment" | "unsafe_content" | "impersonation" | "other"; description: string; status: "open" | "reviewed" | "dismissed" | "action_taken"; reviewed_by: string | null; reviewed_at: string | null; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["reports"]["Row"]> & Pick<Database["public"]["Tables"]["reports"]["Row"], "reporter_id" | "target_type" | "target_id" | "reason" | "description">;
@@ -410,6 +422,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: Json;
       };
+      can_manage_community_bots: { Args: { target_community_id: string }; Returns: boolean };
+      issue_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ raw_token: string; token_prefix: string; created_at: string }> };
+      revoke_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: boolean };
+      get_community_bot_credential_status: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ bot_id: string; token_prefix: string; created_at: string; revoked_at: string | null; rate_limit_per_minute: number }> };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
