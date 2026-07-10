@@ -36,6 +36,8 @@ No Linux package signing key is added in Full MVP. If public repository/package 
 
 Direct private beta artifacts are distributed only through an approved location with SHA-256 and explicit unsigned status.
 
+The future apt/rpm channel layout, scoped keyring rules, desktop/AppStream metadata contract and publication gate are defined in `docs/linux-repository-distribution.md`.
+
 ## Metadata gaps before broad distribution
 
 - Native Linux build/smoke evidence is not available from Windows.

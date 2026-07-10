@@ -23,6 +23,7 @@
     "package:linux:appimage": "npm run build && electron-builder --linux AppImage --x64",
     "package:linux:deb": "npm run build && electron-builder --linux deb --x64",
     "package:linux": "npm run build && electron-builder --linux --x64",
+    "linux:repository:distribution:smoke": "node scripts/linux-repository-distribution-smoke-test.mjs",
     "package:mac:dmg": "npm run build && electron-builder --mac dmg --x64",
     "package:mac:zip": "npm run build && electron-builder --mac zip --x64",
     "package:mac": "npm run build && electron-builder --mac --x64",

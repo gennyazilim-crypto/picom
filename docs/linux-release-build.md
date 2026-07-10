@@ -122,6 +122,8 @@ In both sessions, test microphone denial/grant, mute/deafen, speaking, share sta
 
 ## Distribution gate
 
+Repository distribution must additionally pass `docs/linux-repository-distribution.md`; direct AppImage/deb success does not authorize an apt/rpm repository or claim rpm support.
+
 - AppImage and deb must each pass clean-host build, terminal/menu launch, install/uninstall/reinstall where relevant, custom chrome, core MVP, voice/screen-share, checksum, and artifact inspection.
 - rpm, arm64, repository publishing, package signatures, AppStream metadata, and automatic updates are not claimed.
 - No public distribution occurs until target distro/version support and remaining metadata gaps are approved.
