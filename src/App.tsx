@@ -651,7 +651,7 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id, deleteLocalMessage]);
 
   const realtimeStatus = useSupabaseMessageRealtime({
-    enabled: Boolean(authSession) && !safeMode.active,
+    enabled: Boolean(authSession) && !safeMode.active && activeView === "community",
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
     onInsert: handleRealtimeMessageInsert,

@@ -37,6 +37,11 @@ function getMessageOrderingTimestamp(message: MessageSummary): string {
   return message.deletedAt ?? message.editedAt ?? message.createdAt;
 }
 
+function diagnosticReference(value: string): string {
+  const normalized = value.trim();
+  return normalized.length <= 12 ? normalized : `${normalized.slice(0, 6)}...${normalized.slice(-4)}`;
+}
+
 function createMessageOrderingMetadata(
   type: OrderedRealtimeEventType,
   message: MessageSummary,
@@ -53,10 +58,10 @@ function createMessageOrderingMetadata(
     }),
     type,
     communityId: message.communityId,
-      channelId: message.channelId,
-      messageId: message.id,
-      serverTimestamp,
-      sequence: message.sequence,
+    channelId: message.channelId,
+    messageId: message.id,
+    serverTimestamp,
+    sequence: message.sequence,
   };
 }
 
@@ -74,6 +79,7 @@ export function useSupabaseMessageRealtime({
   const onInsertRef = useRef(onInsert);
   const onUpdateRef = useRef(onUpdate);
   const onDeleteRef = useRef(onDelete);
+  const subscriptionGenerationRef = useRef(0);
 
   useEffect(() => {
     onInsertRef.current = onInsert;
@@ -125,8 +131,12 @@ export function useSupabaseMessageRealtime({
     setConnectionStatus("connecting");
     insertDeduperRef.current.clear();
     eventOrderingRef.current.clear();
+    const generation = ++subscriptionGenerationRef.current;
+    const scope = `${diagnosticReference(communityId)}:${diagnosticReference(channelId)}`;
+    const diagnostics = { delivered: 0, duplicate: 0, stale: 0 };
     let hasConnected = false;
     let canceled = false;
+    const isCurrentSubscription = () => !canceled && subscriptionGenerationRef.current === generation;
 
     const channel = client
       .channel(realtimeChannelNames.messages(communityId, channelId))
@@ -134,6 +144,7 @@ export function useSupabaseMessageRealtime({
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
+          if (!isCurrentSubscription()) return;
           if ((payload.new as MessageRow).thread_id) return;
           const message = mapMessageRow(payload.new as MessageRow);
           const serverTimestamp = getPayloadServerTimestamp(payload, message.createdAt);
@@ -142,26 +153,27 @@ export function useSupabaseMessageRealtime({
           );
 
           if (!orderingDecision.shouldProcess) {
+            diagnostics.stale += 1;
             loggingService.logInfo("Supabase out-of-order realtime insert ignored", {
               reason: orderingDecision.reason,
-              messageId: message.id,
-              clientMessageId: message.clientMessageId,
-              communityId,
-              channelId,
-            });
+              messageRef: diagnosticReference(message.id),
+              hasClientMessageId: Boolean(message.clientMessageId),
+              scope,
+            }, "realtime-deduplication");
             return;
           }
 
           if (!insertDeduperRef.current.shouldProcessInsert(message)) {
+            diagnostics.duplicate += 1;
             loggingService.logInfo("Supabase duplicate realtime message ignored", {
-              messageId: message.id,
-              clientMessageId: message.clientMessageId,
-              communityId,
-              channelId,
-            });
+              messageRef: diagnosticReference(message.id),
+              hasClientMessageId: Boolean(message.clientMessageId),
+              scope,
+            }, "realtime-deduplication");
             return;
           }
 
+          diagnostics.delivered += 1;
           onInsertRef.current(message);
         },
       )
@@ -169,6 +181,7 @@ export function useSupabaseMessageRealtime({
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
+          if (!isCurrentSubscription()) return;
           if ((payload.new as MessageRow).thread_id) return;
           const message = mapMessageRow(payload.new as MessageRow);
           const eventType: OrderedRealtimeEventType = message.deletedAt ? "message:delete" : "message:update";
@@ -178,15 +191,16 @@ export function useSupabaseMessageRealtime({
           );
 
           if (!orderingDecision.shouldProcess) {
+            diagnostics.stale += 1;
             loggingService.logInfo("Supabase out-of-order realtime update ignored", {
               reason: orderingDecision.reason,
-              messageId: message.id,
-              communityId,
-              channelId,
-            });
+              messageRef: diagnosticReference(message.id),
+              scope,
+            }, "realtime-deduplication");
             return;
           }
 
+          diagnostics.delivered += 1;
           onUpdateRef.current(message);
         },
       )
@@ -194,6 +208,7 @@ export function useSupabaseMessageRealtime({
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
+          if (!isCurrentSubscription()) return;
           const oldRow = payload.old as Partial<MessageRow>;
           if (oldRow.thread_id) return;
           if (oldRow.id) {
@@ -215,46 +230,56 @@ export function useSupabaseMessageRealtime({
             });
 
             if (!orderingDecision.shouldProcess) {
+              diagnostics.stale += 1;
               loggingService.logInfo("Supabase out-of-order realtime delete ignored", {
                 reason: orderingDecision.reason,
-                messageId: oldRow.id,
-                communityId,
-                channelId,
-              });
+                messageRef: diagnosticReference(oldRow.id),
+                scope,
+              }, "realtime-deduplication");
               return;
             }
 
+            diagnostics.delivered += 1;
             onDeleteRef.current(oldRow.id);
             return;
           }
 
           loggingService.logWarn("Supabase message delete event missing id", {
-            communityId,
-            channelId,
-          });
+            scope,
+          }, "realtime-deduplication");
         },
       )
       .subscribe((statusValue) => {
-        if (canceled) return;
+        if (!isCurrentSubscription()) return;
 
         const nextStatus = mapRealtimeSubscriptionStatus(statusValue, hasConnected);
         if (!nextStatus) return;
 
-        if (nextStatus === "connected") hasConnected = true;
+        if (nextStatus === "connected") {
+          hasConnected = true;
+          loggingService.logInfo("Supabase message realtime subscribed", { scope, generation }, "realtime-deduplication");
+        }
         setConnectionStatus(nextStatus);
 
         if (nextStatus === "reconnecting" || nextStatus === "disconnected") {
           loggingService.logWarn("Supabase message realtime status", {
             status: statusValue,
             nextStatus,
-            communityId,
-            channelId,
-          });
+            scope,
+          }, "realtime-deduplication");
         }
       });
 
     return () => {
       canceled = true;
+      if (subscriptionGenerationRef.current === generation) subscriptionGenerationRef.current += 1;
+      loggingService.logInfo("Supabase message realtime subscription removed", {
+        scope,
+        generation,
+        delivered: diagnostics.delivered,
+        duplicate: diagnostics.duplicate,
+        stale: diagnostics.stale,
+      }, "realtime-deduplication");
       void client.removeChannel(channel);
     };
   }, [channelId, communityId, enabled]);

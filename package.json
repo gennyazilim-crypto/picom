@@ -186,6 +186,7 @@
     "realtime-scaling:smoke": "node scripts/realtime-scaling-smoke-test.mjs",
     "realtime:ordering:smoke": "node scripts/realtime-event-ordering-smoke-test.mjs",
     "messages:editing-conflicts:smoke": "node scripts/message-editing-conflict-smoke.mjs",
+    "realtime:deduplication:smoke": "node scripts/realtime-deduplication-hardening-smoke.mjs",
     "realtime:load:simulate": "node scripts/realtime-load-simulation.mjs",
     "realtime:load:smoke": "node scripts/realtime-load-simulation-smoke-test.mjs",
     "realtime:backpressure:smoke": "node scripts/realtime-backpressure-smoke-test.mjs",
