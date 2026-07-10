@@ -6,6 +6,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "member:management:polish:test": "node scripts/member-management-mvp-polish-smoke.mjs",
     "channel:management:polish:test": "node scripts/channel-management-polish-smoke.mjs",
     "dev": "npm run electron:dev",
     "renderer:dev": "vite --host 127.0.0.1",

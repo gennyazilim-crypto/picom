@@ -1,5 +1,6 @@
 ﻿import type { Channel, ChannelCategory, Community, Member, Role, UserId } from "../../types/community";
 import type { CommunityAccess, CommunityMembershipStatus, CommunityPermissionKey, CommunityVisibility } from "../../types/communityAccess";
+import type { MemberModerationAction } from "../../types/memberModeration";
 
 const OWNER_PERMISSIONS: CommunityPermissionKey[] = [
   "manageCommunity",
@@ -32,6 +33,7 @@ const ADMIN_PERMISSIONS: CommunityPermissionKey[] = [
 ];
 
 const MODERATOR_PERMISSIONS: CommunityPermissionKey[] = [
+  "manageMembers",
   "moderateMessages",
   "deleteAnyMessage",
   "sendMessages",
@@ -137,6 +139,15 @@ export function canManageChannels(access: CommunityAccess): boolean {
 
 export function canManageMembers(access: CommunityAccess): boolean {
   return hasCommunityPermission(access, "manageMembers");
+}
+
+export function canModerateCommunityMember(access: CommunityAccess, community: Community, targetMember: Member, _action: MemberModerationAction): boolean {
+  if (!canManageMembers(access) || targetMember.userId === access.userId) return false;
+  const targetRole = community.roles.find((role) => role.id === targetMember.roleId);
+  if (!targetRole) return false;
+  if (targetMember.userId === community.ownerId || targetRole.name === "Owner" || targetRole.level >= 100) return false;
+  const actorLevel = access.isOwner ? 100 : (access.role?.level ?? 0);
+  return actorLevel >= 60 && actorLevel > targetRole.level;
 }
 
 export function canModerateMessages(access: CommunityAccess): boolean {

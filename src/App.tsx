@@ -41,7 +41,9 @@ import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/Mai
 import { CreateCommunityModal } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { DeleteChannelModal, EditChannelModal, type EditChannelFormValue } from "./components/ChannelManagementModals";
+import { MemberModerationModal } from "./components/MemberModerationModal";
 import type { Channel } from "./types/community";
+import type { MemberModerationAction } from "./types/memberModeration";
 import { AppLockScreen } from "./components/AppLockScreen";
 import { MentionFeedMain } from "./components/MentionFeedMain";
 import { MentionRightPanel } from "./components/MentionRightPanel";
@@ -132,6 +134,8 @@ import { readStateService } from "./services/supabase/readStateService";
 import { createCommunityFromSummary } from "./utils/communityFactory";
 import { messageMentionsUser } from "./utils/mentionUtils";
 import { canManageChannels, canSendMessage, canViewChannel, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
+import { canModerateCommunityMember } from "./services/permissions/communityPermissions";
+import { memberManagementService } from "./services/memberManagementService";
 
 const overlayIcons = mvpUiIconMap.overlays;
 
@@ -342,6 +346,7 @@ export function App() {
   const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
+  const [memberModerationTarget, setMemberModerationTarget] = useState<{ member: Member; action: MemberModerationAction } | null>(null);
   const [composerInviteOpen, setComposerInviteOpen] = useState(false);
   const [pollCreateOpen, setPollCreateOpen] = useState(false);
   const [activeThread, setActiveThread] = useState<{ thread: ThreadRecord; parentMessage: Message } | null>(null);
@@ -2523,15 +2528,16 @@ export function App() {
                 <MemberSidebar
                   community={displayedActiveCommunity}
                   onOpenProfile={openProfile}
-                  onMemberContextMenu={(event, member) =>
-                  openContext(event, [
-                    { label: `View ${member.displayName}` },
-                    { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
-                    { label: "Open friends foundation", onSelect: openFriends },
-                    { label: "Report user", disabled: member.userId === currentUser.userId, onSelect: () => handleReportUser(member) },
-                    { label: "Moderation placeholder", disabled: true },
-                  ])
-                  }
+                  onMemberContextMenu={(event, member) => {
+                    const moderationActions: { action: MemberModerationAction; label: string }[] = [{ action: "timeout", label: "Timeout member" }, { action: "kick", label: "Remove member" }, { action: "ban", label: "Ban member" }];
+                    openContext(event, [
+                      { label: `View ${member.displayName}`, onSelect: () => openProfilePage(member) },
+                      { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
+                      { label: "Open friends foundation", onSelect: openFriends },
+                      { label: "Report user", disabled: member.userId === currentUser.userId, onSelect: () => handleReportUser(member) },
+                      ...moderationActions.filter(({ action }) => canModerateCommunityMember(communityAccess, activeCommunity, member, action)).map(({ action, label }) => ({ label, tone: action === "timeout" ? "normal" as const : "danger" as const, onSelect: () => setMemberModerationTarget({ member, action }) })),
+                    ]);
+                  }}
                 />
               ) : null}
             </>
@@ -2578,6 +2584,19 @@ export function App() {
       /> : null}
       {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} currentUsername={currentUser.username} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
+      {memberModerationTarget ? <MemberModerationModal
+        member={memberModerationTarget.member}
+        action={memberModerationTarget.action}
+        onClose={() => setMemberModerationTarget(null)}
+        onConfirm={async (reason, timeoutMinutes) => {
+          if (!canModerateCommunityMember(communityAccess, activeCommunity, memberModerationTarget.member, memberModerationTarget.action)) { pushToast("You cannot manage this member.", "error"); return false; }
+          const result = await memberManagementService.moderateMember({ communityId: activeCommunity.id, actorId: currentUser.userId, targetUserId: memberModerationTarget.member.userId, targetDisplayName: memberModerationTarget.member.displayName, action: memberModerationTarget.action, reason, timeoutMinutes });
+          if (!result.ok) { pushToast(result.message, "error"); return false; }
+          replaceCommunityMembers(activeCommunity.id, memberModerationTarget.action === "timeout" ? activeCommunity.members.map((member) => member.userId === memberModerationTarget.member.userId ? { ...member, status: "idle", statusText: `Timed out until ${new Date(result.data.timeoutUntil ?? Date.now()).toLocaleString()}` } : member) : activeCommunity.members.filter((member) => member.userId !== memberModerationTarget.member.userId));
+          pushToast(`${memberModerationTarget.member.displayName}: ${memberModerationTarget.action} completed.`, "success");
+          return true;
+        }}
+      /> : null}
       {composerInviteOpen ? <InvitePeopleModal community={displayedActiveCommunity} currentUserId={currentUser.userId} canCreate={communityAccess.permissions.includes("createInvites")} onClose={() => setComposerInviteOpen(false)} /> : null}
       {pollCreateOpen ? <CreatePollModal channelName={displayedActiveChannel.name} onClose={() => setPollCreateOpen(false)} onCreate={(draft) => sendMessage(draft.question, undefined, null, draft)} /> : null}
       {activeThread ? <ThreadPanel thread={activeThread.thread} parentMessage={activeThread.parentMessage} members={displayedActiveCommunity.members} currentUser={currentUser} canSend={canSendMessage(communityAccess, displayedActiveChannel)} onClose={() => setActiveThread(null)} onNotice={pushToast} /> : null}
