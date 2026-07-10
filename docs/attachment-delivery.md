@@ -10,6 +10,24 @@ Picom's MVP uses Supabase Storage and attachment metadata for image uploads. Pro
 - Existing local/Supabase upload flow: unchanged
 - Secrets: not added
 
+## Review conclusion - 2026-07-10
+
+The `message-attachments` bucket is private and must remain private. Supabase migration
+`20260704002200_storage_message_attachments_bucket.sql` enforces `public = false`; the latest Storage
+SELECT policy in `20260710139000_attachment_scanning_quarantine.sql` serves only clean/development-safe
+objects and calls `public.can_view_message()` for attached files. That function follows current channel
+visibility, including private-channel role rules. Pending objects remain uploader-only.
+
+The upload path stores an object key and writes `public_url = null`; it does not call `getPublicUrl()` or
+persist an expiring signed URL. This is the approved current behavior and must not be replaced with a public
+bucket to fix rendering. Historical private attachment reload has no end-to-end signed URL resolver yet, so
+the safe production-connected fallback is an unavailable/blocked preview rather than public delivery.
+
+Before historical private attachment rendering can be release-ready, add an authenticated resolver that
+accepts an attachment ID, rechecks RLS/message visibility and scan state, returns a short-lived URL with
+private/no-store semantics, refreshes after expiry, and redacts query strings from logs/diagnostics. The
+hosted staging matrix must prove metadata and object denial after membership/private-channel access loss.
+
 ## Goals
 
 - Keep attachment previews fast and safe.
