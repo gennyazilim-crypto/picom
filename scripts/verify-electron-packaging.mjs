@@ -31,6 +31,7 @@ const builderConfig = readText("electron-builder.yml");
 const appConfig = readText("electron/appConfig.cts");
 const mainProcess = readText("electron/main.cts");
 const preload = readText("electron/preload.cts");
+const ipcPayloadValidation = readText("electron/ipcPayloadValidation.cts");
 const gitignore = readText(".gitignore");
 
 assertCondition(packageJson.name === "picom", "package.json name must remain picom.");
@@ -114,7 +115,8 @@ assertIncludes(mainProcess, 'window.webContents.on("will-attach-webview"', "bloc
 assertIncludes(mainProcess, 'app.setAsDefaultProtocolClient("picom"', "registered Picom protocol handler");
 assertIncludes(mainProcess, 'app.on("open-url"', "macOS protocol open-url handler");
 assertIncludes(mainProcess, 'app.on("second-instance"', "second-instance protocol forwarding");
-assertIncludes(mainProcess, "isSupportedPicomDeepLink", "native deep link route allowlist");
+assertIncludes(mainProcess, "isSafeDeepLink", "native deep link validation entry point");
+assertIncludes(ipcPayloadValidation, "isSupportedPicomDeepLink", "native deep link route allowlist");
 
 assertIncludes(preload, "contextBridge.exposeInMainWorld", "safe preload bridge");
 assertIncludes(preload, "picomDesktop", "Picom preload namespace");

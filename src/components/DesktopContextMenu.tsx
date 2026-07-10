@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { OverlayMenuItem } from "../state/useOverlayState";
+import { clampOverlayPosition } from "../utils/desktopDisplayBounds";
 
 type DesktopContextMenuProps = { x: number; y: number; items: OverlayMenuItem[]; onClose: () => void };
 
@@ -29,8 +30,15 @@ export function DesktopContextMenu({ x, y, items, onClose }: DesktopContextMenuP
     };
   }, [onClose]);
 
-  const left = Math.min(x, Math.max(16, window.innerWidth - 238));
-  const top = Math.min(y, Math.max(16, window.innerHeight - (items.length * 38 + 24)));
+  const { left, top } = clampOverlayPosition({
+    x,
+    y,
+    width: 220,
+    height: items.length * 38 + 12,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    margin: 16,
+  });
   return <div ref={menuRef} className="desktop-context-menu" role="menu" aria-label="Context actions" style={{ left, top }} onPointerDown={(event) => event.stopPropagation()}>
     {items.map((item) => <button key={item.label} type="button" role="menuitem" className={`context-menu-item ${item.tone === "danger" ? "danger" : ""}`} disabled={item.disabled} onClick={() => { item.onSelect?.(); onClose(); }}>{item.label}</button>)}
   </div>;

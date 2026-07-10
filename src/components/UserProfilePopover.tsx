@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { Community, Member } from "../types/community";
+import { clampOverlayPosition } from "../utils/desktopDisplayBounds";
 import { MemberAvatar } from "./MemberAvatar";
 
 type UserProfilePopoverProps = { member: Member; community: Community; x: number; y: number; onClose: () => void; onViewProfile?: (member: Member) => void; onReportUser?: (member: Member) => void; isBlocked?: boolean; onToggleBlock?: (member: Member) => void };
@@ -21,8 +22,15 @@ export function UserProfilePopover({ member, community, x, y, onClose, onViewPro
   }, [onClose]);
 
   const role = community.roles.find((candidate) => candidate.id === member.roleId);
-  const left = Math.min(x, Math.max(20, window.innerWidth - 340));
-  const top = Math.min(y, Math.max(20, window.innerHeight - 430));
+  const { left, top } = clampOverlayPosition({
+    x,
+    y,
+    width: 320,
+    height: 410,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    margin: 20,
+  });
   return <section ref={popoverRef} className="profile-popover" role="dialog" aria-label={`${member.displayName} profile preview`} tabIndex={-1} style={{ left, top }} onPointerDown={(event) => event.stopPropagation()}>
     <div className="profile-cover" aria-hidden="true" />
     <div className="profile-body">
