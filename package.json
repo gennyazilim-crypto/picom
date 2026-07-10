@@ -150,6 +150,7 @@
     "auth:email-verification:smoke": "node scripts/email-verification-smoke-test.mjs",
     "auth:email-verification:production:test": "node scripts/email-verification-production-test.mjs",
     "auth:sessions:smoke": "node scripts/session-management-smoke-test.mjs",
+    "auth:sessions:production:test": "node scripts/session-management-production-test.mjs",
     "auth:multi-client-sync:smoke": "node scripts/multi-client-session-sync-smoke-test.mjs",
     "account:activity:smoke": "node scripts/user-activity-history-smoke-test.mjs",
     "auth:2fa:smoke": "node scripts/two-factor-placeholder-smoke-test.mjs",

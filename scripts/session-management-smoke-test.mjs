@@ -31,8 +31,8 @@ if (!settings.includes("Active sessions")) {
   failures.push("Settings > Account should include an Active sessions section.");
 }
 
-if (!settings.includes("Revoke other sessions placeholder")) {
-  failures.push("Settings > Account should include a safe other-session revocation placeholder.");
+if (!settings.includes("Revoke other sessions")) {
+  failures.push("Settings > Account should include other-session revocation.");
 }
 
 if (failures.length) {

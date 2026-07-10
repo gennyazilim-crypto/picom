@@ -338,6 +338,7 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      user_device_sessions:{Row:{id:string;user_id:string;device_id:string;session_hash:string;device_label:string;platform_label:string;runtime_label:string;created_at:string;last_used_at:string;expires_at:string|null;revoked_at:string|null};Insert:never;Update:never;Relationships:[]};
       legal_policy_versions: {
         Row: { policy_key: "terms" | "privacy"; current_version: string; effective_at: string; requires_reaccept: boolean; updated_at: string };
         Insert: never; Update: never; Relationships: [];
@@ -568,6 +569,9 @@ export type Database = {
       };
       begin_own_data_export: { Args: Record<string, never>; Returns: Array<{ id: string; requested_at: string }> };
       complete_own_data_export: { Args: { target_export_id: string; next_status: "ready" | "failed"; next_failure_code?: string | null }; Returns: Array<{ id: string; status: "ready" | "failed"; requested_at: string; completed_at: string; expires_at: string | null }> };
+      register_current_device_session:{Args:{target_device_id:string;target_device_label:string;target_platform_label:string;target_runtime_label:string};Returns:string};
+      list_current_user_device_sessions:{Args:Record<string,never>;Returns:Array<{id:string;device_label:string;platform_label:string;runtime_label:string;created_at:string;last_used_at:string;expires_at:string|null;revoked_at:string|null;current:boolean}>};
+      revoke_other_device_sessions:{Args:Record<string,never>;Returns:number};
       get_admin_system_status_v2: { Args: Record<string, never>; Returns: Json };
       list_admin_operations_v2: { Args: { section_name: string; page_cursor_created_at?: string | null; page_cursor_id?: string | null; page_limit?: number }; Returns: Json };
       append_admin_operations_audit: { Args: { admin_action_type: string; admin_target_type: string; admin_target_id?: string | null }; Returns: number };

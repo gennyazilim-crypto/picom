@@ -3,6 +3,7 @@ import { authService, type AuthServiceSession } from "../services/authService";
 import { loggingService } from "../services/loggingService";
 import { multiClientSessionSyncService } from "../services/multiClientSessionSyncService";
 import { accountActivityService } from "../services/accountActivityService";
+import { sessionManagementService } from "../services/sessionManagementService";
 
 type NoticeTone = "info" | "success" | "error";
 type NoticeCallback = (message: string, tone?: NoticeTone) => void;
@@ -86,6 +87,8 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
       unsubscribeSync();
     };
   }, [notify]);
+
+  useEffect(()=>{const userId=session?.user?.id;if(!userId||session.provider!=="supabase")return;void sessionManagementService.ensureCurrentSessionRegistered();return sessionManagementService.subscribeToCurrentSessionRevocation(userId,()=>{multiClientSessionSyncService.emitLocalPlaceholder({type:"user:session_revoked",userId,reason:"device_session_revoked"})})},[session?.provider,session?.user?.id]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);

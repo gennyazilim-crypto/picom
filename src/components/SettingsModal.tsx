@@ -147,6 +147,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
 
     setActiveSessions(result.data.sessions);
     setSessionManagementMessage(result.data.message);
+    void refreshActiveSessions();
   }, [pushToast]);
 
   useEffect(() => {
