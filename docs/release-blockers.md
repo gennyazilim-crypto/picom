@@ -102,3 +102,6 @@ A dedicated `eu-west-1` staging project was created and migrations, Auth, the ro
 ## Task 412 authorized legal closure
 
 No authorized reviewer, immutable approved policy versions, jurisdiction decision, or project-license grant was supplied. Engineering drafts and smoke tests are not legal approval. RB-10 remains open and stable distribution remains No-Go.
+## Task 413 production ownership and custody
+
+A value-free custody matrix now exists, but every accountable owner/store/rotation/recovery field remains unassigned. Task 406 staging credentials are not production custody. RB-09 remains open.

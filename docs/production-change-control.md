@@ -17,3 +17,7 @@ Only secret names, owners, storage locations, rotation dates, and recovery conta
 ## Freeze exit
 
 Stable release cannot exit freeze until named owners approve the final version/channel/source commit, hosted endpoints/regions, buckets, Edge versions, feature flags, legal versions, support/status URLs, retention/backups, platform signing, artifact checksums, and rollback values.
+
+## Task 413 activation status
+
+This process is documented but cannot activate until real approvers/operators are assigned. No agent-generated identity is an approval.
