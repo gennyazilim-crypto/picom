@@ -19,6 +19,8 @@ export function createMockMessageSet(channelId: string, members: Member[], prefi
     id: `${prefix}-msg-${index}`,
     channelId,
     authorId: members[(index + 1) % members.length].userId,
+    webhookId: index === 6 ? `webhook-${prefix}-release` : undefined,
+    webhookName: index === 6 ? "Release Updates" : undefined,
     body,
     createdAt: new Date(MOCK_BASE_TIME - (8 - index) * 1000 * 60 * 16).toISOString(),
     attachments: createMockAttachmentsForMessage(prefix, index),

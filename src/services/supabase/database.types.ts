@@ -256,6 +256,12 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      webhooks: {
+        Row: { id: string; community_id: string; channel_id: string; name: string; avatar_url: string | null; token_hash: string; created_by: string; revoked_at: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["webhooks"]["Row"]> & Pick<Database["public"]["Tables"]["webhooks"]["Row"], "community_id" | "channel_id" | "name" | "token_hash" | "created_by">;
+        Update: Partial<Database["public"]["Tables"]["webhooks"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: {
       message_attachments: {

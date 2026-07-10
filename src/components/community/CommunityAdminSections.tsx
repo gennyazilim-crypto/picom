@@ -7,7 +7,7 @@ import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 
-export type AdminSectionId = "overview" | "community-settings" | "channels" | "roles" | "members" | "bots" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
+export type AdminSectionId = "overview" | "community-settings" | "channels" | "roles" | "members" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
 
 export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string; permission?: CommunityAccess["permissions"][number]; ownerOnly?: boolean; icon: IconName }> = [
@@ -17,6 +17,7 @@ export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string;
   { id: "roles", label: "Roles", permission: "manageRoles", icon: "lock" },
   { id: "members", label: "Members", permission: "manageMembers", icon: "users" },
   { id: "bots", label: "Bots", permission: "manageCommunity", icon: "user" },
+  { id: "webhooks", label: "Webhooks", permission: "manageChannels", icon: "send" },
   { id: "invites", label: "Invites", permission: "createInvites", icon: "send" },
   { id: "events", label: "Events", permission: "manageCommunity", icon: "bell" },
   { id: "moderation", label: "Moderation", permission: "moderateMessages", icon: "bell" },

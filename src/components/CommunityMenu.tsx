@@ -203,6 +203,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "roles") return <CommunityRolesSection community={community} />;
     if (activeSection === "members") return <CommunityMembersSection community={community} />;
     if (activeSection === "bots") return sectionTools?.bots ?? <div className="community-admin-empty">No bots installed.</div>;
+    if (activeSection === "webhooks") return sectionTools?.webhooks ?? <div className="community-admin-empty">No webhooks configured.</div>;
     if (activeSection === "invites") return <CommunityInvitesSection onOpenInvite={onOpenInvite} />;
     if (activeSection === "events") return sectionTools?.events ?? <div className="community-admin-empty">No events loaded.</div>;
     if (activeSection === "moderation") return <CommunityModerationSection>{sectionTools?.moderation}</CommunityModerationSection>;

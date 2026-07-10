@@ -63,6 +63,8 @@ export interface Message {
   localOrder?: number;
   channelId: ChannelId;
   authorId: UserId;
+  webhookId?: string;
+  webhookName?: string;
   body: string;
   createdAt: string;
   editedAt?: string;

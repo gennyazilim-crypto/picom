@@ -62,3 +62,6 @@ verify_jwt = true
 
 [functions.validate-file]
 verify_jwt = true
+
+[functions.webhook-message]
+verify_jwt = false

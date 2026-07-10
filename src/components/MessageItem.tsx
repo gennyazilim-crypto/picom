@@ -177,6 +177,7 @@ export function MessageItem({
             {member.displayName}
           </button>
           {member.isBot ? <span className="bot-badge">BOT</span> : null}
+          {message.webhookId ? <span className="webhook-badge" title={message.webhookName ?? "Webhook message"}>WEBHOOK</span> : null}
           {role ? <span className="role-label" style={{ color: role.color }}>{role.name}</span> : null}
           <time title={dateTimeService.formatFullTimestamp(message.createdAt)}>{dateTimeService.formatMessageTime(message.createdAt)}</time>
           {message.editedAt && !deleted ? <span className="message-edited-label">edited</span> : null}

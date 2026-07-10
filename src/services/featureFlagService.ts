@@ -57,7 +57,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableFriends: false,
     enableDiscovery: true,
     enableBots: false,
-    enableWebhooks: false,
+    enableWebhooks: true,
     enableThreads: false,
     enablePolls: false,
     enableAdvancedModeration: false,
