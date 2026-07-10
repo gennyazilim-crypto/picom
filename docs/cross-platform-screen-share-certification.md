@@ -46,3 +46,7 @@ RB-05 remains open. Stable notes must not claim certified cross-platform screen 
 ## Task 398 closure attempt
 
 Permission recovery, preview/stop, preload contract, and invalid-payload tests passed on 2026-07-10. No remote-client screen track was tested, and no native Linux or macOS runner evidence was available. The platform matrix remains blocked as detailed in `docs/cross-platform-screen-share-evidence-closure.md`.
+
+## Task 408 Windows real execution
+
+Windows certification was **BLOCKED** because no trusted exact RC, clean Windows test target, hosted voice room, or remote client was available. See `docs/windows-screen-share-certification.md`; structural tests are not presented as packaged remote-view proof.

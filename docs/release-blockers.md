@@ -78,3 +78,7 @@ Hosted Supabase execution was BLOCKED by absent staging project linkage and prot
 ## Task 407 real-evidence update
 
 Hosted LiveKit token and two-client voice execution were BLOCKED by absent staging/provider environment and clients. RB-04 remains open.
+
+## Task 408 real-evidence update
+
+Windows native screen-share certification was BLOCKED by missing trusted RC, clean test target, hosted room, and remote client. RB-05 and RB-06 remain open.
