@@ -62,6 +62,7 @@ type SettingsModalProps = {
   onProfileSettingsChange: (settings: ProfileSettings) => void;
   onClose: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
+  onAccountDeletionRequested: () => void;
   currentUsername: string;
   ownedCommunityCount: number;
   developerPortalContext: {
@@ -73,7 +74,7 @@ type SettingsModalProps = {
   };
 };
 
-export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, currentUsername, ownedCommunityCount, developerPortalContext }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, developerPortalContext }: SettingsModalProps) {
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
@@ -312,8 +313,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     pushToast(result.data.message, "info");
   };
   const accountDeletionConfirmationText = currentUsername;
-  const requestAccountDeletionPlaceholder = async () => {
-    const result = await accountDeletionService.requestDeletionPlaceholder({ confirmationText: accountDeletionConfirmText, expectedUsername: accountDeletionConfirmationText, ownedCommunityCount });
+  const requestAccountDeletion = async () => {
+    const result = await accountDeletionService.requestDeletion({ confirmationText: accountDeletionConfirmText, expectedUsername: accountDeletionConfirmationText, ownedCommunityCount });
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -322,9 +323,10 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     setAccountDeletionStatus(result.data);
     setAccountDeletionConfirmText("");
     pushToast(result.data.message, "success");
+    onAccountDeletionRequested();
   };
-  const cancelAccountDeletionPlaceholder = async () => {
-    const result = await accountDeletionService.cancelDeletionPlaceholder();
+  const cancelAccountDeletion = async () => {
+    const result = await accountDeletionService.cancelDeletion();
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -332,7 +334,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
 
     setAccountDeletionStatus(result.data);
     setAccountDeletionConfirmText("");
-    pushToast("Account deletion placeholder canceled.", "info");
+    pushToast("Account deletion request canceled.", "info");
   };
   const requestDataExportPlaceholder = async () => {
     const result = await dataExportService.requestExport(profileDraft);
@@ -517,14 +519,14 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               <div className="danger-zone-card" aria-label="Account deletion danger zone">
                 <span>Danger Zone</span>
                 <strong>Request account deletion</strong>
-                <small>{accountDeletionStatus.message} {ownedCommunityCount ? `You own ${ownedCommunityCount} communit${ownedCommunityCount === 1 ? "y" : "ies"}; transfer ownership first.` : "No immediate hard delete is performed."}</small>
+                <small>{accountDeletionStatus.message} {ownedCommunityCount ? `You own ${ownedCommunityCount} communit${ownedCommunityCount === 1 ? "y" : "ies"}; transfer ownership first.` : "The request revokes sessions and starts a 14-day review period. It never hard-deletes immediately."}</small>
                 <label>
                   <small>Type username <b>{accountDeletionConfirmationText}</b> to confirm the request.</small>
                   <input value={accountDeletionConfirmText} onChange={(event) => setAccountDeletionConfirmText(event.target.value)} placeholder={accountDeletionConfirmationText} />
                 </label>
                 <div className="settings-actions-row">
-                  <button disabled={accountDeletionConfirmText.trim().toLowerCase() !== accountDeletionConfirmationText.toLowerCase() || ownedCommunityCount > 0} onClick={() => void requestAccountDeletionPlaceholder()}>Request deletion</button>
-                  <button onClick={() => void cancelAccountDeletionPlaceholder()}>Cancel request</button>
+                  <button disabled={accountDeletionConfirmText.trim().toLowerCase() !== accountDeletionConfirmationText.toLowerCase() || ownedCommunityCount > 0 || accountDeletionStatus.requested} onClick={() => void requestAccountDeletion()}>Request deletion and sign out</button>
+                  <button disabled={!accountDeletionStatus.requested} onClick={() => void cancelAccountDeletion()}>Cancel request</button>
                 </div>
               </div>
             </div>
@@ -556,7 +558,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <article className="security-card">
                   <span>Account data</span>
                   <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Export processing" : "Export not requested"}</strong>
-                  <small>{accountDeletionStatus.requested ? "Deletion request placeholder recorded." : "No deletion request active."}</small>
+                  <small>{accountDeletionStatus.requested ? "Deletion request recorded; sign in again to cancel during the review period." : "No deletion request active."}</small>
                 </article>
               </div>
               <label className="settings-toggle-row">
@@ -628,7 +630,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               </div>
               <div className="settings-actions-row">
                 <button onClick={requestDataExportPlaceholder}>Request data export</button>
-                <button onClick={() => pushToast(accountDeletionStatus.message, accountDeletionStatus.requested ? "info" : "success")}>Account deletion status placeholder</button>
+                <button onClick={() => { setActive("Account"); pushToast(accountDeletionStatus.message, accountDeletionStatus.requested ? "info" : "success"); }}>Review account deletion</button>
                 <button onClick={() => { setActive("Advanced"); pushToast("Open Beta support to report a problem.", "info"); }}>Report a problem</button>
                 <button onClick={() => updateSafetySettings(userSafetyCenterService.resetSettings())}>Reset safety settings</button>
               </div>

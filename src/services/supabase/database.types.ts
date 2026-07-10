@@ -251,9 +251,15 @@ export type Database = {
         Relationships: [];
       };
       account_deletion_requests: {
-        Row: { id: string; user_id: string; status: "requested" | "reviewing" | "canceled" | "completed"; requested_at: string; canceled_at: string | null; completed_at: string | null };
+        Row: { id: string; user_id: string; status: "requested" | "reviewing" | "canceled" | "completed"; requested_at: string; canceled_at: string | null; completed_at: string | null; anonymize_after: string | null; sessions_revoked_at: string | null; session_revocation_status: "pending" | "completed" | "failed" };
         Insert: Partial<Database["public"]["Tables"]["account_deletion_requests"]["Row"]> & Pick<Database["public"]["Tables"]["account_deletion_requests"]["Row"], "user_id">;
-        Update: Partial<Database["public"]["Tables"]["account_deletion_requests"]["Row"]>;
+        Update: never;
+        Relationships: [];
+      };
+      account_security_events: {
+        Row: { id: string; user_id: string; event_type: "account_deletion_requested" | "account_deletion_canceled" | "account_sessions_revoked"; request_id: string | null; metadata: Record<string, unknown>; created_at: string };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       threads: {
@@ -336,6 +342,8 @@ export type Database = {
       };
     };
     Functions: {
+      request_current_user_account_deletion: { Args: { confirmation_username: string }; Returns: Array<{ request_id: string; requested_at: string; anonymize_after: string }> };
+      cancel_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; canceled_at: string }> };
       list_public_discovery_communities: {
         Args: { search_text?: string | null; category_filter?: string | null; result_limit?: number };
         Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request" }>;

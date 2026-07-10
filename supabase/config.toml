@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.user-data-export]
 verify_jwt = true
+
+[functions.account-deletion]
+verify_jwt = true
