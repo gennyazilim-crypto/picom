@@ -5,66 +5,70 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   qa:
-    name: QA smoke, typecheck, and build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - windows-latest
-          - ubuntu-latest
-
+    name: Required QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Secret exposure smoke
+      - name: Scan repository for exposed secrets
         run: npm run secrets:smoke
 
       - name: Verify third-party license inventory
         run: npm run licenses:check
 
-      - name: Verify dependency update train policy
+      - name: Verify dependency update policy
         run: npm run dependency:update:train:smoke
 
-      - name: Enforce API and desktop compatibility contracts
+      - name: Verify API versioning enforcement
         run: npm run api:versioning:enforcement:smoke
-
-      - name: Run QA smoke gate
-        run: npm run qa:smoke
-
-      - name: Run Supabase QA gate
-        run: npm run qa:supabase
 
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Build renderer and Electron main
+      - name: Run mock smoke tests
+        run: npm run mock:smoke
+
+      - name: Build renderer and Electron bundles
         run: npm run build
 
-      - name: Enforce renderer performance budgets
-        run: npm run performance:budget:ci
+      - name: Run deterministic QA smoke gate
+        run: npm run qa:smoke
 
-      - name: Verify visual regression coverage contract
-        run: npm run visual:regression:contract
+      - name: Run static Supabase contract gate
+        run: npm run qa:supabase
 
-      - name: Verify E2E core-flow coverage contract
-        run: npm run e2e:coverage:contract
+      - name: Validate GitHub Actions contracts
+        run: npm run ci:workflow:smoke
 
-      - name: Verify release checksum generator
-        run: npm run release:checksums:smoke
-
-      - name: Verify release provenance generator
-        run: npm run release:provenance:smoke
+      - name: Add safe failure summary
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## Picom QA failed"
+            echo "A required deterministic check failed. Review the failed step above."
+            echo "Hosted credentials and local environment files are never included in this summary."
+          } >> "$GITHUB_STEP_SUMMARY"

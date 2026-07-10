@@ -1,0 +1,102 @@
+name: Picom Hosted Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_confirmation:
+        description: Type STAGING_ONLY to run protected hosted checks
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hosted-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  hosted-validation:
+    name: Hosted staging validation
+    runs-on: ubuntu-latest
+    environment: hosted-staging
+    timeout-minutes: 45
+    env:
+      PICOM_RLS_STAGING_URL: ${{ secrets.PICOM_RLS_STAGING_URL }}
+      PICOM_RLS_STAGING_ANON_KEY: ${{ secrets.PICOM_RLS_STAGING_ANON_KEY }}
+      PICOM_RLS_STAGING_CONFIRM: STAGING_ONLY
+      PICOM_RLS_COMMUNITY_ID: ${{ secrets.PICOM_RLS_COMMUNITY_ID }}
+      PICOM_RLS_PUBLIC_CHANNEL_ID: ${{ secrets.PICOM_RLS_PUBLIC_CHANNEL_ID }}
+      PICOM_RLS_PRIVATE_CHANNEL_ID: ${{ secrets.PICOM_RLS_PRIVATE_CHANNEL_ID }}
+      PICOM_RLS_PRIVATE_MESSAGE_ID: ${{ secrets.PICOM_RLS_PRIVATE_MESSAGE_ID }}
+      PICOM_RLS_PRIVATE_ATTACHMENT_ID: ${{ secrets.PICOM_RLS_PRIVATE_ATTACHMENT_ID }}
+      PICOM_RLS_PRIVATE_STORAGE_BUCKET: ${{ secrets.PICOM_RLS_PRIVATE_STORAGE_BUCKET }}
+      PICOM_RLS_PRIVATE_STORAGE_PATH: ${{ secrets.PICOM_RLS_PRIVATE_STORAGE_PATH }}
+      PICOM_RLS_OWNER_EMAIL: ${{ secrets.PICOM_RLS_OWNER_EMAIL }}
+      PICOM_RLS_OWNER_PASSWORD: ${{ secrets.PICOM_RLS_OWNER_PASSWORD }}
+      PICOM_RLS_ADMIN_EMAIL: ${{ secrets.PICOM_RLS_ADMIN_EMAIL }}
+      PICOM_RLS_ADMIN_PASSWORD: ${{ secrets.PICOM_RLS_ADMIN_PASSWORD }}
+      PICOM_RLS_MODERATOR_EMAIL: ${{ secrets.PICOM_RLS_MODERATOR_EMAIL }}
+      PICOM_RLS_MODERATOR_PASSWORD: ${{ secrets.PICOM_RLS_MODERATOR_PASSWORD }}
+      PICOM_RLS_MEMBER_EMAIL: ${{ secrets.PICOM_RLS_MEMBER_EMAIL }}
+      PICOM_RLS_MEMBER_PASSWORD: ${{ secrets.PICOM_RLS_MEMBER_PASSWORD }}
+      PICOM_RLS_VISITOR_EMAIL: ${{ secrets.PICOM_RLS_VISITOR_EMAIL }}
+      PICOM_RLS_VISITOR_PASSWORD: ${{ secrets.PICOM_RLS_VISITOR_PASSWORD }}
+      PICOM_REALTIME_STAGING_URL: ${{ secrets.PICOM_REALTIME_STAGING_URL }}
+      PICOM_REALTIME_STAGING_ANON_KEY: ${{ secrets.PICOM_REALTIME_STAGING_ANON_KEY }}
+      PICOM_REALTIME_STAGING_CONFIRM: STAGING_ONLY
+      PICOM_REALTIME_CLIENT_A_EMAIL: ${{ secrets.PICOM_REALTIME_CLIENT_A_EMAIL }}
+      PICOM_REALTIME_CLIENT_A_PASSWORD: ${{ secrets.PICOM_REALTIME_CLIENT_A_PASSWORD }}
+      PICOM_REALTIME_CLIENT_B_EMAIL: ${{ secrets.PICOM_REALTIME_CLIENT_B_EMAIL }}
+      PICOM_REALTIME_CLIENT_B_PASSWORD: ${{ secrets.PICOM_REALTIME_CLIENT_B_PASSWORD }}
+      PICOM_REALTIME_COMMUNITY_ID: ${{ secrets.PICOM_REALTIME_COMMUNITY_ID }}
+      PICOM_REALTIME_CHANNEL_ID: ${{ secrets.PICOM_REALTIME_CHANNEL_ID }}
+      PICOM_EDGE_STAGING_URL: ${{ secrets.PICOM_EDGE_STAGING_URL }}
+      PICOM_EDGE_STAGING_ANON_KEY: ${{ secrets.PICOM_EDGE_STAGING_ANON_KEY }}
+      PICOM_EDGE_STAGING_CONFIRM: STAGING_ONLY
+      PICOM_EDGE_STAGING_USER_EMAIL: ${{ secrets.PICOM_EDGE_STAGING_USER_EMAIL }}
+      PICOM_EDGE_STAGING_USER_PASSWORD: ${{ secrets.PICOM_EDGE_STAGING_USER_PASSWORD }}
+      PICOM_EDGE_STAGING_ORIGIN: ${{ secrets.PICOM_EDGE_STAGING_ORIGIN }}
+      PICOM_EDGE_COMMUNITY_ID: ${{ secrets.PICOM_EDGE_COMMUNITY_ID }}
+      PICOM_EDGE_VOICE_CHANNEL_ID: ${{ secrets.PICOM_EDGE_VOICE_CHANNEL_ID }}
+      PICOM_EDGE_INVITE_CODE: ${{ secrets.PICOM_EDGE_INVITE_CODE }}
+    steps:
+      - name: Require explicit staging confirmation
+        shell: bash
+        run: |
+          if [ "${{ inputs.staging_confirmation }}" != "STAGING_ONLY" ]; then
+            echo "Hosted validation blocked: staging_confirmation must equal STAGING_ONLY." >&2
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate hosted Supabase RLS and storage boundaries
+        run: npm run supabase:rls:hosted:test
+
+      - name: Validate hosted Supabase Realtime with two clients
+        run: npm run realtime:staging:test
+
+      - name: Validate hosted Edge Function JWT boundaries
+        run: npm run edge:staging:test
+
+      - name: Add safe failure summary
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## Hosted validation blocked or failed"
+            echo "Confirm the protected hosted-staging environment and inspect the failed step."
+            echo "A missing environment is not certified as a pass."
+          } >> "$GITHUB_STEP_SUMMARY"
