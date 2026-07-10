@@ -72,3 +72,13 @@ export type AudioFeedItem = Readonly<{
   isUnread?: boolean;
   isSaved?: boolean;
 }>;
+
+export type AudioPlayableItem = Readonly<{
+  id: string;
+  type: AudioContentType;
+  title: string;
+  contextLabel: string;
+  coverUrl?: string;
+  audioUrl?: string;
+  durationSeconds: number;
+}>;
