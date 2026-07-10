@@ -151,6 +151,8 @@
     "supabase:api-regression": "node scripts/supabase-api-mode-regression.mjs",
     "supabase:rls:smoke": "node scripts/supabase-rls-smoke.mjs",
     "supabase:rls:production-safe": "node scripts/rls-smoke-production-safe.mjs",
+    "supabase:rls:hosted:preflight": "node scripts/hosted-staging-rls-validation.mjs",
+    "supabase:rls:hosted:test": "node scripts/hosted-staging-rls-validation.mjs --run",
     "supabase:rls:test": "node scripts/supabase-rls-smoke.mjs --run",
     "webhooks:foundation:smoke": "node scripts/webhook-foundation-smoke-test.mjs",
     "webhooks:production:test": "node scripts/webhook-production-hardening-test.mjs",
