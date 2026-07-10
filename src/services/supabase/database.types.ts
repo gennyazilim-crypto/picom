@@ -444,7 +444,7 @@ export type Database = {
           message_id: string; community_id: string; channel_id: string; author_id: string; mentioned_user_ids: string[];
           body: string; title: string | null; created_at: string; source: "popular_feed" | "following";
           attachments: Json; reactions: Json; view_count: number; comment_count: number; commenter_ids: string[];
-          popularity_score: number; is_saved: boolean;
+          popularity_score: number; is_saved: boolean; comment_preview: Json;
         };
         Relationships: [];
       };

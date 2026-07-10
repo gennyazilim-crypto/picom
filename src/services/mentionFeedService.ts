@@ -1,6 +1,6 @@
 import { mockMentionItems } from "../data/mockMentions";
 import type { Attachment, AttachmentScanStatus, Reaction } from "../types/community";
-import type { MentionItem } from "../types/mentions";
+import type { MentionCommentPreview, MentionItem } from "../types/mentions";
 import { dataSourceService } from "./dataSourceService";
 import type { Database, Json } from "./supabase/database.types";
 import { getSupabaseClient } from "./supabase/supabaseClient";
@@ -79,6 +79,17 @@ function mapReactions(value: Json): Reaction[] {
   }).filter((reaction) => reaction.count > 0).sort((left, right) => right.count - left.count || left.emoji.localeCompare(right.emoji)).slice(0, 4);
 }
 
+function mapCommentPreview(value: Json): MentionCommentPreview[] {
+  return objectArray(value).flatMap((row) => {
+    const id = stringValue(row.id);
+    const authorId = stringValue(row.author_id);
+    const body = stringValue(row.body);
+    const createdAt = stringValue(row.created_at);
+    if (!id || !authorId || !body || !createdAt) return [];
+    return [{ id, authorId, body: body.slice(0, 180), createdAt }];
+  }).slice(0, 2);
+}
+
 function mapRow(row: MentionFeedRow): MentionItem {
   return {
     id: `mention-${row.message_id}`,
@@ -96,6 +107,7 @@ function mapRow(row: MentionFeedRow): MentionItem {
     viewCount: Math.max(0, Number(row.view_count) || 0),
     commentCount: Math.max(0, Number(row.comment_count) || 0),
     commenterIds: row.commenter_ids,
+    commentPreview: mapCommentPreview(row.comment_preview),
     popularityScore: Math.max(0, Number(row.popularity_score) || 0),
     isUnread: true,
     isSaved: row.is_saved,

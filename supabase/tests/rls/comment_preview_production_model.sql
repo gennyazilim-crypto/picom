@@ -1,0 +1,29 @@
+-- Reply-derived feed comment preview tests. Isolated Supabase test DB only.
+begin;
+select plan(6);
+
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
+('e1000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','comment-owner@picom.local',crypt('PicomTest123!',gen_salt('bf')),now(),'{}','{}',now(),now(),'','','',''),('e1000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','comment-member@picom.local',crypt('PicomTest123!',gen_salt('bf')),now(),'{}','{}',now(),now(),'','','',''),('e1000000-0000-4000-8000-000000000003','00000000-0000-0000-0000-000000000000','authenticated','authenticated','comment-visitor@picom.local',crypt('PicomTest123!',gen_salt('bf')),now(),'{}','{}',now(),now(),'','','','');
+insert into public.profiles(id,username,display_name,status,status_text,accent_color) values('e1000000-0000-4000-8000-000000000001','comment-owner','Comment Owner','online','Test','#007571'),('e1000000-0000-4000-8000-000000000002','comment-member','Comment Member','online','Test','#10C2BB'),('e1000000-0000-4000-8000-000000000003','comment-visitor','Comment Visitor','online','Test','#FF772E');
+insert into public.communities(id,owner_id,name,description,accent_color,visibility,public_read_enabled) values('e2000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','Comment fixture','Fixture','#007571','public',true);
+insert into public.roles(id,community_id,name,color,level,permissions) values('e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','Owner','#007571',100,'{"sendMessages":true}'),('e3000000-0000-4000-8000-000000000002','e2000000-0000-4000-8000-000000000001','Member','#10C2BB',10,'{"sendMessages":true}');
+insert into public.community_members(id,community_id,user_id,role_id) values('e4000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','e3000000-0000-4000-8000-000000000001'),('e4000000-0000-4000-8000-000000000002','e2000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000002','e3000000-0000-4000-8000-000000000002');
+insert into public.channels(id,community_id,name,type,topic,is_private,public_read_enabled,position) values('e5000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','comment-public','text','Public',false,true,1),('e5000000-0000-4000-8000-000000000002','e2000000-0000-4000-8000-000000000001','comment-private','text','Private',true,false,2);
+insert into public.messages(id,community_id,channel_id,author_id,body,client_message_id) values('e6000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','Public @comment-member','comment-parent-public'),('e6000000-0000-4000-8000-000000000002','e2000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000002','e1000000-0000-4000-8000-000000000001','Private @comment-member','comment-parent-private');
+insert into public.messages(id,community_id,channel_id,author_id,body,client_message_id,reply_to_message_id,deleted_at) values
+('e6000000-0000-4000-8000-000000000003','e2000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000002','First visible reply','comment-reply-1','e6000000-0000-4000-8000-000000000001',null),
+('e6000000-0000-4000-8000-000000000004','e2000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','Second visible reply','comment-reply-2','e6000000-0000-4000-8000-000000000001',null),
+('e6000000-0000-4000-8000-000000000005','e2000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000002','Deleted reply body','comment-reply-deleted','e6000000-0000-4000-8000-000000000001',now()),
+('e6000000-0000-4000-8000-000000000006','e2000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000002','e1000000-0000-4000-8000-000000000002','Private reply body','comment-reply-private','e6000000-0000-4000-8000-000000000002',null);
+
+select set_config('request.jwt.claim.sub','e1000000-0000-4000-8000-000000000003',true); set local role authenticated;
+select is((select comment_count from public.list_mention_feed(null,null,20) where message_id='e6000000-0000-4000-8000-000000000001'),2::bigint,'public preview counts visible active replies');
+select is(jsonb_array_length((select comment_preview from public.list_mention_feed(null,null,20) where message_id='e6000000-0000-4000-8000-000000000001')),2,'preview is compact and bounded to two');
+select is((select count(*) from public.list_mention_feed(null,null,20) where message_id='e6000000-0000-4000-8000-000000000002'),0::bigint,'private parent and comments do not leak');
+select is((select position('Deleted reply body' in comment_preview::text) from public.list_mention_feed(null,null,20) where message_id='e6000000-0000-4000-8000-000000000001'),0,'deleted reply body is excluded'); reset role;
+
+select set_config('request.jwt.claim.sub','e1000000-0000-4000-8000-000000000002',true); set local role authenticated;
+select is((select comment_count from public.list_mention_feed(null,null,20) where message_id='e6000000-0000-4000-8000-000000000002'),1::bigint,'member can derive permitted private comment preview');
+select ok((select every(length(item->>'body')<=180) from public.list_mention_feed(null,null,20),jsonb_array_elements(comment_preview) item),'all preview bodies are capped at 180 characters'); reset role;
+
+select * from finish(); rollback;
