@@ -1,115 +1,78 @@
-﻿import { useEffect, useState, type FormEvent } from "react";
-import type { DirectConversation } from "../types/directMessages";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import type { DirectConversation, DirectMessage, DirectMessageAttachment } from "../types/directMessages";
 import { dateTimeService } from "../services/dateTimeService";
-import { AppIcon } from "./AppIcon";
 import { messageDraftService } from "../services/messageDraftService";
+import { AppIcon } from "./AppIcon";
 
-type DirectMessagesViewProps = {
-  conversations: DirectConversation[];
-  activeConversationId: string;
-  currentUserId: string;
-  onSelectConversation: (conversationId: string) => void;
-  onBackToCommunity: () => void;
-  onOpenProfile: (userId: string) => void;
-  onSendMessage: (conversationId: string, body: string) => Promise<boolean>;
-};
+type DirectMessagesViewProps = { conversations: DirectConversation[]; activeConversationId: string; currentUserId: string; onSelectConversation: (conversationId: string) => void; onBackToCommunity: () => void; onOpenProfile: (userId: string) => void; onSendMessage: (conversationId: string, body: string) => Promise<boolean> };
+type ConversationListProps = Pick<DirectMessagesViewProps, "conversations" | "activeConversationId" | "onSelectConversation">;
 
-type ConversationProps = Pick<DirectMessagesViewProps, "conversations" | "activeConversationId" | "onSelectConversation">;
-
-export function DirectConversationList({ conversations, activeConversationId, onSelectConversation }: ConversationProps) {
-  if (!conversations.length) {
-    return <div className="direct-list-empty"><strong>Start a direct message</strong><span>Open a profile and choose Message.</span></div>;
-  }
-
-  return (
-    <div className="direct-conversation-list" aria-label="Recent direct conversations">
-      {conversations.map((conversation) => (
-        <button key={conversation.id} className={`direct-conversation ${conversation.id === activeConversationId ? "active" : ""}`} onClick={() => onSelectConversation(conversation.id)}>
-          <span className={`direct-avatar status-${conversation.participantStatus}`}>{conversation.participantName.slice(0, 1)}</span>
-          <span className="direct-copy"><strong>{conversation.participantName}</strong><small>{conversation.lastMessagePreview || "Start a conversation"}</small></span>
-          {conversation.unreadCount ? <em aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</em> : messageDraftService.hasDraft({ directConversationId: conversation.id }) ? <i className="direct-draft-indicator">Draft</i> : null}
-        </button>
-      ))}
-    </div>
-  );
+function DirectAvatar({ conversation, large = false }: { conversation: DirectConversation; large?: boolean }) {
+  return <span className={`direct-avatar status-${conversation.participantStatus} ${large ? "large" : ""}`}>{conversation.participantAvatarUrl ? <img src={conversation.participantAvatarUrl} alt="" /> : conversation.participantName.slice(0, 1)}<i className="direct-status-dot" aria-hidden="true" /></span>;
 }
 
-export function DirectMessagesSidebar(props: ConversationProps) {
-  return (
-    <aside className="direct-list">
-      <header className="direct-list-header"><span className="eyebrow">Messages</span><h2>Direct messages</h2><p>Private conversations available only to their participants.</p></header>
-      <DirectConversationList {...props} />
-    </aside>
-  );
+export function DirectConversationItem({ conversation, active, onSelect }: { conversation: DirectConversation; active: boolean; onSelect: () => void }) {
+  return <button className={`direct-conversation ${active ? "active" : ""}`} onClick={onSelect} aria-current={active ? "page" : undefined}><DirectAvatar conversation={conversation} /><span className="direct-copy"><strong>{conversation.participantName}{conversation.participantVerified ? <i className="direct-verified" title="Verified profile">Verified</i> : null}</strong><small>{conversation.lastMessagePreview || "Start a conversation"}</small></span>{conversation.unreadCount ? <em aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</em> : messageDraftService.hasDraft({ directConversationId: conversation.id }) ? <i className="direct-draft-indicator">Draft</i> : null}</button>;
 }
 
-export function DirectConversationHeader({ conversation, onBack, onOpenProfile }: { conversation: DirectConversation; onBack: () => void; onOpenProfile: (userId: string) => void }) {
-  return (
-    <header className="direct-chat-header">
-      <button className="icon-button" aria-label="Back to community chat" onClick={onBack}><AppIcon name="chevronRight" size="sm" /></button>
-      <button className="direct-chat-identity" onClick={() => onOpenProfile(conversation.participantUserId)}>
-        <span className={`direct-avatar status-${conversation.participantStatus}`}>{conversation.participantName.slice(0, 1)}</span>
-        <span><strong>{conversation.participantName}</strong><small>@{conversation.participantUsername} · {conversation.participantStatusText}</small></span>
-      </button>
-    </header>
-  );
+export function DirectConversationList({ conversations, activeConversationId, onSelectConversation }: ConversationListProps) {
+  if (!conversations.length) return <div className="direct-list-empty"><AppIcon name="inbox" size="xl" /><strong>No conversations found</strong><span>Try another name or start a message from a profile.</span></div>;
+  return <div className="direct-conversation-list" aria-label="Recent direct conversations">{conversations.map((conversation) => <DirectConversationItem key={conversation.id} conversation={conversation} active={conversation.id === activeConversationId} onSelect={() => onSelectConversation(conversation.id)} />)}</div>;
 }
 
-function DirectMessageComposer({ conversationId, onSendMessage }: { conversationId: string; onSendMessage: (conversationId: string, body: string) => Promise<boolean> }) {
+export function DirectMessagesSidebar(props: ConversationListProps) {
+  const [query, setQuery] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const filtered = useMemo(() => { const normalized = query.trim().toLocaleLowerCase(); return normalized ? props.conversations.filter((conversation) => `${conversation.participantName} ${conversation.participantUsername}`.toLocaleLowerCase().includes(normalized)) : props.conversations; }, [props.conversations, query]);
+  return <aside className="direct-list"><header className="direct-list-header"><div><span className="eyebrow">Private</span><h2>Messages</h2></div><button className="icon-button" type="button" aria-label="Start a new direct message" title="Start a new direct message" onClick={() => setNotice("Open a profile and choose Message to start a conversation.")}><AppIcon name="plus" size="sm" /></button><label className="direct-search"><AppIcon name="search" size="sm" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search conversations" aria-label="Search direct conversations" /></label></header><nav className="direct-shortcuts" aria-label="Direct message sections"><button type="button" onClick={() => setNotice("Friends are available from Picom's friends area.")}><AppIcon name="users" size="sm" /><span>Friends</span></button><button type="button" onClick={() => setNotice("There are no pending message requests.")}><AppIcon name="inbox" size="sm" /><span>Pending requests</span><small>0</small></button></nav><div className="direct-list-title"><strong>Direct Messages</strong><span>{filtered.length}</span></div>{notice ? <button className="direct-sidebar-notice" type="button" onClick={() => setNotice(null)}>{notice}<AppIcon name="close" size="xs" /></button> : null}<DirectConversationList conversations={filtered} activeConversationId={props.activeConversationId} onSelectConversation={props.onSelectConversation} /></aside>;
+}
+
+export function DirectChatHeader({ conversation, searchOpen, searchQuery, onSearchOpen, onSearchChange, onBack, onOpenProfile }: { conversation: DirectConversation; searchOpen: boolean; searchQuery: string; onSearchOpen: () => void; onSearchChange: (value: string) => void; onBack: () => void; onOpenProfile: (userId: string) => void }) {
+  return <header className="direct-chat-header"><button className="icon-button direct-back-button" aria-label="Back to community chat" title="Back to community chat" onClick={onBack}><AppIcon name="chevronRight" size="sm" /></button><button className="direct-chat-identity" onClick={() => onOpenProfile(conversation.participantUserId)}><DirectAvatar conversation={conversation} /><span><strong>{conversation.participantName}{conversation.participantVerified ? <i className="direct-verified">Verified</i> : null}</strong><small>@{conversation.participantUsername} / {conversation.participantStatusText}</small></span></button>{searchOpen ? <label className="direct-header-search"><AppIcon name="search" size="sm" /><input autoFocus value={searchQuery} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search this conversation" aria-label="Search this conversation" /></label> : null}<div className="direct-header-actions"><button className="icon-button" type="button" aria-label="Search conversation" title="Search conversation" onClick={onSearchOpen}><AppIcon name={searchOpen ? "close" : "search"} size="sm" /></button><button className="icon-button" type="button" aria-label="View shared media" title="Shared media"><AppIcon name="image" size="sm" /></button><button className="icon-button" type="button" aria-label="More direct message options" title="More options"><AppIcon name="more" size="sm" /></button></div></header>;
+}
+
+function DirectAttachmentGrid({ attachments }: { attachments: readonly DirectMessageAttachment[] }) {
+  return <div className={`direct-attachment-grid count-${Math.min(attachments.length, 4)}`}>{attachments.slice(0, 4).map((attachment) => attachment.type === "image" ? <button key={attachment.id} type="button" title={attachment.name}><img src={attachment.url} alt={attachment.name} /></button> : <a key={attachment.id} href={attachment.url} download={attachment.name}><AppIcon name="paperclip" size="sm" />{attachment.name}</a>)}</div>;
+}
+
+export function DirectMessageItem({ message, conversation, currentUserId }: { message: DirectMessage; conversation: DirectConversation; currentUserId: string }) {
+  const own = message.authorId === currentUserId;
+  return <article className={`direct-message ${own ? "own" : ""}`}>{!own ? <DirectAvatar conversation={conversation} /> : <span className="direct-own-avatar">You</span>}<div className="direct-message-content">{message.replyPreview ? <div className="direct-reply-preview"><AppIcon name="reply" size="xs" /><span><strong>{message.replyPreview.authorName}</strong>{message.replyPreview.body}</span></div> : null}<div className="direct-message-bubble">{message.deletedAt ? <em>Message deleted</em> : message.body}</div>{!message.deletedAt && message.attachments?.length ? <DirectAttachmentGrid attachments={message.attachments} /> : null}{!message.deletedAt && message.reactions?.length ? <div className="direct-reaction-row">{message.reactions.map((reaction) => <button key={reaction.emoji} type="button" className={reaction.reactedByCurrentUser ? "active" : ""} aria-label={`${reaction.emoji} reaction, ${reaction.count}`}><span>{reaction.emoji}</span>{reaction.count}</button>)}</div> : null}<small>{dateTimeService.formatMessageTime(message.createdAt)}{message.editedAt && !message.deletedAt ? " / edited" : ""}</small></div></article>;
+}
+
+export function DirectMessageList({ conversation, currentUserId, query }: { conversation: DirectConversation; currentUserId: string; query: string }) {
+  const endRef = useRef<HTMLDivElement | null>(null);
+  const normalized = query.trim().toLocaleLowerCase();
+  const messages = normalized ? conversation.messages.filter((message) => message.body.toLocaleLowerCase().includes(normalized)) : conversation.messages;
+  useEffect(() => { if (!normalized) endRef.current?.scrollIntoView({ block: "end" }); }, [conversation.id, conversation.messages.length, normalized]);
+  if (!messages.length) return <div className="direct-chat-empty"><AppIcon name={normalized ? "search" : "inbox"} size="xl" /><strong>{normalized ? "No matching messages" : "Start a direct message"}</strong><span>{normalized ? "Try a different search phrase." : "Messages here are visible only to conversation participants."}</span></div>;
+  return <div className="direct-message-list" aria-live="polite">{messages.map((message) => <DirectMessageItem key={message.id} message={message} conversation={conversation} currentUserId={currentUserId} />)}<div ref={endRef} /></div>;
+}
+
+export function DirectMessageComposer({ conversationId, onSendMessage }: { conversationId: string; onSendMessage: (conversationId: string, body: string) => Promise<boolean> }) {
   const [body, setBody] = useState(() => messageDraftService.getDraft({ directConversationId: conversationId })?.text ?? "");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => setBody(messageDraftService.getDraft({ directConversationId: conversationId })?.text ?? ""), [conversationId]);
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    const value = body.trim();
-    if (!value || sending) return;
-    setSending(true);
-    setError(null);
-    const sent = await onSendMessage(conversationId, value);
-    setSending(false);
-    if (!sent) { setError("Message was not sent. Your draft is still here."); return; }
-    messageDraftService.clearDraft({ directConversationId: conversationId });
-    setBody("");
-  };
-
-  return (
-    <form className="direct-composer" onSubmit={(event) => void submit(event)} aria-busy={sending}>
-      <button type="button" aria-label="Attach file" disabled><AppIcon name="paperclip" size="sm" /></button>
-      <textarea value={body} disabled={sending} onChange={(event) => { setBody(event.target.value); setError(null); messageDraftService.setDraft({ directConversationId: conversationId }, event.target.value); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Message privately" rows={1} maxLength={4000} />
-      <button type="submit" className="direct-send" aria-label="Send direct message" disabled={!body.trim() || sending}><AppIcon name="send" size="sm" /></button>
-      {error ? <span className="direct-composer-error" role="alert">{error}</span> : null}
-    </form>
-  );
+  const [sending, setSending] = useState(false); const [error, setError] = useState<string | null>(null); const [emojiOpen, setEmojiOpen] = useState(false); const [attachmentNotice, setAttachmentNotice] = useState(false);
+  useEffect(() => { setBody(messageDraftService.getDraft({ directConversationId: conversationId })?.text ?? ""); setEmojiOpen(false); setAttachmentNotice(false); }, [conversationId]);
+  const updateBody = (value: string) => { setBody(value); setError(null); messageDraftService.setDraft({ directConversationId: conversationId }, value); };
+  const submit = async (event: FormEvent) => { event.preventDefault(); const value = body.trim(); if (!value || sending) return; setSending(true); setError(null); const sent = await onSendMessage(conversationId, value); setSending(false); if (!sent) { setError("Message was not sent. Your draft is still here."); return; } messageDraftService.clearDraft({ directConversationId: conversationId }); setBody(""); };
+  return <form className="direct-composer" onSubmit={(event) => void submit(event)} aria-busy={sending}><button type="button" aria-label="Attach an image" title="Attach image" onClick={() => setAttachmentNotice((current) => !current)}><AppIcon name="paperclip" size="sm" /></button><textarea value={body} disabled={sending} onChange={(event) => updateBody(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Message privately" rows={1} maxLength={4000} /><button type="button" aria-label="Choose emoji" title="Choose emoji" onClick={() => setEmojiOpen((current) => !current)}><AppIcon name="smile" size="sm" /></button><button type="submit" className="direct-send" aria-label="Send direct message" disabled={!body.trim() || sending}><AppIcon name="send" size="sm" /></button>{emojiOpen ? <div className="direct-emoji-picker" aria-label="Emoji choices">{["👍", "❤️", "😂", "🔥", "👀"].map((emoji) => <button key={emoji} type="button" aria-label={`Insert ${emoji}`} onClick={() => { updateBody(`${body}${body ? " " : ""}${emoji}`); setEmojiOpen(false); }}>{emoji}</button>)}</div> : null}{attachmentNotice ? <span className="direct-composer-note">Image upload will use the private attachment service.</span> : null}{error ? <span className="direct-composer-error" role="alert">{error}</span> : null}</form>;
 }
 
 export function DirectChatMain({ conversation, currentUserId, onBack, onOpenProfile, onSendMessage }: { conversation?: DirectConversation; currentUserId: string; onBack: () => void; onOpenProfile: (userId: string) => void; onSendMessage: (conversationId: string, body: string) => Promise<boolean> }) {
-  if (!conversation) {
-    return <main className="direct-chat-panel"><div className="empty-state"><AppIcon name="inbox" size="xl" /><strong>Select a conversation</strong><p>Choose a recent conversation or start a direct message from a profile.</p></div></main>;
-  }
+  const [searchOpen, setSearchOpen] = useState(false); const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => { setSearchOpen(false); setSearchQuery(""); }, [conversation?.id]);
+  if (!conversation) return <main className="direct-chat-panel"><div className="empty-state"><AppIcon name="inbox" size="xl" /><strong>Select a conversation</strong><p>Choose a recent conversation or start a direct message from a profile.</p></div></main>;
+  return <main className="direct-chat-panel"><DirectChatHeader conversation={conversation} searchOpen={searchOpen} searchQuery={searchQuery} onSearchOpen={() => { setSearchOpen((current) => !current); if (searchOpen) setSearchQuery(""); }} onSearchChange={setSearchQuery} onBack={onBack} onOpenProfile={onOpenProfile} /><DirectMessageList conversation={conversation} currentUserId={currentUserId} query={searchQuery} /><DirectMessageComposer conversationId={conversation.id} onSendMessage={onSendMessage} /></main>;
+}
 
-  return (
-    <main className="direct-chat-panel">
-      <DirectConversationHeader conversation={conversation} onBack={onBack} onOpenProfile={onOpenProfile} />
-      <div className="direct-message-list" aria-live="polite">
-        {conversation.messages.length ? conversation.messages.map((message) => {
-          const own = message.authorId === currentUserId;
-          return <article key={message.id} className={`direct-message ${own ? "own" : ""}`}><span>{message.deletedAt ? "Message deleted" : message.body}</span><small>{dateTimeService.formatMessageTime(message.createdAt)}{message.editedAt && !message.deletedAt ? " ? edited" : ""}</small></article>;
-        }) : <div className="direct-chat-empty"><strong>Start a direct message</strong><span>Messages here are visible only to conversation members.</span></div>}
-      </div>
-      <DirectMessageComposer conversationId={conversation.id} onSendMessage={onSendMessage} />
-    </main>
-  );
+export function DMDetailsPanel({ conversation, onOpenProfile }: { conversation?: DirectConversation; onOpenProfile: (userId: string) => void }) {
+  const [muted, setMuted] = useState(Boolean(conversation?.muted)); const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => { setMuted(Boolean(conversation?.muted)); setNotice(null); }, [conversation?.id, conversation?.muted]);
+  if (!conversation) return <aside className="dm-details-panel"><div className="direct-list-empty"><AppIcon name="user" size="xl" /><strong>Conversation details</strong><span>Select a conversation to view participant information.</span></div></aside>;
+  return <aside className="dm-details-panel" aria-label="Direct message details"><section className="dm-profile-summary"><DirectAvatar conversation={conversation} large /><h2>{conversation.participantName}</h2><span>@{conversation.participantUsername}</span><small>{conversation.participantStatusText}</small><button type="button" onClick={() => onOpenProfile(conversation.participantUserId)}><AppIcon name="user" size="sm" />View profile</button></section><section className="dm-detail-section"><header><strong>Mutual communities</strong><span>{conversation.mutualCommunities?.length ?? 0}</span></header>{conversation.mutualCommunities?.length ? <div className="dm-mutual-list">{conversation.mutualCommunities.map((community) => <div key={community.id}><span>{community.name.slice(0, 1)}</span><strong>{community.name}</strong></div>)}</div> : <small>No shared communities.</small>}</section><section className="dm-detail-section"><header><strong>Shared media</strong><span>{conversation.sharedMedia?.length ?? 0}</span></header>{conversation.sharedMedia?.length ? <div className="dm-shared-media">{conversation.sharedMedia.slice(0, 6).map((media) => <img key={media.id} src={media.url} alt={media.name} />)}</div> : <small>No shared media yet.</small>}</section><section className="dm-detail-section dm-privacy-actions"><header><strong>Privacy</strong><AppIcon name="lock" size="sm" /></header><button type="button" className={muted ? "active" : ""} onClick={() => { setMuted((current) => !current); setNotice(muted ? "Conversation notifications restored." : "Conversation muted locally."); }}><AppIcon name="bell" size="sm" />{muted ? "Unmute conversation" : "Mute conversation"}</button><button type="button" onClick={() => setNotice("Blocking will be completed through the privacy service.")}><AppIcon name="lock" size="sm" />Block user</button><button type="button" className="danger" onClick={() => setNotice("Reporting will open the centralized safety flow.")}><AppIcon name="more" size="sm" />Report user</button>{notice ? <p>{notice}</p> : null}</section></aside>;
 }
 
 export function DirectMessagesView({ conversations, activeConversationId, currentUserId, onSelectConversation, onBackToCommunity, onOpenProfile, onSendMessage }: DirectMessagesViewProps) {
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
-  return (
-    <section className="direct-messages-view" aria-label="Direct messages">
-      <DirectMessagesSidebar conversations={conversations} activeConversationId={activeConversationId} onSelectConversation={onSelectConversation} />
-      <DirectChatMain conversation={activeConversation} currentUserId={currentUserId} onBack={onBackToCommunity} onOpenProfile={onOpenProfile} onSendMessage={onSendMessage} />
-    </section>
-  );
+  return <section className="direct-messages-view" aria-label="Direct messages"><DirectMessagesSidebar conversations={conversations} activeConversationId={activeConversationId} onSelectConversation={onSelectConversation} /><DirectChatMain conversation={activeConversation} currentUserId={currentUserId} onBack={onBackToCommunity} onOpenProfile={onOpenProfile} onSendMessage={onSendMessage} /><DMDetailsPanel conversation={activeConversation} onOpenProfile={onOpenProfile} /></section>;
 }
-
