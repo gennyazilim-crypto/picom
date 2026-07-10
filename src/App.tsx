@@ -393,6 +393,26 @@ export function App() {
   } = useProtectedDesktopSession(pushToast);
   const directMessageUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? currentUserId : currentUserId;
   useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations(result.data); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
+  const refreshFriendState = useCallback(async () => {
+    const result = await relationshipService.getFriendState();
+    if (result.ok) setFriendState(result.data);
+    else pushToast(result.error, "error");
+  }, [pushToast]);
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    void refreshFriendState();
+    void userSafetyCenterService.refreshRemotePrivacy();
+    void relationshipService.subscribeToFriendNotifications((notification) => {
+      if (!active) return;
+      const accepted = notification.eventType === "request_accepted";
+      notificationCenterService.add({ id: `friend-${notification.id}`, category: "system", title: accepted ? "Friend request accepted" : "New friend request", preview: accepted ? "A Picom user accepted your friend request." : "A Picom user sent you a friend request.", createdAt: notification.createdAt, context: { kind: "system", userId: notification.actorUserId, label: "Friends" } });
+      void notificationService.showNotification({ title: accepted ? "Friend request accepted" : "New friend request", body: accepted ? "Your Picom connection is ready." : "Open Friends to review it.", category: "system", tag: `friend-${notification.id}` });
+      void refreshFriendState();
+    }).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
+    return () => { active = false; unsubscribe?.(); };
+  }, [authSession?.user?.id, refreshFriendState]);
   const [legalAcceptancePhase, setLegalAcceptancePhase] = useState<"checking" | "accepted" | "required">("checking");
   const [legalAcceptanceLoading, setLegalAcceptanceLoading] = useState(false);
   const [legalAcceptanceError, setLegalAcceptanceError] = useState<string | null>(null);
@@ -1597,80 +1617,16 @@ export function App() {
     }));
   }, []);
 
-  const acceptFriendRequest = useCallback((requestId: string) => {
-    setFriendState((current) => {
-      const request = current.requests.find((candidate) => candidate.id === requestId && candidate.direction === "incoming");
-      if (!request) return current;
+  const acceptFriendRequest = useCallback(async (requestId: string) => { const result=await relationshipService.acceptFriendRequest(requestId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request accepted.","success"); }, [pushToast, refreshFriendState]);
 
-      return {
-        ...current,
-        requests: current.requests.filter((candidate) => candidate.id !== requestId),
-        friends: [
-          ...current.friends,
-          {
-            userId: request.userId,
-            displayName: request.displayName,
-            username: request.username,
-            status: "online",
-            statusText: "New beta friend",
-            favorite: false,
-            mutualCommunityCount: 1,
-          },
-        ],
-      };
-    });
-    void relationshipService.acceptFriendRequest(requestId);
-    pushToast("Friend request accepted locally.", "success");
-  }, [pushToast]);
+  const dismissFriendRequest = useCallback(async (requestId: string) => { const result=await relationshipService.declineFriendRequest(requestId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request declined.","info"); }, [pushToast, refreshFriendState]);
+  const cancelFriendRequest = useCallback(async (requestId: string) => { const result=await relationshipService.cancelFriendRequest(requestId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request canceled.","info"); }, [pushToast, refreshFriendState]);
 
-  const dismissFriendRequest = useCallback((requestId: string) => {
-    setFriendState((current) => ({
-      ...current,
-      requests: current.requests.filter((request) => request.id !== requestId),
-    }));
-    void relationshipService.declineFriendRequest(requestId);
-    pushToast("Friend request dismissed locally.", "info");
-  }, [pushToast]);
+  const requestFriendFromProfile = useCallback(async (userId: string) => { const result=await relationshipService.sendFriendRequest(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request sent.","success"); }, [pushToast, refreshFriendState]);
 
-  const requestFriendFromProfile = useCallback((userId: string) => {
-    const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
-    if (!member) return;
-    setFriendState((current) => {
-      if (current.friends.some((friend) => friend.userId === userId) || current.requests.some((request) => request.userId === userId)) return current;
-      return { ...current, requests: [...current.requests, { id: `friend-request-${userId}`, userId, displayName: member.displayName, username: member.username, direction: "outgoing", note: "Sent from profile", createdAt: new Date().toISOString() }] };
-    });
-    void relationshipService.sendFriendRequest(userId);
-    pushToast("Friend request sent.", "success");
-  }, [communities, pushToast]);
-
-  const sendFriendRequestPlaceholder = useCallback((userId: string) => {
-    setFriendState((current) => {
-      if (current.requests.some((request) => request.userId === userId) || current.friends.some((friend) => friend.userId === userId)) {
-        return current;
-      }
-
-      const suggestion = current.suggestions.find((candidate) => candidate.userId === userId);
-      if (!suggestion) return current;
-
-      return {
-        friends: current.friends,
-        suggestions: current.suggestions.filter((candidate) => candidate.userId !== userId),
-        requests: [
-          ...current.requests,
-          {
-            id: `friend-request-${userId}`,
-            userId,
-            displayName: suggestion.displayName,
-            username: suggestion.username,
-            direction: "outgoing",
-            note: "Local beta placeholder request.",
-            createdAt: new Date().toISOString(),
-          },
-        ],
-      };
-    });
-    pushToast("Friend request placeholder created locally.", "success");
-  }, [pushToast]);
+  const sendFriendRequest = useCallback(async (userId: string) => { const result=await relationshipService.sendFriendRequest(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request sent.","success"); }, [pushToast, refreshFriendState]);
+  const removeFriend = useCallback(async (userId: string) => { const result=await relationshipService.removeFriend(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend removed.","info"); }, [pushToast, refreshFriendState]);
+  const blockFriend = useCallback(async (userId: string) => { const friend=friendState.friends.find((item)=>item.userId===userId); if(!friend)return; const result=await relationshipService.blockFriend(friend); if(!result.ok){pushToast(result.error,"error");return;} setBlockedUserVersion((value)=>value+1); await refreshFriendState(); pushToast("User blocked and removed from friends.","success"); }, [friendState.friends, pushToast, refreshFriendState]);
 
   const closeProfileView = useCallback(() => {
     setActiveView(previousViewBeforeProfile ?? "mentionFeed");
@@ -2237,7 +2193,10 @@ export function App() {
               onToggleFavorite={toggleFriendFavorite}
               onAcceptRequest={acceptFriendRequest}
               onDismissRequest={dismissFriendRequest}
-              onSendRequestPlaceholder={sendFriendRequestPlaceholder}
+              onCancelRequest={cancelFriendRequest}
+              onSendRequest={sendFriendRequest}
+              onRemoveFriend={removeFriend}
+              onBlockFriend={blockFriend}
             />
           ) : (
             <>

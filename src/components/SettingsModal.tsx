@@ -590,7 +590,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <select value={safetySettings.whoCanSendFriendRequests} onChange={(event) => updateSafetySettings({ whoCanSendFriendRequests: event.target.value as UserSafetySettings["whoCanSendFriendRequests"] })}>
                   <option value="everyone">Everyone</option>
                   <option value="community_members">Community members</option>
-                  <option value="friends_of_friends_placeholder">Friends of friends</option>
+                  <option value="friends_of_friends">Friends of friends</option>
                   <option value="nobody">Nobody</option>
                 </select>
               </label>

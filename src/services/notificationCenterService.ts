@@ -33,6 +33,7 @@ function save(items: NotificationCenterItem[]) { memoryItems=items; try { window
 
 export const notificationCenterService = {
   list(): NotificationCenterItem[] { return [...load()].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)); },
+  add(item: NotificationCenterItem): void { save([item, ...load().filter((candidate) => candidate.id !== item.id)].slice(0, 250)); },
   unreadCount(): number { return load().filter((item)=>!item.readAt).length; },
   markRead(id: string): void { save(load().map((item)=>item.id===id && !item.readAt ? {...item,readAt:new Date().toISOString()} : item)); },
   markAllRead(): void { const now=new Date().toISOString(); save(load().map((item)=>item.readAt ? item : {...item,readAt:now})); },

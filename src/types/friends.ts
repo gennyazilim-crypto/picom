@@ -22,6 +22,14 @@ export type FriendRequest = Readonly<{
   createdAt: string;
 }>;
 
+export type FriendNotification = Readonly<{
+  id: string;
+  actorUserId: string;
+  eventType: "request_sent" | "request_accepted";
+  requestId?: string;
+  createdAt: string;
+}>;
+
 export type FriendSuggestion = Readonly<{
   userId: string;
   displayName: string;

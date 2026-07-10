@@ -11,7 +11,10 @@ type FriendsViewProps = {
   onToggleFavorite: (userId: string) => void;
   onAcceptRequest: (requestId: string) => void;
   onDismissRequest: (requestId: string) => void;
-  onSendRequestPlaceholder: (userId: string) => void;
+  onCancelRequest: (requestId: string) => void;
+  onSendRequest: (userId: string) => void;
+  onRemoveFriend: (userId: string) => void;
+  onBlockFriend: (userId: string) => void;
 };
 
 function FriendAvatar({ name, status }: { name: string; status?: string }) {
@@ -28,21 +31,24 @@ export function FriendsView({
   onToggleFavorite,
   onAcceptRequest,
   onDismissRequest,
-  onSendRequestPlaceholder,
+  onCancelRequest,
+  onSendRequest,
+  onRemoveFriend,
+  onBlockFriend,
 }: FriendsViewProps) {
   const incomingRequests = requests.filter((request) => request.direction === "incoming");
   const outgoingRequests = requests.filter((request) => request.direction === "outgoing");
 
   return (
-    <section className="friends-view" aria-label="Friends placeholder">
+    <section className="friends-view" aria-label="Friends">
       <header className="friends-header">
         <button className="icon-button" aria-label="Back to community chat" onClick={onBackToCommunity}>
           <AppIcon name="chevronRight" size="sm" />
         </button>
         <div>
           <span className="eyebrow">People</span>
-          <h2>Friends foundation</h2>
-          <p>Local beta placeholder. Production friend requests and privacy rules are not enabled yet.</p>
+          <h2>Friends</h2>
+          <p>Manage trusted connections, incoming requests, and privacy-aware suggestions.</p>
         </div>
       </header>
 
@@ -65,6 +71,8 @@ export function FriendsView({
                   <button onClick={() => onOpenDirectMessage(friend.userId)}>Message</button>
                   <button onClick={() => onOpenProfile(friend.userId)}>Profile</button>
                   <button onClick={() => onToggleFavorite(friend.userId)}>{friend.favorite ? "Starred" : "Star"}</button>
+                  <button onClick={() => onRemoveFriend(friend.userId)}>Remove</button>
+                  <button className="danger-button" onClick={() => onBlockFriend(friend.userId)}>Block</button>
                 </div>
               </article>
             ))}
@@ -106,6 +114,7 @@ export function FriendsView({
                   <strong>{request.displayName}</strong>
                   <small>@{request.username}</small>
                 </span>
+                <button onClick={() => onCancelRequest(request.id)}>Cancel</button>
               </article>
             ))}
             {!outgoingRequests.length ? <p className="friend-empty">No pending sent requests.</p> : null}
@@ -123,7 +132,7 @@ export function FriendsView({
                   <strong>{suggestion.displayName}</strong>
                   <small>{suggestion.reason}</small>
                 </span>
-                <button onClick={() => onSendRequestPlaceholder(suggestion.userId)}>Request</button>
+                <button onClick={() => onSendRequest(suggestion.userId)}>Request</button>
               </article>
             ))}
           </section>

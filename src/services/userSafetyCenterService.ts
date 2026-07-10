@@ -1,5 +1,9 @@
+import { dataSourceService } from "./dataSourceService";
+import { loggingService } from "./loggingService";
+import { getSupabaseClient } from "./supabase/supabaseClient";
+
 export type DirectMessagePolicy = "everyone" | "community_members" | "friends_only" | "nobody";
-export type FriendRequestPolicy = "everyone" | "community_members" | "friends_of_friends_placeholder" | "nobody";
+export type FriendRequestPolicy = "everyone" | "community_members" | "friends_of_friends" | "nobody";
 
 export type UserSafetySettings = Readonly<{
   schemaVersion: 1;
@@ -23,16 +27,27 @@ const defaults: UserSafetySettings = {
 };
 
 function normalizeSettings(value: Partial<UserSafetySettings> | null | undefined): UserSafetySettings {
+  const storedFriendPolicy = value?.whoCanSendFriendRequests as FriendRequestPolicy | "friends_of_friends_placeholder" | undefined;
   return {
     ...defaults,
     ...value,
     schemaVersion: 1,
     whoCanDmMe: value?.whoCanDmMe ?? defaults.whoCanDmMe,
-    whoCanSendFriendRequests: value?.whoCanSendFriendRequests ?? defaults.whoCanSendFriendRequests,
+    whoCanSendFriendRequests: storedFriendPolicy === "friends_of_friends_placeholder" ? "friends_of_friends" : storedFriendPolicy ?? defaults.whoCanSendFriendRequests,
     showOnlineStatus: typeof value?.showOnlineStatus === "boolean" ? value.showOnlineStatus : defaults.showOnlineStatus,
     enableReadReceipts: typeof value?.enableReadReceipts === "boolean" ? value.enableReadReceipts : defaults.enableReadReceipts,
     safetyTipsVisible: typeof value?.safetyTipsVisible === "boolean" ? value.safetyTipsVisible : defaults.safetyTipsVisible,
   };
+}
+
+async function persistFriendRequestPrivacy(policy: FriendRequestPolicy): Promise<void> {
+  if (!dataSourceService.getStatus().isSupabase) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+  const { data } = await client.auth.getUser();
+  if (!data.user) return;
+  const { error } = await client.from("profiles").update({ friend_request_privacy: policy }).eq("id", data.user.id);
+  if (error) loggingService.logWarn("Friend request privacy sync failed", { code: error.code }, "privacy");
 }
 
 function readSettings(): UserSafetySettings {
@@ -69,6 +84,20 @@ export const userSafetyCenterService = {
 
   updateSettings(partial: Partial<UserSafetySettings>): UserSafetySettings {
     const next = normalizeSettings({ ...readSettings(), ...partial });
+    writeSettings(next);
+    if (partial.whoCanSendFriendRequests) void persistFriendRequestPrivacy(next.whoCanSendFriendRequests);
+    return next;
+  },
+
+  async refreshRemotePrivacy(): Promise<UserSafetySettings> {
+    if (!dataSourceService.getStatus().isSupabase) return readSettings();
+    const client = getSupabaseClient();
+    if (!client) return readSettings();
+    const { data: authData } = await client.auth.getUser();
+    if (!authData.user) return readSettings();
+    const { data, error } = await client.from("profiles").select("friend_request_privacy").eq("id", authData.user.id).maybeSingle();
+    if (error || !data) return readSettings();
+    const next = normalizeSettings({ ...readSettings(), whoCanSendFriendRequests: data.friend_request_privacy });
     writeSettings(next);
     return next;
   },

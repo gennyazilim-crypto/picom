@@ -62,6 +62,7 @@
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
     "dm:production:smoke": "node scripts/direct-messages-production-smoke-test.mjs",
+    "friends:production:smoke": "node scripts/friend-requests-production-smoke-test.mjs",
     "jobs:smoke": "node scripts/job-queue-smoke-test.mjs",
     "maintenance:scripts:smoke": "node scripts/maintenance-scripts-smoke-test.mjs",
     "db:backup:placeholder": "node scripts/db-backup-placeholder.mjs",

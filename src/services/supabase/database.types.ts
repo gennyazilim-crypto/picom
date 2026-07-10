@@ -26,6 +26,7 @@ export type Database = {
           accepted_privacy_version: string | null;
           privacy_accepted_at: string | null;
           dm_privacy: "everyone" | "friends" | "no_one";
+          friend_request_privacy: "everyone" | "community_members" | "friends_of_friends" | "nobody";
           created_at: string;
           updated_at: string;
         };
@@ -254,6 +255,10 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
         Relationships: [];
       };
+      friend_request_notifications: {
+        Row: { id: string; recipient_id: string; actor_id: string; request_id: string | null; event_type: "request_sent" | "request_accepted"; created_at: string; read_at: string | null };
+        Insert: never; Update: Pick<Database["public"]["Tables"]["friend_request_notifications"]["Row"], "read_at">; Relationships: [];
+      };
       app_admins: {
         Row: { user_id: string; granted_by: string | null; created_at: string };
         Insert: never;
@@ -433,6 +438,9 @@ export type Database = {
       };
       users_are_blocked: { Args: { first_user_id: string; second_user_id: string }; Returns: boolean };
       respond_friend_request: { Args: { target_request_id: string; accept_request: boolean }; Returns: boolean };
+      send_friend_request: { Args: { target_user_id: string }; Returns: string };
+      cancel_friend_request: { Args: { target_request_id: string }; Returns: boolean };
+      list_friend_relationship_state: { Args: Record<string, never>; Returns: Json };
       remove_friend: { Args: { other_user_id: string }; Returns: boolean };
       create_direct_conversation: { Args: { other_user_id: string }; Returns: string };
       list_direct_conversations: { Args: { result_limit?: number }; Returns: Array<{ id: string; participant_user_id: string; participant_name: string; participant_username: string; participant_status: string; participant_status_text: string; last_message_preview: string; updated_at: string; unread_count: number }> };
