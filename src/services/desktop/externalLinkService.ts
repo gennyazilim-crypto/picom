@@ -27,9 +27,9 @@ export function normalizeUrl(url: string): string | null {
     if (!allowedProtocols.has(parsed.protocol)) {
       return null;
     }
-
-    Reflect.set(parsed, "username", "");
-    Reflect.set(parsed, "password", "");
+    if (parsed.username || parsed.password) {
+      return null;
+    }
     return parsed.href;
   } catch {
     return null;
@@ -85,10 +85,8 @@ function getBlockedReason(url: string): ExternalLinkFailureReason {
 async function openViaBrowser(url: string): Promise<ExternalLinkResult> {
   try {
     const opened = window.open(url, "_blank", "noopener,noreferrer");
-    if (opened) {
-      opened.opener = null;
-    }
-
+    if (!opened) return { ok: false, reason: "EXTERNAL_URL_OPEN_FAILED" };
+    opened.opener = null;
     return { ok: true, url };
   } catch {
     return { ok: false, reason: "EXTERNAL_URL_OPEN_FAILED" };

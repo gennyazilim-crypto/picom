@@ -289,6 +289,7 @@
     "desktop:ipc:security:smoke": "node scripts/desktop-ipc-security-audit-smoke-test.mjs",
     "csp:smoke": "node scripts/content-security-policy-smoke-test.mjs",
     "external-links:smoke": "node scripts/external-link-service-smoke-test.mjs",
+    "external-links:production:test": "node scripts/safe-external-links-production-test.mjs",
     "thumbnails:smoke": "node scripts/image-thumbnail-placeholder-smoke-test.mjs",
     "image-cache:smoke": "node scripts/image-cache-strategy-smoke-test.mjs",
     "disk-cache:smoke": "node scripts/disk-cache-management-smoke-test.mjs",
