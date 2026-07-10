@@ -1,0 +1,22 @@
+import type { UserProfile } from "../types/profile";
+import type { ProfilePrivacyProjection,ProfilePrivacySettings } from "../types/profilePrivacy";
+import { dataSourceService } from "./dataSourceService";
+import { getSupabaseClient } from "./supabase/supabaseClient";
+
+const STORAGE_KEY="picom.profilePrivacy.v1";
+export const defaultProfilePrivacySettings:ProfilePrivacySettings={visibility:"everyone",showLocation:true,showTimezone:true,showActivity:true,showMedia:true};
+export const defaultProfilePrivacyProjection:ProfilePrivacyProjection={canViewProfile:true,showLocation:true,showTimezone:true,showActivity:true,showMedia:true};
+export const restrictedProfilePrivacyProjection:ProfilePrivacyProjection={canViewProfile:false,showLocation:false,showTimezone:false,showActivity:false,showMedia:false};
+function readLocal():ProfilePrivacySettings{try{const parsed=JSON.parse(window.localStorage.getItem(STORAGE_KEY)??"null") as Partial<ProfilePrivacySettings>|null;return{...defaultProfilePrivacySettings,...parsed};}catch{return defaultProfilePrivacySettings;}}
+function writeLocal(settings:ProfilePrivacySettings):void{try{window.localStorage.setItem(STORAGE_KEY,JSON.stringify(settings));}catch{/* restricted fallback */}}
+
+export const profilePrivacyService={
+  getLocalSettings():ProfilePrivacySettings{return readLocal();},
+  async getOwnSettings():Promise<ProfilePrivacySettings>{if(dataSourceService.getStatus().isMock)return readLocal();const client=getSupabaseClient();if(!client)return readLocal();const{data,error}=await client.rpc("get_own_profile_privacy",{});const row=data?.[0];if(error||!row)return readLocal();const settings={visibility:row.profile_visibility,showLocation:row.show_location,showTimezone:row.show_timezone,showActivity:row.show_activity,showMedia:row.show_media};writeLocal(settings);return settings;},
+  async updateOwn(partial:Partial<ProfilePrivacySettings>):Promise<{ok:boolean;settings:ProfilePrivacySettings}>{const settings={...readLocal(),...partial};writeLocal(settings);if(dataSourceService.getStatus().isMock)return{ok:true,settings};const client=getSupabaseClient();if(!client)return{ok:false,settings};const{data,error}=await client.rpc("update_profile_privacy",{next_visibility:settings.visibility,next_show_location:settings.showLocation,next_show_timezone:settings.showTimezone,next_show_activity:settings.showActivity,next_show_media:settings.showMedia});return{ok:!error&&Boolean(data),settings};},
+  async getProjection(input:{targetUserId:string;viewerUserId:string;hasSharedCommunity:boolean;isFriend:boolean}):Promise<ProfilePrivacyProjection>{
+    if(dataSourceService.getStatus().isMock){const owner=input.targetUserId===input.viewerUserId;const settings=owner?readLocal():defaultProfilePrivacySettings;const canView=owner||settings.visibility==="everyone"||(settings.visibility==="shared_communities"&&input.hasSharedCommunity)||(settings.visibility==="friends"&&input.isFriend);const trusted=owner||input.hasSharedCommunity||input.isFriend;return{canViewProfile:canView,showLocation:canView&&settings.showLocation,showTimezone:canView&&settings.showTimezone,showActivity:canView&&settings.showActivity&&trusted,showMedia:canView&&settings.showMedia&&trusted};}
+    const client=getSupabaseClient();if(!client)return restrictedProfilePrivacyProjection;const{data,error}=await client.rpc("get_profile_privacy_projection",{target_user_id:input.targetUserId});const row=data?.[0];return error||!row?restrictedProfilePrivacyProjection:{canViewProfile:row.can_view_profile,showLocation:row.show_location,showTimezone:row.show_timezone,showActivity:row.show_activity,showMedia:row.show_media,location:row.location??undefined,timezone:row.timezone??undefined};
+  },
+  applyProjection(profile:UserProfile,projection:ProfilePrivacyProjection):UserProfile{if(!projection.canViewProfile)return{...profile,bio:"This profile is private.",roles:[],tags:[],location:undefined,timezone:undefined,activities:[],media:[],privacyRestricted:true};return{...profile,location:projection.showLocation?(projection.location??profile.location):undefined,timezone:projection.showTimezone?(projection.timezone??profile.timezone):undefined,activities:projection.showActivity?profile.activities:[],media:projection.showMedia?profile.media:[],privacyRestricted:false};},
+};

@@ -69,6 +69,7 @@
     "invites:campaigns:smoke": "node scripts/invite-campaigns-tracking-smoke-test.mjs",
     "onboarding:experiments:smoke": "node scripts/onboarding-experiments-smoke-test.mjs",
     "verification:badges:smoke": "node scripts/profile-verification-badges-smoke-test.mjs",
+    "profile:privacy:smoke": "node scripts/profile-privacy-controls-smoke-test.mjs",
     "jobs:smoke": "node scripts/job-queue-smoke-test.mjs",
     "maintenance:scripts:smoke": "node scripts/maintenance-scripts-smoke-test.mjs",
     "db:backup:placeholder": "node scripts/db-backup-placeholder.mjs",

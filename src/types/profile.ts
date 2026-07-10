@@ -58,6 +58,7 @@ export type UserProfile = {
   isFollowing?: boolean;
   friendshipStatus?: "none" | "incoming" | "outgoing" | "friends";
   verificationBadges?: VerificationBadge[];
+  privacyRestricted?: boolean;
   stats: ProfileStats;
   media: ProfileMediaItem[];
   activities: ProfileActivityItem[];

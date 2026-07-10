@@ -50,6 +50,8 @@ import type { DirectReactionRow } from "./services/supabase/directMessageRealtim
 import { directMessageService } from "./services/supabase/directMessageService";
 import { relationshipService } from "./services/relationshipService";
 import { profileVerificationService } from "./services/profileVerificationService";
+import { defaultProfilePrivacyProjection,profilePrivacyService,restrictedProfilePrivacyProjection } from "./services/profilePrivacyService";
+import type { ProfilePrivacyProjection } from "./types/profilePrivacy";
 import type { VerificationBadge } from "./types/verification";
 import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
 import { advancedSearchService } from "./services/advancedSearchService";
@@ -293,6 +295,8 @@ export function App() {
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [profileVerificationBadges, setProfileVerificationBadges] = useState<VerificationBadge[]>([]);
+  const [profilePrivacyProjection,setProfilePrivacyProjection]=useState<ProfilePrivacyProjection>(defaultProfilePrivacyProjection);
+  const [profilePrivacySubjectId,setProfilePrivacySubjectId]=useState<string|null>(null);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
@@ -704,13 +708,15 @@ export function App() {
 
   const selectedUserProfile = useMemo(() => {
     if (!selectedProfileMember) return null;
-    const profile = getMockProfileForMember(selectedProfileMember, communities, { currentUserId, followedUserIds });
+    const projection=profilePrivacySubjectId===activeProfileUserId?profilePrivacyProjection:restrictedProfilePrivacyProjection;
+    const profile = profilePrivacyService.applyProjection(getMockProfileForMember(selectedProfileMember, communities, { currentUserId, followedUserIds }),projection);
     const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
     return { ...profile, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
-  }, [communities, followedUserIds, friendState.friends, friendState.requests, profileVerificationBadges, selectedProfileMember]);
+  }, [activeProfileUserId, communities, followedUserIds, friendState.friends, friendState.requests, profilePrivacyProjection, profilePrivacySubjectId, profileVerificationBadges, selectedProfileMember]);
 
   useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
+  useEffect(()=>{if(!activeProfileUserId){setProfilePrivacyProjection(defaultProfilePrivacyProjection);setProfilePrivacySubjectId(null);return;}const subjectId=activeProfileUserId;const viewerId=directMessageUserId;const hasSharedCommunity=communities.some((community)=>community.members.some((member)=>member.userId===viewerId)&&community.members.some((member)=>member.userId===subjectId));const isFriend=friendState.friends.some((friend)=>friend.userId===subjectId);let active=true;void profilePrivacyService.getProjection({targetUserId:subjectId,viewerUserId:viewerId,hasSharedCommunity,isFriend}).then((projection)=>{if(active){setProfilePrivacyProjection(projection);setProfilePrivacySubjectId(subjectId)}});return()=>{active=false};},[activeProfileUserId,communities,directMessageUserId,friendState.friends]);
 
   useEffect(() => notificationCenterService.subscribe(setNotificationCenterItems), []);
 

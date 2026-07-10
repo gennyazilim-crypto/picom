@@ -387,6 +387,7 @@ export function ProfileMainPanel({
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
 }) {
+  if(profile.privacyRestricted)return <section className="profile-main-panel" aria-label="Private profile"><div className="profile-section profile-empty-panel"><AppIcon name="lock" size="lg" /><strong>Limited profile</strong><p>This person shares profile details only with their selected audience.</p></div></section>;
   return (
     <section className="profile-main-panel" aria-label="Profile details">
       <ProfileHeroGallery media={profile.media} onOpenImage={onOpenImage} />
