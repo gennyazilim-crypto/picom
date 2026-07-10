@@ -96,5 +96,5 @@ Deno.serve(async (request: Request) => {
       "LiveKit and signing secrets", "raw storage paths", "audit logs", "other users' private data",
     ],
     note: "Server sections were queried with the authenticated user's RLS context. Local desktop settings are merged by the Picom client after this response.",
-  });
+  }, { headers: { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache" } });
 });

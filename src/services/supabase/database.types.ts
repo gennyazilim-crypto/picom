@@ -277,7 +277,7 @@ export type Database = {
       };
       profile_privacy_settings:{Row:{user_id:string;profile_visibility:"everyone"|"shared_communities"|"friends";show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;location:string|null;timezone:string|null;updated_at:string};Insert:never;Update:never;Relationships:[]};
       data_export_requests: {
-        Row: { id: string; user_id: string; status: "requested" | "processing" | "ready" | "failed"; requested_at: string; completed_at: string | null };
+        Row: { id: string; user_id: string; status: "requested" | "processing" | "ready" | "failed"; format: "json"; requested_at: string; completed_at: string | null; expires_at: string | null; failure_code: string | null };
         Insert: Partial<Database["public"]["Tables"]["data_export_requests"]["Row"]> & Pick<Database["public"]["Tables"]["data_export_requests"]["Row"], "user_id">;
         Update: never;
         Relationships: [];

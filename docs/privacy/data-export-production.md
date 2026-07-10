@@ -4,6 +4,8 @@
 
 Picom has a hardened user-triggered JSON export path. Mock mode generates from safe local state. Supabase mode invokes an authenticated Edge Function that queries every server section under the requesting user's RLS context. Large-account asynchronous archival remains a staged follow-up.
 
+The v2 renderer validates the response schema, IDs, timestamps, section bounds, and allowlisted fields before constructing the downloadable object. Unknown fields are discarded, the server-provided exclusion/note strings are not trusted, and expired in-memory exports cannot be downloaded. Edge responses use `Cache-Control: no-store`.
+
 ## User flow
 
 1. User opens Settings > Account or Privacy & Safety.
@@ -94,6 +96,7 @@ The function does not log request authorization or payload content. Errors retur
 - A section exceeding the limit is marked `truncated`.
 - Ready response is marked with a 15-minute expiration timestamp.
 - Browser keeps the returned payload only in memory until download/dismiss/reload.
+- Renderer rechecks the expiration timestamp at status display and download time.
 
 For larger accounts, production should enqueue a background export, stream/paginate reads, encrypt an archive in private object storage, issue a short-lived authenticated download, and purge it after expiry. That asynchronous path is not claimed by this task.
 
@@ -129,4 +132,3 @@ For larger accounts, production should enqueue a background export, stream/pagin
 - No encrypted asynchronous archive/object-storage delivery exists yet.
 - Export-status polling across app restarts is not implemented.
 - Live Edge Function/RLS tests require Supabase CLI or staging.
-
