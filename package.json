@@ -119,6 +119,7 @@
     "backup:verify:automated": "node scripts/verify-backup-placeholder.mjs --execute",
     "backup:plan": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-placeholder.ps1 -Mode plan",
     "backup:plan:smoke": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-placeholder.ps1 -Mode smoke",
+    "supabase:backup:pitr:review:smoke": "node scripts/supabase-backup-pitr-review-smoke.mjs",
     "invites:cleanup:dry-run": "node scripts/cleanup-expired-invites.mjs",
     "invites:cleanup:smoke": "node scripts/expired-invites-cleanup-smoke-test.mjs",
     "uploads:cleanup:dry-run": "node scripts/cleanup-orphaned-uploads.mjs",

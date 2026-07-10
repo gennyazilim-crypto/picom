@@ -22,6 +22,10 @@ This repository does not automatically back up or restore production. Never run 
 
 ## Backup policy gate
 
+The current tier/cost/retention decision record is `docs/supabase-backup-pitr-review.md`. Production plan
+selection remains pending approval; do not assume PITR is active. Database backup does not include Storage
+object bytes or replace configuration/function/secret recovery.
+
 Before production launch, record provider plan/features for automated backups/PITR, retention, region, encryption, access owners, restore limitations, and alerting. Verify the plan covers the selected Supabase tier and database size; do not assume PITR or retention is enabled.
 
 Before every risky migration:

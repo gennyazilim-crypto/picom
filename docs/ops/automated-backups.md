@@ -6,6 +6,10 @@ Picom has a guarded backup plan, not a repository-owned production backup execut
 
 No committed file may contain a database URL with credentials, Supabase access/service-role key, LiveKit/OAuth secret, signed URL, or backup encryption key.
 
+Supabase plan, daily-retention, PITR prerequisites/costs, and the pending Picom production decision are
+reviewed in `docs/supabase-backup-pitr-review.md`. Revalidate official pricing before approval; no provider
+backup or PITR setting is enabled by repository tooling.
+
 ## Backup scope
 
 ### Supabase Postgres
