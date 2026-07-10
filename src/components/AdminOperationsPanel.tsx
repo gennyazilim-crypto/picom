@@ -7,6 +7,7 @@ import { TrustSafetyDashboardView } from "./TrustSafetyDashboardView";
 import { DiscoveryReviewQueue } from "./DiscoveryReviewQueue";
 import { ProfileVerificationAdmin } from "./ProfileVerificationAdmin";
 import { AdminOperationsPagedList, AdminSystemStatusV2 } from "./AdminOperationsV2Sections";
+import { AbuseEventsDashboard } from "./AbuseEventsDashboard";
 
 type SectionId = "productHealth" | "system" | "observability" | "trustSafety" | "discoveryReview" | "users" | "communities" | "reports" | "abuse" | "storage" | "realtime" | "errors";
 
@@ -45,8 +46,8 @@ export function AdminOperationsPanel({ access }: { access: AdminOperationsAccess
           ? <AdminOperationsPagedList access={access} section="communities" />
           : active === "reports"
             ? <AdminOperationsPagedList access={access} section="reports" />
-            : active === "abuse"
-              ? <AdminOperationsPagedList access={access} section="abuse_events" />
+              : active === "abuse"
+                ? <AbuseEventsDashboard access={access} />
               : active === "storage"
                 ? <div className="admin-ops-detail"><strong>Attachment quarantine</strong><p>{snapshot.quarantine.quarantinedCount} blocked items; {snapshot.quarantine.needsReviewCount} need restricted review. {snapshot.storageStatus}. No file path or object URL is exposed.</p></div>
                 : active === "realtime"
