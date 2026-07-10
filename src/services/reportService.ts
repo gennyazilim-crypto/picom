@@ -2,6 +2,7 @@ import type { CreateReportInput, ReportRecord, ReportStatus, UpdateReportStatusI
 import { dataSourceService } from "./dataSourceService";
 import { loggingService } from "./loggingService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
+import { auditLogService } from "./auditLogService";
 
 type ReportResult<T> = Readonly<{ ok: true; data: T } | { ok: false; message: string }>;
 type ReportRow = {
@@ -59,6 +60,7 @@ export const reportService = {
       const next: ReportRecord = { ...current, status: input.status, reviewedById: input.reviewedById, updatedAt: new Date().toISOString() };
       cacheReport(next);
       loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status, targetType: next.targetType }, "audit");
+      if (next.communityId) await auditLogService.append({ communityId: next.communityId, actorId: input.reviewedById, actionType: "moderation_action", targetType: "report", targetId: next.id, reason: `Report marked ${next.status}` });
       return { ok: true, data: next };
     }
 
@@ -66,7 +68,7 @@ export const reportService = {
     if (!client) return { ok: false, message: "The moderation queue is unavailable." };
     const { data, error } = await client.from("reports").update({ status: input.status, reviewed_by: input.reviewedById ?? null, updated_at: new Date().toISOString() }).eq("id", input.reportId).select("id,community_id,reporter_id,target_type,target_id,reason,description,status,reviewed_by,created_at,updated_at").single();
     if (error || !data) return { ok: false, message: "Picom could not update this report." };
-    const next = mapReport(data); cacheReport(next); loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status }, "audit"); return { ok: true, data: next };
+    const next = mapReport(data); cacheReport(next); loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status }, "audit"); if (next.communityId) await auditLogService.append({ communityId: next.communityId, actionType: "moderation_action", targetType: "report", targetId: next.id, reason: `Report marked ${next.status}` }); return { ok: true, data: next };
   },
 
   getSummary(): Record<ReportStatus, number> { return reports.reduce<Record<ReportStatus, number>>((summary, report) => { summary[report.status] += 1; return summary; }, { open: 0, reviewed: 0, dismissed: 0, action_taken: 0 }); },

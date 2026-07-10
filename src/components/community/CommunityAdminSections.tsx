@@ -5,6 +5,7 @@ import { reportService } from "../../services/reportService";
 import { messageModerationFilterService } from "../../services/messageModerationFilterService";
 import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
+import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 
 export type AdminSectionId = "overview" | "community-settings" | "channels" | "roles" | "members" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
@@ -69,8 +70,8 @@ export function CommunityDangerZone({ children }: { children?: ReactNode }) {
   return <SectionShell eyebrow="Owner only" title="Danger zone" description="Destructive actions require explicit confirmation and remain auditable."><div className="community-danger-grid">{children}</div></SectionShell>;
 }
 
-export function CommunityAuditLogPlaceholder() {
-  return <SectionShell eyebrow="Audit" title="Audit log" description="Append-only community audit retrieval remains a backend placeholder for beta."><div className="community-admin-empty"><AppIcon name="inbox" size="lg" /><strong>No audit entries loaded</strong><span>Tokens, passwords, and private message content must never be recorded here.</span></div></SectionShell>;
+export function CommunityAuditLogPlaceholder({ communityId, canView }: { communityId: string; canView: boolean }) {
+  return <CommunityAuditLogSection communityId={communityId} canView={canView} />;
 }
 
 export function ModeratorReportsSection({ communityId, canReview }: { communityId: string; canReview: boolean }) {

@@ -237,6 +237,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["reports"]["Row"]>;
         Relationships: [];
       };
+      audit_log: {
+        Row: { id: string; community_id: string; actor_id: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: {
       message_attachments: {
@@ -252,6 +258,10 @@ export type Database = {
       accept_community_invite: {
         Args: { invite_code: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;
+      };
+      append_community_audit_log: {
+        Args: { target_community_id: string; event_action_type: string; event_target_type: string; event_target_id: string | null; event_reason: string | null };
+        Returns: string;
       };
     };
     Enums: Record<string, never>;

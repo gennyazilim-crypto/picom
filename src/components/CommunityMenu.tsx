@@ -205,7 +205,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "invites") return <CommunityInvitesSection onOpenInvite={onOpenInvite} />;
     if (activeSection === "events") return sectionTools?.events ?? <div className="community-admin-empty">No events loaded.</div>;
     if (activeSection === "moderation") return <CommunityModerationSection>{sectionTools?.moderation}</CommunityModerationSection>;
-    if (activeSection === "audit-log") return <CommunityAuditLogPlaceholder />;
+    if (activeSection === "audit-log") return <CommunityAuditLogPlaceholder communityId={community.id} canView={access.permissions.includes("viewAuditLog")} />;
     return <CommunityDangerZone>{sectionTools?.["danger-zone"]}</CommunityDangerZone>;
   })();
 

@@ -2,6 +2,7 @@ import type { ChannelType } from "../types/community";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import { CHANNEL_LIST_SELECT, listMockChannelSummaries, listSupabaseChannelSummaries, mapChannelListRow } from "./channelListQuery";
+import { auditLogService } from "./auditLogService";
 
 export type ChannelSummary = Readonly<{
   id: string;
@@ -142,21 +143,13 @@ export const channelService = {
 
     if (dataSource.isMock) {
       const now = new Date().toISOString();
+      const channel: ChannelSummary = {
+          id: `mock-channel-${Date.now()}`, communityId: input.communityId, categoryId: input.categoryId ?? null, name, type, topic: input.topic?.trim() || null, isPrivate: Boolean(input.isPrivate), publicReadEnabled: !input.isPrivate, position: 0, createdAt: now, updatedAt: now,
+      };
+      await auditLogService.append({ communityId: input.communityId, actionType: "channel_create", targetType: "channel", targetId: channel.id, reason: `Created #${name}` });
       return {
         ok: true,
-        data: {
-          id: `mock-channel-${Date.now()}`,
-          communityId: input.communityId,
-          categoryId: input.categoryId ?? null,
-          name,
-          type,
-          topic: input.topic?.trim() || null,
-          isPrivate: Boolean(input.isPrivate),
-          publicReadEnabled: !input.isPrivate,
-          position: 0,
-          createdAt: now,
-          updatedAt: now,
-        },
+        data: channel,
       };
     }
 
@@ -181,7 +174,7 @@ export const channelService = {
       return { ok: false, error: { code: "CHANNEL_CREATE_FAILED", message: "Could not create channel." } };
     }
 
-    return { ok: true, data: mapChannelListRow(data) };
+    const channel = mapChannelListRow(data); await auditLogService.append({ communityId: input.communityId, actionType: "channel_create", targetType: "channel", targetId: channel.id, reason: `Created #${name}` }); return { ok: true, data: channel };
   },
 
   async updateChannel(input: UpdateChannelInput): Promise<ChannelServiceResult<ChannelSummary>> {

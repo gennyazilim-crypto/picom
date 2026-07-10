@@ -2,6 +2,7 @@ import type { Community, Member } from "../../types/community";
 import { dataSourceService } from "../dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
 import { communityMembershipService } from "./communityMembershipService";
+import { auditLogService } from "../auditLogService";
 
 export type CommunityInvite = Readonly<{
   id: string;
@@ -73,6 +74,7 @@ export const communityInviteService = {
       const store = readMockStore();
       const invite: CommunityInvite = { id: `invite-${crypto.randomUUID()}`, communityId: input.communityId, code, createdBy: input.createdBy, maxUses: input.maxUses ?? null, uses: 0, expiresAt, revokedAt: null, createdAt: new Date().toISOString() };
       writeMockStore({ records: [...store.records, invite] });
+      await auditLogService.append({ communityId: input.communityId, actorId: input.createdBy, actionType: "invite_create", targetType: "invite", targetId: invite.id, reason: "Invite created" });
       return { ok: true, data: invite };
     }
 
@@ -80,7 +82,8 @@ export const communityInviteService = {
     const client = getSupabaseClient();
     if (!status.configured || !client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: status.reason ?? "Supabase is not configured." } };
     const { data, error } = await client.from("community_invites").insert({ community_id: input.communityId, code, created_by: input.createdBy, max_uses: input.maxUses ?? null, expires_at: expiresAt }).select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at").single();
-    return error || !data ? { ok: false, error: { code: "INVITE_CREATE_FAILED", message: "Picom could not create this invite." } } : { ok: true, data: mapInvite(data) };
+    if (error || !data) return { ok: false, error: { code: "INVITE_CREATE_FAILED", message: "Picom could not create this invite." } };
+    const invite = mapInvite(data); await auditLogService.append({ communityId: input.communityId, actionType: "invite_create", targetType: "invite", targetId: invite.id, reason: "Invite created" }); return { ok: true, data: invite };
   },
 
   async getInviteByCode(rawCode: string): Promise<InviteResult<CommunityInvite>> {
@@ -106,13 +109,15 @@ export const communityInviteService = {
       if (!invite) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite is unavailable." } };
       const revoked = { ...invite, revokedAt: invite.revokedAt ?? new Date().toISOString() };
       writeMockStore({ records: store.records.map((record) => record.id === inviteId ? revoked : record) });
+      await auditLogService.append({ communityId: invite.communityId, actorId: invite.createdBy, actionType: "invite_revoke", targetType: "invite", targetId: invite.id, reason: "Invite revoked" });
       return { ok: true, data: revoked };
     }
 
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
     const { data, error } = await client.from("community_invites").update({ revoked_at: new Date().toISOString() }).eq("id", inviteId).select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at").single();
-    return error || !data ? { ok: false, error: { code: "INVITE_REVOKE_FAILED", message: "Picom could not revoke this invite." } } : { ok: true, data: mapInvite(data) };
+    if (error || !data) return { ok: false, error: { code: "INVITE_REVOKE_FAILED", message: "Picom could not revoke this invite." } };
+    const invite = mapInvite(data); await auditLogService.append({ communityId: invite.communityId, actionType: "invite_revoke", targetType: "invite", targetId: invite.id, reason: "Invite revoked" }); return { ok: true, data: invite };
   },
 
   async acceptInvite(input: { code: string; communities: Community[]; currentUser: Member; isAuthenticated: boolean; bannedUserIds?: string[] }): Promise<InviteResult<{ communityId: string; member: Member }>> {
