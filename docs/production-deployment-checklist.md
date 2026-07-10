@@ -20,6 +20,8 @@ Do not deploy with production secrets in local files. Do not run production migr
 
 ## Database migration
 
+For v2, complete `docs/release/v2-migration-checklist.md` and attach its evidence to this deployment record.
+
 - [ ] `[BLOCKER]` Migration diff reviewed.
 - [ ] `[BLOCKER]` Migration tested in staging.
 - [ ] `[BLOCKER]` RLS policies reviewed for private channel/community isolation.

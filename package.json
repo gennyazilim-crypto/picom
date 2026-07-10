@@ -156,6 +156,7 @@
     "community-discovery:plan:smoke": "node scripts/community-discovery-plan-smoke-test.mjs",
     "analytics:placeholder:smoke": "node scripts/analytics-placeholder-smoke-test.mjs",
     "data-migration:strategy:smoke": "node scripts/data-migration-strategy-smoke-test.mjs",
+    "release:v2:migration:checklist:smoke": "node scripts/v2-migration-checklist-smoke-test.mjs",
     "performance:budget:smoke": "node scripts/performance-budget-smoke-test.mjs",
     "performance:budget:ci": "node scripts/performance-budget-ci.mjs",
     "visual:regression:contract": "node scripts/visual-regression-contract.mjs",

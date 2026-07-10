@@ -4,6 +4,8 @@ Use this workflow before promoting a Picom release candidate to beta or stable r
 
 This workflow ties together staging, quality gates, desktop packaging, checksums, provenance, rollback, and release notes. It does not publish real artifacts by itself.
 
+For the v2 release, the database/client migration stage must also complete `docs/release/v2-migration-checklist.md`.
+
 ## RC metadata
 
 - Release version:
