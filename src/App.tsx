@@ -136,6 +136,7 @@ const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
 const ProfileView = lazy(() => import("./components/ProfileView").then((module) => ({ default: module.ProfileView })));
 const DirectMessagesView = lazy(() => import("./components/DirectMessagesView").then((module) => ({ default: module.DirectMessagesView })));
+const CommunityAudioView = lazy(() => import("./components/audio/CommunityAudioView").then((module) => ({ default: module.CommunityAudioView })));
 const SavedMessagesView = lazy(() => import("./components/SavedMessagesView").then((module) => ({ default: module.SavedMessagesView })));
 const DiscoveryView = lazy(() => import("./components/DiscoveryView").then((module) => ({ default: module.DiscoveryView })));
 const FriendsView = lazy(() => import("./components/FriendsView").then((module) => ({ default: module.FriendsView })));
@@ -178,7 +179,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
+type ActiveView = "community" | "communityAudio" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
 
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
   status: "idle",
@@ -2571,9 +2572,12 @@ export function App() {
                 currentUser={displayedCurrentUser}
                 isAuthenticated={Boolean(authSession)}
                 onSelectChannel={(channel) => {
+                  setActiveView("community");
                   setActiveChannelId(channel.id);
                   clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
                 }}
+                audioActive={activeView === "communityAudio"}
+                onOpenAudio={() => setActiveView("communityAudio")}
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onOpenSettings={openSettings}
                 onLogout={handleLogout}
@@ -2641,7 +2645,15 @@ export function App() {
                   ])
                 }
               />
-              {displayedActiveChannel.type === "voice" ? (
+              {activeView === "communityAudio" ? (
+                <DeferredViewBoundary label="Opening community audio">
+                  <CommunityAudioView
+                    community={displayedActiveCommunity}
+                    canManageAudio={communityAccess.isOwner || communityAccess.permissions.some((permission) => ["manageCommunity", "manageChannels", "moderateMessages"].includes(permission))}
+                    onPlaceholderAction={(message) => pushToast(message, "info")}
+                  />
+                </DeferredViewBoundary>
+              ) : displayedActiveChannel.type === "voice" ? (
                 <DeferredViewBoundary label="Opening voice room">
                 <VoiceRoomView
                   community={displayedActiveCommunity}

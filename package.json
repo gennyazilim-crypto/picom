@@ -113,6 +113,7 @@
     "audio:player:smoke": "node scripts/audio-player-smoke.mjs",
     "audio:feed:smoke": "node scripts/audio-feed-integration-smoke.mjs",
     "audio:profile:smoke": "node scripts/profile-audio-sections-smoke.mjs",
+    "audio:community:smoke": "node scripts/audio-community-smoke.mjs",
     "friends:production:smoke": "node scripts/friend-requests-production-smoke-test.mjs",
     "blocking:privacy:smoke": "node scripts/blocking-privacy-enforcement-smoke-test.mjs",
     "discovery:public:smoke": "node scripts/community-discovery-public-listing-smoke-test.mjs",

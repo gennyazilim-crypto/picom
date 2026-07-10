@@ -5221,3 +5221,43 @@ body{
   .first-launch-progress > span { transition: none; }
 }
 
+.community-audio-entry { width: calc(100% - 20px); min-width: 0; margin: 10px 10px 8px; padding: 10px; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 10px; color: var(--text-secondary); text-align: left; background: color-mix(in srgb, var(--elevated-surface) 68%, transparent); border: 1px solid var(--border); border-radius: var(--radius-md); transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }
+.community-audio-entry:hover, .community-audio-entry.active { color: var(--text-primary); background: var(--hover-surface); border-color: color-mix(in srgb, var(--accent) 36%, var(--border)); }
+.community-audio-entry.active { box-shadow: inset 3px 0 0 var(--accent); }
+.community-audio-entry-icon { width: 34px; height: 34px; display: grid; place-items: center; color: var(--accent); background: var(--accent-soft); border-radius: 11px; }
+.community-audio-entry span:last-child { min-width: 0; display: grid; gap: 2px; }
+.community-audio-entry strong, .community-audio-entry small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.community-audio-entry strong { font-size: .82rem; }
+.community-audio-entry small { color: var(--text-muted); font-size: .68rem; }
+.community-audio-view { position: relative; min-width: 0; min-height: 0; display: flex; flex: 1; flex-direction: column; overflow: hidden; color: var(--text-primary); background: radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 28%), var(--chat-main-bg); }
+.community-audio-header { flex: 0 0 auto; padding: 22px 26px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; background: color-mix(in srgb, var(--chat-main-bg) 92%, var(--elevated-surface)); border-bottom: 1px solid var(--border); }
+.community-audio-heading { min-width: 0; display: flex; align-items: center; gap: 14px; }
+.community-audio-heading-icon { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; color: var(--accent); background: linear-gradient(145deg, var(--accent-soft), var(--elevated-surface)); border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border)); border-radius: 15px; box-shadow: var(--shadow-sm); }
+.community-audio-eyebrow, .community-audio-section-title span { color: var(--accent); font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.community-audio-heading h1, .community-audio-section-title h2 { margin: 2px 0 0; font-family: var(--font-display); letter-spacing: -.025em; }
+.community-audio-heading h1 { font-size: 1.35rem; }
+.community-audio-heading p, .community-audio-section-title p { margin: 4px 0 0; color: var(--text-muted); font-size: .78rem; }
+.community-audio-header-actions { display: flex; align-items: center; gap: 8px; }
+.community-audio-tabs { grid-column: 1 / -1; display: flex; gap: 20px; margin-top: 4px; }
+.community-audio-tabs button { position: relative; padding: 11px 2px 12px; color: var(--text-muted); background: transparent; border: 0; font-size: .76rem; font-weight: 700; }
+.community-audio-tabs button:hover, .community-audio-tabs button.active { color: var(--text-primary); }
+.community-audio-tabs button.active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: var(--accent); border-radius: 999px 999px 0 0; }
+.community-audio-scroll { min-width: 0; min-height: 0; flex: 1; overflow: auto; padding: 26px; }
+.community-audio-section { width: min(100%, 1040px); margin: 0 auto; }
+.community-audio-section-title { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 14px; }
+.community-audio-section-title h2 { font-size: 1.12rem; }
+.community-audio-section-title p { max-width: 380px; text-align: right; }
+.community-audio-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.community-audio-card { min-width: 0; padding: 12px; display: grid; grid-template-columns: 88px minmax(0, 1fr); grid-template-rows: 1fr auto; gap: 10px 12px; background: color-mix(in srgb, var(--elevated-surface) 88%, transparent); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.community-audio-cover { position: relative; grid-row: 1 / 3; width: 88px; min-height: 104px; display: grid; place-items: center; overflow: hidden; color: var(--text-on-accent); background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 45%, var(--warning))); border-radius: 13px; }
+.community-audio-cover img { width: 100%; height: 100%; object-fit: cover; }
+.community-audio-cover span { position: absolute; top: 7px; left: 7px; padding: 3px 6px; color: var(--text-on-accent); background: color-mix(in srgb, var(--app-surface) 26%, transparent); border: 1px solid color-mix(in srgb, var(--text-on-accent) 32%, transparent); border-radius: 999px; backdrop-filter: blur(8px); font-size: .55rem; font-weight: 800; letter-spacing: .08em; }
+.community-audio-card-copy { min-width: 0; }
+.community-audio-card-copy > span, .community-audio-card-copy small { color: var(--text-muted); font-size: .67rem; }
+.community-audio-card-copy h3 { margin: 3px 0 4px; overflow: hidden; color: var(--text-primary); font-size: .88rem; text-overflow: ellipsis; white-space: nowrap; }
+.community-audio-card-copy p { display: -webkit-box; margin: 0 0 5px; overflow: hidden; color: var(--text-secondary); font-size: .72rem; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.community-audio-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.community-audio-empty { padding: 38px 24px; color: var(--text-muted); text-align: center; background: var(--elevated-surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); }
+.community-audio-player-dock { flex: 0 0 auto; padding: 0 26px 18px; }
+.community-audio-player-dock .audio-mini-player { width: min(100%, 1040px); margin: 0 auto; }
+@media (max-width: 1260px) { .community-audio-list { grid-template-columns: minmax(0, 1fr); } .community-audio-section-title p { display: none; } }

@@ -16,6 +16,7 @@ import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals"
 import type { InviteAcceptanceStatus } from "../services/community/communityInviteService";
 import { ReportModal } from "./ReportModal";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
+import { AppIcon } from "./AppIcon";
 
 const CommunityAdminDeferredSection = lazy(() => import("./CommunityAdminDeferredSection").then((module) => ({ default: module.CommunityAdminDeferredSection })));
 
@@ -27,6 +28,8 @@ type CommunitySidebarProps = {
   currentUser: Member;
   isAuthenticated: boolean;
   onSelectChannel: (channel: Channel) => void;
+  audioActive: boolean;
+  onOpenAudio: () => void;
   onCreateChannel: (categoryId: string) => void;
   onOpenSettings: () => void;
   onLogout: () => void;
@@ -51,7 +54,7 @@ type CommunitySidebarProps = {
 
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
-export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onAssignMemberRole, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onAssignMemberRole, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -91,6 +94,10 @@ export function CommunitySidebar({ community, communities, access, activeChannel
       />
 
       <div className="channel-scroll">
+        <button type="button" className={`community-audio-entry ${audioActive ? "active" : ""}`} aria-current={audioActive ? "page" : undefined} onClick={onOpenAudio}>
+          <span className="community-audio-entry-icon" aria-hidden="true"><AppIcon name="headphones" size="md" /></span>
+          <span><strong>Audio</strong><small>Radio and podcasts</small></span>
+        </button>
         {access.isVisitor ? (
           <div className="community-readonly-notice">
             <strong>Viewing public content</strong>
