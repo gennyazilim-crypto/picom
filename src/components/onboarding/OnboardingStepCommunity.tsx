@@ -15,8 +15,7 @@ export function OnboardingStepCommunity({ value, inviteCode, onChange, onInviteC
       <div className="onboarding-choice-grid" role="radiogroup" aria-label="Choose a community entry option">
         {choices.map((choice) => <button key={choice.id} type="button" role="radio" aria-checked={value === choice.id} className={`onboarding-choice ${value === choice.id ? "selected" : ""}`} onClick={() => onChange(choice.id)}><span><AppIcon name={choice.icon} size="md" /></span><strong>{choice.title}</strong><small>{choice.description}</small></button>)}
       </div>
-      {value === "joinInvite" ? <label className="onboarding-invite-field"><span>Invite code</span><input value={inviteCode} maxLength={128} onChange={(event) => onInviteCodeChange(event.target.value)} placeholder="Paste an invite code" /></label> : null}
+      {value === "joinInvite" ? <label className="onboarding-invite-field"><span>Invite code or link</span><input value={inviteCode} maxLength={128} onChange={(event) => onInviteCodeChange(event.target.value)} placeholder="picom://invite/..." /></label> : null}
     </section>
   );
 }
-

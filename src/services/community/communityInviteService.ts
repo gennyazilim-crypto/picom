@@ -35,9 +35,15 @@ function writeMockStore(store: MockInviteStore): void {
 }
 
 function generateCode(): string {
-  const bytes = new Uint8Array(12);
+  const bytes = new Uint8Array(18);
   crypto.getRandomValues(bytes);
-  return [...bytes].map((value) => value.toString(36).padStart(2, "0")).join("").slice(0, 20);
+  return [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+function normalizeCode(value: string): string {
+  const trimmed = value.trim();
+  const deepLinkMatch = /^picom:\/\/invite\/([a-zA-Z0-9_-]{8,64})\/?$/i.exec(trimmed);
+  return deepLinkMatch?.[1] ?? trimmed;
 }
 
 function mapInvite(row: {
@@ -77,8 +83,40 @@ export const communityInviteService = {
     return error || !data ? { ok: false, error: { code: "INVITE_CREATE_FAILED", message: "Picom could not create this invite." } } : { ok: true, data: mapInvite(data) };
   },
 
-  async acceptInvite(input: { code: string; communities: Community[]; currentUser: Member; isAuthenticated: boolean }): Promise<InviteResult<{ communityId: string; member: Member }>> {
-    const code = input.code.trim();
+  async getInviteByCode(rawCode: string): Promise<InviteResult<CommunityInvite>> {
+    const code = normalizeCode(rawCode);
+    if (!/^[a-zA-Z0-9_-]{8,64}$/.test(code)) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite code is invalid." } };
+
+    if (dataSourceService.getStatus().isMock) {
+      const invite = readMockStore().records.find((record) => record.code === code);
+      return invite ? validateInvite(invite) : { ok: false, error: { code: "INVITE_INVALID", message: "That invite code is invalid." } };
+    }
+
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
+    const { data, error } = await client.from("community_invites").select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at").eq("code", code).maybeSingle();
+    if (error || !data) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite is unavailable." } };
+    return validateInvite(mapInvite(data));
+  },
+
+  async revokeInvite(inviteId: string): Promise<InviteResult<CommunityInvite>> {
+    if (dataSourceService.getStatus().isMock) {
+      const store = readMockStore();
+      const invite = store.records.find((record) => record.id === inviteId);
+      if (!invite) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite is unavailable." } };
+      const revoked = { ...invite, revokedAt: invite.revokedAt ?? new Date().toISOString() };
+      writeMockStore({ records: store.records.map((record) => record.id === inviteId ? revoked : record) });
+      return { ok: true, data: revoked };
+    }
+
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
+    const { data, error } = await client.from("community_invites").update({ revoked_at: new Date().toISOString() }).eq("id", inviteId).select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at").single();
+    return error || !data ? { ok: false, error: { code: "INVITE_REVOKE_FAILED", message: "Picom could not revoke this invite." } } : { ok: true, data: mapInvite(data) };
+  },
+
+  async acceptInvite(input: { code: string; communities: Community[]; currentUser: Member; isAuthenticated: boolean; bannedUserIds?: string[] }): Promise<InviteResult<{ communityId: string; member: Member }>> {
+    const code = normalizeCode(input.code);
     if (!input.isAuthenticated) return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before accepting an invite." } };
     if (!/^[a-zA-Z0-9_-]{8,64}$/.test(code)) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite code is invalid." } };
 
@@ -90,6 +128,9 @@ export const communityInviteService = {
       if (!valid.ok) return valid;
       const community = input.communities.find((candidate) => candidate.id === invite.communityId);
       if (!community) return { ok: false, error: { code: "COMMUNITY_NOT_FOUND", message: "The invited community is unavailable." } };
+      if (input.bannedUserIds?.includes(input.currentUser.userId)) return { ok: false, error: { code: "INVITE_BANNED", message: "You cannot join this community." } };
+      const existingMember = community.members.find((member) => member.userId === input.currentUser.userId);
+      if (existingMember) return { ok: true, data: { communityId: community.id, member: existingMember } };
       const joined = await communityMembershipService.joinCommunity({ community, currentUser: input.currentUser, isAuthenticated: true, inviteValidated: true });
       if (!joined.ok) return { ok: false, error: joined.error };
       writeMockStore({ records: store.records.map((record) => record.id === invite.id ? { ...record, uses: record.uses + 1 } : record) });

@@ -1596,6 +1596,7 @@ export function App() {
     setTheme(completion.theme);
     settingsService.updateSettings({ theme: completion.theme, profileSettings: nextProfileSettings });
     setOnboardingPhase("complete");
+    if (completion.startChoice === "joinInvite" && completion.inviteCode) setPendingInviteCode(completion.inviteCode);
 
     setActiveView("mentionFeed");
     pushToast("Picom setup completed.", "success");
