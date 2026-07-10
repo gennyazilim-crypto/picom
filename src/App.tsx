@@ -2377,6 +2377,7 @@ export function App() {
                 pendingInviteCode={pendingInviteCode}
                 onClearPendingInviteCode={() => setPendingInviteCode(null)}
                 onInviteAccepted={handleInviteAccepted}
+                onAssignMemberRole={(memberId, roleId) => replaceCommunityMembers(activeCommunity.id, activeCommunity.members.map((member) => member.id === memberId ? { ...member, roleId } : member))}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
                 events={communityEvents}
                 onCreateEvent={(input) => void createCommunityEvent(input)}

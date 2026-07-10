@@ -6,6 +6,8 @@ import { messageModerationFilterService } from "../../services/messageModeration
 import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
+import { canAssignCommunityRole } from "../../services/permissions/communityPermissions";
+import { communityRoleAssignmentService } from "../../services/community/communityRoleAssignmentService";
 
 export type AdminSectionId = "overview" | "insights" | "community-settings" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
@@ -59,8 +61,21 @@ export function CommunityRolesSection({ community }: { community: Community }) {
   return <SectionShell eyebrow="Access" title="Roles" description="Role order and badges currently follow the community mock/API data source."><div className="community-role-grid">{[...community.roles].sort((a, b) => b.level - a.level).map((role) => <article key={role.id}><i style={{ background: role.color }} /><div><strong>{role.name}</strong><span>Level {role.level}</span></div></article>)}</div></SectionShell>;
 }
 
-export function CommunityMembersSection({ community }: { community: Community }) {
-  return <SectionShell eyebrow="People" title="Members" description="Safe member identity and assigned role preview."><div className="community-admin-member-list">{community.members.map((member) => { const role = community.roles.find((candidate) => candidate.id === member.roleId); return <article key={member.id}><MemberAvatar member={member} size={36} /><div><strong>{member.displayName}</strong><span>@{member.username}</span></div><em>{role?.name ?? "Member"}</em></article>; })}</div></SectionShell>;
+export function CommunityMembersSection({ community, access, onRoleAssigned }: { community: Community; access: CommunityAccess; onRoleAssigned: (memberId: string, roleId: string) => void }) {
+  const [pendingRoles, setPendingRoles] = useState<Record<string, string>>({});
+  const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const assign = async (member: Community["members"][number]) => {
+    const roleId = pendingRoles[member.id] ?? member.roleId;
+    const role = community.roles.find((candidate) => candidate.id === roleId);
+    if (!role || roleId === member.roleId) return;
+    setBusyMemberId(member.id); setError(null);
+    const result = await communityRoleAssignmentService.assignRole({ community, access, member, role });
+    if (result.ok) { onRoleAssigned(member.id, result.data.roleId); setPendingRoles((current) => ({ ...current, [member.id]: result.data.roleId })); }
+    else setError(result.error.message);
+    setBusyMemberId(null);
+  };
+  return <SectionShell eyebrow="People" title="Members" description="Assign roles within your hierarchy. Ownership changes use the separate transfer flow.">{error ? <p className="moderation-queue-error" role="alert">{error}</p> : null}<div className="community-admin-member-list">{community.members.map((member) => { const role = community.roles.find((candidate) => candidate.id === member.roleId); const assignableRoles = community.roles.filter((candidate) => canAssignCommunityRole(access, community, member, candidate)); const canManage = assignableRoles.length > 0; const selectedRoleId = pendingRoles[member.id] ?? member.roleId; return <article key={member.id}><MemberAvatar member={member} size={36} /><div><strong>{member.displayName}</strong><span>@{member.username}</span></div>{canManage ? <div className="role-assignment-controls"><select aria-label={`Role for ${member.displayName}`} value={selectedRoleId} onChange={(event) => setPendingRoles((current) => ({ ...current, [member.id]: event.target.value }))}>{assignableRoles.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select><button type="button" disabled={selectedRoleId === member.roleId || busyMemberId === member.id} onClick={() => void assign(member)}>{busyMemberId === member.id ? "Saving..." : "Apply"}</button></div> : <em>{role?.name ?? "Member"}</em>}</article>; })}</div></SectionShell>;
 }
 
 export function CommunityInvitesSection({ onOpenInvite }: { onOpenInvite: () => void }) {

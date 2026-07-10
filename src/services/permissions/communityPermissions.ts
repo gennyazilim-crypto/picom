@@ -116,6 +116,17 @@ export function hasCommunityPermission(access: CommunityAccess, permission: Comm
   return access.permissions.includes(permission);
 }
 
+export function canAssignCommunityRole(access: CommunityAccess, community: Community, targetMember: Member, targetRole: Role): boolean {
+  if (!hasCommunityPermission(access, "manageRoles") || (!access.isOwner && !access.isAdmin)) return false;
+  const currentTargetRole = community.roles.find((role) => role.id === targetMember.roleId);
+  if (!currentTargetRole) return false;
+  if (targetMember.userId === community.ownerId || currentTargetRole.name === "Owner" || currentTargetRole.level >= 100) return false;
+  if (targetRole.name === "Owner" || targetRole.level >= 100) return false;
+  if (access.isOwner) return true;
+  const actorLevel = access.role?.level ?? 0;
+  return actorLevel >= 80 && currentTargetRole.level < actorLevel && targetRole.level < actorLevel;
+}
+
 export function canManageCommunity(access: CommunityAccess): boolean {
   return hasCommunityPermission(access, "manageCommunity");
 }

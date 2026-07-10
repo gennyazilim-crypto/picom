@@ -186,7 +186,7 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
   );
 }
 
-export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
+export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onAssignMemberRole, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onAssignMemberRole: (memberId: string, roleId: string) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("overview");
   const sections = adminSectionDefinitions.filter((section) => {
     if (section.ownerOnly) return access.isOwner;
@@ -203,7 +203,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "community-settings") return <CommunitySettingsSection community={community} onPlaceholderAction={onPlaceholderAction} />;
     if (activeSection === "channels") return <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
     if (activeSection === "roles") return <CommunityRolesSection community={community} />;
-    if (activeSection === "members") return <CommunityMembersSection community={community} />;
+    if (activeSection === "members") return <CommunityMembersSection community={community} access={access} onRoleAssigned={onAssignMemberRole} />;
     if (activeSection === "emojis") return sectionTools?.emojis ?? <div className="community-admin-empty">No custom emojis loaded.</div>;
     if (activeSection === "stickers") return sectionTools?.stickers ?? <div className="community-admin-empty">No sticker packs loaded.</div>;
     if (activeSection === "bots") return sectionTools?.bots ?? <div className="community-admin-empty">No bots installed.</div>;
