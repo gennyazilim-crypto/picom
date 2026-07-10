@@ -3,7 +3,7 @@ import { mockCommunities } from "../data/mockCommunities";
 import type { MessageSummary } from "./messageService";
 import type { Database } from "./supabase/database.types";
 
-export const MESSAGE_LIST_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at" as const;
+export const MESSAGE_LIST_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, webhook_id, webhook_name" as const;
 
 export type MessageListRow = Readonly<{
   id: string;
@@ -16,6 +16,8 @@ export type MessageListRow = Readonly<{
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
+  webhook_id: string | null;
+  webhook_name: string | null;
 }>;
 
 export type ListMessagesInput = Readonly<{
@@ -58,6 +60,8 @@ export function mapMessageListRow(row: MessageListRow): MessageSummary {
     createdAt: row.created_at,
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
+    webhookId: row.webhook_id ?? undefined,
+    webhookName: row.webhook_name ?? undefined,
   };
 }
 
@@ -91,6 +95,8 @@ export function listMockMessageSummaries(input: ListMessagesInput): MessagePage 
       createdAt: message.createdAt,
       editedAt: message.editedAt ?? null,
       deletedAt: null,
+      webhookId: message.webhookId,
+      webhookName: message.webhookName,
     }))
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 

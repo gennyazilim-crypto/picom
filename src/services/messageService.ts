@@ -7,7 +7,7 @@ import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutatio
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
 
-export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at" as const;
+export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, webhook_id, webhook_name" as const;
 
 export type MessageRow = Readonly<{
   id: string;
@@ -21,6 +21,8 @@ export type MessageRow = Readonly<{
   edited_at: string | null;
   deleted_at: string | null;
   thread_id?: string | null;
+  webhook_id?: string | null;
+  webhook_name?: string | null;
 }>;
 
 export type MessageSummary = Readonly<{
@@ -34,6 +36,8 @@ export type MessageSummary = Readonly<{
   createdAt: string;
   editedAt: string | null;
   deletedAt: string | null;
+  webhookId?: string;
+  webhookName?: string;
 }>;
 
 export type SendMessageInput = Readonly<{
@@ -83,6 +87,8 @@ export function mapMessageRow(row: MessageRow): MessageSummary {
     createdAt: row.created_at,
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
+    webhookId: row.webhook_id ?? undefined,
+    webhookName: row.webhook_name ?? undefined,
   };
 }
 

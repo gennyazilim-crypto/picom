@@ -118,6 +118,8 @@ export type Database = {
           edited_at: string | null;
           deleted_at: string | null;
           thread_id: string | null;
+          webhook_id: string | null;
+          webhook_name: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["messages"]["Row"]> & Pick<Database["public"]["Tables"]["messages"]["Row"], "community_id" | "channel_id" | "author_id">;
         Update: Partial<Database["public"]["Tables"]["messages"]["Row"]>;

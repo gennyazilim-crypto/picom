@@ -3,7 +3,7 @@ import { currentUserId } from "../data/mockCommunities";
 import type { MessageSummary, SendMessageInput } from "./messageService";
 import type { Database } from "./supabase/database.types";
 
-export const MESSAGE_SEND_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at" as const;
+export const MESSAGE_SEND_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, webhook_id, webhook_name" as const;
 
 export type MessageSendRow = Readonly<{
   id: string;
@@ -16,6 +16,8 @@ export type MessageSendRow = Readonly<{
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
+  webhook_id: string | null;
+  webhook_name: string | null;
 }>;
 
 export type MessageSendMutationResult = Readonly<{
@@ -35,6 +37,8 @@ export function mapMessageSendRow(row: MessageSendRow): MessageSummary {
     createdAt: row.created_at,
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
+    webhookId: row.webhook_id ?? undefined,
+    webhookName: row.webhook_name ?? undefined,
   };
 }
 
