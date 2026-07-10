@@ -305,6 +305,18 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["reports"]["Row"]>;
         Relationships: [];
       };
+      moderation_action_records: {
+        Row: { id: string; community_id: string; affected_user_id: string; actor_id: string | null; action_type: "ban" | "kick" | "timeout" | "message_delete" | "other"; target_id: string | null; reason_code: string; appealable: boolean; appealable_until: string | null; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      moderation_appeals: {
+        Row: { id: string; community_id: string; affected_user_id: string; moderation_action_id: string; reason: string; status: "open" | "under_review" | "accepted" | "denied" | "closed"; decision_note: string | null; reviewed_by: string | null; reviewed_at: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["moderation_appeals"]["Row"]> & Pick<Database["public"]["Tables"]["moderation_appeals"]["Row"], "community_id" | "affected_user_id" | "moderation_action_id" | "reason">;
+        Update: Pick<Partial<Database["public"]["Tables"]["moderation_appeals"]["Row"]>, "status" | "decision_note" | "reviewed_by" | "updated_at">;
+        Relationships: [];
+      };
       audit_log: {
         Row: { id: string; community_id: string; actor_id: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; created_at: string };
         Insert: never;

@@ -162,6 +162,7 @@
     "audit-logs:immutability:smoke": "node scripts/audit-log-immutability-smoke-test.mjs",
     "audit-logs:admin-review:test": "node scripts/audit-log-admin-review-test.mjs",
     "reports:production:test": "node scripts/reports-production-workflow-test.mjs",
+    "appeals:production:test": "node scripts/appeals-production-workflow-test.mjs",
     "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs",
     "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs",
     "retention:plan": "node scripts/data-retention-enforcement-placeholder.mjs",
