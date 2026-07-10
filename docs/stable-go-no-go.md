@@ -40,3 +40,7 @@ The local application, deterministic QA, Electron security configuration, Window
 ## Required next action
 
 Do not distribute stable artifacts. Close `docs/release-blockers.md` with archived evidence, generate a final stable-version artifact set, rerun Task 360 and Task 361, obtain named sign-offs, then update this document with a new decision record. A previous No-Go must never be silently edited into Go without evidence.
+
+## Task 405 final review
+
+Decision remains **No-Go**. Tasks 396-404 improved and archived deterministic local evidence, but did not produce hosted Supabase/LiveKit proof, native platform certification, legal approval, named production ownership, or a real restore drill. Consequently no final immutable artifact set, post-signing checksums, or release provenance exists. Distribution and post-launch monitoring must not start.

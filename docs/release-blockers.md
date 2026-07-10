@@ -66,3 +66,7 @@ Environment and secret-management contracts passed without exposing values. Crit
 ## Task 404 evidence update
 
 Backup, PITR, maintenance, and migration recovery safety contracts passed without opening a database. No staging restore or destructive lifecycle drill ran, so RB-11 remains open.
+
+## Task 405 final gate
+
+Final checksum/provenance/RC/deployment/rollback process contracts passed, but there are no signed/notarized/native immutable stable artifacts to hash. RB-01 through RB-11 remain release blockers. Decision: **No-Go**; no publication authorized.

@@ -67,3 +67,7 @@ Voice and screen-share code paths are present, but production certification is i
 ## Distribution status
 
 No public stable distribution is authorized by these notes. Publication requires a recorded Go decision, final artifacts for every promised platform, checksums/provenance, approved legal links, and rollback/support readiness.
+
+## Task 405 release-candidate status
+
+The blocker-closure pass completed on 2026-07-10 with a **No-Go** decision. Local deterministic gates passed, but hosted, native-platform, legal, ownership, and restore evidence remain incomplete. No new stable download, checksum, provenance claim, or release announcement was produced.
