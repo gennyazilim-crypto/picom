@@ -47,6 +47,7 @@ export type Database = {
           discovery_listed: boolean;
           discovery_join_policy: "open" | "request";
           category: "development" | "design" | "gaming" | "music" | "study" | "work" | null;
+          discovery_content_flags: string[];
           created_at: string;
           updated_at: string;
         };
@@ -429,7 +430,7 @@ export type Database = {
       join_or_request_discovery_community: { Args: { target_community_id: string }; Returns: "joined" | "requested" | "already_member" };
       list_discovery_review_queue: {
         Args: { status_filter?: string | null; result_limit?: number };
-        Returns: Array<{ community_id: string; community_name: string; description: string | null; icon_url: string | null; category: string | null; review_status: "pending" | "approved" | "rejected" | "hidden" | "suspended"; report_count: number; submitted_at: string; reviewed_at: string | null }>;
+        Returns: Array<{ community_id: string; community_name: string; description: string | null; icon_url: string | null; category: string | null; content_flags: string[]; review_status: "pending" | "approved" | "rejected" | "hidden" | "suspended"; report_count: number; submitted_at: string; reviewed_at: string | null }>;
       };
       review_discovery_listing: { Args: { target_community_id: string; next_status: string; review_reason?: string | null }; Returns: boolean };
       search_accessible_entities: {

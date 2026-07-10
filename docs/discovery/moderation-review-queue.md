@@ -28,6 +28,7 @@ The review RPC returns only owner-intended public listing metadata:
 - Public name, description, icon, and category.
 - Review state.
 - Aggregate community-report count.
+- Owner-declared, allowlisted content flags.
 - Submission/review timestamps.
 
 It excludes:
@@ -67,6 +68,8 @@ Reports do not automatically suspend or reject a listing. A future threshold may
 ## Anti-abuse and operational controls
 
 - Rate-limit submission/resubmission and report actions.
+- Material changes to name, description, icon, category, visibility, public-read state, listing state, or content flags automatically reset approval to `pending`.
+- Report submission is limited to five attempts per authenticated user per hour using content-free counters.
 - Re-review material profile changes.
 - Prevent owners from directly setting approval status.
 - Prioritize repeated reports without exposing reporter identity in the queue.
@@ -95,4 +98,3 @@ Reports do not automatically suspend or reject a listing. A future threshold may
 - Status update writes exactly one audit event transactionally.
 - Queue never returns report descriptions or member/channel/message data.
 - Report action remains available on safe public Discovery cards.
-

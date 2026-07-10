@@ -10,6 +10,7 @@ export type DiscoveryReviewItem = Readonly<{
   description: string;
   iconUrl?: string;
   category: string;
+  contentFlags: string[];
   status: DiscoveryReviewStatus;
   reportCount: number;
   submittedAt: string;
@@ -40,6 +41,7 @@ function listMockQueue(statusFilter: DiscoveryReviewStatus | null): DiscoveryRev
       description: community.description ?? "Public community profile awaiting review.",
       iconUrl: undefined,
       category: community.discoveryCategory ?? "work",
+      contentFlags: [],
       status: statuses[community.id] ?? (index === 0 ? "approved" : "pending"),
       reportCount: 0,
       submittedAt: "2026-07-10T08:00:00.000Z",
@@ -55,7 +57,7 @@ export const discoveryModerationService = {
     if (!client) return { ok: false, message: "Discovery review is unavailable." };
     const { data, error } = await client.rpc("list_discovery_review_queue", { status_filter: statusFilter, result_limit: 100 });
     if (error) return { ok: false, message: "Picom could not load the discovery review queue." };
-    return { ok: true, data: (data ?? []).map((row) => ({ communityId: row.community_id, communityName: row.community_name, description: row.description ?? "", iconUrl: row.icon_url ?? undefined, category: row.category ?? "uncategorized", status: row.review_status, reportCount: Number(row.report_count) || 0, submittedAt: row.submitted_at, reviewedAt: row.reviewed_at })) };
+    return { ok: true, data: (data ?? []).map((row) => ({ communityId: row.community_id, communityName: row.community_name, description: row.description ?? "", iconUrl: row.icon_url ?? undefined, category: row.category ?? "uncategorized", contentFlags: row.content_flags ?? [], status: row.review_status, reportCount: Number(row.report_count) || 0, submittedAt: row.submitted_at, reviewedAt: row.reviewed_at })) };
   },
 
   async review(communityId: string, status: DiscoveryReviewStatus, reason: string): Promise<ModerationResult<DiscoveryReviewStatus>> {
@@ -71,4 +73,3 @@ export const discoveryModerationService = {
     return error || !data ? { ok: false, message: "Picom could not update this discovery review." } : { ok: true, data: status };
   },
 };
-
