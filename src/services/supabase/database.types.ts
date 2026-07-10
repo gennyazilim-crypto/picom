@@ -203,6 +203,11 @@ export type Database = {
         Insert: Partial<Database["public"]["Tables"]["message_mentions"]["Row"]> & Pick<Database["public"]["Tables"]["message_mentions"]["Row"], "message_id" | "mentioned_user_id">;
         Update: Partial<Database["public"]["Tables"]["message_mentions"]["Row"]>; Relationships: [];
       };
+      voice_story_events: {
+        Row: { id: string; author_id: string; community_id: string; channel_id: string; title: string; created_at: string; ended_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["voice_story_events"]["Row"]> & Pick<Database["public"]["Tables"]["voice_story_events"]["Row"], "author_id" | "community_id" | "channel_id" | "title">;
+        Update: Partial<Database["public"]["Tables"]["voice_story_events"]["Row"]>; Relationships: [];
+      };
       friend_requests: {
         Row: { id: string; sender_id: string; recipient_id: string; status: "pending" | "accepted" | "declined"; created_at: string; responded_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["friend_requests"]["Row"]> & Pick<Database["public"]["Tables"]["friend_requests"]["Row"], "sender_id" | "recipient_id">;
@@ -442,6 +447,14 @@ export type Database = {
         };
         Relationships: [];
       };
+      followed_user_stories_view: {
+        Row: {
+          story_id: string; author_id: string; community_id: string | null; channel_id: string | null; message_id: string | null;
+          story_type: string; title: string; subtitle: string | null; body: string | null; image_url: string | null;
+          gradient_variant: string | null; created_at: string; duration_seconds: number; mentioned_user_ids: string[];
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       accept_current_legal_terms: { Args: Record<string, never>; Returns: Array<{ terms_version: string; privacy_version: string; accepted_at: string }> };
@@ -525,6 +538,10 @@ export type Database = {
       list_mention_feed: {
         Args: { cursor_created_at?: string | null; cursor_message_id?: string | null; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["mention_feed_view"]["Row"]>;
+      };
+      list_followed_user_stories: {
+        Args: { cursor_created_at?: string | null; cursor_story_id?: string | null; result_limit?: number };
+        Returns: Array<Database["public"]["Views"]["followed_user_stories_view"]["Row"]>;
       };
     };
     Enums: Record<string, never>;

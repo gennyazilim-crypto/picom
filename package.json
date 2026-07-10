@@ -266,6 +266,7 @@
     "voice:quality:test": "node scripts/voice-quality-metrics-test.mjs",
     "screen-share:quality:test": "node scripts/screen-share-quality-test.mjs",
     "stories:header:smoke": "node scripts/followed-people-stories-header-smoke-test.mjs",
+    "stories:supabase:smoke": "node scripts/followed-stories-supabase-smoke.mjs",
     "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs",
     "attachments:scan:production:test": "node scripts/attachment-scanning-production-test.mjs",
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",

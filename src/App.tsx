@@ -50,6 +50,7 @@ import type { DirectReactionRow } from "./services/supabase/directMessageRealtim
 import { directMessageService } from "./services/supabase/directMessageService";
 import { relationshipService } from "./services/relationshipService";
 import { mentionFeedService } from "./services/mentionFeedService";
+import { storyService } from "./services/storyService";
 import { profileVerificationService } from "./services/profileVerificationService";
 import { defaultProfilePrivacyProjection,profilePrivacyService,restrictedProfilePrivacyProjection } from "./services/profilePrivacyService";
 import type { ProfilePrivacyProjection } from "./types/profilePrivacy";
@@ -405,11 +406,13 @@ export function App() {
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase) return;
     let active = true;
-    void Promise.all([mentionFeedService.listPage({ limit: 60 }), relationshipService.getFollowing()]).then(([feed, following]) => {
+    void Promise.all([mentionFeedService.listPage({ limit: 60 }), relationshipService.getFollowing(), storyService.listPage({ limit: 40 })]).then(([feed, following, stories]) => {
       if (!active) return;
       if (feed.ok) setMentionItems(feed.data.items);
       else pushToast(feed.error.message, "error");
       if (following.ok) setFollowedUserIds(following.data);
+      if (stories.ok) setStoryItems(stories.data.items);
+      else pushToast(stories.error.message, "error");
     });
     return () => { active = false; };
   }, [authSession?.user?.id, pushToast]);
