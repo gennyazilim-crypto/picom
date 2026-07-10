@@ -75,3 +75,7 @@ The hosted matrix was not rerun because the current operator session had no Supa
 ## Task 420 Edge Functions status
 
 The `livekit-token` release boundary and local JWT/CORS/method/secret contracts passed on 2026-07-11. No linked project, protected Edge staging variables, or LiveKit provider secrets were available, so no function was deployed or called. Placeholder functions were explicitly excluded rather than deployed for checklist coverage. Hosted Edge Functions remain **BLOCKED**.
+
+## Task 421 final rerun
+
+All local Supabase, RLS structure, API regression, secret, typecheck, build, and QA contracts passed. Hosted runners completed preflight only and made no network connection. Because private Presence and release-scoped Edge Functions remain unproven, final hosted status is **PARTIAL / BLOCKED**, not PASS.

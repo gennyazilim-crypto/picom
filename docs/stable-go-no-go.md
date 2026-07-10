@@ -50,3 +50,7 @@ Decision remains **No-Go**. Tasks 396-404 improved and archived deterministic lo
 Decision: **NO-GO**.
 
 Real Task 406 evidence closed migration/Auth/basic RLS/private Storage uncertainty but did not close private Realtime Presence or Edge validation. Tasks 407-411 remain blocked for hosted LiveKit and native trusted platform evidence. Task 412 lacks authorized legal approval, Task 413 lacks accountable owners/custody, and Task 414 lacks a successful isolated restore/destructive drill. No stable artifact publication, checksum announcement, rollout, or post-launch monitoring is authorized.
+
+## Task 421 hosted Supabase closure decision
+
+Decision remains **NO-GO**. Task 421 confirms a `PARTIAL / BLOCKED` hosted Supabase result: local gates and earlier Auth/core RLS/private Storage evidence pass, but private Presence and the release-scoped Edge Function are not proven. No artifact publication is authorized.

@@ -53,3 +53,7 @@ The canonical topic/client/policy contract passes locally, but protected hosted 
 ## Task 420 Edge Functions status
 
 `livekit-token` is the only Edge Function required by the locked Full MVP scope. Its local security contract passes, but it was not deployed or exercised against hosted staging because project linkage and provider secrets were unavailable. Edge Functions remain **BLOCKED**; 501 placeholders and post-MVP functions are not counted as release evidence.
+
+## Task 421 final status
+
+Fresh local gates pass, and earlier real Auth/core RLS/private Storage evidence remains valid. The complete release matrix is still **PARTIAL / BLOCKED** because private Presence, deployed `livekit-token`, broader lost-access coverage, and historical Storage lifecycle evidence are missing. Stable release remains No-Go.
