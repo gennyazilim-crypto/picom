@@ -203,6 +203,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "roles") return <CommunityRolesSection community={community} />;
     if (activeSection === "members") return <CommunityMembersSection community={community} />;
     if (activeSection === "emojis") return sectionTools?.emojis ?? <div className="community-admin-empty">No custom emojis loaded.</div>;
+    if (activeSection === "stickers") return sectionTools?.stickers ?? <div className="community-admin-empty">No sticker packs loaded.</div>;
     if (activeSection === "bots") return sectionTools?.bots ?? <div className="community-admin-empty">No bots installed.</div>;
     if (activeSection === "webhooks") return sectionTools?.webhooks ?? <div className="community-admin-empty">No webhooks configured.</div>;
     if (activeSection === "invites") return <CommunityInvitesSection onOpenInvite={onOpenInvite} />;

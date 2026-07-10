@@ -12,5 +12,3 @@ export type CommunityEmoji = Readonly<{
   disabledAt?: string;
   deletedAt?: string;
 }>;
-
-export type CommunitySticker = Readonly<{ id: string; name: string; title: string; tone: "teal" | "orange" | "aqua" | "neutral" }>;

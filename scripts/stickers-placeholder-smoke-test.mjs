@@ -1,19 +1,10 @@
-﻿import fs from "node:fs";
-
+import fs from "node:fs";
+const service = fs.readFileSync("src/services/stickerPackService.ts", "utf8");
+const migration = fs.readFileSync("supabase/migrations/20260710179000_sticker_pack_management.sql", "utf8");
+const sidebar = fs.readFileSync("src/components/CommunitySidebar.tsx", "utf8");
 const doc = fs.readFileSync("docs/stickers-placeholder.md", "utf8");
-const required = [
-  "post-MVP placeholder",
-  "No third-party or copyrighted sticker assets",
-  "Supabase storage placeholder",
-  "StickerPicker compact popover",
-  "manageStickers",
-  "documentation-only"
-];
-
-const missing = required.filter((needle) => !doc.includes(needle));
-if (missing.length) {
-  console.error(`Stickers placeholder doc is missing: ${missing.join(", ")}`);
-  process.exit(1);
-}
-
-console.log("Stickers placeholder smoke passed.");
+for (const marker of ["validateContent", "MAX_STICKER_BYTES", "createPack", "addSticker", "setPackEnabled", "canManage"]) if (!service.includes(marker)) throw new Error(`Sticker service missing ${marker}`);
+for (const marker of ["community_sticker_packs", "community-stickers", "2097152", "public = false", "can_manage_channel_webhooks"]) if (!migration.includes(marker)) throw new Error(`Sticker migration missing ${marker}`);
+if (!sidebar.includes("CommunityStickersAdminSection") || !sidebar.includes("stickers:")) throw new Error("Community Settings sticker section is missing.");
+for (const marker of ["No marketplace", "community-owned", "No copyrighted", "private Storage"]) if (!doc.includes(marker)) throw new Error(`Sticker documentation missing ${marker}`);
+console.log("Sticker pack management smoke passed.");

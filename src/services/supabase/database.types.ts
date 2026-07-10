@@ -354,9 +354,15 @@ export type Database = {
         Relationships: [];
       };
       community_stickers: {
-        Row: { id: string; community_id: string; name: string; image_url: string; created_by: string; created_at: string; deleted_at: string | null };
+        Row: { id: string; pack_id: string | null; community_id: string; name: string; title: string; image_url: string; storage_path: string | null; created_by: string; created_at: string; moderation_status: "active" | "disabled"; disabled_at: string | null; deleted_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["community_stickers"]["Row"]> & Pick<Database["public"]["Tables"]["community_stickers"]["Row"], "community_id" | "name" | "image_url" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["community_stickers"]["Row"]>;
+        Relationships: [];
+      };
+      community_sticker_packs: {
+        Row: { id: string; community_id: string; name: string; description: string; created_by: string; created_at: string; moderation_status: "active" | "disabled"; deleted_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["community_sticker_packs"]["Row"]> & Pick<Database["public"]["Tables"]["community_sticker_packs"]["Row"], "community_id" | "name" | "created_by">;
+        Update: Partial<Database["public"]["Tables"]["community_sticker_packs"]["Row"]>;
         Relationships: [];
       };
       polls: {

@@ -1,94 +1,24 @@
-﻿# Stickers Placeholder
+# Community Sticker Pack Management
 
-Status: post-MVP placeholder
+Picom supports community-owned sticker packs through Community Settings. No marketplace, paid catalog, public publishing, or remote third-party pack import is enabled.
 
-Stickers are planned as a future expressive media feature for Picom. This placeholder documents the safe architecture without adding a sticker marketplace, copyrighted assets, or runtime sticker picker to the MVP desktop app.
+## Ownership and permissions
 
-## MVP stance
+Each pack belongs to one community and records the manager who created it. Community management permission is required to create, upload, disable, or delete pack content. Renderer checks are UX only; Supabase table and Storage RLS enforce permission. Pack names and sticker names are unique within their community scope.
 
-- Stickers are not enabled in the current MVP runtime.
-- Existing image attachments, emoji, reactions, replies, and message sending stay unchanged.
-- No third-party or copyrighted sticker assets are bundled.
-- No marketplace, paid packs, or external asset fetching is introduced.
+## Upload safety
 
-## Future data model placeholder
+- PNG, JPEG, WEBP, and GIF only; SVG is rejected.
+- 2 MB maximum file size.
+- Extension, MIME, and binary signature validation occurs before upload.
+- Random IDs form object paths; user file names are never trusted.
+- Assets use a private Storage bucket and short-lived signed URLs.
+- Packs and stickers can be disabled without losing moderation evidence.
 
-A future `community_stickers` table can use safe fields:
+## Asset rights
 
-- `id`
-- `community_id`
-- `name`
-- `image_url`
-- `storage_path`
-- `created_by_id`
-- `created_at`
-- `deleted_at`
+No copyrighted sample stickers, Discord assets, marketplace packs, or unlicensed third-party art are bundled. Existing Picom mock cards are original token-based placeholders rather than copied image assets. Community managers remain responsible for upload rights; future reporting/moderation can disable unsafe packs.
 
-Sticker message metadata can reference a sticker by `sticker_id` and should not duplicate large binary payloads in message rows.
+## Product boundary
 
-## Asset rules
-
-Future stickers must follow the same safety model as uploads:
-
-- only use assets the project owns or has explicit rights to use
-- allow safe image types only: png, jpg, jpeg, webp, gif
-- reject SVG until a sanitizer exists
-- enforce max file size from config
-- sanitize file names and storage paths
-- block suspicious or failed scan states
-
-## Supabase storage placeholder
-
-Potential path pattern:
-
-`communities/{communityId}/stickers/{stickerId}/{safeFileName}`
-
-Storage and RLS rules should ensure only permitted users can manage community stickers.
-
-## Future UI placeholder
-
-Potential desktop UI entry points:
-
-- MessageComposer sticker button, hidden behind a feature flag
-- StickerPicker compact popover
-- Community Settings > Stickers
-- Sticker delete confirmation for permitted users
-
-The UI must remain compact and desktop-native. It must not add mobile bottom sheets or mobile navigation.
-
-## Message rendering placeholder
-
-Future sticker messages should render as compact media cards with:
-
-- sticker image
-- author/timestamp like normal messages
-- fallback text if the sticker is deleted
-- blocked state if the asset fails scan or is quarantined
-
-## Permissions
-
-Managing stickers should require a future permission such as:
-
-- `manageStickers`
-- `manageCommunity`
-- owner/admin override
-
-Sending stickers should require normal message send permission in the target channel.
-
-## Security and privacy
-
-- Do not execute sticker files.
-- Do not expose raw storage paths that bypass access checks.
-- Do not log uploaded sticker payloads.
-- Do not track sticker image content in analytics.
-- Do not allow external untrusted sticker URLs as first-class sticker assets.
-
-## Implementation decision
-
-This task is documentation-only. Runtime UI, storage, schema, and picker behavior are intentionally unchanged until stickers become an active milestone.
-
-## Manual verification
-
-- Confirm existing attachment and emoji flows still work.
-- Confirm no new sticker picker or settings panel appears in the MVP UI.
-- Confirm no copyrighted sticker assets were added.
+Community Settings provides pack creation and upload management. The existing compact desktop sticker picker remains stable. Marketplace discovery, monetization, global pack publishing, and arbitrary external URLs are out of scope.
