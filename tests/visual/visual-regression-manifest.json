@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "enabled": false,
+  "blockingMode": "contract_only",
+  "reason": "Playwright and tuned per-platform screenshot baselines are not installed yet.",
+  "viewport": { "width": 1440, "height": 900 },
+  "dataSource": "mock",
+  "reducedMotion": true,
+  "randomness": "fixed",
+  "scenarios": [
+    { "id": "mention-feed-light", "screen": "mentionFeed", "theme": "light" },
+    { "id": "mention-feed-dark", "screen": "mentionFeed", "theme": "dark" },
+    { "id": "profile-light", "screen": "profile", "theme": "light" },
+    { "id": "profile-dark", "screen": "profile", "theme": "dark" },
+    { "id": "community-chat-light", "screen": "communityChat", "theme": "light" },
+    { "id": "community-chat-dark", "screen": "communityChat", "theme": "dark" },
+    { "id": "settings-light", "screen": "settings", "theme": "light" },
+    { "id": "settings-dark", "screen": "settings", "theme": "dark" },
+    { "id": "voice-light", "screen": "voice", "theme": "light" },
+    { "id": "voice-dark", "screen": "voice", "theme": "dark" }
+  ]
+}

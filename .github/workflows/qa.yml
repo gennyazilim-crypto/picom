@@ -51,6 +51,9 @@ jobs:
       - name: Enforce renderer performance budgets
         run: npm run performance:budget:ci
 
+      - name: Verify visual regression coverage contract
+        run: npm run visual:regression:contract
+
       - name: Verify release checksum generator
         run: npm run release:checksums:smoke
 
