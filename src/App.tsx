@@ -297,6 +297,7 @@ export function App() {
   const [mentionTab, setMentionTab] = useState<MentionFeedTab>("feed");
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
+  const followMutationInFlightRef = useRef(new Set<string>());
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [profileVerificationBadges, setProfileVerificationBadges] = useState<VerificationBadge[]>([]);
   const [profilePrivacyProjection,setProfilePrivacyProjection]=useState<ProfilePrivacyProjection>(defaultProfilePrivacyProjection);
@@ -419,6 +420,18 @@ export function App() {
     });
     return () => { active = false; };
   }, [authSession?.user?.id, pushToast]);
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    const refreshFollowing = () => {
+      void relationshipService.getFollowing().then((result) => { if (active && result.ok) setFollowedUserIds(result.data); });
+    };
+    void relationshipService.subscribeToFollowing(refreshFollowing).then((cleanup) => {
+      if (!active) cleanup(); else unsubscribe = cleanup;
+    });
+    return () => { active = false; unsubscribe?.(); };
+  }, [authSession?.user?.id]);
   const refreshFriendState = useCallback(async () => {
     const result = await relationshipService.getFriendState();
     if (result.ok) setFriendState(result.data);
@@ -1390,15 +1403,21 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, switchCommunity]);
 
-  const toggleFollowUser = useCallback((userId: string) => {
-    if (userId === currentUserId) return;
-
-    setFollowedUserIds((current) => {
-      const following = current.includes(userId);
-      void (following ? relationshipService.unfollowUser(userId) : relationshipService.followUser(userId));
-      return following ? current.filter((id) => id !== userId) : [...current, userId];
-    });
-  }, []);
+  const toggleFollowUser = useCallback(async (userId: string) => {
+    if (userId === directMessageUserId || followMutationInFlightRef.current.has(userId)) return;
+    const wasFollowing = followedUserIds.includes(userId);
+    followMutationInFlightRef.current.add(userId);
+    setFollowedUserIds((current) => wasFollowing ? current.filter((id) => id !== userId) : [...new Set([...current, userId])]);
+    const result = await (wasFollowing ? relationshipService.unfollowUser(userId) : relationshipService.followUser(userId));
+    if (!result.ok) {
+      setFollowedUserIds((current) => wasFollowing ? [...new Set([...current, userId])] : current.filter((id) => id !== userId));
+      pushToast(result.error, "error");
+    } else if (dataSourceService.getStatus().isSupabase) {
+      const authoritative = await relationshipService.getFollowing();
+      if (authoritative.ok) setFollowedUserIds(authoritative.data);
+    }
+    followMutationInFlightRef.current.delete(userId);
+  }, [directMessageUserId, followedUserIds, pushToast]);
 
   const toggleMentionReaction = useCallback((id: string) => {
     setMentionItems((current) =>
@@ -2219,7 +2238,7 @@ export function App() {
               member={selectedProfileMember}
               profile={selectedUserProfile}
               communities={communities}
-              currentUserId={currentUserId}
+              currentUserId={directMessageUserId}
               onBack={closeProfileView}
               onToggleFollow={toggleFollowUser}
               onMessage={openDirectMessages}
@@ -2229,7 +2248,7 @@ export function App() {
               onPlaceholderAction={(message) => pushToast(message, "info")}
               onOpenMore={(event, profile) => openContext(event, [
                 { label: profile.isCurrentUser ? "Edit profile placeholder" : "Message placeholder" },
-                { label: profile.isFollowing ? "Unfollow locally" : "Follow locally", onSelect: () => toggleFollowUser(profile.id), disabled: profile.isCurrentUser },
+                { label: profile.isFollowing ? "Unfollow" : "Follow", onSelect: () => void toggleFollowUser(profile.id), disabled: profile.isCurrentUser },
                 { label: blockedUserIds.includes(profile.id) ? "Unblock user" : "Block user", onSelect: () => { if (selectedProfileMember) handleToggleBlockUser(selectedProfileMember); }, disabled: profile.isCurrentUser },
                 { label: "Report user", onSelect: () => { if (selectedProfileMember) handleReportUser(selectedProfileMember); }, disabled: profile.isCurrentUser },
                 { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },

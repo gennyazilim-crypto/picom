@@ -536,6 +536,8 @@ export type Database = {
       list_accessible_saved_messages: { Args: { result_limit?: number }; Returns: Array<{ id: string; message_id: string; community_id: string; channel_id: string; author_id: string; preview: string; message_created_at: string; created_at: string }> };
       get_community_insights_v2: { Args: { target_community_id: string; window_days?: number }; Returns: Json };
       get_profile_activity_v2: { Args: { target_user_id: string; result_limit?: number }; Returns: Json };
+      follow_user: { Args: { target_user_id: string }; Returns: boolean };
+      unfollow_user: { Args: { target_user_id: string }; Returns: boolean };
       list_mention_feed: {
         Args: { cursor_created_at?: string | null; cursor_message_id?: string | null; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["mention_feed_view"]["Row"]>;

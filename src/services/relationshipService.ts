@@ -51,14 +51,18 @@ export async function followUser(userId: string): RelationshipResult<void> {
   if (!userId.trim()) return { ok: false, error: "User ID is required." };
   if (dataSourceService.getStatus().isMock) { mockFollowing.add(userId); return { ok: true, data: undefined }; }
   const auth = await userAndClient(); if (!auth || auth.userId === userId) return { ok: false, error: "Sign in and choose another user." };
-  const { error } = await auth.client.from("user_follows").upsert({ follower_id: auth.userId, followed_id: userId }, { onConflict: "follower_id,followed_id" });
-  return error ? { ok: false, error: isRateLimitError(error) ? rateLimitUserMessage : "Could not follow this user." } : { ok: true, data: undefined };
+  const { error } = await auth.client.rpc("follow_user", { target_user_id: userId });
+  if (!error) return { ok: true, data: undefined };
+  if (isRateLimitError(error)) return { ok: false, error: rateLimitUserMessage };
+  if (error.message.includes("FOLLOW_BLOCKED")) return { ok: false, error: "This follow is unavailable because one of you blocked the other." };
+  if (error.message.includes("PROFILE_NOT_VISIBLE")) return { ok: false, error: "This profile is not available to follow." };
+  return { ok: false, error: "Could not follow this user." };
 }
 
 export async function unfollowUser(userId: string): RelationshipResult<void> {
   if (dataSourceService.getStatus().isMock) { mockFollowing.delete(userId); return { ok: true, data: undefined }; }
   const auth = await userAndClient(); if (!auth) return { ok: false, error: "Sign in to update follows." };
-  const { error } = await auth.client.from("user_follows").delete().eq("follower_id", auth.userId).eq("followed_id", userId);
+  const { error } = await auth.client.rpc("unfollow_user", { target_user_id: userId });
   return error ? { ok: false, error: isRateLimitError(error) ? rateLimitUserMessage : "Could not unfollow this user." } : { ok: true, data: undefined };
 }
 
@@ -136,4 +140,15 @@ export async function subscribeToFriendNotifications(listener: (notification: Fr
   return () => { void auth.client.removeChannel(channel); };
 }
 
-export const relationshipService = { followUser, unfollowUser, getFollowing, getFollowers, getFriendState, sendFriendRequest, acceptFriendRequest, declineFriendRequest, cancelFriendRequest, removeFriend, blockFriend, subscribeToFriendNotifications };
+export async function subscribeToFollowing(listener: () => void): Promise<() => void> {
+  if (dataSourceService.getStatus().isMock) return () => undefined;
+  const auth = await userAndClient();
+  if (!auth) return () => undefined;
+  const channel = auth.client
+    .channel(`following:${auth.userId}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "user_follows", filter: `follower_id=eq.${auth.userId}` }, listener)
+    .subscribe();
+  return () => { void auth.client.removeChannel(channel); };
+}
+
+export const relationshipService = { followUser, unfollowUser, getFollowing, getFollowers, getFriendState, sendFriendRequest, acceptFriendRequest, declineFriendRequest, cancelFriendRequest, removeFriend, blockFriend, subscribeToFriendNotifications, subscribeToFollowing };
