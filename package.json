@@ -67,6 +67,7 @@
     "discovery:public:smoke": "node scripts/community-discovery-public-listing-smoke-test.mjs",
     "discovery:moderation:smoke": "node scripts/discovery-moderation-hardening-smoke-test.mjs",
     "invites:campaigns:smoke": "node scripts/invite-campaigns-tracking-smoke-test.mjs",
+    "onboarding:experiments:smoke": "node scripts/onboarding-experiments-smoke-test.mjs",
     "jobs:smoke": "node scripts/job-queue-smoke-test.mjs",
     "maintenance:scripts:smoke": "node scripts/maintenance-scripts-smoke-test.mjs",
     "db:backup:placeholder": "node scripts/db-backup-placeholder.mjs",

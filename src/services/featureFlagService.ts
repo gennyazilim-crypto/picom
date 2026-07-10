@@ -23,6 +23,7 @@ export const FEATURE_FLAG_KEYS = [
   "enableForumChannels",
   "enableAnnouncementChannels",
   "enableSavedMessages",
+  "enableOnboardingExperiment",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -85,6 +86,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableForumChannels: false,
     enableAnnouncementChannels: false,
     enableSavedMessages: true,
+    enableOnboardingExperiment: false,
   });
 }
 

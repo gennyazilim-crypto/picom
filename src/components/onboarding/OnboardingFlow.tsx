@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Member } from "../../types/community";
 import type { ThemeMode } from "../../services/settingsService";
-import type { OnboardingCompletion, OnboardingProfileBasics, OnboardingStartChoice, OnboardingStepId } from "../../types/onboarding";
+import type { OnboardingCompletion, OnboardingProfileBasics, OnboardingStartChoice } from "../../types/onboarding";
 import { onboardingService } from "../../services/onboarding/onboardingService";
+import { onboardingExperimentService } from "../../services/onboarding/onboardingExperimentService";
 import { AppIcon } from "../AppIcon";
 import { OnboardingStepCommunity } from "./OnboardingStepCommunity";
 import { OnboardingStepFinish } from "./OnboardingStepFinish";
@@ -22,15 +23,9 @@ type Props = {
   onComplete: (completion: OnboardingCompletion) => void | Promise<void>;
 };
 
-const steps: Array<{ id: OnboardingStepId; label: string }> = [
-  { id: "profile", label: "Profile" },
-  { id: "theme", label: "Theme" },
-  { id: "community", label: "Community" },
-  { id: "follow", label: "Follow" },
-  { id: "finish", label: "Finish" },
-];
-
 export function OnboardingFlow({ userId, initialDisplayName, initialUsername = "", initialStatusText = "Ready to explore Picom", initialFollowedUserIds, suggestions, theme, onThemeChange, onComplete }: Props) {
+  const variant = useMemo(() => onboardingExperimentService.getVariant(userId), [userId]);
+  const steps = useMemo(() => onboardingExperimentService.getSteps(variant), [variant]);
   const [stepIndex, setStepIndex] = useState(0);
   const [profile, setProfile] = useState<OnboardingProfileBasics>({ displayName: initialDisplayName, username: initialUsername, statusText: initialStatusText });
   const [startChoice, setStartChoice] = useState<OnboardingStartChoice>("mentionFeed");
@@ -42,6 +37,7 @@ export function OnboardingFlow({ userId, initialDisplayName, initialUsername = "
   const canContinue = currentStep.id !== "profile" || profile.displayName.trim().length > 0;
   const canSkip = currentStep.id === "theme" || currentStep.id === "community" || currentStep.id === "follow";
   const selectedSuggestionCount = useMemo(() => suggestions.filter((member) => followedUserIds.includes(member.userId)).length, [followedUserIds, suggestions]);
+  useEffect(() => { onboardingExperimentService.recordStarted(variant); }, [variant]);
 
   const advance = () => setStepIndex((index) => Math.min(steps.length - 1, index + 1));
   const toggleFollow = (userIdToToggle: string) => setFollowedUserIds((current) => current.includes(userIdToToggle) ? current.filter((id) => id !== userIdToToggle) : [...current, userIdToToggle]);
@@ -68,6 +64,7 @@ export function OnboardingFlow({ userId, initialDisplayName, initialUsername = "
       setSaving(false);
       return;
     }
+    onboardingExperimentService.recordCompleted(variant);
     await onComplete(completion);
   };
 
@@ -99,4 +96,3 @@ export function OnboardingFlow({ userId, initialDisplayName, initialUsername = "
     </main>
   );
 }
-
