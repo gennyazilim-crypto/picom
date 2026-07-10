@@ -116,6 +116,7 @@ export function MessageList({
           <div key={message.id} data-message-id={message.id} className={message.id === highlightedMessageId ? "message-search-highlight" : undefined}>
             {index === Math.max(1, Math.floor(messages.length / 2)) ? <UnreadDivider /> : null}
             <MessageItem
+              communityId={community.id}
               message={message}
               member={member}
               role={role}

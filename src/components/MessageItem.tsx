@@ -9,6 +9,8 @@ import { AttachmentGrid } from "./AttachmentGrid";
 import { EmojiPicker } from "./EmojiPicker";
 import { MemberAvatar } from "./MemberAvatar";
 import { MessageHoverActions } from "./MessageHoverActions";
+import { StickerMessage } from "./StickerMessage";
+import { customEmojiService } from "../services/customEmojiService";
 
 const messageUrlPattern = /(https?:\/\/[^\s<>"]+)/gi;
 const trailingUrlPunctuationPattern = /[),.!?;:]+$/;
@@ -95,6 +97,7 @@ type MessageItemProps = {
   onDelete: (message: Message) => void;
   onToggleReaction: (message: Message, emoji: string) => void;
   pushToast?: (message: string, tone?: ToastTone) => void;
+  communityId: string;
 };
 
 export function MessageItem({
@@ -118,6 +121,7 @@ export function MessageItem({
   onDelete,
   onToggleReaction,
   pushToast,
+  communityId,
 }: MessageItemProps) {
   const [draft, setDraft] = useState(message.body);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
@@ -215,7 +219,7 @@ export function MessageItem({
             <small>Enter saves, Escape cancels, Shift Enter adds a new line.</small>
           </div>
         ) : (
-          <p className="message-text">{renderMessageText(message.body, (url) => { void openMessageLink(url); })}</p>
+          /^\[sticker:([a-z0-9-]+)\]$/.test(message.body) ? <StickerMessage stickerId={/^\[sticker:([a-z0-9-]+)\]$/.exec(message.body)?.[1] ?? ""} /> : <p className="message-text">{renderMessageText(message.body, (url) => { void openMessageLink(url); })}</p>
         )}
         {!deleted && message.attachments?.length ? <AttachmentGrid attachments={message.attachments} onOpenImage={onOpenImage} /> : null}
         {!deleted && message.reactions?.length ? (
@@ -227,7 +231,7 @@ export function MessageItem({
                 type="button"
                 onClick={() => onToggleReaction(message, reaction.emoji)}
               >
-                {reaction.emoji} {reaction.count}
+                {customEmojiService.resolve(communityId, reaction.emoji) ? <img className="reaction-custom-emoji" src={customEmojiService.resolve(communityId, reaction.emoji)?.imageUrl} alt={reaction.emoji} /> : reaction.emoji} {reaction.count}
               </button>
             ))}
           </div>
@@ -244,6 +248,7 @@ export function MessageItem({
             className="message-reaction-picker"
             label="Choose reaction"
             onClose={() => setReactionPickerOpen(false)}
+            communityId={communityId}
             onSelect={(emoji) => {
               onToggleReaction(message, emoji);
               setReactionPickerOpen(false);

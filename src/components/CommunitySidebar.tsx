@@ -20,6 +20,7 @@ import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals"
 import { ReportModal } from "./ReportModal";
 import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
 import { CommunityWebhooksAdminSection } from "./CommunityWebhooksAdminSection";
+import { CommunityEmojisAdminSection } from "./CommunityEmojisAdminSection";
 
 type CommunitySidebarProps = {
   community: Community;
@@ -64,6 +65,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
     moderation: <MessageModerationFiltersPanel community={community} currentUser={currentUser} />,
     bots: <CommunityBotsAdminSection communityId={community.id} ownerId={community.ownerId ?? currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />,
     webhooks: <CommunityWebhooksAdminSection community={community} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageChannels")} />,
+    emojis: <CommunityEmojisAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />,
     "danger-zone": access.isOwner ? <div className="community-admin-tools-stack"><CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /></div> : null,
   };
 

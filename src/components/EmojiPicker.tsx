@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { emojiCategoryLabels, emojiOptions, type EmojiCategoryId } from "../data/emojiOptions";
 import { AppIcon } from "./AppIcon";
+import { customEmojiService } from "../services/customEmojiService";
 
 type EmojiPickerProps = {
   label: string;
   className?: string;
   onSelect: (emoji: string) => void;
   onClose: () => void;
+  communityId?: string;
 };
 
 const categoryOrder: EmojiCategoryId[] = ["frequent", "smileys", "gestures", "objects", "symbols"];
 
-export function EmojiPicker({ label, className, onSelect, onClose }: EmojiPickerProps) {
+export function EmojiPicker({ label, className, onSelect, onClose, communityId }: EmojiPickerProps) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<EmojiCategoryId>("frequent");
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -43,6 +45,7 @@ export function EmojiPicker({ label, className, onSelect, onClose }: EmojiPicker
       return option.category === activeCategory;
     });
   }, [activeCategory, query]);
+  const communityEmojis = useMemo(() => communityId ? customEmojiService.list(communityId).filter((emoji) => !query.trim() || emoji.name.includes(query.trim().toLowerCase())) : [], [communityId, query]);
 
   return (
     <div ref={pickerRef} className={`emoji-picker ${className ?? ""}`} role="dialog" aria-label={label}>
@@ -65,6 +68,7 @@ export function EmojiPicker({ label, className, onSelect, onClose }: EmojiPicker
           </button>
         ))}
       </div>
+      {communityEmojis.length ? <><p className="emoji-picker-section-label">Community</p><div className="emoji-picker-grid community-emoji-grid">{communityEmojis.map((emoji) => <button key={emoji.id} type="button" title={`:${emoji.name}:`} aria-label={`Custom emoji ${emoji.name}`} onClick={() => onSelect(`:${emoji.name}:`)}><img src={emoji.imageUrl} alt="" /></button>)}</div></> : null}
       <div className="emoji-picker-grid" role="listbox" aria-label={query ? "Search results" : emojiCategoryLabels[activeCategory]}>
         {visibleOptions.map((option) => (
           <button

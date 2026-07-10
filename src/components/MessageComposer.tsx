@@ -10,6 +10,7 @@ import { EmojiPicker } from "./EmojiPicker";
 import { mvpUiIconMap } from "./iconRegistry";
 import { slashCommandService, type SlashCommand } from "../services/slashCommandService";
 import { SlashCommandPopover } from "./SlashCommandPopover";
+import { StickerPicker } from "./StickerPicker";
 
 type ToastTone = "info" | "error" | "success";
 const composerIcons = mvpUiIconMap.messageComposer;
@@ -78,6 +79,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [slashDismissed, setSlashDismissed] = useState(false);
+  const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewsRef = useRef<ComposerAttachmentItem[]>([]);
   const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -127,6 +129,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     setEmojiPickerOpen(false);
     setSlashDismissed(false);
     setSlashSelectedIndex(0);
+    setStickerPickerOpen(false);
     setBody(messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   }, [channel.id, communityId]);
 
@@ -434,6 +437,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           <AppIcon name={composerIcons.emoji} size="lg" />
         </button>
         <button className="composer-tool text-tool" aria-label="GIF placeholder" disabled={Boolean(disabledReason)}>GIF</button>
+        <button className="composer-tool text-tool" aria-label="Stickers" disabled={Boolean(disabledReason)} onClick={() => setStickerPickerOpen((current) => !current)}>Sticker</button>
         <button className="send-button" disabled={Boolean(disabledReason) || sending || previews.some((preview) => preview.status === "uploading") || (!body.trim() && !previews.length)} onClick={send}>
           <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
         </button>
@@ -468,8 +472,10 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
             messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
             setEmojiPickerOpen(false);
           }}
+          communityId={communityId}
         />
       ) : null}
+      {stickerPickerOpen ? <StickerPicker onClose={() => setStickerPickerOpen(false)} onSelect={(stickerId) => { setStickerPickerOpen(false); void onSendMessage(`[sticker:${stickerId}]`, [], replyToMessage?.id ?? null); }} /> : null}
       {dragging ? <div className="drop-hint"><AppIcon name={composerIcons.image} /> Drop images to attach</div> : null}
     </footer>
   );
