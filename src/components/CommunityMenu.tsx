@@ -186,7 +186,7 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
   );
 }
 
-export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onAssignMemberRole, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onAssignMemberRole: (memberId: string, roleId: string) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
+export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onAssignMemberRole, onCommunityUpdated, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onAssignMemberRole: (memberId: string, roleId: string) => void; onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("overview");
   const sections = adminSectionDefinitions.filter((section) => {
     if (section.ownerOnly) return access.isOwner;
@@ -200,7 +200,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
   const sectionContent = (() => {
     if (activeSection === "overview") return <CommunityAdminOverview community={community} access={access} />;
     if (activeSection === "insights") return <CommunityInsightsView community={community} access={access} />;
-    if (activeSection === "community-settings") return <CommunitySettingsSection community={community} onPlaceholderAction={onPlaceholderAction} />;
+    if (activeSection === "community-settings") return <CommunitySettingsSection community={community} access={access} onUpdated={onCommunityUpdated} />;
     if (activeSection === "channels") return <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
     if (activeSection === "roles") return <CommunityRolesSection community={community} />;
     if (activeSection === "members") return <CommunityMembersSection community={community} access={access} onRoleAssigned={onAssignMemberRole} />;

@@ -8,6 +8,7 @@ import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 import { canAssignCommunityRole } from "../../services/permissions/communityPermissions";
 import { communityRoleAssignmentService } from "../../services/community/communityRoleAssignmentService";
+import { communityService, type CommunitySummary } from "../../services/communityService";
 
 export type AdminSectionId = "overview" | "insights" | "community-settings" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
@@ -47,10 +48,23 @@ export function CommunityAdminOverview({ community, access }: { community: Commu
   return <SectionShell eyebrow="Workspace health" title={`${community.name} overview`} description={`Signed in with ${access.status} access.`}><div className="community-admin-metrics"><article><strong>{community.members.length}</strong><span>Members</span></article><article><strong>{channels.length}</strong><span>Channels</span></article><article><strong>{community.roles.length}</strong><span>Roles</span></article><article><strong>{community.messages.length}</strong><span>Mock messages</span></article></div><div className="community-admin-note"><AppIcon name="lock" size="sm" /><span>Frontend section visibility improves UX. Supabase RLS remains the authorization boundary.</span></div></SectionShell>;
 }
 
-export function CommunitySettingsSection({ community, onPlaceholderAction }: { community: Community; onPlaceholderAction: (message: string) => void }) {
+export function CommunitySettingsSection({ community, access, onUpdated }: { community: Community; access: CommunityAccess; onUpdated: (community: CommunitySummary) => void }) {
   const [name, setName] = useState(community.name);
   const [description, setDescription] = useState(community.description ?? "");
-  return <SectionShell eyebrow="Community identity" title="Community settings" description="Edit a local draft without bypassing the backend source of truth."><div className="community-settings-form"><label><span>Name</span><input value={name} maxLength={80} onChange={(event) => setName(event.target.value)} /></label><label><span>Description</span><textarea rows={4} maxLength={500} value={description} onChange={(event) => setDescription(event.target.value)} /></label><button type="button" disabled={!name.trim()} onClick={() => onPlaceholderAction("Community settings draft is ready. Supabase save remains permission-enforced.")}><AppIcon name="send" size="sm" /> Save draft</button></div></SectionShell>;
+  const [iconUrl, setIconUrl] = useState(/^https:\/\//i.test(community.icon) ? community.icon : "");
+  const [visibility, setVisibility] = useState<"public" | "private">(community.visibility ?? "private");
+  const [publicReadEnabled, setPublicReadEnabled] = useState(community.publicReadEnabled ?? false);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const save = async () => {
+    if (!access.permissions.includes("manageCommunity")) return;
+    setSaving(true); setNotice(null);
+    const result = await communityService.updateCommunitySettings({ id: community.id, name, description, iconUrl, visibility, publicReadEnabled: visibility === "public" && publicReadEnabled });
+    if (result.ok) { onUpdated(result.data); setNotice("Community settings saved."); }
+    else setNotice(result.error.message);
+    setSaving(false);
+  };
+  return <SectionShell eyebrow="Community identity" title="Community settings" description="Owner and admin changes are validated and permission-enforced by the backend."><div className="community-settings-form"><label><span>Name</span><input value={name} maxLength={80} onChange={(event) => setName(event.target.value)} /></label><label><span>Description</span><textarea rows={4} maxLength={500} value={description} onChange={(event) => setDescription(event.target.value)} /></label><label><span>Icon URL placeholder</span><input type="url" value={iconUrl} maxLength={2048} placeholder="https://..." onChange={(event) => setIconUrl(event.target.value)} /></label><label><span>Visibility</span><select value={visibility} onChange={(event) => { const next = event.target.value as "public" | "private"; setVisibility(next); if (next === "private") setPublicReadEnabled(false); }}><option value="public">Public</option><option value="private">Private</option></select></label><label className="moderation-filter-toggle"><input type="checkbox" checked={publicReadEnabled} disabled={visibility === "private"} onChange={(event) => setPublicReadEnabled(event.target.checked)} /><span>Allow visitors to read public channels</span></label>{notice ? <p className="community-settings-notice" role="status">{notice}</p> : null}<button type="button" disabled={!access.permissions.includes("manageCommunity") || !name.trim() || saving} onClick={() => void save()}><AppIcon name="send" size="sm" /> {saving ? "Saving..." : "Save changes"}</button></div></SectionShell>;
 }
 
 export function CommunityChannelsSection({ community, onCreateChannel }: { community: Community; onCreateChannel: (categoryId: string) => void }) {

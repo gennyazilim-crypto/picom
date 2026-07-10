@@ -27,7 +27,10 @@ export type UpdateCommunityInput = Readonly<{
   id: string;
   name?: string;
   description?: string | null;
+  iconUrl?: string | null;
   accentColor?: string;
+  visibility?: "public" | "private";
+  publicReadEnabled?: boolean;
 }>;
 
 export type CommunityServiceErrorCode =
@@ -88,6 +91,11 @@ function validateUpdateInput(input: UpdateCommunityInput): CommunityServiceError
 
   if (input.description && input.description.length > 500) {
     return { code: "VALIDATION_ERROR", message: "Community description must be 500 characters or fewer." };
+  }
+
+  if (input.iconUrl) {
+    const iconUrl = input.iconUrl.trim();
+    if (iconUrl.length > 2048 || !/^https:\/\//i.test(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a valid HTTPS URL." };
   }
 
   return null;
@@ -198,7 +206,7 @@ export const communityService = {
     return { ok: true, data: mapCommunityListRow(data) };
   },
 
-  async updateCommunityPlaceholder(input: UpdateCommunityInput): Promise<CommunityServiceResult<CommunitySummary>> {
+  async updateCommunitySettings(input: UpdateCommunityInput): Promise<CommunityServiceResult<CommunitySummary>> {
     const validationError = validateUpdateInput(input);
     if (validationError) return { ok: false, error: validationError };
 
@@ -214,10 +222,10 @@ export const communityService = {
           ownerId: "mock-current-user",
           name: nextName ?? "Mock community",
           description: input.description?.trim() || null,
-          iconUrl: null,
+          iconUrl: input.iconUrl?.trim() || null,
           accentColor: input.accentColor ?? "#007571",
-          visibility: "public",
-          publicReadEnabled: true,
+          visibility: input.visibility ?? "public",
+          publicReadEnabled: input.visibility === "private" ? false : input.publicReadEnabled ?? true,
           createdAt: now,
           updatedAt: now,
         },
@@ -227,22 +235,18 @@ export const communityService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const updatePayload: { name?: string; description?: string | null; accent_color?: string } = {};
-    if (nextName !== undefined) updatePayload.name = nextName;
-    if (input.description !== undefined) updatePayload.description = input.description?.trim() || null;
-    if (input.accentColor !== undefined) updatePayload.accent_color = input.accentColor;
-
-    const { data, error } = await configured.data
-      .from("communities")
-      .update(updatePayload)
-      .eq("id", input.id)
-      .select(COMMUNITY_LIST_SELECT)
-      .single();
-
-    if (error || !data) {
+    const { data, error } = await configured.data.rpc("update_community_settings", {
+      target_community_id: input.id,
+      next_name: nextName ?? null,
+      next_description: input.description === undefined ? null : input.description?.trim() || null,
+      next_icon_url: input.iconUrl === undefined ? null : input.iconUrl?.trim() || null,
+      next_visibility: input.visibility ?? null,
+      next_public_read_enabled: input.publicReadEnabled ?? null,
+    });
+    const row = data?.[0];
+    if (error || !row) {
       return { ok: false, error: { code: "COMMUNITY_UPDATE_FAILED", message: "Could not update community." } };
     }
-
-    return { ok: true, data: mapCommunityListRow(data) };
+    return { ok: true, data: mapCommunityListRow(row) };
   },
 };

@@ -527,6 +527,10 @@ export type Database = {
         Args: { target_community_id: string; target_member_id: string; target_role_id: string; change_reason: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string; joined_at: string }>;
       };
+      update_community_settings: {
+        Args: { target_community_id: string; next_name: string | null; next_description: string | null; next_icon_url: string | null; next_visibility: "public" | "private" | null; next_public_read_enabled: boolean | null };
+        Returns: Array<Database["public"]["Tables"]["communities"]["Row"]>;
+      };
       create_community_invite: { Args: { target_community_id: string; target_max_uses?: number | null; target_expires_at?: string | null; target_campaign_label?: string | null }; Returns: Array<Database["public"]["Tables"]["community_invites"]["Row"]> };
       revoke_community_invite: { Args: { target_invite_id: string }; Returns: Array<Database["public"]["Tables"]["community_invites"]["Row"]> };
       list_community_invite_campaigns: { Args: { target_community_id: string }; Returns: Array<{ id: string; community_id: string; created_by: string; creator_name: string; campaign_label: string | null; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; last_used_at: string | null; created_at: string }> };
