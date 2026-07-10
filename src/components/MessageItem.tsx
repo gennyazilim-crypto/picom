@@ -9,6 +9,8 @@ import { messageDeliveryReceiptService } from "../services/messageDeliveryReceip
 import { AttachmentGrid } from "./AttachmentGrid";
 import { EmojiPicker } from "./EmojiPicker";
 import { MemberAvatar } from "./MemberAvatar";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { getUserVerificationVariant } from "../utils/verificationHelpers";
 import { MessageHoverActions } from "./MessageHoverActions";
 import { StickerMessage } from "./StickerMessage";
 import { customEmojiService } from "../services/customEmojiService";
@@ -189,7 +191,7 @@ export function MessageItem({
       <div className="message-content">
         <div className="message-meta">
           <button className="message-author-button" type="button" disabled={profileUnavailable} onClick={(event) => onOpenProfile(event, member)}>
-            {member.displayName}
+            <span>{member.displayName}</span><VerifiedBadge variant={getUserVerificationVariant(member.userId)} />
           </button>
           {member.isBot ? <span className="bot-badge">BOT</span> : null}
           {message.webhookId ? <span className="webhook-badge" title={message.webhookName ?? "Webhook message"}>WEBHOOK</span> : null}

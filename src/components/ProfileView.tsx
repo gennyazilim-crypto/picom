@@ -5,6 +5,8 @@ import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { VerificationBadgeList } from "./VerificationBadgeList";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { getUserVerificationVariant } from "../utils/verificationHelpers";
 
 type ProfileViewProps = {
   profile: UserProfile;
@@ -122,7 +124,7 @@ export function ProfileLeftCard({
         <div className="profile-cover-art" style={{ backgroundImage: `url(${profile.coverUrl})` }} />
         <MemberAvatar member={member} label={profile.displayName} size={104} className="profile-page-avatar" />
         <span className={`profile-status-chip ${profile.status}`}>{profile.status}</span>
-        <h1>{profile.displayName}</h1>
+        <h1 className="profile-name-with-verification"><span>{profile.displayName}</span><VerifiedBadge variant={getUserVerificationVariant(member.userId, profile.verificationBadges ?? [])} /></h1>
         <p>@{profile.username}</p>
         <span className="profile-status-text">{profile.statusText ?? "Picom member"}</span>
         <div className="profile-role-row">

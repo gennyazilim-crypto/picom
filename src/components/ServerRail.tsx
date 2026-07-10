@@ -4,6 +4,7 @@ import type { Community } from "../types/community";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { getCommunityIconLabel } from "../utils/generatedIdentity";
+import { getCommunityVerificationVariant } from "../utils/verificationHelpers";
 
 const railIcons = mvpUiIconMap.serverRail;
 
@@ -47,7 +48,7 @@ export function ServerRail({ communities, activeCommunityId, homeActive = false,
             key={community.id}
             className={`server-button ${community.id === activeCommunityId ? "active" : ""}`}
             style={{ "--server-accent": community.accentColor } as CSSProperties}
-            title={community.name}
+            title={`${community.name}${getCommunityVerificationVariant(community.id) ? " / Official community" : ""}`}
             aria-label={`Open ${community.name}`}
             aria-current={community.id === activeCommunityId ? "page" : undefined}
             onClick={() => onSelectCommunity(community.id)}

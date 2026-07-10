@@ -6,6 +6,8 @@ import { AttachmentGrid } from "./AttachmentGrid";
 import { AppIcon } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { MentionFeedFooter } from "./MentionFeedFooter";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { getUserVerificationVariant } from "../utils/verificationHelpers";
 
 type MentionFeedCardProps = {
   item: MentionItem;
@@ -81,7 +83,7 @@ export function MentionFeedCard({
             onClick={(event) => author && onOpenProfile(event, author)}
             disabled={!author}
           >
-            {authorLabel}
+            <span>{authorLabel}</span><VerifiedBadge variant={author ? getUserVerificationVariant(author.userId) : null} />
           </button>
           <span>
             {community?.name ?? "Visible community"} / #{channel?.name ?? "channel"} / {dateTimeService.formatCompactDateTime(item.createdAt)}

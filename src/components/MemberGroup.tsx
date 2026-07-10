@@ -2,6 +2,8 @@ import { memo, useMemo } from "react";
 import type { MouseEvent } from "react";
 import type { Member, Role, UserStatus } from "../types/community";
 import { MemberAvatar } from "./MemberAvatar";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { getUserVerificationVariant } from "../utils/verificationHelpers";
 
 type MemberGroupProps = {
   name: string;
@@ -45,7 +47,7 @@ const MemberRow = memo(function MemberRow({ member, role, onOpenProfile, onMembe
         />
       </span>
       <span className="member-copy">
-        <strong>{member.displayName}{member.isBot ? <span className="bot-badge">BOT</span> : null}</strong>
+        <strong><span>{member.displayName}</span><VerifiedBadge variant={getUserVerificationVariant(member.userId)} />{member.isBot ? <span className="bot-badge">BOT</span> : null}</strong>
         <small>{presenceLabel}</small>
       </span>
       {role && role.name !== "Member" ? <em style={{ color: role.color }}>{role.name}</em> : null}
