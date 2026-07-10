@@ -2,12 +2,12 @@ import type { MouseEvent } from "react";
 import type { Community, Member, UserStatus } from "../types/community";
 import type { UpcomingEvent, UpcomingEventType } from "../types/events";
 import type { FriendConnection } from "../types/friends";
-import type { MockVoiceState } from "../types/voice";
+import type { VoiceServiceSnapshot } from "../services/voiceService";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 
 type FeedCompanionRailProps = {
-  voiceState: MockVoiceState;
+  voiceState: VoiceServiceSnapshot;
   friends: FriendConnection[];
   events: UpcomingEvent[];
   communities: Community[];
@@ -56,7 +56,7 @@ function VoiceMiniControlCard({
   onLeaveVoice,
   onScreenSharePlaceholder,
 }: Pick<FeedCompanionRailProps, "voiceState" | "onToggleMute" | "onToggleDeafen" | "onLeaveVoice" | "onScreenSharePlaceholder">) {
-  if (!voiceState.isInVoiceRoom) return null;
+  if (voiceState.status !== "connected" && voiceState.status !== "reconnecting") return null;
 
   return (
     <section className="voice-mini-card" aria-label="Current voice room controls">
@@ -66,8 +66,8 @@ function VoiceMiniControlCard({
         </span>
         <div>
           <p className="eyebrow">Connected Voice</p>
-          <strong>{voiceState.roomName}</strong>
-          <small>{voiceState.communityName}</small>
+          <strong>{voiceState.roomName ?? "Voice room"}</strong>
+          <small>{voiceState.status === "reconnecting" ? "Restoring connection..." : "LiveKit connected"}</small>
         </div>
       </header>
       <div className="voice-mini-meta">
@@ -75,16 +75,16 @@ function VoiceMiniControlCard({
           <i />
           Live
         </span>
-        <span>{voiceState.participantCount} listening</span>
+        <span>{voiceState.participants.length} listening</span>
       </div>
       <div className="voice-mini-controls">
-        <button type="button" aria-label={voiceState.isMuted ? "Unmute microphone" : "Mute microphone"} aria-pressed={voiceState.isMuted} onClick={onToggleMute}>
+        <button type="button" aria-label={voiceState.muted ? "Unmute microphone" : "Mute microphone"} aria-pressed={voiceState.muted} onClick={onToggleMute}>
           <AppIcon name="microphone" size="sm" />
         </button>
-        <button type="button" aria-label={voiceState.isDeafened ? "Undeafen audio" : "Deafen audio"} aria-pressed={voiceState.isDeafened} onClick={onToggleDeafen}>
+        <button type="button" aria-label={voiceState.deafened ? "Undeafen audio" : "Deafen audio"} aria-pressed={voiceState.deafened} onClick={onToggleDeafen}>
           <AppIcon name="headphones" size="sm" />
         </button>
-        <button type="button" aria-label="Screen share placeholder" aria-pressed={Boolean(voiceState.isScreenSharing)} onClick={onScreenSharePlaceholder}>
+        <button type="button" aria-label="Open screen share controls" aria-pressed={voiceState.screenSharing} onClick={onScreenSharePlaceholder}>
           <AppIcon name="image" size="sm" />
         </button>
         <button type="button" className="voice-mini-leave" aria-label="Leave voice room" onClick={onLeaveVoice}>

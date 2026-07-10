@@ -4,7 +4,7 @@ import type { UpcomingEvent } from "../types/events";
 import type { FriendConnection } from "../types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "../types/mentions";
 import type { FollowedUserStory } from "../types/stories";
-import type { MockVoiceState } from "../types/voice";
+import type { VoiceServiceSnapshot } from "../services/voiceService";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
@@ -17,7 +17,7 @@ type MentionFeedMainProps = {
   friends: FriendConnection[];
   events: UpcomingEvent[];
   stories: FollowedUserStory[];
-  voiceState: MockVoiceState;
+  voiceState: VoiceServiceSnapshot;
   followedUserIds: string[];
   activeTab: MentionFeedTab;
   activeFilter: MentionQuickFilter | null;

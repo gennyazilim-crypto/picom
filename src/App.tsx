@@ -19,7 +19,6 @@ import type { FollowedUserStory } from "./types/stories";
 import type { CommunityTemplateId } from "./types/communityTemplates";
 import type { CommunityAccess } from "./types/communityAccess";
 import type { OnboardingCompletion } from "./types/onboarding";
-import type { MockVoiceState } from "./types/voice";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
@@ -339,15 +338,6 @@ export function App() {
   const [savedMessages, setSavedMessages] = useState<SavedMessageRecord[]>(() => savedMessageService.listSavedMessages());
   useEffect(() => { let active = true; const refresh = () => { void savedMessageService.getSavedMessages().then((items) => { if (active) setSavedMessages(items); }); }; refresh(); const unsubscribe = savedMessageService.subscribe(refresh); return () => { active = false; unsubscribe(); }; }, []);
   const [communityEvents, setCommunityEvents] = useState(mockUpcomingEvents);
-  const [feedVoiceState, setFeedVoiceState] = useState<MockVoiceState>({
-    isInVoiceRoom: true,
-    roomName: "Focus Room",
-    communityName: "Aurora Studio",
-    participantCount: 8,
-    isMuted: false,
-    isDeafened: false,
-    isScreenSharing: false,
-  });
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
   const [userSafetySettings, setUserSafetySettings] = useState(() => userSafetyCenterService.getSettings());
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
@@ -1604,16 +1594,20 @@ export function App() {
   }, [clearChannelUnread, closeTransientOverlays, markStorySeen, pushToast, switchCommunity]);
 
   const toggleFeedVoiceMute = useCallback(() => {
-    setFeedVoiceState((current) => ({ ...current, isMuted: !current.isMuted }));
-  }, []);
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
+      if (!result.ok) pushToast(result.error.message, "error");
+    }));
+  }, [pushToast, voiceSnapshot.muted]);
 
   const toggleFeedVoiceDeafen = useCallback(() => {
-    setFeedVoiceState((current) => ({ ...current, isDeafened: !current.isDeafened }));
-  }, []);
+    void import("./services/voiceService").then(({ voiceService }) => {
+      const result = voiceService.setDeafened(!voiceSnapshot.deafened);
+      if (!result.ok) pushToast(result.error.message, "error");
+    });
+  }, [pushToast, voiceSnapshot.deafened]);
 
   const leaveFeedVoice = useCallback(() => {
-    setFeedVoiceState((current) => ({ ...current, isInVoiceRoom: false }));
-    pushToast("Left the mock voice room.", "info");
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.leave().then(() => pushToast("Left the voice room.", "info")));
   }, [pushToast]);
 
   const showScreenSharePlaceholder = useCallback(() => {
@@ -2344,7 +2338,7 @@ export function App() {
                 friends={friendState.friends}
                 events={visibleCommunityEvents}
                 stories={visibleStoryItems}
-                voiceState={feedVoiceState}
+                voiceState={voiceSnapshot}
                 followedUserIds={followedUserIds}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
