@@ -115,3 +115,7 @@ Decision: **No-Go**. Real hosted Supabase migration/Auth/basic RLS/private Stora
 ## Task 419 hosted private Presence
 
 Client/topic/RLS contracts and local gates passed on 2026-07-11, but the protected staging matrix could not run without Supabase CLI linkage and `PICOM_REALTIME_*` credentials. The earlier authenticated private Presence `Unauthorized` result remains unresolved. RB-03 stays open; status is **BLOCKED**, not PASS.
+
+## Task 420 hosted Edge Functions
+
+The release-scoped `livekit-token` source and local JWT/CORS/method/secret contracts passed, but no protected staging deployment or request matrix ran. Placeholder functions were excluded from production claims. RB-03 and RB-04 remain open; status is **BLOCKED**.

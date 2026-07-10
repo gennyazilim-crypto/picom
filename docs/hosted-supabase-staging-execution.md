@@ -71,3 +71,7 @@ Recommendation: **Not ready**.
 Task 419 completed a fresh static and local contract review on 2026-07-11. Topic construction, private client configuration, JWT-subject RLS, cleanup, schema smoke, typecheck, build, and QA smoke passed.
 
 The hosted matrix was not rerun because the current operator session had no Supabase CLI/project link, no protected `PICOM_REALTIME_*` variables, and no connected browser automation interface. The prior private Presence `Unauthorized` failure therefore remains authoritative. No PASS was inferred from static checks.
+
+## Task 420 Edge Functions status
+
+The `livekit-token` release boundary and local JWT/CORS/method/secret contracts passed on 2026-07-11. No linked project, protected Edge staging variables, or LiveKit provider secrets were available, so no function was deployed or called. Placeholder functions were explicitly excluded rather than deployed for checklist coverage. Hosted Edge Functions remain **BLOCKED**.

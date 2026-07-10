@@ -49,3 +49,7 @@ RB-01, RB-02, and RB-03 remain open with narrower evidence gaps. Stable distribu
 ## Task 419 private Presence status
 
 The canonical topic/client/policy contract passes locally, but protected hosted credentials and project linkage were unavailable for a rerun on 2026-07-11. Private Realtime Presence remains **BLOCKED** and the previous authenticated `Unauthorized` result is not replaced by local evidence.
+
+## Task 420 Edge Functions status
+
+`livekit-token` is the only Edge Function required by the locked Full MVP scope. Its local security contract passes, but it was not deployed or exercised against hosted staging because project linkage and provider secrets were unavailable. Edge Functions remain **BLOCKED**; 501 placeholders and post-MVP functions are not counted as release evidence.
