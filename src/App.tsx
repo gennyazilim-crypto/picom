@@ -85,7 +85,7 @@ import { messageSendQueueService } from "./services/messageSendQueueService";
 import { messageHistoryExportService } from "./services/messageHistoryExportService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
-import { reportService } from "./services/reportService";
+import { ReportModal, type ReportModalTarget } from "./components/ReportModal";
 import { userBlockingService } from "./services/userBlockingService";
 import { userSafetyCenterService } from "./services/userSafetyCenterService";
 import { notificationService } from "./services/notificationService";
@@ -304,6 +304,7 @@ export function App() {
   const [notificationCenterItems, setNotificationCenterItems] = useState(() => notificationCenterService.list());
   const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
   const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
   const {
     communities,
@@ -1785,30 +1786,11 @@ export function App() {
   };
 
   const handleReportMessage = (message: Message) => {
-    const result = reportService.submitReport({
-      communityId: activeCommunity.id,
-      channelId: message.channelId,
-      reporterId: currentUser.userId,
-      targetType: "message",
-      targetId: message.id,
-      reason: "other",
-      description: `Message report placeholder for ${message.id}`,
-    });
-
-    pushToast(result.ok ? "Report placeholder submitted." : result.message, result.ok ? "success" : "error");
+    setReportTarget({ communityId: activeCommunity.id, channelId: message.channelId, targetType: "message", targetId: message.id, label: message.body.slice(0, 80) || "Attachment message" });
   };
 
   const handleReportUser = (member: Member) => {
-    const result = reportService.submitReport({
-      communityId: activeCommunity.id,
-      reporterId: currentUser.userId,
-      targetType: "user",
-      targetId: member.userId,
-      reason: "other",
-      description: `User report placeholder for ${member.userId}`,
-    });
-
-    pushToast(result.ok ? "User report placeholder submitted." : result.message, result.ok ? "success" : "error");
+    setReportTarget({ communityId: activeCommunity.id, targetType: "user", targetId: member.userId, label: `${member.displayName} (@${member.username})` });
   };
 
   const handleToggleBlockUser = (member: Member) => {
@@ -2057,6 +2039,7 @@ export function App() {
                 { label: profile.isCurrentUser ? "Edit profile placeholder" : "Message placeholder" },
                 { label: profile.isFollowing ? "Unfollow locally" : "Follow locally", onSelect: () => toggleFollowUser(profile.id), disabled: profile.isCurrentUser },
                 { label: blockedUserIds.includes(profile.id) ? "Unblock user" : "Block user", onSelect: () => { if (selectedProfileMember) handleToggleBlockUser(selectedProfileMember); }, disabled: profile.isCurrentUser },
+                { label: "Report user", onSelect: () => { if (selectedProfileMember) handleReportUser(selectedProfileMember); }, disabled: profile.isCurrentUser },
                 { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
               ])}
             />
@@ -2281,6 +2264,7 @@ export function App() {
         />
       ) : null}
       {settingsOpen ? <SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} /> : null}
+      {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {notificationPermissionPrompt ? (
         <NotificationPermissionPrompt
           prompt={notificationPermissionPrompt}

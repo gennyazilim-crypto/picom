@@ -239,7 +239,7 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
   }
 
   const content = selectedSection === "reports"
-    ? <ModeratorReportsSection />
+    ? <ModeratorReportsSection communityId={community.id} canReview={access.permissions.includes("moderateMessages")} />
     : selectedSection === "flagged-messages"
       ? <ModeratorMessagesSection community={community} title="Flagged messages" />
       : selectedSection === "member-moderation"
@@ -261,7 +261,7 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
   );
 }
 
-export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, onOpenInvite }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenLeave: () => void; onOpenInvite: () => void }) {
+export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, onOpenInvite, onReport }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenLeave: () => void; onOpenInvite: () => void; onReport: () => void }) {
   return (
     <ModalShell title={`${community.name} member menu`} eyebrow="Community menu" onClose={onClose}>
       <div className="community-confirm-panel">
@@ -269,7 +269,7 @@ export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, 
         <div className="community-panel-list">
           <article><strong>Notification settings</strong><span>Notification preferences are managed locally in this beta.</span></article>
           {access.permissions.includes("createInvites") ? <button type="button" className="community-panel-action" onClick={onOpenInvite}><strong>Invite people</strong><span>Create a limited Picom invite link.</span></button> : null}
-          <article><strong>Report community</strong><span>Submit reports from Settings &gt; Privacy &amp; Safety without exposing unrelated private content.</span></article>
+          <button type="button" className="community-panel-action" onClick={onReport}><strong>Report community</strong><span>Send this community to the moderator review queue.</span></button>
         </div>
         <div className="modal-actions-row">
           <button className="secondary-action" type="button" onClick={onClose}>Close</button>
@@ -280,7 +280,7 @@ export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, 
   );
 }
 
-export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin, onOpenJoinWithInvite }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void; onOpenJoinWithInvite: () => void }) {
+export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin, onOpenJoinWithInvite, onReport }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void; onOpenJoinWithInvite: () => void; onReport: () => void }) {
   return (
     <ModalShell title={`${community.name} public preview`} eyebrow="Visitor menu" onClose={onClose}>
       <div className="community-confirm-panel">
@@ -290,7 +290,7 @@ export function CommunityVisitorPanel({ community, access, isAuthenticated, onCl
           <article><strong>Join to participate</strong><span>Visitors cannot send messages, react, or upload attachments.</span></article>
           <article><strong>{isAuthenticated ? "Ready to join" : "Sign in required"}</strong><span>{isAuthenticated ? "Confirm the join flow to become a member." : "Sign in or register before joining."}</span></article>
         </div>
-        <div className="modal-actions-row"><button type="button" className="secondary-action" disabled={!isAuthenticated} onClick={onOpenJoinWithInvite}>Join with invite</button></div>
+        <div className="modal-actions-row"><button type="button" className="secondary-action" disabled={!isAuthenticated} onClick={onReport}>Report community</button><button type="button" className="secondary-action" disabled={!isAuthenticated} onClick={onOpenJoinWithInvite}>Join with invite</button></div>
       </div>
     </ModalShell>
   );

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { Community } from "../../types/community";
 import type { CommunityAccess } from "../../types/communityAccess";
 import { reportService } from "../../services/reportService";
@@ -72,10 +72,13 @@ export function CommunityAuditLogPlaceholder() {
   return <SectionShell eyebrow="Audit" title="Audit log" description="Append-only community audit retrieval remains a backend placeholder for beta."><div className="community-admin-empty"><AppIcon name="inbox" size="lg" /><strong>No audit entries loaded</strong><span>Tokens, passwords, and private message content must never be recorded here.</span></div></SectionShell>;
 }
 
-export function ModeratorReportsSection() {
-  const summary = reportService.getSummary();
-  const reports = reportService.listReports().slice(0, 5);
-  return <SectionShell eyebrow="Moderation queue" title="Reports" description="Local report queue preview for Full MVP."><div className="community-admin-metrics"><article><strong>{summary.open}</strong><span>Open</span></article><article><strong>{summary.reviewed}</strong><span>Reviewed</span></article><article><strong>{summary.action_taken}</strong><span>Action taken</span></article></div>{reports.length ? <div className="community-admin-list">{reports.map((report) => <article key={report.id}><div><strong>{report.reason}</strong><span>{report.targetType} · {report.status}</span></div></article>)}</div> : <div className="community-admin-empty"><AppIcon name="bell" size="lg" /><strong>No open reports</strong><span>New reports will appear here without exposing unrelated private content.</span></div>}</SectionShell>;
+export function ModeratorReportsSection({ communityId, canReview }: { communityId: string; canReview: boolean }) {
+  const [reports, setReports] = useState(() => reportService.listReports(communityId));
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { let active = true; void reportService.listCommunityReports(communityId, canReview).then((result) => { if (!active) return; if (result.ok) setReports(result.data); else setError(result.message); }); return () => { active = false; }; }, [canReview, communityId]);
+  const update = async (reportId: string, status: "reviewed" | "dismissed" | "action_taken") => { const result = await reportService.updateReportStatus({ reportId, status }); if (result.ok) setReports((items) => items.map((item) => item.id === reportId ? result.data : item)); else setError(result.message); };
+  const summary = reports.reduce((value, report) => ({ ...value, [report.status]: value[report.status] + 1 }), { open: 0, reviewed: 0, dismissed: 0, action_taken: 0 });
+  return <SectionShell eyebrow="Moderation queue" title="Reports" description="Only moderators, admins, and owners can review this community queue."><div className="community-admin-metrics"><article><strong>{summary.open}</strong><span>Open</span></article><article><strong>{summary.reviewed}</strong><span>Reviewed</span></article><article><strong>{summary.action_taken}</strong><span>Action taken</span></article></div>{error ? <p className="moderation-queue-error" role="alert">{error}</p> : null}{reports.length ? <div className="community-admin-list moderation-report-list">{reports.map((report) => <article key={report.id}><div><strong>{report.reason}</strong><span>{report.targetType} · {report.status}</span><small>{report.description}</small></div><div className="moderation-report-actions"><button type="button" disabled={!canReview || report.status !== "open"} onClick={() => void update(report.id, "reviewed")}>Reviewed</button><button type="button" disabled={!canReview || report.status !== "open"} onClick={() => void update(report.id, "dismissed")}>Dismiss</button><button type="button" disabled={!canReview || report.status !== "open"} onClick={() => void update(report.id, "action_taken")}>Action taken</button></div></article>)}</div> : <div className="community-admin-empty"><AppIcon name="bell" size="lg" /><strong>No reports</strong><span>New reports appear here without exposing unrelated private content.</span></div>}</SectionShell>;
 }
 
 export function ModeratorMessagesSection({ community, title = "Message moderation" }: { community: Community; title?: string }) {

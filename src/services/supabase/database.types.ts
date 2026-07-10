@@ -231,6 +231,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
         Relationships: [];
       };
+      reports: {
+        Row: { id: string; community_id: string | null; reporter_id: string; target_type: "message" | "user" | "community"; target_id: string; reason: "spam" | "harassment" | "unsafe_content" | "impersonation" | "other"; description: string; status: "open" | "reviewed" | "dismissed" | "action_taken"; reviewed_by: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["reports"]["Row"]> & Pick<Database["public"]["Tables"]["reports"]["Row"], "reporter_id" | "target_type" | "target_id" | "reason" | "description">;
+        Update: Partial<Database["public"]["Tables"]["reports"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: {
       message_attachments: {
