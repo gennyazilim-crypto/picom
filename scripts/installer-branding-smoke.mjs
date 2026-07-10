@@ -29,6 +29,9 @@ for (const marker of ["oneClick: false", "perMachine: false", "allowElevation: f
 for (const marker of ["background: assets/installer/macos/dmg-background.png", "path: /Applications", "NSMicrophoneUsageDescription", "NSScreenCaptureUsageDescription"]) {
   if (!builder.includes(marker)) throw new Error(`Missing macOS installer marker: ${marker}`);
 }
+for (const marker of ["synopsis: Desktop community workspace", "Comment: Desktop community workspace", "Categories: Network;Chat;Utility;", 'Terminal: "false"', "StartupWMClass: Picom"]) {
+  if (!builder.includes(marker)) throw new Error(`Missing Linux installer marker: ${marker}`);
+}
 
 const setup = readFileSync("src/components/firstLaunch/FirstLaunchSetup.tsx", "utf8");
 if (/getUserMedia|desktopCapturer|requestPermission|startScreenShare/.test(setup)) throw new Error("Setup must not trigger permissions or capture.");

@@ -64,8 +64,15 @@ linux:
   category: Network
   executableName: Picom
   maintainer: Picom Contributors
-  synopsis: Premium desktop community chat app
-  description: Picom is a premium Electron desktop community chat app for focused groups.
+  synopsis: Desktop community workspace
+  description: Picom is a premium desktop community workspace for chat, channels, and shared activity.
+  desktop:
+    entry:
+      Name: Picom
+      Comment: Desktop community workspace
+      Categories: Network;Chat;Utility;
+      Terminal: "false"
+      StartupWMClass: Picom
   target:
     - target: AppImage
       arch:

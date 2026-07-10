@@ -69,7 +69,9 @@ assertIncludes(builderConfig, "createStartMenuShortcut: true", "Windows start me
 assertIncludes(builderConfig, "category: Network", "Linux desktop category");
 assertIncludes(builderConfig, "executableName: Picom", "Linux executable name");
 assertIncludes(builderConfig, "maintainer: Picom Contributors", "Linux maintainer placeholder");
-assertIncludes(builderConfig, "description: Picom is a premium Electron desktop community chat app for focused groups.", "Linux package description");
+assertIncludes(builderConfig, "description: Picom is a premium desktop community workspace for chat, channels, and shared activity.", "Linux package description");
+assertIncludes(builderConfig, "Comment: Desktop community workspace", "Linux desktop comment");
+assertIncludes(builderConfig, "Categories: Network;Chat;Utility;", "Linux desktop categories");
 assertIncludes(builderConfig, "packageCategory: net", "Debian package category");
 assertIncludes(builderConfig, "category: public.app-category.social-networking", "macOS app category");
 assertIncludes(builderConfig, "hardenedRuntime: false", "macOS unsigned local runtime placeholder");
