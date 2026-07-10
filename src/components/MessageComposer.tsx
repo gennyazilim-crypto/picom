@@ -457,7 +457,10 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
               {preview.status === "uploading" ? (
                 <button aria-label={`Cancel upload for ${preview.name}`} onClick={() => cancelPreviewUpload(preview)}><AppIcon name={composerIcons.close} size="xs" /></button>
               ) : preview.status === "failed" || preview.status === "canceled" ? (
-                <button aria-label={`Retry upload for ${preview.name}`} onClick={() => void retryPreviewUpload(preview)}>Retry</button>
+                <>
+                  <button className="composer-preview-retry-button" aria-label={`Retry upload for ${preview.name}`} onClick={() => void retryPreviewUpload(preview)}>Retry</button>
+                  <button className="composer-preview-remove-button" aria-label={`Remove failed upload ${preview.name}`} onClick={() => removePreview(preview)}><AppIcon name="trash" size="xs" /></button>
+                </>
               ) : (
                 <button aria-label={`Remove ${preview.name}`} onClick={() => removePreview(preview)}><AppIcon name={composerIcons.close} size="xs" /></button>
               )}

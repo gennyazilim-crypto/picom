@@ -2806,6 +2806,18 @@ body{
   padding:0 8px;
   background:color-mix(in srgb,var(--danger) 82%,#111);
 }
+.composer-previews .composer-preview-item.status-failed .composer-preview-retry-button,
+.composer-previews .composer-preview-item.status-canceled .composer-preview-retry-button{
+  right:32px;
+}
+.composer-previews .composer-preview-item.status-failed .composer-preview-remove-button,
+.composer-previews .composer-preview-item.status-canceled .composer-preview-remove-button{
+  right:4px;
+  width:22px;
+  min-width:22px;
+  padding:0;
+  background:rgba(0,0,0,.62);
+}
 .composer-previews .composer-preview-item.status-uploaded{
   border-color:color-mix(in srgb,var(--success) 48%,var(--border));
 }
