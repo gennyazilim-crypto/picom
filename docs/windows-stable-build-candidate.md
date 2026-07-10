@@ -47,3 +47,7 @@ This does not replace a clean-machine launch test.
 6. Generate/check SHA-256 and archive redacted logs/screenshots.
 
 RB-06 remains open until this matrix is complete. The artifact naming also still says beta, so a stable version/channel freeze is required before distribution.
+
+## Task 399 closure attempt
+
+Packaging, signing-process, first-launch, and installer-branding controls passed on 2026-07-10. No trusted certificate was loaded and no clean-machine matrix ran. The existing unsigned beta candidate remains internal-only; see `docs/windows-signed-clean-machine-matrix.md`.

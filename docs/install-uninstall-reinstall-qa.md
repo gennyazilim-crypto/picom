@@ -79,3 +79,7 @@ Configuration and package smoke checks run on Windows. Automated uninstall or
 profile deletion was intentionally not run against the developer workstation.
 Full clean-account Windows installation plus native macOS and Linux matrices are
 release-candidate blockers before public distribution.
+
+## Task 399 Windows update
+
+Signing and installer process contracts passed, but no trusted signed artifact or clean Windows VM/device evidence was available. Install, core-flow, uninstall, retention, and reinstall remain pending against the final signed checksum.

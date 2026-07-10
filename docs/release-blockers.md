@@ -42,3 +42,7 @@ LiveKit service, device, reconnect, mini-card, discovery, and diagnostics contra
 ## Task 398 evidence update
 
 Screen-share permission recovery, preview/stop, preload, and IPC validation passed. Packaged remote-view evidence on Windows and native Linux/macOS evidence are absent, so RB-05 remains open.
+
+## Task 399 evidence update
+
+Windows packaging and fail-closed signing controls passed without loading a certificate. No signed artifact or clean-machine matrix exists, so RB-06 remains open.
