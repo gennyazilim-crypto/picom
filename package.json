@@ -18,6 +18,8 @@
     "package:win:dir": "npm run build && electron-builder --win --x64 --dir",
     "package:win": "npm run build && electron-builder --win --x64",
     "package:windows": "npm run package:win",
+    "windows:signing:smoke": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-windows-signature.ps1 -Smoke",
+    "windows:signing:production:smoke": "node scripts/windows-signing-production-smoke-test.mjs",
     "package:linux:appimage": "npm run build && electron-builder --linux AppImage --x64",
     "package:linux:deb": "npm run build && electron-builder --linux deb --x64",
     "package:linux": "npm run build && electron-builder --linux --x64",

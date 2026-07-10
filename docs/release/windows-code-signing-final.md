@@ -8,6 +8,8 @@ No certificate, private key, password, PIN, cloud signing token, account credent
 
 ## Local unsigned behavior
 
+### Unsigned local builds
+
 Developers may build an unsigned x64 NSIS installer or unpacked directory:
 
 ```powershell
@@ -25,6 +27,18 @@ Expected local behavior:
 - Local builds must not search a repository path for certificate material or silently sign from a developer's personal certificate store.
 
 Do not disable Windows security controls to make an unsigned build appear trusted. Testers who explicitly accept an internal unsigned build must receive its checksum through the approved internal channel.
+
+## Protected CI candidate workflow
+
+`.github/workflows/windows-signed-release.yml` is manual-only, has read-only repository permissions, uses the protected `windows-production-signing` environment, and never runs on pull requests. It expects `WINDOWS_CSC_LINK` and `WINDOWS_CSC_KEY_PASSWORD` as CI secrets and the approved publisher subject as an environment variable. Missing values fail closed without printing them.
+
+The workflow produces an expiring candidate evidence artifact only; it does not publish a GitHub Release or update feed. Run `scripts/verify-windows-signature.ps1` after electron-builder and before checksums/provenance. A real release still requires environment approval, clean-host smoke and the final stable gate below.
+
+## NSIS and MSI signing
+
+NSIS x64 is Picom's configured Windows target. electron-builder must sign the application executable, helper/uninstaller binaries it controls, and final NSIS installer according to the approved signing provider. Verification covers the final installer and clean-host installed executable.
+
+MSI is not configured. If enterprise MSI packaging is approved later, introduce it as a separate reviewed target; use the same protected identity, publisher, timestamp, post-signing checksum/provenance and install/upgrade/uninstall verification. Never assume a signed NSIS artifact proves a separately produced MSI is signed.
 
 ## Production signing model decision
 

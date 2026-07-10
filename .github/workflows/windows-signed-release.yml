@@ -1,0 +1,58 @@
+name: Windows signed release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_signing_candidate:
+        description: Build a protected signed Windows candidate without publishing it
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  signed-candidate:
+    if: inputs.confirm_signing_candidate == true
+    runs-on: windows-latest
+    environment: windows-production-signing
+    timeout-minutes: 45
+    env:
+      CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+      EXPECTED_WINDOWS_PUBLISHER: ${{ vars.WINDOWS_PUBLISHER_SUBJECT }}
+      VITE_RELEASE_CHANNEL: beta
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Fail closed when protected signing configuration is absent
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CSC_LINK)) { throw 'WINDOWS_CSC_LINK is not configured in the protected environment.' }
+          if ([string]::IsNullOrWhiteSpace($env:CSC_KEY_PASSWORD)) { throw 'WINDOWS_CSC_KEY_PASSWORD is not configured in the protected environment.' }
+          if ([string]::IsNullOrWhiteSpace($env:EXPECTED_WINDOWS_PUBLISHER)) { throw 'WINDOWS_PUBLISHER_SUBJECT is not configured.' }
+      - run: npm ci
+      - run: npm run quality:gate
+      - run: npm run package:win
+      - name: Verify installer signature, publisher and timestamp
+        shell: pwsh
+        run: ./scripts/verify-windows-signature.ps1 -Path 'release/Picom-*-Windows-x64.exe' -ExpectedPublisher $env:EXPECTED_WINDOWS_PUBLISHER
+      - name: Generate post-signing checksum and provenance
+        shell: pwsh
+        run: |
+          npm run generate-checksums
+          npm run generate-provenance
+      - name: Upload immutable candidate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: picom-windows-signed-candidate
+          path: |
+            release/Picom-*-Windows-x64.exe
+            release/SHA256SUMS.txt
+            release/provenance.json
+          if-no-files-found: error
+          retention-days: 14
