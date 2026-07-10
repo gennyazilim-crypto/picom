@@ -45,3 +45,7 @@ Before a public stable release:
 ## Decision
 
 RB-10 remains open. Stable distribution is No-Go until approved documents and in-app link/version verification exist. Engineering smoke success does not remove the legal-review requirement.
+
+## Task 402 closure attempt
+
+Policy versioning, acceptance, community-guideline gating, and deletion/retention messaging passed on 2026-07-10. Diagnostics and audio-content drafts were added. The root license and all user-facing policies remain unapproved by an authorized reviewer, so RB-10 remains open. See `docs/final-legal-project-license-approval.md`.

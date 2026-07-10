@@ -54,3 +54,7 @@ Linux packaging and repository-distribution contracts passed, but no native AppI
 ## Task 401 evidence update
 
 macOS notarization/signing workflow controls passed, but no native build, Developer ID signature, notarization, staple, Gatekeeper, or permission matrix ran. RB-08 remains open.
+
+## Task 402 evidence update
+
+Legal-flow engineering contracts passed and diagnostics/audio drafts were completed. No authorized legal/project-license approval exists, so RB-10 remains open.
