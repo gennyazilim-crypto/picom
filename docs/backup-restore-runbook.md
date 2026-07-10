@@ -109,3 +109,7 @@ Guarded backup/restore tooling, maintenance safety, PITR review, and migration r
 ## Task 414 real drill result
 
 A real synthetic staging export was created with schema/public/Auth-Storage/role dumps and a SHA-256 manifest. Restore did not complete: a raw Supabase Postgres image lacked a compatible managed Auth schema, and the local Supabase target port was occupied by an unrelated project that was intentionally left untouched. Treat provider-managed Auth/Storage schema version compatibility and circular message/DM/thread foreign keys as required restore-plan items.
+
+## Task 429 restore lesson
+
+Random-port isolated containers remove the prior port collision, and a fresh database avoids pre-existing Auth table collisions. A valid target still requires the exact provider extension bootstrap. Creating only the `extensions` schema is insufficient because `pg_trgm` operator classes such as `extensions.gin_trgm_ops` must exist before index restore. Do not ignore those index failures or rewrite the dump ad hoc; use a version-matched Supabase restore target and provider-supported role/bootstrap procedure.

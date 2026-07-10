@@ -47,3 +47,7 @@ Not executed. Account deletion/anonymization, ownership transfer/delete, leave/k
 5. Only then run destructive lifecycle cases and cleanup the target.
 
 RB-11 remains open. Stable release is **No-Go**.
+
+## Task 429 isolated rerun
+
+Backup hashes were recomputed and matched. Four isolated Docker strategies were attempted without touching existing containers. A fresh database avoided the managed Auth collision, but schema restore ultimately stopped because `extensions.gin_trgm_ops` was not bootstrapped. Every temporary container was removed. No complete restore, integrity matrix, destructive lifecycle, or promotion occurred; status remains **PARTIAL / BLOCKED**.

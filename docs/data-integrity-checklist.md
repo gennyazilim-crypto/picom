@@ -21,3 +21,7 @@ Any mismatch stops promotion. Auto-fix is forbidden without a reviewed change re
 ## Task 414 execution status
 
 Not executed against a complete restored target. The checklist remains mandatory; no row-count, Auth-link, RLS, Storage-object, DM, verification, or audio integrity result is claimed.
+
+## Task 429 status
+
+Backup hashes passed, but schema restore stopped before data load at a missing provider extension operator class. Consequently no restored row-count, relationship, private-data, RLS, Storage, session, DM, verification, or audio integrity result exists. Local structural integrity smokes pass but do not replace this matrix.

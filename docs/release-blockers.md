@@ -151,3 +151,7 @@ Engineering policy, acceptance, audio, Coolicons, and dependency-license gates p
 ## Task 428 production owners/secret custody
 
 Secret/env/CI controls pass, and the ownership inventory now explicitly separates support, status, incident, and audio responsibilities. Every real owner/store/rotation/recovery/freeze approval remains unassigned. The ownership-transfer UI contract also fails and is carried into lifecycle review. RB-09 remains **BLOCKED**.
+
+## Task 429 isolated restore/destructive lifecycle
+
+Backup hashes matched and isolated random-port Docker attempts were cleaned safely. Restore progressed beyond the previous Auth collision in a fresh DB but stopped at missing `extensions.gin_trgm_ops`; no complete data load or destructive lifecycle ran. Soft-delete/export/ownership-transfer contracts were remediated and pass. RB-11 remains **BLOCKED**.

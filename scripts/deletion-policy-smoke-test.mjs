@@ -39,13 +39,13 @@ for (const expected of [
   assertIncludes(doc, expected, "deletion policy");
 }
 
-for (const expected of ["deleted_at", ".update({", ".is(\"deleted_at\", null)"]) {
+for (const expected of ["deleted_at", 'client.rpc("delete_message_with_version"', "expected_edited_at", "MESSAGE_DELETE_FORBIDDEN"]) {
   assertIncludes(messageDelete, expected, "message delete mutation");
 }
 
-assertIncludes(messageList, ".is(\"deleted_at\", null)", "message list query");
+assertIncludes(messageList, "deleted_at", "message list query");
+assertIncludes(messageList, "deletedAt: row.deleted_at", "message list tombstone mapping");
 assertIncludes(communityDelete, "soft deletion with `deletedAt`", "community delete placeholder docs");
 assertIncludes(auditLog, "append-only", "audit log immutability docs");
 
 console.log("Soft delete and restore policy smoke test passed.");
-
