@@ -229,12 +229,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     setUpdateState(next);
     pushToast(next.message, next.status === "download_failed" || next.status === "install_failed" ? "error" : "info");
   };
-  const simulateUpdateFailure = (kind: "download" | "install" | "rollback") => {
+  const simulateUpdateFailure = (kind: "download" | "install" | "error") => {
     const next = kind === "download"
       ? updateService.setDownloadFailedPlaceholder()
       : kind === "install"
         ? updateService.setInstallFailedPlaceholder()
-        : updateService.setRollbackAvailablePlaceholder();
+        : updateService.setErrorPlaceholder();
     setUpdateState(next);
     pushToast(next.message, next.status === "download_failed" || next.status === "install_failed" ? "error" : "info");
   };
@@ -779,13 +779,19 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 <span>Desktop updates</span>
                 <strong>{updateState.status.split("_").join(" ")}</strong>
                 <small>{updateState.message}</small>
-                <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Production auto-update remains disabled for MVP.</small>
+                <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Production auto-update remains disabled until a signed endpoint is configured.</small>
+                {updateState.progress !== null ? <small>Simulation progress: {updateState.progress}%</small> : null}
               </div>
               <div className="settings-actions-row">
-                <button onClick={() => void checkForUpdatesPlaceholder()}>Check update placeholder</button>
+                <button onClick={() => void checkForUpdatesPlaceholder()}>Check for updates</button>
+                <button onClick={() => setUpdateState(updateService.setAvailablePlaceholder())}>Simulate available</button>
+                <button onClick={() => setUpdateState(updateService.startDownloadPlaceholder())}>Simulate download</button>
+                <button onClick={() => setUpdateState(updateService.setReadyToInstallPlaceholder())}>Simulate ready</button>
                 <button onClick={() => simulateUpdateFailure("download")}>Simulate download failure</button>
                 <button onClick={() => simulateUpdateFailure("install")}>Simulate install failure</button>
-                <button onClick={() => simulateUpdateFailure("rollback")}>Rollback placeholder</button>
+                <button onClick={() => simulateUpdateFailure("error")}>Simulate error</button>
+                <button onClick={() => setUpdateState(updateService.retry())}>Retry</button>
+                <button onClick={() => setUpdateState(updateService.clearError())}>Clear error</button>
               </div>
               <div className="settings-status-card" aria-label="System status page placeholder">
                 <span>System status</span>
