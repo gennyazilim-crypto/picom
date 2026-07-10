@@ -49,6 +49,7 @@ import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/supabase/directMessageRealtimeService";
 import { directMessageService } from "./services/supabase/directMessageService";
 import { relationshipService } from "./services/relationshipService";
+import { mentionFeedService } from "./services/mentionFeedService";
 import { profileVerificationService } from "./services/profileVerificationService";
 import { defaultProfilePrivacyProjection,profilePrivacyService,restrictedProfilePrivacyProjection } from "./services/profilePrivacyService";
 import type { ProfilePrivacyProjection } from "./types/profilePrivacy";
@@ -401,6 +402,17 @@ export function App() {
   } = useProtectedDesktopSession(pushToast);
   const directMessageUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? currentUserId : currentUserId;
   useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations(result.data); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    let active = true;
+    void Promise.all([mentionFeedService.listPage({ limit: 60 }), relationshipService.getFollowing()]).then(([feed, following]) => {
+      if (!active) return;
+      if (feed.ok) setMentionItems(feed.data.items);
+      else pushToast(feed.error.message, "error");
+      if (following.ok) setFollowedUserIds(following.data);
+    });
+    return () => { active = false; };
+  }, [authSession?.user?.id, pushToast]);
   const refreshFriendState = useCallback(async () => {
     const result = await relationshipService.getFriendState();
     if (result.ok) setFriendState(result.data);

@@ -198,6 +198,11 @@ export type Database = {
         Insert: Partial<Database["public"]["Tables"]["user_follows"]["Row"]> & Pick<Database["public"]["Tables"]["user_follows"]["Row"], "follower_id" | "followed_id">;
         Update: Partial<Database["public"]["Tables"]["user_follows"]["Row"]>; Relationships: [];
       };
+      message_mentions: {
+        Row: { id: string; message_id: string; mentioned_user_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["message_mentions"]["Row"]> & Pick<Database["public"]["Tables"]["message_mentions"]["Row"], "message_id" | "mentioned_user_id">;
+        Update: Partial<Database["public"]["Tables"]["message_mentions"]["Row"]>; Relationships: [];
+      };
       friend_requests: {
         Row: { id: string; sender_id: string; recipient_id: string; status: "pending" | "accepted" | "declined"; created_at: string; responded_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["friend_requests"]["Row"]> & Pick<Database["public"]["Tables"]["friend_requests"]["Row"], "sender_id" | "recipient_id">;
@@ -428,6 +433,15 @@ export type Database = {
         Row: Database["public"]["Tables"]["attachments"]["Row"];
         Relationships: [];
       };
+      mention_feed_view: {
+        Row: {
+          message_id: string; community_id: string; channel_id: string; author_id: string; mentioned_user_ids: string[];
+          body: string; title: string | null; created_at: string; source: "popular_feed" | "following";
+          attachments: Json; reactions: Json; view_count: number; comment_count: number; commenter_ids: string[];
+          popularity_score: number; is_saved: boolean;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       accept_current_legal_terms: { Args: Record<string, never>; Returns: Array<{ terms_version: string; privacy_version: string; accepted_at: string }> };
@@ -508,6 +522,10 @@ export type Database = {
       create_forum_post: { Args: { target_community_id: string; target_channel_id: string; post_title: string; post_body: string; post_tags: string[] }; Returns: Json };
       list_accessible_saved_messages: { Args: { result_limit?: number }; Returns: Array<{ id: string; message_id: string; community_id: string; channel_id: string; author_id: string; preview: string; message_created_at: string; created_at: string }> };
       get_community_insights_v2: { Args: { target_community_id: string; window_days?: number }; Returns: Json };
+      list_mention_feed: {
+        Args: { cursor_created_at?: string | null; cursor_message_id?: string | null; result_limit?: number };
+        Returns: Array<Database["public"]["Views"]["mention_feed_view"]["Row"]>;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
