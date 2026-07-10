@@ -18,4 +18,4 @@ mac:
     - target: zip
       arch:
         - x64
-  artifactName: Picom-${version}-macOS-${arch}.${ext}
+  artifactName: Picom-${version}-${channel}-macOS-${arch}.${ext}
