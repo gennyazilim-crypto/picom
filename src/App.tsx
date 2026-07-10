@@ -69,6 +69,7 @@ import { CrashRecoveryDialog } from "./components/CrashRecoveryDialog";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
 import { NotificationCenterPopover } from "./components/NotificationCenterPopover";
 import { notificationCenterService, type NotificationCenterItem } from "./services/notificationCenterService";
+import { notificationPolicyStateService } from "./services/notificationPolicyStateService";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
 import { diagnosticsService } from "./services/diagnosticsService";
@@ -787,6 +788,7 @@ export function App() {
 
   useEffect(() => notificationCenterService.subscribe(setNotificationCenterItems), []);
   useEffect(() => authSession ? notificationCenterService.startRemoteSync() : undefined, [authSession?.user?.id]);
+  useEffect(() => { notificationPolicyStateService.setDoNotDisturb(trayPresenceStatus === "dnd"); }, [trayPresenceStatus]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

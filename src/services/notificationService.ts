@@ -2,6 +2,7 @@ import { platformService } from "./platformService";
 import { settingsService, type NotificationSettings, type QuietHoursSettings } from "./settingsService";
 import { notificationDigestService } from "./notificationDigestService";
 import { emergencyKillSwitchService } from "./emergencyKillSwitchService";
+import { notificationPolicyStateService } from "./notificationPolicyStateService";
 
 export type NotificationPermissionState = NotificationPermission | "unsupported";
 export type NotificationCategory = "system" | "mention" | "message";
@@ -27,6 +28,8 @@ export interface NotificationRouteContext {
   appFocused?: boolean;
   activeChannelId?: string | null;
   eventChannelId?: string | null;
+  communityId?: string | null;
+  channelId?: string | null;
   isNearBottom?: boolean;
   channelMuted?: boolean;
   communityMuted?: boolean;
@@ -64,7 +67,7 @@ export function isQuietHoursActive(quietHours: QuietHoursSettings, now = new Dat
   return current >= start || current < end;
 }
 
-function quietHoursSuppressesDesktop(settings: NotificationSettings, isMention: boolean, category: NotificationCategory, now = new Date()): boolean {
+export function quietHoursSuppressesDesktop(settings: NotificationSettings, isMention: boolean, category: NotificationCategory, now = new Date()): boolean {
   if (!isQuietHoursActive(settings.quietHours, now)) return false;
   if (isMention && settings.quietHours.allowMentions) return false;
   if (settings.quietHours.applyTo === "all_notifications") return true;
@@ -72,7 +75,7 @@ function quietHoursSuppressesDesktop(settings: NotificationSettings, isMention: 
   return false;
 }
 
-function quietHoursShouldSilence(settings: NotificationSettings, isMention: boolean, now = new Date()): boolean {
+export function quietHoursShouldSilence(settings: NotificationSettings, isMention: boolean, now = new Date()): boolean {
   return isQuietHoursActive(settings.quietHours, now)
     && settings.quietHours.applyTo === "sounds_only_placeholder"
     && !(isMention && settings.quietHours.allowMentions);
@@ -88,14 +91,18 @@ function getNativeNotificationBridge() {
 
 export function decideNotificationRoute(context: NotificationRouteContext): NotificationRouteDecision {
   const settings = context.settings ?? settingsService.getSettings().notificationSettings;
+  const policyState = notificationPolicyStateService.getSnapshot();
   const isActiveChannel = Boolean(context.activeChannelId && context.eventChannelId && context.activeChannelId === context.eventChannelId);
   const isMention = Boolean(context.isMention || context.category === "mention");
+  const doNotDisturb = Boolean(settings.muted || context.doNotDisturb || policyState.doNotDisturb);
+  const channelMuted = Boolean(context.channelMuted || notificationPolicyStateService.isChannelMuted(context.channelId ?? context.eventChannelId));
+  const communityMuted = Boolean(context.communityMuted || notificationPolicyStateService.isCommunityMuted(context.communityId));
 
   if (!settings.enabled) {
     return { desktop: false, inbox: false, inAppUnread: false, reason: "Desktop notifications are disabled in settings." };
   }
 
-  if (settings.muted || context.doNotDisturb) {
+  if (doNotDisturb) {
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Notifications are currently muted." };
   }
 
@@ -111,7 +118,7 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Notification digest placeholder grouped this normal message." };
   }
 
-  if ((context.channelMuted || context.communityMuted) && !isMention) {
+  if ((channelMuted || communityMuted) && (!isMention || !settings.allowMentionsFromMutedScopes)) {
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Muted channel or community suppressed this notification." };
   }
 
@@ -179,7 +186,7 @@ export const notificationService = {
 
     const category = payload.category ?? "system";
     const route = decideNotificationRoute({ ...(payload.routing ?? {}), category });
-    const settings = settingsService.getSettings().notificationSettings;
+    const settings = payload.routing?.settings ?? settingsService.getSettings().notificationSettings;
     const isMention = Boolean(payload.routing?.isMention || category === "mention");
     const quietHoursSilent = quietHoursShouldSilence(settings, isMention);
 

@@ -12,6 +12,7 @@ export interface NotificationSettings {
   enabled: boolean;
   muted: boolean;
   mentionsOnly: boolean;
+  allowMentionsFromMutedScopes: boolean;
   digestMode: NotificationDigestMode;
   quietHours: QuietHoursSettings;
 }
@@ -27,7 +28,7 @@ type LocalSettingsMigration = {
 
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
-const currentSchemaVersion = 3;
+const currentSchemaVersion = 4;
 const defaults: PicomSettings = {
   schemaVersion: currentSchemaVersion,
   theme: "light",
@@ -35,6 +36,7 @@ const defaults: PicomSettings = {
     enabled: true,
     muted: false,
     mentionsOnly: false,
+    allowMentionsFromMutedScopes: true,
     digestMode: "off",
     quietHours: {
       enabled: false,
@@ -82,6 +84,19 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
           ...defaults.notificationSettings.quietHours,
           ...((settings.notificationSettings as Partial<NotificationSettings> | undefined)?.quietHours ?? {}),
         },
+      },
+    }),
+  },
+  {
+    fromVersion: 3,
+    toVersion: 4,
+    migrate: (settings) => ({
+      ...settings,
+      schemaVersion: 4,
+      notificationSettings: {
+        ...defaults.notificationSettings,
+        ...(typeof settings.notificationSettings === "object" && settings.notificationSettings ? settings.notificationSettings : {}),
+        allowMentionsFromMutedScopes: true,
       },
     }),
   },

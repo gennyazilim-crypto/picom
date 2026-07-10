@@ -762,6 +762,13 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </span>
                 <input type="checkbox" checked={notificationSettings.quietHours.allowMentions} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, allowMentions: event.target.checked } })} />
               </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Allow mentions from muted communities and channels</strong>
+                  <small>When disabled, muted scopes suppress mentions as well as normal activity.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.allowMentionsFromMutedScopes} onChange={(event) => updateNotifications({ allowMentionsFromMutedScopes: event.target.checked })} />
+              </label>
               <button onClick={testNotification}>Send test notification</button>
             </div>
           ) : active === "Keyboard Shortcuts" ? (
