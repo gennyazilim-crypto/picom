@@ -25,20 +25,31 @@ export type CreateChannelInput = Readonly<{
   type?: ChannelType;
   topic?: string | null;
   isPrivate?: boolean;
+  publicReadEnabled?: boolean;
 }>;
 
 export type UpdateChannelInput = Readonly<{
   channelId: string;
-  name?: string;
-  type?: ChannelType;
+  communityId: string;
+  name: string;
+  type: ChannelType;
   topic?: string | null;
-  categoryId?: string | null;
-  isPrivate?: boolean;
+  categoryId: string | null;
+  isPrivate: boolean;
+  publicReadEnabled: boolean;
 }>;
 
 export type DeleteChannelInput = Readonly<{
   channelId: string;
+  communityId: string;
+  channelName: string;
   confirmName?: string;
+  fallbackChannelId: string | null;
+}>;
+
+export type DeleteChannelResult = Readonly<{
+  deletedChannelId: string;
+  fallbackChannelId: string | null;
 }>;
 
 export type ChannelServiceErrorCode =
@@ -46,8 +57,9 @@ export type ChannelServiceErrorCode =
   | "VALIDATION_ERROR"
   | "CHANNEL_CREATE_FAILED"
   | "CHANNEL_LIST_FAILED"
-  | "CHANNEL_UPDATE_PLACEHOLDER"
-  | "CHANNEL_DELETE_PLACEHOLDER";
+  | "CHANNEL_UPDATE_FAILED"
+  | "CHANNEL_DELETE_FAILED"
+  | "LAST_CHANNEL_REQUIRED";
 
 export type ChannelServiceError = Readonly<{
   code: ChannelServiceErrorCode;
@@ -144,7 +156,7 @@ export const channelService = {
     if (dataSource.isMock) {
       const now = new Date().toISOString();
       const channel: ChannelSummary = {
-          id: `mock-channel-${Date.now()}`, communityId: input.communityId, categoryId: input.categoryId ?? null, name, type, topic: input.topic?.trim() || null, isPrivate: Boolean(input.isPrivate), publicReadEnabled: !input.isPrivate, position: 0, createdAt: now, updatedAt: now,
+          id: `mock-channel-${Date.now()}`, communityId: input.communityId, categoryId: input.categoryId ?? null, name, type, topic: input.topic?.trim() || null, isPrivate: Boolean(input.isPrivate), publicReadEnabled: input.isPrivate ? false : (input.publicReadEnabled ?? true), position: 0, createdAt: now, updatedAt: now,
       };
       await auditLogService.append({ communityId: input.communityId, actionType: "channel_create", targetType: "channel", targetId: channel.id, reason: `Created #${name}` });
       return {
@@ -165,7 +177,7 @@ export const channelService = {
         type,
         topic: input.topic?.trim() || null,
         is_private: Boolean(input.isPrivate),
-        public_read_enabled: !input.isPrivate,
+        public_read_enabled: input.isPrivate ? false : (input.publicReadEnabled ?? true),
       })
       .select(CHANNEL_LIST_SELECT)
       .single();
@@ -182,26 +194,57 @@ export const channelService = {
       return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel ID is required." } };
     }
 
-    return {
-      ok: false,
-      error: {
-        code: "CHANNEL_UPDATE_PLACEHOLDER",
-        message: "Channel editing is prepared but not enabled in the MVP yet.",
-      },
-    };
+    const name = normalizeChannelName(input.name);
+    if (!name) return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel name is required." } };
+    if (input.topic && input.topic.length > 300) return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel topic must be 300 characters or fewer." } };
+
+    const dataSource = dataSourceService.getStatus();
+    if (dataSource.isMock) {
+      const now = new Date().toISOString();
+      return { ok: true, data: { id: input.channelId, communityId: input.communityId, categoryId: input.categoryId, name, type: input.type, topic: input.topic?.trim() || null, isPrivate: input.isPrivate, publicReadEnabled: input.isPrivate ? false : input.publicReadEnabled, position: 0, createdAt: now, updatedAt: now } };
+    }
+
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+    const rpcClient = configured.data as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const { data, error } = await rpcClient.rpc("update_managed_channel", {
+      target_channel_id: input.channelId,
+      next_name: name,
+      next_type: input.type,
+      next_topic: input.topic?.trim() || null,
+      next_category_id: input.categoryId,
+      next_is_private: input.isPrivate,
+      next_public_read_enabled: input.isPrivate ? false : input.publicReadEnabled,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row) return { ok: false, error: { code: "CHANNEL_UPDATE_FAILED", message: error?.message ?? "Could not update channel." } };
+    const channel = mapChannelListRow(row as Parameters<typeof mapChannelListRow>[0]);
+    await auditLogService.append({ communityId: input.communityId, actionType: "channel_update", targetType: "channel", targetId: channel.id, reason: `Updated #${channel.name}` });
+    return { ok: true, data: channel };
   },
 
-  async deleteChannel(input: DeleteChannelInput): Promise<ChannelServiceResult<void>> {
+  async deleteChannel(input: DeleteChannelInput): Promise<ChannelServiceResult<DeleteChannelResult>> {
     if (!input.channelId.trim()) {
       return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel ID is required." } };
     }
 
-    return {
-      ok: false,
-      error: {
-        code: "CHANNEL_DELETE_PLACEHOLDER",
-        message: "Channel deletion is prepared but not enabled in the MVP yet.",
-      },
-    };
+    if (normalizeChannelName(input.confirmName ?? "") !== normalizeChannelName(input.channelName)) {
+      return { ok: false, error: { code: "VALIDATION_ERROR", message: "Type the channel name to confirm deletion." } };
+    }
+    if (!input.fallbackChannelId) {
+      return { ok: false, error: { code: "LAST_CHANNEL_REQUIRED", message: "Create another channel before deleting the final channel." } };
+    }
+
+    const dataSource = dataSourceService.getStatus();
+    if (dataSource.isMock) return { ok: true, data: { deletedChannelId: input.channelId, fallbackChannelId: input.fallbackChannelId } };
+
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+    const rpcClient = configured.data as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+    const { data, error } = await rpcClient.rpc("delete_managed_channel", { target_channel_id: input.channelId, confirmation_name: input.confirmName ?? "" });
+    const row = (Array.isArray(data) ? data[0] : data) as { deleted_channel_id?: string; fallback_channel_id?: string | null } | null;
+    if (error || !row?.deleted_channel_id) return { ok: false, error: { code: "CHANNEL_DELETE_FAILED", message: error?.message ?? "Could not delete channel." } };
+    await auditLogService.append({ communityId: input.communityId, actionType: "channel_delete", targetType: "channel", targetId: input.channelId, reason: `Deleted #${input.channelName}` });
+    return { ok: true, data: { deletedChannelId: row.deleted_channel_id, fallbackChannelId: row.fallback_channel_id ?? input.fallbackChannelId } };
   },
 };

@@ -10,6 +10,7 @@ export type CreateChannelFormValue = {
   type: ChannelType;
   categoryId: string | null;
   isPrivate: boolean;
+  publicReadEnabled: boolean;
   allowedRoleIds: string[];
 };
 
@@ -30,6 +31,7 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
   const [type, setType] = useState<ChannelType>("text");
   const [categoryId, setCategoryId] = useState<string | null>(defaultCategoryId ?? firstCategoryId);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [publicReadEnabled, setPublicReadEnabled] = useState(true);
   const permissionRoles = useMemo(() => community.roles.filter((role) => role.name === "Owner" || role.name === "Admin" || role.name === "Moderator"), [community.roles]);
   const [allowedRoleIds, setAllowedRoleIds] = useState<string[]>(() => permissionRoles.map((role) => role.id));
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
     setError(null);
 
     try {
-      await onSubmit({ name: normalizedName, type, categoryId, isPrivate, allowedRoleIds: isPrivate ? allowedRoleIds : [] });
+      await onSubmit({ name: normalizedName, type, categoryId, isPrivate, publicReadEnabled: isPrivate ? false : publicReadEnabled, allowedRoleIds: isPrivate ? allowedRoleIds : [] });
     } catch {
       setError("Could not create channel. Please try again.");
     } finally {
@@ -109,7 +111,15 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
           <input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} />
           <span>
             <strong>Private channel</strong>
-            <em>Hidden from normal participants until backend permissions are connected.</em>
+            <em>Hidden from visitors and members without private-channel permission.</em>
+          </span>
+        </label>
+
+        <label className="channel-checkbox">
+          <input type="checkbox" checked={!isPrivate && publicReadEnabled} disabled={isPrivate} onChange={(event) => setPublicReadEnabled(event.target.checked)} />
+          <span>
+            <strong>Allow public reading</strong>
+            <em>{isPrivate ? "Private channels are never public." : "Visitors may read when community public access is enabled."}</em>
           </span>
         </label>
 
