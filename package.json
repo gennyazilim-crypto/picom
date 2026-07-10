@@ -67,6 +67,8 @@
     "db:restore:placeholder": "node scripts/db-restore-placeholder.mjs",
     "backup:verify:placeholder": "node scripts/verify-backup-placeholder.mjs",
     "backup:verify:smoke": "node scripts/verify-backup-placeholder.mjs --smoke",
+    "backup:plan": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-placeholder.ps1 -Mode plan",
+    "backup:plan:smoke": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-placeholder.ps1 -Mode smoke",
     "invites:cleanup:dry-run": "node scripts/cleanup-expired-invites.mjs",
     "invites:cleanup:smoke": "node scripts/expired-invites-cleanup-smoke-test.mjs",
     "uploads:cleanup:dry-run": "node scripts/cleanup-orphaned-uploads.mjs",
