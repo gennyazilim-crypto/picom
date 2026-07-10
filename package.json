@@ -109,6 +109,7 @@
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
     "dm:production:smoke": "node scripts/direct-messages-production-smoke-test.mjs",
     "dm:layout:smoke": "node scripts/direct-messages-layout-smoke.mjs",
+    "audio:domain:smoke": "node scripts/audio-domain-smoke.mjs",
     "friends:production:smoke": "node scripts/friend-requests-production-smoke-test.mjs",
     "blocking:privacy:smoke": "node scripts/blocking-privacy-enforcement-smoke-test.mjs",
     "discovery:public:smoke": "node scripts/community-discovery-public-listing-smoke-test.mjs",
