@@ -4,6 +4,7 @@ import { loggingService } from "./loggingService";
 export const FEATURE_FLAG_KEYS = [
   "enableRealtime",
   "enableVoiceRooms",
+  "enableScreenShare",
   "enableDirectMessages",
   "enableFriends",
   "enableDiscovery",
@@ -15,6 +16,7 @@ export const FEATURE_FLAG_KEYS = [
   "enableDiagnostics",
   "enableAutoUpdate",
   "enableAnalyticsPlaceholder",
+  "enableAdminOperations",
   "enableDeveloperPortal",
   "enableCustomEmoji",
   "enableStickers",
@@ -26,7 +28,18 @@ export const FEATURE_FLAG_KEYS = [
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
 export type FeatureFlags = Readonly<Record<FeatureFlagKey, boolean>>;
 export type FeatureFlagOverrides = Partial<Record<FeatureFlagKey, boolean>>;
-export type FeatureFlagSource = "defaults" | "environment" | "remote";
+export type FeatureFlagSource = "defaults" | "environment" | "remote" | "runtime";
+
+export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
+  voice: "enableVoiceRooms",
+  screenShare: "enableScreenShare",
+  webhooks: "enableWebhooks",
+  bots: "enableBots",
+  discovery: "enableDiscovery",
+  adminOperations: "enableAdminOperations",
+  autoUpdate: "enableAutoUpdate",
+  analytics: "enableAnalyticsPlaceholder",
+} as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
   flags: FeatureFlags;
@@ -53,17 +66,19 @@ function createDefaultFeatureFlags(): FeatureFlags {
   return Object.freeze({
     enableRealtime: true,
     enableVoiceRooms: true,
+    enableScreenShare: false,
     enableDirectMessages: false,
     enableFriends: false,
-    enableDiscovery: true,
+    enableDiscovery: false,
     enableBots: false,
-    enableWebhooks: true,
+    enableWebhooks: false,
     enableThreads: true,
     enablePolls: true,
     enableAdvancedModeration: false,
     enableDiagnostics: developmentDiagnostics,
     enableAutoUpdate: false,
-    enableAnalyticsPlaceholder: true,
+    enableAnalyticsPlaceholder: false,
+    enableAdminOperations: false,
     enableDeveloperPortal: false,
     enableCustomEmoji: false,
     enableStickers: false,
@@ -167,7 +182,9 @@ function createSnapshot(): FeatureFlagSnapshot {
 
   const sources: Partial<Record<FeatureFlagKey, FeatureFlagSource>> = {};
   for (const key of FEATURE_FLAG_KEYS) {
-    if (key in runtimeOverrides || key in remoteOverrides) {
+    if (key in runtimeOverrides) {
+      sources[key] = "runtime";
+    } else if (key in remoteOverrides) {
       sources[key] = "remote";
     } else if (key in envOverrides) {
       sources[key] = "environment";
