@@ -90,3 +90,7 @@ Linux package, voice, and screen-share certification was BLOCKED by the absence 
 ## Task 410 real-evidence update
 
 macOS signature, notarization, staple, Gatekeeper, permission, and screen-share certification were BLOCKED by absent native runner and credentials. RB-05 and RB-08 remain open.
+
+## Task 411 real-evidence update
+
+Windows trusted signing and clean-machine execution were BLOCKED by absent certificate/signing environment, final artifact, and clean test target. RB-06 remains open.

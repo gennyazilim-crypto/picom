@@ -12,3 +12,7 @@ Inventory status: **No immutable stable artifact set exists**
 The historical Windows file `Picom-0.1.1-beta.1-beta-Windows-x64.exe` and its recorded checksum are excluded from the final inventory because the file is unsigned, beta-channel, not clean-machine certified, and not part of an immutable cross-platform stable set.
 
 Required final inventory fields remain unassigned: stable version/channel, final source commit, native build runner, signed/notarized status, post-signing size/hash, provenance record, and approved download location. Artifacts must never be replaced under the same version.
+
+## Task 411 Windows inventory update
+
+No trusted signed Windows artifact was produced. The Windows row remains blocked and has no valid final stable SHA-256 or immutable release path.

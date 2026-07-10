@@ -99,3 +99,7 @@ No AppImage or deb was produced, installed, launched, removed, or reinstalled on
 ## Task 410 macOS real execution
 
 No signed/notarized DMG or zip was installed, accepted by Gatekeeper, removed, or reinstalled. Native permission and user-data behavior remain blocked.
+
+## Task 411 Windows real execution
+
+No trusted signed installer was tested on a clean Windows machine. Install, publisher display, launch, core flows, restart, uninstall, retention, and reinstall remain blocked.

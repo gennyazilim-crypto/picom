@@ -51,3 +51,7 @@ RB-06 remains open until this matrix is complete. The artifact naming also still
 ## Task 399 closure attempt
 
 Packaging, signing-process, first-launch, and installer-branding controls passed on 2026-07-10. No trusted certificate was loaded and no clean-machine matrix ran. The existing unsigned beta candidate remains internal-only; see `docs/windows-signed-clean-machine-matrix.md`.
+
+## Task 411 real execution
+
+Trusted signing and clean-machine release execution remained **BLOCKED**. No signed stable installer, post-signing checksum, trusted publisher result, or clean Windows test exists. See `docs/windows-trusted-signing-clean-machine.md`.
