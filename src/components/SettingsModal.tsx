@@ -32,6 +32,8 @@ import { legalDocumentOrder, legalDocuments, type LegalDocumentId } from "../dat
 import { FeedbackSection } from "./settings/FeedbackSection";
 import { DiagnosticsSection } from "./settings/DiagnosticsSection";
 import { LogsViewer } from "./settings/LogsViewer";
+import { DeveloperPortalView } from "./DeveloperPortalView";
+import { featureFlagService } from "../services/featureFlagService";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
@@ -62,9 +64,16 @@ type SettingsModalProps = {
   pushToast: (message: string, tone?: ToastTone) => void;
   currentUsername: string;
   ownedCommunityCount: number;
+  developerPortalContext: {
+    communityId: string;
+    communityName: string;
+    ownerId: string;
+    canManageBots: boolean;
+    canManageWebhooks: boolean;
+  };
 };
 
-export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, currentUsername, ownedCommunityCount }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, profileSettings, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, currentUsername, ownedCommunityCount, developerPortalContext }: SettingsModalProps) {
   const [active, setActive] = useState("Appearance");
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
@@ -92,6 +101,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [adminOperationsAccess, setAdminOperationsAccess] = useState<AdminOperationsAccess>({ allowed: false, source: "none" });
   const [analyticsEnabled, setAnalyticsEnabled] = useState(() => analyticsService.isEnabled());
   const [crashReportingEnabled, setCrashReportingEnabled] = useState(() => crashReporterService.getStatus().enabled);
+  const [developerPortalOpen, setDeveloperPortalOpen] = useState(false);
+  const developerPortalAvailable = featureFlagService.shouldShowEntryPoint("enableDeveloperPortal") && (developerPortalContext.canManageBots || developerPortalContext.canManageWebhooks);
   const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"];
 
   useEffect(() => {
@@ -763,6 +774,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
             <div className="placeholder-panel action-panel">
               <strong>Desktop service placeholders</strong>
               <p>Tray, window controls, file handling and clipboard are routed through safe services.</p>
+              {developerPortalAvailable ? <div className="settings-status-card" aria-label="Developer Portal v1"><span>Developer Portal</span><strong>Restricted development foundation</strong><small>Manage safe bot/webhook metadata and review API placeholders. No raw keys or public publishing.</small><button type="button" onClick={() => setDeveloperPortalOpen(true)}>Open Developer Portal</button></div> : null}
               <div className="settings-status-card" aria-label="About Picom build metadata">
                 <span>About Picom</span>
                 <strong>{appConfig.name} {appConfig.version} ({appConfig.releaseChannel})</strong>
@@ -926,6 +938,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
       </section>
     </div>
     {openLegalDocument ? <LegalDocumentModal documentId={openLegalDocument} onClose={() => setOpenLegalDocument(null)} /> : null}
+    {developerPortalOpen && developerPortalAvailable ? <DeveloperPortalView {...developerPortalContext} onClose={() => setDeveloperPortalOpen(false)} onNotice={pushToast} /> : null}
     </>
   );
 }
