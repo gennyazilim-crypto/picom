@@ -86,3 +86,7 @@ Windows native screen-share certification was BLOCKED by missing trusted RC, cle
 ## Task 409 real-evidence update
 
 Linux package, voice, and screen-share certification was BLOCKED by the absence of a native Linux runner and final artifacts. RB-05 and RB-07 remain open.
+
+## Task 410 real-evidence update
+
+macOS signature, notarization, staple, Gatekeeper, permission, and screen-share certification were BLOCKED by absent native runner and credentials. RB-05 and RB-08 remain open.

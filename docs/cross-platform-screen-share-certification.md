@@ -54,3 +54,7 @@ Windows certification was **BLOCKED** because no trusted exact RC, clean Windows
 ## Task 409 Linux real execution
 
 Linux certification was **BLOCKED** because no native runner or verifiable Linux CI environment was available. X11/Wayland, PipeWire portal, package, audio, and remote-view behavior remain untested.
+
+## Task 410 macOS real execution
+
+macOS certification was **BLOCKED** because no native signed/notarized candidate, test device, microphone/Screen Recording permission flow, or remote client was available.

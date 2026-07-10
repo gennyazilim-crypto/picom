@@ -64,3 +64,7 @@ success does not satisfy production signing requirements.
 ## Task 401 evidence update
 
 The production notarization workflow smoke passed without credentials. No Developer ID signature, Apple submission, staple, Gatekeeper assessment, or native permission matrix occurred; the macOS release gate remains blocked.
+
+## Task 410 real execution
+
+No native macOS signing/notarization command ran. The release-only configuration remains prepared, but Apple trust and permission evidence are absent.
