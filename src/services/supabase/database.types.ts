@@ -251,7 +251,7 @@ export type Database = {
         Relationships: [];
       };
       community_invites: {
-        Row: { id: string; community_id: string; code: string; created_by: string; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; created_at: string };
+        Row: { id: string; community_id: string; code: string; created_by: string; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; created_at: string; campaign_label: string | null; last_used_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["community_invites"]["Row"]> & Pick<Database["public"]["Tables"]["community_invites"]["Row"], "community_id" | "code" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
         Relationships: [];
@@ -454,6 +454,9 @@ export type Database = {
         Args: { invite_code: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;
       };
+      create_community_invite: { Args: { target_community_id: string; target_max_uses?: number | null; target_expires_at?: string | null; target_campaign_label?: string | null }; Returns: Array<Database["public"]["Tables"]["community_invites"]["Row"]> };
+      revoke_community_invite: { Args: { target_invite_id: string }; Returns: Array<Database["public"]["Tables"]["community_invites"]["Row"]> };
+      list_community_invite_campaigns: { Args: { target_community_id: string }; Returns: Array<{ id: string; community_id: string; created_by: string; creator_name: string; campaign_label: string | null; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; last_used_at: string | null; created_at: string }> };
       append_community_audit_log: {
         Args: { target_community_id: string; event_action_type: string; event_target_type: string; event_target_id: string | null; event_reason: string | null };
         Returns: string;

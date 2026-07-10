@@ -14,7 +14,10 @@ export type CommunityInvite = Readonly<{
   expiresAt: string | null;
   revokedAt: string | null;
   createdAt: string;
+  campaignLabel: string | null;
+  lastUsedAt: string | null;
 }>;
+export type InviteCampaignSummary = Omit<CommunityInvite, "code"> & Readonly<{ creatorName: string }>;
 
 type InviteResult<T> = { ok: true; data: T } | { ok: false; error: { code: string; message: string } };
 type MockInviteStore = { records: CommunityInvite[] };
@@ -48,9 +51,9 @@ function normalizeCode(value: string): string {
 }
 
 function mapInvite(row: {
-  id: string; community_id: string; code: string; created_by: string; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; created_at: string;
+  id: string; community_id: string; code: string; created_by: string; max_uses: number | null; uses: number; expires_at: string | null; revoked_at: string | null; created_at: string; campaign_label?: string | null; last_used_at?: string | null;
 }): CommunityInvite {
-  return { id: row.id, communityId: row.community_id, code: row.code, createdBy: row.created_by, maxUses: row.max_uses, uses: row.uses, expiresAt: row.expires_at, revokedAt: row.revoked_at, createdAt: row.created_at };
+  return { id: row.id, communityId: row.community_id, code: row.code, createdBy: row.created_by, maxUses: row.max_uses, uses: row.uses, expiresAt: row.expires_at, revokedAt: row.revoked_at, createdAt: row.created_at, campaignLabel: row.campaign_label ?? null, lastUsedAt: row.last_used_at ?? null };
 }
 
 function validateInvite(invite: CommunityInvite): InviteResult<CommunityInvite> {
@@ -65,14 +68,14 @@ export const communityInviteService = {
     return `picom://invite/${code}`;
   },
 
-  async createInvite(input: { communityId: string; createdBy: string; canCreate: boolean; maxUses?: number | null; expiresInDays?: number | null }): Promise<InviteResult<CommunityInvite>> {
+  async createInvite(input: { communityId: string; createdBy: string; canCreate: boolean; maxUses?: number | null; expiresInDays?: number | null; campaignLabel?: string | null }): Promise<InviteResult<CommunityInvite>> {
     if (!input.canCreate) return { ok: false, error: { code: "PERMISSION_DENIED", message: "You do not have permission to create invites." } };
     const code = generateCode();
     const expiresAt = input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 86_400_000).toISOString() : null;
 
     if (dataSourceService.getStatus().isMock) {
       const store = readMockStore();
-      const invite: CommunityInvite = { id: `invite-${crypto.randomUUID()}`, communityId: input.communityId, code, createdBy: input.createdBy, maxUses: input.maxUses ?? null, uses: 0, expiresAt, revokedAt: null, createdAt: new Date().toISOString() };
+      const invite: CommunityInvite = { id: `invite-${crypto.randomUUID()}`, communityId: input.communityId, code, createdBy: input.createdBy, maxUses: input.maxUses ?? null, uses: 0, expiresAt, revokedAt: null, createdAt: new Date().toISOString(), campaignLabel: input.campaignLabel?.trim().slice(0, 80) || null, lastUsedAt: null };
       writeMockStore({ records: [...store.records, invite] });
       await auditLogService.append({ communityId: input.communityId, actorId: input.createdBy, actionType: "invite_create", targetType: "invite", targetId: invite.id, reason: "Invite created" });
       return { ok: true, data: invite };
@@ -81,9 +84,9 @@ export const communityInviteService = {
     const status = getSupabaseClientStatus();
     const client = getSupabaseClient();
     if (!status.configured || !client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: status.reason ?? "Supabase is not configured." } };
-    const { data, error } = await client.from("community_invites").insert({ community_id: input.communityId, code, created_by: input.createdBy, max_uses: input.maxUses ?? null, expires_at: expiresAt }).select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at").single();
-    if (error || !data) return { ok: false, error: { code: "INVITE_CREATE_FAILED", message: "Picom could not create this invite." } };
-    const invite = mapInvite(data); await auditLogService.append({ communityId: input.communityId, actionType: "invite_create", targetType: "invite", targetId: invite.id, reason: "Invite created" }); return { ok: true, data: invite };
+    const { data, error } = await client.rpc("create_community_invite", { target_community_id: input.communityId, target_max_uses: input.maxUses ?? null, target_expires_at: expiresAt, target_campaign_label: input.campaignLabel?.trim().slice(0, 80) || null });
+    const row=data?.[0]; if (error || !row) return { ok: false, error: { code: "INVITE_CREATE_FAILED", message: "Picom could not create this invite." } };
+    return { ok: true, data: mapInvite(row) };
   },
 
   async getInviteByCode(rawCode: string): Promise<InviteResult<CommunityInvite>> {
@@ -97,7 +100,7 @@ export const communityInviteService = {
 
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
-    const { data, error } = await client.from("community_invites").select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at").eq("code", code).maybeSingle();
+    const { data, error } = await client.from("community_invites").select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at,campaign_label,last_used_at").eq("code", code).maybeSingle();
     if (error || !data) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite is unavailable." } };
     return validateInvite(mapInvite(data));
   },
@@ -115,9 +118,17 @@ export const communityInviteService = {
 
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
-    const { data, error } = await client.from("community_invites").update({ revoked_at: new Date().toISOString() }).eq("id", inviteId).select("id,community_id,code,created_by,max_uses,uses,expires_at,revoked_at,created_at").single();
-    if (error || !data) return { ok: false, error: { code: "INVITE_REVOKE_FAILED", message: "Picom could not revoke this invite." } };
-    const invite = mapInvite(data); await auditLogService.append({ communityId: invite.communityId, actionType: "invite_revoke", targetType: "invite", targetId: invite.id, reason: "Invite revoked" }); return { ok: true, data: invite };
+    const { data, error } = await client.rpc("revoke_community_invite", { target_invite_id: inviteId });
+    const row=data?.[0]; if (error || !row) return { ok: false, error: { code: "INVITE_REVOKE_FAILED", message: "Picom could not revoke this invite." } };
+    return { ok: true, data: mapInvite(row) };
+  },
+
+  async listInviteCampaigns(communityId: string): Promise<InviteResult<InviteCampaignSummary[]>> {
+    if (dataSourceService.getStatus().isMock) return { ok: true, data: readMockStore().records.filter((item)=>item.communityId===communityId).map(({code: _code,...item})=>({...item,creatorName:"Mock creator"})) };
+    const client=getSupabaseClient(); if(!client)return {ok:false,error:{code:"DATA_SOURCE_NOT_CONFIGURED",message:"Supabase is not configured."}};
+    const {data,error}=await client.rpc("list_community_invite_campaigns",{target_community_id:communityId});
+    if(error)return {ok:false,error:{code:"INVITE_LIST_FAILED",message:"Picom could not load invite campaigns."}};
+    return {ok:true,data:(data??[]).map((row)=>({id:row.id,communityId:row.community_id,createdBy:row.created_by,creatorName:row.creator_name,maxUses:row.max_uses,uses:row.uses,expiresAt:row.expires_at,revokedAt:row.revoked_at,createdAt:row.created_at,campaignLabel:row.campaign_label,lastUsedAt:row.last_used_at}))};
   },
 
   async acceptInvite(input: { code: string; communities: Community[]; currentUser: Member; isAuthenticated: boolean; bannedUserIds?: string[] }): Promise<InviteResult<{ communityId: string; member: Member }>> {
@@ -146,7 +157,7 @@ export const communityInviteService = {
     if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
     const { data, error } = await client.rpc("accept_community_invite", { invite_code: code });
     const membership = data?.[0];
-    if (error || !membership) return { ok: false, error: { code: "INVITE_ACCEPT_FAILED", message: error?.message.includes("expired") ? "This invite has expired." : "This invite is invalid, expired, revoked, or exhausted." } };
+    if (error || !membership) return { ok: false, error: { code: error?.message.includes("banned") ? "INVITE_BANNED" : "INVITE_ACCEPT_FAILED", message: error?.message.includes("banned") ? "You cannot join this community." : error?.message.includes("expired") ? "This invite has expired." : "This invite is invalid, expired, revoked, or exhausted." } };
     return { ok: true, data: { communityId: membership.community_id, member: { id: membership.id, userId: membership.user_id, displayName: input.currentUser.displayName, username: input.currentUser.username, avatarSeed: input.currentUser.avatarSeed, avatarUrl: input.currentUser.avatarUrl, status: input.currentUser.status, statusText: "Joined with an invite", roleId: membership.role_id ?? "member", bio: input.currentUser.bio } } };
   },
 };
