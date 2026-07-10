@@ -8,7 +8,7 @@ const artifactsDir = path.join(root, "release");
 
 fs.rmSync(root, { recursive: true, force: true });
 fs.mkdirSync(artifactsDir, { recursive: true });
-fs.writeFileSync(path.join(artifactsDir, "Picom-0.1.0.AppImage"), "artifact-placeholder");
+fs.writeFileSync(path.join(artifactsDir, "Picom-0.1.1-beta.1-beta-Linux-x86_64.AppImage"), "artifact-placeholder");
 
 execFileSync(process.execPath, ["scripts/generate-release-provenance.mjs", `--output=${output}`, `--artifacts-dir=${artifactsDir}`], {
   stdio: "pipe",
@@ -37,8 +37,12 @@ for (const [key, expected] of Object.entries({
   }
 }
 
-if (!Array.isArray(provenance.artifacts) || !provenance.artifacts.includes("Picom-0.1.0.AppImage")) {
+if (!Array.isArray(provenance.artifacts) || !provenance.artifacts.includes("Picom-0.1.1-beta.1-beta-Linux-x86_64.AppImage")) {
   throw new Error("Provenance output did not include expected artifact list.");
+}
+
+if (!Array.isArray(provenance.artifactMetadata) || provenance.artifactMetadata.length !== 1 || !/^[a-f0-9]{64}$/.test(provenance.artifactMetadata[0].sha256) || provenance.artifactMetadata[0].sizeBytes <= 0) {
+  throw new Error("Provenance output did not include safe artifact hash/size metadata.");
 }
 
 for (const forbidden of ["password", "secret", "service_role", "privateKey", "certificatePassword"]) {
@@ -50,7 +54,7 @@ for (const forbidden of ["password", "secret", "service_role", "privateKey", "ce
 for (const [file, expected] of [
   ["src/config/appConfig.ts", "backendApiCompatibilityVersion"],
   ["src/components/SettingsModal.tsx", "About Picom"],
-  ["src/services/diagnosticsService.ts", "commitShort"],
+  ["src/services/diagnostics/diagnosticsService.ts", "commitShort"],
 ]) {
   if (!fs.readFileSync(file, "utf8").includes(expected)) {
     throw new Error(`${file} missing expected provenance marker: ${expected}`);
@@ -59,4 +63,3 @@ for (const [file, expected] of [
 
 fs.rmSync(root, { recursive: true, force: true });
 console.log("Release provenance smoke test passed.");
-

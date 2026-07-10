@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -55,17 +56,36 @@ function listArtifacts(artifactsDir) {
   return files.sort((a, b) => a.localeCompare(b));
 }
 
+function getReleaseChannel(version) {
+  const configured = process.env.VITE_RELEASE_CHANNEL ?? process.env.RELEASE_CHANNEL;
+  if (configured && /^[a-z0-9][a-z0-9-]{0,31}$/i.test(configured)) return configured.toLowerCase();
+  const prerelease = version.split("-")[1];
+  return prerelease ? prerelease.split(".")[0].toLowerCase() : "latest";
+}
+
+function getArtifactMetadata(artifactsDir, artifacts) {
+  return artifacts.map((relativePath) => {
+    const fullPath = path.join(artifactsDir, relativePath);
+    return {
+      path: relativePath,
+      sizeBytes: fs.statSync(fullPath).size,
+      sha256: createHash("sha256").update(fs.readFileSync(fullPath)).digest("hex"),
+    };
+  });
+}
+
 const args = parseArgs(process.argv.slice(2));
 const packageJson = readPackageJson();
 const gitCommit = getGitCommit();
 const outputPath = path.resolve(args.output);
 const electronVersion = packageJson.devDependencies?.electron ?? packageJson.dependencies?.electron ?? "unknown";
+const artifacts = listArtifacts(args.artifactsDir);
 
 const provenance = {
   schemaVersion: 1,
   productName: "Picom",
   appVersion: packageJson.version,
-  releaseChannel: process.env.VITE_RELEASE_CHANNEL ?? process.env.RELEASE_CHANNEL ?? "dev",
+  releaseChannel: getReleaseChannel(packageJson.version),
   gitCommit,
   gitCommitShort: gitCommit === "unknown" ? "unknown" : gitCommit.slice(0, 12),
   buildDate: process.env.VITE_BUILD_DATE ?? new Date().toISOString(),
@@ -75,7 +95,8 @@ const provenance = {
   nodeVersion: process.version,
   frontendBuildHash: process.env.VITE_FRONTEND_BUILD_HASH ?? "not-generated",
   backendApiCompatibilityVersion: process.env.VITE_API_COMPATIBILITY_VERSION ?? "mvp-placeholder",
-  artifacts: listArtifacts(args.artifactsDir),
+  artifacts,
+  artifactMetadata: getArtifactMetadata(args.artifactsDir, artifacts),
   notes: "Sensitive credentials, signing material, certificates, and private machine identifiers are excluded.",
 };
 

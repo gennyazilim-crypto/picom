@@ -70,6 +70,20 @@ node scripts/generate-checksums.mjs --dir=release --output=release/SHA256SUMS.tx
 
 Without `--strict`, the script exits safely if `release/` does not exist or has no artifacts. This keeps local development fast and non-destructive.
 
+Verify the generated manifest on any supported build host:
+
+```bash
+npm run verify-checksums
+```
+
+Custom path verification:
+
+```bash
+node scripts/verify-release-checksums.mjs --dir=release --manifest=release/SHA256SUMS.txt
+```
+
+Verification rejects malformed hashes, missing files, changed bytes, and paths that escape the artifact directory.
+
 ## Release checklist integration
 
 Before publishing beta/stable packages:
@@ -79,6 +93,7 @@ Before publishing beta/stable packages:
 - Build the Linux deb package.
 - Build rpm only if rpm packaging is enabled.
 - Run `npm run generate-checksums`.
+- Run `npm run verify-checksums` against the final signed/notarized bytes.
 - Run `npm run generate-provenance`.
 - Upload artifacts and `SHA256SUMS.txt` together.
 - Upload `provenance.json` with package artifacts.

@@ -53,6 +53,7 @@ jobs:
       - name: Generate post-stapling checksum and provenance
         run: |
           npm run generate-checksums
+          npm run verify-checksums
           npm run generate-provenance
       - name: Remove ephemeral notary key
         if: always()

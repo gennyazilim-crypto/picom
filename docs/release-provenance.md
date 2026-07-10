@@ -4,7 +4,7 @@ Picom release artifacts should include provenance metadata so the team can trace
 
 ## Status
 
-- Provenance generation path: prepared
+- Provenance generation path: active
 - Artifact publishing: not enabled by this task
 - Signing keys: not added
 - Auto-update metadata: not enabled
@@ -25,6 +25,7 @@ Generated provenance includes:
 - frontend build hash placeholder
 - backend API compatibility version placeholder
 - artifact file names found in the release directory
+- artifact size and SHA256 digest for each release file
 
 No secrets, signing keys, certificate passwords, private hostnames, or production credentials should be included.
 
@@ -70,12 +71,15 @@ Recommended release order:
 1. Build Windows/Linux/macOS packages.
 2. Run `npm run generate-checksums`.
 3. Run `npm run generate-provenance`.
-4. Upload packages, `SHA256SUMS.txt`, and `provenance.json` together.
-5. Verify metadata matches the release tag/commit before promotion.
+4. Run `npm run verify-checksums`.
+5. Upload packages, `SHA256SUMS.txt`, and `provenance.json` together.
+6. Verify metadata matches the release tag/commit before promotion.
 
 ## Relationship to checksums
 
 Checksums verify artifact bytes. Provenance explains where those artifact bytes came from. Both should be published together for beta/stable releases.
+
+The provenance generator derives channel from the approved environment override when valid; otherwise it derives the prerelease channel from `package.json` SemVer (`beta` for `0.1.1-beta.1`, `latest` for stable versions). It never serializes the environment wholesale.
 
 ## Security notes
 
@@ -83,4 +87,3 @@ Checksums verify artifact bytes. Provenance explains where those artifact bytes 
 - Do not include environment variables wholesale.
 - Do not include local usernames, private machine names, signing identities, or secret manager paths.
 - Regenerate provenance whenever artifacts are rebuilt.
-
