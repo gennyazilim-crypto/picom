@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const files = {
   doc: readFileSync(resolve(root, "docs/audit-log-immutability.md"), "utf8"),
-  loggingService: readFileSync(resolve(root, "src/services/loggingService.ts"), "utf8"),
+  hardeningDoc: readFileSync(resolve(root, "docs/audit/audit-log-immutability-hardening.md"), "utf8"),
+  auditService: readFileSync(resolve(root, "src/services/auditLogService.ts"), "utf8"),
+  migration: readFileSync(resolve(root, "supabase/migrations/20260710144000_audit_log_immutability_hardening.sql"), "utf8"),
 };
 
 const checks = [
@@ -17,9 +19,13 @@ const checks = [
   [files.doc.includes("authorization headers"), "authorization header exclusion"],
   [files.doc.includes("security definer"), "trusted write function guidance"],
   [files.doc.includes("on delete set null"), "cascade delete protection"],
-  [files.doc.includes("loggingService"), "central logging service relationship"],
-  [files.loggingService.includes("SENSITIVE_KEY_PATTERN"), "logging redaction pattern exists"],
-  [files.loggingService.includes("redactDiagnosticsValue"), "diagnostics redaction helper exists"],
+  [files.hardeningDoc.toLowerCase().includes("append-only"), "hardening append-only policy"],
+  [files.hardeningDoc.includes("Export policy"), "bounded export policy"],
+  [files.hardeningDoc.includes("Retention"), "retention policy"],
+  [files.auditService.includes("AUDIT_SECRET_PATTERN"), "audit service redaction"],
+  [files.auditService.includes("formatVersion: 1"), "bounded export format"],
+  [files.migration.includes("audit_log_append_only"), "database append-only trigger"],
+  [files.migration.includes("revoke insert, update, delete, truncate"), "explicit mutation privilege revocation"],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);
