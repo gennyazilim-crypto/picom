@@ -38,3 +38,7 @@ Local Supabase/RLS/API/secret-boundary and build gates passed on 2026-07-10. Hos
 ## Task 397 evidence update
 
 LiveKit service, device, reconnect, mini-card, discovery, and diagnostics contracts passed locally. No hosted token or two-client media session ran, so RB-04 remains open.
+
+## Task 398 evidence update
+
+Screen-share permission recovery, preview/stop, preload, and IPC validation passed. Packaged remote-view evidence on Windows and native Linux/macOS evidence are absent, so RB-05 remains open.

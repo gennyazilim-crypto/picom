@@ -42,3 +42,7 @@ Status: **Blocked pending macOS host, signing, and notarization**.
 ## Release impact
 
 RB-05 remains open. Stable notes must not claim certified cross-platform screen sharing until every promised platform passes the interactive matrix.
+
+## Task 398 closure attempt
+
+Permission recovery, preview/stop, preload contract, and invalid-payload tests passed on 2026-07-10. No remote-client screen track was tested, and no native Linux or macOS runner evidence was available. The platform matrix remains blocked as detailed in `docs/cross-platform-screen-share-evidence-closure.md`.
