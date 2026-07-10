@@ -253,6 +253,7 @@
     "image-cache:smoke": "node scripts/image-cache-strategy-smoke-test.mjs",
     "disk-cache:smoke": "node scripts/disk-cache-management-smoke-test.mjs",
     "safe-mode:smoke": "node scripts/safe-mode-smoke-test.mjs",
+    "safe-mode:production:test": "node scripts/safe-mode-recovery-production-test.mjs",
     "feed:companion:smoke": "node scripts/feed-companion-rail-smoke-test.mjs",
     "mentions:ranking:test": "node scripts/mention-feed-ranking-v2-test.mjs",
     "follow:suggestions:test": "node scripts/follow-suggestions-v2-test.mjs",

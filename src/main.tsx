@@ -34,7 +34,8 @@ function getRootElement(): HTMLElement {
 
 function bootstrapRenderer(): void {
   markRuntime();
-  localDataMigrationService.migrateOnStartup();
+  const migration = localDataMigrationService.migrateOnStartup();
+  if (!migration.ok) safeModeService.enableSafeMode("local_data_migration_failed");
   crashReporterService.initialize();
   const safeMode = safeModeService.getStartupState();
 

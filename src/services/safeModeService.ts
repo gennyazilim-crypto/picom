@@ -6,7 +6,8 @@ export type SafeModeReason =
   | "manual_flag"
   | "query_flag"
   | "repeated_startup_crash"
-  | "corrupted_settings_placeholder";
+  | "corrupted_settings_placeholder"
+  | "local_data_migration_failed";
 
 export type SafeModeState = Readonly<{
   active: boolean;
@@ -24,6 +25,7 @@ const forcedSafeModeKey = "picom:safe-mode:forced";
 const forcedSafeModeReasonKey = "picom:safe-mode:reason";
 const startupCrashCountKey = "picom:safe-mode:startup-crash-count";
 const startupCrashThreshold = 2;
+let runtimeForcedReason: SafeModeReason | null = null;
 
 const disabledServices = [
   "Realtime paused",
@@ -72,7 +74,8 @@ function readForcedReason(): SafeModeReason {
       reason === "manual_flag" ||
       reason === "query_flag" ||
       reason === "repeated_startup_crash" ||
-      reason === "corrupted_settings_placeholder"
+      reason === "corrupted_settings_placeholder" ||
+      reason === "local_data_migration_failed"
     ) {
       return reason;
     }
@@ -87,12 +90,12 @@ export const safeModeService = {
   getStartupState(): SafeModeState {
     const crashCount = readCrashCount();
     const queryFlag = hasQueryFlag();
-    const forcedFlag = hasForcedFlag();
+    const forcedFlag = Boolean(runtimeForcedReason) || hasForcedFlag();
     const active = queryFlag || forcedFlag || crashCount >= startupCrashThreshold;
     const reason: SafeModeReason | null = queryFlag
       ? "query_flag"
       : forcedFlag
-        ? readForcedReason()
+        ? runtimeForcedReason ?? readForcedReason()
         : crashCount >= startupCrashThreshold
           ? "repeated_startup_crash"
           : null;
@@ -110,7 +113,13 @@ export const safeModeService = {
     return this.getStartupState();
   },
 
+  recordStartupStable(): SafeModeState {
+    writeCrashCount(0);
+    return this.getStartupState();
+  },
+
   enableSafeMode(reason: SafeModeReason = "manual_flag"): SafeModeState {
+    runtimeForcedReason = reason;
     try {
       localStorage.setItem(forcedSafeModeKey, "true");
       localStorage.setItem(forcedSafeModeReasonKey, reason);
@@ -122,6 +131,7 @@ export const safeModeService = {
   },
 
   exitSafeMode(): SafeModeActionResult {
+    runtimeForcedReason = null;
     try {
       localStorage.removeItem(forcedSafeModeKey);
       localStorage.removeItem(forcedSafeModeReasonKey);
@@ -162,6 +172,11 @@ export const safeModeService = {
 
   restartNormally(): void {
     this.exitSafeMode();
+    try {
+      localStorage.setItem("picom:safe-mode:last-normal-restart", new Date().toISOString());
+    } catch {
+      // Runtime state is already cleared in memory; storage is best-effort.
+    }
     window.location.reload();
   },
 };

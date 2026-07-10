@@ -4,7 +4,7 @@ const service = readFileSync("src/services/crashRecoveryService.ts", "utf8");
 const dialog = readFileSync("src/components/CrashRecoveryDialog.tsx", "utf8");
 const boundary = readFileSync("src/components/DesktopStartupErrorBoundary.tsx", "utf8");
 const app = readFileSync("src/App.tsx", "utf8");
-const logging = readFileSync("src/services/loggingService.ts", "utf8");
+const logging = readFileSync("src/services/logging/loggingService.ts", "utf8");
 const styles = readFileSync("src/styles.css", "utf8");
 
 const checks = [

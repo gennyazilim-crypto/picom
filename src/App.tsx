@@ -529,6 +529,7 @@ export function App() {
   useEffect(() => {
     const stableTimer = window.setTimeout(() => {
       crashRecoveryService.recordStartupStable();
+      safeModeService.recordStartupStable();
     }, 3000);
     const recordCleanShutdown = () => crashRecoveryService.recordCleanShutdown();
 

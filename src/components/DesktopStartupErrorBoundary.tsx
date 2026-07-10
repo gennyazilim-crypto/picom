@@ -64,6 +64,11 @@ export class DesktopStartupErrorBoundary extends Component<
     crashRecoveryService.restartRenderer();
   };
 
+  private restartInSafeMode = (): void => {
+    safeModeService.enableSafeMode("manual_flag");
+    crashRecoveryService.restartRenderer();
+  };
+
   render(): ReactNode {
     if (!this.state.error) {
       return this.props.children;
@@ -92,6 +97,9 @@ export class DesktopStartupErrorBoundary extends Component<
           <div className="startup-error-actions">
             <button type="button" className="primary" onClick={this.restartRenderer}>
               Restart app view
+            </button>
+            <button type="button" onClick={this.restartInSafeMode}>
+              Restart in Safe Mode
             </button>
             <button type="button" onClick={this.copyDiagnostics}>
               {this.state.copied ? "Diagnostics copied" : "Copy diagnostics"}

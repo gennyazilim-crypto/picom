@@ -39,10 +39,14 @@ function pruneBackups(storage: Storage): void {
 
 function backupAllowedScope(storage: Storage, scope: LocalDataMigrationScope, raw: string | null, context: MigrationContext): void {
   if (!raw) return;
-  const key = `${BACKUP_PREFIX}:${Date.now()}:${scope}`;
-  storage.setItem(key, raw.slice(0, MAX_BACKUP_CHARS));
-  context.backupKeys.push(key);
-  pruneBackups(storage);
+  try {
+    const key = `${BACKUP_PREFIX}:${Date.now()}:${scope}`;
+    storage.setItem(key, raw.slice(0, MAX_BACKUP_CHARS));
+    context.backupKeys.push(key);
+    pruneBackups(storage);
+  } catch {
+    // A quota/policy failure must not block basic Safe Mode startup.
+  }
 }
 
 function migrateSettings(storage: Storage, context: MigrationContext): void {
@@ -138,7 +142,11 @@ export const localDataMigrationService = {
       version = migration.toVersion;
     }
     const ok = version === CURRENT_SCHEMA_VERSION;
-    storage.setItem(MANIFEST_KEY, JSON.stringify({ schemaVersion: CURRENT_SCHEMA_VERSION, migratedAt: new Date().toISOString(), ok }));
-    return { ok, fromVersion, toVersion: CURRENT_SCHEMA_VERSION, ...context };
+    try {
+      storage.setItem(MANIFEST_KEY, JSON.stringify({ schemaVersion: CURRENT_SCHEMA_VERSION, migratedAt: new Date().toISOString(), ok }));
+      return { ok, fromVersion, toVersion: CURRENT_SCHEMA_VERSION, ...context };
+    } catch {
+      return { ok: false, fromVersion, toVersion: CURRENT_SCHEMA_VERSION, ...context };
+    }
   },
 };
