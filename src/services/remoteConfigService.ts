@@ -1,5 +1,6 @@
 ﻿import { appConfig, type ReleaseChannel } from "../config/appConfig";
 import { dataSourceService } from "./dataSourceService";
+import { getApiCompatibilityRequestHeaders } from "../config/apiCompatibility";
 import { emergencyKillSwitchService, type EmergencyKillSwitchOverrides } from "./emergencyKillSwitchService";
 import { FEATURE_FLAG_KEYS, featureFlagService, type FeatureFlagOverrides } from "./featureFlagService";
 import { loggingService } from "./loggingService";
@@ -202,11 +203,12 @@ function getRemoteConfigUrl(): string | null {
 function getFetchHeaders(): HeadersInit {
   const supabase = dataSourceService.getSupabaseConfig();
   if (!supabase.anonKey) {
-    return { Accept: "application/json" };
+    return { Accept: "application/json", ...getApiCompatibilityRequestHeaders() };
   }
 
   return {
     Accept: "application/json",
+    ...getApiCompatibilityRequestHeaders(),
     apikey: supabase.anonKey,
     Authorization: `Bearer ${supabase.anonKey}`,
   };

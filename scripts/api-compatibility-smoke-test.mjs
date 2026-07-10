@@ -23,7 +23,7 @@ for (const expected of [
   "semantic versioning",
   "breaking change",
   "Additive change policy",
-  "Deprecation headers placeholder",
+  "Enforced compatibility headers",
   "Error shape compatibility",
   "Pagination compatibility",
   "Realtime event compatibility",

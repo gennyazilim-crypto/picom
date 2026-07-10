@@ -35,16 +35,24 @@ Picom is an Electron desktop app for Windows, Linux, and macOS. Backend changes 
 5. Update smoke tests or QA docs.
 6. Remove only after the minimum supported desktop version has moved past affected clients.
 
-## Deprecation headers placeholder
+## Enforced compatibility headers
 
-For future HTTP APIs and Edge Functions, use safe public headers:
+First-party Edge Function JSON responses expose safe public headers:
+
+- `X-Picom-API-Version: 1`
+- `X-Picom-API-Revision: 2026-07-10`
+- `X-Picom-Min-Client-Version: <public semver>`
+- `X-Picom-Recommended-Client-Version: <public semver>`
+
+Desktop requests send `X-Picom-API-Version` and `X-Picom-Client-Version`. Missing API headers remain accepted for previously released clients; an explicitly conflicting API major fails with the stable `VALIDATION_ERROR` shape. Deprecated contracts additionally use:
 
 - `Deprecation: true`
 - `Sunset: <RFC 7231 date placeholder>`
 - `Link: <replacement-doc-url-placeholder>; rel="deprecation"`
-- `X-Picom-Min-Client-Version: <version placeholder>`
 
 Do not include secrets, private deployment details, or internal admin-only config in compatibility headers.
+
+The `client-config` response remains authoritative for blocking minimum-version UI. Headers are advisory compatibility metadata and never replace authentication, RLS, permissions, kill switches, or signed release/update validation.
 
 ## Error shape compatibility
 

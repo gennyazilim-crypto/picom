@@ -39,6 +39,9 @@ jobs:
       - name: Verify dependency update train policy
         run: npm run dependency:update:train:smoke
 
+      - name: Enforce API and desktop compatibility contracts
+        run: npm run api:versioning:enforcement:smoke
+
       - name: Run QA smoke gate
         run: npm run qa:smoke
 

@@ -1,4 +1,5 @@
 import { createPicomLiveKitRoomName } from "../voiceRoomNaming";
+import { getApiCompatibilityRequestHeaders } from "../../config/apiCompatibility";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
 import type { LiveKitServiceErrorCode, LiveKitServiceResult, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekitTypes";
 
@@ -25,6 +26,7 @@ export const liveKitService = {
     const roomName = request.roomName ?? createPicomLiveKitRoomName(request.communityId, request.channelId);
     const { data, error } = await supabase.functions
       .invoke<LiveKitTokenResponse>("livekit-token", {
+        headers: getApiCompatibilityRequestHeaders(),
         body: {
           communityId: request.communityId,
           channelId: request.channelId,
