@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
+import { useRef } from "react";
 import type { Attachment, Member, Message, Role } from "../types/community";
 import { clipboardService } from "../services/clipboardService";
 import { dateTimeService } from "../services/dateTimeService";
@@ -130,6 +131,7 @@ export function MessageItem({
 }: MessageItemProps) {
   const [draft, setDraft] = useState(message.body);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+  const wasEditingRef = useRef(false);
   const deleted = Boolean(message.deletedAt);
   const ownMessage = message.authorId === currentUserId;
   const deliveryStatus = messageDeliveryReceiptService.normalize(message.localStatus);
@@ -138,7 +140,8 @@ export function MessageItem({
   const showRecoveryActions = showDeliveryStatus && messageDeliveryReceiptService.isRecoverable(deliveryStatus);
 
   useEffect(() => {
-    if (editing) setDraft(message.body);
+    if (editing && !wasEditingRef.current) setDraft(message.body);
+    wasEditingRef.current = editing;
   }, [editing, message.body]);
 
   const saveEdit = () => {

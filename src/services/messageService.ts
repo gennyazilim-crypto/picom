@@ -58,10 +58,12 @@ export type SendMessageInput = Readonly<{
 export type EditMessageInput = Readonly<{
   messageId: string;
   body: string;
+  expectedEditedAt?: string | null;
 }>;
 
 export type DeleteMessageInput = Readonly<{
   messageId: string;
+  expectedEditedAt?: string | null;
 }>;
 
 export type MessageServiceErrorCode =
@@ -74,7 +76,10 @@ export type MessageServiceErrorCode =
   | "MESSAGE_SEND_FAILED"
   | "MESSAGE_LIST_FAILED"
   | "MESSAGE_EDIT_FAILED"
-  | "MESSAGE_DELETE_FAILED";
+  | "MESSAGE_EDIT_CONFLICT"
+  | "MESSAGE_DELETED_CONFLICT"
+  | "MESSAGE_DELETE_FAILED"
+  | "MESSAGE_DELETE_CONFLICT";
 
 export type MessageServiceError = Readonly<{
   code: MessageServiceErrorCode;
@@ -268,9 +273,11 @@ export const messageService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data, error } = await editSupabaseMessage(configured.data, input.messageId, body);
+    const { data, error, conflict } = await editSupabaseMessage(configured.data, input.messageId, body, input.expectedEditedAt);
 
     if (error || !data) {
+      if (conflict === "version") return messageError("MESSAGE_EDIT_CONFLICT", "This message changed in another window. Review your draft and retry.");
+      if (conflict === "deleted") return messageError("MESSAGE_DELETED_CONFLICT", "This message was deleted in another window.");
       return messageError("MESSAGE_EDIT_FAILED", "Could not edit message.");
     }
 
@@ -290,9 +297,10 @@ export const messageService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data, error } = await deleteSupabaseMessage(configured.data, input.messageId);
+    const { data, error, conflict } = await deleteSupabaseMessage(configured.data, input.messageId, input.expectedEditedAt);
 
     if (error || !data) {
+      if (conflict === "version") return messageError("MESSAGE_DELETE_CONFLICT", "This message changed in another window. Review it before deleting.");
       return messageError("MESSAGE_DELETE_FAILED", "Could not delete message.");
     }
 

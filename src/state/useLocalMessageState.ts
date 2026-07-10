@@ -48,6 +48,7 @@ type EditLocalMessageInput = {
   channelId: string;
   id: string;
   body: string;
+  editedAt?: string | null;
 };
 
 type ToggleLocalReactionInput = {
@@ -72,19 +73,8 @@ function isSameMessage(message: Message, id: string, clientMessageId?: string | 
   return message.id === id || Boolean(clientMessageId && message.clientMessageId === clientMessageId);
 }
 
-function getMessageFreshnessTimestamp(message: Pick<Message, "createdAt" | "editedAt" | "deletedAt">): number {
-  const parsed = Date.parse(message.deletedAt ?? message.editedAt ?? message.createdAt);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function shouldKeepDeletedMessage(existing: Message, incoming: Message): boolean {
-  if (!existing.deletedAt || incoming.deletedAt) return false;
-
-  const deletedAt = Date.parse(existing.deletedAt);
-  const incomingTimestamp = getMessageFreshnessTimestamp(incoming);
-
-  if (!Number.isFinite(deletedAt) || incomingTimestamp <= 0) return false;
-  return incomingTimestamp <= deletedAt;
+  return Boolean(existing.deletedAt && !incoming.deletedAt);
 }
 
 function compareMessagesByDisplayOrder(left: Message, right: Message): number {
@@ -279,13 +269,12 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       current.map((community) => {
         if (community.id !== communityId) return community;
 
-        const messages = deletedAt
-          ? community.messages.filter((message) => message.id !== id)
-          : community.messages.map((message) =>
-              message.id === id && message.channelId === channelId
-                ? { ...message, body, editedAt: editedAt ?? new Date().toISOString() }
-                : message,
-            );
+        const messages = community.messages.map((message) => {
+          if (message.id !== id || message.channelId !== channelId) return message;
+          if (deletedAt) return { ...message, body: "", editedAt: undefined, deletedAt, attachments: [], reactions: [] };
+          if (message.deletedAt) return message;
+          return { ...message, body, editedAt: editedAt === null ? undefined : editedAt ?? new Date().toISOString() };
+        });
 
         return { ...community, messages };
       }),
@@ -309,7 +298,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     }));
   }, []);
 
-  const editLocalMessage = useCallback(({ communityId, channelId, id, body }: EditLocalMessageInput) => {
+  const editLocalMessage = useCallback(({ communityId, channelId, id, body, editedAt }: EditLocalMessageInput) => {
     setCommunities((current) =>
       current.map((community) =>
         community.id === communityId
@@ -317,7 +306,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
               ...community,
               messages: community.messages.map((message) =>
                 message.id === id && message.channelId === channelId && !message.deletedAt
-                  ? { ...message, body, editedAt: new Date().toISOString() }
+                  ? { ...message, body, editedAt: editedAt === null ? undefined : editedAt ?? new Date().toISOString() }
                   : message,
               ),
             }

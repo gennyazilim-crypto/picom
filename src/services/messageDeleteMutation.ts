@@ -16,7 +16,15 @@ export type MessageDeleteRow = Readonly<{
 export type MessageDeleteMutationResult = Readonly<{
   data: DeletedMessageSummary | null;
   error: unknown;
+  conflict?: "version" | "forbidden";
 }>;
+
+function classifyConflict(error: unknown): MessageDeleteMutationResult["conflict"] {
+  const message = error && typeof error === "object" && "message" in error ? String(error.message) : String(error ?? "");
+  if (message.includes("MESSAGE_VERSION_CONFLICT")) return "version";
+  if (message.includes("MESSAGE_DELETE_FORBIDDEN")) return "forbidden";
+  return undefined;
+}
 
 export function mapMessageDeleteRow(row: MessageDeleteRow): DeletedMessageSummary {
   return {
@@ -32,23 +40,19 @@ export function createMockDeletedMessage(messageId: string): DeletedMessageSumma
   };
 }
 
-export async function deleteSupabaseMessage(client: SupabaseClient<Database>, messageId: string): Promise<MessageDeleteMutationResult> {
-  const { data, error } = await client
-    .from("messages")
-    .update({
-      deleted_at: new Date().toISOString(),
-    })
-    .eq("id", messageId)
-    .is("deleted_at", null)
-    .select(MESSAGE_DELETE_SELECT)
-    .single();
+export async function deleteSupabaseMessage(client: SupabaseClient<Database>, messageId: string, expectedEditedAt?: string | null): Promise<MessageDeleteMutationResult> {
+  const { data, error } = await client.rpc("delete_message_with_version", {
+    target_message_id: messageId,
+    expected_edited_at: expectedEditedAt ?? null,
+  });
+  const row = data?.[0];
 
-  if (error || !data) {
-    return { data: null, error };
+  if (error || !row) {
+    return { data: null, error, conflict: classifyConflict(error) };
   }
 
   return {
-    data: mapMessageDeleteRow(data),
+    data: mapMessageDeleteRow(row),
     error: null,
   };
 }

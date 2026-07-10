@@ -164,7 +164,7 @@ export function createRealtimeEventOrderingGuard(maxEntries = 1000) {
       const latestTimestamp = latestMessageTimestamps.get(key);
       const deletedTimestamp = deletedMessageTimestamps.get(key);
 
-      if (event.type !== "message:delete" && shouldTreatAsOlder(eventTimestamp, deletedTimestamp)) {
+      if (event.type !== "message:delete" && deletedTimestamp !== undefined) {
         return { shouldProcess: false, reason: "older_than_delete" };
       }
 

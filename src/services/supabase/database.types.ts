@@ -545,6 +545,8 @@ export type Database = {
       unfollow_user: { Args: { target_user_id: string }; Returns: boolean };
       set_message_reaction: { Args: { target_message_id: string; target_emoji: string; target_reacted: boolean }; Returns: Array<{ message_id: string; emoji: string; reaction_count: number; reacted_by_current_user: boolean }> };
       list_message_reaction_summaries: { Args: { target_message_ids: string[] }; Returns: Array<{ message_id: string; emoji: string; reaction_count: number; reacted_by_current_user: boolean }> };
+      edit_message_with_version: { Args: { target_message_id: string; next_body: string; expected_edited_at: string | null }; Returns: Array<{ id: string; body: string; edited_at: string; deleted_at: string | null }> };
+      delete_message_with_version: { Args: { target_message_id: string; expected_edited_at: string | null }; Returns: Array<{ id: string; deleted_at: string }> };
       list_mention_feed: {
         Args: { cursor_created_at?: string | null; cursor_message_id?: string | null; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["mention_feed_view"]["Row"]>;

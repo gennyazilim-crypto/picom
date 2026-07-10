@@ -643,12 +643,12 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id, updateLocalMessage, upsertLocalMessage]);
 
   const handleRealtimeMessageDelete = useCallback((messageId: string) => {
-    removeLocalMessage({
+    deleteLocalMessage({
       communityId: activeCommunity.id,
       channelId: activeChannel.id,
       id: messageId,
     });
-  }, [activeChannel.id, activeCommunity.id, removeLocalMessage]);
+  }, [activeChannel.id, activeCommunity.id, deleteLocalMessage]);
 
   const realtimeStatus = useSupabaseMessageRealtime({
     enabled: Boolean(authSession) && !safeMode.active,
@@ -1932,22 +1932,31 @@ export function App() {
     return (role?.level ?? 0) >= 60;
   };
 
-  const handleSaveMessageEdit = (message: Message, body: string) => {
+  const handleSaveMessageEdit = async (message: Message, body: string) => {
     if (message.authorId !== currentUser.userId || message.deletedAt) {
       pushToast("You can only edit your own active messages.", "error");
       return;
     }
 
+    const previousBody = message.body;
+    const previousEditedAt = message.editedAt ?? null;
     editLocalMessage({
       communityId: activeCommunity.id,
       channelId: message.channelId,
       id: message.id,
       body,
     });
+    const result = await messageService.editMessage({ messageId: message.id, body, expectedEditedAt: previousEditedAt });
+    if (!result.ok) {
+      updateLocalMessage({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, body: previousBody, editedAt: previousEditedAt });
+      pushToast(result.error.message, "error");
+      return;
+    }
+    updateLocalMessage({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, body: result.data.body, editedAt: result.data.editedAt });
     setEditingMessageId(null);
   };
 
-  const handleDeleteMessage = (message: Message) => {
+  const handleDeleteMessage = async (message: Message) => {
     const ownMessage = message.authorId === currentUser.userId;
 
     if (!ownMessage && !canCurrentUserModerate()) {
@@ -1960,6 +1969,11 @@ export function App() {
       return;
     }
 
+    const result = await messageService.deleteMessage({ messageId: message.id, expectedEditedAt: message.editedAt ?? null });
+    if (!result.ok) {
+      pushToast(result.error.message, "error");
+      return;
+    }
     deleteLocalMessage({
       communityId: activeCommunity.id,
       channelId: message.channelId,
