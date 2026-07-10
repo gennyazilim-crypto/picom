@@ -158,6 +158,7 @@
     "slo:smoke": "node scripts/slo-plan-smoke-test.mjs",
     "observability:slo:dashboards:smoke": "node scripts/observability-slo-dashboards-smoke-test.mjs",
     "incident:response:smoke": "node scripts/incident-response-smoke-test.mjs",
+    "alerting:oncall:smoke": "node scripts/alerting-on-call-playbook-smoke-test.mjs",
     "postmortem:smoke": "node scripts/postmortem-template-smoke-test.mjs",
     "staging:smoke:doc": "node scripts/staging-smoke-placeholder.mjs --verify-doc",
     "staging:smoke:placeholder": "node scripts/staging-smoke-placeholder.mjs",

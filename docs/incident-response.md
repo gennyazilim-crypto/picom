@@ -16,6 +16,8 @@ Mobile incidents are out of scope. Never include secrets, auth tokens, message b
 
 ## Escalation path placeholder
 
+Detailed acknowledgement, deduplication, silence, escalation and communication rules are in `docs/alerting-on-call-playbook.md`.
+
 1. Incident commander placeholder owns timeline and decisions.
 2. Engineering lead owns technical mitigation.
 3. Operations owner checks health, database, Redis, storage, and deployment state.
