@@ -1,89 +1,78 @@
-﻿# Backup Verification Workflow
+# Backup verification workflow
 
-Picom production data must not rely on untested backups. This workflow documents how to verify database backups by restoring them into a temporary development or staging database and running basic integrity checks.
+## Status
 
-This is a placeholder workflow. Do not run against production by default. Do not store real credentials in scripts, docs, commits, logs, or screenshots.
+Picom includes guarded automation that can restore a **staging backup** into a generated temporary development or staging database, run read-only integrity checks, and remove only that generated database. It is safe plan/smoke mode by default and does not connect without `--execute` plus explicit staging confirmations.
 
-## Goals
+Do not run against production. Do not place database passwords, backup contents, service-role keys, access tokens or real connection URLs in Git, command history, docs, logs or screenshots.
 
-- Confirm backup files can be restored.
-- Confirm core tables exist after restore.
-- Confirm basic row counts can be inspected.
-- Destroy temporary verification databases only when explicitly safe.
-- Document restore failures before a production migration or rollback decision.
+## Safe commands
 
-## Placeholder script
+No database access:
 
-Use:
-
-```bash
-npm run backup:verify:placeholder -- --backup path/to/backup.dump
+```text
+npm run backup:verify:placeholder
+npm run backup:verify:smoke
 ```
 
-By default, the script does not restore anything. It prints the intended verification plan and requires explicit development-only confirmation before a future implementation could run destructive temporary database actions.
+Automated staging-only execution requires PostgreSQL client tools (`createdb`, `psql`, `pg_restore` for custom dumps, `dropdb`) and protected environment configuration:
 
-Required future confirmation placeholder:
-
-```bash
-$env:PICOM_BACKUP_VERIFY_CONFIRM="development-only"
-npm run backup:verify:placeholder -- --backup path/to/backup.dump
+```powershell
+$env:PICOM_BACKUP_VERIFY_CONFIRM="staging-temporary-restore"
+$env:PICOM_BACKUP_VERIFY_SOURCE="staging"
+$env:PGHOST="127.0.0.1"
+$env:PGPORT="5432"
+$env:PGUSER="staging_restore_operator"
+$env:PGPASSWORD="<protected environment only>"
+$env:PGDATABASE="postgres"
+npm run backup:verify:automated -- --backup C:\protected\staging-backup.dump
 ```
 
-## Intended verification behavior
+For a remote staging host, additionally require `PICOM_BACKUP_VERIFY_ALLOW_STAGING=true`; the host must be explicitly named staging/test/dev. Production-like host/database names are rejected. Use a dedicated least-privilege staging restore operator and isolated database server whenever possible.
 
-A future implementation should:
+## Automated behavior
 
-1. Accept a backup file path.
-2. Refuse production connection strings by default.
-3. Create a temporary development database with a unique name.
-4. Restore the backup into that temporary database.
-5. Run read-only integrity checks.
-6. Verify core tables exist:
-   - `users`
-   - `communities`
-   - `channels`
-   - `messages`
-   - `community_members`
-   - `roles`
-   - `attachments`
-   - `audit_logs`
-7. Record placeholder row counts for users, communities, messages, attachments, roles, and audit logs.
-8. Run smoke queries for recent messages and community/channel relationships.
-9. Destroy the temporary database only after explicit confirmation that it is not production.
-10. Write a redacted verification summary.
+1. Validate backup file and staging-only confirmations.
+2. Reject production-like target, arbitrary maintenance database, and unsafe remote host.
+3. Check PostgreSQL client tools.
+4. Generate `picom_restore_verify_<timestamp>_<random>`; no caller-supplied target DB name.
+5. Create temporary DB and restore SQL with `psql` or custom/archive dump with `pg_restore`.
+6. Verify `profiles`, `communities`, `channels`, `messages`, `community_members`, `roles`, `attachments`.
+7. Record staging row counts.
+8. Run read-only relationship/owner/permissions/default-role/clientMessageId integrity checks.
+9. Detect optional `audit_log` without modifying it.
+10. In `finally`, use `dropdb --force` only for the generated prefix-matched database.
 
-## Read-only integrity checks
+This verifies database metadata, not Supabase Storage object bytes, Auth provider behavior, Realtime, Edge Functions, LiveKit or full desktop usability. Run separate staging application/storage smoke after DB verification.
 
-Recommended checks after restore:
+## Manual fallback
 
-- Users table exists.
-- Communities table exists.
-- Channels table exists and every channel has a community.
-- Messages table exists and every message has a valid channel.
-- Community members have valid users and communities.
-- Roles exist for each community or a documented default-role policy exists.
-- Attachments have valid message references.
-- Audit logs load and are not modified by verification.
+Use when client tools are unavailable or provider restore tooling must be used:
 
-## Safety rules
+1. Obtain Operations/Database approval and record staging target/backup checksum/time.
+2. Create an isolated temporary DB through provider console/approved tooling.
+3. Restore without changing production or source backup.
+4. Run read-only table/count/relationship queries from `docs/database-restore-drill.md` and `scripts/check-data-integrity.mjs` guidance.
+5. Run Auth/community/channel/message/upload/private-access/Realtime staging smoke.
+6. Verify Storage objects separately from attachment metadata.
+7. Record durations, counts, errors, backup/tool versions and decision with redaction.
+8. Remove target only after exact non-production identity and approval are reconfirmed.
 
-- Never point the verification script at production by default.
-- Never include database passwords in command examples.
-- Never auto-delete databases unless a generated temporary database name is verified.
-- Never mutate restored data beyond the restore itself.
-- Never publish row counts if they reveal sensitive business information without approval.
-- Always verify backup before risky production migrations.
+Never improvise a production restore or cleanup command from this fallback.
 
-## Failure handling
+## Failure policy
 
-If verification fails:
+- Mark backup unverified and block risky migration/release.
+- Preserve redacted stage/tool/error evidence; do not include credentials or data.
+- Do not retry destructively until cause (backup corruption, version/tool mismatch, permissions, storage, schema drift) is understood.
+- Escalate through incident response if production recoverability is in doubt.
+- If automatic temp DB cleanup fails, contact the staging DB owner immediately; do not broaden a delete command.
 
-1. Mark the backup as not verified.
-2. Do not proceed with risky production migration.
-3. Capture redacted logs and failing command stage.
-4. Check whether backup file is corrupt, incomplete, or incompatible with current restore tooling.
-5. Escalate through `docs/incident-response.md` if production data safety is at risk.
+## Required recurring evidence
 
-## Release checklist integration
+- Monthly during beta and before risky migration; quarterly stable placeholder.
+- Backup checksum/source timestamp and restore-tool/Postgres versions.
+- Restore duration, integrity counts/result, application/storage smoke, cleanup and approvers.
+- No backup is “verified” solely because it exists or a smoke script passes.
 
-Production deployment must treat backup verification as a blocker before risky migrations. See `docs/production-deployment-checklist.md` and `docs/rollback-runbook.md`.
+Production deployment and rollback decisions reference this workflow, the restore drill, incident response and post-restore reconciliation policy.
