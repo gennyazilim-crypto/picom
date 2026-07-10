@@ -70,3 +70,7 @@ Backup, PITR, maintenance, and migration recovery safety contracts passed withou
 ## Task 405 final gate
 
 Final checksum/provenance/RC/deployment/rollback process contracts passed, but there are no signed/notarized/native immutable stable artifacts to hash. RB-01 through RB-11 remain release blockers. Decision: **No-Go**; no publication authorized.
+
+## Task 406 real-evidence update
+
+Hosted Supabase execution was BLOCKED by absent staging project linkage and protected operator credentials. RB-01, RB-02, and RB-03 remain open; no remote evidence was fabricated.

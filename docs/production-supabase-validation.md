@@ -51,3 +51,7 @@ RB-01, RB-02, and RB-03 remain open. Stable distribution is No-Go until hosted e
 ## Task 396 closure attempt
 
 The 2026-07-10 blocker-closure pass reconfirmed all local/static Supabase, RLS, secret-boundary, TypeScript, mock, and build gates. Hosted execution remained blocked because no approved staging project, operator authentication, synthetic role fixtures, or protected test variables were available. See `docs/hosted-supabase-evidence-closure.md`; no remote result is claimed.
+
+## Task 406 real execution
+
+Real hosted execution remained **BLOCKED**. No staging project or protected operator credentials were available, so migrations, Auth, RLS, Storage, Realtime, and Edge requests did not run. See `docs/hosted-supabase-staging-execution.md`.
