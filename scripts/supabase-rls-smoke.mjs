@@ -9,7 +9,8 @@ const sourceDir = join(root, "src");
 
 const requiredFiles = [
   "community_access_boundaries.sql",
-  "message_ownership_and_storage.sql"
+  "message_ownership_and_storage.sql",
+  "direct_messages.sql"
 ];
 
 const requiredScenarioSnippets = [
@@ -21,7 +22,8 @@ const requiredScenarioSnippets = [
   "owner can manage channels",
   "author can edit own message",
   "other member cannot edit another user message",
-  "owner can delete visible community message"
+  "owner can delete visible community message",
+  "non-member cannot read direct messages"
 ];
 
 function fail(message) {
@@ -94,6 +96,23 @@ for (const filePath of rendererFiles) {
   }
 }
 pass("no Supabase service-role key references found in renderer source");
+
+const appSource = readFileSync(join(sourceDir, "App.tsx"), "utf8");
+const mockProfilesSource = readFileSync(join(sourceDir, "data", "mockProfiles.ts"), "utf8");
+if (!appSource.includes("visibleMentionItems") || !appSource.includes("canViewChannel(access, channel)")) {
+  fail("Mention Feed must filter inaccessible channel mentions in mock/client UX");
+}
+pass("Mention Feed filters inaccessible channel mentions");
+if (!mockProfilesSource.includes("filterCommunitiesForViewer") || !mockProfilesSource.includes("canViewChannel(access, channel)")) {
+  fail("Profile activity/media must filter inaccessible community channels in mock/client UX");
+}
+pass("Profile activity and media filter inaccessible channels");
+
+const hardeningMigration = join(root, "supabase", "migrations", "20260710004800_mvp_plus_security_hardening.sql");
+if (!existsSync(hardeningMigration)) {
+  fail("missing MVP+ RLS hardening migration");
+}
+pass("MVP+ RLS hardening migration exists");
 
 const cli = spawnSync("supabase", ["--version"], { encoding: "utf8" });
 if (cli.status !== 0) {
