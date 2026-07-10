@@ -5032,6 +5032,46 @@ body{
   background: color-mix(in srgb, var(--success) 8%, var(--surface));
 }
 
+.first-launch-permission-guide {
+  display: grid;
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-elevated));
+}
+.first-launch-permission-guide > header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+}
+.first-launch-permission-guide > header div { display: grid; min-width: 0; gap: 2px; }
+.first-launch-permission-guide > header strong { color: var(--text-primary); }
+.first-launch-permission-guide > header small { color: var(--text-muted); }
+.first-launch-permission-guide > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.first-launch-permission-guide article {
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.first-launch-permission-guide article strong { color: var(--text-primary); }
+.first-launch-permission-guide article p {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .first-launch-complete {
   align-items: center;
   justify-content: center;
@@ -5052,6 +5092,7 @@ body{
 
 .first-launch-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
   border-top: 1px solid var(--border);
