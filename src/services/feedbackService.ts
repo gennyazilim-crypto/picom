@@ -70,6 +70,7 @@ export type SupportDiagnosticsPayload = Readonly<{
   };
   serviceStatus: {
     realtimeStatus: string;
+    supabaseStatus: string;
     supabaseHost: string | null;
     liveKitStatus: string;
     authState: "authenticated" | "signed_out";
@@ -83,6 +84,7 @@ export type SupportDiagnosticsPayload = Readonly<{
       source?: string;
     };
   };
+  recentErrors: Array<{ id: string; timestamp: string; message: string; source?: string }>;
   environments: {
     supabase: string;
     liveKit: string;
@@ -126,11 +128,12 @@ export const feedbackService = {
     const diagnostics = diagnosticsService.getSnapshot();
     const redactedFeedback = redactFeedbackDraft(feedback);
 
-    return {
+    return loggingService.redactDiagnosticsValue({
       createdAt: new Date().toISOString(),
       app: diagnostics.app,
       runtime: diagnostics.runtime,
       serviceStatus: diagnostics.serviceStatus,
+      recentErrors: diagnostics.recentErrors,
       environments: {
         supabase: diagnostics.serviceStatus.supabaseHost
           ? `${diagnostics.app.environment}:${diagnostics.serviceStatus.supabaseHost}`
@@ -140,7 +143,7 @@ export const feedbackService = {
       feedback: redactedFeedback,
       recentLogs: feedback?.includeLogs ? loggingService.getRecentLogs(75) : [],
       note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, privileged server keys, or private secrets."
-    };
+    });
   },
 
   createReportText(feedback: FeedbackDraft): string {
