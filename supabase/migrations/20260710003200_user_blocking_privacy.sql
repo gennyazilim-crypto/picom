@@ -1,4 +1,4 @@
-﻿-- User blocking and DM privacy enforcement.
+-- User blocking and DM privacy enforcement.
 create table if not exists public.blocked_users (
   id uuid primary key default gen_random_uuid(),
   blocker_id uuid not null references public.profiles(id) on delete cascade,

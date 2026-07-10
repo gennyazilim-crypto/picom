@@ -1,4 +1,4 @@
-﻿-- Community role-aware menu and public visitor access foundation.
+-- Community role-aware menu and public visitor access foundation.
 -- Frontend role checks are UX only; these policies keep read/write boundaries in Postgres.
 
 alter table public.communities

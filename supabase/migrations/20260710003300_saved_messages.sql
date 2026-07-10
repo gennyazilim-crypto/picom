@@ -1,4 +1,4 @@
-﻿-- User-owned saved messages. Message visibility is rechecked for every read/insert.
+-- User-owned saved messages. Message visibility is rechecked for every read/insert.
 create table if not exists public.saved_messages (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,

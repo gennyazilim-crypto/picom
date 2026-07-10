@@ -1,4 +1,4 @@
-﻿-- Profiles table schema hardening
+-- Profiles table schema hardening
 -- Adds user-facing validation constraints for the MVP profile surface.
 
 alter table public.profiles

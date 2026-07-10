@@ -1,4 +1,4 @@
-﻿create table if not exists public.community_events (
+create table if not exists public.community_events (
   id uuid primary key default gen_random_uuid(), community_id uuid not null references public.communities(id) on delete cascade,
   channel_id uuid references public.channels(id) on delete set null, title text not null check(char_length(title) between 1 and 120),
   description text not null default '' check(char_length(description)<=2000), starts_at timestamptz not null, ends_at timestamptz,

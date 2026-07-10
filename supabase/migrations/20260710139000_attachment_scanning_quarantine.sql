@@ -49,6 +49,3 @@ using (
       )
   )
 );
-
-comment on policy "message attachments read scanned visible object" on storage.objects is
-  'Blocks pending, suspicious, and failed objects; clean/dev-skipped objects still require uploader or message visibility.';

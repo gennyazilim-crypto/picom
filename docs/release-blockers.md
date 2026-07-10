@@ -94,3 +94,7 @@ macOS signature, notarization, staple, Gatekeeper, permission, and screen-share 
 ## Task 411 real-evidence update
 
 Windows trusted signing and clean-machine execution were BLOCKED by absent certificate/signing environment, final artifact, and clean test target. RB-06 remains open.
+
+## Task 406 hosted execution superseding update
+
+A dedicated `eu-west-1` staging project was created and migrations, Auth, the role RLS matrix, and private Storage boundaries produced real PASS evidence. Private Realtime Presence still returned `Unauthorized`, Edge Functions were not deployed, and broader lost-access/DM/profile/signed-URL cases remain incomplete. RB-01, RB-02, and RB-03 stay open with narrower scope; no hosted result is overstated.

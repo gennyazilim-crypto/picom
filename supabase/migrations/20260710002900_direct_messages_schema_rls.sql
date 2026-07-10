@@ -1,4 +1,4 @@
-﻿-- Direct Messages schema and RLS foundation.
+-- Direct Messages schema and RLS foundation.
 -- Conversation membership is the only read boundary; clients cannot add themselves to arbitrary conversations.
 
 create table if not exists public.direct_conversations (

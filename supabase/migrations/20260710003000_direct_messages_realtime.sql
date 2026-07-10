@@ -1,4 +1,4 @@
-﻿-- Enable DM rows for Supabase Realtime. RLS remains authoritative for row delivery.
+-- Enable DM rows for Supabase Realtime. RLS remains authoritative for row delivery.
 do $$
 begin
   if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'direct_messages') then

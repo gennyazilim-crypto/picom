@@ -1,4 +1,4 @@
-﻿-- Follow and friend relationship foundation.
+-- Follow and friend relationship foundation.
 create table if not exists public.user_follows (
   id uuid primary key default gen_random_uuid(),
   follower_id uuid not null references public.profiles(id) on delete cascade,

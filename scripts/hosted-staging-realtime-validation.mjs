@@ -53,21 +53,26 @@ async function authenticate(client, label, emailName, passwordName) {
     email: process.env[emailName],
     password: process.env[passwordName],
   });
-  if (error || !data.user) fail(`${label} synthetic account authentication failed.`);
+  if (error || !data.user || !data.session?.access_token) fail(`${label} synthetic account authentication failed.`);
+  // Private Broadcast/Presence authorization is evaluated during the socket
+  // join. Propagate the fresh password-session token before subscribing so the
+  // first join cannot race the client's async auth-state listener.
+  await client.realtime.setAuth(data.session.access_token);
   return data.user.id;
 }
 
 function subscribe(channel, label, onSubscribed) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`${label} subscription timed out.`)), 20_000);
-    channel.subscribe((status) => {
+    channel.subscribe((status, error) => {
       if (status === "SUBSCRIBED") {
         onSubscribed?.();
         clearTimeout(timer);
         resolve();
       } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         clearTimeout(timer);
-        reject(new Error(`${label} subscription failed with ${status}.`));
+        const detail = error?.message ? `: ${error.message}` : "";
+        reject(new Error(`${label} subscription failed with ${status}${detail}.`));
       }
     });
   });

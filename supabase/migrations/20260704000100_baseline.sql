@@ -1,4 +1,4 @@
-﻿-- Picom MVP database baseline
+-- Picom MVP database baseline
 -- This migration creates the core Supabase/Postgres tables for the desktop chat MVP.
 -- RLS is enabled by default; access policies are added in follow-up tasks.
 

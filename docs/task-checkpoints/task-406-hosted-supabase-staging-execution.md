@@ -2,16 +2,23 @@
 
 ## Status
 
-**BLOCKED / Not ready.**
+**PARTIAL / Not ready.**
 
-## Execution
+## Passed
 
-No hosted command was run. Required staging URL/anon key, CLI authentication, project reference, database password, synthetic users, and fixture identifiers were absent. The preceding automatic login attempt failed safely because the session is non-TTY.
+- Dedicated hosted project and region inventory recorded.
+- Migration apply and parity through `20260710258000`.
+- Hosted Auth create/profile-trigger/login/session-restore/invalid-password/logout proof.
+- Anonymous/owner/admin/moderator/member/visitor public/private RLS matrix.
+- Private message attachment and Storage object access boundary.
+- No secret was printed or committed.
 
-## Evidence
+## Failed or blocked
 
-No real hosted screenshot/log exists. Local preflight evidence remains in Tasks 396 and 405 and is not counted as hosted proof.
+- Private Realtime Presence join returned `Unauthorized`; two-client realtime evidence is incomplete.
+- Edge Functions were not deployed/validated.
+- Full Mention/Profile/DM/lost-access and signed-URL refresh matrices remain open.
 
-## Remaining blockers
+## Release impact
 
-RB-01, RB-02, and RB-03. No secret was read, printed, or committed.
+RB-01, RB-02, and RB-03 remain open. Stable release remains **No-Go**.

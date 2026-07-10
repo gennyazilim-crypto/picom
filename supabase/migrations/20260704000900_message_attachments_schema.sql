@@ -2,6 +2,7 @@
 -- The baseline table is public.attachments; this migration hardens it for message attachment usage.
 
 alter table public.attachments
+  add column if not exists public_url text,
   add column if not exists thumbnail_url text,
   add column if not exists status text not null default 'attached';
 
