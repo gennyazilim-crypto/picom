@@ -59,3 +59,5 @@ Before a beta or stable release, confirm:
 - Wire production dashboards and alerts without collecting sensitive content.
 - Define final owners once the operations/support rotation is real.
 - Add CI/release links to bundle-size, staging smoke, and incident-response workflows.
+
+The provider-independent dashboard panels, metric privacy boundary, freshness behavior and candidate burn-rate alerts are specified in `docs/observability-slo-dashboards.md`.

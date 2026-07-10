@@ -156,6 +156,7 @@
     "bundle:size:audit": "node scripts/bundle-size-audit.mjs",
     "bundle:size:smoke": "node scripts/bundle-size-audit.mjs --smoke",
     "slo:smoke": "node scripts/slo-plan-smoke-test.mjs",
+    "observability:slo:dashboards:smoke": "node scripts/observability-slo-dashboards-smoke-test.mjs",
     "incident:response:smoke": "node scripts/incident-response-smoke-test.mjs",
     "postmortem:smoke": "node scripts/postmortem-template-smoke-test.mjs",
     "staging:smoke:doc": "node scripts/staging-smoke-placeholder.mjs --verify-doc",
