@@ -52,6 +52,10 @@ The base config does not request ad-hoc signing. If an internal ad-hoc path is l
 
 ## Protected production CI
 
+The manual `.github/workflows/macos-signed-notarized-release.yml` job uses the protected `macos-production-signing` environment and `electron-builder.macos-release.yml`. It has no pull-request trigger or publish step. Certificate and App Store Connect API material come from CI secrets; the temporary `.p8` is permission-restricted under the runner temp directory and removed in an `always()` cleanup step.
+
+The release-only builder override enables hardened runtime, reviewed main/helper entitlements and notarization without changing the unsigned local base config. `scripts/verify-macos-signing.sh` performs deep signature, entitlement display, Gatekeeper and staple validation before checksums/provenance.
+
 Requirements:
 
 - Current supported macOS runner and approved Xcode command-line tools.

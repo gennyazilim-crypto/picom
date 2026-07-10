@@ -26,6 +26,8 @@
     "package:mac:dmg": "npm run build && electron-builder --mac dmg --x64",
     "package:mac:zip": "npm run build && electron-builder --mac zip --x64",
     "package:mac": "npm run build && electron-builder --mac --x64",
+    "package:mac:signed-candidate": "npm run build && electron-builder --mac dmg zip --x64 --config electron-builder.macos-release.yml",
+    "macos:notarization:production:smoke": "node scripts/macos-notarization-production-smoke-test.mjs",
     "generate-checksums": "node scripts/generate-checksums.mjs",
     "release:checksums:smoke": "node scripts/release-artifact-checksums-smoke-test.mjs",
     "generate-provenance": "node scripts/generate-release-provenance.mjs",

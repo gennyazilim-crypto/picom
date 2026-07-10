@@ -1,0 +1,21 @@
+extends: ./electron-builder.yml
+
+mac:
+  icon: assets/brand/app-icon.png
+  category: public.app-category.social-networking
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  notarize: true
+  entitlements: assets/brand/entitlements.mac.plist
+  entitlementsInherit: assets/brand/entitlements.mac.inherit.plist
+  extendInfo:
+    NSMicrophoneUsageDescription: Picom uses microphone access for MVP voice rooms when you join a voice channel.
+    NSScreenCaptureUsageDescription: Picom uses screen recording access only when you choose to share your screen.
+  target:
+    - target: dmg
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+  artifactName: Picom-${version}-macOS-${arch}.${ext}
