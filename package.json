@@ -129,6 +129,8 @@
     "backend:health:smoke": "node scripts/backend-health-split-smoke-test.mjs",
     "backend:degradation:smoke": "node scripts/backend-graceful-degradation-smoke-test.mjs",
     "admin:bootstrap:smoke": "node scripts/admin-bootstrap-smoke-test.mjs",
+    "admin:bootstrap:production:preflight": "node scripts/admin-bootstrap-production-preflight.mjs",
+    "admin:bootstrap:production:test": "node scripts/admin-bootstrap-production-process-test.mjs",
     "production:seed:policy:smoke": "node scripts/production-data-seeding-policy-smoke.mjs",
     "create-admin-user": "node scripts/create-admin-user-placeholder.mjs",
     "admin:create:placeholder": "node scripts/create-admin-user-placeholder.mjs",

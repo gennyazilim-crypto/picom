@@ -1,5 +1,8 @@
 # Admin User Bootstrap
 
+The finalized operator process is `docs/admin-bootstrap.md`. This older implementation note describes the
+guarded development placeholder and must not be used as a production grant command.
+
 Picom needs an operator-only way to create the first app-level administrator later, but the MVP must not automatically create privileged users or expose credentials.
 
 ## Current status
