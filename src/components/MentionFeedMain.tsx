@@ -5,6 +5,7 @@ import type { FriendConnection } from "../types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "../types/mentions";
 import type { FollowedUserStory } from "../types/stories";
 import type { MockVoiceState } from "../types/voice";
+import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
 import { MentionFeedHeader } from "./MentionFeedHeader";
@@ -37,18 +38,6 @@ type MentionFeedMainProps = {
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
 };
-
-function sortPopular(left: MentionItem, right: MentionItem) {
-  if (Boolean(left.isUnread) !== Boolean(right.isUnread)) return left.isUnread ? -1 : 1;
-  const scoreDelta = (right.popularityScore ?? 0) - (left.popularityScore ?? 0);
-  if (scoreDelta !== 0) return scoreDelta;
-  return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
-}
-
-function sortFollowing(left: MentionItem, right: MentionItem) {
-  if (Boolean(left.isUnread) !== Boolean(right.isUnread)) return left.isUnread ? -1 : 1;
-  return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
-}
 
 function isWithinDays(value: string, days: number) {
   const ageMs = Date.UTC(2026, 6, 4, 23, 59, 0) - new Date(value).getTime();
@@ -91,15 +80,9 @@ export function MentionFeedMain({
   onEventDetails,
 }: MentionFeedMainProps) {
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
-  const followedSet = useMemo(() => new Set(followedUserIds), [followedUserIds]);
-  const feedItems = useMemo(() => items.filter((item) => item.source === "popular_feed").sort(sortPopular), [items]);
-  const followingItems = useMemo(
-    () =>
-      items
-        .filter((item) => item.source === "following" && (followedSet.has(item.authorId) || item.mentionedUserIds.some((id) => followedSet.has(id))))
-        .sort(sortFollowing),
-    [followedSet, items],
-  );
+  const rankingNowMs = useMemo(() => Date.now(), []);
+  const feedItems = useMemo(() => rankMentionFeedItems(items, { tab: "feed", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
+  const followingItems = useMemo(() => rankMentionFeedItems(items, { tab: "following", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
   const visibleItems = useMemo(() => applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter), [activeFilter, activeTab, feedItems, followingItems]);
   const storyIds = useMemo(() => stories.map((story) => story.id), [stories]);
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
