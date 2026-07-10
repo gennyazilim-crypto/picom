@@ -18,9 +18,15 @@ Picom uses Coolicons as the approved MVP icon direction. Only the free Coolicons
 
 The Picom logo and generated mock imagery are project-owned placeholders. They are not Discord assets and are not part of the Coolicons set.
 
-## Dependency license review placeholder
+## Automated dependency inventory
 
-Before beta/stable release, review runtime and build dependencies listed in `package.json` and the generated lockfile.
+The npm dependency inventory is generated from the committed lockfile:
+
+- Generate/update: `npm run licenses:generate`
+- Verify committed report and block missing/proprietary metadata: `npm run licenses:check`
+- Generated report: `THIRD_PARTY_LICENSES.generated.md`
+
+CI runs the check after `npm ci`. The generated inventory lists metadata; it does not copy full license texts, determine compatibility, or replace legal review. A reviewer must inspect license obligations, notices/source-offer requirements, dependency purpose, bundled versus development-only status, and release artifacts before distribution.
 
 Current dependency areas include:
 
@@ -32,3 +38,5 @@ Current dependency areas include:
 - Development helper packages
 
 Do not bundle proprietary assets, Coolicons PRO assets, unlicensed UI kit exports, copied Discord assets, or third-party images without documented rights.
+
+Coolicons attribution above is manually maintained because it is an asset license, not an npm lockfile dependency. Automation must never remove it.

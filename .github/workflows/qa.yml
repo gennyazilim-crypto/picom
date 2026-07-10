@@ -33,6 +33,9 @@ jobs:
       - name: Secret exposure smoke
         run: npm run secrets:smoke
 
+      - name: Verify third-party license inventory
+        run: npm run licenses:check
+
       - name: Run QA smoke gate
         run: npm run qa:smoke
 

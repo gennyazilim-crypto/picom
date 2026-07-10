@@ -203,6 +203,8 @@
     "deps:management:smoke": "node scripts/dependency-management-smoke-test.mjs",
     "deps:vulnerability:smoke": "node scripts/dependency-vulnerability-policy-smoke-test.mjs",
     "licenses:smoke": "node scripts/license-notices-smoke-test.mjs",
+    "licenses:generate": "node scripts/generate-third-party-licenses.mjs",
+    "licenses:check": "node scripts/generate-third-party-licenses.mjs --check",
     "enterprise:readiness:smoke": "node scripts/enterprise-readiness-smoke-test.mjs",
     "architecture:long-term:smoke": "node scripts/long-term-architecture-review-smoke-test.mjs",
     "roadmap:smoke": "node scripts/roadmap-smoke-test.mjs",
