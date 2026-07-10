@@ -49,3 +49,7 @@ RB-07 remains open. A Windows cross-build attempt cannot certify Linux behavior.
 ## Task 400 closure attempt
 
 Linux packaging metadata, repository distribution, safe install, signing lifecycle, and rollback contracts passed on 2026-07-10. No native Linux runner or artifact was available, so AppImage/deb execution and checksums remain blocked. See `docs/linux-native-package-validation.md`.
+
+## Task 409 real execution
+
+Native Linux package and screen-share certification remained **BLOCKED**. No Linux runner, AppImage/deb artifact, desktop session, portal stack, remote client, or final checksum was available. See `docs/linux-native-package-screen-share-certification.md`.

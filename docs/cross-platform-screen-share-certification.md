@@ -50,3 +50,7 @@ Permission recovery, preview/stop, preload contract, and invalid-payload tests p
 ## Task 408 Windows real execution
 
 Windows certification was **BLOCKED** because no trusted exact RC, clean Windows test target, hosted voice room, or remote client was available. See `docs/windows-screen-share-certification.md`; structural tests are not presented as packaged remote-view proof.
+
+## Task 409 Linux real execution
+
+Linux certification was **BLOCKED** because no native runner or verifiable Linux CI environment was available. X11/Wayland, PipeWire portal, package, audio, and remote-view behavior remain untested.

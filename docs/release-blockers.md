@@ -82,3 +82,7 @@ Hosted LiveKit token and two-client voice execution were BLOCKED by absent stagi
 ## Task 408 real-evidence update
 
 Windows native screen-share certification was BLOCKED by missing trusted RC, clean test target, hosted room, and remote client. RB-05 and RB-06 remain open.
+
+## Task 409 real-evidence update
+
+Linux package, voice, and screen-share certification was BLOCKED by the absence of a native Linux runner and final artifacts. RB-05 and RB-07 remain open.

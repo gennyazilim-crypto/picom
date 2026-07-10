@@ -91,3 +91,7 @@ Package metadata and distribution controls passed structurally. Native AppImage 
 ## Task 401 macOS update
 
 Release-only signing/notarization controls passed statically. DMG installation, Gatekeeper, permissions, app removal, data retention, and reinstall remain pending on a final signed/notarized candidate.
+
+## Task 409 Linux real execution
+
+No AppImage or deb was produced, installed, launched, removed, or reinstalled on Linux. Native user-data and desktop-integration behavior remain blocked.
