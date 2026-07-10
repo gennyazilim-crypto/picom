@@ -13,13 +13,14 @@ function getBooleanFlag(value: string | undefined): boolean {
 
 const environment = import.meta.env.VITE_APP_ENV ?? "development";
 const gitCommit = import.meta.env.VITE_GIT_COMMIT ?? "local";
+const appVersion = import.meta.env.VITE_APP_VERSION ?? "0.1.1-beta.1";
 
 export const appConfig = Object.freeze({
   name: import.meta.env.VITE_APP_NAME ?? "Picom",
-  version: import.meta.env.VITE_APP_VERSION ?? "0.1.1-beta.1",
+  version: appVersion,
   identifier: import.meta.env.VITE_APP_IDENTIFIER ?? "com.picom.desktop",
   environment,
-  releaseChannel: resolveReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment) satisfies ReleaseChannel,
+  releaseChannel: resolveReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment, appVersion) satisfies ReleaseChannel,
   dataSource: getDataSourceMode(import.meta.env.VITE_DATA_SOURCE),
   statusPageUrl: import.meta.env.VITE_STATUS_PAGE_URL ?? "",
   remoteConfigUrl: import.meta.env.VITE_REMOTE_CONFIG_URL ?? "",

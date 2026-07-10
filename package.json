@@ -17,6 +17,7 @@
     "voice:discovery:test": "node scripts/active-voice-rooms-discovery-smoke.mjs",
     "screen-share:preview:test": "node scripts/screen-share-preview-controls-smoke.mjs",
     "release:artifact-naming:test": "node scripts/release-artifact-naming-smoke.mjs",
+    "release:channel:installer:smoke": "node scripts/release-channel-installer-smoke.mjs",
     "keyboard:shortcuts:final:test": "node scripts/keyboard-shortcut-finalization-smoke.mjs",
     "search:palette:production:test": "node scripts/search-command-palette-production-smoke.mjs",
     "block:mute:ux:test": "node scripts/block-mute-ux-polish-smoke.mjs",

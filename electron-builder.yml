@@ -24,6 +24,7 @@ protocols:
 
 extraMetadata:
   main: dist-electron/main.cjs
+  picomReleaseChannel: ${channel}
 
 win:
   icon: assets/brand/app-icon.ico
