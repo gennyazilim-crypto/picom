@@ -300,7 +300,7 @@ export type Database = {
         Relationships: [];
       };
       bot_credentials: {
-        Row: { id: string; bot_id: string; token_prefix: string; token_hash: string; created_by: string; created_at: string; last_used_at: string | null; revoked_at: string | null };
+        Row: { id: string; bot_id: string; token_prefix: string; token_hash: string; hash_algorithm: "sha256"; created_by: string; created_at: string; last_used_at: string | null; revoked_at: string | null };
         Insert: never;
         Update: never;
         Relationships: [];
@@ -426,6 +426,7 @@ export type Database = {
       issue_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ raw_token: string; token_prefix: string; created_at: string }> };
       revoke_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: boolean };
       get_community_bot_credential_status: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ bot_id: string; token_prefix: string; created_at: string; revoked_at: string | null; rate_limit_per_minute: number }> };
+      rotate_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ raw_token: string; token_prefix: string; created_at: string }> };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

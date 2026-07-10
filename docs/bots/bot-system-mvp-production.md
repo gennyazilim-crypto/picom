@@ -29,6 +29,7 @@ Frontend button visibility is UX only. Every trusted RPC repeats authorization a
 - `anon`/`authenticated` have no table access; status RPC exposes prefix/timestamps/rate-limit label only, never hash.
 - Only one active credential per bot exists; issue fails if one is active.
 - Revocation is idempotent, sets `revoked_at`, and appends an audit event.
+- Regeneration uses an atomic revoke-and-issue function; failure rolls back the revocation and a replacement raw token is shown once.
 - Raw token, hash, Authorization header, secrets, message/command content, and private metadata are forbidden from logs, analytics, diagnostics, abuse events, audit reasons, DTOs, and UI after one-time display.
 
 The current React UI intentionally keeps Supabase issue/revoke wiring disabled until live RLS/RPC tests and production provisioning are approved. Mock one-time behavior remains for desktop UX testing.
@@ -74,3 +75,5 @@ Credential issue/revoke uses append-only community audit events with bot ID/acti
 - Endpoint schemas, idempotency, role/RLS tests, slow mode, event filtering/backpressure, abuse ingestion, rotation, monitoring/on-call and incident runbook.
 - Live Supabase CLI tests and external security review.
 - Public developer access remains disabled until these pass.
+
+Detailed lifecycle and incident controls are in [Bot token security model](bot-token-security-model.md).

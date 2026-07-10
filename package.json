@@ -165,6 +165,7 @@
     "appeals:production:test": "node scripts/appeals-production-workflow-test.mjs",
     "trust-safety:production:test": "node scripts/trust-safety-dashboard-production-test.mjs",
     "bots:production:test": "node scripts/bot-system-production-test.mjs",
+    "bots:security:test": "node scripts/bot-token-security-test.mjs",
     "database-performance:smoke": "node scripts/database-performance-smoke-test.mjs",
     "message-retention:smoke": "node scripts/message-retention-smoke-test.mjs",
     "retention:plan": "node scripts/data-retention-enforcement-placeholder.mjs",

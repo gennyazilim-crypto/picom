@@ -65,7 +65,7 @@ export const botCredentialService = {
     if (!canManage) return { ok: false, message: "You do not have permission to manage bot credentials." };
     if (!dataSourceService.getStatus().isMock) return { ok: false, message: "Bot token issuance requires the future trusted Edge Function." };
     const records = readRecords();
-    if (records[botId]) return { ok: false, message: "A credential was already issued for this bot. Raw tokens cannot be shown again." };
+    if (records[botId] && !records[botId].revokedAt) return { ok: false, message: "An active credential already exists for this bot. Raw tokens cannot be shown again." };
 
     const prefixBytes = crypto.getRandomValues(new Uint8Array(6));
     const secretBytes = crypto.getRandomValues(new Uint8Array(32));
@@ -88,5 +88,14 @@ export const botCredentialService = {
     if (!writeRecords({ ...records, [botId]: revoked })) return { ok: false, message: "Picom could not save the revoked state." };
     return { ok: true, data: statusFromRecord(botId, revoked) };
   },
-};
 
+  async regenerateTokenOnce(botId: string, canManage: boolean): Promise<CredentialResult<IssuedBotToken>> {
+    if (!canManage) return { ok: false, message: "You do not have permission to regenerate bot credentials." };
+    if (!dataSourceService.getStatus().isMock) return { ok: false, message: "Bot token regeneration requires the trusted rotation function." };
+    const records = readRecords();
+    const current = records[botId];
+    if (!current) return { ok: false, message: "This bot does not have a credential to regenerate." };
+    if (!current.revokedAt && !writeRecords({ ...records, [botId]: Object.freeze({ ...current, revokedAt: new Date().toISOString() }) })) return { ok: false, message: "Picom could not revoke the previous bot credential." };
+    return this.issueTokenOnce(botId, canManage);
+  },
+};

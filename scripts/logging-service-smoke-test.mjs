@@ -3,8 +3,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const loggingPath = resolve(root, "src/services/loggingService.ts");
-const loggingFacadePath = resolve(root, "src/services/logging/loggingService.ts");
+const loggingFacadePath = resolve(root, "src/services/loggingService.ts");
+const loggingPath = resolve(root, "src/services/logging/loggingService.ts");
 
 if (!existsSync(loggingPath)) {
   throw new Error("Missing central logging service implementation.");
@@ -17,17 +17,7 @@ if (!existsSync(loggingFacadePath)) {
 const implementation = readFileSync(loggingPath, "utf8");
 const facade = readFileSync(loggingFacadePath, "utf8");
 
-const requiredExports = [
-  "loggingService",
-  "type LogEntry",
-  "type LogLevel"
-];
-
-for (const term of requiredExports) {
-  if (!facade.includes(term)) {
-    throw new Error(`Missing logging facade export: ${term}`);
-  }
-}
+if (!facade.includes('export * from "./logging/loggingService"')) throw new Error("Missing logging facade re-export.");
 
 const requiredApi = [
   "logDebug",
@@ -68,8 +58,8 @@ for (const term of redactionTerms) {
 }
 
 const behaviorChecks = [
-  ["bounded log buffer", "MAX_LOGS = 250"],
-  ["old log trimming", "logs.splice(0, logs.length - MAX_LOGS)"],
+  ["bounded log buffer", "MAX_RETAINED_LOGS = 250"],
+  ["old log trimming", "logs.splice(0, logs.length - MAX_RETAINED_LOGS)"],
   ["listener cleanup", "listeners.delete(listener)"],
   ["circular metadata guard", "[circular]"],
   ["large message truncation", "[truncated]"],
