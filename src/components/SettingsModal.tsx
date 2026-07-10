@@ -27,6 +27,7 @@ import { adminOperationsService, type AdminOperationsAccess } from "../services/
 import { analyticsService } from "../services/analyticsService";
 import { crashReporterService } from "../services/crashReporterService";
 import { AppIcon } from "./AppIcon";
+import { HelpCenterView } from "./HelpCenterView";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { legalDocumentOrder, legalDocuments, type LegalDocumentId } from "../data/legalDocuments";
@@ -107,7 +108,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
   const [crashReportingEnabled, setCrashReportingEnabled] = useState(() => crashReporterService.getStatus().enabled);
   const [developerPortalOpen, setDeveloperPortalOpen] = useState(false);
   const developerPortalAvailable = featureFlagService.shouldShowEntryPoint("enableDeveloperPortal") && (developerPortalContext.canManageBots || developerPortalContext.canManageWebhooks);
-  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"];
+  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"];
 
   useEffect(() => {
     setProfileDraft(profileSettings);
@@ -751,6 +752,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                 </div>
               ))}
             </div>
+          ) : active === "Help Center" ? (
+            <HelpCenterView />
           ) : active === "Diagnostics" ? (
             <div className="settings-diagnostics-stack">
               <FeedbackSection onNotice={pushToast} />
