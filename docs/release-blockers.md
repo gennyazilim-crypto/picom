@@ -135,3 +135,7 @@ A clean-source Windows x64 NSIS/unpacked internal beta candidate was generated, 
 ## Task 424 Linux native package/screen share
 
 Linux packaging and screen-share structural contracts passed, but no native workflow could be dispatched with the available GitHub permissions and no Linux host was available. No AppImage/DEB or portal/media evidence exists. RB-05 and RB-07 remain **BLOCKED**.
+
+## Task 425 macOS notarization/screen share
+
+Protected workflow and local signing/permission contracts passed, but dispatch was denied and no Apple credentials/native runner were available. No signed/notarized/stapled artifact or real macOS media evidence exists. RB-05 and RB-08 remain **BLOCKED**.

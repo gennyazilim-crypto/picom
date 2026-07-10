@@ -68,3 +68,7 @@ The production notarization workflow smoke passed without credentials. No Develo
 ## Task 410 real execution
 
 No native macOS signing/notarization command ran. The release-only configuration remains prepared, but Apple trust and permission evidence are absent.
+
+## Task 425 update
+
+The protected workflow and local notarization contract pass structurally. Workflow dispatch returned HTTP 403 and no Apple/CSC credentials were available. No signing, notarization, staple, or Gatekeeper claim is authorized from this attempt.

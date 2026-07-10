@@ -53,3 +53,7 @@ The macOS hardened-runtime/notarization workflow contract passed on 2026-07-10. 
 ## Task 410 real execution
 
 Native macOS signing, notarization, staple, permissions, and screen-share certification remained **BLOCKED**. No macOS artifact or Apple submission exists; see `docs/macos-notarization-screen-share-certification.md`.
+
+## Task 425 protected execution attempt
+
+Static release configuration remains valid, but the protected macOS workflow could not be dispatched with the available GitHub permissions and no Apple credential exists locally. No artifact or notarization evidence was generated. macOS stable candidacy remains **BLOCKED**.

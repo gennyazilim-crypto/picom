@@ -21,3 +21,9 @@ No native macOS runner, Developer ID credential, protected keychain/notary envir
 Static notarization workflow contracts from Task 401 are not Apple evidence. No Apple secret, certificate, screen content, or fabricated notarization record was stored.
 
 RB-05 and RB-08 remain open. Recommendation: **Not ready**.
+
+## Task 425 execution attempt
+
+Result on 2026-07-11: **BLOCKED**.
+
+All local notarization workflow, packaging, permission-recovery, preview/stop, TypeScript, and build contracts passed. No Apple/CSC credentials are present. Protected workflow dispatch returned HTTP 403 because the GitHub account lacks administration rights. No native app, DMG/ZIP, Developer ID signature, notarization submission, staple, Gatekeeper result, permission test, remote share, or post-staple checksum exists.
