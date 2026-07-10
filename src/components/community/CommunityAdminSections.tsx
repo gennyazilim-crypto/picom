@@ -11,13 +11,14 @@ import { canAssignCommunityRole } from "../../services/permissions/communityPerm
 import { communityRoleAssignmentService } from "../../services/community/communityRoleAssignmentService";
 import { communityService, type CommunitySummary } from "../../services/communityService";
 
-export type AdminSectionId = "overview" | "insights" | "community-settings" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
+export type AdminSectionId = "overview" | "insights" | "community-settings" | "verification" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
 
 export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string; permission?: CommunityAccess["permissions"][number]; ownerOnly?: boolean; icon: IconName }> = [
   { id: "overview", label: "Overview", icon: "home" },
   { id: "insights", label: "Insights", permission: "viewInsights", icon: "inbox" },
   { id: "community-settings", label: "Community Settings", permission: "manageCommunity", icon: "settings" },
+  { id: "verification", label: "Verification", permission: "manageCommunity", icon: "lock" },
   { id: "channels", label: "Channels", permission: "manageChannels", icon: "hash" },
   { id: "roles", label: "Roles", permission: "manageRoles", icon: "lock" },
   { id: "members", label: "Members", permission: "manageMembers", icon: "users" },

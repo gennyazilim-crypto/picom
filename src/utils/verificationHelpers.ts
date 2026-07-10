@@ -14,6 +14,12 @@ const mockUserVerifications = new Map<string, VerificationBadgeVariant>([
 const mockCommunityVerifications = new Map<string, VerificationBadgeVariant>([
   ["aurora", "official_community"],
 ]);
+const runtimeVerifications = new Map<string, VerificationBadgeVariant | null>();
+const runtimeKey = (targetType: "profile" | "community", targetId: string) => `${targetType}:${targetId}`;
+
+export function registerRuntimeVerification(targetType: "profile" | "community", targetId: string, variant: VerificationBadgeVariant | null): void {
+  runtimeVerifications.set(runtimeKey(targetType, targetId), variant);
+}
 
 const priority: readonly VerificationBadgeVariant[] = ["picom_staff", "official_community", "verified_bot", "verified_user"];
 
@@ -33,12 +39,16 @@ export function verificationVariantFromBadges(badges: readonly VerificationBadge
 export function getUserVerificationVariant(userId: string, badges: readonly VerificationBadge[] = []): VerificationBadgeVariant | null {
   const persisted = verificationVariantFromBadges(badges);
   if (persisted) return persisted;
+  const key = runtimeKey("profile", userId);
+  if (runtimeVerifications.has(key)) return runtimeVerifications.get(key) ?? null;
   return dataSourceService.getStatus().isMock ? mockUserVerifications.get(userId) ?? null : null;
 }
 
 export function getCommunityVerificationVariant(communityId: string, badges: readonly VerificationBadge[] = []): VerificationBadgeVariant | null {
   const persisted = verificationVariantFromBadges(badges);
   if (persisted === "official_community") return persisted;
+  const key = runtimeKey("community", communityId);
+  if (runtimeVerifications.has(key)) return runtimeVerifications.get(key) ?? null;
   return dataSourceService.getStatus().isMock ? mockCommunityVerifications.get(communityId) ?? null : null;
 }
 

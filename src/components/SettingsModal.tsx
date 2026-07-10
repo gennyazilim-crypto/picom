@@ -21,6 +21,7 @@ import { userBlockingService, type BlockedUserRecord } from "../services/userBlo
 import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
 import { profilePrivacyService } from "../services/profilePrivacyService";
 import { profileService } from "../services/profileService";
+import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";
 import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
 import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";
 import type { ProfilePrivacySettings } from "../types/profilePrivacy";
@@ -728,6 +729,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <button disabled={profileSaving || !profileDraft.displayName.trim()} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : "Save profile"}</button>
                 <button disabled={profileSaving} onClick={resetProfileSettings}>Discard changes</button>
               </div>
+              <ProfileVerificationRequestCard />
             </div>
           ) : active === "Notifications" ? (
             <div className="placeholder-panel action-panel">

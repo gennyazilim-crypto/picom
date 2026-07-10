@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const badgeMigration = readFileSync("supabase/migrations/20260710195000_profile_verification_badges.sql", "utf8");
 const securityMigration = readFileSync("supabase/migrations/20260710249000_verification_schema_security.sql", "utf8");
+const workflowMigration = readFileSync("supabase/migrations/20260710250000_verification_request_review_mvp.sql", "utf8");
 const rlsTest = readFileSync("supabase/tests/rls/verification_security.sql", "utf8");
 const view = readFileSync("src/components/VerificationBadgeList.tsx", "utf8");
 const admin = readFileSync("src/components/ProfileVerificationAdmin.tsx", "utf8");
@@ -14,6 +15,9 @@ for (const marker of ["profile_verifications", "community_verifications", "verif
 }
 for (const type of ["verified_user", "official_community", "picom_staff", "verified_bot", "creator_verified"]) {
   if (!securityMigration.includes(type)) throw new Error(`Missing verification type: ${type}`);
+}
+for (const marker of ["request_profile_verification", "request_community_verification", "get_own_profile_verification_requests", "list_verification_review_requests", "review_verification_request", "decision_reason", "No identity-document upload", "Identity-document upload and paid verification are intentionally unsupported"]) {
+  if (!workflowMigration.includes(marker)) throw new Error(`Missing verification workflow marker: ${marker}`);
 }
 for (const scenario of ["user cannot self-approve verification", "approved verification is readable", "non-reviewer cannot review verification", "verification decision creates audit log"]) {
   if (!rlsTest.includes(scenario)) throw new Error(`Missing verification RLS scenario: ${scenario}`);

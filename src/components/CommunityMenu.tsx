@@ -10,6 +10,7 @@ import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 import "../communityGuidelines.css";
 import { CommunityInsightsView } from "./CommunityInsightsView";
+import { CommunityVerificationRequestCard } from "./VerificationRequestPanel";
 import {
   adminSectionDefinitions,
   moderatorSectionDefinitions,
@@ -201,6 +202,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "overview") return <CommunityAdminOverview community={community} access={access} />;
     if (activeSection === "insights") return <CommunityInsightsView community={community} access={access} />;
     if (activeSection === "community-settings") return <CommunitySettingsSection community={community} access={access} onUpdated={onCommunityUpdated} />;
+    if (activeSection === "verification") return <CommunityVerificationRequestCard community={community} />;
     if (activeSection === "channels") return <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
     if (activeSection === "roles") return <CommunityRolesSection community={community} />;
     if (activeSection === "members") return <CommunityMembersSection community={community} access={access} onRoleAssigned={onAssignMemberRole} />;

@@ -8,14 +8,16 @@ import { DiscoveryReviewQueue } from "./DiscoveryReviewQueue";
 import { ProfileVerificationAdmin } from "./ProfileVerificationAdmin";
 import { AdminOperationsPagedList, AdminSystemStatusV2 } from "./AdminOperationsV2Sections";
 import { AbuseEventsDashboard } from "./AbuseEventsDashboard";
+import { VerificationAdminReviewQueue } from "./VerificationRequestPanel";
 
-type SectionId = "productHealth" | "system" | "observability" | "trustSafety" | "discoveryReview" | "users" | "communities" | "reports" | "abuse" | "storage" | "realtime" | "errors";
+type SectionId = "productHealth" | "system" | "observability" | "trustSafety" | "verification" | "discoveryReview" | "users" | "communities" | "reports" | "abuse" | "storage" | "realtime" | "errors";
 
 const sections: Array<{ id: SectionId; label: string; icon: IconName }> = [
   { id: "productHealth", label: "Product health", icon: "settings" },
   { id: "system", label: "System status", icon: "settings" },
   { id: "observability", label: "Observability", icon: "search" },
   { id: "trustSafety", label: "Trust & Safety", icon: "lock" },
+  { id: "verification", label: "Verification Requests", icon: "lock" },
   { id: "discoveryReview", label: "Discovery review", icon: "search" },
   { id: "users", label: "Users overview", icon: "users" },
   { id: "communities", label: "Communities", icon: "home" },
@@ -38,6 +40,8 @@ export function AdminOperationsPanel({ access }: { access: AdminOperationsAccess
       ? <><div className="admin-ops-metrics"><article><span>App starts</span><strong>{snapshot.observability.appStarts}</strong></article><article><span>Auth failures</span><strong>{snapshot.observability.authFailures}</strong></article><article><span>Message failures</span><strong>{snapshot.observability.messageSendFailures}</strong></article><article><span>Realtime reconnects</span><strong>{snapshot.observability.realtimeReconnects}</strong></article><article><span>Upload failures</span><strong>{snapshot.observability.uploadFailures}</strong></article><article><span>LiveKit join failures</span><strong>{snapshot.observability.liveKitJoinFailures}</strong></article><article><span>Screen share failures</span><strong>{snapshot.observability.screenShareFailures}</strong></article><article><span>RLS denied</span><strong>{snapshot.observability.rlsDeniedErrors}</strong></article><article><span>Crash reports</span><strong>{snapshot.observability.crashReports}</strong></article><article><span>Abuse events</span><strong>{snapshot.observability.abuseEvents}</strong></article><article><span>Package</span><strong>{snapshot.observability.packageInfo}</strong></article><article><span>Platform</span><strong>{snapshot.observability.platform}</strong></article></div><div className="admin-ops-detail"><strong>Local redacted sample</strong><p>Counts use the latest {snapshot.observability.sampleWindow} in-memory log entries. No message content, user identity, token, IP address, or private channel data is included.</p></div></>
       : active === "trustSafety"
         ? <TrustSafetyDashboardView access={access} />
+        : active === "verification"
+          ? <VerificationAdminReviewQueue />
         : active === "discoveryReview"
           ? <DiscoveryReviewQueue access={access} />
           : active === "users"
