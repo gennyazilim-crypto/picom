@@ -51,6 +51,10 @@ Use this together with `docs/safe-rollout.md`, `docs/incident-response.md`, and 
 
 Database rollback is high risk and must not be automatic.
 
+The staging backup/apply/recover/reapply evidence procedure is `docs/database-migration-rollback-drill.md`.
+Production migration approval requires a recent completed drill for the selected recovery branch; a prepared
+or blocked document is not completion evidence.
+
 ### Before any rollback
 
 1. Verify latest backup exists.

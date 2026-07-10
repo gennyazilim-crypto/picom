@@ -185,6 +185,7 @@ Before deploying schema changes, verify:
 
 ## References to use during release
 
+- `docs/database-migration-rollback-drill.md`
 - `docs/production-deployment-checklist.md` if present
 - `docs/rollback-runbook.md` if present
 - `docs/database-backup-restore.md` if present
