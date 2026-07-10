@@ -211,6 +211,7 @@
     "e2ee:architecture:smoke": "node scripts/e2ee-architecture-smoke-test.mjs",
     "compliance:export-deletion:smoke": "node scripts/compliance-export-deletion-smoke-test.mjs",
     "legal:gdpr-dsa:smoke": "node scripts/gdpr-dsa-legal-review-smoke-test.mjs",
+    "legal:publication:gate:smoke": "node scripts/legal-final-publication-gate-smoke-test.mjs",
     "localization:qa:smoke": "node scripts/localization-qa-smoke-test.mjs",
     "date-time:smoke": "node scripts/date-time-formatting-smoke-test.mjs",
     "accessibility:display:smoke": "node scripts/accessibility-display-smoke-test.mjs",
