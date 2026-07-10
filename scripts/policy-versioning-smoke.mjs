@@ -1,0 +1,10 @@
+import fs from "node:fs";
+const config = fs.readFileSync("src/config/legalConfig.ts", "utf8");
+const documents = fs.readFileSync("src/data/legalDocuments.ts", "utf8");
+const policy = fs.readFileSync("docs/policy-versioning.md", "utf8");
+const settings = fs.readFileSync("src/components/SettingsModal.tsx", "utf8");
+for (const key of ["termsVersion", "privacyVersion", "guidelinesVersion", "acceptableUseVersion", "requiresProfessionalReview"]) if (!config.includes(key)) throw new Error(`Legal config is missing ${key}`);
+for (const id of ["terms", "privacy", "guidelines", "acceptableUse"]) if (!documents.includes(`label(\"${id}\")`)) throw new Error(`Legal document is missing a visible ${id} version.`);
+for (const heading of ["Re-consent flow", "Publication workflow", "Compatibility and rollback", "professional legal review required"]) if (!policy.toLowerCase().includes(heading.toLowerCase())) throw new Error(`Policy document is missing ${heading}`);
+for (const needle of ["legalDocumentOrder", "Professional review required", "LegalDocumentModal"]) if (!settings.includes(needle)) throw new Error(`Settings legal UI is missing ${needle}`);
+console.log("Policy versioning smoke passed.");

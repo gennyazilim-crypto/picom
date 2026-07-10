@@ -6,6 +6,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "policy:versioning:test": "node scripts/policy-versioning-smoke.mjs",
     "legal:acceptance:test": "node scripts/legal-acceptance-tracking-smoke.mjs",
     "community:audit:viewer:test": "node scripts/community-audit-log-viewer-smoke.mjs",
     "member:management:polish:test": "node scripts/member-management-mvp-polish-smoke.mjs",
