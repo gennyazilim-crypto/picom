@@ -50,3 +50,7 @@ Windows packaging and fail-closed signing controls passed without loading a cert
 ## Task 400 evidence update
 
 Linux packaging and repository-distribution contracts passed, but no native AppImage/deb was built or launched. RB-07 remains open.
+
+## Task 401 evidence update
+
+macOS notarization/signing workflow controls passed, but no native build, Developer ID signature, notarization, staple, Gatekeeper, or permission matrix ran. RB-08 remains open.

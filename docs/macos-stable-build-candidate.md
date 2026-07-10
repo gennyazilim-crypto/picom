@@ -45,3 +45,7 @@ Protected CI/operator steps must then verify:
 9. SHA-256 and provenance records.
 
 Unsigned/quarantined local artifacts must not be presented as stable downloads. RB-08 remains open.
+
+## Task 401 closure attempt
+
+The macOS hardened-runtime/notarization workflow contract passed on 2026-07-10. No native macOS runner or Apple credential was available, so signing, notarization, stapling, Gatekeeper, permission, and clean-machine checks did not run. See `docs/macos-signing-notarization-staple-validation.md`.

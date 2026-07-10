@@ -60,3 +60,7 @@ provenance must contain no credentials. Emergency rotation follows
 
 Checksums do not replace publisher authentication; unsigned local package
 success does not satisfy production signing requirements.
+
+## Task 401 evidence update
+
+The production notarization workflow smoke passed without credentials. No Developer ID signature, Apple submission, staple, Gatekeeper assessment, or native permission matrix occurred; the macOS release gate remains blocked.
