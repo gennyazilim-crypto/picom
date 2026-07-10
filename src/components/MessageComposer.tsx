@@ -90,7 +90,8 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   const onTypingStopRef = useRef(onTypingStop);
   const previousChannelIdRef = useRef(channel.id);
   const previousCommunityIdRef = useRef(communityId);
-  const slashSuggestions = slashDismissed ? [] : slashCommandService.getSuggestions(body);
+  const slashPermissionContext = { invite: canInvite, topic: canEditTopic, poll: canCreatePoll } as const;
+  const slashSuggestions = slashDismissed ? [] : slashCommandService.getSuggestions(body, slashPermissionContext);
 
   useEffect(() => {
     previewsRef.current = previews;
@@ -333,6 +334,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   };
 
   const applySlashCommand = (command: SlashCommand) => {
+    if (!slashCommandService.canUseCommand(command, slashPermissionContext)) { pushToast("You do not have permission to use this command.", "error"); setSlashDismissed(true); return; }
     if (command.name === "help") { pushToast("Built-ins: /help /invite /me /shrug /tableflip /topic /poll", "info"); setBody(""); }
     else if (command.name === "invite") { if (canInvite && onOpenInvite) onOpenInvite(); else pushToast("You do not have permission to create invites.", "error"); setBody(""); }
     else if (command.name === "topic") { if (canEditTopic && onOpenTopic) onOpenTopic(); else pushToast("You do not have permission to edit this channel topic.", "error"); setBody(""); }

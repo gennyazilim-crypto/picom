@@ -1,19 +1,33 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 
-const doc = fs.readFileSync("docs/slash-commands-placeholder.md", "utf8");
-const required = [
-  "post-MVP placeholder",
-  "not enabled",
-  "must not execute arbitrary code",
-  "typed registry",
-  "enableSlashCommands",
-  "desktop-native"
+const service = fs.readFileSync("src/services/slashCommandService.ts", "utf8");
+const composer = fs.readFileSync("src/components/MessageComposer.tsx", "utf8");
+const doc = fs.readFileSync("docs/slash-command-registry.md", "utf8");
+
+const requiredServiceMarkers = [
+  'source: "builtin"',
+  'source: "bot" | "plugin"',
+  "MAX_SUGGESTIONS = 8",
+  "registerExternalMetadata",
+  "External slash commands accept metadata only.",
+  "canUseCommand",
 ];
-
-const missing = required.filter((needle) => !doc.includes(needle));
-if (missing.length) {
-  console.error(`Slash commands placeholder doc is missing: ${missing.join(", ")}`);
+const missingServiceMarkers = requiredServiceMarkers.filter((marker) => !service.includes(marker));
+if (missingServiceMarkers.length) {
+  console.error(`Slash command registry is missing: ${missingServiceMarkers.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Slash commands placeholder smoke passed.");
+if (!composer.includes("getSuggestions(body, slashPermissionContext)") || !composer.includes("canUseCommand(command, slashPermissionContext)")) {
+  console.error("Composer does not enforce slash command permissions at suggestion and selection time.");
+  process.exit(1);
+}
+
+for (const marker of ["metadata-only", "never executes", "Built-in", "bot", "plugin", "permission", "eight"]) {
+  if (!doc.includes(marker)) {
+    console.error(`Slash command registry documentation is missing: ${marker}`);
+    process.exit(1);
+  }
+}
+
+console.log("Slash command registry smoke passed.");
