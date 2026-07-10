@@ -441,6 +441,9 @@ export type Database = {
       send_friend_request: { Args: { target_user_id: string }; Returns: string };
       cancel_friend_request: { Args: { target_request_id: string }; Returns: boolean };
       list_friend_relationship_state: { Args: Record<string, never>; Returns: Json };
+      block_user: { Args: { target_user_id: string }; Returns: boolean };
+      unblock_user: { Args: { target_user_id: string }; Returns: boolean };
+      list_blocked_users: { Args: Record<string, never>; Returns: Array<{ user_id: string; display_name: string; username: string; blocked_at: string }> };
       remove_friend: { Args: { other_user_id: string }; Returns: boolean };
       create_direct_conversation: { Args: { other_user_id: string }; Returns: string };
       list_direct_conversations: { Args: { result_limit?: number }; Returns: Array<{ id: string; participant_user_id: string; participant_name: string; participant_username: string; participant_status: string; participant_status_text: string; last_message_preview: string; updated_at: string; unread_count: number }> };

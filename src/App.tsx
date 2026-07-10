@@ -455,14 +455,17 @@ export function App() {
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? fallbackCurrentUser;
   const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
+  const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const visibleMentionItems = useMemo(() => mentionItems.filter((item) => {
+    if (blockedUserIds.includes(item.authorId)) return false;
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
     const access = getCommunityAccess(currentUserId, community);
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
-  }), [communities, mentionItems]);
+  }), [blockedUserIds, communities, mentionItems]);
   const visibleStoryItems = useMemo(() => storyItems.filter((item) => {
+    if (blockedUserIds.includes(item.authorId)) return false;
     if (!item.communityId) return true;
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
@@ -470,7 +473,7 @@ export function App() {
     if (!item.channelId) return access.isMember || access.canViewPublicContent;
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
-  }), [communities, storyItems]);
+  }), [blockedUserIds, communities, storyItems]);
   const visibleCommunityEvents = useMemo(() => communityEvents.filter((item) => {
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
@@ -492,6 +495,13 @@ export function App() {
   useEffect(() => {
     return userSafetyCenterService.subscribe(setUserSafetySettings);
   }, []);
+
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    let active = true;
+    void userBlockingService.refreshRemoteBlocks().then(() => { if (active) setBlockedUserVersion((version) => version + 1); });
+    return () => { active = false; };
+  }, [authSession?.user?.id]);
 
   useEffect(() => {
     let canceled = false;
@@ -671,7 +681,6 @@ export function App() {
     return filterCommunityForAccess(baseCommunity, communityAccess);
   }, [activeCommunity, communityAccess, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings, trayPresenceStatus]);
   const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
-  const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const followSuggestionsV2 = useMemo(() => rankFollowSuggestions({
     candidates: communities.flatMap((community) => community.members),
     communities,
@@ -1908,15 +1917,18 @@ export function App() {
     setReportTarget({ communityId: activeCommunity.id, targetType: "user", targetId: member.userId, label: `${member.displayName} (@${member.username})` });
   };
 
-  const handleToggleBlockUser = (member: Member) => {
+  const handleToggleBlockUser = async (member: Member) => {
     if (member.userId === currentUser.userId) {
       pushToast("You cannot block your own account.", "error");
       return;
     }
 
-    const result = userBlockingService.toggleBlockedUser(member);
+    const blocked = !userBlockingService.isBlocked(member.userId);
+    const persisted = await userBlockingService.setBlockedUser(member, blocked);
+    if (!persisted) { pushToast(`Could not ${blocked ? "block" : "unblock"} ${member.displayName}.`, "error"); return; }
     setBlockedUserVersion((version) => version + 1);
-    pushToast(result.blocked ? `${member.displayName} blocked locally.` : `${member.displayName} unblocked locally.`, result.blocked ? "info" : "success");
+    if (blocked) { setDirectConversations((current) => current.filter((conversation) => conversation.participantUserId !== member.userId)); void refreshFriendState(); }
+    pushToast(blocked ? `${member.displayName} blocked.` : `${member.displayName} unblocked.`, blocked ? "info" : "success");
   };
 
   const handleJoinCommunity = async () => {
@@ -2360,6 +2372,7 @@ export function App() {
                 onToggleReaction={handleToggleMessageReaction}
                 onRetryMessage={(message) => void retryFailedMessage(message)}
                 onRemoveFailedMessage={removeFailedMessage}
+                blockedUserIds={blockedUserIds}
                 onOpenJoinCommunity={handleJoinCommunity}
                 pushToast={pushToast}
               />

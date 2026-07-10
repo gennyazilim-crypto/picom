@@ -176,10 +176,10 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
     setSafetySettings(next);
     pushToast("Privacy & Safety setting saved locally.", "success");
   };
-  const unblockUser = (userId: string, displayName: string) => {
-    userBlockingService.unblockUser(userId);
+  const unblockUser = async (userId: string, displayName: string, username: string) => {
+    const ok = await userBlockingService.setBlockedUser({ userId, displayName, username }, false);
     setBlockedUsers(userBlockingService.listBlockedUsers());
-    pushToast(`${displayName} unblocked locally.`, "success");
+    pushToast(ok ? `${displayName} unblocked.` : `Could not unblock ${displayName}.`, ok ? "success" : "error");
   };
   const saveProfileSettings = () => {
     const next = settingsService.updateProfileSettings({
@@ -546,7 +546,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
               <div className="settings-status-card" aria-label="Safety summary">
                 <span>Safety summary</span>
                 <strong>{userSafetyCenterService.getPrivacySummary(blockedUsers.length)}</strong>
-                <small>These preferences are local placeholders and never store passwords, tokens, or private message content.</small>
+                <small>Privacy choices are enforced locally and synchronized to Supabase when connected; passwords, tokens, and message content are never stored here.</small>
               </div>
               <div className="security-card-grid">
                 <article className="security-card">
@@ -620,7 +620,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, o
                         <strong>{blockedUser.displayName}</strong>
                         <small>@{blockedUser.username} blocked {dateTimeService.formatMessageTime(blockedUser.blockedAt)}</small>
                       </div>
-                      <button onClick={() => unblockUser(blockedUser.userId, blockedUser.displayName)}>Unblock</button>
+                      <button onClick={() => void unblockUser(blockedUser.userId, blockedUser.displayName, blockedUser.username)}>Unblock</button>
                     </article>
                   )) : (
                     <article className="session-card">

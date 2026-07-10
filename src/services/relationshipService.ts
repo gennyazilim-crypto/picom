@@ -112,10 +112,11 @@ export async function removeFriend(userId: string): RelationshipResult<boolean> 
 }
 
 export async function blockFriend(friend: Pick<FriendConnection, "userId" | "displayName" | "username">): RelationshipResult<boolean> {
-  userBlockingService.blockUser(friend);
-  const removed = await removeFriend(friend.userId);
+  const blocked = await userBlockingService.setBlockedUser(friend, true);
+  if (!blocked) return { ok: false, error: "Could not block this user." };
+  if (dataSourceService.getStatus().isMock) mockFriends.delete(friend.userId);
   for (const [id, request] of mockRequests) if (request.userId === friend.userId) mockRequests.delete(id);
-  return removed.ok ? { ok: true, data: true } : removed;
+  return { ok: true, data: true };
 }
 
 export async function getFriendState(): RelationshipResult<FriendState> {
