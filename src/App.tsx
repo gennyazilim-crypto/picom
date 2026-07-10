@@ -114,7 +114,7 @@ import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
 import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
 import { createCommunityFromSummary } from "./utils/communityFactory";
 import { messageMentionsUser } from "./utils/mentionUtils";
-import { canSendMessage, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
+import { canSendMessage, canViewChannel, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
 
 const overlayIcons = mvpUiIconMap.overlays;
 
@@ -402,6 +402,13 @@ export function App() {
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? fallbackCurrentUser;
   const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
+  const visibleMentionItems = useMemo(() => mentionItems.filter((item) => {
+    const community = communities.find((candidate) => candidate.id === item.communityId);
+    if (!community) return false;
+    const access = getCommunityAccess(currentUserId, community);
+    const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
+    return Boolean(channel && canViewChannel(access, channel));
+  }), [communities, mentionItems]);
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
   useEffect(() => {
@@ -2003,7 +2010,7 @@ export function App() {
           ) : activeView === "mentionFeed" ? (
             <div className="mention-feed-shell">
               <MentionFeedMain
-                items={mentionItems}
+                items={visibleMentionItems}
                 communities={communities}
                 friends={friendState.friends}
                 events={communityEvents}
@@ -2046,7 +2053,7 @@ export function App() {
                 }
               />
               <MentionRightPanel
-                items={mentionItems}
+                items={visibleMentionItems}
                 communities={communities}
                 popularUserIds={[...mockPopularUserIds]}
                 followedUserIds={followedUserIds}

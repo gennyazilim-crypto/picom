@@ -137,6 +137,9 @@ export const uploadService = {
     const validationError = validateInput(input);
     if (validationError) return { ok: false, error: validationError };
     if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
+    const contentValidation = await fileService.validateContent(input.file);
+    if (!contentValidation.ok) return uploadError("VALIDATION_ERROR", contentValidation.reason);
+    if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
 
     const dataSource = dataSourceService.getStatus();
 

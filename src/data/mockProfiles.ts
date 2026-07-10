@@ -1,6 +1,7 @@
 ﻿import { currentUserId as defaultCurrentUserId, mockCommunities } from "./mockCommunities";
 import type { Attachment, Channel, Community, Member, Message, Role, UserStatus } from "../types/community";
 import type { ProfileActivityItem, ProfileLookupOptions, ProfileMediaItem, ProfileStatus, UserProfile } from "../types/profile";
+import { canViewChannel, getCommunityAccess } from "../services/permissions/communityPermissions";
 
 const profilePalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
 const locations = ["Istanbul", "Berlin", "Amsterdam", "Izmir", "Lisbon", "Remote"];
@@ -30,6 +31,26 @@ function getRole(community: Community, member: Member): Role | undefined {
 
 function getMemberCommunities(communities: Community[], userId: string): Community[] {
   return communities.filter((community) => community.members.some((member) => member.userId === userId));
+}
+
+function filterCommunitiesForViewer(communities: Community[], viewerUserId: string): Community[] {
+  return communities.flatMap((community) => {
+    const access = getCommunityAccess(viewerUserId, community);
+    if (!access.isMember && !access.canViewPublicContent) return [];
+    const visibleChannelIds = new Set(
+      getChannels(community)
+        .filter((channel) => canViewChannel(access, channel))
+        .map((channel) => channel.id),
+    );
+    return [{
+      ...community,
+      categories: community.categories.map((category) => ({
+        ...category,
+        channels: category.channels.filter((channel) => visibleChannelIds.has(channel.id)),
+      })),
+      messages: community.messages.filter((message) => visibleChannelIds.has(message.channelId)),
+    }];
+  });
 }
 
 function mapStatus(status: UserStatus): ProfileStatus {
@@ -163,14 +184,15 @@ function getTags(member: Member, roles: string[]): string[] {
 }
 
 function makeProfile(member: Member, communities: Community[], options: ProfileLookupOptions): UserProfile {
-  const profileCommunities = getMemberCommunities(communities, member.userId);
+  const visibleCommunities = filterCommunitiesForViewer(communities, options.currentUserId);
+  const profileCommunities = getMemberCommunities(visibleCommunities, member.userId);
   const primaryCommunity = profileCommunities[0] ?? communities[0];
   const roles = profileCommunities.map((community) => getRole(community, member)?.name ?? "Member");
   const uniqueRoles = Array.from(new Set(roles.length ? roles : ["Member"]));
-  const activities = getMessageActivities(member, communities).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
-  const media = getMedia(member, communities);
+  const activities = getMessageActivities(member, visibleCommunities).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+  const media = getMedia(member, visibleCommunities);
   const visibleActivities = activities.length ? activities : getFallbackActivity(member, primaryCommunity);
-  const reactionCount = communities.flatMap((community) => community.messages).filter((message) => message.authorId === member.userId).reduce((total, message) => total + (message.reactions?.reduce((sum, reaction) => sum + reaction.count, 0) ?? 0), 0);
+  const reactionCount = visibleCommunities.flatMap((community) => community.messages).filter((message) => message.authorId === member.userId).reduce((total, message) => total + (message.reactions?.reduce((sum, reaction) => sum + reaction.count, 0) ?? 0), 0);
   const seedNumber = hashSeed(member.userId);
 
   return {

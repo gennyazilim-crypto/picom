@@ -3,7 +3,7 @@ export const allowedImageMimeTypes = new Set(["image/png", "image/jpeg", "image/
 export const allowedImageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
 export const maxImageFileSizeBytes = 10 * 1024 * 1024;
 
-export type FileValidationErrorCode = "UNSUPPORTED_MIME_TYPE" | "UNSUPPORTED_EXTENSION" | "FILE_TOO_LARGE";
+export type FileValidationErrorCode = "UNSUPPORTED_MIME_TYPE" | "UNSUPPORTED_EXTENSION" | "FILE_TOO_LARGE" | "INVALID_FILE_SIGNATURE";
 
 export type FileValidationResult =
   | Readonly<{ ok: true }>
@@ -19,6 +19,23 @@ function getFileExtension(fileName: string): string {
   const dotIndex = fileName.lastIndexOf(".");
   if (dotIndex < 0) return "";
   return fileName.slice(dotIndex).toLowerCase();
+}
+
+function matchesImageSignature(bytes: Uint8Array, mimeType: string): boolean {
+  if (mimeType === "image/png") {
+    return bytes.length >= 8 && [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((value, index) => bytes[index] === value);
+  }
+  if (mimeType === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mimeType === "image/gif") {
+    const signature = String.fromCharCode(...bytes.slice(0, 6));
+    return signature === "GIF87a" || signature === "GIF89a";
+  }
+  if (mimeType === "image/webp") {
+    return bytes.length >= 12
+      && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF"
+      && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+  }
+  return false;
 }
 
 export const fileService = {
@@ -48,6 +65,25 @@ export const fileService = {
     }
 
     return { ok: true };
+  },
+  async validateContent(file: File): Promise<FileValidationResult> {
+    try {
+      const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+      if (!matchesImageSignature(bytes, file.type)) {
+        return {
+          ok: false,
+          code: "INVALID_FILE_SIGNATURE",
+          reason: "The file contents do not match the selected image type.",
+        };
+      }
+      return { ok: true };
+    } catch {
+      return {
+        ok: false,
+        code: "INVALID_FILE_SIGNATURE",
+        reason: "Picom could not verify this image safely.",
+      };
+    }
   },
   createPreview(file: File): LocalAttachmentPreview {
     return { id: `local-file-${Date.now()}-${file.name}`, name: file.name, type: file.type, size: file.size, file, url: URL.createObjectURL(file) };
