@@ -253,6 +253,7 @@ export function MessageItem({
           <EmojiPicker
             className="message-reaction-picker"
             label="Choose reaction"
+            mode="reaction"
             onClose={() => setReactionPickerOpen(false)}
             communityId={communityId}
             onSelect={(emoji) => {

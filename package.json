@@ -131,6 +131,7 @@
     "webhooks:production:test": "node scripts/webhook-production-hardening-test.mjs",
     "slash:commands:smoke": "node scripts/slash-commands-placeholder-smoke-test.mjs",
     "emoji:custom:smoke": "node scripts/custom-emoji-foundation-smoke-test.mjs",
+    "emoji:picker:production:smoke": "node scripts/emoji-picker-production-smoke.mjs",
     "stickers:placeholder:smoke": "node scripts/stickers-placeholder-smoke-test.mjs",
     "polls:foundation:smoke": "node scripts/polls-feature-foundation-smoke-test.mjs",
     "events:foundation:smoke": "node scripts/community-events-foundation-smoke-test.mjs",

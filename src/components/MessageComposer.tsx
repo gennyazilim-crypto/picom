@@ -474,6 +474,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         <EmojiPicker
           className="composer-emoji-picker"
           label="Choose emoji for message"
+          mode="composer"
           onClose={() => setEmojiPickerOpen(false)}
           onSelect={(emoji) => {
             const nextBody = `${body}${emoji}`;

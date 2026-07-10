@@ -7,7 +7,7 @@ export type EmojiOption = Readonly<{
 }>;
 
 export const emojiCategoryLabels: Record<EmojiCategoryId, string> = {
-  frequent: "Frequently Used",
+  frequent: "Recent",
   smileys: "Smileys",
   gestures: "Gestures",
   objects: "Objects",
