@@ -74,3 +74,7 @@ Final checksum/provenance/RC/deployment/rollback process contracts passed, but t
 ## Task 406 real-evidence update
 
 Hosted Supabase execution was BLOCKED by absent staging project linkage and protected operator credentials. RB-01, RB-02, and RB-03 remain open; no remote evidence was fabricated.
+
+## Task 407 real-evidence update
+
+Hosted LiveKit token and two-client voice execution were BLOCKED by absent staging/provider environment and clients. RB-04 remains open.

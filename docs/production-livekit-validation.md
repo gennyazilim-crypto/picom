@@ -48,3 +48,7 @@ RB-04 remains open. Picom must not advertise production-certified voice until th
 ## Task 397 closure attempt
 
 All local voice/device/recovery/mini-card/discovery contracts passed on 2026-07-10. Hosted token issuance, two-client media, authorization, reconnect, and cleanup were not run because Task 396 staging access remained unavailable. See `docs/hosted-livekit-two-client-validation.md`.
+
+## Task 407 real execution
+
+Hosted two-client execution was **BLOCKED**. No staging token endpoint, LiveKit project, protected credentials, synthetic accounts, or isolated clients were available. No real media or authorization result is claimed; see `docs/hosted-livekit-two-client-execution.md`.
