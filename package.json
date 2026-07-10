@@ -205,6 +205,7 @@
     "mentions:ranking:test": "node scripts/mention-feed-ranking-v2-test.mjs",
     "follow:suggestions:test": "node scripts/follow-suggestions-v2-test.mjs",
     "search:relevance:test": "node scripts/search-relevance-tuning-test.mjs",
+    "presence:accuracy:test": "node scripts/advanced-presence-accuracy-test.mjs",
     "stories:header:smoke": "node scripts/followed-people-stories-header-smoke-test.mjs",
     "attachments:scan:smoke": "node scripts/attachment-malware-scanning-smoke-test.mjs",
     "attachments:quarantine:smoke": "node scripts/attachment-quarantine-smoke-test.mjs",

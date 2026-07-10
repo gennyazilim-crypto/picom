@@ -11,14 +11,7 @@ import {
   shouldThrottleRealtimeSend,
   type RealtimeConnectionStatus,
 } from "../services/supabase/realtimeService";
-
-type PresencePayload = Readonly<{
-  userId: string;
-  displayName: string;
-  avatarUrl: string | null;
-  status: UserStatus;
-  lastSeen: string;
-}>;
+import { aggregatePresenceEntries, PRESENCE_HEARTBEAT_MS, prunePresenceMap, type PresencePayload } from "../utils/presenceAccuracy";
 
 type UseSupabasePresenceChannelInput = Readonly<{
   enabled: boolean;
@@ -34,19 +27,6 @@ type UseSupabasePresenceChannelResult = Readonly<{
   presenceByUserId: Record<string, PresencePayload>;
   connectionStatus: RealtimeConnectionStatus;
 }>;
-
-function isPresencePayload(value: unknown): value is PresencePayload {
-  if (!value || typeof value !== "object") return false;
-
-  const payload = value as Partial<PresencePayload>;
-  return (
-    typeof payload.userId === "string" &&
-    typeof payload.displayName === "string" &&
-    (payload.avatarUrl === null || typeof payload.avatarUrl === "string" || typeof payload.avatarUrl === "undefined") &&
-    ["online", "idle", "dnd", "offline"].includes(String(payload.status)) &&
-    typeof payload.lastSeen === "string"
-  );
-}
 
 function arePresenceMapsEqual(left: Record<string, PresencePayload>, right: Record<string, PresencePayload>): boolean {
   const leftKeys = Object.keys(left);
@@ -83,7 +63,7 @@ export function useSupabasePresenceChannel({
   const subscribedRef = useRef(false);
   const lastPresenceTrackAtRef = useRef(0);
   const pendingPresenceTrackTimerRef = useRef<number | null>(null);
-  const safeStatus = status === "offline" ? "online" : status;
+  const safeStatus = status;
   const presencePayloadRef = useRef<PresencePayload>({
     userId: currentUserId,
     displayName: displayName.slice(0, 80),
@@ -95,6 +75,10 @@ export function useSupabasePresenceChannel({
   const trackPresenceSafely = useCallback(() => {
     const channel = channelRef.current;
     if (!subscribedRef.current || !channel) return;
+    if (presencePayloadRef.current.status === "offline") {
+      void channel.untrack();
+      return;
+    }
 
     const now = Date.now();
     const sendPresence = () => {
@@ -131,7 +115,10 @@ export function useSupabasePresenceChannel({
   useEffect(() => {
     if (!enabled || !dataSourceService.getStatus().isSupabase) return;
 
-    const markOffline = () => setConnectionStatus("disconnected");
+    const markOffline = () => {
+      setConnectionStatus("disconnected");
+      setPresenceByUserId({});
+    };
     const retrackPresence = () => {
       setConnectionStatus((current) => (current === "disconnected" ? "reconnecting" : current));
 
@@ -160,6 +147,21 @@ export function useSupabasePresenceChannel({
       window.removeEventListener("focus", retrackPresence);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
+  }, [enabled, trackPresenceSafely]);
+
+  useEffect(() => {
+    if (!enabled || !dataSourceService.getStatus().isSupabase) return;
+    const heartbeat = window.setInterval(() => {
+      setPresenceByUserId((current) => {
+        const next = prunePresenceMap(current);
+        return arePresenceMapsEqual(current, next) ? current : next;
+      });
+      if (document.visibilityState !== "visible" || !navigator.onLine || presencePayloadRef.current.status === "offline") return;
+      presencePayloadRef.current = { ...presencePayloadRef.current, lastSeen: new Date().toISOString() };
+      trackPresenceSafely();
+    }, PRESENCE_HEARTBEAT_MS);
+
+    return () => window.clearInterval(heartbeat);
   }, [enabled, trackPresenceSafely]);
 
   useEffect(() => {
@@ -200,24 +202,7 @@ export function useSupabasePresenceChannel({
       })
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState();
-        const nextPresenceByUserId: Record<string, PresencePayload> = {};
-
-        Object.values(state).forEach((entries) => {
-          entries.forEach((entry) => {
-            if (!isPresencePayload(entry)) return;
-
-            const existing = nextPresenceByUserId[entry.userId];
-            if (existing && existing.lastSeen.localeCompare(entry.lastSeen) > 0) return;
-
-            nextPresenceByUserId[entry.userId] = {
-              userId: entry.userId,
-              displayName: entry.displayName.slice(0, 80),
-              avatarUrl: entry.avatarUrl ?? null,
-              status: entry.status === "offline" ? "online" : entry.status,
-              lastSeen: entry.lastSeen,
-            };
-          });
-        });
+        const nextPresenceByUserId = aggregatePresenceEntries(Object.values(state).flat(), Date.now());
 
         setPresenceByUserId((current) => (arePresenceMapsEqual(current, nextPresenceByUserId) ? current : nextPresenceByUserId));
       })
@@ -237,7 +222,8 @@ export function useSupabasePresenceChannel({
             lastSeen: new Date().toISOString(),
           };
           lastPresenceTrackAtRef.current = Date.now();
-          await channel.track(presencePayloadRef.current);
+          if (presencePayloadRef.current.status === "offline") await channel.untrack();
+          else await channel.track(presencePayloadRef.current);
           return;
         }
 

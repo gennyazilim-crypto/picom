@@ -618,7 +618,7 @@ export function App() {
         const presence = presenceChannel.presenceByUserId[member.userId];
         if (!presence) return member;
 
-        const status = presence.status === "offline" ? "online" : presence.status;
+        const status = presence.status;
         const statusText = status === "dnd" ? "Do not disturb" : status === "idle" ? "Idle now" : "Online now";
 
         return {
