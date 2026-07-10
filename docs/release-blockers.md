@@ -147,3 +147,7 @@ Signing and package controls passed, but protected dispatch was denied and no ce
 ## Task 427 authorized legal/license approval
 
 Engineering policy, acceptance, audio, Coolicons, and dependency-license gates passed. No authorized reviewer, project-license grant, immutable policy approval, jurisdiction/effective-date/contact decision, or audio-rights approval exists. RB-10 remains **BLOCKED** and stable distribution remains No-Go.
+
+## Task 428 production owners/secret custody
+
+Secret/env/CI controls pass, and the ownership inventory now explicitly separates support, status, incident, and audio responsibilities. Every real owner/store/rotation/recovery/freeze approval remains unassigned. The ownership-transfer UI contract also fails and is carried into lifecycle review. RB-09 remains **BLOCKED**.

@@ -15,13 +15,20 @@ Result: **Incomplete - named owners required before stable release**
 | macOS signing/notarization | UNASSIGNED | Keychain/CI/notary store | UNASSIGNED | Blocker |
 | Linux packaging/signing | UNASSIGNED | Protected CI/key store | UNASSIGNED | Blocker |
 | Artifacts/checksums/provenance | UNASSIGNED | Immutable release storage | UNASSIGNED | Blocker |
-| Support/status/incident response | UNASSIGNED | Approved support/status tools | UNASSIGNED | Blocker |
+| Support operations | UNASSIGNED | Approved support tool | UNASSIGNED | Blocker |
+| Status page | UNASSIGNED | Approved status provider | UNASSIGNED | Blocker |
+| Incident response | UNASSIGNED | Incident/on-call system | UNASSIGNED | Blocker |
 | Legal documents | UNASSIGNED | Versioned approved documents | UNASSIGNED | Blocker |
 | Backups/restore | UNASSIGNED | Provider backup/PITR store | UNASSIGNED | Blocker |
 | Secret rotation/recovery | UNASSIGNED | Approved secret manager | UNASSIGNED | Blocker |
+| Radio/podcast/audio rights and operations | UNASSIGNED | Approved media/storage/provider inventory | UNASSIGNED | Blocker |
 
 No secret value belongs in this matrix. A role label or `UNASSIGNED` placeholder is not an approval or operational owner.
 
 ## Task 413 result
 
 No authorized assignment record was supplied. Every `UNASSIGNED` row remains a stable-release blocker; the agent did not infer owner identities.
+
+## Task 428 result
+
+No real assignment record was provided on 2026-07-11. Support, status, incident response, and release-scoped audio ownership are now explicit rows, but every accountable and recovery owner remains `UNASSIGNED`. The matrix is complete as a blocker inventory, not as an operational approval.

@@ -21,3 +21,7 @@ Stable release cannot exit freeze until named owners approve the final version/c
 ## Task 413 activation status
 
 This process is documented but cannot activate until real approvers/operators are assigned. No agent-generated identity is an approval.
+
+## Task 428 activation decision
+
+Secret and environment controls pass structurally, but normal-change approvers, incident leadership, emergency override authority, rollback owners, and audit-trail custody remain unassigned. Production change control is documented but not operationally activated.

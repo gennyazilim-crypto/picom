@@ -72,3 +72,7 @@ Environment/placeholder/secret-boundary checks passed on 2026-07-10, but no name
 ## Task 413 freeze result
 
 The hosted Task 406 project is staging-only and is not a production freeze. Stable version, production project/provider identifiers, function versions, legal versions, support URLs, feature flags, retention, backups, and platform signing identities remain unapproved.
+
+## Task 428 freeze decision
+
+The production inventory remains value-free and safe, but no owner or approver accepted it. Version/channel, production providers/regions, functions, CORS, URLs, policy versions, feature flags, diagnostics, retention, backups, and package identities remain unfrozen. Freeze exit is denied.
