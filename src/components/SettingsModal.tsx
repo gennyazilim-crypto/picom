@@ -148,6 +148,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   useEffect(() => {
     if (active === "Account") {
       void refreshActiveSessions();
+      void dataExportService.refreshStatus().then(setDataExportStatus);
       setAccountActivities(accountActivityService.listRecent());
     }
   }, [active, refreshActiveSessions]);
@@ -168,6 +169,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
       setNotificationPolicyState(notificationPolicyStateService.getSnapshot());
       setSafetySettings(userSafetyCenterService.getSettings());
       void profilePrivacyService.getOwnSettings().then(setProfilePrivacy);
+      void dataExportService.refreshStatus().then(setDataExportStatus);
     }
   }, [active]);
 
@@ -361,8 +363,10 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     setAccountDeletionConfirmText("");
     pushToast("Account deletion request canceled.", "info");
   };
-  const requestDataExportPlaceholder = async () => {
-    const result = await dataExportService.requestExport(profileDraft);
+  const requestDataExport = async () => {
+    const pending = dataExportService.requestExport(profileDraft);
+    setDataExportStatus(dataExportService.getStatus());
+    const result = await pending;
     if (!result.ok) {
       pushToast(result.message, "error");
       return;
@@ -371,7 +375,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     setDataExportStatus(result.data);
     pushToast(result.data.message, "success");
   };
-  const downloadDataExportPlaceholder = () => {
+  const downloadDataExport = () => {
     const result = dataExportService.downloadExportJson();
     if (!result.ok) {
       pushToast(result.message, "error");
@@ -536,10 +540,11 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <span>Data export</span>
                 <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Generating export" : dataExportStatus.status === "failed" ? "Export failed" : "Not requested"}</strong>
                 <small>{dataExportStatus.message}</small>
+                {dataExportStatus.requestedAt ? <small>Requested {dateTimeService.formatFullTimestamp(dataExportStatus.requestedAt)}. Export content is held only in this app session and is not stored in the request table.</small> : null}
               </div>
               <div className="settings-actions-row">
-                <button onClick={() => void requestDataExportPlaceholder()}>Request data export</button>
-                <button disabled={!dataExportStatus.canDownload} onClick={downloadDataExportPlaceholder}>Download JSON export</button>
+                <button disabled={dataExportStatus.status === "processing"} onClick={() => void requestDataExport}>{dataExportStatus.status === "processing" ? "Generating export..." : "Request data export"}</button>
+                <button disabled={!dataExportStatus.canDownload} onClick={downloadDataExport}>Download JSON export</button>
               </div>
               <div className="danger-zone-card" aria-label="Account deletion danger zone">
                 <span>Danger Zone</span>
@@ -675,7 +680,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <small>Do not share passwords, tokens, recovery codes, or private invite links. Report suspicious behavior from message/member context actions.</small>
               </div>
               <div className="settings-actions-row">
-                <button onClick={requestDataExportPlaceholder}>Request data export</button>
+                <button disabled={dataExportStatus.status === "processing"} onClick={() => void requestDataExport()}>Request data export</button>
                 <button onClick={() => { setActive("Account"); pushToast(accountDeletionStatus.message, accountDeletionStatus.requested ? "info" : "success"); }}>Review account deletion</button>
                 <button onClick={() => { setActive("Advanced"); pushToast("Open Beta support to report a problem.", "info"); }}>Report a problem</button>
                 <button onClick={() => updateSafetySettings(userSafetyCenterService.resetSettings())}>Reset safety settings</button>

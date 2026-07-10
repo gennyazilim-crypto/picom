@@ -1,0 +1,9 @@
+# User data export production implementation
+
+Picom provides an authenticated, synchronous JSON export of the current user's own account data. The desktop calls the `user-data-export` Edge Function with its normal session. The function uses that same user JWT and Supabase RLS for every content query; it does not use or require a service-role key. A user-scoped RPC creates/finalizes bounded job metadata, while the export payload itself is not stored in `data_export_requests`.
+
+Allowlisted sections are profile fields, community membership rows, messages authored by the user, attachment metadata uploaded by the user, outgoing follows and saved-message references. The client validates schema, row caps, timestamps and field allowlists before merging local desktop settings in memory. Passwords/password hashes, auth/session/refresh tokens, cookies, authorization headers, service keys, signing/LiveKit credentials, raw IP/storage paths, audit logs and other users' private data are excluded.
+
+The response is `no-store`, exists in renderer memory for the current session, and is downloadable as JSON for at most the server's 15-minute readiness window. Reloading clears the payload even if safe request metadata still says ready, so the user must request a fresh export. Settings refreshes the user's own latest job status through RLS and disables duplicate submission while processing.
+
+The migration and function must be deployed and tested in hosted staging before production claims. Required tests include unauthenticated denial, cross-user request IDs, concurrent/rate-limited requests, RLS-denied private rows, deleted/anonymized records, truncation, malformed payload rejection, expiry, revoked sessions and secret scanning. Supabase CLI/staging absence means repository contract tests are not hosted proof.

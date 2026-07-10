@@ -1,14 +1,8 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCorsPreflight } from "../_shared/cors.ts";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
 import { requireSupabaseUser } from "../_shared/auth.ts";
 
 const SECTION_LIMIT = 5000;
-
-function requiredEnv(name: string): string | null {
-  const value = Deno.env.get(name);
-  return value && value.trim() ? value.trim() : null;
-}
 
 function takeBounded<T>(rows: T[] | null): { items: T[]; truncated: boolean } {
   const source = rows ?? [];
@@ -22,31 +16,10 @@ Deno.serve(async (request: Request) => {
 
   const auth = await requireSupabaseUser(request);
   if (!auth.ok) return auth.response;
-  const supabaseUrl = requiredEnv("SUPABASE_URL");
-  const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) return errorResponse("INTERNAL_ERROR", "Data export processing is unavailable.", 503);
-
-  const recentCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-  const { data: recentRequest } = await auth.supabase
-    .from("data_export_requests")
-    .select("id,status,requested_at")
-    .eq("user_id", auth.user.id)
-    .gte("requested_at", recentCutoff)
-    .in("status", ["requested", "processing"])
-    .order("requested_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (recentRequest) return errorResponse("VALIDATION_ERROR", "A recent data export request is already processing. Try again later.", 429, undefined, { "Retry-After": "600" });
-
-  const { data: requestRow, error: requestError } = await auth.supabase
-    .from("data_export_requests")
-    .insert({ user_id: auth.user.id, status: "requested", format: "json" })
-    .select("id,requested_at")
-    .single();
-  if (requestError || !requestRow) return errorResponse("INTERNAL_ERROR", "Picom could not create the export request.", 500);
-
-  const operator = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  await operator.from("data_export_requests").update({ status: "processing" }).eq("id", requestRow.id).eq("user_id", auth.user.id);
+  const { data: started, error: startError } = await auth.supabase.rpc("begin_own_data_export");
+  const requestRow = started?.[0];
+  if (startError?.message?.includes("EXPORT_ALREADY_PROCESSING")) return errorResponse("RATE_LIMITED", "A recent data export is already processing. Try again later.", 429, undefined, { "Retry-After": "600" });
+  if (startError || !requestRow) return errorResponse("INTERNAL_ERROR", "Picom could not create the export request.", 500);
 
   const [profileResult, membershipsResult, messagesResult, attachmentsResult, followsResult, savedResult] = await Promise.all([
     auth.supabase.from("profiles").select("id,username,display_name,avatar_url,status,status_text,bio,accent_color,onboarding_completed,created_at,updated_at").eq("id", auth.user.id).single(),
@@ -59,7 +32,7 @@ Deno.serve(async (request: Request) => {
 
   const queryError = profileResult.error || membershipsResult.error || messagesResult.error || attachmentsResult.error || followsResult.error || savedResult.error;
   if (queryError || !profileResult.data) {
-    await operator.from("data_export_requests").update({ status: "failed", completed_at: new Date().toISOString(), failure_code: "EXPORT_QUERY_FAILED" }).eq("id", requestRow.id).eq("user_id", auth.user.id);
+    await auth.supabase.rpc("complete_own_data_export", { target_export_id: requestRow.id, next_status: "failed", next_failure_code: "EXPORT_QUERY_FAILED" });
     return errorResponse("INTERNAL_ERROR", "Picom could not generate the data export safely.", 500);
   }
 
@@ -68,9 +41,11 @@ Deno.serve(async (request: Request) => {
   const attachments = takeBounded(attachmentsResult.data);
   const follows = takeBounded(followsResult.data);
   const savedMessages = takeBounded(savedResult.data);
-  const completedAt = new Date().toISOString();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  await operator.from("data_export_requests").update({ status: "ready", completed_at: completedAt, expires_at: expiresAt, failure_code: null }).eq("id", requestRow.id).eq("user_id", auth.user.id);
+  const { data: completed, error: completeError } = await auth.supabase.rpc("complete_own_data_export", { target_export_id: requestRow.id, next_status: "ready", next_failure_code: null });
+  const completedRow = completed?.[0];
+  if (completeError || !completedRow) return errorResponse("INTERNAL_ERROR", "Picom could not finalize the data export safely.", 500);
+  const completedAt = completedRow.completed_at;
+  const expiresAt = completedRow.expires_at;
 
   return jsonResponse({
     schemaVersion: 1,

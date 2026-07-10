@@ -8,7 +8,7 @@ const STORAGE_KEY = "picom.dataExport.v4";
 const MAX_SECTION_ROWS = 5000;
 const excluded = ["password hashes", "session tokens", "auth and refresh tokens", "cookies", "authorization headers", "service keys", "LiveKit credentials", "signing keys", "raw storage paths", "raw IP addresses", "audit logs", "other users' private data"];
 
-type Stored = { exportId: string | null; requestedAt: string | null; status: "not_requested" | "processing" | "ready" | "failed" };
+type Stored = { exportId: string | null; requestedAt: string | null; expiresAt: string | null; status: "not_requested" | "processing" | "ready" | "failed" };
 export type DataExportStatus = Stored & { message: string; canDownload: boolean };
 export type DataExportProfileInput = { displayName?: string; statusText?: string; bio?: string };
 type ExportRecord = Readonly<Record<string, string | number | boolean | null>>;
@@ -37,8 +37,8 @@ function read(): Stored {
   try {
     const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<Stored>;
     const validStatus = value.status === "processing" || value.status === "ready" || value.status === "failed" ? value.status : "not_requested";
-    return { exportId: typeof value.exportId === "string" ? value.exportId : null, requestedAt: typeof value.requestedAt === "string" ? value.requestedAt : null, status: validStatus };
-  } catch { return { exportId: null, requestedAt: null, status: "not_requested" }; }
+    return { exportId: typeof value.exportId === "string" ? value.exportId : null, requestedAt: typeof value.requestedAt === "string" ? value.requestedAt : null, expiresAt: typeof value.expiresAt === "string" ? value.expiresAt : null, status: validStatus };
+  } catch { return { exportId: null, requestedAt: null, expiresAt: null, status: "not_requested" }; }
 }
 
 function write(value: Stored): void {
@@ -50,7 +50,7 @@ function isExpired(payload: DataExportPayload | null): boolean {
 }
 
 function status(value: Stored): DataExportStatus {
-  const expired = isExpired(latestPayload);
+  const expired = isExpired(latestPayload) || Boolean(value.expiresAt && Date.parse(value.expiresAt) <= Date.now());
   const message = value.status === "processing"
     ? "Export is being generated under your account permissions."
     : value.status === "ready"
@@ -139,24 +139,35 @@ function buildMockPayload(profile: DataExportProfileInput, exportId: string, req
 
 export const dataExportService = {
   getStatus(): DataExportStatus { return status(read()); },
+  async refreshStatus(): Promise<DataExportStatus> {
+    if (dataSourceService.getStatus().isMock) return status(read());
+    const client = getSupabaseClient();
+    if (!client) return status(read());
+    const { data, error } = await client.from("data_export_requests").select("id,status,requested_at,expires_at").order("requested_at", { ascending: false }).limit(1).maybeSingle();
+    if (error || !data) return status(read());
+    if (latestPayload?.exportId !== data.id) latestPayload = null;
+    const next: Stored = { exportId: data.id, requestedAt: data.requested_at, expiresAt: data.expires_at, status: data.status === "processing" || data.status === "ready" || data.status === "failed" ? data.status : "processing" };
+    write(next);
+    return status(next);
+  },
   async requestExport(profile: DataExportProfileInput): Promise<DataExportResult<DataExportStatus>> {
     const requestedAt = new Date().toISOString();
     latestPayload = null;
-    write({ exportId: null, requestedAt, status: "processing" });
+    write({ exportId: null, requestedAt, expiresAt: null, status: "processing" });
     if (dataSourceService.getStatus().isMock) {
       const exportId = `export_${crypto.randomUUID()}`;
       latestPayload = buildMockPayload(profile, exportId, requestedAt);
-      const next: Stored = { exportId, requestedAt, status: "ready" };
+      const next: Stored = { exportId, requestedAt, expiresAt: null, status: "ready" };
       write(next);
       return { ok: true, data: status(next) };
     }
     const client = getSupabaseClient();
-    if (!client) { const failed: Stored = { exportId: null, requestedAt, status: "failed" }; write(failed); return { ok: false, message: "Data export is unavailable." }; }
+    if (!client) { const failed: Stored = { exportId: null, requestedAt, expiresAt: null, status: "failed" }; write(failed); return { ok: false, message: "Data export is unavailable." }; }
     const { data, error } = await client.functions.invoke("user-data-export", { body: {} });
     const server = error ? null : normalizeServerPayload(data);
-    if (!server) { const failed: Stored = { exportId: null, requestedAt, status: "failed" }; write(failed); return { ok: false, message: "Picom could not validate and generate your data export." }; }
+    if (!server) { const failed: Stored = { exportId: null, requestedAt, expiresAt: null, status: "failed" }; write(failed); return { ok: false, message: "Picom could not validate and generate your data export." }; }
     latestPayload = { ...server, localDesktopSettings: settingsService.getSettings() };
-    const next: Stored = { exportId: latestPayload.exportId, requestedAt: latestPayload.requestedAt, status: "ready" };
+    const next: Stored = { exportId: latestPayload.exportId, requestedAt: latestPayload.requestedAt, expiresAt: latestPayload.expiresAt, status: "ready" };
     write(next);
     return { ok: true, data: status(next) };
   },
