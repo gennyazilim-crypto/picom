@@ -8,7 +8,7 @@ import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseC
 import type { Database } from "./supabase/database.types";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
-export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, webhook_id, webhook_name" as const;
+export const MESSAGE_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, thread_id, webhook_id, webhook_name" as const;
 
 export type MessageRow = Readonly<{
   id: string;

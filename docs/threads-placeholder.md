@@ -1,96 +1,27 @@
-﻿# Threads Placeholder
+# Threads Production Foundation
 
-Status: post-MVP placeholder
+Picom can start or open one thread per parent message, render focused replies in the desktop ThreadPanel, and keep thread replies out of the main chat timeline.
 
-Threads are planned as future side discussions connected to a parent message. This placeholder documents the architecture and guardrails without adding a ThreadPanel or changing the current MVP message layout.
+## Permissions and isolation
 
-## MVP stance
+Thread creation requires send permission in the exact parent channel. The backend verifies the parent message belongs to the supplied community/channel and is not itself a thread reply. Reply RPCs re-check thread visibility, channel send permission, archive state, and authenticated identity. Private-channel rules flow through `can_view_thread` and `can_view_channel`.
 
-- Threads are not enabled in the current MVP runtime.
-- Existing MessageList, MessageComposer, replies, reactions, attachments, and realtime message flow remain unchanged.
-- No right-side thread panel is added yet, so MemberSidebar and ChatMain layout stay stable.
+## Unread summary and realtime
 
-## Future data model placeholder
+Each user has a separate thread read timestamp. The summary returns reply count, unread count, and last reply time without exposing unrelated message content. An open panel marks replies read and subscribes only to its thread. Realtime and list-query filters prevent thread replies from appearing in main chat.
 
-A future `threads` table can use safe fields:
+## documented limits
 
-- `id`
-- `community_id`
-- `channel_id`
-- `parent_message_id`
-- `name`
-- `created_by_id`
-- `created_at`
-- `archived_at`
-- `deleted_at`
+- The panel loads the latest 100 messages. Older-reply pagination is deferred.
+- One thread is allowed per parent message.
+- Attachments, reactions, reply-to-reply, member subscriptions, search, and notification fan-out remain future work.
+- Archived threads are read-only.
+- Thread summaries are loaded when a thread opens; channel-wide summary badges are deferred to avoid expensive fan-out queries.
 
-Thread messages can reuse the existing messages model with an optional `thread_id` when the schema is ready.
+## Manual checks
 
-## Supabase/RLS expectations
-
-- Users can view a thread only if they can view the parent channel and parent message.
-- Private channel thread data must not leak to unauthorized users.
-- Creating a thread requires `sendMessages` permission in the parent channel.
-- Posting in a thread requires channel/thread access and a valid Supabase Auth session.
-- Deleted parent messages should show a safe fallback without exposing deleted content.
-
-## Future service methods
-
-Potential typed methods:
-
-- `startThread(messageId, payload)`
-- `openThread(threadId)`
-- `fetchThreadMessages(threadId, cursor)`
-- `sendThreadMessage(threadId, payload)`
-- `archiveThread(threadId)`
-
-All write operations should reconcile optimistic local state with Supabase confirmation and realtime echoes.
-
-## Future UI placeholder
-
-Potential desktop UI entry points:
-
-- Message context menu > Start thread
-- Message context menu > Open thread
-- Thread panel on the right, replacing or overlaying MemberSidebar only when explicitly opened
-- Thread modal fallback if panel would crowd the desktop layout
-
-No mobile-style drawer, bottom sheet, or responsive phone layout should be introduced.
-
-## Realtime behavior
-
-Future realtime events:
-
-- `thread:created`
-- `thread:archived`
-- `thread:message_new`
-- `thread:message_update`
-- `thread:message_delete`
-
-Clients should deduplicate by `eventId` and prevent thread messages from being rendered in the parent channel list unless explicitly represented as a thread summary.
-
-## Performance notes
-
-- Thread messages should use pagination.
-- Opening a thread should not refetch the entire channel history.
-- Thread unread state should be stored separately from channel read state when implemented.
-
-## Security notes
-
-- Do not expose messages from private channels through thread search or deep links.
-- Do not log raw thread message content in diagnostics.
-- Do not include tokens, passwords, authorization headers, or session values in thread-related logs.
-
-## Feature flag behavior
-
-A future `enableThreads` flag should hide thread entry points. Backend RLS and permissions remain mandatory and cannot be replaced by frontend flags.
-
-## Implementation decision
-
-This task is documentation-only. Runtime ThreadPanel, context menu actions, Supabase migrations, and thread services are intentionally deferred.
-
-## Manual verification
-
-- Confirm existing message context menu still behaves as before.
-- Confirm no ThreadPanel appears in the MVP UI.
-- Confirm MemberSidebar and ChatMain layout remain stable.
+1. Start/open a thread from a visible parent message.
+2. Send replies from two windows and verify deduplicated realtime updates.
+3. Confirm replies never render in the parent MessageList.
+4. Confirm private-channel/visitor access is denied and archived threads are read-only.
+5. Reopen a thread and verify its unread summary/read marker.

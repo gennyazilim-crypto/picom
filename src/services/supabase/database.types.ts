@@ -291,6 +291,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["threads"]["Row"]>;
         Relationships: [];
       };
+      thread_read_states: {
+        Row: { thread_id: string; user_id: string; last_read_at: string };
+        Insert: Database["public"]["Tables"]["thread_read_states"]["Row"];
+        Update: Partial<Database["public"]["Tables"]["thread_read_states"]["Row"]>;
+        Relationships: [];
+      };
       forum_posts: {
         Row: { id: string; channel_id: string; title: string; author_id: string; tags: string[]; status: "open" | "resolved"; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["forum_posts"]["Row"]> & Pick<Database["public"]["Tables"]["forum_posts"]["Row"], "channel_id" | "title" | "author_id">;
@@ -450,6 +456,10 @@ export type Database = {
       toggle_poll_vote: { Args: { target_poll_id: string; target_option_id: string }; Returns: Json };
       close_poll: { Args: { target_poll_id: string }; Returns: Json };
       set_community_event_rsvp: { Args: { target_event_id: string; next_status: "interested" | "going" | "not_going" }; Returns: boolean };
+      open_or_create_thread: { Args: { target_community_id: string; target_channel_id: string; target_parent_message_id: string; thread_name: string }; Returns: Json };
+      send_thread_message: { Args: { target_thread_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
+      get_thread_summary: { Args: { target_thread_id: string }; Returns: Json };
+      mark_thread_read: { Args: { target_thread_id: string }; Returns: boolean };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

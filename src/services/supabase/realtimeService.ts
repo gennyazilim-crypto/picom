@@ -218,7 +218,7 @@ export function subscribeToChannelMessages(input: SubscribeToChannelMessagesInpu
         table: "messages",
         filter: `channel_id=eq.${input.channelId}`,
       },
-      (payload) => input.onInsert?.(mapMessageRow(payload.new as MessageRow)),
+      (payload) => { const row = payload.new as MessageRow; if (!row.thread_id) input.onInsert?.(mapMessageRow(row)); },
     )
     .on(
       "postgres_changes",
@@ -228,7 +228,7 @@ export function subscribeToChannelMessages(input: SubscribeToChannelMessagesInpu
         table: "messages",
         filter: `channel_id=eq.${input.channelId}`,
       },
-      (payload) => input.onUpdate?.(mapMessageRow(payload.new as MessageRow)),
+      (payload) => { const row = payload.new as MessageRow; if (!row.thread_id) input.onUpdate?.(mapMessageRow(row)); },
     )
     .on(
       "postgres_changes",
@@ -238,7 +238,7 @@ export function subscribeToChannelMessages(input: SubscribeToChannelMessagesInpu
         table: "messages",
         filter: `channel_id=eq.${input.channelId}`,
       },
-      (payload) => input.onDelete?.(mapMessageRow(payload.old as MessageRow)),
+      (payload) => { const row = payload.old as MessageRow; if (!row.thread_id) input.onDelete?.(mapMessageRow(row)); },
     )
     .subscribe((status) => {
       const mappedStatus = mapRealtimeSubscriptionStatus(status, hasConnected);

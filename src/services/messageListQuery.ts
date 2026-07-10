@@ -3,7 +3,7 @@ import { mockCommunities } from "../data/mockCommunities";
 import type { MessageSummary } from "./messageService";
 import type { Database } from "./supabase/database.types";
 
-export const MESSAGE_LIST_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, webhook_id, webhook_name" as const;
+export const MESSAGE_LIST_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, thread_id, webhook_id, webhook_name" as const;
 
 export type MessageListRow = Readonly<{
   id: string;
@@ -16,6 +16,7 @@ export type MessageListRow = Readonly<{
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
+  thread_id: string | null;
   webhook_id: string | null;
   webhook_name: string | null;
 }>;
@@ -110,6 +111,7 @@ export async function listSupabaseMessageSummaries(client: SupabaseClient<Databa
     .select(MESSAGE_LIST_SELECT)
     .eq("community_id", input.communityId)
     .eq("channel_id", input.channelId)
+    .is("thread_id", null)
     .is("deleted_at", null)
     .order("sequence", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
