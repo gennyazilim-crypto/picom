@@ -131,3 +131,7 @@ Local voice/device/reconnect/Connected Voice contracts passed, but no deployed t
 ## Task 423 Windows native screen share/package
 
 A clean-source Windows x64 NSIS/unpacked internal beta candidate was generated, hashed, and startup-smoked. It is unsigned and no clean install, interactive picker, remote view, or real media cleanup ran. RB-05 remains **BLOCKED**; RB-06 gains package evidence but remains open.
+
+## Task 424 Linux native package/screen share
+
+Linux packaging and screen-share structural contracts passed, but no native workflow could be dispatched with the available GitHub permissions and no Linux host was available. No AppImage/DEB or portal/media evidence exists. RB-05 and RB-07 remain **BLOCKED**.

@@ -103,3 +103,7 @@ No signed/notarized DMG or zip was installed, accepted by Gatekeeper, removed, o
 ## Task 411 Windows real execution
 
 No trusted signed installer was tested on a clean Windows machine. Install, publisher display, launch, core flows, restart, uninstall, retention, and reinstall remain blocked.
+
+## Task 424 Linux update
+
+No native package workflow could be started with the available GitHub permissions. AppImage execution/removal and DEB install/launch/remove/reinstall were not performed. Structural packaging contracts pass, but native lifecycle evidence remains blocked.

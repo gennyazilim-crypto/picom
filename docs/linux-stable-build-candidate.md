@@ -53,3 +53,7 @@ Linux packaging metadata, repository distribution, safe install, signing lifecyc
 ## Task 409 real execution
 
 Native Linux package and screen-share certification remained **BLOCKED**. No Linux runner, AppImage/deb artifact, desktop session, portal stack, remote client, or final checksum was available. See `docs/linux-native-package-screen-share-certification.md`.
+
+## Task 424 native workflow attempt
+
+Local Linux packaging/distribution contracts passed, but the authenticated GitHub account could neither dispatch the package matrix nor create the validation PR required to trigger it. No native Ubuntu run occurred. AppImage/DEB build, launch, install, checksum, and screen-share certification remain **BLOCKED**.
