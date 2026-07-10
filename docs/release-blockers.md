@@ -46,3 +46,7 @@ Screen-share permission recovery, preview/stop, preload, and IPC validation pass
 ## Task 399 evidence update
 
 Windows packaging and fail-closed signing controls passed without loading a certificate. No signed artifact or clean-machine matrix exists, so RB-06 remains open.
+
+## Task 400 evidence update
+
+Linux packaging and repository-distribution contracts passed, but no native AppImage/deb was built or launched. RB-07 remains open.

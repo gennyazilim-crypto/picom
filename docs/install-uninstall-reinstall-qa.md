@@ -83,3 +83,7 @@ release-candidate blockers before public distribution.
 ## Task 399 Windows update
 
 Signing and installer process contracts passed, but no trusted signed artifact or clean Windows VM/device evidence was available. Install, core-flow, uninstall, retention, and reinstall remain pending against the final signed checksum.
+
+## Task 400 Linux update
+
+Package metadata and distribution controls passed structurally. Native AppImage removal and deb install/remove/purge/reinstall behavior were not run because this is a Windows host.
