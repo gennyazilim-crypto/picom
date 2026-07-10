@@ -3039,6 +3039,7 @@ body{
   --surface-hover: color-mix(in srgb, var(--accent) 16%, var(--surface));
   --accent-soft: color-mix(in srgb, var(--accent) 24%, var(--surface));
   --focus-ring: 0 0 0 4px color-mix(in srgb, var(--picom-aqua) 48%, transparent);
+  --shadow-soft: 0 0 0 1px var(--border-strong);
 }
 
 :root[data-reduced-motion="true"] {
@@ -3084,9 +3085,25 @@ body{
 :root[data-reduced-motion="true"] *::before,
 :root[data-reduced-motion="true"] *::after {
   animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
   transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+}
+
+/* Respect the desktop operating-system preference before or without a saved Picom override. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
 }
 
 /* Task 393: safe external message links */

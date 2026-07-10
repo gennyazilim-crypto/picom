@@ -50,6 +50,9 @@ for (const expected of [
   "data-reduced-motion",
   "data-larger-text",
   "data-focus-ring-strong",
+  "animation-delay: 0ms !important",
+  "transition-delay: 0ms !important",
+  "@media (prefers-reduced-motion: reduce)",
   "transition-duration: 1ms !important",
 ]) {
   assertIncludes(styles, expected, "accessibility CSS");
@@ -57,5 +60,8 @@ for (const expected of [
 
 assertIncludes(doc, "Settings > Appearance", "accessibility docs");
 assertIncludes(doc, "No mobile UI", "accessibility docs");
+if (doc.includes("Larger text placeholder") || doc.includes("Strong focus ring placeholder")) {
+  throw new Error("Accessibility docs still describe finalized controls as placeholders.");
+}
 
 console.log("High contrast and reduced motion smoke test passed.");
