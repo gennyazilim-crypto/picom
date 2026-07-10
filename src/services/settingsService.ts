@@ -27,7 +27,7 @@ type LocalSettingsMigration = {
 
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
-const currentSchemaVersion = 2;
+const currentSchemaVersion = 3;
 const defaults: PicomSettings = {
   schemaVersion: currentSchemaVersion,
   theme: "light",
@@ -66,6 +66,22 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
       accessibilitySettings: {
         ...defaults.accessibilitySettings,
         ...(typeof settings.accessibilitySettings === "object" && settings.accessibilitySettings ? settings.accessibilitySettings : {}),
+      },
+    }),
+  },
+  {
+    fromVersion: 2,
+    toVersion: 3,
+    migrate: (settings) => ({
+      ...settings,
+      schemaVersion: 3,
+      notificationSettings: {
+        ...defaults.notificationSettings,
+        ...(typeof settings.notificationSettings === "object" && settings.notificationSettings ? settings.notificationSettings : {}),
+        quietHours: {
+          ...defaults.notificationSettings.quietHours,
+          ...((settings.notificationSettings as Partial<NotificationSettings> | undefined)?.quietHours ?? {}),
+        },
       },
     }),
   },

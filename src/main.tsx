@@ -6,6 +6,7 @@ import { deepLinkService } from "./services/deepLinkService";
 import { safeModeService } from "./services/safeModeService";
 import { sleepWakeResumeService } from "./services/sleepWakeResumeService";
 import { crashReporterService } from "./services/crashReporterService";
+import { localDataMigrationService } from "./services/localDataMigrationService";
 import "./styles.css";
 import "./screenShareQuality.css";
 
@@ -33,6 +34,7 @@ function getRootElement(): HTMLElement {
 
 function bootstrapRenderer(): void {
   markRuntime();
+  localDataMigrationService.migrateOnStartup();
   crashReporterService.initialize();
   const safeMode = safeModeService.getStartupState();
 
