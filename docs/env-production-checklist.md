@@ -8,6 +8,8 @@
 
 ## Renderer build variables
 
+- [ ] `npm run supabase:env:validate` passes for committed examples.
+- [ ] The ignored release env passes `node scripts/validate-supabase-environment.mjs --target production --file <env-file>`.
 - [ ] `VITE_SUPABASE_URL` is the intended production public URL.
 - [ ] `VITE_SUPABASE_ANON_KEY` is the anon key, never service-role.
 - [ ] `VITE_RELEASE_CHANNEL` matches `beta` or `stable` approval.
@@ -53,3 +55,4 @@
 - [ ] `npm run secrets:smoke`, `npm run supabase:smoke`, and real RLS tests pass.
 - [ ] No populated `.env.production` or secret file is committed.
 - [ ] `npm run env:placeholders:check` passes for all committed environment examples.
+- [ ] `npm run secrets:smoke` confirms no server-only Supabase key crossed into renderer/runtime source.
