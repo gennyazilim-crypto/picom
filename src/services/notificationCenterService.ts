@@ -31,12 +31,55 @@ let memoryItems: NotificationCenterItem[] | null = null;
 function load(): NotificationCenterItem[] { if (memoryItems) return memoryItems; try { const raw=window.localStorage.getItem(STORAGE_KEY); memoryItems=raw ? JSON.parse(raw) as NotificationCenterItem[] : seeded; } catch { memoryItems=seeded; } return memoryItems; }
 function save(items: NotificationCenterItem[]) { memoryItems=items; try { window.localStorage.setItem(STORAGE_KEY,JSON.stringify(items)); } catch { /* restricted desktop fallback */ } for(const listener of listeners) listener(items); }
 
+function routeCategory(category: NotificationCenterCategory): NotificationCategory {
+  if (category === "mention") return "mention";
+  if (category === "system" || category === "event") return "system";
+  return "message";
+}
+
+function shouldStoreInInbox(item: NotificationCenterItem): boolean {
+  const settings = settingsService.getSettings().notificationSettings;
+  return decideNotificationRoute({
+    category: routeCategory(item.category),
+    isMention: item.category === "mention",
+    doNotDisturb: settings.muted,
+    settings,
+  }).inbox;
+}
+
+function isRemoteId(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
+
+function mapRemote(items: RemoteNotificationInboxItem[]): NotificationCenterItem[] {
+  return items.filter(shouldStoreInInbox).map((item) => ({ ...item }));
+}
+
 export const notificationCenterService = {
   list(): NotificationCenterItem[] { return [...load()].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)); },
-  add(item: NotificationCenterItem): void { save([item, ...load().filter((candidate) => candidate.id !== item.id)].slice(0, 250)); },
+  add(item: NotificationCenterItem): void { if (!shouldStoreInInbox(item)) return; save([item, ...load().filter((candidate) => candidate.id !== item.id)].slice(0, 250)); },
   unreadCount(): number { return load().filter((item)=>!item.readAt).length; },
-  markRead(id: string): void { save(load().map((item)=>item.id===id && !item.readAt ? {...item,readAt:new Date().toISOString()} : item)); },
-  markAllRead(): void { const now=new Date().toISOString(); save(load().map((item)=>item.readAt ? item : {...item,readAt:now})); },
+  markRead(id: string): void { save(load().map((item)=>item.id===id && !item.readAt ? {...item,readAt:new Date().toISOString()} : item)); if (dataSourceService.getStatus().isSupabase && isRemoteId(id)) void notificationInboxService.markRead(id); },
+  markAllRead(): void { const now=new Date().toISOString(); save(load().map((item)=>item.readAt ? item : {...item,readAt:now})); if (dataSourceService.getStatus().isSupabase) void notificationInboxService.markAllRead(); },
+  delete(id: string): void { save(load().filter((item) => item.id !== id)); if (dataSourceService.getStatus().isSupabase && isRemoteId(id)) void notificationInboxService.softDelete(id); },
   replaceFromRemote(items: NotificationCenterItem[]): void { save(items); },
   subscribe(listener: Listener): () => void { listeners.add(listener); return ()=>listeners.delete(listener); },
+  startRemoteSync(): () => void {
+    if (!dataSourceService.getStatus().isSupabase) return () => undefined;
+    let active = true;
+    let unsubscribeRemote: (() => void) | undefined;
+    const refresh = async () => {
+      const result = await notificationInboxService.list();
+      if (active && result.ok) save(mapRemote(result.data));
+    };
+    void refresh();
+    void notificationInboxService.subscribeToChanges(() => { void refresh(); }).then((cleanup) => {
+      if (!active) cleanup(); else unsubscribeRemote = cleanup;
+    });
+    return () => { active = false; unsubscribeRemote?.(); };
+  },
 };
+import { dataSourceService } from "./dataSourceService";
+import { decideNotificationRoute, type NotificationCategory } from "./notificationService";
+import { settingsService } from "./settingsService";
+import { notificationInboxService, type RemoteNotificationInboxItem } from "./supabase/notificationInboxService";

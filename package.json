@@ -188,6 +188,7 @@
     "messages:editing-conflicts:smoke": "node scripts/message-editing-conflict-smoke.mjs",
     "realtime:deduplication:smoke": "node scripts/realtime-deduplication-hardening-smoke.mjs",
     "read-state:smoke": "node scripts/unread-read-state-production-smoke.mjs",
+    "notification-inbox:smoke": "node scripts/notification-inbox-production-smoke.mjs",
     "realtime:load:simulate": "node scripts/realtime-load-simulation.mjs",
     "realtime:load:smoke": "node scripts/realtime-load-simulation-smoke-test.mjs",
     "realtime:backpressure:smoke": "node scripts/realtime-backpressure-smoke-test.mjs",

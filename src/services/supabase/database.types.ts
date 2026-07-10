@@ -267,6 +267,29 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_invites"]["Row"]>;
         Relationships: [];
       };
+      notifications: {
+        Row: {
+          id: string;
+          recipient_id: string;
+          actor_id: string | null;
+          category: "mention" | "reply" | "reaction" | "dm" | "event" | "system";
+          title: string;
+          preview: string;
+          context_kind: "community" | "dm" | "system";
+          context_label: string;
+          community_id: string | null;
+          channel_id: string | null;
+          message_id: string | null;
+          user_id: string | null;
+          source_event_id: string | null;
+          created_at: string;
+          read_at: string | null;
+          deleted_at: string | null;
+        };
+        Insert: never;
+        Update: Partial<Pick<Database["public"]["Tables"]["notifications"]["Row"], "read_at" | "deleted_at">>;
+        Relationships: [];
+      };
       community_voice_usage_daily: {
         Row: { community_id: string; usage_date: string; session_count: number; participant_minutes: number; peak_concurrent: number; updated_at: string };
         Insert: never;

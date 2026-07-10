@@ -786,6 +786,7 @@ export function App() {
   useEffect(()=>{if(!activeProfileUserId){setProfilePrivacyProjection(defaultProfilePrivacyProjection);setProfilePrivacySubjectId(null);return;}const subjectId=activeProfileUserId;const viewerId=directMessageUserId;const hasSharedCommunity=communities.some((community)=>community.members.some((member)=>member.userId===viewerId)&&community.members.some((member)=>member.userId===subjectId));const isFriend=friendState.friends.some((friend)=>friend.userId===subjectId);let active=true;void profilePrivacyService.getProjection({targetUserId:subjectId,viewerUserId:viewerId,hasSharedCommunity,isFriend}).then((projection)=>{if(active){setProfilePrivacyProjection(projection);setProfilePrivacySubjectId(subjectId)}});return()=>{active=false};},[activeProfileUserId,communities,directMessageUserId,friendState.friends]);
 
   useEffect(() => notificationCenterService.subscribe(setNotificationCenterItems), []);
+  useEffect(() => authSession ? notificationCenterService.startRemoteSync() : undefined, [authSession?.user?.id]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
