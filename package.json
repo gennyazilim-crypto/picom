@@ -145,6 +145,7 @@
     "performance:budget:smoke": "node scripts/performance-budget-smoke-test.mjs",
     "performance:budget:ci": "node scripts/performance-budget-ci.mjs",
     "visual:regression:contract": "node scripts/visual-regression-contract.mjs",
+    "e2e:coverage:contract": "node scripts/e2e-coverage-contract.mjs",
     "bundle:size:audit": "node scripts/bundle-size-audit.mjs",
     "bundle:size:smoke": "node scripts/bundle-size-audit.mjs --smoke",
     "slo:smoke": "node scripts/slo-plan-smoke-test.mjs",

@@ -54,6 +54,9 @@ jobs:
       - name: Verify visual regression coverage contract
         run: npm run visual:regression:contract
 
+      - name: Verify E2E core-flow coverage contract
+        run: npm run e2e:coverage:contract
+
       - name: Verify release checksum generator
         run: npm run release:checksums:smoke
 

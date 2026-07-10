@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "runnerStatus": "planned",
+  "allowedModes": ["mock", "staging"],
+  "productionAllowed": false,
+  "desktopPlatforms": ["windows", "linux", "macos"],
+  "flows": [
+    { "id": "auth-login-register", "preflightCommands": ["mock:smoke", "auth:email-verification:smoke"], "mockUi": "planned", "stagingUi": "planned" },
+    { "id": "community-join", "preflightCommands": ["community:access:smoke", "invites:campaigns:smoke"], "mockUi": "planned", "stagingUi": "planned" },
+    { "id": "message-send", "preflightCommands": ["message:send-queue:smoke", "realtime:ordering:smoke"], "mockUi": "planned", "stagingUi": "planned" },
+    { "id": "attachment-upload", "preflightCommands": ["upload:ux:test", "attachments:scan:smoke"], "mockUi": "planned", "stagingUi": "planned" },
+    { "id": "mention-feed", "preflightCommands": ["mentions:ranking:test", "stories:header:smoke"], "mockUi": "planned", "stagingUi": "planned" },
+    { "id": "full-profile", "preflightCommands": ["profile:privacy:smoke", "verification:badges:smoke"], "mockUi": "planned", "stagingUi": "planned" },
+    { "id": "voice-room", "preflightCommands": ["livekit:smoke", "voice:quality:test"], "mockUi": "planned", "stagingUi": "planned" }
+  ]
+}
