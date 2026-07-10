@@ -61,7 +61,7 @@ import { profileActivityService } from "./services/profileActivityService";
 import type { ProfilePrivacyProjection } from "./types/profilePrivacy";
 import type { VerificationBadge } from "./types/verification";
 import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
-import { advancedSearchService } from "./services/advancedSearchService";
+import { advancedSearchService, type AdvancedSearchResult } from "./services/advancedSearchService";
 import { termsAcceptanceService } from "./services/termsAcceptanceService";
 import { savedMessageService, type SavedMessageRecord } from "./services/savedMessageService";
 import { SavedMessagesView } from "./components/SavedMessagesView";
@@ -195,6 +195,7 @@ type CommandPaletteProps = {
   results: PaletteResult[];
   selectedIndex: number;
   setSelectedIndex: (value: number) => void;
+  loading: boolean;
   onClose: () => void;
 };
 
@@ -205,6 +206,7 @@ function CommandPalette({
   results,
   selectedIndex,
   setSelectedIndex,
+  loading,
   onClose,
 }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -217,12 +219,22 @@ function CommandPalette({
 
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        setSelectedIndex(Math.min(results.length - 1, selectedIndex + 1));
+        if (results.length) setSelectedIndex(Math.min(results.length - 1, selectedIndex + 1));
       }
 
       if (event.key === "ArrowUp") {
         event.preventDefault();
-        setSelectedIndex(Math.max(0, selectedIndex - 1));
+        if (results.length) setSelectedIndex(Math.max(0, selectedIndex - 1));
+      }
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        if (results.length) setSelectedIndex(0);
+      }
+
+      if (event.key === "End") {
+        event.preventDefault();
+        if (results.length) setSelectedIndex(results.length - 1);
       }
 
       if (event.key === "Enter") {
@@ -239,21 +251,24 @@ function CommandPalette({
 
   return (
     <div className="command-backdrop" onMouseDown={onClose}>
-      <section className="command-palette" onMouseDown={(event) => event.stopPropagation()}>
+      <section className="command-palette" role="dialog" aria-modal="true" aria-label="Search and command palette" onMouseDown={(event) => event.stopPropagation()}>
         <div className="command-input">
           <AppIcon name={overlayIcons.search} />
           <input
             ref={inputRef}
             value={query}
+            aria-controls="command-palette-results"
+            aria-activedescendant={results[selectedIndex] ? `command-result-${results[selectedIndex].id}` : undefined}
             onChange={(event) => {
               setQuery(event.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Search communities, channels, members, messages..."
+            placeholder="Search communities, channels, messages, profiles, commands..."
           />
         </div>
 
-        <div className="command-results">
+        <div id="command-palette-results" className="command-results" role="listbox" aria-busy={loading}>
+          {loading ? <div className="command-search-state"><AppIcon name="search" size="sm" /><span>Searching accessible Picom content...</span></div> : null}
           {groups.map((group) => (
             <div className="command-group" key={group}>
               <header>{group}</header>
@@ -265,6 +280,9 @@ function CommandPalette({
                   return (
                     <button
                       key={result.id}
+                      id={`command-result-${result.id}`}
+                      role="option"
+                      aria-selected={index === selectedIndex}
                       className={index === selectedIndex ? "active" : ""}
                       onMouseEnter={() => setSelectedIndex(index)}
                       onClick={result.run}
@@ -277,10 +295,10 @@ function CommandPalette({
             </div>
           ))}
 
-          {!results.length ? <div className="empty-state compact">No results for {query || "this search"}</div> : null}
+          {!loading && !results.length ? <div className="empty-state compact"><strong>No matching results</strong><span>Try a community, channel, message, profile, or command name.</span></div> : null}
         </div>
 
-        <footer>{communities.length} communities indexed locally</footer>
+        <footer><span>{communities.length} communities indexed locally</span><span>Arrow keys navigate / Enter opens / Esc closes</span></footer>
       </section>
     </div>
   );
@@ -334,6 +352,8 @@ export function App() {
   const [userSafetySettings, setUserSafetySettings] = useState(() => userSafetyCenterService.getSettings());
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
   const [notificationPolicyState, setNotificationPolicyState] = useState(() => notificationPolicyStateService.getSnapshot());
+  const [paletteEntityResults, setPaletteEntityResults] = useState<AdvancedSearchResult[]>([]);
+  const [paletteSearchLoading, setPaletteSearchLoading] = useState(false);
   useEffect(() => notificationPolicyStateService.subscribe(setNotificationPolicyState), []);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
@@ -543,6 +563,30 @@ export function App() {
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
   }), [communities, communityEvents, notificationPolicyState]);
+  const searchableCommunities = useMemo(() => communities.map((community) => ({ ...community, members: community.members.filter((member) => !blockedUserIds.includes(member.userId)), messages: community.messages.filter((message) => !blockedUserIds.includes(message.authorId)) })), [blockedUserIds, communities]);
+  const searchableSavedMessages = useMemo(() => savedMessages.filter((item) => !blockedUserIds.includes(item.authorId)), [blockedUserIds, savedMessages]);
+  useEffect(() => {
+    if (!paletteOpen) { setPaletteEntityResults([]); setPaletteSearchLoading(false); return; }
+    const query = paletteQuery.trim();
+    if (!query) { setPaletteEntityResults([]); setPaletteSearchLoading(false); return; }
+    let canceled = false;
+    setPaletteSearchLoading(true);
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        const local = advancedSearchService.searchLocal(query, searchableCommunities, visibleMentionItems, currentUserId, searchableSavedMessages);
+        const remote = dataSourceService.getStatus().isSupabase && query.length >= 2 ? await advancedSearchService.searchRemote(query, null, 50) : [];
+        if (canceled) return;
+        const merged = new Map<string, AdvancedSearchResult>();
+        [...local, ...remote.filter((result) => !result.userId || !blockedUserIds.includes(result.userId))].forEach((result) => {
+          const key = `${result.category}:${result.communityId ?? ""}:${result.channelId ?? ""}:${result.messageId ?? result.userId ?? result.id}`;
+          if (!merged.has(key)) merged.set(key, result);
+        });
+        setPaletteEntityResults([...merged.values()].slice(0, 80));
+        setPaletteSearchLoading(false);
+      })();
+    }, 180);
+    return () => { canceled = true; window.clearTimeout(timeoutId); };
+  }, [blockedUserIds, paletteOpen, paletteQuery, searchableCommunities, searchableSavedMessages, visibleMentionItems]);
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
   const latestActiveMessageId = useMemo(() => {
@@ -1421,16 +1465,26 @@ export function App() {
       },
     ];
 
-    const searchResults = advancedSearchService.searchLocal(paletteQuery, communities, mentionItems, currentUserId, savedMessages);
-    for (const result of searchResults) {
+    for (const result of paletteEntityResults) {
       all.push({
         id: result.id, group: result.category, label: result.label, detail: result.detail,
         run: () => {
-          if (result.category === "People" && result.userId) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
+          if (result.category === "People" && result.userId) {
+            const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === result.userId);
+            if (member && !blockedUserIds.includes(member.userId)) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
+            else pushToast("This profile is unavailable or outside your accessible communities.", "error");
+          }
           else if (result.category === "Communities" && result.communityId) { setActiveView("community"); switchCommunity(result.communityId); }
           else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
             const target = advancedSearchService.resolveMessageJumpTarget(result, communities, currentUserId);
-            if (target.ok) jumpToMessage(target.community, target.message); else pushToast(target.reason, "error");
+            if (target.ok) jumpToMessage(target.community, target.message);
+            else {
+              const community = communities.find((candidate) => candidate.id === result.communityId);
+              const access = community ? getCommunityAccess(currentUserId, community) : null;
+              const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === result.channelId);
+              if (community && access && channel && canViewChannel(access, channel)) { setActiveView("community"); switchCommunity(community.id, channel.id); setActiveChannelId(channel.id); clearChannelUnread({ communityId: community.id, channelId: channel.id }); if (result.messageId) setHighlightedMessageId(result.messageId); }
+              else pushToast(target.reason, "error");
+            }
           } else if (result.communityId && result.channelId) { setActiveView("community"); switchCommunity(result.communityId, result.channelId); setActiveChannelId(result.channelId); clearChannelUnread({ communityId: result.communityId, channelId: result.channelId }); }
           closePalette();
         },
@@ -1440,7 +1494,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [activeView, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, mentionItems, openSettings, paletteQuery, pushToast, savedMessages, setActiveChannelId, switchCommunity, theme]);
+  }, [activeView, blockedUserIds, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, openSettings, paletteEntityResults, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");
@@ -2656,6 +2710,7 @@ export function App() {
           results={paletteResults}
           selectedIndex={Math.min(paletteIndex, Math.max(0, paletteResults.length - 1))}
           setSelectedIndex={setPaletteIndex}
+          loading={paletteSearchLoading}
           onClose={closePalette}
         />
       ) : null}

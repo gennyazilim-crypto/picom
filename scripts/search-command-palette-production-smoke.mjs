@@ -1,0 +1,10 @@
+import fs from "node:fs";
+const app = fs.readFileSync("src/App.tsx", "utf8");
+const search = fs.readFileSync("src/services/advancedSearchService.ts", "utf8");
+const migration = fs.readFileSync("supabase/migrations/20260710087000_advanced_search_production.sql", "utf8");
+for (const needle of ["paletteSearchLoading", "paletteEntityResults", "setTimeout", "searchRemote", "searchLocal", "Home", "End", 'role="listbox"', "aria-activedescendant"]) if (!app.includes(needle)) throw new Error(`Command palette is missing ${needle}`);
+for (const needle of ["Communities", "Channels", "Messages", "People", "Commands"]) if (!app.includes(needle)) throw new Error(`Command palette category is missing ${needle}`);
+for (const needle of ["canViewChannel", "getCommunityAccess", "resolveMessageJumpTarget", "rankSearchResults"]) if (!search.includes(needle)) throw new Error(`Search service permission boundary is missing ${needle}`);
+for (const needle of ["security definer", "public.can_view_channel", "auth.uid()", "saved.user_id = auth.uid()"] ) if (!migration.includes(needle)) throw new Error(`Remote search permission boundary is missing ${needle}`);
+if (!app.includes("blockedUserIds.includes")) throw new Error("Blocked profiles are not excluded from palette results.");
+console.log("Search command palette production smoke passed.");
