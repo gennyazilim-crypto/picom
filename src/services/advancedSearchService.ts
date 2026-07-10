@@ -3,6 +3,7 @@ import type { MentionItem } from "../types/mentions";
 import type { SavedMessageRecord } from "./savedMessageService";
 import { canViewChannel, getCommunityAccess } from "./permissions/communityPermissions";
 import { getSupabaseClient } from "./supabase/supabaseClient";
+import { normalizeSearchQuery, rankSearchResults } from "../utils/searchRelevance";
 
 export type AdvancedSearchCategory = "People" | "Communities" | "Channels" | "Messages" | "Mentions" | "Saved" | "Media";
 export type AdvancedSearchResult = Readonly<{
@@ -27,11 +28,11 @@ function includes(value: string | null | undefined, query: string): boolean {
 }
 
 function safeQuery(query: string): string {
-  return query.trim().replace(/[%_]/g, "").slice(0, 80);
+  return normalizeSearchQuery(query).replace(/[%_]/g, "");
 }
 
 export function searchLocal(queryInput: string, communities: Community[], mentions: MentionItem[], currentUserId: string, savedMessages: SavedMessageRecord[] = []): AdvancedSearchResult[] {
-  const query = queryInput.trim().toLocaleLowerCase();
+  const query = normalizeSearchQuery(queryInput);
   const results: AdvancedSearchResult[] = [];
   const seenUsers = new Set<string>();
 
@@ -69,7 +70,7 @@ export function searchLocal(queryInput: string, communities: Community[], mentio
     results.push({ id: `search-saved-${saved.id}`, category: "Saved", label: saved.preview?.slice(0, 72) || "Saved message", detail: community.name, communityId: community.id, channelId: saved.channelId, messageId: saved.messageId });
   }
 
-  return results.slice(0, 80);
+  return rankSearchResults(results, query).slice(0, 80);
 }
 
 export function resolveMessageJumpTarget(result: AdvancedSearchResult, communities: Community[], currentUserId: string): MessageJumpResolution {
@@ -91,7 +92,7 @@ export async function searchRemote(queryInput: string, category: RemoteSearchCat
   const { data, error } = await client.rpc("search_accessible_entities", { query_text: query, category_filter: category, result_limit: Math.min(Math.max(limit, 1), 80) });
   if (error) return [];
   const categoryMap: Record<RemoteSearchCategory, AdvancedSearchCategory> = { community: "Communities", channel: "Channels", member: "People", message: "Messages", mention: "Mentions", saved_message: "Saved" };
-  return (data ?? []).map((row) => ({
+  const results = (data ?? []).map((row) => ({
     id: `remote-${row.result_type}-${row.entity_id}`,
     category: categoryMap[row.result_type],
     label: row.label,
@@ -101,6 +102,7 @@ export async function searchRemote(queryInput: string, category: RemoteSearchCat
     messageId: row.message_id ?? undefined,
     userId: row.user_id ?? undefined,
   }));
+  return rankSearchResults(results, query).slice(0, Math.min(Math.max(limit, 1), 80));
 }
 
 export const searchMessages = (query: string) => searchRemote(query, "message", 30);
