@@ -92,6 +92,7 @@
     "electron:security:smoke": "node scripts/electron-security-smoke-test.mjs",
     "electron:preload-contract:test": "node scripts/electron-preload-contract-test.mjs",
     "electron:window-controls:test": "node scripts/electron-window-controls-smoke-test.mjs",
+    "electron:window-state:qa": "node scripts/electron-window-state-frame-qa.mjs",
     "electron:ipc-fuzz:test": "node scripts/ipc-invalid-payload-fuzz-test.mjs",
     "security:pentest:prep:smoke": "node scripts/penetration-test-preparation-smoke-test.mjs",
     "security:external-review:smoke": "node scripts/external-security-review-smoke-test.mjs",
