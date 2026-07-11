@@ -44,4 +44,6 @@ export const radioService = {
   unsaveRadio: (id: string) => radioRepository.setSaved(id, false),
   reactToRadio: (id: string, emoji: string) => radioRepository.react(id, emoji),
   assignRadioHost: (input: Parameters<typeof audioDataSource.assignRadioSessionHost>[0]) => radioRepository.assignHost(input),
+  getRadioListeners: (id: string) => radioRepository.listListeners(id),
+  moderateRadioListener: (id: string, userId: string, action: Parameters<typeof audioDataSource.moderateRadioListener>[2]) => radioRepository.moderateListener(id, userId, action),
 };

@@ -1,0 +1,79 @@
+.radio-production-desk {
+  margin: 0 var(--space-7) var(--space-7);
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, var(--surface-elevated), var(--surface-soft));
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+}
+.radio-production-header,
+.radio-production-heading,
+.radio-production-health,
+.radio-production-actions,
+.radio-production-side header,
+.radio-listener-control,
+.radio-danger-confirmation > div,
+.radio-danger-confirmation footer { display: flex; align-items: center; }
+.radio-production-header { justify-content: space-between; gap: 20px; margin-bottom: 14px; }
+.radio-production-heading { gap: 12px; min-width: 0; }
+.radio-production-heading > span { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--radius-md); color: var(--accent); background: var(--accent-soft); }
+.radio-production-heading small,
+.radio-production-side header small { color: var(--text-muted); font-size: 10px; font-weight: 800; letter-spacing: .11em; }
+.radio-production-heading h2 { margin: 2px 0; font: 700 18px/1.2 var(--font-display); }
+.radio-production-heading p { margin: 0; color: var(--text-secondary); font-size: 12px; }
+.radio-production-health { justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.radio-production-health > span { padding: 6px 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-secondary); font-size: 11px; font-weight: 700; }
+.radio-production-health .connection i { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--warning); }
+.radio-production-health .connection.connected i { background: var(--success); }
+.radio-production-notice { margin-bottom: 12px; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); font-size: 12px; }
+.radio-production-notice.error { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+.radio-production-notice.status { color: var(--success); }
+.radio-production-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(270px, .8fr); gap: 16px; align-items: start; min-width: 0; }
+.radio-production-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 11px; min-width: 0; }
+.radio-production-form label,
+.radio-production-side label { display: grid; gap: 6px; min-width: 0; color: var(--text-secondary); font-size: 11px; font-weight: 700; }
+.radio-production-form label.wide { grid-column: 1 / -1; }
+.radio-production-form input,
+.radio-production-form select,
+.radio-production-form textarea,
+.radio-production-side select { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-primary); padding: 9px 10px; font: inherit; outline: none; }
+.radio-production-form textarea { resize: vertical; }
+.radio-production-form input:focus-visible,
+.radio-production-form select:focus-visible,
+.radio-production-form textarea:focus-visible,
+.radio-production-side select:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-ring); }
+.radio-cover-field small { color: var(--text-muted); font-weight: 500; }
+.radio-production-actions { gap: 8px; flex-wrap: wrap; }
+.radio-production-actions button,
+.radio-production-side button,
+.radio-danger-confirmation button { min-height: 32px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-primary); font-weight: 700; cursor: pointer; }
+.radio-production-actions button { display: inline-flex; align-items: center; gap: 6px; }
+.radio-production-actions button.danger,
+.radio-production-side button.danger,
+.radio-danger-confirmation button.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+.radio-production-actions button:disabled,
+.radio-production-side button:disabled,
+.radio-danger-confirmation button:disabled { opacity: .48; cursor: not-allowed; }
+.radio-production-side { display: grid; gap: 12px; min-width: 0; }
+.radio-production-side > section { display: grid; gap: 10px; padding: 13px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+.radio-production-side header { justify-content: space-between; gap: 10px; }
+.radio-production-side header > div { display: grid; gap: 2px; }
+.radio-production-side header > span { min-width: 24px; padding: 4px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); text-align: center; font-size: 11px; font-weight: 800; }
+.radio-production-side p { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.radio-listener-control { gap: 8px; min-width: 0; padding-top: 8px; border-top: 1px solid var(--border); }
+.radio-listener-control > span:nth-child(2) { display: grid; flex: 1; min-width: 0; }
+.radio-listener-control strong,
+.radio-listener-control small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.radio-listener-control small { color: var(--text-muted); }
+.radio-listener-control button { display: grid; place-items: center; min-width: 28px; width: 28px; height: 28px; padding: 0; }
+.radio-listener-fallback { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-soft); color: var(--text-muted); }
+.radio-danger-confirmation { margin-top: 14px; padding: 12px; border: 1px solid color-mix(in srgb, var(--danger) 36%, var(--border)); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-md); }
+.radio-danger-confirmation > div { gap: 10px; color: var(--danger); }
+.radio-danger-confirmation > div > span { flex: 1; }
+.radio-danger-confirmation p { margin: 3px 0 0; color: var(--text-secondary); font-size: 12px; }
+.radio-danger-confirmation footer { justify-content: flex-end; gap: 8px; margin-top: 10px; }
+@media (max-width: 1280px) {
+  .radio-production-grid { grid-template-columns: 1fr; }
+  .radio-production-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

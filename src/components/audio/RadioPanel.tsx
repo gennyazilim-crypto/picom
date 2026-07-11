@@ -115,6 +115,7 @@ export function RadioPanel({ session, communityName, host, listeners, canHost, o
   const [notice, setNotice] = useState<string | null>(null);
   const [noticeTone, setNoticeTone] = useState<"status" | "error">("status");
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [confirmStatus, setConfirmStatus] = useState<"ended" | "cancelled" | null>(null);
   const playable = useMemo(() => radioPlayable(activeSession, communityName), [communityName, activeSession]);
   useEffect(() => { setActiveSession(session); setSaved(session.isSavedByCurrentUser); }, [session]);
   useEffect(() => { const current = catalog.radioSessions.find((item) => item.id === activeSession.id); if (current) { setActiveSession(current); setSaved(current.isSavedByCurrentUser); } }, [activeSession.id, catalog.radioSessions]);
@@ -138,6 +139,7 @@ export function RadioPanel({ session, communityName, host, listeners, canHost, o
   };
   const changeStatus = async (next: "live" | "ended" | "cancelled") => {
     const result = await runAction(next, () => next === "live" ? radioService.goLive(activeSession.id) : next === "ended" ? radioService.endRadioSession(activeSession.id) : radioService.cancelRadioSchedule(activeSession.id), next === "live" ? "Broadcast is live." : next === "ended" ? "Broadcast ended." : "Schedule cancelled.");
+    setConfirmStatus(null);
     if (result.ok && result.data) setActiveSession(result.data as RadioSession);
   };
 
@@ -154,9 +156,10 @@ export function RadioPanel({ session, communityName, host, listeners, canHost, o
           <RadioChatLink communityName={communityName} onOpenCommunity={onOpenCommunity} />
           {canHost ? <section className="radio-host-actions"><header><small>HOST TOOLS</small><strong>Broadcast controls</strong></header><div>
             <button type="button" disabled={busyAction !== null || !["draft","scheduled"].includes(activeSession.status)} onClick={() => void changeStatus("live")}><AppIcon name="play" size="sm" />Start broadcast</button>
-            <button type="button" disabled={busyAction !== null || activeSession.status !== "live"} onClick={() => void changeStatus("ended")}><AppIcon name="close" size="sm" />End broadcast</button>
-            <button type="button" disabled={busyAction !== null || !["draft","scheduled"].includes(activeSession.status)} onClick={() => void changeStatus("cancelled")}><AppIcon name="bell" size="sm" />Cancel schedule</button>
+            <button type="button" disabled={busyAction !== null || activeSession.status !== "live"} onClick={() => setConfirmStatus("ended")}><AppIcon name="close" size="sm" />End broadcast</button>
+            <button type="button" disabled={busyAction !== null || !["draft","scheduled"].includes(activeSession.status)} onClick={() => setConfirmStatus("cancelled")}><AppIcon name="bell" size="sm" />Cancel schedule</button>
           </div></section> : null}
+          {confirmStatus ? <div className="radio-danger-confirmation" role="alertdialog" aria-modal="true" aria-labelledby="radio-panel-confirm-title"><div><AppIcon name="close" size="lg" /><span><strong id="radio-panel-confirm-title">{confirmStatus === "ended" ? "End this broadcast?" : "Cancel this schedule?"}</strong><p>This action is recorded and cannot be reversed.</p></span></div><footer><button type="button" onClick={() => setConfirmStatus(null)}>Keep session</button><button type="button" className="danger" disabled={busyAction !== null} onClick={() => void changeStatus(confirmStatus)}>{confirmStatus === "ended" ? "Confirm end" : "Confirm cancel"}</button></footer></div> : null}
         </div>
         <RadioListenerList listeners={listeners} total={activeSession.listenerCount} />
       </div>

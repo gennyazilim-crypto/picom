@@ -3,6 +3,8 @@ import {
   audioDataSource,
   type AssignRadioSessionHostInput,
   type AudioServiceResult,
+  type RadioListenerModerationAction,
+  type RadioListenerState,
   type StartRadioSessionInput,
   type UpdateRadioScheduleInput,
 } from "./audioDataSource";
@@ -22,6 +24,8 @@ export interface RadioRepository {
   setSaved(sessionId: string, saved: boolean): Promise<AudioServiceResult<boolean>>;
   react(sessionId: string, emoji: string): Promise<AudioServiceResult<boolean>>;
   assignHost(input: AssignRadioSessionHostInput): Promise<AudioServiceResult<boolean>>;
+  listListeners(sessionId: string): Promise<AudioServiceResult<RadioListenerState[]>>;
+  moderateListener(sessionId: string, userId: string, action: RadioListenerModerationAction): Promise<AudioServiceResult<boolean>>;
 }
 
 export const radioRepository: RadioRepository = {
@@ -42,4 +46,6 @@ export const radioRepository: RadioRepository = {
   setSaved: (sessionId, saved) => audioDataSource.setRadioSaved(sessionId, saved),
   react: (sessionId, emoji) => audioDataSource.reactToRadioSession(sessionId, emoji),
   assignHost: (input) => audioDataSource.assignRadioSessionHost(input),
+  listListeners: (sessionId) => audioDataSource.listRadioListeners(sessionId),
+  moderateListener: (sessionId, userId, action) => audioDataSource.moderateRadioListener(sessionId, userId, action),
 };

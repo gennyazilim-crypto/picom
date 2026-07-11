@@ -2603,7 +2603,8 @@ export function App() {
             <DeferredViewBoundary label="Opening radio community">
               <RadioCommunityShell
                 community={displayedActiveCommunity}
-                canManageAudio={communityAccess.isOwner || communityAccess.permissions.some((permission) => ["manageCommunity", "manageChannels", "moderateMessages"].includes(permission))}
+                currentUser={displayedCurrentUser}
+                canManageAudio={communityAccess.isOwner || communityAccess.permissions.some((permission) => ["manageCommunity", "hostRadio", "manageRadioPrograms"].includes(permission))}
                 onOpenProfile={openProfilePage}
               />
             </DeferredViewBoundary>

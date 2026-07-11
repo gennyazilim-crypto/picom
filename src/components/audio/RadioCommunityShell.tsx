@@ -8,9 +8,10 @@ import { MemberAvatar } from "../MemberAvatar";
 import { RadioPanel } from "./RadioPanel";
 import { RadioSessionList } from "./CommunityAudioView";
 import "./RadioCommunityShell.css";
-import { useAudioCatalog } from "../../hooks/useAudioCatalog";
+import { useAudioCatalogState } from "../../hooks/useAudioCatalog";
+import { RadioHostProducerPanel } from "./RadioHostProducerPanel";
 
-type RadioCommunityShellProps = { community: Community; canManageAudio: boolean; onOpenProfile?: (member: Member) => void };
+type RadioCommunityShellProps = { community: Community; currentUser: Member; canManageAudio: boolean; onOpenProfile?: (member: Member) => void };
 
 const primarySections: readonly { id: Exclude<RadioCommunitySection, "listenerChat">; label: string; icon: IconName }[] = [
   { id: "live", label: "Live Now", icon: "microphone" },
@@ -24,8 +25,8 @@ function RadioEmptyState({ icon, title, body }: { icon: IconName; title: string;
   return <div className="radio-shell-empty"><span aria-hidden="true"><AppIcon name={icon} size="xl" /></span><strong>{title}</strong><p>{body}</p></div>;
 }
 
-export function RadioCommunityShell({ community, canManageAudio, onOpenProfile }: RadioCommunityShellProps) {
-  const catalog = useAudioCatalog();
+export function RadioCommunityShell({ community, currentUser, canManageAudio, onOpenProfile }: RadioCommunityShellProps) {
+  const { snapshot: catalog, error: catalogError, realtimeStatus } = useAudioCatalogState();
   const [activeSection, setActiveSection] = useState<RadioCommunitySection>(() => communityNavigationService.getRadioSection(community.id));
   const [snapshot, setSnapshot] = useState<RadioCommunityShellSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +72,10 @@ export function RadioCommunityShell({ community, canManageAudio, onOpenProfile }
   const selectSection = (section: RadioCommunitySection) => { communityNavigationService.rememberRadioSection(community.id, section); setActiveSection(section); };
   const openSession = (session: RadioSession) => { communityNavigationService.rememberRadioSession(community.id, session.id); setSelectedSession(session); };
   const closeSession = () => { communityNavigationService.rememberRadioSession(community.id, null); setSelectedSession(null); };
+  const updateManagedSession = (session: RadioSession) => {
+    setSnapshot((current) => current ? { ...current, sessions: current.sessions.some((item) => item.id === session.id) ? current.sessions.map((item) => item.id === session.id ? session : item) : [session, ...current.sessions] } : current);
+    setSelectedSession((current) => current?.id === session.id ? session : current);
+  };
 
   if (selectedSession) return <RadioPanel session={selectedSession} communityName={community.name} host={community.members.find((member) => member.userId === selectedSession.hostUserId)} listeners={community.members.filter((member) => member.status !== "offline")} canHost={canManageAudio} onClose={closeSession} onOpenCommunity={closeSession} />;
 
@@ -84,6 +89,7 @@ export function RadioCommunityShell({ community, canManageAudio, onOpenProfile }
       <div><span className="eyebrow">Radio community</span><h1>{community.name}</h1><p>{community.description || "A dedicated Picom station for live shows, schedules, hosts, and announcements."}</p></div>
       <div className="radio-shell-status"><i />Station ready<span>{snapshot?.settings.scheduleTimezone ?? "UTC"}</span>{canManageAudio ? <strong>Station manager</strong> : null}</div>
     </header>
+    {canManageAudio && snapshot ? <RadioHostProducerPanel community={community} currentUser={currentUser} snapshot={snapshot} realtimeStatus={realtimeStatus} connectionError={catalogError} onSessionChanged={updateManagedSession} /> : null}
     <div className="radio-shell-layout">
       <nav className="radio-shell-navigation" aria-label={`${community.name} radio sections`}>
         <span>STATION</span>

@@ -37,13 +37,16 @@ export type StartRadioSessionInput = Readonly<{
   description: string;
   startsAt: string;
   coverUrl?: string;
+  coverStoragePath?: string;
   status?: "draft" | "scheduled" | "live";
   programId?: string;
   scheduledEndAt?: string;
   listenerChatChannelId?: string;
 }>;
-export type UpdateRadioScheduleInput = Readonly<{ title?: string; description?: string; startsAt?: string; scheduledEndAt?: string | null; programId?: string | null; listenerChatChannelId?: string | null; coverUrl?: string | null }>;
+export type UpdateRadioScheduleInput = Readonly<{ title?: string; description?: string; startsAt?: string; scheduledEndAt?: string | null; programId?: string | null; listenerChatChannelId?: string | null; coverUrl?: string | null; coverStoragePath?: string | null }>;
 export type AssignRadioSessionHostInput = Readonly<{ sessionId: string; userId: string; hostRole?: "host" | "co_host" | "producer" }>;
+export type RadioListenerState = Readonly<{ userId: string; muted: boolean; joinedAt: string }>;
+export type RadioListenerModerationAction = "mute" | "unmute" | "remove";
 
 type RadioRow = Database["public"]["Tables"]["radio_sessions"]["Row"];
 type RadioReactionRow = Database["public"]["Tables"]["radio_session_reactions"]["Row"];
@@ -58,6 +61,7 @@ let localPodcasts = mockPodcastEpisodes.map((item) => ({ ...item, reactionSummar
 const localSavedRadio = new Set(localRadio.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
 const localSavedPodcasts = new Set(localPodcasts.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
 const localListeningSessions = new Set<string>();
+const localListenerMuted = new Map<string, boolean>();
 const localSessionHosts = new Map(localRadio.map((session) => [session.id, new Set([session.hostUserId])]));
 
 function feedFromCatalog(radio: RadioSession[], podcasts: PodcastEpisode[]): AudioFeedItem[] {
@@ -205,11 +209,15 @@ async function transitionRadioSession(id: string, status: "live" | "ended" | "ca
   }
   const client = getSupabaseClient();
   if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio is unavailable.");
-  const payload = status === "live" ? { status, actual_started_at: now, ended_at: null } : { status, ended_at: now };
-  const result = await client.from("radio_sessions").update(payload).eq("id", id).select().single();
-  if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", `Picom could not mark this Radio session ${status}.`);
+  const result = await client.rpc("transition_radio_session", {
+    target_session_id: id,
+    next_status: status,
+    confirmation_session_title: status === "live" ? null : current.data.title,
+  });
+  const row = Array.isArray(result.data) ? result.data[0] : result.data;
+  if (result.error || !row) return fail("AUDIO_REQUEST_FAILED", "Picom could not change this Radio session state.");
   await refresh();
-  return ok(mapRadio(result.data, localSavedRadio));
+  return ok(mapRadio(row, localSavedRadio));
 }
 
 async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSnapshot>> {
@@ -228,7 +236,12 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
   }
   const savedRadio = new Set((saved.data ?? []).filter((item) => item.item_type === "radio_session").map((item) => item.item_id));
   const savedPodcasts = new Set((saved.data ?? []).filter((item) => item.item_type === "podcast_episode").map((item) => item.item_id));
-  const radioSessions = (radio.data ?? []).map((item) => mapRadio(item, savedRadio, radioReactions.data ?? []));
+  const radioRows = await Promise.all((radio.data ?? []).map(async (item) => {
+    if (!item.cover_storage_path) return item;
+    const signed = await client.storage.from("audio-covers").createSignedUrl(item.cover_storage_path, 3600);
+    return signed.data?.signedUrl ? { ...item, cover_url: signed.data.signedUrl } : item;
+  }));
+  const radioSessions = radioRows.map((item) => mapRadio(item, savedRadio, radioReactions.data ?? []));
   const podcastEpisodes = (podcasts.data ?? []).map((item) => mapPodcast(item, reactions.data ?? [], comments.data ?? [], savedPodcasts));
   return ok({ radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes) });
 }
@@ -295,7 +308,7 @@ export const audioDataSource = {
         id: `radio-${crypto.randomUUID()}`, communityId: input.communityId, channelId: input.channelId, programId: input.programId,
         hostUserId: currentUserId, title, description: input.description.trim().slice(0, 4000),
         status: input.status ?? "scheduled", startsAt: input.startsAt, scheduledEndAt: input.scheduledEndAt, listenerChatChannelId: input.listenerChatChannelId, listenerCount: 0,
-        speakerCount: 1, coverUrl: input.coverUrl, tags: [], isFeatured: false,
+        speakerCount: 1, coverUrl: input.coverUrl, coverStoragePath: input.coverStoragePath, tags: [], isFeatured: false,
         isSavedByCurrentUser: false,
       };
       localRadio = [item, ...localRadio];
@@ -308,7 +321,7 @@ export const audioDataSource = {
     const result = await client.from("radio_sessions").insert({
       community_id: input.communityId, channel_id: input.channelId ?? null, program_id: input.programId ?? null, host_user_id: userId,
       title, description: input.description.trim().slice(0, 4000), status: input.status ?? "scheduled",
-      starts_at: input.startsAt, scheduled_end_at: input.scheduledEndAt ?? null, listener_chat_channel_id: input.listenerChatChannelId ?? null, cover_url: input.coverUrl ?? null,
+      starts_at: input.startsAt, scheduled_end_at: input.scheduledEndAt ?? null, listener_chat_channel_id: input.listenerChatChannelId ?? null, cover_url: input.coverUrl ?? null, cover_storage_path: input.coverStoragePath ?? null,
     }).select().single();
     if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "Picom could not create the radio session.");
     await refresh();
@@ -328,14 +341,14 @@ export const audioDataSource = {
     if (!title || title.length > 120 || !Number.isFinite(Date.parse(startsAt))) return fail("AUDIO_VALIDATION_ERROR", "Enter a valid Radio title and schedule time.");
     if (dataSourceService.getStatus().isMock) {
       let updated: RadioSession | undefined;
-      localRadio = localRadio.map((session) => session.id !== id ? session : (updated = { ...session, title, description: input.description?.trim().slice(0, 4000) ?? session.description, startsAt, scheduledEndAt: input.scheduledEndAt === null ? undefined : input.scheduledEndAt ?? session.scheduledEndAt, programId: input.programId === null ? undefined : input.programId ?? session.programId, listenerChatChannelId: input.listenerChatChannelId === null ? undefined : input.listenerChatChannelId ?? session.listenerChatChannelId, coverUrl: input.coverUrl === null ? undefined : input.coverUrl ?? session.coverUrl }));
+      localRadio = localRadio.map((session) => session.id !== id ? session : (updated = { ...session, title, description: input.description?.trim().slice(0, 4000) ?? session.description, startsAt, scheduledEndAt: input.scheduledEndAt === null ? undefined : input.scheduledEndAt ?? session.scheduledEndAt, programId: input.programId === null ? undefined : input.programId ?? session.programId, listenerChatChannelId: input.listenerChatChannelId === null ? undefined : input.listenerChatChannelId ?? session.listenerChatChannelId, coverUrl: input.coverUrl === null ? undefined : input.coverUrl ?? session.coverUrl, coverStoragePath: input.coverStoragePath === null ? undefined : input.coverStoragePath ?? session.coverStoragePath }));
       if (!updated) return fail("AUDIO_NOT_FOUND", "Radio session was not found.");
       publish(localSnapshot());
       return ok(updated);
     }
     const client = getSupabaseClient();
     if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio is unavailable.");
-    const result = await client.from("radio_sessions").update({ title, description: input.description?.trim().slice(0, 4000) ?? current.data.description, starts_at: startsAt, scheduled_end_at: input.scheduledEndAt === undefined ? current.data.scheduledEndAt ?? null : input.scheduledEndAt, program_id: input.programId === undefined ? current.data.programId ?? null : input.programId, listener_chat_channel_id: input.listenerChatChannelId === undefined ? current.data.listenerChatChannelId ?? null : input.listenerChatChannelId, cover_url: input.coverUrl === undefined ? current.data.coverUrl ?? null : input.coverUrl }).eq("id", id).select().single();
+    const result = await client.from("radio_sessions").update({ title, description: input.description?.trim().slice(0, 4000) ?? current.data.description, starts_at: startsAt, scheduled_end_at: input.scheduledEndAt === undefined ? current.data.scheduledEndAt ?? null : input.scheduledEndAt, program_id: input.programId === undefined ? current.data.programId ?? null : input.programId, listener_chat_channel_id: input.listenerChatChannelId === undefined ? current.data.listenerChatChannelId ?? null : input.listenerChatChannelId, cover_url: input.coverUrl === undefined ? current.data.coverUrl ?? null : input.coverUrl, cover_storage_path: input.coverStoragePath === undefined ? current.data.coverStoragePath ?? null : input.coverStoragePath }).eq("id", id).select().single();
     if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "Picom could not update this Radio schedule.");
     await refresh();
     return ok(mapRadio(result.data, localSavedRadio));
@@ -349,7 +362,13 @@ export const audioDataSource = {
     }
     if (dataSourceService.getStatus().isMock) {
       const alreadyListening = localListeningSessions.has(id);
-      if (listening) localListeningSessions.add(id); else localListeningSessions.delete(id);
+      if (listening) {
+        localListeningSessions.add(id);
+        localListenerMuted.set(id, false);
+      } else {
+        localListeningSessions.delete(id);
+        localListenerMuted.delete(id);
+      }
       if (alreadyListening !== listening) localRadio = localRadio.map((item) => item.id === id ? { ...item, listenerCount: Math.max(0, item.listenerCount + (listening ? 1 : -1)) } : item);
       publish(localSnapshot());
       return ok(listening);
@@ -363,6 +382,40 @@ export const audioDataSource = {
     return result.error
       ? fail("AUDIO_REQUEST_FAILED", listening ? "Picom could not join this radio session." : "Picom could not leave this radio session.")
       : (await refresh(), ok(listening));
+  },
+  async listRadioListeners(id: string): Promise<AudioServiceResult<RadioListenerState[]>> {
+    const source = await getRadioCommunityId(id);
+    if (!source.ok) return source;
+    if (dataSourceService.getStatus().isMock) {
+      return ok(localListeningSessions.has(id)
+        ? [{ userId: currentUserId, muted: localListenerMuted.get(id) ?? false, joinedAt: new Date().toISOString() }]
+        : []);
+    }
+    const client = getSupabaseClient();
+    if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio listener controls are unavailable.");
+    const result = await client.from("radio_listeners").select("user_id,muted,joined_at").eq("radio_session_id", id).is("left_at", null).order("joined_at");
+    if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not load the active Radio audience.");
+    return ok((result.data ?? []).map((listener) => ({ userId: listener.user_id, muted: listener.muted, joinedAt: listener.joined_at })));
+  },
+  async moderateRadioListener(id: string, userId: string, action: RadioListenerModerationAction): Promise<AudioServiceResult<boolean>> {
+    const source = await getRadioCommunityId(id);
+    if (!source.ok) return source;
+    if (dataSourceService.getStatus().isMock) {
+      if (!localListeningSessions.has(id) || userId !== currentUserId) return fail("AUDIO_NOT_FOUND", "That listener is no longer active.");
+      if (action === "remove") {
+        localListeningSessions.delete(id);
+        localListenerMuted.delete(id);
+        localRadio = localRadio.map((session) => session.id === id ? { ...session, listenerCount: Math.max(0, session.listenerCount - 1) } : session);
+      } else localListenerMuted.set(id, action === "mute");
+      publish(localSnapshot());
+      return ok(true);
+    }
+    const client = getSupabaseClient();
+    if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio listener controls are unavailable.");
+    const result = await client.rpc("moderate_radio_listener", { target_session_id: id, target_user_id: userId, moderation_action: action });
+    if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not apply that listener action.");
+    await refresh();
+    return ok(true);
   },
   setRadioSaved: (id: string, saved: boolean) => setSaved("radio_session", id, saved),
   async reactToRadioSession(id: string, emoji: string): Promise<AudioServiceResult<boolean>> {
@@ -443,9 +496,8 @@ export const audioDataSource = {
       return ok(true);
     }
     const client = getSupabaseClient();
-    const assignedBy = await authenticatedUserId();
-    if (!client || !assignedBy) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before assigning a Radio host.");
-    const result = await client.from("radio_session_hosts").upsert({ radio_session_id: input.sessionId, user_id: input.userId, host_role: input.hostRole ?? "co_host", assigned_by: assignedBy }, { onConflict: "radio_session_id,user_id" });
+    if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before assigning a Radio host.");
+    const result = await client.rpc("assign_radio_session_host", { target_session_id: input.sessionId, target_user_id: input.userId, target_host_role: input.hostRole ?? "co_host" });
     return result.error ? fail("AUDIO_REQUEST_FAILED", "Picom could not assign this Radio host.") : ok(true);
   },
   async commentOnPodcastEpisode(id: string, body: string): Promise<AudioServiceResult<AudioCommentPreview>> {

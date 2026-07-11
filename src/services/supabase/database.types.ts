@@ -596,6 +596,9 @@ export type Database = {
     Functions: {
       join_current_user_radio_listener: { Args: { target_session_id: string }; Returns: Array<Database["public"]["Tables"]["radio_listeners"]["Row"]> };
       leave_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };
+      assign_radio_session_host: { Args: { target_session_id: string; target_user_id: string; target_host_role?: string }; Returns: boolean };
+      transition_radio_session: { Args: { target_session_id: string; next_status: string; confirmation_session_title?: string | null }; Returns: Array<Database["public"]["Tables"]["radio_sessions"]["Row"]> };
+      moderate_radio_listener: { Args: { target_session_id: string; target_user_id: string; moderation_action: string }; Returns: boolean };
       transfer_community_ownership: {
         Args: { target_community_id: string; target_new_owner_id: string; confirmation_community_name: string };
         Returns: Array<{ community_id: string; previous_owner_id: string; new_owner_id: string; transferred_at: string }>;
