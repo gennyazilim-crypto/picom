@@ -1,6 +1,7 @@
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import { getMockCommunityKind, isMissingCommunityKindColumnError, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow, COMMUNITY_LIST_SELECT, LEGACY_COMMUNITY_LIST_SELECT } from "./communityListQuery";
+import { getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow } from "./communityListQuery";
+import { isCommunityTemplateId } from "../data/communityTemplates";
 import { isCommunityKind, type CommunityKind } from "../types/community";
 
 export type CommunitySummary = Readonly<{
@@ -21,6 +22,7 @@ export type CommunitySummary = Readonly<{
 }>;
 
 export type CreateCommunityInput = Readonly<{
+  creationRequestId?: string;
   name: string;
   kind?: CommunityKind;
   description?: string | null;
@@ -46,6 +48,7 @@ export type CommunityServiceErrorCode =
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
   | "COMMUNITY_CREATE_FAILED"
+  | "COMMUNITY_TEMPLATE_FAILED"
   | "COMMUNITY_UPDATE_FAILED"
   | "COMMUNITY_LIST_FAILED";
 
@@ -62,8 +65,15 @@ function cleanName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const mockCommunityCreations = new Map<string, CommunitySummary>();
+
 function validateCreateInput(input: CreateCommunityInput): CommunityServiceError | null {
   const name = cleanName(input.name);
+
+  if (input.creationRequestId !== undefined && !UUID_PATTERN.test(input.creationRequestId.trim())) {
+    return { code: "VALIDATION_ERROR", message: "Community creation request ID must be a UUID." };
+  }
 
   if (input.kind !== undefined && !isCommunityKind(input.kind)) {
     return { code: "VALIDATION_ERROR", message: "Community kind must be text, radio, or podcast." };
@@ -88,6 +98,7 @@ function validateCreateInput(input: CreateCommunityInput): CommunityServiceError
 
   if (input.visibility !== undefined && input.visibility !== "public" && input.visibility !== "private") return { code: "VALIDATION_ERROR", message: "Community visibility must be public or private." };
   if (input.publicReadEnabled !== undefined && typeof input.publicReadEnabled !== "boolean") return { code: "VALIDATION_ERROR", message: "Public read policy must be enabled or disabled." };
+  if (input.templateId !== undefined && input.templateId !== null && !isCommunityTemplateId(input.templateId)) return { code: "VALIDATION_ERROR", message: "Choose a supported community template." };
 
   return null;
 }
@@ -178,29 +189,37 @@ export const communityService = {
     const iconUrl = input.iconUrl?.trim() || null;
     const visibility = input.visibility ?? "public";
     const publicReadEnabled = visibility === "public" ? input.publicReadEnabled ?? true : false;
+    const creationRequestId = input.creationRequestId?.trim() || crypto.randomUUID();
+    const templateId = kind === "text" ? input.templateId ?? "custom" : "custom";
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
+      const existing = mockCommunityCreations.get(creationRequestId);
+      if (existing) {
+        if (existing.kind !== kind || existing.name !== name || existing.templateId !== templateId) {
+          return { ok: false, error: { code: "VALIDATION_ERROR", message: "This creation request was already used for different community details." } };
+        }
+        return { ok: true, data: existing };
+      }
       const now = new Date().toISOString();
-      return {
-        ok: true,
-        data: {
-          id: `mock-community-${Date.now()}`,
-          kind,
-          ownerId: "mock-current-user",
-          name,
-          description: input.description?.trim() || null,
-          iconUrl,
-          accentColor: input.accentColor ?? "#007571",
-          visibility,
-          publicReadEnabled,
-          rulesEnabled: true,
-          rulesVersion: "1",
-          templateId: input.templateId ?? "custom",
-          createdAt: now,
-          updatedAt: now,
-        },
+      const community: CommunitySummary = {
+        id: `mock-community-${creationRequestId}`,
+        kind,
+        ownerId: "mock-current-user",
+        name,
+        description: input.description?.trim() || null,
+        iconUrl,
+        accentColor: input.accentColor ?? "#007571",
+        visibility,
+        publicReadEnabled,
+        rulesEnabled: true,
+        rulesVersion: "1",
+        templateId,
+        createdAt: now,
+        updatedAt: now,
       };
+      mockCommunityCreations.set(creationRequestId, community);
+      return { ok: true, data: community };
     }
 
     const configured = getConfiguredSupabaseClient();
@@ -211,6 +230,24 @@ export const communityService = {
 
     if (userError || !userId) {
       return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before creating a community." } };
+    }
+
+    if (kind === "text") {
+      const { data, error } = await configured.data.rpc("create_text_community_with_defaults", {
+        target_creation_request_id: creationRequestId,
+        community_name: name,
+        community_description: input.description?.trim() || null,
+        community_icon_url: iconUrl,
+        community_accent_color: input.accentColor ?? "#007571",
+        community_visibility: visibility,
+        community_public_read_enabled: publicReadEnabled,
+        community_template_id: templateId,
+      });
+      const row = data?.[0];
+      if (error || !row) {
+        return { ok: false, error: { code: "COMMUNITY_TEMPLATE_FAILED", message: "Could not create the Text community and its starter rooms." } };
+      }
+      return { ok: true, data: { ...mapCommunityListRow(row), templateId } };
     }
 
     const insertPayload = {
@@ -228,23 +265,11 @@ export const communityService = {
         ...insertPayload,
         kind,
       })
-      .select(COMMUNITY_LIST_SELECT)
+      .select("id, kind, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at")
       .single();
 
     if (!currentResult.error && currentResult.data) {
       return { ok: true, data: mapCommunityListRow(currentResult.data) };
-    }
-
-    if (kind === "text" && isMissingCommunityKindColumnError(currentResult.error)) {
-      const legacyResult = await configured.data
-        .from("communities")
-        .insert(insertPayload)
-        .select(LEGACY_COMMUNITY_LIST_SELECT)
-        .single();
-
-      if (!legacyResult.error && legacyResult.data) {
-        return { ok: true, data: mapCommunityListRow({ ...legacyResult.data, kind: "text" }) };
-      }
     }
 
     return { ok: false, error: { code: "COMMUNITY_CREATE_FAILED", message: "Could not create community." } };

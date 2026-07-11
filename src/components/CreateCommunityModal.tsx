@@ -10,6 +10,7 @@ import "./CreateCommunityModal.css";
 const overlayIcons = mvpUiIconMap.overlays;
 
 export type CreateCommunityFormValue = Readonly<{
+  creationRequestId: string;
   kind: CommunityKind;
   name: string;
   description?: string;
@@ -49,6 +50,7 @@ function isHttpsUrl(value: string): boolean {
 }
 
 export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModalProps) {
+  const [creationRequestId] = useState(() => crypto.randomUUID());
   const [step, setStep] = useState(0);
   const [kind, setKind] = useState<CommunityKind | null>(null);
   const [name, setName] = useState("");
@@ -93,6 +95,7 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
     setError(null);
     try {
       const result = await onSubmit({
+        creationRequestId,
         kind,
         name: name.trim().replace(/\s+/g, " "),
         description: description.trim() || undefined,

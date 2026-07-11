@@ -4,13 +4,25 @@ export const communityTemplates: readonly CommunityTemplate[] = [
   {
     id: "custom",
     name: "Custom",
-    description: "Start with a clean general channel.",
+    description: "Start with Picom's text-first welcome, chat, and focus rooms.",
     accentColor: "#007571",
     categories: [
       {
-        name: "General",
+        name: "Information",
+        channels: [
+          { name: "welcome", type: "text", topic: "Start here" }
+        ]
+      },
+      {
+        name: "Channels",
         channels: [
           { name: "general", type: "text", topic: "Start the conversation" }
+        ]
+      },
+      {
+        name: "Voice",
+        channels: [
+          { name: "focus-room", type: "voice", topic: "A focused voice room" }
         ]
       }
     ],

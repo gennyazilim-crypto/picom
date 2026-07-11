@@ -51,6 +51,8 @@ export type Database = {
           discovery_join_policy: "open" | "request";
           category: "development" | "design" | "gaming" | "music" | "study" | "work" | null;
           discovery_content_flags: string[];
+          creation_request_id: string | null;
+          creation_template_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -529,6 +531,19 @@ export type Database = {
       };
     };
     Functions: {
+      create_text_community_with_defaults: {
+        Args: {
+          target_creation_request_id: string;
+          community_name: string;
+          community_description?: string | null;
+          community_icon_url?: string | null;
+          community_accent_color?: string;
+          community_visibility?: "public" | "private";
+          community_public_read_enabled?: boolean;
+          community_template_id?: string;
+        };
+        Returns: Array<Database["public"]["Tables"]["communities"]["Row"]>;
+      };
       accept_current_legal_terms: { Args: Record<string, never>; Returns: Array<{ terms_version: string; privacy_version: string; accepted_at: string }> };
       request_current_user_account_deletion: { Args: { confirmation_username: string }; Returns: Array<{ request_id: string; requested_at: string; anonymize_after: string }> };
       cancel_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; canceled_at: string }> };
