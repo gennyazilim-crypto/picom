@@ -4,6 +4,8 @@ import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 
 const STORAGE_KEY = "picom.profilePrivacy.v2";
+type ProfilePrivacyListener = (settings: ProfilePrivacySettings) => void;
+const listeners = new Set<ProfilePrivacyListener>();
 
 export const defaultProfilePrivacySettings: ProfilePrivacySettings = {
   visibility: "everyone",
@@ -45,10 +47,17 @@ function readLocal(): ProfilePrivacySettings {
 
 function writeLocal(settings: ProfilePrivacySettings): void {
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch { /* Restricted runtime fallback. */ }
+  for (const listener of listeners) listener({ ...settings });
 }
 
 export const profilePrivacyService = {
   getLocalSettings(): ProfilePrivacySettings { return readLocal(); },
+  subscribe(listener: ProfilePrivacyListener): () => void {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  },
 
   async getOwnSettings(): Promise<ProfilePrivacySettings> {
     if (dataSourceService.getStatus().isMock) return readLocal();

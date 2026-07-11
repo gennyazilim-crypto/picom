@@ -193,9 +193,9 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
 
   useEffect(() => {
     if (active === "Privacy & Safety") {
-      setBlockedUsers(userBlockingService.listBlockedUsers());
+      void userBlockingService.refreshRemoteBlocks().then(setBlockedUsers);
       setNotificationPolicyState(notificationPolicyStateService.getSnapshot());
-      setSafetySettings(userSafetyCenterService.getSettings());
+      void userSafetyCenterService.refreshRemotePrivacy().then(setSafetySettings);
       void profilePrivacyService.getOwnSettings().then(setProfilePrivacy);
       void directSafetyService.getPrivacy().then(setDirectMessagePrivacy);
       void dataExportService.refreshStatus().then(setDataExportStatus);
@@ -221,6 +221,11 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     const next = userSafetyCenterService.updateSettings(partial);
     setSafetySettings(next);
     pushToast("Privacy & Safety setting saved locally.", "success");
+  };
+  const updateFriendRequestPrivacy = async (policy: UserSafetySettings["whoCanSendFriendRequests"]) => {
+    const result = await userSafetyCenterService.updateFriendRequestPrivacy(policy);
+    setSafetySettings(result.settings);
+    pushToast(result.ok ? "Friend-request privacy updated." : "Friend-request privacy could not be saved; the previous setting was restored.", result.ok ? "success" : "error");
   };
   const unblockUser = async (userId: string, displayName: string, username: string) => {
     const ok = await userBlockingService.setBlockedUser({ userId, displayName, username }, false);
@@ -282,8 +287,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     setStartupSettings(next);
     pushToast(next.error ? "Launch on startup is unavailable in this build or platform." : next.launchOnStartup ? "Picom will launch when you sign in." : "Launch on startup disabled.", next.error ? "error" : "success");
   };
-  const updateProfilePrivacy=(partial:Partial<ProfilePrivacySettings>)=>{void profilePrivacyService.updateOwn(partial).then((result)=>{setProfilePrivacy(result.settings);pushToast(result.ok?"Profile privacy updated.":"Profile privacy saved locally; remote sync failed.",result.ok?"success":"error")});};
-  const updateDirectMessagePrivacy = (value: DirectMessagePrivacy) => { void directSafetyService.updatePrivacy(value).then((result) => { setDirectMessagePrivacy(result.value); pushToast(result.ok ? "Direct-message privacy updated." : "Direct-message privacy could not be synchronized.", result.ok ? "success" : "error"); }); };
+  const updateProfilePrivacy=(partial:Partial<ProfilePrivacySettings>)=>{void profilePrivacyService.updateOwn(partial).then((result)=>{setProfilePrivacy(result.settings);pushToast(result.ok?"Profile privacy updated.":"Profile privacy could not be saved; the previous setting was restored.",result.ok?"success":"error")});};
+  const updateDirectMessagePrivacy = (value: DirectMessagePrivacy) => { void directSafetyService.updatePrivacy(value).then((result) => { setDirectMessagePrivacy(result.value); if (result.ok) setSafetySettings(userSafetyCenterService.updateSettings({ whoCanDmMe: result.value === "friends" ? "friends_only" : result.value === "no_one" ? "nobody" : "everyone" })); pushToast(result.ok ? "Direct-message privacy updated." : "Direct-message privacy could not be synchronized.", result.ok ? "success" : "error"); }); };
   const updateStartMinimizedToTray = async (enabled: boolean) => {
     const next = await startupService.setStartMinimizedToTray(enabled);
     setStartupSettings(next);
@@ -652,6 +657,11 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <strong>{userSafetyCenterService.getPrivacySummary(blockedUsers.length)}</strong>
                 <small>Privacy choices are enforced locally and synchronized to Supabase when connected; passwords, tokens, and message content are never stored here.</small>
               </div>
+              <div className="settings-status-card" aria-label="Public and visitor profile behavior">
+                <span>Public and visitor visibility</span>
+                <strong>{profilePrivacy.visibility === "everyone" ? "Safe profile basics are public" : profilePrivacy.visibility === "shared_communities" ? "Shared communities only" : "Friends only"}</strong>
+                <small>Visitors never receive private-channel activity or media. Each section below can be hidden independently, and server-side profile projection remains authoritative.</small>
+              </div>
               <div className="security-card-grid">
                 <article className="security-card">
                   <span>Blocked users</span>
@@ -676,22 +686,10 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Who can message me</strong>
-                  <small>Controls who may start a private conversation. Backend RLS remains authoritative.</small>
-                </span>
-                <select value={safetySettings.whoCanDmMe} onChange={(event) => updateSafetySettings({ whoCanDmMe: event.target.value as UserSafetySettings["whoCanDmMe"] })}>
-                  <option value="everyone">Everyone</option>
-                  <option value="community_members">Community members</option>
-                  <option value="friends_only">Friends only</option>
-                  <option value="nobody">Nobody</option>
-                </select>
-              </label>
-              <label className="settings-toggle-row">
-                <span>
                   <strong>Who can send friend requests</strong>
                   <small>Controls incoming friend requests while preserving existing community access.</small>
                 </span>
-                <select value={safetySettings.whoCanSendFriendRequests} onChange={(event) => updateSafetySettings({ whoCanSendFriendRequests: event.target.value as UserSafetySettings["whoCanSendFriendRequests"] })}>
+                <select value={safetySettings.whoCanSendFriendRequests} onChange={(event) => void updateFriendRequestPrivacy(event.target.value as UserSafetySettings["whoCanSendFriendRequests"])}>
                   <option value="everyone">Everyone</option>
                   <option value="community_members">Community members</option>
                   <option value="friends_of_friends">Friends of friends</option>

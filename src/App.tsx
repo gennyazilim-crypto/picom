@@ -967,6 +967,11 @@ export function App() {
 
   useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
   useEffect(()=>{if(!activeProfileUserId){setProfilePrivacyProjection(defaultProfilePrivacyProjection);setProfilePrivacySubjectId(null);return;}const subjectId=activeProfileUserId;const viewerId=directMessageUserId;const hasSharedCommunity=communities.some((community)=>community.members.some((member)=>member.userId===viewerId)&&community.members.some((member)=>member.userId===subjectId));const isFriend=friendState.friends.some((friend)=>friend.userId===subjectId);let active=true;void profilePrivacyService.getProjection({targetUserId:subjectId,viewerUserId:viewerId,hasSharedCommunity,isFriend}).then((projection)=>{if(active){setProfilePrivacyProjection(projection);setProfilePrivacySubjectId(subjectId)}});return()=>{active=false};},[activeProfileUserId,communities,directMessageUserId,friendState.friends]);
+  useEffect(() => profilePrivacyService.subscribe((settings) => {
+    if (activeProfileUserId !== directMessageUserId) return;
+    setProfilePrivacyProjection({ ...settings, canViewProfile: true, location: profileSettings.location || undefined, timezone: profileSettings.timezone || undefined });
+    setProfilePrivacySubjectId(directMessageUserId);
+  }), [activeProfileUserId, directMessageUserId, profileSettings.location, profileSettings.timezone]);
 
   useEffect(() => notificationCenterService.subscribe(setNotificationCenterItems), []);
   useEffect(() => authSession ? notificationCenterService.startRemoteSync() : undefined, [authSession?.user?.id]);

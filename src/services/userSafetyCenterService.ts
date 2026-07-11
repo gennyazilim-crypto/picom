@@ -40,14 +40,15 @@ function normalizeSettings(value: Partial<UserSafetySettings> | null | undefined
   };
 }
 
-async function persistFriendRequestPrivacy(policy: FriendRequestPolicy): Promise<void> {
-  if (!dataSourceService.getStatus().isSupabase) return;
+async function persistFriendRequestPrivacy(policy: FriendRequestPolicy): Promise<boolean> {
+  if (!dataSourceService.getStatus().isSupabase) return true;
   const client = getSupabaseClient();
-  if (!client) return;
+  if (!client) return false;
   const { data } = await client.auth.getUser();
-  if (!data.user) return;
+  if (!data.user) return false;
   const { error } = await client.from("profiles").update({ friend_request_privacy: policy }).eq("id", data.user.id);
   if (error) loggingService.logWarn("Friend request privacy sync failed", { code: error.code }, "privacy");
+  return !error;
 }
 
 function readSettings(): UserSafetySettings {
@@ -85,8 +86,16 @@ export const userSafetyCenterService = {
   updateSettings(partial: Partial<UserSafetySettings>): UserSafetySettings {
     const next = normalizeSettings({ ...readSettings(), ...partial });
     writeSettings(next);
-    if (partial.whoCanSendFriendRequests) void persistFriendRequestPrivacy(next.whoCanSendFriendRequests);
     return next;
+  },
+
+  async updateFriendRequestPrivacy(policy: FriendRequestPolicy): Promise<{ ok: boolean; settings: UserSafetySettings }> {
+    const previous = readSettings();
+    const next = normalizeSettings({ ...previous, whoCanSendFriendRequests: policy });
+    writeSettings(next);
+    if (await persistFriendRequestPrivacy(policy)) return { ok: true, settings: next };
+    writeSettings(previous);
+    return { ok: false, settings: previous };
   },
 
   async refreshRemotePrivacy(): Promise<UserSafetySettings> {
