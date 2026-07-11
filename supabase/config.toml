@@ -57,6 +57,9 @@ verify_jwt = true
 [functions.meeting-join]
 verify_jwt = true
 
+[functions.meeting-token]
+verify_jwt = true
+
 [functions.livekit-moderation]
 verify_jwt = true
 

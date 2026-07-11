@@ -6,6 +6,7 @@
   ],
   "releaseAuthenticated": [
     { "name": "livekit-token", "verifyJwt": true },
+    { "name": "meeting-token", "verifyJwt": true },
     { "name": "livekit-moderation", "verifyJwt": true },
     { "name": "validate-file", "verifyJwt": true },
     { "name": "user-data-export", "verifyJwt": true },

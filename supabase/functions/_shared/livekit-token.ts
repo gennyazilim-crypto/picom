@@ -8,7 +8,7 @@ export interface LiveKitTokenInput {
   canPublish?: boolean;
   canSubscribe?: boolean;
   canPublishData?: boolean;
-  canPublishSources?: readonly ("microphone" | "screen_share" | "screen_share_audio")[];
+  canPublishSources?: readonly ("camera" | "microphone" | "screen_share" | "screen_share_audio")[];
 }
 
 export interface LiveKitTokenResult {
