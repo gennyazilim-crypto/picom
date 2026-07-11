@@ -1,4 +1,5 @@
 import { currentUserFollowedUserIds } from "../data/mockFollows";
+import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { friendRequestService } from "./friends/friendRequestService";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
@@ -17,6 +18,7 @@ async function userAndClient() {
 
 export async function followUser(userId: string): RelationshipResult<void> {
   if (!userId.trim()) return { ok: false, error: "User ID is required." };
+  if (dataSourceService.getStatus().isMock && userId === currentUserId) return { ok: false, error: "You cannot follow your own account." };
   if (dataSourceService.getStatus().isMock) { mockFollowing.add(userId); return { ok: true, data: undefined }; }
   const auth = await userAndClient(); if (!auth || auth.userId === userId) return { ok: false, error: "Sign in and choose another user." };
   const { error } = await auth.client.rpc("follow_user", { target_user_id: userId });
@@ -28,6 +30,7 @@ export async function followUser(userId: string): RelationshipResult<void> {
 }
 
 export async function unfollowUser(userId: string): RelationshipResult<void> {
+  if (!userId.trim() || (dataSourceService.getStatus().isMock && userId === currentUserId)) return { ok: false, error: "Choose another user." };
   if (dataSourceService.getStatus().isMock) { mockFollowing.delete(userId); return { ok: true, data: undefined }; }
   const auth = await userAndClient(); if (!auth) return { ok: false, error: "Sign in to update follows." };
   const { error } = await auth.client.rpc("unfollow_user", { target_user_id: userId });

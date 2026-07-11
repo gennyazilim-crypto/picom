@@ -18,11 +18,13 @@ type ProfileViewProps = {
   onBack: () => void;
   onToggleFollow: (userId: string) => void;
   onMessage?: (userId: string) => void;
-  onFriendAction?: (userId: string) => void;
+  onFriendAction?: (userId: string, action: "add" | "cancel" | "accept" | "remove") => void;
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
-  onPlaceholderAction?: (message: string) => void;
   onEditProfile?: () => void;
+  onRequestVerification?: () => void;
+  isBlocked?: boolean;
+  relationshipBusy?: boolean;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
   onOpenCommunity?: (communityId: string) => void;
   dataState?: "idle" | "loading" | "ready" | "error";
@@ -35,9 +37,11 @@ type ProfileActionButtonsProps = {
   isCurrentUser: boolean;
   onToggleFollow: (userId: string) => void;
   onMessage?: (userId: string) => void;
-  onFriendAction?: (userId: string) => void;
-  onPlaceholderAction?: (message: string) => void;
+  onFriendAction?: (userId: string, action: "add" | "cancel" | "accept" | "remove") => void;
   onEditProfile?: () => void;
+  onRequestVerification?: () => void;
+  isBlocked?: boolean;
+  relationshipBusy?: boolean;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
 };
 
@@ -73,13 +77,17 @@ function getActivityIcon(type: ProfileActivityItem["type"]): IconName {
   return "hash";
 }
 
-function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onFriendAction, onEditProfile, onOpenMore }: ProfileActionButtonsProps) {
+function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onFriendAction, onEditProfile, onRequestVerification, isBlocked = false, relationshipBusy = false, onOpenMore }: ProfileActionButtonsProps) {
   if (isCurrentUser) {
     return (
       <div className="profile-action-buttons">
         <button type="button" className="profile-primary-button" onClick={onEditProfile}>
           <AppIcon name="edit" size="sm" />
           Edit Profile
+        </button>
+        <button type="button" onClick={onRequestVerification}>
+          <AppIcon name="lock" size="sm" />
+          Verification
         </button>
         <button type="button" onClick={(event) => onOpenMore?.(event, profile)}>
           <AppIcon name="more" size="sm" />
@@ -91,17 +99,17 @@ function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessag
 
   return (
     <div className="profile-action-buttons">
-      <button type="button" className="profile-primary-button" onClick={() => onMessage?.(profile.id)}>
+      <button type="button" className="profile-primary-button" disabled={isBlocked || relationshipBusy} onClick={() => onMessage?.(profile.id)}>
         <AppIcon name="send" size="sm" />
         Message
       </button>
-      <button type="button" onClick={() => onToggleFollow(profile.id)}>
+      <button type="button" disabled={isBlocked || relationshipBusy} onClick={() => onToggleFollow(profile.id)}>
         <AppIcon name="user" size="sm" />
         {profile.isFollowing ? "Unfollow" : "Follow"}
       </button>
-      <button type="button" disabled={profile.friendshipStatus === "friends" || profile.friendshipStatus === "outgoing"} onClick={() => onFriendAction?.(profile.id)}>
-        <AppIcon name={profile.friendshipStatus === "friends" ? "users" : "plus"} size="sm" />
-        {profile.friendshipStatus === "friends" ? "Friends" : profile.friendshipStatus === "outgoing" ? "Request sent" : profile.friendshipStatus === "incoming" ? "Review request" : "Add Friend"}
+      <button type="button" disabled={isBlocked || relationshipBusy} onClick={() => onFriendAction?.(profile.id, profile.friendshipStatus === "friends" ? "remove" : profile.friendshipStatus === "outgoing" ? "cancel" : profile.friendshipStatus === "incoming" ? "accept" : "add")}>
+        <AppIcon name={profile.friendshipStatus === "friends" ? "users" : profile.friendshipStatus === "outgoing" ? "close" : profile.friendshipStatus === "incoming" ? "users" : "plus"} size="sm" />
+        {relationshipBusy ? "Updating..." : profile.friendshipStatus === "friends" ? "Remove friend" : profile.friendshipStatus === "outgoing" ? "Cancel request" : profile.friendshipStatus === "incoming" ? "Accept request" : "Add Friend"}
       </button>
       <button type="button" aria-label="More profile actions" onClick={(event) => onOpenMore?.(event, profile)}>
         <AppIcon name="more" size="sm" />
@@ -118,8 +126,10 @@ export function ProfileLeftCard({
   onToggleFollow,
   onMessage,
   onFriendAction,
-  onPlaceholderAction,
   onEditProfile,
+  onRequestVerification,
+  isBlocked,
+  relationshipBusy,
   onOpenMore,
 }: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
   const verification = getUserVerificationSummary(member.userId, profile.verificationBadges ?? [], profile.verification ?? member.verification);
@@ -155,8 +165,10 @@ export function ProfileLeftCard({
           onToggleFollow={onToggleFollow}
           onMessage={onMessage}
           onFriendAction={onFriendAction}
-          onPlaceholderAction={onPlaceholderAction}
           onEditProfile={onEditProfile}
+          onRequestVerification={onRequestVerification}
+          isBlocked={isBlocked}
+          relationshipBusy={relationshipBusy}
           onOpenMore={onOpenMore}
         />
       </div>
@@ -466,8 +478,10 @@ export function ProfileView({
   onFriendAction,
   onOpenActivity,
   onOpenImage,
-  onPlaceholderAction,
   onEditProfile,
+  onRequestVerification,
+  isBlocked,
+  relationshipBusy,
   onOpenMore,
   onOpenCommunity,
   dataState,
@@ -487,8 +501,10 @@ export function ProfileView({
           onToggleFollow={onToggleFollow}
           onMessage={onMessage}
           onFriendAction={onFriendAction}
-          onPlaceholderAction={onPlaceholderAction}
           onEditProfile={onEditProfile}
+          onRequestVerification={onRequestVerification}
+          isBlocked={isBlocked}
+          relationshipBusy={relationshipBusy}
           onOpenMore={onOpenMore}
         />
         <ProfileMainPanel profile={profile} communities={communities} currentUserId={currentUserId} dataState={dataState} dataError={dataError} onRetryData={onRetryData} onOpenActivity={onOpenActivity} onOpenImage={onOpenImage} onOpenCommunity={onOpenCommunity} />

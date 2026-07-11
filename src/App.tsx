@@ -369,6 +369,7 @@ export function App() {
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
+  const [profileRelationshipBusyUserId, setProfileRelationshipBusyUserId] = useState<string | null>(null);
   const [friendsViewTab, setFriendsViewTab] = useState<FriendViewTab>("all");
   const [savedMessages, setSavedMessages] = useState<SavedMessageRecord[]>(() => savedMessageService.listSavedMessages());
   useEffect(() => { let active = true; const refresh = () => { void savedMessageService.getSavedMessages().then((items) => { if (active) setSavedMessages(items); }); }; refresh(); const unsubscribe = savedMessageService.subscribe(refresh); return () => { active = false; unsubscribe(); }; }, []);
@@ -925,7 +926,10 @@ export function App() {
     const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
     const ownOverrides = profile.id === directMessageUserId ? { username: profileSettings.username || profile.username, displayName: profileSettings.displayName || profile.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? profile.avatarUrl, coverUrl: profileSettings.coverUrl === null ? undefined : profileSettings.coverUrl ?? profile.coverUrl, status: profileSettings.status, statusText: profileSettings.statusText || profile.statusText, bio: profileSettings.bio || profile.bio, location: profileSettings.location || profile.location, timezone: profileSettings.timezone || profile.timezone, preferredLanguage: profileSettings.preferredLanguage || profile.preferredLanguage, tags: profileSettings.tags.length ? profileSettings.tags : profile.tags } : {};
-    return { ...profile, ...ownOverrides, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
+    const isFollowing = profile.id !== directMessageUserId && followedUserIds.includes(profile.id);
+    const initialMockFollowing = currentUserFollowedUserIds.includes(profile.id);
+    const followerDelta = dataSourceService.getStatus().isMock ? Number(isFollowing) - Number(initialMockFollowing) : 0;
+    return { ...profile, ...ownOverrides, isFollowing, stats: { ...profile.stats, followers: Math.max(0, profile.stats.followers + followerDelta) }, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
   }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, profilePrivacyProjection, profilePrivacySubjectId, profileSettings, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember]);
 
   useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
@@ -1681,16 +1685,19 @@ export function App() {
     if (userId === directMessageUserId || followMutationInFlightRef.current.has(userId)) return;
     const wasFollowing = followedUserIds.includes(userId);
     followMutationInFlightRef.current.add(userId);
+    setProfileRelationshipBusyUserId(userId);
     setFollowedUserIds((current) => wasFollowing ? current.filter((id) => id !== userId) : [...new Set([...current, userId])]);
     const result = await (wasFollowing ? relationshipService.unfollowUser(userId) : relationshipService.followUser(userId));
     if (!result.ok) {
       setFollowedUserIds((current) => wasFollowing ? [...new Set([...current, userId])] : current.filter((id) => id !== userId));
       pushToast(result.error, "error");
-    } else if (dataSourceService.getStatus().isSupabase) {
+    } else {
       const authoritative = await relationshipService.getFollowing();
       if (authoritative.ok) setFollowedUserIds(authoritative.data);
+      setProfileReloadVersion((version) => version + 1);
     }
     followMutationInFlightRef.current.delete(userId);
+    setProfileRelationshipBusyUserId((current) => current === userId ? null : current);
   }, [directMessageUserId, followedUserIds, pushToast]);
 
   const toggleMentionReaction = useCallback((id: string) => {
@@ -2036,7 +2043,29 @@ export function App() {
   const dismissFriendRequest = useCallback(async (requestId: string) => { const result=await relationshipService.declineFriendRequest(requestId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request declined.","info"); }, [pushToast, refreshFriendState]);
   const cancelFriendRequest = useCallback(async (requestId: string) => { const result=await relationshipService.cancelFriendRequest(requestId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request canceled.","info"); }, [pushToast, refreshFriendState]);
 
-  const requestFriendFromProfile = useCallback(async (userId: string) => { const result=await relationshipService.sendFriendRequest(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request sent.","success"); }, [pushToast, refreshFriendState]);
+  const handleProfileFriendAction = useCallback(async (userId: string, action: "add" | "cancel" | "accept" | "remove") => {
+    if (userId === directMessageUserId) { pushToast("You cannot manage a friendship with your own account.", "error"); return; }
+    if (userBlockingService.isBlocked(userId)) { pushToast("Unblock this user before changing the friendship.", "error"); return; }
+    if (profileRelationshipBusyUserId === userId) return;
+    setProfileRelationshipBusyUserId(userId);
+    const request = friendState.requests.find((candidate) => candidate.userId === userId && candidate.status === "pending");
+    const result = action === "add"
+      ? await relationshipService.sendFriendRequest(userId)
+      : action === "remove"
+        ? await relationshipService.removeFriend(userId)
+        : action === "accept" && request
+          ? await relationshipService.acceptFriendRequest(request.id)
+          : action === "cancel" && request
+            ? await relationshipService.cancelFriendRequest(request.id)
+            : { ok: false as const, error: "This friend request is no longer available." };
+    if (!result.ok) pushToast(result.error, "error");
+    else {
+      await refreshFriendState();
+      setProfileReloadVersion((version) => version + 1);
+      pushToast(action === "add" ? "Friend request sent." : action === "accept" ? "Friend request accepted." : action === "cancel" ? "Friend request canceled." : "Friend removed.", action === "remove" || action === "cancel" ? "info" : "success");
+    }
+    setProfileRelationshipBusyUserId((current) => current === userId ? null : current);
+  }, [directMessageUserId, friendState.requests, profileRelationshipBusyUserId, pushToast, refreshFriendState]);
 
   const sendFriendRequest = useCallback(async (userId: string) => { const result=await relationshipService.sendFriendRequest(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request sent.","success"); }, [pushToast, refreshFriendState]);
   const removeFriend = useCallback(async (userId: string) => { const result=await relationshipService.removeFriend(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend removed.","info"); }, [pushToast, refreshFriendState]);
@@ -2381,7 +2410,8 @@ export function App() {
   };
 
   const handleReportUser = (member: Member) => {
-    setReportTarget({ communityId: activeCommunity.id, targetType: "user", targetId: member.userId, label: `${member.displayName} (@${member.username})` });
+    const contextCommunity = communities.find((community) => community.members.some((candidate) => candidate.userId === member.userId)) ?? activeCommunity;
+    setReportTarget({ communityId: contextCommunity.id, targetType: "user", targetId: member.userId, label: `${member.displayName} (@${member.username})` });
   };
 
   const handleToggleBlockUser = async (member: Member) => {
@@ -2394,7 +2424,12 @@ export function App() {
     const persisted = await userBlockingService.setBlockedUser(member, blocked);
     if (!persisted) { pushToast(`Could not ${blocked ? "block" : "unblock"} ${member.displayName}.`, "error"); return false; }
     setBlockedUserVersion((version) => version + 1);
-    if (blocked) { setDirectConversations((current) => current.filter((conversation) => conversation.participantUserId !== member.userId)); void refreshFriendState(); }
+    if (blocked) {
+      setDirectConversations((current) => current.filter((conversation) => conversation.participantUserId !== member.userId));
+      if (followedUserIds.includes(member.userId)) { await relationshipService.unfollowUser(member.userId); setFollowedUserIds((current) => current.filter((id) => id !== member.userId)); }
+      void refreshFriendState();
+    }
+    setProfileReloadVersion((version) => version + 1);
     pushToast(blocked ? `${member.displayName} blocked.` : `${member.displayName} unblocked.`, blocked ? "info" : "success");
     return true;
   };
@@ -2657,7 +2692,7 @@ export function App() {
               onBack={closeProfileView}
               onToggleFollow={toggleFollowUser}
               onMessage={openDirectMessages}
-              onFriendAction={requestFriendFromProfile}
+              onFriendAction={handleProfileFriendAction}
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
               onOpenCommunity={openFeedEventCommunity}
@@ -2665,14 +2700,27 @@ export function App() {
               dataError={remoteProfileLoadError}
               onRetryData={() => setProfileReloadVersion((version) => version + 1)}
               onEditProfile={() => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely without persisted navigation. */ } openSettings(); }}
-              onPlaceholderAction={(message) => pushToast(message, "info")}
-              onOpenMore={(event, profile) => openContext(event, [
-                { label: profile.isCurrentUser ? "Edit profile placeholder" : "Message placeholder" },
-                { label: profile.isFollowing ? "Unfollow" : "Follow", onSelect: () => void toggleFollowUser(profile.id), disabled: profile.isCurrentUser },
-                { label: blockedUserIds.includes(profile.id) ? "Unblock user" : "Block user", onSelect: () => { if (selectedProfileMember) handleToggleBlockUser(selectedProfileMember); }, disabled: profile.isCurrentUser },
-                { label: "Report user", onSelect: () => { if (selectedProfileMember) handleReportUser(selectedProfileMember); }, disabled: profile.isCurrentUser },
-                { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
-              ])}
+              onRequestVerification={() => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely without persisted navigation. */ } openSettings(); }}
+              isBlocked={blockedUserIds.includes(selectedUserProfile.id)}
+              relationshipBusy={profileRelationshipBusyUserId === selectedUserProfile.id}
+              onOpenMore={(event, profile) => {
+                const request = friendState.requests.find((candidate) => candidate.userId === profile.id && candidate.status === "pending");
+                const friendAction = profile.friendshipStatus === "friends" ? "remove" : profile.friendshipStatus === "outgoing" ? "cancel" : profile.friendshipStatus === "incoming" ? "accept" : "add";
+                const friendLabel = friendAction === "remove" ? "Remove friend" : friendAction === "cancel" ? "Cancel friend request" : friendAction === "accept" ? "Accept friend request" : "Add friend";
+                const openProfileSettings = () => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely. */ } openSettings(); };
+                openContext(event, profile.isCurrentUser ? [
+                  { label: "Edit profile", onSelect: openProfileSettings },
+                  { label: "Verification status and request", onSelect: openProfileSettings },
+                  { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
+                ] : [
+                  { label: "Message", onSelect: () => openDirectMessages(profile.id), disabled: blockedUserIds.includes(profile.id) },
+                  { label: profile.isFollowing ? "Unfollow" : "Follow", onSelect: () => void toggleFollowUser(profile.id), disabled: blockedUserIds.includes(profile.id) || profileRelationshipBusyUserId === profile.id },
+                  { label: friendLabel, onSelect: () => void handleProfileFriendAction(profile.id, friendAction), disabled: blockedUserIds.includes(profile.id) || profileRelationshipBusyUserId === profile.id || ((friendAction === "accept" || friendAction === "cancel") && !request) },
+                  { label: blockedUserIds.includes(profile.id) ? "Unblock user" : "Block user", onSelect: () => { if (selectedProfileMember) void handleToggleBlockUser(selectedProfileMember); } },
+                  { label: "Report user", onSelect: () => { if (selectedProfileMember) handleReportUser(selectedProfileMember); } },
+                  { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
+                ]);
+              }}
             />
             </DeferredViewBoundary>
           ) : activeView === "savedMessages" ? (

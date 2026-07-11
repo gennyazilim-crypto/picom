@@ -1,4 +1,5 @@
 import { mockFriendState } from "../../data/mockFriends";
+import { currentUserId } from "../../data/mockCommunities";
 import type {
   FriendConnection,
   FriendNotification,
@@ -165,6 +166,7 @@ const mockFriendDataSource: FriendRequestDataSource = {
   async sendRequest(userId) {
     const normalized = userId.trim();
     if (!normalized) return failure("INVALID_INPUT", "Choose a user before sending a friend request.");
+    if (normalized === currentUserId) return failure("SELF_REQUEST", "You cannot send a friend request to your own account.");
     if (userBlockingService.isBlocked(normalized)) return failure("BLOCKED", "Friend requests are unavailable for this relationship.");
     if (mockFriends.has(normalized)) return failure("ALREADY_FRIENDS", "This user is already a friend.");
     if ([...mockRequests.values()].some((request) => request.userId === normalized && request.status === "pending")) return failure("DUPLICATE_REQUEST", "A friend request is already pending.");
