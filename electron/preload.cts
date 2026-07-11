@@ -18,6 +18,7 @@ type NativeNotificationPayload = Readonly<{
   body?: string;
   tag?: string;
   silent?: boolean;
+  deepLink?: string;
 }>;
 type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 type TrayAction = "open" | "settings" | "mute" | "quit" | TrayStatus;

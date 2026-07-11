@@ -1,6 +1,6 @@
 export type WindowAction = "minimize" | "maximize" | "close";
 export type TrayStatus = "online" | "idle" | "dnd" | "invisible";
-export type SafeNotificationPayload = Readonly<{ title: string; body?: string; silent?: boolean }>;
+export type SafeNotificationPayload = Readonly<{ title: string; body?: string; silent?: boolean; deepLink?: string }>;
 export const MAX_CLIPBOARD_TEXT_LENGTH = 1024 * 1024;
 export type ScreenCaptureListPayload = Readonly<{ requestId: string; userInitiated: true }>;
 export type ScreenCaptureSelectionPayload = Readonly<{ requestId: string; sourceId: string }>;
@@ -106,6 +106,17 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     const expectedKind = route === "radio" ? "session" : "episode";
     return segments[1] === expectedKind && isSafeDeepLinkSegment(segments[0]) && isSafeDeepLinkSegment(segments[2]);
   }
+  if (route === "meeting") {
+    const safe = (index: number) => isSafeDeepLinkSegment(segments[index]);
+    if (segments.length===3) return safe(0)&&segments[1]==="room"&&safe(2);
+    if (segments.length===5&&segments[1]==="room") return safe(0)&&safe(2)&&segments[3]==="session"&&safe(4);
+    if (segments[1]!=="channel"||segments[3]!=="room"||!safe(0)||!safe(2)||!safe(4)) return false;
+    if (segments.length===5) return true;
+    if (segments.length===6) return segments[5]==="chat";
+    if (segments.length===7) return segments[5]==="session"&&safe(6);
+    if (segments.length===8) return (segments[5]==="chat"&&segments[6]==="message"&&safe(7))||(segments[5]==="session"&&safe(6)&&segments[7]==="chat");
+    return segments.length===10&&segments[5]==="session"&&safe(6)&&segments[7]==="chat"&&segments[8]==="message"&&safe(9);
+  }
   return (route === "settings" || route === "friends") && segments.length === 0;
 }
 
@@ -126,7 +137,8 @@ export function parseNotificationPayload(value: unknown): SafeNotificationPayloa
   const record = value as Record<string, unknown>;
   const title = sanitizeText(record.title, 120);
   if (!title) return null;
-  return { title, body: sanitizeText(record.body, 240), silent: typeof record.silent === "boolean" ? record.silent : undefined };
+  const deepLink = isSafeDeepLink(record.deepLink) ? record.deepLink : undefined;
+  return { title, body: sanitizeText(record.body, 240), silent: typeof record.silent === "boolean" ? record.silent : undefined, deepLink };
 }
 
 function sanitizeDefaultFileName(value: unknown): string {

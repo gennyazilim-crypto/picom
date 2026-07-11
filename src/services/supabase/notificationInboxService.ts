@@ -16,15 +16,19 @@ export type RemoteNotificationInboxItem = Readonly<{
     channelId?: string;
     messageId?: string;
     podcastEpisodeId?: string;
+    meetingRoomId?: string;
+    meetingSessionId?: string;
+    meetingStartsAt?: string;
+    deepLink?: string;
     userId?: string;
     label: string;
   }>;
 }>;
 
 type InboxResult<T> = { ok: true; data: T } | { ok: false; error: "NOTIFICATION_INBOX_UNAVAILABLE" | "NOTIFICATION_INBOX_FAILED" };
-const selectColumns = "id,category,title,preview,context_kind,context_label,community_id,channel_id,message_id,podcast_episode_id,user_id,created_at,read_at";
+const selectColumns = "id,category,title,preview,context_kind,context_label,community_id,channel_id,message_id,podcast_episode_id,meeting_room_id,meeting_session_id,meeting_starts_at,deep_link,user_id,created_at,read_at";
 
-function mapRow(row: Pick<NotificationRow, "id" | "category" | "title" | "preview" | "context_kind" | "context_label" | "community_id" | "channel_id" | "message_id" | "podcast_episode_id" | "user_id" | "created_at" | "read_at">): RemoteNotificationInboxItem {
+function mapRow(row: Pick<NotificationRow, "id" | "category" | "title" | "preview" | "context_kind" | "context_label" | "community_id" | "channel_id" | "message_id" | "podcast_episode_id" | "meeting_room_id" | "meeting_session_id" | "meeting_starts_at" | "deep_link" | "user_id" | "created_at" | "read_at">): RemoteNotificationInboxItem {
   return {
     id: row.id,
     category: row.category,
@@ -38,6 +42,10 @@ function mapRow(row: Pick<NotificationRow, "id" | "category" | "title" | "previe
       channelId: row.channel_id ?? undefined,
       messageId: row.message_id ?? undefined,
       podcastEpisodeId: row.podcast_episode_id ?? undefined,
+      meetingRoomId: row.meeting_room_id ?? undefined,
+      meetingSessionId: row.meeting_session_id ?? undefined,
+      meetingStartsAt: row.meeting_starts_at ?? undefined,
+      deepLink: row.deep_link ?? undefined,
       userId: row.user_id ?? undefined,
       label: row.context_label,
     },
@@ -81,7 +89,7 @@ export const notificationInboxService = {
     return true;
   },
 
-  async subscribeToChanges(onChange: () => void): Promise<() => void> {
+  async subscribeToChanges(onChange: (item?: RemoteNotificationInboxItem) => void): Promise<() => void> {
     const client = getSupabaseClient();
     if (!client) return () => undefined;
     const { data: { user } } = await client.auth.getUser();
@@ -89,7 +97,10 @@ export const notificationInboxService = {
     const channel = client.channel(`notification-inbox:${user.id}`).on(
       "postgres_changes",
       { event: "*", schema: "public", table: "notifications", filter: `recipient_id=eq.${user.id}` },
-      () => onChange(),
+      (payload) => {
+        const row = payload.new as NotificationRow;
+        onChange(row?.id ? mapRow(row) : undefined);
+      },
     ).subscribe();
     return () => { void client.removeChannel(channel); };
   },

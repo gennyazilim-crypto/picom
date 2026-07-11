@@ -3,6 +3,7 @@ export type DeepLinkAction =
   | { type: "community"; communityId: string; channelId?: string; messageId?: string }
   | { type: "radio"; communityId: string; sessionId: string }
   | { type: "podcast"; communityId: string; episodeId: string }
+  | { type: "meeting"; communityId: string; channelId?: string; roomId: string; sessionId?: string; messageId?: string }
   | { type: "meetingChat"; communityId: string; channelId: string; roomId: string; sessionId?: string; messageId?: string }
   | { type: "authCallback"; code?: string; error?: string }
   | { type: "passwordRecovery"; code?: string; error?: string }
@@ -133,6 +134,8 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   if (route === "meeting" && !parsed.search && !parsed.hash && segments[1] === "channel" && segments[3] === "room" && [segments[0],segments[2],segments[4]].every(isSafeSegment)) {
     const communityId=segments[0],channelId=segments[2],roomId=segments[4];
+    if (segments.length === 5) return { ok: true, url: `picom://meeting/${communityId}/channel/${channelId}/room/${roomId}`, action: { type: "meeting", communityId, channelId, roomId } };
+    if (segments.length === 7 && segments[5] === "session" && isSafeSegment(segments[6])) return { ok: true, url: `picom://meeting/${communityId}/channel/${channelId}/room/${roomId}/session/${segments[6]}`, action: { type: "meeting", communityId, channelId, roomId, sessionId: segments[6] } };
     if (segments.length === 6 && segments[5] === "chat") return { ok: true, url: `picom://meeting/${communityId}/channel/${channelId}/room/${roomId}/chat`, action: { type: "meetingChat", communityId, channelId, roomId } };
     if (segments.length === 8 && segments[5] === "chat" && segments[6] === "message" && isSafeSegment(segments[7])) return { ok: true, url: `picom://meeting/${communityId}/channel/${channelId}/room/${roomId}/chat/message/${segments[7]}`, action: { type: "meetingChat", communityId, channelId, roomId, messageId: segments[7] } };
     if (segments.length >= 8 && segments[5] === "session" && isSafeSegment(segments[6]) && segments[7] === "chat") {
@@ -140,6 +143,13 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
       if (segments.length === 10 && segments[8] === "message" && isSafeSegment(segments[9])) return { ok: true, url: `picom://meeting/${communityId}/channel/${channelId}/room/${roomId}/session/${segments[6]}/chat/message/${segments[9]}`, action: { type: "meetingChat", communityId, channelId, roomId, sessionId: segments[6], messageId: segments[9] } };
     }
     return { ok: false, reason: "INVALID_MEETING_CHAT_LINK" };
+  }
+
+  if (route === "meeting" && !parsed.search && !parsed.hash && segments[1] === "room" && [segments[0],segments[2]].every(isSafeSegment)) {
+    const communityId=segments[0],roomId=segments[2];
+    if (segments.length === 3) return { ok: true, url: `picom://meeting/${communityId}/room/${roomId}`, action: { type: "meeting", communityId, roomId } };
+    if (segments.length === 5 && segments[3] === "session" && isSafeSegment(segments[4])) return { ok: true, url: `picom://meeting/${communityId}/room/${roomId}/session/${segments[4]}`, action: { type: "meeting", communityId, roomId, sessionId: segments[4] } };
+    return { ok: false, reason: "INVALID_MEETING_LINK" };
   }
 
   if (route === "settings" && segments.length === 0) {

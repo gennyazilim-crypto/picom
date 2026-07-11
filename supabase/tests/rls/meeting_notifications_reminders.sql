@@ -1,0 +1,16 @@
+begin;
+select plan(12);
+select has_table('public','meeting_notification_jobs','meeting notification outbox exists');
+select has_column('public','notifications','meeting_room_id','notification has exact meeting room route');
+select has_column('public','notifications','meeting_session_id','notification has exact meeting session route');
+select has_column('public','notifications','deep_link','notification has validated deep link');
+select has_function('public','enqueue_due_meeting_reminders',array['timestamp with time zone','integer'],'reminder scheduler exists');
+select has_function('public','dispatch_due_meeting_notifications',array['integer'],'retry dispatcher exists');
+select has_function('public','process_meeting_notification_jobs',array['timestamp with time zone','integer'],'worker entry point exists');
+select ok((select relrowsecurity from pg_class where oid='public.meeting_notification_jobs'::regclass),'outbox RLS enabled');
+select is((select count(*)::integer from pg_policies where schemaname='public' and tablename='meeting_notification_jobs'),0,'no client outbox policy');
+select ok(not has_table_privilege('authenticated','public.meeting_notification_jobs','select'),'authenticated cannot inspect outbox');
+select ok(has_function_privilege('service_role','public.process_meeting_notification_jobs(timestamp with time zone,integer)','execute'),'service role can run worker');
+select ok(not has_function_privilege('authenticated','public.process_meeting_notification_jobs(timestamp with time zone,integer)','execute'),'authenticated cannot run worker');
+select * from finish();
+rollback;

@@ -7,7 +7,7 @@ export type NotificationCenterItem = Readonly<{
   createdAt: string;
   readAt?: string;
   preferenceCategory?: NotificationCategory;
-  context: Readonly<{ kind: "community" | "dm" | "system"; communityId?: string; channelId?: string; messageId?: string; radioSessionId?: string; podcastEpisodeId?: string; userId?: string; label: string }>;
+  context: Readonly<{ kind: "community" | "dm" | "system"; communityId?: string; channelId?: string; messageId?: string; radioSessionId?: string; podcastEpisodeId?: string; meetingRoomId?: string; meetingSessionId?: string; meetingStartsAt?: string; deepLink?: string; userId?: string; label: string }>;
 }>;
 
 const STORAGE_KEY = "picom.notificationCenter.v1";
@@ -71,6 +71,7 @@ export const notificationCenterService = {
   delete(id: string): void { save(load().filter((item) => item.id !== id)); if (dataSourceService.getStatus().isSupabase && isRemoteId(id)) void notificationInboxService.softDelete(id); },
   replaceFromRemote(items: NotificationCenterItem[]): void { save(items); },
   subscribe(listener: Listener): () => void { listeners.add(listener); return ()=>listeners.delete(listener); },
+  openDeepLink(item: NotificationCenterItem): boolean { const link=item.context.deepLink; return Boolean(link&&deepLinkService.handleDeepLink(link).ok); },
   startRemoteSync(): () => void {
     if (!dataSourceService.getStatus().isSupabase) return () => undefined;
     let active = true;
@@ -90,3 +91,4 @@ import { dataSourceService } from "./dataSourceService";
 import { decideNotificationRoute, type NotificationCategory } from "./notificationService";
 import { settingsService } from "./settingsService";
 import { notificationInboxService, type RemoteNotificationInboxItem } from "./supabase/notificationInboxService";
+import { deepLinkService } from "./deepLinkService";

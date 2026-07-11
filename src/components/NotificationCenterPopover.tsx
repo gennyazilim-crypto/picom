@@ -20,7 +20,7 @@ export function NotificationCenterPopover({ items, onClose, onOpenSource }: { it
         <div className="notification-center-list">
           {filtered.length ? filtered.map((item)=><article key={item.id} className={`notification-center-row ${item.readAt?"":"unread"}`}>
             <span className="notification-row-icon"><AppIcon name={icon(item.category)} size="sm" /></span>
-            <button className="notification-row-copy" onClick={()=>{notificationCenterService.markRead(item.id);onOpenSource(item);}}><strong>{item.title}</strong><span>{item.preview}</span><small>{item.context.label} · {dateTimeService.formatNotificationTimestamp(item.createdAt)}</small></button>
+            <button className="notification-row-copy" onClick={()=>{notificationCenterService.markRead(item.id);notificationCenterService.openDeepLink(item);onOpenSource(item);}}><strong>{item.title}</strong><span>{item.preview}</span><small>{item.context.label} · {dateTimeService.formatNotificationTimestamp(item.createdAt)}</small></button>
             <div className="notification-row-actions">
               {!item.readAt?<button className="notification-read-dot" aria-label={`Mark ${item.title} read`} onClick={()=>notificationCenterService.markRead(item.id)} />:null}
               <button className="notification-delete-button" aria-label={`Remove ${item.title}`} title="Remove notification" onClick={()=>notificationCenterService.delete(item.id)}><AppIcon name="trash" size="xs" /></button>

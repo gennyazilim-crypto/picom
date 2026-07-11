@@ -270,6 +270,10 @@ export type Database = {
         Insert: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_events"]["Row"],"room_id"|"event_type"|"event_source"|"idempotency_key"|"occurred_at">;
         Update: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]>;Relationships:[];
       };
+      meeting_notification_jobs:{
+        Row:{id:string;recipient_id:string;actor_id:string|null;room_id:string;session_id:string|null;event_kind:"reminder"|"started"|"schedule_changed"|"cancelled"|"invite_received"|"waiting_request"|"admission_result"|"cohost_assigned"|"stage_request";event_key:string;title:string;preview:string;context_label:string;deep_link:string;meeting_starts_at:string|null;available_at:string;expires_at:string;attempt_count:number;max_attempts:number;processed_at:string|null;last_error_code:string|null;created_at:string;updated_at:string};
+        Insert:never;Update:never;Relationships:[];
+      };
       meeting_invite_redemptions: {
         Row:{id:string;invite_id:string;user_id:string;redeemed_at:string};
         Insert:Partial<Database["public"]["Tables"]["meeting_invite_redemptions"]["Row"]>&Pick<Database["public"]["Tables"]["meeting_invite_redemptions"]["Row"],"invite_id"|"user_id">;
@@ -416,6 +420,10 @@ export type Database = {
           channel_id: string | null;
           message_id: string | null;
           podcast_episode_id: string | null;
+          meeting_room_id: string | null;
+          meeting_session_id: string | null;
+          meeting_starts_at: string | null;
+          deep_link: string | null;
           user_id: string | null;
           source_event_id: string | null;
           created_at: string;
@@ -976,6 +984,9 @@ export type Database = {
       cancel_meeting_waiting_request:{Args:{target_entry_id:string};Returns:Json};
       list_meeting_waiting_entries:{Args:{target_room_id:string};Returns:Json};
       get_my_meeting_waiting_entry:{Args:{target_room_id:string;target_session_id?:string|null};Returns:Json};
+      dispatch_due_meeting_notifications:{Args:{target_limit?:number};Returns:number};
+      enqueue_due_meeting_reminders:{Args:{target_now?:string;target_limit?:number};Returns:number};
+      process_meeting_notification_jobs:{Args:{target_now?:string;target_limit?:number};Returns:Json};
       create_managed_text_channel: { Args: { target_community_id: string; target_category_id?: string | null; channel_name: string; channel_type?: "text" | "voice" | "forum" | "announcement"; channel_topic?: string | null; channel_is_private?: boolean; channel_public_read_enabled?: boolean }; Returns: Array<Database["public"]["Tables"]["channels"]["Row"]> };
       send_text_message_idempotent: { Args: { target_community_id: string; target_channel_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id?: string | null; target_attachment_ids?: string[] }; Returns: Array<Database["public"]["Tables"]["messages"]["Row"]> };
       complete_current_user_onboarding: { Args: { target_profile: Json; target_followed_user_ids?: string[]; target_theme?: "light" | "dark" | "system" }; Returns: Array<{ completed: boolean; completed_at: string; followed_user_ids: string[]; theme_mode: "light" | "dark" | "system" }> };

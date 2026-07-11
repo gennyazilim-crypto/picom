@@ -7,6 +7,7 @@ declare global {
     body?: string;
     tag?: string;
     silent?: boolean;
+    deepLink?: string;
   };
   type PicomTrayStatus = "online" | "idle" | "dnd" | "invisible";
   type PicomTrayAction = "open" | "settings" | "mute" | "quit" | PicomTrayStatus;

@@ -575,6 +575,7 @@ function registerIpcHandlers(): void {
         body: safePayload.body,
         silent: safePayload.silent
       });
+      if (safePayload.deepLink) notification.on("click",()=>handleNativeDeepLink(safePayload.deepLink));
       notification.show();
       return { ok: true, native: true } as const;
     } catch {

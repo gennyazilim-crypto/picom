@@ -3,6 +3,7 @@ import { settingsService, type NotificationSettings, type QuietHoursSettings } f
 import { notificationDigestService } from "./notificationDigestService";
 import { emergencyKillSwitchService } from "./emergencyKillSwitchService";
 import { notificationPolicyStateService } from "./notificationPolicyStateService";
+import { deepLinkService } from "./deepLinkService";
 import type { NotificationCategory } from "../types/notifications";
 
 export type { NotificationCategory } from "../types/notifications";
@@ -15,6 +16,7 @@ export interface NativeNotificationPayload {
   category?: NotificationCategory;
   tag?: string;
   silent?: boolean;
+  deepLink?: string;
   routing?: Omit<NotificationRouteContext, "category">;
 }
 
@@ -35,6 +37,8 @@ export interface NotificationRouteContext {
   isNearBottom?: boolean;
   channelMuted?: boolean;
   communityMuted?: boolean;
+  activeMeetingRoomId?: string | null;
+  eventMeetingRoomId?: string | null;
   doNotDisturb?: boolean;
   settings?: NotificationSettings;
 }
@@ -134,6 +138,7 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
   const settings = context.settings ?? settingsService.getSettings().notificationSettings;
   const policyState = notificationPolicyStateService.getSnapshot();
   const isActiveChannel = Boolean(context.activeChannelId && context.eventChannelId && context.activeChannelId === context.eventChannelId);
+  const isActiveMeeting = Boolean(context.activeMeetingRoomId && context.eventMeetingRoomId && context.activeMeetingRoomId === context.eventMeetingRoomId);
   const isMention = Boolean(context.isMention || context.category === "mention");
   const doNotDisturb = Boolean(settings.muted || context.doNotDisturb || policyState.doNotDisturb);
   const channelMuted = Boolean(context.channelMuted || notificationPolicyStateService.isChannelMuted(context.channelId ?? context.eventChannelId));
@@ -165,6 +170,10 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
 
   if ((channelMuted || communityMuted) && (!isMention || !settings.allowMentionsFromMutedScopes)) {
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Muted channel or community suppressed this notification." };
+  }
+
+  if (context.appFocused && isActiveMeeting) {
+    return { desktop: false, inbox: false, inAppUnread: false, reason: "User is already viewing this meeting." };
   }
 
   if (context.appFocused && isActiveChannel && context.isNearBottom) {
@@ -258,6 +267,7 @@ export const notificationService = {
           body: payload.body,
           tag: payload.tag,
           silent: shouldBeSilent,
+          deepLink: payload.deepLink,
         });
 
         if (!result.ok) releaseNativeNotification(payload);
@@ -283,11 +293,12 @@ export const notificationService = {
 
     try {
       // Electron can later replace this path with a preload/native bridge while keeping this service API stable.
-      new NativeNotification(payload.title, {
+      const notification = new NativeNotification(payload.title, {
         body: payload.body,
         tag: payload.tag,
         silent: shouldBeSilent,
       });
+      if (payload.deepLink) notification.onclick = () => { deepLinkService.handleDeepLink(payload.deepLink as string); };
       return { ok: true, permission: NativeNotification.permission };
     } catch {
       releaseNativeNotification(payload);
