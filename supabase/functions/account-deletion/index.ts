@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireSupabaseUser } from "../_shared/auth.ts";
 import { handleCorsPreflight } from "../_shared/cors.ts";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
+import { readBoundedJsonObject } from "../_shared/request.ts";
 
 type RequestBody = {
   action?: "request" | "cancel";
@@ -29,12 +30,9 @@ Deno.serve(async (request: Request) => {
   const auth = await requireSupabaseUser(request);
   if (!auth.ok) return auth.response;
 
-  let body: RequestBody;
-  try {
-    body = (await request.json()) as RequestBody;
-  } catch {
-    return errorResponse("VALIDATION_ERROR", "Use a valid account deletion request.", 400);
-  }
+  const parsed = await readBoundedJsonObject<RequestBody>(request, { maxBytes: 1024, allowedKeys: new Set(["action", "confirmationUsername"]) });
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.body;
 
   if (body.action === "cancel") {
     const { data, error } = await auth.supabase.rpc("cancel_current_user_account_deletion");

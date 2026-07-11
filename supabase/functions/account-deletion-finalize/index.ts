@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCorsPreflight } from "../_shared/cors.ts";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
+import { readBoundedJsonObject } from "../_shared/request.ts";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -30,8 +31,9 @@ Deno.serve(async (request: Request) => {
   const suppliedSecret = request.headers.get("x-picom-worker-secret") ?? "";
   if (!expectedSecret || !suppliedSecret || !(await safeEqual(expectedSecret, suppliedSecret))) return errorResponse("FORBIDDEN", "Worker authorization failed.", 403);
 
-  let requestId = "";
-  try { const body = await request.json() as { requestId?: unknown }; requestId = typeof body.requestId === "string" ? body.requestId : ""; } catch { return errorResponse("VALIDATION_ERROR", "Use a valid finalization request.", 400); }
+  const parsed = await readBoundedJsonObject<{ requestId?: unknown }>(request, { maxBytes: 512, allowedKeys: new Set(["requestId"]) });
+  if (!parsed.ok) return parsed.response;
+  const requestId = typeof parsed.body.requestId === "string" ? parsed.body.requestId : "";
   if (!uuidPattern.test(requestId)) return errorResponse("VALIDATION_ERROR", "A valid request ID is required.", 400);
   const supabaseUrl = requiredEnv("SUPABASE_URL");
   const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");

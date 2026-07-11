@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "releasePublic": [
+    { "name": "health", "verifyJwt": false },
+    { "name": "client-config", "verifyJwt": false }
+  ],
+  "releaseAuthenticated": [
+    { "name": "livekit-token", "verifyJwt": true },
+    { "name": "livekit-moderation", "verifyJwt": true },
+    { "name": "validate-file", "verifyJwt": true },
+    { "name": "user-data-export", "verifyJwt": true },
+    { "name": "account-deletion", "verifyJwt": true }
+  ],
+  "releaseInternal": [
+    { "name": "account-deletion-finalize", "verifyJwt": false, "guard": "worker-secret-and-disabled-by-default" }
+  ],
+  "excluded": [
+    { "name": "accept-invite", "classification": "placeholder", "reason": "Invite acceptance uses the RLS-protected database RPC in Full MVP." },
+    { "name": "moderation-helper", "classification": "placeholder", "reason": "Returns an explicit not-implemented response and performs no action." },
+    { "name": "notification-fanout", "classification": "placeholder", "reason": "Provider delivery is not configured for Full MVP." },
+    { "name": "webhook-message", "classification": "post-release", "reason": "Production webhooks are outside locked Full MVP scope." }
+  ],
+  "requiredSecretNames": [
+    "PICOM_ALLOWED_ORIGINS",
+    "LIVEKIT_URL",
+    "LIVEKIT_API_KEY",
+    "LIVEKIT_API_SECRET",
+    "ACCOUNT_DELETION_FINALIZATION_ENABLED",
+    "ACCOUNT_DELETION_WORKER_SECRET"
+  ]
+}

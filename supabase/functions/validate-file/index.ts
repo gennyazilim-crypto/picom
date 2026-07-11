@@ -2,6 +2,7 @@ import { handleCorsPreflight } from "../_shared/cors.ts";
 import { validateImageMetadata } from "../_shared/file-validation.ts";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
 import { requireSupabaseUser } from "../_shared/auth.ts";
+import { readBoundedJsonObject } from "../_shared/request.ts";
 
 type ValidateFileRequest = {
   fileName?: string;
@@ -10,14 +11,6 @@ type ValidateFileRequest = {
 };
 
 type ValidationFailureCode = "UNSUPPORTED_MIME_TYPE" | "UNSUPPORTED_EXTENSION" | "FILE_TOO_LARGE" | "VALIDATION_ERROR";
-
-async function readJsonBody(request: Request): Promise<ValidateFileRequest | null> {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
-}
 
 function toEdgeErrorCode(code: ValidationFailureCode): "UPLOAD_INVALID_TYPE" | "UPLOAD_TOO_LARGE" | "VALIDATION_ERROR" {
   if (code === "FILE_TOO_LARGE") return "UPLOAD_TOO_LARGE";
@@ -37,8 +30,9 @@ Deno.serve(async (request: Request) => {
   const auth = await requireSupabaseUser(request);
   if (!auth.ok) return auth.response;
 
-  const body = await readJsonBody(request);
-  const validation = validateImageMetadata(body?.fileName, body?.mimeType, body?.sizeBytes);
+  const parsed = await readBoundedJsonObject<ValidateFileRequest>(request, { maxBytes: 2048, allowedKeys: new Set(["fileName", "mimeType", "sizeBytes"]) });
+  if (!parsed.ok) return parsed.response;
+  const validation = validateImageMetadata(parsed.body.fileName, parsed.body.mimeType, parsed.body.sizeBytes);
 
   if (!validation.ok) {
     return errorResponse(toEdgeErrorCode(validation.code), validation.message, 400, {

@@ -8,7 +8,23 @@ export const corsHeaders = {
   ...apiCompatibilityHeaders(),
 };
 
+function allowedOrigins(): Set<string> {
+  return new Set((Deno.env.get("PICOM_ALLOWED_ORIGINS") ?? "").split(",").map((value) => value.trim()).filter(Boolean));
+}
+
+function headersForOrigin(origin: string | null): HeadersInit {
+  return { ...corsHeaders, ...(origin ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {}) };
+}
+
 export function handleCorsPreflight(request: Request): Response | null {
+  const origin = request.headers.get("Origin");
+  if (origin && !allowedOrigins().has(origin)) {
+    return new Response(JSON.stringify({ code: "FORBIDDEN", message: "Origin is not allowed." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store", Vary: "Origin" },
+    });
+  }
+
   if (request.method !== "OPTIONS" && requestedApiVersionIsUnsupported(request)) {
     return new Response(JSON.stringify({
       code: "VALIDATION_ERROR",
@@ -16,13 +32,13 @@ export function handleCorsPreflight(request: Request): Response | null {
       details: { supportedApiVersions: [PICOM_API_VERSION] },
     }), {
       status: 400,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+      headers: { "Content-Type": "application/json", ...headersForOrigin(origin) },
     });
   }
 
   if (request.method !== "OPTIONS") return null;
 
   return new Response("ok", {
-    headers: corsHeaders,
+    headers: headersForOrigin(origin),
   });
 }

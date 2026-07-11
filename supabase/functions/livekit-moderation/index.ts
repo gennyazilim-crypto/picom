@@ -2,6 +2,8 @@ import { RoomServiceClient, TrackType } from "npm:livekit-server-sdk@2.17.0";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
 import { requireSupabaseUser } from "../_shared/auth.ts";
 import { createPicomLiveKitRoomName } from "../_shared/livekit-room.ts";
+import { handleCorsPreflight } from "../_shared/cors.ts";
+import { readBoundedJsonObject } from "../_shared/request.ts";
 
 type Action = "mute" | "remove";
 type Body = { communityId?: string; channelId?: string; targetUserId?: string; action?: Action };
@@ -12,16 +14,17 @@ const env = (name: string): string | null => Deno.env.get(name)?.trim() || null;
 const serviceUrl = (value: string): string => value.replace(/^wss:/, "https:").replace(/^ws:/, "http:");
 
 Deno.serve(async (request) => {
-  if (request.method !== "POST") return methodNotAllowed(["POST"]);
-  if (Number(request.headers.get("content-length") || "0") > 2048) return errorResponse("PAYLOAD_TOO_LARGE", "Request body is too large.", 413);
-  let body: Body;
-  try { body = await request.json() as Body; } catch { return errorResponse("VALIDATION_ERROR", "A JSON request body is required.", 400); }
-  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((key) => !allowedKeys.has(key))) return errorResponse("VALIDATION_ERROR", "Voice moderation request is invalid.", 400);
+  const preflight = handleCorsPreflight(request);
+  if (preflight) return preflight;
+  if (request.method !== "POST") return methodNotAllowed(["POST", "OPTIONS"]);
+  const auth = await requireSupabaseUser(request);
+  if (!auth.ok) return auth.response;
+  const parsed = await readBoundedJsonObject<Body>(request, { maxBytes: 2048, allowedKeys });
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.body;
   if (!body.communityId || !body.channelId || !body.targetUserId || ![body.communityId, body.channelId, body.targetUserId].every((value) => uuidPattern.test(value))) return errorResponse("VALIDATION_ERROR", "Valid community, channel, and target identifiers are required.", 400);
   if (body.action !== "mute" && body.action !== "remove") return errorResponse("VALIDATION_ERROR", "action must be mute or remove.", 400);
 
-  const auth = await requireSupabaseUser(request);
-  if (!auth.ok) return auth.response;
   const { data: limitRows, error: limitError } = await auth.supabase.rpc("consume_current_user_action_rate_limit", { target_action: "livekit_token" });
   const limit = Array.isArray(limitRows) ? limitRows[0] as { is_allowed?: boolean; retry_after_seconds?: number } | undefined : undefined;
   if (limitError || !limit?.is_allowed) return errorResponse("RATE_LIMITED", "Voice moderation is temporarily unavailable. Try again shortly.", 429, undefined, { "Retry-After": String(Math.min(Math.max(Number(limit?.retry_after_seconds) || 30, 1), 3600)) });
