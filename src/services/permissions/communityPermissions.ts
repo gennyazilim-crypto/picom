@@ -67,14 +67,23 @@ const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<Community
   },
 };
 
+const MEETING_PERMISSIONS: Readonly<Record<CommunityMembershipStatus, readonly CommunityPermissionKey[]>> = {
+  owner: ["createMeeting","manageMeeting","joinMeeting","publishAudio","publishVideo","shareScreen","admitGuests","manageParticipants","manageStage","viewMeetingHistory","enableCaptions"],
+  admin: ["createMeeting","manageMeeting","joinMeeting","publishAudio","publishVideo","shareScreen","admitGuests","manageParticipants","manageStage","viewMeetingHistory","enableCaptions"],
+  moderator: ["joinMeeting","publishAudio","publishVideo","shareScreen","manageParticipants","manageStage","viewMeetingHistory"],
+  member: ["joinMeeting","publishAudio","publishVideo"],
+  visitor: [],
+};
+
 const KNOWN_PERMISSIONS = new Set<CommunityPermissionKey>([
   ...OWNER_PERMISSIONS,
   ...ADMIN_PERMISSIONS,
   ...MODERATOR_PERMISSIONS,
   ...MEMBER_PERMISSIONS,
   ...Object.values(KIND_PERMISSIONS).flatMap((matrix) => Object.values(matrix).flat()),
+  ...Object.values(MEETING_PERMISSIONS).flat(),
 ]);
-const KIND_SCOPED_PERMISSIONS = new Set<CommunityPermissionKey>(Object.values(KIND_PERMISSIONS).flatMap((matrix) => Object.values(matrix).flat()));
+const KIND_SCOPED_PERMISSIONS = new Set<CommunityPermissionKey>([...Object.values(KIND_PERMISSIONS).flatMap((matrix) => Object.values(matrix).flat()),...Object.values(MEETING_PERMISSIONS).flat()]);
 
 function isCommunityPermissionKey(value: string): value is CommunityPermissionKey {
   return KNOWN_PERMISSIONS.has(value as CommunityPermissionKey);
@@ -144,13 +153,13 @@ function getRolePermissions(status: CommunityMembershipStatus, kind: CommunityKi
   const explicit = roles.flatMap((role) => role.permissionValues ? Object.entries(role.permissionValues).filter(([, allowed]) => allowed).map(([permission]) => permission) : [...(role.capabilities ?? [])])
     .filter(isCommunityPermissionKey)
     .filter((permission) => isCommunityPermissionAvailableForKind(kind, permission));
-  return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...explicit])];
+  return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...MEETING_PERMISSIONS[status], ...explicit])];
 }
 
 export function getDefaultCommunityRolePermissions(role: Role, kind: CommunityKind): CommunityPermissionKey[] {
   const status = getStatus(role, isOwnerRole(role));
   const common = status === "owner" ? OWNER_PERMISSIONS : status === "admin" ? ADMIN_PERMISSIONS : status === "moderator" ? MODERATOR_PERMISSIONS : MEMBER_PERMISSIONS;
-  return [...new Set([...common, ...KIND_PERMISSIONS[kind][status]])];
+  return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...MEETING_PERMISSIONS[status]])];
 }
 
 export function getCommunityAccess(userId: UserId, community: Community): CommunityAccess {

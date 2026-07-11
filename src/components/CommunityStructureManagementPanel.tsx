@@ -6,6 +6,7 @@ import { communityStructureService } from "../services/community/communityStruct
 import { radioCommunityService } from "../services/audio/radioCommunityService";
 import { podcastCommunityService } from "../services/audio/podcastCommunityService";
 import { AppIcon } from "./AppIcon";
+import { CommunityMeetingRoomManagement } from "./CommunityMeetingRoomManagement";
 import "./CommunityStructureManagementPanel.css";
 
 type Props = Readonly<{
@@ -82,7 +83,7 @@ export function CommunityStructureManagementPanel(props: Props) {
   };
 
   if (community.kind === "text") {
-    return <section className="community-structure-manager" aria-label="Text community structure management">
+    return <><CommunityMeetingRoomManagement community={community} access={access} /><section className="community-structure-manager" aria-label="Text community structure management">
       <header className="community-structure-heading"><div><span className="eyebrow">Text community structure</span><h3>Categories and channels</h3><p>Create, order, and protect the routes members use. Accessible move controls are always available.</p></div><AppIcon name="hash" size="lg" /></header>
       {notice ? <p className={notice.error ? "structure-notice error" : "structure-notice"} role={notice.error ? "alert" : "status"}>{notice.text}</p> : null}
       <form className="structure-create-row" onSubmit={(event) => { event.preventDefault(); const name = newCategoryName.trim(); if (!name) return; void run(async () => { await props.onCreateCategory(name); setNewCategoryName(""); }); }}>
@@ -128,7 +129,7 @@ export function CommunityStructureManagementPanel(props: Props) {
         <div className="structure-override-list">{overrides.length ? overrides.map((item) => <span key={`${item.roleId}:${item.permission}`}><strong>{community.roles.find((role) => role.id === item.roleId)?.name ?? "Role"}</strong>{item.permission}: {item.effect}</span>) : <p>No explicit overrides. Role permissions are inherited.</p>}</div>
       </section> : null}
       {pendingCategoryDelete ? <div className="structure-inline-confirm" role="alertdialog" aria-modal="true"><strong>Delete this category?</strong><p>Its channels move to the first remaining category so active routes remain valid.</p><footer><button type="button" onClick={() => setPendingCategoryDelete(null)}>Cancel</button><button type="button" className="danger-action" onClick={() => void run(async () => { await props.onDeleteCategory(pendingCategoryDelete); setPendingCategoryDelete(null); })}>Confirm delete</button></footer></div> : null}
-    </section>;
+    </section></>;
   }
 
   const audioKind = community.kind === "radio" ? "radio" : "podcast";
@@ -138,7 +139,7 @@ export function CommunityStructureManagementPanel(props: Props) {
     setSections((current) => current.map((item) => item.id === section.id ? result.data : item)); setNotice({ error: false, text: `${result.data.label} updated.` });
   };
 
-  return <section className="community-structure-manager" aria-label={`${community.kind} community structure management`}>
+  return <><CommunityMeetingRoomManagement community={community} access={access} /><section className="community-structure-manager" aria-label={`${community.kind} community structure management`}>
     <header className="community-structure-heading"><div><span className="eyebrow">{community.kind} content structure</span><h3>{community.kind === "radio" ? "Station sections" : "Publishing sections"}</h3><p>Only compatible sections are available. Visibility and ordering persist for every member route.</p></div><AppIcon name={community.kind === "radio" ? "voice" : "microphone"} size="lg" /></header>
     {notice ? <p className={notice.error ? "structure-notice error" : "structure-notice"} role={notice.error ? "alert" : "status"}>{notice.text}</p> : null}
     <div className="structure-toolbar"><span>{sections.length} configured sections</span><button type="button" disabled={busy} onClick={() => void run(async () => { const result = await communityStructureService.restoreDefaultSections(community.id, audioKind); if (!result.ok) { setNotice({ error: true, text: result.error }); return; } setSections(result.data); setSelectedSectionId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? null); setNotice({ error: false, text: "Compatible default sections restored." }); })}><AppIcon name="plus" size="sm" />Restore missing defaults</button></div>
@@ -157,5 +158,5 @@ export function CommunityStructureManagementPanel(props: Props) {
       </article>)}
     </div>}
     {pendingSectionDelete ? <div className="structure-inline-confirm" role="alertdialog" aria-modal="true"><strong>Delete {pendingSectionDelete.label}?</strong><p>The section can be recreated with Restore missing defaults. Linked content is retained.</p><footer><button type="button" onClick={() => setPendingSectionDelete(null)}>Cancel</button><button type="button" className="danger-action" onClick={() => void run(async () => { const target = pendingSectionDelete; const result = await communityStructureService.deleteSection(target); if (!result.ok) { setNotice({ error: true, text: result.error }); return; } const remaining = sections.filter((item) => item.id !== target.id).map((item, position) => ({ ...item, position })); setSections(remaining); setSelectedSectionId((current) => current === target.id ? remaining[0]?.id ?? null : current); setPendingSectionDelete(null); setNotice({ error: false, text: `${target.label} removed; linked content was retained.` }); })}>Confirm delete</button></footer></div> : null}
-  </section>;
+  </section></>;
 }
