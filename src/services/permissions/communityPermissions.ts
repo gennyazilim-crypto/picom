@@ -97,10 +97,16 @@ export function isCommunityPublicReadEnabled(community: Community): boolean {
   return community.publicReadEnabled ?? false;
 }
 
-export function getUserCommunityRole(userId: UserId, community: Community): { member?: Member; role?: Role } {
+export function getAssignedCommunityRoles(member: Member | undefined, community: Community): Role[] {
+  if (!member) return [];
+  const roleIds = member.roleIds?.length ? member.roleIds : [member.roleId];
+  return community.roles.filter((role) => roleIds.includes(role.id)).sort((a, b) => getRolePosition(b) - getRolePosition(a));
+}
+
+export function getUserCommunityRole(userId: UserId, community: Community): { member?: Member; role?: Role; roles: Role[] } {
   const member = community.members.find((candidate) => candidate.userId === userId);
-  const role = member ? community.roles.find((candidate) => candidate.id === member.roleId) : undefined;
-  return { member, role };
+  const roles = getAssignedCommunityRoles(member, community);
+  return { member, role: roles[0], roles };
 }
 
 export function getRolePosition(role?: Pick<Role, "level">): number {
@@ -125,7 +131,7 @@ function getStatus(role?: Role, isOwner = false): CommunityMembershipStatus {
   return "member";
 }
 
-function getRolePermissions(status: CommunityMembershipStatus, kind: CommunityKind, role?: Role): CommunityPermissionKey[] {
+function getRolePermissions(status: CommunityMembershipStatus, kind: CommunityKind, roles: readonly Role[] = []): CommunityPermissionKey[] {
   const common = status === "owner"
     ? OWNER_PERMISSIONS
     : status === "admin"
@@ -135,7 +141,7 @@ function getRolePermissions(status: CommunityMembershipStatus, kind: CommunityKi
         : status === "member"
           ? MEMBER_PERMISSIONS
           : [];
-  const explicit = (role?.capabilities ?? [])
+  const explicit = roles.flatMap((role) => role.permissionValues ? Object.entries(role.permissionValues).filter(([, allowed]) => allowed).map(([permission]) => permission) : [...(role.capabilities ?? [])])
     .filter(isCommunityPermissionKey)
     .filter((permission) => isCommunityPermissionAvailableForKind(kind, permission));
   return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...explicit])];
@@ -148,7 +154,7 @@ export function getDefaultCommunityRolePermissions(role: Role, kind: CommunityKi
 }
 
 export function getCommunityAccess(userId: UserId, community: Community): CommunityAccess {
-  const { member, role } = getUserCommunityRole(userId, community);
+  const { member, role, roles } = getUserCommunityRole(userId, community);
   const owner = isCommunityOwner(userId, community);
   const status = getStatus(role, owner);
   const visibility = getCommunityVisibility(community);
@@ -158,7 +164,7 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
   const publicReadPermission: CommunityPermissionKey = community.kind === "radio" ? "viewRadioContent" : "viewPodcastContent";
   const permissions = isVisitor && canViewPublicContent && community.kind !== "text"
     ? [publicReadPermission]
-    : getRolePermissions(status, community.kind, role);
+    : getRolePermissions(status, community.kind, roles);
 
   return {
     userId,
@@ -197,8 +203,9 @@ export function resolveCommunityPermission(
   if (!isCommunityPermissionAvailableForKind(access.communityKind, permission)) return false;
   let allowed = hasCommunityPermission(access, permission);
   if (access.isOwner || !access.role) return allowed;
+  const roleIds = access.member?.roleIds?.length ? access.member.roleIds : [access.role.id];
   for (const scope of scopes) {
-    const matching = overrides.filter((override) => override.roleId === access.role?.id && override.permission === permission && override.scope.type === scope.type && override.scope.id === scope.id);
+    const matching = overrides.filter((override) => roleIds.includes(override.roleId) && override.permission === permission && override.scope.type === scope.type && override.scope.id === scope.id);
     if (matching.some((override) => override.effect === "deny")) allowed = false;
     else if (matching.some((override) => override.effect === "allow")) allowed = true;
   }
@@ -217,14 +224,14 @@ export function canManageCommunityRole(access: CommunityAccess, targetRole: Role
 
 export function canAssignCommunityRole(access: CommunityAccess, community: Community, targetMember: Member, targetRole: Role): boolean {
   if (!canManageCommunityRole(access, targetRole)) return false;
-  const currentTargetRole = community.roles.find((role) => role.id === targetMember.roleId);
+  const currentTargetRole = getAssignedCommunityRoles(targetMember, community)[0];
   if (!currentTargetRole || targetMember.userId === community.ownerId || isOwnerRole(currentTargetRole)) return false;
   return access.isOwner || getRolePosition(access.role) > getRolePosition(currentTargetRole);
 }
 
 export function canDeleteCommunityRole(access: CommunityAccess, community: Community, targetRole: Role): boolean {
   if (!canManageCommunityRole(access, targetRole) || targetRole.isDefault) return false;
-  return !community.members.some((member) => member.roleId === targetRole.id);
+  return !community.members.some((member) => member.roleId === targetRole.id || member.roleIds?.includes(targetRole.id));
 }
 
 export function canManageCommunity(access: CommunityAccess): boolean {
@@ -241,7 +248,7 @@ export function canManageMembers(access: CommunityAccess): boolean {
 
 export function canModerateCommunityMember(access: CommunityAccess, community: Community, targetMember: Member, _action: MemberModerationAction): boolean {
   if (!canManageMembers(access) || targetMember.userId === access.userId) return false;
-  const targetRole = community.roles.find((role) => role.id === targetMember.roleId);
+  const targetRole = getAssignedCommunityRoles(targetMember, community)[0];
   if (!targetRole) return false;
   if (targetMember.userId === community.ownerId || isOwnerRole(targetRole)) return false;
   const actorLevel = access.isOwner ? 101 : getRolePosition(access.role);

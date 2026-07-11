@@ -80,6 +80,7 @@ export interface Member {
   status: UserStatus;
   statusText: string;
   roleId: RoleId;
+  roleIds?: RoleId[];
   bio?: string;
   isBot?: boolean;
 }

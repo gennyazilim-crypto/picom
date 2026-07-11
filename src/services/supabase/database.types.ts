@@ -103,6 +103,16 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_rules"]["Row"]>;
         Relationships: [];
       };
+      community_member_roles: {
+        Row: { id: string; community_id: string; member_id: string; role_id: string; is_primary: boolean; assigned_by: string | null; assigned_at: string };
+        Insert: Partial<Database["public"]["Tables"]["community_member_roles"]["Row"]> & Pick<Database["public"]["Tables"]["community_member_roles"]["Row"], "community_id" | "member_id" | "role_id">;
+        Update: Partial<Database["public"]["Tables"]["community_member_roles"]["Row"]>;
+        Relationships: [];
+      };
+      community_member_role_audit: {
+        Row: { id: string; community_id: string; member_id: string; target_user_id: string; actor_id: string; old_role_ids: string[]; new_role_ids: string[]; reason: string; created_at: string };
+        Insert: never; Update: never; Relationships: [];
+      };
       community_permission_definitions: {
         Row: { permission_key: string; category: string; allowed_kinds: string[]; delegable: boolean; owner_reserved: boolean; description: string; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["community_permission_definitions"]["Row"]> & Pick<Database["public"]["Tables"]["community_permission_definitions"]["Row"], "permission_key" | "category" | "description">;
@@ -685,6 +695,7 @@ export type Database = {
       update_community_role: { Args: { target_community_id: string; target_role_id: string; target_name: string; target_color: string; target_icon: string | null; target_level: number; target_permissions: Json; change_reason: string }; Returns: Array<Database["public"]["Tables"]["roles"]["Row"]> };
       swap_community_role_order: { Args: { target_community_id: string; target_role_id: string; adjacent_role_id: string; change_reason: string }; Returns: Array<Database["public"]["Tables"]["roles"]["Row"]> };
       delete_community_role: { Args: { target_community_id: string; target_role_id: string; change_reason: string }; Returns: boolean };
+      set_community_member_roles: { Args: { target_community_id: string; target_member_id: string; target_role_ids: string[]; change_reason: string }; Returns: Array<{ member_id: string; community_id: string; user_id: string; primary_role_id: string; role_ids: string[] }> };
       join_current_user_radio_listener: { Args: { target_session_id: string }; Returns: Array<Database["public"]["Tables"]["radio_listeners"]["Row"]> };
       leave_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };
       heartbeat_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };

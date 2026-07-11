@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const read=(path)=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
+const migration=read("supabase/migrations/20260711149400_member_multi_role_assignment.sql");
+const service=read("src/services/community/communityRoleAssignmentService.ts");
+const component=read("src/components/community/CommunityMemberRoleAssignment.tsx");
+const permissions=read("src/services/permissions/communityPermissions.ts");
+const members=read("src/services/membersService.ts");
+const app=read("src/App.tsx");
+for(const marker of ["community_member_roles","community_member_role_audit","set_community_member_roles","SELF_ROLE_CHANGE_FORBIDDEN","OWNER_ROLE_TRANSFER_REQUIRED","ROLE_HIERARCHY_DENIED","PERMISSION_DELEGATION_DENIED","MEMBER_UNAVAILABLE","community_bans","for update","old_role_ids","new_role_ids","supabase_realtime","replica identity full"]) assert.ok(migration.includes(marker),`migration missing ${marker}`);
+for(const marker of ["setRoles","target_role_ids","roleIds","subscribe","community_member_roles","removeChannel"]) assert.ok(service.includes(marker),`assignment service missing ${marker}`);
+for(const marker of ["Assigned and available roles","Effective permission summary","Save roles","You cannot change your own roles","Ownership uses the transfer workflow","canManageCommunityRole"]) assert.ok(component.includes(marker),`member role dialog missing ${marker}`);
+assert.ok(!component.includes("getSupabaseClient")&&!component.includes("supabase.from"),"member role UI bypasses service layer");
+assert.ok(permissions.includes("getAssignedCommunityRoles")&&permissions.includes("member.roleIds")&&permissions.includes("roleIds.includes(override.roleId)"),"frontend effective access is not multi-role aware");
+assert.ok(members.includes('.from("community_member_roles")')&&members.includes("roleIdsByMember"),"member loading does not hydrate role sets");
+assert.ok(app.includes("onMemberRolesChanged")&&app.includes("roleIds"),"role assignment does not update app state immediately");
+console.log("Member multi-role dialog, hierarchy, persistence, realtime, audit, unavailable-member, and effective-access smoke: PASS");

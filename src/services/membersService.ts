@@ -18,6 +18,7 @@ export type MemberSummary = Readonly<{
   communityId: string;
   userId: string;
   roleId: string | null;
+  roleIds: string[];
   joinedAt: string;
   displayName: string | null;
   username: string | null;
@@ -53,12 +54,13 @@ function membersError(code: MembersServiceErrorCode, message: string): MembersSe
   return { ok: false, error: { code, message } };
 }
 
-function mapMemberRow(row: MemberRow): MemberSummary {
+function mapMemberRow(row: MemberRow, roleIds: string[] = row.role_id ? [row.role_id] : []): MemberSummary {
   return {
     id: row.id,
     communityId: row.community_id,
     userId: row.user_id,
     roleId: row.role_id,
+    roleIds,
     joinedAt: row.joined_at,
     displayName: null,
     username: null,
@@ -73,12 +75,13 @@ function toUserStatus(value: string | null | undefined): UserStatus {
   return "offline";
 }
 
-function mapMemberWithProfile(row: MemberRow, profile?: ProfileRow): MemberSummary {
+function mapMemberWithProfile(row: MemberRow, profile?: ProfileRow, roleIds: string[] = row.role_id ? [row.role_id] : []): MemberSummary {
   return {
     id: row.id,
     communityId: row.community_id,
     userId: row.user_id,
     roleId: row.role_id,
+    roleIds,
     joinedAt: row.joined_at,
     displayName: profile?.display_name ?? null,
     username: profile?.username ?? null,
@@ -121,6 +124,7 @@ export const membersService = {
           communityId,
           userId: member.userId,
           roleId: member.roleId,
+          roleIds: member.roleIds?.length ? [...member.roleIds] : [member.roleId],
           joinedAt: new Date(0).toISOString(),
           displayName: member.displayName,
           username: member.username,
@@ -152,7 +156,11 @@ export const membersService = {
           .in("id", userIds)
       : { data: [] };
     const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile as ProfileRow]));
+    const memberIds = data.map((member) => member.id);
+    const { data: memberRoles } = memberIds.length ? await configured.data.from("community_member_roles").select("member_id, role_id, is_primary").in("member_id", memberIds) : { data: [] };
+    const roleIdsByMember = new Map<string, string[]>();
+    for (const assignment of memberRoles ?? []) roleIdsByMember.set(assignment.member_id, [...(roleIdsByMember.get(assignment.member_id) ?? []), assignment.role_id]);
 
-    return { ok: true, data: data.map((member) => mapMemberWithProfile(member, profileById.get(member.user_id)) ?? mapMemberRow(member)) };
+    return { ok: true, data: data.map((member) => mapMemberWithProfile(member, profileById.get(member.user_id), roleIdsByMember.get(member.id)) ?? mapMemberRow(member, roleIdsByMember.get(member.id))) };
   },
 };

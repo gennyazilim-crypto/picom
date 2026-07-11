@@ -188,7 +188,7 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
   );
 }
 
-export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onAssignMemberRole, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onAssignMemberRole: (memberId: string, roleId: string) => void; onCommunityRolesChanged: (roles: Community["roles"]) => void; onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
+export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onMemberRolesChanged, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onMemberRolesChanged: (memberId: string, roleIds: string[], primaryRoleId: string) => void; onCommunityRolesChanged: (roles: Community["roles"]) => void; onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("overview");
   const sections = adminSectionDefinitions.filter((section) => {
     if (section.ownerOnly) return access.isOwner;
@@ -206,7 +206,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "verification") return <CommunityVerificationRequestCard community={community} />;
     if (activeSection === "channels") return <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
     if (activeSection === "roles") return <CommunityRolesSection community={community} access={access} onRolesChanged={onCommunityRolesChanged} />;
-    if (activeSection === "members") return <CommunityMembersSection community={community} access={access} onRoleAssigned={onAssignMemberRole} />;
+    if (activeSection === "members") return <CommunityMembersSection community={community} access={access} onMemberRolesChanged={onMemberRolesChanged} />;
     if (activeSection === "emojis") return sectionTools?.emojis ?? <div className="community-admin-empty">No custom emojis loaded.</div>;
     if (activeSection === "stickers") return sectionTools?.stickers ?? <div className="community-admin-empty">No sticker packs loaded.</div>;
     if (activeSection === "bots") return sectionTools?.bots ?? <div className="community-admin-empty">No bots installed.</div>;

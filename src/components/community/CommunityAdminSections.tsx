@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import type { Community } from "../../types/community";
 import type { CommunityAccess } from "../../types/communityAccess";
 import { reportService } from "../../services/reportService";
@@ -7,10 +7,10 @@ import { dateTimeService } from "../../services/dateTimeService";
 import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
-import { canAssignCommunityRole } from "../../services/permissions/communityPermissions";
-import { communityRoleAssignmentService } from "../../services/community/communityRoleAssignmentService";
 import { communityService, type CommunitySummary } from "../../services/communityService";
-import { CommunityRoleManagement } from "./CommunityRoleManagement";
+
+const CommunityRoleManagement = lazy(() => import("./CommunityRoleManagement").then((module) => ({ default: module.CommunityRoleManagement })));
+const CommunityMemberRoleAssignment = lazy(() => import("./CommunityMemberRoleAssignment").then((module) => ({ default: module.CommunityMemberRoleAssignment })));
 
 export type AdminSectionId = "overview" | "insights" | "community-settings" | "verification" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
@@ -75,24 +75,11 @@ export function CommunityChannelsSection({ community, onCreateChannel }: { commu
 }
 
 export function CommunityRolesSection({ community, access, onRolesChanged }: { community: Community; access: CommunityAccess; onRolesChanged: (roles: Community["roles"]) => void }) {
-  return <SectionShell eyebrow="Access architecture" title="Roles and permissions" description="Create custom roles, control permissions, and order the visible hierarchy through audited service operations."><CommunityRoleManagement community={community} access={access} onRolesChanged={onRolesChanged} /></SectionShell>;
+  return <SectionShell eyebrow="Access architecture" title="Roles and permissions" description="Create custom roles, control permissions, and order the visible hierarchy through audited service operations."><Suspense fallback={<div className="community-admin-empty">Loading role editor...</div>}><CommunityRoleManagement community={community} access={access} onRolesChanged={onRolesChanged} /></Suspense></SectionShell>;
 }
 
-export function CommunityMembersSection({ community, access, onRoleAssigned }: { community: Community; access: CommunityAccess; onRoleAssigned: (memberId: string, roleId: string) => void }) {
-  const [pendingRoles, setPendingRoles] = useState<Record<string, string>>({});
-  const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const assign = async (member: Community["members"][number]) => {
-    const roleId = pendingRoles[member.id] ?? member.roleId;
-    const role = community.roles.find((candidate) => candidate.id === roleId);
-    if (!role || roleId === member.roleId) return;
-    setBusyMemberId(member.id); setError(null);
-    const result = await communityRoleAssignmentService.assignRole({ community, access, member, role });
-    if (result.ok) { onRoleAssigned(member.id, result.data.roleId); setPendingRoles((current) => ({ ...current, [member.id]: result.data.roleId })); }
-    else setError(result.error.message);
-    setBusyMemberId(null);
-  };
-  return <SectionShell eyebrow="People" title="Members" description="Assign roles within your hierarchy. Ownership changes use the separate transfer flow.">{error ? <p className="moderation-queue-error" role="alert">{error}</p> : null}<div className="community-admin-member-list">{community.members.map((member) => { const role = community.roles.find((candidate) => candidate.id === member.roleId); const assignableRoles = community.roles.filter((candidate) => canAssignCommunityRole(access, community, member, candidate)); const canManage = assignableRoles.length > 0; const selectedRoleId = pendingRoles[member.id] ?? member.roleId; return <article key={member.id}><MemberAvatar member={member} size={36} /><div><strong>{member.displayName}</strong><span>@{member.username}</span></div>{canManage ? <div className="role-assignment-controls"><select aria-label={`Role for ${member.displayName}`} value={selectedRoleId} onChange={(event) => setPendingRoles((current) => ({ ...current, [member.id]: event.target.value }))}>{assignableRoles.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}</select><button type="button" disabled={selectedRoleId === member.roleId || busyMemberId === member.id} onClick={() => void assign(member)}>{busyMemberId === member.id ? "Saving..." : "Apply"}</button></div> : <em>{role?.name ?? "Member"}</em>}</article>; })}</div></SectionShell>;
+export function CommunityMembersSection({ community, access, onMemberRolesChanged }: { community: Community; access: CommunityAccess; onMemberRolesChanged: (memberId: string, roleIds: string[], primaryRoleId: string) => void }) {
+  return <SectionShell eyebrow="People and access" title="Member roles" description="Assign one or more roles to a member. Self, Owner, and equal-or-higher hierarchy changes remain blocked."><Suspense fallback={<div className="community-admin-empty">Loading member access...</div>}><CommunityMemberRoleAssignment community={community} access={access} onMemberRolesChanged={onMemberRolesChanged} /></Suspense></SectionShell>;
 }
 
 export function CommunityInvitesSection({ onOpenInvite }: { onOpenInvite: () => void }) {
