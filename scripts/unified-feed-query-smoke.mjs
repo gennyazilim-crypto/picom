@@ -12,6 +12,9 @@ const ranking=await import(`data:text/javascript;base64,${Buffer.from(compiled).
 for(const marker of ["security_invoker = true","public.can_view_content_mention","public.user_follows","public.read_states","public.audio_feed_read_states","public.saved_messages","public.saved_audio_items","cursor_rank","cursor_created_at","cursor_feed_item_id","feed_item_id desc","visible_content_feed_engagement"])
   assert.ok(migration.includes(marker),`missing Feed SQL contract: ${marker}`);
 assert.ok(service.includes('client.rpc("list_ranked_unified_feed"'),"Feed service must use one ranked RPC");
+assert.ok(service.includes("const fetchLimit = limit + 1"),"Feed service must over-fetch one row for exact cursor detection");
+assert.ok(service.includes("const hasNextPage = rows.length > limit"),"Feed service must not emit a false terminal cursor");
+assert.ok(service.includes("rows.slice(0, limit)"),"Feed service must hide the look-ahead row from the page");
 assert.ok(service.includes("dataSourceService.getStatus().isMock"),"Feed service must preserve mock mode");
 assert.ok(service.includes("no_followed_mentions"),"Following empty state contract missing");
 assert.ok(types.includes('"popular" | "following"'),"distinct Feed modes missing");

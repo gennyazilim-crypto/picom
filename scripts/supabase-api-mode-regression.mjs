@@ -90,6 +90,9 @@ try {
   assertContains("src/services/friends/friendRequestService.ts", 'rpc("send_friend_request"', "Friends Supabase lifecycle path");
   assertContains("src/services/supabase/directMessageService.ts", 'rpc("send_direct_message_v3"', "atomic Direct Message send path");
   assertContains("src/services/directMessages/directRealtimeService.ts", "direct_message_attachments", "Direct Message Realtime attachment path");
+  assertContains("src/services/feed/feedQueryService.ts", '.rpc("list_ranked_unified_feed"', "unified Feed Supabase query path");
+  assertContains("src/services/feed/feedQueryService.ts", "const fetchLimit = limit + 1", "unified Feed exact pagination look-ahead");
+  assertContains("src/services/feed/feedRealtimeService.ts", '"audio_feed_read_states"', "unified Feed audio state Realtime path");
   assertContains(".env.example", "VITE_SUPABASE_URL", "Supabase URL env example");
   assertContains(".env.example", "VITE_SUPABASE_ANON_KEY", "Supabase anon key env example");
   assertContains(".env.example", "SUPABASE_SERVICE_ROLE_KEY", "server-only service role env documentation");

@@ -18,6 +18,7 @@ const requiredFiles = [
   "text_community_messaging_integration.sql",
   "audio_production_integration.sql",
   "friends_dm_production_integration.sql",
+  "feed_mentions_production_integration.sql",
 ];
 
 const requiredScenarioSnippets = [
@@ -65,6 +66,9 @@ const requiredScenarioSnippets = [
   "DM message and attachment metadata commit through one RPC",
   "DM pending uploads require an authorized participant",
   "Friends and Direct Messages Realtime publications cover production tables",
+  "Feed RPC reserves one look-ahead row for exact keyset pagination",
+  "Feed state changes are published for realtime reconciliation",
+  "Feed visibility remains source-authorized by RLS",
 ];
 
 function fail(message) {

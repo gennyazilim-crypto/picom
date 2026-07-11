@@ -21,6 +21,9 @@ requireText(migration, "pg_publication_tables", "idempotent realtime publication
 requireText(migration, "public.can_view_message(message.id)", "source authorization");
 requireText(realtime, '"content_mentions"', "unified mention subscription");
 requireText(realtime, '"read_states"', "read reconciliation subscription");
+requireText(realtime, '"user_follows"', "following tab reconciliation subscription");
+requireText(realtime, '"audio_feed_read_states"', "audio read-state reconciliation subscription");
+requireText(realtime, '"saved_audio_items"', "audio saved-state reconciliation subscription");
 requireText(realtime, '"radio_sessions"', "Radio subscription");
 requireText(realtime, '"podcast_episode_comments"', "Podcast comment subscription");
 requireText(realtime, "setTimeout(() =>", "event coalescing");

@@ -37,6 +37,7 @@ const requiredChain = [
   "20260711151000_text_community_messaging_integration.sql",
   "20260711151100_audio_production_integration.sql",
   "20260711151200_friends_dm_production_integration.sql",
+  "20260711151300_unified_feed_mentions_production_integration.sql",
 ];
 let lastIndex = -1;
 for (const required of requiredChain) { const index = files.indexOf(required); if (index < 0) throw new Error(`Required Full MVP migration is missing: ${required}`); if (index <= lastIndex) throw new Error(`Full MVP migration chain is out of order: ${required}`); lastIndex = index; }

@@ -101,20 +101,23 @@ export const feedQueryService = {
       : { ok: false, error: { code: "FEED_BACKEND_UNAVAILABLE", message: "The Feed is temporarily unavailable." } };
     const limit = resultLimit(query.limit);
     const rankingEpoch = query.cursor?.rankingEpoch ?? new Date().toISOString();
+    const fetchLimit = limit + 1;
     const { data, error } = await client.rpc("list_ranked_unified_feed", {
       feed_mode: query.mode, ranking_epoch_input: rankingEpoch, cursor_rank: query.cursor?.rankingScore ?? null,
       cursor_created_at: query.cursor?.createdAt ?? null, cursor_feed_item_id: query.cursor?.feedItemId ?? null,
       source_types: query.sourceTypes?.length ? [...query.sourceTypes] : null, created_after: query.createdAfter ?? null,
-      unread_only: query.unreadOnly ?? false, saved_only: query.savedOnly ?? false, result_limit: limit,
+      unread_only: query.unreadOnly ?? false, saved_only: query.savedOnly ?? false, result_limit: fetchLimit,
     });
     if (error) return cached && Date.now() - cached.updatedAt <= PAGE_CACHE_STALE_MS
       ? { ok: true, data: { ...cached.page, isStale: true } }
       : { ok: false, error: { code: "FEED_LOAD_FAILED", message: error.message } };
-    const items = ((data ?? []) as RankedFeedRow[]).map(mapRow);
+    const rows = (data ?? []) as RankedFeedRow[];
+    const hasNextPage = rows.length > limit;
+    const items = rows.slice(0, limit).map(mapRow);
     const last = items[items.length - 1];
     const page: UnifiedFeedPage = {
       items,
-      nextCursor: items.length === limit && last ? { rankingScore: last.rankingScore, createdAt: last.mention.createdAt, feedItemId: last.feedItemId, rankingEpoch: last.rankingEpoch } : null,
+      nextCursor: hasNextPage && last ? { rankingScore: last.rankingScore, createdAt: last.mention.createdAt, feedItemId: last.feedItemId, rankingEpoch: last.rankingEpoch } : null,
       rankingEpoch,
       emptyState: items.length ? null : query.mode === "following" ? "no_followed_mentions" : "no_visible_mentions",
     };
