@@ -14,6 +14,7 @@ export type UploadImageAttachmentInput = Readonly<{
   file: File;
   userId?: string;
   signal?: AbortSignal;
+  onProgress?: (progress: Readonly<{ percent: number; stage: "validating" | "uploading" | "finalizing" }>) => void;
 }>;
 
 export type UploadedAttachmentSummary = Readonly<{
@@ -136,6 +137,7 @@ export const uploadService = {
   sanitizeUploadFileName,
 
   async uploadImageAttachment(input: UploadImageAttachmentInput): Promise<UploadServiceResult<UploadedAttachmentSummary>> {
+    input.onProgress?.({ percent: 5, stage: "validating" });
     const validationError = validateInput(input);
     if (validationError) return { ok: false, error: validationError };
     if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
@@ -162,6 +164,7 @@ export const uploadService = {
         mimeType: input.file.type,
         sizeBytes: input.file.size,
       });
+      input.onProgress?.({ percent: 100, stage: "finalizing" });
       return {
         ok: true,
         data: {
@@ -198,6 +201,7 @@ export const uploadService = {
     const storagePath = createPendingStoragePath(input, userId);
     if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
 
+    input.onProgress?.({ percent: 30, stage: "uploading" });
     const { error } = await configured.data.storage
       .from(MESSAGE_ATTACHMENTS_BUCKET)
       .upload(storagePath, input.file, {
@@ -205,7 +209,10 @@ export const uploadService = {
         upsert: false,
       });
 
-    if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
+    if (isUploadCanceled(input)) {
+      if (!error) await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).remove([storagePath]);
+      return uploadError("UPLOAD_CANCELED", "Upload canceled.");
+    }
 
     if (error) {
       if (isRateLimitError(error)) return uploadError("RATE_LIMITED", rateLimitUserMessage);
@@ -218,6 +225,7 @@ export const uploadService = {
       mimeType: input.file.type,
       sizeBytes: input.file.size,
     });
+    input.onProgress?.({ percent: 100, stage: "finalizing" });
     return {
       ok: true,
       data: {
@@ -236,5 +244,15 @@ export const uploadService = {
         scanStatus: "pending",
       },
     };
+  },
+
+  async removePending(storagePath: string): Promise<boolean> {
+    const normalized = storagePath.trim().replace(/\\/g, "/");
+    if (!normalized.includes("/pending/")) return false;
+    if (dataSourceService.getStatus().isMock) return true;
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return false;
+    const { error } = await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).remove([normalized]);
+    return !error;
   },
 };

@@ -19,6 +19,7 @@ const requiredFiles = [
   "audio_production_integration.sql",
   "friends_dm_production_integration.sql",
   "feed_mentions_production_integration.sql",
+  "storage_lifecycle_full_mvp.sql",
 ];
 
 const requiredScenarioSnippets = [
@@ -69,6 +70,10 @@ const requiredScenarioSnippets = [
   "Feed RPC reserves one look-ahead row for exact keyset pagination",
   "Feed state changes are published for realtime reconciliation",
   "Feed visibility remains source-authorized by RLS",
+  "cross-user private Text objects require source visibility",
+  "cross-user private DM objects require participant visibility",
+  "cross-user private audio objects require source visibility",
+  "orphan inventory is service-role only",
 ];
 
 function fail(message) {

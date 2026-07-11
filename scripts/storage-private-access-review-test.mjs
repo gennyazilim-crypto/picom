@@ -9,6 +9,8 @@ const upload = read("src/services/uploadService.ts");
 const metadata = read("src/services/attachmentService.ts");
 const hosted = read("scripts/hosted-staging-rls-validation.mjs");
 const docs = read("docs/attachment-delivery.md");
+const lifecycle = read("supabase/migrations/20260711151400_storage_lifecycle_full_mvp.sql");
+const lifecycleDocs = read("docs/supabase-storage-lifecycle.md");
 
 const checks = [
   [bucket.includes("'message-attachments'") && /\n\s*false,\s*\n\s*10485760/.test(bucket), "private bucket with size limit"],
@@ -20,6 +22,9 @@ const checks = [
   [metadata.includes("public_url: null") && metadata.includes("never an expiring signed URL"), "metadata does not persist signed URL"],
   [hosted.includes("PICOM_RLS_PRIVATE_ATTACHMENT_ID") && hosted.includes("PICOM_RLS_PRIVATE_STORAGE_PATH"), "hosted metadata and object leak matrix"],
   [docs.includes("Review conclusion - 2026-07-10") && docs.includes("Historical private attachment reload"), "documented delivery decision and blocker"],
+  [lifecycle.includes("list_storage_orphan_candidates") && lifecycle.includes("to service_role"), "service-role-only orphan inventory"],
+  [/\('podcast-audio'\s*,\s*'podcast-audio'\s*,\s*false/.test(lifecycle) && /\('direct-message-attachments'\s*,\s*'direct-message-attachments'\s*,\s*false/.test(lifecycle), "private DM and Podcast buckets"],
+  [lifecycleDocs.includes("Public identity assets") && lifecycleDocs.includes("Private content buckets"), "explicit public/private Storage classification"],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);

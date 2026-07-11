@@ -1,13 +1,13 @@
 # Orphaned Upload Cleanup Job
 
-Picom now has a safe development foundation for cleaning uploaded files that never become attached to a sent message.
+Picom has a production-safe, operator-controlled foundation for cleaning uploaded files that never become attached to authoritative metadata.
 
 ## Current state
 
 - Attachments use `public.attachments` with `status` values: `pending`, `attached`, and `failed`.
-- Supabase Storage bucket: `message-attachments`.
+- The inventory covers all Full MVP buckets documented in `docs/supabase-storage-lifecycle.md`.
 - Pending upload paths use the `pending/{userId}` segment.
-- A production destructive cleanup job is not enabled.
+- Destructive cleanup is never automatic; it requires server-only credentials plus explicit confirmation.
 
 ## Processor behavior
 
@@ -39,17 +39,10 @@ npm run uploads:cleanup:smoke
 npm run uploads:cleanup:dry-run
 ```
 
-## Future Supabase implementation
+With `SUPABASE_URL` and server-only `SUPABASE_SERVICE_ROLE_KEY`, dry-run invokes the service-role-only `list_storage_orphan_candidates` RPC. Without them it reports `BLOCKED` truthfully.
 
-When production cleanup is enabled, the adapter should:
+## Apply mode
 
-- Select old `pending` or `failed` attachments with `message_id is null`.
-- Delete the matching Storage object only after verifying it is not linked to any message.
-- Update attachment metadata to `orphaned` only after a future migration allows that status, or keep a separate cleanup audit table.
-- Log counts, not private filenames or user content.
+Apply mode deletes only candidates returned by the server-side inventory after the grace period. It requires `PICOM_CONFIRM_STORAGE_DELETE=DELETE_ORPHANS` and `--apply`. The script logs aggregate counts, never private filenames or content.
 
-## Not implemented yet
-
-- No production scheduler.
-- No destructive production cleanup.
-- No `orphaned` database status migration.
+Production scheduling remains intentionally disabled until staging dry-run, backup, and cross-user RLS evidence are approved.

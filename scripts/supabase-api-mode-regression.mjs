@@ -93,6 +93,9 @@ try {
   assertContains("src/services/feed/feedQueryService.ts", '.rpc("list_ranked_unified_feed"', "unified Feed Supabase query path");
   assertContains("src/services/feed/feedQueryService.ts", "const fetchLimit = limit + 1", "unified Feed exact pagination look-ahead");
   assertContains("src/services/feed/feedRealtimeService.ts", '"audio_feed_read_states"', "unified Feed audio state Realtime path");
+  assertContains("src/services/uploadService.ts", "await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).remove([storagePath])", "canceled Text upload cleanup path");
+  assertContains("src/services/communityBrandingService.ts", "options.signal?.aborted", "community branding cancel-safe upload path");
+  assertContains("scripts/cleanup-orphaned-uploads.mjs", '.rpc("list_storage_orphan_candidates"', "operator-only orphan inventory path");
   assertContains(".env.example", "VITE_SUPABASE_URL", "Supabase URL env example");
   assertContains(".env.example", "VITE_SUPABASE_ANON_KEY", "Supabase anon key env example");
   assertContains(".env.example", "SUPABASE_SERVICE_ROLE_KEY", "server-only service role env documentation");
