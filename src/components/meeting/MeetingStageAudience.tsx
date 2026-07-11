@@ -1,29 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { MeetingClientParticipant, MeetingClientSnapshot } from "../../types/meetingClient";
 import type { MeetingStageServiceResult } from "../../services/meeting/meetingStageService";
 import { meetingService } from "../../services/meeting/meetingService";
 import { meetingStageService } from "../../services/meeting/meetingStageService";
 import { AppIcon } from "../AppIcon";
+import { MeetingParticipantTile } from "./MeetingParticipantTile";
 import "./MeetingStageAudience.css";
 
 const STAGE_ROLES = new Set(["host", "cohost", "speaker"]);
 const isStageParticipant = (participant: MeetingClientParticipant): boolean => STAGE_ROLES.has(participant.role);
 const initials = (name: string): string => name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "P";
-
-function StageMedia({ participant }: { participant: MeetingClientParticipant }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    if (videoRef.current && participant.cameraStream) videoRef.current.srcObject = participant.cameraStream;
-    return () => { if (videoRef.current) videoRef.current.srcObject = null; };
-  }, [participant.cameraStream]);
-  return (
-    <article className={`meeting-stage-audience__tile${participant.isSpeaking ? " is-speaking" : ""}`}>
-      {participant.cameraStream ? <video ref={videoRef} autoPlay playsInline muted={participant.isLocal} aria-label={`${participant.displayName} camera`} /> : <span className="meeting-stage-audience__avatar" aria-hidden="true">{initials(participant.displayName)}</span>}
-      <span className="meeting-stage-audience__tile-meta"><strong>{participant.displayName}{participant.isLocal ? " (you)" : ""}</strong><small>{participant.role}</small></span>
-      <span className="meeting-stage-audience__media-state"><AppIcon name="microphone" size="xs" />{participant.microphoneEnabled ? "Live" : "Muted"}</span>
-    </article>
-  );
-}
 
 export function MeetingStageAudience({ snapshot, onFocusParticipant, onOpenPeople }: { snapshot: MeetingClientSnapshot; onFocusParticipant: (id: string | null) => void; onOpenPeople: () => void }) {
   const [tab, setTab] = useState<"participants" | "viewers">("participants");
@@ -60,7 +46,7 @@ export function MeetingStageAudience({ snapshot, onFocusParticipant, onOpenPeopl
       </header>
       <div className="meeting-stage-audience__body">
         <div className="meeting-stage-audience__stage">
-          {stage.length ? <div className="meeting-stage-audience__grid">{stage.map((participant) => <button type="button" className="meeting-stage-audience__tile-button" key={participant.id} onClick={() => onFocusParticipant(participant.id)} aria-label={`Focus ${participant.displayName}`}><StageMedia participant={participant} /></button>)}</div> : <div className="meeting-stage-audience__empty"><AppIcon name="users" size="xl" /><strong>The stage is ready</strong><p>Approved speakers will appear here.</p></div>}
+          {stage.length ? <div className="meeting-stage-audience__grid">{stage.map((participant) => <MeetingParticipantTile participant={participant} variant="stage" focused={participant.id === snapshot.focusedParticipantId} key={participant.id} onActivate={() => onFocusParticipant(participant.id === snapshot.focusedParticipantId ? null : participant.id)} />)}</div> : <div className="meeting-stage-audience__empty"><AppIcon name="users" size="xl" /><strong>The stage is ready</strong><p>Approved speakers will appear here.</p></div>}
           {local && !isStageParticipant(local) ? <div className="meeting-stage-audience__request"><span><strong>Join the conversation</strong><small>Viewers listen by default and publish only after a host promotes them.</small></span>{localRequest?.stageRequestStatus === "requested" ? <button type="button" disabled={busy === local.id} onClick={() => run(local.id, () => meetingStageService.cancelRequest(local.id))}>Cancel request</button> : <button type="button" disabled={busy === local.id || !snapshot.capabilities.canRaiseHand} onClick={() => run(local.id, () => meetingStageService.requestToSpeak(local.id))}>Request to speak</button>}</div> : null}
           {error ? <p className="meeting-stage-audience__error" role="alert">{error}</p> : null}
         </div>

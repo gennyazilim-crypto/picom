@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { meetingService } from "../../services/meeting/meetingService";
 import type { MeetingClientParticipant, MeetingClientScreenShare, MeetingClientSnapshot } from "../../types/meetingClient";
 import { AppIcon } from "../AppIcon";
-import { VerifiedAvatarFrame } from "../VerifiedAvatarFrame";
+import { MeetingParticipantTile } from "./MeetingParticipantTile";
 import "./MeetingScreenShareFocus.css";
 
 type ShareScale = "fit" | "fill" | "actual";
@@ -14,21 +14,6 @@ function ShareVideo({ share, scale }: { share: MeetingClientScreenShare; scale: 
     return () => { if (ref.current) ref.current.srcObject = null; };
   }, [share.stream]);
   return <video ref={ref} autoPlay muted playsInline className={`meeting-share-video is-${scale}`} aria-label={`${share.participantName} shared screen`} />;
-}
-
-function CompactParticipant({ participant }: { participant: MeetingClientParticipant }) {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.srcObject = participant.cameraStream ?? null;
-    return () => { if (ref.current) ref.current.srcObject = null; };
-  }, [participant.cameraStream]);
-  return (
-    <article className={`meeting-share-person${participant.isSpeaking ? " is-speaking" : ""}`}>
-      {participant.cameraEnabled && participant.cameraStream ? <video ref={ref} autoPlay muted playsInline className={participant.isLocal ? "is-mirrored" : ""} aria-label={`${participant.displayName} camera`} /> : <VerifiedAvatarFrame userId={participant.userId} label={participant.displayName} avatarUrl={participant.avatarUrl} avatarSeed={participant.identity} verification={participant.verification} size="compact" avatarSize={36} />}
-      <span><strong>{participant.displayName}</strong><small>{participant.handRaised ? "Hand raised" : participant.microphoneEnabled ? participant.role : "Muted"}</small></span>
-      <AppIcon name={participant.microphoneEnabled ? "microphone" : "volumeOff"} size="xs" />
-    </article>
-  );
 }
 
 export function MeetingScreenShareFocus({ snapshot, onReturnToGrid, onReturnToSpeaker, onOpenPeople }: { snapshot: MeetingClientSnapshot; onReturnToGrid: () => void; onReturnToSpeaker: () => void; onOpenPeople: () => void }) {
@@ -63,7 +48,7 @@ export function MeetingScreenShareFocus({ snapshot, onReturnToGrid, onReturnToSp
         <div className={`meeting-screen-share-focus__viewer is-${scale}`}><ShareVideo share={share} scale={scale} /></div>
         <aside className="meeting-share-participants" aria-label="Meeting participants">
           <div className="meeting-share-participants__sharer"><small>Sharing now</small><strong>{share.participantName}</strong>{sharer ? <span>{sharer.role}{sharer.communityRole?.name ? ` / ${sharer.communityRole.name}` : ""}</span> : null}</div>
-          <div className="meeting-share-participants__list">{compactParticipants.map((participant) => <CompactParticipant key={participant.id} participant={participant} />)}</div>
+          <div className="meeting-share-participants__list">{compactParticipants.map((participant) => <MeetingParticipantTile key={participant.id} participant={participant} variant="share" />)}</div>
         </aside>
       </div>
       <footer><span>{shares.length > 1 ? "Picom displays one active share at a time." : "Participant context remains visible while content is shared."}</span><button type="button" onClick={onReturnToGrid}>Return to Grid</button><button type="button" onClick={onReturnToSpeaker}>Speaker view</button></footer>

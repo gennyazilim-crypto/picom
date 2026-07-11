@@ -43,6 +43,8 @@
     { "id": "community-admin-admin-radio-light", "screen": "communityAdmin", "variant": "admin_radio", "theme": "light", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
     { "id": "community-admin-admin-radio-dark", "screen": "communityAdmin", "variant": "admin_radio", "theme": "dark", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
     { "id": "community-admin-moderator-podcast-light", "screen": "communityAdmin", "variant": "moderator_podcast", "theme": "light", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
-    { "id": "community-admin-visitor-podcast-dark", "screen": "communityAdmin", "variant": "visitor_podcast", "theme": "dark", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" }
+    { "id": "community-admin-visitor-podcast-dark", "screen": "communityAdmin", "variant": "visitor_podcast", "theme": "dark", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
+    { "id": "meeting-participant-tiles-light", "screen": "meetingParticipantTiles", "theme": "light", "viewport": "default", "entryFile": "src/components/meeting/MeetingParticipantTileFixtures.tsx" },
+    { "id": "meeting-participant-tiles-dark", "screen": "meetingParticipantTiles", "theme": "dark", "viewport": "default", "entryFile": "src/components/meeting/MeetingParticipantTileFixtures.tsx" }
   ]
 }

@@ -14,6 +14,7 @@ const requiredScreens = Object.freeze({
   podcastCommunity: "src/components/audio/PodcastCommunityShell.tsx",
   podcastEpisode: "src/components/audio/PodcastEpisodeDetail.tsx",
   communityAdmin: "src/components/CommunityMenu.tsx",
+  meetingParticipantTiles: "src/components/meeting/MeetingParticipantTileFixtures.tsx",
 });
 const expectedViewports = Object.freeze({
   default: { width: 1440, height: 900 },

@@ -1,47 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStableMeetingSpeaker } from "../../hooks/useStableMeetingSpeaker";
 import { meetingService } from "../../services/meeting/meetingService";
 import type { MeetingClientParticipant, MeetingClientSnapshot } from "../../types/meetingClient";
 import { AppIcon } from "../AppIcon";
-import { VerifiedAvatarFrame } from "../VerifiedAvatarFrame";
-import { VerifiedBadge } from "../VerifiedBadge";
+import { MeetingParticipantTile } from "./MeetingParticipantTile";
 import "./MeetingSpeakerFocus.css";
 
 const FILMSTRIP_PAGE_SIZE = 7;
-
-function ParticipantVideo({ stream, mirrored, label }: { stream: MediaStream; mirrored: boolean; label: string }) {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.srcObject = stream;
-    return () => { if (ref.current) ref.current.srcObject = null; };
-  }, [stream]);
-  return <video ref={ref} autoPlay muted playsInline className={mirrored ? "is-mirrored" : ""} aria-label={label} />;
-}
-
-function ParticipantMedia({ participant, large = false }: { participant: MeetingClientParticipant; large?: boolean }) {
-  if (participant.cameraEnabled && participant.cameraStream) {
-    return <ParticipantVideo stream={participant.cameraStream} mirrored={participant.isLocal} label={`${participant.displayName} camera`} />;
-  }
-  return (
-    <span className="meeting-speaker-avatar">
-      <VerifiedAvatarFrame userId={participant.userId} label={participant.displayName} avatarUrl={participant.avatarUrl} avatarSeed={participant.identity} verification={participant.verification} size="medium" avatarSize={large ? 116 : 48} />
-      <small>{participant.cameraEnabled ? "Connecting camera" : "Camera off"}</small>
-    </span>
-  );
-}
-
-function FilmstripTile({ participant, pinned, onPin }: { participant: MeetingClientParticipant; pinned: boolean; onPin: () => void }) {
-  return (
-    <article className={`meeting-filmstrip-tile${participant.isSpeaking ? " is-speaking" : ""}${pinned ? " is-pinned" : ""}`}>
-      <button type="button" className="meeting-filmstrip-tile__media" aria-label={`${pinned ? "Unpin" : "Pin"} ${participant.displayName}`} aria-pressed={pinned} onClick={onPin}>
-        <ParticipantMedia participant={participant} />
-      </button>
-      <span className="meeting-filmstrip-tile__identity"><span><strong>{participant.displayName}</strong><VerifiedBadge verification={participant.verification} size="xs" /></span><small>{participant.role}</small></span>
-      <span className="meeting-filmstrip-tile__state" aria-label={participant.microphoneEnabled ? "Microphone on" : "Microphone muted"}><AppIcon name={participant.microphoneEnabled ? "microphone" : "volumeOff"} size="xs" /></span>
-      {participant.handRaised ? <span className="meeting-filmstrip-tile__hand">Hand</span> : null}
-    </article>
-  );
-}
 
 export function MeetingSpeakerFocus({ snapshot, onOpenPeople }: { snapshot: MeetingClientSnapshot; onOpenPeople: () => void }) {
   const participants = snapshot.participantIds.map((id) => snapshot.participantsById[id]).filter(Boolean);
@@ -80,17 +45,14 @@ export function MeetingSpeakerFocus({ snapshot, onOpenPeople }: { snapshot: Meet
         <span className="meeting-speaker-focus__count"><AppIcon name="users" size="xs" />{participants.length} participants</span>
         <button type="button" onClick={onOpenPeople}><AppIcon name="users" size="sm" />People</button>
       </header>
-      <div className={`meeting-speaker-focus__stage${focused.isSpeaking ? " is-speaking" : ""}`}>
-        <ParticipantMedia participant={focused} large />
-        <span className="meeting-speaker-focus__shade" aria-hidden="true" />
-        <span className="meeting-speaker-focus__identity"><span><strong>{focused.displayName}{focused.isLocal ? " (you)" : ""}</strong><VerifiedBadge verification={focused.verification} size="sm" /></span><small>{focused.role}{focused.communityRole?.name ? ` / ${focused.communityRole.name}` : ""}</small></span>
-        <span className="meeting-speaker-focus__states">{focused.handRaised ? <span>Hand raised</span> : null}<span>{focused.connectionQuality}</span><span><AppIcon name={focused.microphoneEnabled ? "microphone" : "volumeOff"} size="xs" />{focused.microphoneEnabled ? "Mic on" : "Muted"}</span></span>
+      <div className="meeting-speaker-focus__stage">
+        <MeetingParticipantTile participant={focused} variant="focus" focused={pinned} onActivate={() => meetingService.setFocus(pinned ? null : focused.id)} />
         <button type="button" className={`meeting-speaker-focus__pin${pinned ? " is-pinned" : ""}`} aria-pressed={pinned} aria-label={`${pinned ? "Unpin" : "Pin"} ${focused.displayName}`} onClick={() => meetingService.setFocus(pinned ? null : focused.id)}><AppIcon name="pin" size="sm" />{pinned ? "Unpin" : "Pin"}</button>
       </div>
       <div className="meeting-filmstrip" aria-label="Participant filmstrip">
         <button type="button" className="meeting-filmstrip__page" disabled={page === 0} aria-label="Previous participants" onClick={() => setFilmstripPage((current) => Math.max(0, current - 1))}>Previous</button>
         <div className="meeting-filmstrip__items" role="list">
-          {visibleFilmstrip.map((participant) => <div role="listitem" key={participant.id}><FilmstripTile participant={participant} pinned={manualPin === participant.id} onPin={() => meetingService.setFocus(manualPin === participant.id ? null : participant.id)} /></div>)}
+          {visibleFilmstrip.map((participant) => <div role="listitem" key={participant.id}><MeetingParticipantTile participant={participant} variant="filmstrip" focused={manualPin === participant.id} onActivate={() => meetingService.setFocus(manualPin === participant.id ? null : participant.id)} /></div>)}
         </div>
         <button type="button" className="meeting-filmstrip__page" disabled={page === pageCount - 1} aria-label="Next participants" onClick={() => setFilmstripPage((current) => Math.min(pageCount - 1, current + 1))}>Next{overflowCount > 0 ? ` +${overflowCount}` : ""}</button>
       </div>

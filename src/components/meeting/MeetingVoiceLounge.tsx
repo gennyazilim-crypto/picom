@@ -3,76 +3,10 @@ import type { MeetingClientParticipant, MeetingClientSnapshot } from "../../type
 import type { OverlayMenuItem } from "../../state/useOverlayState";
 import { AppIcon } from "../AppIcon";
 import { DesktopContextMenu } from "../DesktopContextMenu";
-import { VerifiedAvatarFrame } from "../VerifiedAvatarFrame";
-import { VerifiedBadge } from "../VerifiedBadge";
+import { MeetingParticipantTile } from "./MeetingParticipantTile";
 import "./MeetingVoiceLounge.css";
 
 type MenuState = Readonly<{ x: number; y: number; participantId: string }>;
-
-const qualityLabel = (quality: MeetingClientParticipant["connectionQuality"]) =>
-  quality === "unknown" ? "Connection pending" : `${quality.slice(0, 1).toUpperCase()}${quality.slice(1)} connection`;
-
-function SpeakingWaveform() {
-  return <span className="meeting-lounge-waveform" aria-hidden="true"><i /><i /><i /><i /></span>;
-}
-
-function LoungeParticipantCard({
-  participant,
-  focused,
-  noiseShieldStatus,
-  onFocus,
-  onMenu,
-}: {
-  participant: MeetingClientParticipant;
-  focused: boolean;
-  noiseShieldStatus: MeetingClientSnapshot["noiseShield"]["status"];
-  onFocus: () => void;
-  onMenu: (event: MouseEvent<HTMLElement>) => void;
-}) {
-  const microphoneLabel = participant.microphoneEnabled ? "Microphone on" : "Microphone muted";
-  return (
-    <article
-      className={`meeting-lounge-person${participant.isSpeaking ? " is-speaking" : ""}${focused ? " is-selected" : ""}`}
-      data-quality={participant.connectionQuality}
-      role="listitem"
-      onContextMenu={onMenu}
-    >
-      <button type="button" className="meeting-lounge-person__avatar" aria-label={`Select ${participant.displayName}`} aria-pressed={focused} onClick={onFocus}>
-        <VerifiedAvatarFrame
-          userId={participant.userId}
-          label={participant.displayName}
-          avatarUrl={participant.avatarUrl}
-          avatarSeed={participant.identity}
-          verification={participant.verification}
-          size="medium"
-          avatarSize={64}
-        />
-        {participant.isSpeaking ? <SpeakingWaveform /> : null}
-      </button>
-
-      <div className="meeting-lounge-person__identity">
-        <span className="meeting-lounge-person__name-row">
-          <button type="button" onClick={onFocus}>{participant.displayName}{participant.isLocal ? " (you)" : ""}</button>
-          <VerifiedBadge verification={participant.verification} size="xs" />
-        </span>
-        <span className="meeting-lounge-person__roles">
-          <strong>{participant.role}</strong>
-          {participant.communityRole?.name ? <small>{participant.communityRole.name}</small> : null}
-        </span>
-        <span className="meeting-lounge-person__signals">
-          <span aria-label={microphoneLabel}><AppIcon name={participant.microphoneEnabled ? "microphone" : "volumeOff"} size="xs" />{participant.isSpeaking ? "Speaking" : microphoneLabel}</span>
-          {participant.handRaised ? <span className="is-hand">Hand raised</span> : null}
-          <span className="is-quality" title={qualityLabel(participant.connectionQuality)}>{participant.connectionQuality}</span>
-          {participant.isLocal && noiseShieldStatus !== "off" ? <span className="is-shield">Noise Shield {noiseShieldStatus}</span> : null}
-        </span>
-      </div>
-
-      <button type="button" className="meeting-lounge-person__more" aria-label={`Actions for ${participant.displayName}`} onClick={onMenu}>
-        <AppIcon name="more" size="sm" />
-      </button>
-    </article>
-  );
-}
 
 export function MeetingVoiceLounge({
   snapshot,
@@ -117,13 +51,15 @@ export function MeetingVoiceLounge({
 
       <div className="meeting-voice-lounge__grid" data-density={density} role="list" aria-label={`${participants.length} voice participants`}>
         {participants.map((participant) => (
-          <LoungeParticipantCard
+          <MeetingParticipantTile
             key={participant.id}
             participant={participant}
-            focused={participant.id === snapshot.focusedParticipantId}
-            noiseShieldStatus={snapshot.noiseShield.status}
-            onFocus={() => onFocusParticipant(participant.id === snapshot.focusedParticipantId ? null : participant.id)}
-            onMenu={(event) => openMenu(participant.id, event)}
+            variant="voice"
+            selected={participant.id === snapshot.focusedParticipantId}
+            auxiliaryLabel={participant.isLocal && snapshot.noiseShield.status !== "off" ? `Noise Shield ${snapshot.noiseShield.status}` : undefined}
+            onActivate={() => onFocusParticipant(participant.id === snapshot.focusedParticipantId ? null : participant.id)}
+            onContextMenu={(event) => openMenu(participant.id, event)}
+            onMore={(event) => openMenu(participant.id, event)}
           />
         ))}
       </div>
