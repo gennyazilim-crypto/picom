@@ -168,6 +168,20 @@ if (!existsSync(hardeningMigration)) {
 }
 pass("MVP+ RLS hardening migration exists");
 
+const hostedMatrixPath = join(root, "supabase", "tests", "hosted", "full-mvp-rls-matrix.json");
+const hostedRunnerPath = join(root, "scripts", "hosted-staging-rls-validation.mjs");
+if (!existsSync(hostedMatrixPath) || !existsSync(hostedRunnerPath)) {
+  fail("missing Full MVP hosted RLS matrix or runner");
+}
+const hostedMatrix = JSON.parse(readFileSync(hostedMatrixPath, "utf8"));
+for (const actor of ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"]) {
+  if (!hostedMatrix.actors?.[actor]) fail(`hosted RLS matrix is missing actor: ${actor}`);
+}
+for (const domain of ["text", "radio", "podcast", "feed", "stories", "profile", "friends", "direct_messages", "settings", "audit", "storage", "realtime"]) {
+  if (!hostedMatrix.coverage?.domains?.includes(domain)) fail(`hosted RLS matrix is missing domain: ${domain}`);
+}
+pass("Full MVP hosted RLS actor and content matrix exists");
+
 const cli = spawnSync("supabase", ["--version"], { encoding: "utf8" });
 if (cli.status !== 0) {
   if (shouldRunRealTests) {

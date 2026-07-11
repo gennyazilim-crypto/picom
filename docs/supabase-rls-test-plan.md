@@ -16,6 +16,7 @@ Picom validates Supabase access boundaries with local pgTAP SQL tests plus a Nod
 - Attachment metadata visibility following message/channel visibility.
 - Direct conversation metadata, participant, message, attachment, and reaction isolation.
 - Direct message author/reaction ownership and blocked-participant write denial.
+- Full MVP hosted matrix for Text, Radio, Podcast, Feed/stories, Profile, Friends/DM, synced settings, audit/admin, Storage, and Realtime.
 
 ## Commands
 
@@ -39,11 +40,23 @@ Project QA gate:
 npm run qa:supabase
 ```
 
+Hosted Full MVP preflight and execution:
+
+```powershell
+node scripts/full-mvp-rls-matrix-contract.mjs
+npm run supabase:rls:hosted:preflight
+npm run supabase:rls:hosted:test
+```
+
+The execution command is staging-only, requires synthetic accounts and dedicated canary fixtures, and
+performs ephemeral writes. It refuses to run without both `STAGING_ONLY` and `ALLOW_EPHEMERAL_WRITES`.
+
 ## Test files
 
 - `supabase/tests/rls/community_access_boundaries.sql`
 - `supabase/tests/rls/message_ownership_and_storage.sql`
 - `supabase/tests/rls/direct_messages.sql`
+- `supabase/tests/hosted/full-mvp-rls-matrix.json` (deployed staging matrix; not a pgTAP file)
 
 Each test file:
 

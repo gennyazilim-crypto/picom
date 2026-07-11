@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "coverage": {
+    "domains": ["text", "radio", "podcast", "feed", "stories", "profile", "friends", "direct_messages", "settings", "audit", "storage", "realtime"],
+    "operations": ["SELECT", "INSERT", "UPDATE", "DELETE", "STORAGE_SELECT", "REALTIME_AUTHORIZE"]
+  },
+  "actors": {
+    "anonymous": { "authenticated": false, "communityMember": false, "role": null, "envPrefix": null },
+    "owner": { "authenticated": true, "communityMember": true, "role": "owner", "envPrefix": "PICOM_RLS_OWNER" },
+    "admin": { "authenticated": true, "communityMember": true, "role": "admin", "envPrefix": "PICOM_RLS_ADMIN" },
+    "moderator": { "authenticated": true, "communityMember": true, "role": "moderator", "envPrefix": "PICOM_RLS_MODERATOR" },
+    "member": { "authenticated": true, "communityMember": true, "role": "member", "envPrefix": "PICOM_RLS_MEMBER" },
+    "visitor": { "authenticated": true, "communityMember": false, "role": null, "envPrefix": "PICOM_RLS_VISITOR" },
+    "blocked": { "authenticated": true, "communityMember": false, "role": null, "envPrefix": "PICOM_RLS_BLOCKED" },
+    "dm_non_participant": { "authenticated": true, "communityMember": false, "role": null, "envPrefix": "PICOM_RLS_DM_NON_PARTICIPANT" }
+  },
+  "fixtures": {
+    "textCommunityId": "PICOM_RLS_COMMUNITY_ID",
+    "publicTextChannelId": "PICOM_RLS_PUBLIC_CHANNEL_ID",
+    "radioSessionId": "PICOM_RLS_PUBLIC_RADIO_SESSION_ID",
+    "podcastEpisodeId": "PICOM_RLS_PUBLISHED_PODCAST_EPISODE_ID",
+    "dmConversationId": "PICOM_RLS_DM_CONVERSATION_ID"
+  },
+  "readCases": [
+    { "id": "text.public-channel", "relation": "channels", "column": "id", "fixtureEnv": "PICOM_RLS_PUBLIC_CHANNEL_ID", "allow": ["anonymous", "owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] },
+    { "id": "text.private-channel", "relation": "channels", "column": "id", "fixtureEnv": "PICOM_RLS_PRIVATE_CHANNEL_ID", "allow": ["owner", "admin"] },
+    { "id": "text.private-message", "relation": "messages", "column": "id", "fixtureEnv": "PICOM_RLS_PRIVATE_MESSAGE_ID", "allow": ["owner", "admin"] },
+    { "id": "text.private-reply", "relation": "messages", "column": "id", "fixtureEnv": "PICOM_RLS_PRIVATE_REPLY_ID", "allow": ["owner", "admin"] },
+    { "id": "text.private-attachment", "relation": "attachments", "column": "id", "fixtureEnv": "PICOM_RLS_PRIVATE_ATTACHMENT_ID", "allow": ["owner", "admin"] },
+    { "id": "text.private-reaction", "relation": "message_reactions", "column": "id", "fixtureEnv": "PICOM_RLS_PRIVATE_REACTION_ID", "allow": ["owner", "admin"] },
+    { "id": "radio.public-session", "relation": "radio_sessions", "column": "id", "fixtureEnv": "PICOM_RLS_PUBLIC_RADIO_SESSION_ID", "allow": ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] },
+    { "id": "radio.draft-session", "relation": "radio_sessions", "column": "id", "fixtureEnv": "PICOM_RLS_DRAFT_RADIO_SESSION_ID", "allow": ["owner", "admin"] },
+    { "id": "podcast.published-episode", "relation": "podcast_episodes", "column": "id", "fixtureEnv": "PICOM_RLS_PUBLISHED_PODCAST_EPISODE_ID", "allow": ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] },
+    { "id": "podcast.draft-episode", "relation": "podcast_episodes", "column": "id", "fixtureEnv": "PICOM_RLS_DRAFT_PODCAST_EPISODE_ID", "allow": ["owner", "admin"] },
+    { "id": "feed.public-mention", "relation": "content_mentions", "column": "id", "fixtureEnv": "PICOM_RLS_PUBLIC_CONTENT_MENTION_ID", "allow": ["owner", "admin", "moderator", "member", "visitor", "dm_non_participant"] },
+    { "id": "feed.private-mention", "relation": "content_mentions", "column": "id", "fixtureEnv": "PICOM_RLS_PRIVATE_CONTENT_MENTION_ID", "allow": ["owner", "admin"] },
+    { "id": "stories.followed-visible-source", "relation": "followed_content_stories_view", "column": "story_id", "fixtureEnv": "PICOM_RLS_FOLLOWED_STORY_ID", "allow": ["owner"] },
+    { "id": "friends.participant-request", "relation": "friend_requests", "column": "id", "fixtureEnv": "PICOM_RLS_OWNER_MEMBER_FRIEND_REQUEST_ID", "allow": ["owner", "member"] },
+    { "id": "dm.conversation", "relation": "direct_conversations", "column": "id", "fixtureEnv": "PICOM_RLS_DM_CONVERSATION_ID", "allow": ["owner", "member", "blocked"] },
+    { "id": "dm.message", "relation": "direct_messages", "column": "id", "fixtureEnv": "PICOM_RLS_DM_MESSAGE_ID", "allow": ["owner", "member", "blocked"] },
+    { "id": "dm.attachment", "relation": "direct_message_attachments", "column": "id", "fixtureEnv": "PICOM_RLS_DM_ATTACHMENT_ID", "allow": ["owner", "member", "blocked"] },
+    { "id": "dm.reaction", "relation": "direct_message_reactions", "column": "id", "fixtureEnv": "PICOM_RLS_DM_REACTION_ID", "allow": ["owner", "member", "blocked"] },
+    { "id": "audit.community-log", "relation": "audit_log", "column": "id", "fixtureEnv": "PICOM_RLS_AUDIT_LOG_ID", "allow": ["owner", "admin"] }
+  ],
+  "storageCases": [
+    { "id": "storage.text-private", "bucketEnv": "PICOM_RLS_PRIVATE_STORAGE_BUCKET", "pathEnv": "PICOM_RLS_PRIVATE_STORAGE_PATH", "allow": ["owner", "admin"] },
+    { "id": "storage.radio-cover", "bucketEnv": "PICOM_RLS_AUDIO_COVERS_BUCKET", "pathEnv": "PICOM_RLS_RADIO_COVER_STORAGE_PATH", "allow": ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] },
+    { "id": "storage.podcast-published", "bucketEnv": "PICOM_RLS_PODCAST_AUDIO_BUCKET", "pathEnv": "PICOM_RLS_PODCAST_PUBLIC_STORAGE_PATH", "allow": ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] },
+    { "id": "storage.podcast-draft", "bucketEnv": "PICOM_RLS_PODCAST_AUDIO_BUCKET", "pathEnv": "PICOM_RLS_PODCAST_DRAFT_STORAGE_PATH", "allow": ["owner", "admin"] },
+    { "id": "storage.dm-private", "bucketEnv": "PICOM_RLS_DM_STORAGE_BUCKET", "pathEnv": "PICOM_RLS_DM_STORAGE_PATH", "allow": ["owner", "member", "blocked"] }
+  ],
+  "realtimeCases": [
+    { "id": "realtime.community-presence", "topic": "presence:community:${PICOM_RLS_COMMUNITY_ID}", "extension": "presence", "allow": ["owner", "admin", "moderator", "member"] },
+    { "id": "realtime.public-channel-typing", "topic": "typing:community:${PICOM_RLS_COMMUNITY_ID}:channel:${PICOM_RLS_PUBLIC_CHANNEL_ID}", "extension": "broadcast", "allow": ["owner", "admin", "moderator", "member"] },
+    { "id": "realtime.private-channel-room", "topic": "room:community:${PICOM_RLS_COMMUNITY_ID}:channel:${PICOM_RLS_PRIVATE_CHANNEL_ID}", "extension": "broadcast", "allow": ["owner", "admin"] },
+    { "id": "realtime.community-wide", "topic": "room:community:${PICOM_RLS_COMMUNITY_ID}:all-visible-channels", "extension": "postgres_changes", "allow": ["owner", "admin", "moderator", "member"] },
+    { "id": "realtime.dm-typing", "topic": "dm:conversation:${PICOM_RLS_DM_CONVERSATION_ID}", "extension": "broadcast", "allow": ["owner", "member"] },
+    { "id": "realtime.invalid-topic", "topic": "picom:invalid:topic", "extension": "broadcast", "allow": [] }
+  ],
+  "mutationSuites": [
+    { "id": "text_message_crud_reply_reaction", "allow": ["owner", "admin", "moderator", "member"] },
+    { "id": "dm_message_crud", "allow": ["owner", "member"] },
+    { "id": "settings_own_update_cross_user_deny", "allow": ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] },
+    { "id": "radio_listener_join_leave", "allow": ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] },
+    { "id": "podcast_comment_create_delete", "allow": ["owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"] }
+  ]
+}
