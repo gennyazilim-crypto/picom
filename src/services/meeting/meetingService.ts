@@ -11,6 +11,7 @@ import { meetingRepository } from "./meetingRepository";
 let currentRequest: MeetingClientJoinRequest | null = null;
 let joinPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
 let joinKey: string | null = null;
+let authorizationRefreshPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
 let sessionCleanups: Array<() => void> = [];
 
 const keyOf = (request: MeetingClientJoinRequest) => `${request.roomId}:${request.sessionId}`;
@@ -46,6 +47,39 @@ function authoritativeParticipant(item: MeetingParticipantAuthority): MeetingCli
   };
 }
 
+function applyAuthoritativeParticipants(generation: number, snapshot: MeetingParticipantStateSnapshot): void {
+  const current = meetingStore.getSnapshot();
+  if (current.generation !== generation) return;
+  const priorByIdentity = new Map(
+    current.participantIds
+      .map((id) => current.participantsById[id])
+      .filter(Boolean)
+      .map((participant) => [participant.identity, participant]),
+  );
+  const previousLocal = [...priorByIdentity.values()].find((participant) => participant.isLocal);
+  const participants = snapshot.participants.map((item) => {
+    const authoritative = authoritativeParticipant(item);
+    const prior = priorByIdentity.get(authoritative.identity);
+    return {
+      ...authoritative,
+      isLocal: prior?.isLocal ?? false,
+      isSpeaking: prior?.isSpeaking ?? false,
+      cameraStream: prior?.cameraStream,
+      connectionQuality: prior?.connectionQuality ?? authoritative.connectionQuality,
+    };
+  });
+  const nextLocal = participants.find((participant) => participant.identity === previousLocal?.identity);
+  meetingStore.replaceParticipants(generation, participants);
+  if (!previousLocal || !nextLocal || previousLocal.role === nextLocal.role) return;
+
+  const nextCapabilities = capabilities(nextLocal.role);
+  meetingStore.setCapabilities(generation, nextLocal.role, nextCapabilities);
+  if (!nextCapabilities.canPublishAudio && !meetingStore.getSnapshot().localMedia.muted) {
+    queueMicrotask(() => { void meetingService.setMuted(true); });
+  }
+  queueMicrotask(() => { void meetingService.refreshAuthorization(); });
+}
+
 function applyProviderParticipants(generation:number,snapshot:ReturnType<typeof meetingLiveKitAdapter.getSnapshot>):void {
   const current=meetingStore.getSnapshot(); if(current.generation!==generation)return;
   const byIdentity=new Map(current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean).map((participant)=>[participant.identity,participant]));
@@ -64,20 +98,21 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
     applyProviderParticipants(generation,provider);
   }));
   sessionCleanups.push(meetingRepository.subscribe(request.roomId,request.sessionId,{
-    onParticipants:(snapshot:MeetingParticipantStateSnapshot)=>{if(meetingStore.getSnapshot().generation===generation)meetingStore.replaceParticipants(generation,snapshot.participants.map(authoritativeParticipant));},
+    onParticipants:(snapshot:MeetingParticipantStateSnapshot)=>applyAuthoritativeParticipants(generation,snapshot),
     onWaitingEntry:(entry)=>{if(meetingStore.getSnapshot().generation!==generation)return;if(entry.userId!==meetingStore.getSnapshot().participantsById[meetingStore.getSnapshot().participantIds.find((id)=>meetingStore.getSnapshot().participantsById[id]?.isLocal)??""]?.userId&&meetingStore.getSnapshot().waitingEntry?.id!==entry.id)return;meetingStore.patch(generation,{waitingEntry:{id:entry.id,status:entry.status}});if(entry.status==="admitted"&&currentRequest)void meetingService.join(currentRequest,true);if(entry.status==="denied"||entry.status==="expired")meetingStore.setError(generation,fail("MEETING_ADMISSION_DENIED","The host did not admit this meeting request.",entry.status==="expired"));},
     onRealtimeStatus:(realtimeStatus)=>meetingStore.patch(generation,{realtimeStatus}),
     onError:(message)=>meetingStore.patch(generation,{error:fail("MEETING_PROVIDER_ERROR",message,true)}),
   }));
   sessionCleanups.push(meetingSignalService.start({roomId:request.roomId,sessionId:request.sessionId}));
   sessionCleanups.push(meetingSignalService.subscribeReactions((reaction)=>meetingStore.appendReaction(generation,{id:reaction.eventId,senderIdentity:reaction.senderIdentity,kind:reaction.kind,createdAt:reaction.sentAt,expiresAt:reaction.expiresAt})));
-  sessionCleanups.push(meetingSignalService.subscribeHandQueue(request.roomId,request.sessionId,{onSnapshot:(queue)=>{const current=meetingStore.getSnapshot();const participants=current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean);const handByParticipant=new Map(queue.entries.map((entry)=>[entry.participantId,entry.handRaised]));const next=participants.map((participant)=>handByParticipant.has(participant.id)?{...participant,handRaised:handByParticipant.get(participant.id)??false}:participant);const local=next.find((participant)=>participant.isLocal);meetingStore.replaceParticipants(generation,next);meetingStore.patch(generation,{handRaised:local?.handRaised??false});},onStatus:(realtimeStatus)=>meetingStore.patch(generation,{realtimeStatus}),onError:(message)=>meetingStore.patch(generation,{error:fail("MEETING_PROVIDER_ERROR",message,true)})}));
+  sessionCleanups.push(meetingSignalService.subscribeHandQueue(request.roomId,request.sessionId,{onSnapshot:(queue)=>{const current=meetingStore.getSnapshot();const participants=current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean);const handByParticipant=new Map(queue.entries.map((entry)=>[entry.participantId,entry.handRaised]));const next=participants.map((participant)=>handByParticipant.has(participant.id)?{...participant,handRaised:handByParticipant.get(participant.id)??false}:participant);const local=next.find((participant)=>participant.isLocal);meetingStore.replaceParticipants(generation,next);meetingStore.patch(generation,{handRaised:local?.handRaised??false,stageQueue:queue.entries});},onStatus:(realtimeStatus)=>meetingStore.patch(generation,{realtimeStatus}),onError:(message)=>meetingStore.patch(generation,{error:fail("MEETING_PROVIDER_ERROR",message,true)})}));
   sessionCleanups.push(voiceDeviceService.subscribe((devices)=>meetingStore.patch(generation,{localDevices:{inputId:devices.selectedInputId,outputId:devices.selectedOutputId,permission:devices.permission}})));
 }
 
 async function prepare(request:MeetingClientJoinRequest):Promise<number> {
   stopBindings(); await meetingLiveKitAdapter.disconnect(); currentRequest=request;
-  const generation=meetingStore.begin({roomId:request.roomId,sessionId:request.sessionId,communityId:request.communityId,communityName:request.communityName,channelId:request.channelId,channelName:request.channelName,roomTitle:request.roomTitle});
+  const generation=meetingStore.begin({roomId:request.roomId,sessionId:request.sessionId,communityId:request.communityId,communityName:request.communityName,channelId:request.channelId,channelName:request.channelName,roomTitle:request.roomTitle,roomMode:request.roomMode});
+  if(request.roomMode==="stage")meetingStore.setLayout("stage");
   const devices=voiceDeviceService.getSnapshot();meetingStore.patch(generation,{localDevices:{inputId:devices.selectedInputId,outputId:devices.selectedOutputId,permission:devices.permission}});return generation;
 }
 
@@ -104,6 +139,14 @@ export const meetingService = {
     joinKey=nextKey;joinPromise=performJoin(request,force).finally(()=>{joinPromise=null;joinKey=null});return joinPromise;
   },
   retry():Promise<MeetingClientResult<MeetingClientSnapshot>> {return currentRequest?this.join(currentRequest,true):Promise.resolve({ok:false,error:fail("MEETING_CONTEXT_INVALID","Choose a meeting before retrying.",false)});},
+  refreshAuthorization():Promise<MeetingClientResult<MeetingClientSnapshot>> {
+    if(authorizationRefreshPromise)return authorizationRefreshPromise;
+    if(joinPromise)return joinPromise;
+    if(!currentRequest)return Promise.resolve({ok:false,error:fail("MEETING_CONTEXT_INVALID","Meeting authorization cannot be refreshed without an active room.",false)});
+    const request=currentRequest;
+    authorizationRefreshPromise=(async()=>{await prepare(request);return performJoin(request,true);})().finally(()=>{authorizationRefreshPromise=null;});
+    return authorizationRefreshPromise;
+  },
   async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation;stopBindings();await meetingLiveKitAdapter.disconnect();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null});currentRequest=null;},
   setLayout:meetingStore.setLayout,
   setRightDock:meetingStore.setRightDock,

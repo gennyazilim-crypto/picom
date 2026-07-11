@@ -975,6 +975,7 @@ export type Database = {
       set_meeting_participant_hand_state:{Args:{target_participant_id:string;target_raised:boolean};Returns:Json};
       update_meeting_hand_signal:{Args:{target_participant_id:string;target_action:"raise"|"lower"|"acknowledge"|"request_stage"|"cancel_stage"|"approve_stage"|"deny_stage"};Returns:Json};
       get_meeting_hand_queue:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
+      manage_meeting_stage_participant:{Args:{target_participant_id:string;stage_action:"promote"|"demote"|"remove";change_reason?:string};Returns:Json};
       cleanup_stale_meeting_participants:{Args:{target_session_id:string;target_stale_before?:string};Returns:Json};
       process_livekit_webhook_event:{Args:{target_event_id:string;target_event_type:string;target_occurred_at:string;target_room_id:string;target_session_id:string;target_room_name:string;target_payload_digest:string;target_participant_identity?:string|null;target_participant_name?:string|null;target_track_sid?:string|null;target_track_kind?:string|null;target_track_source?:string|null};Returns:Json};
       expire_meeting_waiting_entries:{Args:{target_room_id?:string|null};Returns:number};

@@ -29,7 +29,7 @@ function initialSnapshot(generation = 0): MeetingClientSnapshot {
     focusedParticipantId: null, focusedShareId: null, screenShares: [],
     localDevices: { inputId: "default", outputId: "default", permission: "prompt" },
     localMedia: { muted: true, deafened: false, cameraEnabled: false, screenSharing: false },
-    noiseShield: { requested: false, applied: false, status: "off" }, handRaised: false, reactions: [],
+    noiseShield: { requested: false, applied: false, status: "off" }, handRaised: false, stageQueue: [], reactions: [],
     providerStatus: "idle", realtimeStatus: "idle", error: null, updatedAt: new Date(0).toISOString(),
   };
 }

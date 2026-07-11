@@ -4,6 +4,7 @@ import { AppIcon } from "../AppIcon";
 import { MeetingVoiceLounge } from "./MeetingVoiceLounge";
 import { MeetingVideoGrid } from "./MeetingVideoGrid";
 import { MeetingSpeakerFocus } from "./MeetingSpeakerFocus";
+import { MeetingStageAudience } from "./MeetingStageAudience";
 
 const MeetingScreenShareFocus = lazy(() => import("./MeetingScreenShareFocus").then((module) => ({ default: module.MeetingScreenShareFocus })));
 
@@ -52,6 +53,9 @@ export function MeetingStage({
   onReturnToSpeaker: () => void;
 }) {
   const participants = snapshot.participantIds.map((id) => snapshot.participantsById[id]).filter(Boolean);
+  if (snapshot.layout === "stage") {
+    return <MeetingStageAudience snapshot={snapshot} onFocusParticipant={onFocusParticipant} onOpenPeople={onOpenPeople} />;
+  }
   if (snapshot.layout === "screen_share" && (snapshot.screenShares?.length ?? 0) > 0) {
     return <Suspense fallback={<section className="meeting-stage" aria-label="Loading shared content"><div className="meeting-stage__empty"><span><AppIcon name="image" size="xl" /></span><strong>Preparing shared content</strong><p>The participant strip remains available when the secure media view is ready.</p></div></section>}><MeetingScreenShareFocus snapshot={snapshot} onReturnToGrid={onReturnToGrid} onReturnToSpeaker={onReturnToSpeaker} onOpenPeople={onOpenPeople} /></Suspense>;
   }

@@ -1,6 +1,7 @@
 import type { MeetingCapabilities, MeetingConnectionQuality, MeetingLayoutMode, MeetingReactionKind, MeetingRole, MeetingSidePanel } from "./meeting";
 import type { MeetingRequestedSources } from "../services/livekit/meetingTokenTypes";
 import type { VerificationSummary } from "./verification";
+import type { MeetingHandQueueEntry } from "./meetingSignals";
 
 export type MeetingClientPhase =
   | "idle"
@@ -42,6 +43,7 @@ export type MeetingClientContext = Readonly<{
   channelId: string;
   channelName?: string;
   roomTitle: string;
+  roomMode?: "voice" | "meeting" | "stage";
 }>;
 
 export type MeetingClientJoinRequest = MeetingClientContext & Readonly<{
@@ -116,6 +118,7 @@ export type MeetingClientSnapshot = Readonly<{
   localMedia: Readonly<{ muted: boolean; deafened: boolean; cameraEnabled: boolean; screenSharing: boolean }>;
   noiseShield: Readonly<{ requested: boolean; applied: boolean; status: "off" | "requested" | "applied" | "unavailable" | "failed" }>;
   handRaised: boolean;
+  stageQueue?: readonly MeetingHandQueueEntry[];
   reactions: readonly MeetingClientReaction[];
   providerStatus: string;
   realtimeStatus: "idle" | "connecting" | "connected" | "reconnecting" | "disconnected";
