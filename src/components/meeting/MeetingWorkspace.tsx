@@ -19,14 +19,15 @@ export function MeetingWorkspace() {
   const selectDock=(panel:MeetingSidePanel)=>meetingService.setRightDock(panel);
   const cycleLayout=()=>meetingService.setLayout(layouts[(layouts.indexOf(snapshot.layout)+1)%layouts.length]);
   const toggleFocus=()=>setFocusMode((current)=>!current);
+  const focusParticipant=(id:string|null)=>{meetingService.setFocus(id);if(id)meetingService.setLayout("speaker")};
   return <section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"}>
     <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} />
     <div className="meeting-workspace__body">
       <main className="meeting-workspace__canvas">
-        {snapshot.phase==="prejoin"?<MeetingPreJoin />:<MeetingStage snapshot={snapshot} onFocusParticipant={(id)=>meetingService.setFocus(id)} onOpenPeople={()=>meetingService.setRightDock("people")} />}
+        {snapshot.phase==="prejoin"?<MeetingPreJoin />:<MeetingStage snapshot={snapshot} onFocusParticipant={focusParticipant} onOpenPeople={()=>meetingService.setRightDock("people")} />}
         <MeetingWorkspaceStatusSurface snapshot={snapshot} onRetry={()=>{void meetingService.retry()}} onLeave={()=>{void meetingService.leave()}} />
       </main>
-      {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={(id)=>meetingService.setFocus(id)} onClose={()=>meetingService.setRightDock("none")} />:null}
+      {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={focusParticipant} onClose={()=>meetingService.setRightDock("none")} />:null}
     </div>
     <MeetingControlDock snapshot={snapshot} focusMode={focusMode} onToggleMute={()=>{void meetingService.setMuted(!snapshot.localMedia.muted)}} onToggleDeafen={()=>meetingService.setDeafened(!snapshot.localMedia.deafened)} onCycleLayout={cycleLayout} onToggleDock={toggleDock} onToggleFocus={toggleFocus} onLeave={()=>{void meetingService.leave()}} />
   </section>;

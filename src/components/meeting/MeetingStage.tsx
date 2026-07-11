@@ -2,6 +2,7 @@ import type { MeetingClientParticipant, MeetingClientSnapshot } from "../../type
 import { AppIcon } from "../AppIcon";
 import { MeetingVoiceLounge } from "./MeetingVoiceLounge";
 import { MeetingVideoGrid } from "./MeetingVideoGrid";
+import { MeetingSpeakerFocus } from "./MeetingSpeakerFocus";
 
 function initials(name: string): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "P";
@@ -44,6 +45,9 @@ export function MeetingStage({
   onOpenPeople: () => void;
 }) {
   const participants = snapshot.participantIds.map((id) => snapshot.participantsById[id]).filter(Boolean);
+  if (snapshot.layout === "speaker" && participants.length > 0 && !participants.some((participant) => participant.screenSharing)) {
+    return <MeetingSpeakerFocus snapshot={snapshot} onOpenPeople={onOpenPeople} />;
+  }
   const audioOnly = participants.length > 0 && participants.every((participant) => !participant.cameraEnabled && !participant.screenSharing);
   if (audioOnly) {
     return <MeetingVoiceLounge snapshot={snapshot} participants={participants} onFocusParticipant={onFocusParticipant} onOpenPeople={onOpenPeople} />;
