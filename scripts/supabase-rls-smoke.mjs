@@ -21,6 +21,7 @@ const requiredFiles = [
   "feed_mentions_production_integration.sql",
   "storage_lifecycle_full_mvp.sql",
   "realtime_presence_typing_full_mvp.sql",
+  "meeting_rls_permissions.sql",
 ];
 
 const requiredScenarioSnippets = [
@@ -78,6 +79,9 @@ const requiredScenarioSnippets = [
   "unauthorized Realtime topics are denied",
   "DM typing requires active participant",
   "private channel topics use mature role permissions",
+  "visitor cannot see private room metadata",
+  "member cannot self-promote",
+  "cohost cannot assign host",
 ];
 
 function fail(message) {

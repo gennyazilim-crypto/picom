@@ -915,6 +915,13 @@ export type Database = {
       get_profile_privacy_projection_v3:{Args:{target_user_id:string};Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";can_view_profile:boolean;show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;show_communities:boolean;show_friends:boolean;show_follows:boolean;show_audio:boolean;location:string|null;timezone:string|null}>};
       get_profile_domain_v1:{Args:{target_user_id:string;result_limit?:number};Returns:Json};
       update_own_profile_domain:{Args:{profile_patch:Json};Returns:Json};
+      meeting_role_for_user:{Args:{target_room_id:string;target_user_id:string};Returns:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest"};
+      can_view_meeting_room:{Args:{target_room_id:string};Returns:boolean};
+      can_join_meeting_room:{Args:{target_room_id:string};Returns:boolean};
+      meeting_join_disposition:{Args:{target_room_id:string};Returns:"direct"|"waiting"|"denied"};
+      can_view_meeting_sensitive:{Args:{target_room_id:string};Returns:boolean};
+      authorize_meeting_action:{Args:{target_room_id:string;target_action:string};Returns:Json};
+      set_meeting_participant_role:{Args:{target_participant_id:string;next_role:string;change_reason:string};Returns:Json};
       create_managed_text_channel: { Args: { target_community_id: string; target_category_id?: string | null; channel_name: string; channel_type?: "text" | "voice" | "forum" | "announcement"; channel_topic?: string | null; channel_is_private?: boolean; channel_public_read_enabled?: boolean }; Returns: Array<Database["public"]["Tables"]["channels"]["Row"]> };
       send_text_message_idempotent: { Args: { target_community_id: string; target_channel_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id?: string | null; target_attachment_ids?: string[] }; Returns: Array<Database["public"]["Tables"]["messages"]["Row"]> };
       complete_current_user_onboarding: { Args: { target_profile: Json; target_followed_user_ids?: string[]; target_theme?: "light" | "dark" | "system" }; Returns: Array<{ completed: boolean; completed_at: string; followed_user_ids: string[]; theme_mode: "light" | "dark" | "system" }> };

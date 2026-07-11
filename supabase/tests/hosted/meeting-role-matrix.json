@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "communityKinds": ["text", "radio", "podcast"],
+  "roles": {
+    "owner": { "meetingRole": "host", "allow": ["createMeeting", "manageMeeting", "joinMeeting", "publishAudio", "publishVideo", "shareScreen", "admitGuests", "manageParticipants", "manageStage", "viewMeetingHistory", "enableCaptions"] },
+    "admin": { "meetingRole": "cohost", "allow": ["createMeeting", "manageMeeting", "joinMeeting", "publishAudio", "publishVideo", "shareScreen", "admitGuests", "manageParticipants", "manageStage", "viewMeetingHistory", "enableCaptions"], "deny": ["assignHost"] },
+    "moderator": { "meetingRole": "speaker", "allow": ["joinMeeting", "publishAudio", "publishVideo", "shareScreen", "manageParticipants", "manageStage", "viewMeetingHistory"], "deny": ["createMeeting", "manageMeeting", "admitGuests", "assignHost", "manageEqualOrHigher"] },
+    "member": { "meetingRole": "participant", "allow": ["joinMeeting", "publishAudio", "publishVideo"], "deny": ["createMeeting", "manageMeeting", "shareScreen", "admitGuests", "manageParticipants", "manageStage", "viewMeetingHistory", "enableCaptions"] },
+    "viewer": { "meetingRole": "viewer", "allow": ["joinInvitedMeeting", "sendChat", "react", "raiseHand"], "deny": ["publishAudio", "publishVideo", "shareScreen", "manageParticipants", "viewAttendance"] },
+    "guest": { "meetingRole": "guest", "allow": ["viewOpenPublicRoom", "joinWithInviteOrOpenPolicy", "enterWaitingRoom"], "deny": ["viewPrivateRoom", "viewParticipantListBeforeAdmission", "viewInvites", "viewAttendance", "selfEscalate"] }
+  },
+  "invariants": [
+    "anonymous users cannot discover rooms",
+    "visitor cannot see private room metadata",
+    "visitor cannot see participant lists invitations events captions or attendance",
+    "invited non-member follows join policy and waiting room",
+    "blocked banned or timed-out user cannot join or publish",
+    "member cannot self-promote",
+    "cohost cannot assign host",
+    "moderator cannot manage equal or higher role",
+    "custom role grants are bounded by effective community permissions",
+    "text radio and podcast communities use the same server authorization contract"
+  ]
+}

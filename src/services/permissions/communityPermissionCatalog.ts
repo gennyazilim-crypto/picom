@@ -1,7 +1,7 @@
 import type { CommunityKind } from "../../types/community";
 import type { CommunityPermissionKey } from "../../types/communityAccess";
 
-export type CommunityPermissionGroupName = "General" | "Membership" | "Text" | "Voice" | "Radio" | "Podcast" | "Moderation" | "Administration";
+export type CommunityPermissionGroupName = "General" | "Membership" | "Text" | "Voice" | "Meetings" | "Radio" | "Podcast" | "Moderation" | "Administration";
 export type CommunityPermissionDefinition = Readonly<{ key: CommunityPermissionKey; label: string; description: string; kinds: readonly CommunityKind[] }>;
 export type CommunityPermissionGroup = Readonly<{ name: CommunityPermissionGroupName; permissions: readonly CommunityPermissionDefinition[] }>;
 
@@ -34,6 +34,18 @@ export const COMMUNITY_PERMISSION_GROUPS: readonly CommunityPermissionGroup[] = 
     { key: "muteMembers", label: "Mute members", description: "Server-mute lower-ranked voice participants.", kinds: all },
     { key: "removeFromVoice", label: "Remove from voice", description: "Remove lower-ranked participants from a voice room.", kinds: all },
     { key: "manageVoiceRoom", label: "Manage voice room", description: "Manage normal voice rooms and their participants.", kinds: all },
+  ] },
+  { name: "Meetings", permissions: [
+    { key: "createMeeting", label: "Create meetings", description: "Create approved meeting rooms.", kinds: all },
+    { key: "manageMeeting", label: "Manage meetings", description: "Manage meeting lifecycle and policy.", kinds: all },
+    { key: "joinMeeting", label: "Join meetings", description: "Join accessible open meetings.", kinds: all },
+    { key: "publishAudio", label: "Publish audio", description: "Publish microphone audio in meetings.", kinds: all },
+    { key: "publishVideo", label: "Publish video", description: "Publish camera video in meetings.", kinds: all },
+    { key: "admitGuests", label: "Admit guests", description: "Admit or deny waiting-room guests.", kinds: all },
+    { key: "manageParticipants", label: "Manage participants", description: "Moderate lower-ranked meeting participants.", kinds: all },
+    { key: "manageStage", label: "Manage stage", description: "Promote and demote lower-ranked stage participants.", kinds: all },
+    { key: "viewMeetingHistory", label: "View meeting history", description: "View privacy-bounded attendance and history.", kinds: all },
+    { key: "enableCaptions", label: "Enable captions", description: "Enable configured consent-gated captions.", kinds: all },
   ] },
   { name: "Radio", permissions: [
     { key: "viewRadioContent", label: "View Radio", description: "View accessible Radio content.", kinds: radio },
