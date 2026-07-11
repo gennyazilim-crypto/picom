@@ -123,7 +123,7 @@ for (const term of tokenHelperRequired) {
   }
 }
 
-const screenCaptureRequired = ["window.picomDesktop?.screenCapture?.getSources", "SCREEN_CAPTURE_UNAVAILABLE"];
+const screenCaptureRequired = ["window.picomDesktop?.screenCapture?.getSources", "selectSource", "cancelSelection", "SCREEN_CAPTURE_UNAVAILABLE"];
 for (const term of screenCaptureRequired) {
   if (!screenCaptureService.includes(term)) {
     throw new Error(`Missing screen capture service wiring: ${term}`);
@@ -151,7 +151,7 @@ if (!electronMain.includes("desktopCapturer.getSources") || !preload.includes("s
   throw new Error("Missing Electron screen capture bridge.");
 }
 
-if (!ipcChannels.includes("picom:screen-capture-get-sources") || !preload.includes("invokeWhitelisted")) {
+if (!ipcChannels.includes("picom:screen-capture-get-sources") || !ipcChannels.includes("picom:screen-capture-select-source") || !ipcChannels.includes("picom:screen-capture-cancel-selection") || !preload.includes("invokeWhitelisted")) {
   throw new Error("Screen capture IPC must stay whitelisted through preload.");
 }
 

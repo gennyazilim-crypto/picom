@@ -23,6 +23,7 @@
     "voice:reconnect:full-mvp:smoke": "node scripts/voice-devices-reconnect-full-mvp-smoke.mjs",
     "voice:discovery:test": "node scripts/active-voice-rooms-discovery-smoke.mjs",
     "screen-share:preview:test": "node scripts/screen-share-preview-controls-smoke.mjs",
+    "screen-share:bridge:full-mvp:smoke": "node scripts/screen-share-picker-bridge-full-mvp-smoke.mjs",
     "release:artifact-naming:test": "node scripts/release-artifact-naming-smoke.mjs",
     "release:channel:installer:smoke": "node scripts/release-channel-installer-smoke.mjs",
     "keyboard:shortcuts:final:test": "node scripts/keyboard-shortcut-finalization-smoke.mjs",

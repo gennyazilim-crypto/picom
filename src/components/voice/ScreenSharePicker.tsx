@@ -16,21 +16,25 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
   const [status, setStatus] = useState<PickerStatus>("idle");
   const [sources, setSources] = useState<ScreenCaptureSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  const [sourceRequestId, setSourceRequestId] = useState<string | null>(null);
   const [qualityPreset, setQualityPreset] = useState<ScreenShareQualityPresetId>("balanced");
   const [error, setError] = useState<string | null>(null);
   const [guidance, setGuidance] = useState<string | null>(null);
   const [retryable, setRetryable] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function loadSources(): Promise<void> {
     setStatus("loading");
     setError(null);
     setGuidance(null);
     setRetryable(false);
+    setNotice(null);
 
     const result = await screenCaptureService.listSources();
     if (!result.ok) {
       setSources([]);
       setSelectedSourceId(null);
+      setSourceRequestId(null);
       setError(result.message);
       setGuidance(result.guidance);
       setRetryable(result.retryable);
@@ -39,12 +43,47 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
     }
 
     setSources(result.sources);
+    setSourceRequestId(result.requestId);
     setSelectedSourceId(result.sources[0]?.id ?? null);
     setStatus("ready");
   }
 
+  async function cancelSourceSelection(): Promise<void> {
+    if (sourceRequestId) await screenCaptureService.cancelSelection(sourceRequestId);
+    setSources([]);
+    setSelectedSourceId(null);
+    setSourceRequestId(null);
+    setError(null);
+    setGuidance(null);
+    setRetryable(false);
+    setNotice("Screen source selection canceled.");
+    setStatus("idle");
+  }
+
+  async function startSelectedSource(): Promise<void> {
+    if (!sourceRequestId || !selectedSourceId) return;
+    setStatus("loading");
+    setError(null);
+    const result = await screenCaptureService.selectSource(sourceRequestId, selectedSourceId);
+    if (!result.ok) {
+      setError(result.message);
+      setGuidance(result.guidance);
+      setRetryable(result.retryable);
+      setSources([]);
+      setSelectedSourceId(null);
+      setSourceRequestId(null);
+      setStatus("error");
+      return;
+    }
+    onStart?.(result.source.id, qualityPreset, result.source.name);
+    setSources([]);
+    setSelectedSourceId(null);
+    setSourceRequestId(null);
+    setStatus("idle");
+  }
+
   const selectedSource = sources.find((source) => source.id === selectedSourceId);
-  const startDisabled = !connected || (!screenSharing && !selectedSourceId);
+  const startDisabled = !connected || status === "loading" || (!screenSharing && (!selectedSourceId || !sourceRequestId));
 
   return (
     <div className="screen-share-picker">
@@ -56,8 +95,8 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
           <strong>Screen share source</strong>
           <small>{selectedSource ? selectedSource.name : "Choose a screen or application window"}</small>
         </div>
-        <button type="button" onClick={screenSharing ? onStop : loadSources} disabled={status === "loading"}>
-          {screenSharing ? "Stop sharing" : status === "loading" ? "Loading..." : "Choose source"}
+        <button type="button" onClick={screenSharing ? onStop : sources.length ? () => void cancelSourceSelection() : () => void loadSources()} disabled={status === "loading"}>
+          {screenSharing ? "Stop sharing" : status === "loading" ? "Loading..." : sources.length ? "Cancel" : "Choose source"}
         </button>
       </div>
 
@@ -68,6 +107,8 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
           {retryable ? <button type="button" onClick={() => void loadSources()} disabled={status === "loading"}>Try again</button> : null}
         </div>
       ) : null}
+
+      {notice ? <p className="screen-share-picker-note" role="status">{notice}</p> : null}
 
       <label className="screen-share-quality-control">
         <span>Share quality</span>
@@ -87,6 +128,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
                 key={source.id}
                 type="button"
                 onClick={() => setSelectedSourceId(source.id)}
+                aria-pressed={source.id === selectedSourceId}
               >
                 {source.thumbnailDataUrl ? <img src={source.thumbnailDataUrl} alt="" /> : <span className="screen-source-fallback" />}
                 <span>
@@ -105,7 +147,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
                 onStop?.();
                 return;
               }
-              if (selectedSourceId) onStart?.(selectedSourceId, qualityPreset, selectedSource?.name);
+              void startSelectedSource();
             }}
           >
             {screenSharing ? "Stop sharing" : connected ? "Start sharing" : "Join room to share"}

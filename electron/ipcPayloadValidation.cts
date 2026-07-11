@@ -2,8 +2,42 @@ export type WindowAction = "minimize" | "maximize" | "close";
 export type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 export type SafeNotificationPayload = Readonly<{ title: string; body?: string; silent?: boolean }>;
 export const MAX_CLIPBOARD_TEXT_LENGTH = 1024 * 1024;
+export type ScreenCaptureListPayload = Readonly<{ requestId: string; userInitiated: true }>;
+export type ScreenCaptureSelectionPayload = Readonly<{ requestId: string; sourceId: string }>;
 
 const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
+const safeScreenCaptureRequestIdPattern = /^[a-f0-9-]{16,64}$/i;
+const safeScreenCaptureSourceIdPattern = /^(screen|window):[a-zA-Z0-9:_-]{1,240}$/;
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOnlyKeys(record: Record<string, unknown>, allowed: readonly string[]): boolean {
+  return Object.keys(record).every((key) => allowed.includes(key));
+}
+
+export function isSafeScreenCaptureSourceId(value: unknown): value is string {
+  return typeof value === "string" && safeScreenCaptureSourceIdPattern.test(value);
+}
+
+export function parseScreenCaptureListPayload(value: unknown): ScreenCaptureListPayload | null {
+  if (!isPlainRecord(value) || !hasOnlyKeys(value, ["requestId", "userInitiated"])) return null;
+  if (typeof value.requestId !== "string" || !safeScreenCaptureRequestIdPattern.test(value.requestId) || value.userInitiated !== true) return null;
+  return { requestId: value.requestId, userInitiated: true };
+}
+
+export function parseScreenCaptureSelectionPayload(value: unknown): ScreenCaptureSelectionPayload | null {
+  if (!isPlainRecord(value) || !hasOnlyKeys(value, ["requestId", "sourceId"])) return null;
+  if (typeof value.requestId !== "string" || !safeScreenCaptureRequestIdPattern.test(value.requestId) || !isSafeScreenCaptureSourceId(value.sourceId)) return null;
+  return { requestId: value.requestId, sourceId: value.sourceId };
+}
+
+export function parseScreenCaptureCancelPayload(value: unknown): Readonly<{ requestId: string }> | null {
+  if (!isPlainRecord(value) || !hasOnlyKeys(value, ["requestId"])) return null;
+  if (typeof value.requestId !== "string" || !safeScreenCaptureRequestIdPattern.test(value.requestId)) return null;
+  return { requestId: value.requestId };
+}
 
 export function isWindowAction(action: unknown): action is WindowAction {
   return action === "minimize" || action === "maximize" || action === "close";

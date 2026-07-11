@@ -29,6 +29,10 @@ import {
   parseClipboardWritePayload,
   parseNotificationPayload,
   parseSaveTextPayload,
+  parseScreenCaptureCancelPayload,
+  parseScreenCaptureListPayload,
+  parseScreenCaptureSelectionPayload,
+  isSafeScreenCaptureSourceId,
   type TrayStatus,
 } from "./ipcPayloadValidation.cjs";
 
@@ -40,6 +44,11 @@ type SafeScreenCaptureSource = Readonly<{
   type: "screen" | "window";
   thumbnailDataUrl: string | null;
   appIconDataUrl: string | null;
+}>;
+type ScreenCaptureSession = Readonly<{
+  requestId: string;
+  expiresAt: number;
+  sources: ReadonlyMap<string, SafeScreenCaptureSource>;
 }>;
 type TrayAction = "open" | "settings" | "mute" | "quit" | "online" | "idle" | "dnd" | "invisible";
 type SafePickedImageFile = Readonly<{
@@ -64,6 +73,18 @@ let closeToTrayEnabled = false;
 let isQuitting = false;
 const pendingDeepLinks: string[] = [];
 let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const screenCaptureSessions = new WeakMap<object, ScreenCaptureSession>();
+const SCREEN_CAPTURE_SESSION_TTL_MS = 60_000;
+const MAX_SCREEN_CAPTURE_SOURCES = 50;
+const MAX_SCREEN_CAPTURE_DATA_URL_LENGTH = 512 * 1024;
+
+function sanitizeScreenCaptureName(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "Untitled source";
+}
+
+function boundedCaptureDataUrl(value: string | null): string | null {
+  return value && value.startsWith("data:image/png;base64,") && value.length <= MAX_SCREEN_CAPTURE_DATA_URL_LENGTH ? value : null;
+}
 function isSafeExternalUrl(url: string): boolean {
   return normalizeExternalUrl(url) !== null;
 }
@@ -458,9 +479,15 @@ function registerIpcHandlers(): void {
     return { ok: true, native: true, maximized: window.isMaximized() || window.isFullScreen() } as const;
   });
 
-  ipcMain.handle(IPC_CHANNELS.screenCaptureGetSources, async (event) => {
+  ipcMain.handle(IPC_CHANNELS.screenCaptureGetSources, async (event, payload: unknown) => {
     if (!isTrustedIpcEvent(event)) {
       return { ok: false, native: true, error: "UNTRUSTED_SCREEN_CAPTURE_SENDER", platform: process.platform } as const;
+    }
+
+    const safePayload = parseScreenCaptureListPayload(payload);
+    const sourceWindow = BrowserWindow.fromWebContents(event.sender);
+    if (!safePayload || !sourceWindow || sourceWindow.isDestroyed() || !sourceWindow.isFocused()) {
+      return { ok: false, native: true, error: "SCREEN_CAPTURE_USER_ACTION_REQUIRED", platform: process.platform } as const;
     }
 
     try {
@@ -477,22 +504,55 @@ function registerIpcHandlers(): void {
         fetchWindowIcons: true
       });
 
-      const safeSources: SafeScreenCaptureSource[] = sources.map((source) => ({
-        id: source.id,
-        name: source.name,
-        type: source.id.startsWith("screen:") ? "screen" : "window",
-        thumbnailDataUrl: source.thumbnail.isEmpty() ? null : source.thumbnail.toDataURL(),
-        appIconDataUrl: source.appIcon?.isEmpty() ? null : source.appIcon?.toDataURL() ?? null
-      }));
+      const safeSources: SafeScreenCaptureSource[] = sources
+        .filter((source) => isSafeScreenCaptureSourceId(source.id))
+        .slice(0, MAX_SCREEN_CAPTURE_SOURCES)
+        .map((source) => ({
+          id: source.id,
+          name: sanitizeScreenCaptureName(source.name),
+          type: source.id.startsWith("screen:") ? "screen" : "window",
+          thumbnailDataUrl: boundedCaptureDataUrl(source.thumbnail.isEmpty() ? null : source.thumbnail.toDataURL()),
+          appIconDataUrl: boundedCaptureDataUrl(source.appIcon?.isEmpty() ? null : source.appIcon?.toDataURL() ?? null)
+        }));
 
       if (safeSources.length === 0) {
         return { ok: false, native: true, error: "SCREEN_CAPTURE_NO_SOURCES", platform: process.platform } as const;
       }
 
-      return { ok: true, native: true, sources: safeSources } as const;
+      screenCaptureSessions.set(event.sender, {
+        requestId: safePayload.requestId,
+        expiresAt: Date.now() + SCREEN_CAPTURE_SESSION_TTL_MS,
+        sources: new Map(safeSources.map((source) => [source.id, source])),
+      });
+      return { ok: true, native: true, requestId: safePayload.requestId, sources: safeSources } as const;
     } catch {
       return { ok: false, native: true, error: "SCREEN_CAPTURE_SOURCES_UNAVAILABLE", platform: process.platform } as const;
     }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.screenCaptureSelectSource, (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_SCREEN_CAPTURE_SENDER" } as const;
+    const safePayload = parseScreenCaptureSelectionPayload(payload);
+    if (!safePayload) return { ok: false, native: true, error: "INVALID_SCREEN_CAPTURE_SELECTION" } as const;
+
+    const session = screenCaptureSessions.get(event.sender);
+    if (!session || session.requestId !== safePayload.requestId || session.expiresAt < Date.now()) {
+      screenCaptureSessions.delete(event.sender);
+      return { ok: false, native: true, error: "SCREEN_CAPTURE_SELECTION_EXPIRED" } as const;
+    }
+    const source = session.sources.get(safePayload.sourceId);
+    screenCaptureSessions.delete(event.sender);
+    if (!source) return { ok: false, native: true, error: "SCREEN_CAPTURE_SOURCE_NOT_ALLOWED" } as const;
+    return { ok: true, native: true, source: { id: source.id, name: source.name, type: source.type } } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.screenCaptureCancelSelection, (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_SCREEN_CAPTURE_SENDER" } as const;
+    const safePayload = parseScreenCaptureCancelPayload(payload);
+    if (!safePayload) return { ok: false, native: true, error: "INVALID_SCREEN_CAPTURE_CANCEL" } as const;
+    const session = screenCaptureSessions.get(event.sender);
+    if (session?.requestId === safePayload.requestId) screenCaptureSessions.delete(event.sender);
+    return { ok: true, native: true, canceled: true } as const;
   });
 
   ipcMain.handle(IPC_CHANNELS.notificationShow, (event, payload: unknown) => {

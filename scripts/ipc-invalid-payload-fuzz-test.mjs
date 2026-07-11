@@ -14,6 +14,9 @@ for (const value of invalidValues) {
   if (validators.normalizeExternalUrl(value) !== null) throw new Error("Invalid external URL value was accepted");
   if (validators.parseClipboardWritePayload(value) !== null) throw new Error("Invalid clipboard value was accepted");
   if (validators.isSafeDeepLink(value)) throw new Error("Invalid deep link value was accepted");
+  if (validators.parseScreenCaptureListPayload(value) !== null) throw new Error("Invalid screen list payload was accepted");
+  if (validators.parseScreenCaptureSelectionPayload(value) !== null) throw new Error("Invalid screen selection payload was accepted");
+  if (validators.parseScreenCaptureCancelPayload(value) !== null) throw new Error("Invalid screen cancel payload was accepted");
 }
 
 for (const action of ["minimize", "maximize", "close"]) if (!validators.isWindowAction(action)) throw new Error(`Valid window action rejected: ${action}`);
@@ -34,6 +37,14 @@ if (!notification || notification.title.length > 120 || (notification.body?.leng
 const save = validators.parseSaveTextPayload({ defaultPath: "../bad:<name>?.json", content: "x".repeat(2 * 1024 * 1024 + 100), path: "C:/forbidden" });
 if (!save || /[<>:"/\\|?*]/.test(save.defaultPath) || save.content.length !== 2 * 1024 * 1024 || "path" in save) throw new Error("Save payload bounds/path sanitization failed");
 if (validators.parseClipboardWritePayload("x".repeat(validators.MAX_CLIPBOARD_TEXT_LENGTH + 10)).length !== validators.MAX_CLIPBOARD_TEXT_LENGTH) throw new Error("Clipboard payload was not bounded");
+
+const captureRequestId = "123e4567-e89b-12d3-a456-426614174000";
+if (!validators.parseScreenCaptureListPayload({ requestId: captureRequestId, userInitiated: true })) throw new Error("Safe screen list payload rejected");
+if (!validators.parseScreenCaptureSelectionPayload({ requestId: captureRequestId, sourceId: "screen:0:0" })) throw new Error("Safe screen selection payload rejected");
+if (!validators.parseScreenCaptureCancelPayload({ requestId: captureRequestId })) throw new Error("Safe screen cancel payload rejected");
+for (const payload of [{ requestId: captureRequestId, userInitiated: false }, { requestId: "short", userInitiated: true }, { requestId: captureRequestId, sourceId: "file:///secret" }, { requestId: captureRequestId, sourceId: "screen:0:0", extra: true }]) {
+  if (validators.parseScreenCaptureListPayload(payload) || validators.parseScreenCaptureSelectionPayload(payload) || validators.parseScreenCaptureCancelPayload(payload)) throw new Error("Unsafe screen capture payload accepted");
+}
 
 for (const link of ["picom://settings", "picom://friends", "picom://invite/ABC_123", "picom://community/community-1/channel/channel-2/message/message-3", "picom://auth/callback?code=abcdefgh"]) {
   if (!validators.isSafeDeepLink(link)) throw new Error(`Safe deep link rejected: ${link}`);
@@ -57,7 +68,8 @@ for (let index = 0; index < 1000; index += 1) {
 const main = fs.readFileSync("electron/main.cts", "utf8");
 const preload = fs.readFileSync("electron/preload.cts", "utf8");
 const channels = fs.readFileSync("electron/ipcChannels.cts", "utf8");
-if (!main.includes('types: ["screen", "window"]') || !main.includes("screenCaptureGetSources, async (event)")) throw new Error("Screen picker is not fixed-input/sender-guarded");
+if (!main.includes('types: ["screen", "window"]') || !main.includes("screenCaptureGetSources, async (event, payload: unknown)")) throw new Error("Screen picker is not fixed-input/payload/sender-guarded");
+for (const marker of ["parseScreenCaptureListPayload", "parseScreenCaptureSelectionPayload", "parseScreenCaptureCancelPayload", "screenCaptureSessions", "SCREEN_CAPTURE_SESSION_TTL_MS"]) if (!main.includes(marker)) throw new Error(`Secure screen picker contract missing: ${marker}`);
 if (channels.includes("update") || preload.includes("update:")) throw new Error("Update IPC must remain absent until a frozen safe contract is approved");
 for (const forbidden of ["child_process", "exec(", "spawn(", "shell.openPath", "fs.rm", "fs.unlink", "fs.readdir"]) {
   if (main.includes(forbidden)) throw new Error(`Forbidden native capability found in IPC main path: ${forbidden}`);

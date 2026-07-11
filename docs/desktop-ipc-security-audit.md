@@ -46,12 +46,11 @@ This task is documentation and verification only. No renderer UI behavior change
 - Risk: Low.
 - Notes: Renderer receives boolean state only.
 
-### Screen capture sources
+### Screen capture sources and selection
 
-- Channel: `picom:screen-capture-get-sources`
+- Channels: `picom:screen-capture-get-sources`, `picom:screen-capture-select-source`, `picom:screen-capture-cancel-selection`
 - Risk: Medium.
-- Notes: Required for MVP screen sharing. Main process returns source id, name, type, thumbnail, and app icon only. This should remain gated by explicit user action in the UI.
-- TODO: Keep screen-share source picker user-initiated and document macOS screen recording permissions.
+- Notes: Required for MVP screen sharing. Main returns bounded source id, name, type, thumbnail, and app icon only after a focused explicit action. Selection is restricted to a one-use, 60-second, WebContents-bound source session; cancel invalidates it. macOS denial is checked before enumeration.
 
 ### Native notifications
 

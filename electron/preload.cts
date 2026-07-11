@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IPC_CHANNELS, isIpcChannel } from "./ipcChannels.cjs";
+import { parseScreenCaptureCancelPayload, parseScreenCaptureListPayload, parseScreenCaptureSelectionPayload } from "./ipcPayloadValidation.cjs";
 
 type WindowAction = "minimize" | "maximize" | "close";
 type MaximizeStateHandler = (isMaximized: boolean) => void;
@@ -10,6 +11,8 @@ type SafeScreenCaptureSource = Readonly<{
   thumbnailDataUrl: string | null;
   appIconDataUrl: string | null;
 }>;
+type ScreenCaptureListRequest = Readonly<{ requestId: string; userInitiated: true }>;
+type ScreenCaptureSelectionRequest = Readonly<{ requestId: string; sourceId: string }>;
 type NativeNotificationPayload = Readonly<{
   title: string;
   body?: string;
@@ -214,11 +217,30 @@ const bridge = Object.freeze({
     };
   },
   screenCapture: {
-    getSources: () =>
-      invokeWhitelisted(IPC_CHANNELS.screenCaptureGetSources) as Promise<
-        | { ok: true; native: true; sources: SafeScreenCaptureSource[] }
+    getSources: (request: ScreenCaptureListRequest) => {
+      const safeRequest = parseScreenCaptureListPayload(request);
+      if (!safeRequest) return Promise.resolve({ ok: false, native: true, error: "INVALID_SCREEN_CAPTURE_REQUEST" } as const);
+      return invokeWhitelisted(IPC_CHANNELS.screenCaptureGetSources, safeRequest) as Promise<
+        | { ok: true; native: true; requestId: string; sources: SafeScreenCaptureSource[] }
         | { ok: false; native: true; error: string; platform?: string }
-      >
+      >;
+    },
+    selectSource: (request: ScreenCaptureSelectionRequest) => {
+      const safeRequest = parseScreenCaptureSelectionPayload(request);
+      if (!safeRequest) return Promise.resolve({ ok: false, native: true, error: "INVALID_SCREEN_CAPTURE_SELECTION" } as const);
+      return invokeWhitelisted(IPC_CHANNELS.screenCaptureSelectSource, safeRequest) as Promise<
+        | { ok: true; native: true; source: Pick<SafeScreenCaptureSource, "id" | "name" | "type"> }
+        | { ok: false; native: true; error: string }
+      >;
+    },
+    cancelSelection: (request: Readonly<{ requestId: string }>) => {
+      const safeRequest = parseScreenCaptureCancelPayload(request);
+      if (!safeRequest) return Promise.resolve({ ok: false, native: true, error: "INVALID_SCREEN_CAPTURE_CANCEL" } as const);
+      return invokeWhitelisted(IPC_CHANNELS.screenCaptureCancelSelection, safeRequest) as Promise<
+        | { ok: true; native: true; canceled: true }
+        | { ok: false; native: true; error: string }
+      >;
+    },
   },
   showNotification: (payload: NativeNotificationPayload) =>
     invokeWhitelisted(IPC_CHANNELS.notificationShow, payload) as Promise<

@@ -25,14 +25,16 @@ Runtime info is diagnostics metadata only. It must not include environment varia
 
 ## Screen capture
 
-`screenCapture.getSources()` returns safe source descriptors:
+`screenCapture.getSources({ requestId, userInitiated: true })` starts a short-lived, focused-window picker session and returns safe source descriptors:
 
 - `id`
 - `name`
 - `type` (`screen` or `window`)
 - thumbnail/app-icon data URL or null
 
-The bridge does not expose `desktopCapturer`. Main verifies the sender, handles macOS permission state, and returns safe error codes. Capture starts only after explicit renderer/user selection through the voice service.
+`screenCapture.selectSource({ requestId, sourceId })` accepts only a source from that same unexpired WebContents-bound session and consumes the session. `screenCapture.cancelSelection({ requestId })` invalidates it without capture. Source count, names, identifiers, thumbnails, and icon data URLs are bounded.
+
+The bridge does not expose `desktopCapturer`. Main verifies the sender and focused explicit-action payload, handles macOS permission state, and returns safe error codes. Capture starts only after the selected source is approved through this narrow one-use contract.
 
 ## Tray
 
@@ -83,6 +85,8 @@ Version 1 uses only:
 - `picom:window-is-maximized`
 - `picom:window-maximize-state-changed`
 - `picom:screen-capture-get-sources`
+- `picom:screen-capture-select-source`
+- `picom:screen-capture-cancel-selection`
 - `picom:notification-show`
 - `picom:tray-set-status`
 - `picom:tray-set-muted`

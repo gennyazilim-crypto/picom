@@ -56,9 +56,17 @@ declare global {
         | { ok: false; native: true; error: string }
       >;
       screenCapture?: {
-        getSources: () => Promise<
-          | { ok: true; native: true; sources: PicomScreenCaptureSource[] }
+        getSources: (request: { requestId: string; userInitiated: true }) => Promise<
+          | { ok: true; native: true; requestId: string; sources: PicomScreenCaptureSource[] }
           | { ok: false; native: true; error: string; platform?: string }
+        >;
+        selectSource: (request: { requestId: string; sourceId: string }) => Promise<
+          | { ok: true; native: true; source: Pick<PicomScreenCaptureSource, "id" | "name" | "type"> }
+          | { ok: false; native: true; error: string }
+        >;
+        cancelSelection: (request: { requestId: string }) => Promise<
+          | { ok: true; native: true; canceled: true }
+          | { ok: false; native: true; error: string }
         >;
       };
       tray?: {

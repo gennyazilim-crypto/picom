@@ -1,18 +1,25 @@
 export type ScreenCaptureSource = PicomScreenCaptureSource;
 
 export type ScreenCaptureServiceResult =
-  | Readonly<{ ok: true; sources: ScreenCaptureSource[] }>
+  | Readonly<{ ok: true; requestId: string; sources: ScreenCaptureSource[] }>
   | Readonly<{
       ok: false;
-      error: "SCREEN_CAPTURE_UNAVAILABLE" | "SCREEN_CAPTURE_PERMISSION_DENIED" | "SCREEN_CAPTURE_NO_SOURCES" | "SCREEN_CAPTURE_FAILED";
+      error: "SCREEN_CAPTURE_UNAVAILABLE" | "SCREEN_CAPTURE_PERMISSION_DENIED" | "SCREEN_CAPTURE_NO_SOURCES" | "SCREEN_CAPTURE_SELECTION_EXPIRED" | "SCREEN_CAPTURE_FAILED";
       message: string;
       guidance: string;
       retryable: boolean;
     }>;
 
 function isValidSource(source: PicomScreenCaptureSource): boolean {
-  return Boolean(source.id && source.name && (source.type === "screen" || source.type === "window"));
+  return /^(screen|window):[a-zA-Z0-9:_-]{1,240}$/.test(source.id) && Boolean(source.name && source.name.length <= 160 && (source.type === "screen" || source.type === "window"));
 }
+
+const createRequestId = (): string => {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const values = new Uint32Array(4);
+  crypto.getRandomValues(values);
+  return Array.from(values, (value) => value.toString(16).padStart(8, "0")).join("");
+};
 
 export const screenCaptureService = {
   async listSources(): Promise<ScreenCaptureServiceResult> {
@@ -28,7 +35,8 @@ export const screenCaptureService = {
       };
     }
 
-    const result = await getSources().catch(() => null);
+    const requestId = createRequestId();
+    const result = await getSources({ requestId, userInitiated: true }).catch(() => null);
 
     if (!result?.ok) {
       const platform = result?.platform ?? window.picomDesktop?.getRuntimeInfo().platform ?? "unknown";
@@ -50,9 +58,24 @@ export const screenCaptureService = {
       };
     }
 
-    return {
-      ok: true,
-      sources: result.sources.filter(isValidSource)
-    };
+    const sources = result.sources.filter(isValidSource).slice(0, 50);
+    if (!sources.length) return { ok: false, error: "SCREEN_CAPTURE_NO_SOURCES", message: "No safe shareable sources were returned.", guidance: "Try loading sources again after opening the screen or window you want to share.", retryable: true };
+    return { ok: true, requestId: result.requestId, sources };
+  },
+
+  async selectSource(requestId: string, sourceId: string): Promise<Readonly<{ ok: true; source: Pick<ScreenCaptureSource, "id" | "name" | "type"> }> | Readonly<{ ok: false; message: string; guidance: string; retryable: boolean }>> {
+    const selectSource = window.picomDesktop?.screenCapture?.selectSource;
+    if (!selectSource) return { ok: false, message: "Screen source validation is unavailable.", guidance: "Restart Picom in the Electron desktop app and choose the source again.", retryable: false };
+    const result = await selectSource({ requestId, sourceId }).catch(() => null);
+    if (!result || !result.ok) {
+      const expired = result?.error === "SCREEN_CAPTURE_SELECTION_EXPIRED";
+      return { ok: false, message: expired ? "The screen source selection expired." : "Picom could not validate the selected source.", guidance: "Choose the screen or window again before starting share.", retryable: true };
+    }
+    if (!isValidSource({ ...result.source, thumbnailDataUrl: null, appIconDataUrl: null })) return { ok: false, message: "Picom rejected an invalid screen source.", guidance: "Choose the screen or window again before starting share.", retryable: true };
+    return { ok: true, source: result.source };
+  },
+
+  async cancelSelection(requestId: string): Promise<void> {
+    await window.picomDesktop?.screenCapture?.cancelSelection({ requestId }).catch(() => undefined);
   }
 };

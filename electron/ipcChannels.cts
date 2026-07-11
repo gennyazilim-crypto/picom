@@ -3,6 +3,8 @@ export const IPC_CHANNELS = Object.freeze({
   windowIsMaximized: "picom:window-is-maximized",
   windowMaximizeStateChanged: "picom:window-maximize-state-changed",
   screenCaptureGetSources: "picom:screen-capture-get-sources",
+  screenCaptureSelectSource: "picom:screen-capture-select-source",
+  screenCaptureCancelSelection: "picom:screen-capture-cancel-selection",
   notificationShow: "picom:notification-show",
   traySetStatus: "picom:tray-set-status",
   traySetMuted: "picom:tray-set-muted",
