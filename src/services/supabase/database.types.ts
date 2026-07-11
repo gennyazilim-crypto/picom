@@ -74,6 +74,8 @@ export type Database = {
           system_key: "owner" | "admin" | "moderator" | "member" | null;
           is_default: boolean;
           permissions_version: number;
+          icon: string | null;
+          display_order: number;
           created_at: string;
           updated_at: string;
         };
@@ -679,6 +681,10 @@ export type Database = {
       };
     };
     Functions: {
+      create_community_role: { Args: { target_community_id: string; target_name: string; target_color: string; target_icon: string | null; target_level: number; target_permissions: Json; change_reason: string }; Returns: Array<Database["public"]["Tables"]["roles"]["Row"]> };
+      update_community_role: { Args: { target_community_id: string; target_role_id: string; target_name: string; target_color: string; target_icon: string | null; target_level: number; target_permissions: Json; change_reason: string }; Returns: Array<Database["public"]["Tables"]["roles"]["Row"]> };
+      swap_community_role_order: { Args: { target_community_id: string; target_role_id: string; adjacent_role_id: string; change_reason: string }; Returns: Array<Database["public"]["Tables"]["roles"]["Row"]> };
+      delete_community_role: { Args: { target_community_id: string; target_role_id: string; change_reason: string }; Returns: boolean };
       join_current_user_radio_listener: { Args: { target_session_id: string }; Returns: Array<Database["public"]["Tables"]["radio_listeners"]["Row"]> };
       leave_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };
       heartbeat_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };

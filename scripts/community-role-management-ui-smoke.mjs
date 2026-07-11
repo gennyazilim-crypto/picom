@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const component = read("src/components/community/CommunityRoleManagement.tsx");
+const catalog = read("src/services/permissions/communityPermissionCatalog.ts");
+const service = read("src/services/community/communityRoleManagementService.ts");
+const migration = read("supabase/migrations/20260711149300_community_role_management_ui.sql");
+const app = read("src/App.tsx");
+for (const group of ["General","Membership","Text","Voice","Radio","Podcast","Moderation","Administration"]) assert.ok(catalog.includes(`name: \"${group}\"`), `missing permission group ${group}`);
+for (const marker of ["Create role","Save role","Duplicate","Delete","Move up","Move down","Role color tokens","Optional icon","window.confirm","canDeleteCommunityRole","hasCommunityPermission(access, permission.key)"]) assert.ok(component.includes(marker), `role UI missing ${marker}`);
+assert.ok(!component.includes("supabase.from") && !component.includes("getSupabaseClient"), "role UI must use the service boundary");
+for (const operation of ["createRole","updateRole","duplicateRole","swapRoleOrder","deleteRole"]) assert.ok(service.includes(operation), `role service missing ${operation}`);
+for (const rpc of ["create_community_role","update_community_role","swap_community_role_order","delete_community_role"]) assert.ok(service.includes(`rpc(\"${rpc}\"`) && migration.includes(`function public.${rpc}`), `missing RPC boundary ${rpc}`);
+for (const safeguard of ["ROLE_HIERARCHY_DENIED","PERMISSION_DELEGATION_DENIED","SYSTEM_ROLE_MUTATION_FORBIDDEN","ROLE_IN_USE","redact_audit_reason","for update","revoke all on function"]) assert.ok(migration.includes(safeguard), `role migration missing ${safeguard}`);
+assert.ok(app.includes("onCommunityRolesChanged") && app.includes("replaceCommunities"), "role changes must update app state");
+console.log("Community role create, edit, color/icon, permission, order, duplicate, delete, service, audit, and hierarchy UI smoke: PASS");

@@ -61,9 +61,12 @@ export interface Role {
   color: string;
   level: number;
   capabilities?: readonly string[];
+  permissionValues?: Readonly<Record<string, boolean>>;
   systemKey?: RoleSystemKey;
   isDefault?: boolean;
   permissionsVersion?: number;
+  icon?: string;
+  displayOrder?: number;
 }
 
 export interface Member {

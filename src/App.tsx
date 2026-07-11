@@ -2974,6 +2974,7 @@ export function App() {
                 onClearPendingInviteCode={() => setPendingInviteCode(null)}
                 onInviteAccepted={handleInviteAccepted}
                 onAssignMemberRole={(memberId, roleId) => replaceCommunityMembers(activeCommunity.id, activeCommunity.members.map((member) => member.id === memberId ? { ...member, roleId } : member))}
+                onCommunityRolesChanged={(roles) => replaceCommunities(communities.map((community) => community.id === activeCommunity.id ? { ...community, roles } : community))}
                 onCommunityUpdated={(summary) => replaceCommunities(communities.map((community) => community.id !== summary.id ? community : { ...community, kind: summary.kind, ownerId: summary.ownerId ?? community.ownerId, name: summary.name, description: summary.description, icon: summary.iconUrl ?? "", accentColor: summary.accentColor, visibility: summary.visibility, publicReadEnabled: summary.publicReadEnabled }))}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
                 events={communityEvents}

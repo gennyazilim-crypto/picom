@@ -10,6 +10,7 @@ import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 import { canAssignCommunityRole } from "../../services/permissions/communityPermissions";
 import { communityRoleAssignmentService } from "../../services/community/communityRoleAssignmentService";
 import { communityService, type CommunitySummary } from "../../services/communityService";
+import { CommunityRoleManagement } from "./CommunityRoleManagement";
 
 export type AdminSectionId = "overview" | "insights" | "community-settings" | "verification" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
@@ -73,8 +74,8 @@ export function CommunityChannelsSection({ community, onCreateChannel }: { commu
   return <SectionShell eyebrow="Structure" title="Channels" description="Create channels through the existing validated channel modal."><div className="community-admin-list">{community.categories.map((category) => <article key={category.id}><div><strong>{category.name}</strong><span>{category.channels.length} channels</span></div><button type="button" onClick={() => onCreateChannel(category.id)}><AppIcon name="plus" size="sm" /> Add channel</button></article>)}</div></SectionShell>;
 }
 
-export function CommunityRolesSection({ community }: { community: Community }) {
-  return <SectionShell eyebrow="Access" title="Roles" description="Role order and badges currently follow the community mock/API data source."><div className="community-role-grid">{[...community.roles].sort((a, b) => b.level - a.level).map((role) => <article key={role.id}><i style={{ background: role.color }} /><div><strong>{role.name}</strong><span>Level {role.level}</span></div></article>)}</div></SectionShell>;
+export function CommunityRolesSection({ community, access, onRolesChanged }: { community: Community; access: CommunityAccess; onRolesChanged: (roles: Community["roles"]) => void }) {
+  return <SectionShell eyebrow="Access architecture" title="Roles and permissions" description="Create custom roles, control permissions, and order the visible hierarchy through audited service operations."><CommunityRoleManagement community={community} access={access} onRolesChanged={onRolesChanged} /></SectionShell>;
 }
 
 export function CommunityMembersSection({ community, access, onRoleAssigned }: { community: Community; access: CommunityAccess; onRoleAssigned: (memberId: string, roleId: string) => void }) {

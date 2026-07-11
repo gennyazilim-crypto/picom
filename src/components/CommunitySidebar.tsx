@@ -45,6 +45,7 @@ type CommunitySidebarProps = {
   onClearPendingInviteCode: () => void;
   onInviteAccepted: (communityId: string, member: Member, status: InviteAcceptanceStatus, preview: import("../services/community/communityInviteService").CommunityInvitePreview) => void | Promise<void>;
   onAssignMemberRole: (memberId: string, roleId: string) => void;
+  onCommunityRolesChanged: (roles: Community["roles"]) => void;
   onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void;
   onPlaceholderAction: (message: string) => void;
   events: UpcomingEvent[];
@@ -55,7 +56,7 @@ type CommunitySidebarProps = {
 
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
-export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onAssignMemberRole, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onAssignMemberRole, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -127,7 +128,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
 
       <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />
 
-      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onCreateChannel={onCreateChannel} onAssignMemberRole={onAssignMemberRole} onCommunityUpdated={onCommunityUpdated} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
+      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onCreateChannel={onCreateChannel} onAssignMemberRole={onAssignMemberRole} onCommunityRolesChanged={onCommunityRolesChanged} onCommunityUpdated={onCommunityUpdated} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
       {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} /> : null}
       {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}
       {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} onOpenJoinWithInvite={() => setOpenPanel("joinInvite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}

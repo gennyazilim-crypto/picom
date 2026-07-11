@@ -141,6 +141,12 @@ function getRolePermissions(status: CommunityMembershipStatus, kind: CommunityKi
   return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...explicit])];
 }
 
+export function getDefaultCommunityRolePermissions(role: Role, kind: CommunityKind): CommunityPermissionKey[] {
+  const status = getStatus(role, isOwnerRole(role));
+  const common = status === "owner" ? OWNER_PERMISSIONS : status === "admin" ? ADMIN_PERMISSIONS : status === "moderator" ? MODERATOR_PERMISSIONS : MEMBER_PERMISSIONS;
+  return [...new Set([...common, ...KIND_PERMISSIONS[kind][status]])];
+}
+
 export function getCommunityAccess(userId: UserId, community: Community): CommunityAccess {
   const { member, role } = getUserCommunityRole(userId, community);
   const owner = isCommunityOwner(userId, community);
