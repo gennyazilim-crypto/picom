@@ -8,6 +8,7 @@ export type DirectMessageAttachment = Readonly<{
   name: string;
   mimeType?: string;
   fileSize?: number;
+  storagePath?: string;
   width?: number;
   height?: number;
   createdAt?: string;
@@ -39,6 +40,7 @@ export type DirectMessage = Readonly<{
   replyPreview?: DirectMessageReplyPreview;
   reactions?: readonly DirectMessageReaction[];
   isPlaceholder?: boolean;
+  sendStatus?: "sending" | "sent" | "failed";
 }>;
 
 export type DirectMessageCursor = Readonly<{ createdAt: string; id: string }>;

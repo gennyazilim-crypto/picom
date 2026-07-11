@@ -27,7 +27,7 @@ type LegacySubscribeInput = Readonly<{ conversationIds: readonly string[]; curre
 const mockActiveListeners = new Set<Readonly<{ conversationId: string; listener: DirectRealtimeListener }>>();
 const mockListListeners = new Set<DirectRealtimeListener>();
 
-function mapAttachment(row: DirectAttachmentRow): DirectSharedMediaItem { return { id: row.id, messageId: row.message_id, type: row.mime_type?.startsWith("image/") === false ? "file" : "image", url: row.url, name: row.file_name ?? "attachment", mimeType: row.mime_type ?? undefined, fileSize: row.size_bytes ?? row.file_size ?? undefined, width: row.width ?? undefined, height: row.height ?? undefined, createdAt: row.created_at }; }
+function mapAttachment(row: DirectAttachmentRow): DirectSharedMediaItem { return { id: row.id, messageId: row.message_id, type: row.mime_type?.startsWith("image/") === false ? "file" : "image", url: row.url, storagePath: row.storage_path ?? undefined, name: row.file_name ?? "attachment", mimeType: row.mime_type ?? undefined, fileSize: row.size_bytes ?? row.file_size ?? undefined, width: row.width ?? undefined, height: row.height ?? undefined, createdAt: row.created_at }; }
 function eventKey(event: DirectRealtimeEvent): string {
   if ("message" in event) return `${event.type}:${event.message.clientMessageId ?? event.message.id}:${event.message.editedAt ?? event.message.deletedAt ?? event.message.createdAt}`;
   if ("reaction" in event) return `${event.type}:${event.reaction.id}:${event.reaction.created_at}`;

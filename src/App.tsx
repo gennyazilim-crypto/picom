@@ -11,7 +11,7 @@ import { communityEventService, type CreateCommunityEventInput, type UpdateCommu
 import { mockFollowedUserStories } from "./data/mockStories";
 import { mockFollowSuggestions } from "./data/mockFollowSuggestions";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
-import type { DirectConversation, DirectSharedMediaItem } from "./types/directMessages";
+import type { DirectConversation, DirectMessage, DirectMessageAttachment, DirectSharedMediaItem } from "./types/directMessages";
 import type { FriendState, FriendViewTab } from "./types/friends";
 import { friendPresenceService } from "./services/friends/friendPresenceService";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
@@ -49,6 +49,7 @@ import { MentionRightPanel } from "./components/MentionRightPanel";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import type { DirectReactionRow } from "./services/directMessages/directRealtimeService";
 import { directMessageService } from "./services/directMessages/directMessageService";
+import { directAttachmentUploadService } from "./services/directMessages/directAttachmentUploadService";
 import { relationshipService } from "./services/relationshipService";
 import { mentionFeedService } from "./services/mentionFeedService";
 import { storyService } from "./services/storyService";
@@ -1884,18 +1885,15 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, communities, directConversations, pushToast]);
 
-  const sendDirectMessageLocal = useCallback(async (conversationId: string, body: string): Promise<boolean> => {
+  const sendDirectMessageLocal = useCallback(async (conversationId: string, body: string, attachments: readonly DirectMessageAttachment[] = [], replyToMessageId?: string, retryClientMessageId?: string): Promise<boolean> => {
     const conversation = directConversations.find((candidate) => candidate.id === conversationId);
     if (conversation && !userBlockingService.canMessageUser(conversation.participantUserId)) { pushToast("Direct messages with this blocked user are disabled.", "error"); return false; }
     const createdAt = new Date().toISOString();
-    const clientMessageId = `dm-client-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? {
-      ...conversation, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0,
-      messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: directMessageUserId, body, createdAt }],
-    } : conversation));
-    const result = await directMessageService.sendDirectMessage({ conversationId, body, clientMessageId });
-    if (result.ok) { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? result.data : message), lastMessagePreview: result.data.body, updatedAt: result.data.createdAt } : item)); return true; }
-    setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.filter((message) => message.clientMessageId !== clientMessageId) } : item));
+    const clientMessageId = retryClientMessageId ?? crypto.randomUUID();
+    setDirectConversations((current) => current.map((item) => { if (item.id !== conversationId) return item; const reply = replyToMessageId ? item.messages.find((message) => message.id === replyToMessageId) : undefined; const optimistic: DirectMessage = { id: `dm-optimistic-${clientMessageId}`, clientMessageId, conversationId, authorId: directMessageUserId, body, createdAt, attachments, replyToMessageId, replyPreview: replyToMessageId ? { messageId: replyToMessageId, authorName: reply?.authorId === directMessageUserId ? "You" : item.participantName, body: !reply ? "Message unavailable" : reply.deletedAt ? "Message deleted" : reply.body } : undefined, sendStatus: "sending" }; const existingIndex = item.messages.findIndex((message) => message.clientMessageId === clientMessageId); const messages = [...item.messages]; if (existingIndex >= 0) messages[existingIndex] = { ...messages[existingIndex], ...optimistic }; else messages.push(optimistic); return { ...item, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0, messages }; }));
+    const result = await directMessageService.sendDirectMessage({ conversationId, body, attachments, replyToMessageId, clientMessageId });
+    if (result.ok) { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? { ...result.data, sendStatus: "sent" } : message), lastMessagePreview: result.data.body, updatedAt: result.data.createdAt } : item)); return true; }
+    setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? { ...message, sendStatus: "failed" } : message) } : item));
     pushToast(result.error.message, "error");
     return false;
   }, [directConversations, directMessageUserId, pushToast]);
@@ -1905,7 +1903,7 @@ export function App() {
       if (conversation.id !== message.conversationId) return conversation;
       const index = conversation.messages.findIndex((candidate) => candidate.id === message.id || Boolean(message.clientMessageId && candidate.clientMessageId === message.clientMessageId));
       const messages = [...conversation.messages];
-      if (index >= 0) messages[index] = message; else messages.push(message);
+      if (index >= 0) messages[index] = { ...message, sendStatus: "sent" }; else messages.push({ ...message, sendStatus: "sent" });
       const active = activeView === "directMessages" && activeDirectConversationId === conversation.id;
       return { ...conversation, messages, lastMessagePreview: message.deletedAt ? "Message deleted" : message.body, updatedAt: message.createdAt, unreadCount: message.authorId === directMessageUserId || active ? 0 : conversation.unreadCount + (index >= 0 ? 0 : 1) };
     }));
@@ -1925,6 +1923,7 @@ export function App() {
       if (message.id !== reaction.message_id) return message;
       const reactions = [...(message.reactions ?? [])];
       const index = reactions.findIndex((item) => item.emoji === reaction.emoji);
+      if (reaction.user_id === directMessageUserId && ((type === "add" && index >= 0 && reactions[index].reactedByCurrentUser) || (type === "remove" && (index < 0 || !reactions[index].reactedByCurrentUser)))) return message;
       const delta = type === "add" ? 1 : -1;
       if (index >= 0) { const next = reactions[index].count + delta; if (next > 0) reactions[index] = { ...reactions[index], count: next, reactedByCurrentUser: reaction.user_id === directMessageUserId ? type === "add" : reactions[index].reactedByCurrentUser }; else reactions.splice(index, 1); }
       else if (type === "add") reactions.push({ emoji: reaction.emoji, count: 1, reactedByCurrentUser: reaction.user_id === directMessageUserId });
@@ -1932,8 +1931,14 @@ export function App() {
     }) })));
   }, [directMessageUserId]);
 
+  const editDirectMessageLocal = useCallback(async (messageId: string, body: string): Promise<boolean> => { const result = await directMessageService.editDirectMessage(messageId, body); if (!result.ok) { pushToast(result.error.message, "error"); return false; } handleDirectRealtimeUpdate(result.data); return true; }, [handleDirectRealtimeUpdate, pushToast]);
+  const deleteDirectMessageLocal = useCallback(async (messageId: string): Promise<boolean> => { const result = await directMessageService.deleteDirectMessage(messageId); if (!result.ok) { pushToast(result.error.message, "error"); return false; } handleDirectRealtimeUpdate(result.data); return true; }, [handleDirectRealtimeUpdate, pushToast]);
+  const toggleDirectReactionLocal = useCallback(async (message: DirectMessage, emoji: string): Promise<boolean> => { const active = message.reactions?.find((reaction) => reaction.emoji === emoji)?.reactedByCurrentUser === true; const result = active ? await directMessageService.removeDirectReaction(message.id, emoji) : await directMessageService.addDirectReaction(message.id, emoji); if (!result.ok) { pushToast(result.error.message, "error"); return false; } handleDirectRealtimeReaction(active ? "remove" : "add", { id: `local-${message.id}-${emoji}-${directMessageUserId}`, message_id: message.id, user_id: directMessageUserId, emoji, created_at: new Date().toISOString() }); return true; }, [directMessageUserId, handleDirectRealtimeReaction, pushToast]);
+  const removeFailedDirectMessage = useCallback((messageId: string) => { setDirectConversations((current) => current.map((conversation) => ({ ...conversation, messages: conversation.messages.filter((message) => message.id !== messageId || message.sendStatus !== "failed") }))); }, []);
+
   const handleDirectRealtimeAttachment = useCallback((type: "add" | "remove", attachment: DirectSharedMediaItem) => {
-    setDirectConversations((current) => current.map((conversation) => { if (!conversation.messages.some((message) => message.id === attachment.messageId)) return conversation; return { ...conversation, sharedMedia: type === "add" ? [...(conversation.sharedMedia ?? []).filter((item) => item.id !== attachment.id), attachment] : (conversation.sharedMedia ?? []).filter((item) => item.id !== attachment.id), messages: conversation.messages.map((message) => message.id !== attachment.messageId ? message : { ...message, attachments: type === "add" ? [...(message.attachments ?? []).filter((item) => item.id !== attachment.id), attachment] : (message.attachments ?? []).filter((item) => item.id !== attachment.id) }) }; }));
+    const apply = (resolved: DirectSharedMediaItem) => setDirectConversations((current) => current.map((conversation) => { if (!conversation.messages.some((message) => message.id === resolved.messageId)) return conversation; return { ...conversation, sharedMedia: type === "add" ? [...(conversation.sharedMedia ?? []).filter((item) => item.id !== resolved.id), resolved] : (conversation.sharedMedia ?? []).filter((item) => item.id !== resolved.id), messages: conversation.messages.map((message) => message.id !== resolved.messageId ? message : { ...message, attachments: type === "add" ? [...(message.attachments ?? []).filter((item) => item.id !== resolved.id), resolved] : (message.attachments ?? []).filter((item) => item.id !== resolved.id) }) }; }));
+    if (type === "add") void directAttachmentUploadService.resolveDisplayUrl(attachment).then((resolved) => apply({ ...resolved, messageId: attachment.messageId, createdAt: attachment.createdAt })); else apply(attachment);
   }, []);
 
   const handleDirectReadState = useCallback((conversationId: string, userId: string, lastReadAt?: string, lastReadMessageId?: string) => {
@@ -1958,6 +1963,7 @@ export function App() {
     onAttachment: handleDirectRealtimeAttachment,
     onReadState: handleDirectReadState,
     onConversationChanged: refreshDirectConversationSummaries,
+    mutedConversationIds: directConversations.filter((conversation) => conversation.muted).map((conversation) => conversation.id),
   });
 
   const openNotificationSource = useCallback((item: NotificationCenterItem) => {
@@ -2651,9 +2657,18 @@ export function App() {
               conversations={directConversations}
               activeConversationId={activeDirectConversationId}
               currentUserId={directMessageUserId}
+              currentUserDisplayName={currentUser.displayName}
               friendRequestCount={friendState.counts.pending}
               onSelectConversation={(conversationId) => { setActiveDirectConversationId(conversationId); setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item)); void directMessageService.markDirectConversationRead(conversationId); }}
               onSendMessage={sendDirectMessageLocal}
+              onEditMessage={editDirectMessageLocal}
+              onDeleteMessage={deleteDirectMessageLocal}
+              onToggleReaction={toggleDirectReactionLocal}
+              onRemoveFailedMessage={removeFailedDirectMessage}
+              onOpenCommunity={openCommunityFromRail}
+              onBlockUser={async (userId) => { const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId); if (!member) { pushToast("This user is no longer available.", "error"); return false; } await handleToggleBlockUser(member); return true; }}
+              onReportUser={(userId) => { const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId); if (member) handleReportUser(member); else pushToast("This user is no longer available.", "error"); }}
+              onNotice={(message, kind = "info") => pushToast(message, kind)}
               onSetMuted={async (conversationId, muted) => { const mutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null; const result = await directMessageService.setDirectConversationMuted(conversationId, mutedUntil); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, muted, mutedUntil: mutedUntil ?? undefined } : conversation)); return true; }}
               onArchive={async (conversationId) => { const result = await directMessageService.setDirectConversationArchived(conversationId, true); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => { const remaining = current.filter((conversation) => conversation.id !== conversationId); setActiveDirectConversationId(remaining[0]?.id ?? ""); return remaining; }); return true; }}
               onBackToCommunity={() => setActiveView("community")}

@@ -5,7 +5,7 @@ for(const marker of ["loadDirectConversations","getDirectMessagesPage","send_dir
 for(const marker of ["dm_privacy","users_are_blocked","friendships","GROUP_DM_NOT_SUPPORTED","count(*) from public.direct_conversation_members","revoke insert on public.direct_messages"])if(!migration.includes(marker))throw new Error(`DM migration missing ${marker}`);
 for(const marker of ["subscribeToActiveDirectConversation", "subscribeToDirectConversationList", "direct_conversation_participants", ".eq(\"user_id\", input.currentUserId)", "messageIds", "removeChannel"])if(!realtime.includes(marker))throw new Error(`DM realtime access/cleanup missing ${marker}`);
 if(!app.includes("directMessageService.loadDirectConversations")||!app.includes("directMessageUserId"))throw new Error("Supabase DM App integration missing.");
-for(const marker of ["Promise<boolean>","aria-busy","Message was not sent. Your draft is still here.","unreadCount"])if(!view.includes(marker))throw new Error(`DM UI missing ${marker}`);
+for(const marker of ["Promise<boolean>","aria-busy","Message was not sent.","direct-message-recovery","unreadCount"])if(!view.includes(marker))throw new Error(`DM UI missing ${marker}`);
 if(!rail.includes("onOpenDirectMessages")||!rail.includes("Direct messages"))throw new Error("ServerRail DM entry missing.");
 for(const marker of ["two participants", "block", "privacy", "No group DM", "access-boundary checklist"])if(!doc.includes(marker))throw new Error(`DM docs missing ${marker}`);
 console.log("Direct messages production smoke passed.");

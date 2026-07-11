@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+const [view, styles, app, service, upload, typing, realtime] = await Promise.all([read("src/components/DirectMessagesView.tsx"), read("src/components/DirectMessagesView.css"), read("src/App.tsx"), read("src/services/directMessages/directMessageService.ts"), read("src/services/directMessages/directAttachmentUploadService.ts"), read("src/hooks/useDirectTypingBroadcast.ts"), read("src/hooks/useDirectMessageRealtime.ts")]);
+for (const marker of ["EmojiPicker", "directAttachmentUploadService.upload", "replyTo", "onEditMessage", "onDeleteMessage", "onToggleReaction", "clipboardService.copyText", "externalLinkService.openExternalUrl", "Message was not sent", "Retry", "Cancel upload", "ImagePreviewModal", "onContextMenu"]) assert.match(view, new RegExp(marker));
+for (const marker of ["direct-message-actions", "direct-edit-form", "direct-message-recovery", "direct-upload-preview", "direct-composer-reply", "direct-typing-indicator", "direct-message-link"]) assert.match(styles, new RegExp(marker));
+for (const marker of ["editDirectMessageLocal", "deleteDirectMessageLocal", "toggleDirectReactionLocal", "removeFailedDirectMessage", "retryClientMessageId", "sendStatus: \"failed\""]) assert.match(app, new RegExp(marker));
+for (const marker of ["storage_path", "addDirectMessageAttachments", "replyToMessageId", "upsert"]) assert.match(service, new RegExp(marker));
+for (const marker of ["direct-message-attachments", "conversationId", "AbortSignal", "createSignedUrl", "removePending", "validateContent"]) assert.match(upload, new RegExp(marker));
+assert.doesNotMatch(upload, /communityId|channelId/);
+for (const marker of ["private: true", "broadcast", "typing", "removeChannel", "mockRooms"]) assert.match(typing, new RegExp(marker));
+assert.match(realtime, /mutedConversationIds/);
+assert.doesNotMatch(view, /supabase\.from|dangerouslySetInnerHTML/);
+console.log("Direct message send, reply, edit, delete, reaction, attachment, typing, safe-link, and failure-recovery contracts passed.");

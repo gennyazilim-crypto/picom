@@ -470,12 +470,80 @@
 .direct-message-author > span { color: var(--text-muted); font-size: 9px; }
 
 .direct-message-unit {
+  position: relative;
   max-width: 100%;
   min-width: 0;
   display: grid;
   justify-items: start;
   gap: 5px;
 }
+
+.direct-message-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.direct-message-actions {
+  position: absolute;
+  top: -31px;
+  right: 4px;
+  z-index: 4;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(3px);
+  transition: opacity var(--motion-fast), transform var(--motion-fast);
+}
+
+.direct-message-group.incoming .direct-message-actions { right: auto; left: 4px; }
+.direct-message-unit:hover .direct-message-actions,
+.direct-message-unit:focus-within .direct-message-actions,
+.direct-message-unit.actions-pinned .direct-message-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.direct-message-actions button { width: 27px; height: 27px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.direct-message-actions button:hover,
+.direct-message-actions button:focus-visible { outline: 0; background: var(--surface-hover); color: var(--text-primary); }
+.direct-message-actions button.direct-copy-action { width: auto; padding: 0 7px; font-size: 9px; font-weight: 800; }
+
+.direct-edit-form { width: min(480px, 100%); display: grid; gap: 7px; padding: 9px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); box-shadow: var(--shadow-soft); }
+.direct-edit-form textarea { min-height: 72px; resize: vertical; padding: 8px; border: 1px solid var(--border); border-radius: 9px; outline: 0; background: var(--surface-soft); color: var(--text-primary); font: inherit; line-height: 1.45; }
+.direct-edit-form textarea:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
+.direct-edit-form > div { display: flex; justify-content: flex-end; gap: 6px; }
+.direct-edit-form button,
+.direct-delete-confirm button,
+.direct-message-recovery button { min-height: 28px; padding: 0 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); color: var(--text-secondary); cursor: pointer; }
+.direct-edit-form button:last-child { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); background: var(--accent-soft); color: var(--accent); }
+
+.direct-delete-confirm,
+.direct-message-recovery { max-width: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 7px 8px; border: 1px solid color-mix(in srgb, var(--danger) 25%, var(--border)); border-radius: 10px; background: color-mix(in srgb, var(--danger) 6%, var(--surface)); color: var(--text-secondary); font-size: 10px; }
+.direct-delete-confirm button.danger { color: var(--danger); }
+.direct-message-recovery span { color: var(--danger); font-weight: 750; }
+.direct-message-unit.status-failed .direct-message-bubble { border-color: color-mix(in srgb, var(--danger) 42%, var(--border)); }
+.direct-message-unit.status-sending { opacity: .72; }
+.direct-reaction-picker { position: absolute; z-index: 12; bottom: 36px; right: 0; }
+.direct-message-group.incoming .direct-reaction-picker { right: auto; left: 0; }
+.direct-message-highlight { border-radius: 14px; animation: direct-message-highlight 1.8s ease-out; }
+@keyframes direct-message-highlight { 0%, 35% { background: color-mix(in srgb, var(--accent-soft) 78%, transparent); box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 10%, transparent); } 100% { background: transparent; box-shadow: none; } }
+
+.direct-typing-indicator { width: max-content; max-width: 100%; display: flex; align-items: center; gap: 8px; margin-left: 48px; color: var(--text-muted); font-size: 10px; }
+.direct-typing-indicator > span { display: flex; gap: 3px; }
+.direct-typing-indicator i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); animation: direct-typing 1s ease-in-out infinite; }
+.direct-typing-indicator i:nth-child(2) { animation-delay: .12s; }
+.direct-typing-indicator i:nth-child(3) { animation-delay: .24s; }
+@keyframes direct-typing { 0%, 100% { opacity: .35; transform: translateY(1px); } 50% { opacity: 1; transform: translateY(-2px); } }
 
 .direct-message-group.own .direct-message-unit { justify-items: end; }
 
@@ -619,6 +687,30 @@
   background: color-mix(in srgb, var(--surface) 94%, var(--accent-soft));
   box-shadow: 0 12px 30px color-mix(in srgb, var(--text-primary) 8%, transparent);
 }
+
+.direct-composer.dragging { border-color: var(--accent); box-shadow: var(--focus-ring), var(--shadow-soft); }
+.direct-file-input { display: none; }
+.direct-composer-reply { grid-column: 1 / -1; min-width: 0; display: grid; grid-template-columns: 18px minmax(0, 1fr) 30px; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); }
+.direct-composer-reply > span { min-width: 0; display: grid; gap: 1px; }
+.direct-composer-reply strong,
+.direct-composer-reply small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.direct-composer-reply strong { font-size: 10px; }
+.direct-composer-reply small { color: var(--text-muted); font-size: 9px; }
+.direct-composer-reply button { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.direct-upload-previews { grid-column: 1 / -1; display: grid; gap: 6px; }
+.direct-upload-preview { min-width: 0; display: grid; grid-template-columns: 42px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-soft); }
+.direct-upload-preview > img { width: 42px; height: 36px; object-fit: cover; border-radius: 8px; }
+.direct-upload-preview > div { min-width: 0; display: grid; gap: 2px; }
+.direct-upload-preview strong,
+.direct-upload-preview small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.direct-upload-preview strong { color: var(--text-secondary); font-size: 9px; }
+.direct-upload-preview small { color: var(--text-muted); font-size: 8px; text-transform: capitalize; }
+.direct-upload-preview progress { width: 100%; height: 5px; accent-color: var(--accent); }
+.direct-upload-preview > button { width: auto; min-width: 30px; height: 28px; padding: 0 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-secondary); font-size: 9px; cursor: pointer; }
+.direct-upload-preview.status-failed,
+.direct-upload-preview.status-canceled { border-color: color-mix(in srgb, var(--danger) 34%, var(--border)); }
+.direct-composer-emoji-picker { position: absolute; right: 46px; bottom: 62px; z-index: 12; }
+.direct-drop-hint { position: absolute; inset: 8px; z-index: 10; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px dashed var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--surface) 92%, var(--accent-soft)); color: var(--accent); font-size: 11px; font-weight: 800; pointer-events: none; }
 
 .direct-composer:focus-within {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
@@ -823,5 +915,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .direct-attachment-grid img,
-  .dm-shared-media img { transition: none; }
+  .dm-shared-media img,
+  .direct-message-actions { transition: none; }
+  .direct-typing-indicator i,
+  .direct-message-highlight { animation: none; }
 }

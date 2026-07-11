@@ -26,7 +26,7 @@ async function enrichSupabasePage(page: DirectMessagePage): Promise<DirectMessag
   const messageIds = page.items.map((message) => message.id);
   const replyIds = [...new Set(page.items.map((message) => message.replyToMessageId).filter((id): id is string => Boolean(id)))];
   const [attachmentsResult, reactionsResult, repliesResult] = await Promise.all([
-    client.from("direct_message_attachments").select("id,message_id,url,file_name,mime_type,file_size,size_bytes,width,height,created_at").in("message_id", messageIds),
+    client.from("direct_message_attachments").select("id,message_id,url,storage_path,file_name,mime_type,file_size,size_bytes,width,height,created_at").in("message_id", messageIds),
     client.from("direct_message_reactions").select("id,message_id,user_id,emoji,created_at").in("message_id", messageIds),
     replyIds.length ? client.from("direct_messages").select("id,author_id,body,deleted_at").in("id", replyIds) : Promise.resolve({ data: [], error: null }),
   ]);
@@ -37,8 +37,11 @@ async function enrichSupabasePage(page: DirectMessagePage): Promise<DirectMessag
   if (profilesResult.error) return failure("Reply author metadata could not be loaded.");
   const profileNames = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile.display_name]));
   const { data: authData } = await client.auth.getUser();
+  const storedPaths = [...new Set((attachmentsResult.data ?? []).map((item) => item.storage_path ?? (!/^(https?:|blob:|data:)/i.test(item.url) ? item.url : null)).filter((value): value is string => Boolean(value)))];
+  const signedByPath = new Map<string, string>();
+  await Promise.all(storedPaths.map(async (path) => { const signed = await client.storage.from("direct-message-attachments").createSignedUrl(path, 60 * 60); if (signed.data?.signedUrl) signedByPath.set(path, signed.data.signedUrl); }));
   const items = page.items.map((message) => {
-    const attachments = (attachmentsResult.data ?? []).filter((item) => item.message_id === message.id).map((item) => ({ id: item.id, messageId: item.message_id, type: item.mime_type?.startsWith("image/") === false ? "file" as const : "image" as const, url: item.url, name: item.file_name ?? "attachment", mimeType: item.mime_type ?? undefined, fileSize: item.size_bytes ?? item.file_size ?? undefined, width: item.width ?? undefined, height: item.height ?? undefined, createdAt: item.created_at }));
+    const attachments = (attachmentsResult.data ?? []).filter((item) => item.message_id === message.id).map((item) => { const storagePath = item.storage_path ?? (!/^(https?:|blob:|data:)/i.test(item.url) ? item.url : undefined); return { id: item.id, messageId: item.message_id, type: item.mime_type?.startsWith("image/") === false ? "file" as const : "image" as const, url: storagePath ? signedByPath.get(storagePath) ?? item.url : item.url, storagePath, name: item.file_name ?? "attachment", mimeType: item.mime_type ?? undefined, fileSize: item.size_bytes ?? item.file_size ?? undefined, width: item.width ?? undefined, height: item.height ?? undefined, createdAt: item.created_at }; });
     const grouped = new Map<string, { count: number; reactedByCurrentUser: boolean }>();
     for (const reaction of (reactionsResult.data ?? []).filter((item) => item.message_id === message.id)) { const current = grouped.get(reaction.emoji) ?? { count: 0, reactedByCurrentUser: false }; grouped.set(reaction.emoji, { count: current.count + 1, reactedByCurrentUser: current.reactedByCurrentUser || reaction.user_id === authData.user?.id }); }
     const reply = message.replyToMessageId ? replyRows.find((row) => row.id === message.replyToMessageId) : undefined;
@@ -68,14 +71,15 @@ export async function addDirectMessageAttachments(messageId: string, attachments
     return saved ? { ok: true, data: [...attachments] } : failure("Direct message was not found.");
   }
   const client = getSupabaseClient(); if (!client) return failure("Supabase is not configured.");
-  const existing = await client.from("direct_message_attachments").select("url").eq("message_id", messageId).in("url", attachments.map((attachment) => attachment.url));
+  const persistedUrls = attachments.map((attachment) => attachment.storagePath ?? attachment.url);
+  const existing = await client.from("direct_message_attachments").select("url").eq("message_id", messageId).in("url", persistedUrls);
   if (existing.error) return failure("Existing direct message attachments could not be checked.");
   const existingUrls = new Set((existing.data ?? []).map((item) => item.url));
-  const pending = attachments.filter((attachment) => !existingUrls.has(attachment.url));
+  const pending = attachments.filter((attachment) => !existingUrls.has(attachment.storagePath ?? attachment.url));
   if (!pending.length) return { ok: true, data: [...attachments] };
-  const inserted = await client.from("direct_message_attachments").insert(pending.map((attachment) => ({ message_id: messageId, url: attachment.url, file_name: attachment.name, mime_type: attachment.mimeType ?? null, file_size: attachment.fileSize ?? null, size_bytes: attachment.fileSize ?? null, width: attachment.width ?? null, height: attachment.height ?? null }))).select("id,message_id,url,file_name,mime_type,file_size,size_bytes,width,height,created_at");
+  const inserted = await client.from("direct_message_attachments").insert(pending.map((attachment) => ({ id: attachment.id, message_id: messageId, url: attachment.storagePath ?? attachment.url, storage_path: attachment.storagePath ?? null, file_name: attachment.name, mime_type: attachment.mimeType ?? null, file_size: attachment.fileSize ?? null, size_bytes: attachment.fileSize ?? null, width: attachment.width ?? null, height: attachment.height ?? null }))).select("id,message_id,url,storage_path,file_name,mime_type,file_size,size_bytes,width,height,created_at");
   if (inserted.error) return failure("The direct message attachment metadata could not be saved.");
-  return { ok: true, data: (inserted.data ?? []).map((item) => ({ id: item.id, messageId: item.message_id, type: item.mime_type?.startsWith("image/") === false ? "file" as const : "image" as const, url: item.url, name: item.file_name ?? "attachment", mimeType: item.mime_type ?? undefined, fileSize: item.size_bytes ?? item.file_size ?? undefined, width: item.width ?? undefined, height: item.height ?? undefined, createdAt: item.created_at })) };
+  return { ok: true, data: (inserted.data ?? []).map((item) => { const source = pending.find((attachment) => attachment.id === item.id); return { id: item.id, messageId: item.message_id, type: item.mime_type?.startsWith("image/") === false ? "file" as const : "image" as const, url: source?.url ?? item.url, storagePath: item.storage_path ?? source?.storagePath, name: item.file_name ?? "attachment", mimeType: item.mime_type ?? undefined, fileSize: item.size_bytes ?? item.file_size ?? undefined, width: item.width ?? undefined, height: item.height ?? undefined, createdAt: item.created_at }; }) };
 }
 
 export async function sendDirectMessage(conversationId: string, body: string, attachments?: readonly DirectMessageAttachment[], replyToMessageId?: string, clientMessageId?: string): Promise<DirectMessageServiceResult<DirectMessage>>;

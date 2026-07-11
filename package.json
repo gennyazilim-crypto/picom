@@ -111,6 +111,7 @@
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
     "dm:production:smoke": "node scripts/direct-messages-production-smoke-test.mjs",
     "dm:services:realtime:smoke": "node scripts/direct-messages-services-realtime-smoke.mjs",
+    "dm:interactions:smoke": "node scripts/direct-message-interactions-smoke.mjs",
     "dm:layout:smoke": "node scripts/direct-messages-layout-smoke.mjs",
     "audio:domain:smoke": "node scripts/audio-domain-smoke.mjs",
     "audio:player:smoke": "node scripts/audio-player-smoke.mjs",
