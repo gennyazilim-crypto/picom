@@ -325,6 +325,7 @@
     "notifications:permission-onboarding:smoke": "node scripts/notification-permission-onboarding-smoke-test.mjs",
     "notifications:quiet-hours:smoke": "node scripts/quiet-hours-smoke-test.mjs",
     "notifications:digest:smoke": "node scripts/notification-digest-smoke-test.mjs",
+    "notifications:preferences:smoke": "node scripts/notification-preferences-full-mvp-smoke.mjs",
     "tray:integration:smoke": "node scripts/tray-integration-smoke-test.mjs",
     "startup:smoke": "node scripts/launch-on-startup-smoke-test.mjs",
     "update:failure:smoke": "node scripts/update-failure-recovery-smoke-test.mjs",

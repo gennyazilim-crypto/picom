@@ -3,9 +3,11 @@ import { settingsService, type NotificationSettings, type QuietHoursSettings } f
 import { notificationDigestService } from "./notificationDigestService";
 import { emergencyKillSwitchService } from "./emergencyKillSwitchService";
 import { notificationPolicyStateService } from "./notificationPolicyStateService";
+import type { NotificationCategory } from "../types/notifications";
+
+export type { NotificationCategory } from "../types/notifications";
 
 export type NotificationPermissionState = NotificationPermission | "unsupported";
-export type NotificationCategory = "system" | "mention" | "message";
 
 export interface NativeNotificationPayload {
   title: string;
@@ -44,6 +46,45 @@ export interface NotificationRouteDecision {
   reason: string;
 }
 
+const recentNativeNotifications = new Map<string, number>();
+const DUPLICATE_WINDOW_MS = 5_000;
+
+function isMessageLikeCategory(category: NotificationCategory): boolean {
+  return category === "message" || category === "direct_message" || category === "reply" || category === "reaction" || category === "community_announcement";
+}
+
+export function isNotificationCategoryEnabled(settings: NotificationSettings, category: NotificationCategory): boolean {
+  if (category === "mention") return settings.mentions;
+  if (category === "reply") return settings.replies;
+  if (category === "reaction") return settings.reactions;
+  if (category === "direct_message") return settings.directMessages;
+  if (category === "community_announcement") return settings.communityAnnouncements;
+  if (category === "friend_request") return settings.friendRequests;
+  if (category === "friend_acceptance") return settings.friendAcceptances;
+  if (category === "radio_live") return settings.radioLive;
+  if (category === "radio_reminder") return settings.radioReminders;
+  if (category === "podcast_release") return settings.podcastReleases;
+  if (category === "event_reminder") return settings.eventReminders;
+  return true;
+}
+
+function nativeNotificationKey(payload: NativeNotificationPayload): string {
+  return payload.tag?.trim() || `${payload.category ?? "system"}:${payload.title}:${payload.body ?? ""}`;
+}
+
+function claimNativeNotification(payload: NativeNotificationPayload, now = Date.now()): boolean {
+  for (const [key, timestamp] of recentNativeNotifications) if (now - timestamp > DUPLICATE_WINDOW_MS) recentNativeNotifications.delete(key);
+  const key = nativeNotificationKey(payload);
+  const previous = recentNativeNotifications.get(key);
+  if (previous !== undefined && now - previous <= DUPLICATE_WINDOW_MS) return false;
+  recentNativeNotifications.set(key, now);
+  return true;
+}
+
+function releaseNativeNotification(payload: NativeNotificationPayload): void {
+  recentNativeNotifications.delete(nativeNotificationKey(payload));
+}
+
 function parseMinutes(value: string): number | null {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value);
   if (!match) return null;
@@ -71,13 +112,13 @@ export function quietHoursSuppressesDesktop(settings: NotificationSettings, isMe
   if (!isQuietHoursActive(settings.quietHours, now)) return false;
   if (isMention && settings.quietHours.allowMentions) return false;
   if (settings.quietHours.applyTo === "all_notifications") return true;
-  if (settings.quietHours.applyTo === "normal_messages_only") return category === "message" && !isMention;
+  if (settings.quietHours.applyTo === "normal_messages_only") return isMessageLikeCategory(category) && !isMention;
   return false;
 }
 
 export function quietHoursShouldSilence(settings: NotificationSettings, isMention: boolean, now = new Date()): boolean {
   return isQuietHoursActive(settings.quietHours, now)
-    && settings.quietHours.applyTo === "sounds_only_placeholder"
+    && settings.quietHours.applyTo === "sounds_only"
     && !(isMention && settings.quietHours.allowMentions);
 }
 
@@ -102,6 +143,10 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
     return { desktop: false, inbox: false, inAppUnread: false, reason: "Desktop notifications are disabled in settings." };
   }
 
+  if (!isNotificationCategoryEnabled(settings, context.category)) {
+    return { desktop: false, inbox: false, inAppUnread: false, reason: "This notification category is disabled in settings." };
+  }
+
   if (doNotDisturb) {
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Notifications are currently muted." };
   }
@@ -110,7 +155,7 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Quiet Hours suppressed this desktop notification." };
   }
 
-  if (settings.mentionsOnly && context.category === "message" && !isMention) {
+  if (settings.mentionsOnly && isMessageLikeCategory(context.category) && !isMention) {
     return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Only mention notifications are enabled." };
   }
 
@@ -128,6 +173,10 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
 
   if (context.appFocused && isActiveChannel) {
     return { desktop: false, inbox: true, inAppUnread: true, reason: "Active channel notification routed in-app." };
+  }
+
+  if (!settings.nativeDesktopEnabled) {
+    return { desktop: false, inbox: true, inAppUnread: !isActiveChannel, reason: "Native desktop notifications are disabled in settings." };
   }
 
   return { desktop: true, inbox: true, inAppUnread: !isActiveChannel, reason: "Desktop notification allowed." };
@@ -152,6 +201,8 @@ export const notificationService = {
       permission: this.getPermission(),
       supported: Boolean(getNativeNotificationBridge()) || this.getPermission() !== "unsupported",
       nativeBridgeAvailable: Boolean(getNativeNotificationBridge()),
+      nativeDesktopEnabled: settingsService.getSettings().notificationSettings.nativeDesktopEnabled,
+      soundEnabled: settingsService.getSettings().notificationSettings.soundEnabled,
       settings: settingsService.getSettings().notificationSettings,
     };
   },
@@ -189,9 +240,14 @@ export const notificationService = {
     const settings = payload.routing?.settings ?? settingsService.getSettings().notificationSettings;
     const isMention = Boolean(payload.routing?.isMention || category === "mention");
     const quietHoursSilent = quietHoursShouldSilence(settings, isMention);
+    const shouldBeSilent = payload.silent ?? (!settings.soundEnabled || quietHoursSilent);
 
     if (!route.desktop) {
       return { ok: false, reason: route.reason, permission: this.getPermission() };
+    }
+
+    if (!claimNativeNotification(payload)) {
+      return { ok: false, reason: "Duplicate notification suppressed.", permission: this.getPermission() };
     }
 
     const nativeBridge = getNativeNotificationBridge();
@@ -201,24 +257,27 @@ export const notificationService = {
           title: payload.title,
           body: payload.body,
           tag: payload.tag,
-          silent: payload.silent ?? quietHoursSilent,
+          silent: shouldBeSilent,
         });
 
+        if (!result.ok) releaseNativeNotification(payload);
         return {
           ok: result.ok,
           reason: result.ok ? undefined : result.error,
           permission: this.getPermission(),
         };
       } catch {
+        releaseNativeNotification(payload);
         return { ok: false, reason: "Native notification bridge failed safely.", permission: this.getPermission() };
       }
     }
 
     const permission = await this.requestPermission();
-    if (!permission.ok) return permission;
+    if (!permission.ok) { releaseNativeNotification(payload); return permission; }
 
     const NativeNotification = getNotificationConstructor();
     if (!NativeNotification) {
+      releaseNativeNotification(payload);
       return { ok: false, reason: "Native notifications unavailable in this runtime.", permission: "unsupported" };
     }
 
@@ -227,10 +286,11 @@ export const notificationService = {
       new NativeNotification(payload.title, {
         body: payload.body,
         tag: payload.tag,
-        silent: payload.silent ?? quietHoursSilent,
+        silent: shouldBeSilent,
       });
       return { ok: true, permission: NativeNotification.permission };
     } catch {
+      releaseNativeNotification(payload);
       return { ok: false, reason: "Notification could not be shown by the current runtime.", permission: NativeNotification.permission };
     }
   },
@@ -238,7 +298,7 @@ export const notificationService = {
   async showTestNotification() {
     return this.showNotification({
       title: "Picom",
-      body: "Desktop notification placeholder is working.",
+      body: "Your desktop notification preferences are working.",
       category: "system",
       tag: "picom-test-notification",
     });

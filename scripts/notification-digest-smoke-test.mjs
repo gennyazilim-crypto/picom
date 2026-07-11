@@ -14,7 +14,7 @@ const checks = [
   [digest.includes("communityId") && digest.includes("channelId") && digest.includes("date"), "group dimensions"],
   [service.includes("notificationDigestService.shouldDigestNotification"), "notification routing uses digest helper"],
   [service.includes("Notification digest placeholder grouped this normal message."), "digest route reason"],
-  [modal.includes("Notification digest placeholder"), "settings UI"],
+  [modal.includes("Message digest preview"), "settings UI"],
   [modal.includes("hourly_placeholder") && modal.includes("daily_placeholder"), "digest options"],
   [docs.includes("Mentions and system notifications are not digested"), "docs mention behavior"],
   [docs.includes("community, channel, and date"), "docs grouping behavior"],

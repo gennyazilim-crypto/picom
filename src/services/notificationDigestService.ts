@@ -1,4 +1,5 @@
 import type { NotificationSettings } from "./settingsService";
+import type { NotificationCategory } from "../types/notifications";
 
 export type NotificationDigestMode = "off" | "hourly_placeholder" | "daily_placeholder";
 
@@ -31,13 +32,13 @@ function getDateKey(value: string): string {
 }
 
 export const notificationDigestService = {
-  shouldDigestNotification(settings: NotificationSettings, category: "mention" | "message" | "system", isMention: boolean): boolean {
+  shouldDigestNotification(settings: NotificationSettings, category: NotificationCategory, isMention: boolean): boolean {
     return settings.digestMode !== "off" && category === "message" && !isMention;
   },
 
   getDigestModeLabel(mode: NotificationDigestMode): string {
-    if (mode === "hourly_placeholder") return "Hourly digest placeholder";
-    if (mode === "daily_placeholder") return "Daily digest placeholder";
+    if (mode === "hourly_placeholder") return "Hourly digest";
+    if (mode === "daily_placeholder") return "Daily digest";
     return "Off";
   },
 

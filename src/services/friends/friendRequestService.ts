@@ -348,6 +348,7 @@ export async function routeFriendNotification(notification: FriendNotification):
   notificationCenterService.add({
     id: `friend-${notification.id}`,
     category: "system",
+    preferenceCategory: accepted ? "friend_acceptance" : "friend_request",
     title,
     preview,
     createdAt: notification.createdAt,
@@ -356,7 +357,7 @@ export async function routeFriendNotification(notification: FriendNotification):
   const desktop = await notificationService.showNotification({
     title,
     body: accepted ? "Your Picom connection is ready." : "Open Friends to review it.",
-    category: "system",
+    category: accepted ? "friend_acceptance" : "friend_request",
     tag: `friend-${notification.id}`,
   });
   return { routed: true, desktop: desktop.ok, reason: desktop.reason };

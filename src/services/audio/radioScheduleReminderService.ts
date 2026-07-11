@@ -201,7 +201,8 @@ function hash(value: string): string {
 async function dispatchEvent(reminder: RadioScheduleReminder, session: RadioSession, event: ReminderEvent): Promise<void> {
   if (event.kind === "stale") return;
   const copy = eventCopy(event, session);
-  const route = decideNotificationRoute({ category: "system", communityId: session.communityId });
+  const category = event.kind === "live" ? "radio_live" : "radio_reminder";
+  const route = decideNotificationRoute({ category, communityId: session.communityId });
   const notificationId = "radio-" + reminder.id + "-" + hash(event.key);
   if (route.inbox) {
     notificationCenterService.add({
@@ -210,11 +211,12 @@ async function dispatchEvent(reminder: RadioScheduleReminder, session: RadioSess
       title: copy.title,
       preview: copy.preview,
       createdAt: new Date().toISOString(),
+      preferenceCategory: category,
       context: { kind: "community", communityId: session.communityId, channelId: session.channelId, radioSessionId: session.id, label: "Radio schedule" },
     });
   }
   if (route.desktop && notificationService.getPermission() === "granted") {
-    await notificationService.showNotification({ title: copy.title, body: copy.preview, category: "system", tag: notificationId, routing: { communityId: session.communityId, channelId: session.channelId } });
+    await notificationService.showNotification({ title: copy.title, body: copy.preview, category, tag: notificationId, routing: { communityId: session.communityId, channelId: session.channelId } });
   }
 }
 

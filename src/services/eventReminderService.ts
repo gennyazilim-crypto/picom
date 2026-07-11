@@ -1,7 +1,6 @@
 import type { EventRsvpStatus, UpcomingEvent } from "../types/events";
 import { dataSourceService } from "./dataSourceService";
 import { notificationService } from "./notificationService";
-import { settingsService } from "./settingsService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 
 const STORAGE_KEY = "picom.eventReminders.v1";
@@ -19,9 +18,7 @@ function scheduleTimer(event: UpcomingEvent, minutesBefore: number): void {
   if (delay <= 0) return;
   const timer = globalThis.setTimeout(() => {
     if (delay > MAX_TIMER_MS) { scheduleTimer(event, minutesBefore); return; }
-    const settings = settingsService.getSettings().notificationSettings;
-    if (!settings.enabled || settings.muted || settings.mentionsOnly) return;
-    void notificationService.showNotification({ title: `Upcoming: ${event.title}`, body: `Starts in ${minutesBefore} minutes.`, category: "system", tag: `event-reminder-${event.id}` });
+    void notificationService.showNotification({ title: `Upcoming: ${event.title}`, body: `Starts in ${minutesBefore} minutes.`, category: "event_reminder", tag: `event-reminder-${event.id}`, routing: { communityId: event.communityId } });
     timers.delete(event.id);
   }, Math.min(delay, MAX_TIMER_MS));
   timers.set(event.id, timer);

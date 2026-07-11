@@ -54,6 +54,20 @@ import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
+type NotificationPreferenceKey = "mentions" | "replies" | "reactions" | "directMessages" | "communityAnnouncements" | "friendRequests" | "friendAcceptances" | "radioLive" | "radioReminders" | "podcastReleases" | "eventReminders";
+const notificationPreferenceRows: ReadonlyArray<Readonly<{ key: NotificationPreferenceKey; label: string; description: string }>> = [
+  { key: "mentions", label: "Mentions", description: "Notify when someone mentions you in a visible community channel." },
+  { key: "replies", label: "Replies", description: "Notify when someone replies to one of your messages." },
+  { key: "reactions", label: "Reactions", description: "Notify when people react to your messages." },
+  { key: "directMessages", label: "Direct messages", description: "Notify for private messages when that conversation is not already visible." },
+  { key: "communityAnnouncements", label: "Community announcements", description: "Notify for official announcements in communities you can access." },
+  { key: "friendRequests", label: "Friend requests", description: "Notify when someone sends you a friend request." },
+  { key: "friendAcceptances", label: "Friend request acceptances", description: "Notify when someone accepts a friend request you sent." },
+  { key: "radioLive", label: "Radio live alerts", description: "Notify when a followed or reminded Radio show goes live." },
+  { key: "radioReminders", label: "Radio reminders", description: "Notify for saved Radio schedule reminders and changes." },
+  { key: "podcastReleases", label: "Podcast releases", description: "Notify for new releases from followed Podcast communities." },
+  { key: "eventReminders", label: "Event reminders", description: "Notify before events you marked Going or Interested." },
+];
 
 function formatCacheSize(bytes: number | null): string {
   if (bytes === null) return "Not available";
@@ -152,6 +166,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
 
   useEffect(() => updateService.onStateChange(setUpdateState), []);
   useEffect(() => settingsService.subscribe((settings) => setNotificationSettings(settings.notificationSettings)), []);
+  useEffect(() => notificationPolicyStateService.subscribe(setNotificationPolicyState), []);
   useEffect(() => voiceService.subscribe(setVoiceSettingsSnapshot), []);
   useEffect(() => { void startupService.refreshNativeState().then(setStartupSettings); }, []);
   useEffect(() => { let active = true; void adminOperationsService.getAccess().then((access) => { if (active) setAdminOperationsAccess(access); }); return () => { active = false; }; }, []);
@@ -210,11 +225,15 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     const result = await notificationService.showTestNotification();
     pushToast(result.ok ? "Test notification sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
   };
+  const requestNotificationPermission = async () => {
+    const result = await notificationService.requestPermission();
+    pushToast(result.ok ? "Desktop notification permission enabled." : result.reason ?? "Notification permission is unavailable.", result.ok ? "success" : "error");
+  };
   const notificationStatus = notificationService.getStatus();
   const updateNotifications = (partial: Partial<NotificationSettings>) => {
     const next = settingsService.updateNotificationSettings(partial).notificationSettings;
     setNotificationSettings(next);
-    pushToast("Notification setting saved locally.", "success");
+    pushToast("Notification preference saved.", "success");
   };
   const updateAccessibility = (partial: Partial<AccessibilitySettings>) => {
     const next = settingsService.updateAccessibilitySettings(partial).accessibilitySettings;
@@ -837,41 +856,47 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Notifications" ? (
             <div className="placeholder-panel action-panel">
-              <strong>Desktop notifications</strong>
-              <p>Uses a safe browser/native fallback and never calls desktop APIs directly from React.</p>
+              <strong>Notification preferences</strong>
+              <p>Choose which Picom activity can reach your inbox and desktop. Native delivery remains behind the safe preload bridge.</p>
               <div className="settings-status-card" aria-label="Notification runtime status">
                 <span>Runtime support</span>
                 <strong>{notificationStatus.supported ? "Available" : "Fallback only"}</strong>
-                <small>Permission: {notificationStatus.permission}. Settings are saved locally for this desktop profile.</small>
+                <small>Permission: {notificationStatus.permission}. Account preferences synchronize when Supabase mode is available.</small>
+                <div className="settings-actions-row">
+                  <button type="button" disabled={!notificationStatus.supported || notificationStatus.permission === "granted"} onClick={() => void requestNotificationPermission()}>{notificationStatus.permission === "granted" ? "Permission granted" : "Allow desktop notifications"}</button>
+                  <button type="button" disabled={!notificationSettings.enabled || !notificationSettings.nativeDesktopEnabled} onClick={() => void testNotification()}>Send test notification</button>
+                </div>
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Enable desktop notifications</strong>
-                  <small>Allow Picom to show native desktop notifications where the runtime supports them.</small>
+                  <strong>Enable notifications</strong>
+                  <small>Master preference for notification inbox, unread routing, and desktop alerts.</small>
                 </span>
                 <input type="checkbox" checked={notificationSettings.enabled} onChange={(event) => updateNotifications({ enabled: event.target.checked })} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Friend requests</strong>
-                  <small>Show inbox and desktop alerts when someone sends you a friend request.</small>
+                  <strong>Native desktop notifications</strong>
+                  <small>Show approved alerts outside Picom when the desktop runtime and permission allow it.</small>
                 </span>
-                <input type="checkbox" checked={notificationSettings.friendRequests} onChange={(event) => updateNotifications({ friendRequests: event.target.checked })} />
+                <input type="checkbox" disabled={!notificationSettings.enabled} checked={notificationSettings.nativeDesktopEnabled} onChange={(event) => updateNotifications({ nativeDesktopEnabled: event.target.checked })} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Friend request acceptances</strong>
-                  <small>Notify you when someone accepts a friend request you sent.</small>
+                  <strong>Notification sounds</strong>
+                  <small>Play the operating-system notification sound when an alert is not silenced by Quiet Hours.</small>
                 </span>
-                <input type="checkbox" checked={notificationSettings.friendAcceptances} onChange={(event) => updateNotifications({ friendAcceptances: event.target.checked })} />
+                <input type="checkbox" disabled={!notificationSettings.enabled || !notificationSettings.nativeDesktopEnabled} checked={notificationSettings.soundEnabled} onChange={(event) => updateNotifications({ soundEnabled: event.target.checked })} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Mute notifications</strong>
-                  <small>Keep desktop alerts quiet while preserving the notification inbox.</small>
+                  <strong>Do not disturb</strong>
+                  <small>Pause desktop interruptions while preserving the notification inbox and unread state.</small>
                 </span>
-                <input type="checkbox" checked={notificationSettings.muted} onChange={(event) => updateNotifications({ muted: event.target.checked })} />
+                <input type="checkbox" checked={notificationPolicyState.doNotDisturb} onChange={(event) => setNotificationPolicyState(notificationPolicyStateService.setDoNotDisturb(event.target.checked))} />
               </label>
+              <div className="settings-status-card" aria-label="Notification categories"><span>Activity</span><strong>Choose what notifies you</strong><small>Disabled categories do not create native alerts or inbox entries.</small></div>
+              {notificationPreferenceRows.map((preference) => <label className="settings-toggle-row" key={preference.key}><span><strong>{preference.label}</strong><small>{preference.description}</small></span><input type="checkbox" disabled={!notificationSettings.enabled} checked={notificationSettings[preference.key]} onChange={(event) => updateNotifications({ [preference.key]: event.target.checked })} /></label>)}
               <label className="settings-toggle-row">
                 <span>
                   <strong>Mentions only</strong>
@@ -881,13 +906,13 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Notification digest (Coming soon)</strong>
-                  <small>{notificationDigestService.getDigestModeLabel(notificationSettings.digestMode)} prepares lower-priority grouping; scheduled delivery is not enabled.</small>
+                  <strong>Message digest preview</strong>
+                  <small>{notificationDigestService.getDigestModeLabel(notificationSettings.digestMode)} groups lower-priority messages in the inbox instead of interrupting you.</small>
                 </span>
                 <select value={notificationSettings.digestMode} onChange={(event) => updateNotifications({ digestMode: event.target.value as typeof notificationSettings.digestMode })}>
                   <option value="off">Off</option>
-                  <option value="hourly_placeholder">Hourly (Coming soon)</option>
-                  <option value="daily_placeholder">Daily (Coming soon)</option>
+                  <option value="hourly_placeholder">Hourly grouping</option>
+                  <option value="daily_placeholder">Daily grouping</option>
                 </select>
               </label>
               <div className="settings-status-card" aria-label="Quiet Hours notification setting">
@@ -924,7 +949,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 <select value={notificationSettings.quietHours.applyTo} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, applyTo: event.target.value as typeof notificationSettings.quietHours.applyTo } })}>
                   <option value="all_notifications">All notifications</option>
                   <option value="normal_messages_only">Normal messages only</option>
-                  <option value="sounds_only_placeholder">Sounds only (Coming soon)</option>
+                  <option value="sounds_only">Sounds only</option>
                 </select>
               </label>
               <label className="settings-toggle-row">
@@ -941,7 +966,15 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </span>
                 <input type="checkbox" checked={notificationSettings.allowMentionsFromMutedScopes} onChange={(event) => updateNotifications({ allowMentionsFromMutedScopes: event.target.checked })} />
               </label>
-              <button onClick={testNotification}>Send test notification</button>
+              <div className="settings-status-card" aria-label="Muted communities and channels">
+                <span>Muted scopes</span>
+                <strong>{notificationPolicyState.mutedCommunityIds.length + notificationPolicyState.mutedChannelIds.length ? "Muted communities and channels" : "No muted communities or channels"}</strong>
+                <small>Muted scopes suppress normal activity. Mentions follow your muted-scope override above.</small>
+                <div className="mute-scope-list">
+                  {notificationPolicyState.mutedCommunityIds.map((communityId) => { const community = communities.find((candidate) => candidate.id === communityId); return <article key={`notifications-community-${communityId}`}><div><strong>{community?.name ?? "Unavailable community"}</strong><small>Community mute</small></div><button type="button" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setCommunityMuted(communityId, false))}>Unmute</button></article>; })}
+                  {notificationPolicyState.mutedChannelIds.map((channelId) => { const community = communities.find((candidate) => candidate.categories.some((category) => category.channels.some((channel) => channel.id === channelId))); const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === channelId); return <article key={`notifications-channel-${channelId}`}><div><strong>#{channel?.name ?? "unavailable-channel"}</strong><small>{community?.name ?? "Unavailable community"} / channel mute</small></div><button type="button" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setChannelMuted(channelId, false))}>Unmute</button></article>; })}
+                </div>
+              </div>
             </div>
           ) : active === "Voice & Video" ? (
             <div className="placeholder-panel action-panel">

@@ -24,7 +24,7 @@ export const settingsPersistenceRegistry = {
   featureFlags: "server-controlled",
   updatePolicy: "server-controlled",
 } as const satisfies Record<string, SettingsPersistenceScope>;
-export type QuietHoursApplyMode = "all_notifications" | "normal_messages_only" | "sounds_only_placeholder";
+export type QuietHoursApplyMode = "all_notifications" | "normal_messages_only" | "sounds_only";
 export interface QuietHoursSettings {
   enabled: boolean;
   startTime: string;
@@ -34,10 +34,21 @@ export interface QuietHoursSettings {
 }
 export interface NotificationSettings {
   enabled: boolean;
+  nativeDesktopEnabled: boolean;
+  soundEnabled: boolean;
   muted: boolean;
   mentionsOnly: boolean;
+  mentions: boolean;
+  replies: boolean;
+  reactions: boolean;
+  directMessages: boolean;
+  communityAnnouncements: boolean;
   friendRequests: boolean;
   friendAcceptances: boolean;
+  radioLive: boolean;
+  radioReminders: boolean;
+  podcastReleases: boolean;
+  eventReminders: boolean;
   allowMentionsFromMutedScopes: boolean;
   digestMode: NotificationDigestMode;
   quietHours: QuietHoursSettings;
@@ -68,7 +79,7 @@ type LocalSettingsMigration = {
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
 const initialSectionKey = "picom:settings:initial-section";
-const currentSchemaVersion = 8;
+const currentSchemaVersion = 9;
 const listeners = new Set<(settings: PicomSettings) => void>();
 let cachedSettings: PicomSettings | null = null;
 const defaults: PicomSettings = {
@@ -77,10 +88,21 @@ const defaults: PicomSettings = {
   firstLaunchSetupCompleted: false,
   notificationSettings: {
     enabled: true,
+    nativeDesktopEnabled: true,
+    soundEnabled: true,
     muted: false,
     mentionsOnly: false,
+    mentions: true,
+    replies: true,
+    reactions: true,
+    directMessages: true,
+    communityAnnouncements: true,
     friendRequests: true,
     friendAcceptances: true,
+    radioLive: true,
+    radioReminders: true,
+    podcastReleases: true,
+    eventReminders: true,
     allowMentionsFromMutedScopes: true,
     digestMode: "off",
     quietHours: {
@@ -195,6 +217,34 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
       },
     }),
   },
+  {
+    fromVersion: 8,
+    toVersion: 9,
+    migrate: (settings) => {
+      const previous = typeof settings.notificationSettings === "object" && settings.notificationSettings
+        ? settings.notificationSettings as Partial<NotificationSettings> & { quietHours?: Partial<QuietHoursSettings> & { applyTo?: string } }
+        : {};
+      const previousApplyTo = (previous.quietHours as { applyTo?: unknown } | undefined)?.applyTo;
+      const migratedApplyTo: QuietHoursApplyMode = previousApplyTo === "sounds_only_placeholder"
+        ? "sounds_only"
+        : previousApplyTo === "all_notifications" || previousApplyTo === "normal_messages_only" || previousApplyTo === "sounds_only"
+          ? previousApplyTo
+          : defaults.notificationSettings.quietHours.applyTo;
+      return {
+        ...settings,
+        schemaVersion: 9,
+        notificationSettings: {
+          ...defaults.notificationSettings,
+          ...previous,
+          quietHours: {
+            ...defaults.notificationSettings.quietHours,
+            ...(previous.quietHours ?? {}),
+            applyTo: migratedApplyTo,
+          },
+        },
+      };
+    },
+  },
 ];
 
 function getStoredSchemaVersion(settings: StoredPicomSettings): number {
@@ -202,6 +252,8 @@ function getStoredSchemaVersion(settings: StoredPicomSettings): number {
 }
 
 function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
+  const quietHours = (settings.notificationSettings as Partial<NotificationSettings> | undefined)?.quietHours;
+  const applyTo: string | undefined = (quietHours as { applyTo?: string } | undefined)?.applyTo;
   return {
     ...defaults,
     ...settings,
@@ -213,7 +265,10 @@ function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
       ...(settings.notificationSettings ?? {}),
       quietHours: {
         ...defaults.notificationSettings.quietHours,
-        ...((settings.notificationSettings as Partial<NotificationSettings> | undefined)?.quietHours ?? {}),
+        ...(quietHours ?? {}),
+        applyTo: applyTo === "all_notifications" || applyTo === "normal_messages_only" || applyTo === "sounds_only" || applyTo === "sounds_only_placeholder"
+          ? applyTo === "sounds_only_placeholder" ? "sounds_only" : applyTo
+          : defaults.notificationSettings.quietHours.applyTo,
       },
     },
     profileSettings: {

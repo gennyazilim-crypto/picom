@@ -13,7 +13,7 @@ for (const marker of ["isQuietHoursActive", "quietHoursSuppressesDesktop", "quie
 assert.ok(service.indexOf("if (doNotDisturb)") < service.indexOf("if (quietHoursSuppressesDesktop"), "DND must take precedence over mention and quiet-hours overrides");
 assert.ok(service.includes("isMention && settings.quietHours.allowMentions"), "quiet-hours mention override must remain explicit");
 for (const marker of ["mutedCommunityIds", "mutedChannelIds", "setDoNotDisturb", "setCommunityMuted", "setChannelMuted", "localStorage"]) assert.ok(policy.includes(marker), `missing persistent policy state: ${marker}`);
-assert.ok(settings.includes("currentSchemaVersion = 4") && settings.includes("fromVersion: 3") && settings.includes("allowMentionsFromMutedScopes: true"), "notification preference migration must persist the new override");
+assert.ok(settings.includes("currentSchemaVersion = 9") && settings.includes("fromVersion: 8") && settings.includes("allowMentionsFromMutedScopes: true"), "notification preference migrations must persist the muted-scope override");
 assert.ok(modal.includes("Allow mentions from muted communities and channels"), "settings must expose the mention override");
 assert.ok(app.includes('setDoNotDisturb(trayPresenceStatus === "dnd")'), "tray DND must feed the central policy state");
 assert.ok(inbox.includes("decideNotificationRoute"), "DND and Quiet Hours must not break inbox routing");

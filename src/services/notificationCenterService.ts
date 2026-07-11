@@ -6,6 +6,7 @@ export type NotificationCenterItem = Readonly<{
   preview: string;
   createdAt: string;
   readAt?: string;
+  preferenceCategory?: NotificationCategory;
   context: Readonly<{ kind: "community" | "dm" | "system"; communityId?: string; channelId?: string; messageId?: string; radioSessionId?: string; podcastEpisodeId?: string; userId?: string; label: string }>;
 }>;
 
@@ -34,14 +35,17 @@ function save(items: NotificationCenterItem[]) { memoryItems=items; try { window
 
 function routeCategory(category: NotificationCenterCategory): NotificationCategory {
   if (category === "mention") return "mention";
-  if (category === "system" || category === "event") return "system";
-  return "message";
+  if (category === "reply") return "reply";
+  if (category === "reaction") return "reaction";
+  if (category === "dm") return "direct_message";
+  if (category === "event") return "event_reminder";
+  return "system";
 }
 
 function shouldStoreInInbox(item: NotificationCenterItem): boolean {
   const settings = settingsService.getSettings().notificationSettings;
   return decideNotificationRoute({
-    category: routeCategory(item.category),
+    category: item.preferenceCategory ?? routeCategory(item.category),
     isMention: item.category === "mention",
     doNotDisturb: settings.muted,
     communityId: item.context.communityId,
