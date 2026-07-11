@@ -8,7 +8,7 @@ import { menuService } from "../services/menuService";
 import { settingsSections, settingsService, type AccessibilitySettings, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";
 import { statusPageService } from "../services/statusPageService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
-import { twoFactorAuthService } from "../services/twoFactorAuthService";
+import { socialAuthService, type SocialAuthProvider, type SocialProviderAccountState } from "../services/auth/socialAuthService";
 import { accountDeletionService } from "../services/accountDeletionService";
 import { dataExportService } from "../services/dataExportService";
 import { appLockService } from "../services/appLockService";
@@ -79,7 +79,9 @@ type SettingsModalProps = {
   onClose: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
   onAccountDeletionRequested: () => void;
+  onLogout: () => Promise<void> | void;
   currentUsername: string;
+  currentEmail?: string | null;
   ownedCommunityCount: number;
   currentEmailVerifiedAt?: string | null;
   requireEmailVerification?: boolean;
@@ -92,7 +94,7 @@ type SettingsModalProps = {
   };
 };
 
-export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState<SettingsSection>(settingsService.consumeInitialSection);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
@@ -105,8 +107,15 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const [emailVerificationMessage, setEmailVerificationMessage] = useState<string | null>(null);
   const [activeSessions, setActiveSessions] = useState<SessionDeviceSummary[]>([]);
   const [sessionManagementMessage, setSessionManagementMessage] = useState<string | null>(null);
-  const [twoFactorStatus, setTwoFactorStatus] = useState(() => twoFactorAuthService.getStatus());
-  const [twoFactorMessage, setTwoFactorMessage] = useState(twoFactorStatus.message);
+  const [socialProviders, setSocialProviders] = useState<SocialProviderAccountState[]>(() => (["google", "apple"] as const).map((provider) => { const availability = socialAuthService.getProviderAvailability(provider); return { provider, label: provider === "google" ? "Google" : "Apple", available: availability.enabled, linked: false, reason: availability.reason }; }));
+  const [socialProviderBusy, setSocialProviderBusy] = useState<SocialAuthProvider | null>(null);
+  const [passwordResetMessage, setPasswordResetMessage] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordChangeBusy, setPasswordChangeBusy] = useState(false);
+  const [sessionRevokeConfirmationOpen, setSessionRevokeConfirmationOpen] = useState(false);
+  const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
   const [accountDeletionStatus, setAccountDeletionStatus] = useState(() => accountDeletionService.getStatus());
   const [accountDeletionConfirmText, setAccountDeletionConfirmText] = useState("");
   const [accountDeletionPassword, setAccountDeletionPassword] = useState("");
@@ -154,7 +163,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
 
     setActiveSessions(result.data.sessions);
     setSessionManagementMessage(result.data.message);
-    void refreshActiveSessions();
+  }, [pushToast]);
+
+  const refreshSocialProviders = useCallback(async () => {
+    const result = await socialAuthService.getAccountProviderStates();
+    if (result.ok) setSocialProviders(result.data);
+    else pushToast(result.error, "error");
   }, [pushToast]);
 
   useEffect(() => {
@@ -162,9 +176,10 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
       void refreshActiveSessions();
       void dataExportService.refreshStatus().then(setDataExportStatus);
       void accountDeletionService.refreshStatus().then(setAccountDeletionStatus);
+      void refreshSocialProviders();
       setAccountActivities(accountActivityService.listRecent());
     }
-  }, [active, refreshActiveSessions]);
+  }, [active, refreshActiveSessions, refreshSocialProviders]);
 
   const refreshCacheSummary = useCallback(async () => {
     setCacheSummary(await cacheManagementService.getCacheSummary());
@@ -317,39 +332,45 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     }
 
     setSessionManagementMessage(result.data.message);
+    setSessionRevokeConfirmationOpen(false);
+    accountActivityService.recordActivity({ type: "session_revoked", metadata: { scope: "other_sessions" } });
+    setAccountActivities(accountActivityService.listRecent());
+    await refreshActiveSessions();
     pushToast(result.data.message, "success");
   };
-  const prepareTwoFactorPlaceholder = () => {
-    const result = twoFactorAuthService.prepareSetupPlaceholder();
-    if (!result.ok) {
-      pushToast(result.message, "error");
-      return;
-    }
-
-    setTwoFactorStatus(result.data);
-    setTwoFactorMessage(result.data.message);
-    pushToast("Two-factor placeholder prepared locally.", "success");
+  const requestPasswordReset = async () => {
+    if (!currentEmail) { pushToast("No email address is available for this account.", "error"); return; }
+    const result = await authService.requestPasswordReset(currentEmail);
+    const message = result.ok ? result.data.message : result.error.message;
+    setPasswordResetMessage(message);
+    pushToast(message, result.ok ? "success" : "error");
   };
-  const disableTwoFactorPlaceholder = () => {
-    const result = twoFactorAuthService.disablePlaceholder();
-    if (!result.ok) {
-      pushToast(result.message, "error");
-      return;
-    }
-
-    setTwoFactorStatus(result.data);
-    setTwoFactorMessage(result.data.message);
-    pushToast("Two-factor placeholder disabled locally.", "info");
+  const submitPasswordChange = async () => {
+    if (passwordChangeBusy) return;
+    if (newPassword !== confirmNewPassword) { pushToast("New passwords do not match.", "error"); return; }
+    setPasswordChangeBusy(true);
+    const result = await authService.changeCurrentPassword(currentPassword, newPassword);
+    setPasswordChangeBusy(false);
+    setCurrentPassword(""); setNewPassword(""); setConfirmNewPassword("");
+    if (!result.ok) { pushToast(result.error.message, "error"); return; }
+    accountActivityService.recordActivity({ type: "password_changed", metadata: { sessionsRevoked: result.data.sessionsRevoked } });
+    pushToast(result.data.message, "success");
+    onClose();
+    await onLogout();
   };
-  const regenerateRecoveryCodesPlaceholder = () => {
-    const result = twoFactorAuthService.regenerateRecoveryCodesPlaceholder();
-    if (!result.ok) {
-      pushToast(result.message, "error");
-      return;
-    }
-
-    setTwoFactorMessage(result.data.message);
+  const connectSocialProvider = async (provider: SocialAuthProvider) => {
+    setSocialProviderBusy(provider);
+    const result = await socialAuthService.beginProviderLink(provider);
+    setSocialProviderBusy(null);
+    if (!result.ok) { pushToast(result.error, "error"); return; }
     pushToast(result.data.message, "info");
+    await refreshSocialProviders();
+  };
+  const logoutCurrentSession = async () => {
+    accountActivityService.recordActivity({ type: "logout", metadata: { source: "settings" } });
+    setLogoutConfirmationOpen(false);
+    onClose();
+    await onLogout();
   };
   const accountDeletionConfirmationText = currentUsername;
   const requestAccountDeletion = async () => {
@@ -371,6 +392,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
 
     setAccountDeletionStatus(result.data);
     setAccountDeletionConfirmText("");
+    accountActivityService.recordActivity({ type: "account_deletion_requested", metadata: { sessionsRevoked: result.data.sessionsRevoked } });
     pushToast(result.data.message, "success");
     onAccountDeletionRequested();
   };
@@ -488,6 +510,11 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
             <div className="placeholder-panel action-panel">
               <strong>Account security</strong>
               <p>Review session, verification, export, and deletion controls. Supabase Auth remains the source of truth for account actions.</p>
+              <div className="settings-status-card" aria-label="Account identity">
+                <span>Account identity</span>
+                <strong>{currentEmail ?? currentUsername}</strong>
+                <small>{currentEmail ? `${currentEmailVerifiedAt ? "Verified email" : "Unverified email"}. Authentication provider details never expose tokens.` : "Mock/local identity. Connect Supabase Auth to manage a production email account."}</small>
+              </div>
               <div className="settings-status-card" aria-label="Email verification controls">
                 <span>Email verification</span>
                 <strong>{currentEmailVerifiedAt ? "Email verified" : requireEmailVerification ? "Verification required" : "Verification recommended"}</strong>
@@ -501,19 +528,41 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 </article>
                 <article className="security-card">
                   <span>Password</span>
-                  <strong>Available from sign-in</strong>
-                  <small>Password reset uses a non-enumerating Supabase Auth request from the sign-in screen.</small>
-                </article>
-                <article className="security-card">
-                  <span>2FA</span>
-                  <strong>{twoFactorStatus.enabled ? "Local setup draft" : "Coming soon"}</strong>
-                  <small>{twoFactorMessage}</small>
+                  <strong>Reset or change securely</strong>
+                  <small>Reset responses are non-enumerating. Password changes require the current password and revoke every session.</small>
                 </article>
                 <article className="security-card">
                   <span>Logs</span>
                   <strong>Redacted diagnostics</strong>
                   <small>Support payloads are routed through loggingService redaction before export.</small>
                 </article>
+              </div>
+              <div className="settings-status-card" aria-label="Connected sign-in providers">
+                <span>Connected sign-in providers</span>
+                <strong>{socialProviders.filter((provider) => provider.linked).length ? `${socialProviders.filter((provider) => provider.linked).length} connected` : "Email and password"}</strong>
+                <small>Google and Apple are enabled only after their Supabase provider and Picom callback configuration are explicitly available.</small>
+              </div>
+              <div className="security-card-grid">
+                {socialProviders.map((provider) => (
+                  <article className="security-card" key={provider.provider}>
+                    <span>{provider.label}</span>
+                    <strong>{provider.linked ? "Connected" : provider.available ? "Available" : "Unavailable"}</strong>
+                    <small>{provider.linked ? `${provider.label} is connected to this account.` : provider.reason ?? `Connect ${provider.label} through Supabase Auth.`}</small>
+                    <button disabled={provider.linked || !provider.available || socialProviderBusy !== null} onClick={() => void connectSocialProvider(provider.provider)}>{socialProviderBusy === provider.provider ? "Opening browser..." : provider.linked ? "Connected" : `Connect ${provider.label}`}</button>
+                  </article>
+                ))}
+              </div>
+              <div className="settings-status-card" aria-label="Password reset and change">
+                <span>Password security</span>
+                <strong>Reset by email or change now</strong>
+                <small>{passwordResetMessage ?? "Password reset uses a neutral email response. Changing your password requires recent re-authentication and signs out every device."}</small>
+                <div className="settings-actions-row">
+                  <button disabled={!currentEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
+                </div>
+                <label><small>Current password</small><input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>
+                <label><small>New password (12+ characters)</small><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+                <label><small>Confirm new password</small><input type="password" autoComplete="new-password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} /></label>
+                <div className="settings-actions-row"><button disabled={passwordChangeBusy || currentPassword.length < 8 || newPassword.length < 12 || confirmNewPassword.length < 12} onClick={() => void submitPasswordChange()}>{passwordChangeBusy ? "Changing password..." : "Change password and sign out all sessions"}</button></div>
               </div>
               <div className="settings-status-card" aria-label="Active desktop sessions">
                 <span>Active sessions</span>
@@ -559,14 +608,13 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               </div>
               <div className="settings-actions-row">
                 <button onClick={() => setActive("Diagnostics")}>Open Diagnostics</button>
-                <button onClick={() => pushToast("Sign out and use password reset from the sign-in screen.", "info")}>Password reset guidance</button>
                 <button disabled={Boolean(currentEmailVerifiedAt)} onClick={requestEmailVerification}>{currentEmailVerifiedAt ? "Email verified" : "Resend verification"}</button>
                 <button onClick={refreshActiveSessions}>Refresh sessions</button>
-                <button onClick={revokeOtherSessions}>Revoke other sessions</button>
-                <button onClick={prepareTwoFactorPlaceholder}>Enable 2FA (Coming soon)</button>
-                <button onClick={disableTwoFactorPlaceholder}>Disable 2FA draft</button>
-                <button onClick={regenerateRecoveryCodesPlaceholder}>Recovery codes (Coming soon)</button>
+                <button onClick={() => setSessionRevokeConfirmationOpen(true)}>Revoke other sessions</button>
+                <button onClick={() => setLogoutConfirmationOpen(true)}>Log out</button>
               </div>
+              {sessionRevokeConfirmationOpen ? <div className="danger-zone-card"><span>Confirm session revocation</span><strong>Sign out every other device?</strong><small>The current desktop session remains active. This security action is recorded without storing raw tokens.</small><div className="settings-actions-row"><button onClick={() => void revokeOtherSessions()}>Revoke other sessions now</button><button onClick={() => setSessionRevokeConfirmationOpen(false)}>Cancel</button></div></div> : null}
+              {logoutConfirmationOpen ? <div className="danger-zone-card"><span>Confirm logout</span><strong>Log out of this desktop session?</strong><small>Unsaved composer text may be lost. Other sessions are not affected.</small><div className="settings-actions-row"><button onClick={() => void logoutCurrentSession()}>Log out now</button><button onClick={() => setLogoutConfirmationOpen(false)}>Cancel</button></div></div> : null}
               <div className="settings-status-card" aria-label="User data export">
                 <span>Data export</span>
                 <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Generating export" : dataExportStatus.status === "failed" ? "Export failed" : "Not requested"}</strong>
@@ -574,7 +622,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 {dataExportStatus.requestedAt ? <small>Requested {dateTimeService.formatFullTimestamp(dataExportStatus.requestedAt)}. Export content is held only in this app session and is not stored in the request table.</small> : null}
               </div>
               <div className="settings-actions-row">
-                <button disabled={dataExportStatus.status === "processing"} onClick={() => void requestDataExport}>{dataExportStatus.status === "processing" ? "Generating export..." : "Request data export"}</button>
+                <button disabled={dataExportStatus.status === "processing"} onClick={() => void requestDataExport()}>{dataExportStatus.status === "processing" ? "Generating export..." : "Request data export"}</button>
                 <button disabled={!dataExportStatus.canDownload} onClick={downloadDataExport}>Download JSON export</button>
               </div>
               <div className="danger-zone-card" aria-label="Account deletion danger zone">

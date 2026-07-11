@@ -6,6 +6,16 @@ import { getSupabaseClient } from "../supabase/supabaseClient";
 
 export type SocialAuthProvider = "google" | "apple";
 type SocialAuthResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type SocialProviderAccountState = Readonly<{
+  provider: SocialAuthProvider;
+  label: "Google" | "Apple";
+  available: boolean;
+  linked: boolean;
+  reason?: string;
+}>;
+
+const accountProviders: readonly SocialAuthProvider[] = ["google", "apple"];
+const providerLabel = (provider: SocialAuthProvider): "Google" | "Apple" => provider === "google" ? "Google" : "Apple";
 
 function getDisplayName(user: User): string {
   const metadata = user.user_metadata ?? {};
@@ -73,6 +83,38 @@ export const socialAuthService = {
     const openResult = await externalLinkService.openExternalUrl(data.url);
     if (!openResult.ok) return { ok: false, error: externalLinkService.getUserFriendlyError(openResult.reason) };
     return { ok: true, data: { provider } };
+  },
+
+  async getAccountProviderStates(): Promise<SocialAuthResult<SocialProviderAccountState[]>> {
+    const base = accountProviders.map((provider) => {
+      const availability = socialAuthService.getProviderAvailability(provider);
+      return { provider, label: providerLabel(provider), available: availability.enabled, linked: false, reason: availability.reason } satisfies SocialProviderAccountState;
+    });
+    if (dataSourceService.getStatus().isMock) return { ok: true, data: base };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: "Supabase Auth is not configured." };
+    const { data, error } = await client.auth.getUser();
+    if (error || !data.user) return { ok: false, error: "Sign in again to review connected providers." };
+    const linked = new Set((data.user.identities ?? []).map((identity) => identity.provider));
+    return { ok: true, data: base.map((state) => ({ ...state, linked: linked.has(state.provider), reason: linked.has(state.provider) ? `${state.label} is connected to this Picom account.` : state.reason })) };
+  },
+
+  async beginProviderLink(provider: SocialAuthProvider): Promise<SocialAuthResult<{ provider: SocialAuthProvider; message: string }>> {
+    const availability = socialAuthService.getProviderAvailability(provider);
+    if (!availability.enabled) return { ok: false, error: availability.reason ?? "This social provider is unavailable." };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: "Supabase Auth is not configured." };
+    const { data: userData, error: userError } = await client.auth.getUser();
+    if (userError || !userData.user) return { ok: false, error: "Sign in again before connecting a provider." };
+    if ((userData.user.identities ?? []).some((identity) => identity.provider === provider)) return { ok: true, data: { provider, message: `${providerLabel(provider)} is already connected.` } };
+    const { data, error } = await client.auth.linkIdentity({
+      provider: provider as Provider,
+      options: { redirectTo: appConfig.supabase.oauthRedirectUrl, skipBrowserRedirect: true },
+    });
+    if (error || !data.url) return { ok: false, error: `Picom could not start ${providerLabel(provider)} account linking.` };
+    const openResult = await externalLinkService.openExternalUrl(data.url);
+    if (!openResult.ok) return { ok: false, error: externalLinkService.getUserFriendlyError(openResult.reason) };
+    return { ok: true, data: { provider, message: `Complete ${providerLabel(provider)} connection in your browser, then return to Picom.` } };
   },
 
   async completeOAuthCallback(code: string): Promise<SocialAuthResult<void>> {

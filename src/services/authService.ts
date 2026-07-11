@@ -29,6 +29,12 @@ export type PasswordResetRequestSummary = Readonly<{
   message: string;
 }>;
 
+export type PasswordChangeSummary = Readonly<{
+  provider: "mock" | "supabase";
+  message: string;
+  sessionsRevoked: boolean;
+}>;
+
 export type EmailVerificationRequestSummary = Readonly<{
   provider: "mock" | "supabase";
   message: string;
@@ -271,6 +277,22 @@ export const authService = {
     if (error) return { ok: false, error: mapSupabaseError(error) };
     await configured.data.auth.signOut({ scope: "global" });
     return { ok: true, data: { message: "Password updated. All sessions were signed out; sign in with your new password." } };
+  },
+
+  async changeCurrentPassword(currentPassword: string, newPassword: string): Promise<AuthServiceResult<PasswordChangeSummary>> {
+    if (currentPassword.length < 8) return authError("AUTH_INVALID_INPUT", "Enter your current password to continue.");
+    if (newPassword.length < 12) return authError("AUTH_INVALID_INPUT", "New password must be at least 12 characters.");
+    if (Object.is(currentPassword, newPassword)) return authError("AUTH_INVALID_INPUT", "Choose a new password that differs from your current password.");
+    const reauthentication = await authService.reauthenticateCurrentUser(currentPassword);
+    if (!reauthentication.ok) return reauthentication;
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+    if (!configured.data) return { ok: true, data: { provider: "mock", message: "Mock password change completed. Sign in again to continue.", sessionsRevoked: true } };
+    const { error } = await configured.data.auth.updateUser({ password: newPassword });
+    if (error) return { ok: false, error: mapSupabaseError(error) };
+    const { error: signOutError } = await configured.data.auth.signOut({ scope: "global" });
+    if (signOutError) return authError("AUTH_PROVIDER_ERROR", "Password changed, but global session revocation could not be confirmed. Sign out on every device and contact support.");
+    return { ok: true, data: { provider: "supabase", message: "Password changed and all sessions revoked. Sign in with your new password.", sessionsRevoked: true } };
   },
 
   async requestEmailVerification(email?: string): Promise<AuthServiceResult<EmailVerificationRequestSummary>> {
