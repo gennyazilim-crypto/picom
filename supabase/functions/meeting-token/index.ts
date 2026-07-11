@@ -77,6 +77,9 @@ Deno.serve(async (request: Request) => {
   const auth = await requireSupabaseUser(request);
   if (!auth.ok) return respond(auth.response);
 
+  const { error: expiryError } = await auth.supabase.rpc("expire_meeting_waiting_entries", { target_room_id: body.roomId });
+  if (expiryError) return respond(errorResponse("INTERNAL_ERROR", "Meeting waiting state is temporarily unavailable.", 503));
+
   const requested = body.requestedSources ?? {};
   const { data, error } = await auth.supabase.rpc("authorize_livekit_meeting_token", {
     target_room_id: body.roomId,

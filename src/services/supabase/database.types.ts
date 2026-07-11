@@ -248,7 +248,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]>;Relationships:[];
       };
       meeting_waiting_entries: {
-        Row: { id:string;room_id:string;session_id:string|null;user_id:string;display_name:string;requested_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"waiting"|"admitted"|"denied"|"expired"|"cancelled";idempotency_key:string;requested_at:string;resolved_at:string|null;resolved_by_user_id:string|null;denial_reason_code:string|null;created_at:string;updated_at:string };
+        Row: { id:string;room_id:string;session_id:string|null;user_id:string;display_name:string;requested_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"waiting"|"admitted"|"denied"|"expired"|"cancelled";idempotency_key:string;request_message:string;invite_id:string|null;invited_by_user_id:string|null;requested_at:string;expires_at:string;resolved_at:string|null;resolved_by_user_id:string|null;denial_reason_code:string|null;decision_note:string|null;decision_metadata:Json;cancelled_at:string|null;host_notified_at:string|null;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"],"room_id"|"user_id"|"display_name"|"idempotency_key">;
         Update: Partial<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"]>;Relationships:[];
       };
@@ -948,6 +948,13 @@ export type Database = {
       list_meeting_invites:{Args:{target_room_id:string};Returns:Json};
       authorize_livekit_meeting_token:{Args:{target_room_id:string;target_session_id:string;request_audio?:boolean;request_video?:boolean;request_screen?:boolean;request_data?:boolean};Returns:Array<{room_id:string;session_id:string;community_id:string;provider_room_name:string;participant_identity:string;participant_name:string;meeting_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";access_state:"authorized"|"waiting";waiting_entry_id:string|null;can_subscribe:boolean;can_publish_audio:boolean;can_publish_video:boolean;can_publish_screen:boolean;can_publish_data:boolean}>};
       process_livekit_webhook_event:{Args:{target_event_id:string;target_event_type:string;target_occurred_at:string;target_room_id:string;target_session_id:string;target_room_name:string;target_payload_digest:string;target_participant_identity?:string|null;target_participant_name?:string|null;target_track_sid?:string|null;target_track_kind?:string|null;target_track_source?:string|null};Returns:Json};
+      expire_meeting_waiting_entries:{Args:{target_room_id?:string|null};Returns:number};
+      request_meeting_waiting_admission:{Args:{target_room_id:string;target_session_id:string;target_request_message?:string;target_idempotency_key?:string|null};Returns:Json};
+      resolve_meeting_waiting_entry:{Args:{target_entry_id:string;target_decision:"admit"|"deny";target_decision_note?:string|null};Returns:Json};
+      resolve_all_meeting_waiting:{Args:{target_room_id:string;target_decision:"admit"|"deny";target_decision_note?:string|null};Returns:Json};
+      cancel_meeting_waiting_request:{Args:{target_entry_id:string};Returns:Json};
+      list_meeting_waiting_entries:{Args:{target_room_id:string};Returns:Json};
+      get_my_meeting_waiting_entry:{Args:{target_room_id:string;target_session_id?:string|null};Returns:Json};
       create_managed_text_channel: { Args: { target_community_id: string; target_category_id?: string | null; channel_name: string; channel_type?: "text" | "voice" | "forum" | "announcement"; channel_topic?: string | null; channel_is_private?: boolean; channel_public_read_enabled?: boolean }; Returns: Array<Database["public"]["Tables"]["channels"]["Row"]> };
       send_text_message_idempotent: { Args: { target_community_id: string; target_channel_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id?: string | null; target_attachment_ids?: string[] }; Returns: Array<Database["public"]["Tables"]["messages"]["Row"]> };
       complete_current_user_onboarding: { Args: { target_profile: Json; target_followed_user_ids?: string[]; target_theme?: "light" | "dark" | "system" }; Returns: Array<{ completed: boolean; completed_at: string; followed_user_ids: string[]; theme_mode: "light" | "dark" | "system" }> };
