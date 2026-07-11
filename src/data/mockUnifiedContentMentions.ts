@@ -10,7 +10,7 @@ const visibility = {
   publicReadEnabled: true,
 };
 
-const textFixtures = mockMentionItems.slice(0, 4).map((item) =>
+const textFixtures = mockMentionItems.map((item) =>
   textMentionToUnified(item, item.mentionedUserIds[0] ?? currentUserId),
 );
 

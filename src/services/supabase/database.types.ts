@@ -643,6 +643,13 @@ export type Database = {
         };
         Relationships: [];
       };
+      followed_content_stories_view: {
+        Row: { story_id: string; author_id: string; community_id: string | null; channel_id: string | null; message_id: string | null;
+          source_type: "profile_status" | "text_message" | "radio_chat" | "radio_session" | "podcast_episode" | "podcast_comment" | "voice" | "event" | null;
+          source_id: string | null; parent_source_id: string | null; story_type: string; title: string; subtitle: string | null;
+          body: string | null; image_url: string | null; gradient_variant: string | null; created_at: string; duration_seconds: number; mentioned_user_ids: string[] };
+        Relationships: [];
+      };
     };
     Functions: {
       join_current_user_radio_listener: { Args: { target_session_id: string }; Returns: Array<Database["public"]["Tables"]["radio_listeners"]["Row"]> };
@@ -841,13 +848,14 @@ export type Database = {
         Returns: Array<Pick<Database["public"]["Tables"]["content_mentions"]["Row"], "id" | "source_type" | "source_id" | "parent_source_id" | "community_id" | "channel_id" | "author_id" | "mentioned_user_id" | "preview" | "source_created_at" | "source_updated_at" | "visibility_context">>;
       };
       list_ranked_unified_feed: {
-        Args: { feed_mode?: "popular" | "following"; ranking_epoch_input?: string; cursor_rank?: number | null; cursor_created_at?: string | null; cursor_feed_item_id?: string | null; source_types?: string[] | null; result_limit?: number };
+        Args: { feed_mode?: "popular" | "following"; ranking_epoch_input?: string; cursor_rank?: number | null; cursor_created_at?: string | null; cursor_feed_item_id?: string | null; source_types?: string[] | null; created_after?: string | null; unread_only?: boolean; saved_only?: boolean; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["unified_content_feed_view"]["Row"] & { reaction_count: number; comment_count: number; listener_count: number; is_unread: boolean; is_saved: boolean; is_follow_related: boolean; ranking_score: number; ranking_epoch: string }>;
       };
       list_followed_user_stories: {
         Args: { cursor_created_at?: string | null; cursor_story_id?: string | null; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["followed_user_stories_view"]["Row"]>;
       };
+      list_followed_content_stories: { Args: { cursor_created_at?: string | null; cursor_story_id?: string | null; result_limit?: number }; Returns: Array<Database["public"]["Views"]["followed_content_stories_view"]["Row"]> };
       get_direct_message_privacy: { Args: Record<string, never>; Returns: "everyone" | "friends" | "no_one" };
       update_direct_message_privacy: { Args: { next_privacy: "everyone" | "friends" | "no_one" }; Returns: boolean };
       submit_safety_report: {

@@ -28,6 +28,12 @@ function getChannelName(communities: Community[], story: FollowedUserStory) {
   return channel ? `#${channel.name}` : undefined;
 }
 
+function sourceActionLabel(story: FollowedUserStory) {
+  if (story.sourceType === "radio_session") return "Open Radio";
+  if (story.sourceType === "podcast_episode" || story.sourceType === "podcast_comment") return "Open episode";
+  return "Open in channel";
+}
+
 export function StoryProgressBar({ stories, activeStoryId }: { stories: FollowedUserStory[]; activeStoryId: string }) {
   const activeIndex = stories.findIndex((story) => story.id === activeStoryId);
   return <div className="story-progress-bar" aria-hidden="true">{stories.map((story, index) => <span key={story.id} className={index === activeIndex ? "active" : index < activeIndex ? "complete" : ""} />)}</div>;
@@ -60,7 +66,7 @@ export function StoryViewerModal({ story, stories, author, communities, onCloseS
           <div className="story-viewer-copy"><small>{story.subtitle ?? story.type.replace("_", " ")}</small><h2>{story.title}</h2>{story.body ? <p>{story.body}</p> : null}<span>{getCommunityName(communities, story.communityId)}{channelName ? ` / ${channelName}` : ""}</span></div>
         </div>
         <StoryViewerControls onPreviousStory={onPreviousStory} onNextStory={onNextStory} />
-        {story.communityId && story.channelId ? <button className="story-open-channel" type="button" onClick={() => onOpenStoryInChannel(story)}><AppIcon name="chevronRight" size="sm" />Open in channel</button> : null}
+        {story.communityId && (story.channelId || story.sourceId) ? <button className="story-open-channel" type="button" onClick={() => onOpenStoryInChannel(story)}><AppIcon name="chevronRight" size="sm" />{sourceActionLabel(story)}</button> : null}
       </section>
     </div>
   );

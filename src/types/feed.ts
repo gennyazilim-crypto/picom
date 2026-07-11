@@ -15,4 +15,5 @@ export type UnifiedFeedPage = Readonly<{
 export type UnifiedFeedQuery = Readonly<{
   mode: UnifiedFeedMode; cursor?: UnifiedFeedCursor | null; limit?: number;
   sourceTypes?: readonly ContentMentionSourceType[]; followedAuthorIds?: readonly string[];
+  createdAfter?: string; unreadOnly?: boolean; savedOnly?: boolean;
 }>;

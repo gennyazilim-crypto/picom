@@ -1,13 +1,14 @@
 import { mockFollowedUserStories } from "../data/mockStories";
 import type { FollowedUserStory, StoryType } from "../types/stories";
 import { dataSourceService } from "./dataSourceService";
+import { feedUiStateService } from "./feed/feedUiStateService";
 import type { Database } from "./supabase/database.types";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 
-type StoryRow = Database["public"]["Views"]["followed_user_stories_view"]["Row"];
+type StoryRow = Database["public"]["Views"]["followed_content_stories_view"]["Row"];
 type StoryResult = Readonly<{ ok: true; data: { items: FollowedUserStory[]; nextCursor: string | null; hasMore: boolean } }> | Readonly<{ ok: false; error: { code: string; message: string } }>;
 
-const allowedTypes = new Set<StoryType>(["status", "mention_highlight", "media", "voice", "event", "community_update"]);
+const allowedTypes = new Set<StoryType>(["status", "mention_highlight", "media", "voice", "event", "community_update", "radio", "podcast"]);
 const gradientByType: Record<StoryType, string> = {
   status: "story-bg-ocean",
   mention_highlight: "story-bg-warm",
@@ -15,6 +16,8 @@ const gradientByType: Record<StoryType, string> = {
   voice: "story-bg-voice",
   event: "story-bg-event",
   community_update: "story-bg-teal",
+  radio: "story-bg-voice",
+  podcast: "story-bg-event",
 };
 
 function encodeCursor(createdAt: string, storyId: string): string {
@@ -44,6 +47,9 @@ function mapRow(row: StoryRow): FollowedUserStory {
     communityId: row.community_id ?? undefined,
     channelId: row.channel_id ?? undefined,
     messageId: row.message_id ?? undefined,
+    sourceType: row.source_type ?? undefined,
+    sourceId: row.source_id ?? undefined,
+    parentSourceId: row.parent_source_id ?? undefined,
     type,
     title: row.title,
     subtitle: row.subtitle ?? undefined,
@@ -52,7 +58,7 @@ function mapRow(row: StoryRow): FollowedUserStory {
     gradient: row.gradient_variant ?? gradientByType[type],
     timeLabel: timeLabel(row.created_at),
     createdAt: row.created_at,
-    status: "unseen",
+    status: feedUiStateService.isStorySeen(row.story_id) ? "seen" : "unseen",
     durationSeconds: row.duration_seconds,
     mentionedUserIds: row.mentioned_user_ids,
   };
@@ -62,7 +68,7 @@ async function listPage(input: Readonly<{ cursor?: string | null; limit?: number
   const limit = Math.min(Math.max(input.limit ?? 30, 1), 40);
   const cursor = decodeCursor(input.cursor);
   if (dataSourceService.getStatus().isMock) {
-    const ordered = [...mockFollowedUserStories].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt) || right.id.localeCompare(left.id));
+    const ordered = feedUiStateService.applySeenState(mockFollowedUserStories).sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt) || right.id.localeCompare(left.id));
     const start = cursor ? Math.max(0, ordered.findIndex((story) => story.createdAt === cursor.createdAt && story.id === cursor.storyId) + 1) : 0;
     const items = ordered.slice(start, start + limit);
     const hasMore = start + limit < ordered.length;
@@ -72,7 +78,7 @@ async function listPage(input: Readonly<{ cursor?: string | null; limit?: number
 
   const client = getSupabaseClient();
   if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Following Stories are unavailable until Picom reconnects." } };
-  const { data, error } = await client.rpc("list_followed_user_stories", {
+  const { data, error } = await client.rpc("list_followed_content_stories", {
     cursor_created_at: cursor?.createdAt ?? null,
     cursor_story_id: cursor?.storyId ?? null,
     result_limit: limit + 1,

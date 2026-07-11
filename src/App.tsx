@@ -53,6 +53,7 @@ import { directAttachmentUploadService } from "./services/directMessages/directA
 import { relationshipService } from "./services/relationshipService";
 import { mentionFeedService } from "./services/mentionFeedService";
 import { storyService } from "./services/storyService";
+import { feedUiStateService } from "./services/feed/feedUiStateService";
 import { profileVerificationService } from "./services/profileVerificationService";
 import { defaultProfilePrivacyProjection,profilePrivacyService,restrictedProfilePrivacyProjection } from "./services/profilePrivacyService";
 import { profileActivityService } from "./services/profileActivityService";
@@ -351,9 +352,9 @@ export function App() {
   const [activeView, setActiveView] = useState<ActiveView>("community");
   const [isActiveMessageListNearBottom, setIsActiveMessageListNearBottom] = useState(true);
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
-  const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(mockFollowedUserStories);
-  const [mentionTab, setMentionTab] = useState<MentionFeedTab>("feed");
-  const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(null);
+  const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(() => feedUiStateService.applySeenState(mockFollowedUserStories));
+  const [mentionTab, setMentionTab] = useState<MentionFeedTab>(() => feedUiStateService.getSelection().tab);
+  const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(() => feedUiStateService.getSelection().filter);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const followMutationInFlightRef = useRef(new Set<string>());
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
@@ -1738,8 +1739,13 @@ export function App() {
   }, []);
 
   const toggleMentionFilter = useCallback((filter: MentionQuickFilter) => {
-    setMentionQuickFilter((current) => (current === filter ? null : filter));
-  }, []);
+    setMentionQuickFilter((current) => { const next = current === filter ? null : filter; feedUiStateService.setSelection(mentionTab, next); return next; });
+  }, [mentionTab]);
+
+  const changeMentionTab = useCallback((tab: MentionFeedTab) => {
+    feedUiStateService.setSelection(tab, mentionQuickFilter);
+    setMentionTab(tab);
+  }, [mentionQuickFilter]);
 
   const openMentionInChannel = useCallback((item: MentionItem) => {
     setActiveView("community");
@@ -1751,10 +1757,24 @@ export function App() {
   }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
 
   const markStorySeen = useCallback((storyId: string) => {
+    feedUiStateService.markStorySeen(storyId);
     setStoryItems((current) => current.map((story) => (story.id === storyId ? { ...story, status: "seen" } : story)));
   }, []);
 
   const openStoryInChannel = useCallback((story: FollowedUserStory) => {
+    if (story.sourceType === "radio_session" && story.communityId && story.sourceId) {
+      const target = communities.find((community) => community.id === story.communityId);
+      if (!target || target.kind !== "radio") { pushToast("This Radio story is no longer accessible.", "error"); return; }
+      communityNavigationService.rememberRadioSession(story.communityId, story.sourceId);
+      setActiveView("radioCommunity"); switchCommunity(story.communityId); markStorySeen(story.id); closeTransientOverlays(); return;
+    }
+    if ((story.sourceType === "podcast_episode" || story.sourceType === "podcast_comment") && story.communityId && story.sourceId) {
+      const target = communities.find((community) => community.id === story.communityId);
+      const episodeId = story.parentSourceId ?? story.sourceId;
+      if (!target || target.kind !== "podcast") { pushToast("This Podcast story is no longer accessible.", "error"); return; }
+      communityNavigationService.rememberPodcastEpisode(story.communityId, episodeId);
+      setActiveView("podcastCommunity"); switchCommunity(story.communityId); markStorySeen(story.id); closeTransientOverlays(); return;
+    }
     if (!story.communityId || !story.channelId) {
       pushToast("This story is not linked to an open channel yet.", "info");
       return;
@@ -1766,7 +1786,7 @@ export function App() {
     markStorySeen(story.id);
     closeTransientOverlays();
     loggingService.logInfo("Story message highlight placeholder prepared", { messageId: story.messageId }, "mention-feed");
-  }, [clearChannelUnread, closeTransientOverlays, markStorySeen, pushToast, switchCommunity]);
+  }, [clearChannelUnread, closeTransientOverlays, communities, markStorySeen, pushToast, switchCommunity]);
 
   const toggleFeedVoiceMute = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
@@ -2639,7 +2659,7 @@ export function App() {
                 currentUserId={currentUserId}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
-                onTabChange={setMentionTab}
+                onTabChange={changeMentionTab}
                 onOpenImage={openPreview}
                 onOpenInChannel={openMentionInChannel}
                 onToggleReaction={toggleMentionReaction}

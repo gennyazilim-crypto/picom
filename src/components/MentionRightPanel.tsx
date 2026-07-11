@@ -66,6 +66,9 @@ export function MentionRightPanel({
     { id: "week", label: "This week" },
     { id: "unread", label: "Unread" },
     { id: "saved", label: "Saved" },
+    { id: "text", label: "Text" },
+    { id: "radio", label: "Radio" },
+    { id: "podcast", label: "Podcast" },
   ];
 
   return (

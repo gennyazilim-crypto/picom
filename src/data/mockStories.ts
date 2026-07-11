@@ -1,4 +1,5 @@
 import type { FollowedUserStory } from "../types/stories";
+import { mockAudioFeedItems } from "./mockAudio";
 
 export const mockFollowedUserStories: FollowedUserStory[] = [
   { id: "story-aurora-mira-status", authorId: "aurora-user-1", communityId: "aurora", channelId: "aurora-general", type: "status", title: "Polishing the desktop shell", subtitle: "Focus block", body: "Mira is refining the mention card rhythm before the next beta pass.", gradient: "story-bg-ocean", timeLabel: "18 min", createdAt: "2026-07-05T19:12:00.000Z", status: "unseen", durationSeconds: 8 },
@@ -14,3 +15,26 @@ export const mockFollowedUserStories: FollowedUserStory[] = [
   { id: "story-pixel-yuna-mention", authorId: "pixel-user-1", communityId: "pixel", channelId: "pixel-general", messageId: "pixel-message-4", type: "mention_highlight", title: "Gallery layout shoutout", subtitle: "Mention highlight", body: "Yuna called out the shared media direction for profile pages.", gradient: "story-bg-ocean", timeLabel: "7 h", createdAt: "2026-07-05T11:44:00.000Z", status: "unseen", durationSeconds: 8, mentionedUserIds: ["user-me"] },
   { id: "story-orbit-sia-status", authorId: "orbit-user-2", communityId: "orbit", channelId: "orbit-talk", type: "status", title: "Public read testing", subtitle: "Visitor mode", body: "Sia is checking what visitors can safely see before they join.", gradient: "story-bg-teal", timeLabel: "8 h", createdAt: "2026-07-05T10:50:00.000Z", status: "seen", durationSeconds: 8 },
 ];
+
+mockFollowedUserStories.push(...mockAudioFeedItems.slice(0, 6).map((item, index): FollowedUserStory => {
+  const podcast = item.type === "podcast_episode";
+  const sourceId = item.sourceId ?? item.id.replace(/^feed-/, "");
+  return {
+    id: `story-audio-${sourceId}`,
+    authorId: item.mentionAuthorUserId ?? item.authorUserId ?? item.hostUserId ?? (index % 2 ? "aurora-user-1" : "aurora-user-2"),
+    communityId: item.communityId,
+    sourceType: podcast ? "podcast_episode" : "radio_session",
+    sourceId,
+    type: podcast ? "podcast" : "radio",
+    title: item.title,
+    subtitle: podcast ? "Podcast update" : item.type === "radio_live" ? "Radio live now" : "Radio update",
+    body: item.mentionHighlight ?? item.body,
+    imageUrl: item.coverUrl,
+    gradient: podcast ? "story-bg-event" : "story-bg-voice",
+    timeLabel: index < 2 ? `${20 + index * 14} min` : `${index} h`,
+    createdAt: item.createdAt,
+    status: index % 3 === 0 ? "seen" : "unseen",
+    durationSeconds: 9,
+    mentionedUserIds: item.isMention ? ["user-me"] : [],
+  };
+}));

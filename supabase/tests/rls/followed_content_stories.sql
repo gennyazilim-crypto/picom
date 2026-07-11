@@ -1,0 +1,11 @@
+begin;select plan(9);
+select has_view('public','followed_content_stories_view','followed content story view exists');
+select has_function('public','list_followed_content_stories',array['timestamp with time zone','text','integer'],'followed content story RPC exists');
+select is((select reloptions@>array['security_invoker=true'] from pg_class where oid='public.followed_content_stories_view'::regclass),true,'story view uses source RLS');
+select ok(pg_get_viewdef('public.followed_content_stories_view'::regclass,true) like '%user_follows%','story view uses persisted follows');
+select ok(pg_get_viewdef('public.followed_content_stories_view'::regclass,true) like '%radio_sessions%','story view includes Radio');
+select ok(pg_get_viewdef('public.followed_content_stories_view'::regclass,true) like '%podcast_episodes%','story view includes Podcast');
+select ok(pg_get_viewdef('public.followed_content_stories_view'::regclass,true) like '%unified_content_feed_view%','story view includes unified Text mentions');
+select ok(has_function_privilege('authenticated','public.list_followed_content_stories(timestamptz,text,integer)','EXECUTE'),'authenticated can list stories');
+select ok(not has_table_privilege('anon','public.followed_content_stories_view','SELECT'),'anonymous story access denied');
+select * from finish();rollback;

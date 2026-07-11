@@ -54,6 +54,7 @@ function mockPage(query: UnifiedFeedQuery): UnifiedFeedPage {
   const followed = new Set(query.followedAuthorIds ?? []);
   const inputs: UnifiedFeedRankingInput[] = mockUnifiedContentMentions
     .filter((mention) => !query.sourceTypes?.length || query.sourceTypes.includes(mention.sourceType))
+    .filter((mention) => !query.createdAfter || mention.createdAt >= query.createdAfter)
     .map((mention, index) => ({
       feedItemId: mention.id, mention, mentionedUserIds: [mention.mentionedUserId],
       metrics: { reactions: (index * 3) % 17, comments: (index * 2) % 11, listeners: mention.sourceType === "radio_session" || mention.sourceType.startsWith("podcast_") ? 24 + index * 9 : 0, mentionCount: 1 },
@@ -82,7 +83,8 @@ export const feedQueryService = {
     const { data, error } = await client.rpc("list_ranked_unified_feed", {
       feed_mode: query.mode, ranking_epoch_input: rankingEpoch, cursor_rank: query.cursor?.rankingScore ?? null,
       cursor_created_at: query.cursor?.createdAt ?? null, cursor_feed_item_id: query.cursor?.feedItemId ?? null,
-      source_types: query.sourceTypes?.length ? [...query.sourceTypes] : null, result_limit: limit,
+      source_types: query.sourceTypes?.length ? [...query.sourceTypes] : null, created_after: query.createdAfter ?? null,
+      unread_only: query.unreadOnly ?? false, saved_only: query.savedOnly ?? false, result_limit: limit,
     });
     if (error) return { ok: false, error: { code: "FEED_LOAD_FAILED", message: error.message } };
     const items = ((data ?? []) as RankedFeedRow[]).map(mapRow);

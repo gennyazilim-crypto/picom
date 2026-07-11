@@ -948,6 +948,7 @@
 
 /* Unified Text, Radio, and Podcast Feed card language. */
 .unified-feed-list{min-width:0;display:grid;align-content:start;gap:14px}
+.feed-query-notice{margin:0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-soft);color:var(--text-secondary);font-size:12px}
 .unified-feed-card{position:relative;border-radius:22px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 96%,transparent),var(--surface-soft));box-shadow:var(--shadow-soft)}
 .unified-feed-card--audio{grid-template-columns:168px minmax(0,1fr);min-height:224px}
 .unified-feed-card--audio.unread::before{content:"";position:absolute;z-index:2;left:-1px;top:22px;width:4px;height:42px;border-radius:999px;background:var(--picom-orange)}

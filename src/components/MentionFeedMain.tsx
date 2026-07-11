@@ -22,6 +22,9 @@ import { podcastService } from "../services/audio/podcastService";
 import { audioFeedReadStateService } from "../services/audio/audioFeedReadStateService";
 import { communityNavigationService } from "../services/community/communityNavigationService";
 import { getCommunityAccess } from "../services/permissions/communityPermissions";
+import { feedQueryService } from "../services/feed/feedQueryService";
+import { dataSourceService } from "../services/dataSourceService";
+import type { UnifiedFeedItem } from "../types/feed";
 
 type MentionFeedMainProps = {
   items: MentionItem[];
@@ -55,8 +58,8 @@ type MentionFeedMainProps = {
 };
 
 function isWithinDays(value: string, days: number) {
-  const ageMs = Date.UTC(2026, 6, 4, 23, 59, 0) - new Date(value).getTime();
-  return ageMs <= days * 24 * 60 * 60 * 1000;
+  const ageMs = Date.now() - new Date(value).getTime();
+  return ageMs >= 0 && ageMs <= days * 24 * 60 * 60 * 1000;
 }
 
 function applyQuickFilter(items: MentionItem[], filter: MentionQuickFilter | null) {
@@ -64,7 +67,32 @@ function applyQuickFilter(items: MentionItem[], filter: MentionQuickFilter | nul
   if (filter === "today") return items.filter((item) => isWithinDays(item.createdAt, 1));
   if (filter === "week") return items.filter((item) => isWithinDays(item.createdAt, 7));
   if (filter === "unread") return items.filter((item) => item.isUnread);
-  return items.filter((item) => item.isSaved);
+  if (filter === "saved") return items.filter((item) => item.isSaved);
+  if (filter === "text") return items;
+  return [];
+}
+
+function sourceTypesForFilter(filter: MentionQuickFilter | null) {
+  if (filter === "text") return ["text_message", "radio_chat"] as const;
+  if (filter === "radio") return ["radio_session"] as const;
+  if (filter === "podcast") return ["podcast_episode", "podcast_comment"] as const;
+  return undefined;
+}
+
+function createdAfterForFilter(filter: MentionQuickFilter | null) {
+  const days = filter === "today" ? 1 : filter === "week" ? 7 : 0;
+  return days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString() : undefined;
+}
+
+function applyAudioQuickFilter(items: readonly AudioFeedItem[], filter: MentionQuickFilter | null, saved: ReadonlySet<string>, read: ReadonlySet<string>) {
+  if (!filter) return [...items];
+  if (filter === "today") return items.filter((item) => isWithinDays(item.createdAt, 1));
+  if (filter === "week") return items.filter((item) => isWithinDays(item.createdAt, 7));
+  if (filter === "unread") return items.filter((item) => Boolean(item.isUnread && !read.has(item.id)));
+  if (filter === "saved") return items.filter((item) => saved.has(item.id));
+  if (filter === "radio") return items.filter((item) => item.type !== "podcast_episode");
+  if (filter === "podcast") return items.filter((item) => item.type === "podcast_episode");
+  return [];
 }
 
 export function MentionFeedMain({
@@ -105,11 +133,20 @@ export function MentionFeedMain({
   const [selectedPodcastEpisodeId, setSelectedPodcastEpisodeId] = useState<string | null>(null);
   const [savedAudioIds, setSavedAudioIds] = useState<Set<string>>(() => new Set(audioCatalog.feedItems.filter((item) => item.isSaved).map((item) => item.id)));
   const [readAudioIds, setReadAudioIds] = useState<Set<string>>(new Set());
+  const [queriedFeedItems, setQueriedFeedItems] = useState<readonly UnifiedFeedItem[] | null>(null);
+  const [feedQueryNotice, setFeedQueryNotice] = useState<string | null>(null);
   const rankingNowMs = useMemo(() => Date.now(), []);
   const feedItems = useMemo(() => rankMentionFeedItems(items, { tab: "feed", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
   const followingItems = useMemo(() => rankMentionFeedItems(items, { tab: "following", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
-  const visibleItems = useMemo(() => applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter), [activeFilter, activeTab, feedItems, followingItems]);
-  const storyIds = useMemo(() => stories.map((story) => story.id), [stories]);
+  const locallyVisibleItems = useMemo(() => applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter), [activeFilter, activeTab, feedItems, followingItems]);
+  const visibleStories = useMemo(() => stories.filter((story) => {
+    if (!story.communityId) return true;
+    const community = communities.find((candidate) => candidate.id === story.communityId);
+    if (!community) return false;
+    const access = getCommunityAccess(currentUserId, community);
+    return access.isMember || access.canViewPublicContent;
+  }), [communities, currentUserId, stories]);
+  const storyIds = useMemo(() => visibleStories.map((story) => story.id), [visibleStories]);
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
   const accessibleAudioItems = useMemo(() => audioCatalog.feedItems.filter((item) => {
     const community = communities.find((candidate) => candidate.id === item.communityId);
@@ -117,7 +154,30 @@ export function MentionFeedMain({
     const access = getCommunityAccess(currentUserId, community);
     return access.isMember || access.canViewPublicContent;
   }), [audioCatalog.feedItems, communities, currentUserId]);
-  const visibleAudioItems = useMemo(() => activeTab === "feed" ? accessibleAudioItems.slice(0, 6) : accessibleAudioItems.filter((item) => followedUserIds.includes(item.mentionAuthorUserId ?? item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [accessibleAudioItems, activeTab, followedUserIds]);
+  const followedAudioItems = useMemo(() => accessibleAudioItems.filter((item) => followedUserIds.includes(item.mentionAuthorUserId ?? item.authorUserId ?? item.hostUserId ?? "")), [accessibleAudioItems, followedUserIds]);
+  const locallyVisibleAudioItems = useMemo(() => applyAudioQuickFilter(activeTab === "feed" ? accessibleAudioItems : followedAudioItems, activeFilter, savedAudioIds, readAudioIds), [accessibleAudioItems, activeFilter, activeTab, followedAudioItems, readAudioIds, savedAudioIds]);
+  useEffect(() => {
+    let active = true;
+    setQueriedFeedItems(null);
+    const hostedStateFilters = dataSourceService.getStatus().isSupabase;
+    void feedQueryService.refresh({
+      mode: activeTab === "feed" ? "popular" : "following",
+      sourceTypes: sourceTypesForFilter(activeFilter),
+      followedAuthorIds: followedUserIds,
+      createdAfter: createdAfterForFilter(activeFilter),
+      unreadOnly: hostedStateFilters && activeFilter === "unread",
+      savedOnly: hostedStateFilters && activeFilter === "saved",
+      limit: 50,
+    }).then((result) => {
+      if (!active) return;
+      if (result.ok) { setQueriedFeedItems(result.data.items); setFeedQueryNotice(null); }
+      else { setFeedQueryNotice("Live ranking is unavailable. Showing cached visible updates."); setQueriedFeedItems(null); }
+    });
+    return () => { active = false; };
+  }, [activeFilter, activeTab, followedUserIds]);
+  const queriedSourceOrder = useMemo(() => queriedFeedItems === null ? null : new Map(queriedFeedItems.map((item, index) => [item.mention.sourceId, index])), [queriedFeedItems]);
+  const visibleItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleItems : locallyVisibleItems.filter((item) => queriedSourceOrder.has(item.messageId)).sort((left, right) => (queriedSourceOrder.get(left.messageId) ?? 999) - (queriedSourceOrder.get(right.messageId) ?? 999)), [locallyVisibleItems, queriedSourceOrder]);
+  const visibleAudioItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleAudioItems.slice(0, 12) : locallyVisibleAudioItems.filter((item) => queriedSourceOrder.has(item.sourceId ?? item.id.replace(/^feed-/, ""))).sort((left, right) => (queriedSourceOrder.get(left.sourceId ?? left.id.replace(/^feed-/, "")) ?? 999) - (queriedSourceOrder.get(right.sourceId ?? right.id.replace(/^feed-/, "")) ?? 999)).slice(0, 12), [locallyVisibleAudioItems, queriedSourceOrder]);
   const audioReminderFeedIds = useMemo(() => new Set([...reminderState.reminderIds].map((id) => "feed-" + id)), [reminderState.reminderIds]);
   const radioEvents = useMemo<UpcomingEvent[]>(() => audioCatalog.radioSessions
     .filter((session) => session.status === "scheduled")
@@ -192,7 +252,7 @@ export function MentionFeedMain({
   return (
     <main className="mention-feed-main" aria-label="Home mention feed">
       <FollowedPeopleStoriesHeader
-        stories={stories}
+        stories={visibleStories}
         communities={communities}
         activeStoryId={activeStoryId}
         onOpenStory={openStory}
@@ -204,12 +264,13 @@ export function MentionFeedMain({
       />
       <MentionFeedHeader
         activeTab={activeTab}
-        feedCount={feedItems.length}
-        followingCount={followingItems.length}
+        feedCount={feedItems.length + accessibleAudioItems.length}
+        followingCount={followingItems.length + followedAudioItems.length}
         onTabChange={onTabChange}
       />
       <div className="mention-feed-body-grid">
         <div className="mention-feed-primary-list">
+        {feedQueryNotice ? <p className="feed-query-notice" role="status">{feedQueryNotice}</p> : null}
         <UnifiedFeedList
           textItems={visibleItems}
           audioItems={visibleAudioItems}

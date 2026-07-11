@@ -2,7 +2,7 @@ import type { Attachment, ChannelId, CommunityId, MessageId, Reaction, UserId } 
 
 export type MentionSource = "popular_feed" | "following";
 export type MentionFeedTab = "feed" | "following";
-export type MentionQuickFilter = "today" | "week" | "unread" | "saved";
+export type MentionQuickFilter = "today" | "week" | "unread" | "saved" | "text" | "radio" | "podcast";
 
 export type MentionCommentPreview = {
   id: string;
