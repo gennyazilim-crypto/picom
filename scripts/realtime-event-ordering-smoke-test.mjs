@@ -26,7 +26,7 @@ const checks = [
   [files.realtimeHook.includes("Supabase out-of-order realtime update ignored"), "out-of-order update logging"],
   [files.directRealtimeService.includes("const seen = new Map<string, number>()"), "DM bounded event dedupe state"],
   [files.directRealtimeService.includes("if (seen.has(key)) return"), "DM duplicate event rejection"],
-  [files.directRealtimeService.includes("seen.clear(); for (const channel of channels) void client.removeChannel(channel)"), "DM subscription cleanup"],
+  [files.directRealtimeService.includes("guard.clear(); if (channel) void client.removeChannel(channel)") && files.directRealtimeService.includes("guard.clear(); void client.removeChannel(channel)"), "DM active/list subscription cleanup"],
   [files.localMessageState.includes("shouldKeepDeletedMessage"), "local deleted message guard"],
   [files.sharedEvents.includes("eventId"), "shared realtime event id type"],
   [files.sharedEvents.includes("serverTimestamp"), "shared realtime timestamp type"],

@@ -10,7 +10,7 @@ for (const marker of ["grid-template-columns: minmax(260px, 280px) minmax(0, 1fr
   if (!styles.includes(marker)) throw new Error(`DM layout style marker missing: ${marker}`);
 }
 if (/supabase\.from|dangerouslySetInnerHTML/.test(component)) throw new Error("DM view must not bypass services or render unsafe HTML.");
-if (!component.includes('size="medium"') || component.includes('size="profile"')) throw new Error("DM avatars must use the non-aura medium verification variant.");
+if (!component.includes('size={compact ? "compact" : "medium"}') || component.includes('size="profile"')) throw new Error("DM avatars must use compact/medium non-aura verification variants only.");
 if (!component.includes("aria-expanded={detailsOpen}")) throw new Error("DM details disclosure state must be accessible.");
 
 console.log("Direct Messages centered desktop layout and grouping smoke passed.");
