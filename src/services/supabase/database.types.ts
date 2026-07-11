@@ -611,6 +611,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["saved_audio_items"]["Row"]>;
         Relationships: [];
       };
+      user_settings: {
+        Row: { user_id: string; schema_version: number; notification_settings: Json; updated_at: string };
+        Insert: { user_id: string; schema_version?: number; notification_settings?: Json; updated_at?: string };
+        Update: { schema_version?: number; notification_settings?: Json; updated_at?: string };
+        Relationships: [];
+      };
     };
     Views: {
       message_attachments: {

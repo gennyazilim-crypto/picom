@@ -20,6 +20,6 @@ if (/getUserMedia|desktopCapturer|requestPermission|startScreenShare|voiceServic
 if (!app.includes("!safeMode.active && !firstLaunchSetupCompleted") || !app.includes("<FirstLaunchSetup")) throw new Error("First-launch setup App integration missing.");
 if (app.indexOf("<FirstLaunchSetup") > app.indexOf("if (passwordRecoveryMode || !authReady || !authSession)")) throw new Error("First-launch setup must precede unauthenticated login/register rendering.");
 if (!settingsModal.includes('import.meta.env.DEV') || !settingsModal.includes("Reset first-launch setup") || !settingsModal.includes("settingsService.resetFirstLaunchSetup()")) throw new Error("Development-only first-launch reset control is missing.");
-if (!settings.includes("backupInvalidSettings(raw)") || !settings.includes("return defaults")) throw new Error("Corrupted settings must retain a safe-default recovery path.");
+if (!settings.includes("backupInvalidSettings(raw, storage)") || !settings.includes("return cloneSettings(defaults)")) throw new Error("Corrupted settings must retain a safe-default recovery path.");
 
 console.log("First-launch setup persistence and no-prompt smoke passed.");

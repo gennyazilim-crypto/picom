@@ -1,7 +1,23 @@
 import type { ProfileStatus } from "../types/profile";
+import { dataSourceService } from "./dataSourceService";
+import type { Json } from "./supabase/database.types";
+import { getSupabaseClient } from "./supabase/supabaseClient";
 
 export type ThemeMode = "light" | "dark";
 import type { NotificationDigestMode } from "./notificationDigestService";
+export const settingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"] as const;
+export type SettingsSection = typeof settingsSections[number];
+export type SettingsPersistenceScope = "local-device" | "user-account-synced" | "community-specific" | "server-controlled";
+export const settingsPersistenceRegistry = {
+  theme: "local-device",
+  firstLaunchSetupCompleted: "local-device",
+  accessibilitySettings: "local-device",
+  notificationSettings: "user-account-synced",
+  profileSettings: "user-account-synced",
+  communityNotificationPolicy: "community-specific",
+  featureFlags: "server-controlled",
+  updatePolicy: "server-controlled",
+} as const satisfies Record<string, SettingsPersistenceScope>;
 export type QuietHoursApplyMode = "all_notifications" | "normal_messages_only" | "sounds_only_placeholder";
 export interface QuietHoursSettings {
   enabled: boolean;
@@ -44,7 +60,10 @@ type LocalSettingsMigration = {
 
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
-const currentSchemaVersion = 6;
+const initialSectionKey = "picom:settings:initial-section";
+const currentSchemaVersion = 7;
+const listeners = new Set<(settings: PicomSettings) => void>();
+let cachedSettings: PicomSettings | null = null;
 const defaults: PicomSettings = {
   schemaVersion: currentSchemaVersion,
   theme: "light",
@@ -135,7 +154,7 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
     migrate: (settings) => ({
       ...settings,
       schemaVersion: 5,
-      firstLaunchSetupCompleted: false,
+      firstLaunchSetupCompleted: settings.firstLaunchSetupCompleted === true,
     }),
   },
   {
@@ -149,6 +168,11 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
         ...(typeof settings.profileSettings === "object" && settings.profileSettings ? settings.profileSettings : {}),
       },
     }),
+  },
+  {
+    fromVersion: 6,
+    toVersion: 7,
+    migrate: (settings) => ({ ...settings, schemaVersion: 7 }),
   },
 ];
 
@@ -206,33 +230,65 @@ function migrateSettings(settings: StoredPicomSettings): PicomSettings {
   return normalizeSettings(working);
 }
 
-function backupInvalidSettings(raw: string): void {
+function localStore(): Storage | null {
+  try { return typeof localStorage === "undefined" ? null : localStorage; } catch { return null; }
+}
+
+function sessionStore(): Storage | null {
+  try { return typeof sessionStorage === "undefined" ? null : sessionStorage; } catch { return null; }
+}
+
+function cloneSettings(settings: PicomSettings): PicomSettings {
+  return {
+    ...settings,
+    notificationSettings: { ...settings.notificationSettings, quietHours: { ...settings.notificationSettings.quietHours } },
+    profileSettings: { ...settings.profileSettings, tags: [...settings.profileSettings.tags] },
+    accessibilitySettings: { ...settings.accessibilitySettings },
+  };
+}
+
+function importLegacySettings(storage: Storage): PicomSettings | null {
+  const legacyTheme = storage.getItem("picom:theme") ?? storage.getItem("picom-theme");
+  const legacyFirstLaunch = storage.getItem("picom:first-launch-completed") ?? storage.getItem("picom-first-launch-completed");
+  if (!legacyTheme && !legacyFirstLaunch) return null;
+  const next = normalizeSettings({ schemaVersion: currentSchemaVersion, theme: legacyTheme === "dark" ? "dark" : "light", firstLaunchSetupCompleted: legacyFirstLaunch === "true" });
+  for (const legacyKey of ["picom:theme", "picom-theme", "picom:first-launch-completed", "picom-first-launch-completed"]) storage.removeItem(legacyKey);
+  return next;
+}
+
+function backupInvalidSettings(raw: string, storage: Storage): void {
   try {
-    localStorage.setItem(`${backupKeyPrefix}.${Date.now()}`, raw.slice(0, 12_000));
-    localStorage.setItem("picom:safe-mode:forced", "true");
-    localStorage.setItem("picom:safe-mode:reason", "corrupted_settings_placeholder");
-    localStorage.removeItem(key);
+    storage.setItem(`${backupKeyPrefix}.${Date.now()}`, JSON.stringify({ reason: "invalid_json", byteLength: raw.length, recoveredAt: new Date().toISOString() }));
+    storage.removeItem(key);
   } catch {
-    // If localStorage is unavailable, fall back to safe defaults without blocking startup.
+    // Safe defaults remain available even when storage recovery is unavailable.
   }
 }
 
-function writeSettings(next: PicomSettings): void {
-  localStorage.setItem(key, JSON.stringify(next));
+function writeSettings(next: PicomSettings): boolean {
+  const normalized = cloneSettings(next);
+  cachedSettings = normalized;
+  let persisted = false;
+  try { const storage = localStore(); if (storage) { storage.setItem(key, JSON.stringify(normalized)); persisted = true; } } catch { /* Keep in-memory settings for this session. */ }
+  for (const listener of listeners) listener(cloneSettings(normalized));
+  return persisted;
 }
 
 export const settingsService = {
   getDefaultSettings(): PicomSettings {
-    return {
-      ...defaults,
-      notificationSettings: { ...defaults.notificationSettings },
-      profileSettings: { ...defaults.profileSettings },
-      accessibilitySettings: { ...defaults.accessibilitySettings },
-    };
+    return cloneSettings(defaults);
   },
   getSettings(): PicomSettings {
-    const raw = localStorage.getItem(key);
-    if (!raw) return defaults;
+    if (cachedSettings) return cloneSettings(cachedSettings);
+    const storage = localStore();
+    if (!storage) return cloneSettings(defaults);
+    const raw = storage.getItem(key);
+    if (!raw) {
+      const legacy = importLegacySettings(storage);
+      if (legacy) { writeSettings(legacy); return cloneSettings(legacy); }
+      cachedSettings = cloneSettings(defaults);
+      return cloneSettings(defaults);
+    }
 
     try {
       const parsed = JSON.parse(raw) as StoredPicomSettings;
@@ -240,10 +296,12 @@ export const settingsService = {
       if (JSON.stringify(next) !== raw) {
         writeSettings(next);
       }
-      return next;
+      cachedSettings = cloneSettings(next);
+      return cloneSettings(next);
     } catch {
-      backupInvalidSettings(raw);
-      return defaults;
+      backupInvalidSettings(raw, storage);
+      cachedSettings = cloneSettings(defaults);
+      return cloneSettings(defaults);
     }
   },
   updateSettings(partial: Partial<PicomSettings>) {
@@ -253,12 +311,14 @@ export const settingsService = {
   },
   updateNotificationSettings(partial: Partial<NotificationSettings>) {
     const current = this.getSettings();
-    return this.updateSettings({
+    const next = this.updateSettings({
       notificationSettings: {
         ...current.notificationSettings,
         ...partial,
       },
     });
+    if (dataSourceService.getStatus().isSupabase) queueMicrotask(() => { void settingsService.syncAccountSettings(next); });
+    return next;
   },
   updateProfileSettings(partial: Partial<ProfileSettings>) {
     const current = this.getSettings();
@@ -284,5 +344,45 @@ export const settingsService = {
   resetFirstLaunchSetup() {
     return this.updateSettings({ firstLaunchSetupCompleted: false });
   },
-  resetSettings() { localStorage.removeItem(key); return defaults; }
+  subscribe(listener: (settings: PicomSettings) => void) {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  },
+  requestInitialSection(section: SettingsSection) { try { sessionStore()?.setItem(initialSectionKey, section); return true; } catch { return false; } },
+  consumeInitialSection(): SettingsSection {
+    try {
+      const storage = sessionStore();
+      const requested = storage?.getItem(initialSectionKey);
+      storage?.removeItem(initialSectionKey);
+      return settingsSections.includes(requested as SettingsSection) ? requested as SettingsSection : "Appearance";
+    } catch { return "Appearance"; }
+  },
+  async syncAccountSettings(settings?: PicomSettings): Promise<{ ok: true } | { ok: false; error: string }> {
+    const accountSettings = settings ?? settingsService.getSettings();
+    if (dataSourceService.getStatus().isMock) return { ok: true };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: "SETTINGS_BACKEND_UNAVAILABLE" };
+    const { data, error } = await client.auth.getUser();
+    if (error || !data.user) return { ok: false, error: "SETTINGS_AUTH_REQUIRED" };
+    const notificationSettings = JSON.parse(JSON.stringify(accountSettings.notificationSettings)) as Json;
+    const result = await client.from("user_settings").upsert({ user_id: data.user.id, schema_version: currentSchemaVersion, notification_settings: notificationSettings, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    return result.error ? { ok: false, error: "SETTINGS_SYNC_FAILED" } : { ok: true };
+  },
+  async hydrateAccountSettings(): Promise<{ ok: true; settings: PicomSettings } | { ok: false; error: string; settings: PicomSettings }> {
+    const current = this.getSettings();
+    if (dataSourceService.getStatus().isMock) return { ok: true, settings: current };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: "SETTINGS_BACKEND_UNAVAILABLE", settings: current };
+    const { data: auth, error: authError } = await client.auth.getUser();
+    if (authError || !auth.user) return { ok: false, error: "SETTINGS_AUTH_REQUIRED", settings: current };
+    const result = await client.from("user_settings").select("schema_version,notification_settings").eq("user_id", auth.user.id).maybeSingle();
+    if (result.error) return { ok: false, error: "SETTINGS_LOAD_FAILED", settings: current };
+    if (!result.data) { const synced = await this.syncAccountSettings(current); return synced.ok ? { ok: true, settings: current } : { ok: false, error: synced.error, settings: current }; }
+    const remote = normalizeSettings({ ...current, notificationSettings: result.data.notification_settings as unknown as NotificationSettings });
+    writeSettings(remote);
+    return { ok: true, settings: remote };
+  },
+  resetSettings() { try { localStore()?.removeItem(key); } catch { /* In-memory reset still succeeds. */ } cachedSettings = cloneSettings(defaults); for (const listener of listeners) listener(cloneSettings(defaults)); return cloneSettings(defaults); },
 };

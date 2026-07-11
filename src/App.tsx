@@ -980,6 +980,7 @@ export function App() {
     document.documentElement.dataset.focusRingStrong = accessibilitySettings.focusRingStrong ? "true" : "false";
     settingsService.updateSettings({ theme, accessibilitySettings });
   }, [accessibilitySettings, theme]);
+  useEffect(() => { if (authSession?.user?.id) void settingsService.hydrateAccountSettings(); }, [authSession?.user?.id]);
 
   useEffect(() => {
     setIsActiveMessageListNearBottom(true);
@@ -2830,15 +2831,15 @@ export function App() {
               dataState={dataSourceService.getStatus().isSupabase ? remoteProfileLoadState : "ready"}
               dataError={remoteProfileLoadError}
               onRetryData={() => setProfileReloadVersion((version) => version + 1)}
-              onEditProfile={() => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely without persisted navigation. */ } openSettings(); }}
-              onRequestVerification={() => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely without persisted navigation. */ } openSettings(); }}
+              onEditProfile={() => { settingsService.requestInitialSection("Profile"); openSettings(); }}
+              onRequestVerification={() => { settingsService.requestInitialSection("Profile"); openSettings(); }}
               isBlocked={blockedUserIds.includes(selectedUserProfile.id)}
               relationshipBusy={profileRelationshipBusyUserId === selectedUserProfile.id}
               onOpenMore={(event, profile) => {
                 const request = friendState.requests.find((candidate) => candidate.userId === profile.id && candidate.status === "pending");
                 const friendAction = profile.friendshipStatus === "friends" ? "remove" : profile.friendshipStatus === "outgoing" ? "cancel" : profile.friendshipStatus === "incoming" ? "accept" : "add";
                 const friendLabel = friendAction === "remove" ? "Remove friend" : friendAction === "cancel" ? "Cancel friend request" : friendAction === "accept" ? "Accept friend request" : "Add friend";
-                const openProfileSettings = () => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely. */ } openSettings(); };
+                const openProfileSettings = () => { settingsService.requestInitialSection("Profile"); openSettings(); };
                 openContext(event, profile.isCurrentUser ? [
                   { label: "Edit profile", onSelect: openProfileSettings },
                   { label: "Verification status and request", onSelect: openProfileSettings },

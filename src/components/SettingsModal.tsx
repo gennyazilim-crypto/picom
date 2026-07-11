@@ -5,7 +5,7 @@ import type { Community } from "../types/community";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { authService } from "../services/authService";
 import { menuService } from "../services/menuService";
-import { settingsService, type AccessibilitySettings, type NotificationSettings, type ProfileSettings } from "../services/settingsService";
+import { settingsSections, settingsService, type AccessibilitySettings, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";
 import { statusPageService } from "../services/statusPageService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
 import { twoFactorAuthService } from "../services/twoFactorAuthService";
@@ -52,18 +52,6 @@ import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
-const settingsInitialSectionKey = "picom:settings:initial-section";
-const allowedInitialSections = new Set(["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"]);
-
-function readInitialSettingsSection(): string {
-  try {
-    const requested = sessionStorage.getItem(settingsInitialSectionKey);
-    sessionStorage.removeItem(settingsInitialSectionKey);
-    return requested && allowedInitialSections.has(requested) ? requested : "Appearance";
-  } catch {
-    return "Appearance";
-  }
-}
 
 function formatCacheSize(bytes: number | null): string {
   if (bytes === null) return "Not available";
@@ -106,7 +94,7 @@ type SettingsModalProps = {
 
 export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
-  const [active, setActive] = useState(readInitialSettingsSection);
+  const [active, setActive] = useState<SettingsSection>(settingsService.consumeInitialSection);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(() => ({ ...profileSettings, username: profileSettings.username || currentUsername }));
   const [feedbackIssueType, setFeedbackIssueType] = useState<FeedbackIssueType>("bug");
@@ -143,13 +131,14 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const [crashReportingEnabled, setCrashReportingEnabled] = useState(() => crashReporterService.getStatus().enabled);
   const [developerPortalOpen, setDeveloperPortalOpen] = useState(false);
   const developerPortalAvailable = featureFlagService.shouldShowEntryPoint("enableDeveloperPortal") && (developerPortalContext.canManageBots || developerPortalContext.canManageWebhooks);
-  const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"];
+  const sections = settingsSections;
 
   useEffect(() => {
     setProfileDraft({ ...profileSettings, username: profileSettings.username || currentUsername });
   }, [currentUsername, profileSettings]);
 
   useEffect(() => updateService.onStateChange(setUpdateState), []);
+  useEffect(() => settingsService.subscribe((settings) => setNotificationSettings(settings.notificationSettings)), []);
   useEffect(() => voiceService.subscribe(setVoiceSettingsSnapshot), []);
   useEffect(() => { void startupService.refreshNativeState().then(setStartupSettings); }, []);
   useEffect(() => { let active = true; void adminOperationsService.getAccess().then((access) => { if (active) setAdminOperationsAccess(access); }); return () => { active = false; }; }, []);

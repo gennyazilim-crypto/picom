@@ -3,7 +3,7 @@ const settings = fs.readFileSync("src/components/SettingsModal.tsx", "utf8");
 const app = fs.readFileSync("src/App.tsx", "utf8");
 const logs = fs.readFileSync("src/components/settings/LogsViewer.tsx", "utf8");
 for (const section of ["Account", "Profile", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Privacy & Safety", "Advanced"]) if (!settings.includes(`\"${section}\"`)) throw new Error(`Settings section is missing ${section}`);
-for (const needle of ["profileService.updateCurrentProfile", "voiceService.subscribe", "Toggle microphone", "System default (Coming soon)", "Feedback and redacted exports"]) if (!settings.includes(needle)) throw new Error(`Settings implementation is missing ${needle}`);
+for (const needle of ["profileService.updateCurrentProfile", "voiceService.subscribe", "Toggle microphone", "Light Theme", "Dark Theme", "Feedback and redacted exports"]) if (!settings.includes(needle)) throw new Error(`Settings implementation is missing ${needle}`);
 for (const stale of ["Larger text placeholder", "Strong focus ring placeholder", "Local profile editing", "Mentions only placeholder", "Native notification foundation"]) if (settings.includes(stale)) throw new Error(`Visible stale placeholder copy remains: ${stale}`);
 for (const needle of ["Export", "Clear", "loggingService.exportLogs"]) if (!logs.includes(needle)) throw new Error(`Logs viewer is missing ${needle}`);
 if (!app.includes("settingsService.updateSettings({ theme, accessibilitySettings })")) throw new Error("Theme persistence is not wired.");
