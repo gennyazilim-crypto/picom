@@ -69,7 +69,7 @@ export const meetingParticipantReconciliationService = {
   seedMock(snapshot:MeetingParticipantStateSnapshot):void { mockSnapshots.set(key(snapshot.roomId,snapshot.sessionId),snapshot); },
   async setHandRaised(participantId:string,raised:boolean):Promise<ServiceResult<Readonly<Record<string,unknown>>>> {
     if(dataSourceService.getStatus().isMock) return {ok:true,data:{participantId,handRaised:raised,updatedAt:new Date().toISOString()}};
-    const client=getSupabaseClient(); if(!client) return fail("DATA_SOURCE_NOT_CONFIGURED","Supabase is not configured."); const {data,error}=await client.rpc("set_meeting_participant_hand_state",{target_participant_id:participantId,target_raised:raised});
+    const client=getSupabaseClient(); if(!client) return fail("DATA_SOURCE_NOT_CONFIGURED","Supabase is not configured."); const {data,error}=await client.rpc("update_meeting_hand_signal",{target_participant_id:participantId,target_action:raised?"raise":"lower"});
     return error||!record(data)?fail("MEETING_HAND_STATE_FAILED","Picom could not update the hand state."):{ok:true,data:record(data)??{}};
   },
   async cleanupStale(sessionId:string,staleBefore:string):Promise<ServiceResult<Readonly<Record<string,unknown>>>> {

@@ -289,7 +289,7 @@ export type Database = {
         Insert:never;Update:never;Relationships:[];
       };
       meeting_participant_runtime_state:{
-        Row:{participant_id:string;session_id:string;hand_raised:boolean;hand_raised_at:string|null;hand_sequence:number;server_version:number;updated_by_user_id:string|null;updated_at:string};
+        Row:{participant_id:string;session_id:string;hand_raised:boolean;hand_raised_at:string|null;hand_sequence:number;server_version:number;acknowledged_by_user_id:string|null;acknowledged_at:string|null;stage_request_status:"none"|"requested"|"approved"|"denied"|"cancelled";stage_requested_at:string|null;stage_resolved_at:string|null;stage_resolved_by_user_id:string|null;updated_by_user_id:string|null;updated_at:string};
         Insert:never;Update:never;Relationships:[];
       };
       community_event_rsvps: {
@@ -965,6 +965,8 @@ export type Database = {
       send_meeting_chat_message:{Args:{target_room_id:string;target_session_id:string|null;message_body:string;target_client_message_id:string;target_reply_to_message_id?:string|null;target_attachment_ids?:string[]};Returns:Array<Database["public"]["Tables"]["messages"]["Row"]>};
       mark_meeting_chat_read:{Args:{target_room_id:string;target_session_id:string|null;target_last_read_message_id?:string|null};Returns:boolean};
       set_meeting_participant_hand_state:{Args:{target_participant_id:string;target_raised:boolean};Returns:Json};
+      update_meeting_hand_signal:{Args:{target_participant_id:string;target_action:"raise"|"lower"|"acknowledge"|"request_stage"|"cancel_stage"|"approve_stage"|"deny_stage"};Returns:Json};
+      get_meeting_hand_queue:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
       cleanup_stale_meeting_participants:{Args:{target_session_id:string;target_stale_before?:string};Returns:Json};
       process_livekit_webhook_event:{Args:{target_event_id:string;target_event_type:string;target_occurred_at:string;target_room_id:string;target_session_id:string;target_room_name:string;target_payload_digest:string;target_participant_identity?:string|null;target_participant_name?:string|null;target_track_sid?:string|null;target_track_kind?:string|null;target_track_source?:string|null};Returns:Json};
       expire_meeting_waiting_entries:{Args:{target_room_id?:string|null};Returns:number};

@@ -8,6 +8,8 @@ export type {
   VoiceServiceResult,
   VoiceServiceSnapshot,
   VoiceStateListener,
+  VoiceDataPacket,
+  VoiceDataPacketListener,
   VoiceTokenRequest,
   VoiceTokenResponse,
 } from "../voiceService";

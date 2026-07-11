@@ -53,13 +53,16 @@ export type VoiceServiceErrorCode =
   | "VOICE_ROOM_UNAVAILABLE"
   | "VOICE_PERMISSION_DENIED"
   | "VOICE_SCREEN_SHARE_CONFLICT"
-  | "VOICE_SCREEN_SHARE_FAILED";
+  | "VOICE_SCREEN_SHARE_FAILED"
+  | "VOICE_DATA_UNAVAILABLE";
 
 export type VoiceServiceResult<T> =
   | Readonly<{ ok: true; data: T }>
   | Readonly<{ ok: false; error: { code: VoiceServiceErrorCode; message: string } }>;
 
 export type VoiceStateListener = (snapshot: VoiceServiceSnapshot) => void;
+export type VoiceDataPacket = Readonly<{topic:string;payload:Uint8Array;senderIdentity:string;receivedAt:string}>;
+export type VoiceDataPacketListener = (packet:VoiceDataPacket)=>void;
 
 export type VoiceSessionDiagnosticsSummary = Readonly<{
   status: VoiceConnectionStatus;
@@ -115,6 +118,7 @@ let snapshot: VoiceServiceSnapshot = {
 };
 
 const listeners = new Set<VoiceStateListener>();
+const dataPacketListeners = new Set<VoiceDataPacketListener>();
 
 function hasScreenPublishToken(): boolean {
   return activeTokenIntent === "screen";
@@ -318,6 +322,11 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
       if (participant.isLocal) connectionQuality = normalizeVoiceConnectionQuality(quality);
     })
+    .on(RoomEvent.DataReceived,(payload,participant,_kind,topic)=>{
+      if(!participant||!topic||payload.byteLength>16_384)return;
+      const packet:VoiceDataPacket={topic,payload:new Uint8Array(payload),senderIdentity:participant.identity,receivedAt:new Date().toISOString()};
+      dataPacketListeners.forEach((listener)=>listener(packet));
+    })
     .on(RoomEvent.ParticipantNameChanged, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackMuted, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackUnmuted, () => emitParticipants(activeRoom))
@@ -520,6 +529,16 @@ voiceDeviceService.subscribePreferences((preferences) => {
 export const voiceService = {
   getSnapshot(): VoiceServiceSnapshot {
     return snapshot;
+  },
+
+  getLocalParticipantIdentity():string|null{return room?.localParticipant.identity??null;},
+
+  subscribeDataPackets(listener:VoiceDataPacketListener):()=>void{dataPacketListeners.add(listener);return()=>{dataPacketListeners.delete(listener)};},
+
+  async publishDataPacket(topic:string,payload:Uint8Array,reliable=false):Promise<VoiceServiceResult<void>>{
+    if(!room||room.state===ConnectionState.Disconnected)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Join the meeting before sending a signal."}};
+    if(!/^[a-z0-9._-]{1,80}$/i.test(topic)||payload.byteLength<1||payload.byteLength>16_384)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"The meeting signal payload is invalid."}};
+    try{await room.localParticipant.publishData(payload,{reliable,topic});return{ok:true,data:undefined}}catch{return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Picom could not send the meeting signal."}}}
   },
 
   getDiagnosticsSummary(): VoiceSessionDiagnosticsSummary {
