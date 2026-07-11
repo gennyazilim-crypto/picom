@@ -66,28 +66,24 @@ export function createMockSentMessage(input: SendMessageInput, body: string): Me
 export async function sendSupabaseMessage(
   client: SupabaseClient<Database>,
   input: SendMessageInput,
-  authorId: string,
   body: string,
 ): Promise<MessageSendMutationResult> {
-  const { data, error } = await client
-    .from("messages")
-    .insert({
-      community_id: input.communityId,
-      channel_id: input.channelId,
-      author_id: authorId,
-      body,
-      client_message_id: input.clientMessageId ?? null,
-      reply_to_message_id: input.replyToMessageId ?? null,
-    })
-    .select(MESSAGE_SEND_SELECT)
-    .single();
+  const { data, error } = await client.rpc("send_text_message_idempotent", {
+    target_community_id: input.communityId,
+    target_channel_id: input.channelId,
+    message_body: body,
+    target_client_message_id: input.clientMessageId ?? "",
+    target_reply_to_message_id: input.replyToMessageId ?? null,
+    target_attachment_ids: [...(input.attachmentIds ?? [])],
+  });
+  const row = data?.[0] as MessageSendRow | undefined;
 
-  if (error || !data) {
+  if (error || !row) {
     return { data: null, error };
   }
 
   return {
-    data: mapMessageSendRow(data),
+    data: mapMessageSendRow(row),
     error: null,
   };
 }

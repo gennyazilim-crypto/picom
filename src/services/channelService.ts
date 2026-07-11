@@ -168,25 +168,22 @@ export const channelService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data, error } = await configured.data
-      .from("channels")
-      .insert({
-        community_id: input.communityId,
-        category_id: input.categoryId ?? null,
-        name,
-        type,
-        topic: input.topic?.trim() || null,
-        is_private: Boolean(input.isPrivate),
-        public_read_enabled: input.isPrivate ? false : (input.publicReadEnabled ?? true),
-      })
-      .select(CHANNEL_LIST_SELECT)
-      .single();
+    const { data, error } = await configured.data.rpc("create_managed_text_channel", {
+      target_community_id: input.communityId,
+      target_category_id: input.categoryId ?? null,
+      channel_name: name,
+      channel_type: type,
+      channel_topic: input.topic?.trim() || null,
+      channel_is_private: Boolean(input.isPrivate),
+      channel_public_read_enabled: input.isPrivate ? false : (input.publicReadEnabled ?? true),
+    });
+    const row = data?.[0];
 
-    if (error || !data) {
+    if (error || !row) {
       return { ok: false, error: { code: "CHANNEL_CREATE_FAILED", message: "Could not create channel." } };
     }
 
-    const channel = mapChannelListRow(data); await auditLogService.append({ communityId: input.communityId, actionType: "channel_create", targetType: "channel", targetId: channel.id, reason: `Created #${name}` }); return { ok: true, data: channel };
+    const channel = mapChannelListRow(row); await auditLogService.append({ communityId: input.communityId, actionType: "channel_create", targetType: "channel", targetId: channel.id, reason: `Created #${name}` }); return { ok: true, data: channel };
   },
 
   async updateChannel(input: UpdateChannelInput): Promise<ChannelServiceResult<ChannelSummary>> {

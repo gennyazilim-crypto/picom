@@ -53,6 +53,7 @@ export type SendMessageInput = Readonly<{
   authorId?: string;
   clientMessageId?: string | null;
   replyToMessageId?: string | null;
+  attachmentIds?: readonly string[];
 }>;
 
 export type EditMessageInput = Readonly<{
@@ -74,6 +75,7 @@ export type MessageServiceErrorCode =
   | "QUEUE_FULL"
   | "QUEUE_CANCELED"
   | "MESSAGE_SEND_FAILED"
+  | "MESSAGE_SEND_CONFLICT"
   | "MESSAGE_LIST_FAILED"
   | "MESSAGE_EDIT_FAILED"
   | "MESSAGE_EDIT_CONFLICT"
@@ -145,6 +147,11 @@ function validateSendMessageInput(input: SendMessageInput): MessageServiceError 
     return { code: "VALIDATION_ERROR", message: "Message must be 4000 characters or fewer." };
   }
 
+  const attachmentIds = input.attachmentIds ?? [];
+  if (attachmentIds.length > 4 || attachmentIds.some((id) => !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id))) {
+    return { code: "VALIDATION_ERROR", message: "A message can include up to four valid attachments." };
+  }
+
   return null;
 }
 
@@ -184,11 +191,7 @@ function validateDeleteMessageInput(input: DeleteMessageInput): MessageServiceEr
   return null;
 }
 
-async function getSupabaseAuthorId(client: SupabaseClient<Database>, explicitAuthorId?: string): Promise<MessageServiceResult<string>> {
-  if (explicitAuthorId?.trim()) {
-    return { ok: true, data: explicitAuthorId.trim() };
-  }
-
+async function getSupabaseAuthorId(client: SupabaseClient<Database>): Promise<MessageServiceResult<string>> {
   const { data, error } = await client.auth.getUser();
 
   if (error || !data.user) {
@@ -196,6 +199,17 @@ async function getSupabaseAuthorId(client: SupabaseClient<Database>, explicitAut
   }
 
   return { ok: true, data: data.user.id };
+}
+
+function ensureClientMessageId(value?: string | null): string {
+  const normalized = value?.trim();
+  if (normalized) return normalized;
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function hasErrorMessage(error: unknown, marker: string): boolean {
+  return typeof error === "object" && error !== null && "message" in error && String((error as { message?: unknown }).message).includes(marker);
 }
 
 export const messageService = {
@@ -237,22 +251,24 @@ export const messageService = {
     if (validationError) return { ok: false, error: validationError };
 
     const body = input.body.trim();
+    const normalizedInput: SendMessageInput = { ...input, clientMessageId: ensureClientMessageId(input.clientMessageId) };
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
-      return { ok: true, data: createMockSentMessage(input, body) };
+      return { ok: true, data: createMockSentMessage(normalizedInput, body) };
     }
 
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const author = await getSupabaseAuthorId(configured.data, input.authorId);
+    const author = await getSupabaseAuthorId(configured.data);
     if (!author.ok) return author;
 
-    const { data, error } = await sendSupabaseMessage(configured.data, input, author.data, body);
+    const { data, error } = await sendSupabaseMessage(configured.data, normalizedInput, body);
 
     if (error || !data) {
       if (isRateLimitError(error)) return messageError("RATE_LIMITED", rateLimitUserMessage);
+      if (hasErrorMessage(error, "MESSAGE_IDEMPOTENCY_CONFLICT")) return messageError("MESSAGE_SEND_CONFLICT", "This retry key was already used for different message content.");
       return messageError("MESSAGE_SEND_FAILED", "Could not send message.");
     }
 

@@ -14,7 +14,8 @@ const requiredFiles = [
   "verification_security.sql",
   "community_lifecycle_management.sql",
   "podcast_full_mvp.sql",
-  "profile_access_cross_community_privacy.sql"
+  "profile_access_cross_community_privacy.sql",
+  "text_community_messaging_integration.sql",
 ];
 
 const requiredScenarioSnippets = [
@@ -49,7 +50,12 @@ const requiredScenarioSnippets = [
   "friend still cannot read private-community source activity",
   "blocked user cannot view profile basics",
   "removing community access removes profile activity visibility",
-  "friends-only profile is hidden from visitor"
+  "friends-only profile is hidden from visitor",
+  "idempotent retry returns the previous successful message",
+  "idempotency key cannot be reused for different message content",
+  "member cannot send Text messages to a Radio community",
+  "private channel denial is enforced by the message RPC",
+  "pending attachment is linked atomically to the sent message",
 ];
 
 function fail(message) {

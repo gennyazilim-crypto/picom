@@ -2414,6 +2414,7 @@ export function App() {
       communityId: activeCommunity.id,
       channelId: displayedActiveChannel.id,
       authorId: currentUser.userId,
+      attachmentIds: attachments?.map((attachment) => attachment.id),
       body,
       clientMessageId,
       replyToMessageId,
@@ -2459,7 +2460,7 @@ export function App() {
     if (!message.clientMessageId || (message.localStatus !== "failed" && message.localStatus !== "queued_offline")) return;
     const localStatus = typeof navigator !== "undefined" && !navigator.onLine ? "queued_offline" : "sending";
     setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus });
-    const result = await messageSendQueueService.enqueue({ communityId: activeCommunity.id, channelId: message.channelId, authorId: message.authorId, body: message.body, clientMessageId: message.clientMessageId, replyToMessageId: message.replyToMessageId, localOrder: message.localOrder ?? messageSendQueueService.nextLocalOrder(activeCommunity.id, message.channelId) });
+    const result = await messageSendQueueService.enqueue({ communityId: activeCommunity.id, channelId: message.channelId, authorId: message.authorId, body: message.body, attachmentIds: message.attachments?.map((attachment) => attachment.id), clientMessageId: message.clientMessageId, replyToMessageId: message.replyToMessageId, localOrder: message.localOrder ?? messageSendQueueService.nextLocalOrder(activeCommunity.id, message.channelId) });
     if (!result.ok) {
       if (result.error.code === "QUEUE_CANCELED") return;
       setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus: "failed" });

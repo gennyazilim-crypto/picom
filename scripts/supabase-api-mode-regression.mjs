@@ -74,9 +74,9 @@ try {
   assertContains("src/services/profileService.ts", '.rpc("get_profile_domain_v1"', "privacy-projected profiles read API path");
   assertContains("src/services/profileService.ts", '.rpc("update_own_profile_domain"', "owner-scoped profiles write API path");
   assertContains("src/services/communityService.ts", ".from(\"communities\")", "communities API path");
-  assertContains("src/services/channelService.ts", ".from(\"channels\")", "channels API path");
+  assertContains("src/services/channelService.ts", '.rpc("create_managed_text_channel"', "authoritative Text channel creation API path");
   assertContains("src/services/messageService.ts", "listMessages", "messages list service path");
-  assertContains("src/services/messageSendMutation.ts", ".from(\"messages\")", "messages send mutation path");
+  assertContains("src/services/messageSendMutation.ts", '.rpc("send_text_message_idempotent"', "idempotent Text message send API path");
   assertContains("src/services/uploadService.ts", ".storage", "Supabase storage upload path");
   assertContains("src/services/attachmentService.ts", ".from(\"attachments\")", "attachment metadata API path");
   assertContains("src/services/membersService.ts", ".from(\"community_members\")", "members API path");
