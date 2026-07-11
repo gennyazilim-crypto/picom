@@ -12,6 +12,7 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [session, setSession] = useState<AuthServiceSession | null>(null);
   const sessionRef = useRef<AuthServiceSession | null>(null);
 
@@ -38,6 +39,7 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
     const unsubscribe = authService.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
       if (event === "SIGNED_OUT") setError(null);
+      if (event === "SIGNED_IN") setNotice(null);
     });
 
     const unsubscribeSync = multiClientSessionSyncService.subscribe((event) => {
@@ -93,6 +95,7 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     const result = await authService.signInWithEmailPassword(email, password);
     if (result.ok) {
@@ -114,16 +117,20 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
   const register = useCallback(async (email: string, password: string, displayName: string, acceptedLegalVersion: string) => {
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     const result = await authService.signUpWithEmailPassword(email, password, displayName, acceptedLegalVersion);
     if (result.ok) {
-      setSession(result.data);
-      accountActivityService.recordActivity({
-        type: "login_success",
-        userId: result.data.user?.id ?? null,
-        metadata: { provider: result.data.provider, signup: true }
-      });
-      notify?.("Picom account created.", "success");
+      setSession(result.data.session);
+      setNotice(result.data.message);
+      if (result.data.session) {
+        accountActivityService.recordActivity({
+          type: "login_success",
+          userId: result.data.session.user?.id ?? null,
+          metadata: { provider: result.data.session.provider, signup: true }
+        });
+      }
+      notify?.(result.data.message, "success");
     } else {
       loggingService.logWarn("Auth register failed", { code: result.error.code });
       setError(result.error.message);
@@ -135,6 +142,7 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
   const signOut = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     const result = await authService.signOut();
     if (result.ok) {
@@ -157,11 +165,12 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
     ready,
     loading,
     error,
+    notice,
     session,
     authenticated: Boolean(session),
     signIn,
     register,
     signOut,
-    clearError: () => setError(null),
+    clearError: () => { setError(null); setNotice(null); },
   } as const;
 }

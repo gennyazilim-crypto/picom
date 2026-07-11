@@ -24,6 +24,13 @@ export type AuthServiceSession = Readonly<{
   expiresAt: number | null;
 }>;
 
+export type AuthSignUpOutcome = Readonly<{
+  session: AuthServiceSession | null;
+  user: AuthServiceUser | null;
+  requiresEmailVerification: boolean;
+  message: string;
+}>;
+
 export type PasswordResetRequestSummary = Readonly<{
   provider: "mock" | "supabase";
   message: string;
@@ -189,10 +196,12 @@ export const authService = {
       return { ok: false, error: mapSupabaseError(error) };
     }
 
-    return { ok: true, data: mapSession(data.session) ?? getMockSession(normalizedEmail) };
+    const session = mapSession(data.session);
+    if (!session?.user) return authError("AUTH_PROVIDER_ERROR", "Supabase did not create a valid session. Please sign in again.");
+    return { ok: true, data: session };
   },
 
-  async signUpWithEmailPassword(email: string, password: string, displayName: string | undefined, acceptedLegalVersion: string): Promise<AuthServiceResult<AuthServiceSession>> {
+  async signUpWithEmailPassword(email: string, password: string, displayName: string | undefined, acceptedLegalVersion: string): Promise<AuthServiceResult<AuthSignUpOutcome>> {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !password) {
       return authError("AUTH_INVALID_INPUT", "Email and password are required.");
@@ -205,7 +214,7 @@ export const authService = {
     if (!configured.data) {
       const session = getMockSession(normalizedEmail);
       if (session.user) termsAcceptanceService.recordMockRegistrationAcceptance(session.user.id);
-      return { ok: true, data: session };
+      return { ok: true, data: { session, user: session.user, requiresEmailVerification: false, message: "Picom mock account created." } };
     }
 
     const { data, error } = await configured.data.auth.signUp({
@@ -220,7 +229,18 @@ export const authService = {
       return { ok: false, error: mapSupabaseError(error) };
     }
 
-    return { ok: true, data: mapSession(data.session) ?? { provider: "supabase", user: mapUser(data.user), expiresAt: null } };
+    const session = mapSession(data.session);
+    const user = mapUser(data.user);
+    if (!session && !user) return authError("AUTH_PROVIDER_ERROR", "Supabase did not return an account or session.");
+    return {
+      ok: true,
+      data: {
+        session,
+        user,
+        requiresEmailVerification: !session,
+        message: session ? "Picom account created and signed in." : "Account created. Check your email to verify the account, then sign in.",
+      },
+    };
   },
 
   async requestPasswordReset(email: string): Promise<AuthServiceResult<PasswordResetRequestSummary>> {
@@ -357,7 +377,22 @@ export const authService = {
       return { ok: false, error: mapSupabaseError(error) };
     }
 
-    return { ok: true, data: mapSession(data.session) };
+    let session = data.session;
+    if (!session) return { ok: true, data: null };
+    if ((session.expires_at ?? 0) <= Math.floor(Date.now() / 1000) + 30) {
+      const refreshed = await configured.data.auth.refreshSession();
+      if (refreshed.error || !refreshed.data.session) {
+        await configured.data.auth.signOut({ scope: "local" });
+        return authError("AUTH_SESSION_EXPIRED", "Your session expired. Please sign in again.");
+      }
+      session = refreshed.data.session;
+    }
+    const verified = await configured.data.auth.getUser();
+    if (verified.error || !verified.data.user || verified.data.user.id !== session.user.id) {
+      await configured.data.auth.signOut({ scope: "local" });
+      return authError("AUTH_SESSION_EXPIRED", "Your session is no longer valid. Please sign in again.");
+    }
+    return { ok: true, data: mapSession({ ...session, user: verified.data.user }) };
   },
 
   async getCurrentUser(): Promise<AuthServiceResult<AuthServiceUser | null>> {
@@ -384,7 +419,7 @@ export const authService = {
       return { ok: true, data: undefined };
     }
 
-    const { error } = await configured.data.auth.signOut();
+    const { error } = await configured.data.auth.signOut({ scope: "local" });
     if (error) {
       return { ok: false, error: mapSupabaseError(error) };
     }

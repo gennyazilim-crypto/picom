@@ -4,5 +4,6 @@ export type {
   AuthServiceErrorCode,
   AuthServiceResult,
   AuthServiceSession,
+  AuthSignUpOutcome,
   AuthServiceUser,
 } from "../authService";

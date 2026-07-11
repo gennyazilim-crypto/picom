@@ -497,6 +497,7 @@ export function App() {
     ready: authReady,
     loading: authLoading,
     error: authError,
+    notice: authNotice,
     session: authSession,
     signIn: handleLogin,
     register: handleRegister,
@@ -1009,7 +1010,7 @@ export function App() {
   useEffect(() => appearanceService.subscribeToSystemTheme((systemTheme) => {
     if (appearanceSettings.themeMode === "system") setTheme(systemTheme);
   }), [appearanceSettings.themeMode]);
-  useEffect(() => { if (authSession?.user?.id) void settingsService.hydrateAccountSettings(); }, [authSession?.user?.id]);
+  useEffect(() => { if (authSession?.user?.id) void settingsService.hydrateAccountSettings().then((result) => { if (result.ok) { setAppearanceSettings(result.settings.appearanceSettings); setTheme(appearanceService.resolveTheme(result.settings.appearanceSettings.themeMode)); } }); }, [authSession?.user?.id]);
 
   useEffect(() => {
     setIsActiveMessageListNearBottom(true);
@@ -2322,6 +2323,7 @@ export function App() {
               theme={theme}
               loading={!authReady || authLoading}
               error={authError}
+              notice={authNotice}
               onToggleTheme={toggleTheme}
               onSubmit={handleRegister}
               onSwitchToLogin={() => {

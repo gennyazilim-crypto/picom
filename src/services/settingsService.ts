@@ -395,6 +395,7 @@ export const settingsService = {
   updateSettings(partial: Partial<PicomSettings>) {
     const next = normalizeSettings({ ...this.getSettings(), ...partial, schemaVersion: currentSchemaVersion });
     writeSettings(next);
+    if (dataSourceService.getStatus().isSupabase) queueMicrotask(() => { void settingsService.syncAccountSettings(next); });
     return next;
   },
   updateNotificationSettings(partial: Partial<NotificationSettings>) {
@@ -405,7 +406,6 @@ export const settingsService = {
         ...partial,
       },
     });
-    if (dataSourceService.getStatus().isSupabase) queueMicrotask(() => { void settingsService.syncAccountSettings(next); });
     return next;
   },
   updateProfileSettings(partial: Partial<ProfileSettings>) {
@@ -464,7 +464,7 @@ export const settingsService = {
     const { data, error } = await client.auth.getUser();
     if (error || !data.user) return { ok: false, error: "SETTINGS_AUTH_REQUIRED" };
     const notificationSettings = JSON.parse(JSON.stringify(accountSettings.notificationSettings)) as Json;
-    const result = await client.from("user_settings").upsert({ user_id: data.user.id, schema_version: currentSchemaVersion, notification_settings: notificationSettings, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    const result = await client.from("user_settings").upsert({ user_id: data.user.id, schema_version: currentSchemaVersion, theme_mode: accountSettings.appearanceSettings.themeMode, notification_settings: notificationSettings, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
     return result.error ? { ok: false, error: "SETTINGS_SYNC_FAILED" } : { ok: true };
   },
   async hydrateAccountSettings(): Promise<{ ok: true; settings: PicomSettings } | { ok: false; error: string; settings: PicomSettings }> {
@@ -474,10 +474,11 @@ export const settingsService = {
     if (!client) return { ok: false, error: "SETTINGS_BACKEND_UNAVAILABLE", settings: current };
     const { data: auth, error: authError } = await client.auth.getUser();
     if (authError || !auth.user) return { ok: false, error: "SETTINGS_AUTH_REQUIRED", settings: current };
-    const result = await client.from("user_settings").select("schema_version,notification_settings").eq("user_id", auth.user.id).maybeSingle();
+    const result = await client.from("user_settings").select("schema_version,theme_mode,notification_settings").eq("user_id", auth.user.id).maybeSingle();
     if (result.error) return { ok: false, error: "SETTINGS_LOAD_FAILED", settings: current };
     if (!result.data) { const synced = await this.syncAccountSettings(current); return synced.ok ? { ok: true, settings: current } : { ok: false, error: synced.error, settings: current }; }
-    const remote = normalizeSettings({ ...current, notificationSettings: result.data.notification_settings as unknown as NotificationSettings });
+    const themeMode = result.data.theme_mode as ThemePreference;
+    const remote = normalizeSettings({ ...current, theme: themeMode === "system" ? current.theme : themeMode, appearanceSettings: { ...current.appearanceSettings, themeMode }, notificationSettings: result.data.notification_settings as unknown as NotificationSettings });
     writeSettings(remote);
     return { ok: true, settings: remote };
   },

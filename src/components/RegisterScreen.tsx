@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import logoUrl from "../../assets/brand/picom-logo-concept.png";
+import logoUrl from "../../assets/brand/picom-logo.png";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
@@ -11,12 +11,13 @@ type RegisterScreenProps = {
   theme: "light" | "dark";
   loading: boolean;
   error: string | null;
+  notice?: string | null;
   onToggleTheme: () => void;
   onSubmit: (email: string, password: string, displayName: string, acceptedLegalVersion: string) => Promise<void>;
   onSwitchToLogin: () => void;
 };
 
-export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit, onSwitchToLogin }: RegisterScreenProps) {
+export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, onSubmit, onSwitchToLogin }: RegisterScreenProps) {
   const [displayName, setDisplayName] = useState("Picom User");
   const [email, setEmail] = useState("new@picom.local");
   const [password, setPassword] = useState("PicomDev123!");
@@ -132,6 +133,7 @@ export function RegisterScreen({ theme, loading, error, onToggleTheme, onSubmit,
         <p className="auth-note">Acceptance version {legalConfig.currentVersion} and its server timestamp are recorded with your profile.</p>
 
         {localError || error ? <div className="auth-error" role="alert">{localError ?? error}</div> : null}
+        {!localError && !error && notice ? <div className="auth-success" role="status">{notice}</div> : null}
 
         <button className="auth-submit" type="submit" disabled={loading || !acceptedLegal}>
           {loading ? "Creating account..." : "Create account"}

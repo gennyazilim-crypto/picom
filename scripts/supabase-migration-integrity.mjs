@@ -33,6 +33,7 @@ const requiredChain = [
   "20260711149500_type_aware_community_structure_management.sql",
   "20260711150100_livekit_token_authorization.sql",
   "20260711150600_voice_screen_permissions_moderation.sql",
+  "20260711150900_auth_profile_onboarding_production.sql",
 ];
 let lastIndex = -1;
 for (const required of requiredChain) { const index = files.indexOf(required); if (index < 0) throw new Error(`Required Full MVP migration is missing: ${required}`); if (index <= lastIndex) throw new Error(`Full MVP migration chain is out of order: ${required}`); lastIndex = index; }

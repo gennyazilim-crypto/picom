@@ -648,9 +648,9 @@ export type Database = {
         Relationships: [];
       };
       user_settings: {
-        Row: { user_id: string; schema_version: number; notification_settings: Json; updated_at: string };
-        Insert: { user_id: string; schema_version?: number; notification_settings?: Json; updated_at?: string };
-        Update: { schema_version?: number; notification_settings?: Json; updated_at?: string };
+        Row: { user_id: string; schema_version: number; theme_mode: "light" | "dark" | "system"; notification_settings: Json; updated_at: string };
+        Insert: { user_id: string; schema_version?: number; theme_mode?: "light" | "dark" | "system"; notification_settings?: Json; updated_at?: string };
+        Update: { schema_version?: number; theme_mode?: "light" | "dark" | "system"; notification_settings?: Json; updated_at?: string };
         Relationships: [];
       };
     };
@@ -879,6 +879,7 @@ export type Database = {
       get_profile_privacy_projection_v3:{Args:{target_user_id:string};Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";can_view_profile:boolean;show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;show_communities:boolean;show_friends:boolean;show_follows:boolean;show_audio:boolean;location:string|null;timezone:string|null}>};
       get_profile_domain_v1:{Args:{target_user_id:string;result_limit?:number};Returns:Json};
       update_own_profile_domain:{Args:{profile_patch:Json};Returns:Json};
+      complete_current_user_onboarding: { Args: { target_profile: Json; target_followed_user_ids?: string[]; target_theme?: "light" | "dark" | "system" }; Returns: Array<{ completed: boolean; completed_at: string; followed_user_ids: string[]; theme_mode: "light" | "dark" | "system" }> };
       follow_user: { Args: { target_user_id: string }; Returns: boolean };
       unfollow_user: { Args: { target_user_id: string }; Returns: boolean };
       set_message_reaction: { Args: { target_message_id: string; target_emoji: string; target_reacted: boolean }; Returns: Array<{ message_id: string; emoji: string; reaction_count: number; reacted_by_current_user: boolean }> };

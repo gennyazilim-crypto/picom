@@ -50,10 +50,10 @@ function writeLocalRecord(userId: string, record: OnboardingRecord): void {
 
 export const onboardingService = {
   async getState(userId: string): Promise<OnboardingServiceResult<OnboardingRecord>> {
-    const localRecord = readLocalRecord(userId);
     const source = dataSourceService.getStatus();
 
     if (source.isMock) {
+      const localRecord = readLocalRecord(userId);
       return {
         ok: true,
         data: localRecord ?? { completed: false, completedAt: null, followedUserIds: [], profile: null, provider: "mock" },
@@ -63,21 +63,18 @@ export const onboardingService = {
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: "Picom could not check first-run setup. Check the Supabase configuration." };
 
-    const { data, error } = await client
-      .from("profiles")
-      .select("onboarding_completed,onboarding_completed_at,display_name,username,status_text")
-      .eq("id", userId)
-      .maybeSingle();
+    const [profileResult, followingResult] = await Promise.all([
+      client.from("profiles").select("onboarding_completed,onboarding_completed_at,display_name,username,status_text").eq("id", userId).maybeSingle(),
+      client.from("user_follows").select("followed_id").eq("follower_id", userId),
+    ]);
 
-    if (error || !data) {
-      if (localRecord) return { ok: true, data: localRecord };
-      return { ok: false, error: "Picom could not load your onboarding status." };
-    }
+    if (profileResult.error || !profileResult.data || followingResult.error) return { ok: false, error: "Picom could not load your onboarding status." };
+    const data = profileResult.data;
 
     const record: OnboardingRecord = {
       completed: data.onboarding_completed,
       completedAt: data.onboarding_completed_at,
-      followedUserIds: localRecord?.followedUserIds ?? [],
+      followedUserIds: (followingResult.data ?? []).map((row) => row.followed_id),
       profile: {
         displayName: data.display_name,
         username: data.username,
@@ -85,7 +82,6 @@ export const onboardingService = {
       },
       provider: "supabase",
     };
-    writeLocalRecord(userId, record);
     return { ok: true, data: record };
   },
 
@@ -96,7 +92,7 @@ export const onboardingService = {
 
     const completedAt = new Date().toISOString();
     const source = dataSourceService.getStatus();
-    const record: OnboardingRecord = {
+    let record: OnboardingRecord = {
       completed: true,
       completedAt,
       followedUserIds: [...new Set(input.followedUserIds)],
@@ -108,23 +104,21 @@ export const onboardingService = {
       const client = getSupabaseClient();
       if (!client) return { ok: false, error: "Picom could not save first-run setup. Check the Supabase configuration." };
 
-      const { error } = await client
-        .from("profiles")
-        .update({
-          display_name: displayName,
-          ...(username ? { username } : {}),
-          status_text: input.profile.statusText.trim(),
-          onboarding_completed: true,
-          onboarding_completed_at: completedAt,
-          updated_at: completedAt,
-        })
-        .eq("id", userId);
-
-      if (error) return { ok: false, error: "Picom could not save your onboarding choices." };
+      const { data, error } = await client.rpc("complete_current_user_onboarding", {
+        target_profile: { displayName, username, statusText: input.profile.statusText.trim() },
+        target_followed_user_ids: record.followedUserIds,
+        target_theme: input.theme,
+      });
+      const persisted = Array.isArray(data) ? data[0] : undefined;
+      if (error || !persisted?.completed) return { ok: false, error: "Picom could not save your onboarding choices." };
+      record = {
+        ...record,
+        completedAt: persisted.completed_at,
+        followedUserIds: persisted.followed_user_ids,
+      };
     }
 
-    // user_follows is not in the current baseline schema; suggestions remain local until that table lands.
-    writeLocalRecord(userId, record);
+    if (source.isMock) writeLocalRecord(userId, record);
     return { ok: true, data: record };
   },
 
