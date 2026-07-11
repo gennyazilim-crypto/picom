@@ -26,7 +26,7 @@ function initialSnapshot(generation = 0): MeetingClientSnapshot {
   return {
     schemaVersion: 1, generation, phase: "idle", context: null, role: null, capabilities: noCapabilities,
     participantIds: [], participantsById: {}, waitingEntry: null, layout: "grid", rightDock: "none",
-    focusedParticipantId: null, focusedShareId: null,
+    focusedParticipantId: null, focusedShareId: null, screenShares: [],
     localDevices: { inputId: "default", outputId: "default", permission: "prompt" },
     localMedia: { muted: true, deafened: false, cameraEnabled: false, screenSharing: false },
     noiseShield: { requested: false, applied: false, status: "off" }, handRaised: false, reactions: [],

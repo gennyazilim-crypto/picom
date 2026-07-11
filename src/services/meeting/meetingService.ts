@@ -60,6 +60,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
     const phase=provider.status==="connected"?"connected":provider.status==="reconnecting"?"reconnecting":provider.status==="disconnected"?"disconnected":provider.status==="connecting"?"connecting":provider.status==="requesting_token"?"token-loading":null;
     if(phase)meetingStore.transition(generation,phase,{providerStatus:provider.status,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:Boolean(provider.cameraEnabled),screenSharing:provider.screenSharing},error:null});
     else if(provider.errorCode)meetingStore.setError(generation,fail(provider.errorCode==="VOICE_PERMISSION_DENIED"?"MEETING_PERMISSION_DENIED":"MEETING_PROVIDER_ERROR",provider.error??"The meeting provider reported an error.",true,provider.errorCode));
+    meetingStore.patch(generation,{screenShares:provider.screenShares});
     applyProviderParticipants(generation,provider);
   }));
   sessionCleanups.push(meetingRepository.subscribe(request.roomId,request.sessionId,{
@@ -109,6 +110,7 @@ export const meetingService = {
   setFocus:meetingStore.setFocus,
   setNoiseShield:meetingStore.setNoiseShield,
   setVideoSubscriptions:meetingLiveKitAdapter.setVideoSubscriptionPlan,
+  setFocusedScreenShare:meetingLiveKitAdapter.setFocusedScreenShare,
   async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});return result.ok;},
   setDeafened(deafened:boolean):boolean{const result=meetingLiveKitAdapter.setDeafened(deafened);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,deafened:result.data.deafened}});return result.ok;},
   sendReaction:meetingSignalService.sendReaction,

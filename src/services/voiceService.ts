@@ -2,11 +2,14 @@ import { ConnectionState, Room, RoomEvent, Track, VideoQuality, type RemoteParti
 import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
-import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality, type VoiceDurationBucket } from "../utils/voiceQualityMetrics";
+import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality } from "../utils/voiceQualityMetrics";
 import { getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "./voiceDeviceService";
 import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, MeetingTransportConnectionState } from "../types/meeting";
 import type { MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
+import { voiceDiagnosticsRegistry, type VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
+
+export type { VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 
 export type VoiceConnectionStatus = MeetingTransportConnectionState;
 
@@ -79,23 +82,6 @@ export type VoiceStateListener = (snapshot: VoiceServiceSnapshot) => void;
 export type VoiceDataPacket = Readonly<{topic:string;payload:Uint8Array;senderIdentity:string;receivedAt:string}>;
 export type VoiceDataPacketListener = (packet:VoiceDataPacket)=>void;
 
-export type VoiceSessionDiagnosticsSummary = Readonly<{
-  status: VoiceConnectionStatus;
-  connected: boolean;
-  participantCount: number;
-  muted: boolean;
-  deafened: boolean;
-  screenSharing: boolean;
-  remoteScreenShareCount: number;
-  lastErrorCode: VoiceServiceErrorCode | null;
-  connectionQuality: VoiceConnectionQuality;
-  reconnectCount: number;
-  joinAttemptCount: number;
-  joinFailureCount: number;
-  deviceErrorCount: number;
-  sessionDurationBucket: VoiceDurationBucket;
-}>;
-
 let room: Room | null = null;
 let speakingIdentities = new Set<string>();
 let screenShareMediaTrack: MediaStreamTrack | null = null;
@@ -104,6 +90,7 @@ const remoteScreenShareTracks = new Map<string, MediaStreamTrack>();
 let cameraTracks: VoiceCameraTrack[] = [];
 let videoSubscriptionPlan: MeetingVideoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
 const participantConnectionQualities = new Map<string, MeetingConnectionQuality>();
+let focusedScreenShareId: string | null = null;
 let activeTokenIntent: VoiceIntent | null = null;
 let connectionQuality: VoiceConnectionQuality = "unknown";
 let reconnectCount = 0;
@@ -267,6 +254,7 @@ function removeScreenShare(id: string): void {
   const remoteTrack = remoteScreenShareTracks.get(id);
   if (remoteTrack) remoteTrack.onended = null;
   remoteScreenShareTracks.delete(id);
+  if (focusedScreenShareId === id) focusedScreenShareId = null;
   setScreenShares(screenShares.filter((share) => share.id !== id));
 }
 
@@ -284,6 +272,12 @@ function remoteScreenShareId(participantIdentity: string, trackSid: string): str
   return `remote:${participantIdentity}:${trackSid}`;
 }
 
+function applyFocusedScreenShareSubscription(activeRoom: Room, requestedId: string | null = focusedScreenShareId): void {
+  void import("./livekit/screenShareSubscriptionPolicy").then(({ applySingleScreenShareSubscription }) => {
+    if (room === activeRoom) focusedScreenShareId = applySingleScreenShareSubscription(activeRoom, requestedId);
+  });
+}
+
 function clearScreenShareState(): void {
   const localTrack = screenShareMediaTrack;
   screenShareMediaTrack = null;
@@ -292,6 +286,7 @@ function clearScreenShareState(): void {
     if (localTrack.readyState === "live") localTrack.stop();
   }
   setScreenShares(screenShares.filter((share) => !share.isLocal));
+  if (focusedScreenShareId?.startsWith("local:")) focusedScreenShareId = null;
   emit({ screenSharing: false });
 }
 
@@ -375,6 +370,7 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ParticipantConnected, () => {
       if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
       applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
+      applyFocusedScreenShareSubscription(activeRoom);
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.ParticipantDisconnected, (participant) => {
@@ -382,6 +378,7 @@ function bindRoomEvents(activeRoom: Room): void {
       participantConnectionQualities.delete(participant.identity);
       removeParticipantScreenShares(participant.identity);
       removeParticipantCameraTracks(participant.identity);
+      applyFocusedScreenShareSubscription(activeRoom);
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
@@ -400,16 +397,30 @@ function bindRoomEvents(activeRoom: Room): void {
       dataPacketListeners.forEach((listener)=>listener(packet));
     })
     .on(RoomEvent.ParticipantNameChanged, () => emitParticipants(activeRoom))
-    .on(RoomEvent.TrackMuted, () => emitParticipants(activeRoom))
-    .on(RoomEvent.TrackUnmuted, () => emitParticipants(activeRoom))
+    .on(RoomEvent.TrackMuted, (publication, participant) => {
+      if (publication.source === Track.Source.ScreenShare) {
+        removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
+        applyFocusedScreenShareSubscription(activeRoom);
+      }
+      emitParticipants(activeRoom);
+    })
+    .on(RoomEvent.TrackUnmuted, (publication, participant) => {
+      if (publication.source === Track.Source.ScreenShare && publication.track?.kind === Track.Kind.Video) {
+        const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
+        upsertScreenShare({ id: shareId, participantIdentity: participant.identity, participantName: participant.name || participant.identity, isLocal: false, stream: new MediaStream([publication.track.mediaStreamTrack]), sourceLabel: "Shared screen" });
+      }
+      emitParticipants(activeRoom);
+    })
     .on(RoomEvent.TrackPublished, () => {
       applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
+      applyFocusedScreenShareSubscription(activeRoom);
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.TrackUnpublished, (publication, participant) => {
       if (publication.source === Track.Source.ScreenShare) removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
       if (publication.source === Track.Source.Camera) removeCameraTrack(remoteCameraId(participant.identity, publication.trackSid));
       emitParticipants(activeRoom);
+      applyFocusedScreenShareSubscription(activeRoom);
     })
     .on(RoomEvent.LocalTrackPublished, () => emitParticipants(activeRoom))
     .on(RoomEvent.LocalTrackUnpublished, (publication) => {
@@ -421,6 +432,10 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
       if (publication.source === Track.Source.ScreenShare && track.kind === Track.Kind.Video) {
         const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
+        if (focusedScreenShareId && focusedScreenShareId !== shareId) {
+          publication.setSubscribed(false);
+          return;
+        }
         const mediaTrack = track.mediaStreamTrack;
         const previousTrack = remoteScreenShareTracks.get(shareId);
         if (previousTrack) previousTrack.onended = null;
@@ -443,9 +458,16 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.TrackUnsubscribed, (_track, publication, participant) => {
       if (publication.source === Track.Source.ScreenShare) {
         removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
+        applyFocusedScreenShareSubscription(activeRoom);
       }
       if (publication.source === Track.Source.Camera) removeCameraTrack(remoteCameraId(participant.identity, publication.trackSid));
       emitParticipants(activeRoom);
+    })
+    .on(RoomEvent.TrackSubscriptionFailed, (trackSid, participant) => {
+      const shareId = remoteScreenShareId(participant.identity, trackSid);
+      removeScreenShare(shareId);
+      applyFocusedScreenShareSubscription(activeRoom);
+      emit({ error: "The shared screen could not be loaded. Picom will keep participant context available.", errorCode: "VOICE_SCREEN_SHARE_FAILED" });
     })
     .on(RoomEvent.Disconnected, () => {
       if (sessionStartedAtMs) lastSessionDurationMs = Date.now() - sessionStartedAtMs;
@@ -482,6 +504,7 @@ function stopLocalTracks(activeRoom: Room): void {
   screenShares = [];
   clearRemoteScreenShareTracks();
   cameraTracks = [];
+  focusedScreenShareId = null;
 }
 
 function createElectronScreenShareConstraints(sourceId: string): MediaStreamConstraints {
@@ -679,6 +702,13 @@ export const voiceService = {
     return true;
   },
 
+  setFocusedScreenShare(shareId: string | null): boolean {
+    focusedScreenShareId = shareId;
+    if (!room || room.state === ConnectionState.Disconnected) return false;
+    applyFocusedScreenShareSubscription(room, shareId);
+    return true;
+  },
+
   async requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
     return requestToken(request);
   },
@@ -722,6 +752,7 @@ export const voiceService = {
     cameraTracks = [];
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
+    focusedScreenShareId = null;
     emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
 
     try {
@@ -762,6 +793,7 @@ export const voiceService = {
     cameraTracks = [];
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
+    focusedScreenShareId = null;
     emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
     try {
       const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext, Boolean(options.cameraEnabled), options.cameraDeviceId);
@@ -829,6 +861,7 @@ export const voiceService = {
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
     cameraTracks = [];
+    focusedScreenShareId = null;
 
     emit({
       status: "disconnected",
@@ -973,3 +1006,5 @@ export const voiceService = {
     return stopScreenShareInternal(room);
   },
 };
+
+voiceDiagnosticsRegistry.setProvider(() => voiceService.getDiagnosticsSummary());

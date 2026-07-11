@@ -84,6 +84,15 @@ export type MeetingClientReaction = Readonly<{
   expiresAt: string;
 }>;
 
+export type MeetingClientScreenShare = Readonly<{
+  id: string;
+  participantIdentity: string;
+  participantName: string;
+  isLocal: boolean;
+  stream: MediaStream;
+  sourceLabel?: string;
+}>;
+
 export type MeetingClientSnapshot = Readonly<{
   schemaVersion: 1;
   generation: number;
@@ -98,6 +107,7 @@ export type MeetingClientSnapshot = Readonly<{
   rightDock: MeetingSidePanel;
   focusedParticipantId: string | null;
   focusedShareId: string | null;
+  screenShares?: readonly MeetingClientScreenShare[];
   localDevices: Readonly<{
     inputId: string;
     outputId: string;

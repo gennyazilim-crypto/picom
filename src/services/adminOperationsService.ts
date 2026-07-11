@@ -9,7 +9,7 @@ import { loggingService } from "./loggingService";
 import { networkStatusService } from "./networkStatusService";
 import { reportService } from "./reportService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
-import { voiceService } from "./voiceService";
+import { voiceDiagnosticsRegistry } from "./voiceDiagnosticsRegistry";
 import type { AdminOperationsListItem, AdminOperationsListSection, AdminOperationsPage, AdminOperationsResult, AdminSystemStatusV2 } from "../types/adminOperations";
 
 export type AdminOperationsAccess = Readonly<{ allowed: boolean; source: "development" | "app_admin" | "none" }>;
@@ -98,7 +98,7 @@ export const adminOperationsService = {
     const network = networkStatusService.getSnapshot();
     const abuse = abuseEventService.getAdminSummary();
     const diagnostics = diagnosticsService.getSnapshot();
-    const voiceQuality = voiceService.getDiagnosticsSummary();
+    const voiceQuality = voiceDiagnosticsRegistry.getSummary();
     const recentErrors = logs.filter((entry) => entry.level === "error").slice(-12).reverse();
     const recentWarnings = logs.filter((entry) => entry.level === "warn").slice(-12).reverse();
     const apiStatus = dataSourceService.getStatus().isMock

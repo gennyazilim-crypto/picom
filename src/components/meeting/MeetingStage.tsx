@@ -1,8 +1,11 @@
+import { lazy, Suspense } from "react";
 import type { MeetingClientParticipant, MeetingClientSnapshot } from "../../types/meetingClient";
 import { AppIcon } from "../AppIcon";
 import { MeetingVoiceLounge } from "./MeetingVoiceLounge";
 import { MeetingVideoGrid } from "./MeetingVideoGrid";
 import { MeetingSpeakerFocus } from "./MeetingSpeakerFocus";
+
+const MeetingScreenShareFocus = lazy(() => import("./MeetingScreenShareFocus").then((module) => ({ default: module.MeetingScreenShareFocus })));
 
 function initials(name: string): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "P";
@@ -39,12 +42,19 @@ export function MeetingStage({
   snapshot,
   onFocusParticipant,
   onOpenPeople,
+  onReturnToGrid,
+  onReturnToSpeaker,
 }: {
   snapshot: MeetingClientSnapshot;
   onFocusParticipant: (id: string | null) => void;
   onOpenPeople: () => void;
+  onReturnToGrid: () => void;
+  onReturnToSpeaker: () => void;
 }) {
   const participants = snapshot.participantIds.map((id) => snapshot.participantsById[id]).filter(Boolean);
+  if (snapshot.layout === "screen_share" && (snapshot.screenShares?.length ?? 0) > 0) {
+    return <Suspense fallback={<section className="meeting-stage" aria-label="Loading shared content"><div className="meeting-stage__empty"><span><AppIcon name="image" size="xl" /></span><strong>Preparing shared content</strong><p>The participant strip remains available when the secure media view is ready.</p></div></section>}><MeetingScreenShareFocus snapshot={snapshot} onReturnToGrid={onReturnToGrid} onReturnToSpeaker={onReturnToSpeaker} onOpenPeople={onOpenPeople} /></Suspense>;
+  }
   if (snapshot.layout === "speaker" && participants.length > 0 && !participants.some((participant) => participant.screenSharing)) {
     return <MeetingSpeakerFocus snapshot={snapshot} onOpenPeople={onOpenPeople} />;
   }

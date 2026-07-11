@@ -42,4 +42,5 @@ export const meetingLiveKitAdapter = {
   setMuted(muted: boolean) { if (dataSourceService.getStatus().isMock) { publishMock({ muted }); return Promise.resolve({ ok: true, data: mockSnapshot } as const); } return voiceService.setMuted(muted); },
   setDeafened(deafened: boolean) { if (dataSourceService.getStatus().isMock) { publishMock({ deafened }); return { ok: true, data: mockSnapshot } as const; } return voiceService.setDeafened(deafened); },
   setVideoSubscriptionPlan(plan: MeetingVideoSubscriptionPlan) { return dataSourceService.getStatus().isMock || voiceService.setVideoSubscriptionPlan(plan); },
+  setFocusedScreenShare(shareId: string | null) { return dataSourceService.getStatus().isMock || voiceService.setFocusedScreenShare(shareId); },
 };

@@ -1,7 +1,8 @@
 import { appConfig } from "../../config/appConfig";
 import { loggingService, type LogEntry } from "../logging/loggingService";
 import type { RealtimeConnectionStatus } from "../supabase/realtimeService";
-import { voiceService, type VoiceConnectionStatus } from "../voiceService";
+import type { VoiceConnectionStatus } from "../voiceService";
+import { voiceDiagnosticsRegistry } from "../voiceDiagnosticsRegistry";
 import type { VoiceConnectionQuality, VoiceDurationBucket } from "../../utils/voiceQualityMetrics";
 import { dataSourceService } from "../dataSourceService";
 
@@ -144,7 +145,7 @@ export const diagnosticsService = {
     const recentErrors = getRecentErrors();
     const supabaseHost = safeUrlHost(appConfig.supabase.url);
     const lastApiError = recentErrors.find((entry) => /api|supabase|network|auth|storage|realtime/i.test(`${entry.source ?? ""} ${entry.message}`)) ?? null;
-    const voiceDiagnostics = voiceService.getDiagnosticsSummary();
+    const voiceDiagnostics = voiceDiagnosticsRegistry.getSummary();
     return {
       app: {
         name: appConfig.name,
