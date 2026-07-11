@@ -40,6 +40,8 @@ export type VoiceServiceSnapshot = Readonly<{
   canSpeak?: boolean;
   canShareScreen?: boolean;
   screenSharing: boolean;
+  cameraEnabled?: boolean;
+  canUseCamera?: boolean;
   screenShares: VoiceScreenShare[];
   participants: VoiceParticipant[];
   error: string | null;
@@ -463,6 +465,8 @@ async function connectWithToken(
   desiredMuted: boolean,
   desiredDeafened: boolean,
   roomContext: VoiceRoomContext,
+  desiredCamera = false,
+  cameraDeviceId = "default",
 ): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
   emit({ status: "connecting", roomName: token.roomName, roomContext, error: null, errorCode: null });
 
@@ -480,6 +484,7 @@ async function connectWithToken(
     activeTokenIntent = token.intent;
 
     let microphoneEnabled = token.canPublishAudio;
+    let cameraEnabled = false;
     try {
       const devicePreferences = voiceDeviceService.getSnapshot();
       if (token.canPublishAudio) {
@@ -492,6 +497,15 @@ async function connectWithToken(
       deviceErrorCount += 1;
     }
 
+    if (token.canPublishVideo && desiredCamera) {
+      try {
+        await activeRoom.localParticipant.setCameraEnabled(true, cameraDeviceId === "default" ? undefined : { deviceId: cameraDeviceId });
+        cameraEnabled = true;
+      } catch {
+        deviceErrorCount += 1;
+      }
+    }
+
     if (desiredDeafened) applyRemoteAudioSubscription(activeRoom, false);
     emit({
       status: "connected",
@@ -502,6 +516,8 @@ async function connectWithToken(
       deafened: desiredDeafened,
       canSpeak: token.canPublishAudio,
       canShareScreen: token.canPublishScreen,
+      canUseCamera: Boolean(token.canPublishVideo),
+      cameraEnabled,
       screenSharing: Boolean(screenShareMediaTrack),
       screenShares,
       error: token.canPublishAudio && !microphoneEnabled ? "Microphone permission was denied or no input device is available." : null,
@@ -626,14 +642,14 @@ export const voiceService = {
     }
   },
 
-  async connectAuthorizedToken(token: VoiceTokenResponse, roomContext: VoiceRoomContext): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+  async connectAuthorizedToken(token: VoiceTokenResponse, roomContext: VoiceRoomContext, options: Readonly<{muted?:boolean;cameraEnabled?:boolean;cameraDeviceId?:string}> = {}): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (joinInFlight) return { ok: true, data: snapshot };
     joinInFlight = true;
     joinAttemptCount += 1;
     lastJoinRequest = null;
     reconnectGeneration += 1;
     reconnectInFlight = null;
-    const desiredMuted = snapshot.muted;
+    const desiredMuted = options.muted ?? snapshot.muted;
     const desiredDeafened = snapshot.deafened;
     if (room) {
       stopLocalTracks(room);
@@ -648,7 +664,7 @@ export const voiceService = {
     clearRemoteScreenShareTracks();
     emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
     try {
-      const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext);
+      const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext, Boolean(options.cameraEnabled), options.cameraDeviceId);
       if (!result.ok) joinFailureCount += 1;
       return result;
     } finally {
@@ -721,6 +737,8 @@ export const voiceService = {
       canSpeak: false,
       canShareScreen: false,
       screenSharing: false,
+      cameraEnabled: false,
+      canUseCamera: false,
       screenShares: [],
       error: null,
       errorCode: null,

@@ -16,6 +16,7 @@ export type LiveKitTokenResponse = Readonly<{
   participantName: string;
   intent: LiveKitIntent;
   canPublishAudio: boolean;
+  canPublishVideo?: boolean;
   canPublishScreen: boolean;
   expiresAt: string;
 }>;

@@ -40,7 +40,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   sessionCleanups.push(meetingLiveKitAdapter.subscribe((provider)=>{
     if(meetingStore.getSnapshot().generation!==generation)return;
     const phase=provider.status==="connected"?"connected":provider.status==="reconnecting"?"reconnecting":provider.status==="disconnected"?"disconnected":provider.status==="connecting"?"connecting":provider.status==="requesting_token"?"token-loading":null;
-    if(phase)meetingStore.transition(generation,phase,{providerStatus:provider.status,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:false,screenSharing:provider.screenSharing},error:null});
+    if(phase)meetingStore.transition(generation,phase,{providerStatus:provider.status,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:Boolean(provider.cameraEnabled),screenSharing:provider.screenSharing},error:null});
     else if(provider.errorCode)meetingStore.setError(generation,fail(provider.errorCode==="VOICE_PERMISSION_DENIED"?"MEETING_PERMISSION_DENIED":"MEETING_PROVIDER_ERROR",provider.error??"The meeting provider reported an error.",true,provider.errorCode));
     applyProviderParticipants(generation,provider);
   }));

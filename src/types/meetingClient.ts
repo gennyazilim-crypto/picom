@@ -48,6 +48,10 @@ export type MeetingClientJoinRequest = MeetingClientContext & Readonly<{
   participantName?: string;
   mockDisposition?: "authorized" | "waiting" | "failed";
   mockRole?: MeetingRole;
+  joinMuted?: boolean;
+  joinCameraOff?: boolean;
+  cameraDeviceId?: string;
+  noiseShield?: boolean;
 }>;
 
 export type MeetingClientParticipant = Readonly<{

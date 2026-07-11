@@ -18,7 +18,7 @@ function mockAuthorization(request: MeetingClientJoinRequest): MeetingTokenResul
 }
 
 function voiceToken(token: MeetingTokenAuthorizedResponse, request: MeetingClientJoinRequest): VoiceTokenResponse {
-  return { token: token.token, url: token.url, roomName: token.roomName, identity: token.identity, participantName: token.participantName, intent: request.requestedSources.screenShare ? "screen" : "voice", canPublishAudio: token.canPublishAudio, canPublishScreen: token.canPublishScreen, expiresAt: token.expiresAt };
+  return { token: token.token, url: token.url, roomName: token.roomName, identity: token.identity, participantName: token.participantName, intent: request.requestedSources.screenShare ? "screen" : "voice", canPublishAudio: token.canPublishAudio, canPublishVideo: token.canPublishVideo, canPublishScreen: token.canPublishScreen, expiresAt: token.expiresAt };
 }
 
 export const meetingLiveKitAdapter = {
@@ -30,7 +30,7 @@ export const meetingLiveKitAdapter = {
       publishMock({ status: "connected", muted: !token.canPublishAudio, canSpeak: token.canPublishAudio, canShareScreen: token.canPublishScreen, participants: [{ identity: token.identity, name: token.participantName, isLocal: true, isSpeaking: false, isMicrophoneEnabled: token.canPublishAudio }], error: null, errorCode: null });
       return { ok: true, data: mockSnapshot };
     }
-    return voiceService.connectAuthorizedToken(voiceToken(token, request), { communityId: request.communityId, communityName: request.communityName, channelId: request.channelId, channelName: request.channelName });
+    return voiceService.connectAuthorizedToken(voiceToken(token, request), { communityId: request.communityId, communityName: request.communityName, channelId: request.channelId, channelName: request.channelName }, { muted: request.joinMuted !== false, cameraEnabled: request.joinCameraOff === false, cameraDeviceId: request.cameraDeviceId });
   },
   subscribe(listener: Listener): () => void {
     if (!dataSourceService.getStatus().isMock) return voiceService.subscribe(listener);

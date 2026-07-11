@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from "react";
 import { meetingService } from "../../services/meeting/meetingService";
 import type { MeetingLayoutMode, MeetingSidePanel } from "../../types/meeting";
 import { MeetingControlDock } from "./MeetingControlDock";
+import { MeetingPreJoin } from "./MeetingPreJoin";
 import { MeetingRightDock } from "./MeetingRightDock";
 import { MeetingStage } from "./MeetingStage";
 import { MeetingTopBar } from "./MeetingTopBar";
@@ -22,7 +23,7 @@ export function MeetingWorkspace() {
     <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} />
     <div className="meeting-workspace__body">
       <main className="meeting-workspace__canvas">
-        <MeetingStage snapshot={snapshot} onFocusParticipant={(id)=>meetingService.setFocus(id)} />
+        {snapshot.phase==="prejoin"?<MeetingPreJoin />:<MeetingStage snapshot={snapshot} onFocusParticipant={(id)=>meetingService.setFocus(id)} />}
         <MeetingWorkspaceStatusSurface snapshot={snapshot} onRetry={()=>{void meetingService.retry()}} onLeave={()=>{void meetingService.leave()}} />
       </main>
       {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onClose={()=>meetingService.setRightDock("none")} />:null}
