@@ -5,17 +5,9 @@ import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from ".
 import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality, type VoiceDurationBucket } from "../utils/voiceQualityMetrics";
 import { getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "./voiceDeviceService";
+import type { MeetingParticipant, MeetingRoomContext, MeetingTransportConnectionState } from "../types/meeting";
 
-export type VoiceConnectionStatus =
-  | "idle"
-  | "requesting_token"
-  | "connecting"
-  | "connected"
-  | "reconnecting"
-  | "permission_denied"
-  | "token_error"
-  | "error"
-  | "disconnected";
+export type VoiceConnectionStatus = MeetingTransportConnectionState;
 
 export type VoiceIntent = LiveKitIntent;
 export type VoiceTokenRequest = LiveKitTokenRequest;
@@ -26,20 +18,9 @@ export type VoiceJoinRequest = VoiceTokenRequest & Readonly<{
   channelName?: string;
 }>;
 
-export type VoiceRoomContext = Readonly<{
-  communityId: string;
-  communityName?: string;
-  channelId: string;
-  channelName?: string;
-}>;
+export type VoiceRoomContext = Pick<MeetingRoomContext, "communityId" | "communityName" | "channelId" | "channelName">;
 
-export type VoiceParticipant = Readonly<{
-  identity: string;
-  name: string;
-  isLocal: boolean;
-  isSpeaking: boolean;
-  isMicrophoneEnabled: boolean;
-}>;
+export type VoiceParticipant = Pick<MeetingParticipant, "identity" | "name" | "isLocal" | "isSpeaking" | "isMicrophoneEnabled">;
 
 export type VoiceScreenShare = Readonly<{
   id: string;
