@@ -50,7 +50,7 @@ type DirectMessagesSidebarProps = ConversationListProps & Pick<DirectMessagesVie
 
 function DirectAvatar({ conversation, large = false, compact = false }: { conversation: DirectConversation; large?: boolean; compact?: boolean }) {
   const verification = getUserVerificationSummary(conversation.participantUserId);
-  return <span className={`direct-avatar-shell status-${conversation.participantStatus} ${large ? "large" : ""} ${compact ? "compact" : ""}`}><VerifiedAvatarFrame userId={conversation.participantUserId} label={conversation.participantName} avatarUrl={conversation.participantAvatarUrl} size="medium" avatarSize={large ? 64 : compact ? 38 : 42} verification={verification} /><i className="direct-status-dot" role="img" aria-label={`${conversation.participantName} is ${conversation.participantStatus}`} /></span>;
+  return <span className={`direct-avatar-shell status-${conversation.participantStatus} ${large ? "large" : ""} ${compact ? "compact" : ""}`}><VerifiedAvatarFrame userId={conversation.participantUserId} label={conversation.participantName} avatarUrl={conversation.participantAvatarUrl} size={compact ? "compact" : "medium"} avatarSize={large ? 64 : compact ? 38 : 42} verification={verification} /><i className="direct-status-dot" role="img" aria-label={`${conversation.participantName} is ${conversation.participantStatus}`} /></span>;
 }
 
 export function DirectConversationItem({ conversation, active, onSelect }: { conversation: DirectConversation; active: boolean; onSelect: () => void }) {

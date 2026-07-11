@@ -10,8 +10,10 @@ const verificationTypes = readFileSync("src/types/verification.ts", "utf8");
 const verificationHelpers = readFileSync("src/utils/verificationHelpers.ts", "utf8");
 const verifiedBadge = readFileSync("src/components/VerifiedBadge.tsx", "utf8");
 const verifiedAvatar = readFileSync("src/components/VerifiedAvatarFrame.tsx", "utf8");
+const verificationTooltip = readFileSync("src/components/VerificationBadgeTooltip.tsx", "utf8");
 const directMessages = readFileSync("src/components/DirectMessagesView.tsx", "utf8");
 const directMessageTypes = readFileSync("src/types/directMessages.ts", "utf8");
+const app = readFileSync("src/App.tsx", "utf8");
 const styles = readFileSync("src/styles.css", "utf8");
 
 for (const marker of ["verification_badges", "verification_badge_audit", "APP_ADMIN_REQUIRED", "grant_verification_badge", "revoke_verification_badge", "validate_verification_subject", "revoke all on function"]) {
@@ -48,9 +50,12 @@ for (const fixture of ["pending", "rejected", "revoked", "approvedUser", "staff"
 if (!verifiedBadge.includes('<svg className="verified-badge-glyph"')) throw new Error("Verified badge does not use the internal check SVG");
 if (verifiedBadge.includes("title={label}")) throw new Error("Verified badge must not combine native title with the custom tooltip");
 if (!verifiedBadge.includes('event.key === "Escape"')) throw new Error("Verified badge tooltip lacks Escape handling");
+if (!verificationTooltip.includes("createPortal") || !verificationTooltip.includes("document.body")) throw new Error("Verified tooltip is not rendered in the viewport overlay layer");
 if (!verifiedAvatar.includes('verifiedType && size === "profile"')) throw new Error("Verified aura is not restricted to profile avatars");
 if (directMessageTypes.includes("participantVerified")) throw new Error("DM verification still has a conflicting boolean source");
 if (directMessages.includes("participantVerified") || directMessages.includes("verifiedType=")) throw new Error("DM still derives verification from legacy props");
 if (!directMessages.includes("<VerifiedBadge verification={verification}")) throw new Error("DM name rows do not render canonical verification badges");
+if (!directMessages.includes('size={compact ? "compact" : "medium"}')) throw new Error("DM avatar variants do not separate compact and medium contexts");
+for (const marker of ["command-result-label", "getUserVerificationSummary", "getCommunityVerificationSummary", "verification={result.verification}"]) if (!app.includes(marker)) throw new Error(`Search verification integration is missing ${marker}`);
 if (!styles.includes(".verified-avatar-ring-subtle") || !styles.includes("display: none")) throw new Error("Compact and medium aura defense is missing");
 console.log("Verification schema and security smoke test passed.");

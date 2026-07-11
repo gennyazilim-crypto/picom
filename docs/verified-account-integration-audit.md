@@ -27,7 +27,12 @@ Date: 2026-07-11
 
 Supabase migrations and review RPC/RLS rules were not changed. The existing approval service remains authoritative in Supabase mode. Runtime review updates now register a full status-bearing summary, so rejected and revoked decisions cannot render a public marker.
 
-## Remaining gap
+## Search and tooltip closure
 
-There is no application-wide rendered search result component in the current project. The future search result UI must consume `getUserVerificationSummary` or `getCommunityVerificationSummary`; it must not add `isVerified`, `verified`, or another display-only boolean.
+- The rendered Command Palette now resolves People and Communities through `getUserVerificationSummary` and `getCommunityVerificationSummary` and places an approved-only badge beside the result name.
+- The verified tooltip is rendered through a `document.body` portal, clamped to the desktop viewport, hidden on scroll/resize/blur/Escape, and no longer depends on a clipped message/list container.
+- DM compact avatars now select the compact semantic variant; medium header/detail avatars remain neutral and profile aura remains profile-only.
 
+## Remaining backend boundary
+
+Hosted verification review/RLS evidence still requires the protected Supabase staging environment. No local structural test is presented as hosted approval evidence.

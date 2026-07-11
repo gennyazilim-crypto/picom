@@ -26,7 +26,7 @@ The edit camera remains a separate bottom-right action and appears only on the c
 
 ## Badge and tooltip
 
-`VerifiedBadge` owns a small inline white check SVG and never uses camera, image, edit, role, or presence icons. Its accessible label is independent of color. The custom tooltip is hidden by default, opens on hover/focus, closes on leave/blur/Escape, uses no duplicate native `title`, and does not accept pointer events.
+`VerifiedBadge` owns a small inline white check SVG and never uses camera, image, edit, role, or presence icons. Its accessible label is independent of color. The custom tooltip is absent by default, opens on hover/focus, closes on leave/blur/Escape/scroll/resize, uses no duplicate native `title`, and does not accept pointer events. It renders through a viewport-clamped `document.body` portal so clipped chat/list containers cannot cover it.
 
 ## Labels
 
@@ -39,5 +39,4 @@ Role badges and verification badges must remain separate in layout and semantics
 
 ## Integration contract
 
-The canonical helper is used by Direct Messages, Profile, Community Chat messages, MemberSidebar, Mention Feed author rows, Popular/Following rows, UserProfilePopover, CommunityHeader, and ServerRail labeling. No rendered search-result row currently exists; a future search UI must use the same helper and name-adjacent compact badge rather than introduce another boolean.
-
+The canonical helper is used by Direct Messages, Profile, Community Chat messages, MemberSidebar, Friends, Mention Feed author rows, Popular/Following rows, UserProfilePopover, CommunityHeader, ServerRail labeling, and Command Palette People/Communities search results. No integration may introduce another display-only verification boolean.

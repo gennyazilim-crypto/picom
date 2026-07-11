@@ -57,7 +57,9 @@ import { profileVerificationService } from "./services/profileVerificationServic
 import { defaultProfilePrivacyProjection,profilePrivacyService,restrictedProfilePrivacyProjection } from "./services/profilePrivacyService";
 import { profileActivityService } from "./services/profileActivityService";
 import type { ProfilePrivacyProjection } from "./types/profilePrivacy";
-import type { VerificationBadge } from "./types/verification";
+import type { VerificationBadge, VerificationSummary } from "./types/verification";
+import { getCommunityVerificationSummary, getUserVerificationSummary } from "./utils/verificationHelpers";
+import { VerifiedBadge } from "./components/VerifiedBadge";
 import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
 import { advancedSearchService, type AdvancedSearchResult } from "./services/advancedSearchService";
 import { termsAcceptanceService } from "./services/termsAcceptanceService";
@@ -183,6 +185,7 @@ type PaletteResult = {
   group: string;
   label: string;
   detail: string;
+  verification?: VerificationSummary;
   run: () => void;
 };
 
@@ -311,7 +314,7 @@ function CommandPalette({
                       onMouseEnter={() => setSelectedIndex(index)}
                       onClick={result.run}
                     >
-                      <strong>{result.label}</strong>
+                      <strong className="command-result-label"><span>{result.label}</span><VerifiedBadge verification={result.verification} size="xs" /></strong>
                       <span>{result.detail}</span>
                     </button>
                   );
@@ -1611,8 +1614,15 @@ export function App() {
     ];
 
     for (const result of paletteEntityResults) {
+      const resultMember = result.userId ? communities.flatMap((community) => community.members).find((candidate) => candidate.userId === result.userId) : undefined;
+      const resultCommunity = result.communityId ? communities.find((community) => community.id === result.communityId) : undefined;
+      const verification = result.category === "People" && resultMember
+        ? getUserVerificationSummary(resultMember.userId, [], resultMember.verification)
+        : result.category === "Communities" && resultCommunity
+          ? getCommunityVerificationSummary(resultCommunity.id, [], resultCommunity.verification)
+          : undefined;
       all.push({
-        id: result.id, group: result.category, label: result.label, detail: result.detail,
+        id: result.id, group: result.category, label: result.label, detail: result.detail, verification,
         run: () => {
           if (result.category === "People" && result.userId) {
             const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === result.userId);

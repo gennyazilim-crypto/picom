@@ -2615,13 +2615,10 @@ body{
 }
 
 .verified-badge-tooltip {
-  position: absolute;
-  left: calc(100% + 6px);
-  bottom: calc(100% + 5px);
-  z-index: 80;
+  position: fixed;
+  z-index: 120;
   min-width: max-content;
   max-width: 180px;
-  transform: translateY(4px);
   padding: 6px 8px;
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -2632,17 +2629,14 @@ body{
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
   pointer-events: none;
-  transition: opacity var(--motion-fast), transform var(--motion-fast), visibility var(--motion-fast);
+  animation: verified-tooltip-in var(--motion-fast) both;
 }
 
-.verified-badge.is-tooltip-visible .verified-badge-tooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
+.verified-badge-tooltip.placement-above { transform: translate(-50%, -100%); }
+.verified-badge-tooltip.placement-below { transform: translate(-50%, 0); }
+
+@keyframes verified-tooltip-in { from { opacity: 0; } to { opacity: 1; } }
 
 .verified-badge:focus-visible { box-shadow: var(--focus-ring); }
 .verified-badge:focus:not(:focus-visible) { outline: none; }
@@ -2721,6 +2715,10 @@ body{
   top: 5px;
   right: -2px;
 }
+
+.command-result-label { min-width: 0; display: flex; align-items: center; gap: 5px; }
+.command-result-label > span:first-child { min-width: 0; overflow: hidden; color: var(--text-primary); font-size: inherit; text-overflow: ellipsis; white-space: nowrap; }
+.command-group button .command-result-label .verified-badge { color: #fff; font-size: 0; }
 
 @keyframes picom-verified-orbit {
   to { transform: rotate(360deg); }
