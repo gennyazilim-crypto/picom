@@ -54,6 +54,9 @@ import { relationshipService } from "./services/relationshipService";
 import { mentionFeedService } from "./services/mentionFeedService";
 import { storyService } from "./services/storyService";
 import { feedUiStateService } from "./services/feed/feedUiStateService";
+import { feedMentionCacheService } from "./services/feed/feedMentionCacheService";
+import { feedRealtimeService } from "./services/feed/feedRealtimeService";
+import { feedQueryService } from "./services/feed/feedQueryService";
 import { profileVerificationService } from "./services/profileVerificationService";
 import { defaultProfilePrivacyProjection,profilePrivacyService,restrictedProfilePrivacyProjection } from "./services/profilePrivacyService";
 import { profileActivityService } from "./services/profileActivityService";
@@ -497,7 +500,7 @@ export function App() {
     let active = true;
     void Promise.all([mentionFeedService.listPage({ limit: 60 }), relationshipService.getFollowing(), storyService.listPage({ limit: 40 })]).then(([feed, following, stories]) => {
       if (!active) return;
-      if (feed.ok) setMentionItems(feed.data.items);
+      if (feed.ok) setMentionItems(feedMentionCacheService.replace(feed.data.items));
       else pushToast(feed.error.message, "error");
       if (following.ok) setFollowedUserIds(following.data);
       if (stories.ok) setStoryItems(stories.data.items);
@@ -505,6 +508,35 @@ export function App() {
     });
     return () => { active = false; };
   }, [authSession?.user?.id, pushToast]);
+  useEffect(() => {
+    const userId = authSession?.user?.id;
+    if (safeMode.active || !userId || !dataSourceService.getStatus().isSupabase) return;
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    let refreshInFlight: Promise<void> | null = null;
+    feedMentionCacheService.reset(userId);
+    const refresh = (reason: "change" | "reconnect") => {
+      if (refreshInFlight) return refreshInFlight;
+      refreshInFlight = mentionFeedService.listPage({ limit: 60 }).then((result) => {
+        if (!active) return;
+        if (result.ok) setMentionItems((current) => feedMentionCacheService.replace(result.data.items, current));
+        loggingService.logInfo("Feed realtime refresh completed", { reason, ok: result.ok, cacheSize: feedMentionCacheService.diagnostics().size }, "mention-feed");
+      }).finally(() => { refreshInFlight = null; });
+      return refreshInFlight;
+    };
+    void feedRealtimeService.subscribe({
+      onInvalidate: (event) => {
+        feedQueryService.invalidateCache();
+        if (event.eventType === "DELETE" && event.sourceId && (event.table === "messages" || event.table === "content_mentions")) {
+          setMentionItems((current) => feedMentionCacheService.removeSource(event.sourceId!, current));
+        }
+        void refresh(event.reason);
+      },
+      onStatus: (status) => loggingService.logInfo("Feed realtime status", { status }, "mention-feed"),
+      onError: (message) => loggingService.logInfo("Feed realtime unavailable", { reason: message }, "mention-feed"),
+    }).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
+    return () => { active = false; unsubscribe?.(); };
+  }, [authSession?.user?.id, safeMode.active]);
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase) return;
     let active = true;

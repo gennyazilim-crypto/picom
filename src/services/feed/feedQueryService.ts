@@ -15,7 +15,22 @@ type RankedFeedRow = Readonly<{
 }>;
 const localRead = new Set<string>();
 const localSaved = new Set<string>();
+const PAGE_CACHE_LIMIT = 16;
+const PAGE_CACHE_FRESH_MS = 30_000;
+const PAGE_CACHE_STALE_MS = 5 * 60_000;
+const pageCache = new Map<string, { page: UnifiedFeedPage; updatedAt: number }>();
+const bypassFreshCache = new Set<string>();
 const resultLimit = (value?: number) => Math.max(1, Math.min(50, Math.trunc(value ?? 20)));
+
+function pageCacheKey(query: UnifiedFeedQuery) {
+  return JSON.stringify({ ...query, sourceTypes: query.sourceTypes ? [...query.sourceTypes] : undefined, followedAuthorIds: query.followedAuthorIds ? [...query.followedAuthorIds].sort() : undefined });
+}
+
+function rememberPage(key: string, page: UnifiedFeedPage) {
+  pageCache.delete(key);
+  pageCache.set(key, { page, updatedAt: Date.now() });
+  while (pageCache.size > PAGE_CACHE_LIMIT) pageCache.delete(pageCache.keys().next().value as string);
+}
 
 function visibility(value: unknown): UnifiedContentMention["visibility"] {
   const data = value && typeof value === "object" ? value as Record<string, unknown> : {};
@@ -76,8 +91,14 @@ function mockPage(query: UnifiedFeedQuery): UnifiedFeedPage {
 export const feedQueryService = {
   async listPage(query: UnifiedFeedQuery): Promise<FeedQueryResult> {
     if (dataSourceService.getStatus().isMock) return { ok: true, data: mockPage(query) };
+    const key = pageCacheKey(query);
+    const cached = pageCache.get(key);
+    const bypassFresh = bypassFreshCache.delete(key);
+    if (!bypassFresh && cached && Date.now() - cached.updatedAt <= PAGE_CACHE_FRESH_MS) return { ok: true, data: cached.page };
     const client = getSupabaseClient();
-    if (!client) return { ok: false, error: { code: "FEED_BACKEND_UNAVAILABLE", message: "The Feed is temporarily unavailable." } };
+    if (!client) return cached && Date.now() - cached.updatedAt <= PAGE_CACHE_STALE_MS
+      ? { ok: true, data: { ...cached.page, isStale: true } }
+      : { ok: false, error: { code: "FEED_BACKEND_UNAVAILABLE", message: "The Feed is temporarily unavailable." } };
     const limit = resultLimit(query.limit);
     const rankingEpoch = query.cursor?.rankingEpoch ?? new Date().toISOString();
     const { data, error } = await client.rpc("list_ranked_unified_feed", {
@@ -86,17 +107,23 @@ export const feedQueryService = {
       source_types: query.sourceTypes?.length ? [...query.sourceTypes] : null, created_after: query.createdAfter ?? null,
       unread_only: query.unreadOnly ?? false, saved_only: query.savedOnly ?? false, result_limit: limit,
     });
-    if (error) return { ok: false, error: { code: "FEED_LOAD_FAILED", message: error.message } };
+    if (error) return cached && Date.now() - cached.updatedAt <= PAGE_CACHE_STALE_MS
+      ? { ok: true, data: { ...cached.page, isStale: true } }
+      : { ok: false, error: { code: "FEED_LOAD_FAILED", message: error.message } };
     const items = ((data ?? []) as RankedFeedRow[]).map(mapRow);
     const last = items[items.length - 1];
-    return { ok: true, data: {
+    const page: UnifiedFeedPage = {
       items,
       nextCursor: items.length === limit && last ? { rankingScore: last.rankingScore, createdAt: last.mention.createdAt, feedItemId: last.feedItemId, rankingEpoch: last.rankingEpoch } : null,
       rankingEpoch,
       emptyState: items.length ? null : query.mode === "following" ? "no_followed_mentions" : "no_visible_mentions",
-    } };
+    };
+    rememberPage(key, page);
+    return { ok: true, data: page };
   },
-  refresh(query: Omit<UnifiedFeedQuery, "cursor">) { return this.listPage({ ...query, cursor: null }); },
+  refresh(query: Omit<UnifiedFeedQuery, "cursor">) { const next = { ...query, cursor: null }; bypassFreshCache.add(pageCacheKey(next)); return this.listPage(next); },
+  invalidateCache() { pageCache.clear(); bypassFreshCache.clear(); },
+  cacheDiagnostics() { return { size: pageCache.size, maxPages: PAGE_CACHE_LIMIT, oldestAgeMs: pageCache.size ? Date.now() - Math.min(...[...pageCache.values()].map((entry) => entry.updatedAt)) : 0 } as const; },
   setMockRead(feedItemId: string, read: boolean) { if (read) localRead.add(feedItemId); else localRead.delete(feedItemId); },
   setMockSaved(feedItemId: string, saved: boolean) { if (saved) localSaved.add(feedItemId); else localSaved.delete(feedItemId); },
 };

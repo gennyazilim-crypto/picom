@@ -10,7 +10,7 @@ export type UnifiedFeedItem = Readonly<{
 export type UnifiedFeedCursor = Readonly<{ rankingScore: number; createdAt: string; feedItemId: string; rankingEpoch: string }>;
 export type UnifiedFeedEmptyState = "no_visible_mentions" | "no_followed_mentions" | null;
 export type UnifiedFeedPage = Readonly<{
-  items: readonly UnifiedFeedItem[]; nextCursor: UnifiedFeedCursor | null; rankingEpoch: string; emptyState: UnifiedFeedEmptyState;
+  items: readonly UnifiedFeedItem[]; nextCursor: UnifiedFeedCursor | null; rankingEpoch: string; emptyState: UnifiedFeedEmptyState; isStale?: boolean;
 }>;
 export type UnifiedFeedQuery = Readonly<{
   mode: UnifiedFeedMode; cursor?: UnifiedFeedCursor | null; limit?: number;

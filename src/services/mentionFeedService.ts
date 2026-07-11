@@ -109,7 +109,7 @@ function mapRow(row: MentionFeedRow): MentionItem {
     commenterIds: row.commenter_ids,
     commentPreview: mapCommentPreview(row.comment_preview),
     popularityScore: Math.max(0, Number(row.popularity_score) || 0),
-    isUnread: true,
+    isUnread: row.is_unread,
     isSaved: row.is_saved,
   };
 }
