@@ -8,6 +8,7 @@ import type {
 import { meetingStore } from "../../stores/meetingStore";
 import { voiceDeviceService } from "../voiceDeviceService";
 import { meetingService } from "./meetingService";
+import { meetingInviteCredentialService } from "./meetingInviteCredentialService";
 
 const STORAGE_KEY = "picom.meeting-prejoin.v1";
 type Listener = () => void;
@@ -400,6 +401,12 @@ export const meetingPreJoinService = {
     }
     emit({ busy: true, error: null, notice: null });
     this.stopDevicePreviews();
+    const inviteResult = await meetingInviteCredentialService.redeem(request.roomId);
+    if (!inviteResult.ok) {
+      const error = { code: "MEETING_TOKEN_UNAVAILABLE" as const, message: inviteResult.message, recoverable: false, providerCode: inviteResult.code };
+      emit({ busy: false, error: createError("TOKEN_FAILED", inviteResult.message, false) });
+      return { ok: false, error };
+    }
     const next: MeetingClientJoinRequest = {
       ...request,
       joinMuted: snapshot.joinMuted,

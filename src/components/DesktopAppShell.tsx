@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { windowService } from "../services/windowService";
 import { AppIcon } from "./AppIcon";
+import { MeetingDeepLinkGateway } from "./meeting/MeetingDeepLinkGateway";
 
 type DesktopAppShellProps = {
   children: ReactNode;
@@ -37,7 +38,7 @@ export function DesktopAppShell({ children }: DesktopAppShellProps) {
           <p>Resize the window to at least 1100px wide to use Picom's full desktop chat layout.</p>
         </div>
       </div>
-      <section className="desktop-app-shell">{children}</section>
+      <section className="desktop-app-shell">{children}<MeetingDeepLinkGateway /></section>
     </div>
   );
 }

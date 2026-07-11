@@ -47,9 +47,12 @@ export type MeetingInviteSummary = Readonly<{
 
 export type CreateMeetingInviteInput = Readonly<{
   roomId: string;
+  communityId: string;
+  channelId?: string | null;
   sessionId?: string | null;
   invitedUserId?: string | null;
   role?: MeetingRole;
+  guestPolicy?: "authenticated_only" | "signed_in_guest";
   expiresAt?: string;
   maxUses?: number;
 }>;
@@ -73,13 +76,16 @@ export type MeetingInviteValidation = Readonly<{
 
 export type MeetingJoinPreview = Readonly<{
   roomId: string;
+  sessionId?: string | null;
   communityId?: string;
   communityName?: string;
   roomTitle?: string;
+  hostName?: string;
   mode?: "voice" | "meeting" | "stage";
   status?: MeetingRoomStatus;
   joinPolicy?: MeetingJoinPolicy;
   waitingRoomEnabled?: boolean;
+  capabilities?: Readonly<Record<string, boolean>>;
   scheduledFor?: string | null;
   scheduledEndAt?: string | null;
   canJoin: boolean;

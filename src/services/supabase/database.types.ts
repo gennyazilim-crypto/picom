@@ -962,6 +962,7 @@ export type Database = {
       move_community_meeting_room:{Args:{target_room_id:string;move_direction:"up"|"down"};Returns:boolean};
       schedule_meeting_room:{Args:{target_room_id:string;target_scheduled_for:string;target_scheduled_end_at:string;target_host_user_id?:string|null;target_cohost_user_ids?:string[];target_event_id?:string|null;target_reminder_policy?:Json};Returns:Json};
       create_meeting_invite:{Args:{target_room_id:string;target_token_hash:string;target_token_hint:string;target_role?:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";target_invited_user_id?:string|null;target_session_id?:string|null;target_expires_at?:string|null;target_max_uses?:number};Returns:Json};
+      regenerate_meeting_invite:{Args:{target_invite_id:string;target_token_hash:string;target_token_hint:string;target_role?:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";target_invited_user_id?:string|null;target_session_id?:string|null;target_expires_at?:string|null;target_max_uses?:number};Returns:Json};
       revoke_meeting_invite:{Args:{target_invite_id:string};Returns:Json};
       validate_meeting_invite:{Args:{target_token_hash:string;target_room_id?:string|null;consume_use?:boolean};Returns:Json};
       get_meeting_join_preview:{Args:{target_room_id:string;target_token_hash?:string|null};Returns:Json};

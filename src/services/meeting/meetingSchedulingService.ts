@@ -15,6 +15,7 @@ import { getSupabaseClient } from "../supabase/supabaseClient";
 
 type StoredMockInvite = MeetingInviteSummary & { tokenHash: string };
 const mockInvites = new Map<string, StoredMockInvite>();
+const safeLinkSegment = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function failure<T>(code: string, message: string): MeetingSchedulingResult<T> {
   return { ok: false, error: { code, message } };
@@ -24,6 +25,14 @@ function randomInviteSecret(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+function buildInviteDeepLink(input: CreateMeetingInviteInput, secret: string): string {
+  const community = encodeURIComponent(input.communityId);
+  const room = encodeURIComponent(input.roomId);
+  const channelPath = input.channelId ? `/channel/${encodeURIComponent(input.channelId)}/room/${room}` : `/room/${room}`;
+  const sessionPath = input.sessionId ? `/session/${encodeURIComponent(input.sessionId)}` : "";
+  return `picom://meeting/${community}${channelPath}${sessionPath}?invite=${secret}`;
 }
 
 async function sha256(value: string): Promise<string> {
@@ -87,6 +96,49 @@ function mapSchedule(value: unknown): MeetingScheduleSummary | null {
   return result.roomId && result.eventId && result.scheduledFor && result.scheduledEndAt ? result : null;
 }
 
+function mapInviteValidation(value: unknown): MeetingInviteValidation | undefined {
+  const row = asRecord(value);
+  if (!row || typeof row.valid !== "boolean") return undefined;
+  const role = typeof row.role === "string" && ["host", "cohost", "speaker", "participant", "viewer", "guest"].includes(row.role) ? row.role as MeetingInviteValidation["role"] : undefined;
+  return {
+    valid: row.valid,
+    code: typeof row.code === "string" ? row.code.slice(0, 80) : "INVITE_INVALID",
+    roomId: typeof row.roomId === "string" ? row.roomId : undefined,
+    sessionId: typeof row.sessionId === "string" ? row.sessionId : null,
+    role,
+    expiresAt: typeof row.expiresAt === "string" ? row.expiresAt : null,
+    alreadyRedeemed: row.alreadyRedeemed === true,
+    usesRemaining: typeof row.usesRemaining === "number" ? Math.max(0, Math.floor(row.usesRemaining)) : undefined,
+  };
+}
+
+export function mapMeetingJoinPreview(value: unknown): MeetingJoinPreview | null {
+  const row = asRecord(value);
+  if (!row || typeof row.roomId !== "string" || typeof row.canJoin !== "boolean" || typeof row.reason !== "string") return null;
+  const mode = typeof row.mode === "string" && ["voice", "meeting", "stage"].includes(row.mode) ? row.mode as MeetingJoinPreview["mode"] : undefined;
+  const status = typeof row.status === "string" && ["scheduled", "open", "live", "ended", "cancelled", "locked"].includes(row.status) ? row.status as MeetingJoinPreview["status"] : undefined;
+  const joinPolicy = typeof row.joinPolicy === "string" && ["open", "members", "invite_only", "approval_required"].includes(row.joinPolicy) ? row.joinPolicy as MeetingJoinPreview["joinPolicy"] : undefined;
+  const disposition = typeof row.disposition === "string" && ["direct", "waiting", "denied"].includes(row.disposition) ? row.disposition as MeetingJoinPreview["disposition"] : undefined;
+  const capabilities = asRecord(row.capabilities);
+  return {
+    roomId: row.roomId,
+    sessionId: typeof row.sessionId === "string" ? row.sessionId : null,
+    communityId: typeof row.communityId === "string" ? row.communityId : undefined,
+    communityName: typeof row.communityName === "string" ? row.communityName.slice(0, 120) : undefined,
+    roomTitle: typeof row.roomTitle === "string" ? row.roomTitle.slice(0, 120) : undefined,
+    hostName: typeof row.hostName === "string" ? row.hostName.slice(0, 120) : undefined,
+    mode, status, joinPolicy,
+    waitingRoomEnabled: row.waitingRoomEnabled === true,
+    capabilities: capabilities ? Object.fromEntries(Object.entries(capabilities).filter(([, enabled]) => typeof enabled === "boolean")) as Record<string, boolean> : undefined,
+    scheduledFor: typeof row.scheduledFor === "string" ? row.scheduledFor : null,
+    scheduledEndAt: typeof row.scheduledEndAt === "string" ? row.scheduledEndAt : null,
+    canJoin: row.canJoin,
+    disposition,
+    reason: row.reason.slice(0, 80),
+    invite: mapInviteValidation(row.invite),
+  };
+}
+
 function normalizeSchedule(input: MeetingScheduleInput): MeetingScheduleInput | null {
   const start = Date.parse(input.scheduledFor);
   const end = Date.parse(input.scheduledEndAt);
@@ -122,20 +174,45 @@ export const meetingSchedulingService = {
   async createInvite(input: CreateMeetingInviteInput): Promise<MeetingSchedulingResult<CreatedMeetingInvite>> {
     const maxUses = input.maxUses ?? 1;
     const expiresAt = input.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    if (!input.roomId || maxUses < 1 || maxUses > 100 || Date.parse(expiresAt) <= Date.now() + 5 * 60 * 1000) return failure("MEETING_INVITE_INVALID", "Choose a valid invite expiry and use limit.");
+    const expiry = Date.parse(expiresAt);
+    if (!safeLinkSegment.test(input.roomId) || !safeLinkSegment.test(input.communityId) || (input.channelId && !safeLinkSegment.test(input.channelId)) || (input.sessionId && !safeLinkSegment.test(input.sessionId)) || maxUses < 1 || maxUses > 100 || expiry <= Date.now() + 5 * 60 * 1000 || expiry > Date.now() + 30 * 24 * 60 * 60 * 1000) return failure("MEETING_INVITE_INVALID", "Choose a valid meeting, invite expiry, and use limit.");
     const secret = randomInviteSecret();
     const tokenHash = await sha256(secret);
     const tokenHint = secret.slice(-8);
+    const role = input.guestPolicy === "signed_in_guest" ? "guest" : input.role ?? "participant";
     if (dataSourceService.getStatus().isMock) {
-      const invite: MeetingInviteSummary = { id: crypto.randomUUID(), roomId: input.roomId, sessionId: input.sessionId ?? null, invitedUserId: input.invitedUserId ?? null, invitedByUserId: "mock-current-user", role: input.role ?? "participant", status: "active", tokenHint, maxUses, useCount: 0, createdAt: new Date().toISOString(), expiresAt, lastUsedAt: null, revokedAt: null };
+      const invite: MeetingInviteSummary = { id: crypto.randomUUID(), roomId: input.roomId, sessionId: input.sessionId ?? null, invitedUserId: input.invitedUserId ?? null, invitedByUserId: "mock-current-user", role, status: "active", tokenHint, maxUses, useCount: 0, createdAt: new Date().toISOString(), expiresAt, lastUsedAt: null, revokedAt: null };
       mockInvites.set(tokenHash, { ...invite, tokenHash });
-      return { ok: true, data: { invite, secret, deepLink: `picom://meeting/${input.roomId}?invite=${secret}` } };
+      return { ok: true, data: { invite, secret, deepLink: buildInviteDeepLink(input, secret) } };
     }
     const client = getSupabaseClient();
     if (!client) return failure("DATA_SOURCE_NOT_CONFIGURED", "Supabase is not configured.");
-    const { data, error } = await client.rpc("create_meeting_invite", { target_room_id: input.roomId, target_token_hash: tokenHash, target_token_hint: tokenHint, target_role: input.role ?? "participant", target_invited_user_id: input.invitedUserId ?? null, target_session_id: input.sessionId ?? null, target_expires_at: expiresAt, target_max_uses: maxUses });
+    const { data, error } = await client.rpc("create_meeting_invite", { target_room_id: input.roomId, target_token_hash: tokenHash, target_token_hint: tokenHint, target_role: role, target_invited_user_id: input.invitedUserId ?? null, target_session_id: input.sessionId ?? null, target_expires_at: expiresAt, target_max_uses: maxUses });
     const invite = mapInvite(data);
-    return error || !invite ? failure("MEETING_INVITE_CREATE_FAILED", "Picom could not create this meeting invite.") : { ok: true, data: { invite, secret, deepLink: `picom://meeting/${input.roomId}?invite=${secret}` } };
+    return error || !invite ? failure("MEETING_INVITE_CREATE_FAILED", "Picom could not create this meeting invite.") : { ok: true, data: { invite, secret, deepLink: buildInviteDeepLink(input, secret) } };
+  },
+
+  async regenerateInvite(inviteId: string, input: CreateMeetingInviteInput): Promise<MeetingSchedulingResult<CreatedMeetingInvite>> {
+    const maxUses = input.maxUses ?? 1;
+    const expiresAt = input.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const expiry = Date.parse(expiresAt);
+    if (!inviteId || !safeLinkSegment.test(input.roomId) || !safeLinkSegment.test(input.communityId) || maxUses < 1 || maxUses > 100 || expiry <= Date.now() + 5 * 60 * 1000 || expiry > Date.now() + 30 * 24 * 60 * 60 * 1000) return failure("MEETING_INVITE_INVALID", "Choose a valid meeting, invite expiry, and use limit.");
+    const secret = randomInviteSecret(), tokenHash = await sha256(secret), tokenHint = secret.slice(-8);
+    const role = input.guestPolicy === "signed_in_guest" ? "guest" : input.role ?? "participant";
+    if (dataSourceService.getStatus().isMock) {
+      const existing = [...mockInvites.values()].find((item) => item.id === inviteId && item.roomId === input.roomId);
+      if (!existing || existing.status === "revoked") return failure("MEETING_INVITE_NOT_FOUND", "This meeting invite is unavailable.");
+      const now = new Date().toISOString();
+      mockInvites.set(existing.tokenHash, { ...existing, status: "revoked", revokedAt: now });
+      const invite: MeetingInviteSummary = { id: crypto.randomUUID(), roomId: input.roomId, sessionId: input.sessionId ?? null, invitedUserId: input.invitedUserId ?? null, invitedByUserId: "mock-current-user", role, status: "active", tokenHint, maxUses, useCount: 0, createdAt: now, expiresAt, lastUsedAt: null, revokedAt: null };
+      mockInvites.set(tokenHash, { ...invite, tokenHash });
+      return { ok: true, data: { invite, secret, deepLink: buildInviteDeepLink(input, secret) } };
+    }
+    const client = getSupabaseClient();
+    if (!client) return failure("DATA_SOURCE_NOT_CONFIGURED", "Supabase is not configured.");
+    const { data, error } = await client.rpc("regenerate_meeting_invite", { target_invite_id: inviteId, target_token_hash: tokenHash, target_token_hint: tokenHint, target_role: role, target_invited_user_id: input.invitedUserId ?? null, target_session_id: input.sessionId ?? null, target_expires_at: expiresAt, target_max_uses: maxUses });
+    const invite = mapInvite(data);
+    return error || !invite ? failure("MEETING_INVITE_REGENERATE_FAILED", "Picom could not regenerate this meeting invite.") : { ok: true, data: { invite, secret, deepLink: buildInviteDeepLink(input, secret) } };
   },
 
   async revokeInvite(inviteId: string): Promise<MeetingSchedulingResult<MeetingInviteSummary>> {
@@ -178,10 +255,12 @@ export const meetingSchedulingService = {
     const client = dataSourceService.getStatus().isMock ? null : getSupabaseClient();
     if (dataSourceService.getStatus().isMock) {
       const validation = secret ? mockValidation(mockInvites.get(await sha256(secret.toLowerCase())), false) : undefined;
-      return { ok: true, data: { roomId, roomTitle: "Scheduled Picom meeting", mode: "meeting", status: "scheduled", joinPolicy: secret ? "invite_only" : "members", waitingRoomEnabled: true, canJoin: false, disposition: "denied", reason: "not_started", invite: validation } };
+      const canJoin = !secret || validation?.valid === true;
+      return { ok: true, data: { roomId, sessionId: validation?.sessionId ?? `mock-session-${roomId}`, communityId: "community-aurora", communityName: "Aurora Studio", roomTitle: "Picom workspace review", hostName: "Mira Chen", mode: "meeting", status: "live", joinPolicy: secret ? "invite_only" : "members", waitingRoomEnabled: true, capabilities: { canPublishAudio: true, canPublishVideo: true, canShareScreen: true, canSendChat: true }, canJoin, disposition: canJoin ? "waiting" : "denied", reason: canJoin ? "allowed" : validation?.code ?? "invite_invalid", invite: validation } };
     }
     if (!client) return failure("DATA_SOURCE_NOT_CONFIGURED", "Supabase is not configured.");
     const { data, error } = await client.functions.invoke<MeetingJoinPreview>("meeting-join", { headers: getApiCompatibilityRequestHeaders(), body: { action: "preview", roomId, ...(secret ? { inviteToken: secret } : {}) } });
-    return error || !data || typeof data.canJoin !== "boolean" ? failure("MEETING_JOIN_PREVIEW_FAILED", "Picom could not load the meeting join preview.") : { ok: true, data };
+    const preview = mapMeetingJoinPreview(data);
+    return error || !preview ? failure("MEETING_JOIN_PREVIEW_FAILED", "Picom could not load the meeting join preview.") : { ok: true, data: preview };
   },
 };
