@@ -4,6 +4,7 @@ import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
 import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality, type VoiceDurationBucket } from "../utils/voiceQualityMetrics";
 import { getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
+import { voiceDeviceService, type VoiceDeviceSnapshot } from "./voiceDeviceService";
 
 export type VoiceConnectionStatus =
   | "idle"
@@ -94,6 +95,8 @@ let lastSessionDurationMs: number | null = null;
 let reconnectingActive = false;
 let joinInFlight = false;
 let lastJoinRequest: VoiceTokenRequest | null = null;
+let appliedInputPreferenceKey = "";
+let appliedOutputDeviceId = "";
 let snapshot: VoiceServiceSnapshot = {
   status: "idle",
   roomName: null,
@@ -349,6 +352,39 @@ async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceRes
   return { ok: true, data: token.data };
 }
 
+function inputPreferenceKey(preferences: VoiceDeviceSnapshot): string {
+  return [preferences.selectedInputId, preferences.echoCancellation, preferences.noiseSuppression, preferences.autoGainControl].join(":");
+}
+
+async function applyVoiceDevicePreferences(activeRoom: Room, preferences: VoiceDeviceSnapshot): Promise<void> {
+  if (preferences.selectedOutputId !== appliedOutputDeviceId) {
+    try {
+      await activeRoom.switchActiveDevice("audiooutput", preferences.selectedOutputId, preferences.selectedOutputId !== "default");
+      appliedOutputDeviceId = preferences.selectedOutputId;
+    } catch (error) {
+      deviceErrorCount += 1;
+      loggingService.logWarn("LiveKit output device switch failed", { errorName: error instanceof Error ? error.name : "UnknownError" }, "voice");
+    }
+  }
+
+  const nextInputKey = inputPreferenceKey(preferences);
+  if (nextInputKey === appliedInputPreferenceKey) return;
+  try {
+    if (snapshot.muted) {
+      await activeRoom.switchActiveDevice("audioinput", preferences.selectedInputId, preferences.selectedInputId !== "default");
+    } else {
+      await activeRoom.localParticipant.setMicrophoneEnabled(false);
+      await activeRoom.localParticipant.setMicrophoneEnabled(true, voiceDeviceService.getAudioCaptureConstraints());
+    }
+    appliedInputPreferenceKey = nextInputKey;
+    emit({ participants: getParticipants(activeRoom), error: null, errorCode: null });
+  } catch (error) {
+    deviceErrorCount += 1;
+    emit({ error: "The selected microphone or processing options could not be applied.", errorCode: "VOICE_PERMISSION_DENIED" });
+    loggingService.logWarn("LiveKit input device switch failed", { errorName: error instanceof Error ? error.name : "UnknownError" }, "voice");
+  }
+}
+
 async function connectWithToken(
   token: VoiceTokenResponse,
   desiredMuted: boolean,
@@ -362,13 +398,18 @@ async function connectWithToken(
   });
 
   try {
+    appliedInputPreferenceKey = "";
+    appliedOutputDeviceId = "";
     room = activeRoom;
     bindRoomEvents(activeRoom);
     await activeRoom.connect(token.url, token.token);
 
     let microphoneEnabled = true;
     try {
-      await activeRoom.localParticipant.setMicrophoneEnabled(!desiredMuted);
+      const devicePreferences = voiceDeviceService.getSnapshot();
+      await activeRoom.localParticipant.setMicrophoneEnabled(!desiredMuted, voiceDeviceService.getAudioCaptureConstraints());
+      appliedInputPreferenceKey = inputPreferenceKey(devicePreferences);
+      await applyVoiceDevicePreferences(activeRoom, devicePreferences);
     } catch {
       microphoneEnabled = false;
       deviceErrorCount += 1;
@@ -398,6 +439,11 @@ async function connectWithToken(
     return voiceError("VOICE_CONNECTION_FAILED", "Picom could not connect to this voice room. Check your network and try again.");
   }
 }
+
+voiceDeviceService.subscribePreferences((preferences) => {
+  const activeRoom = room;
+  if (activeRoom && activeRoom.state !== ConnectionState.Disconnected) void applyVoiceDevicePreferences(activeRoom, preferences);
+});
 
 export const voiceService = {
   getSnapshot(): VoiceServiceSnapshot {
@@ -512,7 +558,8 @@ export const voiceService = {
     }
 
     try {
-      await room.localParticipant.setMicrophoneEnabled(!muted);
+      await room.localParticipant.setMicrophoneEnabled(!muted, voiceDeviceService.getAudioCaptureConstraints());
+      if (!muted) appliedInputPreferenceKey = inputPreferenceKey(voiceDeviceService.getSnapshot());
       emit({
         muted,
         error: null,

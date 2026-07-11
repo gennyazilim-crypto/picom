@@ -979,7 +979,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
           ) : active === "Voice & Video" ? (
             <div className="placeholder-panel action-panel">
               <strong>Voice & Video</strong>
-              <p>Review current LiveKit connection and app-focused audio controls. Device selection remains system-default for this beta.</p>
+              <p>Manage permission-gated voice devices, LiveKit capture processing, screen-share guidance, and Radio/Podcast playback defaults.</p>
               <div className="security-card-grid">
                 <article className="security-card"><span>Connection</span><strong>{voiceSettingsSnapshot.status.replace(/_/g, " ")}</strong><small>{voiceSettingsSnapshot.roomName ? `Room: ${voiceSettingsSnapshot.roomName}` : "Join a voice channel to activate controls."}</small></article>
                 <article className="security-card"><span>Microphone</span><strong>{voiceSettingsSnapshot.muted ? "Muted" : "Unmuted"}</strong><small>Shortcut: Ctrl + Shift + M while connected.</small></article>

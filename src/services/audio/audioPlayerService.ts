@@ -1,6 +1,7 @@
 import type { AudioPlayableItem } from "../../types/audio";
 import { dataSourceService } from "../dataSourceService";
 import { podcastProgressService } from "./podcastProgressService";
+import { voiceDeviceService } from "../voiceDeviceService";
 
 export type AudioPlayerStatus = "idle" | "ready" | "loading" | "playing" | "paused" | "reconnecting" | "ended" | "error";
 export const PODCAST_PLAYBACK_RATES = [0.75, 1, 1.25, 1.5, 2] as const;
@@ -185,6 +186,13 @@ function failPlayback(message: string) {
   publish({ ...snapshot, status: "error", error: message });
 }
 
+async function applySelectedOutput(audio: HTMLAudioElement): Promise<void> {
+  const sinkAudio = audio as HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
+  const outputId = voiceDeviceService.getSnapshot().selectedOutputId;
+  if (!sinkAudio.setSinkId || outputId === "default") return;
+  try { await sinkAudio.setSinkId(outputId); } catch { /* Playback remains available on the operating-system default output. */ }
+}
+
 function scheduleReconnect() {
   const item = snapshot.item;
   if (!playRequested || !item?.isLive) return;
@@ -213,6 +221,7 @@ function ensureTransport(item: AudioPlayableItem): HTMLAudioElement | null {
   }
   const audio = new Audio(source);
   transport = audio;
+  void applySelectedOutput(audio);
   audio.preload = item.isLive ? "none" : "metadata";
   audio.loop = item.type === "radio_live" && dataSourceService.getStatus().isMock;
   audio.volume = snapshot.volume;
@@ -245,6 +254,10 @@ function ensureTransport(item: AudioPlayableItem): HTMLAudioElement | null {
   };
   return audio;
 }
+
+voiceDeviceService.subscribePreferences(() => {
+  if (transport) void applySelectedOutput(transport);
+});
 
 export const audioPlayerService = {
   getSnapshot: () => snapshot,
