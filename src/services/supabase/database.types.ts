@@ -552,13 +552,13 @@ export type Database = {
         Relationships: [];
       };
       podcast_series: {
-        Row: { id: string; community_id: string; title: string; description: string; cover_url: string | null; created_by: string; is_active: boolean; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string; title: string; description: string; cover_url: string | null; cover_storage_path: string | null; tags: string[]; created_by: string; is_active: boolean; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["podcast_series"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_series"]["Row"], "community_id" | "title" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["podcast_series"]["Row"]>;
         Relationships: [];
       };
       podcast_episodes: {
-        Row: { id: string; community_id: string; series_id: string | null; author_user_id: string; title: string; description: string; cover_url: string | null; audio_url: string | null; duration_seconds: number; status: "draft" | "published" | "archived"; published_at: string | null; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string; series_id: string | null; author_user_id: string; host_user_id: string | null; title: string; description: string; cover_url: string | null; cover_storage_path: string | null; audio_url: string | null; audio_storage_path: string | null; audio_mime_type: "audio/mpeg" | "audio/mp4" | "audio/ogg" | "audio/wav" | "audio/webm" | null; audio_size_bytes: number | null; duration_seconds: number; is_explicit: boolean; tags: string[]; status: "draft" | "published" | "archived"; published_at: string | null; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["podcast_episodes"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_episodes"]["Row"], "community_id" | "author_user_id" | "title">;
         Update: Partial<Database["public"]["Tables"]["podcast_episodes"]["Row"]>;
         Relationships: [];
@@ -570,9 +570,15 @@ export type Database = {
         Relationships: [];
       };
       podcast_episode_comments: {
-        Row: { id: string; episode_id: string; author_id: string | null; body: string; created_at: string; updated_at: string; deleted_at: string | null };
+        Row: { id: string; episode_id: string; author_id: string | null; reply_to_comment_id: string | null; body: string; created_at: string; updated_at: string; deleted_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["podcast_episode_comments"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_episode_comments"]["Row"], "episode_id" | "body">;
         Update: Partial<Database["public"]["Tables"]["podcast_episode_comments"]["Row"]>;
+        Relationships: [];
+      };
+      podcast_playback_progress: {
+        Row: { id: string; user_id: string; episode_id: string; position_seconds: number; duration_seconds: number; completed_at: string | null; last_played_at: string; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["podcast_playback_progress"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_playback_progress"]["Row"], "user_id" | "episode_id" | "position_seconds" | "duration_seconds">;
+        Update: Partial<Pick<Database["public"]["Tables"]["podcast_playback_progress"]["Row"], "position_seconds" | "duration_seconds" | "completed_at" | "last_played_at" | "updated_at">>;
         Relationships: [];
       };
       saved_audio_items: {

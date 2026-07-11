@@ -12,7 +12,8 @@ const requiredFiles = [
   "message_ownership_and_storage.sql",
   "direct_messages.sql",
   "verification_security.sql",
-  "community_lifecycle_management.sql"
+  "community_lifecycle_management.sql",
+  "podcast_full_mvp.sql"
 ];
 
 const requiredScenarioSnippets = [
@@ -37,7 +38,10 @@ const requiredScenarioSnippets = [
   "non-owner cannot transfer ownership",
   "ownership target must be a current member",
   "archived community is hidden from normal authenticated reads",
-  "archive retains child data for controlled recovery"
+  "archive retains child data for controlled recovery",
+  "draft podcast episodes remain private",
+  "playback progress belongs only to current user",
+  "podcast storage enforces episode ownership"
 ];
 
 function fail(message) {

@@ -126,6 +126,7 @@
     "radio:cross-surface:smoke": "node scripts/radio-cross-surface-integration-smoke.mjs",
     "radio:full-mvp:qa": "node scripts/radio-full-mvp-e2e-qa.mjs",
     "audio:podcast:smoke": "node scripts/audio-podcast-detail-smoke.mjs",
+    "podcast:data-model:smoke": "node scripts/podcast-full-mvp-data-model-smoke.mjs",
     "audio:schema:smoke": "node scripts/audio-schema-rls-smoke.mjs",
     "audio:service:smoke": "node scripts/audio-service-layer-smoke.mjs",
     "audio:mvp:qa": "node scripts/audio-mvp-final-qa.mjs",

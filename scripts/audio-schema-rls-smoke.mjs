@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 const migration = await readFile(new URL("../supabase/migrations/20260710251000_audio_radio_podcast_schema_rls.sql", import.meta.url), "utf8");
 const radioMigration = await readFile(new URL("../supabase/migrations/20260711000900_radio_full_mvp_data_model_storage.sql", import.meta.url), "utf8");
+const podcastMigration = await readFile(new URL("../supabase/migrations/20260711001600_podcast_full_mvp_data_model_storage.sql", import.meta.url), "utf8");
 for (const table of ["radio_sessions", "radio_listeners", "podcast_episodes", "podcast_episode_reactions", "podcast_episode_comments", "saved_audio_items"]) {
   if (!migration.includes(`create table if not exists public.${table}`)) throw new Error(`Missing ${table}`);
   if (!migration.includes(`alter table public.${table} enable row level security`)) throw new Error(`RLS not enabled for ${table}`);
@@ -18,4 +19,6 @@ if (!migration.includes("'podcast-audio', 'podcast-audio', false") || !migration
 if (migration.includes("service_role") || migration.includes("public, true")) throw new Error("Migration includes an unsafe secret/public storage pattern");
 if (!radioMigration.includes("'draft','scheduled','live','ended','cancelled'") || !radioMigration.includes("radio listeners private metadata")) throw new Error("Radio status or private listener contract is incomplete");
 if (!radioMigration.includes("can_view_radio_cover_object") || !radioMigration.includes("can_manage_radio_cover_object") || radioMigration.includes("radio-recordings")) throw new Error("Radio cover storage or recording scope is unsafe");
+for (const marker of ["podcast_playback_progress", "enforce_podcast_community_kind", "can_view_podcast_audio_object", "can_manage_podcast_cover_object", "audio_storage_path"]) if (!podcastMigration.includes(marker)) throw new Error(`Podcast Full MVP schema missing: ${marker}`);
+if (!podcastMigration.includes("alter table public.podcast_playback_progress enable row level security") || podcastMigration.includes("public, true")) throw new Error("Podcast progress RLS or storage privacy is unsafe");
 console.log("Audio schema, RLS helpers, indexes, and private storage policy smoke passed.");

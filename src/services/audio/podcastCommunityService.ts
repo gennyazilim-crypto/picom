@@ -19,7 +19,7 @@ function settingsFromRow(community: Community, row?: SettingsRow | null): Podcas
 }
 
 function seriesFromRow(row: SeriesRow): PodcastSeries {
-  return { id: row.id, communityId: row.community_id, title: row.title, description: row.description, coverUrl: row.cover_url ?? undefined, createdBy: row.created_by, isActive: row.is_active, createdAt: row.created_at };
+  return { id: row.id, communityId: row.community_id, title: row.title, description: row.description, coverUrl: row.cover_url ?? undefined, coverStoragePath: row.cover_storage_path ?? undefined, tags: row.tags, createdBy: row.created_by, isActive: row.is_active, createdAt: row.created_at };
 }
 
 function getPublisherUserIds(community: Community): string[] {
@@ -38,7 +38,7 @@ export const podcastCommunityService = {
     if (!client) return { ok: false, error: "Podcast publishing data is unavailable while Supabase is not configured." };
     const [settings, series] = await Promise.all([
       client.from("podcast_community_settings").select("community_id,about,listener_discussion_enabled,listener_discussion_channel_id,created_at,updated_at").eq("community_id", community.id).maybeSingle(),
-      client.from("podcast_series").select("id,community_id,title,description,cover_url,created_by,is_active,created_at,updated_at").eq("community_id", community.id).eq("is_active", true).order("created_at", { ascending: true }).limit(100),
+      client.from("podcast_series").select("id,community_id,title,description,cover_url,cover_storage_path,tags,created_by,is_active,created_at,updated_at").eq("community_id", community.id).eq("is_active", true).order("created_at", { ascending: true }).limit(100),
     ]);
     if (settings.error || series.error) return { ok: false, error: "Picom could not load the Podcast library structure." };
     return { ok: true, data: { settings: settingsFromRow(community, settings.data), episodes: episodes.data, series: (series.data ?? []).map(seriesFromRow), publisherUserIds: getPublisherUserIds(community) } };

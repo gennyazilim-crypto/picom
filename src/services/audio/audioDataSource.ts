@@ -213,15 +213,16 @@ function mapPodcast(
   });
   const visible = comments.filter((item) => item.episode_id === row.id && !item.deleted_at);
   return {
-    id: row.id, communityId: row.community_id, seriesId: row.series_id ?? undefined, authorUserId: row.author_user_id,
+    id: row.id, communityId: row.community_id, seriesId: row.series_id ?? undefined, authorUserId: row.author_user_id, hostUserId: row.host_user_id ?? undefined,
     title: row.title, description: row.description, coverUrl: row.cover_url ?? undefined,
-    audioUrl: row.audio_url ?? undefined, durationSeconds: row.duration_seconds,
-    publishedAt: row.published_at ?? row.created_at, tags: [], reactionSummary: [...grouped.values()],
+    coverStoragePath: row.cover_storage_path ?? undefined, audioUrl: row.audio_url ?? undefined, audioStoragePath: row.audio_storage_path ?? undefined,
+    audioMimeType: row.audio_mime_type ?? undefined, audioSizeBytes: row.audio_size_bytes ?? undefined, durationSeconds: row.duration_seconds,
+    publishedAt: row.published_at ?? row.created_at, tags: row.tags, reactionSummary: [...grouped.values()],
     commentPreview: visible.slice(0, 3).map((item) => ({
-      id: item.id, authorId: item.author_id ?? "deleted-user", body: item.body, createdAt: item.created_at,
+      id: item.id, authorId: item.author_id ?? "deleted-user", body: item.body, replyToCommentId: item.reply_to_comment_id ?? undefined, createdAt: item.created_at,
     })),
     commentCount: visible.length, listenerCount: 0,
-    isSavedByCurrentUser: savedIds.has(row.id), status: podcastStatus(row.status),
+    isSavedByCurrentUser: savedIds.has(row.id), isExplicit: row.is_explicit, status: podcastStatus(row.status),
   };
 }
 
@@ -286,9 +287,9 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
   const [radio, radioReactions, podcasts, reactions, comments, saved] = await Promise.all([
     client.from("radio_sessions").select("id,community_id,channel_id,program_id,host_user_id,title,description,status,starts_at,scheduled_end_at,actual_started_at,ended_at,listener_chat_channel_id,cover_url,cover_storage_path,stream_url,tags,is_featured,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
     client.from("radio_session_reactions").select("id,radio_session_id,user_id,emoji,created_at").limit(1000),
-    client.from("podcast_episodes").select("id,community_id,series_id,author_user_id,title,description,cover_url,audio_url,duration_seconds,status,published_at,created_at,updated_at").order("published_at", { ascending: false }).limit(200),
+    client.from("podcast_episodes").select("id,community_id,series_id,author_user_id,host_user_id,title,description,cover_url,cover_storage_path,audio_url,audio_storage_path,audio_mime_type,audio_size_bytes,duration_seconds,is_explicit,tags,status,published_at,created_at,updated_at").order("published_at", { ascending: false }).limit(200),
     client.from("podcast_episode_reactions").select("id,episode_id,user_id,emoji,created_at").limit(1000),
-    client.from("podcast_episode_comments").select("id,episode_id,author_id,body,created_at,updated_at,deleted_at").is("deleted_at", null).order("created_at", { ascending: false }).limit(600),
+    client.from("podcast_episode_comments").select("id,episode_id,author_id,reply_to_comment_id,body,created_at,updated_at,deleted_at").is("deleted_at", null).order("created_at", { ascending: false }).limit(600),
     client.from("saved_audio_items").select("id,user_id,item_type,item_id,created_at").limit(500),
   ]);
   if (radio.error || radioReactions.error || podcasts.error || reactions.error || comments.error || saved.error) {
@@ -302,7 +303,14 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
     return signed.data?.signedUrl ? { ...item, cover_url: signed.data.signedUrl } : item;
   }));
   const radioSessions = radioRows.map((item) => mapRadio(item, savedRadio, radioReactions.data ?? []));
-  const podcastEpisodes = (podcasts.data ?? []).map((item) => mapPodcast(item, reactions.data ?? [], comments.data ?? [], savedPodcasts));
+  const podcastRows = await Promise.all((podcasts.data ?? []).map(async (item) => {
+    let coverUrl = item.cover_url;
+    let audioUrl = item.audio_url;
+    if (item.cover_storage_path) { const signed = await client.storage.from("audio-covers").createSignedUrl(item.cover_storage_path, 3600); if (signed.data?.signedUrl) coverUrl = signed.data.signedUrl; }
+    if (item.audio_storage_path) { const signed = await client.storage.from("podcast-audio").createSignedUrl(item.audio_storage_path, 3600); if (signed.data?.signedUrl) audioUrl = signed.data.signedUrl; }
+    return { ...item, cover_url: coverUrl, audio_url: audioUrl };
+  }));
+  const podcastEpisodes = podcastRows.map((item) => mapPodcast(item, reactions.data ?? [], comments.data ?? [], savedPodcasts));
   return ok({ radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes) });
 }
 
@@ -622,7 +630,7 @@ export const audioDataSource = {
     const result = await client.rpc("remove_radio_session_host", { target_session_id: sessionId, target_user_id: userId });
     return result.error ? fail("AUDIO_REQUEST_FAILED", "This host removal is blocked by the common role hierarchy.") : ok(Boolean(result.data));
   },
-  async commentOnPodcastEpisode(id: string, body: string): Promise<AudioServiceResult<AudioCommentPreview>> {
+  async commentOnPodcastEpisode(id: string, body: string, replyToCommentId?: string): Promise<AudioServiceResult<AudioCommentPreview>> {
     const cleanBody = body.trim().slice(0, 4000);
     if (!cleanBody) return fail("AUDIO_VALIDATION_ERROR", "Comment text is required.");
     const source = await getPodcastCommunityId(id);
@@ -630,10 +638,12 @@ export const audioDataSource = {
     const kindGuard = await ensureCommunityKind(source.data, "podcast");
     if (!kindGuard.ok) return kindGuard;
     if (dataSourceService.getStatus().isMock) {
+      if (replyToCommentId && !localPodcasts.find((item) => item.id === id)?.commentPreview.some((comment) => comment.id === replyToCommentId)) return fail("AUDIO_VALIDATION_ERROR", "The Podcast comment being replied to is unavailable.");
       const comment: AudioCommentPreview = {
         id: `audio-comment-${crypto.randomUUID()}`,
         authorId: currentUserId,
         body: cleanBody,
+        replyToCommentId,
         createdAt: new Date().toISOString(),
       };
       localPodcasts = localPodcasts.map((item) => item.id === id
@@ -648,10 +658,11 @@ export const audioDataSource = {
     const result = await client.from("podcast_episode_comments").insert({
       episode_id: id,
       author_id: userId,
+      reply_to_comment_id: replyToCommentId ?? null,
       body: cleanBody,
     }).select().single();
     if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "Picom could not add this comment.");
     await refresh();
-    return ok({ id: result.data.id, authorId: result.data.author_id ?? userId, body: result.data.body, createdAt: result.data.created_at });
+    return ok({ id: result.data.id, authorId: result.data.author_id ?? userId, body: result.data.body, replyToCommentId: result.data.reply_to_comment_id ?? undefined, createdAt: result.data.created_at });
   },
 };

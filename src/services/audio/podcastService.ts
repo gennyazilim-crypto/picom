@@ -1,6 +1,7 @@
 import type { AudioPlayableItem } from "../../types/audio";
 import { audioDataSource } from "./audioDataSource";
 import { audioPlaybackCoordinatorService } from "./audioPlaybackCoordinatorService";
+import { podcastProgressService } from "./podcastProgressService";
 
 export const podcastService = {
   getCommunityPodcastEpisodes: (communityId: string) => audioDataSource.listPodcastEpisodes(communityId),
@@ -27,5 +28,8 @@ export const podcastService = {
   savePodcastEpisode: (id: string) => audioDataSource.setPodcastSaved(id, true),
   unsavePodcastEpisode: (id: string) => audioDataSource.setPodcastSaved(id, false),
   reactToPodcastEpisode: (id: string, emoji: string) => audioDataSource.reactToPodcastEpisode(id, emoji),
-  commentOnPodcastEpisode: (id: string, body: string) => audioDataSource.commentOnPodcastEpisode(id, body),
+  commentOnPodcastEpisode: (id: string, body: string, replyToCommentId?: string) => audioDataSource.commentOnPodcastEpisode(id, body, replyToCommentId),
+  getPlaybackProgress: (id: string) => podcastProgressService.get(id),
+  savePlaybackProgress: (id: string, positionSeconds: number, durationSeconds: number) => podcastProgressService.save({ episodeId: id, positionSeconds, durationSeconds }),
+  clearPlaybackProgress: (id: string) => podcastProgressService.clear(id),
 };

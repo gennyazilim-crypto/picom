@@ -60,6 +60,8 @@ export type PodcastSeries = Readonly<{
   title: string;
   description: string;
   coverUrl?: string;
+  coverStoragePath?: string;
+  tags?: readonly string[];
   createdBy: string;
   isActive: boolean;
   createdAt: string;
@@ -75,6 +77,7 @@ export type AudioCommentPreview = Readonly<{
   id: string;
   authorId: string;
   body: string;
+  replyToCommentId?: string;
   createdAt: string;
 }>;
 
@@ -150,10 +153,15 @@ export type PodcastEpisode = Readonly<{
   communityId: string;
   seriesId?: string;
   authorUserId: string;
+  hostUserId?: string;
   title: string;
   description: string;
   coverUrl?: string;
+  coverStoragePath?: string;
   audioUrl?: string;
+  audioStoragePath?: string;
+  audioMimeType?: "audio/mpeg" | "audio/mp4" | "audio/ogg" | "audio/wav" | "audio/webm";
+  audioSizeBytes?: number;
   durationSeconds: number;
   publishedAt: string;
   tags: readonly string[];
@@ -162,8 +170,17 @@ export type PodcastEpisode = Readonly<{
   commentCount: number;
   listenerCount: number;
   isSavedByCurrentUser: boolean;
-  isExplicit?: false;
+  isExplicit?: boolean;
   status: PodcastEpisodeStatus;
+}>;
+
+export type PodcastPlaybackProgress = Readonly<{
+  episodeId: string;
+  userId: string;
+  positionSeconds: number;
+  durationSeconds: number;
+  completedAt?: string;
+  lastPlayedAt: string;
 }>;
 
 export type PodcastCommunityShellSnapshot = Readonly<{
