@@ -1,5 +1,6 @@
 import type { MeetingCapabilities, MeetingConnectionQuality, MeetingLayoutMode, MeetingReactionKind, MeetingRole, MeetingSidePanel } from "./meeting";
 import type { MeetingRequestedSources } from "../services/livekit/meetingTokenTypes";
+import type { VerificationSummary } from "./verification";
 
 export type MeetingClientPhase =
   | "idle"
@@ -59,7 +60,11 @@ export type MeetingClientParticipant = Readonly<{
   userId?: string;
   identity: string;
   displayName: string;
+  username?: string;
+  avatarUrl?: string;
   role: MeetingRole;
+  communityRole?: Readonly<{ id: string; name: string }> | null;
+  verification?: VerificationSummary;
   presence: "invited" | "waiting" | "joining" | "connected" | "reconnecting" | "left" | "removed";
   isLocal: boolean;
   isSpeaking: boolean;

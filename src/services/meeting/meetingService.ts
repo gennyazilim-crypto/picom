@@ -25,13 +25,31 @@ function capabilities(role: MeetingRole, token?: Readonly<{ canPublishAudio:bool
 }
 
 function authoritativeParticipant(item: MeetingParticipantAuthority): MeetingClientParticipant {
-  return { id:item.participantId,userId:item.userId??undefined,identity:item.providerIdentity,displayName:item.displayName,role:item.meetingRole,presence:item.providerPresence,isLocal:false,isSpeaking:false,microphoneEnabled:item.tracks.some((track)=>track.source==="microphone"&&track.state==="published"),cameraEnabled:item.tracks.some((track)=>track.source==="camera"&&track.state==="published"),screenSharing:item.tracks.some((track)=>track.source==="screen_share"&&track.state==="published"),handRaised:item.handState.raised,connectionQuality:"unknown" };
+  return {
+    id: item.participantId,
+    userId: item.userId ?? undefined,
+    identity: item.providerIdentity,
+    displayName: item.displayName,
+    username: item.username ?? undefined,
+    avatarUrl: item.avatarUrl ?? undefined,
+    role: item.meetingRole,
+    communityRole: item.communityRole,
+    verification: item.verification,
+    presence: item.providerPresence,
+    isLocal: false,
+    isSpeaking: false,
+    microphoneEnabled: item.tracks.some((track) => track.source === "microphone" && track.state === "published"),
+    cameraEnabled: item.tracks.some((track) => track.source === "camera" && track.state === "published"),
+    screenSharing: item.tracks.some((track) => track.source === "screen_share" && track.state === "published"),
+    handRaised: item.handState.raised,
+    connectionQuality: "unknown",
+  };
 }
 
 function applyProviderParticipants(generation:number,snapshot:ReturnType<typeof meetingLiveKitAdapter.getSnapshot>):void {
   const current=meetingStore.getSnapshot(); if(current.generation!==generation)return;
   const byIdentity=new Map(current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean).map((participant)=>[participant.identity,participant]));
-  for(const item of snapshot.participants){const prior=byIdentity.get(item.identity);byIdentity.set(item.identity,{id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,role:prior?.role??current.role??"participant",presence:snapshot.status==="reconnecting"?"reconnecting":"connected",isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:prior?.cameraEnabled??false,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),handRaised:prior?.handRaised??false,connectionQuality:prior?.connectionQuality??"unknown"})}
+  for(const item of snapshot.participants){const prior=byIdentity.get(item.identity);byIdentity.set(item.identity,{id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,username:prior?.username,avatarUrl:prior?.avatarUrl,role:prior?.role??current.role??"participant",communityRole:prior?.communityRole,verification:prior?.verification,presence:snapshot.status==="reconnecting"?"reconnecting":"connected",isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:prior?.cameraEnabled??false,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),handRaised:prior?.handRaised??false,connectionQuality:prior?.connectionQuality??"unknown"})}
   meetingStore.replaceParticipants(generation,[...byIdentity.values()]);
 }
 
@@ -52,7 +70,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   }));
   sessionCleanups.push(meetingSignalService.start({roomId:request.roomId,sessionId:request.sessionId}));
   sessionCleanups.push(meetingSignalService.subscribeReactions((reaction)=>meetingStore.appendReaction(generation,{id:reaction.eventId,senderIdentity:reaction.senderIdentity,kind:reaction.kind,createdAt:reaction.sentAt,expiresAt:reaction.expiresAt})));
-  sessionCleanups.push(meetingSignalService.subscribeHandQueue(request.roomId,request.sessionId,{onSnapshot:(queue)=>{const current=meetingStore.getSnapshot();const local=current.participantIds.map((id)=>current.participantsById[id]).find((participant)=>participant?.isLocal);const hand=queue.entries.find((entry)=>entry.participantId===local?.id);meetingStore.patch(generation,{handRaised:hand?.handRaised??false});},onStatus:(realtimeStatus)=>meetingStore.patch(generation,{realtimeStatus}),onError:(message)=>meetingStore.patch(generation,{error:fail("MEETING_PROVIDER_ERROR",message,true)})}));
+  sessionCleanups.push(meetingSignalService.subscribeHandQueue(request.roomId,request.sessionId,{onSnapshot:(queue)=>{const current=meetingStore.getSnapshot();const participants=current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean);const handByParticipant=new Map(queue.entries.map((entry)=>[entry.participantId,entry.handRaised]));const next=participants.map((participant)=>handByParticipant.has(participant.id)?{...participant,handRaised:handByParticipant.get(participant.id)??false}:participant);const local=next.find((participant)=>participant.isLocal);meetingStore.replaceParticipants(generation,next);meetingStore.patch(generation,{handRaised:local?.handRaised??false});},onStatus:(realtimeStatus)=>meetingStore.patch(generation,{realtimeStatus}),onError:(message)=>meetingStore.patch(generation,{error:fail("MEETING_PROVIDER_ERROR",message,true)})}));
   sessionCleanups.push(voiceDeviceService.subscribe((devices)=>meetingStore.patch(generation,{localDevices:{inputId:devices.selectedInputId,outputId:devices.selectedOutputId,permission:devices.permission}})));
 }
 

@@ -23,10 +23,10 @@ export function MeetingWorkspace() {
     <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} />
     <div className="meeting-workspace__body">
       <main className="meeting-workspace__canvas">
-        {snapshot.phase==="prejoin"?<MeetingPreJoin />:<MeetingStage snapshot={snapshot} onFocusParticipant={(id)=>meetingService.setFocus(id)} />}
+        {snapshot.phase==="prejoin"?<MeetingPreJoin />:<MeetingStage snapshot={snapshot} onFocusParticipant={(id)=>meetingService.setFocus(id)} onOpenPeople={()=>meetingService.setRightDock("people")} />}
         <MeetingWorkspaceStatusSurface snapshot={snapshot} onRetry={()=>{void meetingService.retry()}} onLeave={()=>{void meetingService.leave()}} />
       </main>
-      {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onClose={()=>meetingService.setRightDock("none")} />:null}
+      {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={(id)=>meetingService.setFocus(id)} onClose={()=>meetingService.setRightDock("none")} />:null}
     </div>
     <MeetingControlDock snapshot={snapshot} focusMode={focusMode} onToggleMute={()=>{void meetingService.setMuted(!snapshot.localMedia.muted)}} onToggleDeafen={()=>meetingService.setDeafened(!snapshot.localMedia.deafened)} onCycleLayout={cycleLayout} onToggleDock={toggleDock} onToggleFocus={toggleFocus} onLeave={()=>{void meetingService.leave()}} />
   </section>;
