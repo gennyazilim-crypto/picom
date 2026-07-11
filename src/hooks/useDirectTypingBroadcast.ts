@@ -26,7 +26,7 @@ export function useDirectTypingBroadcast(input: Input) {
     }
     const status = getSupabaseClientStatus(); const client = getSupabaseClient(); if (!status.configured || !client) { window.clearInterval(cleanupTimer); setConnectionStatus("disconnected"); return; }
     let connected = false; setConnectionStatus("connecting");
-    const channel = client.channel(realtimeChannelNames.directMessages(input.conversationId), { config: { private: true, broadcast: { self: false } } })
+    const channel = client.channel(realtimeChannelNames.directTyping(input.conversationId), { config: { private: true, broadcast: { self: false } } })
       .on("broadcast", { event: "typing" }, ({ payload }) => { const value = payload as Partial<TypingPayload>; if (typeof value.userId === "string" && typeof value.displayName === "string" && typeof value.isTyping === "boolean" && typeof value.sentAt === "number") receive(value as TypingPayload); })
       .subscribe((value) => { const next = mapRealtimeSubscriptionStatus(value, connected); if (next === "connected") { connected = true; subscribedRef.current = true; } if (next) setConnectionStatus(next); });
     channelRef.current = channel;

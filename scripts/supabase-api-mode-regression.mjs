@@ -96,6 +96,10 @@ try {
   assertContains("src/services/uploadService.ts", "await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).remove([storagePath])", "canceled Text upload cleanup path");
   assertContains("src/services/communityBrandingService.ts", "options.signal?.aborted", "community branding cancel-safe upload path");
   assertContains("scripts/cleanup-orphaned-uploads.mjs", '.rpc("list_storage_orphan_candidates"', "operator-only orphan inventory path");
+  assertContains("src/services/supabase/supabaseClient.ts", 'event === "TOKEN_REFRESHED"', "Realtime token refresh synchronization");
+  assertContains("src/services/supabase/realtimeService.ts", "communityMessages", "canonical community-wide Realtime topic");
+  assertContains("src/services/supabase/realtimeService.ts", "directTyping", "canonical DM typing topic");
+  assertContains("src/services/supabase/realtimeDiagnosticsService.ts", "duplicateChannelCount", "bounded Realtime subscription diagnostics");
   assertContains(".env.example", "VITE_SUPABASE_URL", "Supabase URL env example");
   assertContains(".env.example", "VITE_SUPABASE_ANON_KEY", "Supabase anon key env example");
   assertContains(".env.example", "SUPABASE_SERVICE_ROLE_KEY", "server-only service role env documentation");

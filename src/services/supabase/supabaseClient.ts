@@ -45,5 +45,13 @@ export function getSupabaseClient(): SupabaseClient<Database> | null {
     },
   });
 
+  const configuredClient = client;
+  configuredClient.auth.onAuthStateChange((event, session) => {
+    if (session?.access_token && (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED")) {
+      void configuredClient.realtime.setAuth(session.access_token);
+    }
+    if (event === "SIGNED_OUT") void configuredClient.removeAllChannels();
+  });
+
   return client;
 }

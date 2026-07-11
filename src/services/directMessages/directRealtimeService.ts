@@ -52,7 +52,7 @@ export function subscribeToActiveDirectConversation(input: ActiveSubscribeInput)
     if (canceled) return;
     if (membership.error || !membership.data || messages.error) { input.onStatus("disconnected"); return; }
     const messageIds = new Set((messages.data ?? []).map((message) => message.id)); let connected = false;
-    channel = client.channel(`${realtimeChannelNames.directMessages(input.conversationId)}:active`)
+    channel = client.channel(realtimeChannelNames.directActive(input.conversationId))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `conversation_id=eq.${input.conversationId}` }, (payload) => { const message = mapDirectMessageRow(payload.new as DirectMessageRow); messageIds.add(message.id); guard.dispatch({ type: "direct_message:insert", message }); })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "direct_messages", filter: `conversation_id=eq.${input.conversationId}` }, (payload) => guard.dispatch({ type: "direct_message:update", message: mapDirectMessageRow(payload.new as DirectMessageRow) }))
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "direct_messages", filter: `conversation_id=eq.${input.conversationId}` }, (payload) => { const row = payload.old as Partial<DirectMessageRow>; if (row.id) { messageIds.delete(row.id); guard.dispatch({ type: "direct_message:delete", conversationId: input.conversationId, messageId: row.id }); } })
@@ -72,7 +72,7 @@ export function subscribeToDirectConversationList(input: ListSubscribeInput): ()
   const clientStatus = getSupabaseClientStatus(); const client = getSupabaseClient();
   if (!clientStatus.configured || !client) { input.onStatus("disconnected"); return () => undefined; }
   let connected = false; input.onStatus("connecting");
-  const channel = client.channel(`dm:list:${input.currentUserId}`)
+  const channel = client.channel(realtimeChannelNames.directList(input.currentUserId))
     .on("postgres_changes", { event: "*", schema: "public", table: "direct_conversations" }, (payload) => { const row = (payload.new && Object.keys(payload.new).length ? payload.new : payload.old) as Partial<DirectConversationRow>; if (row.id) guard.dispatch({ type: "direct_conversation:changed", conversationId: row.id }); })
     .on("postgres_changes", { event: "*", schema: "public", table: "direct_conversation_participants", filter: `user_id=eq.${input.currentUserId}` }, (payload) => { const row = (payload.new && Object.keys(payload.new).length ? payload.new : payload.old) as Partial<DirectParticipantRow>; if (row.conversation_id) guard.dispatch({ type: "direct_conversation:changed", conversationId: row.conversation_id }); })
     .subscribe((value) => { const next = mapRealtimeSubscriptionStatus(value, connected); if (next === "connected") connected = true; if (next) input.onStatus(next); });

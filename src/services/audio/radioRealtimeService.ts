@@ -1,6 +1,6 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { dataSourceService } from "../dataSourceService";
-import { createRealtimeEventDeduper, mapRealtimeSubscriptionStatus, type RealtimeConnectionStatus } from "../supabase/realtimeService";
+import { createRealtimeEventDeduper, mapRealtimeSubscriptionStatus, realtimeChannelNames, type RealtimeConnectionStatus } from "../supabase/realtimeService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
 
 export type RadioRealtimeTable = "radio_sessions" | "radio_listeners" | "radio_session_reactions" | "radio_program_schedules" | "radio_program_hosts" | "radio_session_hosts";
@@ -48,7 +48,7 @@ function startSupabaseTransport(): () => void {
     const localGeneration = ++generation;
     let hasConnected = false;
     emitStatus(attempt > 0 ? "reconnecting" : "connecting");
-    let nextChannel = client.channel(`radio:catalog:${localGeneration}:${Date.now()}`);
+    let nextChannel = client.channel(realtimeChannelNames.radioCatalog(localGeneration));
     for (const table of tables) {
       nextChannel = nextChannel.on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
         if (canceled || generation !== localGeneration) return;

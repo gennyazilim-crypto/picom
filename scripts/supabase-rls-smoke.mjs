@@ -20,6 +20,7 @@ const requiredFiles = [
   "friends_dm_production_integration.sql",
   "feed_mentions_production_integration.sql",
   "storage_lifecycle_full_mvp.sql",
+  "realtime_presence_typing_full_mvp.sql",
 ];
 
 const requiredScenarioSnippets = [
@@ -74,6 +75,9 @@ const requiredScenarioSnippets = [
   "cross-user private DM objects require participant visibility",
   "cross-user private audio objects require source visibility",
   "orphan inventory is service-role only",
+  "unauthorized Realtime topics are denied",
+  "DM typing requires active participant",
+  "private channel topics use mature role permissions",
 ];
 
 function fail(message) {

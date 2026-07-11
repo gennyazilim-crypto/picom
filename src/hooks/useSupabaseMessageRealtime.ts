@@ -142,7 +142,7 @@ export function useSupabaseMessageRealtime({
     const isCurrentSubscription = () => !canceled && subscriptionGenerationRef.current === generation;
 
     const channel = client
-      .channel(realtimeChannelNames.messages(communityId, subscribeCommunityWide ? "all-visible-channels" : channelId))
+      .channel(subscribeCommunityWide ? realtimeChannelNames.communityMessages(communityId) : realtimeChannelNames.messages(communityId, channelId))
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: insertFilter },

@@ -1,5 +1,6 @@
 import { dataSourceService } from "../dataSourceService";
 import { getSupabaseClient } from "../supabase/supabaseClient";
+import { realtimeChannelNames } from "../supabase/realtimeService";
 
 export type FeedRealtimeStatus = "idle" | "connecting" | "connected" | "reconnecting" | "disconnected" | "error";
 export type FeedRealtimeEvent = Readonly<{
@@ -71,7 +72,7 @@ export const feedRealtimeService = {
     };
 
     setStatus("connecting");
-    const channel = client.channel(`feed:${data.user.id}`);
+    const channel = client.channel(realtimeChannelNames.feed(data.user.id));
     for (const table of tables) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
         schedule({ reason: "change", table, eventType: payload.eventType, sourceId: sourceIdFor(table, payload) });

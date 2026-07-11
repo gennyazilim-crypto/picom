@@ -30,10 +30,18 @@ export type RealtimeEventOrderingDecision = Readonly<{
 
 export const realtimeChannelNames = {
   messages: (communityId: string, channelId: string) => `room:community:${communityId}:channel:${channelId}`,
+  communityMessages: (communityId: string) => `room:community:${communityId}:all-visible-channels`,
   presence: (communityId: string) => `presence:community:${communityId}`,
   typing: (communityId: string, channelId: string) => `typing:community:${communityId}:channel:${channelId}`,
   directMessages: (conversationId: string) => `dm:conversation:${conversationId}`,
+  directTyping: (conversationId: string) => `dm:conversation:${conversationId}`,
+  directActive: (conversationId: string) => `dm:data:conversation:${conversationId}:active`,
+  directList: (userId: string) => `dm:list:${userId}`,
   directReactions: (userId: string) => `dm:reactions:${userId}`,
+  friendPresence: (userId: string) => `friend-presence:${userId}`,
+  feed: (userId: string) => `feed:${userId}`,
+  radioCatalog: (generation: number) => `radio:catalog:${generation}`,
+  podcastCatalog: (generation: number) => `podcast:catalog:${generation}`,
 } as const;
 
 export function mapRealtimeSubscriptionStatus(status: string, hasConnected: boolean): RealtimeConnectionStatus | null {

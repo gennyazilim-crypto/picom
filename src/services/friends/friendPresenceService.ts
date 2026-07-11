@@ -2,10 +2,14 @@ import { mockFriendState } from "../../data/mockFriends";
 import type { UserStatus } from "../../types/community";
 import { dataSourceService } from "../dataSourceService";
 import { getSupabaseClient } from "../supabase/supabaseClient";
+import { realtimeChannelNames } from "../supabase/realtimeService";
 
 export type FriendPresence = Readonly<{ status: UserStatus; statusText: string }>;
 export type FriendPresenceSnapshot = Readonly<Record<string, FriendPresence>>;
 export type FriendPresenceOptions = Readonly<{ sharePresence: boolean; ownStatus: UserStatus }>;
+
+let activePresenceSubscriptions = 0;
+let pendingOfflineTimer: ReturnType<typeof setTimeout> | null = null;
 
 function safePresence(status: unknown): FriendPresence {
   if (status === "online") return { status: "online", statusText: "Online" };
@@ -44,7 +48,10 @@ async function subscribe(
 
   const auth = await authenticatedClient();
   if (!auth) return () => undefined;
+  activePresenceSubscriptions += 1;
+  if (pendingOfflineTimer) { clearTimeout(pendingOfflineTimer); pendingOfflineTimer = null; }
   let active = true;
+  let released = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   const ownStatus = safePresence(options.ownStatus).status;
   const publishOwnPresence = (status: UserStatus, sharePresence = options.sharePresence) =>
@@ -65,7 +72,7 @@ async function subscribe(
   await publishOwnPresence(ownStatus);
   await refresh();
   const channel = normalizedIds.length
-    ? auth.client.channel(`friend-presence:${auth.userId}`).on(
+    ? auth.client.channel(realtimeChannelNames.friendPresence(auth.userId)).on(
       "postgres_changes",
       { event: "*", schema: "public", table: "friend_presence", filter: `user_id=in.(${normalizedIds.join(",")})` },
       scheduleRefresh,
@@ -74,11 +81,19 @@ async function subscribe(
   const heartbeat = setInterval(() => { void publishOwnPresence(ownStatus); }, 45_000);
 
   return () => {
+    if (released) return;
+    released = true;
     active = false;
     clearInterval(heartbeat);
     if (refreshTimer) clearTimeout(refreshTimer);
     if (channel) void auth.client.removeChannel(channel);
-    void publishOwnPresence("offline", false);
+    activePresenceSubscriptions = Math.max(0, activePresenceSubscriptions - 1);
+    if (activePresenceSubscriptions === 0) {
+      pendingOfflineTimer = setTimeout(() => {
+        pendingOfflineTimer = null;
+        if (activePresenceSubscriptions === 0) void publishOwnPresence("offline", false);
+      }, 400);
+    }
   };
 }
 

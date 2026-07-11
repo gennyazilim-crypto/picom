@@ -1,6 +1,6 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { dataSourceService } from "../dataSourceService";
-import { createRealtimeEventDeduper, mapRealtimeSubscriptionStatus, type RealtimeConnectionStatus } from "../supabase/realtimeService";
+import { createRealtimeEventDeduper, mapRealtimeSubscriptionStatus, realtimeChannelNames, type RealtimeConnectionStatus } from "../supabase/realtimeService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
 
 export type PodcastRealtimeTable = "podcast_episodes" | "podcast_episode_reactions" | "podcast_episode_comments" | "saved_audio_items" | "podcast_playback_progress";
@@ -35,7 +35,7 @@ function startSupabaseTransport(): () => void {
     const localGeneration = ++generation;
     let hasConnected = false;
     emitStatus(attempt > 0 ? "reconnecting" : "connecting");
-    let nextChannel = client.channel(`podcast:catalog:${localGeneration}:${Date.now()}`);
+    let nextChannel = client.channel(realtimeChannelNames.podcastCatalog(localGeneration));
     for (const table of tables) {
       nextChannel = nextChannel.on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
         if (canceled || generation !== localGeneration) return;

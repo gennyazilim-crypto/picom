@@ -5,6 +5,8 @@ const service = readFileSync("src/services/supabase/realtimeService.ts", "utf8")
 const messageHook = readFileSync("src/hooks/useSupabaseMessageRealtime.ts", "utf8");
 const typingHook = readFileSync("src/hooks/useSupabaseTypingBroadcast.ts", "utf8");
 const presenceHook = readFileSync("src/hooks/useSupabasePresenceChannel.ts", "utf8");
+const directTypingHook = readFileSync("src/hooks/useDirectTypingBroadcast.ts", "utf8");
+const authorization = readFileSync("supabase/migrations/20260711151500_realtime_presence_typing_full_mvp.sql", "utf8");
 
 const checks = [
   [runner.includes("STAGING_ONLY") && runner.includes("service[_-]?role"), "staging-only public-key guard"],
@@ -17,6 +19,8 @@ const checks = [
   [messageHook.includes("client.removeChannel(channel)"), "message hook cleanup"],
   [typingHook.includes("client.removeChannel(channel)"), "typing hook cleanup"],
   [presenceHook.includes("client.removeChannel(channel)") && presenceHook.includes("channel.untrack()"), "presence cleanup"],
+  [directTypingHook.includes("realtimeChannelNames.directTyping") && authorization.includes("dm:conversation:"), "authorized private DM typing topic"],
+  [authorization.includes("all-visible-channels") && authorization.includes("viewPrivateChannels"), "community-wide and private-channel topic authorization"],
 ];
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);
 if (failed.length) throw new Error(`Realtime staging contract failed: ${failed.join(", ")}`);
