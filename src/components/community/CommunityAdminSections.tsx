@@ -7,7 +7,8 @@ import { dateTimeService } from "../../services/dateTimeService";
 import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
-import { communityService, type CommunitySummary } from "../../services/communityService";
+import type { CommunitySummary } from "../../services/communityService";
+import { CommunitySettingsEditor } from "./CommunitySettingsEditor";
 
 const CommunityRoleManagement = lazy(() => import("./CommunityRoleManagement").then((module) => ({ default: module.CommunityRoleManagement })));
 const CommunityMemberRoleAssignment = lazy(() => import("./CommunityMemberRoleAssignment").then((module) => ({ default: module.CommunityMemberRoleAssignment })));
@@ -53,22 +54,7 @@ export function CommunityAdminOverview({ community, access }: { community: Commu
 }
 
 export function CommunitySettingsSection({ community, access, onUpdated }: { community: Community; access: CommunityAccess; onUpdated: (community: CommunitySummary) => void }) {
-  const [name, setName] = useState(community.name);
-  const [description, setDescription] = useState(community.description ?? "");
-  const [iconUrl, setIconUrl] = useState(/^https:\/\//i.test(community.icon) ? community.icon : "");
-  const [visibility, setVisibility] = useState<"public" | "private">(community.visibility ?? "private");
-  const [publicReadEnabled, setPublicReadEnabled] = useState(community.publicReadEnabled ?? false);
-  const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const save = async () => {
-    if (!access.permissions.includes("manageCommunity")) return;
-    setSaving(true); setNotice(null);
-    const result = await communityService.updateCommunitySettings({ id: community.id, name, description, iconUrl, visibility, publicReadEnabled: visibility === "public" && publicReadEnabled });
-    if (result.ok) { onUpdated(result.data); setNotice("Community settings saved."); }
-    else setNotice(result.error.message);
-    setSaving(false);
-  };
-  return <SectionShell eyebrow="Community identity" title="Community settings" description="Owner and admin changes are validated and permission-enforced by the backend."><div className="community-settings-form"><label><span>Name</span><input value={name} maxLength={80} onChange={(event) => setName(event.target.value)} /></label><label><span>Description</span><textarea rows={4} maxLength={500} value={description} onChange={(event) => setDescription(event.target.value)} /></label><label><span>Icon URL placeholder</span><input type="url" value={iconUrl} maxLength={2048} placeholder="https://..." onChange={(event) => setIconUrl(event.target.value)} /></label><label><span>Visibility</span><select value={visibility} onChange={(event) => { const next = event.target.value as "public" | "private"; setVisibility(next); if (next === "private") setPublicReadEnabled(false); }}><option value="public">Public</option><option value="private">Private</option></select></label><label className="moderation-filter-toggle"><input type="checkbox" checked={publicReadEnabled} disabled={visibility === "private"} onChange={(event) => setPublicReadEnabled(event.target.checked)} /><span>Allow visitors to read public channels</span></label>{notice ? <p className="community-settings-notice" role="status">{notice}</p> : null}<button type="button" disabled={!access.permissions.includes("manageCommunity") || !name.trim() || saving} onClick={() => void save()}><AppIcon name="send" size="sm" /> {saving ? "Saving..." : "Save changes"}</button></div></SectionShell>;
+  return <SectionShell eyebrow="Community identity" title="Community settings" description="Branding, join rules, visibility, notifications, and type defaults are validated and audited by the backend."><CommunitySettingsEditor community={community} access={access} onUpdated={onUpdated} /></SectionShell>;
 }
 
 export function CommunityChannelsSection({ community, onCreateChannel }: { community: Community; onCreateChannel: (categoryId: string) => void }) {

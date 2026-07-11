@@ -303,6 +303,7 @@
     "community:role-management:smoke": "node scripts/community-role-management-ui-smoke.mjs",
     "community:member-roles:smoke": "node scripts/member-multi-role-assignment-smoke.mjs",
     "community:settings:persistence:test": "node scripts/community-settings-persistence-test.mjs",
+    "community:settings-branding:full:smoke": "node scripts/community-settings-branding-full-smoke.mjs",
     "realtime:load:simulate": "node scripts/realtime-load-simulation.mjs",
     "realtime:load:smoke": "node scripts/realtime-load-simulation-smoke-test.mjs",
     "realtime:backpressure:smoke": "node scripts/realtime-backpressure-smoke-test.mjs",

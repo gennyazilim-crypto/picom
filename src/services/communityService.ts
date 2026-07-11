@@ -3,6 +3,9 @@ import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseC
 import { getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow } from "./communityListQuery";
 import { isCommunityTemplateId } from "../data/communityTemplates";
 import { isCommunityKind, type CommunityKind } from "../types/community";
+import type { CommunityRule } from "../types/communityRules";
+import { getDefaultCommunityTypeSettings, isValidCommunityTypeSettings, type CommunityNotificationLevel, type CommunityTypeSettings } from "../types/communitySettings";
+import { communityRulesService } from "./communityRulesService";
 
 export type CommunitySummary = Readonly<{
   id: string;
@@ -11,9 +14,12 @@ export type CommunitySummary = Readonly<{
   name: string;
   description: string | null;
   iconUrl: string | null;
+  bannerUrl: string | null;
   accentColor: string;
   visibility: "public" | "private";
   publicReadEnabled: boolean;
+  defaultNotificationLevel: CommunityNotificationLevel;
+  typeSettings: CommunityTypeSettings;
   rulesEnabled: boolean;
   rulesVersion: string;
   templateId?: string | null;
@@ -27,9 +33,15 @@ export type CreateCommunityInput = Readonly<{
   kind?: CommunityKind;
   description?: string | null;
   iconUrl?: string | null;
+  bannerUrl?: string | null;
   accentColor?: string;
   visibility?: "public" | "private";
   publicReadEnabled?: boolean;
+  defaultNotificationLevel?: CommunityNotificationLevel;
+  rulesEnabled?: boolean;
+  rulesVersion?: string;
+  typeSettings?: CommunityTypeSettings;
+  rules?: readonly CommunityRule[];
   templateId?: string | null;
 }>;
 
@@ -38,9 +50,15 @@ export type UpdateCommunityInput = Readonly<{
   name?: string;
   description?: string | null;
   iconUrl?: string | null;
+  bannerUrl?: string | null;
   accentColor?: string;
   visibility?: "public" | "private";
   publicReadEnabled?: boolean;
+  defaultNotificationLevel?: CommunityNotificationLevel;
+  rulesEnabled?: boolean;
+  rulesVersion?: string;
+  typeSettings?: CommunityTypeSettings;
+  rules?: readonly CommunityRule[];
 }>;
 
 export type CommunityServiceErrorCode =
@@ -64,6 +82,10 @@ export type CommunityServiceResult<T> =
 
 function cleanName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
+}
+
+function isSafeBrandUrl(value: string): boolean {
+  return /^https:\/\//i.test(value) || /^data:image\/(?:png|jpeg|webp);base64,/i.test(value);
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -96,6 +118,17 @@ function validateCreateInput(input: CreateCommunityInput): CommunityServiceError
     const iconUrl = input.iconUrl.trim();
     if (iconUrl.length > 2048 || !/^https:\/\//i.test(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a valid HTTPS URL." };
   }
+
+  if (input.bannerUrl) {
+    const bannerUrl = input.bannerUrl.trim();
+    if ((!bannerUrl.startsWith("data:image/") && bannerUrl.length > 2048) || !isSafeBrandUrl(bannerUrl)) return { code: "VALIDATION_ERROR", message: "Community banner must be a controlled HTTPS image upload." };
+  }
+
+  if (input.defaultNotificationLevel && !["all", "mentions", "none"].includes(input.defaultNotificationLevel)) return { code: "VALIDATION_ERROR", message: "Choose a supported default notification level." };
+  if (input.typeSettings && !isValidCommunityTypeSettings(input.typeSettings.kind, input.typeSettings)) return { code: "VALIDATION_ERROR", message: "Community type settings are invalid." };
+  if (input.rulesVersion !== undefined && !/^[a-zA-Z0-9._-]{1,32}$/.test(input.rulesVersion)) return { code: "VALIDATION_ERROR", message: "Rules version must use 1-32 safe characters." };
+  if (input.rules && (input.rules.length > 10 || input.rules.some((rule) => !rule.title.trim() || rule.title.trim().length > 120 || !rule.body.trim() || rule.body.trim().length > 2000))) return { code: "VALIDATION_ERROR", message: "Add up to 10 complete rules with valid titles and text." };
+  if (input.rulesEnabled && !input.rules?.length) return { code: "VALIDATION_ERROR", message: "Publish at least one rule before requiring acceptance." };
 
   if (input.visibility !== undefined && input.visibility !== "public" && input.visibility !== "private") return { code: "VALIDATION_ERROR", message: "Community visibility must be public or private." };
   if (input.publicReadEnabled !== undefined && typeof input.publicReadEnabled !== "boolean") return { code: "VALIDATION_ERROR", message: "Public read policy must be enabled or disabled." };
@@ -226,9 +259,12 @@ export const communityService = {
         name,
         description: input.description?.trim() || null,
         iconUrl,
+        bannerUrl: null,
         accentColor: input.accentColor ?? "#007571",
         visibility,
         publicReadEnabled,
+        defaultNotificationLevel: "mentions",
+        typeSettings: getDefaultCommunityTypeSettings(kind),
         rulesEnabled: true,
         rulesVersion: "1",
         templateId,
@@ -316,7 +352,7 @@ export const communityService = {
         ...insertPayload,
         kind,
       })
-      .select("id, kind, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at")
+      .select("id, kind, owner_id, name, description, icon_url, banner_url, accent_color, visibility, public_read_enabled, default_notification_level, type_settings, rules_enabled, rules_version, created_at, updated_at")
       .single();
 
     if (!currentResult.error && currentResult.data) {
@@ -335,20 +371,25 @@ export const communityService = {
 
     if (dataSource.isMock) {
       const now = new Date().toISOString();
+      const kind = input.typeSettings?.kind ?? getMockCommunityKind(input.id);
+      if (input.rules) communityRulesService.saveMockRules(input.id, input.rules);
       return {
         ok: true,
         data: {
           id: input.id,
-          kind: getMockCommunityKind(input.id),
+          kind,
           ownerId: "mock-current-user",
           name: nextName ?? "Mock community",
           description: input.description?.trim() || null,
           iconUrl: input.iconUrl?.trim() || null,
+          bannerUrl: input.bannerUrl?.trim() || null,
           accentColor: input.accentColor ?? "#007571",
           visibility: input.visibility ?? "public",
           publicReadEnabled: input.visibility === "private" ? false : input.publicReadEnabled ?? true,
-          rulesEnabled: false,
-          rulesVersion: "1",
+          defaultNotificationLevel: input.defaultNotificationLevel ?? "mentions",
+          typeSettings: input.typeSettings ?? getDefaultCommunityTypeSettings(kind),
+          rulesEnabled: input.rulesEnabled ?? false,
+          rulesVersion: input.rulesVersion ?? "1",
           createdAt: now,
           updatedAt: now,
         },
@@ -363,8 +404,14 @@ export const communityService = {
       next_name: nextName ?? null,
       next_description: input.description === undefined ? null : input.description?.trim() || null,
       next_icon_url: input.iconUrl === undefined ? null : input.iconUrl?.trim() || null,
+      next_banner_url: input.bannerUrl === undefined ? null : input.bannerUrl?.trim() || null,
       next_visibility: input.visibility ?? null,
       next_public_read_enabled: input.publicReadEnabled ?? null,
+      next_default_notification_level: input.defaultNotificationLevel ?? null,
+      next_rules_enabled: input.rulesEnabled ?? null,
+      next_rules_version: input.rulesVersion ?? null,
+      next_type_settings: input.typeSettings ?? null,
+      next_rules: input.rules?.map((rule) => ({ title: rule.title.trim(), body: rule.body.trim(), required: rule.required })) ?? null,
     });
     const row = data?.[0];
     if (error || !row) {

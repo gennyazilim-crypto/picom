@@ -42,9 +42,12 @@ export type Database = {
           name: string;
           description: string | null;
           icon_url: string | null;
+          banner_url: string | null;
           accent_color: string;
           visibility: "public" | "private";
           public_read_enabled: boolean;
+          default_notification_level: "all" | "mentions" | "none";
+          type_settings: Json;
           rules_enabled: boolean;
           rules_version: string;
           discovery_listed: boolean;
@@ -531,7 +534,7 @@ export type Database = {
         Relationships: [];
       };
       radio_community_settings: {
-        Row: { community_id: string; schedule_timezone: string; listener_chat_enabled: boolean; listener_chat_channel_id: string | null; announcements_enabled: boolean; created_at: string; updated_at: string };
+        Row: { community_id: string; schedule_timezone: string; listener_chat_enabled: boolean; listener_chat_channel_id: string | null; announcements_enabled: boolean; default_host_role: "owner" | "host"; schedule_visibility: "public" | "members"; listener_rules: string; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_community_settings"]["Row"]> & Pick<Database["public"]["Tables"]["radio_community_settings"]["Row"], "community_id">;
         Update: Partial<Database["public"]["Tables"]["radio_community_settings"]["Row"]>;
         Relationships: [];
@@ -603,7 +606,7 @@ export type Database = {
         Relationships: [];
       };
       podcast_community_settings: {
-        Row: { community_id: string; about: string; listener_discussion_enabled: boolean; listener_discussion_channel_id: string | null; created_at: string; updated_at: string };
+        Row: { community_id: string; about: string; listener_discussion_enabled: boolean; listener_discussion_channel_id: string | null; default_publisher_role: "owner" | "publisher"; comments_enabled: boolean; explicit_content_default: boolean; comment_rules: string; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["podcast_community_settings"]["Row"]> & Pick<Database["public"]["Tables"]["podcast_community_settings"]["Row"], "community_id">;
         Update: Partial<Database["public"]["Tables"]["podcast_community_settings"]["Row"]>;
         Relationships: [];
@@ -807,7 +810,7 @@ export type Database = {
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string; joined_at: string }>;
       };
       update_community_settings: {
-        Args: { target_community_id: string; next_name: string | null; next_description: string | null; next_icon_url: string | null; next_visibility: "public" | "private" | null; next_public_read_enabled: boolean | null };
+        Args: { target_community_id: string; next_name: string | null; next_description: string | null; next_icon_url: string | null; next_banner_url: string | null; next_visibility: "public" | "private" | null; next_public_read_enabled: boolean | null; next_default_notification_level: "all" | "mentions" | "none" | null; next_rules_enabled: boolean | null; next_rules_version: string | null; next_type_settings: Json | null; next_rules: Json | null };
         Returns: Array<Database["public"]["Tables"]["communities"]["Row"]>;
       };
       create_community_invite: { Args: { target_community_id: string; target_max_uses?: number | null; target_expires_at?: string | null; target_campaign_label?: string | null }; Returns: Array<Database["public"]["Tables"]["community_invites"]["Row"]> };

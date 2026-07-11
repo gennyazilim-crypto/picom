@@ -1,9 +1,17 @@
 # Community settings persistence
 
-The Community Admin Panel persists name, description, HTTPS icon placeholder, visibility, and public-read policy through `communityService.updateCommunitySettings`. The UI never calls Supabase directly and updates App state only after the service returns the authoritative row.
+Community Admin persists identity, controlled icon/banner uploads, visibility, public read, default notifications, versioned join rules, and Text/Radio/Podcast defaults through service-layer operations. UI components never call Supabase directly.
 
-`update_community_settings` allows the owner or an admin role at level 80+, validates all fields, forces public read off for private communities, updates `updated_at`, and appends a redacted `community_update` audit entry. Frontend section visibility is convenience only; the security-definer RPC is the authorization boundary.
+`update_community_settings` locks the active community, validates every field and kind-specific JSON shape, replaces published rules, synchronizes audio settings, updates the community row, and appends one redacted audit event in a single transaction. A failure rolls back all database changes. Newly uploaded assets are removed by the service when the settings RPC fails.
 
-Name is required and limited to 80 characters, description to 500, and icon URLs to HTTPS with a 2048-character cap. Icon upload/storage remains a placeholder; no new upload feature is introduced.
+## Type behavior
 
-Hosted permission and RLS behavior must be checked after applying the migration. No hosted result is claimed by the static repository test.
+- Text: maximum message length, attachment availability, and reaction availability are restrictive RLS insert guards.
+- Radio: default host role, schedule timezone/visibility, listener chat, and listener rules are synchronized to `radio_community_settings`; schedule visibility is RLS-enforced.
+- Podcast: default publisher role, comment policy, explicit-content default, and comment rules are synchronized to `podcast_community_settings`; comment creation and explicit defaults are database-enforced.
+
+## Branding controls
+
+The public `community-branding` bucket accepts PNG/JPG/WEBP only, with a 6 MB server cap. The desktop service applies a stricter 2 MB icon cap and 6 MB banner cap. Only users with effective `manageCommunity` permission can mutate assets under that community's UUID path.
+
+Hosted RLS and Storage execution remains blocked without an approved Supabase CLI/staging context; repository smoke tests do not fabricate that evidence.

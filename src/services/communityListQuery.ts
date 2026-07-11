@@ -3,8 +3,9 @@ import { mockCommunities } from "../data/mockCommunities";
 import type { CommunitySummary } from "./communityService";
 import type { Database } from "./supabase/database.types";
 import { isCommunityKind, type CommunityKind } from "../types/community";
+import { getDefaultCommunityTypeSettings, normalizeCommunityTypeSettings, type CommunityNotificationLevel } from "../types/communitySettings";
 
-export const COMMUNITY_LIST_SELECT = "id, kind, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
+export const COMMUNITY_LIST_SELECT = "id, kind, owner_id, name, description, icon_url, banner_url, accent_color, visibility, public_read_enabled, default_notification_level, type_settings, rules_enabled, rules_version, created_at, updated_at" as const;
 export const LEGACY_COMMUNITY_LIST_SELECT = "id, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
 
 export type CommunityListRow = Readonly<{
@@ -14,9 +15,12 @@ export type CommunityListRow = Readonly<{
   name: string;
   description: string | null;
   icon_url: string | null;
+  banner_url?: string | null;
   accent_color: string;
   visibility: "public" | "private";
   public_read_enabled: boolean;
+  default_notification_level?: CommunityNotificationLevel;
+  type_settings?: unknown;
   rules_enabled: boolean;
   rules_version: string;
   created_at: string;
@@ -42,9 +46,12 @@ export function mapCommunityListRow(row: CommunityListRow): CommunitySummary {
     name: row.name,
     description: row.description,
     iconUrl: row.icon_url,
+    bannerUrl: row.banner_url ?? null,
     accentColor: row.accent_color,
     visibility: row.visibility,
     publicReadEnabled: row.public_read_enabled,
+    defaultNotificationLevel: row.default_notification_level ?? "mentions",
+    typeSettings: normalizeCommunityTypeSettings(kind, row.type_settings),
     rulesEnabled: row.rules_enabled,
     rulesVersion: row.rules_version,
     createdAt: row.created_at,
@@ -60,9 +67,12 @@ export function listMockCommunitySummaries(): CommunitySummary[] {
     name: community.name,
     description: null,
     iconUrl: null,
+    bannerUrl: community.bannerUrl ?? null,
     accentColor: community.accentColor,
     visibility: community.visibility ?? "private",
     publicReadEnabled: community.publicReadEnabled ?? false,
+    defaultNotificationLevel: community.defaultNotificationLevel ?? "mentions",
+    typeSettings: community.typeSettings ?? getDefaultCommunityTypeSettings(community.kind),
     rulesEnabled: community.rulesEnabled ?? false,
     rulesVersion: community.rulesVersion ?? "1",
     createdAt: null,

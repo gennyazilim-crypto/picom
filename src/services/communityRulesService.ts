@@ -4,6 +4,7 @@ import { loggingService } from "./loggingService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 
 const storageKey = "picom.communityRules.acceptance.v1";
+const mockRulesStorageKey = "picom.communityRules.content.v1";
 
 function now(): string {
   return new Date().toISOString();
@@ -96,7 +97,12 @@ export const communityRulesService = {
   },
 
   async loadPublishedRules(communityId: string): Promise<{ ok: true; rules: CommunityRule[] } | { ok: false; message: string }> {
-    if (dataSourceService.getStatus().isMock) return { ok: true, rules: this.getDefaultRules(communityId) };
+    if (dataSourceService.getStatus().isMock) {
+      try {
+        const stored = JSON.parse(getLocalStorage()?.getItem(mockRulesStorageKey) ?? "{}") as Record<string, CommunityRule[]>;
+        return { ok: true, rules: stored[communityId]?.length ? stored[communityId] : this.getDefaultRules(communityId) };
+      } catch { return { ok: true, rules: this.getDefaultRules(communityId) }; }
+    }
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: "Community rules are unavailable. Try again later." };
     const { data, error } = await client.from("community_rules").select("id, community_id, title, body, position, required, created_at, updated_at").eq("community_id", communityId).eq("published", true).order("position", { ascending: true });
@@ -105,6 +111,19 @@ export const communityRulesService = {
       return { ok: false, message: "Community rules could not be loaded. Joining is paused for safety." };
     }
     return { ok: true, rules: (data ?? []).map((row) => ({ id: row.id, communityId: row.community_id, title: row.title, body: row.body, position: row.position, required: row.required, createdAt: row.created_at, updatedAt: row.updated_at })) };
+  },
+
+  saveMockRules(communityId: string, rules: readonly CommunityRule[]): void {
+    if (!dataSourceService.getStatus().isMock) return;
+    const storage = getLocalStorage();
+    if (!storage) return;
+    try {
+      const stored = JSON.parse(storage.getItem(mockRulesStorageKey) ?? "{}") as Record<string, CommunityRule[]>;
+      stored[communityId] = rules.slice(0, 10).map((rule, position) => ({ ...rule, communityId, position, title: rule.title.trim().slice(0, 120), body: rule.body.trim().slice(0, 2000), updatedAt: now() }));
+      storage.setItem(mockRulesStorageKey, JSON.stringify(stored));
+    } catch {
+      loggingService.logWarn("Community rules content cache write failed", { communityId }, "community-rules");
+    }
   },
 
   getAcceptance(communityId: string, userId: string): CommunityRulesAcceptance {

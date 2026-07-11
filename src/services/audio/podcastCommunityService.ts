@@ -15,6 +15,9 @@ function settingsFromRow(community: Community, row?: SettingsRow | null): Podcas
     about: row?.about || community.description || "This Podcast community has not published an About note yet.",
     listenerDiscussionEnabled: row?.listener_discussion_enabled === true && Boolean(row.listener_discussion_channel_id),
     listenerDiscussionChannelId: row?.listener_discussion_channel_id ?? undefined,
+    defaultPublisherRole: row?.default_publisher_role === "owner" ? "owner" : "publisher",
+    commentsEnabled: row?.comments_enabled ?? true,
+    explicitContentDefault: row?.explicit_content_default ?? false,
   };
 }
 
@@ -37,7 +40,7 @@ export const podcastCommunityService = {
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: "Podcast publishing data is unavailable while Supabase is not configured." };
     const [settings, series] = await Promise.all([
-      client.from("podcast_community_settings").select("community_id,about,listener_discussion_enabled,listener_discussion_channel_id,created_at,updated_at").eq("community_id", community.id).maybeSingle(),
+      client.from("podcast_community_settings").select("community_id,about,listener_discussion_enabled,listener_discussion_channel_id,default_publisher_role,comments_enabled,explicit_content_default,comment_rules,created_at,updated_at").eq("community_id", community.id).maybeSingle(),
       client.from("podcast_series").select("id,community_id,title,description,cover_url,cover_storage_path,tags,created_by,is_active,created_at,updated_at").eq("community_id", community.id).eq("is_active", true).order("created_at", { ascending: true }).limit(100),
     ]);
     if (settings.error || series.error) return { ok: false, error: "Picom could not load the Podcast library structure." };

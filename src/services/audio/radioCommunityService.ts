@@ -20,6 +20,8 @@ function settingsFromRow(communityId: string, row?: SettingsRow | null): RadioCo
     listenerChatEnabled: row?.listener_chat_enabled === true && Boolean(row.listener_chat_channel_id),
     listenerChatChannelId: row?.listener_chat_channel_id ?? undefined,
     announcementsEnabled: row?.announcements_enabled ?? true,
+    defaultHostRole: row?.default_host_role === "owner" ? "owner" : "host",
+    scheduleVisibility: row?.schedule_visibility === "members" ? "members" : "public",
   };
 }
 
@@ -54,7 +56,7 @@ export const radioCommunityService = {
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: "Radio station data is unavailable while Supabase is not configured." };
     const [settings, programs, schedules, programHosts, announcements] = await Promise.all([
-      client.from("radio_community_settings").select("community_id,schedule_timezone,listener_chat_enabled,listener_chat_channel_id,announcements_enabled,created_at,updated_at").eq("community_id", community.id).maybeSingle(),
+      client.from("radio_community_settings").select("community_id,schedule_timezone,listener_chat_enabled,listener_chat_channel_id,announcements_enabled,default_host_role,schedule_visibility,listener_rules,created_at,updated_at").eq("community_id", community.id).maybeSingle(),
       client.from("radio_programs").select("id,community_id,title,description,host_user_id,created_by,slug,cover_url,cover_storage_path,tags,default_duration_minutes,is_active,created_at,updated_at").eq("community_id", community.id).eq("is_active", true).order("created_at", { ascending: true }).limit(100),
       client.from("radio_program_schedules").select("id,program_id,community_id,weekday,starts_at_local,duration_minutes,timezone,effective_from,effective_until,is_active,created_by,created_at,updated_at").eq("community_id", community.id).eq("is_active", true).order("weekday", { ascending: true }).limit(200),
       client.from("radio_program_hosts").select("id,program_id,user_id,host_role,assigned_by,assigned_at").limit(500),

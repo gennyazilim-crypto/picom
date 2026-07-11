@@ -2989,7 +2989,7 @@ export function App() {
                   setActiveView(communityViewForKind(activeCommunity.kind));
                 }}
                 onCommunityRolesChanged={(roles) => replaceCommunities(communities.map((community) => community.id === activeCommunity.id ? { ...community, roles } : community))}
-                onCommunityUpdated={(summary) => replaceCommunities(communities.map((community) => community.id !== summary.id ? community : { ...community, kind: summary.kind, ownerId: summary.ownerId ?? community.ownerId, name: summary.name, description: summary.description, icon: summary.iconUrl ?? "", accentColor: summary.accentColor, visibility: summary.visibility, publicReadEnabled: summary.publicReadEnabled }))}
+                onCommunityUpdated={(summary) => replaceCommunities(communities.map((community) => community.id !== summary.id ? community : { ...community, kind: summary.kind, ownerId: summary.ownerId ?? community.ownerId, name: summary.name, description: summary.description, icon: summary.iconUrl ?? "", bannerUrl: summary.bannerUrl, accentColor: summary.accentColor, visibility: summary.visibility, publicReadEnabled: summary.publicReadEnabled, defaultNotificationLevel: summary.defaultNotificationLevel, typeSettings: summary.typeSettings, rulesEnabled: summary.rulesEnabled, rulesVersion: summary.rulesVersion }))}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
                 events={communityEvents}
                 onCreateEvent={(input) => void createCommunityEvent(input)}

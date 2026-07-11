@@ -8,6 +8,8 @@ export type RadioCommunitySettings = Readonly<{
   listenerChatEnabled: boolean;
   listenerChatChannelId?: string;
   announcementsEnabled: boolean;
+  defaultHostRole: "owner" | "host";
+  scheduleVisibility: "public" | "members";
 }>;
 
 export type RadioProgram = Readonly<{
@@ -52,6 +54,9 @@ export type PodcastCommunitySettings = Readonly<{
   about: string;
   listenerDiscussionEnabled: boolean;
   listenerDiscussionChannelId?: string;
+  defaultPublisherRole: "owner" | "publisher";
+  commentsEnabled: boolean;
+  explicitContentDefault: boolean;
 }>;
 
 export type PodcastSeries = Readonly<{

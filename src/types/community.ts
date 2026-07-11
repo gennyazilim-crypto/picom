@@ -161,6 +161,9 @@ export interface Community {
   publicReadEnabled?: boolean;
   rulesEnabled?: boolean;
   rulesVersion?: string;
+  bannerUrl?: string | null;
+  defaultNotificationLevel?: import("./communitySettings").CommunityNotificationLevel;
+  typeSettings?: import("./communitySettings").CommunityTypeSettings;
   discoveryListed?: boolean;
   discoveryCategory?: "development" | "design" | "gaming" | "music" | "study" | "work";
   discoveryJoinPolicy?: "open" | "request";
