@@ -31,7 +31,10 @@ export const activeVoiceRoomDiscoveryService = {
       return community.categories.flatMap((category) => category.channels).flatMap((channel) => {
         if (channel.type !== "voice" || !canViewChannel(access, channel)) return [];
 
-        const activeHere = connected && isCurrentRoom(voiceSnapshot.roomName, channel.id, channel.name);
+        const activeHere = connected && (
+          voiceSnapshot.roomContext?.channelId === channel.id
+          || isCurrentRoom(voiceSnapshot.roomName, channel.id, channel.name)
+        );
         const suppliedOccupancy = occupancyByChannelId[channel.id];
         const participantCount = suppliedOccupancy?.participantCount ?? (activeHere ? voiceSnapshot.participants.length : isMock ? stableMockCount(channel.id) : 0);
         if (participantCount <= 0) return [];

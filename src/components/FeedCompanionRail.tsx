@@ -67,7 +67,7 @@ function VoiceMiniControlCard({
         </span>
         <div>
           <p className="eyebrow">Connected Voice</p>
-          <strong>{voiceState.roomName ?? "Voice room"}</strong>
+          <strong>{voiceState.roomContext?.channelName ?? voiceState.roomName ?? "Voice room"}</strong>
           <small>{voiceState.status === "reconnecting" ? "Restoring connection..." : "LiveKit connected"}</small>
         </div>
       </header>

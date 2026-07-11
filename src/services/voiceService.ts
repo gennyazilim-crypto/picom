@@ -21,6 +21,18 @@ export type VoiceIntent = LiveKitIntent;
 export type VoiceTokenRequest = LiveKitTokenRequest;
 export type VoiceTokenResponse = LiveKitTokenResponse;
 
+export type VoiceJoinRequest = VoiceTokenRequest & Readonly<{
+  communityName?: string;
+  channelName?: string;
+}>;
+
+export type VoiceRoomContext = Readonly<{
+  communityId: string;
+  communityName?: string;
+  channelId: string;
+  channelName?: string;
+}>;
+
 export type VoiceParticipant = Readonly<{
   identity: string;
   name: string;
@@ -41,6 +53,7 @@ export type VoiceScreenShare = Readonly<{
 export type VoiceServiceSnapshot = Readonly<{
   status: VoiceConnectionStatus;
   roomName: string | null;
+  roomContext: VoiceRoomContext | null;
   muted: boolean;
   deafened: boolean;
   screenSharing: boolean;
@@ -94,12 +107,13 @@ let sessionStartedAtMs: number | null = null;
 let lastSessionDurationMs: number | null = null;
 let reconnectingActive = false;
 let joinInFlight = false;
-let lastJoinRequest: VoiceTokenRequest | null = null;
+let lastJoinRequest: VoiceJoinRequest | null = null;
 let appliedInputPreferenceKey = "";
 let appliedOutputDeviceId = "";
 let snapshot: VoiceServiceSnapshot = {
   status: "idle",
   roomName: null,
+  roomContext: null,
   muted: false,
   deafened: false,
   screenSharing: false,
@@ -313,7 +327,16 @@ function bindRoomEvents(activeRoom: Room): void {
       stopLocalTracks(activeRoom);
       activeRoom.removeAllListeners();
       if (room === activeRoom) room = null;
-      emit({ status: "disconnected", participants: [], roomName: null, screenSharing: false, screenShares: [] });
+      emit({
+        status: "disconnected",
+        participants: [],
+        roomName: null,
+        roomContext: null,
+        screenSharing: false,
+        screenShares: [],
+        error: "This voice room ended or the connection was closed.",
+        errorCode: "VOICE_ROOM_UNAVAILABLE",
+      });
     });
 }
 
@@ -389,8 +412,9 @@ async function connectWithToken(
   token: VoiceTokenResponse,
   desiredMuted: boolean,
   desiredDeafened: boolean,
+  roomContext: VoiceRoomContext,
 ): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
-  emit({ status: "connecting", roomName: token.roomName, error: null, errorCode: null });
+  emit({ status: "connecting", roomName: token.roomName, roomContext, error: null, errorCode: null });
 
   const activeRoom = new Room({
     adaptiveStream: true,
@@ -419,6 +443,7 @@ async function connectWithToken(
     emit({
       status: "connected",
       roomName: token.roomName,
+      roomContext,
       participants: getParticipants(activeRoom),
       muted: desiredMuted || !microphoneEnabled,
       deafened: desiredDeafened,
@@ -482,7 +507,7 @@ export const voiceService = {
     return requestToken(request);
   },
 
-  async join(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+  async join(request: VoiceJoinRequest): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (joinInFlight) {
       return { ok: true, data: snapshot };
     }
@@ -490,6 +515,13 @@ export const voiceService = {
     joinInFlight = true;
     joinAttemptCount += 1;
     lastJoinRequest = request;
+    const { communityName, channelName, ...tokenRequest } = request;
+    const roomContext: VoiceRoomContext = {
+      communityId: request.communityId,
+      communityName,
+      channelId: request.channelId,
+      channelName,
+    };
     const desiredMuted = snapshot.muted;
     const desiredDeafened = snapshot.deafened;
     if (room) {
@@ -501,16 +533,16 @@ export const voiceService = {
     speakingIdentities = new Set<string>();
     screenShareMediaTrack = null;
     screenShares = [];
-    emit({ error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
 
     try {
-      const token = await requestToken(request);
+      const token = await requestToken(tokenRequest);
       if (!token.ok) {
         joinFailureCount += 1;
         return token;
       }
 
-      const result = await connectWithToken(token.data, desiredMuted, desiredDeafened);
+      const result = await connectWithToken(token.data, desiredMuted, desiredDeafened, roomContext);
       if (!result.ok) joinFailureCount += 1;
       return result;
     } finally {
@@ -542,6 +574,7 @@ export const voiceService = {
     emit({
       status: "disconnected",
       roomName: null,
+      roomContext: null,
       participants: [],
       muted: false,
       deafened: false,

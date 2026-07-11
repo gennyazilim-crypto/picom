@@ -205,6 +205,7 @@ function communityViewForKind(kind: Community["kind"]): ActiveView {
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
   status: "idle",
   roomName: null,
+  roomContext: null,
   muted: false,
   deafened: false,
   screenSharing: false,
@@ -735,15 +736,23 @@ export function App() {
     }
     let canceled = false;
     let unsubscribe: (() => void) | undefined;
+    let activeVoiceService: typeof import("./services/voiceService")["voiceService"] | undefined;
+    const leaveVoiceOnWindowClose = () => {
+      if (activeVoiceService) void activeVoiceService.leave();
+    };
+
+    window.addEventListener("beforeunload", leaveVoiceOnWindowClose);
 
     void import("./services/voiceService").then(({ voiceService }) => {
       if (canceled) return;
+      activeVoiceService = voiceService;
       unsubscribe = voiceService.subscribe(setVoiceSnapshot);
     });
 
     return () => {
       canceled = true;
       unsubscribe?.();
+      window.removeEventListener("beforeunload", leaveVoiceOnWindowClose);
     };
   }, []);
 
@@ -1893,7 +1902,11 @@ export function App() {
   }, [pushToast]);
 
   const openFeedScreenShare = useCallback(() => {
-    const room = activeVoiceRooms.find((candidate) => candidate.channelName === voiceSnapshot.roomName && candidate.canJoin);
+    const room = activeVoiceRooms.find((candidate) => (
+      candidate.communityId === voiceSnapshot.roomContext?.communityId
+      && candidate.channelId === voiceSnapshot.roomContext?.channelId
+      && candidate.canJoin
+    ));
     if (!room) { pushToast("The connected voice room is no longer available.", "error"); return; }
     const community = communities.find((candidate) => candidate.id === room.communityId);
     const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === room.channelId);
@@ -1902,7 +1915,7 @@ export function App() {
     switchCommunity(room.communityId, room.channelId);
     closeTransientOverlays();
     pushToast("Screen share controls opened in the connected voice room.", "success");
-  }, [activeVoiceRooms, closeTransientOverlays, communities, pushToast, switchCommunity, voiceSnapshot.roomName]);
+  }, [activeVoiceRooms, closeTransientOverlays, communities, pushToast, switchCommunity, voiceSnapshot.roomContext]);
 
   const openDiscoveredVoiceRoom = useCallback((room: ActiveVoiceRoomSummary) => {
     const community = communities.find((candidate) => candidate.id === room.communityId);
@@ -1936,7 +1949,9 @@ export function App() {
     void import("./services/voiceService").then(({ voiceService }) =>
       voiceService.join({
         communityId: activeCommunity.id,
+        communityName: activeCommunity.name,
         channelId: displayedActiveChannel.id,
+        channelName: displayedActiveChannel.name,
         participantName: displayedCurrentUser.displayName,
         intent: "voice",
       }).then((result) => {
