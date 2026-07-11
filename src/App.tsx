@@ -84,6 +84,8 @@ import { socialAuthService } from "./services/auth/socialAuthService";
 import { onboardingService } from "./services/onboarding/onboardingService";
 import { communityService } from "./services/communityService";
 import { communityNavigationService, type CommunityShellView } from "./services/community/communityNavigationService";
+import { resolveCommunityJoinLanding } from "./services/community/communityJoinRoutingService";
+import type { CommunityInvitePreview, InviteAcceptanceStatus } from "./services/community/communityInviteService";
 import { communityMembershipService } from "./services/community/communityMembershipService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
@@ -2278,6 +2280,16 @@ export function App() {
     pushToast(blocked ? `${member.displayName} blocked.` : `${member.displayName} unblocked.`, blocked ? "info" : "success");
   };
 
+  const openJoinedCommunity = (target: Community) => {
+    const landing = resolveCommunityJoinLanding(target);
+    if (target.kind === "radio") communityNavigationService.rememberRadioSection(target.id, "live");
+    if (target.kind === "podcast") communityNavigationService.rememberPodcastSection(target.id, "episodes");
+    switchCommunity(target.id, landing.channelId);
+    if (landing.channelId) setActiveChannelId(landing.channelId);
+    setActiveView(landing.view);
+    return landing;
+  };
+
   const handleJoinCommunity = async (rulesAcceptance: { rulesVersion: string; acceptedAt: string } | null) => {
     const result = await communityMembershipService.joinCommunity({
       community: activeCommunity,
@@ -2295,7 +2307,8 @@ export function App() {
       ...activeCommunity.members.filter((member) => member.userId !== result.data.member.userId),
       result.data.member,
     ]);
-    pushToast(result.data.status === "already_member" ? `You are already a member of ${activeCommunity.name}.` : `Joined ${activeCommunity.name}.`, "success");
+    const landing = openJoinedCommunity(activeCommunity);
+    pushToast(result.data.status === "already_member" ? `You are already a member of ${activeCommunity.name}. Opened ${landing.landingLabel}.` : `Joined ${activeCommunity.name}. Opened ${landing.landingLabel}.`, "success");
     return true;
   };
 
@@ -2314,19 +2327,26 @@ export function App() {
     pushToast(`Left ${activeCommunity.name}.`, "info");
   };
 
-  const handleInviteAccepted = (communityId: string, member: Member, status: import("./services/community/communityInviteService").InviteAcceptanceStatus) => {
-    const target = communities.find((community) => community.id === communityId);
+  const handleInviteAccepted = async (communityId: string, member: Member, status: InviteAcceptanceStatus, preview: CommunityInvitePreview) => {
+    let target = communities.find((community) => community.id === communityId);
     if (!target) {
-      pushToast(status === "already_member" ? "You are already a member. Refresh communities to load the workspace." : "Joined successfully. Refresh communities to load the invited workspace.", "success");
-      setPendingInviteCode(null);
-      return;
+      const listed = await communityService.listCommunities();
+      const summary = listed.ok ? listed.data.find((community) => community.id === communityId) : undefined;
+      if (!summary) {
+        pushToast(status === "already_member" ? "You are already a member, but the workspace could not be loaded." : "Joined successfully, but the workspace could not be loaded.", "error");
+        setPendingInviteCode(null);
+        return;
+      }
+      target = addCommunity(createCommunityFromSummary(summary));
     }
 
-    replaceCommunityMembers(communityId, [...target.members.filter((candidate) => candidate.userId !== member.userId), member]);
-    switchCommunity(communityId);
-    setActiveView(communityViewForKind(target.kind));
+    const defaultRole = target.roles.find((role) => role.id === member.roleId) ?? target.roles.find((role) => role.name === "Member");
+    const normalizedMember = { ...member, roleId: defaultRole?.id ?? member.roleId };
+    replaceCommunityMembers(communityId, [...target.members.filter((candidate) => candidate.userId !== member.userId), normalizedMember]);
+    const landing = openJoinedCommunity(target);
     setPendingInviteCode(null);
-    pushToast(status === "already_member" ? `You are already a member of ${target.name}.` : `Joined ${target.name} with invite.`, "success");
+    const displayName = target.name || preview.communityName;
+    pushToast(status === "already_member" ? `You are already a member of ${displayName}. Opened ${landing.landingLabel}.` : `Joined ${displayName} with invite. Opened ${landing.landingLabel}.`, "success");
   };
 
   const handleCreateCommunity = async (value: CreateCommunityFormValue): Promise<CreateCommunitySubmitResult> => {

@@ -2,6 +2,7 @@
 import { dataSourceService } from "../dataSourceService";
 import type { CommunityRulesAcceptanceInput } from "../../types/communityRules";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
+import { userBlockingService } from "../userBlockingService";
 
 export type CommunityMembershipServiceErrorCode =
   | "AUTH_REQUIRED"
@@ -30,6 +31,7 @@ export type JoinCommunityInput = {
   currentUser: Member;
   isAuthenticated: boolean;
   inviteValidated?: boolean;
+  bannedUserIds?: string[];
   rulesAcceptance?: CommunityRulesAcceptanceInput | null;
 };
 
@@ -82,6 +84,7 @@ function mapPublicJoinError(message?: string): CommunityMembershipServiceResult<
   if (message?.includes("AUTH_REQUIRED")) return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before joining a community." } };
   if (message?.includes("PRIVATE_COMMUNITY_INVITE_REQUIRED")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require an invite or approval." } };
   if (message?.includes("JOIN_BANNED")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "You cannot join this community." } };
+  if (message?.includes("JOIN_BLOCKED")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "This community cannot be joined while a blocking relationship is active." } };
   if (message?.includes("COMMUNITY_NOT_FOUND")) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "This community is unavailable." } };
   if (message?.includes("DEFAULT_ROLE_MISSING")) return { ok: false, error: { code: "JOIN_FAILED", message: "This community is not ready to accept members." } };
   if (message?.includes("RULES_ACCEPTANCE_REQUIRED")) return { ok: false, error: { code: "RULES_ACCEPTANCE_REQUIRED", message: "Review and accept the current community rules before joining." } };
@@ -97,6 +100,9 @@ export const communityMembershipService = {
     if (input.community.visibility === "private" && !input.inviteValidated) {
       return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require a valid invite." } };
     }
+
+    if (input.bannedUserIds?.includes(input.currentUser.userId)) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "You cannot join this community." } };
+    if (input.community.ownerId && userBlockingService.isBlocked(input.community.ownerId)) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "This community cannot be joined while a blocking relationship is active." } };
 
     const existingMember = input.community.members.find((member) => member.userId === input.currentUser.userId);
     if (existingMember) return { ok: true, data: { member: existingMember, status: "already_member" } };

@@ -6,6 +6,7 @@ import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescripto
 import { getCommunityMenuItems } from "../services/community/communityMenuService";
 import { clipboardService } from "../services/clipboardService";
 import { communityRulesService } from "../services/communityRulesService";
+import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 import "../communityGuidelines.css";
@@ -293,13 +294,14 @@ export function CommunityMemberPanel({ community, access, onClose, onOpenLeave, 
 }
 
 export function CommunityVisitorPanel({ community, access, isAuthenticated, onClose, onOpenJoin, onOpenJoinWithInvite, onOpenGuidelines, onReport }: { community: Community; access: CommunityAccess; isAuthenticated: boolean; onClose: () => void; onOpenJoin: () => void; onOpenJoinWithInvite: () => void; onOpenGuidelines: () => void; onReport: () => void }) {
+  const kindSummary = getCommunityKindInviteSummary(community.kind);
   return (
     <ModalShell title={`${community.name} public preview`} eyebrow="Visitor menu" onClose={onClose}>
       <div className="community-confirm-panel">
         <CommunityVisitorMenu community={community} access={access} onJoin={onOpenJoin} />
         <div className="community-panel-list">
-          <article><strong>Public channels visible</strong><span>Private channels and member-only data stay hidden.</span></article>
-          <article><strong>Join to participate</strong><span>Visitors cannot send messages, react, or upload attachments.</span></article>
+          <article><strong>{kindSummary.label} preview</strong><span>{kindSummary.visitorCopy}</span></article>
+          <article><strong>Landing destination</strong><span>After joining, Picom opens {kindSummary.landingLabel}.</span></article>
           <article><strong>{isAuthenticated ? "Ready to join" : "Sign in required"}</strong><span>{isAuthenticated ? "Confirm the join flow to become a member." : "Sign in or register before joining."}</span></article>
           <button type="button" className="community-panel-action" onClick={onOpenGuidelines}><strong>Community Guidelines</strong><span>Review the current legal-review draft and reporting expectations.</span></button>
         </div>
@@ -319,6 +321,7 @@ export function CommunityJoinModal({ community, currentUserId, isAuthenticated, 
   const rulesEnabled = community.rulesEnabled !== false;
   const rulesVersion = community.rulesVersion ?? "1";
   const requiredRules = rules.filter((rule) => rule.required);
+  const kindSummary = getCommunityKindInviteSummary(community.kind);
 
   useEffect(() => {
     if (!rulesEnabled) { setRulesLoading(false); return; }
@@ -335,10 +338,12 @@ export function CommunityJoinModal({ community, currentUserId, isAuthenticated, 
   return (
     <ModalShell title={`Join ${community.name}`} eyebrow="Community access" onClose={onClose}>
       <div className="community-confirm-panel">
-        <p>{community.description ?? "Join this Picom community to participate in public channels."}</p>
+        <p>{community.description ?? kindSummary.visitorCopy}</p>
         <dl>
+          <div><dt>Kind</dt><dd>{kindSummary.label}</dd></div>
           <div><dt>Members</dt><dd>{community.members.length}</dd></div>
           <div><dt>Visibility</dt><dd>{community.visibility ?? "private"}</dd></div>
+          <div><dt>Opens at</dt><dd>{kindSummary.landingLabel}</dd></div>
           <div><dt>Rules</dt><dd>{rulesEnabled ? `${requiredRules.length} required - version ${rulesVersion}` : "Acceptance not required"}</dd></div>
         </dl>
         {rulesEnabled ? <section className="community-join-rules" aria-labelledby="community-join-rules-title">

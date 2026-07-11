@@ -374,6 +374,7 @@
     "community:podcast-template:smoke": "node scripts/podcast-community-default-template-smoke.mjs",
     "community:routing:smoke": "node scripts/type-specific-community-routing-smoke.mjs",
     "community:kind-permissions:smoke": "node scripts/community-kind-permissions-rls-smoke.mjs",
+    "community:typed-join:smoke": "node scripts/typed-community-invite-join-smoke.mjs",
     "quality:fast": "npm run qa:smoke && npm run typecheck",
     "quality:gate": "npm run qa:smoke && npm run typecheck && npm run build",
     "production:launch:audit:smoke": "node scripts/final-production-launch-audit-smoke-test.mjs",

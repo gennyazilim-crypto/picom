@@ -18,6 +18,7 @@ import { ReportModal } from "./ReportModal";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { AppIcon } from "./AppIcon";
 import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
+import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 
 const CommunityAdminDeferredSection = lazy(() => import("./CommunityAdminDeferredSection").then((module) => ({ default: module.CommunityAdminDeferredSection })));
 
@@ -43,7 +44,7 @@ type CommunitySidebarProps = {
   onLeaveCommunity: () => void | Promise<void>;
   pendingInviteCode?: string | null;
   onClearPendingInviteCode: () => void;
-  onInviteAccepted: (communityId: string, member: Member, status: InviteAcceptanceStatus) => void;
+  onInviteAccepted: (communityId: string, member: Member, status: InviteAcceptanceStatus, preview: import("../services/community/communityInviteService").CommunityInvitePreview) => void | Promise<void>;
   onAssignMemberRole: (memberId: string, roleId: string) => void;
   onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void;
   onPlaceholderAction: (message: string) => void;
@@ -61,6 +62,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
   );
   const [openPanel, setOpenPanel] = useState<OpenCommunityPanel>(null);
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
+  const kindSummary = getCommunityKindInviteSummary(community.kind);
   useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
   const canReorderChannels = canManageChannels(access);
   const deferredAdminSection = (section: import("./CommunityAdminDeferredSection").CommunityAdminDeferredSectionId) => (
@@ -106,8 +108,8 @@ export function CommunitySidebar({ community, communities, access, activeChannel
         </button> : null}
         {access.isVisitor ? (
           <div className="community-readonly-notice">
-            <strong>Viewing public content</strong>
-            <span>Join this community to send messages, react, upload, and see member-only spaces.</span>
+            <strong>Viewing public {kindSummary.label.toLowerCase()}</strong>
+            <span>{kindSummary.visitorCopy}</span>
           </div>
         ) : null}
 
@@ -126,7 +128,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
             showReorderControls={canReorderChannels}
             onMoveChannel={onMoveChannel}
           />
-        )) : <div className="empty-state compact">No public channels are visible.</div>}
+        )) : <div className="empty-state compact">{community.kind === "text" ? "No public channels are visible." : `Open ${kindSummary.landingLabel} to explore this ${kindSummary.label.toLowerCase()}.`}</div>}
       </div>
 
       <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Community, Member } from "../types/community";
-import { communityInviteService, type CommunityInvite, type InviteAcceptanceStatus, type InviteCampaignSummary } from "../services/community/communityInviteService";
+import { communityInviteService, type CommunityInvite, type CommunityInvitePreview, type InviteAcceptanceStatus, type InviteCampaignSummary } from "../services/community/communityInviteService";
+import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 import { clipboardService } from "../services/clipboardService";
 import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
@@ -40,16 +41,61 @@ export function InvitePeopleModal({ community, currentUserId, canCreate, onClose
   return <InviteModalShell title={`Invite people to ${community.name}`} onClose={onClose}><div className="invite-flow-content"><p>Create a limited invite. Picom tracks aggregate uses only; no IP, device, referrer, or fingerprint analytics are collected.</p><label><span>Campaign label</span><input maxLength={80} value={campaignLabel} onChange={(event) => setCampaignLabel(event.target.value)} placeholder="Community invite" /></label><div className="invite-options"><label><span>Maximum uses</span><input type="number" min="1" max="100" value={maxUses} onChange={(event) => setMaxUses(event.target.value)} /></label><label><span>Expires in days</span><input type="number" min="1" max="30" value={expiresInDays} onChange={(event) => setExpiresInDays(event.target.value)} /></label></div>{invite ? <div className="invite-result"><span>{invite.revokedAt ? "Revoked invite" : "Invite link"}</span><strong>{communityInviteService.getInviteLink(invite.code)}</strong><small>{invite.uses} / {invite.maxUses ?? "unlimited"} uses</small><div className="invite-result-actions"><button type="button" disabled={Boolean(invite.revokedAt)} onClick={() => void copy()}><AppIcon name="paperclip" size="sm" /> Copy link</button><button className="danger-action" type="button" disabled={Boolean(invite.revokedAt) || busy} onClick={() => void revoke()}><AppIcon name="trash" size="sm" /> Revoke</button></div></div> : null}{campaigns.length ? <div className="session-list" aria-label="Invite campaign summaries">{campaigns.slice(0, 6).map((campaign) => <article key={campaign.id} className="session-card"><div><strong>{campaign.campaignLabel ?? "Community invite"}</strong><small>{campaign.uses} / {campaign.maxUses ?? "unlimited"} uses - by {campaign.creatorName} - {campaign.revokedAt ? "revoked" : campaign.expiresAt && Date.parse(campaign.expiresAt) <= Date.now() ? "expired" : "active"}</small></div></article>)}</div> : null}{message ? <p className="invite-flow-message" role="status">{message}</p> : null}<div className="modal-actions-row"><button className="secondary-action" type="button" onClick={onClose}>Close</button><button className="send-button" type="button" disabled={!canCreate || busy} onClick={() => void create()}><AppIcon name="plus" size="sm" />{busy ? "Creating…" : "Create invite"}</button></div></div></InviteModalShell>;
 }
 
-export function JoinWithInviteModal({ initialCode = "", isAuthenticated, communities, currentUser, onClose, onAccepted }: { initialCode?: string; isAuthenticated: boolean; communities: Community[]; currentUser: Member; onClose: () => void; onAccepted: (communityId: string, member: Member, status: InviteAcceptanceStatus) => void }) {
+export function JoinWithInviteModal({ initialCode = "", isAuthenticated, communities, currentUser, onClose, onAccepted }: { initialCode?: string; isAuthenticated: boolean; communities: Community[]; currentUser: Member; onClose: () => void; onAccepted: (communityId: string, member: Member, status: InviteAcceptanceStatus, preview: CommunityInvitePreview) => void | Promise<void> }) {
   const [code, setCode] = useState(initialCode);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<CommunityInvitePreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    if (code.trim().length < 8) { setPreview(null); setPreviewLoading(false); setError(null); return; }
+    let active = true;
+    setPreview(null);
+    setPreviewLoading(true);
+    const timer = window.setTimeout(() => {
+      void communityInviteService.getInvitePreview(code, communities).then((result) => {
+        if (!active) return;
+        setPreview(result.ok ? result.data : null);
+        setError(result.ok ? null : result.error.message);
+        setPreviewLoading(false);
+      });
+    }, 250);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [code, communities]);
 
   const accept = async () => {
+    if (!preview) return;
     setBusy(true); setError(null);
     const result = await communityInviteService.acceptInvite({ code, communities, currentUser, isAuthenticated });
     if (!result.ok) { setError(result.error.message); setBusy(false); return; }
-    onAccepted(result.data.communityId, result.data.member, result.data.status); onClose();
+    await onAccepted(result.data.communityId, result.data.member, result.data.status, preview);
+    onClose();
   };
-  return <InviteModalShell title="Join with invite" onClose={onClose}><div className="invite-flow-content"><p>Paste a Picom invite code or link. Invalid, expired, revoked, and exhausted invites are rejected safely.</p><label className="invite-code-field"><span>Invite code or link</span><input autoFocus value={code} onChange={(event) => setCode(event.target.value)} placeholder="picom://invite/..." /></label>{!isAuthenticated ? <p className="auth-error">Sign in or register before accepting an invite.</p> : null}{error ? <p className="auth-error" role="alert">{error}</p> : null}<div className="modal-actions-row"><button className="secondary-action" type="button" onClick={onClose}>Cancel</button><button className="send-button" type="button" disabled={!isAuthenticated || busy || !code.trim()} onClick={() => void accept()}><AppIcon name="plus" size="sm" />{busy ? "Joining…" : "Accept invite"}</button></div></div></InviteModalShell>;
+  const summary = preview ? getCommunityKindInviteSummary(preview.communityKind) : null;
+
+  return (
+    <InviteModalShell title="Join with invite" onClose={onClose}>
+      <div className="invite-flow-content">
+        <p>Paste a Picom invite code or link. The preview confirms the community type before any membership is created.</p>
+        <label className="invite-code-field"><span>Invite code or link</span><input autoFocus value={code} onChange={(event) => setCode(event.target.value)} placeholder="picom://invite/..." /></label>
+        {previewLoading ? <p className="community-rules-status" role="status">Checking invite...</p> : null}
+        {preview && summary ? <section className="community-confirm-panel" aria-label="Invite preview">
+          <p className="eyebrow">{summary.label}</p>
+          <h3>{preview.communityName}</h3>
+          <p>{preview.description ?? "This community has not added a description yet."}</p>
+          <dl>
+            <div><dt>Kind</dt><dd>{summary.label}</dd></div>
+            <div><dt>Visibility</dt><dd>{preview.visibility}</dd></div>
+            <div><dt>Members</dt><dd>{preview.memberCount}</dd></div>
+            <div><dt>Opens at</dt><dd>{summary.landingLabel}</dd></div>
+          </dl>
+          <ul>{summary.capabilitySummary.map((capability) => <li key={capability}>{capability}</li>)}</ul>
+        </section> : null}
+        {!isAuthenticated ? <p className="auth-error">Sign in or register before accepting an invite.</p> : null}
+        {error ? <p className="auth-error" role="alert">{error}</p> : null}
+        <div className="modal-actions-row"><button className="secondary-action" type="button" onClick={onClose}>Cancel</button><button className="send-button" type="button" disabled={!isAuthenticated || busy || previewLoading || !preview} onClick={() => void accept()}><AppIcon name="plus" size="sm" />{busy ? "Joining..." : "Accept invite"}</button></div>
+      </div>
+    </InviteModalShell>
+  );
 }

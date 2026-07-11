@@ -1,0 +1,30 @@
+import { readFile } from "node:fs/promises";
+import ts from "typescript";
+
+const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+const source = await read("src/services/community/communityJoinRoutingService.ts");
+const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText;
+const routing = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const base = { ownerId: "owner", icon: "P", accentColor: "#000", visibility: "public", publicReadEnabled: true, roles: [], members: [], messages: [] };
+const text = { ...base, id: "text", kind: "text", name: "Text", categories: [{ id: "info", name: "Information", channels: [{ id: "rules", name: "rules", type: "text" }, { id: "welcome", name: "welcome", type: "text" }] }] };
+const radio = { ...base, id: "radio", kind: "radio", name: "Radio", categories: [] };
+const podcast = { ...base, id: "podcast", kind: "podcast", name: "Podcast", categories: [] };
+assert(routing.resolveCommunityJoinLanding(text).channelId === "welcome" && routing.resolveCommunityJoinLanding(text).view === "community", "Text join does not land on Welcome");
+assert(routing.resolveCommunityJoinLanding(radio).view === "radioCommunity" && routing.resolveCommunityJoinLanding(radio).landingLabel === "Live and Schedule", "Radio join landing is wrong");
+assert(routing.resolveCommunityJoinLanding(podcast).view === "podcastCommunity" && routing.resolveCommunityJoinLanding(podcast).landingLabel === "Episodes", "Podcast join landing is wrong");
+for (const kind of ["text", "radio", "podcast"]) assert(routing.getCommunityKindInviteSummary(kind).capabilitySummary.length >= 2, `${kind} invite capability summary is incomplete`);
+
+const inviteService = await read("src/services/community/communityInviteService.ts");
+for (const marker of ["CommunityInvitePreview", "getInvitePreview", "get_community_invite_preview", "INVITE_BLOCKED"]) assert(inviteService.includes(marker), `Invite service is missing ${marker}`);
+const modal = await read("src/components/CommunityInviteModals.tsx");
+for (const marker of ["Checking invite", "Invite preview", "communityKind", "Opens at", "capabilitySummary"]) assert(modal.includes(marker), `Invite modal is missing ${marker}`);
+const onboarding = await read("src/components/onboarding/OnboardingStepCommunity.tsx");
+for (const marker of ['kind: "text"', 'kind: "radio"', 'kind: "podcast"', "community kind recommendations"]) assert(onboarding.includes(marker), `Onboarding type guidance is missing ${marker}`);
+const app = await read("src/App.tsx");
+for (const marker of ["resolveCommunityJoinLanding", "rememberRadioSection", "rememberPodcastSection", "handleInviteAccepted"]) assert(app.includes(marker), `Typed join routing is missing ${marker}`);
+const migration = await read("supabase/migrations/20260711000700_typed_community_invite_join.sql");
+for (const marker of ["get_community_invite_preview", "community_kind public.community_kind", "community_members_join_restrictions", "JOIN_BANNED", "JOIN_BLOCKED", "users_are_blocked"]) assert(migration.includes(marker), `Typed join migration is missing ${marker}`);
+const sqlTest = await read("supabase/tests/rls/typed_community_invite_join.sql");
+for (const marker of ["Invite preview identifies Text", "Invite preview identifies Radio", "Invite preview identifies Podcast", "Valid invite joins private Podcast community", "Banned user cannot join", "Blocked user cannot join"]) assert(sqlTest.includes(marker), `Typed join pgTAP is missing ${marker}`);
+console.log("Typed invite preview, join landing, onboarding guidance, ban/block, and private access contracts passed.");

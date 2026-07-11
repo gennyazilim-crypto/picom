@@ -3,6 +3,8 @@ import { dataSourceService } from "../dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
 import { communityMembershipService } from "./communityMembershipService";
 import { auditLogService } from "../auditLogService";
+import { isCommunityKind, type CommunityKind } from "../../types/community";
+import { userBlockingService } from "../userBlockingService";
 
 export type CommunityInvite = Readonly<{
   id: string;
@@ -19,6 +21,25 @@ export type CommunityInvite = Readonly<{
 }>;
 export type InviteCampaignSummary = Omit<CommunityInvite, "code"> & Readonly<{ creatorName: string }>;
 export type InviteAcceptanceStatus = "joined" | "already_member";
+export type CommunityInvitePreview = Readonly<{
+  communityId: string;
+  communityName: string;
+  communityKind: CommunityKind;
+  description: string | null;
+  visibility: "public" | "private";
+  memberCount: number;
+  expiresAt: string | null;
+}>;
+
+type InvitePreviewRow = {
+  community_id: string;
+  community_name: string;
+  community_kind: string;
+  description: string | null;
+  visibility: string;
+  member_count: number;
+  expires_at: string | null;
+};
 
 type InviteResult<T> = { ok: true; data: T } | { ok: false; error: { code: string; message: string } };
 type MockInviteStore = { records: CommunityInvite[] };
@@ -55,6 +76,9 @@ function mapInviteAcceptanceError(message?: string): InviteResult<never> {
   const mappings = [
     ["AUTH_REQUIRED", "AUTH_REQUIRED", "Sign in before accepting an invite."],
     ["INVITE_BANNED", "INVITE_BANNED", "You cannot join this community."],
+    ["JOIN_BANNED", "INVITE_BANNED", "You cannot join this community."],
+    ["INVITE_BLOCKED", "INVITE_BLOCKED", "This community cannot be joined while a blocking relationship is active."],
+    ["JOIN_BLOCKED", "INVITE_BLOCKED", "This community cannot be joined while a blocking relationship is active."],
     ["INVITE_EXPIRED", "INVITE_EXPIRED", "This invite has expired."],
     ["INVITE_REVOKED", "INVITE_REVOKED", "This invite has been revoked."],
     ["INVITE_EXHAUSTED", "INVITE_EXHAUSTED", "This invite has reached its use limit."],
@@ -120,6 +144,30 @@ export const communityInviteService = {
     return validateInvite(mapInvite(data));
   },
 
+  async getInvitePreview(rawCode: string, communities: Community[]): Promise<InviteResult<CommunityInvitePreview>> {
+    const code = normalizeCode(rawCode);
+    if (!/^[a-zA-Z0-9_-]{8,64}$/.test(code)) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite code is invalid." } };
+
+    if (dataSourceService.getStatus().isMock) {
+      const invite = readMockStore().records.find((record) => record.code === code);
+      if (!invite) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite code is invalid." } };
+      const valid = validateInvite(invite);
+      if (!valid.ok) return valid;
+      const community = communities.find((candidate) => candidate.id === invite.communityId);
+      if (!community) return { ok: false, error: { code: "COMMUNITY_NOT_FOUND", message: "The invited community is unavailable." } };
+      if (community.ownerId && userBlockingService.isBlocked(community.ownerId)) return { ok: false, error: { code: "INVITE_BLOCKED", message: "This community cannot be joined while a blocking relationship is active." } };
+      return { ok: true, data: { communityId: community.id, communityName: community.name, communityKind: community.kind, description: community.description ?? null, visibility: community.visibility ?? "private", memberCount: community.members.length, expiresAt: invite.expiresAt } };
+    }
+
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Supabase is not configured." } };
+    const response = await client.rpc("get_community_invite_preview" as never, { invite_code: code } as never);
+    const row = (response.data as unknown as InvitePreviewRow[] | null)?.[0];
+    if (response.error || !row) return mapInviteAcceptanceError(response.error?.message);
+    if (!isCommunityKind(row.community_kind) || (row.visibility !== "public" && row.visibility !== "private")) return { ok: false, error: { code: "INVITE_INVALID", message: "That invite has invalid community metadata." } };
+    return { ok: true, data: { communityId: row.community_id, communityName: row.community_name, communityKind: row.community_kind, description: row.description, visibility: row.visibility, memberCount: row.member_count, expiresAt: row.expires_at } };
+  },
+
   async revokeInvite(inviteId: string): Promise<InviteResult<CommunityInvite>> {
     if (dataSourceService.getStatus().isMock) {
       const store = readMockStore();
@@ -160,6 +208,7 @@ export const communityInviteService = {
       const community = input.communities.find((candidate) => candidate.id === invite.communityId);
       if (!community) return { ok: false, error: { code: "COMMUNITY_NOT_FOUND", message: "The invited community is unavailable." } };
       if (input.bannedUserIds?.includes(input.currentUser.userId)) return { ok: false, error: { code: "INVITE_BANNED", message: "You cannot join this community." } };
+      if (community.ownerId && userBlockingService.isBlocked(community.ownerId)) return { ok: false, error: { code: "INVITE_BLOCKED", message: "This community cannot be joined while a blocking relationship is active." } };
       const existingMember = community.members.find((member) => member.userId === input.currentUser.userId);
       if (existingMember) return { ok: true, data: { communityId: community.id, member: existingMember, status: "already_member" } };
       const joined = await communityMembershipService.joinCommunity({ community, currentUser: input.currentUser, isAuthenticated: true, inviteValidated: true });
