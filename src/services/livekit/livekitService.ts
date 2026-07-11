@@ -8,7 +8,8 @@ function liveKitError(code: LiveKitServiceErrorCode, message: string): LiveKitSe
 }
 
 function isTokenResponse(value: LiveKitTokenResponse | null): value is LiveKitTokenResponse {
-  return Boolean(value?.token && value.url && value.roomName && value.identity && value.expiresAt);
+  return Boolean(value?.token && value.url && value.roomName && value.identity && value.expiresAt
+    && typeof value.canPublishAudio === "boolean" && typeof value.canPublishScreen === "boolean");
 }
 
 export const liveKitService = {

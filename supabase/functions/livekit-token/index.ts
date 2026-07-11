@@ -97,7 +97,7 @@ Deno.serve(async (request: Request) => {
 
   const { data: authorizationRows, error: authorizationError } = await auth.supabase.rpc("authorize_livekit_room", { target_community_id: communityId, target_channel_id: channelId, target_intent: intent });
   const authorization = Array.isArray(authorizationRows) ? authorizationRows[0] as AuthorizationRow | undefined : undefined;
-  if (authorizationError || !authorization || authorization.community_kind !== "text") return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "You cannot join this voice channel.", 403));
+  if (authorizationError || !authorization) return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "You cannot join this voice channel.", 403));
 
   const displayName = typeof auth.user.user_metadata?.display_name === "string" ? auth.user.user_metadata.display_name : auth.user.email?.split("@")[0] ?? "Picom user";
   const participantName = parsed.body.participantName?.trim() || displayName.slice(0, 80);
@@ -109,5 +109,5 @@ Deno.serve(async (request: Request) => {
     ? canPublish ? [...(authorization.can_publish_audio ? ["microphone" as const] : []), "screen_share", "screen_share_audio"] : []
     : canPublish ? ["microphone"] : [];
   const { token, expiresAt } = await createLiveKitToken({ apiKey: livekitApiKey, apiSecret: livekitApiSecret, identity: auth.user.id, name: participantName, roomName, ttlSeconds: tokenTtlSeconds, canPublish, canSubscribe: true, canPublishData: false, canPublishSources: publishSources });
-  return respond(jsonResponse({ token, url: livekitUrl, roomName, identity: auth.user.id, participantName, intent, expiresAt }));
+  return respond(jsonResponse({ token, url: livekitUrl, roomName, identity: auth.user.id, participantName, intent, canPublishAudio: authorization.can_publish_audio, canPublishScreen: authorization.can_publish_screen, expiresAt }));
 });

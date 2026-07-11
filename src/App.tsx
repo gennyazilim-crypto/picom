@@ -1951,6 +1951,15 @@ export function App() {
       pushToast(communityAccess.isVisitor ? "Join this community before entering voice." : "Sign in before entering voice.", "error");
       return;
     }
+    const voiceRoomsEnabled = displayedActiveCommunity.typeSettings?.voiceRoomsEnabled ?? displayedActiveCommunity.kind === "text";
+    if (!voiceRoomsEnabled) {
+      pushToast("Normal voice rooms are disabled for this community type.", "error");
+      return;
+    }
+    if (!communityAccess.permissions.includes("joinVoice")) {
+      pushToast("Your role cannot join this voice room.", "error");
+      return;
+    }
 
     void import("./services/voiceService").then(({ voiceService }) =>
       voiceService.join({
@@ -1966,7 +1975,7 @@ export function App() {
         }
       }),
     );
-  }, [activeCommunity.id, authSession, communityAccess.isVisitor, displayedActiveChannel.id, displayedActiveChannel.type, displayedCurrentUser.displayName, pushToast]);
+  }, [activeCommunity.id, authSession, communityAccess.isVisitor, communityAccess.permissions, displayedActiveChannel.id, displayedActiveChannel.type, displayedActiveCommunity.kind, displayedActiveCommunity.typeSettings, displayedCurrentUser.displayName, pushToast]);
 
   const leaveActiveVoiceRoom = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.leave());
@@ -2004,6 +2013,15 @@ export function App() {
       }),
     );
   }, [pushToast]);
+
+  const moderateActiveVoiceParticipant = useCallback((participant: import("./services/voiceService").VoiceParticipant, action: "mute" | "remove") => {
+    void import("./services/voiceModerationService").then(({ voiceModerationService }) => voiceModerationService.moderate({
+      communityId: activeCommunity.id,
+      channelId: displayedActiveChannel.id,
+      targetUserId: participant.identity,
+      action,
+    }).then((result) => pushToast(result.ok ? `${participant.name} was ${action === "mute" ? "server-muted" : "removed from voice"}.` : result.message, result.ok ? "success" : "error")));
+  }, [activeCommunity.id, displayedActiveChannel.id, pushToast]);
 
   const openFeedEventCommunity = useCallback((communityId: string) => {
     const targetCommunity = communities.find((community) => community.id === communityId);
@@ -3094,6 +3112,11 @@ export function App() {
                   onLeave={leaveActiveVoiceRoom}
                   onToggleMute={toggleActiveVoiceMute}
                   onToggleDeafen={toggleActiveVoiceDeafen}
+                  canSpeak={Boolean(voiceSnapshot.canSpeak) && (communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
+                  canShareScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.permissions.includes("shareScreen")}
+                  canMuteMembers={communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom")}
+                  canRemoveFromVoice={communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom")}
+                  onModerateParticipant={moderateActiveVoiceParticipant}
                   onStartScreenShare={startActiveVoiceScreenShare}
                   onStopScreenShare={stopActiveVoiceScreenShare}
                 />

@@ -4,6 +4,7 @@ export type CommunityNotificationLevel = "all" | "mentions" | "none";
 
 export type TextCommunitySettings = Readonly<{
   kind: "text";
+  voiceRoomsEnabled: boolean;
   maxMessageLength: number;
   attachmentsEnabled: boolean;
   reactionsEnabled: boolean;
@@ -11,6 +12,7 @@ export type TextCommunitySettings = Readonly<{
 
 export type RadioCommunityTypeSettings = Readonly<{
   kind: "radio";
+  voiceRoomsEnabled: boolean;
   defaultHostRole: "owner" | "host";
   scheduleTimezone: string;
   scheduleVisibility: "public" | "members";
@@ -20,6 +22,7 @@ export type RadioCommunityTypeSettings = Readonly<{
 
 export type PodcastCommunityTypeSettings = Readonly<{
   kind: "podcast";
+  voiceRoomsEnabled: boolean;
   defaultPublisherRole: "owner" | "publisher";
   commentsEnabled: boolean;
   explicitContentDefault: boolean;
@@ -29,9 +32,9 @@ export type PodcastCommunityTypeSettings = Readonly<{
 export type CommunityTypeSettings = TextCommunitySettings | RadioCommunityTypeSettings | PodcastCommunityTypeSettings;
 
 export function getDefaultCommunityTypeSettings(kind: CommunityKind): CommunityTypeSettings {
-  if (kind === "radio") return { kind, defaultHostRole: "host", scheduleTimezone: "UTC", scheduleVisibility: "public", listenerChatEnabled: true, listenerRules: "Keep live discussion relevant and respectful." };
-  if (kind === "podcast") return { kind, defaultPublisherRole: "publisher", commentsEnabled: true, explicitContentDefault: false, commentRules: "Discuss the episode without harassment or spoilers outside marked threads." };
-  return { kind: "text", maxMessageLength: 4000, attachmentsEnabled: true, reactionsEnabled: true };
+  if (kind === "radio") return { kind, voiceRoomsEnabled: false, defaultHostRole: "host", scheduleTimezone: "UTC", scheduleVisibility: "public", listenerChatEnabled: true, listenerRules: "Keep live discussion relevant and respectful." };
+  if (kind === "podcast") return { kind, voiceRoomsEnabled: false, defaultPublisherRole: "publisher", commentsEnabled: true, explicitContentDefault: false, commentRules: "Discuss the episode without harassment or spoilers outside marked threads." };
+  return { kind: "text", voiceRoomsEnabled: true, maxMessageLength: 4000, attachmentsEnabled: true, reactionsEnabled: true };
 }
 
 export function normalizeCommunityTypeSettings(kind: CommunityKind, value: unknown): CommunityTypeSettings {
@@ -43,6 +46,7 @@ export function normalizeCommunityTypeSettings(kind: CommunityKind, value: unkno
     const typedFallback = fallback as TextCommunitySettings;
     return {
     kind,
+    voiceRoomsEnabled: typeof candidate.voiceRoomsEnabled === "boolean" ? candidate.voiceRoomsEnabled : typedFallback.voiceRoomsEnabled,
     maxMessageLength: typeof candidate.maxMessageLength === "number" && candidate.maxMessageLength >= 250 && candidate.maxMessageLength <= 4000 ? Math.floor(candidate.maxMessageLength) : typedFallback.maxMessageLength,
     attachmentsEnabled: typeof candidate.attachmentsEnabled === "boolean" ? candidate.attachmentsEnabled : typedFallback.attachmentsEnabled,
     reactionsEnabled: typeof candidate.reactionsEnabled === "boolean" ? candidate.reactionsEnabled : typedFallback.reactionsEnabled,
@@ -52,6 +56,7 @@ export function normalizeCommunityTypeSettings(kind: CommunityKind, value: unkno
     const typedFallback = fallback as RadioCommunityTypeSettings;
     return {
     kind,
+    voiceRoomsEnabled: typeof candidate.voiceRoomsEnabled === "boolean" ? candidate.voiceRoomsEnabled : typedFallback.voiceRoomsEnabled,
     defaultHostRole: candidate.defaultHostRole === "owner" ? "owner" : "host",
     scheduleTimezone: typeof candidate.scheduleTimezone === "string" && candidate.scheduleTimezone.trim().length <= 64 ? candidate.scheduleTimezone.trim() || "UTC" : typedFallback.scheduleTimezone,
     scheduleVisibility: candidate.scheduleVisibility === "members" ? "members" : "public",
@@ -62,6 +67,7 @@ export function normalizeCommunityTypeSettings(kind: CommunityKind, value: unkno
   const typedFallback = fallback as PodcastCommunityTypeSettings;
   return {
     kind,
+    voiceRoomsEnabled: typeof candidate.voiceRoomsEnabled === "boolean" ? candidate.voiceRoomsEnabled : typedFallback.voiceRoomsEnabled,
     defaultPublisherRole: candidate.defaultPublisherRole === "owner" ? "owner" : "publisher",
     commentsEnabled: typeof candidate.commentsEnabled === "boolean" ? candidate.commentsEnabled : typedFallback.commentsEnabled,
     explicitContentDefault: typeof candidate.explicitContentDefault === "boolean" ? candidate.explicitContentDefault : typedFallback.explicitContentDefault,

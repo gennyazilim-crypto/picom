@@ -27,9 +27,13 @@ export const COMMUNITY_PERMISSION_GROUPS: readonly CommunityPermissionGroup[] = 
     { key: "addReactions", label: "Add reactions", description: "Add and remove own message reactions.", kinds: text },
   ] },
   { name: "Voice", permissions: [
-    { key: "joinVoice", label: "Join voice", description: "Join an accessible voice channel.", kinds: text },
-    { key: "speakInVoice", label: "Speak in voice", description: "Publish microphone audio.", kinds: text },
-    { key: "shareScreen", label: "Share screen", description: "Publish an approved screen-share track.", kinds: text },
+    { key: "joinVoice", label: "Join voice", description: "Join a configured and accessible voice channel.", kinds: all },
+    { key: "speak", label: "Speak", description: "Publish microphone audio in normal voice rooms.", kinds: all },
+    { key: "speakInVoice", label: "Speak in voice (legacy)", description: "Compatibility alias for existing grants.", kinds: all },
+    { key: "shareScreen", label: "Share screen", description: "Publish an approved screen-share track.", kinds: all },
+    { key: "muteMembers", label: "Mute members", description: "Server-mute lower-ranked voice participants.", kinds: all },
+    { key: "removeFromVoice", label: "Remove from voice", description: "Remove lower-ranked participants from a voice room.", kinds: all },
+    { key: "manageVoiceRoom", label: "Manage voice room", description: "Manage normal voice rooms and their participants.", kinds: all },
   ] },
   { name: "Radio", permissions: [
     { key: "viewRadioContent", label: "View Radio", description: "View accessible Radio content.", kinds: radio },

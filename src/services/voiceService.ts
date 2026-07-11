@@ -56,6 +56,8 @@ export type VoiceServiceSnapshot = Readonly<{
   roomContext: VoiceRoomContext | null;
   muted: boolean;
   deafened: boolean;
+  canSpeak?: boolean;
+  canShareScreen?: boolean;
   screenSharing: boolean;
   screenShares: VoiceScreenShare[];
   participants: VoiceParticipant[];
@@ -122,6 +124,8 @@ let snapshot: VoiceServiceSnapshot = {
   roomContext: null,
   muted: false,
   deafened: false,
+  canSpeak: false,
+  canShareScreen: false,
   screenSharing: false,
   screenShares: [],
   participants: [],
@@ -485,12 +489,14 @@ async function connectWithToken(
     await activeRoom.connect(token.url, token.token);
     activeTokenIntent = token.intent;
 
-    let microphoneEnabled = true;
+    let microphoneEnabled = token.canPublishAudio;
     try {
       const devicePreferences = voiceDeviceService.getSnapshot();
-      await activeRoom.localParticipant.setMicrophoneEnabled(!desiredMuted, voiceDeviceService.getAudioCaptureConstraints());
-      appliedInputPreferenceKey = inputPreferenceKey(devicePreferences);
-      await applyVoiceDevicePreferences(activeRoom, devicePreferences);
+      if (token.canPublishAudio) {
+        await activeRoom.localParticipant.setMicrophoneEnabled(!desiredMuted, voiceDeviceService.getAudioCaptureConstraints());
+        appliedInputPreferenceKey = inputPreferenceKey(devicePreferences);
+        await applyVoiceDevicePreferences(activeRoom, devicePreferences);
+      }
     } catch {
       microphoneEnabled = false;
       deviceErrorCount += 1;
@@ -502,12 +508,14 @@ async function connectWithToken(
       roomName: token.roomName,
       roomContext,
       participants: getParticipants(activeRoom),
-      muted: desiredMuted || !microphoneEnabled,
+      muted: desiredMuted || !microphoneEnabled || !token.canPublishAudio,
       deafened: desiredDeafened,
+      canSpeak: token.canPublishAudio,
+      canShareScreen: token.canPublishScreen,
       screenSharing: Boolean(screenShareMediaTrack),
       screenShares,
-      error: microphoneEnabled ? null : "Microphone permission was denied or no input device is available.",
-      errorCode: microphoneEnabled ? null : "VOICE_PERMISSION_DENIED",
+      error: token.canPublishAudio && !microphoneEnabled ? "Microphone permission was denied or no input device is available." : null,
+      errorCode: token.canPublishAudio && !microphoneEnabled ? "VOICE_PERMISSION_DENIED" : null,
     });
 
     return { ok: true, data: snapshot };
@@ -680,6 +688,8 @@ export const voiceService = {
       participants: [],
       muted: false,
       deafened: false,
+      canSpeak: false,
+      canShareScreen: false,
       screenSharing: false,
       screenShares: [],
       error: null,
@@ -691,6 +701,7 @@ export const voiceService = {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before changing microphone state.");
     }
+    if (!muted && !snapshot.canSpeak) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish microphone audio in this room.");
 
     try {
       await room.localParticipant.setMicrophoneEnabled(!muted, voiceDeviceService.getAudioCaptureConstraints());
@@ -725,6 +736,7 @@ export const voiceService = {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");
     }
+    if (!snapshot.canShareScreen) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot share a screen in this room.");
 
     if (screenShareMediaTrack) {
       return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Stop the current screen share before choosing another source." } };

@@ -45,24 +45,24 @@ const MEMBER_PERMISSIONS: CommunityPermissionKey[] = [];
 
 const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<CommunityMembershipStatus, readonly CommunityPermissionKey[]>>>> = {
   text: {
-    owner: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speakInVoice", "shareScreen"],
-    admin: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speakInVoice", "shareScreen"],
-    moderator: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speakInVoice", "shareScreen"],
-    member: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speakInVoice", "shareScreen"],
+    owner: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    admin: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    moderator: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice"],
+    member: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speak", "speakInVoice", "shareScreen"],
     visitor: [],
   },
   radio: {
-    owner: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "publishRadioAnnouncements", "moderateRadioComments"],
-    admin: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "publishRadioAnnouncements", "moderateRadioComments"],
-    moderator: ["viewRadioContent", "listenRadio", "moderateRadioComments"],
-    member: ["viewRadioContent", "listenRadio"],
+    owner: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "publishRadioAnnouncements", "moderateRadioComments", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    admin: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "publishRadioAnnouncements", "moderateRadioComments", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    moderator: ["viewRadioContent", "listenRadio", "moderateRadioComments", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice"],
+    member: ["viewRadioContent", "listenRadio", "joinVoice", "speak", "speakInVoice", "shareScreen"],
     visitor: [],
   },
   podcast: {
-    owner: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
-    admin: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
-    moderator: ["viewPodcastContent", "listenPodcasts", "moderatePodcastEpisodes", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments"],
-    member: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts"],
+    owner: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    admin: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    moderator: ["viewPodcastContent", "listenPodcasts", "moderatePodcastEpisodes", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice"],
+    member: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts", "joinVoice", "speak", "speakInVoice", "shareScreen"],
     visitor: [],
   },
 };

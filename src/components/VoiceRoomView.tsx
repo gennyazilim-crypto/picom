@@ -15,6 +15,11 @@ type VoiceRoomViewProps = {
   onLeave?: () => void;
   onToggleMute?: () => void;
   onToggleDeafen?: () => void;
+  canSpeak?: boolean;
+  canShareScreen?: boolean;
+  canMuteMembers?: boolean;
+  canRemoveFromVoice?: boolean;
+  onModerateParticipant?: (participant: VoiceParticipant, action: "mute" | "remove") => void;
   onStartScreenShare?: (sourceId: string, preset: ScreenShareQualityPresetId, sourceLabel?: string) => void;
   onStopScreenShare?: () => void;
 };
@@ -66,6 +71,7 @@ export function VoiceControls({
   disconnected,
   muted,
   deafened,
+  canSpeak,
   onJoin,
   onLeave,
   onToggleMute,
@@ -76,6 +82,7 @@ export function VoiceControls({
   disconnected: boolean;
   muted: boolean;
   deafened: boolean;
+  canSpeak: boolean;
   onJoin?: () => void;
   onLeave?: () => void;
   onToggleMute?: () => void;
@@ -87,7 +94,7 @@ export function VoiceControls({
         <AppIcon name={connected ? "close" : "voice"} size="sm" />
         {connected ? "Leave room" : joining ? "Joining..." : disconnected ? "Reconnect" : "Join room"}
       </button>
-      <button type="button" onClick={onToggleMute} disabled={!connected} aria-pressed={muted}>
+      <button type="button" onClick={onToggleMute} disabled={!connected || !canSpeak} aria-pressed={muted}>
         <AppIcon name="microphone" size="sm" />
         {muted ? "Unmute" : "Mute"}
       </button>
@@ -99,7 +106,7 @@ export function VoiceControls({
   );
 }
 
-export function VoiceParticipantList({ community, participants }: { community: Community; participants: VoiceParticipant[] }) {
+export function VoiceParticipantList({ community, participants, canMuteMembers = false, canRemoveFromVoice = false, onModerateParticipant }: { community: Community; participants: VoiceParticipant[]; canMuteMembers?: boolean; canRemoveFromVoice?: boolean; onModerateParticipant?: (participant: VoiceParticipant, action: "mute" | "remove") => void }) {
   if (!participants.length) {
     return (
       <div className="voice-empty-panel">
@@ -130,6 +137,10 @@ export function VoiceParticipantList({ community, participants }: { community: C
                 <SpeakingIndicator participant={participant} />
               </small>
             </span>
+            {!participant.isLocal && community.ownerId !== participant.identity && (canMuteMembers || canRemoveFromVoice) ? <div className="voice-participant-actions">
+              {canMuteMembers ? <button type="button" aria-label={`Mute ${member?.displayName ?? participant.name}`} onClick={() => onModerateParticipant?.(participant, "mute")}><AppIcon name="microphone" size="xs" /></button> : null}
+              {canRemoveFromVoice ? <button type="button" className="danger" aria-label={`Remove ${member?.displayName ?? participant.name} from voice`} onClick={() => onModerateParticipant?.(participant, "remove")}><AppIcon name="close" size="xs" /></button> : null}
+            </div> : null}
           </div>
         );
       })}
@@ -145,6 +156,11 @@ export function VoiceRoomView({
   onLeave,
   onToggleMute,
   onToggleDeafen,
+  canSpeak = false,
+  canShareScreen = false,
+  canMuteMembers = false,
+  canRemoveFromVoice = false,
+  onModerateParticipant,
   onStartScreenShare,
   onStopScreenShare,
 }: VoiceRoomViewProps) {
@@ -184,6 +200,7 @@ export function VoiceRoomView({
             disconnected={snapshot.status === "disconnected"}
             muted={snapshot.muted}
             deafened={snapshot.deafened}
+            canSpeak={canSpeak}
             onJoin={onJoin}
             onLeave={onLeave}
             onToggleMute={onToggleMute}
@@ -196,7 +213,7 @@ export function VoiceRoomView({
           <VoiceDevicePanel />
 
           <ScreenShareControls
-            connected={connected}
+            connected={connected && canShareScreen}
             screenSharing={snapshot.screenSharing}
             onStart={onStartScreenShare}
             onStop={onStopScreenShare}
@@ -212,7 +229,7 @@ export function VoiceRoomView({
             <AppIcon name="users" size="lg" />
           </header>
 
-          <VoiceParticipantList community={community} participants={snapshot.participants} />
+          <VoiceParticipantList community={community} participants={snapshot.participants} canMuteMembers={canMuteMembers} canRemoveFromVoice={canRemoveFromVoice} onModerateParticipant={onModerateParticipant} />
         </article>
       </div>
     </section>
