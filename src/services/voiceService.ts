@@ -917,6 +917,20 @@ export const voiceService = {
     return { ok: true, data: snapshot };
   },
 
+  async setCameraEnabled(enabled: boolean, deviceId = "default"): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    if (!room) return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a meeting before changing camera state.");
+    if (enabled && !snapshot.canUseCamera) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish camera video in this room.");
+    try {
+      await room.localParticipant.setCameraEnabled(enabled, enabled && deviceId !== "default" ? { deviceId } : undefined);
+      emit({ cameraEnabled: enabled, error: null, errorCode: null, participants: getParticipants(room) });
+      return { ok: true, data: snapshot };
+    } catch {
+      deviceErrorCount += 1;
+      emit({ cameraEnabled: false });
+      return voiceError("VOICE_PERMISSION_DENIED", "Camera permission was denied or the selected camera is unavailable.");
+    }
+  },
+
   async startScreenShare(sourceId: string, preset: ScreenShareQualityPresetId = "balanced", sourceLabel?: string): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");

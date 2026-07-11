@@ -11,7 +11,7 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-  participant_record public.meeting_participants%rowtype;
+  participant_record public.meeting_session_participants%rowtype;
   previous_role text;
   next_role text;
   role_result jsonb;
@@ -24,16 +24,16 @@ begin
   end if;
 
   select * into participant_record
-  from public.meeting_participants
+  from public.meeting_session_participants
   where id = target_participant_id
     and left_at is null
-    and provider_presence not in ('left', 'removed')
+    and state not in ('left', 'removed')
   for update;
   if not found then
     raise exception 'MEETING_PARTICIPANT_NOT_ACTIVE' using errcode = 'P0002';
   end if;
 
-  previous_role := participant_record.meeting_role;
+  previous_role := participant_record.role;
   next_role := case when stage_action = 'promote' then 'speaker' else 'viewer' end;
   role_result := public.set_meeting_participant_role(
     target_participant_id,

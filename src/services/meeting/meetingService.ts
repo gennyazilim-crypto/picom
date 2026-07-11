@@ -156,6 +156,9 @@ export const meetingService = {
   setFocusedScreenShare:meetingLiveKitAdapter.setFocusedScreenShare,
   async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});return result.ok;},
   setDeafened(deafened:boolean):boolean{const result=meetingLiveKitAdapter.setDeafened(deafened);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,deafened:result.data.deafened}});return result.ok;},
+  async setCameraEnabled(enabled:boolean,deviceId="default"):Promise<boolean>{const result=await meetingLiveKitAdapter.setCameraEnabled(enabled,deviceId);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,cameraEnabled:Boolean(result.data.cameraEnabled)}});return result.ok===true;},
+  async startScreenShare(sourceId:string,sourceLabel?:string):Promise<boolean>{const result=await meetingLiveKitAdapter.startScreenShare(sourceId,sourceLabel);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:Boolean(result.data.screenSharing)}});return result.ok===true;},
+  async stopScreenShare():Promise<boolean>{const result=await meetingLiveKitAdapter.stopScreenShare();if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:false}});return result.ok;},
   sendReaction:meetingSignalService.sendReaction,
   applyHandAction:meetingSignalService.applyHandAction,
 };

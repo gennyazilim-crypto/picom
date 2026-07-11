@@ -35,6 +35,6 @@ export function MeetingWorkspace() {
       </main>
       {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={focusParticipant} onClose={()=>meetingService.setRightDock("none")} />:null}
     </div>
-    <MeetingControlDock snapshot={snapshot} focusMode={focusMode} onToggleMute={()=>{void meetingService.setMuted(!snapshot.localMedia.muted)}} onToggleDeafen={()=>meetingService.setDeafened(!snapshot.localMedia.deafened)} onCycleLayout={cycleLayout} onToggleDock={toggleDock} onToggleFocus={toggleFocus} onLeave={()=>{void meetingService.leave()}} />
+    <MeetingControlDock snapshot={snapshot} focusMode={focusMode} onCycleLayout={cycleLayout} onToggleDock={toggleDock} onToggleFocus={toggleFocus} onLeave={()=>{void meetingService.leave()}} />
   </section>;
 }
