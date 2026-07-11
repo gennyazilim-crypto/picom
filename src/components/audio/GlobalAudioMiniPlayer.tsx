@@ -21,6 +21,13 @@ export function GlobalAudioMiniPlayer() {
 
   useEffect(() => {
     const item = player.item;
+    if (!item || item.type !== "podcast_episode" || catalog.loading || catalog.error) return;
+    const episode = catalog.snapshot.podcastEpisodes.find((candidate) => candidate.id === item.id);
+    if (!episode || episode.status !== "published" || !episode.audioUrl) audioPlayerService.markUnavailable();
+  }, [catalog.error, catalog.loading, catalog.snapshot.podcastEpisodes, player.item]);
+
+  useEffect(() => {
+    const item = player.item;
     if (!item || item.type !== "radio_live" || ["idle", "ended", "error"].includes(player.status)) return;
     const heartbeat = () => { void radioService.heartbeatRadioListener(item.id); };
     heartbeat();
