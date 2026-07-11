@@ -71,3 +71,18 @@ The deterministic local quality gates and required GitHub Picom QA run `29129185
 - Complete isolated backup restore plus integrity and destructive-lifecycle validation.
 
 No immutable stable artifacts, final checksums, final provenance, release publication, rollout, or post-release monitoring were initiated. Required product, engineering, security, operations, and support sign-offs remain unapproved.
+
+## Task 520 final Full MVP completion decision (2026-07-11)
+
+### Decision: NO-GO
+
+All 89 Tasks 431-519 have their exact checkpoint and expected commit subject, but Full MVP acceptance remains **Partial**:
+
+- mandatory renderer performance and generated-license checks currently fail;
+- the Task 519 staging matrix has 18 BLOCKED flows and no hosted PASS evidence;
+- visual and E2E results are coverage contracts, not executed desktop UI evidence;
+- RB-01 through RB-11 remain open;
+- disk artifacts are unsigned Windows development/beta outputs, not an immutable stable cross-platform set;
+- validation occurred with unrelated user-owned working-tree changes and must be repeated from a clean candidate.
+
+No stable publication, release creation, signing, checksum announcement, rollout or post-launch action is authorized. A future decision requires QB-01/QB-02 plus RB-01 through RB-11 to close with evidence on one immutable candidate.

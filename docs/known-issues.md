@@ -1,107 +1,111 @@
 # Picom Known Issues
 
-This document tracks known issues for the Picom beta readiness phase.
+Status date: 2026-07-11
+Decision context: Full MVP Partial; Stable No-Go
 
-Tester downloads, reporting, withdrawal, and rollback follow the [Beta distribution portal/process](beta-distribution-portal.md).
+Tester distribution, withdrawal, and rollback remain governed by `docs/beta-distribution-portal.md`. An item marked blocker must not be hidden in release notes.
 
 ## Status labels
 
-- `blocker`: must be fixed before beta distribution
-- `critical`: strongly recommended before wider beta
-- `major`: acceptable for limited beta only with workaround
-- `minor`: acceptable for beta notes
-- `placeholder`: intentionally incomplete MVP/beta area
+- `blocker`: required before a release candidate can be approved.
+- `critical`: required before wider beta unless explicitly risk-accepted.
+- `major`: acceptable only for constrained internal testing with a documented limitation.
+- `minor`: does not invalidate the current local build.
+- `external-blocked`: needs hosted/native/legal/owner evidence unavailable to local source checks.
 
-## Current known issues
+## Current issues
 
-### KI-001: Stale Picom development processes can lock Windows package output
+### KI-001: Renderer performance budget fails
 
-- Status: `minor`
-- Area: Electron packaging
-- Platforms: Windows
-- Symptom: `electron-builder --dir` can fail when renaming `release/win-unpacked.tmp` to `release/win-unpacked`.
-- Impact: Packaging pauses until project-specific Vite/Electron processes release the output directory. The current Windows NSIS candidate was produced successfully after targeted cleanup.
-- Workaround:
-  - Close running Picom/Electron processes.
-  - Delete `release/win-unpacked.tmp`.
-  - Retry `npm run package:windows`; elevation is not normally required.
-- Reference: `docs/electron-packaging.md`
-- Next step: Complete clean-account installer launch/uninstall smoke testing.
-
-### KI-002: Production build emits large chunk warning
-
-- Status: `minor`
-- Area: Frontend build
+- Status: `blocker`
+- Area: Renderer performance
 - Platforms: Windows, Linux, macOS
-- Symptom: Vite reports a chunk larger than 500 kB after minification.
-- Impact: Build still passes, but startup performance should be monitored before beta expansion.
-- Workaround: None required for limited beta.
-- Next step: Consider code splitting for voice/media or optional views after core beta smoke tests.
+- Evidence: `initialJs=1757.0 KiB` exceeds the 1650.0 KiB hard cap; `initialCss=240.8 KiB` exceeds the 240.0 KiB hard cap.
+- Impact: The required performance gate exits non-zero. Build success does not override it.
+- Required action: Audit the current entry/static graph and global CSS after concurrent UI work is frozen. Do not raise or disable the caps merely to pass.
 
-### KI-003: Supabase CLI may be missing locally
+### KI-002: Generated license report is stale
+
+- Status: `blocker`
+- Area: Third-party licensing
+- Evidence: `npm run licenses:smoke` passes, but `npm run licenses:check` exits non-zero and reports a missing/stale generated report.
+- Impact: The source/asset dependency inventory cannot be certified for release.
+- Required action: Reconcile package/assets/notices after concurrent work is complete, run the approved generator, review the diff, and make both license gates pass.
+
+### KI-003: Current validation is not tied to a clean immutable candidate
+
+- Status: `blocker`
+- Area: Release reproducibility
+- Evidence: User-owned Cursor changes were present while Task 520 commands ran.
+- Impact: Local outcomes describe the current working tree, not solely the audited Git commit.
+- Required action: Preserve and review user changes, commit them intentionally, use a clean checkout, and rerun all gates.
+
+### KI-004: Full staging E2E is blocked
+
+- Status: `external-blocked`
+- Area: Supabase/desktop E2E
+- Evidence: Task 519 contract covers 18 flows, but the record is 0 PASS, 0 FAIL, 18 BLOCKED.
+- Impact: Registration/onboarding, community kinds, Text, Radio, Podcast, Friends/DM, Profile, Feed, Settings, moderation, session restore and privacy are not certified together against one staging candidate.
+- Required action: Provision protected staging, synthetic actor fixtures, two clients and redacted evidence; run the guarded matrix.
+
+### KI-005: Hosted Supabase closure remains partial
+
+- Status: `external-blocked`
+- Area: RLS, Storage, Realtime and Edge Functions
+- Evidence: Structural QA passes; Supabase CLI pgTAP is skipped locally; private Presence, broader Storage lifecycle and deployed Edge request evidence remain incomplete.
+- Impact: Local contracts cannot certify cross-user isolation or deployed behavior.
+- Required action: Run approved hosted actor/content and lifecycle matrices without exposing secrets.
+
+### KI-006: Voice and native screen share are not certified
+
+- Status: `external-blocked`
+- Area: LiveKit and Electron desktop capture
+- Platforms: Windows, Linux, macOS
+- Evidence: Local token/device/reconnect/bridge/publish contracts pass; no complete two-client/native matrix exists.
+- Impact: Media permissions, remote render, reconnect and cleanup are not release-proven.
+- Required action: Run provider-backed two-client voice and platform-native screen-share certification.
+
+### KI-007: No immutable trusted cross-platform artifact set exists
+
+- Status: `external-blocked`
+- Area: Packaging and trust
+- Evidence: Unsigned Windows development/beta files exist; Linux and macOS stable artifacts do not.
+- Impact: Stable checksums/provenance, clean-machine install, trusted publisher, notarization and rollback cannot be certified.
+- Required action: Build from one frozen source commit on native runners, sign/notarize where required, then install/smoke/hash/provenance-test exact bytes.
+
+### KI-008: Production ownership, legal approval and restore evidence are open
+
+- Status: `external-blocked`
+- Area: Operations, legal, privacy and database recovery
+- Evidence: RB-09, RB-10 and RB-11 remain open.
+- Impact: Production custody, policy authority and recoverability are not approved.
+- Required action: Assign accountable owners, obtain authorized approvals and complete a compatible isolated restore plus guarded lifecycle drill.
+
+### KI-009: Visual and UI E2E checks are contracts, not executed UI tests
+
+- Status: `major`
+- Area: Desktop QA
+- Evidence: Visual contract maps 33 scenarios; E2E contract maps 17 flows; no Playwright/Electron pixel/click runner is active.
+- Impact: Regressions can still escape source-level contract checks.
+- Required action: Add a reviewed deterministic desktop runner, fixed fixtures, redacted artifacts and tuned cross-platform baselines.
+
+### KI-010: Windows package output can be locked by stale Picom processes
 
 - Status: `minor`
-- Area: Supabase tooling
-- Platforms: Windows, Linux, macOS
-- Symptom: Supabase schema/type commands can warn or fail when the Supabase CLI is not installed.
-- Impact: Does not block mock mode or renderer build, but can block local schema workflows.
-- Workaround: Install Supabase CLI for backend schema/type generation workflows.
-- Next step: Document exact Supabase CLI setup once beta backend project details are finalized.
-
-### KI-004: macOS signing and notarization are placeholders
-
-- Status: `placeholder`
-- Area: macOS packaging
-- Platforms: macOS
-- Symptom: macOS beta artifacts are unsigned local placeholders.
-- Impact: Testers may see OS trust prompts or need manual launch approval.
-- Workaround: Use local beta smoke-test instructions and avoid presenting unsigned builds as production-ready.
-- Next step: Add production signing/notarization only after final release identity and certificates exist.
-
-### KI-005: Windows code signing is not configured
-
-- Status: `placeholder`
 - Area: Windows packaging
-- Platforms: Windows
-- Symptom: Windows installers are unsigned for local beta.
-- Impact: SmartScreen or antivirus warnings may appear.
-- Workaround: Document unsigned beta behavior in tester instructions.
-- Next step: Add signing through secure CI secrets later; do not commit certificates or passwords.
+- Symptom: Electron builder may fail while renaming a temporary unpacked folder.
+- Workaround: Close only Picom project processes, remove the confirmed project-local temporary output, and retry.
+- Safety: Do not terminate unrelated Electron applications or delete broad temporary directories.
 
-### KI-006: Some Supabase/LiveKit beta flows depend on external beta services
+## Intentional scope boundaries
 
-- Status: `major`
-- Area: Supabase and LiveKit
-- Platforms: Windows, Linux, macOS
-- Symptom: Supabase mode and LiveKit flows need valid beta URLs and safe public keys in `.env.local`.
-- Impact: Testers without beta service access should use mock mode.
-- Workaround: Use `.env.beta.example` and `docs/beta-environment.md`.
-- Next step: Finalize beta Supabase project, RLS policies, LiveKit token flow, and smoke-test accounts.
-
-### KI-007: Full platform package smoke tests are not complete
-
-- Status: `major`
-- Area: Release QA
-- Platforms: Windows, Linux, macOS
-- Symptom: Platform package configs are prepared, but full installer/package QA still needs manual runs.
-- Impact: Do not promote beyond beta readiness until platform smoke tests pass.
-- Workaround: Use:
-  - `docs/windows-smoke-test.md`
-  - `docs/linux-smoke-test.md`
-  - `docs/macos-smoke-test.md`
-- Next step: Run smoke tests on each target OS.
-
-## Not known issues
-
-These are intentional beta/MVP boundaries, not bugs:
+These are not bugs and must not be advertised as implemented:
 
 - No mobile app or mobile layout.
-- No Discord branding, copied assets, copied icons, or exact Discord colors.
+- No Discord branding, copied assets, copied layouts, logos or exact colors.
 - No production auto-update.
-- No bot marketplace, plugin runtime, enterprise admin console, billing, or public discovery marketplace.
+- No bot marketplace, plugin runtime, enterprise admin console, billing or public discovery marketplace in this Full MVP completion decision.
 
-## Review cadence
+## Review rule
 
-- Update this document after every beta smoke-test session.
-- Move fixed issues to release notes only after a passing verification run.
-- Do not hide blockers in release notes; blockers must remain visible here until fixed.
+Close an issue only with the named command/evidence on the exact candidate. Missing credentials, skipped providers, documentation or a local contract cannot be converted into PASS.

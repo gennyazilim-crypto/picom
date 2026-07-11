@@ -1,5 +1,7 @@
 # Picom Full MVP Gap Audit
 
+> Historical baseline: this document captured the pre-Task-431 implementation gaps. The superseding Task 520 decision is `docs/full-mvp-final-audit.md`, with traceability in `docs/full-mvp-task-status-431-519.md`. Do not use the historical status table as the current completion decision.
+
 Audit date: 2026-07-11
 Source baseline: `a3a855d4dfdea8a7a004ffb584936325a2cdc7f5`
 Latest required QA: [Picom QA #541](https://github.com/gennyazilim-crypto/picom/actions/runs/29130390770), successful
@@ -107,4 +109,3 @@ Latest required QA: [Picom QA #541](https://github.com/gennyazilim-crypto/picom/
 ## Current blockers
 
 Canonical release blockers RB-01 through RB-11 remain open. Most relevant to this pack are hosted RLS/Storage/Realtime/Edge evidence, hosted LiveKit, native screen share, native packages/signing, production ownership, legal approval, and compatible restore validation. Missing external evidence remains `BLOCKED`; it is not converted into local PASS.
-

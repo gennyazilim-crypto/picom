@@ -172,3 +172,16 @@ Backup hashes matched and isolated random-port Docker attempts were cleaned safe
 | RB-11 | Isolated restore drill | Backup hashes verified; restore blocked by Supabase image/schema mismatch | Restore compatible backup fully, validate integrity, then run guarded lifecycle checks |
 
 All blockers remain release-blocking. None may be converted to PASS by a local contract, missing-secret skip, placeholder owner, or unsigned artifact.
+
+## Task 520 final Full MVP audit update
+
+Tasks 431-519 have 89/89 exact checkpoints and 89/89 exact commit subjects, but traceability is not release certification. The protected Task 519 matrix remains 0 PASS, 0 FAIL, 18 BLOCKED, so RB-01 through RB-11 remain open.
+
+Two additional local quality gates currently prevent even an immutable Full MVP release-candidate claim:
+
+| ID | Local blocker | Current evidence | Closure |
+| --- | --- | --- | --- |
+| QB-01 | Renderer performance hard caps fail | `initialJs=1757.0 KiB` over 1650.0; `initialCss=240.8 KiB` over 240.0 | Optimize entry/static JS and initial CSS without raising/disabling approved caps |
+| QB-02 | Third-party license report is stale | `licenses:smoke` passes; `licenses:check` fails | Finalize concurrent package/assets, regenerate, review and pass the check |
+
+Task 520 decision: **Full MVP Partial; Stable No-Go**. No artifact publication is authorized.

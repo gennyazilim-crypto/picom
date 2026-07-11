@@ -1,196 +1,114 @@
-﻿# Full MVP Final Audit
+# Picom Final Full MVP Completion Audit
 
-Date: 2026-07-06
-Product: Picom desktop community chat app
+Audit date: 2026-07-11
+Task range: 431-519
+Audited source baseline: `eac79e261e9f1af96f0dd7e7957c1ae11ad7a8ef`
 Platforms: Windows, Linux, macOS
-Decision: Ready with non-blockers for beta QA. Not ready for production/live until the manual platform, Supabase CLI, and release hardening checks below are completed.
 
-## 1. Full MVP readiness
+## Final decisions
 
-Status: Ready with non-blockers.
+| Decision | Result | Reason |
+| --- | --- | --- |
+| Full MVP product-code completion | **Partial** | Core implementations and deterministic contracts exist across the requested domains, but two mandatory local gates fail and several acceptance paths lack real hosted/native execution. |
+| Stable release | **No-Go** | RB-01 through RB-11 remain open; no immutable signed/notarized cross-platform artifact set exists. |
+| Automatic publication | **Forbidden** | Task 520 is an audit only. No artifact was promoted or published. |
 
-Picom's current Full MVP codebase passes the local quality gate and the main structural smoke tests. The Electron shell, mock mode, Supabase schema foundation, LiveKit MVP wiring, screen-share bridge, and Windows package directory build are in a usable beta-QA state.
+Product-code completeness and release certification are intentionally separate. Local source/contracts are not hosted Supabase, LiveKit, native screen-share, clean-machine, legal, ownership, or restore evidence.
 
-This audit does not claim production readiness. Linux and macOS package smoke must be run on those platforms, Supabase CLI-backed reset/RLS tests must be run after installing the CLI, and LiveKit/Supabase must be validated against real hosted credentials before beta expansion.
+## Audit integrity
 
-## 2. Completed areas
+- The supplied Tasks 431-519 archive contains 89 tasks.
+- All 89 exact checkpoint paths named by those task files exist.
+- All 89 exact commit subjects named by those task files exist in Git history.
+- Older task packs contain duplicate task numbers. The audit matched the exact checkpoint path and exact commit subject from the current archive rather than accepting any same-number file.
+- No missing task, checkpoint, or expected commit was found.
+- Seventy-three checkpoints contain explicit `BLOCKED` language. This is primarily retained external/native evidence, not permission to claim completion.
+- Validation ran with unrelated user/Cursor changes present in the working tree. Those files were not staged, modified, discarded, or committed by Task 520. A stable candidate must be rebuilt from a clean immutable commit.
 
-### Electron shell
+Detailed range traceability is in `docs/full-mvp-task-status-431-519.md`.
 
-- Custom titlebar is implemented.
-- Native File/Edit/View menu is disabled through Electron configuration.
-- Window default size is documented as 1440x900.
-- Minimum size is documented as 1100x700.
-- Frameless custom chrome is verified by packaging smoke.
-- Safe preload bridge is verified by packaging smoke.
-- contextIsolation is enabled.
-- nodeIntegration is disabled.
-- Windows unpacked package generation passed on this workstation.
+## Requested feature status
 
-### UI
+| Area | Product implementation | Deterministic evidence | Missing acceptance/release evidence |
+| --- | --- | --- | --- |
+| Electron window controls and shell | Code/contract foundation complete | Typecheck, build, QA and package config pass | Interactive packaged controls and normal/maximized frame behavior on all target platforms |
+| Text, Radio and Podcast community kinds | Code/migrations/contracts complete | Community-kind, Radio and Podcast checkpoints and commits present | Hosted migrations, RLS, Storage, Realtime and end-to-end user flows on one immutable candidate |
+| Radio | Local Full MVP implementation present | Data, service, listener, host, schedule, roles, moderation and QA checkpoints present | Real hosted media/provider and two-client evidence |
+| Podcast | Local Full MVP implementation present | Draft/publish/player/queue/interactions/moderation/QA checkpoints present | Hosted Storage, playback and cross-user permission evidence |
+| Friends and Direct Messages | Local implementation and Supabase service/RLS foundation present | Friendship, DM, privacy and realtime contracts pass structurally | Hosted participant isolation, block/privacy and two-client realtime evidence |
+| Full Profile and verified identity | Local implementation present | Approved-only verification and profile/privacy contracts present | Hosted profile media, privacy projection and verification review evidence |
+| Unified Feed and stories | Local implementation present | Text/Radio/Podcast mention, actions, cache and QA checkpoints present | Hosted visibility, pagination, realtime and private-content denial evidence |
+| Settings | Local implementation and persistence contracts present | Account/profile/appearance/notifications/voice/advanced checkpoints present | Provider-backed account paths and native persistence/device evidence where applicable |
+| Community administration | Local implementation present | Role hierarchy, assignment, structure, invites, moderation, audit and danger contracts present | Hosted actor matrix and destructive-operation evidence |
+| Voice and screen share | Source, preload, renderer and token contracts present | Voice/device/reconnect/screen bridge/publish contracts pass locally | Deployed token endpoint, two-client LiveKit media, and Windows/Linux/macOS native certification |
+| Supabase Auth and product data | Service/data-source integration present | Supabase QA, schema, migration integrity, API regression and structural RLS pass | Complete hosted actor/content matrix and real UI flow evidence |
+| Supabase Storage | Private lifecycle contracts present | Structural policies and RLS matrix contract pass | Historical access refresh, lost-access denial, orphan cleanup and real hosted lifecycle evidence |
+| Supabase Realtime | Subscription/presence/typing/unread cleanup present | Realtime staging contract passes | Protected two-client run; earlier private Presence authorization remains unresolved |
+| Edge Functions | Release-scoped source/deploy contracts present | JWT/CORS/method/secret contract passes | Protected deployment and hosted request matrix |
+| Mock/Supabase source selection | Explicit source policy complete | Mock smoke and Supabase API regression pass | No silent mock fallback is allowed; staging data remains unavailable here |
 
-- ServerRail, CommunitySidebar, ChatMain, MessageList, MessageComposer, and MemberSidebar are implemented.
-- Mention Feed exists with story header, social footer, and companion rail.
-- Full Profile Page exists.
-- Settings, DesktopContextMenu, and ImagePreview surfaces exist.
-- Light/dark mode and Picom design tokens are in place.
-- Coolicons/AppIcon is the approved icon direction.
-- No mobile UI was added in this audit.
+## Quality gate results
 
-### Messaging
+| Command | Result | Evidence |
+| --- | --- | --- |
+| `npm run typecheck` | PASS | TypeScript completed without errors. |
+| `npm run mock:smoke` | PASS | Explicit mock fixtures and no-silent-fallback audit passed. |
+| `npm run qa:smoke` | PASS | Environment, hooks, logs, diagnostics, errors, secrets, renderer boundary, branding, desktop, Electron, packaging, settings, LiveKit and mock gates passed. |
+| `npm run build` | PASS with warnings | Electron and Vite production build completed; ineffective voice dynamic import and large chunk warnings remain. |
+| `npm run performance:budget:ci` | **FAIL** | `initialJs=1757.0 KiB` exceeds `1650.0 KiB`; `initialCss=240.8 KiB` exceeds `240.0 KiB`; total assets `2989.4 KiB` is warning-only below hard cap. |
+| `npm run licenses:smoke` | PASS | Notice structure passed. |
+| `npm run licenses:check` | **FAIL** | Generated license report is missing or stale. It was not regenerated because the notice/package files are user-owned concurrent work. |
+| `npm run supabase:qa` | PASS with external warning | Migration integrity, schema, structural RLS and API regression passed; Supabase CLI is unavailable, so real pgTAP was skipped. |
+| `npm run supabase:smoke` | PASS with external warning | Structural schema checks pass; CLI reset not executed. |
+| `npm run supabase:rls:smoke` | PASS with external warning | Structural RLS cases pass; real pgTAP not executed. |
+| Full MVP RLS matrix contract | PASS | Actor/domain/operation/Storage/Realtime/mutation contract is present. |
+| Full MVP staging matrix contract | PASS contract / **BLOCKED execution** | 18 flows: 0 PASS, 0 FAIL, 18 BLOCKED. This is not staging certification. |
+| Edge and Realtime staging contracts | PASS contracts | No protected hosted execution is claimed. |
+| `npm run package:verify` | PASS config only | Electron packaging configuration passes; this does not install or certify artifacts. |
+| `npm run visual:regression:contract` | PASS contract only | 33 desktop light/dark scenarios mapped; no pixel runner/baseline execution. |
+| `npm run e2e:coverage:contract` | PASS contract only | 17 core flows mapped; no Playwright/Electron UI E2E execution. |
 
-- Mock/local message flow is covered by mock smoke.
-- Local reactions and message-service paths are covered structurally.
-- Attachments and image preview are represented in the UI foundation.
-- Reply/reaction/emoji MVP paths exist in the renderer foundation.
+Because performance and license checks are required gates, the current working tree cannot be labeled Full MVP code complete or release-candidate ready.
 
-### Community access
+## Artifact inventory summary
 
-- Role-aware community access/menu work is present.
-- Owner/admin/mod/member/visitor behavior is represented in the mock/service layer.
-- Join/leave and visitor read-only states are prepared.
-- Private channel hiding is covered by access helpers and smoke coverage.
-- Composer permission-state foundation exists.
+Current disk contents include unsigned Windows development/beta artifacts and generated renderer/Electron outputs. They are not an immutable stable set:
 
-### Supabase
+- `release/Picom-0.1.0-Windows-x64.exe` - 120,374,587 bytes.
+- `release/Picom-0.1.1-beta.1-Windows-x64.exe` - 120,375,860 bytes.
+- `release/win-unpacked/Picom.exe` - 235,715,584 bytes.
+- Two `win-unpacked.tmp/electron.exe` files in task release folders - temporary/incomplete output, excluded.
+- No Linux AppImage/deb stable artifacts were found.
+- No macOS DMG/zip stable artifacts were found.
+- `dist` and `dist-electron` are developer build outputs, not distributable certification evidence.
 
-- Supabase migrations are present for profiles, communities, members, roles, categories, channels, messages, attachments, reactions, read states, indexes, storage, and RLS.
-- Supabase client/service wrappers exist.
-- Structural Supabase smoke passed.
-- RLS SQL test files and smoke wrapper exist.
-- Service-role key is documented as server-only and is not required in renderer env examples.
+Exact interpretation is in `docs/final-stable-rc-artifact-inventory.md`.
 
-### LiveKit and screen share
+## Product-code blockers
 
-- LiveKit dependency and renderer service are verified by smoke.
-- Deterministic room naming is verified.
-- Token Edge Function structure is verified.
-- Voice room UI wiring is verified.
-- Electron screen-share bridge is verified.
-- Screen share controls and preview are verified.
+1. Restore the renderer performance gate without raising or disabling the approved caps.
+2. Reconcile and regenerate the third-party license report after the concurrent asset/package work is finalized, then make `licenses:check` pass.
+3. Run a clean-worktree build so quality evidence maps to one immutable commit.
+4. Activate a real desktop UI E2E runner and pixel regression execution; current contracts only map coverage.
 
-### Cross-platform package
+## External, native and governance blockers
 
-- Electron builder config is verified.
-- Windows, Linux, and macOS smoke docs exist.
-- Windows unpacked package generation passed on this workstation.
-- Linux/macOS smoke plans are documented without falsely claiming local success.
+1. Complete protected hosted Supabase RLS/Storage/Realtime/Edge validation with synthetic actors.
+2. Complete two-client LiveKit voice and reconnect validation.
+3. Certify native screen sharing on Windows, Linux and macOS.
+4. Produce trusted Windows, native Linux, and signed/notarized macOS candidates and clean-machine evidence.
+5. Assign production owners/custodians and freeze approved environment values.
+6. Obtain authorized legal/privacy/license approval.
+7. Complete a compatible isolated restore and guarded destructive lifecycle drill.
 
-## 3. Partial areas
+## Prioritized next actions
 
-- Supabase smoke is structural because Supabase CLI is not installed on this workstation.
-- RLS tests are prepared, but full local reset/RLS execution requires Supabase CLI.
-- Linux package smoke must be run on Linux.
-- macOS package smoke must be run on macOS.
-- LiveKit smoke verifies wiring, not a real hosted LiveKit session with multiple users.
-- Screen share smoke verifies bridge and renderer wiring, not OS permission prompts on all platforms.
-- Bundle size warning remains and should be addressed before production, but it does not block beta QA.
+1. P0: Freeze Cursor work into a reviewed commit, fix performance and stale license report, then rerun the complete local gate.
+2. P0: Provision the protected staging actor/provider matrix and execute Task 519 against the exact candidate.
+3. P0: Close hosted RLS/Storage/Realtime/Edge and LiveKit privacy/security evidence.
+4. P0: Produce and certify native platform artifacts, signing/notarization and screen share.
+5. P0: Close ownership, legal and restore blockers; only then convene a new Go/No-Go review.
 
-## 4. Critical blockers
+## Final statement
 
-No local code/build blockers were found in this final audit.
-
-Production/live blockers remain:
-
-- Supabase CLI-backed database reset/RLS tests have not been executed on this machine.
-- Hosted Supabase auth/storage/realtime credentials still need a real environment validation pass.
-- Hosted LiveKit voice/screen-share test with two clients still needs manual validation.
-- Linux and macOS package launches still need platform smoke results.
-- Signing, notarization, updater, and production release hardening are outside the current verified beta gate.
-
-## 5. Non-blocking known issues
-
-- Vite reports chunks larger than 500 kB after minification.
-- voiceService is separately chunked but still large because LiveKit is a significant dependency.
-- Supabase CLI warning appears during structural smoke when CLI is not installed.
-- Electron builder reports duplicate dependency references for vite@8.1.3 during Windows package directory generation; packaging still completed.
-- Linux rpm packaging is not configured; current Linux targets are AppImage and deb.
-- macOS builds are currently local unsigned/not-notarized placeholders.
-
-## 6. Required manual tests
-
-### Windows
-
-- Launch release/win-unpacked/Picom.exe.
-- Confirm no native File/Edit/View menu appears.
-- Confirm custom titlebar, minimize, maximize/restore, and close work.
-- Confirm maximized mode removes frame padding/radius.
-- Confirm mock community/channel/message flow works.
-- Confirm Mention Feed, Profile Page, and Settings open.
-- Confirm image preview opens.
-
-### Linux
-
-- Run npm run package:linux on Linux.
-- Launch AppImage and/or installed deb.
-- Confirm desktop entry, icon, titlebar, mock mode, and no mobile UI.
-
-### macOS
-
-- Run npm run package:mac on macOS.
-- Launch app from dmg/zip.
-- Confirm custom chrome behavior and permission prompt wording.
-- Verify microphone/screen-recording permission flow.
-
-### Supabase
-
-- Install Supabase CLI.
-- Run the documented Supabase local reset/RLS tests.
-- Validate auth signup/login/session restore.
-- Validate storage upload and private channel attachment access.
-- Validate realtime message insert/update/delete across two windows.
-
-### LiveKit
-
-- Configure hosted or local LiveKit credentials.
-- Join a voice room from two clients.
-- Validate mute/deafen, speaking indicator, leave, and reconnect behavior.
-- Validate screen source picker and start/stop screen share on Windows, Linux, and macOS.
-
-## 7. Exact next fixes before wider beta
-
-1. Install Supabase CLI and run the full reset/RLS test suite.
-2. Run hosted Supabase API-mode smoke against real project credentials.
-3. Run two-client realtime message and LiveKit voice/screen-share manual smoke.
-4. Run Linux and macOS package smoke on real target platforms.
-5. Reduce or intentionally budget the large renderer chunk before production.
-
-## 8. Commands run
-
-```text
-npm run typecheck
-npm run mock:smoke
-npm run supabase:smoke
-npm run livekit:smoke
-npm run package:verify
-npm run build
-```
-
-Additional package command run during the cross-platform package smoke task:
-
-```text
-npm run package:win:dir
-```
-
-## 9. Test results
-
-- npm run typecheck: passed.
-- npm run mock:smoke: passed.
-- npm run supabase:smoke: passed with Supabase CLI missing warning for optional reset smoke.
-- npm run livekit:smoke: passed.
-- npm run package:verify: passed.
-- npm run build: passed with Vite chunk-size warning.
-- npm run package:win:dir: passed during package smoke task.
-
-## 10. Changed files in this task
-
-- docs/full-mvp-final-audit.md
-- docs/task-checkpoints/task-full-mvp-final-audit.md
-
-## 11. Commit
-
-Commit will be created after this audit document is written:
-
-```text
-git commit -m "audit full mvp readiness"
-```
+Tasks 431-519 are traceable and their implementation/checkpoint work is present. That does not make the requested Full MVP accepted or the product stable-ready. Current decision: **Full MVP Partial; Stable No-Go; no publication authorized.**
