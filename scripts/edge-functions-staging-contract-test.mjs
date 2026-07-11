@@ -9,7 +9,11 @@ const failed = [];
 for (const name of functions) {
   const source = readFileSync(`supabase/functions/${name}/index.ts`, "utf8");
   if (!config.includes(`[functions.${name}]\nverify_jwt = true`) && !config.includes(`[functions.${name}]\r\nverify_jwt = true`)) failed.push(`${name} verify_jwt`);
-  if (!source.includes("handleCorsPreflight") || !source.includes("requireSupabaseUser")) failed.push(`${name} auth/CORS helpers`);
+  const hasCorsBoundary = name === "livekit-token"
+    ? source.includes("PICOM_ALLOWED_ORIGINS") && source.includes("corsHeadersFor") && source.includes("Origin is not allowed")
+    : source.includes("handleCorsPreflight");
+  if (!hasCorsBoundary || !source.includes("requireSupabaseUser")) failed.push(`${name} auth/CORS helpers`);
+  if (name === "livekit-token" && !source.includes('rpc("authorize_livekit_room"')) failed.push("livekit-token authorization RPC");
   if (/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/.test(source)) failed.push(`${name} service-role reference/value`);
 }
 

@@ -1,51 +1,30 @@
 # Picom LiveKit Token Function
 
-This authenticated Supabase Edge Function issues short-lived LiveKit room tokens for Picom voice channels.
+Authenticated Supabase Edge Function for short-lived, least-privilege Text-community voice-room tokens.
 
-## Server-only secrets
+## Server-only configuration
 
 - `LIVEKIT_URL`
 - `LIVEKIT_API_KEY`
 - `LIVEKIT_API_SECRET`
+- `PICOM_ALLOWED_ORIGINS`, comma-separated exact desktop/dev origins
 
-Set them with `supabase secrets set`. Never expose the API key/secret through `VITE_` variables, Electron preload, renderer code, logs, diagnostics, or committed files.
+Set these only with Supabase secret storage. Never use `VITE_` variables, renderer/preload values, logs, diagnostics, or committed files.
 
-## Request
+## Authorization
 
-`POST /functions/v1/livekit-token` with the signed-in user's Supabase access token and JSON:
+`POST` JSON accepts `communityId`, `channelId`, optional deterministic `roomName`, optional safe `participantName`, and `intent` (`voice` or `screen`). The function verifies the Supabase JWT, rate limit, 2 KiB JSON contract, origin allowlist, active Text community, active membership, bans/timeouts, voice channel, private access, and scoped `joinVoice`/`speakInVoice`/`shareScreen` permissions through `authorize_livekit_room`.
 
-```json
-{
-  "communityId": "uuid",
-  "channelId": "uuid",
-  "participantName": "Optional display name",
-  "intent": "voice"
-}
-```
+Tokens expire after ten minutes. Voice tokens publish microphone only when `speakInVoice` is allowed. Screen tokens publish screen-share sources only when `shareScreen` is allowed. Camera and data publishing are not granted.
 
-`intent` may be `voice` or `screen`. The function verifies the Supabase user, validates the UUIDs, reads the voice channel through RLS, derives `community:<communityId>:voice:<channelId>`, and uses `auth.uid()` as participant identity.
-
-## Token boundary
-
-The token expires after one hour and grants room join, subscribe, publish, and data publish capabilities. Current MVP publishing supports microphone audio and screen-share tracks. If future policy requires per-source grants, tighten the server grant before exposing new UI.
-
-Expected grant review:
-
-- `roomJoin: true`
-- `room` exactly matches the server-derived community/channel room
-- `canSubscribe: true`
-- `canPublish: true` for microphone and screen-share tracks
-- `canPublishData: true` for bounded room-control/presence data
-
-The renderer cannot select an arbitrary identity or room name. Participant identity is the authenticated Supabase user ID.
-
-## Deploy
+## Deployment
 
 ```powershell
-supabase secrets set LIVEKIT_URL=<wss-url>
-supabase secrets set LIVEKIT_API_KEY=<server-key>
-supabase secrets set LIVEKIT_API_SECRET=<server-secret>
+supabase link --project-ref <staging-project-ref>
+supabase db push
+supabase secrets set LIVEKIT_URL=<wss-url> LIVEKIT_API_KEY=<server-key> LIVEKIT_API_SECRET=<server-secret> PICOM_ALLOWED_ORIGINS=<exact-origins>
 supabase functions deploy livekit-token
+node scripts/livekit-token-staging-validation.mjs --run
 ```
 
-Unauthenticated requests and users who cannot read the target voice channel must be rejected.
+Use synthetic staging users/rooms. Do not print tokens or secret values. Production deployment requires separate approval.

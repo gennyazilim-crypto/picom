@@ -5,6 +5,10 @@ export interface LiveKitTokenInput {
   name: string;
   roomName: string;
   ttlSeconds?: number;
+  canPublish?: boolean;
+  canSubscribe?: boolean;
+  canPublishData?: boolean;
+  canPublishSources?: readonly ("microphone" | "screen_share" | "screen_share_audio")[];
 }
 
 export interface LiveKitTokenResult {
@@ -39,6 +43,10 @@ export async function createLiveKitToken({
   name,
   roomName,
   ttlSeconds = 60 * 60,
+  canPublish = false,
+  canSubscribe = true,
+  canPublishData = false,
+  canPublishSources = [],
 }: LiveKitTokenInput): Promise<LiveKitTokenResult> {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const expiresAtSeconds = nowSeconds + ttlSeconds;
@@ -54,9 +62,10 @@ export async function createLiveKitToken({
       video: {
         room: roomName,
         roomJoin: true,
-        canPublish: true,
-        canSubscribe: true,
-        canPublishData: true,
+        canPublish,
+        canSubscribe,
+        canPublishData,
+        canPublishSources,
       },
     }),
   );

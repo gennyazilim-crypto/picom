@@ -105,7 +105,8 @@ const functionRequired = [
   "requireSupabaseUser",
   "VOICE_NOT_CONFIGURED",
   "VOICE_CHANNEL_FORBIDDEN",
-  "VOICE_CHANNEL_REQUIRED",
+  "authorize_livekit_room",
+  "PICOM_ALLOWED_ORIGINS",
   "createLiveKitToken"
 ];
 
@@ -115,7 +116,7 @@ for (const term of functionRequired) {
   }
 }
 
-const tokenHelperRequired = ["HMAC", "SHA-256", "roomJoin", "canPublish", "canSubscribe"];
+const tokenHelperRequired = ["HMAC", "SHA-256", "roomJoin", "canPublish", "canSubscribe", "canPublishSources"];
 for (const term of tokenHelperRequired) {
   if (!livekitTokenHelper.includes(term)) {
     throw new Error(`Missing LiveKit token helper capability: ${term}`);

@@ -1,104 +1,26 @@
-# LiveKit token Edge Function
+# Secure LiveKit token Edge Function
 
-Task 197 adds the Supabase Edge Function boundary for Picom voice tokens.
+## Security boundary
 
-## Function
+- Supabase gateway and `requireSupabaseUser` verify the bearer JWT.
+- The user-scoped client calls `authorize_livekit_room`; renderer-supplied identity, grants, and arbitrary room names are never trusted.
+- Only active members of active Text communities may join community voice channels.
+- Visitors, banned users, active timeouts, inaccessible private channels, non-voice channels, and Radio/Podcast community kinds are denied.
+- `joinVoice` controls room entry, `speakInVoice` controls microphone publish, and `shareScreen` controls screen publish.
+- Tokens expire after ten minutes and never grant camera or LiveKit data publish.
+- `LIVEKIT_API_SECRET` remains server-side and is excluded from renderer, preload, logs, and diagnostics.
 
-```text
-supabase/functions/livekit-token/index.ts
-```
+## HTTP boundary
 
-The function accepts:
+- `POST` and `OPTIONS` only.
+- Exact `PICOM_ALLOWED_ORIGINS` allowlist with `Vary: Origin`; no credentialed wildcard.
+- `application/json` only, maximum 2 KiB, supported keys only, bounded participant name.
+- Responses use `Cache-Control: no-store` and never return server credentials.
 
-```json
-{
-  "communityId": "uuid",
-  "channelId": "uuid",
-  "roomName": "picom:communityId:channelId optional",
-  "participantName": "optional display name",
-  "intent": "voice | screen"
-}
-```
+## Staging matrix
 
-It returns:
+Run `npm run livekit:token:security:smoke` locally. With approved staging configuration, run `node scripts/livekit-token-staging-validation.mjs --run` to verify missing JWT denial, permitted member success, visitor denial, private-channel denial, deterministic identity/room, ten-minute expiry, and publish-source grants. Values/tokens are never printed.
 
-```json
-{
-  "token": "livekit-jwt",
-  "url": "livekit-server-url",
-  "roomName": "picom:communityId:channelId",
-  "identity": "supabase-user-id",
-  "participantName": "display name",
-  "intent": "voice",
-  "expiresAt": "iso-date"
-}
-```
+## Deployment status
 
-## Security model
-
-- The renderer sends the user's Supabase Auth bearer token.
-- The Edge Function validates the session with Supabase Auth.
-- The function queries `public.channels` using the user's JWT, so channel access remains governed by RLS.
-- The channel must be a `voice` channel.
-- LiveKit API key/secret stay in Edge Function environment variables only.
-- The token is scoped to one room and one user identity.
-- `roomName` is optional and must match the deterministic `picom:{communityId}:{channelId}` room.
-- `intent` is validated as `voice` or `screen`; both currently receive the MVP publish/subscribe grants.
-- Token expiry is short-lived at 1 hour.
-
-## Required environment variables
-
-Supabase provides:
-
-```env
-SUPABASE_URL=...
-SUPABASE_ANON_KEY=...
-```
-
-Set these in Supabase function secret storage:
-
-```env
-LIVEKIT_URL=...
-LIVEKIT_API_KEY=...
-LIVEKIT_API_SECRET=...
-```
-
-Do not commit real LiveKit values.
-
-## Supabase configuration
-
-`supabase/config.toml` includes:
-
-```toml
-[functions.livekit-token]
-verify_jwt = true
-```
-
-## Local test placeholder
-
-When Supabase CLI and LiveKit credentials are available:
-
-```powershell
-supabase functions serve livekit-token
-```
-
-Then call with a valid Supabase user access token:
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://127.0.0.1:54321/functions/v1/livekit-token `
-  -Headers @{ Authorization = "Bearer USER_ACCESS_TOKEN" } `
-  -ContentType "application/json" `
-  -Body '{"communityId":"COMMUNITY_UUID","channelId":"VOICE_CHANNEL_UUID"}'
-```
-
-## Platform notes
-
-- Windows: microphone access depends on Windows privacy settings and Chromium permission prompts.
-- Linux: microphone and screen sharing may depend on PulseAudio/PipeWire and xdg-desktop-portal support.
-- macOS: microphone and screen recording require System Settings permissions.
-
-## Current limitation
-
-This task creates the token boundary only. The renderer voice connection UI/service can call this function in later voice tasks.
+Repository implementation and security contracts can pass locally. Actual `supabase db push`, secret configuration, function deployment, and LiveKit connection evidence remain `BLOCKED` until an approved staging project, Supabase CLI session, synthetic users/rooms, and LiveKit server credentials are available. A browser login alone is not evidence of deployment.

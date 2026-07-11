@@ -108,6 +108,8 @@
     "settings:advanced-diagnostics:smoke": "node scripts/advanced-diagnostics-settings-full-mvp-smoke.mjs",
     "settings:full-mvp:qa": "node scripts/settings-full-mvp-e2e-qa.mjs",
     "livekit:smoke": "node scripts/livekit-smoke-test.mjs",
+    "livekit:token:security:smoke": "node scripts/livekit-token-security-smoke.mjs",
+    "livekit:token:staging": "node scripts/livekit-token-staging-validation.mjs",
     "qa:smoke": "node scripts/qa-smoke-gate.mjs",
     "qa:supabase": "node scripts/supabase-qa-gate.mjs",
     "supabase:status": "supabase status",
