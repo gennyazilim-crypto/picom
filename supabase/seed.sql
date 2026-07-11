@@ -224,3 +224,40 @@ insert into public.read_states (id, user_id, channel_id, last_read_message_id, u
 on conflict (user_id, channel_id) do update set
   last_read_message_id = excluded.last_read_message_id,
   updated_at = now();
+
+-- Task 531 local-only meeting metadata parity. No raw media or provider credentials.
+insert into public.meeting_rooms (
+  id,community_id,channel_id,linked_chat_channel_id,source_kind,mode,title,description,status,join_policy,
+  default_role,host_user_id,created_by,capabilities,waiting_room_enabled,max_participants,created_at,updated_at
+) values (
+  'a1000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001',
+  '50000000-0000-4000-8000-000000000003','50000000-0000-4000-8000-000000000002',
+  'community_channel','meeting','Picom Studio Sync','Local deterministic meeting seed.','live','members','participant',
+  '00000000-0000-4000-8000-000000000101','00000000-0000-4000-8000-000000000101',
+  '{"canPublishAudio":true,"canPublishVideo":true,"canShareScreen":true,"canSendChat":true}'::jsonb,
+  false,50,now(),now()
+) on conflict(id) do update set title=excluded.title,status=excluded.status,capabilities=excluded.capabilities,updated_at=now();
+
+insert into public.meeting_sessions (
+  id,room_id,provider,provider_room_name,status,connection_state,started_by_user_id,started_at,participant_count,last_event_sequence,idempotency_key
+) values (
+  'a2000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','livekit',
+  'picom-local-community-voice-meeting','live','connected','00000000-0000-4000-8000-000000000101',now(),2,1,'seed-meeting-session-001'
+) on conflict(id) do update set status=excluded.status,connection_state=excluded.connection_state,participant_count=excluded.participant_count,updated_at=now();
+
+insert into public.meeting_session_participants (
+  id,session_id,user_id,provider_identity,display_name,role,state,capabilities,joined_at,last_seen_at
+) values
+  ('a3000000-0000-4000-8000-000000000001','a2000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000101','local-owner','Aylin Studio','host','connected','{"canManageParticipants":true,"canEndRoom":true}'::jsonb,now(),now()),
+  ('a3000000-0000-4000-8000-000000000002','a2000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000103','local-member','Deniz Member','participant','connected','{"canPublishAudio":true,"canSendChat":true}'::jsonb,now(),now())
+on conflict(id) do update set role=excluded.role,state=excluded.state,capabilities=excluded.capabilities,last_seen_at=now(),updated_at=now();
+
+insert into public.meeting_invites (id,room_id,invited_user_id,invited_by_user_id,role,status,token_hash,created_at,expires_at) values (
+  'a4000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000102',
+  '00000000-0000-4000-8000-000000000101','cohost','active','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',now(),now()+interval '1 day'
+) on conflict(id) do update set role=excluded.role,status=excluded.status,expires_at=excluded.expires_at;
+
+insert into public.meeting_events (id,room_id,session_id,actor_user_id,event_type,event_source,idempotency_key,sequence,payload,occurred_at) values (
+  'a5000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','a2000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000101','session_started','backend','seed-meeting-event-001',1,'{"status":"live"}'::jsonb,now()
+) on conflict(id) do update set sequence=excluded.sequence,payload=excluded.payload,occurred_at=excluded.occurred_at;

@@ -232,6 +232,41 @@ export type Database = {
         Insert: Partial<Database["public"]["Tables"]["community_events"]["Row"]> & Pick<Database["public"]["Tables"]["community_events"]["Row"],"community_id"|"title"|"starts_at"|"created_by">;
         Update: Partial<Database["public"]["Tables"]["community_events"]["Row"]>;Relationships:[];
       };
+      meeting_rooms: {
+        Row: { id:string;community_id:string;channel_id:string|null;event_id:string|null;linked_chat_channel_id:string|null;source_kind:"community_channel"|"scheduled_event"|"ad_hoc";mode:"voice"|"meeting"|"stage";title:string;description:string;status:"scheduled"|"open"|"live"|"ended"|"cancelled"|"locked";join_policy:"open"|"members"|"invite_only"|"approval_required";default_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";host_user_id:string;created_by:string;approved_by_user_id:string|null;capabilities:Json;metadata:Json;waiting_room_enabled:boolean;max_participants:number;scheduled_for:string|null;scheduled_end_at:string|null;locked_at:string|null;locked_by_user_id:string|null;ended_at:string|null;ended_by_user_id:string|null;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["meeting_rooms"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_rooms"]["Row"],"community_id"|"source_kind"|"mode"|"title"|"host_user_id"|"created_by">;
+        Update: Partial<Database["public"]["Tables"]["meeting_rooms"]["Row"]>;Relationships:[];
+      };
+      meeting_sessions: {
+        Row: { id:string;room_id:string;provider:"livekit";provider_room_name:string;status:"preparing"|"live"|"reconnecting"|"ended"|"failed";connection_state:string;started_by_user_id:string;ended_by_user_id:string|null;started_at:string|null;ended_at:string|null;participant_count:number;last_event_sequence:number;idempotency_key:string;metadata:Json;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["meeting_sessions"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_sessions"]["Row"],"room_id"|"provider_room_name"|"started_by_user_id"|"idempotency_key">;
+        Update: Partial<Database["public"]["Tables"]["meeting_sessions"]["Row"]>;Relationships:[];
+      };
+      meeting_session_participants: {
+        Row: { id:string;session_id:string;user_id:string|null;provider_identity:string;display_name:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";state:"invited"|"waiting"|"joining"|"connected"|"reconnecting"|"left"|"removed";capabilities:Json;joined_at:string|null;left_at:string|null;last_seen_at:string|null;removed_by_user_id:string|null;removal_reason_code:string|null;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_session_participants"]["Row"],"session_id"|"provider_identity"|"display_name"|"role">;
+        Update: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]>;Relationships:[];
+      };
+      meeting_waiting_entries: {
+        Row: { id:string;room_id:string;session_id:string|null;user_id:string;display_name:string;requested_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"waiting"|"admitted"|"denied"|"expired"|"cancelled";idempotency_key:string;requested_at:string;resolved_at:string|null;resolved_by_user_id:string|null;denial_reason_code:string|null;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"],"room_id"|"user_id"|"display_name"|"idempotency_key">;
+        Update: Partial<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"]>;Relationships:[];
+      };
+      meeting_invites: {
+        Row: { id:string;room_id:string;invited_user_id:string|null;invited_by_user_id:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"active"|"accepted"|"declined"|"revoked"|"expired";token_hash:string;created_at:string;expires_at:string|null;responded_at:string|null;revoked_at:string|null };
+        Insert: Partial<Database["public"]["Tables"]["meeting_invites"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_invites"]["Row"],"room_id"|"invited_by_user_id"|"role"|"token_hash">;
+        Update: Partial<Database["public"]["Tables"]["meeting_invites"]["Row"]>;Relationships:[];
+      };
+      meeting_events: {
+        Row: { id:string;room_id:string;session_id:string|null;actor_user_id:string|null;actor_participant_id:string|null;event_type:string;event_source:"backend"|"livekit"|"webhook"|"client";provider_event_id:string|null;idempotency_key:string;sequence:number;payload:Json;occurred_at:string;created_at:string };
+        Insert: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_events"]["Row"],"room_id"|"event_type"|"event_source"|"idempotency_key"|"occurred_at">;
+        Update: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]>;Relationships:[];
+      };
+      meeting_attendance: {
+        Row: { id:string;session_id:string;user_id:string|null;participant_identity_hash:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";joined_at:string;left_at:string|null;duration_seconds:number|null;reconnect_count:number;final_state:"left"|"removed"|"disconnected"|"ended";created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["meeting_attendance"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_attendance"]["Row"],"session_id"|"participant_identity_hash"|"role"|"joined_at">;
+        Update: Partial<Database["public"]["Tables"]["meeting_attendance"]["Row"]>;Relationships:[];
+      };
       community_event_rsvps: {
         Row: { id:string;event_id:string;user_id:string;status:"interested"|"going"|"not_going";created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["community_event_rsvps"]["Row"]> & Pick<Database["public"]["Tables"]["community_event_rsvps"]["Row"],"event_id"|"user_id"|"status">;
@@ -486,7 +521,7 @@ export type Database = {
         Relationships: [];
       };
       audit_log: {
-        Row: { id: string; community_id: string; actor_id: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; created_at: string };
+        Row: { id: string; community_id: string; actor_id: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; meeting_room_id: string | null; meeting_session_id: string | null; created_at: string };
         Insert: never;
         Update: never;
         Relationships: [];
