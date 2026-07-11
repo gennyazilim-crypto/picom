@@ -362,6 +362,9 @@ export function App() {
   const [profilePrivacySubjectId,setProfilePrivacySubjectId]=useState<string|null>(null);
   const [remoteUserProfile,setRemoteUserProfile]=useState<UserProfile|null>(null);
   const [remoteProfileSubjectId,setRemoteProfileSubjectId]=useState<string|null>(null);
+  const [remoteProfileLoadState,setRemoteProfileLoadState]=useState<"idle"|"loading"|"ready"|"error">("idle");
+  const [remoteProfileLoadError,setRemoteProfileLoadError]=useState<string|null>(null);
+  const [profileReloadVersion,setProfileReloadVersion]=useState(0);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
@@ -892,20 +895,24 @@ export function App() {
     if (!activeProfileUserId || !selectedProfileMember || !dataSourceService.getStatus().isSupabase) {
       setRemoteUserProfile(null);
       setRemoteProfileSubjectId(null);
+      setRemoteProfileLoadState(activeProfileUserId && selectedProfileMember ? "ready" : "idle");
+      setRemoteProfileLoadError(null);
       return;
     }
     const subjectId = activeProfileUserId;
     let active = true;
     setRemoteUserProfile(null);
     setRemoteProfileSubjectId(null);
+    setRemoteProfileLoadState("loading");
+    setRemoteProfileLoadError(null);
     void profileActivityService.load({ member: selectedProfileMember, communities, viewerUserId: directMessageUserId, followedUserIds }).then((result) => {
       if (!active || subjectId !== activeProfileUserId) return;
       setRemoteProfileSubjectId(subjectId);
-      if (result.ok) setRemoteUserProfile(result.data);
-      else pushToast(result.error.message, "error");
+      if (result.ok) { setRemoteUserProfile(result.data); setRemoteProfileLoadState("ready"); setRemoteProfileLoadError(null); }
+      else { setRemoteProfileLoadState("error"); setRemoteProfileLoadError(result.error.message); pushToast(result.error.message, "error"); }
     });
     return () => { active = false; };
-  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, pushToast, selectedProfileMember]);
+  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, profileReloadVersion, pushToast, selectedProfileMember]);
 
   const selectedUserProfile = useMemo(() => {
     if (!selectedProfileMember) return null;
@@ -2654,6 +2661,9 @@ export function App() {
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
               onOpenCommunity={openFeedEventCommunity}
+              dataState={dataSourceService.getStatus().isSupabase ? remoteProfileLoadState : "ready"}
+              dataError={remoteProfileLoadError}
+              onRetryData={() => setProfileReloadVersion((version) => version + 1)}
               onEditProfile={() => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely without persisted navigation. */ } openSettings(); }}
               onPlaceholderAction={(message) => pushToast(message, "info")}
               onOpenMore={(event, profile) => openContext(event, [

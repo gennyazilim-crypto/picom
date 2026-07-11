@@ -7,7 +7,7 @@ import { AppIcon, type IconName } from "./AppIcon";
 import { VerifiedProfileAvatar } from "./VerifiedProfileAvatar";
 import { VerificationBadgeList } from "./VerificationBadgeList";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
-import { useAudioCatalog } from "../hooks/useAudioCatalog";
+import { useAudioCatalogState } from "../hooks/useAudioCatalog";
 import { ProfileAudioSections } from "./audio/ProfileAudioSections";
 
 type ProfileViewProps = {
@@ -25,6 +25,9 @@ type ProfileViewProps = {
   onEditProfile?: () => void;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
   onOpenCommunity?: (communityId: string) => void;
+  dataState?: "idle" | "loading" | "ready" | "error";
+  dataError?: string | null;
+  onRetryData?: () => void;
 };
 
 type ProfileActionButtonsProps = {
@@ -226,7 +229,7 @@ export function ProfileHeroGallery({ media, onOpenImage }: { media: ProfileMedia
           })}
         </div>
       ) : (
-        <div className="profile-empty-panel">No profile media yet.</div>
+        <div className="profile-empty-panel"><AppIcon name="image" size="lg" /><strong>No profile media yet</strong><span>Visible images shared by this member will appear here.</span></div>
       )}
     </section>
   );
@@ -264,7 +267,7 @@ export function ProfileBio({ profile }: { profile: UserProfile }) {
           <h2>About {profile.displayName}</h2>
         </div>
       </div>
-      <p>{profile.bio}</p>
+      {profile.bio.trim() ? <p>{profile.bio}</p> : <div className="profile-empty-inline">No bio has been shared.</div>}
     </section>
   );
 }
@@ -273,12 +276,12 @@ export function ProfileDetailsGrid({ profile, communities }: { profile: UserProf
   const details: Array<{ icon: IconName; label: string; value: string | number }> = [
     { icon: "bell", label: "Status", value: profile.statusText ?? profile.status },
     { icon: "home", label: "Location", value: profile.location ?? "Not shared" },
-    { icon: "settings", label: "Timezone", value: profile.timezone ?? "System timezone" },
+    { icon: "settings", label: "Timezone", value: profile.timezone ?? "Not shared" },
     { icon: "user", label: "Joined", value: dateTimeService.formatCompactDateTime(profile.joinedAt) },
-    { icon: "users", label: "Main community", value: getCommunityName(communities, profile.mainCommunityId) },
+    { icon: "users", label: "Main community", value: profile.mainCommunityId ? getCommunityName(communities, profile.mainCommunityId) : "Not shared" },
     { icon: "lock", label: "Top role", value: profile.topRole ?? "Member" },
     { icon: "smile", label: "Activity score", value: profile.activityScore ?? 0 },
-    { icon: "hash", label: "Language", value: profile.preferredLanguage ?? "English" },
+    { icon: "hash", label: "Language", value: profile.preferredLanguage ?? "Not shared" },
   ];
 
   return (
@@ -315,6 +318,7 @@ export function ProfileSkillsTags({ profile }: { profile: UserProfile }) {
         {profile.tags.map((tag) => (
           <span key={tag} className={profile.roles.includes(tag) ? "role-tag" : undefined}>{tag}</span>
         ))}
+        {!profile.tags.length ? <div className="profile-empty-inline">No tags or interests shared.</div> : null}
       </div>
     </section>
   );
@@ -336,7 +340,7 @@ export function ProfileActivityList({
           <p className="eyebrow">Activity</p>
           <h2>Recent activity</h2>
         </div>
-        <span>Visible mock communities only</span>
+        <span>Access-filtered sources only</span>
       </div>
       <div className="profile-activity-list">
         {activities.slice(0, 8).map((activity) => (
@@ -358,7 +362,7 @@ export function ProfileActivityList({
             ) : null}
           </article>
         ))}
-        {!activities.length ? <div className="profile-empty-panel">No recent activity is visible for this member yet.</div> : null}
+        {!activities.length ? <div className="profile-empty-panel"><AppIcon name="bell" size="lg" /><strong>No visible recent activity</strong><span>Private channels and inaccessible communities are never included.</span></div> : null}
       </div>
     </section>
   );
@@ -386,10 +390,20 @@ export function ProfileSharedMedia({ media, onOpenImage }: { media: ProfileMedia
           ))}
         </div>
       ) : (
-        <div className="profile-empty-panel">No shared images yet.</div>
+        <div className="profile-empty-panel"><AppIcon name="image" size="lg" /><strong>No visible shared images</strong><span>Private or deleted source media is not shown.</span></div>
       )}
     </section>
   );
+}
+
+function ProfileRelationshipSummary({ profile, mutualCommunityCount }: { profile: UserProfile; mutualCommunityCount: number }) {
+  const friendshipLabel = profile.isCurrentUser ? "Your profile" : profile.friendshipStatus === "friends" ? "Friends" : profile.friendshipStatus === "incoming" ? "Request received" : profile.friendshipStatus === "outgoing" ? "Request sent" : "Not connected";
+  return <section className="profile-section"><div className="profile-section-header"><div><p className="eyebrow">Connections</p><h2>Friends and follows</h2></div></div><div className="profile-relationship-grid"><div><AppIcon name="users" size="sm" /><span>Relationship</span><strong>{friendshipLabel}</strong></div><div><AppIcon name="home" size="sm" /><span>Mutual communities</span><strong>{mutualCommunityCount}</strong></div>{profile.privacy.showFollows ? <><div><AppIcon name="user" size="sm" /><span>Followers</span><strong>{profile.stats.followers}</strong></div><div><AppIcon name="plus" size="sm" /><span>Following</span><strong>{profile.stats.following}</strong></div></> : <div className="profile-empty-inline">Follow counts are private.</div>}</div></section>;
+}
+
+function ProfileMutualCommunities({ profile, communities, currentUserId, onOpenCommunity }: { profile: UserProfile; communities: Community[]; currentUserId: string; onOpenCommunity?: (communityId: string) => void }) {
+  const visible = profile.privacy.showCommunities ? communities.filter((community) => community.members.some((member) => member.userId === profile.id) && (profile.id === currentUserId || community.members.some((member) => member.userId === currentUserId))) : [];
+  return <section className="profile-section"><div className="profile-section-header"><div><p className="eyebrow">Communities</p><h2>{profile.id === currentUserId ? "Joined communities" : "Mutual communities"}</h2></div><span>{visible.length} visible</span></div>{visible.length ? <div className="profile-mutual-community-list">{visible.slice(0, 8).map((community) => { const member = community.members.find((candidate) => candidate.userId === profile.id); const role = community.roles.find((candidate) => candidate.id === member?.roleId); return <button type="button" key={community.id} onClick={() => onOpenCommunity?.(community.id)}><span className="profile-mutual-community-icon" style={{ background: community.accentColor }}>{community.icon}</span><span><strong>{community.name}</strong><small>{role?.name ?? "Member"}</small></span><AppIcon name="chevronRight" size="sm" /></button>; })}</div> : <div className="profile-empty-panel"><AppIcon name="users" size="lg" /><strong>{profile.privacy.showCommunities ? "No mutual communities" : "Communities are private"}</strong><span>Only communities visible to both accounts can appear here.</span></div>}</section>;
 }
 
 export function ProfileMainPanel({
@@ -398,32 +412,45 @@ export function ProfileMainPanel({
   onOpenActivity,
   onOpenImage,
   onOpenCommunity,
+  currentUserId,
+  dataState = "ready",
+  dataError,
+  onRetryData,
 }: {
   profile: UserProfile;
   communities: Community[];
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
   onOpenCommunity?: (communityId: string) => void;
+  currentUserId: string;
+  dataState?: "idle" | "loading" | "ready" | "error";
+  dataError?: string | null;
+  onRetryData?: () => void;
 }) {
-  const audioCatalog = useAudioCatalog();
+  const audioCatalog = useAudioCatalogState();
+  if (dataState === "loading" || dataState === "idle") return <section className="profile-main-panel" aria-busy="true" aria-label="Loading profile details"><div className="profile-section profile-source-state"><span className="profile-source-state-icon"><AppIcon name="user" size="lg" /></span><div><p className="eyebrow">Profile</p><h2>Loading visible profile sections</h2><p>Picom is applying profile privacy and source-channel access.</p></div></div><div className="profile-loading-grid" aria-hidden="true"><i /><i /><i /><i /></div></section>;
+  if (dataState === "error") return <section className="profile-main-panel" aria-label="Profile loading error"><div className="profile-section profile-source-state error" role="alert"><span className="profile-source-state-icon"><AppIcon name="close" size="lg" /></span><div><p className="eyebrow">Profile unavailable</p><h2>Profile details could not be loaded</h2><p>{dataError ?? "Picom could not load this access-filtered profile."}</p>{onRetryData ? <button type="button" onClick={onRetryData}>Try again</button> : null}</div></div></section>;
   if(profile.privacyRestricted)return <section className="profile-main-panel" aria-label="Private profile"><div className="profile-section profile-empty-panel"><AppIcon name="lock" size="lg" /><strong>Limited profile</strong><p>This person shares profile details only with their selected audience.</p></div></section>;
   const visibleCommunityIds = new Set(communities.map((community) => community.id));
   const audioVisible = profile.privacy.showAudio;
-  const hostedRadio = audioVisible ? audioCatalog.radioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId)) : [];
-  const podcastEpisodes = audioVisible ? audioCatalog.podcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
-  const savedRadio = audioVisible ? audioCatalog.radioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId)) : [];
-  const savedPodcasts = audioVisible ? audioCatalog.podcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
+  const hostedRadio = audioVisible ? audioCatalog.snapshot.radioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId)) : [];
+  const podcastEpisodes = audioVisible ? audioCatalog.snapshot.podcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
+  const savedRadio = audioVisible && profile.isCurrentUser ? audioCatalog.snapshot.radioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId)) : [];
+  const savedPodcasts = audioVisible && profile.isCurrentUser ? audioCatalog.snapshot.podcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
   const audioStats = { radioSessions: hostedRadio.length, podcastEpisodes: podcastEpisodes.length, audioListeners: [...hostedRadio, ...podcastEpisodes].reduce((total, item) => total + item.listenerCount, 0) };
+  const mutualCommunityCount = communities.filter((community) => community.members.some((member) => member.userId === profile.id) && (profile.id === currentUserId || community.members.some((member) => member.userId === currentUserId))).length;
   return (
     <section className="profile-main-panel" aria-label="Profile details">
       <ProfileHeroGallery media={profile.media} onOpenImage={onOpenImage} />
-      <ProfileStats profile={profile} audioStats={audioVisible ? audioStats : undefined} />
+      <ProfileStats profile={profile} audioStats={audioVisible && !audioCatalog.loading && !audioCatalog.error ? audioStats : undefined} />
       <ProfileBio profile={profile} />
       <ProfileDetailsGrid profile={profile} communities={communities} />
       <ProfileSkillsTags profile={profile} />
+      <ProfileRelationshipSummary profile={profile} mutualCommunityCount={mutualCommunityCount} />
+      <ProfileMutualCommunities profile={profile} communities={communities} currentUserId={currentUserId} onOpenCommunity={onOpenCommunity} />
       <ProfileActivityList activities={profile.activities} communities={communities} onOpenActivity={onOpenActivity} />
       <ProfileSharedMedia media={profile.media} onOpenImage={onOpenImage} />
-      {audioVisible ? <ProfileAudioSections hostedRadio={hostedRadio} podcastEpisodes={podcastEpisodes} savedRadio={savedRadio} savedPodcasts={savedPodcasts} communities={communities} isCurrentUser={Boolean(profile.isCurrentUser)} onOpenCommunity={onOpenCommunity} /> : null}
+      {audioVisible ? <ProfileAudioSections hostedRadio={hostedRadio} podcastEpisodes={podcastEpisodes} savedRadio={savedRadio} savedPodcasts={savedPodcasts} communities={communities} isCurrentUser={Boolean(profile.isCurrentUser)} loading={audioCatalog.loading} error={audioCatalog.error} onRetry={() => { void audioCatalog.refresh(); }} onOpenCommunity={onOpenCommunity} /> : null}
     </section>
   );
 }
@@ -443,6 +470,9 @@ export function ProfileView({
   onEditProfile,
   onOpenMore,
   onOpenCommunity,
+  dataState,
+  dataError,
+  onRetryData,
 }: ProfileViewProps) {
   const isCurrentUser = profile.isCurrentUser ?? profile.id === currentUserId;
 
@@ -461,7 +491,7 @@ export function ProfileView({
           onEditProfile={onEditProfile}
           onOpenMore={onOpenMore}
         />
-        <ProfileMainPanel profile={profile} communities={communities} onOpenActivity={onOpenActivity} onOpenImage={onOpenImage} onOpenCommunity={onOpenCommunity} />
+        <ProfileMainPanel profile={profile} communities={communities} currentUserId={currentUserId} dataState={dataState} dataError={dataError} onRetryData={onRetryData} onOpenActivity={onOpenActivity} onOpenImage={onOpenImage} onOpenCommunity={onOpenCommunity} />
       </div>
     </main>
   );

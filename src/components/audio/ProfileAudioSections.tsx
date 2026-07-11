@@ -14,13 +14,17 @@ function communityName(communities: Community[], communityId: string) { return c
 function radioPlayable(session: RadioSession, communities: Community[]): AudioPlayableItem { return { id: session.id, type: session.status === "live" ? "radio_live" : session.status === "ended" ? "radio_ended" : "radio_scheduled", title: session.title, contextLabel: `${communityName(communities, session.communityId)} / Community radio`, coverUrl: session.coverUrl, audioUrl: session.streamUrl, durationSeconds: 3600, communityId: session.communityId, isLive: session.status === "live" }; }
 function podcastPlayable(episode: PodcastEpisode, communities: Community[]): AudioPlayableItem { return { id: episode.id, type: "podcast_episode", title: episode.title, contextLabel: `${communityName(communities, episode.communityId)} / Podcast`, coverUrl: episode.coverUrl, audioUrl: episode.audioUrl, durationSeconds: episode.durationSeconds, communityId: episode.communityId }; }
 
-type ProfileAudioSectionsProps = { hostedRadio: RadioSession[]; podcastEpisodes: PodcastEpisode[]; savedRadio: RadioSession[]; savedPodcasts: PodcastEpisode[]; communities: Community[]; isCurrentUser: boolean; onOpenCommunity?: (communityId: string) => void };
+type ProfileAudioSectionsProps = { hostedRadio: RadioSession[]; podcastEpisodes: PodcastEpisode[]; savedRadio: RadioSession[]; savedPodcasts: PodcastEpisode[]; communities: Community[]; isCurrentUser: boolean; loading?: boolean; error?: string | null; onRetry?: () => void; onOpenCommunity?: (communityId: string) => void };
 
-export function ProfileAudioSections({ hostedRadio, podcastEpisodes, savedRadio, savedPodcasts, communities, isCurrentUser, onOpenCommunity }: ProfileAudioSectionsProps) {
+function savedItemIds(items: Array<RadioSession | PodcastEpisode>): Set<string> {
+  return new Set(items.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
+}
+
+export function ProfileAudioSections({ hostedRadio, podcastEpisodes, savedRadio, savedPodcasts, communities, isCurrentUser, loading = false, error = null, onRetry, onOpenCommunity }: ProfileAudioSectionsProps) {
   const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
   const [selectedPodcastEpisodeId, setSelectedPodcastEpisodeId] = useState<string | null>(null);
-  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set([...savedRadio.map((item) => item.id), ...savedPodcasts.map((item) => item.id)]));
-  useEffect(() => { setSavedIds(new Set([...savedRadio.map((item) => item.id), ...savedPodcasts.map((item) => item.id)])); }, [savedPodcasts, savedRadio]);
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => savedItemIds([...hostedRadio, ...podcastEpisodes, ...savedRadio, ...savedPodcasts]));
+  useEffect(() => { setSavedIds(savedItemIds([...hostedRadio, ...podcastEpisodes, ...savedRadio, ...savedPodcasts])); }, [hostedRadio, podcastEpisodes, savedPodcasts, savedRadio]);
   const toggleSaved = async (item: RadioSession | PodcastEpisode) => {
     const wasSaved = savedIds.has(item.id);
     setSavedIds((current) => { const next = new Set(current); if (wasSaved) next.delete(item.id); else next.add(item.id); return next; });
@@ -31,6 +35,9 @@ export function ProfileAudioSections({ hostedRadio, podcastEpisodes, savedRadio,
   const openPodcast = (episode: PodcastEpisode) => { setSelectedPodcastEpisodeId(episode.id); setSelectedAudio(podcastPlayable(episode, communities)); };
   const selectedPodcastEpisode = podcastEpisodes.find((episode) => episode.id === selectedPodcastEpisodeId) ?? savedPodcasts.find((episode) => episode.id === selectedPodcastEpisodeId) ?? null;
   const selectedPodcastCommunity = selectedPodcastEpisode ? communities.find((community) => community.id === selectedPodcastEpisode.communityId) : undefined;
+
+  if (loading) return <section className="profile-section profile-source-state" aria-busy="true"><span className="profile-source-state-icon"><AppIcon name="headphones" size="lg" /></span><div><p className="eyebrow">Audio</p><h2>Loading visible Radio and Podcast activity</h2><p>Picom is checking the audio catalog you are allowed to view.</p></div></section>;
+  if (error) return <section className="profile-section profile-source-state error" role="alert"><span className="profile-source-state-icon"><AppIcon name="close" size="lg" /></span><div><p className="eyebrow">Audio unavailable</p><h2>Radio and Podcast activity could not be loaded</h2><p>{error}</p>{onRetry ? <button type="button" onClick={onRetry}>Try again</button> : null}</div></section>;
 
   return <div className="profile-audio-sections">
     {selectedAudio ? <AudioMiniPlayer item={selectedAudio} onClose={() => setSelectedAudio(null)} /> : null}
