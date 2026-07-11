@@ -1,40 +1,37 @@
 import type { Community, Member } from "../types/community";
+import { dataSourceService } from "./dataSourceService";
+import { getSupabaseClient } from "./supabase/supabaseClient";
 
-const STORAGE_KEY = "picom.communityDeleteSafety.v1";
-const SCHEMA_VERSION = 1;
+const STORAGE_KEY = "picom.communityDeleteSafety.v2";
+const SCHEMA_VERSION = 2;
 
 export type CommunityDeleteSafetyStatus = Readonly<{
   communityId: string;
-  requestedAt: string;
-  requestedByUserId: string;
-  status: "soft_delete_placeholder";
+  archivedAt: string;
+  archivedByUserId: string;
+  status: "archived";
   message: string;
 }>;
 
-type StoredCommunityDeleteSafety = Record<string, CommunityDeleteSafetyStatus>;
+type StoredCommunityArchives = Record<string, CommunityDeleteSafetyStatus>;
+export type CommunityDeleteSafetyResult<T> = Readonly<{ ok: true; data: T }> | Readonly<{ ok: false; message: string }>;
 
-export type CommunityDeleteSafetyResult<T> =
-  | Readonly<{ ok: true; data: T }>
-  | Readonly<{ ok: false; message: string }>;
-
-function readStore(): StoredCommunityDeleteSafety {
+function readStore(): StoredCommunityArchives {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
-
-    const parsed = JSON.parse(raw) as { schemaVersion?: number; records?: StoredCommunityDeleteSafety };
-    if (parsed.schemaVersion !== SCHEMA_VERSION || !parsed.records) return {};
-    return parsed.records;
+    const parsed = JSON.parse(raw) as { schemaVersion?: number; records?: StoredCommunityArchives };
+    return parsed.schemaVersion === SCHEMA_VERSION && parsed.records ? parsed.records : {};
   } catch {
     return {};
   }
 }
 
-function writeStore(records: StoredCommunityDeleteSafety): void {
+function writeStore(records: StoredCommunityArchives): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ schemaVersion: SCHEMA_VERSION, records }));
   } catch {
-    // Local storage can be unavailable in restricted desktop fallback contexts.
+    // Restricted desktop fallback: completion still remains in component state.
   }
 }
 
@@ -47,50 +44,32 @@ export const communityDeleteSafetyService = {
     return readStore()[communityId] ?? null;
   },
 
-  requestSoftDeletePlaceholder(community: Community, currentUser: Member, confirmationName: string): CommunityDeleteSafetyResult<CommunityDeleteSafetyStatus> {
-    if (!isOwner(community, currentUser)) {
-      return {
-        ok: false,
-        message: "Only the community owner can prepare a delete placeholder.",
-      };
-    }
+  async archiveCommunity(community: Community, currentUser: Member, confirmationName: string): Promise<CommunityDeleteSafetyResult<CommunityDeleteSafetyStatus>> {
+    if (!isOwner(community, currentUser)) return { ok: false, message: "Only the community owner can archive this community." };
+    if (confirmationName.trim() !== community.name) return { ok: false, message: "Type the exact community name before archiving it." };
 
-    if (confirmationName.trim() !== community.name) {
-      return {
-        ok: false,
-        message: "Type the exact community name before preparing the delete placeholder.",
-      };
+    let archivedAt = new Date().toISOString();
+    if (!dataSourceService.getStatus().isMock) {
+      const client = getSupabaseClient();
+      if (!client) return { ok: false, message: "Community archive is unavailable until Supabase is configured." };
+      const { data, error } = await client.rpc("archive_community", {
+        target_community_id: community.id,
+        confirmation_community_name: confirmationName.trim(),
+        archive_reason: "Owner confirmed safe community archive in Picom Desktop",
+      });
+      const row = data?.[0];
+      if (error || !row) return { ok: false, message: "Picom could not archive the community safely." };
+      archivedAt = row.archived_at;
     }
 
     const next: CommunityDeleteSafetyStatus = {
       communityId: community.id,
-      requestedAt: new Date().toISOString(),
-      requestedByUserId: currentUser.userId,
-      status: "soft_delete_placeholder",
-      message: "Community delete placeholder recorded locally. The community was not deleted.",
+      archivedAt,
+      archivedByUserId: currentUser.userId,
+      status: "archived",
+      message: "Community archived. Content and audit history were retained for controlled recovery.",
     };
-
-    writeStore({
-      ...readStore(),
-      [community.id]: next,
-    });
-
-    return {
-      ok: true,
-      data: next,
-    };
-  },
-
-  clearPlaceholder(communityId: string): CommunityDeleteSafetyResult<{ message: string }> {
-    const records = readStore();
-    delete records[communityId];
-    writeStore(records);
-
-    return {
-      ok: true,
-      data: {
-        message: "Community delete placeholder cleared.",
-      },
-    };
+    writeStore({ ...readStore(), [community.id]: next });
+    return { ok: true, data: next };
   },
 };

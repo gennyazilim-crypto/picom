@@ -53,6 +53,9 @@ export type Database = {
           discovery_content_flags: string[];
           creation_request_id: string | null;
           creation_template_id: string | null;
+          archived_at: string | null;
+          archived_by: string | null;
+          archive_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -561,6 +564,14 @@ export type Database = {
       };
     };
     Functions: {
+      transfer_community_ownership: {
+        Args: { target_community_id: string; target_new_owner_id: string; confirmation_community_name: string };
+        Returns: Array<{ community_id: string; previous_owner_id: string; new_owner_id: string; transferred_at: string }>;
+      };
+      archive_community: {
+        Args: { target_community_id: string; confirmation_community_name: string; archive_reason?: string };
+        Returns: Array<{ community_id: string; archived_at: string; archived_by: string }>;
+      };
       create_text_community_with_defaults: {
         Args: {
           target_creation_request_id: string;

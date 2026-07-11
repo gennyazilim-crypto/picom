@@ -11,7 +11,8 @@ const requiredFiles = [
   "community_access_boundaries.sql",
   "message_ownership_and_storage.sql",
   "direct_messages.sql",
-  "verification_security.sql"
+  "verification_security.sql",
+  "community_lifecycle_management.sql"
 ];
 
 const requiredScenarioSnippets = [
@@ -32,7 +33,11 @@ const requiredScenarioSnippets = [
   "blocked participant cannot send direct messages",
   "user cannot self-approve verification",
   "approved verification is readable",
-  "non-reviewer cannot review verification"
+  "non-reviewer cannot review verification",
+  "non-owner cannot transfer ownership",
+  "ownership target must be a current member",
+  "archived community is hidden from normal authenticated reads",
+  "archive retains child data for controlled recovery"
 ];
 
 function fail(message) {

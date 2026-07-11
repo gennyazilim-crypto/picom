@@ -17,7 +17,6 @@ import type { InviteAcceptanceStatus } from "../services/community/communityInvi
 import { ReportModal } from "./ReportModal";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { AppIcon } from "./AppIcon";
-import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
 import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 
 const CommunityAdminDeferredSection = lazy(() => import("./CommunityAdminDeferredSection").then((module) => ({ default: module.CommunityAdminDeferredSection })));
@@ -79,12 +78,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
     webhooks: deferredAdminSection("webhooks"),
     emojis: deferredAdminSection("emojis"),
     stickers: deferredAdminSection("stickers"),
-    "danger-zone": access.isOwner ? (
-      <div className="community-danger-zone-tools">
-        {deferredAdminSection("danger-zone")}
-        <CommunityOwnershipTransferPanel community={community} currentUser={currentUser} />
-      </div>
-    ) : null,
+    "danger-zone": access.isOwner ? deferredAdminSection("danger-zone") : null,
   };
 
   return (

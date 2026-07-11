@@ -2,33 +2,24 @@ import { readFileSync } from "node:fs";
 
 const service = readFileSync("src/services/communityOwnershipTransferService.ts", "utf8");
 const component = readFileSync("src/components/CommunityOwnershipTransferPanel.tsx", "utf8");
-const sidebar = readFileSync("src/components/CommunitySidebar.tsx", "utf8");
+const migration = readFileSync("supabase/migrations/20260711000800_community_lifecycle_management.sql", "utf8");
+const test = readFileSync("supabase/tests/rls/community_lifecycle_management.sql", "utf8");
 
 const failures = [];
-
-if (!service.includes('!== "Owner"')) {
-  failures.push("Ownership transfer placeholder must restrict preparation to the current owner.");
+for (const marker of ["Only the current owner", "confirmationName.trim() !== community.name", "Target user must be a current community member", 'rpc("transfer_community_ownership"', 'status: "completed"']) {
+  if (!service.includes(marker)) failures.push(`ownership service missing: ${marker}`);
 }
-
-if (!service.includes("confirmationName.trim() !== community.name")) {
-  failures.push("Ownership transfer placeholder must require exact community name confirmation.");
+for (const marker of ["transfer_community_ownership", "for update", "COMMUNITY_TRANSFER_OWNER_REQUIRED", "COMMUNITY_TRANSFER_TARGET_NOT_MEMBER", "ownership_transfer", "set owner_id = target_new_owner_id"]) {
+  if (!migration.toLowerCase().includes(marker.toLowerCase())) failures.push(`ownership migration missing: ${marker}`);
 }
-
-if (!service.includes("Target user must be a current community member")) {
-  failures.push("Ownership transfer placeholder must validate target membership.");
-}
-
-if (!component.includes("Owner-only placeholder")) {
-  failures.push("UI should clearly mark ownership transfer as an owner-only placeholder.");
-}
-
-if (!sidebar.includes("CommunityOwnershipTransferPanel")) {
-  failures.push("CommunitySidebar should mount the ownership transfer panel.");
+for (const marker of ["Transfer ownership", "Transferring...", "role=\"alert\""]) if (!component.includes(marker)) failures.push(`ownership UI missing: ${marker}`);
+for (const scenario of ["non-owner cannot transfer ownership", "ownership target must be a current member", "owner can transfer ownership atomically", "new owner receives Owner role", "previous owner receives safe non-owner role"]) if (!test.includes(scenario)) failures.push(`ownership pgTAP missing: ${scenario}`);
+for (const legacyMarker of ["pending_placeholder", "requestTransferPlaceholder", "Owner-only placeholder", "No roles change yet"]) {
+  if (service.includes(legacyMarker) || component.includes(legacyMarker)) failures.push(`Ownership transfer still contains legacy marker: ${legacyMarker}`);
 }
 
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
 }
-
-console.log("Community ownership transfer smoke passed.");
+console.log("Community ownership transfer production smoke passed.");

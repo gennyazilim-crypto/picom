@@ -10,7 +10,7 @@ export function getCommunityMenuItems(access: CommunityAccess): CommunityMenuIte
       { id: "manage-roles", label: "Manage roles", permission: "manageRoles" },
       { id: "invite-people", label: "Invite people", permission: "createInvites" },
       { id: "audit-log", label: "Audit log placeholder", permission: "viewAuditLog" },
-      { id: "transfer-ownership", label: "Transfer ownership placeholder" },
+      { id: "transfer-ownership", label: "Transfer ownership" },
       { id: "delete-community", label: "Delete community", tone: "danger" },
       { id: "leave-community", label: "Leave community", disabled: true, description: "Transfer ownership before leaving." },
     ];

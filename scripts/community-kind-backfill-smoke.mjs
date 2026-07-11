@@ -23,14 +23,17 @@ assert((seed.match(/'text'::public\.community_kind/gu) ?? []).length >= 2, "Lega
 assert(seed.includes("kind = excluded.kind"), "Seed conflict update does not preserve explicit text classification");
 
 const mocks = read("src/data/mockCommunities.ts");
-const activeKinds = [...mocks.matchAll(/makeCommunity\(\{[^}]*?kind:\s*"([^"]+)"/gu)].map((match) => match[1]);
-assert(activeKinds.length >= 5 && activeKinds.every((kind) => kind === "text"), "Existing primary mock communities must all be explicit text communities");
+const activeKinds = [...mocks.matchAll(/makeCommunity\(\{\s*id:\s*"([^"]+)"[^}]*?kind:\s*"([^"]+)"/gu)].map((match) => ({ id: match[1], kind: match[2] }));
+const legacyKinds = activeKinds.filter(({ id }) => id !== "picom-radio" && id !== "picom-podcast");
+assert(legacyKinds.length >= 5 && legacyKinds.every(({ kind }) => kind === "text"), "Existing legacy mock communities must remain explicit text communities");
+assert(activeKinds.some(({ id, kind }) => id === "picom-radio" && kind === "radio"), "Dedicated Radio mock community must remain explicitly radio");
+assert(activeKinds.some(({ id, kind }) => id === "picom-podcast" && kind === "podcast"), "Dedicated Podcast mock community must remain explicitly podcast");
 for (const kind of ["text", "radio", "podcast"]) assert(mocks.includes(`${kind}: Object.freeze({ id: "kind-example-${kind}", kind: "${kind}"`), `Kind example fixture is missing ${kind}`);
 
 const query = read("src/services/communityListQuery.ts");
 for (const marker of ["LEGACY_COMMUNITY_LIST_SELECT", "isMissingCommunityKindColumnError", 'code === "42703"', 'code === "PGRST204"', 'kind: "text"']) assert(query.includes(marker), `Legacy list fallback is missing ${marker}`);
 const service = read("src/services/communityService.ts");
-for (const marker of ["kind === \"text\"", "isMissingCommunityKindColumnError(currentResult.error)", "LEGACY_COMMUNITY_LIST_SELECT", "insertPayload"]) assert(service.includes(marker), `Legacy create fallback is missing ${marker}`);
+for (const marker of ["kind === \"text\"", "create_text_community_with_defaults", "create_radio_community_with_defaults", "create_podcast_community_with_defaults"]) assert(service.includes(marker), `Typed community creation service is missing ${marker}`);
 const state = read("src/state/useMvpAppState.ts");
 assert(state.includes("supportsTextChannels(community)"), "Channel navigation is not gated by community kind");
 

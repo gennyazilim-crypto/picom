@@ -16,6 +16,8 @@ export function CommunityOwnershipTransferPanel({ community, currentUser }: Comm
   const [targetUserId, setTargetUserId] = useState("");
   const [confirmationName, setConfirmationName] = useState("");
   const [status, setStatus] = useState<OwnershipTransferStatus | null>(() => communityOwnershipTransferService.getStatus(community.id));
+  const [errorMessage, setErrorMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const canPrepareTransfer = isCurrentUserOwner(community, currentUser);
   const eligibleMembers = useMemo(() => community.members.filter((member) => member.userId !== currentUser.userId), [community.members, currentUser.userId]);
@@ -24,24 +26,20 @@ export function CommunityOwnershipTransferPanel({ community, currentUser }: Comm
     setStatus(communityOwnershipTransferService.getStatus(community.id));
     setTargetUserId(eligibleMembers[0]?.userId ?? "");
     setConfirmationName("");
+    setErrorMessage("");
   }, [community.id, eligibleMembers]);
 
   if (!canPrepareTransfer) {
     return null;
   }
 
-  function prepareTransfer() {
-    const result = communityOwnershipTransferService.requestTransferPlaceholder(community, currentUser, targetUserId, confirmationName);
+  async function transferOwnership() {
+    setSubmitting(true);
+    setErrorMessage("");
+    const result = await communityOwnershipTransferService.transferOwnership(community, currentUser, targetUserId, confirmationName);
+    setSubmitting(false);
     if (!result.ok) {
-      setStatus({
-        communityId: community.id,
-        requestedAt: new Date().toISOString(),
-        fromUserId: currentUser.userId,
-        toUserId: targetUserId,
-        targetDisplayName: "Not ready",
-        status: "pending_placeholder",
-        message: result.message,
-      });
+      setErrorMessage(result.message);
       return;
     }
 
@@ -49,21 +47,15 @@ export function CommunityOwnershipTransferPanel({ community, currentUser }: Comm
     setConfirmationName("");
   }
 
-  function clearTransfer() {
-    communityOwnershipTransferService.clearPlaceholder(community.id);
-    setStatus(null);
-    setConfirmationName("");
-  }
-
   return (
-    <section className="ownership-transfer-card" aria-label="Community ownership transfer placeholder">
+    <section className="ownership-transfer-card" aria-label="Community ownership transfer">
       <div className="ownership-transfer-head">
         <span>
           <AppIcon name="users" size="sm" />
         </span>
         <div>
           <strong>Ownership transfer</strong>
-          <small>Owner-only placeholder. No roles change yet.</small>
+          <small>Atomically moves ownership to an existing member and records an audit event.</small>
         </div>
       </div>
       <select value={targetUserId} onChange={(event) => setTargetUserId(event.target.value)} aria-label="Select target owner">
@@ -73,10 +65,10 @@ export function CommunityOwnershipTransferPanel({ community, currentUser }: Comm
       </select>
       <input value={confirmationName} onChange={(event) => setConfirmationName(event.target.value)} placeholder={`Type ${community.name}`} aria-label="Confirm community name" />
       <div className="ownership-transfer-actions">
-        <button type="button" disabled={!targetUserId || confirmationName.trim() !== community.name} onClick={prepareTransfer}>Prepare transfer</button>
-        <button type="button" onClick={clearTransfer}>Clear</button>
+        <button type="button" disabled={submitting || status?.status === "completed" || !targetUserId || confirmationName.trim() !== community.name} onClick={() => void transferOwnership()}>{submitting ? "Transferring..." : "Transfer ownership"}</button>
       </div>
-      {status ? <small className="ownership-transfer-status">{status.message}{status.targetDisplayName !== "Not ready" ? ` Target: ${status.targetDisplayName}.` : ""}</small> : null}
+      {errorMessage ? <small className="ownership-transfer-status" role="alert">{errorMessage}</small> : null}
+      {status ? <small className="ownership-transfer-status" role="status">{status.message}</small> : null}
     </section>
   );
 }
