@@ -1,6 +1,7 @@
 import type { AudioPlayableItem, RadioSession } from "../../types/audio";
 import { audioDataSource, type AudioServiceResult, type StartRadioSessionInput } from "./audioDataSource";
 import { audioPlayerService } from "./audioPlayerService";
+import { radioRepository } from "./radioRepository";
 
 function playable(session: RadioSession): AudioPlayableItem {
   return {
@@ -14,27 +15,33 @@ function playable(session: RadioSession): AudioPlayableItem {
 }
 
 export const radioService = {
-  getCommunityRadioSessions: (communityId: string) => audioDataSource.listRadioSessions(communityId),
+  getCommunityRadioSessions: (communityId: string) => radioRepository.list({ communityId }),
+  getScheduledRadioSessions: (communityId?: string) => radioRepository.list({ communityId, statuses: ["draft", "scheduled"] }),
+  getEndedRadioSessions: (communityId?: string) => radioRepository.list({ communityId, statuses: ["ended", "cancelled"] }),
   async getLiveRadioSessions(): Promise<AudioServiceResult<RadioSession[]>> {
     const result = await audioDataSource.listRadioSessions();
     return result.ok ? { ok: true, data: result.data.filter((item) => item.status === "live") } : result;
   },
-  getRadioSession: (id: string) => audioDataSource.getRadioSession(id),
-  startRadioSession: (payload: StartRadioSessionInput) => audioDataSource.startRadioSession(payload),
-  endRadioSession: (id: string) => audioDataSource.endRadioSession(id),
+  getRadioSession: (id: string) => radioRepository.get(id),
+  startRadioSession: (payload: StartRadioSessionInput) => radioRepository.create(payload),
+  updateRadioSchedule: (id: string, input: Parameters<typeof audioDataSource.updateRadioSchedule>[1]) => radioRepository.updateSchedule(id, input),
+  cancelRadioSchedule: (id: string) => radioRepository.cancelSchedule(id),
+  goLive: (id: string) => radioRepository.start(id),
+  endRadioSession: (id: string) => radioRepository.end(id),
   async listenToRadio(id: string) {
-    const result = await audioDataSource.setListening(id, true);
+    const result = await radioRepository.join(id);
     if (!result.ok) return result;
     const session = await audioDataSource.getRadioSession(id);
     if (session.ok) audioPlayerService.select(playable(session.data));
     return result;
   },
   async leaveRadio(id: string) {
-    const result = await audioDataSource.setListening(id, false);
+    const result = await radioRepository.leave(id);
     if (result.ok && audioPlayerService.getSnapshot().item?.id === id) audioPlayerService.clear();
     return result;
   },
-  saveRadio: (id: string) => audioDataSource.setRadioSaved(id, true),
-  unsaveRadio: (id: string) => audioDataSource.setRadioSaved(id, false),
-  reactToRadio: (id: string, emoji: string) => audioDataSource.reactToRadioSession(id, emoji),
+  saveRadio: (id: string) => radioRepository.setSaved(id, true),
+  unsaveRadio: (id: string) => radioRepository.setSaved(id, false),
+  reactToRadio: (id: string, emoji: string) => radioRepository.react(id, emoji),
+  assignRadioHost: (input: Parameters<typeof audioDataSource.assignRadioSessionHost>[0]) => radioRepository.assignHost(input),
 };

@@ -8,6 +8,7 @@ import { MemberAvatar } from "../MemberAvatar";
 import { RadioPanel } from "./RadioPanel";
 import { RadioSessionList } from "./CommunityAudioView";
 import "./RadioCommunityShell.css";
+import { useAudioCatalog } from "../../hooks/useAudioCatalog";
 
 type RadioCommunityShellProps = { community: Community; canManageAudio: boolean; onOpenProfile?: (member: Member) => void };
 
@@ -24,6 +25,7 @@ function RadioEmptyState({ icon, title, body }: { icon: IconName; title: string;
 }
 
 export function RadioCommunityShell({ community, canManageAudio, onOpenProfile }: RadioCommunityShellProps) {
+  const catalog = useAudioCatalog();
   const [activeSection, setActiveSection] = useState<RadioCommunitySection>(() => communityNavigationService.getRadioSection(community.id));
   const [snapshot, setSnapshot] = useState<RadioCommunityShellSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +55,12 @@ export function RadioCommunityShell({ community, canManageAudio, onOpenProfile }
     });
     return () => { active = false; };
   }, [community]);
+
+  useEffect(() => {
+    const sessions = catalog.radioSessions.filter((session) => session.communityId === community.id);
+    setSnapshot((current) => current ? { ...current, sessions } : current);
+    setSelectedSession((current) => current ? sessions.find((session) => session.id === current.id) ?? null : null);
+  }, [catalog.radioSessions, community.id]);
 
   const hosts = useMemo(() => {
     const ids = new Set(snapshot?.hostUserIds ?? []);
