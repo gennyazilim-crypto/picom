@@ -1,4 +1,4 @@
-import type { AudioFeedItem, AudioReactionSummary, PodcastEpisode, RadioSession } from "../types/audio";
+import type { AudioFeedItem, AudioReactionSummary, PodcastEpisode, RadioAnnouncement, RadioProgram, RadioProgramSchedule, RadioSession } from "../types/audio";
 
 function makeAudioCover(label: string, variant: number): string {
   const palettes = [
@@ -21,12 +21,26 @@ const reactions = (offset: number): readonly AudioReactionSummary[] => [
 ];
 
 export const mockRadioSessions: RadioSession[] = [
-  { id: "radio-aurora-live-design", communityId: "picom-radio", hostUserId: "user-me", title: "Design Desk Live", description: "A focused live desk session about building calm community interfaces.", status: "live", startsAt: "2026-07-10T15:00:00.000Z", listenerCount: 128, speakerCount: 2, coverUrl: makeAudioCover("Design Desk", 0), tags: ["Design", "Community", "Live"], isFeatured: true, isSavedByCurrentUser: true },
-  { id: "radio-north-live-release", communityId: "picom-radio", hostUserId: "north-user-1", title: "Release Room Radio", description: "Release notes, desktop QA stories, and a quiet soundtrack-free conversation.", status: "live", startsAt: "2026-07-10T16:20:00.000Z", listenerCount: 74, speakerCount: 3, coverUrl: makeAudioCover("Release Room", 2), tags: ["Release", "Desktop"], isFeatured: true, isSavedByCurrentUser: false },
+  { id: "radio-aurora-live-design", communityId: "picom-radio", programId: "radio-program-design-desk", hostUserId: "user-me", title: "Design Desk Live", description: "A focused live desk session about building calm community interfaces.", status: "live", startsAt: "2026-07-10T15:00:00.000Z", actualStartedAt: "2026-07-10T15:00:00.000Z", listenerCount: 128, speakerCount: 2, coverUrl: makeAudioCover("Design Desk", 0), tags: ["Design", "Community", "Live"], reactionSummary: reactions(5), isFeatured: true, isSavedByCurrentUser: true },
+  { id: "radio-north-live-release", communityId: "picom-radio", programId: "radio-program-release-room", hostUserId: "north-user-1", title: "Release Room Radio", description: "Release notes, desktop QA stories, and a quiet soundtrack-free conversation.", status: "live", startsAt: "2026-07-10T16:20:00.000Z", actualStartedAt: "2026-07-10T16:20:00.000Z", listenerCount: 74, speakerCount: 3, coverUrl: makeAudioCover("Release Room", 2), tags: ["Release", "Desktop"], reactionSummary: reactions(2), isFeatured: true, isSavedByCurrentUser: false },
   { id: "radio-terra-scheduled-lab", communityId: "picom-radio", hostUserId: "terra-user-1", title: "Tomorrow's Lab Notes", description: "A scheduled community roundtable for product experiments.", status: "scheduled", startsAt: "2026-07-11T17:30:00.000Z", listenerCount: 39, speakerCount: 2, coverUrl: makeAudioCover("Lab Notes", 4), tags: ["Research", "Roundtable"], isFeatured: false, isSavedByCurrentUser: true },
   { id: "radio-pixel-scheduled-makers", communityId: "picom-radio", hostUserId: "pixel-user-2", title: "Pixel Makers Hour", description: "Scheduled interviews with community makers and moderators.", status: "scheduled", startsAt: "2026-07-12T18:00:00.000Z", listenerCount: 62, speakerCount: 4, coverUrl: makeAudioCover("Makers Hour", 1), tags: ["Creators", "Interviews"], isFeatured: true, isSavedByCurrentUser: false },
   { id: "radio-aurora-ended-accessibility", communityId: "picom-radio", hostUserId: "aurora-user-2", title: "Accessible Desktop Recap", description: "An ended session reviewing keyboard and contrast practices.", status: "ended", startsAt: "2026-07-07T13:00:00.000Z", endedAt: "2026-07-07T14:05:00.000Z", listenerCount: 212, speakerCount: 3, coverUrl: makeAudioCover("Desktop Recap", 3), tags: ["Accessibility", "Desktop"], isFeatured: false, isSavedByCurrentUser: false },
   { id: "radio-north-ended-community", communityId: "picom-radio", hostUserId: "north-user-3", title: "North Dock Weekly", description: "The archived weekly community status conversation.", status: "ended", startsAt: "2026-07-05T19:00:00.000Z", endedAt: "2026-07-05T19:48:00.000Z", listenerCount: 96, speakerCount: 2, coverUrl: makeAudioCover("North Weekly", 2), tags: ["Weekly", "Community"], isFeatured: false, isSavedByCurrentUser: true },
+];
+
+export const mockRadioPrograms: RadioProgram[] = [
+  { id: "radio-program-design-desk", communityId: "picom-radio", title: "Design Desk", description: "A recurring live desk for calm product and community design.", hostUserId: "user-me", hostUserIds: ["user-me", "aurora-user-2"], slug: "design-desk", coverUrl: makeAudioCover("Design Desk", 0), tags: ["Design", "Community"], defaultDurationMinutes: 60, isActive: true, createdAt: "2026-06-15T09:00:00.000Z" },
+  { id: "radio-program-release-room", communityId: "picom-radio", title: "Release Room", description: "Desktop release notes and evidence-focused conversations.", hostUserId: "north-user-1", hostUserIds: ["north-user-1"], slug: "release-room", coverUrl: makeAudioCover("Release Room", 2), tags: ["Release", "Desktop"], defaultDurationMinutes: 75, isActive: true, createdAt: "2026-06-18T09:00:00.000Z" },
+];
+
+export const mockRadioProgramSchedules: RadioProgramSchedule[] = [
+  { id: "radio-schedule-design-desk", programId: "radio-program-design-desk", communityId: "picom-radio", weekday: 2, startsAtLocal: "18:00:00", durationMinutes: 60, timezone: "Europe/Berlin", effectiveFrom: "2026-06-15", isActive: true },
+  { id: "radio-schedule-release-room", programId: "radio-program-release-room", communityId: "picom-radio", weekday: 4, startsAtLocal: "19:30:00", durationMinutes: 75, timezone: "Europe/Berlin", effectiveFrom: "2026-06-18", isActive: true },
+];
+
+export const mockRadioAnnouncements: RadioAnnouncement[] = [
+  { id: "radio-announcement-schedule", communityId: "picom-radio", authorUserId: "user-me", body: "This week's station schedule is confirmed. Listener Chat remains governed by channel access.", publishedAt: "2026-07-09T08:00:00.000Z" },
 ];
 
 export const mockPodcastEpisodes: PodcastEpisode[] = [

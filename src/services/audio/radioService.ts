@@ -36,4 +36,5 @@ export const radioService = {
   },
   saveRadio: (id: string) => audioDataSource.setRadioSaved(id, true),
   unsaveRadio: (id: string) => audioDataSource.setRadioSaved(id, false),
+  reactToRadio: (id: string, emoji: string) => audioDataSource.reactToRadioSession(id, emoji),
 };

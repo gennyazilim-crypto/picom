@@ -1,5 +1,5 @@
 export type AudioContentType = "radio_live" | "radio_scheduled" | "podcast_episode";
-export type RadioSessionStatus = "scheduled" | "live" | "ended";
+export type RadioSessionStatus = "draft" | "scheduled" | "live" | "ended" | "cancelled";
 export type PodcastEpisodeStatus = "draft" | "published" | "archived";
 
 export type RadioCommunitySettings = Readonly<{
@@ -16,8 +16,27 @@ export type RadioProgram = Readonly<{
   title: string;
   description: string;
   hostUserId?: string;
+  hostUserIds?: readonly string[];
+  slug?: string;
+  coverUrl?: string;
+  coverStoragePath?: string;
+  tags?: readonly string[];
+  defaultDurationMinutes?: number;
   isActive: boolean;
   createdAt: string;
+}>;
+
+export type RadioProgramSchedule = Readonly<{
+  id: string;
+  programId: string;
+  communityId: string;
+  weekday: number;
+  startsAtLocal: string;
+  durationMinutes: number;
+  timezone: string;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+  isActive: boolean;
 }>;
 
 export type RadioAnnouncement = Readonly<{
@@ -63,16 +82,22 @@ export type RadioSession = Readonly<{
   id: string;
   communityId: string;
   channelId?: string;
+  programId?: string;
   hostUserId: string;
   title: string;
   description: string;
   status: RadioSessionStatus;
   startsAt: string;
+  scheduledEndAt?: string;
+  actualStartedAt?: string;
   endedAt?: string;
+  listenerChatChannelId?: string;
   listenerCount: number;
   speakerCount: number;
   coverUrl?: string;
+  coverStoragePath?: string;
   tags: readonly string[];
+  reactionSummary?: readonly AudioReactionSummary[];
   isFeatured: boolean;
   isSavedByCurrentUser: boolean;
 }>;
@@ -81,6 +106,7 @@ export type RadioCommunityShellSnapshot = Readonly<{
   settings: RadioCommunitySettings;
   sessions: readonly RadioSession[];
   programs: readonly RadioProgram[];
+  schedules: readonly RadioProgramSchedule[];
   announcements: readonly RadioAnnouncement[];
   hostUserIds: readonly string[];
 }>;

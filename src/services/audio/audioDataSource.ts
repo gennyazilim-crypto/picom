@@ -37,17 +37,21 @@ export type StartRadioSessionInput = Readonly<{
   description: string;
   startsAt: string;
   coverUrl?: string;
-  status?: "scheduled" | "live";
+  status?: "draft" | "scheduled" | "live";
+  programId?: string;
+  scheduledEndAt?: string;
+  listenerChatChannelId?: string;
 }>;
 
 type RadioRow = Database["public"]["Tables"]["radio_sessions"]["Row"];
+type RadioReactionRow = Database["public"]["Tables"]["radio_session_reactions"]["Row"];
 type PodcastRow = Database["public"]["Tables"]["podcast_episodes"]["Row"];
 type ReactionRow = Database["public"]["Tables"]["podcast_episode_reactions"]["Row"];
 type CommentRow = Database["public"]["Tables"]["podcast_episode_comments"]["Row"];
 
 const ok = <T,>(data: T): AudioServiceResult<T> => ({ ok: true, data });
 const fail = <T,>(code: AudioServiceErrorCode, message: string): AudioServiceResult<T> => ({ ok: false, error: { code, message } });
-let localRadio = mockRadioSessions.map((item) => ({ ...item }));
+let localRadio: RadioSession[] = mockRadioSessions.map((item) => ({ ...item, reactionSummary: [...(item.reactionSummary ?? [])] }));
 let localPodcasts = mockPodcastEpisodes.map((item) => ({ ...item, reactionSummary: [...item.reactionSummary], commentPreview: [...item.commentPreview] }));
 const localSavedRadio = new Set(localRadio.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
 const localSavedPodcasts = new Set(localPodcasts.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
@@ -73,7 +77,7 @@ function feedFromCatalog(radio: RadioSession[], podcasts: PodcastEpisode[]): Aud
 }
 
 function localSnapshot(): AudioCatalogSnapshot {
-  const radioSessions = localRadio.map((item) => ({ ...item, isSavedByCurrentUser: localSavedRadio.has(item.id) }));
+  const radioSessions = localRadio.map((item) => ({ ...item, reactionSummary: [...(item.reactionSummary ?? [])], isSavedByCurrentUser: localSavedRadio.has(item.id) }));
   const podcastEpisodes = localPodcasts.map((item) => ({
     ...item,
     isSavedByCurrentUser: localSavedPodcasts.has(item.id),
@@ -85,7 +89,7 @@ function localSnapshot(): AudioCatalogSnapshot {
 
 function clone(value: AudioCatalogSnapshot): AudioCatalogSnapshot {
   return {
-    radioSessions: value.radioSessions.map((item) => ({ ...item })),
+    radioSessions: value.radioSessions.map((item) => ({ ...item, reactionSummary: [...(item.reactionSummary ?? [])] })),
     podcastEpisodes: value.podcastEpisodes.map((item) => ({ ...item, reactionSummary: [...item.reactionSummary], commentPreview: [...item.commentPreview] })),
     feedItems: value.feedItems.map((item) => ({ ...item })),
   };
@@ -103,20 +107,25 @@ function publish(value: AudioCatalogSnapshot) {
 }
 
 function radioStatus(value: string): RadioSessionStatus {
-  return value === "live" || value === "ended" ? value : "scheduled";
+  return value === "draft" || value === "live" || value === "ended" || value === "cancelled" ? value : "scheduled";
 }
 
 function podcastStatus(value: string): PodcastEpisodeStatus {
   return value === "published" || value === "archived" ? value : "draft";
 }
 
-function mapRadio(row: RadioRow, savedIds: ReadonlySet<string>): RadioSession {
+function mapRadio(row: RadioRow, savedIds: ReadonlySet<string>, reactions: readonly RadioReactionRow[] = []): RadioSession {
+  const grouped = new Map<string, AudioReactionSummary>();
+  reactions.filter((reaction) => reaction.radio_session_id === row.id).forEach((reaction) => {
+    const prior = grouped.get(reaction.emoji);
+    grouped.set(reaction.emoji, { emoji: reaction.emoji, count: (prior?.count ?? 0) + 1, reactedByCurrentUser: prior?.reactedByCurrentUser || reaction.user_id === currentUserId });
+  });
   return {
-    id: row.id, communityId: row.community_id, channelId: row.channel_id ?? undefined,
+    id: row.id, communityId: row.community_id, channelId: row.channel_id ?? undefined, programId: row.program_id ?? undefined,
     hostUserId: row.host_user_id, title: row.title, description: row.description,
-    status: radioStatus(row.status), startsAt: row.starts_at, endedAt: row.ended_at ?? undefined,
-    listenerCount: row.listener_count, speakerCount: 1, coverUrl: row.cover_url ?? undefined,
-    tags: [], isFeatured: false, isSavedByCurrentUser: savedIds.has(row.id),
+    status: radioStatus(row.status), startsAt: row.starts_at, scheduledEndAt: row.scheduled_end_at ?? undefined, actualStartedAt: row.actual_started_at ?? undefined, endedAt: row.ended_at ?? undefined,
+    listenerChatChannelId: row.listener_chat_channel_id ?? undefined, listenerCount: row.listener_count, speakerCount: 1, coverUrl: row.cover_url ?? undefined, coverStoragePath: row.cover_storage_path ?? undefined,
+    tags: row.tags, reactionSummary: [...grouped.values()], isFeatured: row.is_featured, isSavedByCurrentUser: savedIds.has(row.id),
   };
 }
 
@@ -180,19 +189,20 @@ async function getPodcastCommunityId(id: string): Promise<AudioServiceResult<str
 async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSnapshot>> {
   const client = getSupabaseClient();
   if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Audio is unavailable while Supabase is not configured.");
-  const [radio, podcasts, reactions, comments, saved] = await Promise.all([
-    client.from("radio_sessions").select("id,community_id,channel_id,host_user_id,title,description,status,starts_at,ended_at,cover_url,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
+  const [radio, radioReactions, podcasts, reactions, comments, saved] = await Promise.all([
+    client.from("radio_sessions").select("id,community_id,channel_id,program_id,host_user_id,title,description,status,starts_at,scheduled_end_at,actual_started_at,ended_at,listener_chat_channel_id,cover_url,cover_storage_path,tags,is_featured,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
+    client.from("radio_session_reactions").select("id,radio_session_id,user_id,emoji,created_at").limit(1000),
     client.from("podcast_episodes").select("id,community_id,series_id,author_user_id,title,description,cover_url,audio_url,duration_seconds,status,published_at,created_at,updated_at").order("published_at", { ascending: false }).limit(200),
     client.from("podcast_episode_reactions").select("id,episode_id,user_id,emoji,created_at").limit(1000),
     client.from("podcast_episode_comments").select("id,episode_id,author_id,body,created_at,updated_at,deleted_at").is("deleted_at", null).order("created_at", { ascending: false }).limit(600),
     client.from("saved_audio_items").select("id,user_id,item_type,item_id,created_at").limit(500),
   ]);
-  if (radio.error || podcasts.error || reactions.error || comments.error || saved.error) {
+  if (radio.error || radioReactions.error || podcasts.error || reactions.error || comments.error || saved.error) {
     return fail("AUDIO_REQUEST_FAILED", "Picom could not load audio right now.");
   }
   const savedRadio = new Set((saved.data ?? []).filter((item) => item.item_type === "radio_session").map((item) => item.item_id));
   const savedPodcasts = new Set((saved.data ?? []).filter((item) => item.item_type === "podcast_episode").map((item) => item.item_id));
-  const radioSessions = (radio.data ?? []).map((item) => mapRadio(item, savedRadio));
+  const radioSessions = (radio.data ?? []).map((item) => mapRadio(item, savedRadio, radioReactions.data ?? []));
   const podcastEpisodes = (podcasts.data ?? []).map((item) => mapPodcast(item, reactions.data ?? [], comments.data ?? [], savedPodcasts));
   return ok({ radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes) });
 }
@@ -256,9 +266,9 @@ export const audioDataSource = {
     if (!kindGuard.ok) return kindGuard;
     if (dataSourceService.getStatus().isMock) {
       const item: RadioSession = {
-        id: `radio-${crypto.randomUUID()}`, communityId: input.communityId, channelId: input.channelId,
+        id: `radio-${crypto.randomUUID()}`, communityId: input.communityId, channelId: input.channelId, programId: input.programId,
         hostUserId: currentUserId, title, description: input.description.trim().slice(0, 4000),
-        status: input.status ?? "scheduled", startsAt: input.startsAt, listenerCount: 0,
+        status: input.status ?? "scheduled", startsAt: input.startsAt, scheduledEndAt: input.scheduledEndAt, listenerChatChannelId: input.listenerChatChannelId, listenerCount: 0,
         speakerCount: 1, coverUrl: input.coverUrl, tags: [], isFeatured: false,
         isSavedByCurrentUser: false,
       };
@@ -270,9 +280,9 @@ export const audioDataSource = {
     const userId = await authenticatedUserId();
     if (!client || !userId) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before starting radio.");
     const result = await client.from("radio_sessions").insert({
-      community_id: input.communityId, channel_id: input.channelId ?? null, host_user_id: userId,
+      community_id: input.communityId, channel_id: input.channelId ?? null, program_id: input.programId ?? null, host_user_id: userId,
       title, description: input.description.trim().slice(0, 4000), status: input.status ?? "scheduled",
-      starts_at: input.startsAt, cover_url: input.coverUrl ?? null,
+      starts_at: input.startsAt, scheduled_end_at: input.scheduledEndAt ?? null, listener_chat_channel_id: input.listenerChatChannelId ?? null, cover_url: input.coverUrl ?? null,
     }).select().single();
     if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "Picom could not create the radio session.");
     await refresh();
@@ -323,6 +333,26 @@ export const audioDataSource = {
       : ok(listening);
   },
   setRadioSaved: (id: string, saved: boolean) => setSaved("radio_session", id, saved),
+  async reactToRadioSession(id: string, emoji: string): Promise<AudioServiceResult<boolean>> {
+    const cleanEmoji = emoji.trim().slice(0, 32);
+    if (!cleanEmoji) return fail("AUDIO_VALIDATION_ERROR", "Choose a valid reaction.");
+    const source = await getRadioCommunityId(id);
+    if (!source.ok) return source;
+    const kindGuard = await ensureCommunityKind(source.data, "radio");
+    if (!kindGuard.ok) return kindGuard;
+    if (dataSourceService.getStatus().isMock) {
+      localRadio = localRadio.map((item) => item.id !== id ? item : { ...item, reactionSummary: (item.reactionSummary ?? []).some((reaction) => reaction.emoji === cleanEmoji) ? (item.reactionSummary ?? []).map((reaction) => reaction.emoji === cleanEmoji ? { ...reaction, count: reaction.count + 1, reactedByCurrentUser: true } : reaction) : [...(item.reactionSummary ?? []), { emoji: cleanEmoji, count: 1, reactedByCurrentUser: true }] });
+      publish(localSnapshot());
+      return ok(true);
+    }
+    const client = getSupabaseClient();
+    const userId = await authenticatedUserId();
+    if (!client || !userId) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before reacting.");
+    const result = await client.from("radio_session_reactions").upsert({ radio_session_id: id, user_id: userId, emoji: cleanEmoji }, { onConflict: "radio_session_id,user_id,emoji" });
+    if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not add this Radio reaction.");
+    await refresh();
+    return ok(true);
+  },
 
   async listPodcastEpisodes(communityId?: string, userId?: string): Promise<AudioServiceResult<PodcastEpisode[]>> {
     const result = await refresh();

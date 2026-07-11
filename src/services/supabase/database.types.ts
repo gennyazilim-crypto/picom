@@ -480,9 +480,21 @@ export type Database = {
         Relationships: [];
       };
       radio_programs: {
-        Row: { id: string; community_id: string; title: string; description: string; host_user_id: string | null; created_by: string; is_active: boolean; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string; title: string; description: string; host_user_id: string | null; created_by: string; slug: string | null; cover_url: string | null; cover_storage_path: string | null; tags: string[]; default_duration_minutes: number; is_active: boolean; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_programs"]["Row"]> & Pick<Database["public"]["Tables"]["radio_programs"]["Row"], "community_id" | "title" | "created_by">;
         Update: Partial<Database["public"]["Tables"]["radio_programs"]["Row"]>;
+        Relationships: [];
+      };
+      radio_program_schedules: {
+        Row: { id: string; program_id: string; community_id: string; weekday: number; starts_at_local: string; duration_minutes: number; timezone: string; effective_from: string; effective_until: string | null; is_active: boolean; created_by: string; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_program_schedules"]["Row"]> & Pick<Database["public"]["Tables"]["radio_program_schedules"]["Row"], "program_id" | "community_id" | "weekday" | "starts_at_local" | "created_by">;
+        Update: Partial<Database["public"]["Tables"]["radio_program_schedules"]["Row"]>;
+        Relationships: [];
+      };
+      radio_program_hosts: {
+        Row: { id: string; program_id: string; user_id: string; host_role: "host" | "co_host" | "producer"; assigned_by: string; assigned_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_program_hosts"]["Row"]> & Pick<Database["public"]["Tables"]["radio_program_hosts"]["Row"], "program_id" | "user_id" | "assigned_by">;
+        Update: Partial<Database["public"]["Tables"]["radio_program_hosts"]["Row"]>;
         Relationships: [];
       };
       radio_announcements: {
@@ -492,15 +504,33 @@ export type Database = {
         Relationships: [];
       };
       radio_sessions: {
-        Row: { id: string; community_id: string; channel_id: string | null; host_user_id: string; title: string; description: string; status: "scheduled" | "live" | "ended" | "cancelled"; starts_at: string; ended_at: string | null; cover_url: string | null; listener_count: number; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string; channel_id: string | null; program_id: string | null; host_user_id: string; title: string; description: string; status: "draft" | "scheduled" | "live" | "ended" | "cancelled"; starts_at: string; scheduled_end_at: string | null; actual_started_at: string | null; ended_at: string | null; listener_chat_channel_id: string | null; cover_url: string | null; cover_storage_path: string | null; tags: string[]; is_featured: boolean; listener_count: number; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_sessions"]["Row"]> & Pick<Database["public"]["Tables"]["radio_sessions"]["Row"], "community_id" | "host_user_id" | "title" | "starts_at">;
         Update: Partial<Database["public"]["Tables"]["radio_sessions"]["Row"]>;
         Relationships: [];
       };
       radio_listeners: {
-        Row: { id: string; radio_session_id: string; user_id: string; joined_at: string; left_at: string | null; muted: boolean };
+        Row: { id: string; radio_session_id: string; user_id: string; joined_at: string; left_at: string | null; muted: boolean; last_heartbeat_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_listeners"]["Row"]> & Pick<Database["public"]["Tables"]["radio_listeners"]["Row"], "radio_session_id" | "user_id">;
         Update: Partial<Database["public"]["Tables"]["radio_listeners"]["Row"]>;
+        Relationships: [];
+      };
+      radio_session_hosts: {
+        Row: { id: string; radio_session_id: string; user_id: string; host_role: "host" | "co_host" | "producer"; assigned_by: string; assigned_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_session_hosts"]["Row"]> & Pick<Database["public"]["Tables"]["radio_session_hosts"]["Row"], "radio_session_id" | "user_id" | "assigned_by">;
+        Update: Partial<Database["public"]["Tables"]["radio_session_hosts"]["Row"]>;
+        Relationships: [];
+      };
+      radio_program_follows: {
+        Row: { id: string; program_id: string; user_id: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_program_follows"]["Row"]> & Pick<Database["public"]["Tables"]["radio_program_follows"]["Row"], "program_id" | "user_id">;
+        Update: never;
+        Relationships: [];
+      };
+      radio_session_reactions: {
+        Row: { id: string; radio_session_id: string; user_id: string; emoji: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_session_reactions"]["Row"]> & Pick<Database["public"]["Tables"]["radio_session_reactions"]["Row"], "radio_session_id" | "user_id" | "emoji">;
+        Update: never;
         Relationships: [];
       };
       podcast_community_settings: {
