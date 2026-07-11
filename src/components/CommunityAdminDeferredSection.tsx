@@ -6,7 +6,8 @@ import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
 import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
 import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
 import { CommunityStructureManagementPanel } from "./CommunityStructureManagementPanel";
-import { MessageModerationFiltersPanel } from "./MessageModerationFiltersPanel";
+import type { ReportRecord } from "../types/reports";
+import { CommunityModerationCenter } from "./community/CommunityModerationCenter";
 import { CommunityEventsAdminSection } from "./CommunityEventsAdminSection";
 import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
 import { CommunityWebhooksAdminSection } from "./CommunityWebhooksAdminSection";
@@ -28,16 +29,18 @@ type Props = {
   onEditChannel: (channel: Channel) => void;
   onDeleteChannel: (channel: Channel) => void;
   onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void;
+  onCommunityMembersChanged: (members: Member[]) => void;
+  onOpenModerationSource: (report: ReportRecord) => void;
   onCreateEvent: (input: CreateCommunityEventInput) => void;
   onUpdateEvent: (eventId: string, input: UpdateCommunityEventInput) => void;
   onCancelEvent: (eventId: string) => void;
 };
 
-export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
+export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCommunityMembersChanged, onOpenModerationSource, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
   if (section === "overview") return <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />;
   if (section === "channels") return <CommunityStructureManagementPanel community={community} currentUser={currentUser} access={access} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} />;
   if (section === "events") return <CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} />;
-  if (section === "moderation") return <MessageModerationFiltersPanel community={community} currentUser={currentUser} />;
+  if (section === "moderation") return <CommunityModerationCenter community={community} access={access} mode="all" onMembersChanged={onCommunityMembersChanged} onOpenSource={onOpenModerationSource} />;
   if (section === "bots") return <CommunityBotsAdminSection communityId={community.id} ownerId={community.ownerId ?? currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;
   if (section === "webhooks") return <CommunityWebhooksAdminSection community={community} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageChannels")} />;
   if (section === "emojis") return <CommunityEmojisAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;

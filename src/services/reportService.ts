@@ -57,7 +57,8 @@ export const reportService = {
     if (dataSourceService.getStatus().isMock) return { ok: true, data: this.listReports(communityId) };
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: "The moderation queue is unavailable." };
-    const { data, error } = await client.from("reports").select("id,community_id,conversation_id,reporter_id,target_type,target_id,reason,description,evidence_excerpt,status,reviewed_by,reviewed_at,created_at,updated_at").eq("community_id", communityId).order("created_at", { ascending: false }).limit(100);
+    const response = await client.rpc("list_community_report_queue" as never, { target_community_id: communityId } as never);
+    const data = response.data as unknown as ReportRow[] | null; const error = response.error;
     if (error) return { ok: false, message: "Picom could not load the moderation queue." };
     const mapped = (data ?? []).map(mapReport); mapped.forEach(cacheReport); return { ok: true, data: mapped };
   },
@@ -65,6 +66,8 @@ export const reportService = {
   async updateReportStatus(input: UpdateReportStatusInput): Promise<ReportResult<ReportRecord>> {
     if (!input.canReview) return { ok: false, message: "You do not have permission to review community reports." };
     const current = reports.find((report) => report.id === input.reportId);
+    const reviewReason = input.reviewReason?.trim() || `Report marked ${input.status}`;
+    if (reviewReason.length < 3 || reviewReason.length > 500) return { ok: false, message: "Review reason must be between 3 and 500 characters." };
     if (dataSourceService.getStatus().isMock) {
       if (!current) return { ok: false, message: "Report was not found in the local queue." };
       if (!canTransitionReportStatus(current.status, input.status)) return { ok: false, message: "This report status transition is not allowed." };
@@ -72,7 +75,7 @@ export const reportService = {
       const next: ReportRecord = { ...current, status: input.status, reviewedById: input.reviewedById ?? "mock-current-reviewer", reviewedAt: now, updatedAt: now };
       cacheReport(next);
       loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status, targetType: next.targetType }, "audit");
-      if (next.communityId) await auditLogService.append({ communityId: next.communityId, actorId: input.reviewedById, actionType: "moderation_action", targetType: "report", targetId: next.id, reason: `Report marked ${next.status}` });
+      if (next.communityId) await auditLogService.append({ communityId: next.communityId, actorId: input.reviewedById, actionType: "moderation_action", targetType: "report", targetId: next.id, reason: reviewReason });
       return { ok: true, data: next };
     }
 
@@ -81,9 +84,10 @@ export const reportService = {
     const { data: authData } = await client.auth.getUser();
     const reviewerId = input.reviewedById ?? authData.user?.id;
     if (!reviewerId) return { ok: false, message: "Sign in before reviewing reports." };
-    const { data, error } = await client.from("reports").update({ status: input.status, reviewed_by: reviewerId, updated_at: new Date().toISOString() }).eq("id", input.reportId).select("id,community_id,conversation_id,reporter_id,target_type,target_id,reason,description,evidence_excerpt,status,reviewed_by,reviewed_at,created_at,updated_at").single();
-    if (error || !data) return { ok: false, message: "Picom could not update this report." };
-    const next = mapReport(data); cacheReport(next); loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status }, "audit"); if (next.communityId && !isPodcastReportTarget(next.targetType)) await auditLogService.append({ communityId: next.communityId, actionType: "moderation_action", targetType: "report", targetId: next.id, reason: `Report marked ${next.status}` }); return { ok: true, data: next };
+    const response = await client.rpc("review_community_report" as never, { target_report_id: input.reportId, next_status: input.status, review_reason: reviewReason } as never);
+    const row = (response.data as unknown as ReportRow[] | null)?.[0];
+    if (response.error || !row) return { ok: false, message: response.error?.message.includes("REPORT_TRANSITION_INVALID") ? "This report status transition is not allowed." : "Picom could not update this report." };
+    const next = mapReport(row); cacheReport(next); loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status }, "audit"); return { ok: true, data: next };
   },
 
   getSummary(): Record<ReportStatus, number> { return reports.reduce<Record<ReportStatus, number>>((summary, report) => { summary[report.status] += 1; return summary; }, { open: 0, reviewed: 0, dismissed: 0, action_taken: 0 }); },

@@ -15,6 +15,8 @@ const actionCopy: Record<MemberModerationAction, { title: string; description: s
   kick: { title: "Remove member", description: "This member will leave the community and may join again later if access permits.", button: "Remove member" },
   ban: { title: "Ban member", description: "This member will be removed and blocked from joining until the ban is reviewed.", button: "Ban member" },
   timeout: { title: "Timeout member", description: "Temporarily restrict this member. Existing content remains unchanged.", button: "Apply timeout" },
+  unban: { title: "Remove ban", description: "Allow this person to join again if the community access policy permits.", button: "Remove ban" },
+  untimeout: { title: "Remove timeout", description: "Restore this member's participation permissions immediately.", button: "Remove timeout" },
 };
 
 export function MemberModerationModal({ member, action, onClose, onConfirm }: MemberModerationModalProps) {

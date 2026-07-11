@@ -37,4 +37,5 @@ export type UpdateReportStatusInput = Readonly<{
   status: ReportStatus;
   canReview: boolean;
   reviewedById?: string;
+  reviewReason?: string;
 }>;

@@ -1,8 +1,10 @@
 ﻿import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { lazy, Suspense } from "react";
 import type { Community, Member } from "../types/community";
 import type { CommunityRule, CommunityRulesAcceptanceInput } from "../types/communityRules";
 import type { CommunityAccess, CommunityMenuActionId, CommunityMenuItemDescriptor } from "../types/communityAccess";
+import type { ReportRecord } from "../types/reports";
 import { getCommunityMenuItems } from "../services/community/communityMenuService";
 import { clipboardService } from "../services/clipboardService";
 import { communityRulesService } from "../services/communityRulesService";
@@ -24,14 +26,12 @@ import {
   CommunityModerationSection,
   CommunityRolesSection,
   CommunitySettingsSection,
-  ModeratorLogPlaceholder,
   ModeratorBlockedItemsSection,
-  ModeratorMembersSection,
-  ModeratorMessagesSection,
-  ModeratorReportsSection,
   type AdminSectionId,
   type ModeratorSectionId,
 } from "./community/CommunityAdminSections";
+
+const CommunityModerationCenter = lazy(() => import("./community/CommunityModerationCenter").then((module) => ({ default: module.CommunityModerationCenter })));
 
 type MenuCallbacks = {
   onOpenAdminPanel: () => void;
@@ -240,7 +240,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
   );
 }
 
-export function CommunityModeratorPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void }) {
+export function CommunityModeratorPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onMembersChanged, onOpenModerationSource }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onMembersChanged: (members: Member[]) => void; onOpenModerationSource: (report: ReportRecord) => void }) {
   const [activeSection, setActiveSection] = useState<ModeratorSectionId>("reports");
   const sections = moderatorSectionDefinitions.filter((section) => access.permissions.includes(section.permission));
   const selectedSection = sections.some((section) => section.id === activeSection) ? activeSection : sections[0]?.id ?? "reports";
@@ -249,15 +249,7 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
     return <ModalShell title="Moderator panel unavailable" eyebrow="Permission denied" onClose={onClose}><div className="auth-error">Moderator access is required.</div></ModalShell>;
   }
 
-  const content = selectedSection === "reports"
-    ? <ModeratorReportsSection communityId={community.id} canReview={access.permissions.includes("moderateMessages")} />
-    : selectedSection === "flagged-messages"
-      ? <ModeratorBlockedItemsSection communityId={community.id} />
-      : selectedSection === "member-moderation"
-        ? <ModeratorMembersSection community={community} />
-        : selectedSection === "message-moderation"
-          ? <ModeratorMessagesSection community={community} />
-          : <ModeratorLogPlaceholder />;
+  const content = selectedSection === "flagged-messages" ? <ModeratorBlockedItemsSection communityId={community.id} /> : <Suspense fallback={<div className="community-admin-empty" role="status">Loading moderation tools...</div>}><CommunityModerationCenter community={community} access={access} mode={selectedSection === "reports" ? "reports" : selectedSection === "member-moderation" ? "members" : selectedSection === "message-moderation" ? "messages" : "log"} onMembersChanged={onMembersChanged} onOpenSource={onOpenModerationSource} /></Suspense>;
 
   return (
     <ModalShell title={`${community.name} moderator panel`} eyebrow="Moderation" onClose={onClose} className="community-management-modal">

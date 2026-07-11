@@ -44,6 +44,7 @@ import { DeleteChannelModal, EditChannelModal, type EditChannelFormValue } from 
 import { MemberModerationModal } from "./components/MemberModerationModal";
 import type { Channel } from "./types/community";
 import type { MemberModerationAction } from "./types/memberModeration";
+import type { ReportRecord } from "./types/reports";
 import { AppLockScreen } from "./components/AppLockScreen";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
@@ -2978,6 +2979,15 @@ export function App() {
                 onClearPendingInviteCode={() => setPendingInviteCode(null)}
                 onInviteAccepted={handleInviteAccepted}
                 onMemberRolesChanged={(memberId, roleIds, primaryRoleId) => replaceCommunityMembers(activeCommunity.id, activeCommunity.members.map((member) => member.id === memberId ? { ...member, roleId: primaryRoleId, roleIds } : member))}
+                onCommunityMembersChanged={(members) => replaceCommunityMembers(activeCommunity.id, members)}
+                onOpenModerationSource={(report: ReportRecord) => {
+                  if (report.targetType === "direct_message" || report.conversationId) { pushToast("Direct message reports are restricted to authorized Picom Safety review.", "info"); return; }
+                  if (report.targetType === "message") { const message = activeCommunity.messages.find((item) => item.id === report.targetId); if (!message) { pushToast("The reported message is unavailable or no longer visible.", "info"); return; } setActiveView("community"); setActiveChannelId(message.channelId); setHighlightedMessageId(message.id); return; }
+                  if (report.targetType === "radio_session") { setActiveView("radioCommunity"); return; }
+                  if (report.targetType === "podcast_episode" || report.targetType === "podcast_comment") { setActiveView("podcastCommunity"); return; }
+                  if (report.targetType === "user") { const member = activeCommunity.members.find((item) => item.userId === report.targetId); if (member) openProfilePage(member); else pushToast("The reported profile is unavailable.", "info"); return; }
+                  setActiveView(communityViewForKind(activeCommunity.kind));
+                }}
                 onCommunityRolesChanged={(roles) => replaceCommunities(communities.map((community) => community.id === activeCommunity.id ? { ...community, roles } : community))}
                 onCommunityUpdated={(summary) => replaceCommunities(communities.map((community) => community.id !== summary.id ? community : { ...community, kind: summary.kind, ownerId: summary.ownerId ?? community.ownerId, name: summary.name, description: summary.description, icon: summary.iconUrl ?? "", accentColor: summary.accentColor, visibility: summary.visibility, publicReadEnabled: summary.publicReadEnabled }))}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
