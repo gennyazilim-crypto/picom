@@ -1,6 +1,7 @@
 import type { FriendState } from "../types/friends";
 
 export const mockFriendState: FriendState = {
+  counts: { friends: 15, incoming: 1, outgoing: 1, pending: 2 },
   friends: [
     {
       userId: "aurora-user-1",

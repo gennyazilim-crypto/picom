@@ -2,16 +2,18 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [migration, rlsTest, types, mock, relationships, dm, followsMigration, dmMigration] = await Promise.all([
+const [migration, rlsTest, types, mock, relationshipFacade, friendService, dm, followsMigration, dmMigration] = await Promise.all([
   read("supabase/migrations/20260711002000_friendship_schema_rls_privacy_foundation.sql"),
   read("supabase/tests/rls/friendship_schema_rls_privacy_foundation.sql"),
   read("src/types/friends.ts"),
   read("src/data/mockFriends.ts"),
   read("src/services/relationshipService.ts"),
+  read("src/services/friends/friendRequestService.ts"),
   read("src/services/directMessages/directConversationService.ts"),
   read("supabase/migrations/20260710003100_social_relationships.sql"),
   read("supabase/migrations/20260710187000_direct_messages_backend_production.sql"),
 ]);
+const relationships = relationshipFacade + friendService;
 
 for (const state of ["pending", "accepted", "declined", "cancelled"]) {
   assert.match(migration, new RegExp(`['\"]${state}['\"]`), `migration must include ${state}`);
@@ -31,7 +33,7 @@ assert.doesNotMatch(mock, /Pending placeholder request/);
 assert.match(relationships, /mockRequestHistory/);
 assert.match(relationships, /Only incoming friend requests can be accepted/);
 assert.match(relationships, /Only outgoing friend requests can be cancelled/);
-assert.match(relationships, /userBlockingService\.isBlocked\(userId\)/);
+assert.match(relationships, /userBlockingService\.isBlocked\((?:userId|normalized)\)/);
 assert.match(dm, /userBlockingService\.isBlocked\(normalizedUserId\)/);
 assert.match(followsMigration, /create table if not exists public\.user_follows/i);
 assert.match(followsMigration, /create table if not exists public\.friendships/i);

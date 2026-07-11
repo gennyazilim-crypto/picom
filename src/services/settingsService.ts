@@ -12,6 +12,8 @@ export interface NotificationSettings {
   enabled: boolean;
   muted: boolean;
   mentionsOnly: boolean;
+  friendRequests: boolean;
+  friendAcceptances: boolean;
   allowMentionsFromMutedScopes: boolean;
   digestMode: NotificationDigestMode;
   quietHours: QuietHoursSettings;
@@ -37,6 +39,8 @@ const defaults: PicomSettings = {
     enabled: true,
     muted: false,
     mentionsOnly: false,
+    friendRequests: true,
+    friendAcceptances: true,
     allowMentionsFromMutedScopes: true,
     digestMode: "off",
     quietHours: {

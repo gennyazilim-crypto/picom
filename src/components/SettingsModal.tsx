@@ -749,6 +749,20 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
               </label>
               <label className="settings-toggle-row">
                 <span>
+                  <strong>Friend requests</strong>
+                  <small>Show inbox and desktop alerts when someone sends you a friend request.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.friendRequests} onChange={(event) => updateNotifications({ friendRequests: event.target.checked })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
+                  <strong>Friend request acceptances</strong>
+                  <small>Notify you when someone accepts a friend request you sent.</small>
+                </span>
+                <input type="checkbox" checked={notificationSettings.friendAcceptances} onChange={(event) => updateNotifications({ friendAcceptances: event.target.checked })} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>
                   <strong>Mute notifications</strong>
                   <small>Keep desktop alerts quiet while preserving the notification inbox.</small>
                 </span>

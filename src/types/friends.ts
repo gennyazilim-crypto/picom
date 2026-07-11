@@ -14,6 +14,38 @@ export type FriendConnection = Readonly<{
 
 export type FriendRequestStatus = "pending" | "accepted" | "declined" | "cancelled";
 
+export type FriendServiceErrorCode =
+  | "INVALID_INPUT"
+  | "AUTH_REQUIRED"
+  | "SELF_REQUEST"
+  | "BLOCKED"
+  | "PRIVACY_DENIED"
+  | "DUPLICATE_REQUEST"
+  | "ALREADY_FRIENDS"
+  | "COOLDOWN"
+  | "NOT_FOUND"
+  | "DIRECTION_DENIED"
+  | "RATE_LIMITED"
+  | "NETWORK"
+  | "UNKNOWN";
+
+export type FriendServiceError = Readonly<{
+  code: FriendServiceErrorCode;
+  message: string;
+  retryable: boolean;
+}>;
+
+export type FriendServiceResult<T> =
+  | Readonly<{ ok: true; data: T }>
+  | Readonly<{ ok: false; error: string; details: FriendServiceError }>;
+
+export type FriendRequestCounts = Readonly<{
+  friends: number;
+  incoming: number;
+  outgoing: number;
+  pending: number;
+}>;
+
 export type FriendRequest = Readonly<{
   id: string;
   userId: string;
@@ -44,4 +76,5 @@ export type FriendState = Readonly<{
   friends: FriendConnection[];
   requests: FriendRequest[];
   suggestions: FriendSuggestion[];
+  counts: FriendRequestCounts;
 }>;

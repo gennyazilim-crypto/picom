@@ -510,19 +510,20 @@ export function App() {
     else pushToast(result.error, "error");
   }, [pushToast]);
   useEffect(() => {
-    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (dataSourceService.getStatus().isSupabase && !authSession) return;
     let active = true;
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribeNotifications: (() => void) | undefined;
+    let unsubscribeState: (() => void) | undefined;
     void refreshFriendState();
-    void userSafetyCenterService.refreshRemotePrivacy();
+    if (dataSourceService.getStatus().isSupabase) void userSafetyCenterService.refreshRemotePrivacy();
+    void relationshipService.subscribeToFriendState((state) => {
+      if (active) setFriendState(state);
+    }).then((cleanup) => { if (!active) cleanup(); else unsubscribeState = cleanup; });
     void relationshipService.subscribeToFriendNotifications((notification) => {
       if (!active) return;
-      const accepted = notification.eventType === "request_accepted";
-      notificationCenterService.add({ id: `friend-${notification.id}`, category: "system", title: accepted ? "Friend request accepted" : "New friend request", preview: accepted ? "A Picom user accepted your friend request." : "A Picom user sent you a friend request.", createdAt: notification.createdAt, context: { kind: "system", userId: notification.actorUserId, label: "Friends" } });
-      void notificationService.showNotification({ title: accepted ? "Friend request accepted" : "New friend request", body: accepted ? "Your Picom connection is ready." : "Open Friends to review it.", category: "system", tag: `friend-${notification.id}` });
-      void refreshFriendState();
-    }).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
-    return () => { active = false; unsubscribe?.(); };
+      void relationshipService.routeFriendNotification(notification);
+    }).then((cleanup) => { if (!active) cleanup(); else unsubscribeNotifications = cleanup; });
+    return () => { active = false; unsubscribeNotifications?.(); unsubscribeState?.(); };
   }, [authSession?.user?.id, refreshFriendState]);
   const [legalAcceptancePhase, setLegalAcceptancePhase] = useState<"checking" | "accepted" | "required">("checking");
   const [legalAcceptanceLoading, setLegalAcceptanceLoading] = useState(false);
