@@ -82,6 +82,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate Full MVP staging E2E matrix contract
+        run: node scripts/full-mvp-staging-e2e-contract.mjs
+
       - name: Validate hosted Supabase RLS and storage boundaries
         run: npm run supabase:rls:hosted:test
 

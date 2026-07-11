@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "task": 519,
+  "target": "staging",
+  "productionUsed": false,
+  "executionStatus": "BLOCKED",
+  "recordedOn": "2026-07-11",
+  "sourceCommit": "pending-task-519",
+  "redactionReviewed": true,
+  "providerResults": {
+    "supabase": "BLOCKED",
+    "livekit": "BLOCKED",
+    "nativeDesktop": "BLOCKED"
+  },
+  "flowResults": [
+    { "id": "first-launch-auth-onboarding", "status": "BLOCKED", "reasonCode": "PROTECTED_STAGING_FIXTURES_UNAVAILABLE" },
+    { "id": "community-kinds-create", "status": "BLOCKED", "reasonCode": "PROTECTED_STAGING_FIXTURES_UNAVAILABLE" },
+    { "id": "invite-join-visitor-member", "status": "BLOCKED", "reasonCode": "SYNTHETIC_ACTOR_MATRIX_UNAVAILABLE" },
+    { "id": "roles-permissions", "status": "BLOCKED", "reasonCode": "SYNTHETIC_ACTOR_MATRIX_UNAVAILABLE" },
+    { "id": "text-chat-message-lifecycle", "status": "BLOCKED", "reasonCode": "TWO_CLIENT_STAGING_UNAVAILABLE" },
+    { "id": "text-chat-attachments", "status": "BLOCKED", "reasonCode": "STAGING_STORAGE_UNAVAILABLE" },
+    { "id": "friends-direct-messages", "status": "BLOCKED", "reasonCode": "TWO_CLIENT_STAGING_UNAVAILABLE" },
+    { "id": "profile-settings-privacy-verification", "status": "BLOCKED", "reasonCode": "SYNTHETIC_ACTOR_MATRIX_UNAVAILABLE" },
+    { "id": "feed-cross-content-mentions", "status": "BLOCKED", "reasonCode": "PROTECTED_STAGING_FIXTURES_UNAVAILABLE" },
+    { "id": "radio-listener-host", "status": "BLOCKED", "reasonCode": "HOSTED_MEDIA_PROVIDER_UNAVAILABLE" },
+    { "id": "podcast-publish-listen", "status": "BLOCKED", "reasonCode": "STAGING_STORAGE_UNAVAILABLE" },
+    { "id": "settings-persistence", "status": "BLOCKED", "reasonCode": "NATIVE_STAGING_CLIENT_UNAVAILABLE" },
+    { "id": "voice-two-client", "status": "BLOCKED", "reasonCode": "HOSTED_LIVEKIT_UNAVAILABLE" },
+    { "id": "screen-share-native", "status": "BLOCKED", "reasonCode": "NATIVE_PLATFORM_MATRIX_UNAVAILABLE" },
+    { "id": "moderation-audit", "status": "BLOCKED", "reasonCode": "SYNTHETIC_ACTOR_MATRIX_UNAVAILABLE" },
+    { "id": "logout-session-restore", "status": "BLOCKED", "reasonCode": "NATIVE_STAGING_CLIENT_UNAVAILABLE" },
+    { "id": "realtime-reconnect-dedup", "status": "BLOCKED", "reasonCode": "TWO_CLIENT_STAGING_UNAVAILABLE" },
+    { "id": "private-data-isolation", "status": "BLOCKED", "reasonCode": "HOSTED_RLS_MATRIX_UNAVAILABLE" }
+  ],
+  "blockers": [
+    "Protected hosted-staging environment values were not available in this local execution.",
+    "Synthetic owner, admin, moderator, member, visitor, blocked, and DM non-participant fixtures were not available.",
+    "Windows, Linux, macOS, LiveKit, and native screen-share evidence was not captured for one immutable candidate."
+  ],
+  "evidenceReferences": []
+}

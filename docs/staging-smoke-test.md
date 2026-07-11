@@ -8,6 +8,8 @@ Do not use production secrets during staging smoke tests. Do not run destructive
 
 This checklist validates staging readiness before release promotion. It is separate from local mock smoke tests and production deployment approval.
 
+The complete Full MVP actor/content matrix, protected runner, evidence rules, and current blocker status are documented in `docs/full-mvp-staging-e2e-matrix.md`. Its machine-readable source is `tests/e2e/full-mvp-staging-matrix.json`. A contract pass is not hosted staging certification.
+
 ## Required environment
 
 - Staging Supabase project configured.
@@ -59,6 +61,8 @@ This checklist validates staging readiness before release promotion. It is separ
 
 `npm run staging:smoke:placeholder` is intentionally non-destructive by default. It prints the required checklist and refuses to call staging unless a future implementation adds explicit staging credentials and confirmation.
 
+`node scripts/hosted-full-mvp-staging-e2e.mjs` is also non-destructive by default. Its `--run` mode requires exact staging and synthetic-write confirmations, protected environment values, the complete actor fixtures, and a redacted evidence file. Missing providers or native platform evidence remain `BLOCKED`; they are never silently passed.
+
 ## Pass/fail criteria
 
 Pass only if:
@@ -86,4 +90,5 @@ Fail or block promotion if:
 - `docs/incident-response.md`
 - `docs/performance-budget.md`
 - `docs/bundle-size.md`
+- `docs/full-mvp-staging-e2e-matrix.md`
 - Production deployment checklist placeholder once available

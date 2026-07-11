@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "name": "Picom Full MVP staging end-to-end matrix",
+  "target": "staging",
+  "productionAllowed": false,
+  "desktopPlatforms": ["windows", "linux", "macos"],
+  "requiredConfirmations": ["STAGING_ONLY", "ALLOW_SYNTHETIC_WRITES"],
+  "requiredActors": ["new_user", "owner", "admin", "moderator", "member", "visitor", "blocked_user", "dm_non_participant"],
+  "redactionPolicy": {
+    "allow": ["flow id", "status", "reason code", "platform", "release commit", "timestamp", "defect id"],
+    "deny": ["password", "access token", "refresh token", "service-role key", "private URL", "user content", "private identifier"]
+  },
+  "hostedSuites": [
+    { "id": "rls-storage", "runner": "scripts/hosted-staging-rls-validation.mjs" },
+    { "id": "realtime-two-client", "runner": "scripts/hosted-staging-realtime-validation.mjs" },
+    { "id": "edge-functions-jwt", "runner": "scripts/hosted-staging-edge-functions-validation.mjs" }
+  ],
+  "flows": [
+    {
+      "id": "first-launch-auth-onboarding",
+      "actors": ["new_user"],
+      "checks": ["first launch", "register", "profile creation", "onboarding", "theme", "follow suggestions"],
+      "preflightCommands": ["first-launch:smoke", "auth:onboarding:production:smoke"],
+      "evidence": ["desktop capture", "session result"]
+    },
+    {
+      "id": "community-kinds-create",
+      "actors": ["owner"],
+      "checks": ["create Text community", "create Radio community", "create Podcast community", "default roles and channels"],
+      "preflightCommands": ["community:kind-full-mvp:qa"],
+      "evidence": ["desktop capture", "database assertion"]
+    },
+    {
+      "id": "invite-join-visitor-member",
+      "actors": ["owner", "member", "visitor"],
+      "checks": ["create invite", "visitor public read", "private content denial", "join", "leave"],
+      "preflightCommands": ["community:invites-access:smoke", "channel:private-permissions:smoke"],
+      "evidence": ["desktop capture", "RLS assertion"]
+    },
+    {
+      "id": "roles-permissions",
+      "actors": ["owner", "admin", "moderator", "member", "visitor"],
+      "checks": ["assign role", "allowed management", "higher-role denial", "composer permission state"],
+      "preflightCommands": ["community:role-management:smoke", "community:member-roles:smoke"],
+      "evidence": ["desktop capture", "RLS assertion", "audit assertion"]
+    },
+    {
+      "id": "text-chat-message-lifecycle",
+      "actors": ["member", "moderator"],
+      "checks": ["send", "optimistic reconcile", "reply", "reaction add remove", "edit own", "delete own", "moderator delete"],
+      "preflightCommands": ["message:send-queue:smoke", "replies:production:smoke", "reactions:summaries:smoke"],
+      "evidence": ["two-client capture", "database assertion"]
+    },
+    {
+      "id": "text-chat-attachments",
+      "actors": ["member", "visitor"],
+      "checks": ["valid image upload", "invalid type denial", "oversize denial", "preview", "private signed access", "visitor upload denial"],
+      "preflightCommands": ["upload:ux:test", "attachments:scan:smoke"],
+      "evidence": ["desktop capture", "Storage assertion"]
+    },
+    {
+      "id": "friends-direct-messages",
+      "actors": ["member", "blocked_user", "dm_non_participant"],
+      "checks": ["friend request", "accept", "open DM", "send and receive", "reaction", "read state", "block", "non-participant denial"],
+      "preflightCommands": ["friends:production:smoke", "dm:production:smoke", "dm:services:realtime:smoke"],
+      "evidence": ["two-client capture", "RLS assertion"]
+    },
+    {
+      "id": "profile-settings-privacy-verification",
+      "actors": ["member", "visitor", "blocked_user"],
+      "checks": ["edit profile", "avatar media", "privacy projection", "approved badge display", "pending badge hidden", "blocked visibility"],
+      "preflightCommands": ["profile:privacy:smoke", "profile:edit-storage:smoke", "verification:badges:smoke"],
+      "evidence": ["desktop capture", "RLS assertion"]
+    },
+    {
+      "id": "feed-cross-content-mentions",
+      "actors": ["member", "visitor", "blocked_user"],
+      "checks": ["Text mention", "Radio mention", "Podcast mention", "story", "open in context", "private and blocked filtering"],
+      "preflightCommands": ["feed:full-mvp:qa"],
+      "evidence": ["desktop capture", "visibility assertion"]
+    },
+    {
+      "id": "radio-listener-host",
+      "actors": ["owner", "member", "visitor"],
+      "checks": ["schedule", "publish", "listener join", "host controls", "moderation", "stop", "audit"],
+      "preflightCommands": ["radio:full-mvp:qa"],
+      "evidence": ["two-client capture", "database assertion", "provider result"]
+    },
+    {
+      "id": "podcast-publish-listen",
+      "actors": ["owner", "member", "visitor"],
+      "checks": ["draft", "media upload", "publish", "play and resume", "save", "reaction", "comment", "moderation"],
+      "preflightCommands": ["podcast:full-mvp:qa"],
+      "evidence": ["desktop capture", "Storage assertion", "database assertion"]
+    },
+    {
+      "id": "settings-persistence",
+      "actors": ["member"],
+      "checks": ["account", "profile", "appearance", "privacy", "notifications", "voice devices", "advanced diagnostics", "restart persistence"],
+      "preflightCommands": ["settings:full-mvp:qa"],
+      "evidence": ["desktop capture", "restart result"]
+    },
+    {
+      "id": "voice-two-client",
+      "actors": ["member", "moderator"],
+      "checks": ["token", "join two clients", "mute", "deafen", "speaking", "reconnect", "leave", "moderator end"],
+      "preflightCommands": ["voice:client:smoke", "livekit:token:security:smoke"],
+      "evidence": ["two-client capture", "provider result"]
+    },
+    {
+      "id": "screen-share-native",
+      "actors": ["member"],
+      "checks": ["native source picker", "permission denial", "start", "remote render", "stop", "cleanup"],
+      "preflightCommands": ["screen-share:publish:full-mvp:smoke", "screen-share:bridge:full-mvp:smoke"],
+      "evidence": ["platform capture", "provider result"]
+    },
+    {
+      "id": "moderation-audit",
+      "actors": ["owner", "admin", "moderator", "member"],
+      "checks": ["report", "review", "message moderation", "member moderation", "danger confirmation", "immutable audit"],
+      "preflightCommands": ["community:moderation:full:smoke", "community:audit-danger:full:smoke"],
+      "evidence": ["desktop capture", "audit assertion", "RLS assertion"]
+    },
+    {
+      "id": "logout-session-restore",
+      "actors": ["member"],
+      "checks": ["logout", "protected view denial", "login", "restart restore", "revoked session denial"],
+      "preflightCommands": ["auth:sessions:smoke", "auth:multi-client-sync:smoke"],
+      "evidence": ["desktop capture", "session result"]
+    },
+    {
+      "id": "realtime-reconnect-dedup",
+      "actors": ["member"],
+      "checks": ["two-client insert update delete", "disconnect", "reconnect", "ordering", "client id deduplication"],
+      "preflightCommands": ["realtime:ordering:smoke", "realtime:deduplication:smoke"],
+      "evidence": ["two-client capture", "database assertion"]
+    },
+    {
+      "id": "private-data-isolation",
+      "actors": ["visitor", "blocked_user", "dm_non_participant"],
+      "checks": ["private channel denial", "private attachment denial", "blocked feed denial", "DM metadata denial", "audit denial"],
+      "preflightCommands": ["supabase:rls:production-safe", "blocking:privacy:smoke", "dm:privacy:safety:smoke"],
+      "evidence": ["RLS assertion", "Storage assertion"]
+    }
+  ]
+}
