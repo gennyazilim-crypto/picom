@@ -34,6 +34,7 @@ export type MeetingPreJoinSnapshot = Readonly<{
   microphoneLevel:number;
   speakerTestActive:boolean;
   busy:boolean;
+  notice:string|null;
   error:Readonly<{code:MeetingPreJoinErrorCode;message:string;recoverable:boolean}>|null;
 }>;
 

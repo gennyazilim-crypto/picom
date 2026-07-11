@@ -12,6 +12,10 @@ export type VoiceDeviceOption = {
   isDefault: boolean;
 };
 
+export type VoiceDeviceSelectionOptions = Readonly<{
+  notifyConsumers?: boolean;
+}>;
+
 export type VoiceDeviceSnapshot = {
   isSupported: boolean;
   permission: VoiceDevicePermission;
@@ -91,6 +95,10 @@ let listeningForDeviceChanges = false;
 let microphoneTestStream: MediaStream | null = null;
 let microphoneTestContext: AudioContext | null = null;
 let microphoneTestFrame: number | null = null;
+let outputTestContext: AudioContext | null = null;
+let outputTestTimer: ReturnType<typeof setTimeout> | null = null;
+let outputTestResolve: (() => void) | null = null;
+let outputTestGeneration = 0;
 
 const emit = (next: Partial<VoiceDeviceSnapshot>) => {
   snapshot = { ...snapshot, ...next };
@@ -131,6 +139,16 @@ function stopMicrophoneTestResources(): void {
   microphoneTestStream = null;
   if (microphoneTestContext) void microphoneTestContext.close().catch(() => undefined);
   microphoneTestContext = null;
+}
+
+function stopOutputTestResources(): void {
+  if (outputTestTimer !== null) clearTimeout(outputTestTimer);
+  outputTestTimer = null;
+  const resolve = outputTestResolve;
+  outputTestResolve = null;
+  if (outputTestContext) void outputTestContext.close().catch(() => undefined);
+  outputTestContext = null;
+  resolve?.();
 }
 
 const toOptions = (devices: MediaDeviceInfo[], kind: MediaDeviceKind): VoiceDeviceOption[] =>
@@ -221,6 +239,7 @@ export const voiceDeviceService = {
       const selectedOutputId = normalizeSelection(snapshot.selectedOutputId, outputDevices);
       const inputRemoved = previousInputId !== "default" && selectedInputId !== previousInputId;
       const outputRemoved = previousOutputId !== "default" && selectedOutputId !== previousOutputId;
+      const restartMicrophoneTest = inputRemoved && snapshot.microphoneTestActive;
       const notice = inputRemoved && outputRemoved
         ? "The selected microphone and speaker were removed. Picom switched to available system devices."
         : inputRemoved
@@ -231,8 +250,10 @@ export const voiceDeviceService = {
       emit({ inputDevices, outputDevices, selectedInputId, selectedOutputId, permission, isLoading: false, notice });
       persist();
       if (selectedInputId !== previousInputId || selectedOutputId !== previousOutputId) {
-        if (snapshot.microphoneTestActive) voiceDeviceService.stopMicrophoneTest();
+        if (restartMicrophoneTest) voiceDeviceService.stopMicrophoneTest();
+        if (outputRemoved && snapshot.outputTestActive) voiceDeviceService.stopOutputTest();
         publishPreferences();
+        if (restartMicrophoneTest) await voiceDeviceService.startMicrophoneTest();
       }
     } catch (error) {
       permission = permissionFromError(error);
@@ -249,15 +270,18 @@ export const voiceDeviceService = {
   async selectInput(deviceId: string): Promise<boolean> {
     if (!snapshot.inputDevices.some((device) => device.deviceId === deviceId)) return false;
     try {
+      const restartMicrophoneTest = snapshot.microphoneTestActive;
       const nextSnapshot = { ...snapshot, selectedInputId: deviceId };
       const stream = await mediaDevices!.getUserMedia({
         audio: createAudioConstraints(nextSnapshot),
         video: false,
       });
       stream.getTracks().forEach((track) => track.stop());
+      if (restartMicrophoneTest) voiceDeviceService.stopMicrophoneTest();
       emit({ selectedInputId: deviceId, permission: "granted", error: null, notice: null });
       persist();
       publishPreferences();
+      if (restartMicrophoneTest) await voiceDeviceService.startMicrophoneTest();
       return true;
     } catch (error) {
       emit({ permission: permissionFromError(error), error: "The selected microphone is unavailable." });
@@ -265,11 +289,12 @@ export const voiceDeviceService = {
     }
   },
 
-  selectOutput(deviceId: string): boolean {
+  selectOutput(deviceId: string, options: VoiceDeviceSelectionOptions = {}): boolean {
     if (!snapshot.outputDevices.some((device) => device.deviceId === deviceId)) return false;
+    if (snapshot.outputTestActive) voiceDeviceService.stopOutputTest();
     emit({ selectedOutputId: deviceId, error: null, notice: null });
     persist();
-    publishPreferences();
+    if (options.notifyConsumers !== false) publishPreferences();
     return true;
   },
 
@@ -325,8 +350,11 @@ export const voiceDeviceService = {
 
   async testOutput(): Promise<boolean> {
     if (typeof AudioContext === "undefined") { emit({ error: "Speaker testing is unavailable in this runtime." }); return false; }
+    voiceDeviceService.stopOutputTest();
+    const generation = ++outputTestGeneration;
     emit({ outputTestActive: true, error: null });
     const context = new AudioContext() as AudioContext & { setSinkId?: (sinkId: string) => Promise<void> };
+    outputTestContext = context;
     try {
       if (snapshot.selectedOutputId !== "default") {
         if (!context.setSinkId) throw new Error("OUTPUT_ROUTING_UNSUPPORTED");
@@ -342,19 +370,45 @@ export const voiceDeviceService = {
       oscillator.connect(gain).connect(context.destination);
       oscillator.start();
       oscillator.stop(context.currentTime + 0.45);
-      await new Promise((resolve) => setTimeout(resolve, 520));
+      await new Promise<void>((resolve) => {
+        outputTestResolve = resolve;
+        outputTestTimer = setTimeout(() => {
+          outputTestTimer = null;
+          outputTestResolve = null;
+          resolve();
+        }, 520);
+      });
+      if (generation !== outputTestGeneration) return false;
       emit({ outputTestActive: false });
       return true;
     } catch (error) {
       emit({ outputTestActive: false, error: error instanceof Error && error.message === "OUTPUT_ROUTING_UNSUPPORTED" ? "This runtime cannot route test audio to a selected speaker. Use the system default output." : "The selected speaker could not play the test tone." });
       return false;
     } finally {
-      await context.close().catch(() => undefined);
+      if (outputTestContext === context) {
+        outputTestContext = null;
+        await context.close().catch(() => undefined);
+      }
+      if (generation === outputTestGeneration) {
+        outputTestTimer = null;
+        outputTestResolve = null;
+      }
     }
   },
 
-  reset(): void {
+  stopOutputTest(): void {
+    outputTestGeneration += 1;
+    stopOutputTestResources();
+    emit({ outputTestActive: false });
+  },
+
+  stopTests(): void {
     voiceDeviceService.stopMicrophoneTest();
+    voiceDeviceService.stopOutputTest();
+  },
+
+  reset(): void {
+    voiceDeviceService.stopTests();
     emit({ ...defaultPreferences, error: null, notice: null });
     persist();
     publishPreferences();
