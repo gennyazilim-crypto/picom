@@ -204,7 +204,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "insights") return <CommunityInsightsView community={community} access={access} />;
     if (activeSection === "community-settings") return <CommunitySettingsSection community={community} access={access} onUpdated={onCommunityUpdated} />;
     if (activeSection === "verification") return <CommunityVerificationRequestCard community={community} />;
-    if (activeSection === "channels") return <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
+    if (activeSection === "channels") return sectionTools?.channels ?? <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
     if (activeSection === "roles") return <CommunityRolesSection community={community} access={access} onRolesChanged={onCommunityRolesChanged} />;
     if (activeSection === "members") return <CommunityMembersSection community={community} access={access} onMemberRolesChanged={onMemberRolesChanged} />;
     if (activeSection === "emojis") return sectionTools?.emojis ?? <div className="community-admin-empty">No custom emojis loaded.</div>;
@@ -233,7 +233,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
         </nav>
         <div className="community-admin-content">
           {sectionContent}
-          {activeSection !== "moderation" && activeSection !== "danger-zone" ? sectionTools?.[activeSection] : null}
+          {activeSection !== "channels" && activeSection !== "moderation" && activeSection !== "danger-zone" ? sectionTools?.[activeSection] : null}
         </div>
       </div>
     </ModalShell>

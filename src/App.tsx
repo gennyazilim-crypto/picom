@@ -99,6 +99,7 @@ import { resolveCommunityJoinLanding } from "./services/community/communityJoinR
 import type { CommunityInvitePreview, InviteAcceptanceStatus } from "./services/community/communityInviteService";
 import { communityMembershipService } from "./services/community/communityMembershipService";
 import { channelService } from "./services/channelService";
+import { communityStructureService } from "./services/community/communityStructureService";
 import { channelCategoryService } from "./services/channelCategoryService";
 import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
 import { membersService } from "./services/membersService";
@@ -429,6 +430,7 @@ export function App() {
     addCategory,
     renameCategory,
     deleteCategory,
+    moveCategory,
     moveChannel,
     addChannel,
     replaceCommunities,
@@ -2966,6 +2968,8 @@ export function App() {
                 audioActive={activeView === "podcastCommunity"}
                 onOpenAudio={() => setActiveView(communityViewForKind(displayedActiveCommunity.kind))}
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
+                onEditChannel={setEditingChannel}
+                onDeleteChannel={setDeletingChannel}
                 onOpenSettings={openSettings}
                 onLogout={handleLogout}
                 onJoinCommunity={handleJoinCommunity}
@@ -2981,21 +2985,35 @@ export function App() {
                 onCreateEvent={(input) => void createCommunityEvent(input)}
                 onUpdateEvent={(eventId, input) => void updateCommunityEvent(eventId, input)}
                 onCancelEvent={(eventId) => void cancelCommunityEvent(eventId)}
-                onCreateCategory={(name) => {
-                  const category = addCategory({ communityId: activeCommunity.id, name });
-                  pushToast(`${category.name} category created locally.`, "success");
+                onCreateCategory={async (name) => {
+                  const result = await communityStructureService.createTextCategory(activeCommunity.id, name);
+                  if (!result.ok) { pushToast(result.error, "error"); return; }
+                  const category = addCategory({ communityId: activeCommunity.id, id: result.data.id, name: result.data.name, position: result.data.position });
+                  pushToast(`${category.name} category created.`, "success");
                 }}
-                onRenameCategory={(categoryId, name) => {
+                onRenameCategory={async (categoryId, name) => {
+                  const result = await communityStructureService.renameTextCategory(activeCommunity.id, categoryId, name);
+                  if (!result.ok) { pushToast(result.error, "error"); return; }
                   renameCategory({ communityId: activeCommunity.id, categoryId, name });
-                  pushToast("Category renamed locally.", "success");
+                  pushToast("Category renamed.", "success");
                 }}
-                onDeleteCategory={(categoryId) => {
+                onDeleteCategory={async (categoryId) => {
+                  const result = await communityStructureService.deleteTextCategory(activeCommunity.id, categoryId);
+                  if (!result.ok) { pushToast(result.error, "error"); return; }
                   deleteCategory({ communityId: activeCommunity.id, categoryId });
-                  pushToast("Category deleted locally; channels moved safely.", "info");
+                  pushToast("Category deleted; channels moved safely.", "info");
                 }}
-                onMoveChannel={(categoryId, channelId, direction) => {
+                onMoveCategory={async (categoryId, direction) => {
+                  const result = await communityStructureService.moveTextCategory(activeCommunity.id, categoryId, direction);
+                  if (!result.ok) { pushToast(result.error, "error"); return; }
+                  moveCategory({ communityId: activeCommunity.id, categoryId, direction });
+                  pushToast("Category order updated.", "success");
+                }}
+                onMoveChannel={async (categoryId, channelId, direction) => {
+                  const result = await communityStructureService.moveTextChannel(activeCommunity.id, categoryId, channelId, direction);
+                  if (!result.ok) { pushToast(result.error, "error"); return; }
                   moveChannel({ communityId: activeCommunity.id, categoryId, channelId, direction });
-                  pushToast("Channel order updated locally.", "success");
+                  pushToast("Channel order updated.", "success");
                 }}
                 onChannelContextMenu={(event, channel) =>
                   openContext(event, [

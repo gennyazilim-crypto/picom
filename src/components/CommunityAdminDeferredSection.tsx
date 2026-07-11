@@ -1,11 +1,11 @@
-import type { Community, Member } from "../types/community";
+import type { Channel, Community, Member } from "../types/community";
 import type { CommunityAccess } from "../types/communityAccess";
 import type { UpcomingEvent } from "../types/events";
 import type { CreateCommunityEventInput, UpdateCommunityEventInput } from "../services/communityEventService";
 import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
 import { CommunityOwnershipTransferPanel } from "./CommunityOwnershipTransferPanel";
 import { CommunityDeleteSafetyPanel } from "./CommunityDeleteSafetyPanel";
-import { CommunityCategoryManagementPanel } from "./CommunityCategoryManagementPanel";
+import { CommunityStructureManagementPanel } from "./CommunityStructureManagementPanel";
 import { MessageModerationFiltersPanel } from "./MessageModerationFiltersPanel";
 import { CommunityEventsAdminSection } from "./CommunityEventsAdminSection";
 import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
@@ -23,14 +23,19 @@ type Props = {
   onCreateCategory: (name: string) => void;
   onRenameCategory: (categoryId: string, name: string) => void;
   onDeleteCategory: (categoryId: string) => void;
+  onMoveCategory: (categoryId: string, direction: "up" | "down") => void;
+  onCreateChannel: (categoryId: string) => void;
+  onEditChannel: (channel: Channel) => void;
+  onDeleteChannel: (channel: Channel) => void;
+  onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void;
   onCreateEvent: (input: CreateCommunityEventInput) => void;
   onUpdateEvent: (eventId: string, input: UpdateCommunityEventInput) => void;
   onCancelEvent: (eventId: string) => void;
 };
 
-export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
+export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
   if (section === "overview") return <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />;
-  if (section === "channels") return <CommunityCategoryManagementPanel community={community} currentUser={currentUser} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} />;
+  if (section === "channels") return <CommunityStructureManagementPanel community={community} currentUser={currentUser} access={access} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} />;
   if (section === "events") return <CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} />;
   if (section === "moderation") return <MessageModerationFiltersPanel community={community} currentUser={currentUser} />;
   if (section === "bots") return <CommunityBotsAdminSection communityId={community.id} ownerId={community.ownerId ?? currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;

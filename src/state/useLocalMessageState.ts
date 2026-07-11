@@ -158,6 +158,12 @@ type DeleteLocalCategoryInput = {
   categoryId: string;
 };
 
+type MoveLocalCategoryInput = {
+  communityId: string;
+  categoryId: string;
+  direction: "up" | "down";
+};
+
 type MoveLocalChannelInput = {
   communityId: string;
   categoryId: string;
@@ -515,6 +521,19 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
+  const moveCategory = useCallback(({ communityId, categoryId, direction }: MoveLocalCategoryInput) => {
+    setCommunities((current) => current.map((community) => {
+      if (community.id !== communityId) return community;
+      const currentIndex = community.categories.findIndex((category) => category.id === categoryId);
+      const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= community.categories.length) return community;
+      const categories = [...community.categories];
+      const [category] = categories.splice(currentIndex, 1);
+      categories.splice(targetIndex, 0, category);
+      return { ...community, categories: categories.map((item, position) => ({ ...item, position })) };
+    }));
+  }, []);
+
 
   const moveChannel = useCallback(({ communityId, categoryId, channelId, direction }: MoveLocalChannelInput) => {
     setCommunities((current) =>
@@ -596,6 +615,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     addCategory,
     renameCategory,
     deleteCategory,
+    moveCategory,
     moveChannel,
     addChannel,
     replaceCommunities,
