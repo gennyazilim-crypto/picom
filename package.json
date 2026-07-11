@@ -123,6 +123,7 @@
     "radio:service-realtime:smoke": "node scripts/radio-services-realtime-smoke.mjs",
     "radio:host-producer:smoke": "node scripts/radio-host-producer-panel-smoke.mjs",
     "radio:roles-moderation-audit:smoke": "node scripts/radio-roles-moderation-audit-smoke.mjs",
+    "radio:cross-surface:smoke": "node scripts/radio-cross-surface-integration-smoke.mjs",
     "audio:podcast:smoke": "node scripts/audio-podcast-detail-smoke.mjs",
     "audio:schema:smoke": "node scripts/audio-schema-rls-smoke.mjs",
     "audio:service:smoke": "node scripts/audio-service-layer-smoke.mjs",

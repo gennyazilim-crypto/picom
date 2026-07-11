@@ -4,8 +4,9 @@ import type { SavedMessageRecord } from "./savedMessageService";
 import { canViewChannel, getCommunityAccess } from "./permissions/communityPermissions";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 import { normalizeSearchQuery, rankSearchResults } from "../utils/searchRelevance";
+import { audioDataSource } from "./audio/audioDataSource";
 
-export type AdvancedSearchCategory = "People" | "Communities" | "Channels" | "Messages" | "Mentions" | "Saved" | "Media";
+export type AdvancedSearchCategory = "People" | "Communities" | "Channels" | "Messages" | "Mentions" | "Saved" | "Media" | "Radio";
 export type AdvancedSearchResult = Readonly<{
   id: string;
   category: AdvancedSearchCategory;
@@ -16,9 +17,10 @@ export type AdvancedSearchResult = Readonly<{
   messageId?: string;
   userId?: string;
   attachmentId?: string;
+  radioSessionId?: string;
 }>;
 
-export type RemoteSearchCategory = "community" | "channel" | "member" | "message" | "mention" | "saved_message";
+export type RemoteSearchCategory = "community" | "channel" | "member" | "message" | "mention" | "saved_message" | "radio_session";
 export type MessageJumpResolution =
   | Readonly<{ ok: true; community: Community; channel: Channel; message: Message }>
   | Readonly<{ ok: false; reason: string }>;
@@ -28,7 +30,7 @@ function includes(value: string | null | undefined, query: string): boolean {
 }
 
 function safeQuery(query: string): string {
-  return normalizeSearchQuery(query).replace(/[%_]/g, "");
+  return normalizeSearchQuery(query).replace(/[%_(),]/g, "");
 }
 
 export function searchLocal(queryInput: string, communities: Community[], mentions: MentionItem[], currentUserId: string, savedMessages: SavedMessageRecord[] = []): AdvancedSearchResult[] {
@@ -50,6 +52,16 @@ export function searchLocal(queryInput: string, communities: Community[], mentio
       if (!query || includes(message.body, query)) results.push({ id: `search-message-${message.id}`, category: "Messages", label: message.body.slice(0, 72) || "Message", detail: community.name, communityId: community.id, channelId: message.channelId, messageId: message.id });
       for (const attachment of message.attachments ?? []) if (!query || includes(attachment.alt, query)) results.push({ id: `search-media-${attachment.id}`, category: "Media", label: attachment.alt ?? "Shared image", detail: community.name, communityId: community.id, channelId: message.channelId, messageId: message.id, attachmentId: attachment.id });
     }
+  }
+
+  for (const session of audioDataSource.getSnapshot().radioSessions) {
+    if (session.status === "draft" || session.status === "cancelled") continue;
+    const community = communities.find((item) => item.id === session.communityId);
+    if (!community) continue;
+    const access = getCommunityAccess(currentUserId, community);
+    if (!access.isMember && !access.canViewPublicContent) continue;
+    if (query && !includes(session.title, query) && !includes(session.description, query) && !session.tags.some((tag) => includes(tag, query))) continue;
+    results.push({ id: `search-radio-${session.id}`, category: "Radio", label: session.title, detail: `${community.name} · ${session.status}`, communityId: community.id, channelId: session.channelId, radioSessionId: session.id });
   }
 
   for (const mention of mentions) {
@@ -89,12 +101,13 @@ export async function searchRemote(queryInput: string, category: RemoteSearchCat
   const query = safeQuery(queryInput);
   const client = getSupabaseClient();
   if (!client || query.length < 2) return [];
-  const { data, error } = await client.rpc("search_accessible_entities", { query_text: query, category_filter: category, result_limit: Math.min(Math.max(limit, 1), 80) });
-  if (error) return [];
-  const categoryMap: Record<RemoteSearchCategory, AdvancedSearchCategory> = { community: "Communities", channel: "Channels", member: "People", message: "Messages", mention: "Mentions", saved_message: "Saved" };
-  const results = (data ?? []).map((row) => ({
+  const maxResults = Math.min(Math.max(limit, 1), 80);
+  const rpcCategory = category === "radio_session" ? null : category;
+  const rpcResult = category === "radio_session" ? { data: [], error: null } : await client.rpc("search_accessible_entities", { query_text: query, category_filter: rpcCategory, result_limit: maxResults });
+  const categoryMap: Record<Exclude<RemoteSearchCategory, "radio_session">, AdvancedSearchCategory> = { community: "Communities", channel: "Channels", member: "People", message: "Messages", mention: "Mentions", saved_message: "Saved" };
+  const results: AdvancedSearchResult[] = (rpcResult.error ? [] : (rpcResult.data ?? [])).map((row) => ({
     id: `remote-${row.result_type}-${row.entity_id}`,
-    category: categoryMap[row.result_type],
+    category: categoryMap[row.result_type as Exclude<RemoteSearchCategory, "radio_session">],
     label: row.label,
     detail: row.detail,
     communityId: row.community_id ?? undefined,
@@ -102,7 +115,11 @@ export async function searchRemote(queryInput: string, category: RemoteSearchCat
     messageId: row.message_id ?? undefined,
     userId: row.user_id ?? undefined,
   }));
-  return rankSearchResults(results, query).slice(0, Math.min(Math.max(limit, 1), 80));
+  if (category === null || category === "radio_session") {
+    const radioResult = await client.from("radio_sessions").select("id,community_id,channel_id,title,description,status").in("status", ["scheduled", "live", "ended"]).or(`title.ilike.%${query}%,description.ilike.%${query}%`).limit(maxResults);
+    if (!radioResult.error) for (const row of radioResult.data ?? []) results.push({ id: `remote-radio-${row.id}`, category: "Radio", label: row.title, detail: `Radio · ${row.status}`, communityId: row.community_id, channelId: row.channel_id ?? undefined, radioSessionId: row.id });
+  }
+  return rankSearchResults(results, query).slice(0, maxResults);
 }
 
 export const searchMessages = (query: string) => searchRemote(query, "message", 30);
@@ -111,5 +128,6 @@ export const searchChannels = (query: string) => searchRemote(query, "channel", 
 export const searchCommunities = (query: string) => searchRemote(query, "community", 20);
 export const searchMentions = (query: string) => searchRemote(query, "mention", 30);
 export const searchSavedMessages = (query: string) => searchRemote(query, "saved_message", 30);
+export const searchRadio = (query: string) => searchRemote(query, "radio_session", 30);
 
-export const advancedSearchService = { searchLocal, searchRemote, searchMessages, searchPeople, searchChannels, searchCommunities, searchMentions, searchSavedMessages, resolveMessageJumpTarget };
+export const advancedSearchService = { searchLocal, searchRemote, searchMessages, searchPeople, searchChannels, searchCommunities, searchMentions, searchSavedMessages, searchRadio, resolveMessageJumpTarget };

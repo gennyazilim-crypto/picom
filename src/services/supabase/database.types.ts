@@ -533,6 +533,12 @@ export type Database = {
         Update: Partial<Pick<Database["public"]["Tables"]["radio_session_reminders"]["Row"], "remind_minutes_before" | "last_known_starts_at" | "last_known_status" | "last_notification_key" | "last_notified_at" | "updated_at">>;
         Relationships: [];
       };
+      audio_feed_read_states: {
+        Row: { id: string; user_id: string; item_type: "radio_session" | "podcast_episode"; item_id: string; read_at: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["audio_feed_read_states"]["Row"]> & Pick<Database["public"]["Tables"]["audio_feed_read_states"]["Row"], "user_id" | "item_type" | "item_id">;
+        Update: Partial<Pick<Database["public"]["Tables"]["audio_feed_read_states"]["Row"], "read_at">>;
+        Relationships: [];
+      };
       radio_session_reactions: {
         Row: { id: string; radio_session_id: string; user_id: string; emoji: string; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_session_reactions"]["Row"]> & Pick<Database["public"]["Tables"]["radio_session_reactions"]["Row"], "radio_session_id" | "user_id" | "emoji">;

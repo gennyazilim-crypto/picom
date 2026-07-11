@@ -1,6 +1,7 @@
 export type DeepLinkAction =
   | { type: "invite"; code: string }
   | { type: "community"; communityId: string; channelId?: string; messageId?: string }
+  | { type: "radio"; communityId: string; sessionId: string }
   | { type: "authCallback"; code?: string; error?: string }
   | { type: "passwordRecovery"; code?: string; error?: string }
   | { type: "emailVerification"; code?: string; error?: string }
@@ -118,6 +119,10 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   if (route === "community") {
     return parseCommunityLink(segments);
+  }
+
+  if (route === "radio" && segments.length === 3 && segments[1] === "session" && isSafeSegment(segments[0]) && isSafeSegment(segments[2]) && !parsed.search && !parsed.hash) {
+    return { ok: true, url: `picom://radio/${segments[0]}/session/${segments[2]}`, action: { type: "radio", communityId: segments[0], sessionId: segments[2] } };
   }
 
   if (route === "settings" && segments.length === 0) {

@@ -124,20 +124,21 @@ function canMockModerateListener(communityId: string, targetUserId: string): boo
 
 function feedFromCatalog(radio: RadioSession[], podcasts: PodcastEpisode[]): AudioFeedItem[] {
   return [
-    ...radio.filter((item) => item.status === "live" || item.status === "scheduled").map((item): AudioFeedItem => ({
-      id: `feed-${item.id}`, type: item.status === "live" ? "radio_live" : "radio_scheduled",
+    ...radio.filter((item) => item.status === "live" || item.status === "scheduled" || item.status === "ended").map((item): AudioFeedItem => ({
+      id: `feed-${item.id}`, sourceId: item.id,
+      type: item.status === "live" ? "radio_live" : item.status === "scheduled" ? "radio_scheduled" : "radio_ended",
       communityId: item.communityId, hostUserId: item.hostUserId, title: item.title,
-      body: item.description, coverUrl: item.coverUrl, createdAt: item.startsAt,
-      startsAt: item.startsAt, listenerCount: item.listenerCount,
-      isUnread: item.status === "live", isSaved: item.isSavedByCurrentUser,
+      body: item.description, coverUrl: item.coverUrl, createdAt: item.endedAt ?? item.actualStartedAt ?? item.startsAt,
+      startsAt: item.startsAt, listenerCount: item.listenerCount, viewCount: item.listenerCount,
+      reactionSummary: item.reactionSummary, isUnread: true, isSaved: item.isSavedByCurrentUser,
     })),
     ...podcasts.filter((item) => item.status === "published").map((item): AudioFeedItem => ({
-      id: `feed-${item.id}`, type: "podcast_episode", communityId: item.communityId,
+      id: `feed-${item.id}`, sourceId: item.id, type: "podcast_episode", communityId: item.communityId,
       authorUserId: item.authorUserId, title: item.title, body: item.description,
       coverUrl: item.coverUrl, createdAt: item.publishedAt, durationSeconds: item.durationSeconds,
-      listenerCount: item.listenerCount, reactionSummary: item.reactionSummary,
+      listenerCount: item.listenerCount, viewCount: item.listenerCount, reactionSummary: item.reactionSummary,
       commentPreview: item.commentPreview, commentCount: item.commentCount,
-      isSaved: item.isSavedByCurrentUser,
+      commenterIds: item.commentPreview.map((comment) => comment.authorId), isUnread: true, isSaved: item.isSavedByCurrentUser,
     })),
   ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }

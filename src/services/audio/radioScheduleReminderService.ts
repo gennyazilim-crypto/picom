@@ -210,7 +210,7 @@ async function dispatchEvent(reminder: RadioScheduleReminder, session: RadioSess
       title: copy.title,
       preview: copy.preview,
       createdAt: new Date().toISOString(),
-      context: { kind: "community", communityId: session.communityId, channelId: session.channelId, label: "Radio schedule" },
+      context: { kind: "community", communityId: session.communityId, channelId: session.channelId, radioSessionId: session.id, label: "Radio schedule" },
     });
   }
   if (route.desktop && notificationService.getPermission() === "granted") {

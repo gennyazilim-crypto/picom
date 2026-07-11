@@ -6,7 +6,7 @@ export type NotificationCenterItem = Readonly<{
   preview: string;
   createdAt: string;
   readAt?: string;
-  context: Readonly<{ kind: "community" | "dm" | "system"; communityId?: string; channelId?: string; messageId?: string; userId?: string; label: string }>;
+  context: Readonly<{ kind: "community" | "dm" | "system"; communityId?: string; channelId?: string; messageId?: string; radioSessionId?: string; userId?: string; label: string }>;
 }>;
 
 const STORAGE_KEY = "picom.notificationCenter.v1";

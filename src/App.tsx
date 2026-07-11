@@ -612,7 +612,7 @@ export function App() {
         if (canceled) return;
         const merged = new Map<string, AdvancedSearchResult>();
         [...local, ...remote.filter((result) => !result.userId || !blockedUserIds.includes(result.userId))].forEach((result) => {
-          const key = `${result.category}:${result.communityId ?? ""}:${result.channelId ?? ""}:${result.messageId ?? result.userId ?? result.id}`;
+          const key = `${result.category}:${result.communityId ?? ""}:${result.channelId ?? ""}:${result.radioSessionId ?? result.messageId ?? result.userId ?? result.id}`;
           if (!merged.has(key)) merged.set(key, result);
         });
         setPaletteEntityResults([...merged.values()].slice(0, 80));
@@ -1315,6 +1315,21 @@ export function App() {
         return;
       }
 
+      if (action.type === "radio") {
+        const target = communities.find((community) => community.id === action.communityId);
+        const access = target ? getCommunityAccess(currentUserId, target) : null;
+        if (!target || target.kind !== "radio" || !access || (!access.isMember && !access.canViewPublicContent)) {
+          pushToast("This Radio session is unavailable or private.", "error");
+          return;
+        }
+        communityNavigationService.rememberRadioSession(action.communityId, action.sessionId);
+        setActiveView("radioCommunity");
+        switchCommunity(action.communityId);
+        closeTransientOverlays();
+        pushToast("Opened the Radio session.", "info");
+        return;
+      }
+
       const targetCommunity = communities.find((community) => community.id === action.communityId);
       if (!targetCommunity) {
         pushToast("Deep link community is unavailable in this local workspace.", "error");
@@ -1560,6 +1575,7 @@ export function App() {
             if (member && !blockedUserIds.includes(member.userId)) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
             else pushToast("This profile is unavailable or outside your accessible communities.", "error");
           }
+          else if (result.category === "Radio" && result.communityId && result.radioSessionId) { const target = communities.find((community) => community.id === result.communityId); const access = target ? getCommunityAccess(currentUserId, target) : null; if (target?.kind === "radio" && access && (access.isMember || access.canViewPublicContent)) { communityNavigationService.rememberRadioSession(result.communityId, result.radioSessionId); setActiveView("radioCommunity"); switchCommunity(result.communityId); } else pushToast("This Radio session is unavailable or private.", "error"); }
           else if (result.category === "Communities" && result.communityId) { const target = communities.find((community) => community.id === result.communityId); if (target) { setActiveView(communityViewForKind(target.kind)); switchCommunity(result.communityId); } }
           else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
             const target = advancedSearchService.resolveMessageJumpTarget(result, communities, currentUserId);
@@ -1784,7 +1800,7 @@ export function App() {
       return;
     }
 
-    setActiveView("community");
+    setActiveView(communityViewForKind(targetCommunity.kind));
     switchCommunity(communityId);
     closeTransientOverlays();
   }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
@@ -1889,6 +1905,16 @@ export function App() {
     notificationCenterService.markRead(item.id);
     setNotificationCenterOpen(false);
     if (item.context.kind === "dm" && item.context.userId) { openDirectMessages(item.context.userId); return; }
+    if (item.context.kind === "community" && item.context.communityId && item.context.radioSessionId) {
+      const target = communities.find((community) => community.id === item.context.communityId);
+      const access = target ? getCommunityAccess(currentUserId, target) : null;
+      if (target?.kind === "radio" && access && (access.isMember || access.canViewPublicContent)) {
+        communityNavigationService.rememberRadioSession(item.context.communityId, item.context.radioSessionId);
+        setActiveView("radioCommunity");
+        switchCommunity(item.context.communityId);
+      } else pushToast("This Radio session is unavailable or private.", "error");
+      return;
+    }
     if (item.context.kind === "community" && item.context.communityId) {
       const target = communities.find((community) => community.id === item.context.communityId);
       setActiveView(target ? communityViewForKind(target.kind) : "community"); switchCommunity(item.context.communityId, target?.kind === "text" ? item.context.channelId : undefined);
@@ -2479,6 +2505,7 @@ export function App() {
                 voiceState={voiceSnapshot}
                 activeVoiceRooms={activeVoiceRooms}
                 followedUserIds={followedUserIds}
+                currentUserId={currentUserId}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
                 onTabChange={setMentionTab}

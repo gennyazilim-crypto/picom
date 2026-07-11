@@ -1,4 +1,4 @@
-export type AudioContentType = "radio_live" | "radio_scheduled" | "podcast_episode";
+export type AudioContentType = "radio_live" | "radio_scheduled" | "radio_ended" | "podcast_episode";
 export type RadioSessionStatus = "draft" | "scheduled" | "live" | "ended" | "cancelled";
 export type PodcastEpisodeStatus = "draft" | "published" | "archived";
 
@@ -175,6 +175,7 @@ export type PodcastCommunityShellSnapshot = Readonly<{
 
 export type AudioFeedItem = Readonly<{
   id: string;
+  sourceId?: string;
   type: AudioContentType;
   communityId: string;
   authorUserId?: string;
@@ -186,9 +187,11 @@ export type AudioFeedItem = Readonly<{
   startsAt?: string;
   durationSeconds?: number;
   listenerCount?: number;
+  viewCount?: number;
   reactionSummary?: readonly AudioReactionSummary[];
   commentPreview?: readonly AudioCommentPreview[];
   commentCount?: number;
+  commenterIds?: readonly string[];
   isUnread?: boolean;
   isSaved?: boolean;
 }>;
