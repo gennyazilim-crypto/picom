@@ -19,6 +19,10 @@ import { trayService } from "../services/trayService";
 import { updateService } from "../services/updateService";
 import { dateTimeService } from "../services/dateTimeService";
 import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";
+import { safeModeService } from "../services/safeModeService";
+import { localDataMigrationService } from "../services/localDataMigrationService";
+import { feedUiStateService } from "../services/feed/feedUiStateService";
+import { communityNavigationService } from "../services/community/communityNavigationService";
 import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";
 import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
 import { profilePrivacyService } from "../services/profilePrivacyService";
@@ -342,11 +346,30 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     setUpdateState(next);
     pushToast(next.message, next.status === "download_failed" || next.status === "install_failed" ? "error" : "info");
   };
-  const runCacheAction = async (action: () => Promise<{ message: string; summary: CacheSummary }>) => {
+  const runCacheAction = async (action: () => Promise<{ message: string; summary: CacheSummary }>, confirmation: string) => {
+    if (!window.confirm(confirmation)) return;
     const result = await action();
     setCacheSummary(result.summary);
     pushToast(result.message, "success");
   };
+  const resetLayoutState = () => {
+    if (!window.confirm("Reset Picom feed and community navigation layout on this device? Messages, drafts, accounts, and server data are preserved.")) return;
+    feedUiStateService.resetLayoutState();
+    communityNavigationService.resetRouteMemory();
+    pushToast("Local layout state reset. Reopen the affected view to apply defaults.", "success");
+  };
+  const resetLocalSettings = () => {
+    if (!window.confirm("Reset local Picom settings to safe defaults? Your auth session, messages, drafts, and server data will not be deleted.")) return;
+    settingsService.resetSettings();
+    pushToast("Local settings reset. Restart Picom to apply every default.", "success");
+  };
+  const restartInSafeMode = () => {
+    if (!window.confirm("Restart Picom in Safe Mode? Realtime, voice, notifications, tray, updates, and other optional services will be paused.")) return;
+    safeModeService.enableSafeMode("manual_flag");
+    window.location.reload();
+  };
+  const localDataMigrationStatus = localDataMigrationService.getStatus();
+  const safeModeState = safeModeService.getStartupState();
   const requestEmailVerification = async () => {
     const result = await authService.requestEmailVerification();
     if (!result.ok) {
@@ -1015,6 +1038,16 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 <strong>{appConfig.name} {appConfig.version} ({appConfig.releaseChannel})</strong>
                 <small>Build: {appConfig.build.date}. Commit: {appConfig.build.commitShort}. Runtime: {appConfig.build.desktopRuntime}. API compatibility: {appConfig.build.backendApiCompatibilityVersion}.</small>
               </div>
+              <div className="security-card-grid" aria-label="Advanced runtime summary">
+                <article className="security-card"><span>Release</span><strong>{appConfig.releaseChannel}</strong><small>{appConfig.version} / {appConfig.build.commitShort} / {appConfig.build.date}</small></article>
+                <article className="security-card"><span>Data source</span><strong>{appConfig.dataSource}</strong><small>{appConfig.runtimeTarget} on {navigator.platform || "unknown platform"}</small></article>
+                <article className="security-card"><span>Local data</span><strong>Manifest v{localDataMigrationStatus.manifestSchemaVersion} / settings v{localDataMigrationStatus.settingsSchemaVersion}</strong><small>{localDataMigrationStatus.lastMigrationOk === false ? "Last migration needs Safe Mode review" : localDataMigrationStatus.lastMigratedAt ? `Migrated ${dateTimeService.formatFullTimestamp(localDataMigrationStatus.lastMigratedAt)}` : "Migration manifest will be created at startup"}</small></article>
+                <article className="security-card"><span>Recovery backups</span><strong>{localDataMigrationStatus.retainedBackupCount}</strong><small>Bounded non-sensitive local migration backups; auth storage is excluded.</small></article>
+              </div>
+              <div className="settings-status-card" aria-label="Safe Mode recovery">
+                <span>Safe Mode</span><strong>{safeModeState.active ? `Active: ${safeModeState.reason ?? "manual"}` : "Available for troubleshooting"}</strong><small>Safe Mode pauses optional services without clearing your authentication session or server data.</small>
+                <div className="settings-actions-row"><button type="button" onClick={restartInSafeMode}>Restart in Safe Mode</button><button type="button" onClick={resetLayoutState}>Reset layout</button><button type="button" onClick={resetLocalSettings}>Reset local settings</button></div>
+              </div>
               {import.meta.env.DEV ? <button onClick={() => { trayService.simulate("settings"); pushToast("Tray settings action simulated.", "info"); }}>Simulate tray settings</button> : null}
               <div className="settings-status-card" aria-label="Native app menu foundation">
                 <span>Native app menu</span>
@@ -1028,6 +1061,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   type="button"
                   aria-label="Reset first launch setup for development testing"
                   onClick={() => {
+                    if (!window.confirm("Reset first-launch setup for development/support testing? Account and local content are preserved.")) return;
                     settingsService.resetFirstLaunchSetup();
                     pushToast("First-launch setup reset. Restart Picom to test it again; account and local data were preserved.", "success");
                   }}
@@ -1100,7 +1134,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </span>
                 <input type="checkbox" checked={appLockSettings.lockAfterInactivityEnabled} onChange={(event) => updateLockAfterInactivity(event.target.checked)} />
               </label>
-              <div className="settings-status-card" aria-label="Cache management foundation">
+              <div className="settings-status-card" aria-label="Cache management">
                 <span>Cache management</span>
                 <strong>{cacheSummary ? `${cacheSummary.imageCacheEntries}/${cacheSummary.imageCacheMaxEntries} image cache entries` : "Loading cache summary"}</strong>
                 <small>
@@ -1122,8 +1156,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </article>
                 <article className="security-card">
                   <span>Messages</span>
-                  <strong>{cacheSummary?.messageCacheStatus.replace(/_/g, " ") ?? "placeholder"}</strong>
-                  <small>Message cache clearing is prepared without deleting drafts.</small>
+                  <strong>{cacheSummary?.messageCacheStatus.replace(/_/g, " ") ?? "not persisted"}</strong>
+                  <small>Picom does not persist a separate message cache; server messages and local drafts are untouched.</small>
                 </article>
                 <article className="security-card">
                   <span>Offline data</span>
@@ -1133,15 +1167,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </div>
               <div className="settings-actions-row">
                 <button onClick={refreshCacheSummary}>Refresh cache summary</button>
-                <button onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache())}>Clear image cache</button>
-                <button onClick={() => void runCacheAction(() => cacheManagementService.clearMessageCache())}>Clear message cache</button>
-                <button onClick={() => void runCacheAction(() => cacheManagementService.clearLogs())}>Clear logs</button>
-                <button onClick={() => void runCacheAction(() => cacheManagementService.clearAllNonEssentialCache())}>Clear all non-essential cache</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache(), "Clear Picom's in-memory image metadata cache? Images will load again when needed.")}>Clear image cache</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearLogs(), "Clear recent redacted logs from this Picom session?")}>Clear logs</button>
+                <button onClick={() => void runCacheAction(() => cacheManagementService.clearAllNonEssentialCache(), "Clear all non-essential image metadata and redacted logs? Auth sessions, drafts, queued messages, and server data are preserved.")}>Clear all non-essential cache</button>
               </div>
               <div className="settings-status-card" aria-label="Beta feedback and redacted logs">
                 <span>Beta support</span>
                 <strong>Feedback and redacted exports</strong>
-                <small>User-facing feedback stays separate from redacted developer diagnostics. No report is sent until a backend endpoint is added.</small>
+                <small>User-facing feedback stays separate from redacted developer diagnostics. Prepared reports remain local until you explicitly copy/export them or open the support portal.</small>
               </div>
               <label className="settings-toggle-row">
                 <span>

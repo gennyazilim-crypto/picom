@@ -9,6 +9,14 @@ export type LocalDataMigrationResult = Readonly<{
   resetScopes: LocalDataMigrationScope[];
   backupKeys: string[];
 }>;
+export type LocalDataMigrationStatus = Readonly<{
+  storageAvailable: boolean;
+  manifestSchemaVersion: number;
+  settingsSchemaVersion: number;
+  lastMigratedAt: string | null;
+  lastMigrationOk: boolean | null;
+  retainedBackupCount: number;
+}>;
 
 type LocalDataMigration = Readonly<{ fromVersion: number; toVersion: number; migrate: (context: MigrationContext) => void }>;
 type MigrationContext = { migratedScopes: LocalDataMigrationScope[]; resetScopes: LocalDataMigrationScope[]; backupKeys: string[] };
@@ -124,6 +132,22 @@ function readManifestVersion(storage: Storage, context: MigrationContext): numbe
 
 export const localDataMigrationService = {
   getCurrentSchemaVersion(): number { return CURRENT_SCHEMA_VERSION; },
+  getStatus(): LocalDataMigrationStatus {
+    const storage = getStorage();
+    const settingsSchemaVersion = settingsService.getDefaultSettings().schemaVersion;
+    if (!storage) return { storageAvailable: false, manifestSchemaVersion: CURRENT_SCHEMA_VERSION, settingsSchemaVersion, lastMigratedAt: null, lastMigrationOk: null, retainedBackupCount: 0 };
+    let manifestSchemaVersion = 0; let lastMigratedAt: string | null = null; let lastMigrationOk: boolean | null = null; let retainedBackupCount = 0;
+    try {
+      const parsed = JSON.parse(storage.getItem(MANIFEST_KEY) ?? "{}") as { schemaVersion?: unknown; migratedAt?: unknown; ok?: unknown };
+      manifestSchemaVersion = typeof parsed.schemaVersion === "number" ? parsed.schemaVersion : 0;
+      lastMigratedAt = typeof parsed.migratedAt === "string" && Number.isFinite(Date.parse(parsed.migratedAt)) ? parsed.migratedAt : null;
+      lastMigrationOk = typeof parsed.ok === "boolean" ? parsed.ok : null;
+      for (let index = 0; index < storage.length; index += 1) if (storage.key(index)?.startsWith(BACKUP_PREFIX)) retainedBackupCount += 1;
+    } catch {
+      lastMigrationOk = false;
+    }
+    return { storageAvailable: true, manifestSchemaVersion, settingsSchemaVersion, lastMigratedAt, lastMigrationOk, retainedBackupCount };
+  },
   migrateOnStartup(): LocalDataMigrationResult {
     const storage = getStorage();
     const context: MigrationContext = { migratedScopes: [], resetScopes: [], backupKeys: [] };

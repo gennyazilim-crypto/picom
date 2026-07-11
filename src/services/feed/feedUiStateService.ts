@@ -27,6 +27,7 @@ export const feedUiStateService = {
   setSelection(tab: MentionFeedTab, filter: MentionQuickFilter | null) { write({ ...read(), tab, filter }); },
   markStorySeen(storyId: string) { const state = read(); write({ ...state, seenStoryIds: [...new Set([...state.seenStoryIds, storyId])].slice(-500) }); },
   isStorySeen(storyId: string) { return read().seenStoryIds.includes(storyId); },
+  resetLayoutState() { write(fallback); },
   applySeenState(stories: readonly FollowedUserStory[]): FollowedUserStory[] {
     const seen = new Set(read().seenStoryIds);
     return stories.map((story) => seen.has(story.id) ? { ...story, status: "seen" } : story);

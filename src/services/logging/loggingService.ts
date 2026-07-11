@@ -1,5 +1,5 @@
 import { createSafeAppError, formatUserFacingError, type AppErrorCode } from "../errorCodes";
-import { redactLogString, redactLogValue } from "./logRedaction";
+import { redactDiagnosticValue, redactLogString, redactLogValue } from "./logRedaction";
 
 export const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
 export const MAX_RETAINED_LOGS = 250;
@@ -105,7 +105,7 @@ export const loggingService = {
     return format === "text" ? formatLogsAsText(entries) : JSON.stringify(entries, null, 2);
   },
   redactDiagnosticsValue<T>(value: T): T {
-    return redactLogValue(value) as T;
+    return redactDiagnosticValue(value) as T;
   },
   captureUserError(error: unknown, options: CaptureUserErrorOptions = {}): UserErrorNotice {
     const safeError = createSafeAppError(error, options.fallbackCode);

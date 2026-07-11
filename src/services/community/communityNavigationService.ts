@@ -84,4 +84,8 @@ export const communityNavigationService = {
     memory = rest;
     persist();
   },
+  resetRouteMemory() {
+    memory = {};
+    persist();
+  },
 };

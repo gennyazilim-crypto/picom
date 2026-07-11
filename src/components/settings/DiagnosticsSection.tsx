@@ -36,6 +36,7 @@ export function DiagnosticsSection({ onNotice }: { onNotice: (message: string, t
       </header>
       <div className="diagnostics-grid">
         <article><span>Version</span><strong>{snapshot.app.version} / {snapshot.app.releaseChannel}</strong></article>
+        <article><span>Build</span><strong>{snapshot.app.commitShort} / {snapshot.app.buildDate}</strong></article>
         <article><span>Environment</span><strong>{snapshot.app.environment}</strong></article>
         <article><span>Platform</span><strong>{snapshot.runtime.platform}</strong></article>
         <article><span>Electron</span><strong>{snapshot.runtime.electronVersion ?? "Browser fallback"}</strong></article>
@@ -43,7 +44,9 @@ export function DiagnosticsSection({ onNotice }: { onNotice: (message: string, t
         <article><span>Data source</span><strong>{snapshot.app.dataSource}</strong></article>
         <article><span>Auth</span><strong>{snapshot.serviceStatus.authState}</strong></article>
         <article><span>Supabase host</span><strong>{snapshot.serviceStatus.supabaseHost ?? "Not configured"}</strong></article>
+        <article><span>Supabase</span><strong>{snapshot.serviceStatus.supabaseStatus}</strong></article>
         <article><span>Realtime</span><strong>{snapshot.serviceStatus.realtimeStatus}</strong></article>
+        <article><span>LiveKit</span><strong>{snapshot.serviceStatus.liveKitStatus}</strong></article>
         <article><span>Voice</span><strong>{snapshot.serviceStatus.voiceStatus}</strong></article>
         <article><span>Current view</span><strong>{snapshot.serviceStatus.activeView}</strong></article>
         <article><span>Recent errors</span><strong>{snapshot.recentErrors.length}</strong></article>

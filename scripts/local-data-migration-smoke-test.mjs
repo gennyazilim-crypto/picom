@@ -35,7 +35,7 @@ for (const expected of [
 }
 
 for (const expected of [
-  "Settings schema version: `3`",
+  "Settings schema version: `9`",
   "manifest version: `2`",
   "Corruption handling",
   "Auth tokens",

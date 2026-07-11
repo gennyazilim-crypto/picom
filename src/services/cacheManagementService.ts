@@ -74,7 +74,7 @@ export const cacheManagementService = {
   async clearMessageCache(): Promise<CacheActionResult> {
     return {
       ok: true,
-      message: "Message cache placeholder cleared. No auth sessions, drafts, or server data were removed.",
+      message: "No persisted message cache exists, so no message, draft, auth session, or server data was removed.",
       summary: await buildSummary(),
     };
   },
@@ -93,7 +93,7 @@ export const cacheManagementService = {
     loggingService.clearLogs();
     return {
       ok: true,
-      message: "Non-essential cache placeholders cleared. Auth sessions and drafts were preserved.",
+      message: "Non-essential image metadata and redacted logs cleared. Auth sessions, drafts, queued messages, and server data were preserved.",
       summary: await buildSummary(),
     };
   },

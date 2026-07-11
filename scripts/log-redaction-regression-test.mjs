@@ -6,7 +6,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`;
-const { redactLogString, redactLogValue } = await import(moduleUrl);
+const { redactDiagnosticValue, redactLogString, redactLogValue } = await import(moduleUrl);
 
 const sentinels = [
   "TEST_PASSWORD_VALUE_308",
@@ -59,6 +59,11 @@ for (const marker of ["[redacted]", "[redacted-jwt]", "[redacted-bot-token]", "[
   if (!supportExport.includes(marker)) throw new Error(`Expected redaction marker missing: ${marker}`);
 }
 if (!supportExport.includes('"label":"safe"')) throw new Error("Non-sensitive metadata was removed unexpectedly");
+
+const privateContentSentinel = "PRIVATE_DM_BODY_490";
+const diagnosticExport = JSON.stringify(redactDiagnosticValue({ body: privateContentSentinel, nested: { preview: privateContentSentinel, safeStatus: "connected" } }));
+if (diagnosticExport.includes(privateContentSentinel) || !diagnosticExport.includes("[redacted-private-content]")) throw new Error("Private content fields survived diagnostics redaction");
+if (!diagnosticExport.includes("connected")) throw new Error("Safe diagnostics status was removed unexpectedly");
 
 const diagnostics = fs.readFileSync("src/services/diagnostics/diagnosticsService.ts", "utf8");
 if (!diagnostics.includes("loggingService.redactDiagnosticsValue") || !diagnostics.includes("recentLogs")) throw new Error("Support diagnostics export does not pass through logging redaction");

@@ -5,7 +5,7 @@ Picom stores non-sensitive desktop UI settings in local storage. Task 379 adds a
 ## Current local settings schema
 
 - Storage key: `picom-settings`.
-- Settings schema version: `3`.
+- Settings schema version: `9`.
 - Coordinated local-data manifest version: `2` (`picom:local-data-schema:v2`).
 - Data covered:
   - theme
@@ -21,7 +21,7 @@ Picom stores non-sensitive desktop UI settings in local storage. Task 379 adds a
 - Settings without `schemaVersion` are treated as version `0`.
 - Version `0 -> 1` adds the initial schema marker.
 - Version `1 -> 2` ensures accessibility settings exist after the high contrast/reduced motion task.
-- Settings version `2 -> 3` normalizes notification/Quiet Hours defaults for the v2 desktop release.
+- Settings versions `2 -> 9` append bounded migrations for notification routing, first-launch state, profile/account settings, accessibility, appearance, and Full MVP notification preferences.
 - Future migrations should be appended to `localSettingsMigrations`.
 - Unknown future versions reset to safe defaults rather than guessing.
 
@@ -44,7 +44,7 @@ Picom stores non-sensitive desktop UI settings in local storage. Task 379 adds a
 
 1. Start the app with no `picom-settings` value and confirm defaults load.
 2. Save theme/accessibility preferences and reload the app.
-3. Simulate an old settings payload without `schemaVersion`; confirm it migrates to settings version `3` and manifest version `2`.
+3. Simulate an old settings payload without `schemaVersion`; confirm it migrates to settings version `9` and manifest version `2`.
 4. Simulate corrupted JSON; confirm the app starts with defaults and a backup key is created.
 5. Add legacy draft keys (`communityId:channelId`) and confirm they normalize without losing text.
 6. Corrupt remote-config cache metadata and confirm only that cache scope resets.

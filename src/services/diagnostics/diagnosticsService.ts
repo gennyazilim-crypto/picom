@@ -173,7 +173,7 @@ export const diagnosticsService = {
       serviceStatus: safeServiceStatus,
       recentErrors: snapshot.recentErrors,
       recentLogs: loggingService.getRecentLogs(options.recentLogLimit ?? 75),
-      note: "Redacted Picom diagnostics. Passwords, tokens, cookies, authorization headers, service-role keys, private keys, and LiveKit secrets are excluded.",
+      note: "Redacted Picom diagnostics. Passwords, tokens, cookies, authorization headers, service-role keys, private keys, LiveKit secrets, and private message content fields are excluded.",
     });
   },
   exportDiagnostics(format: "json" | "text" = "json", options: { recentLogLimit?: number } = {}): string {

@@ -102,6 +102,7 @@
     "security:pentest:prep:smoke": "node scripts/penetration-test-preparation-smoke-test.mjs",
     "security:external-review:smoke": "node scripts/external-security-review-smoke-test.mjs",
     "settings:diagnostics:smoke": "node scripts/settings-diagnostics-smoke-test.mjs",
+    "settings:advanced-diagnostics:smoke": "node scripts/advanced-diagnostics-settings-full-mvp-smoke.mjs",
     "livekit:smoke": "node scripts/livekit-smoke-test.mjs",
     "qa:smoke": "node scripts/qa-smoke-gate.mjs",
     "qa:supabase": "node scripts/supabase-qa-gate.mjs",

@@ -33,7 +33,10 @@ function loadTypeScriptModule(path, imports = {}) {
   return module.exports;
 }
 
-const settingsModule = loadTypeScriptModule("src/services/settingsService.ts");
+const settingsModule = loadTypeScriptModule("src/services/settingsService.ts", {
+  "./dataSourceService": { dataSourceService: { getStatus: () => ({ isMock: true, isSupabase: false }) } },
+  "./supabase/supabaseClient": { getSupabaseClient: () => null },
+});
 const loggingMock = { loggingService: { logWarn: () => undefined, exportLogs: () => { logExportCount += 1; return JSON.stringify({ entries: [], redacted: true }); } } };
 const cacheMock = { cacheManagementService: { clearAllNonEssentialCache: async () => { cacheClearCount += 1; return { message: "Non-essential cache cleared." }; } } };
 const safeModeModule = loadTypeScriptModule("src/services/safeModeService.ts", {
