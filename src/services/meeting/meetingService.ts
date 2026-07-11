@@ -4,6 +4,7 @@ import type { MeetingClientError, MeetingClientJoinRequest, MeetingClientPartici
 import type { MeetingCapabilities, MeetingRole } from "../../types/meeting";
 import { voiceDeviceService } from "../voiceDeviceService";
 import { meetingSignalService } from "./meetingSignalService";
+import { meetingWaitingRoomService } from "./meetingWaitingRoomService";
 import { getMeetingCapabilities } from "./meetingCapabilityService";
 import { meetingLiveKitAdapter } from "./meetingLiveKitAdapter";
 import { meetingRepository } from "./meetingRepository";
@@ -99,7 +100,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   }));
   sessionCleanups.push(meetingRepository.subscribe(request.roomId,request.sessionId,{
     onParticipants:(snapshot:MeetingParticipantStateSnapshot)=>applyAuthoritativeParticipants(generation,snapshot),
-    onWaitingEntry:(entry)=>{if(meetingStore.getSnapshot().generation!==generation)return;if(entry.userId!==meetingStore.getSnapshot().participantsById[meetingStore.getSnapshot().participantIds.find((id)=>meetingStore.getSnapshot().participantsById[id]?.isLocal)??""]?.userId&&meetingStore.getSnapshot().waitingEntry?.id!==entry.id)return;meetingStore.patch(generation,{waitingEntry:{id:entry.id,status:entry.status}});if(entry.status==="admitted"&&currentRequest)void meetingService.join(currentRequest,true);if(entry.status==="denied"||entry.status==="expired")meetingStore.setError(generation,fail("MEETING_ADMISSION_DENIED","The host did not admit this meeting request.",entry.status==="expired"));},
+    onWaitingEntry:(entry)=>{if(meetingStore.getSnapshot().generation!==generation)return;if(entry.userId!==meetingStore.getSnapshot().participantsById[meetingStore.getSnapshot().participantIds.find((id)=>meetingStore.getSnapshot().participantsById[id]?.isLocal)??""]?.userId&&meetingStore.getSnapshot().waitingEntry?.id!==entry.id)return;meetingStore.patch(generation,{waitingEntry:{id:entry.id,status:entry.status}});if(entry.status==="admitted"&&currentRequest)void meetingService.join(currentRequest,true);if(entry.status==="denied")meetingStore.setError(generation,fail("MEETING_ADMISSION_DENIED",entry.decisionNote||"The host denied this meeting request.",false,"host_denied"));if(entry.status==="expired")meetingStore.setError(generation,fail("MEETING_ADMISSION_DENIED","This waiting-room request expired before admission.",true,"expired"));},
     onRealtimeStatus:(realtimeStatus)=>meetingStore.patch(generation,{realtimeStatus}),
     onError:(message)=>meetingStore.patch(generation,{error:fail("MEETING_PROVIDER_ERROR",message,true)}),
   }));
@@ -146,6 +147,14 @@ export const meetingService = {
     const request=currentRequest;
     authorizationRefreshPromise=(async()=>{await prepare(request);return performJoin(request,true);})().finally(()=>{authorizationRefreshPromise=null;});
     return authorizationRefreshPromise;
+  },
+  async cancelWaitingRequest():Promise<MeetingClientResult<MeetingClientSnapshot>> {
+    const snapshot=meetingStore.getSnapshot(),entry=snapshot.waitingEntry;
+    if(!entry||entry.status!=="waiting")return{ok:false,error:fail("MEETING_WAITING","There is no active waiting-room request to cancel.",false)};
+    const result=await meetingWaitingRoomService.cancel(entry.id);
+    if(!result.ok)return{ok:false,error:fail("MEETING_WAITING",result.error.message,true,result.error.code)};
+    meetingStore.patch(snapshot.generation,{waitingEntry:{id:result.data.id,status:result.data.status},providerStatus:"waiting_cancelled",error:null});
+    return{ok:true,data:meetingStore.getSnapshot()};
   },
   async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation;stopBindings();await meetingLiveKitAdapter.disconnect();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null});currentRequest=null;},
   setLayout:meetingStore.setLayout,
