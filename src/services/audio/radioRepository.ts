@@ -21,6 +21,7 @@ export interface RadioRepository {
   end(sessionId: string): Promise<AudioServiceResult<RadioSession>>;
   join(sessionId: string): Promise<AudioServiceResult<boolean>>;
   leave(sessionId: string): Promise<AudioServiceResult<boolean>>;
+  heartbeat(sessionId: string): Promise<AudioServiceResult<boolean>>;
   setSaved(sessionId: string, saved: boolean): Promise<AudioServiceResult<boolean>>;
   react(sessionId: string, emoji: string): Promise<AudioServiceResult<boolean>>;
   assignHost(input: AssignRadioSessionHostInput): Promise<AudioServiceResult<boolean>>;
@@ -43,6 +44,7 @@ export const radioRepository: RadioRepository = {
   end: (sessionId) => audioDataSource.endRadioSession(sessionId),
   join: (sessionId) => audioDataSource.setListening(sessionId, true),
   leave: (sessionId) => audioDataSource.setListening(sessionId, false),
+  heartbeat: (sessionId) => audioDataSource.heartbeatRadioListener(sessionId),
   setSaved: (sessionId, saved) => audioDataSource.setRadioSaved(sessionId, saved),
   react: (sessionId, emoji) => audioDataSource.reactToRadioSession(sessionId, emoji),
   assignHost: (input) => audioDataSource.assignRadioSessionHost(input),

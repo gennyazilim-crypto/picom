@@ -110,9 +110,11 @@ export function MentionFeedMain({
       if (session) setSelectedRadioSessionId(session.id);
       return;
     }
-    setSelectedPodcastEpisodeId(item.id.replace(/^feed-/, ""));
+    const episodeId = item.id.replace(/^feed-/, "");
+    const episode = audioCatalog.podcastEpisodes.find((candidate) => candidate.id === episodeId);
+    setSelectedPodcastEpisodeId(episodeId);
     const communityName = communities.find((community) => community.id === item.communityId)?.name ?? "Picom community";
-    setSelectedAudio({ id: item.id, type: item.type, title: item.title, contextLabel: `${communityName} / ${item.type === "podcast_episode" ? "Podcast" : "Community radio"}`, coverUrl: item.coverUrl, durationSeconds: item.durationSeconds ?? 3600 });
+    setSelectedAudio({ id: episodeId, type: item.type, title: item.title, contextLabel: `${communityName} / ${item.type === "podcast_episode" ? "Podcast" : "Community radio"}`, coverUrl: item.coverUrl, audioUrl: episode?.audioUrl, durationSeconds: item.durationSeconds ?? episode?.durationSeconds ?? 3600, communityId: item.communityId });
   };
   const selectedRadioSession = audioCatalog.radioSessions.find((session) => session.id === selectedRadioSessionId) ?? null;
   const selectedRadioCommunity = selectedRadioSession ? communities.find((community) => community.id === selectedRadioSession.communityId) : undefined;

@@ -504,7 +504,7 @@ export type Database = {
         Relationships: [];
       };
       radio_sessions: {
-        Row: { id: string; community_id: string; channel_id: string | null; program_id: string | null; host_user_id: string; title: string; description: string; status: "draft" | "scheduled" | "live" | "ended" | "cancelled"; starts_at: string; scheduled_end_at: string | null; actual_started_at: string | null; ended_at: string | null; listener_chat_channel_id: string | null; cover_url: string | null; cover_storage_path: string | null; tags: string[]; is_featured: boolean; listener_count: number; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string; channel_id: string | null; program_id: string | null; host_user_id: string; title: string; description: string; status: "draft" | "scheduled" | "live" | "ended" | "cancelled"; starts_at: string; scheduled_end_at: string | null; actual_started_at: string | null; ended_at: string | null; listener_chat_channel_id: string | null; cover_url: string | null; cover_storage_path: string | null; stream_url: string | null; tags: string[]; is_featured: boolean; listener_count: number; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_sessions"]["Row"]> & Pick<Database["public"]["Tables"]["radio_sessions"]["Row"], "community_id" | "host_user_id" | "title" | "starts_at">;
         Update: Partial<Database["public"]["Tables"]["radio_sessions"]["Row"]>;
         Relationships: [];
@@ -596,6 +596,7 @@ export type Database = {
     Functions: {
       join_current_user_radio_listener: { Args: { target_session_id: string }; Returns: Array<Database["public"]["Tables"]["radio_listeners"]["Row"]> };
       leave_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };
+      heartbeat_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };
       assign_radio_session_host: { Args: { target_session_id: string; target_user_id: string; target_host_role?: string }; Returns: boolean };
       transition_radio_session: { Args: { target_session_id: string; next_status: string; confirmation_session_title?: string | null }; Returns: Array<Database["public"]["Tables"]["radio_sessions"]["Row"]> };
       moderate_radio_listener: { Args: { target_session_id: string; target_user_id: string; moderation_action: string }; Returns: boolean };

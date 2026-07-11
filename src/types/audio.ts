@@ -96,6 +96,7 @@ export type RadioSession = Readonly<{
   speakerCount: number;
   coverUrl?: string;
   coverStoragePath?: string;
+  streamUrl?: string;
   tags: readonly string[];
   reactionSummary?: readonly AudioReactionSummary[];
   isFeatured: boolean;
@@ -167,4 +168,6 @@ export type AudioPlayableItem = Readonly<{
   coverUrl?: string;
   audioUrl?: string;
   durationSeconds: number;
+  communityId?: string;
+  isLive?: boolean;
 }>;

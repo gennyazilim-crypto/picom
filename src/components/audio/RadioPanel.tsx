@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import type { AudioPlayableItem, RadioSession } from "../../types/audio";
+import { useEffect, useState } from "react";
+import type { RadioSession } from "../../types/audio";
 import type { Member } from "../../types/community";
 import { AppIcon } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
-import { AudioMiniPlayer } from "./AudioMiniPlayer";
 import { radioService } from "../../services/audio/radioService";
 import { useAudioCatalog } from "../../hooks/useAudioCatalog";
+import { useAudioPlayer } from "../../hooks/useAudioPlayer";
+import { audioPlayerService } from "../../services/audio/audioPlayerService";
 
 type RadioPanelProps = {
   session: RadioSession;
@@ -23,17 +24,6 @@ function radioStatusLabel(status: RadioSession["status"]) {
   if (status === "draft") return "Draft";
   if (status === "cancelled") return "Cancelled";
   return "Ended";
-}
-
-function radioPlayable(session: RadioSession, communityName: string): AudioPlayableItem {
-  return {
-    id: session.id,
-    type: session.status === "scheduled" ? "radio_scheduled" : "radio_live",
-    title: session.title,
-    contextLabel: `${communityName} / Radio`,
-    coverUrl: session.coverUrl,
-    durationSeconds: 3600,
-  };
 }
 
 export function RadioNowLiveHeader({ session, communityName, onClose }: { session: RadioSession; communityName: string; onClose: () => void }) {
@@ -108,17 +98,18 @@ export function RadioChatLink({ communityName, onOpenCommunity }: { communityNam
 export function RadioPanel({ session, communityName, host, listeners, canHost, onClose, onOpenCommunity }: RadioPanelProps) {
   const catalog = useAudioCatalog();
   const [activeSession, setActiveSession] = useState(session);
-  const [listening, setListening] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [volume, setVolume] = useState(72);
+  const player = useAudioPlayer();
+  const listening = player.item?.id === activeSession.id && !["idle", "ended", "error"].includes(player.status);
   const [saved, setSaved] = useState(session.isSavedByCurrentUser);
   const [notice, setNotice] = useState<string | null>(null);
   const [noticeTone, setNoticeTone] = useState<"status" | "error">("status");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [confirmStatus, setConfirmStatus] = useState<"ended" | "cancelled" | null>(null);
-  const playable = useMemo(() => radioPlayable(activeSession, communityName), [communityName, activeSession]);
   useEffect(() => { setActiveSession(session); setSaved(session.isSavedByCurrentUser); }, [session]);
   useEffect(() => { const current = catalog.radioSessions.find((item) => item.id === activeSession.id); if (current) { setActiveSession(current); setSaved(current.isSavedByCurrentUser); } }, [activeSession.id, catalog.radioSessions]);
+  useEffect(() => {
+    if (player.item?.id === activeSession.id && ["ended", "cancelled"].includes(activeSession.status)) audioPlayerService.markEnded(activeSession.status === "cancelled" ? "This broadcast was cancelled." : "This broadcast has ended.");
+  }, [activeSession.id, activeSession.status, player.item?.id]);
 
   const runAction = async (name: string, action: () => Promise<{ ok: boolean; data?: unknown; error?: { message: string } }>, success: string) => {
     setBusyAction(name); setNotice(null);
@@ -130,7 +121,6 @@ export function RadioPanel({ session, communityName, host, listeners, canHost, o
   const toggleListening = async () => {
     const next = !listening;
     const result = await runAction("listen", () => next ? radioService.listenToRadio(activeSession.id) : radioService.leaveRadio(activeSession.id), next ? "Listening live." : "Left the live audience.");
-    if (result.ok) setListening(next);
   };
   const toggleSaved = async () => {
     const next = !saved;
@@ -146,9 +136,8 @@ export function RadioPanel({ session, communityName, host, listeners, canHost, o
   return <main className="radio-panel">
     <RadioNowLiveHeader session={activeSession} communityName={communityName} onClose={onClose} />
     <div className="radio-panel-scroll">
-      <RadioControls status={activeSession.status} listening={listening} muted={muted} volume={volume} saved={saved} busy={busyAction !== null} onToggleListening={() => void toggleListening()} onToggleMuted={() => setMuted((current) => !current)} onVolumeChange={setVolume} onToggleSaved={() => void toggleSaved()} onShare={() => { setNoticeTone("status"); setNotice("Sharing remains limited to authorized community routing."); }} />
+      <RadioControls status={activeSession.status} listening={listening} muted={player.muted} volume={Math.round(player.volume * 100)} saved={saved} busy={busyAction !== null} onToggleListening={() => void toggleListening()} onToggleMuted={audioPlayerService.toggleMuted} onVolumeChange={(value) => audioPlayerService.setVolume(value / 100)} onToggleSaved={() => void toggleSaved()} onShare={() => { setNoticeTone("status"); setNotice("Sharing remains limited to authorized community routing."); }} />
       {notice ? <div className="radio-panel-notice" role={noticeTone === "error" ? "alert" : "status"}>{notice}</div> : null}
-      {listening ? <AudioMiniPlayer item={playable} onClose={() => setListening(false)} /> : null}
       <div className="radio-panel-grid">
         <div className="radio-panel-primary">
           <RadioHostCard host={host} />

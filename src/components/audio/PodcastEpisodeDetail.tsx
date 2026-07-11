@@ -21,7 +21,7 @@ type PodcastEpisodeDetailProps = {
 };
 
 function playableEpisode(episode: PodcastEpisode, communityName: string): AudioPlayableItem {
-  return { id: episode.id, type: "podcast_episode", title: episode.title, contextLabel: `${communityName} / Podcast`, coverUrl: episode.coverUrl, audioUrl: episode.audioUrl, durationSeconds: episode.durationSeconds };
+  return { id: episode.id, type: "podcast_episode", title: episode.title, contextLabel: `${communityName} / Podcast`, coverUrl: episode.coverUrl, audioUrl: episode.audioUrl, durationSeconds: episode.durationSeconds, communityId: episode.communityId };
 }
 
 export function PodcastEpisodeHeader({ episode, communityName, author, saved, onToggleSaved, onOpenCommunity, onOpenAuthor, onClose, onNotice }: Omit<PodcastEpisodeDetailProps, "relatedEpisodes" | "getCommentAuthorLabel" | "onSelectEpisode"> & { saved: boolean; onToggleSaved: () => void; onNotice: (message: string) => void }) {

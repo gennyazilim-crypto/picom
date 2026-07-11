@@ -8,8 +8,8 @@ import { formatAudioTime } from "./AudioProgressBar";
 import { PodcastEpisodeDetail } from "./PodcastEpisodeDetail";
 
 function communityName(communities: Community[], communityId: string) { return communities.find((community) => community.id === communityId)?.name ?? "Visible community"; }
-function radioPlayable(session: RadioSession, communities: Community[]): AudioPlayableItem { return { id: session.id, type: session.status === "live" ? "radio_live" : "radio_scheduled", title: session.title, contextLabel: `${communityName(communities, session.communityId)} / Community radio`, coverUrl: session.coverUrl, durationSeconds: 3600 }; }
-function podcastPlayable(episode: PodcastEpisode, communities: Community[]): AudioPlayableItem { return { id: episode.id, type: "podcast_episode", title: episode.title, contextLabel: `${communityName(communities, episode.communityId)} / Podcast`, coverUrl: episode.coverUrl, audioUrl: episode.audioUrl, durationSeconds: episode.durationSeconds }; }
+function radioPlayable(session: RadioSession, communities: Community[]): AudioPlayableItem { return { id: session.id, type: session.status === "live" ? "radio_live" : "radio_scheduled", title: session.title, contextLabel: `${communityName(communities, session.communityId)} / Community radio`, coverUrl: session.coverUrl, audioUrl: session.streamUrl, durationSeconds: 3600, communityId: session.communityId, isLive: session.status === "live" }; }
+function podcastPlayable(episode: PodcastEpisode, communities: Community[]): AudioPlayableItem { return { id: episode.id, type: "podcast_episode", title: episode.title, contextLabel: `${communityName(communities, episode.communityId)} / Podcast`, coverUrl: episode.coverUrl, audioUrl: episode.audioUrl, durationSeconds: episode.durationSeconds, communityId: episode.communityId }; }
 
 type ProfileAudioSectionsProps = { hostedRadio: RadioSession[]; podcastEpisodes: PodcastEpisode[]; savedRadio: RadioSession[]; savedPodcasts: PodcastEpisode[]; communities: Community[]; isCurrentUser: boolean; onOpenCommunity?: (communityId: string) => void };
 

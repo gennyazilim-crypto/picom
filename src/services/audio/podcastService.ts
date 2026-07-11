@@ -1,6 +1,6 @@
 import type { AudioPlayableItem } from "../../types/audio";
 import { audioDataSource } from "./audioDataSource";
-import { audioPlayerService } from "./audioPlayerService";
+import { audioPlaybackCoordinatorService } from "./audioPlaybackCoordinatorService";
 
 export const podcastService = {
   getCommunityPodcastEpisodes: (communityId: string) => audioDataSource.listPodcastEpisodes(communityId),
@@ -18,8 +18,10 @@ export const podcastService = {
       coverUrl: episode.coverUrl,
       audioUrl: episode.audioUrl,
       durationSeconds: episode.durationSeconds,
+      communityId: episode.communityId,
     };
-    audioPlayerService.select(item);
+    const selected = await audioPlaybackCoordinatorService.select(item);
+    if (!selected.ok) return selected;
     return result;
   },
   savePodcastEpisode: (id: string) => audioDataSource.setPodcastSaved(id, true),

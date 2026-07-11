@@ -31,6 +31,7 @@ import { UserProfilePopover } from "./components/UserProfilePopover";
 import { DesktopContextMenu } from "./components/DesktopContextMenu";
 import { TermsReacceptPrompt } from "./components/legal/TermsReacceptPrompt";
 import { ToastStack } from "./components/ToastStack";
+import { GlobalAudioMiniPlayer } from "./components/audio/GlobalAudioMiniPlayer";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { FirstLaunchSetup } from "./components/firstLaunch/FirstLaunchSetup";
@@ -2800,6 +2801,7 @@ export function App() {
         </div>
         )}
       </DesktopAppShell>
+      <GlobalAudioMiniPlayer />
 
       {createCommunityOpen ? <CreateCommunityModal onClose={() => setCreateCommunityOpen(false)} onSubmit={handleCreateCommunity} /> : null}
       {createChannelCategoryId ? (

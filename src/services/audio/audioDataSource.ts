@@ -38,6 +38,7 @@ export type StartRadioSessionInput = Readonly<{
   startsAt: string;
   coverUrl?: string;
   coverStoragePath?: string;
+  streamUrl?: string;
   status?: "draft" | "scheduled" | "live";
   programId?: string;
   scheduledEndAt?: string;
@@ -132,7 +133,7 @@ function mapRadio(row: RadioRow, savedIds: ReadonlySet<string>, reactions: reado
     id: row.id, communityId: row.community_id, channelId: row.channel_id ?? undefined, programId: row.program_id ?? undefined,
     hostUserId: row.host_user_id, title: row.title, description: row.description,
     status: radioStatus(row.status), startsAt: row.starts_at, scheduledEndAt: row.scheduled_end_at ?? undefined, actualStartedAt: row.actual_started_at ?? undefined, endedAt: row.ended_at ?? undefined,
-    listenerChatChannelId: row.listener_chat_channel_id ?? undefined, listenerCount: row.listener_count, speakerCount: 1, coverUrl: row.cover_url ?? undefined, coverStoragePath: row.cover_storage_path ?? undefined,
+    listenerChatChannelId: row.listener_chat_channel_id ?? undefined, listenerCount: row.listener_count, speakerCount: 1, coverUrl: row.cover_url ?? undefined, coverStoragePath: row.cover_storage_path ?? undefined, streamUrl: row.stream_url ?? undefined,
     tags: row.tags, reactionSummary: [...grouped.values()], isFeatured: row.is_featured, isSavedByCurrentUser: savedIds.has(row.id),
   };
 }
@@ -224,7 +225,7 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
   const client = getSupabaseClient();
   if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Audio is unavailable while Supabase is not configured.");
   const [radio, radioReactions, podcasts, reactions, comments, saved] = await Promise.all([
-    client.from("radio_sessions").select("id,community_id,channel_id,program_id,host_user_id,title,description,status,starts_at,scheduled_end_at,actual_started_at,ended_at,listener_chat_channel_id,cover_url,cover_storage_path,tags,is_featured,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
+    client.from("radio_sessions").select("id,community_id,channel_id,program_id,host_user_id,title,description,status,starts_at,scheduled_end_at,actual_started_at,ended_at,listener_chat_channel_id,cover_url,cover_storage_path,stream_url,tags,is_featured,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
     client.from("radio_session_reactions").select("id,radio_session_id,user_id,emoji,created_at").limit(1000),
     client.from("podcast_episodes").select("id,community_id,series_id,author_user_id,title,description,cover_url,audio_url,duration_seconds,status,published_at,created_at,updated_at").order("published_at", { ascending: false }).limit(200),
     client.from("podcast_episode_reactions").select("id,episode_id,user_id,emoji,created_at").limit(1000),
@@ -308,7 +309,7 @@ export const audioDataSource = {
         id: `radio-${crypto.randomUUID()}`, communityId: input.communityId, channelId: input.channelId, programId: input.programId,
         hostUserId: currentUserId, title, description: input.description.trim().slice(0, 4000),
         status: input.status ?? "scheduled", startsAt: input.startsAt, scheduledEndAt: input.scheduledEndAt, listenerChatChannelId: input.listenerChatChannelId, listenerCount: 0,
-        speakerCount: 1, coverUrl: input.coverUrl, coverStoragePath: input.coverStoragePath, tags: [], isFeatured: false,
+        speakerCount: 1, coverUrl: input.coverUrl, coverStoragePath: input.coverStoragePath, streamUrl: input.streamUrl, tags: [], isFeatured: false,
         isSavedByCurrentUser: false,
       };
       localRadio = [item, ...localRadio];
@@ -321,7 +322,7 @@ export const audioDataSource = {
     const result = await client.from("radio_sessions").insert({
       community_id: input.communityId, channel_id: input.channelId ?? null, program_id: input.programId ?? null, host_user_id: userId,
       title, description: input.description.trim().slice(0, 4000), status: input.status ?? "scheduled",
-      starts_at: input.startsAt, scheduled_end_at: input.scheduledEndAt ?? null, listener_chat_channel_id: input.listenerChatChannelId ?? null, cover_url: input.coverUrl ?? null, cover_storage_path: input.coverStoragePath ?? null,
+      starts_at: input.startsAt, scheduled_end_at: input.scheduledEndAt ?? null, listener_chat_channel_id: input.listenerChatChannelId ?? null, cover_url: input.coverUrl ?? null, cover_storage_path: input.coverStoragePath ?? null, stream_url: input.streamUrl ?? null,
     }).select().single();
     if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "Picom could not create the radio session.");
     await refresh();
@@ -396,6 +397,13 @@ export const audioDataSource = {
     const result = await client.from("radio_listeners").select("user_id,muted,joined_at").eq("radio_session_id", id).is("left_at", null).order("joined_at");
     if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not load the active Radio audience.");
     return ok((result.data ?? []).map((listener) => ({ userId: listener.user_id, muted: listener.muted, joinedAt: listener.joined_at })));
+  },
+  async heartbeatRadioListener(id: string): Promise<AudioServiceResult<boolean>> {
+    if (dataSourceService.getStatus().isMock) return ok(localListeningSessions.has(id));
+    const client = getSupabaseClient();
+    if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio listener persistence is unavailable.");
+    const result = await client.rpc("heartbeat_current_user_radio_listener", { target_session_id: id });
+    return result.error ? fail("AUDIO_REQUEST_FAILED", "Picom could not refresh the Radio listener session.") : ok(Boolean(result.data));
   },
   async moderateRadioListener(id: string, userId: string, action: RadioListenerModerationAction): Promise<AudioServiceResult<boolean>> {
     const source = await getRadioCommunityId(id);
