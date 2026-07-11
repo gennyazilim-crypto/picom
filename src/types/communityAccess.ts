@@ -7,12 +7,21 @@ export type CommunityVisibility = "public" | "private";
 export type CommunityPermissionKey =
   | "manageCommunity"
   | "manageChannels"
+  | "manageCategories"
+  | "managePermissionOverrides"
   | "manageRoles"
   | "manageMembers"
+  | "moderateMembers"
   | "moderateMessages"
   | "deleteAnyMessage"
+  | "viewChannel"
   | "sendMessages"
   | "sendAnnouncements"
+  | "uploadAttachments"
+  | "addReactions"
+  | "joinVoice"
+  | "speakInVoice"
+  | "shareScreen"
   | "manageTextCommunity"
   | "viewRadioContent"
   | "listenRadio"
@@ -39,6 +48,16 @@ export type CommunityPermissionKey =
   | "createInvites"
   | "viewInsights"
   | "viewAuditLog";
+
+export type CommunityPermissionScopeType = "category" | "channel" | "radio_program" | "podcast_series";
+export type CommunityPermissionOverrideEffect = "allow" | "deny";
+export type CommunityPermissionScope = Readonly<{ type: CommunityPermissionScopeType; id: string }>;
+export type CommunityPermissionOverride = Readonly<{
+  roleId: string;
+  permission: CommunityPermissionKey;
+  scope: CommunityPermissionScope;
+  effect: CommunityPermissionOverrideEffect;
+}>;
 
 export type CommunityAccess = {
   userId: UserId;

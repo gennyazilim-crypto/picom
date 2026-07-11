@@ -15,7 +15,10 @@ export type AttachmentType = "image";
 export type AttachmentScanStatus = "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
 export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "failed" | "queued_offline";
 import type { PollData } from "./polls";
-export type RoleName = "Owner" | "Admin" | "Moderator" | "Radio Producer" | "Radio Host" | "Podcast Publisher" | "Podcast Editor" | "Member" | "Guest";
+export const BUILT_IN_ROLE_NAMES = ["Owner", "Admin", "Moderator", "Member"] as const;
+export type BuiltInRoleName = (typeof BUILT_IN_ROLE_NAMES)[number];
+export type RoleName = BuiltInRoleName | (string & {});
+export type RoleSystemKey = "owner" | "admin" | "moderator" | "member";
 
 export const COMMUNITY_KINDS = ["text", "radio", "podcast"] as const;
 export type CommunityKind = (typeof COMMUNITY_KINDS)[number];
@@ -58,6 +61,9 @@ export interface Role {
   color: string;
   level: number;
   capabilities?: readonly string[];
+  systemKey?: RoleSystemKey;
+  isDefault?: boolean;
+  permissionsVersion?: number;
 }
 
 export interface Member {

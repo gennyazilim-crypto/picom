@@ -1,12 +1,18 @@
 ﻿import type { Channel, ChannelCategory, Community, Member, Role, UserId } from "../../types/community";
-import type { CommunityAccess, CommunityMembershipStatus, CommunityPermissionKey, CommunityVisibility } from "../../types/communityAccess";
+import type { CommunityAccess, CommunityMembershipStatus, CommunityPermissionKey, CommunityPermissionOverride, CommunityPermissionScope, CommunityVisibility } from "../../types/communityAccess";
 import type { MemberModerationAction } from "../../types/memberModeration";
 import type { CommunityKind } from "../../types/community";
 
 const OWNER_PERMISSIONS: CommunityPermissionKey[] = [
   "manageCommunity",
+  "manageChannels",
+  "manageCategories",
+  "managePermissionOverrides",
   "manageRoles",
   "manageMembers",
+  "moderateMembers",
+  "moderateMessages",
+  "deleteAnyMessage",
   "createInvites",
   "viewInsights",
   "viewAuditLog",
@@ -14,8 +20,14 @@ const OWNER_PERMISSIONS: CommunityPermissionKey[] = [
 
 const ADMIN_PERMISSIONS: CommunityPermissionKey[] = [
   "manageCommunity",
+  "manageChannels",
+  "manageCategories",
+  "managePermissionOverrides",
   "manageRoles",
   "manageMembers",
+  "moderateMembers",
+  "moderateMessages",
+  "deleteAnyMessage",
   "createInvites",
   "viewInsights",
   "viewAuditLog",
@@ -23,6 +35,9 @@ const ADMIN_PERMISSIONS: CommunityPermissionKey[] = [
 
 const MODERATOR_PERMISSIONS: CommunityPermissionKey[] = [
   "manageMembers",
+  "moderateMembers",
+  "moderateMessages",
+  "deleteAnyMessage",
   "createInvites",
 ];
 
@@ -30,10 +45,10 @@ const MEMBER_PERMISSIONS: CommunityPermissionKey[] = [];
 
 const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<CommunityMembershipStatus, readonly CommunityPermissionKey[]>>>> = {
   text: {
-    owner: ["manageTextCommunity", "manageChannels", "moderateMessages", "deleteAnyMessage", "sendMessages", "sendAnnouncements", "viewPrivateChannels"],
-    admin: ["manageTextCommunity", "manageChannels", "moderateMessages", "deleteAnyMessage", "sendMessages", "sendAnnouncements", "viewPrivateChannels"],
-    moderator: ["moderateMessages", "deleteAnyMessage", "sendMessages"],
-    member: ["sendMessages"],
+    owner: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speakInVoice", "shareScreen"],
+    admin: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speakInVoice", "shareScreen"],
+    moderator: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speakInVoice", "shareScreen"],
+    member: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speakInVoice", "shareScreen"],
     visitor: [],
   },
   radio: {
@@ -46,7 +61,7 @@ const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<Community
   podcast: {
     owner: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
     admin: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
-    moderator: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments"],
+    moderator: ["viewPodcastContent", "listenPodcasts", "moderatePodcastEpisodes", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments"],
     member: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts"],
     visitor: [],
   },
@@ -88,17 +103,25 @@ export function getUserCommunityRole(userId: UserId, community: Community): { me
   return { member, role };
 }
 
+export function getRolePosition(role?: Pick<Role, "level">): number {
+  return Math.max(0, Math.min(100, role?.level ?? 0));
+}
+
+export function isOwnerRole(role?: Role): boolean {
+  return role?.systemKey === "owner" || role?.name === "Owner" || getRolePosition(role) >= 100;
+}
+
 export function isCommunityOwner(userId: UserId, community: Community): boolean {
   const { role } = getUserCommunityRole(userId, community);
-  return community.ownerId === userId || role?.name === "Owner" || role?.level === 100;
+  return community.ownerId === userId || isOwnerRole(role);
 }
 
 function getStatus(role?: Role, isOwner = false): CommunityMembershipStatus {
   if (isOwner) return "owner";
   if (!role) return "visitor";
-  if (role.name === "Admin" || role.level >= 80) return "admin";
+  if (role.systemKey === "admin" || role.name === "Admin") return "admin";
   if (role.name === "Radio Producer") return "member";
-  if (role.name === "Moderator" || role.level >= 60) return "moderator";
+  if (role.systemKey === "moderator" || role.name === "Moderator") return "moderator";
   return "member";
 }
 
@@ -159,19 +182,43 @@ export function hasCommunityPermission(access: CommunityAccess, permission: Comm
   return access.permissions.includes(permission);
 }
 
+export function resolveCommunityPermission(
+  access: CommunityAccess,
+  permission: CommunityPermissionKey,
+  scopes: readonly CommunityPermissionScope[] = [],
+  overrides: readonly CommunityPermissionOverride[] = [],
+): boolean {
+  if (!isCommunityPermissionAvailableForKind(access.communityKind, permission)) return false;
+  let allowed = hasCommunityPermission(access, permission);
+  if (access.isOwner || !access.role) return allowed;
+  for (const scope of scopes) {
+    const matching = overrides.filter((override) => override.roleId === access.role?.id && override.permission === permission && override.scope.type === scope.type && override.scope.id === scope.id);
+    if (matching.some((override) => override.effect === "deny")) allowed = false;
+    else if (matching.some((override) => override.effect === "allow")) allowed = true;
+  }
+  return allowed;
+}
+
 export function canPerformCommunityKindAction(access: CommunityAccess, permission: CommunityPermissionKey): boolean {
   return isCommunityPermissionAvailableForKind(access.communityKind, permission) && hasCommunityPermission(access, permission);
 }
 
+export function canManageCommunityRole(access: CommunityAccess, targetRole: Role): boolean {
+  if (!hasCommunityPermission(access, "manageRoles") || isOwnerRole(targetRole)) return false;
+  const actorPosition = access.isOwner ? 101 : getRolePosition(access.role);
+  return actorPosition > getRolePosition(targetRole);
+}
+
 export function canAssignCommunityRole(access: CommunityAccess, community: Community, targetMember: Member, targetRole: Role): boolean {
-  if (!hasCommunityPermission(access, "manageRoles") || (!access.isOwner && !access.isAdmin)) return false;
+  if (!canManageCommunityRole(access, targetRole)) return false;
   const currentTargetRole = community.roles.find((role) => role.id === targetMember.roleId);
-  if (!currentTargetRole) return false;
-  if (targetMember.userId === community.ownerId || currentTargetRole.name === "Owner" || currentTargetRole.level >= 100) return false;
-  if (targetRole.name === "Owner" || targetRole.level >= 100) return false;
-  if (access.isOwner) return true;
-  const actorLevel = access.role?.level ?? 0;
-  return actorLevel >= 80 && currentTargetRole.level < actorLevel && targetRole.level < actorLevel;
+  if (!currentTargetRole || targetMember.userId === community.ownerId || isOwnerRole(currentTargetRole)) return false;
+  return access.isOwner || getRolePosition(access.role) > getRolePosition(currentTargetRole);
+}
+
+export function canDeleteCommunityRole(access: CommunityAccess, community: Community, targetRole: Role): boolean {
+  if (!canManageCommunityRole(access, targetRole) || targetRole.isDefault) return false;
+  return !community.members.some((member) => member.roleId === targetRole.id);
 }
 
 export function canManageCommunity(access: CommunityAccess): boolean {
@@ -190,9 +237,9 @@ export function canModerateCommunityMember(access: CommunityAccess, community: C
   if (!canManageMembers(access) || targetMember.userId === access.userId) return false;
   const targetRole = community.roles.find((role) => role.id === targetMember.roleId);
   if (!targetRole) return false;
-  if (targetMember.userId === community.ownerId || targetRole.name === "Owner" || targetRole.level >= 100) return false;
-  const actorLevel = access.isOwner ? 100 : (access.role?.level ?? 0);
-  return actorLevel >= 60 && actorLevel > targetRole.level;
+  if (targetMember.userId === community.ownerId || isOwnerRole(targetRole)) return false;
+  const actorLevel = access.isOwner ? 101 : getRolePosition(access.role);
+  return actorLevel > getRolePosition(targetRole);
 }
 
 export function canModerateMessages(access: CommunityAccess): boolean {

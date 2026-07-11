@@ -71,6 +71,9 @@ export type Database = {
           color: string;
           level: number;
           permissions: Json;
+          system_key: "owner" | "admin" | "moderator" | "member" | null;
+          is_default: boolean;
+          permissions_version: number;
           created_at: string;
           updated_at: string;
         };
@@ -96,6 +99,24 @@ export type Database = {
         Row: { id: string; community_id: string; title: string; body: string; position: number; required: boolean; published: boolean; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["community_rules"]["Row"]> & Pick<Database["public"]["Tables"]["community_rules"]["Row"], "community_id" | "title" | "body">;
         Update: Partial<Database["public"]["Tables"]["community_rules"]["Row"]>;
+        Relationships: [];
+      };
+      community_permission_definitions: {
+        Row: { permission_key: string; category: string; allowed_kinds: string[]; delegable: boolean; owner_reserved: boolean; description: string; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["community_permission_definitions"]["Row"]> & Pick<Database["public"]["Tables"]["community_permission_definitions"]["Row"], "permission_key" | "category" | "description">;
+        Update: Partial<Database["public"]["Tables"]["community_permission_definitions"]["Row"]>;
+        Relationships: [];
+      };
+      community_role_permissions: {
+        Row: { id: string; community_id: string; role_id: string; permission_key: string; allowed: boolean; created_by: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["community_role_permissions"]["Row"]> & Pick<Database["public"]["Tables"]["community_role_permissions"]["Row"], "community_id" | "role_id" | "permission_key" | "allowed">;
+        Update: Partial<Database["public"]["Tables"]["community_role_permissions"]["Row"]>;
+        Relationships: [];
+      };
+      community_permission_overrides: {
+        Row: { id: string; community_id: string; role_id: string; scope_type: "category" | "channel" | "radio_program" | "podcast_series"; scope_id: string; permission_key: string; effect: "allow" | "deny"; created_by: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["community_permission_overrides"]["Row"]> & Pick<Database["public"]["Tables"]["community_permission_overrides"]["Row"], "community_id" | "role_id" | "scope_type" | "scope_id" | "permission_key" | "effect">;
+        Update: Partial<Database["public"]["Tables"]["community_permission_overrides"]["Row"]>;
         Relationships: [];
       };
       profile_details: {
