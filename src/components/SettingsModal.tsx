@@ -20,6 +20,8 @@ import { cacheManagementService, type CacheSummary } from "../services/cacheMana
 import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";
 import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";
 import { profilePrivacyService } from "../services/profilePrivacyService";
+import { directSafetyService } from "../services/directMessages/directSafetyService";
+import type { DirectMessagePrivacy } from "../types/directMessageSafety";
 import { profileService } from "../services/profileService";
 import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";
 import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
@@ -115,6 +117,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const [cacheSummary, setCacheSummary] = useState<CacheSummary | null>(null);
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
   const [profilePrivacy,setProfilePrivacy]=useState<ProfilePrivacySettings>(()=>profilePrivacyService.getLocalSettings());
+  const [directMessagePrivacy, setDirectMessagePrivacy] = useState<DirectMessagePrivacy>(() => directSafetyService.getLocalPrivacy());
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserRecord[]>(() => userBlockingService.listBlockedUsers());
   const [profileSaving, setProfileSaving] = useState(false);
   const [voiceSettingsSnapshot, setVoiceSettingsSnapshot] = useState<VoiceServiceSnapshot>(() => voiceService.getSnapshot());
@@ -176,6 +179,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
       setNotificationPolicyState(notificationPolicyStateService.getSnapshot());
       setSafetySettings(userSafetyCenterService.getSettings());
       void profilePrivacyService.getOwnSettings().then(setProfilePrivacy);
+      void directSafetyService.getPrivacy().then(setDirectMessagePrivacy);
       void dataExportService.refreshStatus().then(setDataExportStatus);
     }
   }, [active]);
@@ -255,6 +259,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     pushToast(next.error ? "Launch on startup is unavailable in this build or platform." : next.launchOnStartup ? "Picom will launch when you sign in." : "Launch on startup disabled.", next.error ? "error" : "success");
   };
   const updateProfilePrivacy=(partial:Partial<ProfilePrivacySettings>)=>{void profilePrivacyService.updateOwn(partial).then((result)=>{setProfilePrivacy(result.settings);pushToast(result.ok?"Profile privacy updated.":"Profile privacy saved locally; remote sync failed.",result.ok?"success":"error")});};
+  const updateDirectMessagePrivacy = (value: DirectMessagePrivacy) => { void directSafetyService.updatePrivacy(value).then((result) => { setDirectMessagePrivacy(result.value); pushToast(result.ok ? "Direct-message privacy updated." : "Direct-message privacy could not be synchronized.", result.ok ? "success" : "error"); }); };
   const updateStartMinimizedToTray = async (enabled: boolean) => {
     const next = await startupService.setStartMinimizedToTray(enabled);
     setStartupSettings(next);
@@ -644,6 +649,7 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
                 <input type="checkbox" checked={profilePrivacy.showOnlineStatus} onChange={(event) => { const enabled=event.target.checked;updateSafetySettings({showOnlineStatus:enabled});updateProfilePrivacy({showOnlineStatus:enabled}); }} />
               </label>
               <label className="settings-toggle-row"><span><strong>Profile audience</strong><small>Private-channel activity is always filtered by channel access, regardless of this choice.</small></span><select value={profilePrivacy.visibility} onChange={(event)=>updateProfilePrivacy({visibility:event.target.value as ProfilePrivacySettings["visibility"]})}><option value="everyone">Everyone</option><option value="shared_communities">Shared communities</option><option value="friends">Friends only</option></select></label>
+              <label className="settings-toggle-row"><span><strong>Who can start a direct message</strong><small>Existing blocked relationships remain inaccessible regardless of this preference.</small></span><select value={directMessagePrivacy} onChange={(event) => updateDirectMessagePrivacy(event.target.value as DirectMessagePrivacy)}><option value="everyone">Everyone</option><option value="friends">Friends only</option><option value="no_one">No one</option></select></label>
               <label className="settings-toggle-row"><span><strong>Show location</strong><small>Hide your location from profile viewers.</small></span><input type="checkbox" checked={profilePrivacy.showLocation} onChange={(event)=>updateProfilePrivacy({showLocation:event.target.checked})} /></label>
               <label className="settings-toggle-row"><span><strong>Show timezone</strong><small>Hide your timezone from profile viewers.</small></span><input type="checkbox" checked={profilePrivacy.showTimezone} onChange={(event)=>updateProfilePrivacy({showTimezone:event.target.checked})} /></label>
               <label className="settings-toggle-row"><span><strong>Show recent activity</strong><small>Only friends or shared-community members can see activity, and only from channels they may access.</small></span><input type="checkbox" checked={profilePrivacy.showActivity} onChange={(event)=>updateProfilePrivacy({showActivity:event.target.checked})} /></label>

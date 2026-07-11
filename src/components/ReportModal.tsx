@@ -4,7 +4,7 @@ import { reportService } from "../services/reportService";
 import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
 
-export type ReportModalTarget = { targetType: ReportTargetType; targetId: string; label: string; communityId?: string; channelId?: string };
+export type ReportModalTarget = { targetType: ReportTargetType; targetId: string; label: string; communityId?: string; channelId?: string; conversationId?: string; evidenceExcerpt?: string };
 type Props = { target: ReportModalTarget; reporterId: string; onClose: () => void; onResult: (message: string, ok: boolean) => void };
 
 const reasons: Array<{ value: ReportReason; label: string; description: string }> = [
@@ -16,7 +16,7 @@ const reasons: Array<{ value: ReportReason; label: string; description: string }
   { value: "other", label: "Something else", description: "Another Community Guidelines concern." },
 ];
 
-const targetTitles: Record<ReportTargetType, string> = { message: "message", user: "user", community: "community", podcast_episode: "Podcast episode", podcast_comment: "Podcast comment" };
+const targetTitles: Record<ReportTargetType, string> = { message: "message", direct_message: "direct message", user: "user", community: "community", podcast_episode: "Podcast episode", podcast_comment: "Podcast comment" };
 
 export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
   const [reason, setReason] = useState<ReportReason>("spam");
@@ -29,11 +29,11 @@ export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
   const submit = async () => {
     if (busy || submitted) return;
     setBusy(true);
-    const result = await reportService.submitReport({ communityId: target.communityId, channelId: target.channelId, reporterId, targetType: target.targetType, targetId: target.targetId, reason, description });
+    const result = await reportService.submitReport({ communityId: target.communityId, channelId: target.channelId, conversationId: target.conversationId, reporterId, targetType: target.targetType, targetId: target.targetId, reason, description, evidenceExcerpt: target.evidenceExcerpt });
     setBusy(false);
     if (!result.ok) { onResult(result.message, false); return; }
     setSubmitted(true);
-    onResult("Report submitted for moderator review.", true);
+    onResult(target.conversationId ? "Report submitted to Picom Safety for review." : "Report submitted for moderator review.", true);
   };
 
   return <div className="modal-backdrop" onMouseDown={close}>
@@ -42,9 +42,10 @@ export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
       {submitted ? <div className="report-confirmation" role="status">
         <span className="report-confirmation-icon"><AppIcon name="inbox" size="xl" /></span>
         <h3>Report received</h3>
-        <p>Authorized community moderators can review this report and the permitted target context. Picom does not attach unrelated private content.</p>
+        <p>{target.conversationId ? "Authorized Picom Safety reviewers can inspect only the selected target and required account metadata. The rest of your private conversation is not attached." : "Authorized community moderators can review this report and the permitted target context. Picom does not attach unrelated private content."}</p>
         <small>If the situation changes, use blocking and safety controls as needed. For immediate danger, contact local emergency services.</small>
       </div> : <div className="report-modal-body">
+        {target.evidenceExcerpt ? <aside className="report-abuse-warning" aria-label="Selected direct message"><AppIcon name="inbox" size="sm" /><span><strong>Selected message</strong> {target.evidenceExcerpt.slice(0, 280)}</span></aside> : null}
         <fieldset className="report-reason-grid"><legend>What is the concern?</legend>{reasons.map((item) => <label key={item.value} className={reason === item.value ? "selected" : ""}><input type="radio" name="report-reason" value={item.value} checked={reason === item.value} onChange={() => setReason(item.value)} /><span><strong>{item.label}</strong><small>{item.description}</small></span></label>)}</fieldset>
         <label><span>Additional details <em>Optional</em></span><textarea rows={5} maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Describe what happened. Do not include passwords, tokens, or unrelated private content." /><small>{description.length}/1000 characters</small></label>
         <aside className="report-abuse-warning"><AppIcon name="lock" size="sm" /><span><strong>Report in good faith.</strong> False, duplicate, or abusive reports can delay safety reviews and may be investigated.</span></aside>

@@ -409,7 +409,7 @@ export type Database = {
         Relationships: [];
       };
       reports: {
-        Row: { id: string; community_id: string | null; reporter_id: string; target_type: "message" | "user" | "community" | "podcast_episode" | "podcast_comment"; target_id: string; reason: "spam" | "harassment" | "unsafe_content" | "impersonation" | "copyright" | "other"; description: string; status: "open" | "reviewed" | "dismissed" | "action_taken"; reviewed_by: string | null; reviewed_at: string | null; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string | null; conversation_id: string | null; reporter_id: string; target_type: "message" | "direct_message" | "user" | "community" | "podcast_episode" | "podcast_comment"; target_id: string; reason: "spam" | "harassment" | "unsafe_content" | "impersonation" | "copyright" | "other"; description: string; evidence_excerpt: string | null; status: "open" | "reviewed" | "dismissed" | "action_taken"; reviewed_by: string | null; reviewed_at: string | null; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["reports"]["Row"]> & Pick<Database["public"]["Tables"]["reports"]["Row"], "reporter_id" | "target_type" | "target_id" | "reason" | "description">;
         Update: Partial<Database["public"]["Tables"]["reports"]["Row"]>;
         Relationships: [];
@@ -808,6 +808,12 @@ export type Database = {
       list_followed_user_stories: {
         Args: { cursor_created_at?: string | null; cursor_story_id?: string | null; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["followed_user_stories_view"]["Row"]>;
+      };
+      get_direct_message_privacy: { Args: Record<string, never>; Returns: "everyone" | "friends" | "no_one" };
+      update_direct_message_privacy: { Args: { next_privacy: "everyone" | "friends" | "no_one" }; Returns: boolean };
+      submit_safety_report: {
+        Args: { report_target_type: string; report_target_id: string; report_reason: string; report_description?: string | null; report_community_id?: string | null; report_conversation_id?: string | null };
+        Returns: Array<Database["public"]["Tables"]["reports"]["Row"]>;
       };
     };
     Enums: {

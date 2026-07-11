@@ -893,6 +893,15 @@
 .dm-privacy-actions button:disabled { opacity: .5; cursor: wait; }
 .dm-privacy-actions button.danger { margin-top: 3px; border-top: 1px solid color-mix(in srgb, var(--danger) 22%, var(--border)); border-radius: 0 0 10px 10px; background: transparent; color: var(--danger); }
 .dm-privacy-actions p { margin: 0; padding: 8px; border-radius: 9px; background: var(--surface-soft); color: var(--text-muted); font-size: 10px; line-height: 1.4; }
+.dm-mute-control { display: grid; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-soft); }
+.dm-mute-control label { color: var(--text-secondary); font-size: 10px; font-weight: 800; }
+.dm-mute-control select { min-width: 0; height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: 9px; outline: 0; background: var(--surface); color: var(--text-primary); font: inherit; font-size: 11px; }
+.dm-mute-control select:focus-visible { box-shadow: var(--focus-ring); }
+.dm-block-confirm { display: grid; gap: 7px; padding: 10px; border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border)); border-radius: 11px; background: color-mix(in srgb, var(--danger) 7%, var(--surface)); }
+.dm-block-confirm strong { color: var(--text-primary); font-size: 11px; }
+.dm-block-confirm p { padding: 0; background: transparent; }
+.dm-block-confirm > div { display: flex; justify-content: flex-end; gap: 6px; }
+.dm-block-confirm > div button { width: auto; padding-inline: 10px; }
 
 @media (max-width: 1320px) {
   .direct-messages-view,

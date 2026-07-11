@@ -8,6 +8,9 @@ const SCHEMA_VERSION = 1;
 
 export type BlockedUserRecord = Readonly<{ userId: UserId; displayName: string; username: string; blockedAt: string; source: "local_placeholder" | "supabase" }>;
 type StoredBlockedUsers = Record<UserId, BlockedUserRecord>;
+const listeners = new Set<() => void>();
+
+function notifyBlockedUsersChanged(): void { listeners.forEach((listener) => listener()); }
 
 function readStore(): StoredBlockedUsers {
   try { const raw = window.localStorage.getItem(STORAGE_KEY); if (!raw) return {}; const parsed = JSON.parse(raw) as { schemaVersion?: number; records?: StoredBlockedUsers }; return parsed.schemaVersion === SCHEMA_VERSION && parsed.records ? parsed.records : {}; } catch { return {}; }
@@ -31,9 +34,9 @@ export const userBlockingService = {
   canMessageUser(userId: UserId): boolean { return !this.isBlocked(userId); },
   blockUser(member: Pick<Member, "userId" | "displayName" | "username">): BlockedUserRecord {
     const record: BlockedUserRecord = { userId: member.userId, displayName: member.displayName, username: member.username, blockedAt: new Date().toISOString(), source: "local_placeholder" };
-    writeStore({ ...readStore(), [member.userId]: record }); void persistBlock(member.userId, true); return record;
+    writeStore({ ...readStore(), [member.userId]: record }); notifyBlockedUsersChanged(); void persistBlock(member.userId, true); return record;
   },
-  unblockUser(userId: UserId): void { const records = readStore(); delete records[userId]; writeStore(records); void persistBlock(userId, false); },
+  unblockUser(userId: UserId): void { const records = readStore(); delete records[userId]; writeStore(records); notifyBlockedUsersChanged(); void persistBlock(userId, false); },
   toggleBlockedUser(member: Pick<Member, "userId" | "displayName" | "username">): { blocked: boolean; record?: BlockedUserRecord } {
     if (this.isBlocked(member.userId)) { this.unblockUser(member.userId); return { blocked: false }; }
     return { blocked: true, record: this.blockUser(member) };
@@ -46,8 +49,9 @@ export const userBlockingService = {
     } else {
       const next = { ...before }; delete next[member.userId]; writeStore(next);
     }
+    notifyBlockedUsersChanged();
     const persisted = await persistBlock(member.userId, blocked);
-    if (!persisted) writeStore(before);
+    if (!persisted) { writeStore(before); notifyBlockedUsersChanged(); }
     return persisted;
   },
   async refreshRemoteBlocks(): Promise<BlockedUserRecord[]> {
@@ -58,6 +62,8 @@ export const userBlockingService = {
     const records: StoredBlockedUsers = {};
     for (const row of data ?? []) records[row.user_id] = { userId: row.user_id, displayName: row.display_name, username: row.username, blockedAt: row.blocked_at, source: "supabase" };
     writeStore(records);
+    notifyBlockedUsersChanged();
     return Object.values(records).sort((left, right) => right.blockedAt.localeCompare(left.blockedAt));
   },
+  subscribe(listener: () => void): () => void { listeners.add(listener); return () => listeners.delete(listener); },
 };

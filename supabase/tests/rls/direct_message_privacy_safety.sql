@@ -1,0 +1,14 @@
+begin;
+select plan(10);
+select has_function('public','get_direct_message_privacy',array[]::text[],'DM privacy getter exists');
+select has_function('public','update_direct_message_privacy',array['text'],'DM privacy updater exists');
+select has_function('public','submit_safety_report',array['text','uuid','text','text','uuid','uuid'],'Safety report RPC exists');
+select has_column('public','reports','conversation_id','Reports have a DM context column');
+select has_column('public','reports','evidence_excerpt','Reports define bounded evidence metadata');
+select has_index('public','reports','idx_reports_conversation_status_created','DM report queue index exists');
+select policies_are('public','reports',array['reports_requester_select','reports_moderator_select','reports_moderator_update'],'Report policies are explicit');
+select policies_are('public','friend_requests',array['friend_requests_select_participants','friend_requests_insert_sender','friend_requests_update_recipient','friend_requests_delete_sender_pending'],'Friend request policies remain explicit');
+select function_privs_are('public','submit_safety_report',array['text','uuid','text','text','uuid','uuid'],'authenticated',array['EXECUTE'],'Authenticated users may call only the guarded report RPC');
+select table_privs_are('public','reports','authenticated',array['SELECT','UPDATE'],'Direct report insertion is not granted');
+select * from finish();
+rollback;

@@ -370,6 +370,7 @@ export function App() {
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
   const [userSafetySettings, setUserSafetySettings] = useState(() => userSafetyCenterService.getSettings());
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
+  useEffect(() => userBlockingService.subscribe(() => setBlockedUserVersion((version) => version + 1)), []);
   const [notificationPolicyState, setNotificationPolicyState] = useState(() => notificationPolicyStateService.getSnapshot());
   const [paletteEntityResults, setPaletteEntityResults] = useState<AdvancedSearchResult[]>([]);
   const [paletteSearchLoading, setPaletteSearchLoading] = useState(false);
@@ -2364,15 +2365,16 @@ export function App() {
   const handleToggleBlockUser = async (member: Member) => {
     if (member.userId === currentUser.userId) {
       pushToast("You cannot block your own account.", "error");
-      return;
+      return false;
     }
 
     const blocked = !userBlockingService.isBlocked(member.userId);
     const persisted = await userBlockingService.setBlockedUser(member, blocked);
-    if (!persisted) { pushToast(`Could not ${blocked ? "block" : "unblock"} ${member.displayName}.`, "error"); return; }
+    if (!persisted) { pushToast(`Could not ${blocked ? "block" : "unblock"} ${member.displayName}.`, "error"); return false; }
     setBlockedUserVersion((version) => version + 1);
     if (blocked) { setDirectConversations((current) => current.filter((conversation) => conversation.participantUserId !== member.userId)); void refreshFriendState(); }
     pushToast(blocked ? `${member.displayName} blocked.` : `${member.displayName} unblocked.`, blocked ? "info" : "success");
+    return true;
   };
 
   const openJoinedCommunity = (target: Community) => {
@@ -2666,10 +2668,11 @@ export function App() {
               onToggleReaction={toggleDirectReactionLocal}
               onRemoveFailedMessage={removeFailedDirectMessage}
               onOpenCommunity={openCommunityFromRail}
-              onBlockUser={async (userId) => { const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId); if (!member) { pushToast("This user is no longer available.", "error"); return false; } await handleToggleBlockUser(member); return true; }}
-              onReportUser={(userId) => { const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId); if (member) handleReportUser(member); else pushToast("This user is no longer available.", "error"); }}
+              onBlockUser={async (userId) => { const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId); if (!member) { pushToast("This user is no longer available.", "error"); return false; } return handleToggleBlockUser(member); }}
+              onReportUser={(userId, conversationId) => { const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId); if (member) setReportTarget({ conversationId, targetType: "user", targetId: member.userId, label: `${member.displayName} (@${member.username})` }); else pushToast("This user is no longer available.", "error"); }}
+              onReportMessage={(message, conversation) => setReportTarget({ conversationId: conversation.id, targetType: "direct_message", targetId: message.id, label: `Message from ${conversation.participantName}`, evidenceExcerpt: message.body.slice(0, 280) })}
               onNotice={(message, kind = "info") => pushToast(message, kind)}
-              onSetMuted={async (conversationId, muted) => { const mutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null; const result = await directMessageService.setDirectConversationMuted(conversationId, mutedUntil); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, muted, mutedUntil: mutedUntil ?? undefined } : conversation)); return true; }}
+              onSetMuted={async (conversationId, mutedUntil) => { const muted = Boolean(mutedUntil && Date.parse(mutedUntil) > Date.now()); const result = await directMessageService.setDirectConversationMuted(conversationId, mutedUntil); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, muted, mutedUntil: mutedUntil ?? undefined } : conversation)); return true; }}
               onArchive={async (conversationId) => { const result = await directMessageService.setDirectConversationArchived(conversationId, true); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => { const remaining = current.filter((conversation) => conversation.id !== conversationId); setActiveDirectConversationId(remaining[0]?.id ?? ""); return remaining; }); return true; }}
               onBackToCommunity={() => setActiveView("community")}
               onOpenFriends={() => openFriends("all")}
