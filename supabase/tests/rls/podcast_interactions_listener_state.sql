@@ -1,0 +1,14 @@
+begin;
+select plan(10);
+select has_function('public','can_use_podcast_listener_state',array['uuid'],'Podcast listener-state permission exists');
+select has_function('public','can_interact_with_podcast_episode',array['uuid'],'Podcast interaction permission exists');
+select has_function('public','validate_podcast_comment_write',array[]::text[],'Podcast moderation guard exists');
+select policies_are('public','podcast_episode_reactions',array['members add own reactions to interactive podcast','podcast reactions follow unblocked episode visibility','users remove own podcast reactions'],'Podcast reaction policies are explicit');
+select policies_are('public','podcast_playback_progress',array['users create own authorized podcast progress','users delete own podcast progress','users read own authorized podcast progress','users update own authorized podcast progress'],'Podcast progress is private and access-bound');
+select col_is_pk('public','podcast_episode_comments','id','Podcast comments keep stable identity');
+select col_not_null('public','podcast_episode_comments','body','Podcast comments require content');
+select has_index('public','podcast_episode_comments','podcast_comments_episode_idx','Podcast comment preview index exists');
+select has_index('public','podcast_episode_reactions','podcast_reactions_episode_idx','Podcast reaction count index exists');
+select has_index('public','saved_audio_items','saved_audio_user_created_idx','Saved Podcast lookup index exists');
+select * from finish();
+rollback;

@@ -79,6 +79,8 @@ export type AudioCommentPreview = Readonly<{
   body: string;
   replyToCommentId?: string;
   createdAt: string;
+  updatedAt?: string;
+  isOwn?: boolean;
 }>;
 
 export type RadioSession = Readonly<{

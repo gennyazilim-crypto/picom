@@ -403,7 +403,8 @@
     "ci:workflow:smoke": "node scripts/github-actions-workflow-contract.mjs",
     "release:go-no-go:guard": "node scripts/release-go-no-go-guard.mjs",
     "podcast:publishing:smoke": "node scripts/podcast-publishing-workflow-smoke.mjs",
-    "podcast:player:smoke": "node scripts/podcast-player-queue-resume-smoke.mjs"
+    "podcast:player:smoke": "node scripts/podcast-player-queue-resume-smoke.mjs",
+    "podcast:interactions:smoke": "node scripts/podcast-interactions-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

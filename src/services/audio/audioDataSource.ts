@@ -16,8 +16,10 @@ import type { CommunityKind } from "../../types/community";
 import { communityService } from "../communityService";
 import { auditLogService } from "../auditLogService";
 import { dataSourceService } from "../dataSourceService";
+import { messageModerationFilterService } from "../messageModerationFilterService";
 import type { Database } from "../supabase/database.types";
 import { getSupabaseClient } from "../supabase/supabaseClient";
+import { userBlockingService } from "../userBlockingService";
 
 export type AudioServiceErrorCode =
   | "AUDIO_BACKEND_UNAVAILABLE"
@@ -65,7 +67,7 @@ type CommentRow = Database["public"]["Tables"]["podcast_episode_comments"]["Row"
 const ok = <T,>(data: T): AudioServiceResult<T> => ({ ok: true, data });
 const fail = <T,>(code: AudioServiceErrorCode, message: string): AudioServiceResult<T> => ({ ok: false, error: { code, message } });
 let localRadio: RadioSession[] = mockRadioSessions.map((item) => ({ ...item, reactionSummary: [...(item.reactionSummary ?? [])] }));
-let localPodcasts = mockPodcastEpisodes.map((item) => ({ ...item, reactionSummary: [...item.reactionSummary], commentPreview: [...item.commentPreview] }));
+let localPodcasts: PodcastEpisode[] = mockPodcastEpisodes.map((item) => ({ ...item, reactionSummary: [...item.reactionSummary], commentPreview: item.commentPreview.map((comment) => ({ ...comment, isOwn: comment.authorId === currentUserId })) }));
 const localSavedRadio = new Set(localRadio.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
 const localSavedPodcasts = new Set(localPodcasts.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
 const localListeningSessions = new Set<string>();
@@ -204,6 +206,7 @@ function mapPodcast(
   reactions: ReactionRow[],
   comments: CommentRow[],
   savedIds: ReadonlySet<string>,
+  viewerId: string | null,
 ): PodcastEpisode {
   const grouped = new Map<string, AudioReactionSummary>();
   reactions.filter((item) => item.episode_id === row.id).forEach((item) => {
@@ -211,7 +214,7 @@ function mapPodcast(
     grouped.set(item.emoji, {
       emoji: item.emoji,
       count: (prior?.count ?? 0) + 1,
-      reactedByCurrentUser: prior?.reactedByCurrentUser || item.user_id === currentUserId,
+      reactedByCurrentUser: prior?.reactedByCurrentUser || item.user_id === viewerId,
     });
   });
   const visible = comments.filter((item) => item.episode_id === row.id && !item.deleted_at);
@@ -222,7 +225,7 @@ function mapPodcast(
     audioMimeType: row.audio_mime_type ?? undefined, audioSizeBytes: row.audio_size_bytes ?? undefined, durationSeconds: row.duration_seconds,
     publishedAt: row.published_at ?? row.created_at, tags: row.tags, reactionSummary: [...grouped.values()],
     commentPreview: visible.slice(0, 3).map((item) => ({
-      id: item.id, authorId: item.author_id ?? "deleted-user", body: item.body, replyToCommentId: item.reply_to_comment_id ?? undefined, createdAt: item.created_at,
+      id: item.id, authorId: item.author_id ?? "deleted-user", body: item.body, replyToCommentId: item.reply_to_comment_id ?? undefined, createdAt: item.created_at, updatedAt: item.updated_at, isOwn: item.author_id === viewerId,
     })),
     commentCount: visible.length, listenerCount: 0,
     isSavedByCurrentUser: savedIds.has(row.id), isExplicit: row.is_explicit, status: podcastStatus(row.status),
@@ -257,6 +260,20 @@ async function getPodcastCommunityId(id: string): Promise<AudioServiceResult<str
   return episode ? ok(episode.communityId) : fail("AUDIO_NOT_FOUND", "Podcast episode was not found or is not available to you.");
 }
 
+async function getInteractivePodcastEpisode(id: string, requireMembership = true): Promise<AudioServiceResult<PodcastEpisode>> {
+  const result = await audioDataSource.getPodcastEpisode(id);
+  if (!result.ok) return result;
+  if (result.data.status !== "published") return fail("AUDIO_REQUEST_FAILED", "Archived or unpublished Podcast episodes do not accept listener interactions.");
+  const kindGuard = await ensureCommunityKind(result.data.communityId, "podcast");
+  if (!kindGuard.ok) return kindGuard;
+  if (dataSourceService.getStatus().isMock) {
+    if (userBlockingService.isBlocked(result.data.authorUserId)) return fail("AUDIO_REQUEST_FAILED", "This Podcast interaction is unavailable because of a blocking relationship.");
+    const community = mockCommunities.find((item) => item.id === result.data.communityId);
+    if (requireMembership && !community?.members.some((member) => member.userId === currentUserId)) return fail("AUDIO_REQUEST_FAILED", "Join this Podcast community before participating.");
+  }
+  return result;
+}
+
 async function transitionRadioSession(id: string, status: "live" | "ended" | "cancelled"): Promise<AudioServiceResult<RadioSession>> {
   const current = await audioDataSource.getRadioSession(id);
   if (!current.ok) return current;
@@ -287,6 +304,7 @@ async function transitionRadioSession(id: string, status: "live" | "ended" | "ca
 async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSnapshot>> {
   const client = getSupabaseClient();
   if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Audio is unavailable while Supabase is not configured.");
+  const viewerId = await authenticatedUserId();
   const [radio, radioReactions, podcasts, reactions, comments, saved] = await Promise.all([
     client.from("radio_sessions").select("id,community_id,channel_id,program_id,host_user_id,title,description,status,starts_at,scheduled_end_at,actual_started_at,ended_at,listener_chat_channel_id,cover_url,cover_storage_path,stream_url,tags,is_featured,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
     client.from("radio_session_reactions").select("id,radio_session_id,user_id,emoji,created_at").limit(1000),
@@ -313,7 +331,7 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
     if (item.audio_storage_path) { const signed = await client.storage.from("podcast-audio").createSignedUrl(item.audio_storage_path, 3600); if (signed.data?.signedUrl) audioUrl = signed.data.signedUrl; }
     return { ...item, cover_url: coverUrl, audio_url: audioUrl };
   }));
-  const podcastEpisodes = podcastRows.map((item) => mapPodcast(item, reactions.data ?? [], comments.data ?? [], savedPodcasts));
+  const podcastEpisodes = podcastRows.map((item) => mapPodcast(item, reactions.data ?? [], comments.data ?? [], savedPodcasts, viewerId));
   return ok({ radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes) });
 }
 
@@ -606,14 +624,18 @@ export const audioDataSource = {
     const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast publishing is unavailable.");
     const result = await client.from("podcast_episodes").delete().eq("id", id); if (result.error) return fail("AUDIO_REQUEST_FAILED", "This episode could not be deleted."); await refresh(); return ok(true);
   },
-  setPodcastSaved: (id: string, saved: boolean) => setSaved("podcast_episode", id, saved),
+  async setPodcastSaved(id: string, saved: boolean): Promise<AudioServiceResult<boolean>> {
+    if (saved) {
+      const episode = await getInteractivePodcastEpisode(id, false);
+      if (!episode.ok) return episode;
+    }
+    return setSaved("podcast_episode", id, saved);
+  },
   async reactToPodcastEpisode(id: string, emoji: string): Promise<AudioServiceResult<boolean>> {
     const cleanEmoji = emoji.trim().slice(0, 32);
     if (!cleanEmoji) return fail("AUDIO_VALIDATION_ERROR", "Choose a valid reaction.");
-    const source = await getPodcastCommunityId(id);
-    if (!source.ok) return source;
-    const kindGuard = await ensureCommunityKind(source.data, "podcast");
-    if (!kindGuard.ok) return kindGuard;
+    const episode = await getInteractivePodcastEpisode(id);
+    if (!episode.ok) return episode;
     if (dataSourceService.getStatus().isMock) {
       localPodcasts = localPodcasts.map((item) => item.id !== id ? item : {
         ...item,
@@ -632,6 +654,28 @@ export const audioDataSource = {
       { onConflict: "episode_id,user_id,emoji" },
     );
     if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not add this reaction.");
+    await refresh();
+    return ok(true);
+  },
+  async removePodcastReaction(id: string, emoji: string): Promise<AudioServiceResult<boolean>> {
+    const cleanEmoji = emoji.trim().slice(0, 32);
+    if (!cleanEmoji) return fail("AUDIO_VALIDATION_ERROR", "Choose a valid reaction.");
+    if (dataSourceService.getStatus().isMock) {
+      localPodcasts = localPodcasts.map((item) => item.id !== id ? item : {
+        ...item,
+        reactionSummary: item.reactionSummary.flatMap((reaction) => {
+          if (reaction.emoji !== cleanEmoji || !reaction.reactedByCurrentUser) return [reaction];
+          return reaction.count <= 1 ? [] : [{ ...reaction, count: reaction.count - 1, reactedByCurrentUser: false }];
+        }),
+      });
+      publish(localSnapshot());
+      return ok(true);
+    }
+    const client = getSupabaseClient();
+    const userId = await authenticatedUserId();
+    if (!client || !userId) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before changing this reaction.");
+    const result = await client.from("podcast_episode_reactions").delete().eq("episode_id", id).eq("user_id", userId).eq("emoji", cleanEmoji);
+    if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not remove this reaction.");
     await refresh();
     return ok(true);
   },
@@ -708,23 +752,27 @@ export const audioDataSource = {
   async commentOnPodcastEpisode(id: string, body: string, replyToCommentId?: string): Promise<AudioServiceResult<AudioCommentPreview>> {
     const cleanBody = body.trim().slice(0, 4000);
     if (!cleanBody) return fail("AUDIO_VALIDATION_ERROR", "Comment text is required.");
-    const source = await getPodcastCommunityId(id);
-    if (!source.ok) return source;
-    const kindGuard = await ensureCommunityKind(source.data, "podcast");
-    if (!kindGuard.ok) return kindGuard;
+    const episode = await getInteractivePodcastEpisode(id);
+    if (!episode.ok) return episode;
+    const moderation = messageModerationFilterService.checkMessage(episode.data.communityId, cleanBody, currentUserId, `podcast:${id}`);
+    if (!moderation.allowed) return fail("AUDIO_REQUEST_FAILED", moderation.reason ?? "This comment is blocked by community moderation.");
     if (dataSourceService.getStatus().isMock) {
       if (replyToCommentId && !localPodcasts.find((item) => item.id === id)?.commentPreview.some((comment) => comment.id === replyToCommentId)) return fail("AUDIO_VALIDATION_ERROR", "The Podcast comment being replied to is unavailable.");
+      const now = new Date().toISOString();
       const comment: AudioCommentPreview = {
         id: `audio-comment-${crypto.randomUUID()}`,
         authorId: currentUserId,
         body: cleanBody,
         replyToCommentId,
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
+        isOwn: true,
       };
       localPodcasts = localPodcasts.map((item) => item.id === id
         ? { ...item, commentPreview: [comment, ...item.commentPreview].slice(0, 3), commentCount: item.commentCount + 1 }
         : item);
       publish(localSnapshot());
+      messageModerationFilterService.recordMessageSent(episode.data.communityId, `podcast:${id}`, currentUserId);
       return ok(comment);
     }
     const client = getSupabaseClient();
@@ -738,6 +786,46 @@ export const audioDataSource = {
     }).select().single();
     if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "Picom could not add this comment.");
     await refresh();
-    return ok({ id: result.data.id, authorId: result.data.author_id ?? userId, body: result.data.body, replyToCommentId: result.data.reply_to_comment_id ?? undefined, createdAt: result.data.created_at });
+    return ok({ id: result.data.id, authorId: result.data.author_id ?? userId, body: result.data.body, replyToCommentId: result.data.reply_to_comment_id ?? undefined, createdAt: result.data.created_at, updatedAt: result.data.updated_at, isOwn: true });
+  },
+  async editPodcastComment(episodeId: string, commentId: string, body: string): Promise<AudioServiceResult<AudioCommentPreview>> {
+    const cleanBody = body.trim().slice(0, 4000);
+    if (!cleanBody) return fail("AUDIO_VALIDATION_ERROR", "Comment text is required.");
+    const episode = await getInteractivePodcastEpisode(episodeId);
+    if (!episode.ok) return episode;
+    const moderation = messageModerationFilterService.checkMessage(episode.data.communityId, cleanBody, currentUserId, `podcast:${episodeId}`);
+    if (!moderation.allowed) return fail("AUDIO_REQUEST_FAILED", moderation.reason ?? "This comment is blocked by community moderation.");
+    if (dataSourceService.getStatus().isMock) {
+      const existing = episode.data.commentPreview.find((comment) => comment.id === commentId);
+      if (!existing?.isOwn) return fail("AUDIO_REQUEST_FAILED", "You can edit only your own visible comments.");
+      const updatedAt = new Date().toISOString();
+      let updated: AudioCommentPreview | undefined;
+      localPodcasts = localPodcasts.map((item) => item.id !== episodeId ? item : { ...item, commentPreview: item.commentPreview.map((comment) => comment.id === commentId ? (updated = { ...comment, body: cleanBody, updatedAt, isOwn: true }) : comment) });
+      if (!updated) return fail("AUDIO_NOT_FOUND", "This comment is no longer available.");
+      publish(localSnapshot());
+      return ok(updated);
+    }
+    const client = getSupabaseClient(); const userId = await authenticatedUserId();
+    if (!client || !userId) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before editing this comment.");
+    const result = await client.from("podcast_episode_comments").update({ body: cleanBody }).eq("id", commentId).eq("episode_id", episodeId).eq("author_id", userId).is("deleted_at", null).select("id,episode_id,author_id,reply_to_comment_id,body,created_at,updated_at,deleted_at").maybeSingle();
+    if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "You cannot edit this Podcast comment.");
+    await refresh();
+    return ok({ id: result.data.id, authorId: result.data.author_id ?? userId, body: result.data.body, replyToCommentId: result.data.reply_to_comment_id ?? undefined, createdAt: result.data.created_at, updatedAt: result.data.updated_at, isOwn: true });
+  },
+  async deletePodcastComment(episodeId: string, commentId: string): Promise<AudioServiceResult<boolean>> {
+    if (dataSourceService.getStatus().isMock) {
+      const episode = localPodcasts.find((item) => item.id === episodeId);
+      const existing = episode?.commentPreview.find((comment) => comment.id === commentId);
+      if (!existing?.isOwn) return fail("AUDIO_REQUEST_FAILED", "You can delete only your own visible comments.");
+      localPodcasts = localPodcasts.map((item) => item.id !== episodeId ? item : { ...item, commentPreview: item.commentPreview.filter((comment) => comment.id !== commentId), commentCount: Math.max(0, item.commentCount - 1) });
+      publish(localSnapshot());
+      return ok(true);
+    }
+    const client = getSupabaseClient(); const userId = await authenticatedUserId();
+    if (!client || !userId) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before deleting this comment.");
+    const result = await client.from("podcast_episode_comments").update({ deleted_at: new Date().toISOString() }).eq("id", commentId).eq("episode_id", episodeId).eq("author_id", userId).is("deleted_at", null).select("id").maybeSingle();
+    if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "You cannot delete this Podcast comment.");
+    await refresh();
+    return ok(true);
   },
 };

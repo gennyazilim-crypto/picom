@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { podcastCommunityService } from "../../services/audio/podcastCommunityService";
+import { audioDataSource } from "../../services/audio/audioDataSource";
+import { podcastService } from "../../services/audio/podcastService";
 import { communityNavigationService, type PodcastCommunitySection } from "../../services/community/communityNavigationService";
 import type { PodcastCommunityShellSnapshot, PodcastEpisode } from "../../types/audio";
 import type { Community, Member } from "../../types/community";
@@ -26,10 +28,9 @@ export function PodcastCommunityShell({ community, canPublish, canEdit, onOpenPr
   const canManage = canPublish || canEdit;
   const [activeSection, setActiveSection] = useState<PodcastCommunitySection>(() => communityNavigationService.getPodcastSection(community.id));
   const [snapshot, setSnapshot] = useState<PodcastCommunityShellSnapshot | null>(null);
-  const [selectedEpisode, setSelectedEpisode] = useState<PodcastEpisode | null>(null);
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(null);
   const [editingEpisode, setEditingEpisode] = useState<PodcastEpisode | null>(null);
   const [publisherOpen, setPublisherOpen] = useState(false);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [refreshVersion, setRefreshVersion] = useState(0);
 
@@ -38,7 +39,7 @@ export function PodcastCommunityShell({ community, canPublish, canEdit, onOpenPr
     setSnapshot(null); setError(null);
     const rememberedSection = communityNavigationService.getPodcastSection(community.id);
     setActiveSection(rememberedSection === "drafts" && !canManage ? "episodes" : rememberedSection);
-    setSelectedEpisode(null);
+    setSelectedEpisodeId(null);
     void podcastCommunityService.getShellSnapshot(community).then((result) => {
       if (!active) return;
       if (!result.ok) { setError(result.error); return; }
@@ -47,18 +48,30 @@ export function PodcastCommunityShell({ community, canPublish, canEdit, onOpenPr
       if ((section === "drafts" && !canManage) || (section === "listenerDiscussion" && !result.data.settings.listenerDiscussionEnabled)) { communityNavigationService.rememberPodcastSection(community.id, "episodes"); setActiveSection("episodes"); }
       const rememberedId = communityNavigationService.getPodcastEpisodeId(community.id);
       const remembered = result.data.episodes.find((episode) => episode.id === rememberedId) ?? null;
-      setSelectedEpisode(remembered);
+      setSelectedEpisodeId(remembered?.id ?? null);
       if (rememberedId && !remembered) communityNavigationService.rememberPodcastEpisode(community.id, null);
     });
     return () => { active = false; };
   }, [canManage, community, refreshVersion]);
 
+  useEffect(() => audioDataSource.subscribe((catalog) => {
+    setSnapshot((current) => current ? { ...current, episodes: catalog.podcastEpisodes.filter((episode) => episode.communityId === community.id) } : current);
+  }), [community.id]);
+
   const publishers = useMemo(() => { const ids = new Set(snapshot?.publisherUserIds ?? []); return community.members.filter((member) => ids.has(member.userId)); }, [community.members, snapshot?.publisherUserIds]);
+  const selectedEpisode = snapshot?.episodes.find((episode) => episode.id === selectedEpisodeId) ?? null;
+  const savedIds = useMemo(() => new Set((snapshot?.episodes ?? []).filter((episode) => episode.isSavedByCurrentUser).map((episode) => episode.id)), [snapshot?.episodes]);
   const getUserLabel = (userId: string) => community.members.find((member) => member.userId === userId)?.displayName ?? "Picom creator";
-  const toggleSaved = (id: string) => setSavedIds((current) => { const next=new Set(current); if(next.has(id))next.delete(id);else next.add(id); return next; });
+  const toggleSaved = (id: string) => {
+    const episode = snapshot?.episodes.find((candidate) => candidate.id === id);
+    if (!episode) return;
+    setError(null);
+    const action = episode.isSavedByCurrentUser ? podcastService.unsavePodcastEpisode(id) : podcastService.savePodcastEpisode(id);
+    void action.then((result) => { if (!result.ok) setError(result.error.message); });
+  };
   const selectSection = (section: PodcastCommunitySection) => { communityNavigationService.rememberPodcastSection(community.id, section); setActiveSection(section); };
-  const openEpisode = (episode: PodcastEpisode) => { communityNavigationService.rememberPodcastEpisode(community.id, episode.id); setSelectedEpisode(episode); };
-  const closeEpisode = () => { communityNavigationService.rememberPodcastEpisode(community.id, null); setSelectedEpisode(null); };
+  const openEpisode = (episode: PodcastEpisode) => { communityNavigationService.rememberPodcastEpisode(community.id, episode.id); setSelectedEpisodeId(episode.id); };
+  const closeEpisode = () => { communityNavigationService.rememberPodcastEpisode(community.id, null); setSelectedEpisodeId(null); };
   const openPublisher = (episode: PodcastEpisode | null) => { setEditingEpisode(episode); setPublisherOpen(true); };
   const closePublisher = () => { setPublisherOpen(false); setEditingEpisode(null); };
   const handlePublishingChange = (episode?: PodcastEpisode) => {

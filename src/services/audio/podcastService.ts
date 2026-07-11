@@ -28,8 +28,13 @@ export const podcastService = {
   savePodcastEpisode: (id: string) => audioDataSource.setPodcastSaved(id, true),
   unsavePodcastEpisode: (id: string) => audioDataSource.setPodcastSaved(id, false),
   reactToPodcastEpisode: (id: string, emoji: string) => audioDataSource.reactToPodcastEpisode(id, emoji),
+  removePodcastReaction: (id: string, emoji: string) => audioDataSource.removePodcastReaction(id, emoji),
   commentOnPodcastEpisode: (id: string, body: string, replyToCommentId?: string) => audioDataSource.commentOnPodcastEpisode(id, body, replyToCommentId),
+  editPodcastComment: (episodeId: string, commentId: string, body: string) => audioDataSource.editPodcastComment(episodeId, commentId, body),
+  deletePodcastComment: (episodeId: string, commentId: string) => audioDataSource.deletePodcastComment(episodeId, commentId),
   getPlaybackProgress: (id: string) => podcastProgressService.get(id),
   savePlaybackProgress: (id: string, positionSeconds: number, durationSeconds: number) => podcastProgressService.save({ episodeId: id, positionSeconds, durationSeconds }),
   clearPlaybackProgress: (id: string) => podcastProgressService.clear(id),
+  markPodcastEpisodeListened: (id: string, durationSeconds: number) => podcastProgressService.save({ episodeId: id, positionSeconds: durationSeconds, durationSeconds }),
+  markPodcastEpisodeUnlistened: (id: string) => podcastProgressService.clear(id),
 };
