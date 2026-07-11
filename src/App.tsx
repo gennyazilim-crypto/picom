@@ -81,7 +81,8 @@ import { feedbackService } from "./services/feedbackService";
 import { loggingService } from "./services/loggingService";
 import { menuService, type MenuActionPayload } from "./services/menuService";
 import { dataSourceService } from "./services/dataSourceService";
-import { settingsService } from "./services/settingsService";
+import { settingsService, type AppearanceSettings, type ThemeMode } from "./services/settingsService";
+import { appearanceService } from "./services/appearanceService";
 import { shortcutService } from "./services/shortcutService";
 import { trayService, type TrayStatus } from "./services/trayService";
 import { maintenanceStatusService } from "./services/maintenanceStatusService";
@@ -343,11 +344,17 @@ export function App() {
     return record && crashRecoveryService.shouldShowRecoveryDialog() ? record : null;
   });
   const [safeMode, setSafeMode] = useState<SafeModeState>(startupSafeMode);
-  const [theme, setTheme] = useState<"light" | "dark">(saved.theme);
+  const [appearanceSettings, setAppearanceSettings] = useState<AppearanceSettings>(saved.appearanceSettings);
+  const [theme, setTheme] = useState<ThemeMode>(() => startupSafeMode.active ? "light" : appearanceService.resolveTheme(saved.appearanceSettings.themeMode));
   const [firstLaunchSetupCompleted, setFirstLaunchSetupCompleted] = useState(saved.firstLaunchSetupCompleted);
   const [accessibilitySettings, setAccessibilitySettings] = useState(saved.accessibilitySettings);
   const [maintenanceStatus, setMaintenanceStatus] = useState(() => maintenanceStatusService.getSnapshot());
   const [profileSettings, setProfileSettings] = useState(saved.profileSettings);
+  const applyManualTheme = (nextTheme: ThemeMode) => {
+    setTheme(nextTheme);
+    setAppearanceSettings(settingsService.updateAppearanceSettings({ themeMode: nextTheme }).appearanceSettings);
+  };
+  const toggleTheme = () => applyManualTheme(theme === "light" ? "dark" : "light");
   const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>("online");
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
@@ -978,13 +985,12 @@ export function App() {
   useEffect(() => { notificationPolicyStateService.setDoNotDisturb(trayPresenceStatus === "dnd"); }, [trayPresenceStatus]);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.dataset.highContrast = accessibilitySettings.highContrast ? "true" : "false";
-    document.documentElement.dataset.reducedMotion = accessibilitySettings.reducedMotion ? "true" : "false";
-    document.documentElement.dataset.largerText = accessibilitySettings.largerText ? "true" : "false";
-    document.documentElement.dataset.focusRingStrong = accessibilitySettings.focusRingStrong ? "true" : "false";
-    settingsService.updateSettings({ theme, accessibilitySettings });
-  }, [accessibilitySettings, theme]);
+    appearanceService.applyDocumentPreferences(theme, appearanceSettings, accessibilitySettings);
+    settingsService.updateSettings({ theme, accessibilitySettings, appearanceSettings });
+  }, [accessibilitySettings, appearanceSettings, theme]);
+  useEffect(() => appearanceService.subscribeToSystemTheme((systemTheme) => {
+    if (appearanceSettings.themeMode === "system") setTheme(systemTheme);
+  }), [appearanceSettings.themeMode]);
   useEffect(() => { if (authSession?.user?.id) void settingsService.hydrateAccountSettings(); }, [authSession?.user?.id]);
 
   useEffect(() => {
@@ -1032,7 +1038,8 @@ export function App() {
   const resetSafeModeSettings = useCallback(() => {
     void safeModeService.resetSettings().then((result) => {
       const defaults = settingsService.getDefaultSettings();
-      setTheme(defaults.theme);
+      setAppearanceSettings(defaults.appearanceSettings);
+      setTheme(appearanceService.resolveTheme(defaults.appearanceSettings.themeMode));
       setAccessibilitySettings(defaults.accessibilitySettings);
       setProfileSettings(defaults.profileSettings);
       pushToast(result.message, "success");
@@ -1067,7 +1074,8 @@ export function App() {
   const resetSettingsFromCrashRecovery = useCallback(() => {
     void safeModeService.resetSettings().then((result) => {
       const defaults = settingsService.getDefaultSettings();
-      setTheme(defaults.theme);
+      setAppearanceSettings(defaults.appearanceSettings);
+      setTheme(appearanceService.resolveTheme(defaults.appearanceSettings.themeMode));
       setAccessibilitySettings(defaults.accessibilitySettings);
       setProfileSettings(defaults.profileSettings);
       crashRecoveryService.clearCrashState();
@@ -1607,7 +1615,7 @@ export function App() {
         label: "Toggle theme",
         detail: theme === "light" ? "Switch to dark" : "Switch to light",
         run: () => {
-          setTheme(theme === "light" ? "dark" : "light");
+          toggleTheme();
           closePalette();
         },
       },
@@ -2217,8 +2225,8 @@ export function App() {
     };
     setProfileSettings(nextProfileSettings);
     setFollowedUserIds(completion.followedUserIds);
-    setTheme(completion.theme);
-    settingsService.updateSettings({ theme: completion.theme, profileSettings: nextProfileSettings });
+    applyManualTheme(completion.theme);
+    settingsService.updateSettings({ theme: completion.theme, appearanceSettings: { ...appearanceSettings, themeMode: completion.theme }, profileSettings: nextProfileSettings });
     setOnboardingPhase("complete");
     if (completion.startChoice === "createCommunity") setCreateCommunityOpen(true);
     if (completion.startChoice === "joinInvite" && completion.inviteCode) setPendingInviteCode(completion.inviteCode);
@@ -2235,8 +2243,8 @@ export function App() {
   if (!safeMode.active && !firstLaunchSetupCompleted) {
     return (
       <DesktopAppShell>
-        <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
-        <FirstLaunchSetup theme={theme} onThemeChange={setTheme} onComplete={finishDesktopFirstLaunchSetup} />
+        <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
+        <FirstLaunchSetup theme={theme} onThemeChange={applyManualTheme} onComplete={finishDesktopFirstLaunchSetup} />
       </DesktopAppShell>
     );
   }
@@ -2245,7 +2253,7 @@ export function App() {
     return (
       <>
         <DesktopAppShell>
-          <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
+          <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
           {maintenanceStatus.status === "maintenance" ? (
             <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} onOpenStatusPage={openSystemStatusPage} />
           ) : authView === "login" ? (
@@ -2253,7 +2261,7 @@ export function App() {
               theme={theme}
               loading={!authReady || authLoading}
               error={authError}
-              onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")}
+              onToggleTheme={toggleTheme}
               onSubmit={handleLogin}
               onPasswordResetRequest={handlePasswordResetRequest}
               recoveryMode={passwordRecoveryMode}
@@ -2270,7 +2278,7 @@ export function App() {
               theme={theme}
               loading={!authReady || authLoading}
               error={authError}
-              onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")}
+              onToggleTheme={toggleTheme}
               onSubmit={handleRegister}
               onSwitchToLogin={() => {
                 clearAuthError();
@@ -2285,17 +2293,17 @@ export function App() {
   }
 
   if (legalAcceptancePhase === "checking" && authSession.user) {
-    return <DesktopAppShell><WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} /><main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="lock" size="xl" /></span><strong>Checking policy version...</strong></main></DesktopAppShell>;
+    return <DesktopAppShell><WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} /><main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="lock" size="xl" /></span><strong>Checking policy version...</strong></main></DesktopAppShell>;
   }
 
   if (legalAcceptancePhase === "required" && authSession.user) {
-    return <DesktopAppShell><WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} /><TermsReacceptPrompt loading={legalAcceptanceLoading} error={legalAcceptanceError} onAccept={() => void acceptUpdatedLegalTerms()} onSignOut={() => void handleLogout()} /></DesktopAppShell>;
+    return <DesktopAppShell><WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} /><TermsReacceptPrompt loading={legalAcceptanceLoading} error={legalAcceptanceError} onAccept={() => void acceptUpdatedLegalTerms()} onSignOut={() => void handleLogout()} /></DesktopAppShell>;
   }
 
   if (onboardingPhase === "checking" && authSession.user) {
     return (
       <DesktopAppShell>
-        <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
+        <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
         <main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="home" size="xl" /></span><strong>Preparing your Picom workspace…</strong></main>
       </DesktopAppShell>
     );
@@ -2305,7 +2313,7 @@ export function App() {
     return (
       <>
         <DesktopAppShell>
-          <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={() => undefined} />
+          <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
           <DeferredViewBoundary label="Preparing onboarding">
           <OnboardingFlow
             userId={authSession.user.id}
@@ -2315,7 +2323,7 @@ export function App() {
             initialFollowedUserIds={followedUserIds}
             suggestions={followSuggestionsV2.length ? followSuggestionsV2.map((suggestion) => suggestion.member) : mockFollowSuggestions.filter((member) => !blockedUserIds.includes(member.userId) && !followedUserIds.includes(member.userId))}
             theme={theme}
-            onThemeChange={setTheme}
+            onThemeChange={applyManualTheme}
             onComplete={finishFirstRunOnboarding}
           />
           </DeferredViewBoundary>
@@ -2682,7 +2690,7 @@ export function App() {
   return (
     <>
       <DesktopAppShell>
-        <WindowTitleBar theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} onOpenSearch={openPalette} onOpenNotifications={() => setNotificationCenterOpen((open) => !open)} notificationUnreadCount={notificationCenterItems.filter((item) => !item.readAt).length} />
+        <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={openPalette} onOpenNotifications={() => setNotificationCenterOpen((open) => !open)} notificationUnreadCount={notificationCenterItems.filter((item) => !item.readAt).length} />
         {maintenanceStatus.status === "maintenance" ? (
           <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} onOpenStatusPage={openSystemStatusPage} />
         ) : (
@@ -3171,7 +3179,7 @@ export function App() {
           pushToast("Channel deleted.", "success");
         }}
       /> : null}
-      {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} onLogout={handleLogout} currentUsername={currentUser.username} currentEmail={authSession?.user?.email} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /></Suspense> : null}
+      {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} appearanceSettings={appearanceSettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onAppearanceSettingsChange={(next) => { setAppearanceSettings(next); setTheme(appearanceService.resolveTheme(next.themeMode)); }} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} onLogout={handleLogout} currentUsername={currentUser.username} currentEmail={authSession?.user?.email} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /></Suspense> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {memberModerationTarget ? <MemberModerationModal
         member={memberModerationTarget.member}

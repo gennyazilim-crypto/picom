@@ -12,7 +12,7 @@ function assertIncludes(text, expected, label) {
 
 const doc = read("docs/localization-qa-tr-en.md");
 const tabs = read("src/components/MentionFeedTabs.tsx");
-const styles = read("src/styles.css");
+const styles = read("src/styles.css") + read("src/components/MentionFeedMain.css");
 const dateTimeService = read("src/services/dateTimeService.ts");
 
 for (const expected of [
@@ -51,7 +51,7 @@ for (const expected of ["navigator.languages?.[0]", "resolvedOptions().locale", 
   assertIncludes(dateTimeService, expected, "locale-aware dateTimeService");
 }
 
-for (const expected of ["does not yet have a complete central runtime message catalog", "Never translate user-generated", "pseudo-locale", "UTF-8"]) {
+for (const expected of ["typed central runtime message catalog", "Never translate user-generated", "pseudo-locale", "UTF-8"]) {
   assertIncludes(doc, expected, "extended localization policy");
 }
 

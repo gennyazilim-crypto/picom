@@ -12,7 +12,9 @@ function assertIncludes(text, expected, label) {
 
 const settingsService = read("src/services/settingsService.ts");
 const app = read("src/App.tsx");
+const appearance = read("src/services/appearanceService.ts");
 const settingsModal = read("src/components/SettingsModal.tsx");
+const localization = read("src/services/localizationService.ts");
 const styles = read("src/styles.css");
 const doc = read("docs/high-contrast-reduced-motion.md");
 
@@ -33,7 +35,7 @@ for (const expected of [
   "dataset.largerText",
   "dataset.focusRingStrong",
 ]) {
-  assertIncludes(app, expected, "App root accessibility dataset");
+  assertIncludes(app + appearance, expected, "App root accessibility dataset");
 }
 
 for (const expected of [
@@ -42,7 +44,7 @@ for (const expected of [
   "Larger text",
   "Strong focus ring",
 ]) {
-  assertIncludes(settingsModal, expected, "SettingsModal accessibility controls");
+  assertIncludes(settingsModal + localization, expected, "SettingsModal accessibility controls");
 }
 
 for (const expected of [

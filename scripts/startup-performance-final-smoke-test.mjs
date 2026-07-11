@@ -11,7 +11,7 @@ const app = read("src/App.tsx");
 const docs = read("docs/startup-performance-final.md");
 
 assert(index.includes("/theme-bootstrap.js") && index.indexOf("/theme-bootstrap.js") < index.indexOf("/src/main.tsx"), "Theme bootstrap must run before the renderer entry");
-assert(bootstrap.includes('localStorage.getItem("picom-settings")') && bootstrap.includes("document.documentElement.dataset.theme"), "Early theme bootstrap is incomplete");
+assert(bootstrap.includes('localStorage.getItem("picom-settings")') && bootstrap.includes("root.dataset.theme") && bootstrap.includes("prefers-color-scheme: dark"), "Early theme bootstrap is incomplete");
 assert(main.includes("scheduleOptionalRendererServices") && main.includes("requestIdleCallback") && main.includes('import("./services/sleepWakeResumeService")'), "Optional renderer services are not deferred");
 assert(main.indexOf("ReactDOM.createRoot") < main.lastIndexOf("scheduleOptionalRendererServices(safeMode.active)"), "Optional services must be scheduled after React render");
 

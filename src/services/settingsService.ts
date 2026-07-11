@@ -4,6 +4,11 @@ import type { Json } from "./supabase/database.types";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 
 export type ThemeMode = "light" | "dark";
+export type ThemePreference = ThemeMode | "system";
+export type UiLanguage = "en" | "tr";
+export type DesktopDensity = "comfortable" | "compact";
+export type DateStylePreference = "system" | "numeric" | "descriptive";
+export type TimeFormatPreference = "system" | "12h" | "24h";
 import type { NotificationDigestMode } from "./notificationDigestService";
 export const settingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"] as const;
 export type SettingsSection = typeof settingsSections[number];
@@ -12,6 +17,7 @@ export const settingsPersistenceRegistry = {
   theme: "local-device",
   firstLaunchSetupCompleted: "local-device",
   accessibilitySettings: "local-device",
+  appearanceSettings: "local-device",
   notificationSettings: "user-account-synced",
   profileSettings: "user-account-synced",
   communityNotificationPolicy: "community-specific",
@@ -50,7 +56,8 @@ export interface ProfileSettings {
   tags: string[];
 }
 export interface AccessibilitySettings { highContrast: boolean; reducedMotion: boolean; largerText: boolean; focusRingStrong: boolean; }
-export interface PicomSettings { schemaVersion: number; theme: ThemeMode; firstLaunchSetupCompleted: boolean; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; accessibilitySettings: AccessibilitySettings; }
+export interface AppearanceSettings { themeMode: ThemePreference; language: UiLanguage; density: DesktopDensity; dateStyle: DateStylePreference; timeFormat: TimeFormatPreference; }
+export interface PicomSettings { schemaVersion: number; theme: ThemeMode; firstLaunchSetupCompleted: boolean; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; accessibilitySettings: AccessibilitySettings; appearanceSettings: AppearanceSettings; }
 type StoredPicomSettings = Partial<PicomSettings> & Record<string, unknown>;
 type LocalSettingsMigration = {
   fromVersion: number;
@@ -61,7 +68,7 @@ type LocalSettingsMigration = {
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
 const initialSectionKey = "picom:settings:initial-section";
-const currentSchemaVersion = 7;
+const currentSchemaVersion = 8;
 const listeners = new Set<(settings: PicomSettings) => void>();
 let cachedSettings: PicomSettings | null = null;
 const defaults: PicomSettings = {
@@ -96,6 +103,7 @@ const defaults: PicomSettings = {
     tags: [],
   },
   accessibilitySettings: { highContrast: false, reducedMotion: false, largerText: false, focusRingStrong: false },
+  appearanceSettings: { themeMode: "system", language: "en", density: "comfortable", dateStyle: "system", timeFormat: "system" },
 };
 
 export const localSettingsMigrations: LocalSettingsMigration[] = [
@@ -174,6 +182,19 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
     toVersion: 7,
     migrate: (settings) => ({ ...settings, schemaVersion: 7 }),
   },
+  {
+    fromVersion: 7,
+    toVersion: 8,
+    migrate: (settings) => ({
+      ...settings,
+      schemaVersion: 8,
+      appearanceSettings: {
+        ...defaults.appearanceSettings,
+        ...(typeof settings.appearanceSettings === "object" && settings.appearanceSettings ? settings.appearanceSettings : {}),
+        themeMode: settings.theme === "dark" ? "dark" : settings.theme === "light" ? "light" : "system",
+      },
+    }),
+  },
 ];
 
 function getStoredSchemaVersion(settings: StoredPicomSettings): number {
@@ -205,6 +226,15 @@ function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
     accessibilitySettings: {
       ...defaults.accessibilitySettings,
       ...(settings.accessibilitySettings ?? {}),
+    },
+    appearanceSettings: {
+      ...defaults.appearanceSettings,
+      ...(settings.appearanceSettings ?? {}),
+      themeMode: settings.appearanceSettings?.themeMode === "light" || settings.appearanceSettings?.themeMode === "dark" || settings.appearanceSettings?.themeMode === "system" ? settings.appearanceSettings.themeMode : defaults.appearanceSettings.themeMode,
+      language: settings.appearanceSettings?.language === "tr" ? "tr" : "en",
+      density: settings.appearanceSettings?.density === "compact" ? "compact" : "comfortable",
+      dateStyle: settings.appearanceSettings?.dateStyle === "numeric" || settings.appearanceSettings?.dateStyle === "descriptive" ? settings.appearanceSettings.dateStyle : "system",
+      timeFormat: settings.appearanceSettings?.timeFormat === "12h" || settings.appearanceSettings?.timeFormat === "24h" ? settings.appearanceSettings.timeFormat : "system",
     },
   };
 }
@@ -244,6 +274,7 @@ function cloneSettings(settings: PicomSettings): PicomSettings {
     notificationSettings: { ...settings.notificationSettings, quietHours: { ...settings.notificationSettings.quietHours } },
     profileSettings: { ...settings.profileSettings, tags: [...settings.profileSettings.tags] },
     accessibilitySettings: { ...settings.accessibilitySettings },
+    appearanceSettings: { ...settings.appearanceSettings },
   };
 }
 
@@ -334,6 +365,15 @@ export const settingsService = {
     return this.updateSettings({
       accessibilitySettings: {
         ...current.accessibilitySettings,
+        ...partial,
+      },
+    });
+  },
+  updateAppearanceSettings(partial: Partial<AppearanceSettings>) {
+    const current = this.getSettings();
+    return this.updateSettings({
+      appearanceSettings: {
+        ...current.appearanceSettings,
         ...partial,
       },
     });

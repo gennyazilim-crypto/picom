@@ -5,7 +5,9 @@ import type { Community } from "../types/community";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { authService } from "../services/authService";
 import { menuService } from "../services/menuService";
-import { settingsSections, settingsService, type AccessibilitySettings, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";
+import { settingsSections, settingsService, type AccessibilitySettings, type AppearanceSettings, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";
+import { appearanceService } from "../services/appearanceService";
+import { localizationService, type LocalizationKey } from "../services/localizationService";
 import { statusPageService } from "../services/statusPageService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
 import { socialAuthService, type SocialAuthProvider, type SocialProviderAccountState } from "../services/auth/socialAuthService";
@@ -71,10 +73,12 @@ function formatCacheSize(bytes: number | null): string {
 type SettingsModalProps = {
   theme: "light" | "dark";
   accessibilitySettings: AccessibilitySettings;
+  appearanceSettings: AppearanceSettings;
   profileSettings: ProfileSettings;
   communities: Community[];
   onThemeChange: (theme: "light" | "dark") => void;
   onAccessibilitySettingsChange: (settings: AccessibilitySettings) => void;
+  onAppearanceSettingsChange: (settings: AppearanceSettings) => void;
   onProfileSettingsChange: (settings: ProfileSettings) => void;
   onClose: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
@@ -94,7 +98,7 @@ type SettingsModalProps = {
   };
 };
 
-export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState<SettingsSection>(settingsService.consumeInitialSection);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
@@ -216,6 +220,12 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     const next = settingsService.updateAccessibilitySettings(partial).accessibilitySettings;
     onAccessibilitySettingsChange(next);
     pushToast("Accessibility setting saved locally.", "success");
+  };
+  const updateAppearance = (partial: Partial<AppearanceSettings>) => {
+    const next = settingsService.updateAppearanceSettings(partial).appearanceSettings;
+    onAppearanceSettingsChange(next);
+    if (partial.themeMode) onThemeChange(appearanceService.resolveTheme(next.themeMode));
+    pushToast(next.language === "tr" ? "Görünüm tercihi kaydedildi." : "Appearance preference saved.", "success");
   };
   const updateSafetySettings = (partial: Partial<UserSafetySettings>) => {
     const next = userSafetyCenterService.updateSettings(partial);
@@ -443,72 +453,87 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
     pushToast(`Data export downloaded: ${result.data.fileName}.`, "success");
   };
 
+  const t = (key: LocalizationKey) => localizationService.translate(key, appearanceSettings.language);
+  const sectionLabel = (section: SettingsSection) => localizationService.translateSettingsSection(section, appearanceSettings.language);
+
   return (
     <>
     <div className="modal-backdrop" onMouseDown={onClose}>
       <section ref={dialogRef} className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
         <aside className="settings-nav">
-          <span className="eyebrow">Settings</span>
+          <span className="eyebrow">{t("settings.title")}</span>
           <h2 id="settings-modal-title">Picom Desktop</h2>
           <div className="settings-tabs">
             {sections.map((section) => (
               <button key={section} className={active === section ? "active" : ""} onClick={() => setActive(section)}>
-                <span className="tab-dot" />{section}
+                <span className="tab-dot" />{sectionLabel(section)}
               </button>
             ))}
           </div>
         </aside>
         <main className="settings-content">
-          <button className="icon-button modal-close" aria-label="Close settings" onClick={onClose}>
+          <button className="icon-button modal-close" aria-label={t("settings.close")} onClick={onClose}>
             <AppIcon name={overlayIcons.close} size="lg" />
           </button>
-          <span className="eyebrow">{active}</span>
-          <h2>{active}</h2>
+          <span className="eyebrow">{sectionLabel(active)}</span>
+          <h2>{sectionLabel(active)}</h2>
           {active === "Appearance" ? (
             <div className="appearance-settings-stack">
+              <p>{t("appearance.description")}</p>
               <div className="theme-grid">
-                <button className={`theme-card ${theme === "light" ? "selected" : ""}`} onClick={() => onThemeChange("light")}>
+                <button className={`theme-card ${appearanceSettings.themeMode === "light" ? "selected" : ""}`} onClick={() => updateAppearance({ themeMode: "light" })}>
                   <span className="theme-preview light-preview" />
-                  <strong>Light Theme</strong>
-                  <small>Soft shell with clean white surfaces.</small>
+                  <strong>{t("theme.light")}</strong>
+                  <small>{t("theme.lightHint")}</small>
                 </button>
-                <button className={`theme-card ${theme === "dark" ? "selected" : ""}`} onClick={() => onThemeChange("dark")}>
+                <button className={`theme-card ${appearanceSettings.themeMode === "dark" ? "selected" : ""}`} onClick={() => updateAppearance({ themeMode: "dark" })}>
                   <span className="theme-preview dark-preview" />
-                  <strong>Dark Theme</strong>
-                  <small>Charcoal shell with separated surfaces.</small>
+                  <strong>{t("theme.dark")}</strong>
+                  <small>{t("theme.darkHint")}</small>
+                </button>
+                <button className={`theme-card ${appearanceSettings.themeMode === "system" ? "selected" : ""}`} onClick={() => updateAppearance({ themeMode: "system" })}>
+                  <span className={`theme-preview ${theme === "dark" ? "dark-preview" : "light-preview"}`} />
+                  <strong>{t("theme.system")}</strong>
+                  <small>{t("theme.systemHint")}</small>
                 </button>
               </div>
               <div className="accessibility-card" aria-label="Accessibility display options">
-                <strong>Accessibility display options</strong>
-                <p>Local desktop preferences for contrast, motion, text scale, and focus visibility.</p>
+                <strong>{t("accessibility.title")}</strong>
+                <p>{t("accessibility.description")}</p>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>High contrast mode</strong>
-                    <small>Strengthens text, borders, and focus rings using Picom design tokens.</small>
+                    <strong>{t("accessibility.highContrast")}</strong>
+                    <small>{t("accessibility.highContrastHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.highContrast} onChange={(event) => updateAccessibility({ highContrast: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>Reduced motion</strong>
-                    <small>Reduces non-essential transitions, animations, and smooth scrolling.</small>
+                    <strong>{t("accessibility.reducedMotion")}</strong>
+                    <small>{t("accessibility.reducedMotionHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.reducedMotion} onChange={(event) => updateAccessibility({ reducedMotion: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>Larger text</strong>
-                    <small>Gently increases base desktop text scale without changing layout.</small>
+                    <strong>{t("accessibility.largerText")}</strong>
+                    <small>{t("accessibility.largerTextHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.largerText} onChange={(event) => updateAccessibility({ largerText: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>Strong focus ring</strong>
-                    <small>Makes keyboard focus indicators more visible.</small>
+                    <strong>{t("accessibility.focusRing")}</strong>
+                    <small>{t("accessibility.focusRingHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.focusRingStrong} onChange={(event) => updateAccessibility({ focusRingStrong: event.target.checked })} />
                 </label>
+              </div>
+              <div className="accessibility-card" aria-label="Language date and desktop density">
+                <label className="settings-toggle-row"><span><strong>{t("appearance.language")}</strong><small>{t("appearance.languageHint")}</small></span><select value={appearanceSettings.language} onChange={(event) => updateAppearance({ language: event.target.value as AppearanceSettings["language"] })}><option value="en">English</option><option value="tr">Türkçe</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{t("appearance.density")}</strong><small>{t("appearance.densityHint")}</small></span><select value={appearanceSettings.density} onChange={(event) => updateAppearance({ density: event.target.value as AppearanceSettings["density"] })}><option value="comfortable">{appearanceSettings.language === "tr" ? "Rahat" : "Comfortable"}</option><option value="compact">{appearanceSettings.language === "tr" ? "Kompakt" : "Compact"}</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{t("appearance.dateStyle")}</strong><small>{t("appearance.dateStyleHint")}</small></span><select value={appearanceSettings.dateStyle} onChange={(event) => updateAppearance({ dateStyle: event.target.value as AppearanceSettings["dateStyle"] })}><option value="system">{appearanceSettings.language === "tr" ? "Sistem" : "System"}</option><option value="numeric">{appearanceSettings.language === "tr" ? "Sayısal" : "Numeric"}</option><option value="descriptive">{appearanceSettings.language === "tr" ? "Açıklamalı" : "Descriptive"}</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{t("appearance.timeFormat")}</strong><small>{t("appearance.timeFormatHint")}</small></span><select value={appearanceSettings.timeFormat} onChange={(event) => updateAppearance({ timeFormat: event.target.value as AppearanceSettings["timeFormat"] })}><option value="system">{appearanceSettings.language === "tr" ? "Sistem" : "System"}</option><option value="12h">12 {appearanceSettings.language === "tr" ? "saat" : "hour"}</option><option value="24h">24 {appearanceSettings.language === "tr" ? "saat" : "hour"}</option></select></label>
               </div>
             </div>
           ) : active === "Account" ? (

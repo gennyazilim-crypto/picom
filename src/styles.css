@@ -1791,6 +1791,22 @@ body{
   gap: 18px;
 }
 
+:root[data-density="compact"] {
+  --space-2: 7px;
+  --space-3: 10px;
+  --space-4: 14px;
+  --space-5: 17px;
+  --space-6: 20px;
+  --space-7: 24px;
+}
+
+:root[data-density="compact"] :where(.channel-item, .member-row, .session-card, .settings-toggle-row) { padding-block: 7px; }
+:root[data-density="compact"] .message-item { padding-block: 8px; }
+
+.appearance-settings-stack .theme-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .accessibility-card {
   display: grid;
   gap: 12px;

@@ -62,6 +62,6 @@ assertIncludes(doc, "Turkish", "date/time docs");
 if (service.includes('"Invalid date"') || service.includes('"Invalid time"')) {
   throw new Error("dateTimeService contains a hardcoded English invalid-date fallback.");
 }
-assertIncludes(service, '"—"', "language-neutral invalid date fallback");
+assertIncludes(service, '"\\u2014"', "language-neutral invalid date fallback");
 
 console.log("Date/time/timezone formatting smoke test passed.");

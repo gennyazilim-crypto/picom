@@ -13,6 +13,7 @@
     "settings:architecture:smoke": "node scripts/settings-architecture-persistence-smoke.mjs",
     "settings:account-security:smoke": "node scripts/account-security-settings-completion-smoke.mjs",
     "settings:profile-privacy:smoke": "node scripts/profile-privacy-settings-full-mvp-smoke.mjs",
+    "settings:appearance-accessibility:smoke": "node scripts/appearance-accessibility-language-settings-smoke.mjs",
     "voice:devices:test": "node scripts/voice-device-selection-smoke.mjs",
     "voice:recovery:test": "node scripts/voice-reconnect-recovery-smoke.mjs",
     "screen-share:recovery:test": "node scripts/screen-share-permission-recovery-smoke.mjs",

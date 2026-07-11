@@ -4,7 +4,7 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
 const hook = read("src/hooks/useDialogFocusTrap.ts");
 for (const marker of ["isTopmostDialog", "[data-dialog-initial-focus], [autofocus]", "contains(document.activeElement)", "previousFocus?.focus()"])
   assert(hook.includes(marker), `Focus trap is missing ${marker}`);
-const modalFiles = ["src/components/ChannelManagementModals.tsx", "src/components/CommunityInviteModals.tsx", "src/components/CreateChannelModal.tsx", "src/components/CreateCommunityModal.tsx", "src/components/CreatePollModal.tsx", "src/components/DeveloperPortalView.tsx", "src/components/FollowedPeopleStoriesHeader.tsx", "src/components/MemberModerationModal.tsx", "src/components/ReportModal.tsx", "src/components/feedback/FeedbackModal.tsx"];
+const modalFiles = ["src/components/ChannelManagementModals.tsx", "src/components/CommunityInviteModals.tsx", "src/components/CreateChannelModal.tsx", "src/components/CreateCommunityModal.tsx", "src/components/CreatePollModal.tsx", "src/components/DeveloperPortalView.tsx", "src/components/StoryViewerModal.tsx", "src/components/MemberModerationModal.tsx", "src/components/ReportModal.tsx", "src/components/feedback/FeedbackModal.tsx"];
 for (const path of modalFiles) { const source = read(path); assert(source.includes("useDialogFocusTrap"), `${path} must use the shared dialog focus trap`); assert(source.includes('aria-modal="true"'), `${path} must expose modal semantics`); assert(source.includes("tabIndex={-1}"), `${path} must provide a programmatic focus fallback`); }
 const icon = read("src/components/AppIcon.tsx");
 assert(icon.includes("aria-hidden={ariaLabel ? undefined : true}"), "Decorative AppIcon instances must be hidden from screen readers");

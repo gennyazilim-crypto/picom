@@ -4,7 +4,7 @@ Picom is a desktop-first Electron app for Windows, Linux, and macOS. This QA che
 
 ## Current implementation status
 
-Picom does not yet have a complete central runtime message catalog or language selector, so it does not claim full English/Turkish localization. Existing Turkish product labels must remain valid UTF-8, locale-sensitive dates use `dateTimeService`, and any future extraction must follow the approved catalog/review plan. Where no i18n catalog exists, English source copy is tracked as an explicit migration backlog rather than presented as translated UI.
+Picom now has a typed central runtime message catalog and an English/Turkish language selector. Settings > Appearance is fully catalog-backed, document language and locale-sensitive dates use `appearanceService` plus `dateTimeService`, and remaining Picom-owned legacy strings follow the same catalog/review plan. Existing Turkish product labels must remain valid UTF-8; English fallback is explicit rather than presented as translated copy.
 
 ## Scope
 
@@ -59,7 +59,7 @@ Picom does not yet have a complete central runtime message catalog or language s
 ## UTF-8 and future-locale checks
 
 - Source, scripts, packaged assets, diagnostics, and support exports must preserve UTF-8; reject replacement glyphs or mojibake sequences.
-- Use BCP 47 locale tags and deterministic English fallback only after the central catalog is approved.
+- Use BCP 47 locale tags and the approved deterministic English fallback for every new catalog key.
 - A future pseudo-locale should expand labels by 30-40% and preserve interpolation markers without changing user content.
 - Turkish casing must not be implemented with English-only string assumptions; search/collation behavior needs locale-specific product approval before changing identifiers.
 - Legal, safety, consent, deletion, and moderation copy requires human translation and version-level review; machine output is not production approval.

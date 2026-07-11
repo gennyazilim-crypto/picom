@@ -1,1 +1,21 @@
-import{readFile}from"node:fs/promises";const[d,t,p]=await Promise.all([readFile("docs/localization-expansion.md","utf8"),readFile("src/services/dateTimeService.ts","utf8"),readFile("package.json","utf8")]);const c=[[d.includes("not approved")&&d.includes("no complete central message catalog/runtime"),"honest status"],[d.includes("BCP 47")&&d.includes("typed `t(key, values)`")&&d.includes("English fallback"),"architecture"],[d.includes("user-generated")&&d.includes("never translated automatically"),"content"],[d.includes("Machine translation")&&d.includes("qualified human translation")&&d.includes("exact version/hash"),"legal"],[d.includes("1100x700")&&d.includes("pseudo-locale")&&d.includes("No mobile"),"desktop QA"],[t.includes("Intl.DateTimeFormat")&&t.includes("Intl.RelativeTimeFormat")&&t.includes("navigator.language"),"date locale"],[p.includes('"localization:expansion:smoke"'),"command"]];const f=c.filter(([o])=>!o);if(f.length){for(const[,l]of f)console.error(`FAIL: ${l}`);process.exit(1)}for(const[,l]of c)console.log(`PASS: ${l}`);
+import { readFile } from "node:fs/promises";
+const [doc, localization, settings, appearance, dateTime, packageJson] = await Promise.all([
+  readFile("docs/localization-expansion.md", "utf8"),
+  readFile("src/services/localizationService.ts", "utf8"),
+  readFile("src/services/settingsService.ts", "utf8"),
+  readFile("src/services/appearanceService.ts", "utf8"),
+  readFile("src/services/dateTimeService.ts", "utf8"),
+  readFile("package.json", "utf8"),
+]);
+const checks = [
+  [doc.includes("typed catalog") && doc.includes("English is the fallback"), "runtime architecture"],
+  [doc.includes("User-generated") && doc.includes("never translated"), "user content boundary"],
+  [localization.includes("UiLanguage") && localization.includes("const tr:") && localization.includes("const en:"), "TR/EN catalog"],
+  [settings.includes("language: UiLanguage") && settings.includes("appearanceSettings"), "persisted language"],
+  [appearance.includes("root.lang = appearance.language") && appearance.includes("dateTimeService.configure"), "document and date integration"],
+  [dateTime.includes('"tr-TR"') && dateTime.includes('"en-US"'), "date locale"],
+  [packageJson.includes('"localization:expansion:smoke"'), "command"],
+];
+const failed = checks.filter(([ok]) => !ok);
+if (failed.length) { for (const [, label] of failed) console.error("FAIL: " + label); process.exit(1); }
+for (const [, label] of checks) console.log("PASS: " + label);
