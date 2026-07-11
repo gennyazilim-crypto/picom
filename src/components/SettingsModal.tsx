@@ -330,7 +330,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   const updateLockAfterInactivity = (enabled: boolean) => {
     const next = appLockService.updateSettings({ lockAfterInactivityEnabled: enabled });
     setAppLockSettings(next);
-    pushToast(enabled ? "Coming soon: inactivity lock preference enabled locally." : "Inactivity lock preference disabled.", "info");
+    pushToast(enabled ? "Inactivity lock preference enabled locally." : "Inactivity lock preference disabled.", "info");
   };
   const checkForUpdatesPlaceholder = async () => {
     const next = await updateService.checkForUpdatesPlaceholder();
@@ -783,7 +783,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <label className="settings-toggle-row">
                 <span>
                   <strong>Read receipts</strong>
-                  <small>Future read receipts should respect this privacy setting by default.</small>
+                  <small>Controls whether eligible conversations may publish read receipts; detailed reader lists remain disabled.</small>
                 </span>
                 <input type="checkbox" checked={safetySettings.enableReadReceipts} onChange={(event) => updateSafetySettings({ enableReadReceipts: event.target.checked })} />
               </label>
@@ -1052,7 +1052,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <div className="settings-status-card" aria-label="Native app menu foundation">
                 <span>Native app menu</span>
                 <strong>Hidden chrome, safe actions</strong>
-                <small>The operating-system menu remains hidden for the custom Picom titlebar. Future menu entries route through menuService instead of direct Electron calls.</small>
+                <small>The operating-system menu remains hidden for the custom Picom titlebar. Desktop menu actions route through menuService instead of direct Electron calls.</small>
               </div>
               {import.meta.env.DEV ? <div className="settings-actions-row">
                 <button onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
@@ -1086,7 +1086,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <label className="settings-toggle-row"><span><strong>Enable diagnostic reports</strong><small>Off by default. Stores a bounded redacted local crash envelope; no provider or DSN is configured.</small></span><input type="checkbox" checked={crashReportingEnabled} onChange={(event) => { const enabled = crashReporterService.setEnabled(event.target.checked); setCrashReportingEnabled(enabled); pushToast(enabled ? "Diagnostic reports enabled locally." : "Diagnostic reports disabled and local queue cleared.", "success"); }} /></label>
               {import.meta.env.DEV ? <div className="settings-actions-row"><button onClick={() => { const record = crashReporterService.captureException(new Error("Picom development crash report test"), { source: "settings-test", authorization: "Bearer redaction-test" }); pushToast(record ? "Redacted test error captured locally." : "Enable diagnostic reports before capturing a test error.", record ? "success" : "info"); }}>Capture test error safely</button><button onClick={() => { const status = crashReporterService.getStatus(); pushToast(`${status.queuedLocalRecords} redacted crash records queued locally.`, "info"); }}>Show crash report status</button></div> : null}
               <div className="settings-actions-row">
-                <button onClick={() => void checkForUpdatesPlaceholder()}>Check for updates (Coming soon)</button>
+                <button type="button" disabled aria-disabled="true" onClick={() => void checkForUpdatesPlaceholder()}>Automatic updates require a signed release endpoint</button>
                 {import.meta.env.DEV ? <><button onClick={() => setUpdateState(updateService.setAvailablePlaceholder())}>Simulate available</button><button onClick={() => setUpdateState(updateService.startDownloadPlaceholder())}>Simulate download</button><button onClick={() => setUpdateState(updateService.setReadyToInstallPlaceholder())}>Simulate ready</button><button onClick={() => simulateUpdateFailure("download")}>Simulate download failure</button><button onClick={() => simulateUpdateFailure("install")}>Simulate install failure</button><button onClick={() => simulateUpdateFailure("error")}>Simulate error</button><button onClick={() => setUpdateState(updateService.setRollbackAvailablePlaceholder())}>Simulate rollback</button></> : null}
                 <button onClick={() => setUpdateState(updateService.retry())}>Retry</button>
                 <button onClick={() => setUpdateState(updateService.clearError())}>Clear error</button>
@@ -1094,7 +1094,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <div className="settings-status-card" aria-label="System status page">
                 <span>System status</span>
                 <strong>{statusPageService.isConfigured() ? statusPageService.getDisplayDomain() : "Not configured"}</strong>
-                <small>Future production deployments can point `VITE_STATUS_PAGE_URL` to a public non-sensitive status page.</small>
+                <small>`VITE_STATUS_PAGE_URL` can point to a public non-sensitive status page when one is configured.</small>
               </div>
               <div className="settings-status-card" aria-label="Launch on startup">
                 <span>Launch on startup</span>
@@ -1110,8 +1110,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Start minimized to tray (Coming soon)</strong>
-                  <small>Prepared for future tray startup behavior; currently stored as a local preference.</small>
+                  <strong>Start minimized to tray</strong>
+                  <small>Applied when launch-on-startup and native tray support are available; stored per device.</small>
                 </span>
                 <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => void updateStartMinimizedToTray(event.target.checked)} />
               </label>
@@ -1125,14 +1125,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <div className="settings-status-card" aria-label="App lock status">
                 <span>App lock</span>
                 <strong>Ctrl + Shift + L</strong>
-                <small>Quick lock hides chat content without storing a password locally. Supabase re-auth unlock is coming later.</small>
+                <small>Quick lock hides chat content without storing a password locally. Account authentication remains managed by Supabase.</small>
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Lock app after inactivity (Coming soon)</strong>
-                  <small>Preference saved locally. Automatic idle locking is intentionally deferred until native idle detection is approved.</small>
+                  <strong>Automatic inactivity lock</strong>
+                  <small>Not available in Full MVP. Use Ctrl + Shift + L to lock Picom immediately.</small>
                 </span>
-                <input type="checkbox" checked={appLockSettings.lockAfterInactivityEnabled} onChange={(event) => updateLockAfterInactivity(event.target.checked)} />
+                <input type="checkbox" checked={appLockSettings.lockAfterInactivityEnabled} onChange={(event) => updateLockAfterInactivity(event.target.checked)} disabled aria-disabled="true" />
               </label>
               <div className="settings-status-card" aria-label="Cache management">
                 <span>Cache management</span>
@@ -1216,8 +1216,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : (
             <div className="placeholder-panel">
-              <strong>{active} (Coming soon)</strong>
-              <p>This section is not enabled in the current desktop release.</p>
+              <strong>Settings section unavailable</strong>
+              <p>Close and reopen Settings. If the problem persists, open Diagnostics and export a redacted report.</p>
             </div>
           )}
         </main>

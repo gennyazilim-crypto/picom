@@ -15,7 +15,7 @@ const checks = [
   [service.includes("restartNormally"), "restart normally action"],
   [main.includes("if (!safeMode.active)"), "bootstrap optional service guard"],
   [boundary.includes("safeModeService.recordStartupCrash"), "error boundary crash count"],
-  [settings.includes("corrupted_settings_placeholder"), "corrupted settings trigger"],
+  [settings.includes("corrupted_local_settings"), "corrupted settings trigger"],
   [app.includes("<SafeModeBanner"), "safe mode banner render"],
   [app.includes("!safeMode.active"), "optional hooks disabled"],
   [banner.includes("Reset settings"), "reset settings action"],

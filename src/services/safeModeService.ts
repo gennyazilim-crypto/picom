@@ -6,7 +6,7 @@ export type SafeModeReason =
   | "manual_flag"
   | "query_flag"
   | "repeated_startup_crash"
-  | "corrupted_settings_placeholder"
+  | "corrupted_local_settings"
   | "local_data_migration_failed";
 
 export type SafeModeState = Readonly<{
@@ -75,7 +75,7 @@ function readForcedReason(): SafeModeReason {
       reason === "manual_flag" ||
       reason === "query_flag" ||
       reason === "repeated_startup_crash" ||
-      reason === "corrupted_settings_placeholder" ||
+      reason === "corrupted_local_settings" ||
       reason === "local_data_migration_failed"
     ) {
       return reason;

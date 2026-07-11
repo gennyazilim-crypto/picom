@@ -346,7 +346,7 @@ function backupInvalidSettings(raw: string, storage: Storage): void {
   try {
     storage.setItem(`${backupKeyPrefix}.${Date.now()}`, JSON.stringify({ reason: "invalid_json", byteLength: raw.length, recoveredAt: new Date().toISOString() }));
     storage.setItem("picom:safe-mode:forced", "true");
-    storage.setItem("picom:safe-mode:reason", "corrupted_settings_placeholder");
+    storage.setItem("picom:safe-mode:reason", "corrupted_local_settings");
     storage.removeItem(key);
   } catch {
     // Safe defaults remain available even when storage recovery is unavailable.

@@ -55,7 +55,7 @@ assert(storage.getItem("picom-settings") === null, "Corrupted settings payload w
 assert(storage.keys().some((key) => key.startsWith("picom-settings.backup.")), "Corrupted settings backup was not created");
 
 let state = safeModeService.getStartupState();
-assert(state.active && state.reason === "corrupted_settings_placeholder", "Corrupted settings did not force Safe Mode");
+assert(state.active && state.reason === "corrupted_local_settings", "Corrupted settings did not force Safe Mode");
 assert(state.disabledServices.includes("Voice paused") && state.disabledServices.includes("Realtime paused"), "Optional service pause list is incomplete");
 
 await safeModeService.resetSettings();

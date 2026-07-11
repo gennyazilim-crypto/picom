@@ -10,7 +10,7 @@ const app = read("src/App.tsx");
 const migration = read("supabase/migrations/20260711148400_user_settings_persistence.sql");
 const databaseTypes = read("src/services/supabase/database.types.ts");
 
-requireText(service, "const currentSchemaVersion = 8", "versioned local schema");
+requireText(service, "const currentSchemaVersion = 9", "versioned local schema");
 requireText(service, "appearanceSettings", "device-local appearance settings");
 for (const scope of ["local-device", "user-account-synced", "community-specific", "server-controlled"]) requireText(service, `\"${scope}\"`, `settings scope ${scope}`);
 requireText(service, "localStore(): Storage | null", "safe local storage boundary");

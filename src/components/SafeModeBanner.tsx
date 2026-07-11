@@ -12,7 +12,7 @@ function getSafeModeReasonLabel(reason: SafeModeState["reason"]): string {
   if (reason === "query_flag") return "Safe mode flag was detected.";
   if (reason === "manual_flag") return "Safe mode was enabled manually.";
   if (reason === "repeated_startup_crash") return "Repeated startup crashes were detected.";
-  if (reason === "corrupted_settings_placeholder") return "Corrupted local settings were reset to safe defaults.";
+  if (reason === "corrupted_local_settings") return "Corrupted local settings were reset to safe defaults.";
   if (reason === "local_data_migration_failed") return "Local data migration could not complete safely.";
   return "Optional services are paused.";
 }
