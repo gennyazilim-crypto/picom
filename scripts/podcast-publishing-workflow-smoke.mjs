@@ -49,7 +49,8 @@ for (const token of [
 if (!/<audio\s+controls/.test(publisherPanel)) throw new Error("Podcast private audio preview is not connected to a native audio control.");
 if (/supabase\s*\.\s*from\s*\(/.test(publisherPanel)) throw new Error("Podcast publisher UI bypasses the service layer.");
 if (!podcastShell.includes("canPublish") || !podcastShell.includes("canEdit") || !podcastShell.includes("PodcastPublisherPanel")) throw new Error("Podcast Publisher and Editor access are not separated in the community shell.");
-if (!app.includes("editPodcastMetadata") || !app.includes('"Podcast Publisher", "Podcast Editor"')) throw new Error("Podcast editor permission wiring is missing at the application boundary.");
+if (!app.includes('permissions.includes("publishPodcasts")') || !app.includes('permissions.includes("editPodcastMetadata")')) throw new Error("Podcast publisher/editor capability wiring is missing at the application boundary.");
+if (app.includes('["Podcast Publisher", "Podcast Editor"].includes')) throw new Error("Podcast access must not fall back to UI role-name matching.");
 if (!migration.includes("can_manage_podcast_episode") || !migration.includes("podcast audio writers update authorized episode objects")) throw new Error("Podcast publishing is not backed by the private-media permission migration.");
 
 console.log("Podcast draft, private media, publish, unpublish, archive, delete, and permission workflow contract passed.");

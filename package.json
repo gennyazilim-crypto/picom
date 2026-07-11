@@ -405,7 +405,8 @@
     "podcast:publishing:smoke": "node scripts/podcast-publishing-workflow-smoke.mjs",
     "podcast:player:smoke": "node scripts/podcast-player-queue-resume-smoke.mjs",
     "podcast:interactions:smoke": "node scripts/podcast-interactions-smoke.mjs",
-    "podcast:integration:smoke": "node scripts/podcast-cross-surface-integration-smoke.mjs"
+    "podcast:integration:smoke": "node scripts/podcast-cross-surface-integration-smoke.mjs",
+    "podcast:moderation:smoke": "node scripts/podcast-permissions-moderation-audit-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

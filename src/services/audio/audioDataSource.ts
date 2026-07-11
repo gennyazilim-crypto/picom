@@ -13,10 +13,12 @@ import type {
   RadioSessionStatus,
 } from "../../types/audio";
 import type { CommunityKind } from "../../types/community";
+import type { CommunityPermissionKey } from "../../types/communityAccess";
 import { communityService } from "../communityService";
 import { auditLogService } from "../auditLogService";
 import { dataSourceService } from "../dataSourceService";
 import { messageModerationFilterService } from "../messageModerationFilterService";
+import { getCommunityAccess, hasCommunityPermission } from "../permissions/communityPermissions";
 import type { Database } from "../supabase/database.types";
 import { getSupabaseClient } from "../supabase/supabaseClient";
 import { userBlockingService } from "../userBlockingService";
@@ -25,6 +27,7 @@ export type AudioServiceErrorCode =
   | "AUDIO_BACKEND_UNAVAILABLE"
   | "AUDIO_KIND_MISMATCH"
   | "AUDIO_NOT_FOUND"
+  | "AUDIO_PERMISSION_DENIED"
   | "AUDIO_VALIDATION_ERROR"
   | "AUDIO_REQUEST_FAILED";
 export type AudioServiceResult<T> = Readonly<
@@ -94,6 +97,11 @@ function getMockRoleContext(communityId: string, userId: string) {
   const member = community?.members.find((candidate) => candidate.userId === userId);
   const role = member ? community?.roles.find((candidate) => candidate.id === member.roleId) : undefined;
   return { community, member, role };
+}
+
+function canMockPodcastPermission(communityId: string, permission: CommunityPermissionKey): boolean {
+  const community = mockCommunities.find((candidate) => candidate.id === communityId && candidate.kind === "podcast");
+  return community ? hasCommunityPermission(getCommunityAccess(currentUserId, community), permission) : false;
 }
 
 function canMockManageHostAssignment(communityId: string, targetUserId: string, hostRole: RadioSessionHostRole, requireCapability: boolean): boolean {
@@ -580,6 +588,7 @@ export const audioDataSource = {
     if (!kindGuard.ok) return kindGuard;
     const now = new Date().toISOString();
     if (dataSourceService.getStatus().isMock) {
+      if (!canMockPodcastPermission(input.communityId, "createPodcastDrafts") && !canMockPodcastPermission(input.communityId, "publishPodcasts")) return fail("AUDIO_PERMISSION_DENIED", "Your community role cannot create Podcast drafts.");
       const episode: PodcastEpisode = { id: "podcast-" + crypto.randomUUID(), communityId: input.communityId, seriesId: input.seriesId, authorUserId: currentUserId, hostUserId: input.hostUserId, title, description: input.description?.trim().slice(0, 12000) ?? "", durationSeconds: 0, publishedAt: now, tags: [...(input.tags ?? [])].slice(0, 20), reactionSummary: [], commentPreview: [], commentCount: 0, listenerCount: 0, isSavedByCurrentUser: false, isExplicit: input.isExplicit ?? false, status: "draft" };
       localPodcasts = [{ ...episode, reactionSummary: [...episode.reactionSummary], commentPreview: [...episode.commentPreview] }, ...localPodcasts]; publish(localSnapshot()); return ok(episode);
     }
@@ -595,7 +604,7 @@ export const audioDataSource = {
     const current = await audioDataSource.getPodcastEpisode(id); if (!current.ok) return current;
     const title = input.title.trim().slice(0, 160); if (!title) return fail("AUDIO_VALIDATION_ERROR", "Episode title is required.");
     const next = { title, description: input.description.trim().slice(0, 12000), seriesId: input.seriesId, hostUserId: input.hostUserId, tags: [...input.tags].map((tag) => tag.trim()).filter(Boolean).slice(0, 20), isExplicit: input.isExplicit };
-    if (dataSourceService.getStatus().isMock) { localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, ...next } : item); publish(localSnapshot()); return ok(localPodcasts.find((item) => item.id === id)!); }
+    if (dataSourceService.getStatus().isMock) { if (!canMockPodcastPermission(current.data.communityId, "editPodcastMetadata") && !canMockPodcastPermission(current.data.communityId, "publishPodcasts")) return fail("AUDIO_PERMISSION_DENIED", "Your community role cannot edit Podcast metadata."); localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, ...next } : item); publish(localSnapshot()); return ok(localPodcasts.find((item) => item.id === id)!); }
     const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast publishing is unavailable.");
     const result = await client.from("podcast_episodes").update({ title: next.title, description: next.description, series_id: next.seriesId ?? null, host_user_id: next.hostUserId ?? null, tags: next.tags, is_explicit: next.isExplicit }).eq("id", id);
     if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not update this Podcast episode.");
@@ -605,6 +614,7 @@ export const audioDataSource = {
   async updatePodcastMedia(id: string, input: UpdatePodcastMediaInput): Promise<AudioServiceResult<PodcastEpisode>> {
     const current = await audioDataSource.getPodcastEpisode(id); if (!current.ok) return current;
     if (dataSourceService.getStatus().isMock) {
+      if (!canMockPodcastPermission(current.data.communityId, "publishPodcasts")) return fail("AUDIO_PERMISSION_DENIED", "Only permitted Podcast Publishers can replace managed media.");
       localPodcasts = localPodcasts.map((item) => item.id !== id ? item : input.kind === "cover" ? { ...item, coverUrl: input.url, coverStoragePath: input.storagePath } : { ...item, audioUrl: input.url, audioStoragePath: input.storagePath, audioMimeType: input.mimeType, audioSizeBytes: input.sizeBytes, durationSeconds: input.durationSeconds ?? item.durationSeconds });
       publish(localSnapshot()); return ok(localPodcasts.find((item) => item.id === id)!);
     }
@@ -619,21 +629,21 @@ export const audioDataSource = {
     const current = await audioDataSource.getPodcastEpisode(id); if (!current.ok) return current;
     if (!current.data.title.trim() || current.data.durationSeconds <= 0 || !(current.data.audioStoragePath || (dataSourceService.getStatus().isMock && current.data.audioUrl))) return fail("AUDIO_VALIDATION_ERROR", "Add a title and valid audio before publishing.");
     const publishedAt = new Date().toISOString();
-    if (dataSourceService.getStatus().isMock) { localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, status: "published", publishedAt } : item); publish(localSnapshot()); return ok(localPodcasts.find((item) => item.id === id)!); }
+    if (dataSourceService.getStatus().isMock) { if (!canMockPodcastPermission(current.data.communityId, "publishPodcasts")) return fail("AUDIO_PERMISSION_DENIED", "Your community role cannot publish Podcast episodes."); localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, status: "published", publishedAt } : item); publish(localSnapshot()); await auditLogService.append({ communityId: current.data.communityId, actionType: "community_update", targetType: "podcast_episode_publish", targetId: id, reason: "Podcast episode published" }); return ok(localPodcasts.find((item) => item.id === id)!); }
     const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast publishing is unavailable.");
     const result = await client.from("podcast_episodes").update({ status: "published", published_at: publishedAt }).eq("id", id); if (result.error) return fail("AUDIO_REQUEST_FAILED", "This episode could not be published.");
     const refreshed = await refresh(); const episode = refreshed.ok ? refreshed.data.podcastEpisodes.find((item) => item.id === id) : undefined; return episode ? ok(episode) : fail("AUDIO_REQUEST_FAILED", "The published episode could not be reloaded.");
   },
   async unpublishPodcastEpisode(id: string): Promise<AudioServiceResult<PodcastEpisode>> {
     const current = await audioDataSource.getPodcastEpisode(id); if (!current.ok) return current;
-    if (dataSourceService.getStatus().isMock) { localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, status: "draft" } : item); publish(localSnapshot()); return ok(localPodcasts.find((item) => item.id === id)!); }
+    if (dataSourceService.getStatus().isMock) { if (!canMockPodcastPermission(current.data.communityId, "publishPodcasts")) return fail("AUDIO_PERMISSION_DENIED", "Your community role cannot unpublish Podcast episodes."); localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, status: "draft" } : item); publish(localSnapshot()); await auditLogService.append({ communityId: current.data.communityId, actionType: "community_update", targetType: "podcast_episode_unpublish", targetId: id, reason: "Podcast episode returned to draft" }); return ok(localPodcasts.find((item) => item.id === id)!); }
     const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast publishing is unavailable.");
     const result = await client.from("podcast_episodes").update({ status: "draft", published_at: null }).eq("id", id); if (result.error) return fail("AUDIO_REQUEST_FAILED", "This episode could not be unpublished.");
     const refreshed = await refresh(); const episode = refreshed.ok ? refreshed.data.podcastEpisodes.find((item) => item.id === id) : undefined; return episode ? ok(episode) : fail("AUDIO_REQUEST_FAILED", "The draft could not be reloaded.");
   },
   async archivePodcastEpisode(id: string): Promise<AudioServiceResult<PodcastEpisode>> {
     const current = await audioDataSource.getPodcastEpisode(id); if (!current.ok) return current;
-    if (dataSourceService.getStatus().isMock) { localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, status: "archived" } : item); publish(localSnapshot()); return ok(localPodcasts.find((item) => item.id === id)!); }
+    if (dataSourceService.getStatus().isMock) { if (!canMockPodcastPermission(current.data.communityId, "archivePodcastEpisodes") && !canMockPodcastPermission(current.data.communityId, "publishPodcasts")) return fail("AUDIO_PERMISSION_DENIED", "Your community role cannot archive Podcast episodes."); localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, status: "archived" } : item); publish(localSnapshot()); await auditLogService.append({ communityId: current.data.communityId, actionType: "community_update", targetType: "podcast_episode_archive", targetId: id, reason: "Podcast episode archived" }); return ok(localPodcasts.find((item) => item.id === id)!); }
     const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast publishing is unavailable.");
     const result = await client.from("podcast_episodes").update({ status: "archived" }).eq("id", id); if (result.error) return fail("AUDIO_REQUEST_FAILED", "This episode could not be archived.");
     const refreshed = await refresh(); const episode = refreshed.ok ? refreshed.data.podcastEpisodes.find((item) => item.id === id) : undefined; return episode ? ok(episode) : fail("AUDIO_REQUEST_FAILED", "The archived episode could not be reloaded.");
@@ -641,7 +651,7 @@ export const audioDataSource = {
   async deletePodcastEpisode(id: string): Promise<AudioServiceResult<boolean>> {
     const current = await audioDataSource.getPodcastEpisode(id); if (!current.ok) return current;
     if (current.data.status === "published") return fail("AUDIO_VALIDATION_ERROR", "Unpublish or archive this episode before deleting it.");
-    if (dataSourceService.getStatus().isMock) { localPodcasts = localPodcasts.filter((item) => item.id !== id); localSavedPodcasts.delete(id); publish(localSnapshot()); return ok(true); }
+    if (dataSourceService.getStatus().isMock) { if (!canMockPodcastPermission(current.data.communityId, "publishPodcasts")) return fail("AUDIO_PERMISSION_DENIED", "Your community role cannot delete Podcast episodes."); localPodcasts = localPodcasts.filter((item) => item.id !== id); localSavedPodcasts.delete(id); publish(localSnapshot()); await auditLogService.append({ communityId: current.data.communityId, actionType: "community_update", targetType: "podcast_episode_delete", targetId: id, reason: "Podcast episode deleted" }); return ok(true); }
     const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast publishing is unavailable.");
     const result = await client.from("podcast_episodes").delete().eq("id", id); if (result.error) return fail("AUDIO_REQUEST_FAILED", "This episode could not be deleted."); await refresh(); return ok(true);
   },
@@ -848,5 +858,39 @@ export const audioDataSource = {
     if (result.error || !result.data) return fail("AUDIO_REQUEST_FAILED", "You cannot delete this Podcast comment.");
     await refresh();
     return ok(true);
+  },
+  async moderatePodcastComment(commentId: string, reason: string): Promise<AudioServiceResult<boolean>> {
+    const cleanReason = reason.trim().slice(0, 500);
+    if (cleanReason.length < 10) return fail("AUDIO_VALIDATION_ERROR", "Add a moderation reason of at least 10 characters.");
+    if (dataSourceService.getStatus().isMock) {
+      const episode = localPodcasts.find((item) => item.commentPreview.some((comment) => comment.id === commentId));
+      if (!episode) return fail("AUDIO_NOT_FOUND", "This Podcast comment is no longer visible.");
+      if (!canMockPodcastPermission(episode.communityId, "moderatePodcastComments")) return fail("AUDIO_PERMISSION_DENIED", "Your community role cannot moderate Podcast comments.");
+      localPodcasts = localPodcasts.map((item) => item.id !== episode.id ? item : { ...item, commentPreview: item.commentPreview.filter((comment) => comment.id !== commentId), commentCount: Math.max(0, item.commentCount - 1) });
+      publish(localSnapshot());
+      await auditLogService.append({ communityId: episode.communityId, actionType: "moderation_action", targetType: "podcast_comment", targetId: commentId, reason: cleanReason });
+      return ok(true);
+    }
+    const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast moderation is unavailable.");
+    const result = await client.rpc("moderate_podcast_comment", { target_comment_id: commentId, moderation_reason: cleanReason });
+    if (result.error || result.data !== true) return fail("AUDIO_PERMISSION_DENIED", "This Podcast comment moderation action was rejected.");
+    await refresh(); return ok(true);
+  },
+  async moderatePodcastEpisode(id: string, action: "unpublish" | "archive", reason: string): Promise<AudioServiceResult<PodcastEpisode>> {
+    const cleanReason = reason.trim().slice(0, 500);
+    if (cleanReason.length < 10) return fail("AUDIO_VALIDATION_ERROR", "Add a moderation reason of at least 10 characters.");
+    const current = await audioDataSource.getPodcastEpisode(id); if (!current.ok) return current;
+    if (dataSourceService.getStatus().isMock) {
+      if (!canMockPodcastPermission(current.data.communityId, "moderatePodcastEpisodes")) return fail("AUDIO_PERMISSION_DENIED", "Only Podcast owners and admins can moderate an episode.");
+      const status: PodcastEpisodeStatus = action === "archive" ? "archived" : "draft";
+      localPodcasts = localPodcasts.map((item) => item.id === id ? { ...item, status } : item); publish(localSnapshot());
+      await auditLogService.append({ communityId: current.data.communityId, actionType: "moderation_action", targetType: "podcast_episode", targetId: id, reason: `${action}: ${cleanReason}` });
+      return ok(localPodcasts.find((item) => item.id === id)!);
+    }
+    const client = getSupabaseClient(); if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Podcast moderation is unavailable.");
+    const result = await client.rpc("moderate_podcast_episode", { target_episode_id: id, moderation_action: action, moderation_reason: cleanReason });
+    if (result.error) return fail("AUDIO_PERMISSION_DENIED", "This Podcast episode moderation action was rejected.");
+    const refreshed = await refresh(); const episode = refreshed.ok ? refreshed.data.podcastEpisodes.find((item) => item.id === id) : undefined;
+    return episode ? ok(episode) : fail("AUDIO_REQUEST_FAILED", "The moderated Podcast episode could not be reloaded.");
   },
 };

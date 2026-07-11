@@ -2646,9 +2646,12 @@ export function App() {
             <DeferredViewBoundary label="Opening podcast community">
               <PodcastCommunityShell
                 community={displayedActiveCommunity}
-                canPublish={communityAccess.isOwner || communityAccess.permissions.includes("manageCommunity") || communityAccess.permissions.includes("publishPodcasts") || displayedActiveCommunity.roles.find((role) => role.id === displayedCurrentUser.roleId)?.name === "Podcast Publisher"}
-                canEdit={communityAccess.isOwner || communityAccess.permissions.includes("manageCommunity") || communityAccess.permissions.includes("publishPodcasts") || communityAccess.permissions.includes("editPodcastMetadata") || ["Podcast Publisher", "Podcast Editor"].includes(displayedActiveCommunity.roles.find((role) => role.id === displayedCurrentUser.roleId)?.name ?? "")}
+                canPublish={communityAccess.permissions.includes("publishPodcasts")}
+                canEdit={communityAccess.permissions.includes("publishPodcasts") || communityAccess.permissions.includes("editPodcastMetadata")}
+                canModerateComments={communityAccess.permissions.includes("moderatePodcastComments")}
+                canModerateEpisodes={communityAccess.permissions.includes("moderatePodcastEpisodes")}
                 onOpenProfile={openProfilePage}
+                onReport={setReportTarget}
               />
             </DeferredViewBoundary>
           ) : activeView === "radioCommunity" && displayedActiveCommunity.kind === "radio" ? (

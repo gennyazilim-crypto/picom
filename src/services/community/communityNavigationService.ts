@@ -2,7 +2,7 @@ import type { Community } from "../../types/community";
 
 export type CommunityShellView = "community" | "radioCommunity" | "podcastCommunity";
 export type RadioCommunitySection = "live" | "schedule" | "programs" | "hosts" | "announcements" | "listenerChat";
-export type PodcastCommunitySection = "episodes" | "series" | "drafts" | "hosts" | "about" | "listenerDiscussion";
+export type PodcastCommunitySection = "episodes" | "series" | "drafts" | "hosts" | "about" | "moderation" | "listenerDiscussion";
 
 type RouteMemory = Readonly<{
   textChannelId?: string;
@@ -14,7 +14,7 @@ type RouteMemory = Readonly<{
 
 const STORAGE_KEY = "picom.community-route-memory.v1";
 const radioSections = new Set<RadioCommunitySection>(["live", "schedule", "programs", "hosts", "announcements", "listenerChat"]);
-const podcastSections = new Set<PodcastCommunitySection>(["episodes", "series", "drafts", "hosts", "about", "listenerDiscussion"]);
+const podcastSections = new Set<PodcastCommunitySection>(["episodes", "series", "drafts", "hosts", "about", "moderation", "listenerDiscussion"]);
 
 function loadMemory(): Record<string, RouteMemory> {
   try {

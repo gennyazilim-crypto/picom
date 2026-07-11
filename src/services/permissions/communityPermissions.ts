@@ -44,8 +44,8 @@ const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<Community
     visitor: [],
   },
   podcast: {
-    owner: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
-    admin: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
+    owner: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
+    admin: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "moderatePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
     moderator: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments"],
     member: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts"],
     visitor: [],

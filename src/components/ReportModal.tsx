@@ -12,10 +12,11 @@ const reasons: Array<{ value: ReportReason; label: string; description: string }
   { value: "harassment", label: "Harassment", description: "Targeted abuse, threats, or unwanted contact." },
   { value: "unsafe_content", label: "Unsafe content", description: "Content that may create a credible safety risk." },
   { value: "impersonation", label: "Impersonation", description: "Misleading identity or affiliation claims." },
+  { value: "copyright", label: "Copyright or rights concern", description: "Audio, artwork, or text may be used without authorization." },
   { value: "other", label: "Something else", description: "Another Community Guidelines concern." },
 ];
 
-const targetTitles: Record<ReportTargetType, string> = { message: "message", user: "user", community: "community" };
+const targetTitles: Record<ReportTargetType, string> = { message: "message", user: "user", community: "community", podcast_episode: "Podcast episode", podcast_comment: "Podcast comment" };
 
 export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
   const [reason, setReason] = useState<ReportReason>("spam");

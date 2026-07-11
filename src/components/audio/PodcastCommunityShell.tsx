@@ -10,9 +10,11 @@ import { MemberAvatar } from "../MemberAvatar";
 import { PodcastEpisodeDetail } from "./PodcastEpisodeDetail";
 import { PodcastEpisodeList } from "./CommunityAudioView";
 import { PodcastPublisherPanel } from "./PodcastPublisherPanel";
+import { PodcastModerationPanel } from "./PodcastModerationPanel";
+import type { ReportModalTarget } from "../ReportModal";
 import "./PodcastCommunityShell.css";
 
-type PodcastCommunityShellProps = { community: Community; canPublish: boolean; canEdit: boolean; onOpenProfile?: (member: Member) => void };
+type PodcastCommunityShellProps = { community: Community; canPublish: boolean; canEdit: boolean; canModerateComments: boolean; canModerateEpisodes: boolean; onOpenProfile?: (member: Member) => void; onReport?: (target: ReportModalTarget) => void };
 const sections: readonly { id: Exclude<PodcastCommunitySection, "drafts" | "listenerDiscussion">; label: string; icon: IconName }[] = [
   { id: "episodes", label: "Episodes", icon: "play" },
   { id: "series", label: "Series", icon: "headphones" },
@@ -24,8 +26,9 @@ function PodcastEmptyState({ icon, title, body }: { icon: IconName; title: strin
   return <div className="podcast-shell-empty"><span aria-hidden="true"><AppIcon name={icon} size="xl" /></span><strong>{title}</strong><p>{body}</p></div>;
 }
 
-export function PodcastCommunityShell({ community, canPublish, canEdit, onOpenProfile }: PodcastCommunityShellProps) {
+export function PodcastCommunityShell({ community, canPublish, canEdit, canModerateComments, canModerateEpisodes, onOpenProfile, onReport }: PodcastCommunityShellProps) {
   const canManage = canPublish || canEdit;
+  const canModerate = canModerateComments || canModerateEpisodes;
   const [activeSection, setActiveSection] = useState<PodcastCommunitySection>(() => communityNavigationService.getPodcastSection(community.id));
   const [snapshot, setSnapshot] = useState<PodcastCommunityShellSnapshot | null>(null);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(null);
@@ -38,21 +41,21 @@ export function PodcastCommunityShell({ community, canPublish, canEdit, onOpenPr
     let active = true;
     setSnapshot(null); setError(null);
     const rememberedSection = communityNavigationService.getPodcastSection(community.id);
-    setActiveSection(rememberedSection === "drafts" && !canManage ? "episodes" : rememberedSection);
+    setActiveSection((rememberedSection === "drafts" && !canManage) || (rememberedSection === "moderation" && !canModerate) ? "episodes" : rememberedSection);
     setSelectedEpisodeId(null);
     void podcastCommunityService.getShellSnapshot(community).then((result) => {
       if (!active) return;
       if (!result.ok) { setError(result.error); return; }
       setSnapshot(result.data);
       const section = communityNavigationService.getPodcastSection(community.id);
-      if ((section === "drafts" && !canManage) || (section === "listenerDiscussion" && !result.data.settings.listenerDiscussionEnabled)) { communityNavigationService.rememberPodcastSection(community.id, "episodes"); setActiveSection("episodes"); }
+      if ((section === "drafts" && !canManage) || (section === "moderation" && !canModerate) || (section === "listenerDiscussion" && !result.data.settings.listenerDiscussionEnabled)) { communityNavigationService.rememberPodcastSection(community.id, "episodes"); setActiveSection("episodes"); }
       const rememberedId = communityNavigationService.getPodcastEpisodeId(community.id);
       const remembered = result.data.episodes.find((episode) => episode.id === rememberedId) ?? null;
       setSelectedEpisodeId(remembered?.id ?? null);
       if (rememberedId && !remembered) communityNavigationService.rememberPodcastEpisode(community.id, null);
     });
     return () => { active = false; };
-  }, [canManage, community, refreshVersion]);
+  }, [canManage, canModerate, community, refreshVersion]);
 
   useEffect(() => audioDataSource.subscribe((catalog) => {
     setSnapshot((current) => current ? { ...current, episodes: catalog.podcastEpisodes.filter((episode) => episode.communityId === community.id) } : current);
@@ -82,10 +85,10 @@ export function PodcastCommunityShell({ community, canPublish, canEdit, onOpenPr
   if (publisherOpen && snapshot && canManage) return <main className="podcast-community-shell"><PodcastPublisherPanel communityId={community.id} episode={editingEpisode} series={snapshot.series} canPublish={canPublish} onClose={closePublisher} onChanged={handlePublishingChange} /></main>;
   if (selectedEpisode && snapshot) {
     const author = community.members.find((member) => member.userId === selectedEpisode.authorUserId);
-    return <PodcastEpisodeDetail episode={selectedEpisode} communityName={community.name} author={author} relatedEpisodes={[...snapshot.episodes]} getCommentAuthorLabel={getUserLabel} onClose={closeEpisode} onOpenCommunity={closeEpisode} onOpenAuthor={author && onOpenProfile ? (_event, member) => onOpenProfile(member) : undefined} onSelectEpisode={openEpisode} />;
+    return <PodcastEpisodeDetail episode={selectedEpisode} communityName={community.name} author={author} relatedEpisodes={[...snapshot.episodes]} getCommentAuthorLabel={getUserLabel} onClose={closeEpisode} onOpenCommunity={closeEpisode} onOpenAuthor={author && onOpenProfile ? (_event, member) => onOpenProfile(member) : undefined} onSelectEpisode={openEpisode} onReport={onReport} />;
   }
 
-  const navigation = [sections[0], sections[1], ...(canManage ? [{ id: "drafts" as const, label: "Drafts", icon: "edit" as IconName }] : []), sections[2], sections[3], ...(snapshot?.settings.listenerDiscussionEnabled ? [{ id: "listenerDiscussion" as const, label: "Listener Discussion", icon: "hash" as IconName }] : [])];
+  const navigation = [sections[0], sections[1], ...(canManage ? [{ id: "drafts" as const, label: "Drafts", icon: "edit" as IconName }] : []), sections[2], sections[3], ...(canModerate ? [{ id: "moderation" as const, label: "Moderation", icon: "lock" as IconName }] : []), ...(snapshot?.settings.listenerDiscussionEnabled ? [{ id: "listenerDiscussion" as const, label: "Listener Discussion", icon: "hash" as IconName }] : [])];
   const published = snapshot?.episodes.filter((episode) => episode.status === "published") ?? [];
   const privateEpisodes = snapshot?.episodes.filter((episode) => episode.status !== "published") ?? [];
 
@@ -101,6 +104,7 @@ export function PodcastCommunityShell({ community, canPublish, canEdit, onOpenPr
         {snapshot&&activeSection==="drafts"&&canManage ? <section><div className="podcast-shell-section-heading"><div><span>PRIVATE WORKSPACE</span><h2>Drafts & archive</h2></div><p>Only permitted Publishers and Editors can see unpublished work.</p></div>{privateEpisodes.length ? <div className="podcast-draft-list">{privateEpisodes.map((episode) => <article key={episode.id}><span><AppIcon name="edit" size="md" /></span><div><strong>{episode.title}</strong><p>{episode.description}</p><small>{getUserLabel(episode.authorUserId)} · {episode.status === "archived" ? "Archived" : "Not published"}</small></div><button type="button" onClick={() => openPublisher(episode)}>Edit<AppIcon name="chevronRight" size="xs" /></button></article>)}</div> : <PodcastEmptyState icon="edit" title="No private drafts" body="Create a real draft to begin the validated publishing workflow." />}</section> : null}
         {snapshot&&activeSection==="hosts" ? <section><div className="podcast-shell-section-heading"><div><span>CREATOR ACCESS</span><h2>Hosts</h2></div><p>Owner, Publisher, and Editor assignments shape the production team.</p></div>{publishers.length ? <div className="podcast-host-grid">{publishers.map((publisher) => <button key={publisher.id} type="button" onClick={() => onOpenProfile?.(publisher)}><MemberAvatar member={publisher} size={44} /><span><strong>{publisher.displayName}</strong><small>{community.roles.find((role)=>role.id===publisher.roleId)?.name??"Podcast creator"}</small></span><AppIcon name="chevronRight" size="sm" /></button>)}</div> : <PodcastEmptyState icon="users" title="No creators assigned" body="The owner can assign Publisher and Editor roles from community administration." />}</section> : null}
         {snapshot&&activeSection==="about" ? <section><div className="podcast-shell-section-heading"><div><span>ABOUT THE SHOW</span><h2>About</h2></div><p>Public context for listeners and collaborators.</p></div><article className="podcast-about-card"><span><AppIcon name="inbox" size="xl" /></span><div><h3>{community.name}</h3><p>{snapshot.settings.about}</p><small>{published.length} episodes · {snapshot.series.length} series · {publishers.length} creators</small></div></article></section> : null}
+        {snapshot&&activeSection==="moderation"&&canModerate ? <PodcastModerationPanel communityId={community.id} episodes={snapshot.episodes} canModerateComments={canModerateComments} canModerateEpisodes={canModerateEpisodes} onEpisodeChanged={handlePublishingChange} /> : null}
         {snapshot&&activeSection==="listenerDiscussion"&&snapshot.settings.listenerDiscussionEnabled ? <section><div className="podcast-shell-section-heading"><div><span>OPTIONAL SIDE CHANNEL</span><h2>Listener Discussion</h2></div><p>Discussion supports episodes but never replaces the Podcast library.</p></div><div className="podcast-discussion-state"><AppIcon name="hash" size="lg" /><div><strong>Listener Discussion is enabled</strong><span>Channel visibility and membership policies remain the access boundary.</span></div></div></section> : null}
       </section>
       <aside className="podcast-shell-side" aria-label="Podcast library context"><section><span>LIBRARY</span><strong>{published.length} episodes</strong><small>{snapshot?.series.length??0} series · {privateEpisodes.length} private drafts/archive</small></section><section><span>PUBLISHING TEAM</span>{publishers.length?publishers.slice(0,4).map((publisher)=><button type="button" key={publisher.id} onClick={()=>onOpenProfile?.(publisher)}><MemberAvatar member={publisher} size={30}/><span><strong>{publisher.displayName}</strong><small>{community.roles.find((role)=>role.id===publisher.roleId)?.name??"Podcast creator"}</small></span></button>):<small>No publishers assigned.</small>}</section><section className="podcast-shell-side-note"><AppIcon name="lock" size="sm" /><small>Drafts and private media remain protected by publishing roles and RLS.</small></section></aside>

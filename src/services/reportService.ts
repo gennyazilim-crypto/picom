@@ -19,6 +19,7 @@ const allowedTransitions: Record<ReportStatus, readonly ReportStatus[]> = { open
 function sanitizeDescription(value: string | undefined): string { return (value?.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(REPORT_SECRET_PATTERN, (_match, bearerPrefix: string | undefined, keyPrefix: string | undefined) => `${bearerPrefix ?? keyPrefix ?? ""}[REDACTED]`).trim() || "No additional details provided.").slice(0, 1000); }
 export function canTransitionReportStatus(from: ReportStatus, to: ReportStatus): boolean { return allowedTransitions[from].includes(to); }
 function cacheReport(report: ReportRecord): void { const index = reports.findIndex((item) => item.id === report.id); if (index >= 0) reports[index] = report; else reports.unshift(report); }
+function isPodcastReportTarget(targetType: ReportRecord["targetType"]): boolean { return targetType === "podcast_episode" || targetType === "podcast_comment"; }
 function mapReport(row: ReportRow): ReportRecord {
   return { id: row.id, communityId: row.community_id ?? undefined, reporterId: row.reporter_id, targetType: row.target_type as ReportRecord["targetType"], targetId: row.target_id, reason: row.reason as ReportRecord["reason"], description: sanitizeDescription(row.description), status: row.status as ReportStatus, reviewedById: row.reviewed_by ?? undefined, reviewedAt: row.reviewed_at ?? undefined, createdAt: row.created_at, updatedAt: row.updated_at };
 }
@@ -77,7 +78,7 @@ export const reportService = {
     if (!reviewerId) return { ok: false, message: "Sign in before reviewing reports." };
     const { data, error } = await client.from("reports").update({ status: input.status, reviewed_by: reviewerId, updated_at: new Date().toISOString() }).eq("id", input.reportId).select("id,community_id,reporter_id,target_type,target_id,reason,description,status,reviewed_by,reviewed_at,created_at,updated_at").single();
     if (error || !data) return { ok: false, message: "Picom could not update this report." };
-    const next = mapReport(data); cacheReport(next); loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status }, "audit"); if (next.communityId) await auditLogService.append({ communityId: next.communityId, actionType: "moderation_action", targetType: "report", targetId: next.id, reason: `Report marked ${next.status}` }); return { ok: true, data: next };
+    const next = mapReport(data); cacheReport(next); loggingService.logInfo("Report moderation action", { reportId: next.id, status: next.status }, "audit"); if (next.communityId && !isPodcastReportTarget(next.targetType)) await auditLogService.append({ communityId: next.communityId, actionType: "moderation_action", targetType: "report", targetId: next.id, reason: `Report marked ${next.status}` }); return { ok: true, data: next };
   },
 
   getSummary(): Record<ReportStatus, number> { return reports.reduce<Record<ReportStatus, number>>((summary, report) => { summary[report.status] += 1; return summary; }, { open: 0, reviewed: 0, dismissed: 0, action_taken: 0 }); },

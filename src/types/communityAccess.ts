@@ -29,6 +29,7 @@ export type CommunityPermissionKey =
   | "publishPodcasts"
   | "editPodcastMetadata"
   | "archivePodcastEpisodes"
+  | "moderatePodcastEpisodes"
   | "managePodcastSeries"
   | "commentOnPodcasts"
   | "reactToPodcasts"

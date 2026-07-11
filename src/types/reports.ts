@@ -1,6 +1,6 @@
-export type ReportTargetType = "message" | "user" | "community";
+export type ReportTargetType = "message" | "user" | "community" | "podcast_episode" | "podcast_comment";
 export type ReportStatus = "open" | "reviewed" | "dismissed" | "action_taken";
-export type ReportReason = "spam" | "harassment" | "unsafe_content" | "impersonation" | "other";
+export type ReportReason = "spam" | "harassment" | "unsafe_content" | "impersonation" | "copyright" | "other";
 
 export type ReportRecord = Readonly<{
   id: string;

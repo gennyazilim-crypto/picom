@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import type { LegalDocumentId } from "../../data/legalDocuments";
 import type { PodcastEpisode, PodcastSeries } from "../../types/audio";
 import { podcastPublishingService, type PodcastUploadKind, type PodcastUploadProgress } from "../../services/audio/podcastPublishingService";
 import { AppIcon } from "../AppIcon";
+import { LegalDocumentModal } from "../legal/LegalDocumentModal";
 import { formatAudioTime } from "./AudioProgressBar";
 
 type PodcastPublisherPanelProps = { communityId: string; episode: PodcastEpisode | null; series: readonly PodcastSeries[]; canPublish: boolean; onClose: () => void; onChanged: (episode?: PodcastEpisode) => void };
@@ -20,6 +22,7 @@ export function PodcastPublisherPanel({ communityId, episode, series, canPublish
   const [progress, setProgress] = useState<PodcastUploadProgress | null>(null);
   const [retryUpload, setRetryUpload] = useState<{ kind: PodcastUploadKind; file: File } | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const [legalDocument, setLegalDocument] = useState<LegalDocumentId | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -68,6 +71,7 @@ export function PodcastPublisherPanel({ communityId, episode, series, canPublish
     <header><div><span className="eyebrow">Private publishing workspace</span><h2>{draft ? "Manage episode" : "New episode draft"}</h2><p>Metadata saves privately until a Publisher completes the media and publishing checks.</p></div><button type="button" className="icon-button" onClick={onClose} aria-label="Close Podcast publisher"><AppIcon name="close" size="md" /></button></header>
     {error ? <div className="podcast-publisher-alert error" role="alert"><AppIcon name="bell" size="sm" /><span>{error}</span>{retryUpload ? <button type="button" disabled={busy} onClick={() => void upload(retryUpload.kind, retryUpload.file)}>Retry upload</button> : null}</div> : null}
     {notice ? <div className="podcast-publisher-alert success" role="status"><AppIcon name="bell" size="sm" /><span>{notice}</span></div> : null}
+    <aside className="podcast-rights-notice"><AppIcon name="lock" size="sm" /><span><strong>Publish only content you are authorized to use.</strong><small>Podcast audio, artwork, notes, and guest material follow Picom's copyright and safety policies.</small></span><button type="button" onClick={() => setLegalDocument("acceptableUse")}>Acceptable Use</button><button type="button" onClick={() => setLegalDocument("guidelines")}>Community Guidelines</button></aside>
     <div className="podcast-publisher-grid">
       <div className="podcast-publisher-form">
         <label><span>Episode title</span><input value={title} maxLength={160} onChange={(event) => setTitle(event.target.value)} /></label>
@@ -85,5 +89,6 @@ export function PodcastPublisherPanel({ communityId, episode, series, canPublish
       </aside>
     </div>
     {confirmAction ? <div className="podcast-confirm-backdrop" role="presentation" onMouseDown={() => setConfirmAction(null)}><div className="podcast-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="podcast-confirm-title" onMouseDown={(event) => event.stopPropagation()}><AppIcon name={confirmAction === "delete" ? "trash" : "bell"} size="lg" /><h3 id="podcast-confirm-title">Confirm {confirmAction}</h3><p>{confirmAction === "delete" ? "This permanently removes the private draft and its managed media." : confirmAction === "archive" ? "This removes the episode from the active library while retaining controlled metadata." : "This returns the episode to the private Drafts workspace."}</p><footer><button type="button" onClick={() => setConfirmAction(null)}>Cancel</button><button type="button" className={confirmAction === "delete" ? "danger" : "primary-button"} onClick={() => void lifecycle(confirmAction)}>Confirm</button></footer></div></div> : null}
+    {legalDocument ? <LegalDocumentModal documentId={legalDocument} onClose={() => setLegalDocument(null)} /> : null}
   </section>;
 }

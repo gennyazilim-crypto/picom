@@ -1,0 +1,18 @@
+begin;
+select plan(14);
+select has_function('public','can_report_podcast_target',array['uuid','text','uuid'],'Podcast report target guard exists');
+select has_function('public','can_review_community_report',array['uuid','text'],'Report review permission is target-aware');
+select has_function('public','moderate_podcast_comment',array['uuid','text'],'Comment moderation RPC exists');
+select has_function('public','moderate_podcast_episode',array['uuid','text','text'],'Episode moderation RPC exists');
+select has_function('public','audit_podcast_episode_lifecycle',array[]::text[],'Episode lifecycle audit trigger function exists');
+select has_trigger('public','podcast_episodes','podcast_episode_lifecycle_audit','Episode lifecycle changes are audited');
+select has_trigger('public','reports','podcast_report_review_prepare','Podcast report reviewer metadata is server controlled');
+select has_trigger('public','reports','podcast_report_review_audit','Podcast report decisions are audited');
+select col_has_check('public','reports','target_type','Podcast report target types remain constrained');
+select col_has_check('public','reports','reason','Copyright report reason remains constrained');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='reports' and policyname='reports_submit_authorized_target'),'Report submission validates target access');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='reports' and policyname='reports_authorized_reviewer_select'),'Report queue uses target-aware reviewer RLS');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='reports' and policyname='reports_authorized_reviewer_update'),'Report decisions use target-aware reviewer RLS');
+select ok(exists(select 1 from public.roles role join public.communities community on community.id=role.community_id where community.kind='podcast'::public.community_kind and lower(role.name)='podcast publisher' and role.permissions->>'publishPodcasts'='true'),'Podcast Publisher capability remains role-backed');
+select * from finish();
+rollback;

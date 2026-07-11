@@ -403,7 +403,7 @@ export type Database = {
         Relationships: [];
       };
       reports: {
-        Row: { id: string; community_id: string | null; reporter_id: string; target_type: "message" | "user" | "community"; target_id: string; reason: "spam" | "harassment" | "unsafe_content" | "impersonation" | "other"; description: string; status: "open" | "reviewed" | "dismissed" | "action_taken"; reviewed_by: string | null; reviewed_at: string | null; created_at: string; updated_at: string };
+        Row: { id: string; community_id: string | null; reporter_id: string; target_type: "message" | "user" | "community" | "podcast_episode" | "podcast_comment"; target_id: string; reason: "spam" | "harassment" | "unsafe_content" | "impersonation" | "copyright" | "other"; description: string; status: "open" | "reviewed" | "dismissed" | "action_taken"; reviewed_by: string | null; reviewed_at: string | null; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["reports"]["Row"]> & Pick<Database["public"]["Tables"]["reports"]["Row"], "reporter_id" | "target_type" | "target_id" | "reason" | "description">;
         Update: Partial<Database["public"]["Tables"]["reports"]["Row"]>;
         Relationships: [];
@@ -723,6 +723,8 @@ export type Database = {
         Args: { target_community_id: string; event_action_type: string; event_target_type: string; event_target_id: string | null; event_reason: string | null };
         Returns: string;
       };
+      moderate_podcast_comment: { Args: { target_comment_id: string; moderation_reason: string }; Returns: boolean };
+      moderate_podcast_episode: { Args: { target_episode_id: string; moderation_action: "unpublish" | "archive"; moderation_reason: string }; Returns: Array<Database["public"]["Tables"]["podcast_episodes"]["Row"]> };
       is_app_admin: {
         Args: Record<string, never>;
         Returns: boolean;
