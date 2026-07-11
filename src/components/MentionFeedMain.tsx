@@ -17,6 +17,7 @@ import { MentionFeedList } from "./MentionFeedList";
 import { AudioFeedSection } from "./audio/AudioFeedSection";
 import { RadioPanel } from "./audio/RadioPanel";
 import { PodcastEpisodeDetail } from "./audio/PodcastEpisodeDetail";
+import { useRadioScheduleReminders } from "../hooks/useRadioScheduleReminders";
 
 type MentionFeedMainProps = {
   items: MentionItem[];
@@ -91,12 +92,12 @@ export function MentionFeedMain({
   onEventDetails,
 }: MentionFeedMainProps) {
   const audioCatalog = useAudioCatalog();
+  const reminderState = useRadioScheduleReminders(audioCatalog.radioSessions);
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
   const [selectedRadioSessionId, setSelectedRadioSessionId] = useState<string | null>(null);
   const [selectedPodcastEpisodeId, setSelectedPodcastEpisodeId] = useState<string | null>(null);
   const [savedAudioIds, setSavedAudioIds] = useState<Set<string>>(() => new Set(audioCatalog.feedItems.filter((item) => item.isSaved).map((item) => item.id)));
-  const [audioReminderIds, setAudioReminderIds] = useState<Set<string>>(() => new Set());
   const rankingNowMs = useMemo(() => Date.now(), []);
   const feedItems = useMemo(() => rankMentionFeedItems(items, { tab: "feed", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
   const followingItems = useMemo(() => rankMentionFeedItems(items, { tab: "following", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
@@ -104,6 +105,27 @@ export function MentionFeedMain({
   const storyIds = useMemo(() => stories.map((story) => story.id), [stories]);
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
   const visibleAudioItems = useMemo(() => activeTab === "feed" ? audioCatalog.feedItems.slice(0, 6) : audioCatalog.feedItems.filter((item) => followedUserIds.includes(item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [activeTab, audioCatalog.feedItems, followedUserIds]);
+  const audioReminderFeedIds = useMemo(() => new Set([...reminderState.reminderIds].map((id) => "feed-" + id)), [reminderState.reminderIds]);
+  const radioEvents = useMemo<UpcomingEvent[]>(() => audioCatalog.radioSessions
+    .filter((session) => session.status === "scheduled")
+    .map((session) => ({
+      id: "radio-event-" + session.id,
+      communityId: session.communityId,
+      channelId: session.channelId,
+      title: session.title,
+      description: session.description,
+      startsAt: session.startsAt,
+      endsAt: session.scheduledEndAt,
+      attendeeCount: session.listenerCount,
+      type: "voice",
+      source: "radio",
+      radioSessionId: session.id,
+      reminderSet: reminderState.reminderIds.has(session.id),
+      currentUserRsvp: reminderState.reminderIds.has(session.id) ? "interested" : undefined,
+    })), [audioCatalog.radioSessions, reminderState.reminderIds]);
+  const companionEvents = useMemo(() => [...radioEvents, ...events.filter((event) => !radioEvents.some((radioEvent) => radioEvent.id === event.id))]
+    .sort((left, right) => Date.parse(left.startsAt) - Date.parse(right.startsAt))
+    .slice(0, 8), [events, radioEvents]);
   const selectAudio = (item: AudioFeedItem) => {
     if (item.type === "radio_live" || item.type === "radio_scheduled") {
       const session = audioCatalog.radioSessions.find((candidate) => candidate.id === item.id.replace(/^feed-/, ""));
@@ -121,6 +143,14 @@ export function MentionFeedMain({
   const selectedPodcastEpisode = audioCatalog.podcastEpisodes.find((episode) => episode.id === selectedPodcastEpisodeId) ?? null;
   const selectedPodcastCommunity = selectedPodcastEpisode ? communities.find((community) => community.id === selectedPodcastEpisode.communityId) : undefined;
   const toggleAudioSet = (setter: (value: Set<string>) => void, current: Set<string>, id: string) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); setter(next); };
+  const toggleAudioReminder = (feedItemId: string) => {
+    const session = audioCatalog.radioSessions.find((candidate) => candidate.id === feedItemId.replace(/^feed-/, ""));
+    if (session) void reminderState.toggle(session);
+  };
+  const toggleEventReminder = (event: UpcomingEvent) => {
+    const session = event.radioSessionId ? audioCatalog.radioSessions.find((candidate) => candidate.id === event.radioSessionId) : undefined;
+    if (session) void reminderState.toggle(session);
+  };
   const openStory = (storyId: string) => {
     setActiveStoryId(storyId);
     onMarkStorySeen(storyId);
@@ -156,7 +186,7 @@ export function MentionFeedMain({
       />
       <div className="mention-feed-body-grid">
         <div className="mention-feed-primary-list">
-        <AudioFeedSection items={visibleAudioItems} communities={communities} savedIds={savedAudioIds} reminderIds={audioReminderIds} onSelect={selectAudio} onToggleSaved={(id) => toggleAudioSet(setSavedAudioIds, savedAudioIds, id)} onToggleReminder={(id) => toggleAudioSet(setAudioReminderIds, audioReminderIds, id)} onOpenCommunity={onOpenEventCommunity} />
+        <AudioFeedSection items={visibleAudioItems} communities={communities} savedIds={savedAudioIds} reminderIds={audioReminderFeedIds} onSelect={selectAudio} onToggleSaved={(id) => toggleAudioSet(setSavedAudioIds, savedAudioIds, id)} onToggleReminder={toggleAudioReminder} onOpenCommunity={onOpenEventCommunity} />
         <MentionFeedList
           items={visibleItems}
           communities={communities}
@@ -173,7 +203,7 @@ export function MentionFeedMain({
           voiceState={voiceState}
           activeVoiceRooms={activeVoiceRooms}
           friends={friends}
-          events={events}
+          events={companionEvents}
           communities={communities}
           onToggleMute={onToggleVoiceMute}
           onToggleDeafen={onToggleVoiceDeafen}
@@ -183,6 +213,7 @@ export function MentionFeedMain({
           onOpenProfile={onOpenProfile}
           onOpenEventCommunity={onOpenEventCommunity}
           onEventDetails={onEventDetails}
+          onToggleEventReminder={toggleEventReminder}
           audioItem={selectedAudio}
           onCloseAudio={() => setSelectedAudio(null)}
         />

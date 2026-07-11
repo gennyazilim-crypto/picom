@@ -16,4 +16,8 @@ export type UpcomingEvent = Readonly<{
   createdAt?: string;
   updatedAt?: string;
   currentUserRsvp?: EventRsvpStatus;
+  source?: "community" | "radio";
+  radioSessionId?: string;
+  reminderSet?: boolean;
+  scheduleTimezone?: string;
 }>;

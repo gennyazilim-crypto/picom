@@ -114,6 +114,7 @@
     "audio:domain:smoke": "node scripts/audio-domain-smoke.mjs",
     "audio:player:smoke": "node scripts/audio-player-smoke.mjs",
     "radio:listener-player:smoke": "node scripts/radio-listener-player-smoke.mjs",
+    "radio:scheduling-notifications:smoke": "node scripts/radio-scheduling-notifications-smoke.mjs",
     "audio:feed:smoke": "node scripts/audio-feed-integration-smoke.mjs",
     "audio:profile:smoke": "node scripts/profile-audio-sections-smoke.mjs",
     "audio:community:smoke": "node scripts/audio-community-smoke.mjs",

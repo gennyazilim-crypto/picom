@@ -527,6 +527,12 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      radio_session_reminders: {
+        Row: { id: string; radio_session_id: string; user_id: string; remind_minutes_before: number; last_known_starts_at: string; last_known_status: "draft" | "scheduled" | "live" | "ended" | "cancelled"; last_notification_key: string | null; last_notified_at: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_session_reminders"]["Row"]> & Pick<Database["public"]["Tables"]["radio_session_reminders"]["Row"], "radio_session_id" | "user_id" | "last_known_starts_at" | "last_known_status">;
+        Update: Partial<Pick<Database["public"]["Tables"]["radio_session_reminders"]["Row"], "remind_minutes_before" | "last_known_starts_at" | "last_known_status" | "last_notification_key" | "last_notified_at" | "updated_at">>;
+        Relationships: [];
+      };
       radio_session_reactions: {
         Row: { id: string; radio_session_id: string; user_id: string; emoji: string; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_session_reactions"]["Row"]> & Pick<Database["public"]["Tables"]["radio_session_reactions"]["Row"], "radio_session_id" | "user_id" | "emoji">;
@@ -740,6 +746,7 @@ export type Database = {
       toggle_poll_vote: { Args: { target_poll_id: string; target_option_id: string }; Returns: Json };
       close_poll: { Args: { target_poll_id: string }; Returns: Json };
       set_community_event_rsvp: { Args: { target_event_id: string; next_status: "interested" | "going" | "not_going" }; Returns: boolean };
+      claim_radio_session_reminder_event: { Args: { target_reminder_id: string; event_key: string; event_starts_at: string; event_status: "draft" | "scheduled" | "live" | "ended" | "cancelled" }; Returns: boolean };
       open_or_create_thread: { Args: { target_community_id: string; target_channel_id: string; target_parent_message_id: string; thread_name: string }; Returns: Json };
       send_thread_message: { Args: { target_thread_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
       get_thread_summary: { Args: { target_thread_id: string }; Returns: Json };

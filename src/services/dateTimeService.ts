@@ -119,6 +119,31 @@ export const dateTimeService = {
     }
   },
 
+  formatEventDay(value: DateTimeInput, options?: DateTimeFormatOptions): string {
+    return formatWith(value, { weekday: "long", month: "short", day: "numeric" }, "Unknown day", options);
+  },
+
+  formatEventTime(value: DateTimeInput, options?: DateTimeFormatOptions): string {
+    return formatWith(value, { hour: "2-digit", minute: "2-digit", timeZoneName: "short" }, "Unknown time", options);
+  },
+
+  getCalendarDayKey(value: DateTimeInput, options?: DateTimeFormatOptions): string {
+    const date = parseDate(value);
+    if (!date) return "invalid";
+    try {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: options?.timeZone,
+      }).formatToParts(date);
+      const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "00";
+      return part("year") + "-" + part("month") + "-" + part("day");
+    } catch {
+      return date.toISOString().slice(0, 10);
+    }
+  },
+
   formatAuditTimestamp(value: DateTimeInput, options?: DateTimeFormatOptions): string {
     return this.formatFullTimestamp(value, options);
   },

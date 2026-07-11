@@ -940,6 +940,10 @@
   cursor: default;
   text-decoration: none;
 }
+.event-mini-actions{display:flex;align-items:center;gap:5px}
+.event-mini-reminder{width:28px;height:28px;display:grid;place-items:center;color:var(--text-muted);background:var(--app-surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.event-mini-reminder:hover{color:var(--text-primary);background:var(--hover-surface)}
+.event-mini-reminder[aria-pressed="true"]{color:var(--accent);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 34%,var(--border))}
 .mention-feed-primary-list{min-width:0;display:grid;align-content:start;gap:14px}.feed-companion-rail>.audio-mini-player{position:sticky;top:12px;z-index:3}
 
 .mention-feed-main {

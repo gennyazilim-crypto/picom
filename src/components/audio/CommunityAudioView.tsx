@@ -5,6 +5,8 @@ import { useAudioCatalog } from "../../hooks/useAudioCatalog";
 import { AppIcon } from "../AppIcon";
 import { RadioPanel } from "./RadioPanel";
 import { PodcastEpisodeDetail } from "./PodcastEpisodeDetail";
+import { useRadioScheduleReminders } from "../../hooks/useRadioScheduleReminders";
+import { dateTimeService } from "../../services/dateTimeService";
 
 type CommunityAudioTab = "live" | "podcasts" | "scheduled";
 
@@ -92,13 +94,14 @@ export function CommunityAudioCard({ title, subtitle, description, coverUrl, bad
 type RadioSessionListProps = {
   sessions: RadioSession[];
   scheduled?: boolean;
-  reminderIds: Set<string>;
+  reminderIds: ReadonlySet<string>;
+  timeZone?: string;
   getUserLabel: (userId: string) => string;
   onListen: (session: RadioSession) => void;
   onToggleReminder: (sessionId: string) => void;
 };
 
-export function RadioSessionList({ sessions, scheduled = false, reminderIds, getUserLabel, onListen, onToggleReminder }: RadioSessionListProps) {
+export function RadioSessionList({ sessions, scheduled = false, reminderIds, timeZone, getUserLabel, onListen, onToggleReminder }: RadioSessionListProps) {
   if (!sessions.length) return <div className="community-audio-empty">No radio sessions are available in this section yet.</div>;
   return <div className="community-audio-list">
     {sessions.map((session) => <CommunityAudioCard
@@ -108,7 +111,7 @@ export function RadioSessionList({ sessions, scheduled = false, reminderIds, get
       description={session.description}
       coverUrl={session.coverUrl}
       badge={scheduled ? "UPCOMING" : "LIVE"}
-      meta={scheduled ? new Date(session.startsAt).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" }) : `${session.listenerCount} listening`}
+      meta={scheduled ? dateTimeService.formatCompactDateTime(session.startsAt, { timeZone }) : `${session.listenerCount} listening`}
       actionLabel={scheduled ? "Preview" : "Listen"}
       isSaved={scheduled ? reminderIds.has(session.id) : undefined}
       onToggleSaved={scheduled ? () => onToggleReminder(session.id) : undefined}
@@ -165,17 +168,20 @@ export function CommunityPodcastSection(props: PodcastEpisodeListProps) {
 
 export function CommunityAudioView({ community, canManageAudio, onPlaceholderAction, onOpenProfile }: CommunityAudioViewProps) {
   const audioCatalog = useAudioCatalog();
+  const reminders = useRadioScheduleReminders(audioCatalog.radioSessions);
   const preferredTab: CommunityAudioTab = community.kind === "podcast" ? "podcasts" : "live";
   const [activeTab, setActiveTab] = useState<CommunityAudioTab>(preferredTab);
   const [selectedRadioSession, setSelectedRadioSession] = useState<RadioSession | null>(null);
   const [selectedPodcastEpisode, setSelectedPodcastEpisode] = useState<PodcastEpisode | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
-  const [reminderIds, setReminderIds] = useState<Set<string>>(() => new Set());
   const radioSessions = useMemo(() => audioCatalog.radioSessions.filter((session) => session.communityId === community.id), [audioCatalog.radioSessions, community.id]);
   const podcastEpisodes = useMemo(() => audioCatalog.podcastEpisodes.filter((episode) => episode.communityId === community.id), [audioCatalog.podcastEpisodes, community.id]);
   const getUserLabel = (userId: string) => community.members.find((member) => member.userId === userId)?.displayName ?? "Picom creator";
   const toggleSaved = (id: string) => setSavedIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
-  const toggleReminder = (id: string) => setReminderIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const toggleReminder = (id: string) => {
+    const session = audioCatalog.radioSessions.find((candidate) => candidate.id === id);
+    if (session) void reminders.toggle(session);
+  };
 
   useEffect(() => {
     setActiveTab(preferredTab);
@@ -203,11 +209,11 @@ export function CommunityAudioView({ community, canManageAudio, onPlaceholderAct
   return <main className="community-audio-view">
     <CommunityAudioHeader communityName={community.name} activeTab={activeTab} canManageAudio={canManageAudio} onSelectTab={setActiveTab} onPlaceholderAction={onPlaceholderAction} />
     <div className="community-audio-scroll">
-      {activeTab === "live" ? <CommunityRadioSection sessions={radioSessions.filter((session) => session.status === "live")} reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={setSelectedRadioSession} onToggleReminder={toggleReminder} /> : null}
+      {activeTab === "live" ? <CommunityRadioSection sessions={radioSessions.filter((session) => session.status === "live")} reminderIds={reminders.reminderIds} getUserLabel={getUserLabel} onListen={setSelectedRadioSession} onToggleReminder={toggleReminder} /> : null}
       {activeTab === "podcasts" ? <CommunityPodcastSection episodes={podcastEpisodes.filter((episode) => episode.status === "published")} savedIds={savedIds} getUserLabel={getUserLabel} onPlay={setSelectedPodcastEpisode} onToggleSaved={toggleSaved} /> : null}
       {activeTab === "scheduled" ? <section className="community-audio-section" aria-labelledby="community-scheduled-title">
-        <div className="community-audio-section-title"><div><span>COMING UP</span><h2 id="community-scheduled-title">Scheduled Radio</h2></div><p>Preview upcoming sessions and keep local reminders.</p></div>
-        <RadioSessionList sessions={radioSessions.filter((session) => session.status === "scheduled")} scheduled reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={setSelectedRadioSession} onToggleReminder={toggleReminder} />
+        <div className="community-audio-section-title"><div><span>COMING UP</span><h2 id="community-scheduled-title">Scheduled Radio</h2></div><p>Preview upcoming sessions and keep synchronized reminders.</p></div>
+        <RadioSessionList sessions={radioSessions.filter((session) => session.status === "scheduled")} scheduled reminderIds={reminders.reminderIds} getUserLabel={getUserLabel} onListen={setSelectedRadioSession} onToggleReminder={toggleReminder} />
       </section> : null}
     </div>
   </main>;

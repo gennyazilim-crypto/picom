@@ -24,6 +24,7 @@ type FeedCompanionRailProps = {
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
+  onToggleEventReminder: (event: UpcomingEvent) => void;
   audioItem?: AudioPlayableItem | null;
   onCloseAudio: () => void;
 };
@@ -201,16 +202,18 @@ function UpcomingEventMiniCard({
   communityName,
   onOpenCommunity,
   onEventDetails,
+  onToggleEventReminder,
 }: {
   event: UpcomingEvent;
   communityName: string;
   onOpenCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
+  onToggleEventReminder: (event: UpcomingEvent) => void;
 }) {
   return (
     <article className="upcoming-event-mini-card">
       <span className="event-mini-icon">
-        <AppIcon name={getEventIcon(event.type)} size="sm" />
+        <AppIcon name={event.source === "radio" ? "microphone" : getEventIcon(event.type)} size="sm" />
       </span>
       <div>
         <strong>{event.title}</strong>
@@ -219,9 +222,12 @@ function UpcomingEventMiniCard({
         </button>
         <small>{dateTimeService.formatCompactDateTime(event.startsAt)} - {event.attendeeCount ?? 0} interested</small>
       </div>
-      <button className="event-mini-action" type="button" aria-label={`Open ${event.title} details`} onClick={() => onEventDetails(event)}>
-        <AppIcon name="chevronRight" size="sm" />
-      </button>
+      <span className="event-mini-actions">
+        {event.source === "radio" ? <button className="event-mini-reminder" type="button" aria-label={event.reminderSet ? `Remove reminder for ${event.title}` : `Remind me about ${event.title}`} aria-pressed={event.reminderSet} onClick={() => onToggleEventReminder(event)}><AppIcon name="bell" size="sm" /></button> : null}
+        <button className="event-mini-action" type="button" aria-label={`Open ${event.title} details`} onClick={() => onEventDetails(event)}>
+          <AppIcon name="chevronRight" size="sm" />
+        </button>
+      </span>
     </article>
   );
 }
@@ -231,7 +237,8 @@ function UpcomingEventsSection({
   communities,
   onOpenEventCommunity,
   onEventDetails,
-}: Pick<FeedCompanionRailProps, "events" | "communities" | "onOpenEventCommunity" | "onEventDetails">) {
+  onToggleEventReminder,
+}: Pick<FeedCompanionRailProps, "events" | "communities" | "onOpenEventCommunity" | "onEventDetails" | "onToggleEventReminder">) {
   return (
     <section className="feed-rail-card upcoming-events-section" aria-label="Upcoming events">
       <header className="feed-rail-section-header">
@@ -249,6 +256,7 @@ function UpcomingEventsSection({
             communityName={getCommunityName(communities, event.communityId)}
             onOpenCommunity={onOpenEventCommunity}
             onEventDetails={onEventDetails}
+            onToggleEventReminder={onToggleEventReminder}
           />
         ))}
       </div>
@@ -270,6 +278,7 @@ export function FeedCompanionRail({
   onOpenProfile,
   onOpenEventCommunity,
   onEventDetails,
+  onToggleEventReminder,
   audioItem,
   onCloseAudio,
 }: FeedCompanionRailProps) {
@@ -285,7 +294,7 @@ export function FeedCompanionRail({
       />
       <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} />
       <FriendsStatusSection friends={friends} communities={communities} onOpenProfile={onOpenProfile} />
-      <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} />
+      <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} onToggleEventReminder={onToggleEventReminder} />
     </aside>
   );
 }

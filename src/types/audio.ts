@@ -103,6 +103,19 @@ export type RadioSession = Readonly<{
   isSavedByCurrentUser: boolean;
 }>;
 
+export type RadioScheduleReminder = Readonly<{
+  id: string;
+  radioSessionId: string;
+  userId: string;
+  remindMinutesBefore: number;
+  lastKnownStartsAt: string;
+  lastKnownStatus: RadioSessionStatus;
+  lastNotificationKey?: string;
+  lastNotifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
 export type RadioCommunityShellSnapshot = Readonly<{
   settings: RadioCommunitySettings;
   sessions: readonly RadioSession[];
