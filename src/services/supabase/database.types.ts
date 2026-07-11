@@ -237,6 +237,14 @@ export type Database = {
         Insert: Partial<Database["public"]["Tables"]["meeting_rooms"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_rooms"]["Row"],"community_id"|"source_kind"|"mode"|"title"|"host_user_id"|"created_by">;
         Update: Partial<Database["public"]["Tables"]["meeting_rooms"]["Row"]>;Relationships:[];
       };
+      meeting_chat_contexts:{
+        Row:{room_id:string;community_id:string;channel_id:string;thread_id:string|null;context_kind:"linked_channel"|"dedicated_thread"|"meeting_source";preserve_after_meeting:boolean;guest_access_expires_at:string|null;created_by:string;created_at:string;updated_at:string};
+        Insert:never;Update:never;Relationships:[];
+      };
+      meeting_chat_message_links:{
+        Row:{message_id:string;room_id:string;session_id:string|null;linked_by_user_id:string|null;created_at:string};
+        Insert:never;Update:never;Relationships:[];
+      };
       meeting_sessions: {
         Row: { id:string;room_id:string;provider:"livekit";provider_room_name:string;status:"preparing"|"live"|"reconnecting"|"ended"|"failed";connection_state:string;started_by_user_id:string;ended_by_user_id:string|null;started_at:string|null;ended_at:string|null;participant_count:number;last_event_sequence:number;idempotency_key:string;metadata:Json;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_sessions"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_sessions"]["Row"],"room_id"|"provider_room_name"|"started_by_user_id"|"idempotency_key">;
@@ -952,6 +960,10 @@ export type Database = {
       list_meeting_invites:{Args:{target_room_id:string};Returns:Json};
       authorize_livekit_meeting_token:{Args:{target_room_id:string;target_session_id:string;request_audio?:boolean;request_video?:boolean;request_screen?:boolean;request_data?:boolean};Returns:Array<{room_id:string;session_id:string;community_id:string;provider_room_name:string;participant_identity:string;participant_name:string;meeting_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";access_state:"authorized"|"waiting";waiting_entry_id:string|null;can_subscribe:boolean;can_publish_audio:boolean;can_publish_video:boolean;can_publish_screen:boolean;can_publish_data:boolean}>};
       get_meeting_participant_snapshot:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
+      configure_meeting_chat_context:{Args:{target_room_id:string;target_context_kind:"linked_channel"|"dedicated_thread"|"meeting_source";target_channel_id?:string|null;target_thread_id?:string|null;target_preserve_after_meeting?:boolean;target_guest_access_expires_at?:string|null};Returns:Json};
+      get_meeting_chat_context:{Args:{target_room_id:string;target_session_id?:string|null};Returns:Json};
+      send_meeting_chat_message:{Args:{target_room_id:string;target_session_id:string|null;message_body:string;target_client_message_id:string;target_reply_to_message_id?:string|null;target_attachment_ids?:string[]};Returns:Array<Database["public"]["Tables"]["messages"]["Row"]>};
+      mark_meeting_chat_read:{Args:{target_room_id:string;target_session_id:string|null;target_last_read_message_id?:string|null};Returns:boolean};
       set_meeting_participant_hand_state:{Args:{target_participant_id:string;target_raised:boolean};Returns:Json};
       cleanup_stale_meeting_participants:{Args:{target_session_id:string;target_stale_before?:string};Returns:Json};
       process_livekit_webhook_event:{Args:{target_event_id:string;target_event_type:string;target_occurred_at:string;target_room_id:string;target_session_id:string;target_room_name:string;target_payload_digest:string;target_participant_identity?:string|null;target_participant_name?:string|null;target_track_sid?:string|null;target_track_kind?:string|null;target_track_source?:string|null};Returns:Json};

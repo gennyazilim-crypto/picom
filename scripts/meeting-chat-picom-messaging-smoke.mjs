@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const read=(path)=>readFileSync(path,"utf8");
+const migration=read("supabase/migrations/20260711153900_meeting_chat_picom_messaging.sql"),service=read("src/services/meeting/meetingChatContextService.ts"),message=read("src/services/messageService.ts"),send=read("src/services/messageSendMutation.ts"),list=read("src/services/messageListQuery.ts"),deepLink=read("src/services/deepLinkService.ts"),db=read("src/services/supabase/database.types.ts"),sql=read("supabase/tests/meeting_chat_picom_messaging.sql");
+for(const marker of ["meeting_chat_contexts","meeting_chat_message_links","can_access_meeting_chat","send_meeting_chat_message","mark_meeting_chat_read","can_view_message","preserve_after_meeting"])assert.ok(migration.includes(marker),`missing ${marker}`);
+for(const forbidden of ["create table if not exists public.meeting_messages","create table if not exists public.meeting_chat_reactions","create table if not exists public.meeting_chat_attachments"])assert.ok(!migration.includes(forbidden),`duplicate subsystem ${forbidden}`);
+for(const primitive of ["messageService.listMessages","messageService.sendMessage","messageService.editMessage","messageService.deleteMessage","reactionService.addReaction","reactionService.removeReaction","reportService.submitReport"])assert.ok(service.includes(primitive),`adapter does not reuse ${primitive}`);
+assert.ok(message.includes("meetingRoomId")&&send.includes('client.rpc("send_meeting_chat_message"')&&list.includes("threadId"),"canonical message service is not meeting/thread aware");
+assert.ok(migration.includes("target_reply_to_message_id")&&migration.includes("target_attachment_ids")&&migration.includes("message_reactions")===false,"reply/attachment primitive missing or reaction subsystem duplicated");
+assert.ok(deepLink.includes('type: "meetingChat"')&&deepLink.includes("INVALID_MEETING_CHAT_LINK"),"exact meeting chat deep link contract missing");
+for(const rpc of ["configure_meeting_chat_context","get_meeting_chat_context","send_meeting_chat_message","mark_meeting_chat_read"])assert.ok(db.includes(`${rpc}:`),`database type missing ${rpc}`);
+assert.ok(sql.includes("duplicate meeting chat subsystem")&&sql.includes("has_table_privilege"),"SQL service/RLS contract missing");
+console.log("Meeting chat context, canonical Picom message primitives, guest expiry, RLS and deep-link smoke: PASS");

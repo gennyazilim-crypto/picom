@@ -3,7 +3,7 @@ import { currentUserId } from "../data/mockCommunities";
 import type { MessageSummary, SendMessageInput } from "./messageService";
 import type { Database } from "./supabase/database.types";
 
-export const MESSAGE_SEND_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, reply_to_message_id, webhook_id, webhook_name" as const;
+export const MESSAGE_SEND_SELECT = "id, community_id, channel_id, author_id, body, client_message_id, sequence, created_at, edited_at, deleted_at, reply_to_message_id, thread_id, webhook_id, webhook_name" as const;
 
 export type MessageSendRow = Readonly<{
   id: string;
@@ -17,6 +17,7 @@ export type MessageSendRow = Readonly<{
   edited_at: string | null;
   deleted_at: string | null;
   reply_to_message_id: string | null;
+  thread_id: string | null;
   webhook_id: string | null;
   webhook_name: string | null;
 }>;
@@ -39,6 +40,7 @@ export function mapMessageSendRow(row: MessageSendRow): MessageSummary {
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     replyToMessageId: row.reply_to_message_id,
+    threadId: row.thread_id ?? null,
     webhookId: row.webhook_id ?? undefined,
     webhookName: row.webhook_name ?? undefined,
   };
@@ -60,6 +62,7 @@ export function createMockSentMessage(input: SendMessageInput, body: string): Me
     editedAt: null,
     deletedAt: null,
     replyToMessageId: input.replyToMessageId ?? null,
+    threadId: input.threadId ?? null,
   };
 }
 
@@ -68,7 +71,16 @@ export async function sendSupabaseMessage(
   input: SendMessageInput,
   body: string,
 ): Promise<MessageSendMutationResult> {
-  const { data, error } = await client.rpc("send_text_message_idempotent", {
+  const request = input.meetingRoomId
+    ? client.rpc("send_meeting_chat_message", {
+      target_room_id: input.meetingRoomId,
+      target_session_id: input.meetingSessionId ?? null,
+      message_body: body,
+      target_client_message_id: input.clientMessageId ?? "",
+      target_reply_to_message_id: input.replyToMessageId ?? null,
+      target_attachment_ids: [...(input.attachmentIds ?? [])],
+    })
+    : client.rpc("send_text_message_idempotent", {
     target_community_id: input.communityId,
     target_channel_id: input.channelId,
     message_body: body,
@@ -76,6 +88,7 @@ export async function sendSupabaseMessage(
     target_reply_to_message_id: input.replyToMessageId ?? null,
     target_attachment_ids: [...(input.attachmentIds ?? [])],
   });
+  const { data, error } = await request;
   const row = data?.[0] as MessageSendRow | undefined;
 
   if (error || !row) {

@@ -27,6 +27,7 @@ export type ListMessagesInput = Readonly<{
   channelId: string;
   limit?: number;
   before?: string | null;
+  threadId?: string | null;
 }>;
 
 export type MessagePage = Readonly<{
@@ -86,6 +87,7 @@ export function listMockMessageSummaries(input: ListMessagesInput): MessagePage 
   const community = mockCommunities.find((item) => item.id === input.communityId);
   const messages = (community?.messages ?? [])
     .filter((message) => message.channelId === input.channelId)
+    .filter(() => !input.threadId)
     .filter((message) => !input.before || message.createdAt < input.before)
     .map((message): MessageSummary => ({
       id: message.id,
@@ -99,6 +101,7 @@ export function listMockMessageSummaries(input: ListMessagesInput): MessagePage 
       editedAt: message.editedAt ?? null,
       deletedAt: null,
       replyToMessageId: message.replyToMessageId ?? null,
+      threadId: null,
       reactions: message.reactions,
       webhookId: message.webhookId,
       webhookName: message.webhookName,
@@ -115,10 +118,11 @@ export async function listSupabaseMessageSummaries(client: SupabaseClient<Databa
     .select(MESSAGE_LIST_SELECT)
     .eq("community_id", input.communityId)
     .eq("channel_id", input.channelId)
-    .is("thread_id", null)
     .order("sequence", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit + 1);
+
+  query = input.threadId ? query.eq("thread_id", input.threadId) : query.is("thread_id", null);
 
   if (input.before) {
     query = query.lt("created_at", input.before);

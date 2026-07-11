@@ -41,6 +41,7 @@ export type MessageSummary = Readonly<{
   editedAt: string | null;
   deletedAt: string | null;
   replyToMessageId: string | null;
+  threadId?: string | null;
   reactions?: Reaction[];
   webhookId?: string;
   webhookName?: string;
@@ -54,6 +55,9 @@ export type SendMessageInput = Readonly<{
   clientMessageId?: string | null;
   replyToMessageId?: string | null;
   attachmentIds?: readonly string[];
+  threadId?: string | null;
+  meetingRoomId?: string;
+  meetingSessionId?: string | null;
 }>;
 
 export type EditMessageInput = Readonly<{
@@ -105,6 +109,7 @@ export function mapMessageRow(row: MessageRow): MessageSummary {
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     replyToMessageId: row.reply_to_message_id,
+    threadId: row.thread_id ?? null,
     webhookId: row.webhook_id ?? undefined,
     webhookName: row.webhook_name ?? undefined,
   };
