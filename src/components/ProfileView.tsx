@@ -206,9 +206,8 @@ export function ProfileLeftCard({
 }
 
 export function ProfileHeroGallery({ media, onOpenImage }: { media: ProfileMediaItem[]; onOpenImage: (attachment: Attachment) => void }) {
-  const visibleMedia = media.slice(0, 5);
+  const visibleMedia = media.filter((item) => item.type === "image").slice(0, 5);
   const photoCount = media.filter((item) => item.type === "image").length;
-  const videoCount = media.filter((item) => item.type === "video_placeholder").length;
 
   return (
     <section className="profile-section profile-hero-gallery-section">
@@ -217,24 +216,22 @@ export function ProfileHeroGallery({ media, onOpenImage }: { media: ProfileMedia
           <p className="eyebrow">Gallery</p>
           <h2>Recent profile media</h2>
         </div>
-        <span>{photoCount} photos / {videoCount} videos</span>
+        <span>{photoCount} photos</span>
       </div>
       {visibleMedia.length ? (
         <div className="profile-hero-gallery">
           {visibleMedia.map((item, index) => {
-            const isVideo = item.type === "video_placeholder";
             return (
               <button
                 key={item.id}
                 type="button"
-                className={`profile-media-card ${index === 0 ? "featured" : ""} ${isVideo ? "video" : ""}`}
-                onClick={() => !isVideo && onOpenImage(profileMediaToAttachment(item))}
-                disabled={isVideo}
+                className={`profile-media-card ${index === 0 ? "featured" : ""}`}
+                onClick={() => onOpenImage(profileMediaToAttachment(item))}
               >
                 <img src={item.thumbnailUrl ?? item.url} alt={item.title ?? "Profile media"} loading="lazy" />
                 <span>
-                  <AppIcon name={isVideo ? "voice" : "image"} size="sm" />
-                  {item.title ?? (isVideo ? "Video placeholder" : "Image")}
+                  <AppIcon name="image" size="sm" />
+                  {item.title ?? "Image"}
                 </span>
               </button>
             );

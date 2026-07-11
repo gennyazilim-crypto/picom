@@ -18,6 +18,7 @@ const expectedViewports = Object.freeze({
   default: { width: 1440, height: 900 },
   minimum: { width: 1100, height: 700 },
 });
+const requiredProfileVariants = Object.freeze(["current_verified", "other_unverified", "blocked", "public", "private", "empty_media"]);
 const failures = [];
 
 if (manifest.schemaVersion !== 1) failures.push("schemaVersion must be 1");
@@ -49,6 +50,8 @@ for (const screen of Object.keys(requiredScreens)) {
   }
 }
 for (const theme of ["light", "dark"]) if (!scenarios.some((scenario) => scenario.screen === "communityChat" && scenario.theme === theme && scenario.viewport === "minimum")) failures.push(`missing communityChat ${theme} minimum desktop scenario`);
+for (const variant of requiredProfileVariants) if (!scenarios.some((scenario) => scenario.screen === "profile" && scenario.variant === variant && scenario.viewport === "default")) failures.push(`missing profile visual variant: ${variant}`);
+for (const scenario of scenarios.filter((candidate) => candidate.screen === "profile")) if (!requiredProfileVariants.includes(scenario.variant)) failures.push(`unexpected profile visual variant: ${scenario.variant}`);
 if (scenarios.some((scenario) => /mobile|phone|tablet/i.test(`${scenario.id} ${scenario.screen} ${scenario.viewport}`))) failures.push("mobile scenarios are outside Picom scope");
 
 if (failures.length) { for (const failure of failures) console.error(`FAIL: ${failure}`); process.exit(1); }

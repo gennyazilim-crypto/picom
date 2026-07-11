@@ -8,7 +8,7 @@ const requiredFlows = Object.freeze({
   "auth-login-register": ["src/components/LoginScreen.tsx", "src/components/RegisterScreen.tsx"],
   onboarding: ["src/components/onboarding/OnboardingFlow.tsx"],
   "mention-feed": ["src/components/MentionFeedMain.tsx"],
-  "full-profile": ["src/components/ProfileView.tsx"],
+  "full-profile": ["src/components/ProfileView.tsx", "src/components/settings/ProfileMediaEditor.tsx", "src/components/VerificationRequestPanel.tsx"],
   "community-channel-switching": ["src/components/CommunitySidebar.tsx", "src/components/ChatMain.tsx"],
   "message-send": ["src/components/MessageComposer.tsx", "src/components/MessageList.tsx"],
   "emoji-reaction-reply": ["src/components/EmojiPicker.tsx", "src/components/MessageItem.tsx"],

@@ -2088,7 +2088,11 @@ export function App() {
     switchCommunity(activity.communityId, activity.channelId);
     clearChannelUnread({ communityId: activity.communityId, channelId: activity.channelId });
     closeTransientOverlays();
-    loggingService.logInfo("Profile activity highlight placeholder prepared", { messageId: activity.messageId }, "profile");
+    if (activity.messageId) {
+      const messageId = activity.messageId;
+      setHighlightedMessageId(messageId);
+      globalThis.setTimeout(() => setHighlightedMessageId((current) => current === messageId ? null : current), 3200);
+    }
   }, [clearChannelUnread, closeTransientOverlays, pushToast, switchCommunity]);
 
   const finishFirstRunOnboarding = useCallback((completion: OnboardingCompletion) => {
