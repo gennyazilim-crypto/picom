@@ -709,6 +709,10 @@ export type Database = {
       delete_direct_message: { Args: { target_message_id: string }; Returns: Json };
       set_direct_conversation_preferences: { Args: { target_conversation_id: string; target_muted_until: string | null; target_archived: boolean }; Returns: boolean };
       mark_direct_conversation_read: { Args: { target_conversation_id: string }; Returns: boolean };
+      mark_direct_conversation_read_to: { Args: { target_conversation_id: string; target_message_id: string }; Returns: boolean };
+      set_direct_conversation_muted: { Args: { target_conversation_id: string; target_muted_until: string | null }; Returns: boolean };
+      set_direct_conversation_archived: { Args: { target_conversation_id: string; target_archived: boolean }; Returns: boolean };
+      list_direct_shared_media: { Args: { target_conversation_id: string; before_created_at?: string | null; before_attachment_id?: string | null; result_limit?: number }; Returns: Array<{ id: string; message_id: string; url: string; file_name: string | null; mime_type: string | null; file_size: number | null; width: number | null; height: number | null; created_at: string }> };
       accept_community_invite: {
         Args: { invite_code: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;

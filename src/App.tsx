@@ -11,7 +11,7 @@ import { communityEventService, type CreateCommunityEventInput, type UpdateCommu
 import { mockFollowedUserStories } from "./data/mockStories";
 import { mockFollowSuggestions } from "./data/mockFollowSuggestions";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
-import type { DirectConversation } from "./types/directMessages";
+import type { DirectConversation, DirectSharedMediaItem } from "./types/directMessages";
 import type { FriendState, FriendViewTab } from "./types/friends";
 import { friendPresenceService } from "./services/friends/friendPresenceService";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
@@ -480,7 +480,8 @@ export function App() {
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
   const directMessageUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? currentUserId : currentUserId;
-  useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations(result.data); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
+  useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
+  useEffect(() => { if (!authSession || !activeDirectConversationId || !dataSourceService.getStatus().isSupabase) return; let active = true; void Promise.all([directMessageService.getDirectMessages(activeDirectConversationId), directMessageService.getDirectSharedMedia(activeDirectConversationId, { limit: 24 })]).then(([messages, media]) => { if (!active) return; if (!messages.ok) { pushToast(messages.error.message, "error"); return; } setDirectConversations((current) => current.map((conversation) => conversation.id === activeDirectConversationId ? { ...conversation, messages: messages.data, sharedMedia: media.ok ? media.data.items : conversation.sharedMedia } : conversation)); }); return () => { active = false; }; }, [activeDirectConversationId, authSession?.user?.id, pushToast]);
   useEffect(() => {
     if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
     let active = true;
@@ -1892,7 +1893,6 @@ export function App() {
       ...conversation, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0,
       messages: [...conversation.messages, { id: clientMessageId, clientMessageId, conversationId, authorId: directMessageUserId, body, createdAt }],
     } : conversation));
-    if (dataSourceService.getStatus().isMock) return true;
     const result = await directMessageService.sendDirectMessage({ conversationId, body, clientMessageId });
     if (result.ok) { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? result.data : message), lastMessagePreview: result.data.body, updatedAt: result.data.createdAt } : item)); return true; }
     setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.filter((message) => message.clientMessageId !== clientMessageId) } : item));
@@ -1907,9 +1907,10 @@ export function App() {
       const messages = [...conversation.messages];
       if (index >= 0) messages[index] = message; else messages.push(message);
       const active = activeView === "directMessages" && activeDirectConversationId === conversation.id;
-      return { ...conversation, messages, lastMessagePreview: message.deletedAt ? "Message deleted" : message.body, updatedAt: message.createdAt, unreadCount: message.authorId === currentUserId || active ? 0 : conversation.unreadCount + (index >= 0 ? 0 : 1) };
+      return { ...conversation, messages, lastMessagePreview: message.deletedAt ? "Message deleted" : message.body, updatedAt: message.createdAt, unreadCount: message.authorId === directMessageUserId || active ? 0 : conversation.unreadCount + (index >= 0 ? 0 : 1) };
     }));
-  }, [activeDirectConversationId, activeView]);
+    if (activeView === "directMessages" && activeDirectConversationId === message.conversationId && message.authorId !== directMessageUserId) void directMessageService.markDirectConversationRead(message.conversationId, message.id);
+  }, [activeDirectConversationId, activeView, directMessageUserId]);
 
   const handleDirectRealtimeUpdate = useCallback((message: DirectConversation["messages"][number]) => {
     setDirectConversations((current) => current.map((conversation) => conversation.id === message.conversationId ? { ...conversation, messages: conversation.messages.map((candidate) => candidate.id === message.id ? { ...candidate, ...message } : candidate), lastMessagePreview: message.deletedAt ? "Message deleted" : message.body } : conversation));
@@ -1925,15 +1926,28 @@ export function App() {
       const reactions = [...(message.reactions ?? [])];
       const index = reactions.findIndex((item) => item.emoji === reaction.emoji);
       const delta = type === "add" ? 1 : -1;
-      if (index >= 0) { const next = reactions[index].count + delta; if (next > 0) reactions[index] = { ...reactions[index], count: next, reactedByCurrentUser: reaction.user_id === currentUserId ? type === "add" : reactions[index].reactedByCurrentUser }; else reactions.splice(index, 1); }
-      else if (type === "add") reactions.push({ emoji: reaction.emoji, count: 1, reactedByCurrentUser: reaction.user_id === currentUserId });
+      if (index >= 0) { const next = reactions[index].count + delta; if (next > 0) reactions[index] = { ...reactions[index], count: next, reactedByCurrentUser: reaction.user_id === directMessageUserId ? type === "add" : reactions[index].reactedByCurrentUser }; else reactions.splice(index, 1); }
+      else if (type === "add") reactions.push({ emoji: reaction.emoji, count: 1, reactedByCurrentUser: reaction.user_id === directMessageUserId });
       return { ...message, reactions };
     }) })));
+  }, [directMessageUserId]);
+
+  const handleDirectRealtimeAttachment = useCallback((type: "add" | "remove", attachment: DirectSharedMediaItem) => {
+    setDirectConversations((current) => current.map((conversation) => { if (!conversation.messages.some((message) => message.id === attachment.messageId)) return conversation; return { ...conversation, sharedMedia: type === "add" ? [...(conversation.sharedMedia ?? []).filter((item) => item.id !== attachment.id), attachment] : (conversation.sharedMedia ?? []).filter((item) => item.id !== attachment.id), messages: conversation.messages.map((message) => message.id !== attachment.messageId ? message : { ...message, attachments: type === "add" ? [...(message.attachments ?? []).filter((item) => item.id !== attachment.id), attachment] : (message.attachments ?? []).filter((item) => item.id !== attachment.id) }) }; }));
+  }, []);
+
+  const handleDirectReadState = useCallback((conversationId: string, userId: string, lastReadAt?: string, lastReadMessageId?: string) => {
+    if (userId !== directMessageUserId) return;
+    setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, unreadCount: 0, lastReadAt, lastReadMessageId } : conversation));
+  }, [directMessageUserId]);
+
+  const refreshDirectConversationSummaries = useCallback(() => {
+    if (!dataSourceService.getStatus().isSupabase) return;
+    void directMessageService.loadDirectConversations().then((result) => { if (!result.ok) return; setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); });
   }, []);
 
   useDirectMessageRealtime({
     enabled: true,
-    conversationIds: directConversations.map((conversation) => conversation.id),
     activeConversationId: activeDirectConversationId,
     currentUserId: directMessageUserId,
     isDirectMessagesViewActive: activeView === "directMessages",
@@ -1941,6 +1955,9 @@ export function App() {
     onUpdate: handleDirectRealtimeUpdate,
     onDelete: handleDirectRealtimeDelete,
     onReaction: handleDirectRealtimeReaction,
+    onAttachment: handleDirectRealtimeAttachment,
+    onReadState: handleDirectReadState,
+    onConversationChanged: refreshDirectConversationSummaries,
   });
 
   const openNotificationSource = useCallback((item: NotificationCenterItem) => {
@@ -2635,8 +2652,10 @@ export function App() {
               activeConversationId={activeDirectConversationId}
               currentUserId={directMessageUserId}
               friendRequestCount={friendState.counts.pending}
-              onSelectConversation={(conversationId) => { setActiveDirectConversationId(conversationId); setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item)); if (dataSourceService.getStatus().isSupabase) void directMessageService.markDirectConversationRead(conversationId); }}
+              onSelectConversation={(conversationId) => { setActiveDirectConversationId(conversationId); setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item)); void directMessageService.markDirectConversationRead(conversationId); }}
               onSendMessage={sendDirectMessageLocal}
+              onSetMuted={async (conversationId, muted) => { const mutedUntil = muted ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null; const result = await directMessageService.setDirectConversationMuted(conversationId, mutedUntil); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, muted, mutedUntil: mutedUntil ?? undefined } : conversation)); return true; }}
+              onArchive={async (conversationId) => { const result = await directMessageService.setDirectConversationArchived(conversationId, true); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => { const remaining = current.filter((conversation) => conversation.id !== conversationId); setActiveDirectConversationId(remaining[0]?.id ?? ""); return remaining; }); return true; }}
               onBackToCommunity={() => setActiveView("community")}
               onOpenFriends={() => openFriends("all")}
               onOpenPendingFriends={() => openFriends("pending")}
