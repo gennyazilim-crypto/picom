@@ -37,7 +37,7 @@ export type UpdateCurrentProfileInput = Readonly<{
   accentColor?: string | null;
 }>;
 
-export type ProfileServiceErrorCode = "DATA_SOURCE_NOT_CONFIGURED" | "AUTH_REQUIRED" | "VALIDATION_ERROR" | "PROFILE_NOT_FOUND" | "PROFILE_FETCH_FAILED" | "PROFILE_UPDATE_FAILED";
+export type ProfileServiceErrorCode = "DATA_SOURCE_NOT_CONFIGURED" | "AUTH_REQUIRED" | "VALIDATION_ERROR" | "PROFILE_NOT_FOUND" | "PROFILE_FETCH_FAILED" | "PROFILE_UPDATE_CONFLICT" | "PROFILE_UPDATE_FAILED";
 export type ProfileServiceError = Readonly<{ code: ProfileServiceErrorCode; message: string }>;
 export type ProfileServiceResult<T> = Readonly<{ ok: true; data: T }> | Readonly<{ ok: false; error: ProfileServiceError }>;
 
@@ -46,6 +46,29 @@ function asRecord(value: Json | undefined): Record<string, Json | undefined> { r
 function text(value: Json | undefined): string | undefined { return typeof value === "string" ? value : undefined; }
 function strings(value: Json | undefined): string[] { return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []; }
 function status(value: Json | undefined): ProfileStatus { if (value === "online" || value === "idle" || value === "offline") return value; return value === "dnd" || value === "busy" ? "busy" : "offline"; }
+
+type StoredMockProfileOverride = Partial<Omit<ProfileSummary, "avatarUrl" | "coverUrl">> & { avatarUrl?: string | null; coverUrl?: string | null };
+const mockProfileOverrideKey = "picom:profile-domain-overrides:v1";
+
+function readMockProfileOverrides(): Record<string, StoredMockProfileOverride> {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    const parsed = JSON.parse(localStorage.getItem(mockProfileOverrideKey) ?? "{}") as Record<string, StoredMockProfileOverride>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeMockProfileOverride(userId: string, value: StoredMockProfileOverride): boolean {
+  if (typeof localStorage === "undefined") return true;
+  try {
+    localStorage.setItem(mockProfileOverrideKey, JSON.stringify({ ...readMockProfileOverrides(), [userId]: value }));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function mapDomainPayload(payload: Json): ProfileSummary | null {
   const root = asRecord(payload);
@@ -76,7 +99,7 @@ function mapDomainPayload(payload: Json): ProfileSummary | null {
 function mapMockProfile(userId: string): ProfileSummary | null {
   const profile = mockProfiles.find((item) => item.id === userId);
   if (!profile) return null;
-  return {
+  const base: ProfileSummary = {
     id: profile.id,
     username: profile.username,
     displayName: profile.displayName,
@@ -92,6 +115,15 @@ function mapMockProfile(userId: string): ProfileSummary | null {
     onboardingCompleted: profile.onboardingCompleted,
     accentColor: "#007571",
     joinedAt: profile.joinedAt,
+  };
+  const override = readMockProfileOverrides()[userId];
+  if (!override) return base;
+  return {
+    ...base,
+    ...override,
+    avatarUrl: override.avatarUrl === null ? undefined : override.avatarUrl ?? base.avatarUrl,
+    coverUrl: override.coverUrl === null ? undefined : override.coverUrl ?? base.coverUrl,
+    tags: override.tags ? [...override.tags] : base.tags,
   };
 }
 
@@ -153,13 +185,27 @@ export const profileService = {
     const validation = validateUpdate(input); if (validation) return { ok: false, error: validation };
     if (dataSourceService.getStatus().isMock) {
       const existing = mapMockProfile(currentUserId); if (!existing) return profileError("PROFILE_NOT_FOUND", "Current profile was not found.");
-      return { ok: true, data: { ...existing, username: input.username?.trim().toLowerCase() ?? existing.username, displayName: input.displayName?.trim() ?? existing.displayName, status: input.status ?? existing.status, statusText: input.statusText?.trim() ?? existing.statusText, bio: input.bio === undefined ? existing.bio : input.bio?.trim() || "", avatarUrl: input.avatarUrl === undefined ? existing.avatarUrl : input.avatarUrl ?? undefined, coverUrl: input.coverUrl === undefined ? existing.coverUrl : input.coverUrl ?? undefined, preferredLanguage: input.preferredLanguage === undefined ? existing.preferredLanguage : input.preferredLanguage?.trim() || undefined, tags: input.tags ? input.tags.map((tag) => tag.trim()) : existing.tags, location: input.location === undefined ? existing.location : input.location?.trim() || undefined, timezone: input.timezone === undefined ? existing.timezone : input.timezone?.trim() || undefined, accentColor: input.accentColor === undefined ? existing.accentColor : input.accentColor ?? undefined, updatedAt: new Date().toISOString() } };
+      const next: ProfileSummary = { ...existing, username: input.username?.trim().toLowerCase() ?? existing.username, displayName: input.displayName?.trim() ?? existing.displayName, status: input.status ?? existing.status, statusText: input.statusText?.trim() ?? existing.statusText, bio: input.bio === undefined ? existing.bio : input.bio?.trim() || "", avatarUrl: input.avatarUrl === undefined ? existing.avatarUrl : input.avatarUrl ?? undefined, coverUrl: input.coverUrl === undefined ? existing.coverUrl : input.coverUrl ?? undefined, preferredLanguage: input.preferredLanguage === undefined ? existing.preferredLanguage : input.preferredLanguage?.trim() || undefined, tags: input.tags ? input.tags.map((tag) => tag.trim()) : existing.tags, location: input.location === undefined ? existing.location : input.location?.trim() || undefined, timezone: input.timezone === undefined ? existing.timezone : input.timezone?.trim() || undefined, accentColor: input.accentColor === undefined ? existing.accentColor : input.accentColor ?? undefined, updatedAt: new Date().toISOString() };
+      const stored = readMockProfileOverrides()[currentUserId];
+      const persisted: StoredMockProfileOverride = {
+        ...stored,
+        ...next,
+        avatarUrl: input.avatarUrl === null ? null : input.avatarUrl !== undefined ? input.avatarUrl : stored?.avatarUrl ?? next.avatarUrl,
+        coverUrl: input.coverUrl === null ? null : input.coverUrl !== undefined ? input.coverUrl : stored?.coverUrl ?? next.coverUrl,
+      };
+      return writeMockProfileOverride(currentUserId, persisted)
+        ? { ok: true, data: next }
+        : profileError("PROFILE_UPDATE_FAILED", "The local profile could not be persisted. Try a smaller image or clear unused app data.");
     }
     const configured = getConfiguredSupabaseClient(); if (!configured.ok) return configured;
     const { data: userData, error: userError } = await configured.data.auth.getUser();
     if (userError || !userData.user) return profileError("AUTH_REQUIRED", "Sign in before updating your profile.");
     const { data, error } = await configured.data.rpc("update_own_profile_domain", { profile_patch: toPatch(input) });
     const mapped = data ? mapDomainPayload(data) : null;
-    return error || !mapped ? profileError("PROFILE_UPDATE_FAILED", "Could not update profile.") : { ok: true, data: mapped };
+    if (error) {
+      const conflict = error.code === "23505" || /username.*(unique|already|taken)|duplicate/i.test(error.message);
+      return profileError(conflict ? "PROFILE_UPDATE_CONFLICT" : "PROFILE_UPDATE_FAILED", conflict ? "That username is already taken." : "Could not update profile.");
+    }
+    return !mapped ? profileError("PROFILE_UPDATE_FAILED", "Could not update profile.") : { ok: true, data: mapped };
   },
 };

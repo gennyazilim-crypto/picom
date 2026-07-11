@@ -856,7 +856,9 @@ export function App() {
 
         return {
           ...member,
+          username: profileSettings.username || member.username,
           displayName: profileSettings.displayName || member.displayName,
+          avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? member.avatarUrl,
           status: mapTrayStatusToMemberStatus(trayPresenceStatus),
           statusText: profileSettings.statusText || trayPresenceLabels[trayPresenceStatus] || member.statusText,
           bio: profileSettings.bio || member.bio,
@@ -881,8 +883,10 @@ export function App() {
   );
   const selectedProfileMember = useMemo(() => {
     if (!activeProfileUserId) return null;
-    return communities.flatMap((community) => community.members).find((member) => member.userId === activeProfileUserId) ?? null;
-  }, [activeProfileUserId, communities]);
+    const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === activeProfileUserId) ?? null;
+    if (!member || member.userId !== directMessageUserId) return member;
+    return { ...member, username: profileSettings.username || member.username, displayName: profileSettings.displayName || member.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? member.avatarUrl, status: (profileSettings.status === "busy" ? "dnd" : profileSettings.status) as typeof member.status, statusText: profileSettings.statusText || member.statusText, bio: profileSettings.bio || member.bio };
+  }, [activeProfileUserId, communities, directMessageUserId, profileSettings]);
 
   useEffect(() => {
     if (!activeProfileUserId || !selectedProfileMember || !dataSourceService.getStatus().isSupabase) {
@@ -913,8 +917,9 @@ export function App() {
     const profile = profilePrivacyService.applyProjection(sourceProfile,projection);
     const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
-    return { ...profile, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
-  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, profilePrivacyProjection, profilePrivacySubjectId, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember]);
+    const ownOverrides = profile.id === directMessageUserId ? { username: profileSettings.username || profile.username, displayName: profileSettings.displayName || profile.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? profile.avatarUrl, coverUrl: profileSettings.coverUrl === null ? undefined : profileSettings.coverUrl ?? profile.coverUrl, status: profileSettings.status, statusText: profileSettings.statusText || profile.statusText, bio: profileSettings.bio || profile.bio, location: profileSettings.location || profile.location, timezone: profileSettings.timezone || profile.timezone, preferredLanguage: profileSettings.preferredLanguage || profile.preferredLanguage, tags: profileSettings.tags.length ? profileSettings.tags : profile.tags } : {};
+    return { ...profile, ...ownOverrides, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
+  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, profilePrivacyProjection, profilePrivacySubjectId, profileSettings, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember]);
 
   useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
   useEffect(()=>{if(!activeProfileUserId){setProfilePrivacyProjection(defaultProfilePrivacyProjection);setProfilePrivacySubjectId(null);return;}const subjectId=activeProfileUserId;const viewerId=directMessageUserId;const hasSharedCommunity=communities.some((community)=>community.members.some((member)=>member.userId===viewerId)&&community.members.some((member)=>member.userId===subjectId));const isFriend=friendState.friends.some((friend)=>friend.userId===subjectId);let active=true;void profilePrivacyService.getProjection({targetUserId:subjectId,viewerUserId:viewerId,hasSharedCommunity,isFriend}).then((projection)=>{if(active){setProfilePrivacyProjection(projection);setProfilePrivacySubjectId(subjectId)}});return()=>{active=false};},[activeProfileUserId,communities,directMessageUserId,friendState.friends]);
@@ -2649,6 +2654,7 @@ export function App() {
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
               onOpenCommunity={openFeedEventCommunity}
+              onEditProfile={() => { try { sessionStorage.setItem("picom:settings:initial-section", "Profile"); } catch { /* Settings still opens safely without persisted navigation. */ } openSettings(); }}
               onPlaceholderAction={(message) => pushToast(message, "info")}
               onOpenMore={(event, profile) => openContext(event, [
                 { label: profile.isCurrentUser ? "Edit profile placeholder" : "Message placeholder" },

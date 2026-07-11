@@ -24,6 +24,8 @@ import { directSafetyService } from "../services/directMessages/directSafetyServ
 import type { DirectMessagePrivacy } from "../types/directMessageSafety";
 import { profileService } from "../services/profileService";
 import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";
+import { ProfileMediaEditor } from "./settings/ProfileMediaEditor";
+import type { ProfileSummary } from "../services/profileService";
 import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
 import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";
 import type { ProfilePrivacySettings } from "../types/profilePrivacy";
@@ -50,6 +52,18 @@ import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
+const settingsInitialSectionKey = "picom:settings:initial-section";
+const allowedInitialSections = new Set(["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"]);
+
+function readInitialSettingsSection(): string {
+  try {
+    const requested = sessionStorage.getItem(settingsInitialSectionKey);
+    sessionStorage.removeItem(settingsInitialSectionKey);
+    return requested && allowedInitialSections.has(requested) ? requested : "Appearance";
+  } catch {
+    return "Appearance";
+  }
+}
 
 function formatCacheSize(bytes: number | null): string {
   if (bytes === null) return "Not available";
@@ -92,9 +106,9 @@ type SettingsModalProps = {
 
 export function SettingsModal({ theme, accessibilitySettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, currentUsername, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
-  const [active, setActive] = useState("Appearance");
+  const [active, setActive] = useState(readInitialSettingsSection);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
-  const [profileDraft, setProfileDraft] = useState<ProfileSettings>(profileSettings);
+  const [profileDraft, setProfileDraft] = useState<ProfileSettings>(() => ({ ...profileSettings, username: profileSettings.username || currentUsername }));
   const [feedbackIssueType, setFeedbackIssueType] = useState<FeedbackIssueType>("bug");
   const [feedbackTitle, setFeedbackTitle] = useState("Picom beta feedback");
   const [feedbackDescription, setFeedbackDescription] = useState("");
@@ -132,8 +146,8 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   const sections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"];
 
   useEffect(() => {
-    setProfileDraft(profileSettings);
-  }, [profileSettings]);
+    setProfileDraft({ ...profileSettings, username: profileSettings.username || currentUsername });
+  }, [currentUsername, profileSettings]);
 
   useEffect(() => updateService.onStateChange(setUpdateState), []);
   useEffect(() => voiceService.subscribe(setVoiceSettingsSnapshot), []);
@@ -211,14 +225,20 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
   };
   const saveProfileSettings = async () => {
     if (profileSaving) return;
+    const previous = profileSettings;
+    const optimistic = settingsService.updateProfileSettings(profileDraft).profileSettings;
+    onProfileSettingsChange(optimistic);
     setProfileSaving(true);
-    const result = await profileService.updateCurrentProfile({ displayName: profileDraft.displayName, statusText: profileDraft.statusText, bio: profileDraft.bio });
+    const result = await profileService.updateCurrentProfile({ username: profileDraft.username, displayName: profileDraft.displayName, status: profileDraft.status, statusText: profileDraft.statusText, bio: profileDraft.bio, location: profileDraft.location, timezone: profileDraft.timezone, preferredLanguage: profileDraft.preferredLanguage, tags: profileDraft.tags });
     setProfileSaving(false);
-    if (!result.ok) { pushToast(result.error.message, "error"); return; }
-    const next = settingsService.updateProfileSettings({ displayName: result.data.displayName, statusText: result.data.statusText, bio: result.data.bio ?? "" }).profileSettings;
+    if (!result.ok) { const rollback = settingsService.updateProfileSettings(previous).profileSettings; setProfileDraft(rollback); onProfileSettingsChange(rollback); pushToast(result.error.message, "error"); return; }
+    applyProfileSummary(result.data);
+    pushToast("Profile changes saved.", "success");
+  };
+  const applyProfileSummary = (profile: ProfileSummary) => {
+    const next = settingsService.updateProfileSettings({ username: profile.username, displayName: profile.displayName, status: profile.status, statusText: profile.statusText ?? "", bio: profile.bio ?? "", avatarUrl: profile.avatarUrl ?? null, coverUrl: profile.coverUrl ?? null, location: profile.location ?? "", timezone: profile.timezone ?? "", preferredLanguage: profile.preferredLanguage ?? "", tags: [...profile.tags] }).profileSettings;
     setProfileDraft(next);
     onProfileSettingsChange(next);
-    pushToast("Profile changes saved.", "success");
   };
   const resetProfileSettings = () => {
     setProfileDraft(profileSettings);
@@ -721,23 +741,37 @@ export function SettingsModal({ theme, accessibilitySettings, profileSettings, c
             <div className="placeholder-panel action-panel">
               <strong>Profile editing</strong>
               <p>Changes apply immediately and synchronize through the profile service in Supabase mode.</p>
+              <ProfileMediaEditor displayName={profileDraft.displayName || currentUsername} avatarUrl={profileDraft.avatarUrl} coverUrl={profileDraft.coverUrl} onProfileUpdated={applyProfileSummary} onNotice={pushToast} />
               <div className="settings-profile-form">
+                <label>
+                  <span>Username</span>
+                  <input value={profileDraft.username} minLength={3} maxLength={32} pattern="[a-z0-9._-]+" onChange={(event) => setProfileDraft({ ...profileDraft, username: event.target.value.toLowerCase() })} placeholder="username" autoCapitalize="none" spellCheck={false} />
+                </label>
                 <label>
                   <span>Display name</span>
                   <input value={profileDraft.displayName} maxLength={80} onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })} placeholder="Display name" />
                 </label>
                 <label>
+                  <span>Presence</span>
+                  <select value={profileDraft.status} onChange={(event) => setProfileDraft({ ...profileDraft, status: event.target.value as ProfileSettings["status"] })}><option value="online">Online</option><option value="idle">Idle</option><option value="busy">Busy</option><option value="offline">Offline</option></select>
+                </label>
+                <label>
                   <span>Status text</span>
                   <input value={profileDraft.statusText} maxLength={120} onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })} placeholder="What are you working on?" />
                 </label>
+                <label><span>Location</span><input value={profileDraft.location} maxLength={120} onChange={(event) => setProfileDraft({ ...profileDraft, location: event.target.value })} placeholder="City or region" /></label>
+                <label><span>Timezone</span><input value={profileDraft.timezone} maxLength={80} onChange={(event) => setProfileDraft({ ...profileDraft, timezone: event.target.value })} placeholder="Europe/Berlin" /></label>
+                <label><span>Preferred language</span><input value={profileDraft.preferredLanguage} maxLength={48} onChange={(event) => setProfileDraft({ ...profileDraft, preferredLanguage: event.target.value })} placeholder="English" /></label>
+                <label><span>Tags</span><input value={profileDraft.tags.join(", ")} onChange={(event) => setProfileDraft({ ...profileDraft, tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 12) })} placeholder="Design, Community, Music" /><small>Up to 12 comma-separated tags.</small></label>
                 <label>
                   <span>Bio</span>
                   <textarea value={profileDraft.bio} maxLength={500} onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })} placeholder="Write a short profile bio" rows={4} />
                 </label>
               </div>
               <div className="settings-actions-row">
-                <button disabled={profileSaving || !profileDraft.displayName.trim()} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : "Save profile"}</button>
+                <button disabled={profileSaving || !profileDraft.displayName.trim() || !/^[a-z0-9._-]{3,32}$/.test(profileDraft.username)} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : "Save profile"}</button>
                 <button disabled={profileSaving} onClick={resetProfileSettings}>Discard changes</button>
+                <button disabled={profileSaving} onClick={() => setActive("Privacy & Safety")}>Manage profile privacy</button>
               </div>
               <ProfileVerificationRequestCard />
             </div>

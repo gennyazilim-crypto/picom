@@ -22,6 +22,7 @@ type ProfileViewProps = {
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
   onPlaceholderAction?: (message: string) => void;
+  onEditProfile?: () => void;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
   onOpenCommunity?: (communityId: string) => void;
 };
@@ -33,6 +34,7 @@ type ProfileActionButtonsProps = {
   onMessage?: (userId: string) => void;
   onFriendAction?: (userId: string) => void;
   onPlaceholderAction?: (message: string) => void;
+  onEditProfile?: () => void;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
 };
 
@@ -68,11 +70,11 @@ function getActivityIcon(type: ProfileActivityItem["type"]): IconName {
   return "hash";
 }
 
-function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onFriendAction, onPlaceholderAction, onOpenMore }: ProfileActionButtonsProps) {
+function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onFriendAction, onEditProfile, onOpenMore }: ProfileActionButtonsProps) {
   if (isCurrentUser) {
     return (
       <div className="profile-action-buttons">
-        <button type="button" className="profile-primary-button" onClick={() => onPlaceholderAction?.("Edit profile placeholder opened locally.")}>
+        <button type="button" className="profile-primary-button" onClick={onEditProfile}>
           <AppIcon name="edit" size="sm" />
           Edit Profile
         </button>
@@ -114,6 +116,7 @@ export function ProfileLeftCard({
   onMessage,
   onFriendAction,
   onPlaceholderAction,
+  onEditProfile,
   onOpenMore,
 }: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
   const verification = getUserVerificationSummary(member.userId, profile.verificationBadges ?? [], profile.verification ?? member.verification);
@@ -131,7 +134,7 @@ export function ProfileLeftCard({
           displayName={profile.displayName}
           verification={verification}
           isCurrentUser={isCurrentUser}
-          onEditAvatar={() => onPlaceholderAction?.("Profile photo editing will use the profile service.")}
+          onEditAvatar={onEditProfile}
         />
         <span className={`profile-status-chip ${profile.status}`}>{profile.status}</span>
         <h1 className="profile-name-with-verification"><span>{profile.displayName}</span></h1>
@@ -150,6 +153,7 @@ export function ProfileLeftCard({
           onMessage={onMessage}
           onFriendAction={onFriendAction}
           onPlaceholderAction={onPlaceholderAction}
+          onEditProfile={onEditProfile}
           onOpenMore={onOpenMore}
         />
       </div>
@@ -436,6 +440,7 @@ export function ProfileView({
   onOpenActivity,
   onOpenImage,
   onPlaceholderAction,
+  onEditProfile,
   onOpenMore,
   onOpenCommunity,
 }: ProfileViewProps) {
@@ -453,6 +458,7 @@ export function ProfileView({
           onMessage={onMessage}
           onFriendAction={onFriendAction}
           onPlaceholderAction={onPlaceholderAction}
+          onEditProfile={onEditProfile}
           onOpenMore={onOpenMore}
         />
         <ProfileMainPanel profile={profile} communities={communities} onOpenActivity={onOpenActivity} onOpenImage={onOpenImage} onOpenCommunity={onOpenCommunity} />

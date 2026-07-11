@@ -1,3 +1,5 @@
+import type { ProfileStatus } from "../types/profile";
+
 export type ThemeMode = "light" | "dark";
 import type { NotificationDigestMode } from "./notificationDigestService";
 export type QuietHoursApplyMode = "all_notifications" | "normal_messages_only" | "sounds_only_placeholder";
@@ -18,7 +20,19 @@ export interface NotificationSettings {
   digestMode: NotificationDigestMode;
   quietHours: QuietHoursSettings;
 }
-export interface ProfileSettings { displayName: string; statusText: string; bio: string; }
+export interface ProfileSettings {
+  displayName: string;
+  username: string;
+  status: ProfileStatus;
+  statusText: string;
+  bio: string;
+  avatarUrl?: string | null;
+  coverUrl?: string | null;
+  location: string;
+  timezone: string;
+  preferredLanguage: string;
+  tags: string[];
+}
 export interface AccessibilitySettings { highContrast: boolean; reducedMotion: boolean; largerText: boolean; focusRingStrong: boolean; }
 export interface PicomSettings { schemaVersion: number; theme: ThemeMode; firstLaunchSetupCompleted: boolean; notificationSettings: NotificationSettings; profileSettings: ProfileSettings; accessibilitySettings: AccessibilitySettings; }
 type StoredPicomSettings = Partial<PicomSettings> & Record<string, unknown>;
@@ -30,7 +44,7 @@ type LocalSettingsMigration = {
 
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
-const currentSchemaVersion = 5;
+const currentSchemaVersion = 6;
 const defaults: PicomSettings = {
   schemaVersion: currentSchemaVersion,
   theme: "light",
@@ -51,7 +65,17 @@ const defaults: PicomSettings = {
       allowMentions: true,
     },
   },
-  profileSettings: { displayName: "", statusText: "", bio: "" },
+  profileSettings: {
+    displayName: "",
+    username: "",
+    status: "online",
+    statusText: "",
+    bio: "",
+    location: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    preferredLanguage: "English",
+    tags: [],
+  },
   accessibilitySettings: { highContrast: false, reducedMotion: false, largerText: false, focusRingStrong: false },
 };
 
@@ -114,6 +138,18 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
       firstLaunchSetupCompleted: false,
     }),
   },
+  {
+    fromVersion: 5,
+    toVersion: 6,
+    migrate: (settings) => ({
+      ...settings,
+      schemaVersion: 6,
+      profileSettings: {
+        ...defaults.profileSettings,
+        ...(typeof settings.profileSettings === "object" && settings.profileSettings ? settings.profileSettings : {}),
+      },
+    }),
+  },
 ];
 
 function getStoredSchemaVersion(settings: StoredPicomSettings): number {
@@ -138,6 +174,9 @@ function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
     profileSettings: {
       ...defaults.profileSettings,
       ...(settings.profileSettings ?? {}),
+      tags: Array.isArray((settings.profileSettings as Partial<ProfileSettings> | undefined)?.tags)
+        ? (settings.profileSettings as Partial<ProfileSettings>).tags?.filter((tag): tag is string => typeof tag === "string").slice(0, 12) ?? []
+        : [],
     },
     accessibilitySettings: {
       ...defaults.accessibilitySettings,
