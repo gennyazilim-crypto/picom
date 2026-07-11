@@ -20,6 +20,7 @@
     "screen-share:recovery:test": "node scripts/screen-share-permission-recovery-smoke.mjs",
     "voice:mini-card:test": "node scripts/voice-mini-card-production-smoke.mjs",
     "voice:client:smoke": "node scripts/voice-room-client-full-mvp-smoke.mjs",
+    "voice:reconnect:full-mvp:smoke": "node scripts/voice-devices-reconnect-full-mvp-smoke.mjs",
     "voice:discovery:test": "node scripts/active-voice-rooms-discovery-smoke.mjs",
     "screen-share:preview:test": "node scripts/screen-share-preview-controls-smoke.mjs",
     "release:artifact-naming:test": "node scripts/release-artifact-naming-smoke.mjs",

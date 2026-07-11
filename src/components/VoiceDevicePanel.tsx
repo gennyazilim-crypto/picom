@@ -18,7 +18,7 @@ export function VoiceDevicePanel() {
   const hasInput = devices.inputDevices.length > 0;
   const hasOutput = devices.outputDevices.length > 0;
   const statusCopy = devices.permission === "denied"
-    ? "Microphone access is blocked in system settings."
+    ? voiceDeviceService.getPermissionGuidance()
     : devices.permission === "unsupported"
       ? "Audio device selection is unavailable in this runtime."
       : devices.permission !== "granted"
@@ -77,7 +77,7 @@ export function VoiceDevicePanel() {
       </div>
 
       <p className={devices.error ? "voice-device-status is-error" : "voice-device-status"} role={devices.error ? "alert" : "status"}>
-        {devices.error ?? statusCopy}
+        {devices.error ?? devices.notice ?? statusCopy}
       </p>
     </section>
   );

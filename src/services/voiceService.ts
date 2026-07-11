@@ -108,6 +108,9 @@ let lastSessionDurationMs: number | null = null;
 let reconnectingActive = false;
 let joinInFlight = false;
 let lastJoinRequest: VoiceJoinRequest | null = null;
+let reconnectInFlight: Promise<VoiceServiceResult<VoiceServiceSnapshot>> | null = null;
+let reconnectGeneration = 0;
+const reconnectBackoffMs = [0, 750, 2_000] as const;
 let appliedInputPreferenceKey = "";
 let appliedOutputDeviceId = "";
 let snapshot: VoiceServiceSnapshot = {
@@ -124,6 +127,15 @@ let snapshot: VoiceServiceSnapshot = {
 };
 
 const listeners = new Set<VoiceStateListener>();
+
+const waitForReconnectDelay = (delayMs: number) => new Promise<void>((resolve) => {
+  window.setTimeout(resolve, delayMs);
+});
+
+const canceledReconnectResult = (): VoiceServiceResult<VoiceServiceSnapshot> => ({
+  ok: false,
+  error: { code: "VOICE_ROOM_UNAVAILABLE", message: "Voice reconnect was canceled." },
+});
 
 function emit(next: Partial<VoiceServiceSnapshot>): void {
   snapshot = { ...snapshot, ...next };
@@ -512,6 +524,14 @@ export const voiceService = {
       return { ok: true, data: snapshot };
     }
 
+    const switchesRoom = Boolean(lastJoinRequest) && (
+      lastJoinRequest?.communityId !== request.communityId
+      || lastJoinRequest?.channelId !== request.channelId
+    );
+    if (switchesRoom) {
+      reconnectGeneration += 1;
+      reconnectInFlight = null;
+    }
     joinInFlight = true;
     joinAttemptCount += 1;
     lastJoinRequest = request;
@@ -554,7 +574,38 @@ export const voiceService = {
     if (!lastJoinRequest) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before trying to reconnect.");
     }
-    return this.join(lastJoinRequest);
+    if (reconnectInFlight) return reconnectInFlight;
+
+    const request = lastJoinRequest;
+    const generation = ++reconnectGeneration;
+    reconnectCount += 1;
+    reconnectInFlight = (async () => {
+      let lastResult: VoiceServiceResult<VoiceServiceSnapshot> = canceledReconnectResult();
+      for (const delayMs of reconnectBackoffMs) {
+        if (generation !== reconnectGeneration || lastJoinRequest !== request) return canceledReconnectResult();
+        if (delayMs > 0) await waitForReconnectDelay(delayMs);
+        if (generation !== reconnectGeneration || lastJoinRequest !== request) return canceledReconnectResult();
+        lastResult = await voiceService.join(request);
+        if (lastResult.ok) return lastResult;
+        if (lastResult.error.code !== "VOICE_CONNECTION_FAILED" && lastResult.error.code !== "VOICE_ROOM_UNAVAILABLE") return lastResult;
+      }
+      return lastResult;
+    })();
+
+    try {
+      return await reconnectInFlight;
+    } finally {
+      if (generation === reconnectGeneration) reconnectInFlight = null;
+    }
+  },
+
+  canReconnect(): boolean {
+    return Boolean(lastJoinRequest) && (
+      snapshot.status === "disconnected"
+      || snapshot.status === "reconnecting"
+      || snapshot.errorCode === "VOICE_CONNECTION_FAILED"
+      || snapshot.errorCode === "VOICE_ROOM_UNAVAILABLE"
+    );
   },
 
   async leave(): Promise<void> {
@@ -566,6 +617,8 @@ export const voiceService = {
     }
     joinInFlight = false;
     lastJoinRequest = null;
+    reconnectGeneration += 1;
+    reconnectInFlight = null;
     reconnectingActive = false;
     sessionStartedAtMs = null;
     connectionQuality = "unknown";

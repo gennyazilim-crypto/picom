@@ -736,6 +736,7 @@ export function App() {
     }
     let canceled = false;
     let unsubscribe: (() => void) | undefined;
+    let stopVoiceRecovery: (() => void) | undefined;
     let activeVoiceService: typeof import("./services/voiceService")["voiceService"] | undefined;
     const leaveVoiceOnWindowClose = () => {
       if (activeVoiceService) void activeVoiceService.leave();
@@ -743,15 +744,20 @@ export function App() {
 
     window.addEventListener("beforeunload", leaveVoiceOnWindowClose);
 
-    void import("./services/voiceService").then(({ voiceService }) => {
+    void Promise.all([
+      import("./services/voiceService"),
+      import("./services/voiceSessionRecoveryService"),
+    ]).then(([{ voiceService }, { voiceSessionRecoveryService }]) => {
       if (canceled) return;
       activeVoiceService = voiceService;
       unsubscribe = voiceService.subscribe(setVoiceSnapshot);
+      stopVoiceRecovery = voiceSessionRecoveryService.start();
     });
 
     return () => {
       canceled = true;
       unsubscribe?.();
+      stopVoiceRecovery?.();
       window.removeEventListener("beforeunload", leaveVoiceOnWindowClose);
     };
   }, []);

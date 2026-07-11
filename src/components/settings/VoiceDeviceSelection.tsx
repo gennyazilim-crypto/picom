@@ -6,6 +6,7 @@ import { audioPlayerService, type AudioPlayerServiceSnapshot } from "../../servi
 export function VoiceDeviceSelection() {
   const [state, setState] = useState<VoiceDeviceSnapshot>(() => voiceDeviceService.getSnapshot());
   const [playback, setPlayback] = useState<AudioPlayerServiceSnapshot>(() => audioPlayerService.getSnapshot());
+  const permissionGuidance = voiceDeviceService.getPermissionGuidance();
 
   useEffect(() => {
     const unsubscribeDevices = voiceDeviceService.subscribe(setState);
@@ -37,11 +38,12 @@ export function VoiceDeviceSelection() {
       ) : null}
 
       {state.error ? <p className="settings-inline-error" role="alert">{state.error}</p> : null}
+      {state.notice ? <p className="settings-note" role="status">{state.notice}</p> : null}
 
       <div className="settings-status-card" aria-label="Microphone permission status">
         <span>Microphone permission</span>
         <strong>{state.permission === "granted" ? "Granted" : state.permission === "denied" ? "Denied" : "Not requested"}</strong>
-        <small>{state.permission === "denied" ? "Enable microphone access in the operating-system privacy settings, then retry." : "Picom never requests microphone or camera capture at startup."}</small>
+        <small>{state.permission === "denied" ? permissionGuidance : "Picom never requests microphone or camera capture at startup."}</small>
       </div>
 
       <label className="settings-field">

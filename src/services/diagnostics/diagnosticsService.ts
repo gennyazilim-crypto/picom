@@ -2,6 +2,7 @@ import { appConfig } from "../../config/appConfig";
 import { loggingService, type LogEntry } from "../logging/loggingService";
 import type { RealtimeConnectionStatus } from "../supabase/realtimeService";
 import { voiceService, type VoiceConnectionStatus } from "../voiceService";
+import type { VoiceConnectionQuality, VoiceDurationBucket } from "../../utils/voiceQualityMetrics";
 
 export type DiagnosticsRealtimeStatus = RealtimeConnectionStatus | "unknown";
 export type SupabaseDiagnosticsStatus = "mock" | "configured" | "not_configured";
@@ -39,6 +40,17 @@ export type DiagnosticsSnapshot = Readonly<{
     supabaseHost: string | null;
     liveKitStatus: "configured" | "not_configured";
     voiceStatus: VoiceConnectionStatus;
+    voice: {
+      participantCount: number;
+      muted: boolean;
+      deafened: boolean;
+      screenSharing: boolean;
+      connectionQuality: VoiceConnectionQuality;
+      reconnectCount: number;
+      joinFailureCount: number;
+      deviceErrorCount: number;
+      sessionDurationBucket: VoiceDurationBucket;
+    };
     authState: "authenticated" | "signed_out";
     activeView: string;
     activeCommunityId: string | null;
@@ -104,6 +116,9 @@ function formatExportAsText(payload: DiagnosticsExportPayload): string {
     `Realtime: ${payload.serviceStatus.realtimeStatus}`,
     `LiveKit: ${payload.serviceStatus.liveKitStatus}`,
     `Voice: ${payload.serviceStatus.voiceStatus}`,
+    `Voice quality: ${payload.serviceStatus.voice.connectionQuality}`,
+    `Voice reconnects: ${payload.serviceStatus.voice.reconnectCount}`,
+    `Voice device errors: ${payload.serviceStatus.voice.deviceErrorCount}`,
     "",
     "Recent errors:",
     ...(payload.recentErrors.length ? payload.recentErrors.map((entry) => `${entry.timestamp} [${entry.source ?? "client"}] ${entry.message}`) : ["None"]),
@@ -127,6 +142,7 @@ export const diagnosticsService = {
     const recentErrors = getRecentErrors();
     const supabaseHost = safeUrlHost(appConfig.supabase.url);
     const lastApiError = recentErrors.find((entry) => /api|supabase|network|auth|storage|realtime/i.test(`${entry.source ?? ""} ${entry.message}`)) ?? null;
+    const voiceDiagnostics = voiceService.getDiagnosticsSummary();
     return {
       app: {
         name: appConfig.name,
@@ -152,7 +168,18 @@ export const diagnosticsService = {
         supabaseStatus: getSupabaseStatus(),
         supabaseHost,
         liveKitStatus: appConfig.liveKit.url ? "configured" : "not_configured",
-        voiceStatus: voiceService.getDiagnosticsSummary().status,
+        voiceStatus: voiceDiagnostics.status,
+        voice: {
+          participantCount: voiceDiagnostics.participantCount,
+          muted: voiceDiagnostics.muted,
+          deafened: voiceDiagnostics.deafened,
+          screenSharing: voiceDiagnostics.screenSharing,
+          connectionQuality: voiceDiagnostics.connectionQuality,
+          reconnectCount: voiceDiagnostics.reconnectCount,
+          joinFailureCount: voiceDiagnostics.joinFailureCount,
+          deviceErrorCount: voiceDiagnostics.deviceErrorCount,
+          sessionDurationBucket: voiceDiagnostics.sessionDurationBucket,
+        },
         authState: appContext.authState,
         activeView: appContext.activeView,
         activeCommunityId: appContext.activeCommunityId,

@@ -29,6 +29,7 @@ export type VoiceDeviceSnapshot = {
   outputTestActive: boolean;
   isLoading: boolean;
   error: string | null;
+  notice: string | null;
 };
 
 const STORAGE_KEY = "picom.voice-device-preferences.v1";
@@ -81,6 +82,7 @@ let snapshot: VoiceDeviceSnapshot = {
   outputTestActive: false,
   isLoading: false,
   error: null,
+  notice: null,
 };
 
 const listeners = new Set<(next: VoiceDeviceSnapshot) => void>();
@@ -185,6 +187,15 @@ export const voiceDeviceService = {
     return createAudioConstraints();
   },
 
+  getPermissionGuidance(): string {
+    if (typeof navigator === "undefined") return "Open the operating-system privacy settings, allow microphone access for Picom, then retry.";
+    const platform = `${navigator.platform ?? ""} ${navigator.userAgent ?? ""}`.toLowerCase();
+    if (platform.includes("win")) return "Windows: open Settings > Privacy & security > Microphone, then allow microphone access for desktop apps and Picom.";
+    if (platform.includes("mac")) return "macOS: open System Settings > Privacy & Security > Microphone, enable Picom, then restart Picom if requested.";
+    if (platform.includes("linux")) return "Linux: allow microphone access in your desktop privacy or application permissions, and verify the PipeWire/PulseAudio input is available.";
+    return "Open the operating-system privacy settings, allow microphone access for Picom, then retry.";
+  },
+
   async refresh(requestPermission = false): Promise<VoiceDeviceSnapshot> {
     if (!mediaDevices?.enumerateDevices) {
       emit({ isSupported: false, permission: "unsupported", error: "Media device selection is not supported in this runtime." });
@@ -192,7 +203,7 @@ export const voiceDeviceService = {
     }
 
     if (!requestPermission && snapshot.permission !== "granted") return snapshot;
-    emit({ isLoading: true, error: null });
+    emit({ isLoading: true, error: null, notice: null });
     let permission = snapshot.permission;
     try {
       if (requestPermission) {
@@ -208,7 +219,16 @@ export const voiceDeviceService = {
       const outputDevices = toOptions(devices, "audiooutput");
       const selectedInputId = normalizeSelection(snapshot.selectedInputId, inputDevices);
       const selectedOutputId = normalizeSelection(snapshot.selectedOutputId, outputDevices);
-      emit({ inputDevices, outputDevices, selectedInputId, selectedOutputId, permission, isLoading: false });
+      const inputRemoved = previousInputId !== "default" && selectedInputId !== previousInputId;
+      const outputRemoved = previousOutputId !== "default" && selectedOutputId !== previousOutputId;
+      const notice = inputRemoved && outputRemoved
+        ? "The selected microphone and speaker were removed. Picom switched to available system devices."
+        : inputRemoved
+          ? "The selected microphone was removed. Picom switched to an available input."
+          : outputRemoved
+            ? "The selected speaker was removed. Picom switched to an available output."
+            : null;
+      emit({ inputDevices, outputDevices, selectedInputId, selectedOutputId, permission, isLoading: false, notice });
       persist();
       if (selectedInputId !== previousInputId || selectedOutputId !== previousOutputId) {
         if (snapshot.microphoneTestActive) voiceDeviceService.stopMicrophoneTest();
@@ -219,6 +239,7 @@ export const voiceDeviceService = {
       emit({
         permission,
         isLoading: false,
+        notice: null,
         error: permission === "denied" ? "Microphone permission was denied. Enable it in system settings and try again." : "Voice devices could not be loaded.",
       });
     }
@@ -234,7 +255,7 @@ export const voiceDeviceService = {
         video: false,
       });
       stream.getTracks().forEach((track) => track.stop());
-      emit({ selectedInputId: deviceId, permission: "granted", error: null });
+      emit({ selectedInputId: deviceId, permission: "granted", error: null, notice: null });
       persist();
       publishPreferences();
       return true;
@@ -246,7 +267,7 @@ export const voiceDeviceService = {
 
   selectOutput(deviceId: string): boolean {
     if (!snapshot.outputDevices.some((device) => device.deviceId === deviceId)) return false;
-    emit({ selectedOutputId: deviceId, error: null });
+    emit({ selectedOutputId: deviceId, error: null, notice: null });
     persist();
     publishPreferences();
     return true;
@@ -334,7 +355,7 @@ export const voiceDeviceService = {
 
   reset(): void {
     voiceDeviceService.stopMicrophoneTest();
-    emit({ ...defaultPreferences, error: null });
+    emit({ ...defaultPreferences, error: null, notice: null });
     persist();
     publishPreferences();
   },
