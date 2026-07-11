@@ -1,11 +1,13 @@
 import type { CreateReportInput } from "../../types/reports";
 import type { MeetingChatContext, MeetingChatDeepLinkInput, MeetingChatSendInput } from "../../types/meetingChat";
+import type { MeetingClientContext } from "../../types/meetingClient";
 import { dataSourceService } from "../dataSourceService";
 import { messageService, type DeleteMessageInput, type EditMessageInput, type MessageServiceResult, type MessageSummary } from "../messageService";
 import type { MessagePage } from "../messageListQuery";
 import { reactionService, type ReactionMutationInput } from "../reactionService";
 import { reportService } from "../reportService";
 import { getSupabaseClient } from "../supabase/supabaseClient";
+import { subscribeToChannelMessages, type RealtimeConnectionStatus } from "../supabase/realtimeService";
 
 type ContextResult<T> = Readonly<{ ok: true; data: T } | { ok: false; error: Readonly<{ code: string; message: string }> }>;
 const mockContexts = new Map<string, MeetingChatContext>();
@@ -37,6 +39,10 @@ async function resolve(roomId:string,sessionId?:string|null):Promise<ContextResu
 
 export const meetingChatContextService={
   resolve,
+  async resolveForMeeting(context:MeetingClientContext):Promise<ContextResult<MeetingChatContext>>{
+    if(dataSourceService.getStatus().isMock&&!mockContexts.has(contextKey(context.roomId,context.sessionId))){this.seedMock({roomId:context.roomId,sessionId:context.sessionId,communityId:context.communityId,channelId:context.channelId,threadId:null,contextKind:"linked_channel",title:`${context.roomTitle} chat`,preserveAfterMeeting:true,guestAccessExpiresAt:null,canRead:true,canWrite:true,isGuest:false});}
+    return resolve(context.roomId,context.sessionId);
+  },
   seedMock(context:MeetingChatContext):void{mockContexts.set(contextKey(context.roomId,context.sessionId),context);mockContexts.set(contextKey(context.roomId),context)},
   listMessages(context:MeetingChatContext,options:{limit?:number;before?:string|null}={}):Promise<MessageServiceResult<MessagePage>>{
     return messageService.listMessages({communityId:context.communityId,channelId:context.channelId,threadId:context.threadId,limit:options.limit,before:options.before});
@@ -55,4 +61,11 @@ export const meetingChatContextService={
     const {data,error}=await client.rpc("mark_meeting_chat_read",{target_room_id:context.roomId,target_session_id:context.sessionId,target_last_read_message_id:lastReadMessageId});return error?fail("MEETING_CHAT_READ_STATE_FAILED","Picom could not save the meeting chat read state."):{ok:true,data:data===true};
   },
   createDeepLink:createMeetingChatDeepLink,
+  subscribeMessages(context:MeetingChatContext,onChange:()=>void,onStatus?:(status:RealtimeConnectionStatus)=>void):()=>void{
+    if(dataSourceService.getStatus().isMock){onStatus?.("connected");return()=>undefined;}
+    return subscribeToChannelMessages({communityId:context.communityId,channelId:context.channelId,onInsert:onChange,onUpdate:onChange,onDelete:onChange,onStatusChange:onStatus});
+  },
+  async copyDeepLink(input:MeetingChatDeepLinkInput):Promise<ContextResult<boolean>>{
+    try{await navigator.clipboard.writeText(createMeetingChatDeepLink(input));return{ok:true,data:true};}catch{return fail("MEETING_LINK_COPY_FAILED","Picom could not copy the meeting link.");}
+  },
 };
