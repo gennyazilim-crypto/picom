@@ -4,9 +4,9 @@ Picom is a Windows/Linux/macOS Electron desktop community chat app backed by Sup
 
 ## Status
 
-- Runtime behavior change: none
+- Runtime behavior: owner-only recoverable community archive is active
 - New destructive job: none
-- Current production posture: conservative placeholders for risky deletes
+- Current production posture: typed confirmation, reason, current-password reauthentication, atomic archive RPC, and append-only audit evidence
 - Source of truth for active schema: `supabase/migrations`
 - Related docs:
   - `docs/database-integrity.md`
@@ -27,7 +27,7 @@ Picom is a Windows/Linux/macOS Electron desktop community chat app backed by Sup
 | --- | --- | --- | --- |
 | Messages | Soft-delete | Yes | Active Supabase path sets `messages.deleted_at`; authorized fetches retain content-free tombstones so replies/order stay understandable. Local mock mode uses the same placeholder. |
 | Channels | Archive or soft-delete preferred | Yes | Current update/delete service is placeholder-only. Existing DB cascade only applies if a community is destructively deleted. |
-| Communities | Soft-delete preferred | Yes | Current UI exposes owner-only delete safety placeholder and requires explicit name confirmation. Future schema should add `deleted_at`. |
+| Communities | Archive | Operations-controlled | Owner-only flow sets `archived_at`, disables public/discovery access, retains children and audit/security history, and never hard-deletes the community row. |
 | Users/profiles | Anonymize or mark deleted | Limited | Supabase Auth deletion can cascade profile rows, but production account deletion should anonymize before destructive auth deletion. |
 | Attachments | Soft-delete/quarantine metadata first; storage hard-delete after retention | Limited | Metadata cascades if the message is destructively deleted; storage cleanup must be a guarded backend job. |
 | Invites | Revoke/expire, then hard-delete cleanup later | No normal restore | Invite production table is not active yet. Cleanup scripts should only remove expired/revoked invites after retention. |
@@ -67,18 +67,19 @@ Danger requirements:
 
 ## Communities
 
-Future policy:
+Current policy:
 
-- Add `deleted_at` for soft delete.
-- Owner-only delete flow.
-- Confirmation must require typing the community name.
-- Soft-deleted communities must be inaccessible from normal community list, channels, messages, realtime rooms, and invites.
-- Audit trail must remain intact.
+- Normal desktop flows archive rather than hard-delete communities.
+- The current owner must provide a reason, type the exact community name, and re-authenticate with the current password.
+- The atomic RPC sets `archived_at`, `archived_by`, and `archive_reason`; changes visibility to private; disables public reads and discovery; and appends an audit event.
+- Archived communities, channels, messages, Radio, and Podcast surfaces are inaccessible through normal RLS paths while retained for recovery and integrity review.
+- Audit and security history remains append-only.
 
-Restore placeholder:
+Restore policy:
 
-- Restore only by owner/app-admin within retention window.
-- Restore must re-enable access only after membership, channels, roles, invites, and storage references are checked.
+- Restore is operations-controlled rather than a normal owner action.
+- Backup verification and relationship integrity checks must complete before access is re-enabled.
+- Restore must validate memberships, roles, channels, messages, invites, storage references, Radio/Podcast records, and audit continuity.
 
 ## Users and profiles
 
@@ -169,7 +170,7 @@ Restore actions should:
 ## Current gaps
 
 - `deleted_at` is active for messages only.
-- Community soft-delete schema is not active yet.
+- Community recoverable archive schema and owner-only RPC are active; a self-service restore remains intentionally unavailable.
 - Channel archive/soft-delete schema is not active yet.
 - Account deletion anonymization fields/workflow exist, while hosted verification and final retention/legal approval remain required.
 - Production invite, report, notification, and audit log tables are not active yet.
@@ -179,6 +180,6 @@ Restore actions should:
 
 1. Delete a message in mock/Supabase mode and confirm it does not render as an active message.
 2. Confirm message fetch filters out `deleted_at` rows.
-3. Confirm community delete UI remains owner-only and confirmation-gated.
+3. Confirm community archive UI remains owner-only and requires reason, exact-name confirmation, and current-password reauthentication.
 4. Confirm account deletion placeholder says no renderer-side data has been deleted.
 5. Confirm audit log docs state normal flows cannot delete audit entries.

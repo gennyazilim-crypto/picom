@@ -1,27 +1,16 @@
-# Community Ownership Transfer Placeholder
+# Community Ownership Transfer
 
-Picom prepares community ownership transfer as an owner-only placeholder. The MVP renderer does not change roles or ownership records directly.
+The historical filename is retained for links, but ownership transfer is no longer a placeholder. Picom exposes the action only to the current community owner in the desktop Danger Zone.
 
-## Current behavior
+## Production contract
 
-- Current owners see an ownership transfer card in the community sidebar setup area.
-- The owner must select an existing community member.
-- The owner must type the exact community name before the placeholder can be prepared.
-- The placeholder records local intent only; roles, membership, and audit logs are not mutated.
+- The target must be another active member of the same community and must not have an active ban.
+- The owner provides a 10-500 character audit reason, types the exact community name, and re-enters the current account password.
+- `authService.reauthenticateCurrentUser` sends the password only to Supabase Auth. Picom never persists or logs it.
+- `transfer_community_ownership` locks the community and both memberships, updates `communities.owner_id`, legacy primary roles, `community_member_roles`, role audit rows, and the append-only community audit row in one PostgreSQL transaction.
+- Failure at any point rolls the transaction back. The UI does not claim partial success.
+- The previous owner receives the safest configured non-owner primary role, preferring Admin; the new owner receives the sole primary Owner role link.
 
-## Future production requirements
+## Verification
 
-- Use a trusted Supabase Edge Function or backend route for real transfer.
-- Verify the caller is the current owner through RLS/server-side checks.
-- Verify the target user is a current, non-deleted, non-banned member.
-- Update owner role/member roles atomically.
-- Create an audit log entry in the same transaction or trusted operation.
-- Prevent the owner from leaving a community until ownership has been transferred.
-
-## Manual verification
-
-1. Sign in as/mock a community owner.
-2. Open a community in the desktop sidebar.
-3. Select a target member.
-4. Confirm the Prepare transfer button remains disabled until the exact community name is typed.
-5. Prepare the placeholder and confirm the status text updates without changing member roles.
+Run `npm run community:ownership-transfer:smoke` and `npm run community:audit-danger:full:smoke`. Run `supabase test db --file supabase/tests/rls/community_lifecycle_management.sql` only against an approved local or staging database.

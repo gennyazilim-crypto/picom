@@ -25,6 +25,7 @@ const actionLabels = new Map(actions.filter((item) => item.value !== "all").map(
 export function CommunityAuditLogSection({ community, canView }: { community: Community; canView: boolean }) {
   const [records, setRecords] = useState<AuditLogRecord[]>([]);
   const [actor, setActor] = useState("");
+  const [target, setTarget] = useState("");
   const [action, setAction] = useState<"all" | AuditActionType>("all");
   const [range, setRange] = useState("all");
   const [notice, setNotice] = useState<string | null>(null);
@@ -68,12 +69,15 @@ export function CommunityAuditLogSection({ community, canView }: { community: Co
   const filtered = useMemo(() => {
     const cutoff = range === "7" ? Date.now() - 7 * 86_400_000 : range === "30" ? Date.now() - 30 * 86_400_000 : 0;
     const query = actor.trim().toLowerCase();
+    const targetQuery = target.trim().toLowerCase();
     return records.filter((record) => {
       const member = actorById.get(record.actorId);
       const actorSearch = `${record.actorId} ${member?.displayName ?? ""} ${member?.username ?? ""}`.toLowerCase();
-      return (!query || actorSearch.includes(query)) && (action === "all" || record.actionType === action) && (!cutoff || Date.parse(record.createdAt) >= cutoff);
+      const targetMember = record.targetId ? actorById.get(record.targetId) : undefined;
+      const targetSearch = `${record.targetType} ${record.targetId ?? ""} ${targetMember?.displayName ?? ""} ${targetMember?.username ?? ""}`.toLowerCase();
+      return (!query || actorSearch.includes(query)) && (!targetQuery || targetSearch.includes(targetQuery)) && (action === "all" || record.actionType === action) && (!cutoff || Date.parse(record.createdAt) >= cutoff);
     });
-  }, [action, actor, actorById, range, records]);
+  }, [action, actor, actorById, range, records, target]);
 
   const copy = async () => {
     const exported = auditLogService.exportForAdmin(filtered, canView);
@@ -102,6 +106,7 @@ export function CommunityAuditLogSection({ community, canView }: { community: Co
     <header><p className="eyebrow">Append-only history</p><h3>Audit log</h3><span>Administrative events only. Tokens, passwords, and message content are excluded.</span></header>
     <div className="audit-log-toolbar">
       <label><span>Actor</span><input value={actor} onChange={(event) => setActor(event.target.value)} placeholder="Name, username, or ID" /></label>
+      <label><span>Target</span><input value={target} onChange={(event) => setTarget(event.target.value)} placeholder="Type, name, or ID" /></label>
       <label><span>Action</span><select value={action} onChange={(event) => setAction(event.target.value as typeof action)}>{actions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
       <label><span>Date range</span><select value={range} onChange={(event) => setRange(event.target.value)}><option value="all">All time</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select></label>
       <div className="audit-export-actions"><button type="button" disabled={exportDisabled} onClick={() => void copy()}><AppIcon name="paperclip" size="sm" />Copy JSON</button><button type="button" disabled={exportDisabled} onClick={download}><AppIcon name="send" size="sm" />Export JSON</button></div>

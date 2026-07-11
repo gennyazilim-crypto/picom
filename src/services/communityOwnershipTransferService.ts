@@ -1,9 +1,12 @@
 import type { Community, Member, UserId } from "../types/community";
+import { authService } from "./authService";
+import { auditLogService } from "./auditLogService";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 
-const STORAGE_KEY = "picom.communityOwnershipTransfer.v2";
-const SCHEMA_VERSION = 2;
+const STORAGE_KEY = "picom.communityOwnershipTransfer.v3";
+const SCHEMA_VERSION = 3;
+const MIN_REASON_LENGTH = 10;
 
 export type OwnershipTransferStatus = Readonly<{
   communityId: string;
@@ -44,9 +47,10 @@ function getRoleName(community: Community, member: Member): string | null {
   return community.roles.find((role) => role.id === member.roleId)?.name ?? null;
 }
 
-function validateTransfer(community: Community, currentUser: Member, targetUserId: UserId, confirmationName: string): OwnershipTransferResult<Member> {
+function validateTransfer(community: Community, currentUser: Member, targetUserId: UserId, confirmationName: string, reason: string): OwnershipTransferResult<Member> {
   if (getRoleName(community, currentUser) !== "Owner") return { ok: false, message: "Only the current owner can transfer community ownership." };
   if (confirmationName.trim() !== community.name) return { ok: false, message: "Type the exact community name before transferring ownership." };
+  if (reason.trim().length < MIN_REASON_LENGTH || reason.trim().length > 500) return { ok: false, message: "Provide a transfer reason between 10 and 500 characters." };
   if (targetUserId === currentUser.userId) return { ok: false, message: "Choose another community member as the target owner." };
   const target = community.members.find((member) => member.userId === targetUserId);
   return target ? { ok: true, data: target } : { ok: false, message: "Target user must be a current community member." };
@@ -57,10 +61,14 @@ export const communityOwnershipTransferService = {
     return readStore()[communityId] ?? null;
   },
 
-  async transferOwnership(community: Community, currentUser: Member, targetUserId: UserId, confirmationName: string): Promise<OwnershipTransferResult<OwnershipTransferStatus>> {
-    const validation = validateTransfer(community, currentUser, targetUserId, confirmationName);
+  async transferOwnership(community: Community, currentUser: Member, targetUserId: UserId, confirmationName: string, reason: string, currentPassword: string): Promise<OwnershipTransferResult<OwnershipTransferStatus>> {
+    const validation = validateTransfer(community, currentUser, targetUserId, confirmationName, reason);
     if (!validation.ok) return validation;
 
+    const reauthentication = await authService.reauthenticateCurrentUser(currentPassword);
+    if (!reauthentication.ok) return { ok: false, message: reauthentication.error.message };
+
+    const cleanReason = reason.trim();
     let transferredAt = new Date().toISOString();
     if (!dataSourceService.getStatus().isMock) {
       const client = getSupabaseClient();
@@ -69,10 +77,21 @@ export const communityOwnershipTransferService = {
         target_community_id: community.id,
         target_new_owner_id: targetUserId,
         confirmation_community_name: confirmationName.trim(),
+        transfer_reason: cleanReason,
       });
       const row = data?.[0];
-      if (error || !row) return { ok: false, message: "Picom could not complete the ownership transfer." };
+      if (error || !row) return { ok: false, message: "Picom could not complete the ownership transfer. No ownership or role changes were applied." };
       transferredAt = row.transferred_at;
+    } else {
+      const audit = await auditLogService.append({
+        communityId: community.id,
+        actorId: currentUser.userId,
+        actionType: "community_update",
+        targetType: "ownership_transfer",
+        targetId: validation.data.userId,
+        reason: cleanReason,
+      });
+      if (!audit.ok) return { ok: false, message: "Ownership transfer could not be audited, so no mock completion was recorded." };
     }
 
     const next: OwnershipTransferStatus = {
@@ -82,7 +101,7 @@ export const communityOwnershipTransferService = {
       toUserId: validation.data.userId,
       targetDisplayName: validation.data.displayName,
       status: "completed",
-      message: `Ownership transferred to ${validation.data.displayName}.`,
+      message: `Ownership transferred to ${validation.data.displayName}. Reopen the community to refresh role-aware controls.`,
     };
     writeStore({ ...readStore(), [community.id]: next });
     return { ok: true, data: next };
