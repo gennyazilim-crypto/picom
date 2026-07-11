@@ -229,18 +229,15 @@ export function ProfileHeroGallery({ media, onOpenImage }: { media: ProfileMedia
 }
 
 export function ProfileStats({ profile, audioStats }: { profile: UserProfile; audioStats?: { radioSessions: number; podcastEpisodes: number; audioListeners: number } }) {
-  const stats = [
-    ["Communities", profile.stats.communities],
+  const stats: Array<readonly [string, number]> = [
+    ...(profile.privacy.showCommunities ? [["Communities", profile.stats.communities] as const] : []),
     ["Posts", profile.stats.posts],
     ["Mentions", profile.stats.mentions],
     ["Reactions", profile.stats.reactions],
-    ["Followers", profile.stats.followers],
-    ["Following", profile.stats.following],
-    ["Roles", profile.stats.roles],
-    ["Radio sessions", audioStats?.radioSessions ?? 0],
-    ["Podcast episodes", audioStats?.podcastEpisodes ?? 0],
-    ["Audio listeners", audioStats?.audioListeners ?? 0],
-  ] as const;
+    ...(profile.privacy.showFollows ? [["Followers", profile.stats.followers] as const, ["Following", profile.stats.following] as const] : []),
+    ...(profile.privacy.showCommunities ? [["Roles", profile.stats.roles] as const] : []),
+    ...(audioStats ? [["Radio sessions", audioStats.radioSessions] as const, ["Podcast episodes", audioStats.podcastEpisodes] as const, ["Audio listeners", audioStats.audioListeners] as const] : []),
+  ];
 
   return (
     <section className="profile-stats-grid" aria-label="Profile stats">
@@ -407,21 +404,22 @@ export function ProfileMainPanel({
   const audioCatalog = useAudioCatalog();
   if(profile.privacyRestricted)return <section className="profile-main-panel" aria-label="Private profile"><div className="profile-section profile-empty-panel"><AppIcon name="lock" size="lg" /><strong>Limited profile</strong><p>This person shares profile details only with their selected audience.</p></div></section>;
   const visibleCommunityIds = new Set(communities.map((community) => community.id));
-  const hostedRadio = audioCatalog.radioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId));
-  const podcastEpisodes = audioCatalog.podcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
-  const savedRadio = audioCatalog.radioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId));
-  const savedPodcasts = audioCatalog.podcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId));
+  const audioVisible = profile.privacy.showAudio;
+  const hostedRadio = audioVisible ? audioCatalog.radioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId)) : [];
+  const podcastEpisodes = audioVisible ? audioCatalog.podcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
+  const savedRadio = audioVisible ? audioCatalog.radioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId)) : [];
+  const savedPodcasts = audioVisible ? audioCatalog.podcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
   const audioStats = { radioSessions: hostedRadio.length, podcastEpisodes: podcastEpisodes.length, audioListeners: [...hostedRadio, ...podcastEpisodes].reduce((total, item) => total + item.listenerCount, 0) };
   return (
     <section className="profile-main-panel" aria-label="Profile details">
       <ProfileHeroGallery media={profile.media} onOpenImage={onOpenImage} />
-      <ProfileStats profile={profile} audioStats={audioStats} />
+      <ProfileStats profile={profile} audioStats={audioVisible ? audioStats : undefined} />
       <ProfileBio profile={profile} />
       <ProfileDetailsGrid profile={profile} communities={communities} />
       <ProfileSkillsTags profile={profile} />
       <ProfileActivityList activities={profile.activities} communities={communities} onOpenActivity={onOpenActivity} />
       <ProfileSharedMedia media={profile.media} onOpenImage={onOpenImage} />
-      <ProfileAudioSections hostedRadio={hostedRadio} podcastEpisodes={podcastEpisodes} savedRadio={savedRadio} savedPodcasts={savedPodcasts} communities={communities} isCurrentUser={Boolean(profile.isCurrentUser)} onOpenCommunity={onOpenCommunity} />
+      {audioVisible ? <ProfileAudioSections hostedRadio={hostedRadio} podcastEpisodes={podcastEpisodes} savedRadio={savedRadio} savedPodcasts={savedPodcasts} communities={communities} isCurrentUser={Boolean(profile.isCurrentUser)} onOpenCommunity={onOpenCommunity} /> : null}
     </section>
   );
 }

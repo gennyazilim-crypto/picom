@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const migration = readFileSync("supabase/migrations/20260710201000_profile_activity_production.sql", "utf8");
+const domainMigration = readFileSync("supabase/migrations/20260711002600_profile_schema_privacy_services_full_mvp.sql", "utf8");
 const service = readFileSync("src/services/profileActivityService.ts", "utf8");
 const app = readFileSync("src/App.tsx", "utf8");
 
@@ -17,7 +18,8 @@ for (const marker of [
   "security definer",
 ]) assert.ok(migration.includes(marker), `missing profile activity marker: ${marker}`);
 
-assert.ok(service.includes('client.rpc("get_profile_activity_v3"'), "profile service must use the online-status-safe protected RPC");
+assert.ok(service.includes('client.rpc("get_profile_domain_v1"'), "profile service must use the canonical privacy-projected domain RPC");
+for (const marker of ["get_profile_domain_v1", "get_profile_activity_v3", "show_communities", "show_follows", "show_audio"]) assert.ok(domainMigration.includes(marker), `missing profile domain marker: ${marker}`);
 assert.ok(service.includes("getMockProfileForMember"), "profile service must retain mock fallback");
 assert.ok(app.includes("profileActivityService.load"), "App must load remote profile through the service");
 assert.ok(app.includes("profileActivityService.emptyProductionProfile"), "Supabase loading must not expose mock activity/media");

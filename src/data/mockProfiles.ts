@@ -215,6 +215,8 @@ function makeProfile(member: Member, communities: Community[], options: ProfileL
     activityScore: 52 + (seedNumber % 46),
     isCurrentUser: member.userId === options.currentUserId,
     isFollowing: options.followedUserIds.includes(member.userId),
+    onboardingCompleted: true,
+    privacy: { visibility: "everyone", canViewProfile: true, showOnlineStatus: true, showLocation: true, showTimezone: true, showActivity: true, showMedia: true, showCommunities: true, showFriends: true, showFollows: true, showAudio: true },
     stats: {
       communities: profileCommunities.length,
       posts: Math.max(visibleActivities.length, activities.length),

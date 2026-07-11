@@ -1,6 +1,7 @@
 ﻿import type { ChannelId, CommunityId, MessageId, UserId } from "./community";
 
 import type { VerificationBadge, VerificationSummary } from "./verification";
+import type { ProfilePrivacyProjection } from "./profilePrivacy";
 
 export type ProfileStatus = "online" | "idle" | "busy" | "offline";
 
@@ -59,6 +60,8 @@ export type UserProfile = {
   friendshipStatus?: "none" | "incoming" | "outgoing" | "friends";
   verification?: VerificationSummary;
   verificationBadges?: VerificationBadge[];
+  onboardingCompleted: boolean;
+  privacy: ProfilePrivacyProjection;
   privacyRestricted?: boolean;
   stats: ProfileStats;
   media: ProfileMediaItem[];

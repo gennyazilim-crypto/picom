@@ -98,6 +98,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_rules"]["Row"]>;
         Relationships: [];
       };
+      profile_details: {
+        Row: { user_id: string; cover_url: string | null; preferred_language: string | null; tags: string[]; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["profile_details"]["Row"]> & Pick<Database["public"]["Tables"]["profile_details"]["Row"], "user_id">;
+        Update: Partial<Database["public"]["Tables"]["profile_details"]["Row"]>;
+        Relationships: [];
+      };
       channel_categories: {
         Row: {
           id: string;
@@ -332,7 +338,7 @@ export type Database = {
       verification_badges: {
         Row:{id:string;subject_type:"user"|"community"|"role";subject_id:string;badge_kind:"profile_reviewed"|"community_official"|"role_managed";label:string;scope_note:string;granted_by:string;granted_at:string;revoked_at:string|null;revoked_by:string|null};Insert:never;Update:never;Relationships:[];
       };
-      profile_privacy_settings:{Row:{user_id:string;profile_visibility:"everyone"|"shared_communities"|"friends";show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;location:string|null;timezone:string|null;updated_at:string};Insert:never;Update:never;Relationships:[]};
+      profile_privacy_settings:{Row:{user_id:string;profile_visibility:"everyone"|"shared_communities"|"friends";show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;show_communities:boolean;show_friends:boolean;show_follows:boolean;show_audio:boolean;location:string|null;timezone:string|null;updated_at:string};Insert:never;Update:never;Relationships:[]};
       data_export_requests: {
         Row: { id: string; user_id: string; status: "requested" | "processing" | "ready" | "failed"; format: "json"; requested_at: string; completed_at: string | null; expires_at: string | null; failure_code: string | null };
         Insert: Partial<Database["public"]["Tables"]["data_export_requests"]["Row"]> & Pick<Database["public"]["Tables"]["data_export_requests"]["Row"], "user_id">;
@@ -790,6 +796,11 @@ export type Database = {
       get_community_insights_v2: { Args: { target_community_id: string; window_days?: number }; Returns: Json };
       get_profile_activity_v2: { Args: { target_user_id: string; result_limit?: number }; Returns: Json };
       get_profile_activity_v3: { Args: { target_user_id: string; result_limit?: number }; Returns: Json };
+      get_own_profile_privacy_v3:{Args:Record<string,never>;Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;show_communities:boolean;show_friends:boolean;show_follows:boolean;show_audio:boolean}>};
+      update_profile_privacy_v3:{Args:{next_visibility:string;next_show_online_status:boolean;next_show_location:boolean;next_show_timezone:boolean;next_show_activity:boolean;next_show_media:boolean;next_show_communities:boolean;next_show_friends:boolean;next_show_follows:boolean;next_show_audio:boolean};Returns:boolean};
+      get_profile_privacy_projection_v3:{Args:{target_user_id:string};Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";can_view_profile:boolean;show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;show_communities:boolean;show_friends:boolean;show_follows:boolean;show_audio:boolean;location:string|null;timezone:string|null}>};
+      get_profile_domain_v1:{Args:{target_user_id:string;result_limit?:number};Returns:Json};
+      update_own_profile_domain:{Args:{profile_patch:Json};Returns:Json};
       follow_user: { Args: { target_user_id: string }; Returns: boolean };
       unfollow_user: { Args: { target_user_id: string }; Returns: boolean };
       set_message_reaction: { Args: { target_message_id: string; target_emoji: string; target_reacted: boolean }; Returns: Array<{ message_id: string; emoji: string; reaction_count: number; reacted_by_current_user: boolean }> };

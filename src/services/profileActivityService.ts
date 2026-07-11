@@ -25,6 +25,8 @@ function asObjects(value: Json | undefined): Array<Record<string, Json | undefin
 
 function text(value: Json | undefined): string | undefined { return typeof value === "string" ? value : undefined; }
 function count(value: Json | undefined): number { return typeof value === "number" && Number.isFinite(value) ? Math.max(0, value) : 0; }
+function flag(value: Json | undefined, fallback = false): boolean { return typeof value === "boolean" ? value : fallback; }
+function strings(value: Json | undefined): string[] { return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []; }
 function profileStatus(value: Json | undefined): ProfileStatus {
   if (value === "online" || value === "idle" || value === "offline") return value;
   return value === "dnd" || value === "busy" ? "busy" : "offline";
@@ -55,6 +57,7 @@ function mapPayload(payload: Json, base: UserProfile): UserProfile {
     return [{ id, type: "image" as const, url, thumbnailUrl: text(row.thumbnail_url), title: text(row.title), createdAt }];
   });
   const stats = asRecord(root.stats);
+  const privacy = asRecord(root.privacy);
   const uniqueRoles = [...new Set(roles)];
   return {
     ...emptyProductionProfile(base),
@@ -62,6 +65,7 @@ function mapPayload(payload: Json, base: UserProfile): UserProfile {
     displayName: text(profile.display_name) ?? base.displayName,
     username: text(profile.username) ?? base.username,
     avatarUrl: text(profile.avatar_url),
+    coverUrl: text(profile.cover_url),
     status: profileStatus(profile.status),
     statusText: text(profile.status_text),
     bio: text(profile.bio) ?? "",
@@ -69,7 +73,9 @@ function mapPayload(payload: Json, base: UserProfile): UserProfile {
     location: text(profile.location),
     timezone: text(profile.timezone),
     roles: uniqueRoles,
-    tags: uniqueRoles,
+    tags: strings(profile.tags).length ? strings(profile.tags) : uniqueRoles,
+    preferredLanguage: text(profile.preferred_language),
+    onboardingCompleted: flag(profile.onboarding_completed, base.onboardingCompleted),
     topRole: uniqueRoles[0],
     mainCommunityId: text(roleRows[0]?.community_id),
     isCurrentUser: base.isCurrentUser,
@@ -79,6 +85,21 @@ function mapPayload(payload: Json, base: UserProfile): UserProfile {
     },
     activities,
     media,
+    privacy: {
+      visibility: text(privacy.visibility) === "friends" || text(privacy.visibility) === "shared_communities" ? text(privacy.visibility) as "friends" | "shared_communities" : "everyone",
+      canViewProfile: flag(privacy.can_view_profile, true),
+      showOnlineStatus: flag(privacy.show_online_status, true),
+      showLocation: flag(privacy.show_location, true),
+      showTimezone: flag(privacy.show_timezone, true),
+      showActivity: flag(privacy.show_activity, true),
+      showMedia: flag(privacy.show_media, true),
+      showCommunities: flag(privacy.show_communities, true),
+      showFriends: flag(privacy.show_friends, true),
+      showFollows: flag(privacy.show_follows, true),
+      showAudio: flag(privacy.show_audio, true),
+      location: text(profile.location),
+      timezone: text(profile.timezone),
+    },
     privacyRestricted: false,
   };
 }
@@ -88,7 +109,7 @@ async function load(input: ProfileLoadInput): Promise<ProfileLoadResult> {
   if (dataSourceService.getStatus().isMock) return { ok: true, data: base };
   const client = getSupabaseClient();
   if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Profile activity is unavailable until Picom reconnects." } };
-  const { data, error } = await client.rpc("get_profile_activity_v3", { target_user_id: input.member.userId, result_limit: 30 });
+  const { data, error } = await client.rpc("get_profile_domain_v1", { target_user_id: input.member.userId, result_limit: 30 });
   if (error || !data) return { ok: false, error: { code: "PROFILE_ACTIVITY_LOAD_FAILED", message: "Picom could not load this profile's activity." } };
   return { ok: true, data: mapPayload(data, base) };
 }
