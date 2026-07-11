@@ -1,7 +1,7 @@
 import fs from "node:fs";
 const service=fs.readFileSync("src/services/supabase/directMessageService.ts","utf8");const realtime=fs.readFileSync("src/services/directMessages/directRealtimeService.ts","utf8");const migration=fs.readFileSync("supabase/migrations/20260710187000_direct_messages_backend_production.sql","utf8");const app=fs.readFileSync("src/App.tsx","utf8");const doc=fs.readFileSync("docs/direct-messages-production.md","utf8");
 const view=fs.readFileSync("src/components/DirectMessagesView.tsx","utf8");const rail=fs.readFileSync("src/components/ServerRail.tsx","utf8");
-for(const marker of ["loadDirectConversations","getDirectMessagesPage","send_direct_message_v2","markDirectConversationRead","limit + 1"])if(!service.includes(marker))throw new Error(`DM service missing ${marker}`);
+for(const marker of ["loadDirectConversations","getDirectMessagesPage","send_direct_message_v3","markDirectConversationRead","limit + 1"])if(!service.includes(marker))throw new Error(`DM service missing ${marker}`);
 for(const marker of ["dm_privacy","users_are_blocked","friendships","GROUP_DM_NOT_SUPPORTED","count(*) from public.direct_conversation_members","revoke insert on public.direct_messages"])if(!migration.includes(marker))throw new Error(`DM migration missing ${marker}`);
 for(const marker of ["subscribeToActiveDirectConversation", "subscribeToDirectConversationList", "direct_conversation_participants", ".eq(\"user_id\", input.currentUserId)", "messageIds", "removeChannel"])if(!realtime.includes(marker))throw new Error(`DM realtime access/cleanup missing ${marker}`);
 if(!app.includes("directMessageService.loadDirectConversations")||!app.includes("directMessageUserId"))throw new Error("Supabase DM App integration missing.");

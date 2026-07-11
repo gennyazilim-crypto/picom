@@ -14,7 +14,7 @@ const [facade, repository, realtime, hook, app, migration, types, view] = await 
 ]);
 
 for (const marker of ["getDirectMessagesPage", "addDirectMessageAttachments", "getDirectSharedMedia", "setDirectConversationMuted", "setDirectConversationArchived", "clientMessageId === clientMessageId", "replyPreview"]) assert.match(facade, new RegExp(marker));
-for (const marker of ["getDirectMessagesPage", "created_at.eq", "send_direct_message_v2", "edit_direct_message", "delete_direct_message", "mark_direct_conversation_read_to", "list_direct_shared_media"]) assert.match(repository, new RegExp(marker));
+for (const marker of ["getDirectMessagesPage", "created_at.eq", "send_direct_message_v3", "edit_direct_message", "delete_direct_message", "mark_direct_conversation_read_to", "list_direct_shared_media"]) assert.match(repository, new RegExp(marker));
 for (const marker of ["subscribeToActiveDirectConversation", "subscribeToDirectConversationList", "direct_conversation_participants", "direct_message_attachments", "removeChannel", "deduplicated"]) assert.match(realtime, new RegExp(marker));
 for (const marker of ["subscribeActive", "subscribeList", "onConversationChanged", "onReadState", "onAttachment"]) assert.match(hook, new RegExp(marker));
 for (const marker of ["getDirectSharedMedia", "handleDirectReadState", "handleDirectRealtimeAttachment", "markDirectConversationRead", "onSetMuted", "onArchive"]) assert.match(app, new RegExp(marker));

@@ -785,6 +785,7 @@ export type Database = {
       list_direct_conversations: { Args: { result_limit?: number }; Returns: Array<{ id: string; participant_user_id: string; participant_name: string; participant_username: string; participant_status: string; participant_status_text: string; last_message_preview: string; updated_at: string; unread_count: number }> };
       send_direct_message: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
       send_direct_message_v2: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id: string | null }; Returns: Json };
+      send_direct_message_v3: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id: string | null; target_attachments?: Json }; Returns: Json };
       edit_direct_message: { Args: { target_message_id: string; message_body: string }; Returns: Json };
       delete_direct_message: { Args: { target_message_id: string }; Returns: Json };
       set_direct_conversation_preferences: { Args: { target_conversation_id: string; target_muted_until: string | null; target_archived: boolean }; Returns: boolean };

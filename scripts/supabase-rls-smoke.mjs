@@ -17,6 +17,7 @@ const requiredFiles = [
   "profile_access_cross_community_privacy.sql",
   "text_community_messaging_integration.sql",
   "audio_production_integration.sql",
+  "friends_dm_production_integration.sql",
 ];
 
 const requiredScenarioSnippets = [
@@ -60,6 +61,10 @@ const requiredScenarioSnippets = [
   "Radio and Podcast tables preserve type-specific community guards",
   "Podcast drafts and private media remain RLS-protected",
   "Radio and Podcast Realtime publications cover production tables",
+  "idempotency key rejects a different Direct Message payload",
+  "DM message and attachment metadata commit through one RPC",
+  "DM pending uploads require an authorized participant",
+  "Friends and Direct Messages Realtime publications cover production tables",
 ];
 
 function fail(message) {

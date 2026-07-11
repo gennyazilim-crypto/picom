@@ -87,6 +87,9 @@ try {
   assertContains("src/services/audio/podcastPublishingService.ts", "client.storage.from(bucket)", "Podcast private Storage path");
   assertContains("src/hooks/useAudioCatalog.ts", "radioRealtimeService.subscribe", "Radio Realtime lifecycle path");
   assertContains("src/hooks/useAudioCatalog.ts", "podcastRealtimeService.subscribe", "Podcast Realtime lifecycle path");
+  assertContains("src/services/friends/friendRequestService.ts", 'rpc("send_friend_request"', "Friends Supabase lifecycle path");
+  assertContains("src/services/supabase/directMessageService.ts", 'rpc("send_direct_message_v3"', "atomic Direct Message send path");
+  assertContains("src/services/directMessages/directRealtimeService.ts", "direct_message_attachments", "Direct Message Realtime attachment path");
   assertContains(".env.example", "VITE_SUPABASE_URL", "Supabase URL env example");
   assertContains(".env.example", "VITE_SUPABASE_ANON_KEY", "Supabase anon key env example");
   assertContains(".env.example", "SUPABASE_SERVICE_ROLE_KEY", "server-only service role env documentation");

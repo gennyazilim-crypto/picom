@@ -24,7 +24,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','71000000-0000-4000-8000-000000000001',true);
 select results_eq($$select public.create_direct_conversation('71000000-0000-4000-8000-000000000002')$$,array['72000000-0000-4000-8000-000000000001'::uuid],'create-or-open returns canonical pair');
 select lives_ok($$select public.send_direct_message_v2('72000000-0000-4000-8000-000000000001','Idempotent message','dm-complete-idempotent',null)$$,'participant sends through atomic RPC');
-select lives_ok($$select public.send_direct_message_v2('72000000-0000-4000-8000-000000000001','Idempotent retry','dm-complete-idempotent',null)$$,'idempotent retry returns existing message');
+select throws_like($$select public.send_direct_message_v2('72000000-0000-4000-8000-000000000001','Different retry payload','dm-complete-idempotent',null)$$,'%DM_IDEMPOTENCY_CONFLICT%','idempotency key rejects a different Direct Message payload');
 select results_eq($$select count(*)::bigint from public.direct_messages where client_message_id='dm-complete-idempotent'$$,array[1::bigint],'client message id prevents duplicate rows');
 select throws_ok($$insert into public.direct_messages(conversation_id,author_id,body,reply_to_message_id) values('72000000-0000-4000-8000-000000000001','71000000-0000-4000-8000-000000000001','cross reply','73000000-0000-4000-8000-000000000002')$$,'cross-conversation reply is rejected');
 select lives_ok($$select public.edit_direct_message('73000000-0000-4000-8000-000000000001','Edited by owner')$$,'author edits own active message');

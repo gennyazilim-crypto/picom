@@ -1,11 +1,11 @@
-import type { DirectConversation, DirectMessage, DirectMessageCursor, DirectMessagePage, DirectSharedMediaPage } from "../../types/directMessages";
+import type { DirectConversation, DirectMessage, DirectMessageAttachment, DirectMessageCursor, DirectMessagePage, DirectSharedMediaPage } from "../../types/directMessages";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabaseClient";
 import type { Database } from "./database.types";
 
 type MessageRow = Database["public"]["Tables"]["direct_messages"]["Row"];
-type DirectMessageErrorCode = "NOT_CONFIGURED" | "AUTH_REQUIRED" | "VALIDATION_ERROR" | "REQUEST_FAILED" | "PERMISSION_DENIED";
+type DirectMessageErrorCode = "NOT_CONFIGURED" | "AUTH_REQUIRED" | "VALIDATION_ERROR" | "REQUEST_FAILED" | "PERMISSION_DENIED" | "IDEMPOTENCY_CONFLICT";
 export type DirectMessageServiceResult<T> = Readonly<{ ok: true; data: T }> | Readonly<{ ok: false; error: Readonly<{ code: DirectMessageErrorCode; message: string }> }>;
-export type SendDirectMessageInput = Readonly<{ conversationId: string; body: string; clientMessageId?: string; replyToMessageId?: string }>;
+export type SendDirectMessageInput = Readonly<{ conversationId: string; body: string; clientMessageId?: string; replyToMessageId?: string; attachments?: readonly DirectMessageAttachment[] }>;
 export type DirectMessagePageOptions = Readonly<{ limit?: number; before?: DirectMessageCursor }>;
 
 function failure(code: DirectMessageErrorCode, message: string): DirectMessageServiceResult<never> { return { ok: false, error: { code, message } }; }
@@ -62,11 +62,22 @@ export async function createDirectConversation(otherUserId: string): Promise<Dir
 export async function sendDirectMessage(input: SendDirectMessageInput): Promise<DirectMessageServiceResult<DirectMessage>> {
   const body = input.body.trim();
   if (!input.conversationId.trim() || !body || body.length > 4000) return failure("VALIDATION_ERROR", "A valid conversation and message are required.");
+  const attachments = input.attachments ?? [];
+  if (attachments.length > 4 || attachments.some((attachment) => !attachment.storagePath)) return failure("VALIDATION_ERROR", "Direct-message attachments must be uploaded before sending.");
   const configured = configuredClient(); if (!configured.ok) return configured;
   const user = await currentUserId(); if (!user.ok) return user;
-  const result = await configured.data.rpc("send_direct_message_v2", { target_conversation_id: input.conversationId, message_body: body, target_client_message_id: input.clientMessageId ?? crypto.randomUUID(), target_reply_to_message_id: input.replyToMessageId ?? null });
-  if (result.error || !result.data || typeof result.data !== "object") return failure("PERMISSION_DENIED", "Direct message was blocked by membership or privacy controls.");
-  return { ok: true, data: mapMessage(result.data as unknown as MessageRow) };
+  const result = await configured.data.rpc("send_direct_message_v3", {
+    target_conversation_id: input.conversationId,
+    message_body: body,
+    target_client_message_id: input.clientMessageId ?? crypto.randomUUID(),
+    target_reply_to_message_id: input.replyToMessageId ?? null,
+    target_attachments: attachments.map((attachment) => ({ id: attachment.id, storage_path: attachment.storagePath, file_name: attachment.name, mime_type: attachment.mimeType, size_bytes: attachment.fileSize, width: attachment.width, height: attachment.height })),
+  });
+  if (result.error || !result.data || typeof result.data !== "object") {
+    if (result.error?.message.includes("DM_IDEMPOTENCY_CONFLICT")) return failure("IDEMPOTENCY_CONFLICT", "This retry key was already used for a different direct message.");
+    return failure("PERMISSION_DENIED", "Direct message was blocked by membership, attachment, or privacy controls.");
+  }
+  return { ok: true, data: { ...mapMessage(result.data as unknown as MessageRow), attachments } };
 }
 
 export async function editDirectMessage(messageId: string, bodyInput: string): Promise<DirectMessageServiceResult<DirectMessage>> {

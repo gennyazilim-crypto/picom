@@ -6,7 +6,7 @@ import { getSupabaseClient } from "../supabase/supabaseClient";
 import { createOrOpenDirectConversation, directMessageMockStore, getDirectConversations, markDirectConversationRead, setDirectConversationArchived, setDirectConversationMuted } from "./directConversationService";
 import { directRealtimeService, type DirectReactionRow } from "./directRealtimeService";
 
-export type DirectMessageSendInput = SendDirectMessageInput & Readonly<{ attachments?: readonly DirectMessageAttachment[]; replyToMessageId?: string }>;
+export type DirectMessageSendInput = SendDirectMessageInput;
 function failure<T>(message: string): DirectMessageServiceResult<T> { return { ok: false, error: { code: "REQUEST_FAILED", message } }; }
 function normalizeLimit(value: number | undefined, fallback = 50): number { return Math.max(1, Math.min(Math.floor(value ?? fallback), 100)); }
 function cursorFor(message: DirectMessage | DirectSharedMediaItem | undefined): DirectMessageCursor | undefined { return message ? { createdAt: message.createdAt, id: message.id } : undefined; }
@@ -98,10 +98,7 @@ export async function sendDirectMessage(first: string | DirectMessageSendInput, 
     directMessageMockStore.replace(input.conversationId, (current) => ({ ...current, messages: [...current.messages, message], lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0, archivedAt: undefined }));
     directRealtimeService.publishMock({ type: "direct_message:insert", message }); return { ok: true, data: message };
   }
-  const sent = await supabaseDirectMessageService.sendDirectMessage({ conversationId: input.conversationId, body, clientMessageId, replyToMessageId: input.replyToMessageId });
-  if (!sent.ok) return sent;
-  if (input.attachments?.length) { const saved = await addDirectMessageAttachments(sent.data.id, input.attachments); if (!saved.ok) return saved; return { ok: true, data: { ...sent.data, attachments: saved.data } }; }
-  return sent;
+  return supabaseDirectMessageService.sendDirectMessage({ conversationId: input.conversationId, body, clientMessageId, replyToMessageId: input.replyToMessageId, attachments: input.attachments });
 }
 
 export async function editDirectMessage(messageId: string, body: string): Promise<DirectMessageServiceResult<DirectMessage>> {
