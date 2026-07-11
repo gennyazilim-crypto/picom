@@ -243,7 +243,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["meeting_sessions"]["Row"]>;Relationships:[];
       };
       meeting_session_participants: {
-        Row: { id:string;session_id:string;user_id:string|null;provider_identity:string;display_name:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";state:"invited"|"waiting"|"joining"|"connected"|"reconnecting"|"left"|"removed";capabilities:Json;joined_at:string|null;left_at:string|null;last_seen_at:string|null;removed_by_user_id:string|null;removal_reason_code:string|null;created_at:string;updated_at:string };
+        Row: { id:string;session_id:string;user_id:string|null;provider_identity:string;display_name:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";state:"invited"|"waiting"|"joining"|"connected"|"reconnecting"|"left"|"removed";capabilities:Json;joined_at:string|null;left_at:string|null;last_seen_at:string|null;provider_joined_at:string|null;provider_left_at:string|null;last_provider_event_at:string|null;last_provider_event_id:string|null;last_provider_event_type:string|null;connection_generation:number;removed_by_user_id:string|null;removal_reason_code:string|null;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_session_participants"]["Row"],"session_id"|"provider_identity"|"display_name"|"role">;
         Update: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]>;Relationships:[];
       };
@@ -277,7 +277,11 @@ export type Database = {
         Insert:never;Update:never;Relationships:[];
       };
       meeting_participant_tracks:{
-        Row:{id:string;session_id:string;participant_id:string;provider_track_sid:string;kind:"audio"|"video";source:"microphone"|"camera"|"screen_share"|"screen_share_audio"|"unknown";state:"published"|"unpublished";published_at:string;unpublished_at:string|null;updated_at:string};
+        Row:{id:string;session_id:string;participant_id:string;provider_track_sid:string;kind:"audio"|"video";source:"microphone"|"camera"|"screen_share"|"screen_share_audio"|"unknown";state:"published"|"unpublished";published_at:string;unpublished_at:string|null;last_provider_event_at:string|null;last_provider_event_id:string|null;updated_at:string};
+        Insert:never;Update:never;Relationships:[];
+      };
+      meeting_participant_runtime_state:{
+        Row:{participant_id:string;session_id:string;hand_raised:boolean;hand_raised_at:string|null;hand_sequence:number;server_version:number;updated_by_user_id:string|null;updated_at:string};
         Insert:never;Update:never;Relationships:[];
       };
       community_event_rsvps: {
@@ -947,6 +951,9 @@ export type Database = {
       get_meeting_join_preview:{Args:{target_room_id:string;target_token_hash?:string|null};Returns:Json};
       list_meeting_invites:{Args:{target_room_id:string};Returns:Json};
       authorize_livekit_meeting_token:{Args:{target_room_id:string;target_session_id:string;request_audio?:boolean;request_video?:boolean;request_screen?:boolean;request_data?:boolean};Returns:Array<{room_id:string;session_id:string;community_id:string;provider_room_name:string;participant_identity:string;participant_name:string;meeting_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";access_state:"authorized"|"waiting";waiting_entry_id:string|null;can_subscribe:boolean;can_publish_audio:boolean;can_publish_video:boolean;can_publish_screen:boolean;can_publish_data:boolean}>};
+      get_meeting_participant_snapshot:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
+      set_meeting_participant_hand_state:{Args:{target_participant_id:string;target_raised:boolean};Returns:Json};
+      cleanup_stale_meeting_participants:{Args:{target_session_id:string;target_stale_before?:string};Returns:Json};
       process_livekit_webhook_event:{Args:{target_event_id:string;target_event_type:string;target_occurred_at:string;target_room_id:string;target_session_id:string;target_room_name:string;target_payload_digest:string;target_participant_identity?:string|null;target_participant_name?:string|null;target_track_sid?:string|null;target_track_kind?:string|null;target_track_source?:string|null};Returns:Json};
       expire_meeting_waiting_entries:{Args:{target_room_id?:string|null};Returns:number};
       request_meeting_waiting_admission:{Args:{target_room_id:string;target_session_id:string;target_request_message?:string;target_idempotency_key?:string|null};Returns:Json};
