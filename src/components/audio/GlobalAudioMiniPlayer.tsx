@@ -6,7 +6,7 @@ import { audioPlaybackCoordinatorService } from "../../services/audio/audioPlayb
 import { radioService } from "../../services/audio/radioService";
 import { AudioMiniPlayer } from "./AudioMiniPlayer";
 
-export function GlobalAudioMiniPlayer() {
+export function GlobalAudioMiniPlayer({ hidden = false }: { hidden?: boolean }) {
   const player = useAudioPlayer();
   const catalog = useAudioCatalogState();
 
@@ -44,6 +44,6 @@ export function GlobalAudioMiniPlayer() {
     };
   }, []);
 
-  if (!player.item) return null;
+  if (!player.item || hidden) return null;
   return <div className="global-audio-dock"><AudioMiniPlayer /></div>;
 }

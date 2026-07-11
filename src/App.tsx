@@ -3062,7 +3062,7 @@ export function App() {
         </div>
         )}
       </DesktopAppShell>
-      <GlobalAudioMiniPlayer />
+      <GlobalAudioMiniPlayer hidden={activeView === "mentionFeed"} />
 
       {createCommunityOpen ? <CreateCommunityModal onClose={() => setCreateCommunityOpen(false)} onSubmit={handleCreateCommunity} /> : null}
       {createChannelCategoryId ? (

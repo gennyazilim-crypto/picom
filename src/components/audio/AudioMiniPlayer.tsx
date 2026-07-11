@@ -14,7 +14,6 @@ export function AudioMiniPlayer({ item, queue, onClose }: { item?: AudioPlayable
   useEffect(() => {
     if (item) void audioPlaybackCoordinatorService.select(item, queue);
   }, [item?.id, item?.type]);
-  if (item) return null;
   const active = player.item;
   if (!active) return null;
   const isPodcast = active.type === "podcast_episode";

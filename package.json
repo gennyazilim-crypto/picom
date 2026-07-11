@@ -379,6 +379,7 @@
     "feed:cards:smoke": "node scripts/unified-feed-cards-smoke.mjs",
     "feed:tabs-stories:smoke": "node scripts/feed-tabs-stories-filters-smoke.mjs",
     "feed:actions:smoke": "node scripts/feed-actions-deep-links-smoke.mjs",
+    "feed:rail:integration:smoke": "node scripts/feed-companion-integration-smoke.mjs",
     "replies:production:smoke": "node scripts/reply-system-production-smoke.mjs",
     "follow:suggestions:test": "node scripts/follow-suggestions-v2-test.mjs",
     "search:relevance:test": "node scripts/search-relevance-tuning-test.mjs",

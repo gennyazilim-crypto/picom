@@ -121,8 +121,8 @@ function FriendStatusRow({
     <button
       className="feed-friend-row"
       type="button"
-      onClick={member ? (event) => onOpenProfile(event, member) : undefined}
-      title={member ? `Open ${friend.displayName} profile` : friend.displayName}
+      onClick={(event) => onOpenProfile(event, displayMember)}
+      title={`Open ${friend.displayName} profile`}
     >
       <span className="feed-friend-avatar">
         <MemberAvatar member={displayMember} size={32} />
@@ -284,14 +284,16 @@ export function FeedCompanionRail({
 }: FeedCompanionRailProps) {
   return (
     <aside className="feed-companion-rail" aria-label="Feed companion rail">
-      {audioItem ? <AudioMiniPlayer item={audioItem} onClose={onCloseAudio} /> : null}
-      <VoiceMiniControlCard
-        voiceState={voiceState}
-        onToggleMute={onToggleMute}
-        onToggleDeafen={onToggleDeafen}
-        onLeaveVoice={onLeaveVoice}
-        onScreenSharePlaceholder={onScreenSharePlaceholder}
-      />
+      <div className="feed-rail-sticky-stack">
+        <AudioMiniPlayer item={audioItem ?? undefined} onClose={onCloseAudio} />
+        <VoiceMiniControlCard
+          voiceState={voiceState}
+          onToggleMute={onToggleMute}
+          onToggleDeafen={onToggleDeafen}
+          onLeaveVoice={onLeaveVoice}
+          onScreenSharePlaceholder={onScreenSharePlaceholder}
+        />
+      </div>
       <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} />
       <FriendsStatusSection friends={friends} communities={communities} onOpenProfile={onOpenProfile} />
       <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} onToggleEventReminder={onToggleEventReminder} />

@@ -944,7 +944,9 @@
 .event-mini-reminder{width:28px;height:28px;display:grid;place-items:center;color:var(--text-muted);background:var(--app-surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
 .event-mini-reminder:hover{color:var(--text-primary);background:var(--hover-surface)}
 .event-mini-reminder[aria-pressed="true"]{color:var(--accent);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 34%,var(--border))}
-.mention-feed-primary-list{min-width:0;display:grid;align-content:start;gap:14px}.feed-companion-rail>.audio-mini-player{position:sticky;top:12px;z-index:3}
+.mention-feed-primary-list{min-width:0;display:grid;align-content:start;gap:14px}
+.feed-rail-sticky-stack{position:sticky;top:12px;z-index:3;min-width:0;display:grid;align-content:start;gap:14px}
+.feed-rail-sticky-stack>.audio-mini-player,.feed-rail-sticky-stack>.voice-mini-card{position:static;top:auto}
 
 /* Unified Text, Radio, and Podcast Feed card language. */
 .unified-feed-list{min-width:0;display:grid;align-content:start;gap:14px}
@@ -1075,11 +1077,7 @@
   align-self: start;
   overflow: visible;
 }
-.feed-companion-rail .voice-mini-card {
-  position: sticky;
-  top: 12px;
-  z-index: 2;
-}
+.feed-companion-rail .voice-mini-card { z-index: 2; }
 
 @media (max-width: 1560px) {
   .mention-feed-body-grid {
