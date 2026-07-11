@@ -13,7 +13,8 @@
     { "name": "account-deletion", "verifyJwt": true }
   ],
   "releaseInternal": [
-    { "name": "account-deletion-finalize", "verifyJwt": false, "guard": "worker-secret-and-disabled-by-default" }
+    { "name": "account-deletion-finalize", "verifyJwt": false, "guard": "worker-secret-and-disabled-by-default" },
+    { "name": "livekit-webhook", "verifyJwt": false, "guard": "livekit-signature-body-hash-and-idempotency" }
   ],
   "excluded": [
     { "name": "accept-invite", "classification": "placeholder", "reason": "Invite acceptance uses the RLS-protected database RPC in Full MVP." },

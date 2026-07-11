@@ -1,0 +1,16 @@
+import { createHash, createHmac, randomUUID } from "node:crypto";
+const run=process.argv.includes("--run");
+const names=["PICOM_LIVEKIT_WEBHOOK_STAGING_URL","PICOM_LIVEKIT_WEBHOOK_STAGING_CONFIRM","PICOM_LIVEKIT_WEBHOOK_API_KEY","PICOM_LIVEKIT_WEBHOOK_API_SECRET","PICOM_LIVEKIT_WEBHOOK_ROOM_ID","PICOM_LIVEKIT_WEBHOOK_SESSION_ID"];
+if(!run){console.log("LiveKit webhook staging validation is BLOCKED until --run and STAGING_ONLY configuration are supplied.");console.log(`Required variable names: ${names.join(", ")}`);console.log("No network request was made and no credential, webhook token, or secret was printed.");process.exit(0)}
+const missing=names.filter((name)=>!process.env[name]?.trim());if(missing.length)throw new Error(`Missing staging configuration names: ${missing.join(", ")}`);if(process.env.PICOM_LIVEKIT_WEBHOOK_STAGING_CONFIRM!=="STAGING_ONLY")throw new Error("PICOM_LIVEKIT_WEBHOOK_STAGING_CONFIRM must equal STAGING_ONLY.");
+const url=new URL(process.env.PICOM_LIVEKIT_WEBHOOK_STAGING_URL);if(url.protocol!=="https:"||url.username||url.password)throw new Error("Webhook staging URL must be credential-free HTTPS.");
+const key=process.env.PICOM_LIVEKIT_WEBHOOK_API_KEY,secret=process.env.PICOM_LIVEKIT_WEBHOOK_API_SECRET,roomId=process.env.PICOM_LIVEKIT_WEBHOOK_ROOM_ID,sessionId=process.env.PICOM_LIVEKIT_WEBHOOK_SESSION_ID;
+const b64url=(value)=>Buffer.from(typeof value==="string"?value:JSON.stringify(value)).toString("base64url");
+const sign=(body,{expired=false}={})=>{const now=Math.floor(Date.now()/1000),header=b64url({alg:"HS256",typ:"JWT"}),payload=b64url({iss:key,nbf:now-5,exp:expired?now-60:now+300,sha256:createHash("sha256").update(body).digest("base64")}),unsigned=`${header}.${payload}`;return `Bearer ${unsigned}.${createHmac("sha256",secret).update(unsigned).digest("base64url")}`};
+const call=async(body,authorization)=>{const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/webhook+json",Authorization:authorization},body,signal:AbortSignal.timeout(20000)});const text=await response.text();let payload=null;try{payload=text?JSON.parse(text):null}catch{}return{response,payload}};
+const event=JSON.stringify({id:randomUUID(),event:"room_started",createdAt:Math.floor(Date.now()/1000),room:{name:`meeting:${roomId}:session:${sessionId}`}}),authorization=sign(event);
+const valid=await call(event,authorization);if(valid.response.status!==200||valid.payload?.accepted!==true||valid.payload?.duplicate!==false)throw new Error(`Valid webhook failed with ${valid.response.status}.`);
+const duplicate=await call(event,authorization);if(duplicate.response.status!==200||duplicate.payload?.duplicate!==true)throw new Error(`Valid duplicate webhook was not idempotent; status ${duplicate.response.status}.`);
+const tampered=await call(event.replace("room_started","room_finished"),authorization);if(tampered.response.status!==401)throw new Error(`Expected tampered webhook 401, received ${tampered.response.status}.`);
+const expired=await call(event,sign(event,{expired:true}));if(expired.response.status!==401)throw new Error(`Expected expired webhook 401, received ${expired.response.status}.`);
+console.log("LiveKit webhook valid/duplicate/tampered/expired staging matrix passed; no credential, webhook token, or secret was printed.");

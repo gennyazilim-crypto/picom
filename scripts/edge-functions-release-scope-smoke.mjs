@@ -14,4 +14,5 @@ assert.ok(moderation.includes("handleCorsPreflight")&&moderation.includes("readB
 assert.ok(deploy.includes("PICOM_CONFIRM_EDGE_DEPLOY")&&deploy.includes("PICOM_EDGE_STAGING_PROJECT_REF")&&!deploy.includes("SUPABASE_ACCESS_TOKEN="),"staging-only deploy guard missing");
 assert.ok(runner.includes("validateDeniedOrigin")&&runner.includes("invalid.synthetic.jwt")&&!runner.includes("INVITE_ACCEPTANCE_NOT_IMPLEMENTED"),"hosted allowed/denied release matrix missing");
 for(const source of [cors,request,moderation,deploy,runner])assert.ok(!/sb_secret_[A-Za-z0-9_-]{8,}/.test(source),"secret value pattern found");
+const livekitWebhook=read("supabase/functions/livekit-webhook/index.ts");assert.ok(release.includes("livekit-webhook")&&livekitWebhook.includes("verifyLiveKitWebhook")&&livekitWebhook.includes('requiredEnv("SUPABASE_SERVICE_ROLE_KEY")')&&!livekitWebhook.includes("console."),"signed internal LiveKit webhook contract missing");
 console.log("Edge Function release scope, JWT, CORS, body, deploy, and secret-boundary smoke: PASS");

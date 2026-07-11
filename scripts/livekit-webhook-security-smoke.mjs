@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const read=(path)=>readFileSync(path,"utf8");
+const edge=read("supabase/functions/livekit-webhook/index.ts"),verifier=read("supabase/functions/_shared/livekit-webhook-verifier.ts"),migration=read("supabase/migrations/20260711153600_livekit_webhook_session_sync.sql"),config=read("supabase/config.toml"),staging=read("scripts/livekit-webhook-staging-validation.mjs"),manifest=JSON.parse(read("supabase/functions/release-manifest.json"));
+assert.match(config,/\[functions\.livekit-webhook\]\s*\r?\nverify_jwt = false/);
+assert.ok(manifest.releaseInternal.some((item)=>item.name==="livekit-webhook"&&item.guard==="livekit-signature-body-hash-and-idempotency"),"signed webhook missing from internal manifest");
+assert.ok(verifier.includes('header.alg !== "HS256"')&&verifier.includes("crypto.subtle.verify")&&verifier.includes("payload.sha256")&&verifier.includes("standardBase64(digest)"),"official signature/body-hash contract missing");
+assert.ok(edge.includes('contentType !== "application/webhook+json"')&&edge.includes("maxBodyBytes = 256 * 1024")&&edge.includes("verifyLiveKitWebhook"),"raw bounded webhook validation missing");
+for(const event of ["room_started","room_finished","participant_joined","participant_left","participant_connection_aborted","track_published","track_unpublished"])assert.ok(edge.includes(`"${event}"`)&&migration.includes(`'${event}'`),`missing event ${event}`);
+for(const marker of ["livekit_webhook_receipts","payload_digest","WEBHOOK_REPLAY_MISMATCH","meeting_participant_tracks","meeting_attendance","last_event_sequence","on conflict(event_source,idempotency_key)","PROCESSING_"])assert.ok(migration.includes(marker),`missing reconciliation marker ${marker}`);
+assert.ok(migration.includes("grant execute on function public.process_livekit_webhook_event")&&migration.includes("to service_role")&&migration.includes("revoke all on function public.process_livekit_webhook_event"),"service-role-only RPC contract missing");
+assert.ok(edge.includes('requiredEnv("SUPABASE_SERVICE_ROLE_KEY")')&&edge.includes('requiredEnv("LIVEKIT_API_SECRET")')&&!edge.includes("console."),"server secret/log boundary missing");
+assert.ok(!migration.includes("raw_body")&&!migration.includes("authorization_header")&&!migration.includes("media_payload"),"forbidden raw payload storage found");
+assert.ok(staging.includes("Valid webhook")&&staging.includes("duplicate")&&staging.includes("tampered")&&staging.includes("expired")&&staging.includes("No network request"),"staging valid/replay/invalid matrix missing");
+console.log("LiveKit webhook signature, body hash, replay idempotency, session, attendance, track, retry, and secret-boundary smoke: PASS");
