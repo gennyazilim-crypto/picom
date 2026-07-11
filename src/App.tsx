@@ -1835,13 +1835,28 @@ export function App() {
       return;
     }
 
+    const targetCommunity = communities.find((community) => community.id === story.communityId);
+    const targetChannel = targetCommunity?.categories.flatMap((category) => category.channels).find((channel) => channel.id === story.channelId);
+    const targetAccess = targetCommunity ? getCommunityAccess(currentUserId, targetCommunity) : null;
+    if (!targetCommunity || !targetChannel || !targetAccess || !canViewChannel(targetAccess, targetChannel)) {
+      pushToast("This Story source is no longer accessible.", "error");
+      return;
+    }
+
     setActiveView("community");
     switchCommunity(story.communityId, story.channelId);
     clearChannelUnread({ communityId: story.communityId, channelId: story.channelId });
     markStorySeen(story.id);
     closeTransientOverlays();
-    loggingService.logInfo("Story message highlight placeholder prepared", { messageId: story.messageId }, "mention-feed");
-  }, [clearChannelUnread, closeTransientOverlays, communities, markStorySeen, pushToast, switchCommunity]);
+    if (story.messageId) {
+      setHighlightedMessageId(story.messageId);
+      if (messageHighlightTimerRef.current) window.clearTimeout(messageHighlightTimerRef.current);
+      messageHighlightTimerRef.current = window.setTimeout(() => {
+        setHighlightedMessageId((current) => current === story.messageId ? null : current);
+        messageHighlightTimerRef.current = null;
+      }, 2200);
+    }
+  }, [clearChannelUnread, closeTransientOverlays, communities, currentUserId, markStorySeen, pushToast, switchCommunity]);
 
   const toggleFeedVoiceMute = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
@@ -1860,9 +1875,17 @@ export function App() {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.leave().then(() => pushToast("Left the voice room.", "info")));
   }, [pushToast]);
 
-  const showScreenSharePlaceholder = useCallback(() => {
-    pushToast("Screen share controls are prepared for LiveKit, but stay local in this task.", "info");
-  }, [pushToast]);
+  const openFeedScreenShare = useCallback(() => {
+    const room = activeVoiceRooms.find((candidate) => candidate.channelName === voiceSnapshot.roomName && candidate.canJoin);
+    if (!room) { pushToast("The connected voice room is no longer available.", "error"); return; }
+    const community = communities.find((candidate) => candidate.id === room.communityId);
+    const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === room.channelId);
+    if (!community || !channel) { pushToast("The connected voice channel is no longer available.", "error"); return; }
+    setActiveView(communityViewForKind(community.kind));
+    switchCommunity(room.communityId, room.channelId);
+    closeTransientOverlays();
+    pushToast("Screen share controls opened in the connected voice room.", "success");
+  }, [activeVoiceRooms, closeTransientOverlays, communities, pushToast, switchCommunity, voiceSnapshot.roomName]);
 
   const openDiscoveredVoiceRoom = useCallback((room: ActiveVoiceRoomSummary) => {
     const community = communities.find((candidate) => candidate.id === room.communityId);
@@ -1954,9 +1977,19 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
 
-  const showFeedEventDetails = useCallback((event: typeof mockUpcomingEvents[number]) => {
-    pushToast(`${event.title} details are a local placeholder.`, "info");
-  }, [pushToast]);
+  const openFeedEventDetails = useCallback((event: typeof mockUpcomingEvents[number]) => {
+    const targetCommunity = communities.find((community) => community.id === event.communityId);
+    if (!targetCommunity) { pushToast("This event is no longer available.", "error"); return; }
+    if (event.source === "radio" && event.radioSessionId) {
+      communityNavigationService.rememberRadioSession(event.communityId, event.radioSessionId);
+      setActiveView("radioCommunity");
+      switchCommunity(event.communityId);
+    } else {
+      setActiveView(communityViewForKind(targetCommunity.kind));
+      switchCommunity(event.communityId, event.channelId);
+    }
+    closeTransientOverlays();
+  }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
 
   const openProfilePage = useCallback((member: Member) => {
     setPreviousViewBeforeProfile((previous) => (activeView === "profile" ? previous : activeView));
@@ -2727,9 +2760,9 @@ export function App() {
                 onToggleVoiceDeafen={toggleFeedVoiceDeafen}
                 onLeaveVoice={leaveFeedVoice}
                 onOpenVoiceRoom={openDiscoveredVoiceRoom}
-                onScreenSharePlaceholder={showScreenSharePlaceholder}
+                onOpenScreenShare={openFeedScreenShare}
                 onOpenEventCommunity={openFeedEventCommunity}
-                onEventDetails={showFeedEventDetails}
+                onEventDetails={openFeedEventDetails}
                 onCopyAudioReference={(item) => {
                   const sourceId = item.sourceId ?? item.id.replace(/^feed-/, "");
                   const reference = item.type === "podcast_episode"

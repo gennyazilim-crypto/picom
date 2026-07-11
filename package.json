@@ -381,6 +381,7 @@
     "feed:actions:smoke": "node scripts/feed-actions-deep-links-smoke.mjs",
     "feed:rail:integration:smoke": "node scripts/feed-companion-integration-smoke.mjs",
     "feed:realtime:cache:smoke": "node scripts/feed-realtime-cache-smoke.mjs",
+    "feed:full-mvp:qa": "node scripts/feed-full-mvp-e2e-qa.mjs",
     "replies:production:smoke": "node scripts/reply-system-production-smoke.mjs",
     "follow:suggestions:test": "node scripts/follow-suggestions-v2-test.mjs",
     "search:relevance:test": "node scripts/search-relevance-tuning-test.mjs",

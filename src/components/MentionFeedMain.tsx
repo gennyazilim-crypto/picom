@@ -52,7 +52,7 @@ type MentionFeedMainProps = {
   onToggleVoiceDeafen: () => void;
   onLeaveVoice: () => void;
   onOpenVoiceRoom: (room: ActiveVoiceRoomSummary) => void;
-  onScreenSharePlaceholder: () => void;
+  onOpenScreenShare: () => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
   onCopyAudioReference: (item: AudioFeedItem) => void;
@@ -123,7 +123,7 @@ export function MentionFeedMain({
   onToggleVoiceDeafen,
   onLeaveVoice,
   onOpenVoiceRoom,
-  onScreenSharePlaceholder,
+  onOpenScreenShare,
   onOpenEventCommunity,
   onEventDetails,
   onCopyAudioReference,
@@ -322,7 +322,7 @@ export function MentionFeedMain({
           onToggleDeafen={onToggleVoiceDeafen}
           onLeaveVoice={onLeaveVoice}
           onOpenVoiceRoom={onOpenVoiceRoom}
-          onScreenSharePlaceholder={onScreenSharePlaceholder}
+          onOpenScreenShare={onOpenScreenShare}
           onOpenProfile={onOpenProfile}
           onOpenEventCommunity={onOpenEventCommunity}
           onEventDetails={onEventDetails}

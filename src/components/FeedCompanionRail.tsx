@@ -20,7 +20,7 @@ type FeedCompanionRailProps = {
   onToggleDeafen: () => void;
   onLeaveVoice: () => void;
   onOpenVoiceRoom: (room: ActiveVoiceRoomSummary) => void;
-  onScreenSharePlaceholder: () => void;
+  onOpenScreenShare: () => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
@@ -55,8 +55,8 @@ function VoiceMiniControlCard({
   onToggleMute,
   onToggleDeafen,
   onLeaveVoice,
-  onScreenSharePlaceholder,
-}: Pick<FeedCompanionRailProps, "voiceState" | "onToggleMute" | "onToggleDeafen" | "onLeaveVoice" | "onScreenSharePlaceholder">) {
+  onOpenScreenShare,
+}: Pick<FeedCompanionRailProps, "voiceState" | "onToggleMute" | "onToggleDeafen" | "onLeaveVoice" | "onOpenScreenShare">) {
   if (voiceState.status !== "connected" && voiceState.status !== "reconnecting") return null;
 
   return (
@@ -85,7 +85,7 @@ function VoiceMiniControlCard({
         <button type="button" aria-label={voiceState.deafened ? "Undeafen audio" : "Deafen audio"} aria-pressed={voiceState.deafened} onClick={onToggleDeafen}>
           <AppIcon name="headphones" size="sm" />
         </button>
-        <button type="button" aria-label="Open screen share controls" aria-pressed={voiceState.screenSharing} onClick={onScreenSharePlaceholder}>
+        <button type="button" aria-label="Open screen share controls" aria-pressed={voiceState.screenSharing} onClick={onOpenScreenShare}>
           <AppIcon name="image" size="sm" />
         </button>
         <button type="button" className="voice-mini-leave" aria-label="Leave voice room" onClick={onLeaveVoice}>
@@ -274,7 +274,7 @@ export function FeedCompanionRail({
   onToggleDeafen,
   onLeaveVoice,
   onOpenVoiceRoom,
-  onScreenSharePlaceholder,
+  onOpenScreenShare,
   onOpenProfile,
   onOpenEventCommunity,
   onEventDetails,
@@ -291,7 +291,7 @@ export function FeedCompanionRail({
           onToggleMute={onToggleMute}
           onToggleDeafen={onToggleDeafen}
           onLeaveVoice={onLeaveVoice}
-          onScreenSharePlaceholder={onScreenSharePlaceholder}
+          onOpenScreenShare={onOpenScreenShare}
         />
       </div>
       <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} />

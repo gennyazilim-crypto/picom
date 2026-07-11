@@ -23,6 +23,7 @@ requireText(rail, "voiceState.status !== \"connected\"", "actual voice connectio
 requireText(rail, "onToggleMute", "voice mute control");
 requireText(rail, "onToggleDeafen", "voice deafen control");
 requireText(rail, "onLeaveVoice", "voice leave control");
+requireText(rail, "onOpenScreenShare", "voice screen share navigation");
 requireText(rail, "onOpenProfile(event, displayMember)", "friend profile navigation");
 requireText(feed, "audioCatalog.radioSessions", "Radio schedule events");
 requireText(feed, "audioItem={selectedAudio}", "Feed audio selection handoff");
