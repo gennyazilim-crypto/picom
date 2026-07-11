@@ -13,7 +13,8 @@ const requiredFiles = [
   "direct_messages.sql",
   "verification_security.sql",
   "community_lifecycle_management.sql",
-  "podcast_full_mvp.sql"
+  "podcast_full_mvp.sql",
+  "profile_access_cross_community_privacy.sql"
 ];
 
 const requiredScenarioSnippets = [
@@ -41,7 +42,14 @@ const requiredScenarioSnippets = [
   "archive retains child data for controlled recovery",
   "draft podcast episodes remain private",
   "playback progress belongs only to current user",
-  "podcast storage enforces episode ownership"
+  "podcast storage enforces episode ownership",
+  "visitor can read everyone-profile basics",
+  "visitor cannot read profile activity without trusted relationship",
+  "shared member sees only public mutual-community activity",
+  "friend still cannot read private-community source activity",
+  "blocked user cannot view profile basics",
+  "removing community access removes profile activity visibility",
+  "friends-only profile is hidden from visitor"
 ];
 
 function fail(message) {
