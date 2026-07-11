@@ -28,6 +28,24 @@ export type RadioAnnouncement = Readonly<{
   publishedAt: string;
 }>;
 
+export type PodcastCommunitySettings = Readonly<{
+  communityId: string;
+  about: string;
+  listenerDiscussionEnabled: boolean;
+  listenerDiscussionChannelId?: string;
+}>;
+
+export type PodcastSeries = Readonly<{
+  id: string;
+  communityId: string;
+  title: string;
+  description: string;
+  coverUrl?: string;
+  createdBy: string;
+  isActive: boolean;
+  createdAt: string;
+}>;
+
 export type AudioReactionSummary = Readonly<{
   emoji: string;
   count: number;
@@ -70,6 +88,7 @@ export type RadioCommunityShellSnapshot = Readonly<{
 export type PodcastEpisode = Readonly<{
   id: string;
   communityId: string;
+  seriesId?: string;
   authorUserId: string;
   title: string;
   description: string;
@@ -85,6 +104,13 @@ export type PodcastEpisode = Readonly<{
   isSavedByCurrentUser: boolean;
   isExplicit?: false;
   status: PodcastEpisodeStatus;
+}>;
+
+export type PodcastCommunityShellSnapshot = Readonly<{
+  settings: PodcastCommunitySettings;
+  episodes: readonly PodcastEpisode[];
+  series: readonly PodcastSeries[];
+  publisherUserIds: readonly string[];
 }>;
 
 export type AudioFeedItem = Readonly<{

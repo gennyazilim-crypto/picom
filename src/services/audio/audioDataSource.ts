@@ -134,7 +134,7 @@ function mapPodcast(
   });
   const visible = comments.filter((item) => item.episode_id === row.id && !item.deleted_at);
   return {
-    id: row.id, communityId: row.community_id, authorUserId: row.author_user_id,
+    id: row.id, communityId: row.community_id, seriesId: row.series_id ?? undefined, authorUserId: row.author_user_id,
     title: row.title, description: row.description, coverUrl: row.cover_url ?? undefined,
     audioUrl: row.audio_url ?? undefined, durationSeconds: row.duration_seconds,
     publishedAt: row.published_at ?? row.created_at, tags: [], reactionSummary: [...grouped.values()],
@@ -158,7 +158,7 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
   if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Audio is unavailable while Supabase is not configured.");
   const [radio, podcasts, reactions, comments, saved] = await Promise.all([
     client.from("radio_sessions").select("id,community_id,channel_id,host_user_id,title,description,status,starts_at,ended_at,cover_url,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
-    client.from("podcast_episodes").select("id,community_id,author_user_id,title,description,cover_url,audio_url,duration_seconds,status,published_at,created_at,updated_at").order("published_at", { ascending: false }).limit(200),
+    client.from("podcast_episodes").select("id,community_id,series_id,author_user_id,title,description,cover_url,audio_url,duration_seconds,status,published_at,created_at,updated_at").order("published_at", { ascending: false }).limit(200),
     client.from("podcast_episode_reactions").select("id,episode_id,user_id,emoji,created_at").limit(1000),
     client.from("podcast_episode_comments").select("id,episode_id,author_id,body,created_at,updated_at,deleted_at").is("deleted_at", null).order("created_at", { ascending: false }).limit(600),
     client.from("saved_audio_items").select("id,user_id,item_type,item_id,created_at").limit(500),

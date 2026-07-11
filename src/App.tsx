@@ -135,8 +135,8 @@ const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
 const ProfileView = lazy(() => import("./components/ProfileView").then((module) => ({ default: module.ProfileView })));
 const DirectMessagesView = lazy(() => import("./components/DirectMessagesView").then((module) => ({ default: module.DirectMessagesView })));
-const CommunityAudioView = lazy(() => import("./components/audio/CommunityAudioView").then((module) => ({ default: module.CommunityAudioView })));
 const RadioCommunityShell = lazy(() => import("./components/audio/RadioCommunityShell").then((module) => ({ default: module.RadioCommunityShell })));
+const PodcastCommunityShell = lazy(() => import("./components/audio/PodcastCommunityShell").then((module) => ({ default: module.PodcastCommunityShell })));
 const SavedMessagesView = lazy(() => import("./components/SavedMessagesView").then((module) => ({ default: module.SavedMessagesView })));
 const DiscoveryView = lazy(() => import("./components/DiscoveryView").then((module) => ({ default: module.DiscoveryView })));
 const FriendsView = lazy(() => import("./components/FriendsView").then((module) => ({ default: module.FriendsView })));
@@ -179,10 +179,10 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "radioCommunity" | "communityAudio" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
+type ActiveView = "community" | "radioCommunity" | "podcastCommunity" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
-  return kind === "text" ? "community" : kind === "radio" ? "radioCommunity" : "communityAudio";
+  return kind === "text" ? "community" : kind === "radio" ? "radioCommunity" : "podcastCommunity";
 }
 
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
@@ -2569,6 +2569,14 @@ export function App() {
               onBlockFriend={blockFriend}
             />
             </DeferredViewBoundary>
+          ) : activeView === "podcastCommunity" && displayedActiveCommunity.kind === "podcast" ? (
+            <DeferredViewBoundary label="Opening podcast community">
+              <PodcastCommunityShell
+                community={displayedActiveCommunity}
+                canPublish={communityAccess.isOwner || communityAccess.permissions.includes("manageCommunity") || ["Podcast Publisher", "Podcast Editor"].includes(displayedActiveCommunity.roles.find((role) => role.id === displayedCurrentUser.roleId)?.name ?? "")}
+                onOpenProfile={openProfilePage}
+              />
+            </DeferredViewBoundary>
           ) : activeView === "radioCommunity" && displayedActiveCommunity.kind === "radio" ? (
             <DeferredViewBoundary label="Opening radio community">
               <RadioCommunityShell
@@ -2591,7 +2599,7 @@ export function App() {
                   setActiveChannelId(channel.id);
                   clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
                 }}
-                audioActive={activeView === "communityAudio"}
+                audioActive={activeView === "podcastCommunity"}
                 onOpenAudio={() => setActiveView(communityViewForKind(displayedActiveCommunity.kind))}
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onOpenSettings={openSettings}
@@ -2660,16 +2668,7 @@ export function App() {
                   ])
                 }
               />
-              {activeView === "communityAudio" ? (
-                <DeferredViewBoundary label="Opening community audio">
-                  <CommunityAudioView
-                    community={displayedActiveCommunity}
-                    canManageAudio={communityAccess.isOwner || communityAccess.permissions.some((permission) => ["manageCommunity", "manageChannels", "moderateMessages"].includes(permission))}
-                    onPlaceholderAction={(message) => pushToast(message, "info")}
-                    onOpenProfile={openProfilePage}
-                  />
-                </DeferredViewBoundary>
-              ) : displayedActiveChannel.type === "voice" ? (
+              {displayedActiveChannel.type === "voice" ? (
                 <DeferredViewBoundary label="Opening voice room">
                 <VoiceRoomView
                   community={displayedActiveCommunity}

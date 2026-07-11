@@ -15,7 +15,13 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
     { id: `${summary.id}-radio-host-role`, name: "Radio Host", color: "var(--picom-aqua)", level: 50, capabilities: ["hostRadio", "manageRadioSchedule"] },
     { id: `${summary.id}-member-role`, name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["listenRadio"] },
   ];
-  const roles = summary.kind === "radio" ? radioRoles : mockRoles;
+  const podcastRoles: Role[] = [
+    { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "publishPodcasts", "managePodcastSeries", "editAnyPodcast", "moderatePodcastComments"] },
+    { id: `${summary.id}-podcast-publisher-role`, name: "Podcast Publisher", color: "var(--picom-aqua)", level: 50, capabilities: ["publishPodcasts", "managePodcastSeries"] },
+    { id: `${summary.id}-podcast-editor-role`, name: "Podcast Editor", color: "var(--picom-orange)", level: 40, capabilities: ["editPodcastMetadata", "moderatePodcastComments"] },
+    { id: `${summary.id}-member-role`, name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["listenPodcasts"] },
+  ];
+  const roles = summary.kind === "radio" ? radioRoles : summary.kind === "podcast" ? podcastRoles : mockRoles;
   const ownerRole = roles.find((role) => role.name === "Owner") ?? roles[0];
   const categories: ChannelCategory[] = (supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
     const categoryId = `${summary.id}-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "category"}`;
