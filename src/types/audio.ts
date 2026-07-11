@@ -116,6 +116,26 @@ export type RadioScheduleReminder = Readonly<{
   updatedAt: string;
 }>;
 
+export type RadioSessionHostRole = "host" | "co_host" | "producer";
+
+export type RadioSessionHostAssignment = Readonly<{
+  id: string;
+  radioSessionId: string;
+  userId: string;
+  hostRole: RadioSessionHostRole;
+  assignedBy: string;
+  assignedAt: string;
+}>;
+
+export type RadioAuditEntry = Readonly<{
+  id: string;
+  actorUserId: string;
+  actionType: string;
+  targetType: string;
+  reason?: string;
+  createdAt: string;
+}>;
+
 export type RadioCommunityShellSnapshot = Readonly<{
   settings: RadioCommunitySettings;
   sessions: readonly RadioSession[];

@@ -22,8 +22,9 @@ type MockCommunityConfig = {
 };
 
 const mockRadioRoles: Role[] = [
-  { id: "owner", name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"] },
-  { id: "radio-host", name: "Radio Host", color: "var(--picom-aqua)", level: 50, capabilities: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioSchedule", "manageRadioPrograms"] },
+  { id: "owner", name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "publishRadioAnnouncements", "moderateRadioComments"] },
+  { id: "radio-producer", name: "Radio Producer", color: "var(--picom-orange)", level: 70, capabilities: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "moderateRadioComments"] },
+  { id: "radio-host", name: "Radio Host", color: "var(--picom-aqua)", level: 50, capabilities: ["viewRadioContent", "listenRadio", "hostRadio"] },
   { id: "member", name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["viewRadioContent", "listenRadio"] },
 ];
 

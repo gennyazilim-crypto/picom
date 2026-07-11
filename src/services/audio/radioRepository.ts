@@ -1,4 +1,4 @@
-import type { RadioSession, RadioSessionStatus } from "../../types/audio";
+import type { RadioAuditEntry, RadioSession, RadioSessionHostAssignment, RadioSessionStatus } from "../../types/audio";
 import {
   audioDataSource,
   type AssignRadioSessionHostInput,
@@ -25,6 +25,9 @@ export interface RadioRepository {
   setSaved(sessionId: string, saved: boolean): Promise<AudioServiceResult<boolean>>;
   react(sessionId: string, emoji: string): Promise<AudioServiceResult<boolean>>;
   assignHost(input: AssignRadioSessionHostInput): Promise<AudioServiceResult<boolean>>;
+  listHosts(sessionId: string): Promise<AudioServiceResult<RadioSessionHostAssignment[]>>;
+  removeHost(sessionId: string, userId: string): Promise<AudioServiceResult<boolean>>;
+  listAudit(sessionId: string): Promise<AudioServiceResult<RadioAuditEntry[]>>;
   listListeners(sessionId: string): Promise<AudioServiceResult<RadioListenerState[]>>;
   moderateListener(sessionId: string, userId: string, action: RadioListenerModerationAction): Promise<AudioServiceResult<boolean>>;
 }
@@ -48,6 +51,9 @@ export const radioRepository: RadioRepository = {
   setSaved: (sessionId, saved) => audioDataSource.setRadioSaved(sessionId, saved),
   react: (sessionId, emoji) => audioDataSource.reactToRadioSession(sessionId, emoji),
   assignHost: (input) => audioDataSource.assignRadioSessionHost(input),
+  listHosts: (sessionId) => audioDataSource.listRadioSessionHosts(sessionId),
+  removeHost: (sessionId, userId) => audioDataSource.removeRadioSessionHost(sessionId, userId),
+  listAudit: (sessionId) => audioDataSource.listRadioAuditHistory(sessionId),
   listListeners: (sessionId) => audioDataSource.listRadioListeners(sessionId),
   moderateListener: (sessionId, userId, action) => audioDataSource.moderateRadioListener(sessionId, userId, action),
 };

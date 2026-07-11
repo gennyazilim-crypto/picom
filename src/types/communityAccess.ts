@@ -20,6 +20,7 @@ export type CommunityPermissionKey =
   | "manageRadioCommunity"
   | "manageRadioSchedule"
   | "manageRadioPrograms"
+  | "manageRadioHosts"
   | "publishRadioAnnouncements"
   | "moderateRadioComments"
   | "viewPodcastContent"

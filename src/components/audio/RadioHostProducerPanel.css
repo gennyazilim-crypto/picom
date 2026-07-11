@@ -55,6 +55,22 @@
 .radio-production-actions button:disabled,
 .radio-production-side button:disabled,
 .radio-danger-confirmation button:disabled { opacity: .48; cursor: not-allowed; }
+.radio-production-team-list{display:grid;gap:6px}
+.radio-production-team-list>div{min-width:0;padding:7px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;background:var(--surface-soft);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.radio-production-team-list>div>span{min-width:0;display:grid}
+.radio-production-team-list strong,.radio-production-team-list small,.radio-audit-history strong,.radio-audit-history small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.radio-production-team-list strong,.radio-audit-history strong{font-size:11px}
+.radio-production-team-list small,.radio-audit-history small{color:var(--text-muted);font-size:10px;text-transform:capitalize}
+.radio-inline-error,.radio-inline-status{margin:0;padding:7px 8px;border-radius:var(--radius-sm);font-size:10px}
+.radio-inline-error{color:var(--danger);background:color-mix(in srgb,var(--danger) 9%,var(--surface))}
+.radio-inline-status{color:var(--success);background:color-mix(in srgb,var(--success) 9%,var(--surface))}
+.radio-audit-history>div{display:grid;gap:6px}
+.radio-audit-history article{min-width:0;padding:7px;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px;background:var(--surface-soft);border-radius:var(--radius-sm)}
+.radio-audit-history article>svg{color:var(--accent)}
+.radio-audit-history article>span{min-width:0;display:grid}
+.radio-inline-confirmation{padding:12px;display:grid;gap:7px;color:var(--text-primary);background:var(--surface);border:1px solid color-mix(in srgb,var(--danger) 35%,var(--border));border-radius:var(--radius-md);box-shadow:var(--shadow-md)}
+.radio-inline-confirmation p{margin:0;color:var(--text-secondary);font-size:11px;line-height:1.45}
+.radio-inline-confirmation footer{display:flex;justify-content:flex-end;gap:7px}
 .radio-production-side { display: grid; gap: 12px; min-width: 0; }
 .radio-production-side > section { display: grid; gap: 10px; padding: 13px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
 .radio-production-side header { justify-content: space-between; gap: 10px; }

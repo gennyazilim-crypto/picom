@@ -604,6 +604,8 @@ export type Database = {
       leave_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };
       heartbeat_current_user_radio_listener: { Args: { target_session_id: string }; Returns: boolean };
       assign_radio_session_host: { Args: { target_session_id: string; target_user_id: string; target_host_role?: string }; Returns: boolean };
+      remove_radio_session_host: { Args: { target_session_id: string; target_user_id: string }; Returns: boolean };
+      list_radio_session_audit: { Args: { target_session_id: string; result_limit?: number }; Returns: Array<{ id: string; actor_id: string; action_type: string; target_type: string; reason: string | null; created_at: string }> };
       transition_radio_session: { Args: { target_session_id: string; next_status: string; confirmation_session_title?: string | null }; Returns: Array<Database["public"]["Tables"]["radio_sessions"]["Row"]> };
       moderate_radio_listener: { Args: { target_session_id: string; target_user_id: string; moderation_action: string }; Returns: boolean };
       transfer_community_ownership: {

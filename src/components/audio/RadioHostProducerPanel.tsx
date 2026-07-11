@@ -7,6 +7,8 @@ import type { RadioCommunityShellSnapshot, RadioSession } from "../../types/audi
 import type { Community, Member } from "../../types/community";
 import { AppIcon } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
+import { reportService } from "../../services/reportService";
+import { RadioProductionTeamPanel } from "./RadioProductionTeamPanel";
 import "./RadioHostProducerPanel.css";
 
 type TransitionAction = "ended" | "cancelled";
@@ -36,8 +38,6 @@ export function RadioHostProducerPanel({ community, currentUser, snapshot, realt
   const [scheduledEndAt, setScheduledEndAt] = useState(selected?.scheduledEndAt ? dateTimeInput(selected.scheduledEndAt) : "");
   const [programId, setProgramId] = useState(selected?.programId ?? "");
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [hostUserId, setHostUserId] = useState("");
-  const [hostRole, setHostRole] = useState<"host" | "co_host" | "producer">("co_host");
   const [listeners, setListeners] = useState<RadioListenerState[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: "status" | "error"; text: string } | null>(null);
@@ -138,14 +138,6 @@ export function RadioHostProducerPanel({ community, currentUser, snapshot, realt
     publishSession(result.data, next === "live" ? "Broadcast is live." : next === "ended" ? "Broadcast ended." : "Broadcast cancelled.");
   };
 
-  const assignHost = async () => {
-    if (!selected || !hostUserId) return;
-    setBusy("host");
-    const result = await radioService.assignRadioHost({ sessionId: selected.id, userId: hostUserId, hostRole });
-    setBusy(null);
-    setNotice(result.ok ? { tone: "status", text: "Host assignment saved." } : { tone: "error", text: result.error.message });
-  };
-
   const moderate = async (listener: RadioListenerState, action: "mute" | "unmute" | "remove") => {
     if (!selected) return;
     setBusy("listener-" + listener.userId);
@@ -161,8 +153,24 @@ export function RadioHostProducerPanel({ community, currentUser, snapshot, realt
     setNotice({ tone: "status", text: action === "remove" ? "Listener removed." : action === "mute" ? "Listener muted." : "Listener unmuted." });
   };
 
+  const reportListener = async (listener: RadioListenerState) => {
+    if (!selected || listener.userId === currentUser.userId) return;
+    setBusy("report-" + listener.userId);
+    const result = await reportService.submitReport({ communityId: community.id, reporterId: currentUser.userId, targetType: "user", targetId: listener.userId, reason: "other", description: "Reported from Radio session moderation: " + selected.title });
+    setBusy(null);
+    setNotice(result.ok ? { tone: "status", text: "Listener report submitted to the moderation queue." } : { tone: "error", text: result.message });
+  };
+
   const listenerMember = (userId: string) => community.members.find((member) => member.userId === userId);
   const terminal = selected ? ["ended", "cancelled"].includes(selected.status) : false;
+  const actorRole = community.roles.find((role) => role.id === currentUser.roleId);
+  const actorIsOwner = community.ownerId === currentUser.userId;
+  const canModerateTarget = (member: Member | undefined, userId: string) => {
+    if (userId === currentUser.userId || userId === community.ownerId) return false;
+    if (actorIsOwner) return true;
+    const targetRole = member ? community.roles.find((role) => role.id === member.roleId) : undefined;
+    return (actorRole?.level ?? 0) > (targetRole?.level ?? 0);
+  };
 
   return <section className="radio-production-desk" aria-labelledby="radio-production-title">
     <header className="radio-production-header">
@@ -190,21 +198,18 @@ export function RadioHostProducerPanel({ community, currentUser, snapshot, realt
       </form>
 
       <aside className="radio-production-side">
-        <section>
-          <header><div><small>PRODUCTION TEAM</small><strong>Host assignment</strong></div><AppIcon name="users" size="md" /></header>
-          <label><span>Community member</span><select value={hostUserId} disabled={!selected || busy !== null} onChange={(event) => setHostUserId(event.target.value)}><option value="">Choose member</option>{community.members.map((member) => <option key={member.userId} value={member.userId}>{member.displayName}</option>)}</select></label>
-          <label><span>Assignment</span><select value={hostRole} disabled={!selected || busy !== null} onChange={(event) => setHostRole(event.target.value as typeof hostRole)}><option value="host">Host</option><option value="co_host">Co-host</option><option value="producer">Producer</option></select></label>
-          <button type="button" disabled={!selected || !hostUserId || busy !== null} onClick={() => void assignHost()}>Save assignment</button>
-        </section>
+        {selected ? <RadioProductionTeamPanel community={community} currentUser={currentUser} session={selected} /> : null}
         <section className="radio-audience-controls">
           <header><div><small>LIVE AUDIENCE</small><strong>Listener moderation</strong></div><span>{listeners.length}</span></header>
           {selected?.status !== "live" ? <p>Listener controls become available while this session is live.</p> : listeners.length ? listeners.map((listener) => {
             const member = listenerMember(listener.userId);
+            const permitted = canModerateTarget(member, listener.userId);
             return <div className="radio-listener-control" key={listener.userId}>
               {member ? <MemberAvatar member={member} size={30} /> : <span className="radio-listener-fallback"><AppIcon name="users" size="sm" /></span>}
               <span><strong>{member?.displayName ?? "Authorized listener"}</strong><small>{listener.muted ? "Muted by host" : "Listening"}</small></span>
-              <button type="button" disabled={busy !== null} aria-label={(listener.muted ? "Unmute " : "Mute ") + (member?.displayName ?? "listener")} onClick={() => void moderate(listener, listener.muted ? "unmute" : "mute")}><AppIcon name={listener.muted ? "volume" : "volumeOff"} size="sm" /></button>
-              <button type="button" className="danger" disabled={busy !== null} aria-label={"Remove " + (member?.displayName ?? "listener")} onClick={() => void moderate(listener, "remove")}><AppIcon name="close" size="sm" /></button>
+              <button type="button" disabled={busy !== null || !permitted} title={!permitted ? "Equal or higher roles cannot be moderated." : undefined} aria-label={(listener.muted ? "Unmute " : "Mute ") + (member?.displayName ?? "listener")} onClick={() => void moderate(listener, listener.muted ? "unmute" : "mute")}><AppIcon name={listener.muted ? "volume" : "volumeOff"} size="sm" /></button>
+              <button type="button" className="danger" disabled={busy !== null || !permitted} title={!permitted ? "Equal or higher roles cannot be removed." : undefined} aria-label={"Remove " + (member?.displayName ?? "listener")} onClick={() => void moderate(listener, "remove")}><AppIcon name="close" size="sm" /></button>
+              <button type="button" disabled={busy !== null || listener.userId === currentUser.userId} aria-label={"Report " + (member?.displayName ?? "listener")} onClick={() => void reportListener(listener)}><AppIcon name="inbox" size="sm" /></button>
             </div>;
           }) : <p>No active listener identities are visible to this host.</p>}
         </section>

@@ -122,6 +122,7 @@
     "radio:data-model:smoke": "node scripts/radio-full-mvp-data-model-smoke.mjs",
     "radio:service-realtime:smoke": "node scripts/radio-services-realtime-smoke.mjs",
     "radio:host-producer:smoke": "node scripts/radio-host-producer-panel-smoke.mjs",
+    "radio:roles-moderation-audit:smoke": "node scripts/radio-roles-moderation-audit-smoke.mjs",
     "audio:podcast:smoke": "node scripts/audio-podcast-detail-smoke.mjs",
     "audio:schema:smoke": "node scripts/audio-schema-rls-smoke.mjs",
     "audio:service:smoke": "node scripts/audio-service-layer-smoke.mjs",

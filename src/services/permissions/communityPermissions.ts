@@ -37,8 +37,8 @@ const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<Community
     visitor: [],
   },
   radio: {
-    owner: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"],
-    admin: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"],
+    owner: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "publishRadioAnnouncements", "moderateRadioComments"],
+    admin: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "manageRadioHosts", "publishRadioAnnouncements", "moderateRadioComments"],
     moderator: ["viewRadioContent", "listenRadio", "moderateRadioComments"],
     member: ["viewRadioContent", "listenRadio"],
     visitor: [],
@@ -97,6 +97,7 @@ function getStatus(role?: Role, isOwner = false): CommunityMembershipStatus {
   if (isOwner) return "owner";
   if (!role) return "visitor";
   if (role.name === "Admin" || role.level >= 80) return "admin";
+  if (role.name === "Radio Producer") return "member";
   if (role.name === "Moderator" || role.level >= 60) return "moderator";
   return "member";
 }

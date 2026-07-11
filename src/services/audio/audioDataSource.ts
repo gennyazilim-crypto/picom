@@ -1,4 +1,4 @@
-import { currentUserId } from "../../data/mockCommunities";
+import { currentUserId, mockCommunities } from "../../data/mockCommunities";
 import { mockPodcastEpisodes, mockRadioSessions } from "../../data/mockAudio";
 import type {
   AudioCommentPreview,
@@ -6,11 +6,15 @@ import type {
   AudioReactionSummary,
   PodcastEpisode,
   PodcastEpisodeStatus,
+  RadioAuditEntry,
   RadioSession,
+  RadioSessionHostAssignment,
+  RadioSessionHostRole,
   RadioSessionStatus,
 } from "../../types/audio";
 import type { CommunityKind } from "../../types/community";
 import { communityService } from "../communityService";
+import { auditLogService } from "../auditLogService";
 import { dataSourceService } from "../dataSourceService";
 import type { Database } from "../supabase/database.types";
 import { getSupabaseClient } from "../supabase/supabaseClient";
@@ -63,7 +67,60 @@ const localSavedRadio = new Set(localRadio.filter((item) => item.isSavedByCurren
 const localSavedPodcasts = new Set(localPodcasts.filter((item) => item.isSavedByCurrentUser).map((item) => item.id));
 const localListeningSessions = new Set<string>();
 const localListenerMuted = new Map<string, boolean>();
-const localSessionHosts = new Map(localRadio.map((session) => [session.id, new Set([session.hostUserId])]));
+const initialHostAssignmentAt = new Date().toISOString();
+const localSessionHosts = new Map<string, Map<string, RadioSessionHostAssignment>>(localRadio.map((session) => [
+  session.id,
+  new Map([[session.hostUserId, {
+    id: "mock-radio-host-" + session.id + "-" + session.hostUserId,
+    radioSessionId: session.id,
+    userId: session.hostUserId,
+    hostRole: "host",
+    assignedBy: session.hostUserId,
+    assignedAt: initialHostAssignmentAt,
+  }]]),
+]));
+
+function mockAssignmentRank(role: RadioSessionHostRole): number {
+  return role === "producer" ? 70 : role === "host" ? 50 : 40;
+}
+
+function getMockRoleContext(communityId: string, userId: string) {
+  const community = mockCommunities.find((candidate) => candidate.id === communityId);
+  const member = community?.members.find((candidate) => candidate.userId === userId);
+  const role = member ? community?.roles.find((candidate) => candidate.id === member.roleId) : undefined;
+  return { community, member, role };
+}
+
+function canMockManageHostAssignment(communityId: string, targetUserId: string, hostRole: RadioSessionHostRole, requireCapability: boolean): boolean {
+  const actor = getMockRoleContext(communityId, currentUserId);
+  const target = getMockRoleContext(communityId, targetUserId);
+  if (!actor.community || !actor.member || !actor.role || !target.member || !target.role) return false;
+  const actorIsOwner = actor.community.ownerId === currentUserId;
+  const actorCapabilities = new Set(actor.role.capabilities ?? []);
+  const actorCanAssign = actorIsOwner
+    || actor.role.level >= 80
+    || actorCapabilities.has("manageCommunity")
+    || actorCapabilities.has("manageRadioCommunity")
+    || actorCapabilities.has("manageRadioPrograms")
+    || actorCapabilities.has("manageRadioHosts");
+  if (!actorCanAssign) return false;
+  if (!actorIsOwner && (targetUserId === currentUserId || targetUserId === actor.community.ownerId || target.role.level >= actor.role.level || mockAssignmentRank(hostRole) >= actor.role.level)) return false;
+  if (!requireCapability) return true;
+  const targetCapabilities = new Set(target.role.capabilities ?? []);
+  return target.role.level >= 80
+    || targetCapabilities.has("manageCommunity")
+    || (hostRole === "producer"
+      ? targetCapabilities.has("manageRadioHosts") || targetCapabilities.has("manageRadioPrograms")
+      : targetCapabilities.has("hostRadio"));
+}
+
+function canMockModerateListener(communityId: string, targetUserId: string): boolean {
+  const actor = getMockRoleContext(communityId, currentUserId);
+  const target = getMockRoleContext(communityId, targetUserId);
+  if (!actor.community || !actor.role || targetUserId === currentUserId || targetUserId === actor.community.ownerId) return false;
+  if (actor.community.ownerId === currentUserId) return true;
+  return actor.role.level > (target.role?.level ?? 0);
+}
 
 function feedFromCatalog(radio: RadioSession[], podcasts: PodcastEpisode[]): AudioFeedItem[] {
   return [
@@ -206,6 +263,7 @@ async function transitionRadioSession(id: string, status: "live" | "ended" | "ca
     localRadio = localRadio.map((session) => session.id !== id ? session : (updated = { ...session, status, actualStartedAt: status === "live" ? session.actualStartedAt ?? now : session.actualStartedAt, endedAt: status === "ended" || status === "cancelled" ? now : session.endedAt }));
     if (!updated) return fail("AUDIO_NOT_FOUND", "Radio session was not found.");
     publish(localSnapshot());
+    await auditLogService.append({ communityId: current.data.communityId, actionType: "community_update", targetType: "radio_session_status", targetId: id, reason: "Radio session status changed to " + status });
     return ok(updated);
   }
   const client = getSupabaseClient();
@@ -313,7 +371,9 @@ export const audioDataSource = {
         isSavedByCurrentUser: false,
       };
       localRadio = [item, ...localRadio];
+      localSessionHosts.set(item.id, new Map([[currentUserId, { id: "mock-radio-host-" + item.id + "-" + currentUserId, radioSessionId: item.id, userId: currentUserId, hostRole: "host", assignedBy: currentUserId, assignedAt: new Date().toISOString() }]]));
       publish(localSnapshot());
+      await auditLogService.append({ communityId: item.communityId, actionType: "community_update", targetType: "radio_session_create", targetId: item.id, reason: "Radio session created" });
       return ok(item);
     }
     const client = getSupabaseClient();
@@ -345,6 +405,7 @@ export const audioDataSource = {
       localRadio = localRadio.map((session) => session.id !== id ? session : (updated = { ...session, title, description: input.description?.trim().slice(0, 4000) ?? session.description, startsAt, scheduledEndAt: input.scheduledEndAt === null ? undefined : input.scheduledEndAt ?? session.scheduledEndAt, programId: input.programId === null ? undefined : input.programId ?? session.programId, listenerChatChannelId: input.listenerChatChannelId === null ? undefined : input.listenerChatChannelId ?? session.listenerChatChannelId, coverUrl: input.coverUrl === null ? undefined : input.coverUrl ?? session.coverUrl, coverStoragePath: input.coverStoragePath === null ? undefined : input.coverStoragePath ?? session.coverStoragePath }));
       if (!updated) return fail("AUDIO_NOT_FOUND", "Radio session was not found.");
       publish(localSnapshot());
+      await auditLogService.append({ communityId: current.data.communityId, actionType: "community_update", targetType: "radio_session_update", targetId: id, reason: "Radio schedule or production metadata updated" });
       return ok(updated);
     }
     const client = getSupabaseClient();
@@ -410,12 +471,14 @@ export const audioDataSource = {
     if (!source.ok) return source;
     if (dataSourceService.getStatus().isMock) {
       if (!localListeningSessions.has(id) || userId !== currentUserId) return fail("AUDIO_NOT_FOUND", "That listener is no longer active.");
+      if (!canMockModerateListener(source.data, userId)) return fail("AUDIO_REQUEST_FAILED", "You cannot moderate yourself or an equal or higher community role.");
       if (action === "remove") {
         localListeningSessions.delete(id);
         localListenerMuted.delete(id);
         localRadio = localRadio.map((session) => session.id === id ? { ...session, listenerCount: Math.max(0, session.listenerCount - 1) } : session);
       } else localListenerMuted.set(id, action === "mute");
       publish(localSnapshot());
+      await auditLogService.append({ communityId: source.data, actionType: "moderation_action", targetType: "radio_listener", targetId: id, reason: "Listener " + userId + ": " + action });
       return ok(true);
     }
     const client = getSupabaseClient();
@@ -488,6 +551,31 @@ export const audioDataSource = {
     await refresh();
     return ok(true);
   },
+  async listRadioSessionHosts(id: string): Promise<AudioServiceResult<RadioSessionHostAssignment[]>> {
+    const source = await getRadioCommunityId(id);
+    if (!source.ok) return source;
+    if (dataSourceService.getStatus().isMock) return ok([...(localSessionHosts.get(id)?.values() ?? [])].map((assignment) => ({ ...assignment })));
+    const client = getSupabaseClient();
+    if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio production team data is unavailable.");
+    const result = await client.from("radio_session_hosts").select("id,radio_session_id,user_id,host_role,assigned_by,assigned_at").eq("radio_session_id", id).order("assigned_at");
+    if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not load the Radio production team.");
+    return ok((result.data ?? []).map((row) => ({ id: row.id, radioSessionId: row.radio_session_id, userId: row.user_id, hostRole: row.host_role, assignedBy: row.assigned_by, assignedAt: row.assigned_at })));
+  },
+  async listRadioAuditHistory(id: string): Promise<AudioServiceResult<RadioAuditEntry[]>> {
+    const source = await getRadioCommunityId(id);
+    if (!source.ok) return source;
+    if (dataSourceService.getStatus().isMock) {
+      const result = await auditLogService.list(source.data, true);
+      return result.ok
+        ? ok(result.data.filter((entry) => entry.targetId === id && entry.targetType.startsWith("radio_")).map((entry) => ({ id: entry.id, actorUserId: entry.actorId, actionType: entry.actionType, targetType: entry.targetType, reason: entry.reason, createdAt: entry.createdAt })))
+        : fail("AUDIO_REQUEST_FAILED", result.message);
+    }
+    const client = getSupabaseClient();
+    if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio audit history is unavailable.");
+    const result = await client.rpc("list_radio_session_audit", { target_session_id: id, result_limit: 30 });
+    if (result.error) return fail("AUDIO_REQUEST_FAILED", "You do not have access to this Radio audit history.");
+    return ok((result.data ?? []).map((row) => ({ id: row.id, actorUserId: row.actor_id, actionType: row.action_type, targetType: row.target_type, reason: row.reason ?? undefined, createdAt: row.created_at })));
+  },
   async assignRadioSessionHost(input: AssignRadioSessionHostInput): Promise<AudioServiceResult<boolean>> {
     if (!input.userId.trim()) return fail("AUDIO_VALIDATION_ERROR", "Choose a valid Radio host.");
     const source = await getRadioCommunityId(input.sessionId);
@@ -495,18 +583,43 @@ export const audioDataSource = {
     const kindGuard = await ensureCommunityKind(source.data, "radio");
     if (!kindGuard.ok) return kindGuard;
     if (dataSourceService.getStatus().isMock) {
-      const assigned = localSessionHosts.get(input.sessionId) ?? new Set<string>();
+      const role = input.hostRole ?? "co_host";
+      if (!canMockManageHostAssignment(source.data, input.userId, role, true)) return fail("AUDIO_REQUEST_FAILED", "Assign the required common Radio role first, and do not grant an equal or higher assignment.");
+      const assigned = localSessionHosts.get(input.sessionId) ?? new Map<string, RadioSessionHostAssignment>();
       const wasAssigned = assigned.has(input.userId);
-      assigned.add(input.userId);
+      assigned.set(input.userId, { id: "mock-radio-host-" + input.sessionId + "-" + input.userId, radioSessionId: input.sessionId, userId: input.userId, hostRole: role, assignedBy: currentUserId, assignedAt: new Date().toISOString() });
       localSessionHosts.set(input.sessionId, assigned);
       if (!wasAssigned) localRadio = localRadio.map((session) => session.id === input.sessionId ? { ...session, speakerCount: session.speakerCount + 1 } : session);
       publish(localSnapshot());
+      await auditLogService.append({ communityId: source.data, actionType: "role_change", targetType: "radio_host_assignment", targetId: input.sessionId, reason: "Assigned " + input.userId + " as " + role });
       return ok(true);
     }
     const client = getSupabaseClient();
     if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before assigning a Radio host.");
     const result = await client.rpc("assign_radio_session_host", { target_session_id: input.sessionId, target_user_id: input.userId, target_host_role: input.hostRole ?? "co_host" });
-    return result.error ? fail("AUDIO_REQUEST_FAILED", "Picom could not assign this Radio host.") : ok(true);
+    return result.error ? fail("AUDIO_REQUEST_FAILED", "This host assignment is not allowed by the common role hierarchy.") : ok(true);
+  },
+  async removeRadioSessionHost(sessionId: string, userId: string): Promise<AudioServiceResult<boolean>> {
+    const source = await getRadioCommunityId(sessionId);
+    if (!source.ok) return source;
+    const session = (await audioDataSource.getRadioSession(sessionId));
+    if (!session.ok) return session;
+    if (session.data.hostUserId === userId) return fail("AUDIO_REQUEST_FAILED", "Transfer the primary host before removing this assignment.");
+    if (dataSourceService.getStatus().isMock) {
+      const assignments = localSessionHosts.get(sessionId);
+      const assignment = assignments?.get(userId);
+      if (!assignment) return fail("AUDIO_NOT_FOUND", "That host assignment no longer exists.");
+      if (!canMockManageHostAssignment(source.data, userId, assignment.hostRole, false)) return fail("AUDIO_REQUEST_FAILED", "You cannot remove an equal or higher Radio assignment.");
+      assignments?.delete(userId);
+      localRadio = localRadio.map((item) => item.id === sessionId ? { ...item, speakerCount: Math.max(1, item.speakerCount - 1) } : item);
+      publish(localSnapshot());
+      await auditLogService.append({ communityId: source.data, actionType: "role_change", targetType: "radio_host_removal", targetId: sessionId, reason: "Removed " + userId + " from " + assignment.hostRole });
+      return ok(true);
+    }
+    const client = getSupabaseClient();
+    if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Radio host removal is unavailable.");
+    const result = await client.rpc("remove_radio_session_host", { target_session_id: sessionId, target_user_id: userId });
+    return result.error ? fail("AUDIO_REQUEST_FAILED", "This host removal is blocked by the common role hierarchy.") : ok(Boolean(result.data));
   },
   async commentOnPodcastEpisode(id: string, body: string): Promise<AudioServiceResult<AudioCommentPreview>> {
     const cleanBody = body.trim().slice(0, 4000);
