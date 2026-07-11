@@ -233,7 +233,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["community_events"]["Row"]>;Relationships:[];
       };
       meeting_rooms: {
-        Row: { id:string;community_id:string;channel_id:string|null;event_id:string|null;linked_chat_channel_id:string|null;source_kind:"community_channel"|"scheduled_event"|"ad_hoc";mode:"voice"|"meeting"|"stage";title:string;description:string;status:"scheduled"|"open"|"live"|"ended"|"cancelled"|"locked";join_policy:"open"|"members"|"invite_only"|"approval_required";default_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";host_user_id:string;created_by:string;approved_by_user_id:string|null;capabilities:Json;metadata:Json;waiting_room_enabled:boolean;max_participants:number;audience_mode:boolean;moderation_policy:Json;position:number;archived_at:string|null;archived_by_user_id:string|null;scheduled_for:string|null;scheduled_end_at:string|null;locked_at:string|null;locked_by_user_id:string|null;ended_at:string|null;ended_by_user_id:string|null;created_at:string;updated_at:string };
+        Row: { id:string;community_id:string;channel_id:string|null;event_id:string|null;linked_chat_channel_id:string|null;source_kind:"community_channel"|"scheduled_event"|"ad_hoc";mode:"voice"|"meeting"|"stage";title:string;description:string;status:"scheduled"|"open"|"live"|"ended"|"cancelled"|"locked";join_policy:"open"|"members"|"invite_only"|"approval_required";default_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";host_user_id:string;cohost_user_ids:string[];created_by:string;approved_by_user_id:string|null;capabilities:Json;metadata:Json;reminder_policy:Json;waiting_room_enabled:boolean;max_participants:number;audience_mode:boolean;moderation_policy:Json;position:number;archived_at:string|null;archived_by_user_id:string|null;scheduled_for:string|null;scheduled_end_at:string|null;locked_at:string|null;locked_by_user_id:string|null;ended_at:string|null;ended_by_user_id:string|null;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_rooms"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_rooms"]["Row"],"community_id"|"source_kind"|"mode"|"title"|"host_user_id"|"created_by">;
         Update: Partial<Database["public"]["Tables"]["meeting_rooms"]["Row"]>;Relationships:[];
       };
@@ -253,7 +253,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"]>;Relationships:[];
       };
       meeting_invites: {
-        Row: { id:string;room_id:string;invited_user_id:string|null;invited_by_user_id:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"active"|"accepted"|"declined"|"revoked"|"expired";token_hash:string;created_at:string;expires_at:string|null;responded_at:string|null;revoked_at:string|null };
+        Row: { id:string;room_id:string;session_id:string|null;invited_user_id:string|null;invited_by_user_id:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"active"|"accepted"|"declined"|"revoked"|"expired";token_hash:string;token_hint:string|null;max_uses:number;use_count:number;created_at:string;expires_at:string|null;responded_at:string|null;last_used_at:string|null;revoked_at:string|null;revoked_by_user_id:string|null };
         Insert: Partial<Database["public"]["Tables"]["meeting_invites"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_invites"]["Row"],"room_id"|"invited_by_user_id"|"role"|"token_hash">;
         Update: Partial<Database["public"]["Tables"]["meeting_invites"]["Row"]>;Relationships:[];
       };
@@ -261,6 +261,11 @@ export type Database = {
         Row: { id:string;room_id:string;session_id:string|null;actor_user_id:string|null;actor_participant_id:string|null;event_type:string;event_source:"backend"|"livekit"|"webhook"|"client";provider_event_id:string|null;idempotency_key:string;sequence:number;payload:Json;occurred_at:string;created_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_events"]["Row"],"room_id"|"event_type"|"event_source"|"idempotency_key"|"occurred_at">;
         Update: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]>;Relationships:[];
+      };
+      meeting_invite_redemptions: {
+        Row:{id:string;invite_id:string;user_id:string;redeemed_at:string};
+        Insert:Partial<Database["public"]["Tables"]["meeting_invite_redemptions"]["Row"]>&Pick<Database["public"]["Tables"]["meeting_invite_redemptions"]["Row"],"invite_id"|"user_id">;
+        Update:Partial<Database["public"]["Tables"]["meeting_invite_redemptions"]["Row"]>;Relationships:[];
       };
       meeting_attendance: {
         Row: { id:string;session_id:string;user_id:string|null;participant_identity_hash:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";joined_at:string;left_at:string|null;duration_seconds:number|null;reconnect_count:number;final_state:"left"|"removed"|"disconnected"|"ended";created_at:string;updated_at:string };
@@ -927,6 +932,12 @@ export type Database = {
       update_community_meeting_room:{Args:{target_room_id:string;room_name:string;room_description:string;room_mode:"voice"|"meeting"|"stage";room_capabilities:Json;room_waiting_enabled:boolean;room_audience_mode:boolean;room_join_policy:string;room_participant_limit:number;room_chat_channel_id:string|null;room_moderation_policy:Json};Returns:Json};
       archive_community_meeting_room:{Args:{target_room_id:string;confirmation_title:string;active_policy?:"deny"|"end"|"transfer";replacement_room_id?:string|null};Returns:boolean};
       move_community_meeting_room:{Args:{target_room_id:string;move_direction:"up"|"down"};Returns:boolean};
+      schedule_meeting_room:{Args:{target_room_id:string;target_scheduled_for:string;target_scheduled_end_at:string;target_host_user_id?:string|null;target_cohost_user_ids?:string[];target_event_id?:string|null;target_reminder_policy?:Json};Returns:Json};
+      create_meeting_invite:{Args:{target_room_id:string;target_token_hash:string;target_token_hint:string;target_role?:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";target_invited_user_id?:string|null;target_session_id?:string|null;target_expires_at?:string|null;target_max_uses?:number};Returns:Json};
+      revoke_meeting_invite:{Args:{target_invite_id:string};Returns:Json};
+      validate_meeting_invite:{Args:{target_token_hash:string;target_room_id?:string|null;consume_use?:boolean};Returns:Json};
+      get_meeting_join_preview:{Args:{target_room_id:string;target_token_hash?:string|null};Returns:Json};
+      list_meeting_invites:{Args:{target_room_id:string};Returns:Json};
       create_managed_text_channel: { Args: { target_community_id: string; target_category_id?: string | null; channel_name: string; channel_type?: "text" | "voice" | "forum" | "announcement"; channel_topic?: string | null; channel_is_private?: boolean; channel_public_read_enabled?: boolean }; Returns: Array<Database["public"]["Tables"]["channels"]["Row"]> };
       send_text_message_idempotent: { Args: { target_community_id: string; target_channel_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id?: string | null; target_attachment_ids?: string[] }; Returns: Array<Database["public"]["Tables"]["messages"]["Row"]> };
       complete_current_user_onboarding: { Args: { target_profile: Json; target_followed_user_ids?: string[]; target_theme?: "light" | "dark" | "system" }; Returns: Array<{ completed: boolean; completed_at: string; followed_user_ids: string[]; theme_mode: "light" | "dark" | "system" }> };
