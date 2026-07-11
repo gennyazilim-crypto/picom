@@ -1,5 +1,7 @@
 ﻿import type { Channel, Community, Member, Role, UserId } from "./community";
 
+import type { CommunityKind } from "./community";
+
 export type CommunityMembershipStatus = "owner" | "admin" | "moderator" | "member" | "visitor";
 export type CommunityVisibility = "public" | "private";
 export type CommunityPermissionKey =
@@ -11,6 +13,26 @@ export type CommunityPermissionKey =
   | "deleteAnyMessage"
   | "sendMessages"
   | "sendAnnouncements"
+  | "manageTextCommunity"
+  | "viewRadioContent"
+  | "listenRadio"
+  | "hostRadio"
+  | "manageRadioCommunity"
+  | "manageRadioSchedule"
+  | "manageRadioPrograms"
+  | "publishRadioAnnouncements"
+  | "moderateRadioComments"
+  | "viewPodcastContent"
+  | "listenPodcasts"
+  | "createPodcastDrafts"
+  | "publishPodcasts"
+  | "editPodcastMetadata"
+  | "archivePodcastEpisodes"
+  | "managePodcastSeries"
+  | "commentOnPodcasts"
+  | "reactToPodcasts"
+  | "moderatePodcastComments"
+  | "managePodcastCommunity"
   | "viewPrivateChannels"
   | "createInvites"
   | "viewInsights"
@@ -18,6 +40,7 @@ export type CommunityPermissionKey =
 
 export type CommunityAccess = {
   userId: UserId;
+  communityKind: CommunityKind;
   status: CommunityMembershipStatus;
   visibility: CommunityVisibility;
   publicReadEnabled: boolean;

@@ -11,15 +11,15 @@ function getIcon(name: string): string {
 export function createCommunityFromSummary(summary: CommunitySummary): Community {
   const template = getCommunityTemplate(summary.templateId);
   const radioRoles: Role[] = [
-    { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "hostRadio", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements"] },
-    { id: `${summary.id}-radio-host-role`, name: "Radio Host", color: "var(--picom-aqua)", level: 50, capabilities: ["hostRadio", "manageRadioSchedule"] },
-    { id: `${summary.id}-member-role`, name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["listenRadio"] },
+    { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"] },
+    { id: `${summary.id}-radio-host-role`, name: "Radio Host", color: "var(--picom-aqua)", level: 50, capabilities: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioSchedule", "manageRadioPrograms"] },
+    { id: `${summary.id}-member-role`, name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["viewRadioContent", "listenRadio"] },
   ];
   const podcastRoles: Role[] = [
-    { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "publishPodcasts", "managePodcastSeries", "editAnyPodcast", "moderatePodcastComments"] },
-    { id: `${summary.id}-podcast-publisher-role`, name: "Podcast Publisher", color: "var(--picom-aqua)", level: 50, capabilities: ["publishPodcasts", "managePodcastSeries"] },
-    { id: `${summary.id}-podcast-editor-role`, name: "Podcast Editor", color: "var(--picom-orange)", level: 40, capabilities: ["editPodcastMetadata", "moderatePodcastComments"] },
-    { id: `${summary.id}-member-role`, name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["listenPodcasts"] },
+    { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"] },
+    { id: `${summary.id}-podcast-publisher-role`, name: "Podcast Publisher", color: "var(--picom-aqua)", level: 50, capabilities: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts"] },
+    { id: `${summary.id}-podcast-editor-role`, name: "Podcast Editor", color: "var(--picom-orange)", level: 40, capabilities: ["viewPodcastContent", "listenPodcasts", "editPodcastMetadata", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments"] },
+    { id: `${summary.id}-member-role`, name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts"] },
   ];
   const roles = summary.kind === "radio" ? radioRoles : summary.kind === "podcast" ? podcastRoles : mockRoles;
   const ownerRole = roles.find((role) => role.name === "Owner") ?? roles[0];

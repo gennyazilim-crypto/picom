@@ -50,6 +50,7 @@ export type CommunityServiceErrorCode =
   | "COMMUNITY_CREATE_FAILED"
   | "COMMUNITY_TEMPLATE_FAILED"
   | "COMMUNITY_UPDATE_FAILED"
+  | "COMMUNITY_KIND_LOOKUP_FAILED"
   | "COMMUNITY_LIST_FAILED";
 
 export type CommunityServiceError = Readonly<{
@@ -161,6 +162,22 @@ function getConfiguredSupabaseClient() {
 }
 
 export const communityService = {
+  async getCommunityKind(communityId: string): Promise<CommunityServiceResult<CommunityKind>> {
+    const dataSource = dataSourceService.getStatus();
+    if (dataSource.isMock) {
+      const created = [...mockCommunityCreations.values()].find((community) => community.id === communityId);
+      return { ok: true, data: created?.kind ?? getMockCommunityKind(communityId) };
+    }
+
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+    const result = await configured.data.from("communities").select("kind").eq("id", communityId).maybeSingle();
+    if (result.error || !result.data || !isCommunityKind(result.data.kind)) {
+      return { ok: false, error: { code: "COMMUNITY_KIND_LOOKUP_FAILED", message: "Community type is unavailable or not visible to you." } };
+    }
+    return { ok: true, data: result.data.kind };
+  },
+
   async listCommunities(): Promise<CommunityServiceResult<CommunitySummary[]>> {
     const dataSource = dataSourceService.getStatus();
 

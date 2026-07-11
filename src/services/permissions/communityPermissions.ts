@@ -1,17 +1,12 @@
 ﻿import type { Channel, ChannelCategory, Community, Member, Role, UserId } from "../../types/community";
 import type { CommunityAccess, CommunityMembershipStatus, CommunityPermissionKey, CommunityVisibility } from "../../types/communityAccess";
 import type { MemberModerationAction } from "../../types/memberModeration";
+import type { CommunityKind } from "../../types/community";
 
 const OWNER_PERMISSIONS: CommunityPermissionKey[] = [
   "manageCommunity",
-  "manageChannels",
   "manageRoles",
   "manageMembers",
-  "moderateMessages",
-  "deleteAnyMessage",
-  "sendMessages",
-  "sendAnnouncements",
-  "viewPrivateChannels",
   "createInvites",
   "viewInsights",
   "viewAuditLog",
@@ -19,14 +14,8 @@ const OWNER_PERMISSIONS: CommunityPermissionKey[] = [
 
 const ADMIN_PERMISSIONS: CommunityPermissionKey[] = [
   "manageCommunity",
-  "manageChannels",
   "manageRoles",
   "manageMembers",
-  "moderateMessages",
-  "deleteAnyMessage",
-  "sendMessages",
-  "sendAnnouncements",
-  "viewPrivateChannels",
   "createInvites",
   "viewInsights",
   "viewAuditLog",
@@ -34,13 +23,52 @@ const ADMIN_PERMISSIONS: CommunityPermissionKey[] = [
 
 const MODERATOR_PERMISSIONS: CommunityPermissionKey[] = [
   "manageMembers",
-  "moderateMessages",
-  "deleteAnyMessage",
-  "sendMessages",
   "createInvites",
 ];
 
-const MEMBER_PERMISSIONS: CommunityPermissionKey[] = ["sendMessages"];
+const MEMBER_PERMISSIONS: CommunityPermissionKey[] = [];
+
+const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<CommunityMembershipStatus, readonly CommunityPermissionKey[]>>>> = {
+  text: {
+    owner: ["manageTextCommunity", "manageChannels", "moderateMessages", "deleteAnyMessage", "sendMessages", "sendAnnouncements", "viewPrivateChannels"],
+    admin: ["manageTextCommunity", "manageChannels", "moderateMessages", "deleteAnyMessage", "sendMessages", "sendAnnouncements", "viewPrivateChannels"],
+    moderator: ["moderateMessages", "deleteAnyMessage", "sendMessages"],
+    member: ["sendMessages"],
+    visitor: [],
+  },
+  radio: {
+    owner: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"],
+    admin: ["viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"],
+    moderator: ["viewRadioContent", "listenRadio", "moderateRadioComments"],
+    member: ["viewRadioContent", "listenRadio"],
+    visitor: [],
+  },
+  podcast: {
+    owner: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
+    admin: ["viewPodcastContent", "listenPodcasts", "createPodcastDrafts", "publishPodcasts", "editPodcastMetadata", "archivePodcastEpisodes", "managePodcastSeries", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments", "managePodcastCommunity"],
+    moderator: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts", "moderatePodcastComments"],
+    member: ["viewPodcastContent", "listenPodcasts", "commentOnPodcasts", "reactToPodcasts"],
+    visitor: [],
+  },
+};
+
+const KNOWN_PERMISSIONS = new Set<CommunityPermissionKey>([
+  ...OWNER_PERMISSIONS,
+  ...ADMIN_PERMISSIONS,
+  ...MODERATOR_PERMISSIONS,
+  ...MEMBER_PERMISSIONS,
+  ...Object.values(KIND_PERMISSIONS).flatMap((matrix) => Object.values(matrix).flat()),
+]);
+const KIND_SCOPED_PERMISSIONS = new Set<CommunityPermissionKey>(Object.values(KIND_PERMISSIONS).flatMap((matrix) => Object.values(matrix).flat()));
+
+function isCommunityPermissionKey(value: string): value is CommunityPermissionKey {
+  return KNOWN_PERMISSIONS.has(value as CommunityPermissionKey);
+}
+
+export function isCommunityPermissionAvailableForKind(kind: CommunityKind, permission: CommunityPermissionKey): boolean {
+  if (!KIND_SCOPED_PERMISSIONS.has(permission)) return true;
+  return Object.values(KIND_PERMISSIONS[kind]).some((permissions) => permissions.includes(permission));
+}
 
 export function getCommunityVisibility(community: Community): CommunityVisibility {
   return community.visibility ?? "private";
@@ -73,12 +101,20 @@ function getStatus(role?: Role, isOwner = false): CommunityMembershipStatus {
   return "member";
 }
 
-function getRolePermissions(status: CommunityMembershipStatus): CommunityPermissionKey[] {
-  if (status === "owner") return OWNER_PERMISSIONS;
-  if (status === "admin") return ADMIN_PERMISSIONS;
-  if (status === "moderator") return MODERATOR_PERMISSIONS;
-  if (status === "member") return MEMBER_PERMISSIONS;
-  return [];
+function getRolePermissions(status: CommunityMembershipStatus, kind: CommunityKind, role?: Role): CommunityPermissionKey[] {
+  const common = status === "owner"
+    ? OWNER_PERMISSIONS
+    : status === "admin"
+      ? ADMIN_PERMISSIONS
+      : status === "moderator"
+        ? MODERATOR_PERMISSIONS
+        : status === "member"
+          ? MEMBER_PERMISSIONS
+          : [];
+  const explicit = (role?.capabilities ?? [])
+    .filter(isCommunityPermissionKey)
+    .filter((permission) => isCommunityPermissionAvailableForKind(kind, permission));
+  return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...explicit])];
 }
 
 export function getCommunityAccess(userId: UserId, community: Community): CommunityAccess {
@@ -87,12 +123,16 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
   const status = getStatus(role, owner);
   const visibility = getCommunityVisibility(community);
   const publicReadEnabled = isCommunityPublicReadEnabled(community);
-  const permissions = getRolePermissions(status);
   const isVisitor = status === "visitor";
   const canViewPublicContent = visibility === "public" && publicReadEnabled;
+  const publicReadPermission: CommunityPermissionKey = community.kind === "radio" ? "viewRadioContent" : "viewPodcastContent";
+  const permissions = isVisitor && canViewPublicContent && community.kind !== "text"
+    ? [publicReadPermission]
+    : getRolePermissions(status, community.kind, role);
 
   return {
     userId,
+    communityKind: community.kind,
     status,
     visibility,
     publicReadEnabled,
@@ -116,6 +156,10 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
 
 export function hasCommunityPermission(access: CommunityAccess, permission: CommunityPermissionKey): boolean {
   return access.permissions.includes(permission);
+}
+
+export function canPerformCommunityKindAction(access: CommunityAccess, permission: CommunityPermissionKey): boolean {
+  return isCommunityPermissionAvailableForKind(access.communityKind, permission) && hasCommunityPermission(access, permission);
 }
 
 export function canAssignCommunityRole(access: CommunityAccess, community: Community, targetMember: Member, targetRole: Role): boolean {
@@ -168,6 +212,7 @@ export function canViewChannel(access: CommunityAccess, channel: Channel): boole
 }
 
 export function canSendMessage(access: CommunityAccess, channel: Channel): boolean {
+  if (access.communityKind !== "text") return false;
   if (!canViewChannel(access, channel)) return false;
   if (access.isVisitor) return false;
   if (channel.type === "announcement") return hasCommunityPermission(access, "sendAnnouncements");
@@ -178,6 +223,7 @@ export function canSendMessage(access: CommunityAccess, channel: Channel): boole
 export function getComposerDisabledReason(access: CommunityAccess, channel: Channel): string | undefined {
   if (!canViewChannel(access, channel)) return "You do not have access to this channel.";
   if (access.isVisitor) return "Join this community to send messages.";
+  if (access.communityKind !== "text") return "Use this community's type-specific interaction controls.";
   if (channel.type === "announcement" && !hasCommunityPermission(access, "sendAnnouncements")) return "This announcement channel is read-only.";
   if (channel.type === "forum") return "Create or open a forum post to participate.";
   if (channel.type === "voice") return "Voice channels do not support text messages here.";

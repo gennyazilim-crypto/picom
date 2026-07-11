@@ -9,12 +9,15 @@ import type {
   RadioSession,
   RadioSessionStatus,
 } from "../../types/audio";
+import type { CommunityKind } from "../../types/community";
+import { communityService } from "../communityService";
 import { dataSourceService } from "../dataSourceService";
 import type { Database } from "../supabase/database.types";
 import { getSupabaseClient } from "../supabase/supabaseClient";
 
 export type AudioServiceErrorCode =
   | "AUDIO_BACKEND_UNAVAILABLE"
+  | "AUDIO_KIND_MISMATCH"
   | "AUDIO_NOT_FOUND"
   | "AUDIO_VALIDATION_ERROR"
   | "AUDIO_REQUEST_FAILED";
@@ -153,6 +156,27 @@ async function authenticatedUserId() {
   return result.data.user?.id ?? null;
 }
 
+async function ensureCommunityKind(communityId: string, expectedKind: CommunityKind): Promise<AudioServiceResult<true>> {
+  const result = await communityService.getCommunityKind(communityId);
+  if (!result.ok) return fail("AUDIO_NOT_FOUND", result.error.message);
+  if (result.data !== expectedKind) return fail("AUDIO_KIND_MISMATCH", `This action requires a ${expectedKind} community.`);
+  return ok(true);
+}
+
+async function getRadioCommunityId(id: string): Promise<AudioServiceResult<string>> {
+  const catalog = await refresh();
+  if (!catalog.ok) return catalog;
+  const session = catalog.data.radioSessions.find((item) => item.id === id);
+  return session ? ok(session.communityId) : fail("AUDIO_NOT_FOUND", "Radio session was not found or is not available to you.");
+}
+
+async function getPodcastCommunityId(id: string): Promise<AudioServiceResult<string>> {
+  const catalog = await refresh();
+  if (!catalog.ok) return catalog;
+  const episode = catalog.data.podcastEpisodes.find((item) => item.id === id);
+  return episode ? ok(episode.communityId) : fail("AUDIO_NOT_FOUND", "Podcast episode was not found or is not available to you.");
+}
+
 async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSnapshot>> {
   const client = getSupabaseClient();
   if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Audio is unavailable while Supabase is not configured.");
@@ -228,6 +252,8 @@ export const audioDataSource = {
     if (!title || title.length > 120 || !Number.isFinite(Date.parse(input.startsAt))) {
       return fail("AUDIO_VALIDATION_ERROR", "Enter a valid radio title and start time.");
     }
+    const kindGuard = await ensureCommunityKind(input.communityId, "radio");
+    if (!kindGuard.ok) return kindGuard;
     if (dataSourceService.getStatus().isMock) {
       const item: RadioSession = {
         id: `radio-${crypto.randomUUID()}`, communityId: input.communityId, channelId: input.channelId,
@@ -254,6 +280,10 @@ export const audioDataSource = {
   },
   async endRadioSession(id: string): Promise<AudioServiceResult<RadioSession>> {
     const endedAt = new Date().toISOString();
+    const source = await getRadioCommunityId(id);
+    if (!source.ok) return source;
+    const kindGuard = await ensureCommunityKind(source.data, "radio");
+    if (!kindGuard.ok) return kindGuard;
     if (dataSourceService.getStatus().isMock) {
       let updated: RadioSession | undefined;
       localRadio = localRadio.map((item) => item.id === id ? (updated = { ...item, status: "ended", endedAt }) : item);
@@ -269,6 +299,12 @@ export const audioDataSource = {
     return ok(mapRadio(result.data, new Set()));
   },
   async setListening(id: string, listening: boolean): Promise<AudioServiceResult<boolean>> {
+    if (listening) {
+      const source = await getRadioCommunityId(id);
+      if (!source.ok) return source;
+      const kindGuard = await ensureCommunityKind(source.data, "radio");
+      if (!kindGuard.ok) return kindGuard;
+    }
     if (dataSourceService.getStatus().isMock) {
       localRadio = localRadio.map((item) => item.id === id
         ? { ...item, listenerCount: Math.max(0, item.listenerCount + (listening ? 1 : -1)) }
@@ -304,6 +340,10 @@ export const audioDataSource = {
   async reactToPodcastEpisode(id: string, emoji: string): Promise<AudioServiceResult<boolean>> {
     const cleanEmoji = emoji.trim().slice(0, 32);
     if (!cleanEmoji) return fail("AUDIO_VALIDATION_ERROR", "Choose a valid reaction.");
+    const source = await getPodcastCommunityId(id);
+    if (!source.ok) return source;
+    const kindGuard = await ensureCommunityKind(source.data, "podcast");
+    if (!kindGuard.ok) return kindGuard;
     if (dataSourceService.getStatus().isMock) {
       localPodcasts = localPodcasts.map((item) => item.id !== id ? item : {
         ...item,
@@ -328,6 +368,10 @@ export const audioDataSource = {
   async commentOnPodcastEpisode(id: string, body: string): Promise<AudioServiceResult<AudioCommentPreview>> {
     const cleanBody = body.trim().slice(0, 4000);
     if (!cleanBody) return fail("AUDIO_VALIDATION_ERROR", "Comment text is required.");
+    const source = await getPodcastCommunityId(id);
+    if (!source.ok) return source;
+    const kindGuard = await ensureCommunityKind(source.data, "podcast");
+    if (!kindGuard.ok) return kindGuard;
     if (dataSourceService.getStatus().isMock) {
       const comment: AudioCommentPreview = {
         id: `audio-comment-${crypto.randomUUID()}`,
