@@ -6,7 +6,7 @@ const checks=[
  ["member and kind authorization RPC",fn.includes('rpc("authorize_livekit_room"')&&migration.includes("VOICE_MEMBERSHIP_REQUIRED")&&migration.includes("kind<>'text'")],
  ["visitor private ban timeout denial",migration.includes("community_bans")&&migration.includes("community_member_timeouts")&&migration.includes("VOICE_PRIVATE_CHANNEL_FORBIDDEN")],
  ["scoped permissions",["viewChannel","viewPrivateChannels","joinVoice","speakInVoice","shareScreen"].every((permission)=>migration.includes(`'${permission}'`))],
- ["short least privilege token",fn.includes("10 * 60")&&token.includes("canPublishSources")&&fn.includes('"microphone"')&&fn.includes('"screen_share"')&&fn.includes("canPublishData: false")],
+ ["short least privilege token",fn.includes("10 * 60")&&token.includes("canPublishSources")&&fn.includes('"microphone"')&&fn.includes('"screen_share"')&&fn.includes("authorization.can_publish_audio")&&fn.includes("canPublishData: false")],
  ["restricted CORS",fn.includes("PICOM_ALLOWED_ORIGINS")&&fn.includes("Origin is not allowed")&&!fn.includes('"Access-Control-Allow-Origin": "*"')],
  ["method and bounded JSON",fn.includes("maxBodyBytes = 2048")&&fn.includes("Content-Type must be application/json")&&fn.includes("methodNotAllowed")],
  ["deterministic identity room",fn.includes("auth.user.id")&&fn.includes("createPicomLiveKitRoomName")&&fn.includes("matchesPicomLiveKitRoomName")],

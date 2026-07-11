@@ -1991,6 +1991,7 @@ export function App() {
     void import("./services/voiceService").then(({ voiceService }) =>
       voiceService.startScreenShare(sourceId, preset, sourceLabel).then((result) => {
         if (!result.ok) pushToast(result.error.message, "error");
+        else pushToast("Screen sharing started.", "success");
       }),
     );
   }, [pushToast]);
@@ -1999,6 +2000,7 @@ export function App() {
     void import("./services/voiceService").then(({ voiceService }) =>
       voiceService.stopScreenShare().then((result) => {
         if (!result.ok) pushToast(result.error.message, "error");
+        else pushToast("Screen sharing stopped.", "info");
       }),
     );
   }, [pushToast]);

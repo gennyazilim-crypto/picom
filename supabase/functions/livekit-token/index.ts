@@ -105,7 +105,9 @@ Deno.serve(async (request: Request) => {
   if (parsed.body.roomName && !matchesPicomLiveKitRoomName(parsed.body.roomName, communityId, channelId)) return respond(errorResponse("VALIDATION_ERROR", "roomName does not match the requested community/channel.", 400));
 
   const canPublish = intent === "screen" ? authorization.can_publish_screen : authorization.can_publish_audio;
-  const publishSources = canPublish ? (intent === "screen" ? ["screen_share", "screen_share_audio"] as const : ["microphone"] as const) : [];
+  const publishSources: Array<"microphone" | "screen_share" | "screen_share_audio"> = intent === "screen"
+    ? canPublish ? [...(authorization.can_publish_audio ? ["microphone" as const] : []), "screen_share", "screen_share_audio"] : []
+    : canPublish ? ["microphone"] : [];
   const { token, expiresAt } = await createLiveKitToken({ apiKey: livekitApiKey, apiSecret: livekitApiSecret, identity: auth.user.id, name: participantName, roomName, ttlSeconds: tokenTtlSeconds, canPublish, canSubscribe: true, canPublishData: false, canPublishSources: publishSources });
   return respond(jsonResponse({ token, url: livekitUrl, roomName, identity: auth.user.id, participantName, intent, expiresAt }));
 });

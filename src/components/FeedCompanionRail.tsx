@@ -68,7 +68,7 @@ function VoiceMiniControlCard({
         <div>
           <p className="eyebrow">Connected Voice</p>
           <strong>{voiceState.roomContext?.channelName ?? voiceState.roomName ?? "Voice room"}</strong>
-          <small>{voiceState.status === "reconnecting" ? "Restoring connection..." : "LiveKit connected"}</small>
+          <small>{voiceState.screenSharing ? "Screen sharing active" : voiceState.status === "reconnecting" ? "Restoring connection..." : "LiveKit connected"}</small>
         </div>
       </header>
       <div className="voice-mini-meta">
@@ -85,7 +85,7 @@ function VoiceMiniControlCard({
         <button type="button" aria-label={voiceState.deafened ? "Undeafen audio" : "Deafen audio"} aria-pressed={voiceState.deafened} onClick={onToggleDeafen}>
           <AppIcon name="headphones" size="sm" />
         </button>
-        <button type="button" aria-label="Open screen share controls" aria-pressed={voiceState.screenSharing} onClick={onOpenScreenShare}>
+        <button type="button" aria-label={voiceState.screenSharing ? "Open active screen share controls" : "Open screen share controls"} aria-pressed={voiceState.screenSharing} onClick={onOpenScreenShare}>
           <AppIcon name="image" size="sm" />
         </button>
         <button type="button" className="voice-mini-leave" aria-label="Leave voice room" onClick={onLeaveVoice}>

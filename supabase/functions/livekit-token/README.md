@@ -15,6 +15,8 @@ Set these only with Supabase secret storage. Never use `VITE_` variables, render
 
 `POST` JSON accepts `communityId`, `channelId`, optional deterministic `roomName`, optional safe `participantName`, and `intent` (`voice` or `screen`). The function verifies the Supabase JWT, rate limit, 2 KiB JSON contract, origin allowlist, active Text community, active membership, bans/timeouts, voice channel, private access, and scoped `joinVoice`/`speakInVoice`/`shareScreen` permissions through `authorize_livekit_room`.
 
+`voice` intent grants microphone publication only. After an explicit approved source selection, the client reconnects to the same deterministic room with `screen` intent; that short-lived token grants screen publication and preserves microphone publication only when `can_publish_audio` is independently true. Screen permission never implies microphone permission.
+
 Tokens expire after ten minutes. Voice tokens publish microphone only when `speakInVoice` is allowed. Screen tokens publish screen-share sources only when `shareScreen` is allowed. Camera and data publishing are not granted.
 
 ## Deployment
