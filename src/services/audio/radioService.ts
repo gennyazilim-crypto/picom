@@ -57,6 +57,7 @@ export const radioService = {
   saveRadio: (id: string) => radioRepository.setSaved(id, true),
   unsaveRadio: (id: string) => radioRepository.setSaved(id, false),
   reactToRadio: (id: string, emoji: string) => radioRepository.react(id, emoji),
+  removeRadioReaction: (id: string, emoji: string) => radioRepository.removeReaction(id, emoji),
   assignRadioHost: (input: Parameters<typeof audioDataSource.assignRadioSessionHost>[0]) => radioRepository.assignHost(input),
   getRadioSessionHosts: (id: string) => radioRepository.listHosts(id),
   removeRadioHost: (id: string, userId: string) => radioRepository.removeHost(id, userId),

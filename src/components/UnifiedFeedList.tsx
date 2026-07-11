@@ -26,6 +26,8 @@ type UnifiedFeedListProps = {
   onMarkAudioRead: (item: AudioFeedItem) => void;
   onOpenCommunity: (communityId: string) => void;
   onOpenRadio: (item: AudioFeedItem) => void;
+  onCopyAudioReference: (item: AudioFeedItem) => void;
+  onReportAudio: (item: AudioFeedItem) => void;
 };
 
 type UnifiedEntry =
@@ -73,6 +75,8 @@ export function UnifiedFeedList(props: UnifiedFeedListProps) {
           onOpenCommunity={props.onOpenCommunity}
           onOpenRadio={props.onOpenRadio}
           onOpenProfile={props.onOpenProfile}
+          onCopyReference={props.onCopyAudioReference}
+          onReport={props.onReportAudio}
         />
       ))}
     </section>

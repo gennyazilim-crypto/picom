@@ -1,4 +1,4 @@
-export type ReportTargetType = "message" | "direct_message" | "user" | "community" | "podcast_episode" | "podcast_comment";
+export type ReportTargetType = "message" | "direct_message" | "user" | "community" | "radio_session" | "podcast_episode" | "podcast_comment";
 export type ReportStatus = "open" | "reviewed" | "dismissed" | "action_taken";
 export type ReportReason = "spam" | "harassment" | "unsafe_content" | "impersonation" | "copyright" | "other";
 

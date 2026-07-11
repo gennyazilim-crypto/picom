@@ -568,6 +568,32 @@ export const audioDataSource = {
     await refresh();
     return ok(true);
   },
+  async removeRadioReaction(id: string, emoji: string): Promise<AudioServiceResult<boolean>> {
+    const cleanEmoji = emoji.trim().slice(0, 32);
+    if (!cleanEmoji) return fail("AUDIO_VALIDATION_ERROR", "Choose a valid reaction.");
+    const source = await getRadioCommunityId(id);
+    if (!source.ok) return source;
+    const kindGuard = await ensureCommunityKind(source.data, "radio");
+    if (!kindGuard.ok) return kindGuard;
+    if (dataSourceService.getStatus().isMock) {
+      localRadio = localRadio.map((item) => item.id !== id ? item : {
+        ...item,
+        reactionSummary: (item.reactionSummary ?? []).flatMap((reaction) => {
+          if (reaction.emoji !== cleanEmoji || !reaction.reactedByCurrentUser) return [reaction];
+          return reaction.count <= 1 ? [] : [{ ...reaction, count: reaction.count - 1, reactedByCurrentUser: false }];
+        }),
+      });
+      publish(localSnapshot());
+      return ok(true);
+    }
+    const client = getSupabaseClient();
+    const userId = await authenticatedUserId();
+    if (!client || !userId) return fail("AUDIO_BACKEND_UNAVAILABLE", "Sign in again before changing this reaction.");
+    const result = await client.from("radio_session_reactions").delete().eq("radio_session_id", id).eq("user_id", userId).eq("emoji", cleanEmoji);
+    if (result.error) return fail("AUDIO_REQUEST_FAILED", "Picom could not remove this Radio reaction.");
+    await refresh();
+    return ok(true);
+  },
 
   async listPodcastEpisodes(communityId?: string, userId?: string): Promise<AudioServiceResult<PodcastEpisode[]>> {
     const result = await refresh();

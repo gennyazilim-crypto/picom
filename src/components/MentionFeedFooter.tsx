@@ -29,6 +29,7 @@ type MentionCommentPreviewProps = {
   previews?: MentionCommentPreview[];
   membersByUserId: Record<string, Member | undefined>;
   totalCount: number;
+  onOpenComments: () => void;
 };
 
 function getReactionTotal(reactions?: Reaction[]): number {
@@ -78,7 +79,7 @@ export function CommentAvatarStack({ commenters, totalCount, onOpenProfile }: Co
   );
 }
 
-export function MentionCommentPreview({ previews, membersByUserId, totalCount }: MentionCommentPreviewProps) {
+export function MentionCommentPreview({ previews, membersByUserId, totalCount, onOpenComments }: MentionCommentPreviewProps) {
   const visiblePreviews = (previews ?? []).slice(0, 2);
   const remaining = Math.max(0, totalCount - visiblePreviews.length);
 
@@ -96,7 +97,7 @@ export function MentionCommentPreview({ previews, membersByUserId, totalCount }:
           </p>
         );
       })}
-      {remaining > 0 ? <button type="button">View {remaining} more comments</button> : null}
+      {remaining > 0 ? <button type="button" onClick={onOpenComments}>View {remaining} more comments</button> : null}
     </div>
   );
 }
@@ -125,11 +126,11 @@ export function MentionFeedFooter({
           </span>
           <EmojiReactionSummary reactions={item.reactions} />
           <CommentAvatarStack commenters={commenters} totalCount={commentCount} onOpenProfile={onOpenProfile} />
-          <span className="mention-footer-pill">
+          <button type="button" className="mention-footer-pill mention-footer-button" onClick={() => onOpenInChannel(item)} aria-label={`Open ${commentCount} comments in channel`}>
             <AppIcon name="reply" size="xs" />
             <strong>{commentCount}</strong>
             <span>comments</span>
-          </span>
+          </button>
         </div>
         <div className="mention-card-actions">
           <button type="button" className={reacted ? "active" : ""} onClick={() => onToggleReaction(item.id)}>
@@ -148,7 +149,7 @@ export function MentionFeedFooter({
           </button>
         </div>
       </footer>
-      <MentionCommentPreview previews={item.commentPreview} membersByUserId={commentPreviewMembers} totalCount={commentCount} />
+      <MentionCommentPreview previews={item.commentPreview} membersByUserId={commentPreviewMembers} totalCount={commentCount} onOpenComments={() => onOpenInChannel(item)} />
     </>
   );
 }

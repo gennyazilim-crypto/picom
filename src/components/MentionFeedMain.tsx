@@ -8,7 +8,7 @@ import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import type { AudioFeedItem, AudioPlayableItem } from "../types/audio";
-import { useAudioCatalog } from "../hooks/useAudioCatalog";
+import { useAudioCatalogState } from "../hooks/useAudioCatalog";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
@@ -55,6 +55,8 @@ type MentionFeedMainProps = {
   onScreenSharePlaceholder: () => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
+  onCopyAudioReference: (item: AudioFeedItem) => void;
+  onReportAudio: (item: AudioFeedItem) => void;
 };
 
 function isWithinDays(value: string, days: number) {
@@ -124,8 +126,11 @@ export function MentionFeedMain({
   onScreenSharePlaceholder,
   onOpenEventCommunity,
   onEventDetails,
+  onCopyAudioReference,
+  onReportAudio,
 }: MentionFeedMainProps) {
-  const audioCatalog = useAudioCatalog();
+  const audioCatalogState = useAudioCatalogState();
+  const audioCatalog = audioCatalogState.snapshot;
   const reminderState = useRadioScheduleReminders(audioCatalog.radioSessions);
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
@@ -224,7 +229,18 @@ export function MentionFeedMain({
     const result = item.type === "podcast_episode" ? await (wasSaved ? podcastService.unsavePodcastEpisode(sourceId) : podcastService.savePodcastEpisode(sourceId)) : await (wasSaved ? radioService.unsaveRadio(sourceId) : radioService.saveRadio(sourceId));
     if (!result.ok) setSavedAudioIds((current) => { const next = new Set(current); if (wasSaved) next.add(item.id); else next.delete(item.id); return next; });
   };
-  const reactToAudio = (item: AudioFeedItem) => { const sourceId = item.sourceId ?? item.id.replace(/^feed-/, ""); const reacted = item.reactionSummary?.some((reaction) => reaction.emoji === "🔥" && reaction.reactedByCurrentUser) === true; void (item.type === "podcast_episode" ? reacted ? podcastService.removePodcastReaction(sourceId, "🔥") : podcastService.reactToPodcastEpisode(sourceId, "🔥") : radioService.reactToRadio(sourceId, "🔥")); };
+  const reactToAudio = (item: AudioFeedItem) => {
+    const sourceId = item.sourceId ?? item.id.replace(/^feed-/, "");
+    const emoji = "\u{1F525}";
+    const reacted = item.reactionSummary?.some((reaction) => reaction.emoji === emoji && reaction.reactedByCurrentUser) === true;
+    void (async () => {
+      const result = item.type === "podcast_episode"
+        ? reacted ? await podcastService.removePodcastReaction(sourceId, emoji) : await podcastService.reactToPodcastEpisode(sourceId, emoji)
+        : reacted ? await radioService.removeRadioReaction(sourceId, emoji) : await radioService.reactToRadio(sourceId, emoji);
+      if (!result.ok) { setFeedQueryNotice(result.error.message); return; }
+      await audioCatalogState.refresh();
+    })();
+  };
   const markAudioRead = (item: AudioFeedItem) => { setReadAudioIds((current) => new Set(current).add(item.id)); void audioFeedReadStateService.markRead(item); };
   const openAudioRadioSource = (item: AudioFeedItem) => { const sessionId = item.sourceId ?? item.id.replace(/^feed-/, ""); communityNavigationService.rememberRadioSession(item.communityId, sessionId); onOpenEventCommunity(item.communityId); };
   const toggleAudioReminder = (feedItemId: string) => {
@@ -292,6 +308,8 @@ export function MentionFeedMain({
           onMarkAudioRead={markAudioRead}
           onOpenCommunity={onOpenEventCommunity}
           onOpenRadio={openAudioRadioSource}
+          onCopyAudioReference={onCopyAudioReference}
+          onReportAudio={onReportAudio}
         />
         </div>
         <FeedCompanionRail

@@ -16,7 +16,7 @@ const reasons: Array<{ value: ReportReason; label: string; description: string }
   { value: "other", label: "Something else", description: "Another Community Guidelines concern." },
 ];
 
-const targetTitles: Record<ReportTargetType, string> = { message: "message", direct_message: "direct message", user: "user", community: "community", podcast_episode: "Podcast episode", podcast_comment: "Podcast comment" };
+const targetTitles: Record<ReportTargetType, string> = { message: "message", direct_message: "direct message", user: "user", community: "community", radio_session: "radio session", podcast_episode: "Podcast episode", podcast_comment: "Podcast comment" };
 
 export function ReportModal({ target, reporterId, onClose, onResult }: Props) {
   const [reason, setReason] = useState<ReportReason>("spam");

@@ -25,9 +25,10 @@ type AudioFeedCardProps = {
   onToggleReminder: (id: string) => void; onReact: (item: AudioFeedItem) => void;
   onMarkRead: (item: AudioFeedItem) => void; onOpenCommunity: (communityId: string) => void;
   onOpenRadio: (item: AudioFeedItem) => void; onOpenProfile: (event: MouseEvent, member: Member) => void;
+  onCopyReference?: (item: AudioFeedItem) => void; onReport?: (item: AudioFeedItem) => void;
 };
 
-export function AudioFeedCard({ item, communities, saved, unread, reminderSet, onSelect, onToggleSaved, onToggleReminder, onReact, onMarkRead, onOpenCommunity, onOpenRadio, onOpenProfile }: AudioFeedCardProps) {
+export function AudioFeedCard({ item, communities, saved, unread, reminderSet, onSelect, onToggleSaved, onToggleReminder, onReact, onMarkRead, onOpenCommunity, onOpenRadio, onOpenProfile, onCopyReference, onReport }: AudioFeedCardProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
   const community = communities.find((candidate) => candidate.id === item.communityId);
@@ -64,6 +65,8 @@ export function AudioFeedCard({ item, communities, saved, unread, reminderSet, o
             <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); if (podcast) onSelect(item); else onOpenRadio(item); }}><AppIcon name={podcast ? "play" : "headphones"} size="sm" />{podcast ? "Open episode" : "Open Radio"}</button>
             <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onToggleSaved(item); }}><AppIcon name="pin" size="sm" />{saved ? "Remove saved" : "Save"}</button>
             {unread ? <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onMarkRead(item); }}><AppIcon name="eye" size="sm" />Mark read</button> : null}
+            {onCopyReference ? <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onCopyReference(item); }}><AppIcon name="hash" size="sm" />Copy reference</button> : null}
+            {onReport ? <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onReport(item); }}><AppIcon name="bell" size="sm" />Report</button> : null}
           </div> : null}
         </div>
       </header>
@@ -74,7 +77,7 @@ export function AudioFeedCard({ item, communities, saved, unread, reminderSet, o
         <span className="audio-social-pill"><AppIcon name="eye" size="xs" />{item.viewCount ?? item.listenerCount ?? 0} {live ? "listeners" : "views"}</span>
         {reactionTotal ? <span className="audio-social-pill reactions">{item.reactionSummary?.slice(0, 4).map((reaction) => <span key={reaction.emoji}>{reaction.emoji}</span>)}<strong>{reactionTotal}</strong></span> : null}
         {visibleCommenters.length ? <span className="audio-commenter-stack">{visibleCommenters.map((member) => <button type="button" key={member.userId} title={member.displayName} aria-label={"Open " + member.displayName + " profile"} onClick={(event) => onOpenProfile(event, member)}><MemberAvatar member={member} size={22} /></button>)}{remainingCommenters ? <em>+{remainingCommenters}</em> : null}</span> : null}
-        <span className="audio-social-pill">{item.commentCount ?? 0} comments</span>
+        <button type="button" className="audio-social-pill audio-social-pill--action" onClick={() => podcast ? onSelect(item) : onOpenRadio(item)}>{item.commentCount ?? 0} comments</button>
       </div>
       <footer>
         {scheduled ? <button type="button" className={reminderSet ? "active" : ""} onClick={() => onToggleReminder(item.id)}><AppIcon name="bell" size="sm" />{reminderSet ? "Reminder set" : "Remind me"}</button> : !ended ? <button type="button" className="primary" onClick={() => onSelect(item)}><AppIcon name="play" size="sm" />{live ? "Listen" : "Play"}</button> : null}

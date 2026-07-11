@@ -1702,22 +1702,26 @@ export function App() {
   }, [directMessageUserId, followedUserIds, pushToast]);
 
   const toggleMentionReaction = useCallback((id: string) => {
-    setMentionItems((current) =>
-      current.map((item) => {
-        if (item.id !== id) return item;
-
-        const [primaryReaction, ...rest] = item.reactions ?? [{ emoji: "👍", count: 0 }];
-        const reactedByCurrentUser = Boolean(primaryReaction.reactedByCurrentUser);
-        const nextPrimaryReaction = {
-          ...primaryReaction,
-          count: Math.max(0, primaryReaction.count + (reactedByCurrentUser ? -1 : 1)),
-          reactedByCurrentUser: !reactedByCurrentUser,
-        };
-
-        return { ...item, reactions: [nextPrimaryReaction, ...rest] };
-      }),
-    );
-  }, []);
+    const item = mentionItems.find((candidate) => candidate.id === id);
+    if (!item) { pushToast("This mention is no longer accessible.", "error"); return; }
+    const previousReactions = item.reactions ?? [];
+    const [primaryReaction = { emoji: "\u{1F44D}", count: 0 }, ...rest] = previousReactions;
+    const wasReacted = Boolean(primaryReaction.reactedByCurrentUser);
+    const optimisticReaction = { ...primaryReaction, count: Math.max(0, primaryReaction.count + (wasReacted ? -1 : 1)), reactedByCurrentUser: !wasReacted };
+    setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, reactions: [optimisticReaction, ...rest] } : candidate));
+    void (async () => {
+      const result = wasReacted
+        ? await reactionService.removeReaction({ messageId: item.messageId, emoji: primaryReaction.emoji })
+        : await reactionService.addReaction({ messageId: item.messageId, emoji: primaryReaction.emoji });
+      if (!result.ok) {
+        setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, reactions: previousReactions } : candidate));
+        pushToast(result.error.message, "error");
+        return;
+      }
+      const authoritativeReaction = { ...primaryReaction, emoji: result.data.emoji, count: result.data.count, reactedByCurrentUser: result.data.reactedByCurrentUser };
+      setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, reactions: [authoritativeReaction, ...rest] } : candidate));
+    })();
+  }, [mentionItems, pushToast]);
 
   const toggleSavedMessage = useCallback(async (community: Community, message: Message): Promise<boolean> => {
     const saved = savedMessageService.isMessageSaved(message.id);
@@ -1735,8 +1739,15 @@ export function App() {
   }, [communities, mentionItems, pushToast, toggleSavedMessage]);
 
   const markMentionRead = useCallback((id: string) => {
-    setMentionItems((current) => current.map((item) => (item.id === id ? { ...item, isUnread: false } : item)));
-  }, []);
+    const item = mentionItems.find((candidate) => candidate.id === id);
+    if (!item || !item.isUnread) return;
+    setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, isUnread: false } : candidate));
+    void readStateService.markChannelRead({ channelId: item.channelId, lastReadMessageId: item.messageId }).then((result) => {
+      if (result.ok) return;
+      setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, isUnread: true } : candidate));
+      pushToast("Picom could not mark this Feed item as read.", "error");
+    });
+  }, [mentionItems, pushToast]);
 
   const toggleMentionFilter = useCallback((filter: MentionQuickFilter) => {
     setMentionQuickFilter((current) => { const next = current === filter ? null : filter; feedUiStateService.setSelection(mentionTab, next); return next; });
@@ -1748,13 +1759,25 @@ export function App() {
   }, [mentionQuickFilter]);
 
   const openMentionInChannel = useCallback((item: MentionItem) => {
+    const community = communities.find((candidate) => candidate.id === item.communityId);
+    const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
+    const access = community ? getCommunityAccess(currentUserId, community) : null;
+    if (!community || !channel || !access || !canViewChannel(access, channel)) {
+      pushToast("This Feed item is no longer accessible.", "error");
+      return;
+    }
     setActiveView("community");
     switchCommunity(item.communityId, item.channelId);
     clearChannelUnread({ communityId: item.communityId, channelId: item.channelId });
     setMentionItems((current) => current.map((candidate) => (candidate.id === item.id ? { ...candidate, isUnread: false } : candidate)));
     closeTransientOverlays();
-    loggingService.logInfo("Mention feed message highlight placeholder prepared", { messageId: item.messageId }, "mention-feed");
-  }, [clearChannelUnread, closeTransientOverlays, switchCommunity]);
+    setHighlightedMessageId(item.messageId);
+    if (messageHighlightTimerRef.current) window.clearTimeout(messageHighlightTimerRef.current);
+    messageHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedMessageId((current) => current === item.messageId ? null : current);
+      messageHighlightTimerRef.current = null;
+    }, 2200);
+  }, [clearChannelUnread, closeTransientOverlays, communities, currentUserId, pushToast, switchCommunity]);
 
   const markStorySeen = useCallback((storyId: string) => {
     feedUiStateService.markStorySeen(storyId);
@@ -2675,6 +2698,17 @@ export function App() {
                 onScreenSharePlaceholder={showScreenSharePlaceholder}
                 onOpenEventCommunity={openFeedEventCommunity}
                 onEventDetails={showFeedEventDetails}
+                onCopyAudioReference={(item) => {
+                  const sourceId = item.sourceId ?? item.id.replace(/^feed-/, "");
+                  const reference = item.type === "podcast_episode"
+                    ? `picom://community/${item.communityId}/podcast/${sourceId}`
+                    : `picom://community/${item.communityId}/radio/${sourceId}`;
+                  void clipboardService.copyText(reference).then(() => pushToast("Feed reference copied.", "success"));
+                }}
+                onReportAudio={(item) => {
+                  const sourceId = item.sourceId ?? item.id.replace(/^feed-/, "");
+                  setReportTarget({ communityId: item.communityId, targetType: item.type === "podcast_episode" ? "podcast_episode" : "radio_session", targetId: sourceId, label: item.title, evidenceExcerpt: item.body.slice(0, 280) });
+                }}
                 onOpenMore={(event, item) =>
                   openContext(event, [
                     {
@@ -2689,6 +2723,14 @@ export function App() {
                     {
                       label: "Open in channel",
                       onSelect: () => openMentionInChannel(item),
+                    },
+                    {
+                      label: "Copy message reference",
+                      onSelect: () => void clipboardService.copyText(`picom://community/${item.communityId}/channel/${item.channelId}/message/${item.messageId}`).then(() => pushToast("Message reference copied.", "success")),
+                    },
+                    {
+                      label: "Report message",
+                      onSelect: () => setReportTarget({ communityId: item.communityId, channelId: item.channelId, targetType: "message", targetId: item.messageId, label: `Feed message ${item.messageId}`, evidenceExcerpt: item.body.slice(0, 280) }),
                     },
                   ])
                 }
