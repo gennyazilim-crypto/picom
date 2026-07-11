@@ -24,7 +24,10 @@ export type CreateCommunityInput = Readonly<{
   name: string;
   kind?: CommunityKind;
   description?: string | null;
+  iconUrl?: string | null;
   accentColor?: string;
+  visibility?: "public" | "private";
+  publicReadEnabled?: boolean;
   templateId?: string | null;
 }>;
 
@@ -77,6 +80,14 @@ function validateCreateInput(input: CreateCommunityInput): CommunityServiceError
   if (input.description && input.description.length > 500) {
     return { code: "VALIDATION_ERROR", message: "Community description must be 500 characters or fewer." };
   }
+
+  if (input.iconUrl) {
+    const iconUrl = input.iconUrl.trim();
+    if (iconUrl.length > 2048 || !/^https:\/\//i.test(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a valid HTTPS URL." };
+  }
+
+  if (input.visibility !== undefined && input.visibility !== "public" && input.visibility !== "private") return { code: "VALIDATION_ERROR", message: "Community visibility must be public or private." };
+  if (input.publicReadEnabled !== undefined && typeof input.publicReadEnabled !== "boolean") return { code: "VALIDATION_ERROR", message: "Public read policy must be enabled or disabled." };
 
   return null;
 }
@@ -164,6 +175,9 @@ export const communityService = {
 
     const name = cleanName(input.name);
     const kind = input.kind ?? "text";
+    const iconUrl = input.iconUrl?.trim() || null;
+    const visibility = input.visibility ?? "public";
+    const publicReadEnabled = visibility === "public" ? input.publicReadEnabled ?? true : false;
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
@@ -176,10 +190,10 @@ export const communityService = {
           ownerId: "mock-current-user",
           name,
           description: input.description?.trim() || null,
-          iconUrl: null,
+          iconUrl,
           accentColor: input.accentColor ?? "#007571",
-          visibility: "public",
-          publicReadEnabled: true,
+          visibility,
+          publicReadEnabled,
           rulesEnabled: true,
           rulesVersion: "1",
           templateId: input.templateId ?? "custom",
@@ -203,9 +217,10 @@ export const communityService = {
       owner_id: userId,
       name,
       description: input.description?.trim() || null,
+      icon_url: iconUrl,
       accent_color: input.accentColor ?? "#007571",
-      visibility: "public" as const,
-      public_read_enabled: true,
+      visibility,
+      public_read_enabled: publicReadEnabled,
     };
     const currentResult = await configured.data
       .from("communities")

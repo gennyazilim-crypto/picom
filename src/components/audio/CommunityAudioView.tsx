@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Community, Member } from "../../types/community";
 import type { PodcastEpisode, RadioSession } from "../../types/audio";
 import { useAudioCatalog } from "../../hooks/useAudioCatalog";
@@ -165,7 +165,8 @@ export function CommunityPodcastSection(props: PodcastEpisodeListProps) {
 
 export function CommunityAudioView({ community, canManageAudio, onPlaceholderAction, onOpenProfile }: CommunityAudioViewProps) {
   const audioCatalog = useAudioCatalog();
-  const [activeTab, setActiveTab] = useState<CommunityAudioTab>("live");
+  const preferredTab: CommunityAudioTab = community.kind === "podcast" ? "podcasts" : "live";
+  const [activeTab, setActiveTab] = useState<CommunityAudioTab>(preferredTab);
   const [selectedRadioSession, setSelectedRadioSession] = useState<RadioSession | null>(null);
   const [selectedPodcastEpisode, setSelectedPodcastEpisode] = useState<PodcastEpisode | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
@@ -175,6 +176,12 @@ export function CommunityAudioView({ community, canManageAudio, onPlaceholderAct
   const getUserLabel = (userId: string) => community.members.find((member) => member.userId === userId)?.displayName ?? "Picom creator";
   const toggleSaved = (id: string) => setSavedIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const toggleReminder = (id: string) => setReminderIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+
+  useEffect(() => {
+    setActiveTab(preferredTab);
+    setSelectedRadioSession(null);
+    setSelectedPodcastEpisode(null);
+  }, [community.id, preferredTab]);
 
   if (selectedRadioSession) {
     return <RadioPanel

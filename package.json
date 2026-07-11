@@ -368,6 +368,7 @@
     "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",
     "community:kind:smoke": "node scripts/community-kind-domain-smoke.mjs",
     "community:kind:backfill:smoke": "node scripts/community-kind-backfill-smoke.mjs",
+    "community:creation:typed:smoke": "node scripts/typed-community-creation-wizard-smoke.mjs",
     "quality:fast": "npm run qa:smoke && npm run typecheck",
     "quality:gate": "npm run qa:smoke && npm run typecheck && npm run build",
     "production:launch:audit:smoke": "node scripts/final-production-launch-audit-smoke-test.mjs",

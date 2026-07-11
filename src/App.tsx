@@ -16,7 +16,6 @@ import type { FriendState } from "./types/friends";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import type { ProfileActivityItem, UserProfile } from "./types/profile";
 import type { FollowedUserStory } from "./types/stories";
-import type { CommunityTemplateId } from "./types/communityTemplates";
 import type { CommunityAccess } from "./types/communityAccess";
 import type { OnboardingCompletion } from "./types/onboarding";
 import { AppIcon } from "./components/AppIcon";
@@ -36,7 +35,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { FirstLaunchSetup } from "./components/firstLaunch/FirstLaunchSetup";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
-import { CreateCommunityModal } from "./components/CreateCommunityModal";
+import { CreateCommunityModal, type CreateCommunityFormValue, type CreateCommunitySubmitResult } from "./components/CreateCommunityModal";
 import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
 import { DeleteChannelModal, EditChannelModal, type EditChannelFormValue } from "./components/ChannelManagementModals";
 import { MemberModerationModal } from "./components/MemberModerationModal";
@@ -1946,6 +1945,7 @@ export function App() {
     setTheme(completion.theme);
     settingsService.updateSettings({ theme: completion.theme, profileSettings: nextProfileSettings });
     setOnboardingPhase("complete");
+    if (completion.startChoice === "createCommunity") setCreateCommunityOpen(true);
     if (completion.startChoice === "joinInvite" && completion.inviteCode) setPendingInviteCode(completion.inviteCode);
 
     setActiveView("mentionFeed");
@@ -2316,25 +2316,26 @@ export function App() {
 
     replaceCommunityMembers(communityId, [...target.members.filter((candidate) => candidate.userId !== member.userId), member]);
     switchCommunity(communityId);
-    setActiveView("community");
+    setActiveView(target.kind === "text" ? "community" : "communityAudio");
     setPendingInviteCode(null);
     pushToast(status === "already_member" ? `You are already a member of ${target.name}.` : `Joined ${target.name} with invite.`, "success");
   };
 
-  const handleCreateCommunity = async (name: string, description?: string, templateId?: CommunityTemplateId) => {
-    const result = await communityService.createCommunity({ name, description, templateId });
+  const handleCreateCommunity = async (value: CreateCommunityFormValue): Promise<CreateCommunitySubmitResult> => {
+    const result = await communityService.createCommunity(value);
 
     if (!result.ok) {
-      pushToast(result.error.message, "error");
-      return;
+      return { ok: false, error: result.error.message };
     }
 
     const community = addCommunity(createCommunityFromSummary(result.data));
-    analyticsService.trackEvent("community_created", { mode: dataSourceService.getStatus().mode });
+    analyticsService.trackEvent("community_created", { mode: dataSourceService.getStatus().mode, kind: community.kind });
     switchCommunity(community.id);
+    setActiveView(community.kind === "text" ? "community" : "communityAudio");
     setCreateCommunityOpen(false);
     maybeShowNotificationPermissionPrompt("community_created");
-    pushToast(`${community.name} created.`, "success");
+    pushToast(`${community.name} ${community.kind} community created.`, "success");
+    return { ok: true };
   };
 
   const handleCreateChannel = async (value: CreateChannelFormValue) => {
@@ -2587,7 +2588,7 @@ export function App() {
                 onClearPendingInviteCode={() => setPendingInviteCode(null)}
                 onInviteAccepted={handleInviteAccepted}
                 onAssignMemberRole={(memberId, roleId) => replaceCommunityMembers(activeCommunity.id, activeCommunity.members.map((member) => member.id === memberId ? { ...member, roleId } : member))}
-                onCommunityUpdated={(summary) => replaceCommunities(communities.map((community) => community.id !== summary.id ? community : { ...community, ownerId: summary.ownerId ?? community.ownerId, name: summary.name, description: summary.description, icon: summary.iconUrl ?? "", accentColor: summary.accentColor, visibility: summary.visibility, publicReadEnabled: summary.publicReadEnabled }))}
+                onCommunityUpdated={(summary) => replaceCommunities(communities.map((community) => community.id !== summary.id ? community : { ...community, kind: summary.kind, ownerId: summary.ownerId ?? community.ownerId, name: summary.name, description: summary.description, icon: summary.iconUrl ?? "", accentColor: summary.accentColor, visibility: summary.visibility, publicReadEnabled: summary.publicReadEnabled }))}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
                 events={communityEvents}
                 onCreateEvent={(input) => void createCommunityEvent(input)}

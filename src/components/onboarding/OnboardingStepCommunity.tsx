@@ -3,7 +3,7 @@ import type { OnboardingStartChoice } from "../../types/onboarding";
 
 type Props = { value: OnboardingStartChoice; inviteCode: string; onChange: (value: OnboardingStartChoice) => void; onInviteCodeChange: (value: string) => void };
 const choices: Array<{ id: OnboardingStartChoice; title: string; description: string; icon: IconName }> = [
-  { id: "createCommunity", title: "Create a community", description: "Continue now and create a community from Picom later.", icon: "plus" },
+  { id: "createCommunity", title: "Create a community", description: "After onboarding, choose Text, Radio, or Podcast and finish setup immediately.", icon: "plus" },
   { id: "joinInvite", title: "Join with an invite", description: "Save an invite code for the community join flow.", icon: "users" },
   { id: "mentionFeed", title: "Continue without a community", description: "Start with Mention Feed and join a community when ready.", icon: "home" },
 ];
