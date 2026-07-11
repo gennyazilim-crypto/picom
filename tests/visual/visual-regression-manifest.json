@@ -37,6 +37,12 @@
     { "id": "podcast-community-light", "screen": "podcastCommunity", "theme": "light", "viewport": "default", "entryFile": "src/components/audio/PodcastCommunityShell.tsx" },
     { "id": "podcast-community-dark", "screen": "podcastCommunity", "theme": "dark", "viewport": "default", "entryFile": "src/components/audio/PodcastCommunityShell.tsx" },
     { "id": "podcast-episode-light", "screen": "podcastEpisode", "theme": "light", "viewport": "default", "entryFile": "src/components/audio/PodcastEpisodeDetail.tsx" },
-    { "id": "podcast-episode-dark", "screen": "podcastEpisode", "theme": "dark", "viewport": "default", "entryFile": "src/components/audio/PodcastEpisodeDetail.tsx" }
+    { "id": "podcast-episode-dark", "screen": "podcastEpisode", "theme": "dark", "viewport": "default", "entryFile": "src/components/audio/PodcastEpisodeDetail.tsx" },
+    { "id": "community-admin-owner-text-light", "screen": "communityAdmin", "variant": "owner_text", "theme": "light", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
+    { "id": "community-admin-owner-text-dark", "screen": "communityAdmin", "variant": "owner_text", "theme": "dark", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
+    { "id": "community-admin-admin-radio-light", "screen": "communityAdmin", "variant": "admin_radio", "theme": "light", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
+    { "id": "community-admin-admin-radio-dark", "screen": "communityAdmin", "variant": "admin_radio", "theme": "dark", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
+    { "id": "community-admin-moderator-podcast-light", "screen": "communityAdmin", "variant": "moderator_podcast", "theme": "light", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" },
+    { "id": "community-admin-visitor-podcast-dark", "screen": "communityAdmin", "variant": "visitor_podcast", "theme": "dark", "viewport": "default", "entryFile": "src/components/CommunityMenu.tsx" }
   ]
 }
