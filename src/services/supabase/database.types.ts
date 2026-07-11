@@ -226,7 +226,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["voice_story_events"]["Row"]>; Relationships: [];
       };
       friend_requests: {
-        Row: { id: string; sender_id: string; recipient_id: string; status: "pending" | "accepted" | "declined"; created_at: string; responded_at: string | null };
+        Row: { id: string; sender_id: string; recipient_id: string; status: "pending" | "accepted" | "declined" | "cancelled"; created_at: string; responded_at: string | null; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["friend_requests"]["Row"]> & Pick<Database["public"]["Tables"]["friend_requests"]["Row"], "sender_id" | "recipient_id">;
         Update: Partial<Database["public"]["Tables"]["friend_requests"]["Row"]>; Relationships: [];
       };

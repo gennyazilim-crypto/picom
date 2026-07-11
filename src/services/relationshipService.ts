@@ -26,6 +26,21 @@ function cloneMockState(): FriendState {
   return { friends: [...mockFriends.values()], requests: [...mockRequests.values()], suggestions: mockFriendState.suggestions.filter((item) => !mockFriends.has(item.userId) && ![...mockRequests.values()].some((request) => request.userId === item.userId)) };
 }
 
+const mockRequestHistory = new Map<string, FriendRequest>();
+
+function transitionMockRequest(
+  requestId: string,
+  status: FriendRequest["status"],
+  expectedDirection: FriendRequest["direction"],
+): FriendRequest | null {
+  const request = mockRequests.get(requestId);
+  if (!request || request.direction !== expectedDirection || request.status !== "pending") return null;
+  const terminal = { ...request, status };
+  mockRequestHistory.set(requestId, terminal);
+  mockRequests.delete(requestId);
+  return terminal;
+}
+
 type RemoteFriendState = { friends?: Array<Record<string, unknown>>; requests?: Array<Record<string, unknown>> };
 function mapRemoteFriendState(value: unknown): FriendState {
   const source = (value && typeof value === "object" ? value : {}) as RemoteFriendState;
@@ -34,7 +49,7 @@ function mapRemoteFriendState(value: unknown): FriendState {
     status: row.status === "online" || row.status === "idle" ? row.status : row.status === "busy" || row.status === "dnd" ? "dnd" : "offline", statusText: String(row.statusText ?? "Friend"), favorite: false, mutualCommunityCount: Number(row.mutualCommunityCount ?? 0),
   }));
   const requests: FriendRequest[] = (source.requests ?? []).map((row) => ({
-    id: String(row.id ?? ""), userId: String(row.userId ?? ""), displayName: String(row.displayName ?? "Picom user"), username: String(row.username ?? "user"), direction: row.direction === "incoming" ? "incoming" : "outgoing", note: row.direction === "incoming" ? "Wants to connect with you." : "Request pending.", createdAt: String(row.createdAt ?? new Date().toISOString()),
+    id: String(row.id ?? ""), userId: String(row.userId ?? ""), displayName: String(row.displayName ?? "Picom user"), username: String(row.username ?? "user"), direction: row.direction === "incoming" ? "incoming" : "outgoing", status: "pending", note: row.direction === "incoming" ? "Wants to connect with you." : "Request pending.", createdAt: String(row.createdAt ?? new Date().toISOString()),
   }));
   return { friends, requests, suggestions: mockFriendState.suggestions.filter((item) => !friends.some((friend) => friend.userId === item.userId) && !requests.some((request) => request.userId === item.userId)) };
 }
@@ -81,28 +96,28 @@ export async function getFollowers(): RelationshipResult<string[]> {
 }
 
 export async function sendFriendRequest(userId: string): RelationshipResult<string> {
-  if (dataSourceService.getStatus().isMock) { const existing=[...mockRequests.values()].find((item)=>item.userId===userId); if(existing)return {ok:false,error:"A friend request is already pending."}; const suggestion=mockFriendState.suggestions.find((item)=>item.userId===userId); const id=`friend-request-${userId}`; mockRequests.set(id,{id,userId,displayName:suggestion?.displayName??"Picom user",username:suggestion?.username??"user",direction:"outgoing",note:"Request pending.",createdAt:new Date().toISOString()}); return { ok: true, data: id }; }
+  if (dataSourceService.getStatus().isMock) { if (userBlockingService.isBlocked(userId)) return {ok:false,error:"Friend requests are unavailable for this relationship."}; if (mockFriends.has(userId)) return {ok:false,error:"This user is already a friend."}; const existing=[...mockRequests.values()].find((item)=>item.userId===userId); if(existing)return {ok:false,error:"A friend request is already pending."}; const suggestion=mockFriendState.suggestions.find((item)=>item.userId===userId); const id=`friend-request-${userId}`; const request: FriendRequest={id,userId,displayName:suggestion?.displayName??"Picom user",username:suggestion?.username??"user",direction:"outgoing",status:"pending",note:"Request pending.",createdAt:new Date().toISOString()}; mockRequests.set(id,request); mockRequestHistory.set(id,request); return { ok: true, data: id }; }
   const auth = await userAndClient(); if (!auth || auth.userId === userId) return { ok: false, error: "Sign in and choose another user." };
   const { data, error } = await auth.client.rpc("send_friend_request", { target_user_id: userId });
   return error || !data ? { ok: false, error: errorMessage(error, "Could not send the friend request.") } : { ok: true, data };
 }
 
 export async function acceptFriendRequest(requestId: string): RelationshipResult<boolean> {
-  if (dataSourceService.getStatus().isMock) { const request = mockRequests.get(requestId); if (request) mockFriends.set(request.userId,{userId:request.userId,displayName:request.displayName,username:request.username,status:"online",statusText:"New friend",favorite:false,mutualCommunityCount:1}); mockRequests.delete(requestId); return { ok: true, data: Boolean(request) }; }
+  if (dataSourceService.getStatus().isMock) { const request = transitionMockRequest(requestId,"accepted","incoming"); if (!request) return {ok:false,error:"Only incoming friend requests can be accepted."}; mockFriends.set(request.userId,{userId:request.userId,displayName:request.displayName,username:request.username,status:"online",statusText:"New friend",favorite:false,mutualCommunityCount:1}); return { ok: true, data: true }; }
   const auth = await userAndClient(); if (!auth) return { ok: false, error: "Sign in to respond." };
   const { data, error } = await auth.client.rpc("respond_friend_request", { target_request_id: requestId, accept_request: true });
   return error ? { ok: false, error: errorMessage(error, "Could not accept the friend request.") } : { ok: true, data };
 }
 
 export async function declineFriendRequest(requestId: string): RelationshipResult<boolean> {
-  if (dataSourceService.getStatus().isMock) { const existed = mockRequests.delete(requestId); return { ok: true, data: existed }; }
+  if (dataSourceService.getStatus().isMock) { const request = transitionMockRequest(requestId,"declined","incoming"); return request ? {ok:true,data:true} : {ok:false,error:"Only incoming friend requests can be declined."}; }
   const auth = await userAndClient(); if (!auth) return { ok: false, error: "Sign in to respond." };
   const { data, error } = await auth.client.rpc("respond_friend_request", { target_request_id: requestId, accept_request: false });
   return error ? { ok: false, error: errorMessage(error, "Could not decline the friend request.") } : { ok: true, data };
 }
 
 export async function cancelFriendRequest(requestId: string): RelationshipResult<boolean> {
-  if (dataSourceService.getStatus().isMock) return { ok: true, data: mockRequests.delete(requestId) };
+  if (dataSourceService.getStatus().isMock) { const request = transitionMockRequest(requestId,"cancelled","outgoing"); return request ? {ok:true,data:true} : {ok:false,error:"Only outgoing friend requests can be cancelled."}; }
   const auth = await userAndClient(); if (!auth) return { ok: false, error: "Sign in to cancel the request." };
   const { data, error } = await auth.client.rpc("cancel_friend_request", { target_request_id: requestId });
   return error ? { ok: false, error: errorMessage(error, "Could not cancel the friend request.") } : { ok: true, data };
@@ -119,7 +134,7 @@ export async function blockFriend(friend: Pick<FriendConnection, "userId" | "dis
   const blocked = await userBlockingService.setBlockedUser(friend, true);
   if (!blocked) return { ok: false, error: "Could not block this user." };
   if (dataSourceService.getStatus().isMock) mockFriends.delete(friend.userId);
-  for (const [id, request] of mockRequests) if (request.userId === friend.userId) mockRequests.delete(id);
+  for (const [id, request] of mockRequests) if (request.userId === friend.userId) transitionMockRequest(id,"cancelled",request.direction);
   return { ok: true, data: true };
 }
 

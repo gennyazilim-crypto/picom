@@ -131,6 +131,7 @@
     "audio:service:smoke": "node scripts/audio-service-layer-smoke.mjs",
     "audio:mvp:qa": "node scripts/audio-mvp-final-qa.mjs",
     "friends:production:smoke": "node scripts/friend-requests-production-smoke-test.mjs",
+    "friendship:foundation:smoke": "node scripts/friendship-schema-rls-privacy-smoke.mjs",
     "blocking:privacy:smoke": "node scripts/blocking-privacy-enforcement-smoke-test.mjs",
     "discovery:public:smoke": "node scripts/community-discovery-public-listing-smoke-test.mjs",
     "discovery:moderation:smoke": "node scripts/discovery-moderation-hardening-smoke-test.mjs",

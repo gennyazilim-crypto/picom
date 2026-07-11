@@ -12,12 +12,15 @@ export type FriendConnection = Readonly<{
   mutualCommunityCount: number;
 }>;
 
+export type FriendRequestStatus = "pending" | "accepted" | "declined" | "cancelled";
+
 export type FriendRequest = Readonly<{
   id: string;
   userId: string;
   displayName: string;
   username: string;
   direction: "incoming" | "outgoing";
+  status: FriendRequestStatus;
   note: string;
   createdAt: string;
 }>;

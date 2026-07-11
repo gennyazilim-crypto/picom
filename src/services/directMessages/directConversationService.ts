@@ -25,6 +25,7 @@ export async function createOrOpenDirectConversation(userId: string): Promise<Di
   const normalizedUserId = userId.trim();
   if (!normalizedUserId) return { ok: false, error: { code: "VALIDATION_ERROR", message: "Participant is required." } };
   if (dataSourceService.getStatus().isSupabase) return supabaseDirectMessageService.createDirectConversation(normalizedUserId);
+  if (userBlockingService.isBlocked(normalizedUserId)) return { ok: false, error: { code: "PERMISSION_DENIED", message: "Direct messages are unavailable for this relationship." } };
   const existing = directMessageMockStore.list().find((conversation) => conversation.participantUserId === normalizedUserId);
   if (existing) return { ok: true, data: existing.id };
   const conversation: DirectConversation = { id: `dm-${normalizedUserId}`, participantUserId: normalizedUserId, participantName: "Picom member", participantUsername: normalizedUserId, participantStatus: "offline", participantStatusText: "Offline", lastMessagePreview: "Start a conversation", updatedAt: new Date().toISOString(), unreadCount: 0, messages: [] };
@@ -39,3 +40,4 @@ export async function markDirectConversationRead(conversationId: string): Promis
 }
 
 export const directConversationService = { getDirectConversations, createOrOpenDirectConversation, markDirectConversationRead };
+import { userBlockingService } from "../userBlockingService";
