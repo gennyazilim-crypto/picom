@@ -626,6 +626,15 @@ export type Database = {
         };
         Relationships: [];
       };
+      unified_content_feed_view: {
+        Row: {
+          feed_item_id: string; source_type: "text_message" | "radio_session" | "radio_chat" | "podcast_episode" | "podcast_comment";
+          source_id: string; parent_source_id: string | null; community_id: string; channel_id: string | null; author_id: string;
+          mentioned_user_ids: string[]; preview: string; source_created_at: string; source_updated_at: string;
+          visibility_context: Json; mention_count: number;
+        };
+        Relationships: [];
+      };
       followed_user_stories_view: {
         Row: {
           story_id: string; author_id: string; community_id: string | null; channel_id: string | null; message_id: string | null;
@@ -830,6 +839,10 @@ export type Database = {
       list_unified_content_mentions: {
         Args: { cursor_created_at?: string | null; cursor_mention_id?: string | null; source_types?: string[] | null; community_filter?: string | null; result_limit?: number };
         Returns: Array<Pick<Database["public"]["Tables"]["content_mentions"]["Row"], "id" | "source_type" | "source_id" | "parent_source_id" | "community_id" | "channel_id" | "author_id" | "mentioned_user_id" | "preview" | "source_created_at" | "source_updated_at" | "visibility_context">>;
+      };
+      list_ranked_unified_feed: {
+        Args: { feed_mode?: "popular" | "following"; ranking_epoch_input?: string; cursor_rank?: number | null; cursor_created_at?: string | null; cursor_feed_item_id?: string | null; source_types?: string[] | null; result_limit?: number };
+        Returns: Array<Database["public"]["Views"]["unified_content_feed_view"]["Row"] & { reaction_count: number; comment_count: number; listener_count: number; is_unread: boolean; is_saved: boolean; is_follow_related: boolean; ranking_score: number; ranking_epoch: string }>;
       };
       list_followed_user_stories: {
         Args: { cursor_created_at?: string | null; cursor_story_id?: string | null; result_limit?: number };

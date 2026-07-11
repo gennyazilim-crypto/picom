@@ -1,0 +1,16 @@
+begin;
+select plan(12);
+select has_view('public','unified_content_feed_view','unified Feed view exists');
+select has_function('public','list_ranked_unified_feed',array['text','timestamp with time zone','numeric','timestamp with time zone','uuid','text[]','integer'],'ranked Feed RPC exists');
+select has_function('public','visible_content_feed_engagement',array['text','uuid','uuid'],'safe aggregate helper exists');
+select is((select reloptions @> array['security_invoker=true'] from pg_class where oid='public.unified_content_feed_view'::regclass),true,'Feed view uses invoker RLS');
+select ok(pg_get_functiondef('public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer)'::regprocedure) like '%user_follows%','Following mode uses persisted follows');
+select ok(pg_get_functiondef('public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer)'::regprocedure) like '%audio_feed_read_states%','audio unread ranking uses persisted state');
+select ok(pg_get_functiondef('public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer)'::regprocedure) like '%read_states%','text unread ranking uses persisted state');
+select ok(pg_get_functiondef('public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer)'::regprocedure) like '%cursor_rank%','rank cursor participates in keyset pagination');
+select ok(pg_get_functiondef('public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer)'::regprocedure) like '%feed_item_id desc%','stable ID tie-breaker is present');
+select ok(pg_get_functiondef('public.visible_content_feed_engagement(text,uuid,uuid)'::regprocedure) like '%can_view_content_mention%','engagement helper verifies source visibility');
+select ok(has_function_privilege('authenticated','public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer)','EXECUTE'),'authenticated can execute ranked Feed RPC');
+select ok(not has_table_privilege('anon','public.unified_content_feed_view','SELECT'),'anonymous users cannot read Feed view');
+select * from finish();
+rollback;

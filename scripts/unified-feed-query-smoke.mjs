@@ -1,0 +1,23 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import ts from "typescript";
+const migration=readFileSync("supabase/migrations/20260711003000_unified_feed_query_ranking_pagination.sql","utf8");
+const service=readFileSync("src/services/feed/feedQueryService.ts","utf8");
+const types=readFileSync("src/types/feed.ts","utf8");
+const rls=readFileSync("supabase/tests/rls/unified_feed_query.sql","utf8");
+const db=readFileSync("src/services/supabase/database.types.ts","utf8");
+const rankingSource=readFileSync("src/utils/unifiedFeedRanking.ts","utf8");
+const compiled=ts.transpileModule(rankingSource,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2020}}).outputText;
+const ranking=await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+for(const marker of ["security_invoker = true","public.can_view_content_mention","public.user_follows","public.read_states","public.audio_feed_read_states","public.saved_messages","public.saved_audio_items","cursor_rank","cursor_created_at","cursor_feed_item_id","feed_item_id desc","visible_content_feed_engagement"])
+  assert.ok(migration.includes(marker),`missing Feed SQL contract: ${marker}`);
+assert.ok(service.includes('client.rpc("list_ranked_unified_feed"'),"Feed service must use one ranked RPC");
+assert.ok(service.includes("dataSourceService.getStatus().isMock"),"Feed service must preserve mock mode");
+assert.ok(service.includes("no_followed_mentions"),"Following empty state contract missing");
+assert.ok(types.includes('"popular" | "following"'),"distinct Feed modes missing");
+assert.ok(db.includes("unified_content_feed_view")&&db.includes("list_ranked_unified_feed"),"database contracts missing");
+assert.ok(rls.includes("Feed view uses invoker RLS"),"RLS invoker test missing");
+const base={feedItemId:"base",mention:{id:"m",sourceType:"text_message",sourceId:"message",communityId:"community",channelId:"channel",authorId:"author",mentionedUserId:"viewer",preview:"hello",createdAt:"2026-07-11T10:00:00.000Z",updatedAt:"2026-07-11T10:00:00.000Z",visibility:{communityVisibility:"public",channelPrivate:false,publicReadEnabled:true}},mentionedUserIds:["viewer"],metrics:{reactions:0,comments:0,listeners:0,mentionCount:1},isUnread:false,isFollowRelated:false};
+const ranked=ranking.rankUnifiedFeedItems([base,{...base,feedItemId:"unread",isUnread:true},{...base,feedItemId:"followed",isFollowRelated:true}],Date.parse("2026-07-11T12:00:00.000Z"));
+assert.equal(ranked[0].item.feedItemId,"followed"); assert.equal(ranked[1].item.feedItemId,"unread");
+console.log("Unified Feed query, ranking, and pagination smoke: PASS");
