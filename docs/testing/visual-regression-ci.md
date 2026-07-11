@@ -9,6 +9,9 @@ CI runs `npm run visual:regression:contract` on Windows and Ubuntu. The gate val
 - Community Chat four-column layout
 - Settings
 - Voice room
+- Radio Community
+- Podcast Community library/publishing/moderation shell
+- Podcast episode detail/player/interactions
 
 This is a **coverage-contract gate**, not a pixel-diff gate. It fails if required scenarios, desktop viewport, stable mock mode or reduced-motion rules are removed.
 
@@ -54,7 +57,7 @@ Choose thresholds after at least 20 clean repetitions per OS. Start with exact l
 
 ## Manual RC checks until activation
 
-- Capture all ten manifest scenarios at 1440x900.
+- Capture all declared manifest scenarios at their configured desktop viewport.
 - Confirm no mobile UI, horizontal overflow or Discord assets/colors.
 - Confirm normal/maximized frame, fixed sidebars, independent chat scroll and pinned composer.
 - Compare light/dark typography, tokens, icons, overlays and voice screen.

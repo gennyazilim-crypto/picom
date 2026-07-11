@@ -27,7 +27,11 @@
     { "id": "voice-dark", "screen": "voice", "theme": "dark", "viewport": "default", "entryFile": "src/components/VoiceRoomView.tsx" },
     { "id": "screen-share-light", "screen": "screenShare", "theme": "light", "viewport": "default", "entryFile": "src/components/voice/ScreenSharePreview.tsx" },
     { "id": "screen-share-dark", "screen": "screenShare", "theme": "dark", "viewport": "default", "entryFile": "src/components/voice/ScreenSharePreview.tsx" },
-    { "id": "radio-podcast-light", "screen": "radioPodcast", "theme": "light", "viewport": "default", "entryFile": "src/components/audio/CommunityAudioView.tsx" },
-    { "id": "radio-podcast-dark", "screen": "radioPodcast", "theme": "dark", "viewport": "default", "entryFile": "src/components/audio/CommunityAudioView.tsx" }
+    { "id": "radio-community-light", "screen": "radioCommunity", "theme": "light", "viewport": "default", "entryFile": "src/components/audio/RadioCommunityShell.tsx" },
+    { "id": "radio-community-dark", "screen": "radioCommunity", "theme": "dark", "viewport": "default", "entryFile": "src/components/audio/RadioCommunityShell.tsx" },
+    { "id": "podcast-community-light", "screen": "podcastCommunity", "theme": "light", "viewport": "default", "entryFile": "src/components/audio/PodcastCommunityShell.tsx" },
+    { "id": "podcast-community-dark", "screen": "podcastCommunity", "theme": "dark", "viewport": "default", "entryFile": "src/components/audio/PodcastCommunityShell.tsx" },
+    { "id": "podcast-episode-light", "screen": "podcastEpisode", "theme": "light", "viewport": "default", "entryFile": "src/components/audio/PodcastEpisodeDetail.tsx" },
+    { "id": "podcast-episode-dark", "screen": "podcastEpisode", "theme": "dark", "viewport": "default", "entryFile": "src/components/audio/PodcastEpisodeDetail.tsx" }
   ]
 }

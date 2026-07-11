@@ -18,6 +18,7 @@ const requiredFlows = Object.freeze({
   "direct-messages": ["src/components/DirectMessagesView.tsx"],
   "voice-room": ["src/components/VoiceRoomView.tsx"],
   "screen-share": ["src/components/voice/ScreenSharePreview.tsx"],
+  "podcast-full-mvp": ["src/components/audio/PodcastCommunityShell.tsx", "src/components/audio/PodcastPublisherPanel.tsx", "src/components/audio/PodcastEpisodeDetail.tsx", "src/components/audio/PodcastModerationPanel.tsx"],
   "settings-diagnostics": ["src/components/SettingsModal.tsx"],
 });
 const failures = [];

@@ -10,7 +10,9 @@ const requiredScreens = Object.freeze({
   directMessages: "src/components/DirectMessagesView.tsx",
   voice: "src/components/VoiceRoomView.tsx",
   screenShare: "src/components/voice/ScreenSharePreview.tsx",
-  radioPodcast: "src/components/audio/CommunityAudioView.tsx",
+  radioCommunity: "src/components/audio/RadioCommunityShell.tsx",
+  podcastCommunity: "src/components/audio/PodcastCommunityShell.tsx",
+  podcastEpisode: "src/components/audio/PodcastEpisodeDetail.tsx",
 });
 const expectedViewports = Object.freeze({
   default: { width: 1440, height: 900 },
