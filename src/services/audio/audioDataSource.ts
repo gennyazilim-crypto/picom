@@ -127,7 +127,19 @@ function canMockModerateListener(communityId: string, targetUserId: string): boo
   return actor.role.level > (target.role?.level ?? 0);
 }
 
-function feedFromCatalog(radio: RadioSession[], podcasts: PodcastEpisode[]): AudioFeedItem[] {
+function containsMention(text: string, tokens: readonly string[]): boolean {
+  return tokens.some((token) => {
+    const escaped = token.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return escaped.length > 0 && new RegExp(`(^|[^a-zA-Z0-9_.-])@${escaped}(?=$|[^a-zA-Z0-9_.-])`, "i").test(text);
+  });
+}
+
+function mockViewerMentionTokens(): string[] {
+  const member = mockCommunities.flatMap((community) => community.members).find((candidate) => candidate.userId === currentUserId);
+  return member?.username ? [member.username] : [];
+}
+
+function feedFromCatalog(radio: RadioSession[], podcasts: PodcastEpisode[], viewerMentionTokens: readonly string[] = []): AudioFeedItem[] {
   return [
     ...radio.filter((item) => item.status === "live" || item.status === "scheduled" || item.status === "ended").map((item): AudioFeedItem => ({
       id: `feed-${item.id}`, sourceId: item.id,
@@ -137,14 +149,22 @@ function feedFromCatalog(radio: RadioSession[], podcasts: PodcastEpisode[]): Aud
       startsAt: item.startsAt, listenerCount: item.listenerCount, viewCount: item.listenerCount,
       reactionSummary: item.reactionSummary, isUnread: true, isSaved: item.isSavedByCurrentUser,
     })),
-    ...podcasts.filter((item) => item.status === "published").map((item): AudioFeedItem => ({
-      id: `feed-${item.id}`, sourceId: item.id, type: "podcast_episode", communityId: item.communityId,
-      authorUserId: item.authorUserId, title: item.title, body: item.description,
-      coverUrl: item.coverUrl, createdAt: item.publishedAt, durationSeconds: item.durationSeconds,
-      listenerCount: item.listenerCount, viewCount: item.listenerCount, reactionSummary: item.reactionSummary,
-      commentPreview: item.commentPreview, commentCount: item.commentCount,
-      commenterIds: item.commentPreview.map((comment) => comment.authorId), isUnread: true, isSaved: item.isSavedByCurrentUser,
-    })),
+    ...podcasts.filter((item) => item.status === "published").map((item): AudioFeedItem => {
+      const commentMention = item.commentPreview.find((comment) => containsMention(comment.body, viewerMentionTokens));
+      const descriptionMention = containsMention(item.description, viewerMentionTokens);
+      const mentionSource = commentMention ? "episode_comment" as const : descriptionMention ? "episode_description" as const : undefined;
+      return {
+        id: `feed-${item.id}`, sourceId: item.id, type: "podcast_episode", communityId: item.communityId,
+        authorUserId: item.authorUserId, title: item.title, body: item.description,
+        coverUrl: item.coverUrl, createdAt: item.publishedAt, durationSeconds: item.durationSeconds,
+        listenerCount: item.listenerCount, viewCount: item.listenerCount, reactionSummary: item.reactionSummary,
+        commentPreview: item.commentPreview, commentCount: item.commentCount,
+        commenterIds: item.commentPreview.map((comment) => comment.authorId), isUnread: true, isSaved: item.isSavedByCurrentUser,
+        isMention: Boolean(mentionSource), mentionSource,
+        mentionHighlight: commentMention?.body.slice(0, 280) ?? (descriptionMention ? item.description.slice(0, 280) : undefined),
+        mentionAuthorUserId: commentMention?.authorId ?? (descriptionMention ? item.authorUserId : undefined),
+      };
+    }),
   ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
 
@@ -156,7 +176,7 @@ function localSnapshot(): AudioCatalogSnapshot {
     reactionSummary: [...item.reactionSummary],
     commentPreview: [...item.commentPreview],
   }));
-  return { radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes) };
+  return { radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes, mockViewerMentionTokens()) };
 }
 
 function clone(value: AudioCatalogSnapshot): AudioCatalogSnapshot {
@@ -305,6 +325,7 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
   const client = getSupabaseClient();
   if (!client) return fail("AUDIO_BACKEND_UNAVAILABLE", "Audio is unavailable while Supabase is not configured.");
   const viewerId = await authenticatedUserId();
+  const viewerProfile = viewerId ? await client.from("profiles").select("username").eq("id", viewerId).maybeSingle() : { data: null, error: null };
   const [radio, radioReactions, podcasts, reactions, comments, saved] = await Promise.all([
     client.from("radio_sessions").select("id,community_id,channel_id,program_id,host_user_id,title,description,status,starts_at,scheduled_end_at,actual_started_at,ended_at,listener_chat_channel_id,cover_url,cover_storage_path,stream_url,tags,is_featured,listener_count,created_at,updated_at").order("starts_at", { ascending: false }).limit(200),
     client.from("radio_session_reactions").select("id,radio_session_id,user_id,emoji,created_at").limit(1000),
@@ -332,7 +353,7 @@ async function loadSupabaseCatalog(): Promise<AudioServiceResult<AudioCatalogSna
     return { ...item, cover_url: coverUrl, audio_url: audioUrl };
   }));
   const podcastEpisodes = podcastRows.map((item) => mapPodcast(item, reactions.data ?? [], comments.data ?? [], savedPodcasts, viewerId));
-  return ok({ radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes) });
+  return ok({ radioSessions, podcastEpisodes, feedItems: feedFromCatalog(radioSessions, podcastEpisodes, viewerProfile.data?.username ? [viewerProfile.data.username] : []) });
 }
 
 async function refresh(): Promise<AudioServiceResult<AudioCatalogSnapshot>> {

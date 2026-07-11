@@ -15,15 +15,16 @@ export type RemoteNotificationInboxItem = Readonly<{
     communityId?: string;
     channelId?: string;
     messageId?: string;
+    podcastEpisodeId?: string;
     userId?: string;
     label: string;
   }>;
 }>;
 
 type InboxResult<T> = { ok: true; data: T } | { ok: false; error: "NOTIFICATION_INBOX_UNAVAILABLE" | "NOTIFICATION_INBOX_FAILED" };
-const selectColumns = "id,category,title,preview,context_kind,context_label,community_id,channel_id,message_id,user_id,created_at,read_at";
+const selectColumns = "id,category,title,preview,context_kind,context_label,community_id,channel_id,message_id,podcast_episode_id,user_id,created_at,read_at";
 
-function mapRow(row: Pick<NotificationRow, "id" | "category" | "title" | "preview" | "context_kind" | "context_label" | "community_id" | "channel_id" | "message_id" | "user_id" | "created_at" | "read_at">): RemoteNotificationInboxItem {
+function mapRow(row: Pick<NotificationRow, "id" | "category" | "title" | "preview" | "context_kind" | "context_label" | "community_id" | "channel_id" | "message_id" | "podcast_episode_id" | "user_id" | "created_at" | "read_at">): RemoteNotificationInboxItem {
   return {
     id: row.id,
     category: row.category,
@@ -36,6 +37,7 @@ function mapRow(row: Pick<NotificationRow, "id" | "category" | "title" | "previe
       communityId: row.community_id ?? undefined,
       channelId: row.channel_id ?? undefined,
       messageId: row.message_id ?? undefined,
+      podcastEpisodeId: row.podcast_episode_id ?? undefined,
       userId: row.user_id ?? undefined,
       label: row.context_label,
     },

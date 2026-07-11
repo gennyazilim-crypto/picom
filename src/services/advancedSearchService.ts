@@ -6,7 +6,7 @@ import { getSupabaseClient } from "./supabase/supabaseClient";
 import { normalizeSearchQuery, rankSearchResults } from "../utils/searchRelevance";
 import { audioDataSource } from "./audio/audioDataSource";
 
-export type AdvancedSearchCategory = "People" | "Communities" | "Channels" | "Messages" | "Mentions" | "Saved" | "Media" | "Radio";
+export type AdvancedSearchCategory = "People" | "Communities" | "Channels" | "Messages" | "Mentions" | "Saved" | "Media" | "Radio" | "Podcasts";
 export type AdvancedSearchResult = Readonly<{
   id: string;
   category: AdvancedSearchCategory;
@@ -18,9 +18,10 @@ export type AdvancedSearchResult = Readonly<{
   userId?: string;
   attachmentId?: string;
   radioSessionId?: string;
+  podcastEpisodeId?: string;
 }>;
 
-export type RemoteSearchCategory = "community" | "channel" | "member" | "message" | "mention" | "saved_message" | "radio_session";
+export type RemoteSearchCategory = "community" | "channel" | "member" | "message" | "mention" | "saved_message" | "radio_session" | "podcast_episode";
 export type MessageJumpResolution =
   | Readonly<{ ok: true; community: Community; channel: Channel; message: Message }>
   | Readonly<{ ok: false; reason: string }>;
@@ -61,7 +62,19 @@ export function searchLocal(queryInput: string, communities: Community[], mentio
     const access = getCommunityAccess(currentUserId, community);
     if (!access.isMember && !access.canViewPublicContent) continue;
     if (query && !includes(session.title, query) && !includes(session.description, query) && !session.tags.some((tag) => includes(tag, query))) continue;
-    results.push({ id: `search-radio-${session.id}`, category: "Radio", label: session.title, detail: `${community.name} · ${session.status}`, communityId: community.id, channelId: session.channelId, radioSessionId: session.id });
+    results.push({ id: `search-radio-${session.id}`, category: "Radio", label: session.title, detail: `${community.name} / ${session.status}`, communityId: community.id, channelId: session.channelId, radioSessionId: session.id });
+  }
+
+  for (const episode of audioDataSource.getSnapshot().podcastEpisodes) {
+    if (episode.status !== "published") continue;
+    const community = communities.find((item) => item.id === episode.communityId);
+    if (!community) continue;
+    const access = getCommunityAccess(currentUserId, community);
+    if (!access.isMember && !access.canViewPublicContent) continue;
+    if (!community.members.some((member) => member.userId === episode.authorUserId)) continue;
+    const commentMatch = episode.commentPreview.some((comment) => includes(comment.body, query));
+    if (query && !includes(episode.title, query) && !includes(episode.description, query) && !episode.tags.some((tag) => includes(tag, query)) && !commentMatch) continue;
+    results.push({ id: `search-podcast-${episode.id}`, category: "Podcasts", label: episode.title, detail: `${community.name} / Podcast episode`, communityId: community.id, userId: episode.authorUserId, podcastEpisodeId: episode.id });
   }
 
   for (const mention of mentions) {
@@ -102,12 +115,13 @@ export async function searchRemote(queryInput: string, category: RemoteSearchCat
   const client = getSupabaseClient();
   if (!client || query.length < 2) return [];
   const maxResults = Math.min(Math.max(limit, 1), 80);
-  const rpcCategory = category === "radio_session" ? null : category;
-  const rpcResult = category === "radio_session" ? { data: [], error: null } : await client.rpc("search_accessible_entities", { query_text: query, category_filter: rpcCategory, result_limit: maxResults });
-  const categoryMap: Record<Exclude<RemoteSearchCategory, "radio_session">, AdvancedSearchCategory> = { community: "Communities", channel: "Channels", member: "People", message: "Messages", mention: "Mentions", saved_message: "Saved" };
+  const customCategory = category === "radio_session" || category === "podcast_episode";
+  const rpcCategory = customCategory ? null : category;
+  const rpcResult = customCategory ? { data: [], error: null } : await client.rpc("search_accessible_entities", { query_text: query, category_filter: rpcCategory, result_limit: maxResults });
+  const categoryMap: Record<Exclude<RemoteSearchCategory, "radio_session" | "podcast_episode">, AdvancedSearchCategory> = { community: "Communities", channel: "Channels", member: "People", message: "Messages", mention: "Mentions", saved_message: "Saved" };
   const results: AdvancedSearchResult[] = (rpcResult.error ? [] : (rpcResult.data ?? [])).map((row) => ({
     id: `remote-${row.result_type}-${row.entity_id}`,
-    category: categoryMap[row.result_type as Exclude<RemoteSearchCategory, "radio_session">],
+    category: categoryMap[row.result_type as Exclude<RemoteSearchCategory, "radio_session" | "podcast_episode">],
     label: row.label,
     detail: row.detail,
     communityId: row.community_id ?? undefined,
@@ -117,7 +131,19 @@ export async function searchRemote(queryInput: string, category: RemoteSearchCat
   }));
   if (category === null || category === "radio_session") {
     const radioResult = await client.from("radio_sessions").select("id,community_id,channel_id,title,description,status").in("status", ["scheduled", "live", "ended"]).or(`title.ilike.%${query}%,description.ilike.%${query}%`).limit(maxResults);
-    if (!radioResult.error) for (const row of radioResult.data ?? []) results.push({ id: `remote-radio-${row.id}`, category: "Radio", label: row.title, detail: `Radio · ${row.status}`, communityId: row.community_id, channelId: row.channel_id ?? undefined, radioSessionId: row.id });
+    if (!radioResult.error) for (const row of radioResult.data ?? []) results.push({ id: `remote-radio-${row.id}`, category: "Radio", label: row.title, detail: `Radio / ${row.status}`, communityId: row.community_id, channelId: row.channel_id ?? undefined, radioSessionId: row.id });
+  }
+  if (category === null || category === "podcast_episode") {
+    const direct = await client.from("podcast_episodes").select("id,community_id,author_user_id,title,description,status").eq("status", "published").or(`title.ilike.%${query}%,description.ilike.%${query}%`).limit(maxResults);
+    const comments = await client.from("podcast_episode_comments").select("episode_id").is("deleted_at", null).ilike("body", `%${query}%`).limit(maxResults);
+    const commentEpisodeIds = [...new Set((comments.data ?? []).map((row) => row.episode_id))];
+    const commentEpisodes = commentEpisodeIds.length ? await client.from("podcast_episodes").select("id,community_id,author_user_id,title,description,status").eq("status", "published").in("id", commentEpisodeIds).limit(maxResults) : { data: [], error: null };
+    const seen = new Set(results.filter((item) => item.category === "Podcasts").map((item) => item.podcastEpisodeId));
+    if (!direct.error && !commentEpisodes.error) for (const row of [...(direct.data ?? []), ...(commentEpisodes.data ?? [])]) {
+      if (seen.has(row.id)) continue;
+      seen.add(row.id);
+      results.push({ id: `remote-podcast-${row.id}`, category: "Podcasts", label: row.title, detail: "Podcast episode", communityId: row.community_id, userId: row.author_user_id, podcastEpisodeId: row.id });
+    }
   }
   return rankSearchResults(results, query).slice(0, maxResults);
 }
@@ -129,5 +155,6 @@ export const searchCommunities = (query: string) => searchRemote(query, "communi
 export const searchMentions = (query: string) => searchRemote(query, "mention", 30);
 export const searchSavedMessages = (query: string) => searchRemote(query, "saved_message", 30);
 export const searchRadio = (query: string) => searchRemote(query, "radio_session", 30);
+export const searchPodcasts = (query: string) => searchRemote(query, "podcast_episode", 30);
 
-export const advancedSearchService = { searchLocal, searchRemote, searchMessages, searchPeople, searchChannels, searchCommunities, searchMentions, searchSavedMessages, searchRadio, resolveMessageJumpTarget };
+export const advancedSearchService = { searchLocal, searchRemote, searchMessages, searchPeople, searchChannels, searchCommunities, searchMentions, searchSavedMessages, searchRadio, searchPodcasts, resolveMessageJumpTarget };

@@ -14,6 +14,8 @@ This protocol is registered through Electron Builder metadata and forwarded safe
 - `picom://community/{communityId}`
 - `picom://community/{communityId}/channel/{channelId}`
 - `picom://community/{communityId}/channel/{channelId}/message/{messageId}`
+- `picom://radio/{communityId}/session/{sessionId}`
+- `picom://podcast/{communityId}/episode/{episodeId}`
 - `picom://settings`
 - `picom://friends`
 
@@ -41,6 +43,7 @@ Links with query strings, hashes, usernames, passwords, unsupported protocols, o
 - Unknown routes fail closed.
 - Native bridge validates supported routes before forwarding to renderer.
 - Renderer validates again before dispatch.
+- Radio and Podcast routes resolve the requested source through the service layer and reject inaccessible, private, draft, archived, or deleted content before navigation.
 - Feature availability and backend permissions still apply after navigation.
 
 ## Browser/dev simulation

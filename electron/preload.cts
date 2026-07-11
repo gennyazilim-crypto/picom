@@ -142,6 +142,11 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     }
   }
 
+  if ((route === "radio" || route === "podcast") && segments.length === 3) {
+    const expectedKind = route === "radio" ? "session" : "episode";
+    return segments[1] === expectedKind && isSafeDeepLinkSegment(segments[0]) && isSafeDeepLinkSegment(segments[2]);
+  }
+
   return (route === "settings" || route === "friends") && segments.length === 0;
 }
 

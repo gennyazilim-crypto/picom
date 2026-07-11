@@ -2399,6 +2399,7 @@ body{
 
 /* Task 451: Radio feed social proof and identity integration. */
 .audio-feed-card.unread{border-color:color-mix(in srgb,var(--accent) 34%,var(--border))}
+.audio-feed-card.podcast_episode.unread .audio-feed-kind,.audio-feed-copy .audio-mention-highlight strong{color:var(--accent)}.audio-feed-copy .audio-mention-highlight{border-left-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 68%,var(--surface))}
 .audio-feed-avatar-button,.audio-commenter-stack button{border:0;background:transparent;padding:0;cursor:pointer}
 .audio-feed-avatar-button{width:32px;height:32px;border-radius:11px}
 .audio-feed-avatar-button:focus-visible,.audio-commenter-stack button:focus-visible,.audio-feed-author-name:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}

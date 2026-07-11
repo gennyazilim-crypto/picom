@@ -118,7 +118,7 @@ export function MentionFeedMain({
     const access = getCommunityAccess(currentUserId, community);
     return access.isMember || access.canViewPublicContent;
   }), [audioCatalog.feedItems, communities, currentUserId]);
-  const visibleAudioItems = useMemo(() => activeTab === "feed" ? accessibleAudioItems.slice(0, 6) : accessibleAudioItems.filter((item) => followedUserIds.includes(item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [accessibleAudioItems, activeTab, followedUserIds]);
+  const visibleAudioItems = useMemo(() => activeTab === "feed" ? accessibleAudioItems.slice(0, 6) : accessibleAudioItems.filter((item) => followedUserIds.includes(item.mentionAuthorUserId ?? item.authorUserId ?? item.hostUserId ?? "")).slice(0, 6), [accessibleAudioItems, activeTab, followedUserIds]);
   const audioReminderFeedIds = useMemo(() => new Set([...reminderState.reminderIds].map((id) => "feed-" + id)), [reminderState.reminderIds]);
   const radioEvents = useMemo<UpcomingEvent[]>(() => audioCatalog.radioSessions
     .filter((session) => session.status === "scheduled")
@@ -146,7 +146,7 @@ export function MentionFeedMain({
       if (session) setSelectedRadioSessionId(session.id);
       return;
     }
-    const episodeId = item.id.replace(/^feed-/, "");
+    const episodeId = item.sourceId ?? item.id.replace(/^feed-/, "");
     const episode = audioCatalog.podcastEpisodes.find((candidate) => candidate.id === episodeId);
     setSelectedPodcastEpisodeId(episodeId);
     const communityName = communities.find((community) => community.id === item.communityId)?.name ?? "Picom community";
@@ -165,7 +165,7 @@ export function MentionFeedMain({
     const result = item.type === "podcast_episode" ? await (wasSaved ? podcastService.unsavePodcastEpisode(sourceId) : podcastService.savePodcastEpisode(sourceId)) : await (wasSaved ? radioService.unsaveRadio(sourceId) : radioService.saveRadio(sourceId));
     if (!result.ok) setSavedAudioIds((current) => { const next = new Set(current); if (wasSaved) next.add(item.id); else next.delete(item.id); return next; });
   };
-  const reactToAudio = (item: AudioFeedItem) => { const sourceId = item.sourceId ?? item.id.replace(/^feed-/, ""); void (item.type === "podcast_episode" ? podcastService.reactToPodcastEpisode(sourceId, "🔥") : radioService.reactToRadio(sourceId, "🔥")); };
+  const reactToAudio = (item: AudioFeedItem) => { const sourceId = item.sourceId ?? item.id.replace(/^feed-/, ""); const reacted = item.reactionSummary?.some((reaction) => reaction.emoji === "🔥" && reaction.reactedByCurrentUser) === true; void (item.type === "podcast_episode" ? reacted ? podcastService.removePodcastReaction(sourceId, "🔥") : podcastService.reactToPodcastEpisode(sourceId, "🔥") : radioService.reactToRadio(sourceId, "🔥")); };
   const markAudioRead = (item: AudioFeedItem) => { setReadAudioIds((current) => new Set(current).add(item.id)); void audioFeedReadStateService.markRead(item); };
   const openAudioRadioSource = (item: AudioFeedItem) => { const sessionId = item.sourceId ?? item.id.replace(/^feed-/, ""); communityNavigationService.rememberRadioSession(item.communityId, sessionId); onOpenEventCommunity(item.communityId); };
   const toggleAudioReminder = (feedItemId: string) => {

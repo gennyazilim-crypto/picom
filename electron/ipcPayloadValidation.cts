@@ -68,6 +68,10 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     if (segments.length === 3) return channelKeyword === "channel" && isSafeDeepLinkSegment(channelId);
     if (segments.length === 5) return channelKeyword === "channel" && isSafeDeepLinkSegment(channelId) && messageKeyword === "message" && isSafeDeepLinkSegment(messageId);
   }
+  if ((route === "radio" || route === "podcast") && segments.length === 3) {
+    const expectedKind = route === "radio" ? "session" : "episode";
+    return segments[1] === expectedKind && isSafeDeepLinkSegment(segments[0]) && isSafeDeepLinkSegment(segments[2]);
+  }
   return (route === "settings" || route === "friends") && segments.length === 0;
 }
 

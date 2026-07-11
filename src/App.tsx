@@ -32,6 +32,7 @@ import { DesktopContextMenu } from "./components/DesktopContextMenu";
 import { TermsReacceptPrompt } from "./components/legal/TermsReacceptPrompt";
 import { ToastStack } from "./components/ToastStack";
 import { GlobalAudioMiniPlayer } from "./components/audio/GlobalAudioMiniPlayer";
+import { podcastService } from "./services/audio/podcastService";
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { FirstLaunchSetup } from "./components/firstLaunch/FirstLaunchSetup";
@@ -612,7 +613,7 @@ export function App() {
         if (canceled) return;
         const merged = new Map<string, AdvancedSearchResult>();
         [...local, ...remote.filter((result) => !result.userId || !blockedUserIds.includes(result.userId))].forEach((result) => {
-          const key = `${result.category}:${result.communityId ?? ""}:${result.channelId ?? ""}:${result.radioSessionId ?? result.messageId ?? result.userId ?? result.id}`;
+          const key = `${result.category}:${result.communityId ?? ""}:${result.channelId ?? ""}:${result.podcastEpisodeId ?? result.radioSessionId ?? result.messageId ?? result.userId ?? result.id}`;
           if (!merged.has(key)) merged.set(key, result);
         });
         setPaletteEntityResults([...merged.values()].slice(0, 80));
@@ -1265,6 +1266,21 @@ export function App() {
     }
   }, [maybeShowNotificationPermissionPrompt, settingsOpen]);
 
+  const openPodcastEpisodeSource = useCallback(async (communityId: string, episodeId: string, successMessage = "Opened the Podcast episode.") => {
+    const target = communities.find((community) => community.id === communityId);
+    const access = target ? getCommunityAccess(currentUserId, target) : null;
+    if (!target || target.kind !== "podcast" || !access || (!access.isMember && !access.canViewPublicContent)) { pushToast("This Podcast episode is unavailable or private.", "error"); return false; }
+    const result = await podcastService.getPodcastEpisode(episodeId);
+    if (!result.ok || result.data.communityId !== communityId || result.data.status !== "published") { pushToast("This Podcast episode is unavailable, private, or no longer published.", "error"); return false; }
+    communityNavigationService.rememberPodcastSection(communityId, "episodes");
+    communityNavigationService.rememberPodcastEpisode(communityId, episodeId);
+    setActiveView("podcastCommunity");
+    switchCommunity(communityId);
+    closeTransientOverlays();
+    pushToast(successMessage, "info");
+    return true;
+  }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
+
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
       if (action.type === "passwordRecovery") {
@@ -1330,6 +1346,11 @@ export function App() {
         return;
       }
 
+      if (action.type === "podcast") {
+        void openPodcastEpisodeSource(action.communityId, action.episodeId);
+        return;
+      }
+
       const targetCommunity = communities.find((community) => community.id === action.communityId);
       if (!targetCommunity) {
         pushToast("Deep link community is unavailable in this local workspace.", "error");
@@ -1351,7 +1372,7 @@ export function App() {
     };
 
     return deepLinkService.onDeepLink(handleDeepLinkAction);
-  }, [clearAuthError, clearChannelUnread, closeTransientOverlays, communities, openSettings, pushToast, switchCommunity]);
+  }, [clearAuthError, clearChannelUnread, closeTransientOverlays, communities, openPodcastEpisodeSource, openSettings, pushToast, switchCommunity]);
 
   useEffect(() => {
     const handleMenuAction = (payload: MenuActionPayload) => {
@@ -1576,6 +1597,7 @@ export function App() {
             else pushToast("This profile is unavailable or outside your accessible communities.", "error");
           }
           else if (result.category === "Radio" && result.communityId && result.radioSessionId) { const target = communities.find((community) => community.id === result.communityId); const access = target ? getCommunityAccess(currentUserId, target) : null; if (target?.kind === "radio" && access && (access.isMember || access.canViewPublicContent)) { communityNavigationService.rememberRadioSession(result.communityId, result.radioSessionId); setActiveView("radioCommunity"); switchCommunity(result.communityId); } else pushToast("This Radio session is unavailable or private.", "error"); }
+          else if (result.category === "Podcasts" && result.communityId && result.podcastEpisodeId) { void openPodcastEpisodeSource(result.communityId, result.podcastEpisodeId, "Opened the Podcast search result."); }
           else if (result.category === "Communities" && result.communityId) { const target = communities.find((community) => community.id === result.communityId); if (target) { setActiveView(communityViewForKind(target.kind)); switchCommunity(result.communityId); } }
           else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
             const target = advancedSearchService.resolveMessageJumpTarget(result, communities, currentUserId);
@@ -1596,7 +1618,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [activeView, blockedUserIds, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, openSettings, paletteEntityResults, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
+  }, [activeView, blockedUserIds, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, openPodcastEpisodeSource, openSettings, paletteEntityResults, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");
@@ -1915,6 +1937,7 @@ export function App() {
       } else pushToast("This Radio session is unavailable or private.", "error");
       return;
     }
+    if (item.context.kind === "community" && item.context.communityId && item.context.podcastEpisodeId) { void openPodcastEpisodeSource(item.context.communityId, item.context.podcastEpisodeId, "Opened the Podcast mention."); return; }
     if (item.context.kind === "community" && item.context.communityId) {
       const target = communities.find((community) => community.id === item.context.communityId);
       setActiveView(target ? communityViewForKind(target.kind) : "community"); switchCommunity(item.context.communityId, target?.kind === "text" ? item.context.channelId : undefined);
@@ -1923,7 +1946,7 @@ export function App() {
       return;
     }
     pushToast(item.title, "info");
-  }, [communities, openDirectMessages, pushToast, setActiveChannelId, switchCommunity]);
+  }, [communities, openDirectMessages, openPodcastEpisodeSource, pushToast, setActiveChannelId, switchCommunity]);
 
   const createCommunityEvent = useCallback(async (input: CreateCommunityEventInput) => { const event=await communityEventService.createEvent(input);if(event){setCommunityEvents((current)=>[event,...current]);pushToast("Event created.","success");}else pushToast("Event could not be created.","error"); },[pushToast]);
   const updateCommunityEvent = useCallback(async (eventId: string, input: UpdateCommunityEventInput) => { const event = await communityEventService.updateEvent(eventId, input); if (event) { setCommunityEvents((current) => current.map((item) => item.id === eventId ? event : item)); pushToast("Event updated.", "success"); } else pushToast("Event could not be updated.", "error"); }, [pushToast]);

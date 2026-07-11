@@ -296,6 +296,7 @@ export type Database = {
           community_id: string | null;
           channel_id: string | null;
           message_id: string | null;
+          podcast_episode_id: string | null;
           user_id: string | null;
           source_event_id: string | null;
           created_at: string;

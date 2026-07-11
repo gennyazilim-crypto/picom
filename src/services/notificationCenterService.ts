@@ -6,7 +6,7 @@ export type NotificationCenterItem = Readonly<{
   preview: string;
   createdAt: string;
   readAt?: string;
-  context: Readonly<{ kind: "community" | "dm" | "system"; communityId?: string; channelId?: string; messageId?: string; radioSessionId?: string; userId?: string; label: string }>;
+  context: Readonly<{ kind: "community" | "dm" | "system"; communityId?: string; channelId?: string; messageId?: string; radioSessionId?: string; podcastEpisodeId?: string; userId?: string; label: string }>;
 }>;
 
 const STORAGE_KEY = "picom.notificationCenter.v1";
@@ -23,6 +23,7 @@ const seeded: NotificationCenterItem[] = [
   { id:"notice-10",category:"dm",title:"Direct message from Nainesh",preview:"You received a private message.",createdAt:"2026-07-09T15:32:00.000Z",readAt:"2026-07-09T15:40:00.000Z",context:{kind:"dm",userId:"u-naines",label:"Direct messages"}},
   { id:"notice-11",category:"event",title:"Voice meetup scheduled",preview:"Eight friends are interested.",createdAt:"2026-07-09T12:00:00.000Z",context:{kind:"community",communityId:"community-orbit",channelId:"orbit-general",label:"Orbit Lounge · event"}},
   { id:"notice-12",category:"system",title:"Mock workspace ready",preview:"Picom is running in local mock mode.",createdAt:"2026-07-09T10:00:00.000Z",readAt:"2026-07-09T10:02:00.000Z",context:{kind:"system",label:"Picom Desktop"}},
+  { id:"notice-13",category:"mention",title:"You were mentioned in a Podcast",preview:"The rollback checklist is ready to verify.",createdAt:"2026-07-10T10:20:00.000Z",context:{kind:"community",communityId:"picom-podcast",podcastEpisodeId:"podcast-north-01",label:"Picom Podcast / Shipping a desktop beta"}},
 ];
 
 type Listener = (items: NotificationCenterItem[]) => void;
@@ -43,6 +44,8 @@ function shouldStoreInInbox(item: NotificationCenterItem): boolean {
     category: routeCategory(item.category),
     isMention: item.category === "mention",
     doNotDisturb: settings.muted,
+    communityId: item.context.communityId,
+    channelId: item.context.channelId,
     settings,
   }).inbox;
 }

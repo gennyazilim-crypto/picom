@@ -9,7 +9,7 @@ import { VerifiedBadge } from "../VerifiedBadge";
 import { formatAudioTime } from "./AudioProgressBar";
 
 function findAuthor(item: AudioFeedItem, communities: Community[]): Member | undefined {
-  const userId = item.authorUserId ?? item.hostUserId;
+  const userId = item.mentionAuthorUserId ?? item.authorUserId ?? item.hostUserId;
   return communities.flatMap((community) => community.members).find((member) => member.userId === userId);
 }
 
@@ -39,7 +39,7 @@ export function AudioFeedCard({ item, communities, saved, unread, reminderSet, o
   const visibleCommenters = commenters.slice(0, 4);
   const remainingCommenters = Math.max(0, commenters.length - visibleCommenters.length);
   const verification = author ? getUserVerificationSummary(author.userId) : undefined;
-  const kindLabel = live ? "Live now" : scheduled ? "Scheduled radio" : ended ? "Radio replay" : "Podcast episode";
+  const kindLabel = live ? "Live now" : scheduled ? "Scheduled radio" : ended ? "Radio replay" : item.isMention ? "Podcast mention" : "Podcast episode";
 
   return <article className={"audio-feed-card " + item.type + (unread ? " unread" : "")}>
     <div className="audio-feed-cover">{item.coverUrl ? <img src={item.coverUrl} alt="" aria-hidden="true" /> : <AppIcon name="headphones" size="xl" />}<span className={"audio-feed-kind " + (live ? "live" : "")}>{kindLabel}</span></div>
@@ -50,7 +50,7 @@ export function AudioFeedCard({ item, communities, saved, unread, reminderSet, o
       </header>
       <h2>{item.title}</h2><p>{item.body}</p>
       <div className="audio-feed-meta">{live ? <span><i />{item.listenerCount ?? 0} listening</span> : scheduled ? <span>{dateTimeService.formatCompactDateTime(item.startsAt ?? item.createdAt)}</span> : podcast ? <><span>{formatAudioTime(item.durationSeconds ?? 0)}</span><span>{dateTimeService.formatCompactDateTime(item.createdAt)}</span></> : <span>Ended {dateTimeService.formatCompactDateTime(item.createdAt)}</span>}</div>
-      {item.commentPreview?.[0] ? <blockquote><strong>Community discussion</strong><span>{item.commentPreview[0].body}</span></blockquote> : null}
+      {item.mentionHighlight ? <blockquote className="audio-mention-highlight"><strong>{item.mentionSource === "episode_comment" ? "Mentioned you in a comment" : "Mentioned you in the episode notes"}</strong><span>{item.mentionHighlight}</span></blockquote> : item.commentPreview?.[0] ? <blockquote><strong>Community discussion</strong><span>{item.commentPreview[0].body}</span></blockquote> : null}
       <div className="audio-feed-social-proof" aria-label="Audio social activity">
         <span className="audio-social-pill"><AppIcon name="eye" size="xs" />{item.viewCount ?? item.listenerCount ?? 0} {live ? "listeners" : "views"}</span>
         {reactionTotal ? <span className="audio-social-pill reactions">{item.reactionSummary?.slice(0, 4).map((reaction) => <span key={reaction.emoji}>{reaction.emoji}</span>)}<strong>{reactionTotal}</strong></span> : null}
@@ -62,7 +62,8 @@ export function AudioFeedCard({ item, communities, saved, unread, reminderSet, o
         <button type="button" onClick={() => onReact(item)}><AppIcon name="smile" size="sm" />React</button>
         <button type="button" className={saved ? "active" : ""} onClick={() => onToggleSaved(item)}><AppIcon name="pin" size="sm" />{saved ? "Saved" : "Save"}</button>
         {unread ? <button type="button" onClick={() => onMarkRead(item)}><AppIcon name="eye" size="sm" />Mark read</button> : null}
-        <button type="button" onClick={() => podcast ? onOpenCommunity(item.communityId) : onOpenRadio(item)}>{podcast ? "Open community" : "Open in Radio"}<AppIcon name="chevronRight" size="xs" /></button>
+        {podcast ? <button type="button" onClick={() => onSelect(item)}>Open episode<AppIcon name="chevronRight" size="xs" /></button> : <button type="button" onClick={() => onOpenRadio(item)}>Open in Radio<AppIcon name="chevronRight" size="xs" /></button>}
+        {podcast ? <button type="button" onClick={() => onOpenCommunity(item.communityId)}>Open community<AppIcon name="hash" size="xs" /></button> : null}
       </footer>
     </div>
   </article>;

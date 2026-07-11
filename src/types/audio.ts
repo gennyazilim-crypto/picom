@@ -211,6 +211,10 @@ export type AudioFeedItem = Readonly<{
   commentPreview?: readonly AudioCommentPreview[];
   commentCount?: number;
   commenterIds?: readonly string[];
+  isMention?: boolean;
+  mentionSource?: "episode_description" | "episode_comment";
+  mentionHighlight?: string;
+  mentionAuthorUserId?: string;
   isUnread?: boolean;
   isSaved?: boolean;
 }>;

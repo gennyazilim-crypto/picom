@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_column('public','notifications','podcast_episode_id','Notification inbox supports exact Podcast routes');
+select has_function('public','enqueue_podcast_mentions',array['uuid','uuid','text','text','text'],'Podcast mention producer exists');
+select has_function('public','notify_podcast_description_mentions',array[]::text[],'Episode description mention trigger exists');
+select has_function('public','notify_podcast_comment_mentions',array[]::text[],'Episode comment mention trigger exists');
+select has_trigger('public','podcast_episodes','podcast_description_mentions_notify','Published description mentions produce notifications');
+select has_trigger('public','podcast_episode_comments','podcast_comment_mentions_notify','Visible comment mentions produce notifications');
+select has_index('public','notifications','notifications_recipient_podcast_idx','Podcast inbox route index exists');
+select col_is_fk('public','notifications','podcast_episode_id','Podcast notification route cannot reference a missing episode');
+select * from finish();
+rollback;
