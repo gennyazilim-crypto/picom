@@ -366,6 +366,7 @@
     "storage:private-access:review:test": "node scripts/storage-private-access-review-test.mjs",
     "upload:ux:test": "node scripts/media-upload-ux-test.mjs",
     "community:access:smoke": "node scripts/community-role-access-smoke-test.mjs",
+    "community:kind:smoke": "node scripts/community-kind-domain-smoke.mjs",
     "quality:fast": "npm run qa:smoke && npm run typecheck",
     "quality:gate": "npm run qa:smoke && npm run typecheck && npm run build",
     "production:launch:audit:smoke": "node scripts/final-production-launch-audit-smoke-test.mjs",

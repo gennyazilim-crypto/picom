@@ -29,6 +29,7 @@ const FALLBACK_CHANNEL: Channel = {
 
 const FALLBACK_COMMUNITY: Community = {
   id: "fallback-community",
+  kind: "text",
   name: "No communities",
   icon: "P",
   accentColor: "#007571",

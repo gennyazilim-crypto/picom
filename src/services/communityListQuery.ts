@@ -2,11 +2,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mockCommunities } from "../data/mockCommunities";
 import type { CommunitySummary } from "./communityService";
 import type { Database } from "./supabase/database.types";
+import { isCommunityKind, type CommunityKind } from "../types/community";
 
-export const COMMUNITY_LIST_SELECT = "id, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
+export const COMMUNITY_LIST_SELECT = "id, kind, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
 
 export type CommunityListRow = Readonly<{
   id: string;
+  kind: CommunityKind;
   owner_id: string;
   name: string;
   description: string | null;
@@ -26,8 +28,13 @@ export type CommunityListQueryResult = Readonly<{
 }>;
 
 export function mapCommunityListRow(row: CommunityListRow): CommunitySummary {
+  if (!isCommunityKind(row.kind)) {
+    throw new TypeError("Community row contains an invalid kind.");
+  }
+
   return {
     id: row.id,
+    kind: row.kind,
     ownerId: row.owner_id,
     name: row.name,
     description: row.description,
@@ -45,6 +52,7 @@ export function mapCommunityListRow(row: CommunityListRow): CommunitySummary {
 export function listMockCommunitySummaries(): CommunitySummary[] {
   return mockCommunities.map((community) => ({
     id: community.id,
+    kind: community.kind,
     ownerId: "mock-current-user",
     name: community.name,
     description: null,
@@ -57,6 +65,10 @@ export function listMockCommunitySummaries(): CommunitySummary[] {
     createdAt: null,
     updatedAt: null,
   }));
+}
+
+export function getMockCommunityKind(communityId: string): CommunityKind {
+  return mockCommunities.find((community) => community.id === communityId)?.kind ?? "text";
 }
 
 export async function listSupabaseCommunitySummaries(client: SupabaseClient<Database>): Promise<CommunityListQueryResult> {

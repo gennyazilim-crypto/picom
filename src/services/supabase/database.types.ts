@@ -37,6 +37,7 @@ export type Database = {
       communities: {
         Row: {
           id: string;
+          kind: Database["public"]["Enums"]["community_kind"];
           owner_id: string;
           name: string;
           description: string | null;
@@ -652,7 +653,9 @@ export type Database = {
         Returns: Array<Database["public"]["Views"]["followed_user_stories_view"]["Row"]>;
       };
     };
-    Enums: Record<string, never>;
+    Enums: {
+      community_kind: "text" | "radio" | "podcast";
+    };
     CompositeTypes: Record<string, never>;
   };
 };

@@ -17,6 +17,41 @@ export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "failed" 
 import type { PollData } from "./polls";
 export type RoleName = "Owner" | "Admin" | "Moderator" | "Member" | "Guest";
 
+export const COMMUNITY_KINDS = ["text", "radio", "podcast"] as const;
+export type CommunityKind = (typeof COMMUNITY_KINDS)[number];
+
+export type CommunityKindCapabilities = Readonly<{
+  supportsTextChannels: boolean;
+  supportsLiveRadio: boolean;
+  supportsPodcastPublishing: boolean;
+}>;
+
+const COMMUNITY_KIND_CAPABILITIES: Readonly<Record<CommunityKind, CommunityKindCapabilities>> = Object.freeze({
+  text: Object.freeze({ supportsTextChannels: true, supportsLiveRadio: false, supportsPodcastPublishing: false }),
+  radio: Object.freeze({ supportsTextChannels: false, supportsLiveRadio: true, supportsPodcastPublishing: false }),
+  podcast: Object.freeze({ supportsTextChannels: false, supportsLiveRadio: false, supportsPodcastPublishing: true }),
+});
+
+export function isCommunityKind(value: unknown): value is CommunityKind {
+  return typeof value === "string" && COMMUNITY_KINDS.includes(value as CommunityKind);
+}
+
+export function getCommunityKindCapabilities(kind: CommunityKind): CommunityKindCapabilities {
+  return COMMUNITY_KIND_CAPABILITIES[kind];
+}
+
+export function supportsTextChannels(subject: CommunityKind | Pick<Community, "kind">): boolean {
+  return getCommunityKindCapabilities(typeof subject === "string" ? subject : subject.kind).supportsTextChannels;
+}
+
+export function supportsLiveRadio(subject: CommunityKind | Pick<Community, "kind">): boolean {
+  return getCommunityKindCapabilities(typeof subject === "string" ? subject : subject.kind).supportsLiveRadio;
+}
+
+export function supportsPodcastPublishing(subject: CommunityKind | Pick<Community, "kind">): boolean {
+  return getCommunityKindCapabilities(typeof subject === "string" ? subject : subject.kind).supportsPodcastPublishing;
+}
+
 export interface Role {
   id: RoleId;
   name: RoleName;
@@ -104,6 +139,7 @@ export interface ChannelCategory {
 
 export interface Community {
   id: CommunityId;
+  kind: CommunityKind;
   ownerId?: UserId;
   name: string;
   icon: string;

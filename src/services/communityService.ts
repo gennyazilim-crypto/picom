@@ -1,9 +1,11 @@
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import { listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow, COMMUNITY_LIST_SELECT } from "./communityListQuery";
+import { getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow, COMMUNITY_LIST_SELECT } from "./communityListQuery";
+import { isCommunityKind, type CommunityKind } from "../types/community";
 
 export type CommunitySummary = Readonly<{
   id: string;
+  kind: CommunityKind;
   ownerId: string | null;
   name: string;
   description: string | null;
@@ -20,6 +22,7 @@ export type CommunitySummary = Readonly<{
 
 export type CreateCommunityInput = Readonly<{
   name: string;
+  kind?: CommunityKind;
   description?: string | null;
   accentColor?: string;
   templateId?: string | null;
@@ -58,6 +61,10 @@ function cleanName(name: string): string {
 
 function validateCreateInput(input: CreateCommunityInput): CommunityServiceError | null {
   const name = cleanName(input.name);
+
+  if (input.kind !== undefined && !isCommunityKind(input.kind)) {
+    return { code: "VALIDATION_ERROR", message: "Community kind must be text, radio, or podcast." };
+  }
 
   if (!name) {
     return { code: "VALIDATION_ERROR", message: "Community name is required." };
@@ -156,6 +163,7 @@ export const communityService = {
     if (validationError) return { ok: false, error: validationError };
 
     const name = cleanName(input.name);
+    const kind = input.kind ?? "text";
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
@@ -164,6 +172,7 @@ export const communityService = {
         ok: true,
         data: {
           id: `mock-community-${Date.now()}`,
+          kind,
           ownerId: "mock-current-user",
           name,
           description: input.description?.trim() || null,
@@ -194,6 +203,7 @@ export const communityService = {
       .from("communities")
       .insert({
         owner_id: userId,
+        kind,
         name,
         description: input.description?.trim() || null,
         accent_color: input.accentColor ?? "#007571",
@@ -223,6 +233,7 @@ export const communityService = {
         ok: true,
         data: {
           id: input.id,
+          kind: getMockCommunityKind(input.id),
           ownerId: "mock-current-user",
           name: nextName ?? "Mock community",
           description: input.description?.trim() || null,

@@ -2,7 +2,7 @@ import { currentUserId } from "../data/mockCommunities";
 import { mockRoles } from "../data/mockMembers";
 import { getCommunityTemplate } from "../data/communityTemplates";
 import type { CommunitySummary } from "../services/communityService";
-import type { ChannelCategory, Community } from "../types/community";
+import { supportsTextChannels, type ChannelCategory, type Community } from "../types/community";
 
 function getIcon(name: string): string {
   return name.trim().slice(0, 1).toUpperCase() || "P";
@@ -11,7 +11,7 @@ function getIcon(name: string): string {
 export function createCommunityFromSummary(summary: CommunitySummary): Community {
   const template = getCommunityTemplate(summary.templateId);
   const ownerRole = mockRoles.find((role) => role.name === "Owner") ?? mockRoles[0];
-  const categories: ChannelCategory[] = template.categories.map((category, categoryIndex) => {
+  const categories: ChannelCategory[] = (supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
     const categoryId = `${summary.id}-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "category"}`;
 
     return {
@@ -33,6 +33,7 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
 
   return {
     id: summary.id,
+    kind: summary.kind,
     ownerId: summary.ownerId ?? undefined,
     name: summary.name,
     icon: getIcon(summary.name),
