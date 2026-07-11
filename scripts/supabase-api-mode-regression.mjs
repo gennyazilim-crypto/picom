@@ -82,6 +82,11 @@ try {
   assertContains("src/services/membersService.ts", ".from(\"community_members\")", "members API path");
   assertContains("src/services/reactionService.ts", 'rpc("set_message_reaction"', "aggregate-safe reactions API path");
   assertContains("src/services/supabase/realtimeService.ts", "postgres_changes", "Supabase realtime postgres_changes path");
+  assertContains("src/services/audio/audioDataSource.ts", 'client.from("radio_sessions")', "Radio Supabase repository path");
+  assertContains("src/services/audio/audioDataSource.ts", 'client.from("podcast_episodes")', "Podcast Supabase repository path");
+  assertContains("src/services/audio/podcastPublishingService.ts", "client.storage.from(bucket)", "Podcast private Storage path");
+  assertContains("src/hooks/useAudioCatalog.ts", "radioRealtimeService.subscribe", "Radio Realtime lifecycle path");
+  assertContains("src/hooks/useAudioCatalog.ts", "podcastRealtimeService.subscribe", "Podcast Realtime lifecycle path");
   assertContains(".env.example", "VITE_SUPABASE_URL", "Supabase URL env example");
   assertContains(".env.example", "VITE_SUPABASE_ANON_KEY", "Supabase anon key env example");
   assertContains(".env.example", "SUPABASE_SERVICE_ROLE_KEY", "server-only service role env documentation");

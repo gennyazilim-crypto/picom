@@ -25,7 +25,7 @@ const required = [
   [source, "stream_url", "Supabase stream source"],
   [migration, "radio_sessions_listener_safe_stream_url_check", "safe endpoint constraint"],
   [migration, "close_radio_listeners_on_terminal_status", "terminal cleanup"],
-  [app, "<GlobalAudioMiniPlayer />", "navigation-persistent global dock"],
+  [app, "<GlobalAudioMiniPlayer", "navigation-persistent global dock"],
 ];
 for (const [content, marker, label] of required) if (!content.includes(marker)) throw new Error("Missing " + label + ": " + marker);
 if (player.includes("setInterval") || read("src/components/audio/useAudioPlayback.ts").includes("new Audio(")) throw new Error("Fake or duplicate component playback remains.");
