@@ -241,6 +241,12 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]>;
         Relationships: [];
       };
+      friend_presence: {
+        Row: { user_id: string; status: "online" | "idle" | "dnd" | "offline"; share_presence: boolean; last_seen_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["friend_presence"]["Row"]> & Pick<Database["public"]["Tables"]["friend_presence"]["Row"], "user_id">;
+        Update: Partial<Database["public"]["Tables"]["friend_presence"]["Row"]>;
+        Relationships: [];
+      };
       direct_conversation_participants: {
         Row: { id: string; conversation_id: string; user_id: string; joined_at: string; last_read_at: string | null; muted_until: string | null; archived_at: string | null; blocked_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["direct_conversation_participants"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversation_participants"]["Row"], "conversation_id" | "user_id">;
@@ -688,6 +694,9 @@ export type Database = {
       send_friend_request: { Args: { target_user_id: string }; Returns: string };
       cancel_friend_request: { Args: { target_request_id: string }; Returns: boolean };
       list_friend_relationship_state: { Args: Record<string, never>; Returns: Json };
+      list_friend_suggestions: { Args: { result_limit?: number }; Returns: Array<{ user_id: string; display_name: string; username: string; avatar_url: string | null; mutual_community_count: number; followed_by_current_user: boolean }> };
+      set_my_friend_presence: { Args: { target_status: string; share_presence: boolean }; Returns: undefined };
+      list_friend_presence: { Args: { target_user_ids: string[] }; Returns: Array<{ user_id: string; status: string; status_text: string; last_seen_at: string | null }> };
       block_user: { Args: { target_user_id: string }; Returns: boolean };
       unblock_user: { Args: { target_user_id: string }; Returns: boolean };
       list_blocked_users: { Args: Record<string, never>; Returns: Array<{ user_id: string; display_name: string; username: string; blocked_at: string }> };

@@ -7,6 +7,7 @@ import type {
   FriendServiceErrorCode,
   FriendServiceResult,
   FriendState,
+  FriendSuggestion,
 } from "../../types/friends";
 import { dataSourceService } from "../dataSourceService";
 import { notificationCenterService } from "../notificationCenterService";
@@ -51,19 +52,24 @@ export function calculateFriendRequestCounts(
   return { friends: friends.length, incoming, outgoing, pending: incoming + outgoing };
 }
 
-function buildState(friends: FriendConnection[], requests: FriendRequest[]): FriendState {
+function buildState(
+  friends: FriendConnection[],
+  requests: FriendRequest[],
+  suggestions: FriendSuggestion[] = mockFriendState.suggestions,
+): FriendState {
   return {
     friends,
     requests,
-    suggestions: mockFriendState.suggestions.filter(
+    suggestions: suggestions.filter(
       (candidate) => !friends.some((friend) => friend.userId === candidate.userId)
-        && !requests.some((request) => request.userId === candidate.userId && request.status === "pending"),
+        && !requests.some((request) => request.userId === candidate.userId && request.status === "pending")
+        && !userBlockingService.isBlocked(candidate.userId),
     ),
     counts: calculateFriendRequestCounts(friends, requests),
   };
 }
 
-function mapRemoteState(value: unknown): FriendState {
+function mapRemoteState(value: unknown, suggestionValue: unknown): FriendState {
   const source = (value && typeof value === "object" ? value : {}) as {
     friends?: Array<Record<string, unknown>>;
     requests?: Array<Record<string, unknown>>;
@@ -91,7 +97,23 @@ function mapRemoteState(value: unknown): FriendState {
     note: row.direction === "incoming" ? "Wants to connect with you." : "Request pending.",
     createdAt: String(row.createdAt ?? new Date().toISOString()),
   }));
-  return buildState(friends, requests);
+  const suggestions: FriendSuggestion[] = (Array.isArray(suggestionValue) ? suggestionValue : []).map((row) => {
+    const source = row as Record<string, unknown>;
+    const mutualCommunityCount = Number(source.mutual_community_count ?? 0);
+    const followedByCurrentUser = source.followed_by_current_user === true;
+    return {
+      userId: String(source.user_id ?? ""),
+      displayName: String(source.display_name ?? "Picom user"),
+      username: String(source.username ?? "user"),
+      avatarUrl: typeof source.avatar_url === "string" ? source.avatar_url : undefined,
+      mutualCommunityCount,
+      followedByCurrentUser,
+      reason: followedByCurrentUser
+        ? `${mutualCommunityCount} shared ${mutualCommunityCount === 1 ? "community" : "communities"} and you follow this person.`
+        : `${mutualCommunityCount} shared ${mutualCommunityCount === 1 ? "community" : "communities"}.`,
+    };
+  });
+  return buildState(friends, requests, suggestions);
 }
 
 function classifyRemoteError<T>(error: { message?: string; code?: string } | null, fallback: string): FriendServiceResult<T> {
@@ -218,8 +240,13 @@ const supabaseFriendDataSource: FriendRequestDataSource = {
   async getState() {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to load friends.");
-    const { data, error } = await auth.client.rpc("list_friend_relationship_state", {});
-    return error ? classifyRemoteError(error, "Could not load friends.") : { ok: true, data: mapRemoteState(data) };
+    const [stateResult, suggestionResult] = await Promise.all([
+      auth.client.rpc("list_friend_relationship_state", {}),
+      auth.client.rpc("list_friend_suggestions", { result_limit: 12 }),
+    ]);
+    if (stateResult.error) return classifyRemoteError(stateResult.error, "Could not load friends.");
+    if (suggestionResult.error) return classifyRemoteError(suggestionResult.error, "Could not load friend suggestions.");
+    return { ok: true, data: mapRemoteState(stateResult.data, suggestionResult.data) };
   },
   async sendRequest(userId) {
     const normalized = userId.trim();

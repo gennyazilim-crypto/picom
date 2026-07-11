@@ -12,7 +12,8 @@ import { mockFollowedUserStories } from "./data/mockStories";
 import { mockFollowSuggestions } from "./data/mockFollowSuggestions";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import type { DirectConversation } from "./types/directMessages";
-import type { FriendState } from "./types/friends";
+import type { FriendState, FriendViewTab } from "./types/friends";
+import { friendPresenceService } from "./services/friends/friendPresenceService";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import type { ProfileActivityItem, UserProfile } from "./types/profile";
 import type { FollowedUserStory } from "./types/stories";
@@ -361,6 +362,7 @@ export function App() {
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
+  const [friendsViewTab, setFriendsViewTab] = useState<FriendViewTab>("all");
   const [savedMessages, setSavedMessages] = useState<SavedMessageRecord[]>(() => savedMessageService.listSavedMessages());
   useEffect(() => { let active = true; const refresh = () => { void savedMessageService.getSavedMessages().then((items) => { if (active) setSavedMessages(items); }); }; refresh(); const unsubscribe = savedMessageService.subscribe(refresh); return () => { active = false; unsubscribe(); }; }, []);
   const [communityEvents, setCommunityEvents] = useState(mockUpcomingEvents);
@@ -525,6 +527,23 @@ export function App() {
     }).then((cleanup) => { if (!active) cleanup(); else unsubscribeNotifications = cleanup; });
     return () => { active = false; unsubscribeNotifications?.(); unsubscribeState?.(); };
   }, [authSession?.user?.id, refreshFriendState]);
+  const friendPresenceIds = friendState.friends.map((friend) => friend.userId).sort().join("|");
+  useEffect(() => {
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    void friendPresenceService.subscribe(
+      friendPresenceIds ? friendPresenceIds.split("|") : [],
+      { sharePresence: userSafetySettings.showOnlineStatus && trayPresenceStatus !== "invisible", ownStatus: trayPresenceStatus === "invisible" ? "offline" : trayPresenceStatus },
+      (presence) => {
+        if (!active) return;
+        setFriendState((current) => {
+          const friends = current.friends.map((friend) => presence[friend.userId] ? { ...friend, ...presence[friend.userId] } : friend);
+          return { ...current, friends };
+        });
+      },
+    ).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
+    return () => { active = false; unsubscribe?.(); };
+  }, [authSession?.user?.id, friendPresenceIds, trayPresenceStatus, userSafetySettings.showOnlineStatus]);
   const [legalAcceptancePhase, setLegalAcceptancePhase] = useState<"checking" | "accepted" | "required">("checking");
   const [legalAcceptanceLoading, setLegalAcceptanceLoading] = useState(false);
   const [legalAcceptanceError, setLegalAcceptanceError] = useState<string | null>(null);
@@ -1953,7 +1972,8 @@ export function App() {
   const updateCommunityEvent = useCallback(async (eventId: string, input: UpdateCommunityEventInput) => { const event = await communityEventService.updateEvent(eventId, input); if (event) { setCommunityEvents((current) => current.map((item) => item.id === eventId ? event : item)); pushToast("Event updated.", "success"); } else pushToast("Event could not be updated.", "error"); }, [pushToast]);
   const cancelCommunityEvent = useCallback(async (eventId:string) => { if(await communityEventService.cancelEvent(eventId)){setCommunityEvents((current)=>current.map((event)=>event.id===eventId?{...event,cancelledAt:new Date().toISOString()}:event));pushToast("Event cancelled.","success");} },[pushToast]);
 
-  const openFriends = useCallback(() => {
+  const openFriends = useCallback((tab: FriendViewTab = "all") => {
+    setFriendsViewTab(tab);
     setActiveView("friends");
     closeTransientOverlays();
   }, [closeTransientOverlays]);
@@ -1975,6 +1995,7 @@ export function App() {
   const sendFriendRequest = useCallback(async (userId: string) => { const result=await relationshipService.sendFriendRequest(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request sent.","success"); }, [pushToast, refreshFriendState]);
   const removeFriend = useCallback(async (userId: string) => { const result=await relationshipService.removeFriend(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend removed.","info"); }, [pushToast, refreshFriendState]);
   const blockFriend = useCallback(async (userId: string) => { const friend=friendState.friends.find((item)=>item.userId===userId); if(!friend)return; const result=await relationshipService.blockFriend(friend); if(!result.ok){pushToast(result.error,"error");return;} setBlockedUserVersion((value)=>value+1); await refreshFriendState(); pushToast("User blocked and removed from friends.","success"); }, [friendState.friends, pushToast, refreshFriendState]);
+  const unblockFriend = useCallback(async (userId: string) => { const blocked=userBlockingService.listBlockedUsers().find((item)=>item.userId===userId); if(!blocked)return; const persisted=await userBlockingService.setBlockedUser(blocked,false); if(!persisted){pushToast("Could not unblock this user.","error");return;} setBlockedUserVersion((value)=>value+1); await refreshFriendState(); pushToast("User unblocked.","success"); }, [pushToast, refreshFriendState]);
 
   const closeProfileView = useCallback(() => {
     setActiveView(previousViewBeforeProfile ?? "mentionFeed");
@@ -2613,9 +2634,12 @@ export function App() {
               conversations={directConversations}
               activeConversationId={activeDirectConversationId}
               currentUserId={directMessageUserId}
+              friendRequestCount={friendState.counts.pending}
               onSelectConversation={(conversationId) => { setActiveDirectConversationId(conversationId); setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item)); if (dataSourceService.getStatus().isSupabase) void directMessageService.markDirectConversationRead(conversationId); }}
               onSendMessage={sendDirectMessageLocal}
               onBackToCommunity={() => setActiveView("community")}
+              onOpenFriends={() => openFriends("all")}
+              onOpenPendingFriends={() => openFriends("pending")}
               onOpenProfile={(userId) => {
                 const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
                 if (member) openProfilePage(member);
@@ -2628,6 +2652,10 @@ export function App() {
               friends={friendState.friends}
               requests={friendState.requests}
               suggestions={friendState.suggestions}
+              counts={friendState.counts}
+              blockedUsers={userBlockingService.listBlockedUsers()}
+              activeTab={friendsViewTab}
+              onTabChange={setFriendsViewTab}
               onBackToCommunity={() => setActiveView("community")}
               onOpenDirectMessage={openDirectMessages}
               onOpenProfile={(userId) => {
@@ -2641,6 +2669,7 @@ export function App() {
               onSendRequest={sendFriendRequest}
               onRemoveFriend={removeFriend}
               onBlockFriend={blockFriend}
+              onUnblockFriend={unblockFriend}
             />
             </DeferredViewBoundary>
           ) : activeView === "podcastCommunity" && displayedActiveCommunity.kind === "podcast" ? (

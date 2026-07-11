@@ -133,6 +133,7 @@
     "friends:production:smoke": "node scripts/friend-requests-production-smoke-test.mjs",
     "friendship:foundation:smoke": "node scripts/friendship-schema-rls-privacy-smoke.mjs",
     "friends:services:smoke": "node scripts/friend-request-services-realtime-smoke.mjs",
+    "friends:ui:smoke": "node scripts/friends-ui-presence-smoke.mjs",
     "blocking:privacy:smoke": "node scripts/blocking-privacy-enforcement-smoke-test.mjs",
     "discovery:public:smoke": "node scripts/community-discovery-public-listing-smoke-test.mjs",
     "discovery:moderation:smoke": "node scripts/discovery-moderation-hardening-smoke-test.mjs",

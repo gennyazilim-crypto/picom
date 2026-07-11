@@ -13,6 +13,7 @@ export type FriendConnection = Readonly<{
 }>;
 
 export type FriendRequestStatus = "pending" | "accepted" | "declined" | "cancelled";
+export type FriendViewTab = "all" | "online" | "pending" | "suggestions" | "blocked";
 
 export type FriendServiceErrorCode =
   | "INVALID_INPUT"
@@ -69,7 +70,10 @@ export type FriendSuggestion = Readonly<{
   userId: string;
   displayName: string;
   username: string;
+  avatarUrl?: string;
   reason: string;
+  mutualCommunityCount: number;
+  followedByCurrentUser: boolean;
 }>;
 
 export type FriendState = Readonly<{
