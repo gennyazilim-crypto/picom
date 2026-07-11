@@ -5,10 +5,11 @@ import type { Database } from "./supabase/database.types";
 import { isCommunityKind, type CommunityKind } from "../types/community";
 
 export const COMMUNITY_LIST_SELECT = "id, kind, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
+export const LEGACY_COMMUNITY_LIST_SELECT = "id, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
 
 export type CommunityListRow = Readonly<{
   id: string;
-  kind: CommunityKind;
+  kind?: CommunityKind | null;
   owner_id: string;
   name: string;
   description: string | null;
@@ -28,13 +29,15 @@ export type CommunityListQueryResult = Readonly<{
 }>;
 
 export function mapCommunityListRow(row: CommunityListRow): CommunitySummary {
-  if (!isCommunityKind(row.kind)) {
+  const kind = row.kind ?? "text";
+
+  if (!isCommunityKind(kind)) {
     throw new TypeError("Community row contains an invalid kind.");
   }
 
   return {
     id: row.id,
-    kind: row.kind,
+    kind,
     ownerId: row.owner_id,
     name: row.name,
     description: row.description,
@@ -71,15 +74,39 @@ export function getMockCommunityKind(communityId: string): CommunityKind {
   return mockCommunities.find((community) => community.id === communityId)?.kind ?? "text";
 }
 
+export function isMissingCommunityKindColumnError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const record = error as Record<string, unknown>;
+  const code = typeof record.code === "string" ? record.code : "";
+  const diagnostic = [record.message, record.details, record.hint].filter((value): value is string => typeof value === "string").join(" ");
+  return (code === "42703" || code === "PGRST204") && /\bkind\b/i.test(diagnostic);
+}
+
 export async function listSupabaseCommunitySummaries(client: SupabaseClient<Database>): Promise<CommunityListQueryResult> {
-  const { data, error } = await client
+  const currentResult = await client
     .from("communities")
     .select(COMMUNITY_LIST_SELECT)
     .order("created_at", { ascending: true });
 
-  if (error) {
-    return { data: null, error };
+  if (!currentResult.error) {
+    return { data: (currentResult.data ?? []).map(mapCommunityListRow), error: null };
   }
 
-  return { data: (data ?? []).map(mapCommunityListRow), error: null };
+  if (!isMissingCommunityKindColumnError(currentResult.error)) {
+    return { data: null, error: currentResult.error };
+  }
+
+  const legacyResult = await client
+    .from("communities")
+    .select(LEGACY_COMMUNITY_LIST_SELECT)
+    .order("created_at", { ascending: true });
+
+  if (legacyResult.error) {
+    return { data: null, error: legacyResult.error };
+  }
+
+  return {
+    data: (legacyResult.data ?? []).map((row) => mapCommunityListRow({ ...row, kind: "text" })),
+    error: null,
+  };
 }

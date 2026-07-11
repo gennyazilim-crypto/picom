@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Channel, Community, Member, Role } from "../types/community";
+import { supportsTextChannels } from "../types/community";
 
 const FALLBACK_ROLE: Role = {
   id: "fallback-role",
@@ -50,6 +51,7 @@ function getChannels(community: Community) {
 }
 
 function getFirstTextChannel(community: Community) {
+  if (!supportsTextChannels(community)) return undefined;
   return getChannels(community).find((channel) => channel.type === "text") ?? getChannels(community)[0];
 }
 

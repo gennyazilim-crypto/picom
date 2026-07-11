@@ -82,6 +82,12 @@ export const mockCommunities: Community[] = [
   makeCommunity({ id: "aurora", kind: "text", name: "Aurora Studio", icon: "A", accentColor: "#007571", offset: 0, currentUserRole: "owner", visibility: "public", publicReadEnabled: true, description: "Owner scenario for Picom workspace operations." }),
   makeCommunity({ id: "north", kind: "text", name: "North Dock", icon: "N", accentColor: "#10C2BB", offset: 6, currentUserRole: "admin", visibility: "public", publicReadEnabled: true, description: "Admin scenario with broad management access." }),
   makeCommunity({ id: "terra", kind: "text", name: "Terra Lab", icon: "T", accentColor: "#C24D0F", offset: 12, currentUserRole: "mod", visibility: "public", publicReadEnabled: true, description: "Moderator scenario for report and message moderation tools." }),
-  makeCommunity({ id: "pixel", kind: "radio", name: "Pixel Guild", icon: "P", accentColor: "#FF772E", offset: 18, currentUserRole: "member", visibility: "public", publicReadEnabled: true, description: "Member scenario with community info and leave controls." }),
-  makeCommunity({ id: "orbit", kind: "podcast", name: "Orbit Works", icon: "O", accentColor: "#752C05", offset: 24, currentUserRole: "visitor", visibility: "public", publicReadEnabled: true, description: "Visitor scenario: public read is available, participation requires joining." }),
+  makeCommunity({ id: "pixel", kind: "text", name: "Pixel Guild", icon: "P", accentColor: "#FF772E", offset: 18, currentUserRole: "member", visibility: "public", publicReadEnabled: true, description: "Member scenario with community info and leave controls." }),
+  makeCommunity({ id: "orbit", kind: "text", name: "Orbit Works", icon: "O", accentColor: "#752C05", offset: 24, currentUserRole: "visitor", visibility: "public", publicReadEnabled: true, description: "Visitor scenario: public read is available, participation requires joining." }),
 ];
+
+export const mockCommunityKindExamples = Object.freeze({
+  text: Object.freeze({ id: "kind-example-text", kind: "text", name: "Text community example" }),
+  radio: Object.freeze({ id: "kind-example-radio", kind: "radio", name: "Radio community example" }),
+  podcast: Object.freeze({ id: "kind-example-podcast", kind: "podcast", name: "Podcast community example" }),
+}) satisfies Readonly<Record<CommunityKind, Readonly<Pick<Community, "id" | "kind" | "name">>>>;

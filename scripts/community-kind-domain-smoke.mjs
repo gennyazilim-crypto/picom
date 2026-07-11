@@ -43,7 +43,7 @@ const sharedDto = read("packages/shared/src/dto/community.ts");
 const schemaDocument = read("docs/community-kind-schema-rls.md");
 const normalizedSchemaDocument = schemaDocument.toLowerCase();
 for (const marker of ["kind?: CommunityKind", "isCommunityKind(input.kind)", "kind = input.kind ?? \"text\"", "kind,"]) assert(service.includes(marker), `Community service is missing ${marker}`);
-for (const marker of ["id, kind, owner_id", "kind: CommunityKind", "kind: row.kind", "kind: community.kind"]) assert(query.includes(marker), `Community query is missing ${marker}`);
+for (const marker of ["id, kind, owner_id", "kind?: CommunityKind | null", 'const kind = row.kind ?? "text"', "kind: community.kind"]) assert(query.includes(marker), `Community query is missing ${marker}`);
 assert(databaseTypes.includes('community_kind: "text" | "radio" | "podcast"'), "Generated Supabase enum type is missing");
 assert(sharedDto.includes('CommunityKindDTO = "text" | "radio" | "podcast"'), "Shared DTO community kind is missing");
 for (const marker of ["non-destructive", "rls", "no hybrid", "invalid values", "existing rows"]) assert(normalizedSchemaDocument.includes(marker), `Schema/RLS documentation is missing ${marker}`);

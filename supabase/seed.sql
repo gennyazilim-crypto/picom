@@ -143,10 +143,11 @@ on conflict (id) do update set
   accent_color = excluded.accent_color,
   updated_at = now();
 
-insert into public.communities (id, owner_id, name, description, icon_url, accent_color, created_at, updated_at) values
-  ('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000101', 'Picom Studio', 'Premium desktop chat seed community.', null, '#007571', now(), now()),
-  ('10000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000101', 'Autumn Lab', 'Secondary workspace for channel switching tests.', null, '#C24D0F', now(), now())
+insert into public.communities (id, owner_id, kind, name, description, icon_url, accent_color, created_at, updated_at) values
+  ('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000101', 'text'::public.community_kind, 'Picom Studio', 'Premium desktop chat seed community.', null, '#007571', now(), now()),
+  ('10000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000101', 'text'::public.community_kind, 'Autumn Lab', 'Secondary workspace for channel switching tests.', null, '#C24D0F', now(), now())
 on conflict (id) do update set
+  kind = excluded.kind,
   name = excluded.name,
   description = excluded.description,
   accent_color = excluded.accent_color,

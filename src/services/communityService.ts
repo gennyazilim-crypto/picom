@@ -1,6 +1,6 @@
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import { getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow, COMMUNITY_LIST_SELECT } from "./communityListQuery";
+import { getMockCommunityKind, isMissingCommunityKindColumnError, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow, COMMUNITY_LIST_SELECT, LEGACY_COMMUNITY_LIST_SELECT } from "./communityListQuery";
 import { isCommunityKind, type CommunityKind } from "../types/community";
 
 export type CommunitySummary = Readonly<{
@@ -199,25 +199,40 @@ export const communityService = {
       return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before creating a community." } };
     }
 
-    const { data, error } = await configured.data
+    const insertPayload = {
+      owner_id: userId,
+      name,
+      description: input.description?.trim() || null,
+      accent_color: input.accentColor ?? "#007571",
+      visibility: "public" as const,
+      public_read_enabled: true,
+    };
+    const currentResult = await configured.data
       .from("communities")
       .insert({
-        owner_id: userId,
+        ...insertPayload,
         kind,
-        name,
-        description: input.description?.trim() || null,
-        accent_color: input.accentColor ?? "#007571",
-        visibility: "public",
-        public_read_enabled: true,
       })
       .select(COMMUNITY_LIST_SELECT)
       .single();
 
-    if (error || !data) {
-      return { ok: false, error: { code: "COMMUNITY_CREATE_FAILED", message: "Could not create community." } };
+    if (!currentResult.error && currentResult.data) {
+      return { ok: true, data: mapCommunityListRow(currentResult.data) };
     }
 
-    return { ok: true, data: mapCommunityListRow(data) };
+    if (kind === "text" && isMissingCommunityKindColumnError(currentResult.error)) {
+      const legacyResult = await configured.data
+        .from("communities")
+        .insert(insertPayload)
+        .select(LEGACY_COMMUNITY_LIST_SELECT)
+        .single();
+
+      if (!legacyResult.error && legacyResult.data) {
+        return { ok: true, data: mapCommunityListRow({ ...legacyResult.data, kind: "text" }) };
+      }
+    }
+
+    return { ok: false, error: { code: "COMMUNITY_CREATE_FAILED", message: "Could not create community." } };
   },
 
   async updateCommunitySettings(input: UpdateCommunityInput): Promise<CommunityServiceResult<CommunitySummary>> {
