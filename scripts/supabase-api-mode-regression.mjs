@@ -71,7 +71,8 @@ try {
   assertContains("src/services/dataSourceService.ts", "supabase", "data source Supabase mode");
   assertContains("src/services/authService.ts", "signInWithPassword", "Supabase auth sign-in path");
   assertContains("src/services/authService.ts", "getCurrentSession", "Supabase session restore path");
-  assertContains("src/services/profileService.ts", ".from(\"profiles\")", "profiles API path");
+  assertContains("src/services/profileService.ts", '.rpc("get_profile_domain_v1"', "privacy-projected profiles read API path");
+  assertContains("src/services/profileService.ts", '.rpc("update_own_profile_domain"', "owner-scoped profiles write API path");
   assertContains("src/services/communityService.ts", ".from(\"communities\")", "communities API path");
   assertContains("src/services/channelService.ts", ".from(\"channels\")", "channels API path");
   assertContains("src/services/messageService.ts", "listMessages", "messages list service path");
