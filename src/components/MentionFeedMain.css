@@ -946,6 +946,28 @@
 .event-mini-reminder[aria-pressed="true"]{color:var(--accent);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 34%,var(--border))}
 .mention-feed-primary-list{min-width:0;display:grid;align-content:start;gap:14px}.feed-companion-rail>.audio-mini-player{position:sticky;top:12px;z-index:3}
 
+/* Unified Text, Radio, and Podcast Feed card language. */
+.unified-feed-list{min-width:0;display:grid;align-content:start;gap:14px}
+.unified-feed-card{position:relative;border-radius:22px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 96%,transparent),var(--surface-soft));box-shadow:var(--shadow-soft)}
+.unified-feed-card--audio{grid-template-columns:168px minmax(0,1fr);min-height:224px}
+.unified-feed-card--audio.unread::before{content:"";position:absolute;z-index:2;left:-1px;top:22px;width:4px;height:42px;border-radius:999px;background:var(--picom-orange)}
+.unified-feed-list .audio-feed-cover{min-height:224px}
+.unified-feed-list .audio-feed-copy{padding:16px;gap:10px}
+.unified-feed-list .audio-feed-copy>header{grid-template-columns:32px minmax(0,1fr) auto}
+.unified-feed-list .audio-feed-copy>header strong{font-size:12px}
+.unified-feed-list .audio-feed-copy>header button{font-size:10px}
+.unified-feed-list .audio-feed-copy h2{font-size:17px}
+.unified-feed-list .audio-feed-copy>p{font-size:13px;line-height:1.5;-webkit-line-clamp:3}
+.unified-feed-list .audio-feed-meta span,.unified-feed-list .audio-social-pill{font-size:10px}
+.unified-feed-list .audio-feed-copy blockquote{padding:9px 10px;font-size:10px}
+.unified-feed-list .audio-feed-copy footer button{min-height:32px;font-size:10px}
+.audio-feed-more{position:relative;justify-self:end}
+.audio-feed-more>.icon-button{width:30px;height:30px;padding:0;display:grid;place-items:center;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-muted)}
+.audio-feed-more-menu{position:absolute;z-index:8;right:0;top:36px;width:176px;display:grid;gap:3px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--elevated-surface);box-shadow:var(--shadow)}
+.audio-feed-more-menu button{min-height:32px;display:flex;align-items:center;gap:8px;border:0;border-radius:8px;background:transparent;color:var(--text-secondary);padding:0 9px;font-size:11px;font-weight:750;text-align:left;cursor:pointer}
+.audio-feed-more-menu button:hover,.audio-feed-more-menu button:focus-visible{background:var(--surface-hover);color:var(--text-primary);outline:none}
+@media(max-width:1320px){.unified-feed-card--audio{grid-template-columns:132px minmax(0,1fr)}.unified-feed-list .audio-feed-cover{min-height:210px}}
+
 .mention-feed-main {
   display: block;
   min-width: 0;

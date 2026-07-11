@@ -376,6 +376,7 @@
     "mentions:extraction:smoke": "node scripts/message-mentions-extraction-smoke.mjs",
     "mentions:unified:smoke": "node scripts/unified-content-mentions-smoke.mjs",
     "feed:query:smoke": "node scripts/unified-feed-query-smoke.mjs",
+    "feed:cards:smoke": "node scripts/unified-feed-cards-smoke.mjs",
     "replies:production:smoke": "node scripts/reply-system-production-smoke.mjs",
     "follow:suggestions:test": "node scripts/follow-suggestions-v2-test.mjs",
     "search:relevance:test": "node scripts/search-relevance-tuning-test.mjs",

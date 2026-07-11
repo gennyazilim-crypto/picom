@@ -67,7 +67,7 @@ export function MentionFeedCard({
   const verification = getUserVerificationSummary(author?.userId ?? item.authorId, [], author?.verification);
 
   return (
-    <article className={`mention-card${item.isUnread ? " unread" : ""}`}>
+    <article className={`mention-card unified-feed-card unified-feed-card--text${item.isUnread ? " unread" : ""}`}>
       <header className="mention-card-header">
         <button
           className="mention-author-button"

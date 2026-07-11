@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { AudioFeedItem } from "../../types/audio";
 import type { Community, Member } from "../../types/community";
 import { dateTimeService } from "../../services/dateTimeService";
@@ -28,6 +28,8 @@ type AudioFeedCardProps = {
 };
 
 export function AudioFeedCard({ item, communities, saved, unread, reminderSet, onSelect, onToggleSaved, onToggleReminder, onReact, onMarkRead, onOpenCommunity, onOpenRadio, onOpenProfile }: AudioFeedCardProps) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const community = communities.find((candidate) => candidate.id === item.communityId);
   const author = findAuthor(item, communities);
   const commenters = findCommenters(item, communities);
@@ -38,15 +40,32 @@ export function AudioFeedCard({ item, communities, saved, unread, reminderSet, o
   const reactionTotal = item.reactionSummary?.reduce((total, reaction) => total + reaction.count, 0) ?? 0;
   const visibleCommenters = commenters.slice(0, 4);
   const remainingCommenters = Math.max(0, commenters.length - visibleCommenters.length);
-  const verification = author ? getUserVerificationSummary(author.userId) : undefined;
+  const verification = author ? getUserVerificationSummary(author.userId, [], author.verification) : undefined;
   const kindLabel = live ? "Live now" : scheduled ? "Scheduled radio" : ended ? "Radio replay" : item.isMention ? "Podcast mention" : "Podcast episode";
 
-  return <article className={"audio-feed-card " + item.type + (unread ? " unread" : "")}>
+  useEffect(() => {
+    if (!moreOpen) return;
+    const closeOutside = (event: PointerEvent) => { if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false); };
+    const closeEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMoreOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", closeEscape); };
+  }, [moreOpen]);
+
+  return <article className={"audio-feed-card unified-feed-card unified-feed-card--audio " + item.type + (unread ? " unread" : "")}>
     <div className="audio-feed-cover">{item.coverUrl ? <img src={item.coverUrl} alt="" aria-hidden="true" /> : <AppIcon name="headphones" size="xl" />}<span className={"audio-feed-kind " + (live ? "live" : "")}>{kindLabel}</span></div>
     <div className="audio-feed-copy">
       <header>
         {author ? <button type="button" className="audio-feed-avatar-button" aria-label={"Open " + author.displayName + " profile"} onClick={(event) => onOpenProfile(event, author)}><MemberAvatar member={author} size={32} /></button> : <span className="audio-feed-author-fallback"><AppIcon name="user" size="sm" /></span>}
         <div><button type="button" className="audio-feed-author-name" onClick={(event) => author && onOpenProfile(event, author)}><strong>{author?.displayName ?? "Picom host"}</strong>{verification ? <VerifiedBadge verification={verification} size="xs" /> : null}</button><button type="button" onClick={() => onOpenCommunity(item.communityId)}>{community?.name ?? "Picom community"}</button></div>
+        <div className="audio-feed-more" ref={moreRef}>
+          <button className="icon-button" type="button" aria-label={`More actions for ${item.title}`} aria-expanded={moreOpen} onClick={() => setMoreOpen((open) => !open)}><AppIcon name="more" size="sm" /></button>
+          {moreOpen ? <div className="audio-feed-more-menu" role="menu">
+            <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); if (podcast) onSelect(item); else onOpenRadio(item); }}><AppIcon name={podcast ? "play" : "headphones"} size="sm" />{podcast ? "Open episode" : "Open Radio"}</button>
+            <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onToggleSaved(item); }}><AppIcon name="pin" size="sm" />{saved ? "Remove saved" : "Save"}</button>
+            {unread ? <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onMarkRead(item); }}><AppIcon name="eye" size="sm" />Mark read</button> : null}
+          </div> : null}
+        </div>
       </header>
       <h2>{item.title}</h2><p>{item.body}</p>
       <div className="audio-feed-meta">{live ? <span><i />{item.listenerCount ?? 0} listening</span> : scheduled ? <span>{dateTimeService.formatCompactDateTime(item.startsAt ?? item.createdAt)}</span> : podcast ? <><span>{formatAudioTime(item.durationSeconds ?? 0)}</span><span>{dateTimeService.formatCompactDateTime(item.createdAt)}</span></> : <span>Ended {dateTimeService.formatCompactDateTime(item.createdAt)}</span>}</div>

@@ -13,8 +13,7 @@ import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
 import { FeedCompanionRail } from "./FeedCompanionRail";
 import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
 import { MentionFeedHeader } from "./MentionFeedHeader";
-import { MentionFeedList } from "./MentionFeedList";
-import { AudioFeedSection } from "./audio/AudioFeedSection";
+import { UnifiedFeedList } from "./UnifiedFeedList";
 import { RadioPanel } from "./audio/RadioPanel";
 import { PodcastEpisodeDetail } from "./audio/PodcastEpisodeDetail";
 import { useRadioScheduleReminders } from "../hooks/useRadioScheduleReminders";
@@ -211,17 +210,27 @@ export function MentionFeedMain({
       />
       <div className="mention-feed-body-grid">
         <div className="mention-feed-primary-list">
-        <AudioFeedSection items={visibleAudioItems} communities={communities} savedIds={savedAudioIds} readIds={readAudioIds} reminderIds={audioReminderFeedIds} onSelect={selectAudio} onToggleSaved={(item) => { void toggleAudioSaved(item); }} onToggleReminder={toggleAudioReminder} onReact={reactToAudio} onMarkRead={markAudioRead} onOpenCommunity={onOpenEventCommunity} onOpenRadio={openAudioRadioSource} onOpenProfile={onOpenProfile} />
-        <MentionFeedList
-          items={visibleItems}
+        <UnifiedFeedList
+          textItems={visibleItems}
+          audioItems={visibleAudioItems}
           communities={communities}
+          savedAudioIds={savedAudioIds}
+          readAudioIds={readAudioIds}
+          reminderAudioIds={audioReminderFeedIds}
           onOpenImage={onOpenImage}
-          onOpenInChannel={onOpenInChannel}
-          onToggleReaction={onToggleReaction}
-          onToggleSaved={onToggleSaved}
-          onMarkRead={onMarkRead}
+          onOpenTextInChannel={onOpenInChannel}
+          onToggleTextReaction={onToggleReaction}
+          onToggleTextSaved={onToggleSaved}
+          onMarkTextRead={onMarkRead}
           onOpenProfile={onOpenProfile}
-          onOpenMore={onOpenMore}
+          onOpenTextMore={onOpenMore}
+          onSelectAudio={selectAudio}
+          onToggleAudioSaved={(item) => { void toggleAudioSaved(item); }}
+          onToggleAudioReminder={toggleAudioReminder}
+          onReactAudio={reactToAudio}
+          onMarkAudioRead={markAudioRead}
+          onOpenCommunity={onOpenEventCommunity}
+          onOpenRadio={openAudioRadioSource}
         />
         </div>
         <FeedCompanionRail
