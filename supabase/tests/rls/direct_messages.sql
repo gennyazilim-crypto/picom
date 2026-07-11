@@ -52,7 +52,7 @@ select results_eq($$ select count(*)::bigint from public.direct_message_reaction
 select lives_ok($$ insert into public.direct_messages (conversation_id, author_id, body, client_message_id) values ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'own insert', 'dm-own-insert') $$, 'participant can insert a direct message');
 select lives_ok($$ insert into public.direct_message_attachments (message_id, url, file_name) values ('40000000-0000-0000-0000-000000000001', 'dm-fixtures/own.png', 'own.png') $$, 'participant can insert a direct attachment');
 select lives_ok($$ update public.direct_messages set body = 'edited by author', edited_at = now() where id = '40000000-0000-0000-0000-000000000001' $$, 'author can update own direct message');
-select lives_ok($$ delete from public.direct_messages where client_message_id = 'dm-own-insert' $$, 'author can delete own direct message');
+select lives_ok($$ update public.direct_messages set deleted_at = now() where client_message_id = 'dm-own-insert' $$, 'author can soft delete own direct message');
 
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
 select results_eq($$ update public.direct_messages set body = 'unauthorized edit' where id = '40000000-0000-0000-0000-000000000001' returning id $$, array[]::uuid[], 'participant cannot update another authors direct message');

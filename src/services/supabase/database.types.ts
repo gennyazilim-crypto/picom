@@ -236,7 +236,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["friendships"]["Row"]>; Relationships: [];
       };
       direct_conversations: {
-        Row: { id: string; type: "direct"; created_by: string; created_at: string; updated_at: string; last_message_at: string | null };
+        Row: { id: string; type: "direct"; created_by: string; created_at: string; updated_at: string; last_message_at: string | null; participant_low_id: string | null; participant_high_id: string | null; superseded_by: string | null };
         Insert: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversations"]["Row"], "created_by">;
         Update: Partial<Database["public"]["Tables"]["direct_conversations"]["Row"]>;
         Relationships: [];
@@ -248,7 +248,7 @@ export type Database = {
         Relationships: [];
       };
       direct_conversation_participants: {
-        Row: { id: string; conversation_id: string; user_id: string; joined_at: string; last_read_at: string | null; muted_until: string | null; archived_at: string | null; blocked_at: string | null };
+        Row: { id: string; conversation_id: string; user_id: string; joined_at: string; last_read_at: string | null; last_read_message_id: string | null; muted_until: string | null; archived_at: string | null; blocked_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["direct_conversation_participants"]["Row"]> & Pick<Database["public"]["Tables"]["direct_conversation_participants"]["Row"], "conversation_id" | "user_id">;
         Update: Partial<Database["public"]["Tables"]["direct_conversation_participants"]["Row"]>;
         Relationships: [];
@@ -704,6 +704,10 @@ export type Database = {
       create_direct_conversation: { Args: { other_user_id: string }; Returns: string };
       list_direct_conversations: { Args: { result_limit?: number }; Returns: Array<{ id: string; participant_user_id: string; participant_name: string; participant_username: string; participant_status: string; participant_status_text: string; last_message_preview: string; updated_at: string; unread_count: number }> };
       send_direct_message: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
+      send_direct_message_v2: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id: string | null }; Returns: Json };
+      edit_direct_message: { Args: { target_message_id: string; message_body: string }; Returns: Json };
+      delete_direct_message: { Args: { target_message_id: string }; Returns: Json };
+      set_direct_conversation_preferences: { Args: { target_conversation_id: string; target_muted_until: string | null; target_archived: boolean }; Returns: boolean };
       mark_direct_conversation_read: { Args: { target_conversation_id: string }; Returns: boolean };
       accept_community_invite: {
         Args: { invite_code: string };

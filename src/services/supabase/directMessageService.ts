@@ -5,7 +5,7 @@ import type { Database } from "./database.types";
 type MessageRow = Database["public"]["Tables"]["direct_messages"]["Row"];
 type DirectMessageErrorCode = "NOT_CONFIGURED" | "AUTH_REQUIRED" | "VALIDATION_ERROR" | "REQUEST_FAILED" | "PERMISSION_DENIED";
 export type DirectMessageServiceResult<T> = Readonly<{ ok: true; data: T }> | Readonly<{ ok: false; error: Readonly<{ code: DirectMessageErrorCode; message: string }> }>;
-export type SendDirectMessageInput = Readonly<{ conversationId: string; body: string; clientMessageId?: string }>;
+export type SendDirectMessageInput = Readonly<{ conversationId: string; body: string; clientMessageId?: string; replyToMessageId?: string }>;
 
 function failure(code: DirectMessageErrorCode, message: string): DirectMessageServiceResult<never> { return { ok: false, error: { code, message } }; }
 function configuredClient() { const status = getSupabaseClientStatus(); const client = getSupabaseClient(); if (!status.configured || !client) return failure("NOT_CONFIGURED", status.reason ?? "Supabase is not configured."); return { ok: true as const, data: client }; }
@@ -44,7 +44,7 @@ export async function sendDirectMessage(input: SendDirectMessageInput): Promise<
   if (!input.conversationId.trim() || !body || body.length > 4000) return failure("VALIDATION_ERROR", "A valid conversation and message are required.");
   const configured = configuredClient(); if (!configured.ok) return configured;
   const user = await currentUserId(); if (!user.ok) return user;
-  const result = await configured.data.rpc("send_direct_message", { target_conversation_id: input.conversationId, message_body: body, target_client_message_id: input.clientMessageId ?? crypto.randomUUID() });
+  const result = await configured.data.rpc("send_direct_message_v2", { target_conversation_id: input.conversationId, message_body: body, target_client_message_id: input.clientMessageId ?? crypto.randomUUID(), target_reply_to_message_id: input.replyToMessageId ?? null });
   if (result.error || !result.data || typeof result.data !== "object") return failure("PERMISSION_DENIED", "Direct message was blocked by membership or privacy controls.");
   return { ok: true, data: mapMessage(result.data as unknown as MessageRow) };
 }

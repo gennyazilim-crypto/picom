@@ -40,10 +40,9 @@ export async function sendDirectMessage(first: string | DirectMessageSendInput, 
     if (!updated) return failure("Direct conversation was not found.");
     directRealtimeService.publishMock({ type: "direct_message:insert", message }); return { ok: true, data: message };
   }
-  const sent = await supabaseDirectMessageService.sendDirectMessage({ conversationId: input.conversationId, body, clientMessageId });
+  const sent = await supabaseDirectMessageService.sendDirectMessage({ conversationId: input.conversationId, body, clientMessageId, replyToMessageId: input.replyToMessageId });
   if (!sent.ok) return sent;
   const client = getSupabaseClient(); if (!client) return sent;
-  if (input.replyToMessageId) { const replyUpdate = await client.from("direct_messages").update({ reply_to_message_id: input.replyToMessageId }).eq("id", sent.data.id); if (replyUpdate.error) return failure("The direct message reply could not be linked."); }
   if (input.attachments?.length) { const attachmentInsert = await client.from("direct_message_attachments").insert(input.attachments.map((attachment) => ({ message_id: sent.data.id, url: attachment.url, file_name: attachment.name, mime_type: attachment.mimeType ?? null, width: attachment.width ?? null, height: attachment.height ?? null }))); if (attachmentInsert.error) return failure("The direct message attachment metadata could not be saved."); }
   return { ok: true, data: { ...sent.data, attachments: input.attachments } };
 }
