@@ -122,7 +122,7 @@
     "edge:staging:preflight": "node scripts/hosted-staging-edge-functions-validation.mjs",
     "edge:staging:test": "node scripts/hosted-staging-edge-functions-validation.mjs --run",
     "edge:staging:contract:test": "node scripts/edge-functions-staging-contract-test.mjs",
-    "supabase:types": "supabase gen types typescript --local --schema public > src/services/supabase/database.types.ts",
+    "supabase:types": "node scripts/generate-supabase-types.mjs",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs",
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
     "dm:production:smoke": "node scripts/direct-messages-production-smoke-test.mjs",
@@ -451,7 +451,11 @@
     "podcast:interactions:smoke": "node scripts/podcast-interactions-smoke.mjs",
     "podcast:integration:smoke": "node scripts/podcast-cross-surface-integration-smoke.mjs",
     "podcast:moderation:smoke": "node scripts/podcast-permissions-moderation-audit-smoke.mjs",
-    "podcast:full-mvp:qa": "node scripts/podcast-full-mvp-e2e-qa.mjs"
+    "podcast:full-mvp:qa": "node scripts/podcast-full-mvp-e2e-qa.mjs",
+    "supabase:types:check": "node scripts/generate-supabase-types.mjs --check",
+    "supabase:config:smoke": "node scripts/supabase-config-contract.mjs",
+    "supabase:migrations:check": "node scripts/supabase-migration-integrity.mjs",
+    "supabase:qa": "node scripts/supabase-qa-gate.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

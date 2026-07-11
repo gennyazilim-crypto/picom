@@ -81,11 +81,13 @@ Run:
 npm run supabase:types
 ```
 
-This updates:
+This atomically updates:
 
 - `src/services/supabase/database.types.ts`
 
-The committed placeholder keeps builds stable before Supabase CLI is available. Generated types should be committed after schema changes once local Supabase is available and verified.
+The wrapper captures CLI output in memory, rejects incomplete output, removes a UTF-8 BOM, and replaces the committed file only after generation succeeds. Use `npm run supabase:types:check` to compare the applied schema with the committed snapshot without writing. Full generation requires the reviewed Supabase CLI and an applied local or linked non-production schema; a missing CLI never truncates the committed file.
+
+See `docs/supabase-environment-migrations-types.md` for local, staging, and production-safe commands and the current generation evidence status.
 
 ## RLS model
 

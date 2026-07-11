@@ -63,6 +63,10 @@ migrations without a full reset. Use `npx supabase stop` when finished. Never ru
 down commands against staging or production. Linking and `db push` require a reviewed deployment step,
 backup verification, and the correct project ref.
 
+Before reset or deployment, run `npm run supabase:migrations:check`. After a successful reset, run
+`npm run supabase:types`; do not redirect raw CLI output with `>` because a failed command can leave an
+empty or BOM-prefixed type file. The project wrapper writes the generated snapshot atomically.
+
 ## Renderer safety
 
 The Electron renderer may only use the anon key.

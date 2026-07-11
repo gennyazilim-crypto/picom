@@ -1,4 +1,5 @@
 import type { CreatedWebhook, WebhookRecord } from "../types/webhooks";
+import { appConfig } from "../config/appConfig";
 import { auditLogService } from "./auditLogService";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
@@ -12,7 +13,7 @@ function readLocal(): StoredWebhook[] { try { const value = JSON.parse(window.lo
 function writeLocal(records: StoredWebhook[]): void { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch { /* restricted fallback */ } }
 function randomToken(): string { const bytes = crypto.getRandomValues(new Uint8Array(32)); return [...bytes].map((value) => value.toString(16).padStart(2, "0")).join(""); }
 async function hashToken(token: string): Promise<string> { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)); return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join(""); }
-function buildEndpointUrl(id: string): string { const base = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "") ?? "http://127.0.0.1:54321"; return `${base}/functions/v1/webhook-message?id=${encodeURIComponent(id)}`; }
+function buildEndpointUrl(id: string): string { const base = appConfig.supabase.url.replace(/\/$/, "") || "http://127.0.0.1:54321"; return `${base}/functions/v1/webhook-message?id=${encodeURIComponent(id)}`; }
 function safeRecord(record: StoredWebhook): WebhookRecord { const { tokenHash: _tokenHash, ...safe } = record; return safe; }
 function mapRpcRow(row: WebhookRpcRow): WebhookRecord { return { id: row.webhook_id, communityId: row.community_id, channelId: row.channel_id, name: row.webhook_name, avatarUrl: row.avatar_url ?? undefined, createdBy: row.created_by, revokedAt: row.revoked_at ?? undefined, createdAt: row.created_at, updatedAt: row.updated_at }; }
 
