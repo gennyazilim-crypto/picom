@@ -30,7 +30,7 @@ for (const marker of [
   "CreateCommunityFormValue",
   "CreateCommunitySubmitResult",
   "communityService.createCommunity(value)",
-  'community.kind === "text" ? "community" : "communityAudio"',
+  "communityViewForKind(community.kind)",
   'completion.startChoice === "createCommunity"',
   "setCreateCommunityOpen(true)",
 ]) assert(app.includes(marker), `App typed creation integration is missing ${marker}`);

@@ -100,10 +100,10 @@ export function CommunitySidebar({ community, communities, access, activeChannel
       />
 
       <div className="channel-scroll">
-        <button type="button" className={`community-audio-entry ${audioActive ? "active" : ""}`} aria-current={audioActive ? "page" : undefined} onClick={onOpenAudio}>
+        {community.kind !== "text" ? <button type="button" className={`community-audio-entry ${audioActive ? "active" : ""}`} aria-current={audioActive ? "page" : undefined} onClick={onOpenAudio}>
           <span className="community-audio-entry-icon" aria-hidden="true"><AppIcon name="headphones" size="md" /></span>
-          <span><strong>Audio</strong><small>Radio and podcasts</small></span>
-        </button>
+          <span><strong>{community.kind === "podcast" ? "Podcast" : "Audio"}</strong><small>{community.kind === "podcast" ? "Shows and episodes" : "Community audio"}</small></span>
+        </button> : null}
         {access.isVisitor ? (
           <div className="community-readonly-notice">
             <strong>Viewing public content</strong>

@@ -15,7 +15,7 @@ export type AttachmentType = "image";
 export type AttachmentScanStatus = "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
 export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "failed" | "queued_offline";
 import type { PollData } from "./polls";
-export type RoleName = "Owner" | "Admin" | "Moderator" | "Member" | "Guest";
+export type RoleName = "Owner" | "Admin" | "Moderator" | "Radio Host" | "Member" | "Guest";
 
 export const COMMUNITY_KINDS = ["text", "radio", "podcast"] as const;
 export type CommunityKind = (typeof COMMUNITY_KINDS)[number];
@@ -57,6 +57,7 @@ export interface Role {
   name: RoleName;
   color: string;
   level: number;
+  capabilities?: readonly string[];
 }
 
 export interface Member {

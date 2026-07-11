@@ -1,0 +1,83 @@
+import { useEffect, useMemo, useState } from "react";
+import { radioCommunityService } from "../../services/audio/radioCommunityService";
+import type { RadioCommunityShellSnapshot, RadioSession } from "../../types/audio";
+import type { Community, Member } from "../../types/community";
+import { AppIcon, type IconName } from "../AppIcon";
+import { MemberAvatar } from "../MemberAvatar";
+import { RadioPanel } from "./RadioPanel";
+import { RadioSessionList } from "./CommunityAudioView";
+import "./RadioCommunityShell.css";
+
+type RadioSection = "live" | "schedule" | "programs" | "hosts" | "announcements" | "listenerChat";
+type RadioCommunityShellProps = { community: Community; canManageAudio: boolean; onOpenProfile?: (member: Member) => void };
+
+const primarySections: readonly { id: Exclude<RadioSection, "listenerChat">; label: string; icon: IconName }[] = [
+  { id: "live", label: "Live Now", icon: "microphone" },
+  { id: "schedule", label: "Schedule", icon: "bell" },
+  { id: "programs", label: "Shows & Programs", icon: "headphones" },
+  { id: "hosts", label: "Hosts", icon: "users" },
+  { id: "announcements", label: "Announcements", icon: "inbox" },
+];
+
+function RadioEmptyState({ icon, title, body }: { icon: IconName; title: string; body: string }) {
+  return <div className="radio-shell-empty"><span aria-hidden="true"><AppIcon name={icon} size="xl" /></span><strong>{title}</strong><p>{body}</p></div>;
+}
+
+export function RadioCommunityShell({ community, canManageAudio, onOpenProfile }: RadioCommunityShellProps) {
+  const [activeSection, setActiveSection] = useState<RadioSection>("live");
+  const [snapshot, setSnapshot] = useState<RadioCommunityShellSnapshot | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<RadioSession | null>(null);
+  const [reminderIds, setReminderIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    let active = true;
+    setSnapshot(null);
+    setError(null);
+    setActiveSection("live");
+    setSelectedSession(null);
+    void radioCommunityService.getShellSnapshot(community).then((result) => {
+      if (!active) return;
+      if (result.ok) setSnapshot(result.data); else setError(result.error);
+    });
+    return () => { active = false; };
+  }, [community]);
+
+  const hosts = useMemo(() => {
+    const ids = new Set(snapshot?.hostUserIds ?? []);
+    return community.members.filter((member) => ids.has(member.userId));
+  }, [community.members, snapshot?.hostUserIds]);
+  const getUserLabel = (userId: string) => community.members.find((member) => member.userId === userId)?.displayName ?? "Picom host";
+  const toggleReminder = (sessionId: string) => setReminderIds((current) => { const next = new Set(current); if (next.has(sessionId)) next.delete(sessionId); else next.add(sessionId); return next; });
+
+  if (selectedSession) return <RadioPanel session={selectedSession} communityName={community.name} host={community.members.find((member) => member.userId === selectedSession.hostUserId)} listeners={community.members.filter((member) => member.status !== "offline")} canHost={canManageAudio} onClose={() => setSelectedSession(null)} onOpenCommunity={() => setSelectedSession(null)} />;
+
+  const sections = snapshot?.settings.listenerChatEnabled ? [...primarySections, { id: "listenerChat" as const, label: "Listener Chat", icon: "hash" as IconName }] : primarySections;
+  const liveSessions = snapshot?.sessions.filter((session) => session.status === "live") ?? [];
+  const scheduledSessions = snapshot?.sessions.filter((session) => session.status === "scheduled") ?? [];
+
+  return <main className="radio-community-shell">
+    <header className="radio-shell-header">
+      <span className="radio-shell-mark" aria-hidden="true"><AppIcon name="microphone" size="xl" /></span>
+      <div><span className="eyebrow">Radio community</span><h1>{community.name}</h1><p>{community.description || "A dedicated Picom station for live shows, schedules, hosts, and announcements."}</p></div>
+      <div className="radio-shell-status"><i />Station ready<span>{snapshot?.settings.scheduleTimezone ?? "UTC"}</span>{canManageAudio ? <strong>Station manager</strong> : null}</div>
+    </header>
+    <div className="radio-shell-layout">
+      <nav className="radio-shell-navigation" aria-label={`${community.name} radio sections`}>
+        <span>STATION</span>
+        {sections.map((section) => <button key={section.id} type="button" className={activeSection === section.id ? "active" : ""} aria-current={activeSection === section.id ? "page" : undefined} onClick={() => setActiveSection(section.id)}><AppIcon name={section.icon} size="md" /><span>{section.label}</span></button>)}
+        <footer><AppIcon name="lock" size="sm" /><span>Listener Chat stays off until a station manager explicitly links a discussion channel.</span></footer>
+      </nav>
+      <section className="radio-shell-content" aria-live="polite">
+        {error ? <div className="radio-shell-error" role="alert"><strong>Station unavailable</strong><span>{error}</span></div> : null}
+        {!snapshot && !error ? <div className="radio-shell-loading" role="status"><AppIcon name="microphone" size="lg" />Loading station...</div> : null}
+        {snapshot && activeSection === "live" ? <section><div className="radio-shell-section-heading"><div><span>ON AIR</span><h2>Live Now</h2></div><p>Broadcasts currently open to this community.</p></div>{liveSessions.length ? <RadioSessionList sessions={liveSessions} reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={setSelectedSession} onToggleReminder={toggleReminder} /> : <RadioEmptyState icon="microphone" title="The station is quiet" body="No broadcast is live. Scheduled shows remain available from the Schedule section." />}</section> : null}
+        {snapshot && activeSection === "schedule" ? <section><div className="radio-shell-section-heading"><div><span>{snapshot.settings.scheduleTimezone}</span><h2>Schedule</h2></div><p>Upcoming broadcasts use the station timezone.</p></div>{scheduledSessions.length ? <RadioSessionList sessions={scheduledSessions} scheduled reminderIds={reminderIds} getUserLabel={getUserLabel} onListen={setSelectedSession} onToggleReminder={toggleReminder} /> : <RadioEmptyState icon="bell" title="No broadcasts scheduled" body={`The ${snapshot.settings.scheduleTimezone} schedule is ready and currently empty.`} />}</section> : null}
+        {snapshot && activeSection === "programs" ? <section><div className="radio-shell-section-heading"><div><span>PROGRAM LIBRARY</span><h2>Shows & Programs</h2></div><p>Recurring station formats and their assigned hosts.</p></div>{snapshot.programs.length ? <div className="radio-program-grid">{snapshot.programs.map((program) => <article key={program.id}><span><AppIcon name="headphones" size="lg" /></span><div><h3>{program.title}</h3><p>{program.description}</p><small>{program.hostUserId ? getUserLabel(program.hostUserId) : "Host not assigned"}</small></div></article>)}</div> : <RadioEmptyState icon="headphones" title="No programs published" body="The station starts clean; managers can define shows after assigning trusted Radio Hosts." />}</section> : null}
+        {snapshot && activeSection === "hosts" ? <section><div className="radio-shell-section-heading"><div><span>MIC ACCESS</span><h2>Hosts</h2></div><p>Owner and Radio Host role assignments control broadcast access.</p></div>{hosts.length ? <div className="radio-host-grid">{hosts.map((host) => <button key={host.id} type="button" onClick={() => onOpenProfile?.(host)}><MemberAvatar member={host} size={44} /><span><strong>{host.displayName}</strong><small>{community.roles.find((role) => role.id === host.roleId)?.name ?? "Radio Host"}</small></span><AppIcon name="chevronRight" size="sm" /></button>)}</div> : <RadioEmptyState icon="users" title="No hosts assigned" body="The owner can assign the Radio Host role from community administration." />}</section> : null}
+        {snapshot && activeSection === "announcements" ? <section><div className="radio-shell-section-heading"><div><span>STATION DESK</span><h2>Announcements</h2></div><p>Official schedule changes and broadcast notices.</p></div>{snapshot.announcements.length ? <div className="radio-announcement-list">{snapshot.announcements.map((announcement) => <article key={announcement.id}><AppIcon name="inbox" size="md" /><div><p>{announcement.body}</p><small>{getUserLabel(announcement.authorUserId)} · {new Date(announcement.publishedAt).toLocaleString()}</small></div></article>)}</div> : <RadioEmptyState icon="inbox" title="No station announcements" body="There are no official notices for this station yet." />}</section> : null}
+        {snapshot && activeSection === "listenerChat" && snapshot.settings.listenerChatEnabled ? <section><div className="radio-shell-section-heading"><div><span>OPTIONAL SIDE CHANNEL</span><h2>Listener Chat</h2></div><p>Discussion supports the broadcast but never replaces the Radio shell.</p></div><div className="radio-listener-chat-state"><AppIcon name="hash" size="lg" /><div><strong>Listener discussion is enabled</strong><span>Channel access remains protected by normal channel visibility and membership rules.</span></div></div></section> : null}
+      </section>
+    </div>
+  </main>;
+}

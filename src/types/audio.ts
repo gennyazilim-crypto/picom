@@ -2,6 +2,32 @@ export type AudioContentType = "radio_live" | "radio_scheduled" | "podcast_episo
 export type RadioSessionStatus = "scheduled" | "live" | "ended";
 export type PodcastEpisodeStatus = "draft" | "published" | "archived";
 
+export type RadioCommunitySettings = Readonly<{
+  communityId: string;
+  scheduleTimezone: string;
+  listenerChatEnabled: boolean;
+  listenerChatChannelId?: string;
+  announcementsEnabled: boolean;
+}>;
+
+export type RadioProgram = Readonly<{
+  id: string;
+  communityId: string;
+  title: string;
+  description: string;
+  hostUserId?: string;
+  isActive: boolean;
+  createdAt: string;
+}>;
+
+export type RadioAnnouncement = Readonly<{
+  id: string;
+  communityId: string;
+  authorUserId: string;
+  body: string;
+  publishedAt: string;
+}>;
+
 export type AudioReactionSummary = Readonly<{
   emoji: string;
   count: number;
@@ -31,6 +57,14 @@ export type RadioSession = Readonly<{
   tags: readonly string[];
   isFeatured: boolean;
   isSavedByCurrentUser: boolean;
+}>;
+
+export type RadioCommunityShellSnapshot = Readonly<{
+  settings: RadioCommunitySettings;
+  sessions: readonly RadioSession[];
+  programs: readonly RadioProgram[];
+  announcements: readonly RadioAnnouncement[];
+  hostUserIds: readonly string[];
 }>;
 
 export type PodcastEpisode = Readonly<{

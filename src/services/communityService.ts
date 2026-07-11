@@ -250,6 +250,23 @@ export const communityService = {
       return { ok: true, data: { ...mapCommunityListRow(row), templateId } };
     }
 
+    if (kind === "radio") {
+      const { data, error } = await configured.data.rpc("create_radio_community_with_defaults", {
+        target_creation_request_id: creationRequestId,
+        community_name: name,
+        community_description: input.description?.trim() || null,
+        community_icon_url: iconUrl,
+        community_accent_color: input.accentColor ?? "#007571",
+        community_visibility: visibility,
+        community_public_read_enabled: publicReadEnabled,
+      });
+      const row = data?.[0];
+      if (error || !row) {
+        return { ok: false, error: { code: "COMMUNITY_TEMPLATE_FAILED", message: "Could not create the Radio station and its access roles." } };
+      }
+      return { ok: true, data: mapCommunityListRow(row) };
+    }
+
     const insertPayload = {
       owner_id: userId,
       name,

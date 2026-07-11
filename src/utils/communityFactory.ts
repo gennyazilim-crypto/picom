@@ -2,7 +2,7 @@ import { currentUserId } from "../data/mockCommunities";
 import { mockRoles } from "../data/mockMembers";
 import { getCommunityTemplate } from "../data/communityTemplates";
 import type { CommunitySummary } from "../services/communityService";
-import { supportsTextChannels, type ChannelCategory, type Community } from "../types/community";
+import { supportsTextChannels, type ChannelCategory, type Community, type Role } from "../types/community";
 
 function getIcon(name: string): string {
   return name.trim().slice(0, 1).toUpperCase() || "P";
@@ -10,7 +10,13 @@ function getIcon(name: string): string {
 
 export function createCommunityFromSummary(summary: CommunitySummary): Community {
   const template = getCommunityTemplate(summary.templateId);
-  const ownerRole = mockRoles.find((role) => role.name === "Owner") ?? mockRoles[0];
+  const radioRoles: Role[] = [
+    { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "hostRadio", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements"] },
+    { id: `${summary.id}-radio-host-role`, name: "Radio Host", color: "var(--picom-aqua)", level: 50, capabilities: ["hostRadio", "manageRadioSchedule"] },
+    { id: `${summary.id}-member-role`, name: "Member", color: "var(--text-muted)", level: 10, capabilities: ["listenRadio"] },
+  ];
+  const roles = summary.kind === "radio" ? radioRoles : mockRoles;
+  const ownerRole = roles.find((role) => role.name === "Owner") ?? roles[0];
   const categories: ChannelCategory[] = (supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
     const categoryId = `${summary.id}-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "category"}`;
 
@@ -41,7 +47,7 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
     description: summary.description,
     visibility: summary.visibility,
     publicReadEnabled: summary.publicReadEnabled,
-    roles: mockRoles,
+    roles,
     members: [
       {
         id: `${summary.id}-owner-member`,

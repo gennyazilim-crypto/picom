@@ -136,6 +136,7 @@ const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((
 const ProfileView = lazy(() => import("./components/ProfileView").then((module) => ({ default: module.ProfileView })));
 const DirectMessagesView = lazy(() => import("./components/DirectMessagesView").then((module) => ({ default: module.DirectMessagesView })));
 const CommunityAudioView = lazy(() => import("./components/audio/CommunityAudioView").then((module) => ({ default: module.CommunityAudioView })));
+const RadioCommunityShell = lazy(() => import("./components/audio/RadioCommunityShell").then((module) => ({ default: module.RadioCommunityShell })));
 const SavedMessagesView = lazy(() => import("./components/SavedMessagesView").then((module) => ({ default: module.SavedMessagesView })));
 const DiscoveryView = lazy(() => import("./components/DiscoveryView").then((module) => ({ default: module.DiscoveryView })));
 const FriendsView = lazy(() => import("./components/FriendsView").then((module) => ({ default: module.FriendsView })));
@@ -178,7 +179,11 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "communityAudio" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
+type ActiveView = "community" | "radioCommunity" | "communityAudio" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
+
+function communityViewForKind(kind: Community["kind"]): ActiveView {
+  return kind === "text" ? "community" : kind === "radio" ? "radioCommunity" : "communityAudio";
+}
 
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
   status: "idle",
@@ -1579,10 +1584,11 @@ export function App() {
   }, [closeTransientOverlays]);
 
   const openCommunityFromRail = useCallback((communityId: string) => {
-    setActiveView("community");
+    const target = communities.find((community) => community.id === communityId);
+    setActiveView(target ? communityViewForKind(target.kind) : "community");
     switchCommunity(communityId);
     closeTransientOverlays();
-  }, [closeTransientOverlays, switchCommunity]);
+  }, [closeTransientOverlays, communities, switchCommunity]);
 
   const toggleFollowUser = useCallback(async (userId: string) => {
     if (userId === directMessageUserId || followMutationInFlightRef.current.has(userId)) return;
@@ -2316,7 +2322,7 @@ export function App() {
 
     replaceCommunityMembers(communityId, [...target.members.filter((candidate) => candidate.userId !== member.userId), member]);
     switchCommunity(communityId);
-    setActiveView(target.kind === "text" ? "community" : "communityAudio");
+    setActiveView(communityViewForKind(target.kind));
     setPendingInviteCode(null);
     pushToast(status === "already_member" ? `You are already a member of ${target.name}.` : `Joined ${target.name} with invite.`, "success");
   };
@@ -2331,7 +2337,7 @@ export function App() {
     const community = addCommunity(createCommunityFromSummary(result.data));
     analyticsService.trackEvent("community_created", { mode: dataSourceService.getStatus().mode, kind: community.kind });
     switchCommunity(community.id);
-    setActiveView(community.kind === "text" ? "community" : "communityAudio");
+    setActiveView(communityViewForKind(community.kind));
     setCreateCommunityOpen(false);
     maybeShowNotificationPermissionPrompt("community_created");
     pushToast(`${community.name} ${community.kind} community created.`, "success");
@@ -2563,6 +2569,14 @@ export function App() {
               onBlockFriend={blockFriend}
             />
             </DeferredViewBoundary>
+          ) : activeView === "radioCommunity" && displayedActiveCommunity.kind === "radio" ? (
+            <DeferredViewBoundary label="Opening radio community">
+              <RadioCommunityShell
+                community={displayedActiveCommunity}
+                canManageAudio={communityAccess.isOwner || communityAccess.permissions.some((permission) => ["manageCommunity", "manageChannels", "moderateMessages"].includes(permission))}
+                onOpenProfile={openProfilePage}
+              />
+            </DeferredViewBoundary>
           ) : (
             <>
               <CommunitySidebar
@@ -2578,7 +2592,7 @@ export function App() {
                   clearChannelUnread({ communityId: activeCommunity.id, channelId: channel.id });
                 }}
                 audioActive={activeView === "communityAudio"}
-                onOpenAudio={() => setActiveView("communityAudio")}
+                onOpenAudio={() => setActiveView(communityViewForKind(displayedActiveCommunity.kind))}
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onOpenSettings={openSettings}
                 onLogout={handleLogout}

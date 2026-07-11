@@ -470,6 +470,24 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      radio_community_settings: {
+        Row: { community_id: string; schedule_timezone: string; listener_chat_enabled: boolean; listener_chat_channel_id: string | null; announcements_enabled: boolean; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_community_settings"]["Row"]> & Pick<Database["public"]["Tables"]["radio_community_settings"]["Row"], "community_id">;
+        Update: Partial<Database["public"]["Tables"]["radio_community_settings"]["Row"]>;
+        Relationships: [];
+      };
+      radio_programs: {
+        Row: { id: string; community_id: string; title: string; description: string; host_user_id: string | null; created_by: string; is_active: boolean; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_programs"]["Row"]> & Pick<Database["public"]["Tables"]["radio_programs"]["Row"], "community_id" | "title" | "created_by">;
+        Update: Partial<Database["public"]["Tables"]["radio_programs"]["Row"]>;
+        Relationships: [];
+      };
+      radio_announcements: {
+        Row: { id: string; community_id: string; author_id: string; body: string; published_at: string; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["radio_announcements"]["Row"]> & Pick<Database["public"]["Tables"]["radio_announcements"]["Row"], "community_id" | "author_id" | "body">;
+        Update: Partial<Database["public"]["Tables"]["radio_announcements"]["Row"]>;
+        Relationships: [];
+      };
       radio_sessions: {
         Row: { id: string; community_id: string; channel_id: string | null; host_user_id: string; title: string; description: string; status: "scheduled" | "live" | "ended" | "cancelled"; starts_at: string; ended_at: string | null; cover_url: string | null; listener_count: number; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["radio_sessions"]["Row"]> & Pick<Database["public"]["Tables"]["radio_sessions"]["Row"], "community_id" | "host_user_id" | "title" | "starts_at">;
@@ -541,6 +559,18 @@ export type Database = {
           community_visibility?: "public" | "private";
           community_public_read_enabled?: boolean;
           community_template_id?: string;
+        };
+        Returns: Array<Database["public"]["Tables"]["communities"]["Row"]>;
+      };
+      create_radio_community_with_defaults: {
+        Args: {
+          target_creation_request_id: string;
+          community_name: string;
+          community_description?: string | null;
+          community_icon_url?: string | null;
+          community_accent_color?: string;
+          community_visibility?: "public" | "private";
+          community_public_read_enabled?: boolean;
         };
         Returns: Array<Database["public"]["Tables"]["communities"]["Row"]>;
       };

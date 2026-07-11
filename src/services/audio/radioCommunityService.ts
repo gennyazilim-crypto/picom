@@ -1,0 +1,65 @@
+import type { Community } from "../../types/community";
+import type { RadioAnnouncement, RadioCommunitySettings, RadioCommunityShellSnapshot, RadioProgram } from "../../types/audio";
+import { dataSourceService } from "../dataSourceService";
+import type { Database } from "../supabase/database.types";
+import { getSupabaseClient } from "../supabase/supabaseClient";
+import { radioService } from "./radioService";
+
+type SettingsRow = Database["public"]["Tables"]["radio_community_settings"]["Row"];
+type ProgramRow = Database["public"]["Tables"]["radio_programs"]["Row"];
+type AnnouncementRow = Database["public"]["Tables"]["radio_announcements"]["Row"];
+export type RadioCommunityResult = Readonly<{ ok: true; data: RadioCommunityShellSnapshot }> | Readonly<{ ok: false; error: string }>;
+
+function settingsFromRow(communityId: string, row?: SettingsRow | null): RadioCommunitySettings {
+  return {
+    communityId,
+    scheduleTimezone: row?.schedule_timezone || "UTC",
+    listenerChatEnabled: row?.listener_chat_enabled === true && Boolean(row.listener_chat_channel_id),
+    listenerChatChannelId: row?.listener_chat_channel_id ?? undefined,
+    announcementsEnabled: row?.announcements_enabled ?? true,
+  };
+}
+
+function programFromRow(row: ProgramRow): RadioProgram {
+  return { id: row.id, communityId: row.community_id, title: row.title, description: row.description, hostUserId: row.host_user_id ?? undefined, isActive: row.is_active, createdAt: row.created_at };
+}
+
+function announcementFromRow(row: AnnouncementRow): RadioAnnouncement {
+  return { id: row.id, communityId: row.community_id, authorUserId: row.author_id, body: row.body, publishedAt: row.published_at };
+}
+
+function getHostUserIds(community: Community): string[] {
+  const hostRoleIds = new Set(community.roles.filter((role) => role.name === "Owner" || role.name === "Radio Host" || role.capabilities?.includes("hostRadio")).map((role) => role.id));
+  return community.members.filter((member) => hostRoleIds.has(member.roleId)).map((member) => member.userId);
+}
+
+export const radioCommunityService = {
+  async getShellSnapshot(community: Community): Promise<RadioCommunityResult> {
+    if (community.kind !== "radio") return { ok: false, error: "This workspace is not a Radio community." };
+    const sessions = await radioService.getCommunityRadioSessions(community.id);
+    if (!sessions.ok) return { ok: false, error: sessions.error.message };
+
+    if (dataSourceService.getStatus().isMock) {
+      return { ok: true, data: { settings: settingsFromRow(community.id), sessions: sessions.data, programs: [], announcements: [], hostUserIds: getHostUserIds(community) } };
+    }
+
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: "Radio station data is unavailable while Supabase is not configured." };
+    const [settings, programs, announcements] = await Promise.all([
+      client.from("radio_community_settings").select("community_id,schedule_timezone,listener_chat_enabled,listener_chat_channel_id,announcements_enabled,created_at,updated_at").eq("community_id", community.id).maybeSingle(),
+      client.from("radio_programs").select("id,community_id,title,description,host_user_id,created_by,is_active,created_at,updated_at").eq("community_id", community.id).eq("is_active", true).order("created_at", { ascending: true }).limit(100),
+      client.from("radio_announcements").select("id,community_id,author_id,body,published_at,created_at").eq("community_id", community.id).order("published_at", { ascending: false }).limit(50),
+    ]);
+    if (settings.error || programs.error || announcements.error) return { ok: false, error: "Picom could not load the Radio station structure." };
+    return {
+      ok: true,
+      data: {
+        settings: settingsFromRow(community.id, settings.data),
+        sessions: sessions.data,
+        programs: (programs.data ?? []).map(programFromRow),
+        announcements: (announcements.data ?? []).map(announcementFromRow),
+        hostUserIds: getHostUserIds(community),
+      },
+    };
+  },
+};
