@@ -401,7 +401,8 @@
     "enterprise:operations:audit:smoke": "node scripts/final-enterprise-operations-audit-smoke-test.mjs",
     "tasks:replacement-manifest:smoke": "node scripts/task-replacement-manifest-smoke-test.mjs",
     "ci:workflow:smoke": "node scripts/github-actions-workflow-contract.mjs",
-    "release:go-no-go:guard": "node scripts/release-go-no-go-guard.mjs"
+    "release:go-no-go:guard": "node scripts/release-go-no-go-guard.mjs",
+    "podcast:publishing:smoke": "node scripts/podcast-publishing-workflow-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
