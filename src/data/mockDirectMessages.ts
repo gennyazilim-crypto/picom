@@ -1,5 +1,6 @@
 import { currentUserId } from "./mockCommunities";
 import type { DirectConversation, DirectMessageAttachment } from "../types/directMessages";
+import { selectMockFixture } from "../config/dataSourcePolicy";
 
 function createDmArtwork(label: string, first: string, second: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${first}"/><stop offset="1" stop-color="${second}"/></linearGradient></defs><rect width="720" height="480" rx="42" fill="url(#g)"/><circle cx="570" cy="110" r="150" fill="white" opacity=".12"/><circle cx="160" cy="420" r="210" fill="white" opacity=".08"/><text x="48" y="420" fill="white" font-family="sans-serif" font-size="42" font-weight="700">${label}</text></svg>`;
@@ -10,7 +11,7 @@ const designReview: DirectMessageAttachment = { id: "dm-media-design-review", ty
 const releaseBoard: DirectMessageAttachment = { id: "dm-media-release-board", type: "image", url: createDmArtwork("Release board", "#9f493d", "#e79a58"), name: "release-board.png", mimeType: "image/png", width: 720, height: 480 };
 const workspaceNotes: DirectMessageAttachment = { id: "dm-media-workspace-notes", type: "image", url: createDmArtwork("Workspace notes", "#334c62", "#6d8fa8"), name: "workspace-notes.png", mimeType: "image/png", width: 720, height: 480 };
 
-export const mockDirectConversations: DirectConversation[] = [
+const rawMockDirectConversations: DirectConversation[] = [
   {
     id: "dm-naines", participantUserId: "u-naines", participantName: "Nainesh Selarka", participantUsername: "nainesh",
     participantStatus: "online", participantStatusText: "Designing on Figma", lastMessagePreview: "The review board is ready.", updatedAt: "2026-07-04T12:24:00.000Z", unreadCount: 2,
@@ -37,3 +38,5 @@ export const mockDirectConversations: DirectConversation[] = [
     messages: [{ id: "dm-radha-1", conversationId: "dm-radha", authorId: "u-radha", body: "Privacy controls are ready for service wiring.", createdAt: "2026-07-03T19:40:00.000Z" }],
   },
 ];
+
+export const mockDirectConversations = selectMockFixture<DirectConversation[]>(rawMockDirectConversations, []);

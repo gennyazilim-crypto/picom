@@ -1,5 +1,6 @@
 import { appConfig } from "../config/appConfig";
 import { loggingService } from "./loggingService";
+import { dataSourceService } from "./dataSourceService";
 
 export type MaintenanceServiceStatus = "operational" | "degraded" | "maintenance";
 
@@ -20,7 +21,7 @@ let snapshot: MaintenanceStatusSnapshot = {
   status: "operational",
   message: "Picom services are operational.",
   checkedAt: null,
-  source: appConfig.dataSource === "mock" ? "mock" : "fallback",
+  source: dataSourceService.getStatus().isMock ? "mock" : "fallback",
 };
 
 function emit(next: MaintenanceStatusSnapshot): MaintenanceStatusSnapshot {
@@ -33,7 +34,7 @@ function emit(next: MaintenanceStatusSnapshot): MaintenanceStatusSnapshot {
 }
 
 function getStatusUrl(): string | null {
-  if (!appConfig.supabase.url || appConfig.dataSource === "mock") {
+  if (!dataSourceService.getStatus().configured || !dataSourceService.getStatus().isSupabase || !appConfig.supabase.url) {
     return null;
   }
 
@@ -75,11 +76,12 @@ export const maintenanceStatusService = {
   async refresh(timeoutMs = 3500): Promise<MaintenanceStatusSnapshot> {
     const statusUrl = getStatusUrl();
     if (!statusUrl) {
+      const dataSource = dataSourceService.getStatus();
       return emit({
-        status: "operational",
-        message: "Mock mode is active; scheduled maintenance checks are skipped.",
+        status: dataSource.isMock ? "operational" : "degraded",
+        message: dataSource.isMock ? "Mock mode is active; scheduled maintenance checks are skipped." : dataSource.reason ?? "Supabase status checks are not configured.",
         checkedAt: new Date().toISOString(),
-        source: "mock",
+        source: dataSource.isMock ? "mock" : "fallback",
       });
     }
 
@@ -100,7 +102,7 @@ export const maintenanceStatusService = {
       loggingService.logWarn("Maintenance status check failed", { error }, "maintenance-status");
       return emit({
         status: "degraded",
-        message: "Picom service status could not be checked. Core mock UI remains available.",
+        message: "Picom service status could not be checked. Backend-dependent content remains unavailable.",
         checkedAt: new Date().toISOString(),
         source: "fallback",
       });

@@ -1,6 +1,7 @@
 import type { FriendState } from "../types/friends";
+import { selectMockFixture } from "../config/dataSourcePolicy";
 
-export const mockFriendState: FriendState = {
+const rawMockFriendState: FriendState = {
   counts: { friends: 15, incoming: 1, outgoing: 1, pending: 2 },
   friends: [
     {
@@ -212,3 +213,8 @@ export const mockFriendState: FriendState = {
     },
   ],
 };
+
+export const mockFriendState = selectMockFixture<FriendState>(rawMockFriendState, {
+  counts: { friends: 0, incoming: 0, outgoing: 0, pending: 0 },
+  friends: [], requests: [], suggestions: [],
+});

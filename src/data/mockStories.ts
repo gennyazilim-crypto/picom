@@ -1,7 +1,8 @@
 import type { FollowedUserStory } from "../types/stories";
 import { mockAudioFeedItems } from "./mockAudio";
+import { selectMockFixture } from "../config/dataSourcePolicy";
 
-export const mockFollowedUserStories: FollowedUserStory[] = [
+const rawMockFollowedUserStories: FollowedUserStory[] = [
   { id: "story-aurora-mira-status", authorId: "aurora-user-1", communityId: "aurora", channelId: "aurora-general", type: "status", title: "Polishing the desktop shell", subtitle: "Focus block", body: "Mira is refining the mention card rhythm before the next beta pass.", gradient: "story-bg-ocean", timeLabel: "18 min", createdAt: "2026-07-05T19:12:00.000Z", status: "unseen", durationSeconds: 8 },
   { id: "story-aurora-jonas-mention", authorId: "aurora-user-2", communityId: "aurora", channelId: "aurora-showcase", messageId: "aurora-message-2", type: "mention_highlight", title: "Your UI note is getting traction", subtitle: "Mention highlight", body: "Jonas highlighted a compact footer pattern in Aurora Studio.", gradient: "story-bg-warm", timeLabel: "32 min", createdAt: "2026-07-05T18:58:00.000Z", status: "unseen", durationSeconds: 9, mentionedUserIds: ["user-me"] },
   { id: "story-north-atlas-media", authorId: "north-user-1", communityId: "north", channelId: "north-showcase", type: "media", title: "New installer preview", subtitle: "Shared media", body: "Atlas shared a safe mock preview for the Windows package notes.", gradient: "story-bg-mountain", timeLabel: "47 min", createdAt: "2026-07-05T18:43:00.000Z", status: "seen", durationSeconds: 8 },
@@ -16,7 +17,7 @@ export const mockFollowedUserStories: FollowedUserStory[] = [
   { id: "story-orbit-sia-status", authorId: "orbit-user-2", communityId: "orbit", channelId: "orbit-talk", type: "status", title: "Public read testing", subtitle: "Visitor mode", body: "Sia is checking what visitors can safely see before they join.", gradient: "story-bg-teal", timeLabel: "8 h", createdAt: "2026-07-05T10:50:00.000Z", status: "seen", durationSeconds: 8 },
 ];
 
-mockFollowedUserStories.push(...mockAudioFeedItems.slice(0, 6).map((item, index): FollowedUserStory => {
+rawMockFollowedUserStories.push(...mockAudioFeedItems.slice(0, 6).map((item, index): FollowedUserStory => {
   const podcast = item.type === "podcast_episode";
   const sourceId = item.sourceId ?? item.id.replace(/^feed-/, "");
   return {
@@ -38,3 +39,5 @@ mockFollowedUserStories.push(...mockAudioFeedItems.slice(0, 6).map((item, index)
     mentionedUserIds: item.isMention ? ["user-me"] : [],
   };
 }));
+
+export const mockFollowedUserStories = selectMockFixture<FollowedUserStory[]>(rawMockFollowedUserStories, []);

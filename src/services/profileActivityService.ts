@@ -35,9 +35,28 @@ function profileStatus(value: Json | undefined): ProfileStatus {
 function emptyProductionProfile(base: UserProfile): UserProfile {
   return {
     ...base,
-    roles: [], tags: [], media: [], activities: [], activityScore: undefined, preferredLanguage: undefined,
+    coverUrl: undefined, location: undefined, timezone: undefined, joinedAt: "", bio: "",
+    roles: [], tags: [], media: [], activities: [], mainCommunityId: undefined, topRole: undefined,
+    activityScore: undefined, preferredLanguage: undefined,
     stats: { communities: 0, posts: 0, mentions: 0, reactions: 0, followers: 0, following: 0, roles: 0 },
   };
+}
+
+function productionProfileBase(input: ProfileLoadInput): UserProfile {
+  return emptyProductionProfile({
+    id: input.member.userId, displayName: input.member.displayName, username: input.member.username,
+    avatarUrl: input.member.avatarUrl, status: profileStatus(input.member.status), statusText: input.member.statusText,
+    joinedAt: "", bio: "", roles: [], tags: [],
+    stats: { communities: 0, posts: 0, mentions: 0, reactions: 0, followers: 0, following: 0, roles: 0 },
+    media: [], activities: [], isCurrentUser: input.member.userId === input.viewerUserId,
+    isFollowing: input.followedUserIds.includes(input.member.userId),
+    onboardingCompleted: false,
+    privacy: {
+      visibility: "friends", canViewProfile: false, showOnlineStatus: false, showLocation: false,
+      showTimezone: false, showActivity: false, showMedia: false, showCommunities: false,
+      showFriends: false, showFollows: false, showAudio: false,
+    },
+  });
 }
 
 function mapPayload(payload: Json, base: UserProfile): UserProfile {
@@ -105,8 +124,9 @@ function mapPayload(payload: Json, base: UserProfile): UserProfile {
 }
 
 async function load(input: ProfileLoadInput): Promise<ProfileLoadResult> {
-  const base = getMockProfileForMember(input.member, input.communities, { currentUserId: input.viewerUserId, followedUserIds: input.followedUserIds });
-  if (dataSourceService.getStatus().isMock) return { ok: true, data: base };
+  const status = dataSourceService.getStatus();
+  const base = status.isMock ? getMockProfileForMember(input.member, input.communities, { currentUserId: input.viewerUserId, followedUserIds: input.followedUserIds }) : productionProfileBase(input);
+  if (status.isMock) return { ok: true, data: base };
   const client = getSupabaseClient();
   if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Profile activity is unavailable until Picom reconnects." } };
   const { data, error } = await client.rpc("get_profile_domain_v1", { target_user_id: input.member.userId, result_limit: 30 });

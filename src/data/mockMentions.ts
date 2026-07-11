@@ -1,5 +1,6 @@
 import type { MentionItem } from "../types/mentions";
 import { mockAttachmentLayouts } from "./mockAttachments";
+import { selectMockFixture } from "../config/dataSourcePolicy";
 
 const base = Date.UTC(2026, 6, 4, 15, 20, 0);
 const minutesAgo = (minutes: number) => new Date(base - minutes * 60 * 1000).toISOString();
@@ -42,7 +43,7 @@ const commentPreview = {
   ],
 };
 
-export const mockMentionItems: MentionItem[] = [
+const rawMockMentionItems: MentionItem[] = [
   {
     id: "mention-popular-01",
     source: "popular_feed",
@@ -495,3 +496,5 @@ export const mockMentionItems: MentionItem[] = [
     popularityScore: 18,
   },
 ];
+
+export const mockMentionItems = selectMockFixture<MentionItem[]>(rawMockMentionItems, []);

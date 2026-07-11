@@ -3,6 +3,7 @@ import { loggingService, type LogEntry } from "../logging/loggingService";
 import type { RealtimeConnectionStatus } from "../supabase/realtimeService";
 import { voiceService, type VoiceConnectionStatus } from "../voiceService";
 import type { VoiceConnectionQuality, VoiceDurationBucket } from "../../utils/voiceQualityMetrics";
+import { dataSourceService } from "../dataSourceService";
 
 export type DiagnosticsRealtimeStatus = RealtimeConnectionStatus | "unknown";
 export type SupabaseDiagnosticsStatus = "mock" | "configured" | "not_configured";
@@ -98,8 +99,9 @@ function getRecentErrors(limit = 20): DiagnosticsErrorSummary[] {
 }
 
 function getSupabaseStatus(): SupabaseDiagnosticsStatus {
-  if (appConfig.dataSource === "mock") return "mock";
-  return appConfig.supabase.url && appConfig.supabase.anonKey ? "configured" : "not_configured";
+  const status = dataSourceService.getStatus();
+  if (status.isMock) return "mock";
+  return status.configured ? "configured" : "not_configured";
 }
 
 function formatExportAsText(payload: DiagnosticsExportPayload): string {
@@ -152,7 +154,7 @@ export const diagnosticsService = {
         releaseChannel: appConfig.releaseChannel,
         buildDate: appConfig.build.date,
         commitShort: appConfig.build.commitShort,
-        dataSource: appConfig.dataSource,
+        dataSource: dataSourceService.getMode(),
         runtimeTarget: appConfig.runtimeTarget,
       },
       runtime: {

@@ -1,5 +1,6 @@
 import { appConfig } from "../config/appConfig";
 import { loggingService } from "./loggingService";
+import { dataSourceService } from "./dataSourceService";
 
 export type NetworkState = "online" | "offline" | "backend_unreachable" | "degraded" | "checking";
 
@@ -34,7 +35,8 @@ function emit(next: NetworkStatusSnapshot): NetworkStatusSnapshot {
 }
 
 function getHealthUrl(): string | null {
-  if (!appConfig.supabase.url) {
+  const status = dataSourceService.getStatus();
+  if (!status.isSupabase || !status.configured || !appConfig.supabase.url) {
     return null;
   }
 
@@ -124,13 +126,14 @@ export const networkStatusService = {
     }
 
     const healthUrl = getHealthUrl();
-    if (!healthUrl || appConfig.dataSource === "mock") {
+    if (!healthUrl) {
+      const dataSource = dataSourceService.getStatus();
       return emit({
-        state: "online",
+        state: dataSource.isMock ? "online" : "backend_unreachable",
         browserOnline,
-        backendReachable: null,
+        backendReachable: dataSource.isMock ? null : false,
         checkedAt: new Date().toISOString(),
-        reason: "Backend health check skipped in mock or unconfigured mode."
+        reason: dataSource.isMock ? "Backend health check skipped in explicit mock mode." : dataSource.reason ?? "Supabase backend is not configured."
       });
     }
 

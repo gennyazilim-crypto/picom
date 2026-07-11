@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
+import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 
@@ -31,6 +32,10 @@ try {
   assertContains("src/services/membersService.ts", "dataSource.isMock", "mock members service path");
   assertContains("src/services/reactionService.ts", "dataSource.isMock", "mock reactions service path");
   assertContains("src/App.tsx", "dataSourceService.getStatus().isSupabase", "Supabase-only startup data effects");
+  assertContains("src/config/dataSourcePolicy.ts", "selectMockFixture", "explicit mock fixture gate");
+  const cleanupAudit = spawnSync(process.execPath, ["scripts/data-source-final-cleanup-smoke.mjs"], { cwd: root, encoding: "utf8" });
+  if (cleanupAudit.status !== 0) throw new Error(cleanupAudit.stderr || cleanupAudit.stdout || "Data source cleanup audit failed.");
+  process.stdout.write(cleanupAudit.stdout);
   console.log("✓ Mock mode smoke test completed");
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
