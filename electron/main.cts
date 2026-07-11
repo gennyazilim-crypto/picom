@@ -417,38 +417,45 @@ function registerIpcHandlers(): void {
 
     const window = BrowserWindow.fromWebContents(event.sender);
 
-    if (!window) {
+    if (!window || window.isDestroyed()) {
       return { ok: false, native: true, error: "WINDOW_NOT_FOUND" } as const;
     }
 
-    if (action === "minimize") {
-      window.minimize();
-    }
-
-    if (action === "maximize") {
-      if (window.isMaximized()) {
-        window.unmaximize();
-      } else {
-        window.maximize();
+    try {
+      if (action === "minimize") {
+        window.minimize();
       }
-    }
 
-    if (action === "close") {
-      window.close();
-    }
+      if (action === "maximize") {
+        if (window.isMaximized()) {
+          window.unmaximize();
+        } else {
+          window.maximize();
+        }
+        sendWindowMaximizeState(window);
+      }
 
-    return { ok: true, native: true, action } as const;
+      const maximized = !window.isDestroyed() && (window.isMaximized() || window.isFullScreen());
+
+      if (action === "close") {
+        window.close();
+      }
+
+      return { ok: true, native: true, action, maximized } as const;
+    } catch {
+      return { ok: false, native: true, error: "WINDOW_ACTION_FAILED" } as const;
+    }
   });
 
   ipcMain.handle(IPC_CHANNELS.windowIsMaximized, (event) => {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const window = BrowserWindow.fromWebContents(event.sender);
 
-    return {
-      ok: Boolean(window),
-      native: true,
-      maximized: window ? window.isMaximized() || window.isFullScreen() : false
-    } as const;
+    if (!window || window.isDestroyed()) {
+      return { ok: false, native: true, maximized: false, error: "WINDOW_NOT_FOUND" } as const;
+    }
+
+    return { ok: true, native: true, maximized: window.isMaximized() || window.isFullScreen() } as const;
   });
 
   ipcMain.handle(IPC_CHANNELS.screenCaptureGetSources, async (event) => {

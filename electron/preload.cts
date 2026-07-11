@@ -184,7 +184,7 @@ const bridge = Object.freeze({
     }
 
     return invokeWhitelisted(IPC_CHANNELS.windowControl, action) as Promise<
-      | { ok: true; native: true; action: WindowAction }
+      | { ok: true; native: true; action: WindowAction; maximized: boolean }
       | { ok: false; native: true; error: string }
     >;
   },

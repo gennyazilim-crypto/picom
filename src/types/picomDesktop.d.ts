@@ -44,7 +44,7 @@ declare global {
       windowControl: (
         action: PicomWindowAction
       ) => Promise<
-        | { ok: true; native: true; action: PicomWindowAction }
+        | { ok: true; native: true; action: PicomWindowAction; maximized: boolean }
         | { ok: false; native: true; error: string }
       >;
       isWindowMaximized?: () => Promise<boolean>;

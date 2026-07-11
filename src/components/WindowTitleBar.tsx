@@ -17,6 +17,8 @@ const titleBarIcons = mvpUiIconMap.windowTitleBar;
 
 export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotifications, notificationUnreadCount = 0 }: WindowTitleBarProps) {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"minimize" | "maximize" | "close" | null>(null);
+  const [controlStatus, setControlStatus] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -35,15 +37,35 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
     };
   }, []);
 
+  const runWindowAction = async (action: "minimize" | "maximize" | "close") => {
+    if (pendingAction) return;
+    setPendingAction(action);
+    setControlStatus("");
+    const result = await windowService.run(action);
+
+    if (!result.ok) {
+      setControlStatus("Window controls are unavailable. Restart Picom if the problem continues.");
+      setPendingAction(null);
+      return;
+    }
+
+    if (action === "maximize") {
+      setIsMaximized(result.maximized);
+      setControlStatus(result.maximized ? "Window maximized." : "Window restored.");
+    }
+
+    setPendingAction(null);
+  };
+
   return (
-    <header className="window-titlebar">
+    <header className={`window-titlebar ${isMaximized ? "is-maximized" : ""}`} data-window-state={isMaximized ? "maximized" : "normal"}>
       <div className="window-brand">
         <img src={logoUrl} alt="Picom" />
         <strong>Picom</strong>
         <span>Desktop MVP</span>
       </div>
 
-      <button className="titlebar-search" onClick={onOpenSearch} aria-label="Open command search">
+      <button type="button" className="titlebar-search" onClick={onOpenSearch} aria-label="Open command search">
         <AppIcon name={titleBarIcons.search} size="sm" />
         <span>Search Picom or press Ctrl K</span>
       </button>
@@ -52,17 +74,18 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
         <span className="connection-pill">
           <span />Mock online
         </span>
-        {onOpenNotifications ? <button className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}><AppIcon name="bell" size="sm" />{notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}</button> : null}
+        {onOpenNotifications ? <button type="button" className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}><AppIcon name="bell" size="sm" />{notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}</button> : null}
         <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
-        <button className="window-control" aria-label="Minimize window" onClick={() => void windowService.run("minimize")}>
+        <button type="button" className="window-control" aria-label="Minimize window" title="Minimize" disabled={pendingAction !== null} onClick={() => void runWindowAction("minimize")}>
           <AppIcon name={titleBarIcons.minimize} size="sm" />
         </button>
-        <button className="window-control" aria-label={isMaximized ? "Restore window" : "Maximize window"} onClick={() => void windowService.run("maximize")}>
+        <button type="button" className={`window-control ${isMaximized ? "is-restore" : ""}`} aria-label={isMaximized ? "Restore window" : "Maximize window"} aria-pressed={isMaximized} title={isMaximized ? "Restore" : "Maximize"} disabled={pendingAction !== null} onClick={() => void runWindowAction("maximize")}>
           <AppIcon name={titleBarIcons.maximize} size="sm" />
         </button>
-        <button className="window-control danger" aria-label="Close window" onClick={() => void windowService.run("close")}>
+        <button type="button" className="window-control danger" aria-label="Close window" title="Close" disabled={pendingAction !== null} onClick={() => void runWindowAction("close")}>
           <AppIcon name={titleBarIcons.close} size="sm" />
         </button>
+        <span className="titlebar-control-status" role="status" aria-live="polite">{controlStatus}</span>
       </div>
     </header>
   );

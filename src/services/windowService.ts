@@ -1,7 +1,7 @@
 export type WindowAction = "minimize" | "maximize" | "close";
 
 export type WindowActionResult =
-  | { ok: true; native: boolean; action: WindowAction }
+  | { ok: true; native: true; action: WindowAction; maximized: boolean }
   | { ok: false; native: boolean; action?: WindowAction; error: string };
 
 export type WindowMaximizeStateCallback = (isMaximized: boolean) => void;
@@ -11,17 +11,29 @@ export const windowService = {
     const nativeWindowControl = window.picomDesktop?.windowControl;
 
     if (!nativeWindowControl) {
-      return { ok: true, native: false, action };
+      return { ok: false, native: false, action, error: "WINDOW_CONTROL_UNAVAILABLE" };
     }
 
-    return nativeWindowControl(action);
+    try {
+      return await nativeWindowControl(action);
+    } catch {
+      return { ok: false, native: true, action, error: "WINDOW_CONTROL_FAILED" };
+    }
   },
 
   async isMaximized(): Promise<boolean> {
-    return window.picomDesktop?.isWindowMaximized?.() ?? false;
+    try {
+      return await (window.picomDesktop?.isWindowMaximized?.() ?? Promise.resolve(false));
+    } catch {
+      return false;
+    }
   },
 
   onMaximizeStateChanged(callback: WindowMaximizeStateCallback): () => void {
-    return window.picomDesktop?.onWindowMaximizeStateChanged?.(callback) ?? (() => undefined);
+    try {
+      return window.picomDesktop?.onWindowMaximizeStateChanged?.(callback) ?? (() => undefined);
+    } catch {
+      return () => undefined;
+    }
   }
 };
