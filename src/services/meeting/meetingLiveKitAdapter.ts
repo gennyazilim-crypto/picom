@@ -4,10 +4,11 @@ import { dataSourceService } from "../dataSourceService";
 import type { MeetingTokenAuthorizedResponse, MeetingTokenResponse, MeetingTokenResult } from "../livekit/meetingTokenTypes";
 import { meetingTokenService } from "../livekit/meetingTokenService";
 import { voiceService, type VoiceServiceResult, type VoiceServiceSnapshot, type VoiceTokenResponse } from "../voiceService";
+import type { MeetingVideoSubscriptionPlan } from "../../types/meetingVideoGrid";
 
 type Listener = (snapshot: VoiceServiceSnapshot) => void;
 const mockListeners = new Set<Listener>();
-let mockSnapshot: VoiceServiceSnapshot = { status: "idle", roomName: null, roomContext: null, muted: true, deafened: false, canSpeak: false, canShareScreen: false, screenSharing: false, screenShares: [], participants: [], error: null, errorCode: null };
+let mockSnapshot: VoiceServiceSnapshot = { status: "idle", roomName: null, roomContext: null, muted: true, deafened: false, canSpeak: false, canShareScreen: false, screenSharing: false, cameraTracks: [], screenShares: [], participants: [], error: null, errorCode: null };
 const publishMock = (patch: Partial<VoiceServiceSnapshot>) => { mockSnapshot = { ...mockSnapshot, ...patch }; for (const listener of mockListeners) listener(mockSnapshot); };
 
 function mockAuthorization(request: MeetingClientJoinRequest): MeetingTokenResult {
@@ -27,7 +28,7 @@ export const meetingLiveKitAdapter = {
     if (token.state !== "authorized") return { ok: false, error: { code: "VOICE_PERMISSION_DENIED", message: "The meeting is waiting for host admission." } };
     if (dataSourceService.getStatus().isMock) {
       publishMock({ status: "connecting", roomName: token.roomName, roomContext: { communityId: request.communityId, communityName: request.communityName, channelId: request.channelId, channelName: request.channelName }, error: null, errorCode: null });
-      publishMock({ status: "connected", muted: !token.canPublishAudio, canSpeak: token.canPublishAudio, canShareScreen: token.canPublishScreen, participants: [{ identity: token.identity, name: token.participantName, isLocal: true, isSpeaking: false, isMicrophoneEnabled: token.canPublishAudio }], error: null, errorCode: null });
+      publishMock({ status: "connected", muted: !token.canPublishAudio, canSpeak: token.canPublishAudio, canShareScreen: token.canPublishScreen, participants: [{ identity: token.identity, name: token.participantName, isLocal: true, isSpeaking: false, isMicrophoneEnabled: token.canPublishAudio, isCameraEnabled: request.joinCameraOff === false, connectionQuality: "excellent" }], error: null, errorCode: null });
       return { ok: true, data: mockSnapshot };
     }
     return voiceService.connectAuthorizedToken(voiceToken(token, request), { communityId: request.communityId, communityName: request.communityName, channelId: request.channelId, channelName: request.channelName }, { muted: request.joinMuted !== false, cameraEnabled: request.joinCameraOff === false, cameraDeviceId: request.cameraDeviceId });
@@ -40,4 +41,5 @@ export const meetingLiveKitAdapter = {
   async disconnect(): Promise<void> { if (dataSourceService.getStatus().isMock) publishMock({ status: "disconnected", roomName: null, roomContext: null, participants: [], screenSharing: false, screenShares: [] }); else await voiceService.leave(); },
   setMuted(muted: boolean) { if (dataSourceService.getStatus().isMock) { publishMock({ muted }); return Promise.resolve({ ok: true, data: mockSnapshot } as const); } return voiceService.setMuted(muted); },
   setDeafened(deafened: boolean) { if (dataSourceService.getStatus().isMock) { publishMock({ deafened }); return { ok: true, data: mockSnapshot } as const; } return voiceService.setDeafened(deafened); },
+  setVideoSubscriptionPlan(plan: MeetingVideoSubscriptionPlan) { return dataSourceService.getStatus().isMock || voiceService.setVideoSubscriptionPlan(plan); },
 };

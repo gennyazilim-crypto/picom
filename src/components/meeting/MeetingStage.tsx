@@ -1,6 +1,7 @@
 import type { MeetingClientParticipant, MeetingClientSnapshot } from "../../types/meetingClient";
 import { AppIcon } from "../AppIcon";
 import { MeetingVoiceLounge } from "./MeetingVoiceLounge";
+import { MeetingVideoGrid } from "./MeetingVideoGrid";
 
 function initials(name: string): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "P";
@@ -46,6 +47,9 @@ export function MeetingStage({
   const audioOnly = participants.length > 0 && participants.every((participant) => !participant.cameraEnabled && !participant.screenSharing);
   if (audioOnly) {
     return <MeetingVoiceLounge snapshot={snapshot} participants={participants} onFocusParticipant={onFocusParticipant} onOpenPeople={onOpenPeople} />;
+  }
+  if (participants.some((participant) => participant.cameraEnabled) && !participants.some((participant) => participant.screenSharing)) {
+    return <MeetingVideoGrid snapshot={snapshot} onFocusParticipant={onFocusParticipant} onOpenPeople={onOpenPeople} />;
   }
 
   const focused = snapshot.focusedParticipantId ? participants.find((item) => item.id === snapshot.focusedParticipantId) : undefined;

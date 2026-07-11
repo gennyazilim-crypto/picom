@@ -1,11 +1,12 @@
-import { ConnectionState, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
+import { ConnectionState, Room, RoomEvent, Track, VideoQuality, type RemoteParticipant } from "livekit-client";
 import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
 import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality, type VoiceDurationBucket } from "../utils/voiceQualityMetrics";
 import { getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "./voiceDeviceService";
-import type { MeetingParticipant, MeetingRoomContext, MeetingTransportConnectionState } from "../types/meeting";
+import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, MeetingTransportConnectionState } from "../types/meeting";
+import type { MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
 
 export type VoiceConnectionStatus = MeetingTransportConnectionState;
 
@@ -20,7 +21,18 @@ export type VoiceJoinRequest = VoiceTokenRequest & Readonly<{
 
 export type VoiceRoomContext = Pick<MeetingRoomContext, "communityId" | "communityName" | "channelId" | "channelName">;
 
-export type VoiceParticipant = Pick<MeetingParticipant, "identity" | "name" | "isLocal" | "isSpeaking" | "isMicrophoneEnabled">;
+export type VoiceParticipant = Pick<MeetingParticipant, "identity" | "name" | "isLocal" | "isSpeaking" | "isMicrophoneEnabled"> & Readonly<{
+  isCameraEnabled: boolean;
+  connectionQuality: MeetingConnectionQuality;
+}>;
+
+export type VoiceCameraTrack = Readonly<{
+  id: string;
+  participantIdentity: string;
+  participantName: string;
+  isLocal: boolean;
+  stream: MediaStream;
+}>;
 
 export type VoiceScreenShare = Readonly<{
   id: string;
@@ -42,6 +54,7 @@ export type VoiceServiceSnapshot = Readonly<{
   screenSharing: boolean;
   cameraEnabled?: boolean;
   canUseCamera?: boolean;
+  cameraTracks?: VoiceCameraTrack[];
   screenShares: VoiceScreenShare[];
   participants: VoiceParticipant[];
   error: string | null;
@@ -88,6 +101,9 @@ let speakingIdentities = new Set<string>();
 let screenShareMediaTrack: MediaStreamTrack | null = null;
 let screenShares: VoiceScreenShare[] = [];
 const remoteScreenShareTracks = new Map<string, MediaStreamTrack>();
+let cameraTracks: VoiceCameraTrack[] = [];
+let videoSubscriptionPlan: MeetingVideoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
+const participantConnectionQualities = new Map<string, MeetingConnectionQuality>();
 let activeTokenIntent: VoiceIntent | null = null;
 let connectionQuality: VoiceConnectionQuality = "unknown";
 let reconnectCount = 0;
@@ -113,6 +129,7 @@ let snapshot: VoiceServiceSnapshot = {
   canSpeak: false,
   canShareScreen: false,
   screenSharing: false,
+  cameraTracks: [],
   screenShares: [],
   participants: [],
   error: null,
@@ -160,6 +177,8 @@ function mapParticipant(participant: RemoteParticipant): VoiceParticipant {
     isLocal: false,
     isSpeaking: speakingIdentities.has(participant.identity),
     isMicrophoneEnabled: participant.isMicrophoneEnabled,
+    isCameraEnabled: participant.isCameraEnabled,
+    connectionQuality: participantConnectionQualities.get(participant.identity) ?? "unknown",
   };
 }
 
@@ -172,6 +191,8 @@ function getParticipants(activeRoom: Room): VoiceParticipant[] {
       isLocal: true,
       isSpeaking: speakingIdentities.has(activeRoom.localParticipant.identity),
       isMicrophoneEnabled: activeRoom.localParticipant.isMicrophoneEnabled,
+      isCameraEnabled: activeRoom.localParticipant.isCameraEnabled,
+      connectionQuality: participantConnectionQualities.get(activeRoom.localParticipant.identity) ?? "unknown",
     },
     ...remoteParticipants,
   ];
@@ -180,7 +201,49 @@ function getParticipants(activeRoom: Room): VoiceParticipant[] {
 }
 
 function emitParticipants(activeRoom: Room): void {
-  emit({ participants: getParticipants(activeRoom) });
+  const remoteTracks = cameraTracks.filter((track) => !track.isLocal);
+  const localTracks: VoiceCameraTrack[] = [];
+  activeRoom.localParticipant.videoTrackPublications.forEach((publication) => {
+    if (publication.source !== Track.Source.Camera || !publication.track?.mediaStreamTrack) return;
+    localTracks.push({ id: `local:${activeRoom.localParticipant.identity}:${publication.trackSid}`, participantIdentity: activeRoom.localParticipant.identity, participantName: activeRoom.localParticipant.name || activeRoom.localParticipant.identity, isLocal: true, stream: new MediaStream([publication.track.mediaStreamTrack]) });
+  });
+  cameraTracks = [...remoteTracks, ...localTracks];
+  emit({ participants: getParticipants(activeRoom), cameraTracks });
+}
+
+const remoteCameraId = (participantIdentity: string, trackSid: string) => `remote-camera:${participantIdentity}:${trackSid}`;
+
+function upsertCameraTrack(track: VoiceCameraTrack): void {
+  cameraTracks = [...cameraTracks.filter((current) => current.id !== track.id), track];
+  emit({ cameraTracks });
+}
+
+function removeCameraTrack(id: string): void {
+  cameraTracks = cameraTracks.filter((track) => track.id !== id);
+  emit({ cameraTracks });
+}
+
+function removeParticipantCameraTracks(participantIdentity: string): void {
+  cameraTracks = cameraTracks.filter((track) => track.participantIdentity !== participantIdentity);
+  emit({ cameraTracks });
+}
+
+function videoQualityFor(identity: string, plan: MeetingVideoSubscriptionPlan): VideoQuality {
+  if (identity === plan.focusedParticipantIdentity || plan.visibleTileCount <= 4) return VideoQuality.HIGH;
+  if (plan.activeSpeakerIdentities.includes(identity) || plan.visibleTileCount <= 9) return VideoQuality.MEDIUM;
+  return VideoQuality.LOW;
+}
+
+function applyRemoteVideoSubscriptionPlan(activeRoom: Room, plan: MeetingVideoSubscriptionPlan): void {
+  const visible = new Set(plan.visibleParticipantIdentities);
+  activeRoom.remoteParticipants.forEach((participant) => {
+    participant.videoTrackPublications.forEach((publication) => {
+      if (publication.source !== Track.Source.Camera) return;
+      const subscribed = visible.has(participant.identity);
+      publication.setSubscribed(subscribed);
+      if (subscribed) publication.setVideoQuality(videoQualityFor(participant.identity, plan));
+    });
+  });
 }
 
 function applyRemoteAudioSubscription(activeRoom: Room, subscribed: boolean): void {
@@ -282,6 +345,7 @@ function bindRoomEvents(activeRoom: Room): void {
         sessionStartedAtMs ??= Date.now();
         reconnectingActive = false;
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
+        applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
         if (restoredFromReconnect) {
           void activeRoom.localParticipant.setMicrophoneEnabled(!snapshot.muted).catch(() => {
             deviceErrorCount += 1;
@@ -310,11 +374,14 @@ function bindRoomEvents(activeRoom: Room): void {
     })
     .on(RoomEvent.ParticipantConnected, () => {
       if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
+      applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.ParticipantDisconnected, (participant) => {
       speakingIdentities.delete(participant.identity);
+      participantConnectionQualities.delete(participant.identity);
       removeParticipantScreenShares(participant.identity);
+      removeParticipantCameraTracks(participant.identity);
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
@@ -322,7 +389,10 @@ function bindRoomEvents(activeRoom: Room): void {
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
-      if (participant.isLocal) connectionQuality = normalizeVoiceConnectionQuality(quality);
+      const normalized = normalizeVoiceConnectionQuality(quality) as MeetingConnectionQuality;
+      participantConnectionQualities.set(participant.identity, normalized);
+      if (participant.isLocal) connectionQuality = normalized;
+      emitParticipants(activeRoom);
     })
     .on(RoomEvent.DataReceived,(payload,participant,_kind,topic)=>{
       if(!participant||!topic||payload.byteLength>16_384)return;
@@ -332,9 +402,13 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ParticipantNameChanged, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackMuted, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackUnmuted, () => emitParticipants(activeRoom))
-    .on(RoomEvent.TrackPublished, () => emitParticipants(activeRoom))
+    .on(RoomEvent.TrackPublished, () => {
+      applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
+      emitParticipants(activeRoom);
+    })
     .on(RoomEvent.TrackUnpublished, (publication, participant) => {
       if (publication.source === Track.Source.ScreenShare) removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
+      if (publication.source === Track.Source.Camera) removeCameraTrack(remoteCameraId(participant.identity, publication.trackSid));
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.LocalTrackPublished, () => emitParticipants(activeRoom))
@@ -361,18 +435,26 @@ function bindRoomEvents(activeRoom: Room): void {
           sourceLabel: "Shared screen",
         });
       }
+      if (publication.source === Track.Source.Camera && track.kind === Track.Kind.Video) {
+        upsertCameraTrack({ id: remoteCameraId(participant.identity, publication.trackSid), participantIdentity: participant.identity, participantName: participant.name || participant.identity, isLocal: false, stream: new MediaStream([track.mediaStreamTrack]) });
+      }
+      emitParticipants(activeRoom);
     })
     .on(RoomEvent.TrackUnsubscribed, (_track, publication, participant) => {
       if (publication.source === Track.Source.ScreenShare) {
         removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
       }
+      if (publication.source === Track.Source.Camera) removeCameraTrack(remoteCameraId(participant.identity, publication.trackSid));
+      emitParticipants(activeRoom);
     })
     .on(RoomEvent.Disconnected, () => {
       if (sessionStartedAtMs) lastSessionDurationMs = Date.now() - sessionStartedAtMs;
       sessionStartedAtMs = null;
       reconnectingActive = false;
       connectionQuality = "unknown";
-      speakingIdentities = new Set<string>();
+        speakingIdentities = new Set<string>();
+        participantConnectionQualities.clear();
+        cameraTracks = [];
       stopLocalTracks(activeRoom);
       activeTokenIntent = null;
       activeRoom.removeAllListeners();
@@ -384,6 +466,7 @@ function bindRoomEvents(activeRoom: Room): void {
         roomContext: null,
         screenSharing: false,
         screenShares: [],
+        cameraTracks: [],
         error: "This voice room ended or the connection was closed.",
         errorCode: "VOICE_ROOM_UNAVAILABLE",
       });
@@ -398,6 +481,7 @@ function stopLocalTracks(activeRoom: Room): void {
   screenShareMediaTrack = null;
   screenShares = [];
   clearRemoteScreenShareTracks();
+  cameraTracks = [];
 }
 
 function createElectronScreenShareConstraints(sourceId: string): MediaStreamConstraints {
@@ -507,6 +591,8 @@ async function connectWithToken(
     }
 
     if (desiredDeafened) applyRemoteAudioSubscription(activeRoom, false);
+    applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
+    emitParticipants(activeRoom);
     emit({
       status: "connected",
       roomName: token.roomName,
@@ -520,6 +606,7 @@ async function connectWithToken(
       cameraEnabled,
       screenSharing: Boolean(screenShareMediaTrack),
       screenShares,
+      cameraTracks,
       error: token.canPublishAudio && !microphoneEnabled ? "Microphone permission was denied or no input device is available." : null,
       errorCode: token.canPublishAudio && !microphoneEnabled ? "VOICE_PERMISSION_DENIED" : null,
     });
@@ -585,6 +672,13 @@ export const voiceService = {
     };
   },
 
+  setVideoSubscriptionPlan(plan: MeetingVideoSubscriptionPlan): boolean {
+    videoSubscriptionPlan = plan;
+    if (!room || room.state === ConnectionState.Disconnected) return false;
+    applyRemoteVideoSubscriptionPlan(room, plan);
+    return true;
+  },
+
   async requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
     return requestToken(request);
   },
@@ -625,7 +719,10 @@ export const voiceService = {
     screenShareMediaTrack = null;
     screenShares = [];
     clearRemoteScreenShareTracks();
-    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
+    cameraTracks = [];
+    participantConnectionQualities.clear();
+    videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
 
     try {
       const token = await requestToken(tokenRequest);
@@ -662,7 +759,10 @@ export const voiceService = {
     screenShareMediaTrack = null;
     screenShares = [];
     clearRemoteScreenShareTracks();
-    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
+    cameraTracks = [];
+    participantConnectionQualities.clear();
+    videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
     try {
       const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext, Boolean(options.cameraEnabled), options.cameraDeviceId);
       if (!result.ok) joinFailureCount += 1;
@@ -726,6 +826,9 @@ export const voiceService = {
     connectionQuality = "unknown";
     activeTokenIntent = null;
     speakingIdentities = new Set<string>();
+    participantConnectionQualities.clear();
+    videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
+    cameraTracks = [];
 
     emit({
       status: "disconnected",
@@ -740,6 +843,7 @@ export const voiceService = {
       cameraEnabled: false,
       canUseCamera: false,
       screenShares: [],
+      cameraTracks: [],
       error: null,
       errorCode: null,
     });

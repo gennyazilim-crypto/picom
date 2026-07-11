@@ -49,7 +49,7 @@ function authoritativeParticipant(item: MeetingParticipantAuthority): MeetingCli
 function applyProviderParticipants(generation:number,snapshot:ReturnType<typeof meetingLiveKitAdapter.getSnapshot>):void {
   const current=meetingStore.getSnapshot(); if(current.generation!==generation)return;
   const byIdentity=new Map(current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean).map((participant)=>[participant.identity,participant]));
-  for(const item of snapshot.participants){const prior=byIdentity.get(item.identity);byIdentity.set(item.identity,{id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,username:prior?.username,avatarUrl:prior?.avatarUrl,role:prior?.role??current.role??"participant",communityRole:prior?.communityRole,verification:prior?.verification,presence:snapshot.status==="reconnecting"?"reconnecting":"connected",isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:prior?.cameraEnabled??false,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),handRaised:prior?.handRaised??false,connectionQuality:prior?.connectionQuality??"unknown"})}
+  for(const item of snapshot.participants){const prior=byIdentity.get(item.identity);const cameraTrack=(snapshot.cameraTracks??[]).find((track)=>track.participantIdentity===item.identity);byIdentity.set(item.identity,{id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,username:prior?.username,avatarUrl:prior?.avatarUrl,role:prior?.role??current.role??"participant",communityRole:prior?.communityRole,verification:prior?.verification,presence:snapshot.status==="reconnecting"?"reconnecting":"connected",isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:item.isCameraEnabled||Boolean(cameraTrack),cameraStream:cameraTrack?.stream,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),handRaised:prior?.handRaised??false,connectionQuality:item.connectionQuality})}
   meetingStore.replaceParticipants(generation,[...byIdentity.values()]);
 }
 
@@ -108,6 +108,7 @@ export const meetingService = {
   setRightDock:meetingStore.setRightDock,
   setFocus:meetingStore.setFocus,
   setNoiseShield:meetingStore.setNoiseShield,
+  setVideoSubscriptions:meetingLiveKitAdapter.setVideoSubscriptionPlan,
   async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});return result.ok;},
   setDeafened(deafened:boolean):boolean{const result=meetingLiveKitAdapter.setDeafened(deafened);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,deafened:result.data.deafened}});return result.ok;},
   sendReaction:meetingSignalService.sendReaction,
