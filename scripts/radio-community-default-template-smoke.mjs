@@ -3,7 +3,9 @@ const read = (path) => readFileSync(path, "utf8");
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
 const app = read("src/App.tsx");
-for (const marker of ['"radioCommunity"', "communityViewForKind", 'kind === "radio" ? "radioCommunity"', "<RadioCommunityShell", 'activeView === "radioCommunity"']) assert(app.includes(marker), `Radio route integration is missing ${marker}`);
+for (const marker of ['"radioCommunity"', "communityViewForKind", "communityNavigationService.getShellView", "<RadioCommunityShell", 'activeView === "radioCommunity"']) assert(app.includes(marker), `Radio route integration is missing ${marker}`);
+const navigationService = read("src/services/community/communityNavigationService.ts");
+for (const marker of ["getShellView", '"radioCommunity"', '"podcastCommunity"', "resolveTextChannelId"]) assert(navigationService.includes(marker), `Central community navigation is missing ${marker}`);
 const shell = read("src/components/audio/RadioCommunityShell.tsx");
 for (const marker of ["RadioCommunityShell", "Live Now", "Schedule", "Shows & Programs", "Hosts", "Announcements", "listenerChatEnabled", "RadioSessionList", "radioCommunityService.getShellSnapshot"]) assert(shell.includes(marker), `RadioCommunityShell is missing ${marker}`);
 assert(!shell.includes("CommunitySidebar") && !shell.includes("PodcastEpisode"), "Radio shell includes text navigation or Podcast identity");

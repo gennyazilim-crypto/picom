@@ -1,0 +1,34 @@
+import { readFileSync } from "node:fs";
+import ts from "typescript";
+const read=(path)=>readFileSync(path,"utf8");const assert=(condition,message)=>{if(!condition)throw new Error(message);};
+
+const source=read("src/services/community/communityNavigationService.ts");
+const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const module={exports:{}};
+new Function("exports","module","require",compiled)(module.exports,module,()=>{throw new Error("Navigation service unexpectedly required a runtime module.");});
+const navigation=module.exports.communityNavigationService;
+const channel=(id,type="text")=>({id,name:id,type});
+const community=(id,kind,channels=[])=>({id,kind,name:id,icon:"P",accentColor:"#007571",categories:channels.length?[{id:`${id}-category`,name:"Channels",channels}]:[],roles:[],members:[],messages:[]});
+const textA=community("text-a","text",[channel("a-general"),channel("a-voice","voice")]);
+const textB=community("text-b","text",[channel("b-general"),channel("b-projects")]);
+const radio=community("radio-a","radio");const podcast=community("podcast-a","podcast");
+assert(navigation.getShellView("text")==="community"&&navigation.getShellView("radio")==="radioCommunity"&&navigation.getShellView("podcast")==="podcastCommunity","Kind-to-shell routing failed");
+assert(navigation.resolveTextChannelId(radio,"a-general")===null&&navigation.resolveTextChannelId(podcast,"a-general")===null,"Non-text shell accepted a text channel ID");
+assert(navigation.resolveTextChannelId(textA,"missing")==="a-general","Stale channel did not fall back safely");
+assert(navigation.rememberTextChannel(textA,"a-voice")&&navigation.resolveTextChannelId(textA)==="a-voice","Text route memory failed");
+assert(navigation.resolveTextChannelId(textB)==="b-general","Text channel memory leaked between communities");
+navigation.rememberRadioSection(radio.id,"hosts");navigation.rememberRadioSession(radio.id,"session-1");
+assert(navigation.getRadioSection(radio.id)==="hosts"&&navigation.getRadioSessionId(radio.id)==="session-1","Radio route memory failed");
+navigation.rememberPodcastSection(podcast.id,"series");navigation.rememberPodcastEpisode(podcast.id,"episode-1");
+assert(navigation.getPodcastSection(podcast.id)==="series"&&navigation.getPodcastEpisodeId(podcast.id)==="episode-1","Podcast route memory failed");
+assert(navigation.getShellChannelId(radio)!==navigation.getShellChannelId(podcast),"Non-text shell identities collide");
+
+const state=read("src/state/useMvpAppState.ts");
+for(const marker of ["getShellChannel","resolveTextChannelId","rememberTextChannel","activeCommunity.kind === \"text\""])assert(state.includes(marker),`Type-safe app state is missing ${marker}`);
+const app=read("src/App.tsx");
+for(const marker of ["CommunityShellView","communityNavigationService.getShellView","activeCommunity.kind !== \"text\"","activeCommunity.kind === \"text\" ? displayedActiveChannel.id : null","targetCommunity.kind === \"text\" ? action.channelId : undefined"])assert(app.includes(marker),`App routing guard is missing ${marker}`);
+assert(app.includes('activeView === "radioCommunity"')&&app.includes('activeView === "podcastCommunity"'),"Dedicated shell branches are missing");
+const radioShell=read("src/components/audio/RadioCommunityShell.tsx");const podcastShell=read("src/components/audio/PodcastCommunityShell.tsx");
+for(const marker of ["getRadioSection","rememberRadioSection","getRadioSessionId","radio-shell-side"])assert(radioShell.includes(marker),`Radio route/side panel is missing ${marker}`);
+for(const marker of ["getPodcastSection","rememberPodcastSection","getPodcastEpisodeId","podcast-shell-side"])assert(podcastShell.includes(marker),`Podcast route/side panel is missing ${marker}`);
+console.log("Type-specific Text/Radio/Podcast routing, route memory, stale-channel isolation, and side-panel contracts passed.");

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Channel, Community, Member, Role } from "../types/community";
 import { supportsTextChannels } from "../types/community";
+import { communityNavigationService } from "../services/community/communityNavigationService";
 
 const FALLBACK_ROLE: Role = {
   id: "fallback-role",
@@ -55,10 +56,19 @@ function getFirstTextChannel(community: Community) {
   return getChannels(community).find((channel) => channel.type === "text") ?? getChannels(community)[0];
 }
 
+function getShellChannel(community: Community): Channel {
+  return {
+    id: communityNavigationService.getShellChannelId(community),
+    name: `${community.kind}-shell`,
+    type: "text",
+    topic: `${community.name} uses its dedicated ${community.kind} navigation.`,
+  };
+}
+
 export function useMvpAppState(communities: Community[]) {
   const safeCommunities = useMemo(() => (communities.length > 0 ? communities : [FALLBACK_COMMUNITY]), [communities]);
   const firstCommunity = safeCommunities[0];
-  const firstChannel = getFirstTextChannel(firstCommunity) ?? FALLBACK_CHANNEL;
+  const firstChannel = getFirstTextChannel(firstCommunity) ?? (firstCommunity.kind === "text" ? FALLBACK_CHANNEL : getShellChannel(firstCommunity));
   const [activeCommunityId, setActiveCommunityId] = useState(firstCommunity.id);
   const [activeChannelId, setActiveChannelId] = useState(firstChannel.id);
 
@@ -68,28 +78,37 @@ export function useMvpAppState(communities: Community[]) {
   );
   const channels = useMemo(() => getChannels(activeCommunity), [activeCommunity]);
   const activeChannel = useMemo(
-    () => channels.find((channel) => channel.id === activeChannelId) ?? getFirstTextChannel(activeCommunity) ?? FALLBACK_CHANNEL,
-    [activeChannelId, channels],
+    () => activeCommunity.kind === "text"
+      ? channels.find((channel) => channel.id === activeChannelId) ?? channels.find((channel) => channel.id === communityNavigationService.resolveTextChannelId(activeCommunity)) ?? FALLBACK_CHANNEL
+      : getShellChannel(activeCommunity),
+    [activeChannelId, activeCommunity, channels],
   );
 
   const selectChannel = useCallback(
     (id: string) => {
-      const fallbackChannel = getFirstTextChannel(activeCommunity) ?? FALLBACK_CHANNEL;
-      const nextChannel = channels.find((channel) => channel.id === id) ?? fallbackChannel;
-      setActiveChannelId(nextChannel.id);
+      if (activeCommunity.kind !== "text") return;
+      const nextChannelId = communityNavigationService.resolveTextChannelId(activeCommunity, id);
+      if (!nextChannelId) return;
+      communityNavigationService.rememberTextChannel(activeCommunity, nextChannelId);
+      setActiveChannelId(nextChannelId);
     },
     [activeCommunity, channels],
   );
 
   const switchCommunity = useCallback(
     (id: string, preferredChannelId?: string) => {
+      if (activeCommunity.kind === "text") communityNavigationService.rememberTextChannel(activeCommunity, activeChannelId);
       const community = safeCommunities.find((candidate) => candidate.id === id) ?? safeCommunities[0];
-      const targetChannel = getChannels(community).find((channel) => channel.id === preferredChannelId);
-      const firstTextChannel = targetChannel ?? getFirstTextChannel(community) ?? FALLBACK_CHANNEL;
+      const targetChannelId = communityNavigationService.resolveTextChannelId(community, preferredChannelId);
       setActiveCommunityId(community.id);
-      setActiveChannelId(firstTextChannel.id);
+      if (targetChannelId) {
+        communityNavigationService.rememberTextChannel(community, targetChannelId);
+        setActiveChannelId(targetChannelId);
+      } else {
+        setActiveChannelId(community.kind === "text" ? FALLBACK_CHANNEL.id : communityNavigationService.getShellChannelId(community));
+      }
     },
-    [safeCommunities],
+    [activeChannelId, activeCommunity, safeCommunities],
   );
 
   const selectChannelByOffset = useCallback(
@@ -97,9 +116,12 @@ export function useMvpAppState(communities: Community[]) {
       const textChannels = channels.filter((channel: Channel) => channel.type === "text");
       const currentIndex = Math.max(0, textChannels.findIndex((channel) => channel.id === activeChannel.id));
       const next = textChannels[Math.min(textChannels.length - 1, Math.max(0, currentIndex + offset))];
-      if (next) setActiveChannelId(next.id);
+      if (next) {
+        communityNavigationService.rememberTextChannel(activeCommunity, next.id);
+        setActiveChannelId(next.id);
+      }
     },
-    [activeChannel.id, channels],
+    [activeChannel.id, activeCommunity, channels],
   );
 
   return {

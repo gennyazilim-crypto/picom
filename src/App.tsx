@@ -83,6 +83,7 @@ import { appConfig } from "./config/appConfig";
 import { socialAuthService } from "./services/auth/socialAuthService";
 import { onboardingService } from "./services/onboarding/onboardingService";
 import { communityService } from "./services/communityService";
+import { communityNavigationService, type CommunityShellView } from "./services/community/communityNavigationService";
 import { communityMembershipService } from "./services/community/communityMembershipService";
 import { channelService } from "./services/channelService";
 import { channelCategoryService } from "./services/channelCategoryService";
@@ -179,10 +180,10 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = "community" | "radioCommunity" | "podcastCommunity" | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
-  return kind === "text" ? "community" : kind === "radio" ? "radioCommunity" : "podcastCommunity";
+  return communityNavigationService.getShellView(kind);
 }
 
 const initialVoiceSnapshot: VoiceServiceSnapshot = {
@@ -624,7 +625,7 @@ export function App() {
     return channelMessages[channelMessages.length - 1]?.id ?? null;
   }, [activeCommunity.messages, displayedActiveChannel.id]);
   useEffect(() => {
-    diagnosticsService.setAppContext({ activeView, activeCommunityId: activeCommunity.id, activeChannelId: displayedActiveChannel.id, authState: authSession?.user ? "authenticated" : "signed_out" });
+    diagnosticsService.setAppContext({ activeView, activeCommunityId: activeCommunity.id, activeChannelId: activeCommunity.kind === "text" ? displayedActiveChannel.id : null, authState: authSession?.user ? "authenticated" : "signed_out" });
   }, [activeChannel.id, activeCommunity.id, activeView, authSession, displayedActiveChannel.id]);
   const supabaseCommunitiesLoadedRef = useRef(false);
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
@@ -762,7 +763,7 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id, deleteLocalMessage]);
 
   const realtimeStatus = useSupabaseMessageRealtime({
-    enabled: Boolean(authSession) && !safeMode.active && activeView === "community",
+    enabled: Boolean(authSession) && !safeMode.active && activeView === "community" && activeCommunity.kind === "text",
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
     subscribeCommunityWide: true,
@@ -771,7 +772,7 @@ export function App() {
     onDelete: handleRealtimeMessageDelete,
   });
   const typingBroadcast = useSupabaseTypingBroadcast({
-    enabled: Boolean(authSession) && !safeMode.active,
+    enabled: Boolean(authSession) && !safeMode.active && activeView === "community" && activeCommunity.kind === "text",
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
     currentUserId: currentUser.userId,
@@ -906,13 +907,13 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id]);
 
   useEffect(() => {
-    if (activeView !== "community" || !isActiveMessageListNearBottom) return;
+    if (activeCommunity.kind !== "text" || activeView !== "community" || !isActiveMessageListNearBottom) return;
     clearChannelUnread({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id });
     void readStateService.markChannelRead({ channelId: displayedActiveChannel.id, lastReadMessageId: latestActiveMessageId });
   }, [activeCommunity.id, activeView, clearChannelUnread, displayedActiveChannel.id, isActiveMessageListNearBottom, latestActiveMessageId]);
 
   useEffect(() => {
-    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
     let canceled = false;
     void readStateService.listCommunityUnread(activeCommunity.id).then((result) => {
       if (canceled || !result.ok) return;
@@ -926,10 +927,10 @@ export function App() {
   }, [activeCommunity.id, authSession, safeMode.active, setCommunityUnreadState]);
 
   useEffect(() => {
-    if (!visibleChannels.length) return;
+    if (activeCommunity.kind !== "text" || !visibleChannels.length) return;
     if (visibleChannels.some((channel) => channel.id === activeChannel.id)) return;
     setActiveChannelId(visibleChannels[0].id);
-  }, [activeChannel.id, setActiveChannelId, visibleChannels]);
+  }, [activeChannel.id, activeCommunity.kind, setActiveChannelId, visibleChannels]);
 
   const refreshMaintenanceStatus = useCallback(() => {
     void maintenanceStatusService.refresh().then(setMaintenanceStatus);
@@ -1050,7 +1051,7 @@ export function App() {
   }, [authSession, pushToast, replaceCommunities, switchCommunity]);
 
   useEffect(() => {
-    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
+    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
     supabaseSidebarLoadedRef.current.add(activeCommunity.id);
@@ -1110,10 +1111,10 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeCommunity.id, authSession, pushToast, replaceCommunityCategories, safeMode.active]);
+  }, [activeCommunity.id, activeCommunity.kind, authSession, pushToast, replaceCommunityCategories, safeMode.active]);
 
   useEffect(() => {
-    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
 
     const messageKey = `${activeCommunity.id}:${activeChannel.id}`;
     if (supabaseMessagesLoadedRef.current.has(messageKey)) return;
@@ -1141,7 +1142,7 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeChannel.id, activeCommunity.id, authSession, mapMessageSummaryToMessage, pushToast, replaceChannelMessages, safeMode.active]);
+  }, [activeChannel.id, activeCommunity.id, activeCommunity.kind, authSession, mapMessageSummaryToMessage, pushToast, replaceChannelMessages, safeMode.active]);
 
   useEffect(() => {
     if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
@@ -1317,9 +1318,9 @@ export function App() {
         return;
       }
 
-      setActiveView("community");
-      switchCommunity(action.communityId, action.channelId);
-      if (action.channelId) {
+      setActiveView(communityViewForKind(targetCommunity.kind));
+      switchCommunity(action.communityId, targetCommunity.kind === "text" ? action.channelId : undefined);
+      if (targetCommunity.kind === "text" && action.channelId) {
         clearChannelUnread({ communityId: action.communityId, channelId: action.channelId });
       }
       closeTransientOverlays();
@@ -1556,7 +1557,7 @@ export function App() {
             if (member && !blockedUserIds.includes(member.userId)) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
             else pushToast("This profile is unavailable or outside your accessible communities.", "error");
           }
-          else if (result.category === "Communities" && result.communityId) { setActiveView("community"); switchCommunity(result.communityId); }
+          else if (result.category === "Communities" && result.communityId) { const target = communities.find((community) => community.id === result.communityId); if (target) { setActiveView(communityViewForKind(target.kind)); switchCommunity(result.communityId); } }
           else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
             const target = advancedSearchService.resolveMessageJumpTarget(result, communities, currentUserId);
             if (target.ok) jumpToMessage(target.community, target.message);
@@ -1707,7 +1708,7 @@ export function App() {
       pushToast(room.joinBlockedReason ?? "You cannot join this voice room.", "info");
       return;
     }
-    setActiveView("community");
+    setActiveView(communityViewForKind(community.kind));
     switchCommunity(community.id, channel.id);
     setActiveChannelId(channel.id);
     pushToast(`Opened ${channel.name}. Use Join room to connect.`, "info");
@@ -1886,13 +1887,14 @@ export function App() {
     setNotificationCenterOpen(false);
     if (item.context.kind === "dm" && item.context.userId) { openDirectMessages(item.context.userId); return; }
     if (item.context.kind === "community" && item.context.communityId) {
-      setActiveView("community"); switchCommunity(item.context.communityId);
-      if (item.context.channelId) setActiveChannelId(item.context.channelId);
+      const target = communities.find((community) => community.id === item.context.communityId);
+      setActiveView(target ? communityViewForKind(target.kind) : "community"); switchCommunity(item.context.communityId, target?.kind === "text" ? item.context.channelId : undefined);
+      if (target?.kind === "text" && item.context.channelId) setActiveChannelId(item.context.channelId);
       if (item.context.messageId) setHighlightedMessageId(item.context.messageId);
       return;
     }
     pushToast(item.title, "info");
-  }, [openDirectMessages, pushToast, switchCommunity]);
+  }, [communities, openDirectMessages, pushToast, setActiveChannelId, switchCommunity]);
 
   const createCommunityEvent = useCallback(async (input: CreateCommunityEventInput) => { const event=await communityEventService.createEvent(input);if(event){setCommunityEvents((current)=>[event,...current]);pushToast("Event created.","success");}else pushToast("Event could not be created.","error"); },[pushToast]);
   const updateCommunityEvent = useCallback(async (eventId: string, input: UpdateCommunityEventInput) => { const event = await communityEventService.updateEvent(eventId, input); if (event) { setCommunityEvents((current) => current.map((item) => item.id === eventId ? event : item)); pushToast("Event updated.", "success"); } else pushToast("Event could not be updated.", "error"); }, [pushToast]);

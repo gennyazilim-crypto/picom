@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 const read=(path)=>readFileSync(path,"utf8"); const assert=(condition,message)=>{if(!condition)throw new Error(message);};
 const app=read("src/App.tsx");
-for(const marker of ['"podcastCommunity"','kind === "radio" ? "radioCommunity" : "podcastCommunity"','<PodcastCommunityShell','activeView === "podcastCommunity"'])assert(app.includes(marker),`Podcast route integration is missing ${marker}`);
+for(const marker of ['"podcastCommunity"','communityNavigationService.getShellView','<PodcastCommunityShell','activeView === "podcastCommunity"'])assert(app.includes(marker),`Podcast route integration is missing ${marker}`);
+const navigationService=read("src/services/community/communityNavigationService.ts");
+for(const marker of ["getShellView",'"radioCommunity"','"podcastCommunity"',"resolveTextChannelId"])assert(navigationService.includes(marker),`Central community navigation is missing ${marker}`);
 assert(!app.includes('"communityAudio"'),"Legacy mixed communityAudio route remains active");
 const shell=read("src/components/audio/PodcastCommunityShell.tsx");
 for(const marker of ["PodcastCommunityShell","Episodes","Series","Drafts","Hosts","About","listenerDiscussionEnabled","PodcastEpisodeList","podcastCommunityService.getShellSnapshot"])assert(shell.includes(marker),`PodcastCommunityShell is missing ${marker}`);
