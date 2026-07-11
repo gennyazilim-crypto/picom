@@ -11,6 +11,7 @@ import { communityService, type CommunitySummary } from "../../services/communit
 
 const CommunityRoleManagement = lazy(() => import("./CommunityRoleManagement").then((module) => ({ default: module.CommunityRoleManagement })));
 const CommunityMemberRoleAssignment = lazy(() => import("./CommunityMemberRoleAssignment").then((module) => ({ default: module.CommunityMemberRoleAssignment })));
+const CommunityInviteManagement = lazy(() => import("./CommunityInviteManagement").then((module) => ({ default: module.CommunityInviteManagement })));
 
 export type AdminSectionId = "overview" | "insights" | "community-settings" | "verification" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
@@ -82,8 +83,8 @@ export function CommunityMembersSection({ community, access, onMemberRolesChange
   return <SectionShell eyebrow="People and access" title="Member roles" description="Assign one or more roles to a member. Self, Owner, and equal-or-higher hierarchy changes remain blocked."><Suspense fallback={<div className="community-admin-empty">Loading member access...</div>}><CommunityMemberRoleAssignment community={community} access={access} onMemberRolesChanged={onMemberRolesChanged} /></Suspense></SectionShell>;
 }
 
-export function CommunityInvitesSection({ onOpenInvite }: { onOpenInvite: () => void }) {
-  return <SectionShell eyebrow="Access links" title="Invites" description="Create limited, expiring links. Invite validation remains server-enforced."><div className="community-admin-empty"><AppIcon name="send" size="lg" /><strong>Create an invite</strong><span>Use limits and expiry are available in the invite modal.</span><button type="button" onClick={onOpenInvite}>Open invite creator</button></div></SectionShell>;
+export function CommunityInvitesSection({ community, access, onOpenInvite }: { community: Community; access: CommunityAccess; onOpenInvite: () => void }) {
+  return <SectionShell eyebrow="Access links" title="Invites" description="Create, inspect, and revoke limited links. Validation and usage remain server-enforced."><Suspense fallback={<div className="community-admin-empty" role="status">Loading invite lifecycle...</div>}><CommunityInviteManagement community={community} canCreate={access.permissions.includes("createInvites")} onOpenInvite={onOpenInvite} /></Suspense></SectionShell>;
 }
 
 export function CommunityModerationSection({ children }: { children?: ReactNode }) {

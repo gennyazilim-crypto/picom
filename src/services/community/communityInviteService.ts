@@ -20,6 +20,7 @@ export type CommunityInvite = Readonly<{
   lastUsedAt: string | null;
 }>;
 export type InviteCampaignSummary = Omit<CommunityInvite, "code"> & Readonly<{ creatorName: string }>;
+export type CommunityInviteLifecycleStatus = "active" | "expired" | "revoked" | "exhausted";
 export type InviteAcceptanceStatus = "joined" | "already_member";
 export type CommunityInvitePreview = Readonly<{
   communityId: string;
@@ -102,13 +103,24 @@ function validateInvite(invite: CommunityInvite): InviteResult<CommunityInvite> 
   return { ok: true, data: invite };
 }
 
+function getLifecycleStatus(invite: Pick<CommunityInvite, "expiresAt" | "maxUses" | "revokedAt" | "uses">): CommunityInviteLifecycleStatus {
+  if (invite.revokedAt) return "revoked";
+  if (invite.expiresAt && Date.parse(invite.expiresAt) <= Date.now()) return "expired";
+  if (invite.maxUses !== null && invite.uses >= invite.maxUses) return "exhausted";
+  return "active";
+}
+
 export const communityInviteService = {
+  getLifecycleStatus,
+
   getInviteLink(code: string): string {
     return `picom://invite/${code}`;
   },
 
   async createInvite(input: { communityId: string; createdBy: string; canCreate: boolean; maxUses?: number | null; expiresInDays?: number | null; campaignLabel?: string | null }): Promise<InviteResult<CommunityInvite>> {
     if (!input.canCreate) return { ok: false, error: { code: "PERMISSION_DENIED", message: "You do not have permission to create invites." } };
+    if (input.maxUses !== null && input.maxUses !== undefined && (!Number.isInteger(input.maxUses) || input.maxUses < 1 || input.maxUses > 100)) return { ok: false, error: { code: "INVITE_LIMIT_INVALID", message: "Maximum uses must be a whole number from 1 to 100." } };
+    if (input.expiresInDays !== null && input.expiresInDays !== undefined && (!Number.isInteger(input.expiresInDays) || input.expiresInDays < 1 || input.expiresInDays > 30)) return { ok: false, error: { code: "INVITE_EXPIRY_INVALID", message: "Expiry must be a whole number from 1 to 30 days." } };
     const code = generateCode();
     const expiresAt = input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 86_400_000).toISOString() : null;
 
@@ -187,11 +199,11 @@ export const communityInviteService = {
   },
 
   async listInviteCampaigns(communityId: string): Promise<InviteResult<InviteCampaignSummary[]>> {
-    if (dataSourceService.getStatus().isMock) return { ok: true, data: readMockStore().records.filter((item)=>item.communityId===communityId).map(({code: _code,...item})=>({...item,creatorName:"Mock creator"})) };
+    if (dataSourceService.getStatus().isMock) return { ok: true, data: readMockStore().records.filter((item)=>item.communityId===communityId).map(({code: _code,...item})=>({...item,creatorName:"Community member"})).sort((left,right)=>Date.parse(right.createdAt)-Date.parse(left.createdAt)) };
     const client=getSupabaseClient(); if(!client)return {ok:false,error:{code:"DATA_SOURCE_NOT_CONFIGURED",message:"Supabase is not configured."}};
     const {data,error}=await client.rpc("list_community_invite_campaigns",{target_community_id:communityId});
     if(error)return {ok:false,error:{code:"INVITE_LIST_FAILED",message:"Picom could not load invite campaigns."}};
-    return {ok:true,data:(data??[]).map((row)=>({id:row.id,communityId:row.community_id,createdBy:row.created_by,creatorName:row.creator_name,maxUses:row.max_uses,uses:row.uses,expiresAt:row.expires_at,revokedAt:row.revoked_at,createdAt:row.created_at,campaignLabel:row.campaign_label,lastUsedAt:row.last_used_at}))};
+    return {ok:true,data:(data??[]).map((row)=>({id:row.id,communityId:row.community_id,createdBy:row.created_by,creatorName:row.creator_name ?? "Authorized member",maxUses:row.max_uses,uses:row.uses,expiresAt:row.expires_at,revokedAt:row.revoked_at,createdAt:row.created_at,campaignLabel:row.campaign_label,lastUsedAt:row.last_used_at})).sort((left,right)=>Date.parse(right.createdAt)-Date.parse(left.createdAt))};
   },
 
   async acceptInvite(input: { code: string; communities: Community[]; currentUser: Member; isAuthenticated: boolean; bannedUserIds?: string[] }): Promise<InviteResult<{ communityId: string; member: Member; status: InviteAcceptanceStatus }>> {

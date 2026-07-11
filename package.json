@@ -294,6 +294,7 @@
     "notification-inbox:smoke": "node scripts/notification-inbox-production-smoke.mjs",
     "notifications:quiet-dnd:enforcement:test": "node scripts/quiet-hours-dnd-enforcement-test.mjs",
     "invites:acceptance:production:test": "node scripts/community-invite-acceptance-production-test.mjs",
+    "community:invites-access:smoke": "node scripts/community-invites-visitor-settings-smoke.mjs",
     "community:public-join:production:test": "node scripts/public-community-join-production-test.mjs",
     "community:role-assignment:test": "node scripts/community-role-assignment-test.mjs",
     "community:role-permissions:smoke": "node scripts/community-role-permission-schema-smoke.mjs",

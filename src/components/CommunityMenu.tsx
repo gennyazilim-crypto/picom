@@ -211,7 +211,7 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     if (activeSection === "stickers") return sectionTools?.stickers ?? <div className="community-admin-empty">No sticker packs loaded.</div>;
     if (activeSection === "bots") return sectionTools?.bots ?? <div className="community-admin-empty">No bots installed.</div>;
     if (activeSection === "webhooks") return sectionTools?.webhooks ?? <div className="community-admin-empty">No webhooks configured.</div>;
-    if (activeSection === "invites") return <CommunityInvitesSection onOpenInvite={onOpenInvite} />;
+    if (activeSection === "invites") return <CommunityInvitesSection community={community} access={access} onOpenInvite={onOpenInvite} />;
     if (activeSection === "events") return sectionTools?.events ?? <div className="community-admin-empty">No events loaded.</div>;
     if (activeSection === "moderation") return <CommunityModerationSection>{sectionTools?.moderation}</CommunityModerationSection>;
     if (activeSection === "audit-log") return <CommunityAuditLogPlaceholder community={community} canView={access.permissions.includes("viewAuditLog") && (access.isOwner || access.isAdmin)} />;
