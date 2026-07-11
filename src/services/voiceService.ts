@@ -626,6 +626,36 @@ export const voiceService = {
     }
   },
 
+  async connectAuthorizedToken(token: VoiceTokenResponse, roomContext: VoiceRoomContext): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    if (joinInFlight) return { ok: true, data: snapshot };
+    joinInFlight = true;
+    joinAttemptCount += 1;
+    lastJoinRequest = null;
+    reconnectGeneration += 1;
+    reconnectInFlight = null;
+    const desiredMuted = snapshot.muted;
+    const desiredDeafened = snapshot.deafened;
+    if (room) {
+      stopLocalTracks(room);
+      room.removeAllListeners();
+      room.disconnect();
+      room = null;
+      activeTokenIntent = null;
+    }
+    speakingIdentities = new Set<string>();
+    screenShareMediaTrack = null;
+    screenShares = [];
+    clearRemoteScreenShareTracks();
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [] });
+    try {
+      const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext);
+      if (!result.ok) joinFailureCount += 1;
+      return result;
+    } finally {
+      joinInFlight = false;
+    }
+  },
+
   async reconnect(): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!lastJoinRequest) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before trying to reconnect.");
