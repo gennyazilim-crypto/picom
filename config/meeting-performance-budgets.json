@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "assetBudgets": {
+    "meetingEntryJsRawBytes": { "target": 112640, "hard": 131072 },
+    "meetingIncrementalJsRawBytes": { "target": 737280, "hard": 819200 },
+    "meetingIncrementalCssRawBytes": { "target": 94208, "hard": 104448 },
+    "screenShareFocusJsRawBytes": { "target": 8192, "hard": 12288 }
+  },
+  "runtimeBudgets": {
+    "joinLatencyP95Ms": 5000,
+    "localControlFeedbackMs": 100,
+    "layoutPlanP95Ms": 8,
+    "maxVisibleGridVideos": 12,
+    "maxSpeakerViewVideos": 8,
+    "maxScreenShareCameraVideos": 6,
+    "maxActiveScreenShares": 1,
+    "maxScreenShareWidth": 1920,
+    "maxScreenShareHeight": 1080,
+    "maxScreenShareFrameRate": 30,
+    "longSessionHeapGrowthMiB": 32
+  },
+  "supportedScenarios": [
+    { "name": "solo", "participants": 1, "maxGridSubscriptions": 1 },
+    { "name": "duo", "participants": 2, "maxGridSubscriptions": 2 },
+    { "name": "quad", "participants": 4, "maxGridSubscriptions": 4 },
+    { "name": "nine", "participants": 9, "maxGridSubscriptions": 9 },
+    { "name": "twelve", "participants": 12, "maxGridSubscriptions": 12 },
+    { "name": "stage_viewer", "participants": 12, "stageSpeakers": 4, "maxGridSubscriptions": 4 }
+  ]
+}
