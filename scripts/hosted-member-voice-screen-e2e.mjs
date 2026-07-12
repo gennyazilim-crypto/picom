@@ -114,21 +114,24 @@ async function runElectronHarness(clients) {
   const rendererHtml = resolve(rendererOutput, "index.html");
   const command = process.platform === "linux" ? "xvfb-run" : electronPath;
   const args = process.platform === "linux" ? ["-a", electronPath, mainPath] : [mainPath];
-  const child = spawn(command, args, { cwd: process.cwd(), env: { ...process.env }, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+  const child = spawn(command, args, { cwd: process.cwd(), env: { ...process.env, PICOM_HOSTED_E2E_CONFIG_FD: "3" }, stdio: ["ignore", "pipe", "pipe", "pipe"], windowsHide: true });
   const stdout = [];
   const stderr = [];
   child.stdout.setEncoding("utf8");
   child.stderr.setEncoding("utf8");
   child.stdout.on("data", (chunk) => stdout.push(chunk));
   child.stderr.on("data", (chunk) => stderr.push(chunk));
-  child.stdin.end(JSON.stringify({ clients, rendererHtml, preloadPath }));
+  child.stdio[3].end(JSON.stringify({ clients, rendererHtml, preloadPath }));
   const exitCode = await new Promise((resolveExit, reject) => {
     const timer = setTimeout(() => { child.kill(); reject(new Error("Hosted Electron media harness timed out.")); }, 210000);
     child.on("error", (error) => { clearTimeout(timer); reject(error); });
     child.on("exit", (code) => { clearTimeout(timer); resolveExit(code ?? 1); });
   });
   const resultLine = stdout.join("").split(/\r?\n/).find((line) => line.startsWith("PICOM_HOSTED_E2E_RESULT="));
-  if (!resultLine) throw new Error(`Hosted Electron harness returned no result (${safeMessage(stderr.join("").slice(-1000))}).`);
+  if (!resultLine) {
+    const runtimeTail = safeMessage(`${stderr.join("").slice(-700)} ${stdout.join("").slice(-300)}`.trim());
+    throw new Error(`Hosted Electron harness returned no result at exit ${exitCode}${runtimeTail ? `: ${runtimeTail}` : "."}`);
+  }
   const result = JSON.parse(resultLine.slice("PICOM_HOSTED_E2E_RESULT=".length));
   if (exitCode !== 0 || result.status !== "passed") throw new Error(`Hosted Electron harness failed: ${safeMessage(result.error ?? "unknown failure")}`);
   return result.matrix;

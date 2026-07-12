@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("node:path");
+const fs = require("node:fs");
 
 const RESULT_PREFIX = "PICOM_HOSTED_E2E_RESULT=";
 const windows = new Map();
@@ -14,12 +15,14 @@ const safeError = (error) => String(error instanceof Error ? error.message : err
 function readConfig() {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    process.stdin.setEncoding("utf8");
-    process.stdin.on("data", (chunk) => chunks.push(chunk));
-    process.stdin.on("end", () => {
+    const input = process.env.PICOM_HOSTED_E2E_CONFIG_FD === "3" ? new fs.ReadStream(null, { fd: 3, autoClose: true }) : process.stdin;
+    delete process.env.PICOM_HOSTED_E2E_CONFIG_FD;
+    input.setEncoding("utf8");
+    input.on("data", (chunk) => chunks.push(chunk));
+    input.on("end", () => {
       try { resolve(JSON.parse(chunks.join(""))); } catch { reject(new Error("Hosted harness configuration is invalid.")); }
     });
-    process.stdin.on("error", reject);
+    input.on("error", reject);
   });
 }
 
