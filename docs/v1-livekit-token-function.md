@@ -53,4 +53,6 @@ This Task 661 workflow is not a replacement for a full owner-authorized `supabas
 
 The committed evidence contract is `docs/evidence/task-661-livekit-token-hosted-evidence-contract.json`. The real run produces artifact `task-661-livekit-token-staging-evidence` containing `task-661-livekit-token-staging.json`. A green source commit alone is not hosted proof; the protected workflow run and artifact are mandatory.
 
+Protected workflow run `29194842117` completed successfully on 2026-07-12. Its redacted artifact reports `status=passed`, all five active-member role cases granted, visitor/non-member/banned cases denied, private Voice membership accepted, microphone/screen/screen-audio grants correct, camera/data denied, HTTP controls correct, and the 10-per-60-second limiter returning `429` on request eleven. It also records 25 out-of-scope pending migrations as explicit release debt rather than treating them as applied.
+
 Provider connection and two-client native media evidence remain separate Tasks 663-668. Task 661 proves the deployed issuer and grant/denial contract without claiming native microphone or screen-capture success.
