@@ -250,3 +250,7 @@ Status: **BLOCKED / NO-GO** (2026-07-12). The exact V1 policy bundle, project li
 ## Task 624 isolated backup restore and destructive lifecycle
 
 Status: **PARTIAL / BLOCKED** (2026-07-12). The immutable synthetic staging database now restores fully into an isolated compatible Supabase Postgres target; row-count, orphan, RLS/private-access and rollback-scoped destructive lifecycle checks pass. Storage object bytes were not backed up/restored and no isolated GoTrue API proved revoked token rejection, so full recovery is not certified and RB-11 remains open.
+
+## Task 625 Picom v1.0.0 release candidate build
+
+Status: **BLOCKED / NO ARTIFACT** (2026-07-12). The complete local deterministic quality matrix passes after updating the hosted-validation workflow to the official Node 24 action runtimes. RC prerequisites do not pass: package metadata is `0.1.1-beta.1`, hosted Supabase gates are open, trusted Windows signing/clean-machine evidence is absent, legal/ownership gates are open, and full Storage/Auth recovery remains blocked. No final package, signature, checksum or provenance was generated; Task 626 is blocked.
