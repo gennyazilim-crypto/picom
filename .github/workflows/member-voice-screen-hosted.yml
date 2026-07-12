@@ -62,7 +62,7 @@ jobs:
           test "$(stat -c '%a:%U' node_modules/electron/dist/chrome-sandbox)" = "4755:root"
 
       - name: Apply reviewed Voice moderation ambiguity migration
-        run: npm run livekit:token:deploy:staging -- --apply
+        run: npm run livekit:token:deploy:staging -- --apply --migrations-only
 
       - name: Run real hosted member voice and screen media matrix
         run: xvfb-run -a npm run voice:screen:hosted:e2e -- --run

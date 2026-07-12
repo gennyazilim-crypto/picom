@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const apply = process.argv.includes("--apply");
+const migrationsOnly = process.argv.includes("--migrations-only");
 const approvedProjectRef = "ufmtvqtsklqsmqxefbbs";
 const migrationVersion = "20260712166000";
 const migrationPath = `supabase/migrations/${migrationVersion}_active_member_voice_screen_access.sql`;
@@ -233,13 +234,19 @@ try {
   const verificationRow = Array.isArray(verification) ? verification[0] : null;
   if (!verificationRow?.member_gate || !verificationRow?.token_gate || !verificationRow?.moderation_gate || !verificationRow?.moderation_level_gate || !verificationRow?.rate_limit_gate || !verificationRow?.migration_recorded || !verificationRow?.rate_limit_migration_recorded || !verificationRow?.rate_limit_keyword_fix_recorded || !verificationRow?.authorization_ambiguity_fix_recorded || !verificationRow?.moderation_ambiguity_fix_recorded || !verificationRow?.moderation_level_helper_recorded) throw new Error("Hosted migration verification failed.");
 
-  const deploy = runSupabase(["functions", "deploy", "livekit-token", "--project-ref", projectRef]);
-  if (deploy.status !== 0) throw new Error(`LiveKit token Function deployment failed: ${redact(deploy.stderr || deploy.stdout)}`);
-  const inventory = runSupabase(["functions", "list", "--project-ref", projectRef]);
-  if (inventory.status !== 0 || !inventory.stdout.includes("livekit-token")) throw new Error(`Deployed Function inventory verification failed: ${redact(inventory.stderr || inventory.stdout)}`);
+  let functionDeployed = false;
+  let functionInventoryVerified = false;
+  if (!migrationsOnly) {
+    const deploy = runSupabase(["functions", "deploy", "livekit-token", "--project-ref", projectRef]);
+    if (deploy.status !== 0) throw new Error(`LiveKit token Function deployment failed: ${redact(deploy.stderr || deploy.stdout)}`);
+    const inventory = runSupabase(["functions", "list", "--project-ref", projectRef]);
+    if (inventory.status !== 0 || !inventory.stdout.includes("livekit-token")) throw new Error(`Deployed Function inventory verification failed: ${redact(inventory.stderr || inventory.stdout)}`);
+    functionDeployed = true;
+    functionInventoryVerified = true;
+  }
 
   writeEvidence({
-    status: "deployed",
+    status: migrationsOnly ? "migrations_verified" : "deployed",
     migrationApplied: true,
     migrationRecorded: true,
     migrationsAppliedThisRun: appliedMigrationCount,
@@ -247,11 +254,14 @@ try {
     deferredOwnerMigrations,
     outOfScopePendingMigrations,
     requiredSecretNamesPresent: requiredSecretNames,
-    functionDeployed: true,
-    functionInventoryVerified: true,
+    functionDeployed,
+    functionInventoryVerified,
+    functionDeploymentSkipped: migrationsOnly,
     deployedAt: new Date().toISOString(),
   });
-  console.log("DEPLOYED active-member authorization migration and livekit-token to the approved Picom staging project; no credential value was printed.");
+  console.log(migrationsOnly
+    ? "VERIFIED active-member authorization migrations in the approved Picom staging project; the already deployed livekit-token Function was not rebuilt."
+    : "DEPLOYED active-member authorization migration and livekit-token to the approved Picom staging project; no credential value was printed.");
 } catch (error) {
   const safeMessage = redact(error instanceof Error ? error.message : error);
   writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, reconciledExistingStoragePolicies: reconciledStoragePolicyCount, deferredOwnerMigrations, outOfScopePendingMigrations, finishedAt: new Date().toISOString() });
