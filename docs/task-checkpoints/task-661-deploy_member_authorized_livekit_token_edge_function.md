@@ -17,7 +17,7 @@ Task 661 is complete only when the protected `Picom LiveKit Token Staging` workf
 
 Any `deferredOwnerMigrations` entries in the artifact remain release blockers for the full schema-sync gate even when this Voice-token task passes.
 Mixed schema/Storage migration `20260711149900` was split so its ordinary schema and RPC contract can apply independently; owner-only branding Storage policy DDL remains explicit in `20260712166100` and must not be marked applied by this workflow when policies are absent.
-The protected workflow now requires applied Voice prerequisite `20260711150600` and executes only reviewed Voice targets `20260712164500` and `20260712166000`; every other pending migration is reported as `outOfScopePendingMigrations` rather than becoming an unrelated Task 661 side effect.
+The protected workflow now requires applied Voice prerequisite `20260711150600` plus its canonical room/public-channel RPCs and executes only reviewed active-member target `20260712166000`; every other pending migration is reported as `outOfScopePendingMigrations` rather than becoming an unrelated Task 661 side effect.
 
 ## Validation commands
 

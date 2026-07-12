@@ -35,7 +35,7 @@ Status date: 2026-07-12
 `.github/workflows/livekit-token-staging.yml` is manual-only and requires `STAGING_ONLY`. The `hosted-staging` environment supplies the Supabase PAT and approved project reference. The workflow:
 
 1. runs the source security contract;
-2. compares hosted migration history with the ordered repository migration set, requires Voice prerequisite `20260711150600`, and applies only reviewed pending Voice migrations `20260712164500` and `20260712166000` through the official Supabase Management API database query endpoint. Other pending versions are reported as `outOfScopePendingMigrations` instead of being executed or presented as complete; an existing schema without migration history still fails closed;
+2. compares hosted migration history with the ordered repository migration set, requires Voice prerequisite `20260711150600` plus the `community_voice_rooms_enabled(uuid)` and `can_read_public_channel(uuid)` RPCs, and applies only reviewed pending active-member migration `20260712166000` through the official Supabase Management API database query endpoint. Other pending versions are reported as `outOfScopePendingMigrations` instead of being executed or presented as complete; an existing schema without migration history still fails closed;
 3. verifies migration `20260712166000` plus the member and token RPCs;
 4. deploys `livekit-token` with Supabase CLI `2.109.1`;
 5. creates temporary confirmed Auth identities and a private fixture community;
@@ -47,7 +47,7 @@ Status date: 2026-07-12
 
 The workflow never prints or uploads the PAT, Supabase server key, LiveKit secret, generated JWT, fixture password, email, or raw user/community/channel identifier.
 
-This Task 661 workflow is not a replacement for a full owner-authorized `supabase db push`. Its only completion requirement is that the reviewed Voice prerequisite exists and the two Voice authorization migrations are recorded and verified before token deployment. `outOfScopePendingMigrations` and deferred Storage-owner migrations remain explicit release debt and must be completed through the canonical database-owner path before a final release gate can claim full schema synchronization.
+This Task 661 workflow is not a replacement for a full owner-authorized `supabase db push`. Its only completion requirement is that the reviewed Voice prerequisite and RPCs exist and active-member migration `20260712166000` is recorded and verified before token deployment. `outOfScopePendingMigrations` and deferred Storage-owner migrations remain explicit release debt and must be completed through the canonical database-owner path before a final release gate can claim full schema synchronization.
 
 ## Evidence boundary
 

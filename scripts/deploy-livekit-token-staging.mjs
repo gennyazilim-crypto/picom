@@ -6,7 +6,7 @@ const approvedProjectRef = "ufmtvqtsklqsmqxefbbs";
 const migrationVersion = "20260712166000";
 const migrationPath = `supabase/migrations/${migrationVersion}_active_member_voice_screen_access.sql`;
 const prerequisiteMigrationVersions = ["20260711150600"];
-const targetMigrationVersions = new Set(["20260712164500", migrationVersion]);
+const targetMigrationVersions = new Set([migrationVersion]);
 const evidencePath = "artifacts/evidence/task-661-livekit-token-staging.json";
 const requiredSecretNames = ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "PICOM_ALLOWED_ORIGINS", "PICOM_V1_VOICE_SCREEN_ENABLED"];
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -154,6 +154,15 @@ try {
   for (const version of prerequisiteMigrationVersions) {
     if (!appliedVersions.has(version)) throw new Error(`Required Voice prerequisite migration is not applied: ${version}`);
   }
+  const prerequisiteFunctions = await management(`/projects/${projectRef}/database/query`, {
+    method: "POST",
+    body: JSON.stringify({
+      query: "select to_regprocedure('public.community_voice_rooms_enabled(uuid)') is not null as rooms_enabled_gate, to_regprocedure('public.can_read_public_channel(uuid)') is not null as public_channel_gate",
+      read_only: true,
+    }),
+  });
+  const prerequisiteRow = Array.isArray(prerequisiteFunctions) ? prerequisiteFunctions[0] : null;
+  if (!prerequisiteRow?.rooms_enabled_gate || !prerequisiteRow?.public_channel_gate) throw new Error("Required Voice prerequisite functions are unavailable.");
   const allPending = migrations.filter((migration) => !appliedVersions.has(migration.version));
   const pending = allPending.filter((migration) => targetMigrationVersions.has(migration.version));
   outOfScopePendingMigrations.push(...allPending.filter((migration) => !targetMigrationVersions.has(migration.version)).map((migration) => migration.version));
