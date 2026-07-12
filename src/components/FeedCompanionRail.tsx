@@ -9,6 +9,7 @@ import type { AudioPlayableItem } from "../types/audio";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { AudioMiniPlayer } from "./audio/AudioMiniPlayer";
+import { NoiseShieldCompactStatus } from "./voice/NoiseShieldControl";
 
 type FeedCompanionRailProps = {
   voiceState: VoiceServiceSnapshot;
@@ -77,6 +78,7 @@ function VoiceMiniControlCard({
           Live
         </span>
         <span>{voiceState.participants.length} listening</span>
+        <NoiseShieldCompactStatus interactive />
       </div>
       <div className="voice-mini-controls">
         <button type="button" aria-label={voiceState.muted ? "Unmute microphone" : "Mute microphone"} aria-pressed={voiceState.muted} onClick={onToggleMute}>

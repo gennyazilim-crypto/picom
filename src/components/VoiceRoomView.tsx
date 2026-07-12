@@ -6,6 +6,7 @@ import { MemberAvatar } from "./MemberAvatar";
 import { ScreenShareControls } from "./voice/ScreenShareControls";
 import { ScreenSharePreview } from "./voice/ScreenSharePreview";
 import type { ScreenShareQualityPresetId } from "../utils/screenShareQuality";
+import { NoiseShieldQuickControl } from "./voice/NoiseShieldControl";
 
 type VoiceRoomViewProps = {
   community: Community;
@@ -206,6 +207,7 @@ export function VoiceRoomView({
             onToggleMute={onToggleMute}
             onToggleDeafen={onToggleDeafen}
           />
+          <NoiseShieldQuickControl connected={connected && canSpeak} />
 
           {snapshot.error ? <p className="voice-room-error">{snapshot.error}</p> : null}
           <p className="voice-room-note">LiveKit tokens are requested through the Supabase Edge Function. Secrets never enter the renderer.</p>

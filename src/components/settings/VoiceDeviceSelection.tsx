@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AppIcon } from "../AppIcon";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "../../services/voiceDeviceService";
 import { audioPlayerService, type AudioPlayerServiceSnapshot } from "../../services/audio/audioPlayerService";
+import { NoiseShieldSettingsPanel } from "../voice/NoiseShieldControl";
 
 export function VoiceDeviceSelection() {
   const [state, setState] = useState<VoiceDeviceSnapshot>(() => voiceDeviceService.getSnapshot());
@@ -25,6 +26,7 @@ export function VoiceDeviceSelection() {
 
   return (
     <div className="voice-device-settings">
+      <NoiseShieldSettingsPanel />
       <div className="settings-row-copy">
         <strong>Audio devices</strong>
         <span>Permission is requested only when you choose to enable microphone access.</span>
