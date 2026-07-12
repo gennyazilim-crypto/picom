@@ -122,6 +122,7 @@
     "livekit:local:stop": "node scripts/livekit-local.mjs stop",
     "livekit:local:cleanup": "node scripts/livekit-local.mjs cleanup",
     "livekit:local:contract": "node scripts/local-self-hosted-livekit-smoke.mjs",
+    "livekit:host:contract": "node scripts/self-hosted-livekit-linux-host-smoke.mjs",
     "livekit:token:security:smoke": "node scripts/livekit-token-security-smoke.mjs",
     "livekit:token:staging": "node scripts/livekit-token-staging-validation.mjs",
     "livekit:token:deploy:staging": "node scripts/deploy-livekit-token-staging.mjs",

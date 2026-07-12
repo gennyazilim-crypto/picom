@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Picom LiveKit host baseline health check
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30
+Persistent=true
+
+[Install]
+WantedBy=timers.target
