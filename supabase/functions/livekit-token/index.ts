@@ -8,7 +8,7 @@ type LiveKitTokenRequest = { communityId?: string; channelId?: string; roomName?
 type AuthorizationRow = { community_id: string; channel_id: string; community_kind: string; channel_private: boolean; can_publish_audio: boolean; can_publish_screen: boolean };
 type CanonicalProfile = { id: string; display_name: string; deletion_requested_at: string | null; is_bot: boolean };
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const participantNamePattern = /^[^\u0000-\u001f\u007f]{1,80}$/;
 const maxBodyBytes = 2048;
 const tokenTtlSeconds = 10 * 60;
@@ -125,12 +125,7 @@ Deno.serve(async (request: Request) => {
   const intent = parseIntent(parsed.body.intent);
   const communityIdValid = typeof communityId === "string" && uuidPattern.test(communityId);
   const channelIdValid = typeof channelId === "string" && uuidPattern.test(channelId);
-  if (!communityIdValid || !channelIdValid) return respond(errorResponse("VALIDATION_ERROR", "A valid communityId and channelId are required.", 400, {
-    communityIdPresent: typeof communityId === "string",
-    communityIdValid,
-    channelIdPresent: typeof channelId === "string",
-    channelIdValid,
-  }));
+  if (!communityIdValid || !channelIdValid) return respond(errorResponse("VALIDATION_ERROR", "A valid communityId and channelId are required.", 400));
   const validatedCommunityId = communityId as string;
   const validatedChannelId = channelId as string;
   if (!intent) return respond(errorResponse("VALIDATION_ERROR", "intent must be voice or screen.", 400));

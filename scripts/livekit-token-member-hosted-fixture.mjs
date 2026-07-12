@@ -71,11 +71,7 @@ function assertToken(payload, userId, intent) {
 }
 
 const safeResponseCode = (payload) => typeof payload?.code === "string" && /^[A-Z0-9_]{1,64}$/.test(payload.code) ? payload.code : "NO_SAFE_CODE";
-const safeResponseDiagnostic = (payload) => {
-  const booleanDetails = payload?.details && typeof payload.details === "object" && !Array.isArray(payload.details)
-    && Object.values(payload.details).every((value) => typeof value === "boolean") ? payload.details : null;
-  return redact(`${typeof payload?.message === "string" ? payload.message : "No safe response message."}${booleanDetails ? ` ${JSON.stringify(booleanDetails)}` : ""}`);
-};
+const safeResponseDiagnostic = (payload) => redact(typeof payload?.message === "string" ? payload.message : "No safe response message.");
 const safeDatabaseCode = (error) => typeof error?.code === "string" && /^[A-Z0-9]{5}$/.test(error.code) ? error.code : "NO_DB_CODE";
 const safeDatabaseDiagnostic = (error) => redact([error?.message, error?.details].filter(Boolean).join(" | "));
 
