@@ -895,13 +895,22 @@ async function createMainWindow(): Promise<void> {
   }
 }
 
-app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
+const packagedMemberMediaCertification = app.isPackaged
+  && process.platform === "win32"
+  && process.env.PICOM_WINDOWS_MEMBER_MEDIA_CERTIFICATION === "CONTROLLED_WINDOWS_ONLY"
+  && process.env.PICOM_HOSTED_E2E_CONFIG_FD === "3"
+  && /^[a-f0-9]{64}$/.test(process.env.PICOM_WINDOWS_MEMBER_MEDIA_CERT_PACKAGE_SHA ?? "");
 
-const hasSingleInstanceLock = app.requestSingleInstanceLock();
-
-if (!hasSingleInstanceLock) {
-  app.quit();
+if (packagedMemberMediaCertification) {
+  require(path.join(__dirname, "certification", "main.cjs"));
 } else {
+  app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
+
+  const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+  if (!hasSingleInstanceLock) {
+    app.quit();
+  } else {
   app.on("second-instance", (_event, argv) => {
     const deepLink = extractDeepLinkFromArgs(argv);
     if (deepLink) {
@@ -928,16 +937,17 @@ if (!hasSingleInstanceLock) {
 
     app.on("activate", focusMainWindow);
   });
+  }
+
+  app.on("before-quit", () => {
+    isQuitting = true;
+  });
+
+  app.on("open-url", (event, url) => {
+    event.preventDefault();
+    handleNativeDeepLink(url);
+  });
 }
-
-app.on("before-quit", () => {
-  isQuitting = true;
-});
-
-app.on("open-url", (event, url) => {
-  event.preventDefault();
-  handleNativeDeepLink(url);
-});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

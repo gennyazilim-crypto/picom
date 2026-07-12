@@ -14,6 +14,7 @@ const fixtureRoot = resolve("scripts/fixtures/livekit-hosted-e2e");
 const rendererOutput = resolve(".tmp/livekit-hosted-e2e");
 const require = createRequire(import.meta.url);
 const electronPath = require("electron");
+const packagedExecutable = process.env.PICOM_HOSTED_E2E_EXECUTABLE?.trim() || null;
 const activeLabels = ["OWNER", "ADMIN", "MODERATOR", "MEMBER"];
 const deniedLabels = ["VISITOR", "NON_MEMBER", "BANNED"];
 const actorLabels = [...activeLabels, ...deniedLabels];
@@ -40,7 +41,7 @@ if (!run && !buildOnly) {
   process.exit(0);
 }
 
-await buildHarness();
+if (!packagedExecutable || buildOnly) await buildHarness();
 if (buildOnly) {
   await rm(rendererOutput, { recursive: true, force: true });
   console.log("Hosted LiveKit Electron renderer harness build passed without a network request.");
@@ -113,7 +114,19 @@ async function runElectronHarness(clients) {
   const preloadPath = resolve(fixtureRoot, "preload.cjs");
   const rendererHtml = resolve(rendererOutput, "index.html");
   if (process.platform === "linux" && !process.env.DISPLAY) throw new Error("Hosted Linux media validation requires an Xvfb DISPLAY.");
-  const child = spawn(electronPath, [mainPath], { cwd: process.cwd(), env: { ...process.env, PICOM_HOSTED_E2E_CONFIG_FD: "3" }, stdio: ["ignore", "pipe", "pipe", "pipe"], windowsHide: true });
+  if (packagedExecutable && process.platform !== "win32") throw new Error("Packaged media certification is restricted to Windows.");
+  const executable = packagedExecutable ?? electronPath;
+  const args = packagedExecutable ? ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] : [mainPath];
+  const child = spawn(executable, args, {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      PICOM_HOSTED_E2E_CONFIG_FD: "3",
+      ...(packagedExecutable ? { PICOM_WINDOWS_MEMBER_MEDIA_CERTIFICATION: "CONTROLLED_WINDOWS_ONLY" } : {}),
+    },
+    stdio: ["ignore", "pipe", "pipe", "pipe"],
+    windowsHide: true,
+  });
   const stdout = [];
   const stderr = [];
   let configPipeError = null;
@@ -122,7 +135,7 @@ async function runElectronHarness(clients) {
   child.stdout.on("data", (chunk) => stdout.push(chunk));
   child.stderr.on("data", (chunk) => stderr.push(chunk));
   child.stdio[3].on("error", (error) => { configPipeError = error; });
-  child.stdio[3].end(JSON.stringify({ clients, rendererHtml, preloadPath }));
+  child.stdio[3].end(JSON.stringify({ clients, rendererHtml, preloadPath, nativeCapture: Boolean(packagedExecutable) }));
   const exitCode = await new Promise((resolveExit, reject) => {
     const timer = setTimeout(() => { child.kill(); reject(new Error("Hosted Electron media harness timed out.")); }, 210000);
     child.on("error", (error) => { clearTimeout(timer); reject(error); });
@@ -170,7 +183,7 @@ try {
   const channelId = randomUUID();
   const roleIds = { OWNER: randomUUID(), ADMIN: randomUUID(), MODERATOR: randomUUID(), MEMBER: randomUUID() };
   const profileValues = actorLabels.map((label) => `('${actors.get(label).id}','t665${runTag}${actorCodes[label]}','Task 665 ${label.toLowerCase()}','online','Hosted media fixture')`).join(",\n");
-  const membershipValues = [["OWNER", roleIds.OWNER], ["ADMIN", roleIds.ADMIN], ["MODERATOR", roleIds.MODERATOR], ["MEMBER", roleIds.MEMBER], ["BANNED", roleIds.MEMBER]].map(([label, roleId]) => `('${communityId}','${actors.get(label).id}','${roleId}')`).join(",\n");
+  const membershipValues = [["OWNER", roleIds.OWNER], ["ADMIN", roleIds.ADMIN], ["MODERATOR", roleIds.MODERATOR], ["MEMBER", null], ["BANNED", roleIds.MEMBER]].map(([label, roleId]) => `('${communityId}','${actors.get(label).id}',${roleId ? `'${roleId}'` : "null"})`).join(",\n");
   await query(`
 begin;
 insert into public.profiles(id,username,display_name,status,status_text) values
@@ -203,6 +216,8 @@ commit;`);
 
   stage = "authentication";
   for (const label of actorLabels) await signIn(label, baseUrl, publicKey);
+  const visibleVoiceChannel = await sessions.get("MEMBER").client.from("channels").select("id,type").eq("id", channelId).maybeSingle();
+  if (visibleVoiceChannel.error || visibleVoiceChannel.data?.type !== "voice") throw new Error("Roleless active member could not see the hosted Voice channel through RLS.");
 
   stage = "token-authorization";
   const activeTokens = [];
@@ -240,11 +255,16 @@ commit;`);
   if (!matrix.reconnect?.reconnecting || !matrix.reconnect?.reconnected) throw new Error("Hosted reconnect evidence is incomplete.");
   if (matrix.postReconnectMedia?.remoteAudioTracks !== activeLabels.length - 1 || matrix.postReconnectMedia?.remoteScreenTracks !== activeLabels.length - 1 || matrix.postReconnectMedia?.renderedScreens < activeLabels.length - 1) throw new Error("Remote media did not recover after hosted reconnect.");
   if (cleanupRows.length !== activeLabels.length || !cleanupRows.every((entry) => entry.disconnected && entry.microphoneEnded && entry.screenEnded && entry.attachedElements === 0)) throw new Error("Hosted track or room cleanup evidence is incomplete.");
+  if (packagedExecutable) {
+    if (!matrix.published.every((entry) => entry.nativeMicrophonePermission && entry.nativeScreenCapture && entry.pickerCancelPassed && entry.screenSourceCount >= 1 && entry.windowSourceCount >= 1 && entry.selectedSourceType === "window")) throw new Error("Packaged Windows microphone permission or native picker evidence is incomplete.");
+    if (!matrix.screenRestart?.sourceEnded || !matrix.screenRestart?.restarted || matrix.screenRestart?.selectedSourceType !== "window") throw new Error("Packaged Windows source-ended/restart evidence is incomplete.");
+    if (!Array.isArray(matrix.postRestartMedia) || !matrix.postRestartMedia.every((entry) => entry.remoteAudioTracks === activeLabels.length - 1 && entry.remoteScreenTracks === activeLabels.length - 1 && entry.renderedScreens >= activeLabels.length - 1)) throw new Error("Packaged Windows media did not recover after screen restart.");
+  }
 
   evidence = {
     ...evidence,
     status: "passed",
-    tokenAuthorization: { activePassed: activeLabels.length, deniedPassed: deniedLabels.length, moderationHierarchyPassed: moderationCases.length },
+    tokenAuthorization: { activePassed: activeLabels.length, deniedPassed: deniedLabels.length, moderationHierarchyPassed: moderationCases.length, rolelessMemberPassed: true, voiceChannelVisibleThroughRls: true },
     media: {
       joinedClients: matrix.connected.length,
       microphonePublishers: matrix.published.length,
@@ -258,6 +278,11 @@ commit;`);
       reconnectMode: matrix.reconnect.mode,
       postReconnectMediaPassed: true,
       cleanupPassed: true,
+      packagedWindowsRuntime: Boolean(packagedExecutable),
+      nativeMicrophonePermissionPassed: Boolean(packagedExecutable),
+      nativePickerCancelPassed: Boolean(packagedExecutable),
+      nativeWindowCapturePassed: Boolean(packagedExecutable),
+      screenRestartAndSourceEndedPassed: Boolean(packagedExecutable),
     },
   };
   console.log("Hosted active-member Voice/Screen media matrix passed for Owner, Admin, Moderator, and Member; denial, moderation, RTP, render, mute, reconnect, and cleanup evidence is redacted.");

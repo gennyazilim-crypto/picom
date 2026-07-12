@@ -1,9 +1,14 @@
 import { ConnectionState, LocalAudioTrack, LocalVideoTrack, Room, RoomEvent, Track, type RemoteTrack } from "livekit-client";
 
-type ClientConfig = Readonly<{ label: string; url: string; token: string; expectedRemoteCount: number }>;
-type HarnessCommand = Readonly<{ id: string; type: "connect" | "publish" | "verify-media" | "mute-cycle" | "verify-controls" | "simulate-reconnect" | "wait-reconnected" | "cleanup"; payload: unknown }>;
+type ClientConfig = Readonly<{ label: string; url: string; token: string; expectedRemoteCount: number; nativeCapture?: boolean }>;
+type HarnessCommand = Readonly<{ id: string; type: "connect" | "publish" | "verify-media" | "mute-cycle" | "verify-controls" | "screen-restart" | "simulate-reconnect" | "wait-reconnected" | "cleanup"; payload: unknown }>;
 type HarnessBridge = Readonly<{
   getConfig: () => Promise<ClientConfig>;
+  screenCapture: Readonly<{
+    getSources: () => Promise<{ ok: boolean; requestId?: string; sources?: Array<{ id: string; name: string; type: "screen" | "window" }>; error?: string }>;
+    selectSource: (requestId: string, sourceId: string) => Promise<{ ok: boolean; source?: { id: string; name: string; type: "screen" | "window" }; error?: string }>;
+    cancelSelection: (requestId: string) => Promise<{ ok: boolean; canceled?: boolean; error?: string }>;
+  }>;
   onCommand: (callback: (command: HarnessCommand) => void) => () => void;
   report: (result: { commandId: string; ok: boolean; data?: unknown; error?: string }) => void;
 }>;
@@ -26,6 +31,7 @@ let reconnectedEvents = 0;
 let remoteMuteEvents = 0;
 let remoteUnmuteEvents = 0;
 let speakingObserved = false;
+let currentScreenEvidence: Record<string, unknown> = {};
 const attachedElements: HTMLMediaElement[] = [];
 
 const delay = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
@@ -75,19 +81,57 @@ async function connect() {
 
 async function publish() {
   if (!room || room.state !== ConnectionState.Connected) throw new Error("Room is not connected.");
-  audioContext = new AudioContext();
-  await audioContext.resume();
-  oscillator = audioContext.createOscillator();
-  const gain = audioContext.createGain();
-  const destination = audioContext.createMediaStreamDestination();
-  oscillator.frequency.value = 420 + config.label.length * 17;
-  gain.gain.value = 0.3;
-  oscillator.connect(gain).connect(destination);
-  oscillator.start();
-  const microphoneTrack = destination.stream.getAudioTracks()[0];
-  if (!microphoneTrack) throw new Error("Synthetic microphone track is unavailable.");
-  localAudio = new LocalAudioTrack(microphoneTrack, undefined, true, audioContext);
+  let microphoneTrack: MediaStreamTrack | undefined;
+  if (config.nativeCapture) {
+    const microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    microphoneTrack = microphoneStream.getAudioTracks()[0];
+  } else {
+    audioContext = new AudioContext();
+    await audioContext.resume();
+    oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const destination = audioContext.createMediaStreamDestination();
+    oscillator.frequency.value = 420 + config.label.length * 17;
+    gain.gain.value = 0.3;
+    oscillator.connect(gain).connect(destination);
+    oscillator.start();
+    microphoneTrack = destination.stream.getAudioTracks()[0];
+  }
+  if (!microphoneTrack) throw new Error("Microphone track is unavailable.");
+  localAudio = new LocalAudioTrack(microphoneTrack, undefined, true, audioContext ?? undefined);
   await room.localParticipant.publishTrack(localAudio, { name: `picom-e2e-microphone-${config.label}`, source: Track.Source.Microphone });
+
+  currentScreenEvidence = await publishScreen();
+  return { microphonePublished: true, screenPublished: true, nativeMicrophonePermission: Boolean(config.nativeCapture), ...currentScreenEvidence };
+}
+
+async function publishScreen() {
+  if (!room) throw new Error("Room is unavailable.");
+  if (config.nativeCapture) {
+    const cancelInventory = await bridge.screenCapture.getSources();
+    if (!cancelInventory.ok || !cancelInventory.requestId || !cancelInventory.sources?.length) throw new Error("Native screen picker inventory is unavailable.");
+    const canceled = await bridge.screenCapture.cancelSelection(cancelInventory.requestId);
+    const canceledSelection = await bridge.screenCapture.selectSource(cancelInventory.requestId, cancelInventory.sources[0].id);
+    if (!canceled.ok || !canceled.canceled || canceledSelection.ok) throw new Error("Native screen picker cancel flow did not fail closed.");
+
+    const inventory = await bridge.screenCapture.getSources();
+    const sources = inventory.sources ?? [];
+    const screenCount = sources.filter((source) => source.type === "screen").length;
+    const windowCount = sources.filter((source) => source.type === "window").length;
+    const target = sources.find((source) => source.type === "window" && source.name.includes("Picom Certification Share Target"));
+    if (!inventory.ok || !inventory.requestId || screenCount < 1 || windowCount < 1 || !target) throw new Error("Native screen/window picker inventory is incomplete.");
+    const selected = await bridge.screenCapture.selectSource(inventory.requestId, target.id);
+    if (!selected.ok || !selected.source) throw new Error("Native window source selection failed.");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { mandatory: { chromeMediaSource: "desktop", chromeMediaSourceId: selected.source.id, maxFrameRate: 15 } },
+    } as unknown as MediaStreamConstraints);
+    const screenTrack = stream.getVideoTracks()[0];
+    if (!screenTrack) throw new Error("Native desktop capture track is unavailable.");
+    localScreen = new LocalVideoTrack(screenTrack, undefined, true);
+    await room.localParticipant.publishTrack(localScreen, { name: `picom-e2e-screen-${config.label}`, source: Track.Source.ScreenShare, simulcast: false });
+    return { nativeScreenCapture: true, pickerCancelPassed: true, screenSourceCount: screenCount, windowSourceCount: windowCount, selectedSourceType: selected.source.type };
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width = 640;
@@ -110,7 +154,18 @@ async function publish() {
   if (!screenTrack) throw new Error("Synthetic screen track is unavailable.");
   localScreen = new LocalVideoTrack(screenTrack, undefined, true);
   await room.localParticipant.publishTrack(localScreen, { name: `picom-e2e-screen-${config.label}`, source: Track.Source.ScreenShare, simulcast: false });
-  return { microphonePublished: true, screenPublished: true };
+  return { nativeScreenCapture: false };
+}
+
+async function restartScreen() {
+  if (!room || !localScreen || !config.nativeCapture) throw new Error("Native screen track is unavailable for restart.");
+  const previousTrack = localScreen.mediaStreamTrack;
+  await room.localParticipant.unpublishTrack(localScreen, true);
+  localScreen.stop();
+  await waitFor(() => previousTrack.readyState === "ended", 5000, "native source-ended cleanup");
+  localScreen = null;
+  currentScreenEvidence = await publishScreen();
+  return { sourceEnded: true, restarted: true, ...currentScreenEvidence };
 }
 
 async function verifyMedia() {
@@ -203,7 +258,7 @@ async function cleanup() {
   return result;
 }
 
-const handlers = { connect, publish, "verify-media": verifyMedia, "mute-cycle": muteCycle, "verify-controls": verifyControls, "simulate-reconnect": simulateReconnect, "wait-reconnected": waitReconnected, cleanup } as const;
+const handlers = { connect, publish, "verify-media": verifyMedia, "mute-cycle": muteCycle, "verify-controls": verifyControls, "screen-restart": restartScreen, "simulate-reconnect": simulateReconnect, "wait-reconnected": waitReconnected, cleanup } as const;
 bridge.onCommand((command) => {
   void Promise.resolve(handlers[command.type]()).then(
     (data) => bridge.report({ commandId: command.id, ok: true, data }),

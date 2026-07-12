@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, desktopCapturer, ipcMain } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 
@@ -7,7 +7,9 @@ const windows = new Map();
 const configsByWebContents = new Map();
 const pending = new Map();
 const readyWaiters = new Map();
+const captureSessions = new Map();
 let commandSequence = 0;
+let shareTargetWindow = null;
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const safeError = (error) => String(error instanceof Error ? error.message : error).replace(/eyJ[A-Za-z0-9._-]+/g, "[redacted-token]").replace(/(?:https?|wss):\/\/\S+/g, "[redacted-url]").slice(0, 300);
@@ -30,6 +32,34 @@ ipcMain.handle("picom-hosted-media:get-config", (event) => {
   const config = configsByWebContents.get(event.sender.id);
   if (!config) throw new Error("Hosted client configuration is unavailable.");
   return config;
+});
+
+ipcMain.handle("picom-hosted-media:get-screen-sources", async (event) => {
+  const config = configsByWebContents.get(event.sender.id);
+  if (!config?.nativeCapture) return { ok: false, error: "NATIVE_CAPTURE_NOT_ENABLED" };
+  const sources = await desktopCapturer.getSources({ types: ["screen", "window"], thumbnailSize: { width: 320, height: 180 }, fetchWindowIcons: false });
+  const safeSources = sources.map((source) => Object.freeze({ id: source.id, name: source.name.slice(0, 120), type: source.id.startsWith("screen:") ? "screen" : "window" }));
+  const requestId = `native-${event.sender.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  captureSessions.set(event.sender.id, { requestId, expiresAt: Date.now() + 30000, sources: safeSources });
+  return { ok: true, requestId, sources: safeSources };
+});
+
+ipcMain.handle("picom-hosted-media:cancel-screen-selection", (event, payload) => {
+  const session = captureSessions.get(event.sender.id);
+  if (!session || payload?.requestId !== session.requestId) return { ok: false, error: "SCREEN_SELECTION_UNAVAILABLE" };
+  captureSessions.delete(event.sender.id);
+  return { ok: true, canceled: true };
+});
+
+ipcMain.handle("picom-hosted-media:select-screen-source", (event, payload) => {
+  const session = captureSessions.get(event.sender.id);
+  if (!session || session.expiresAt < Date.now() || payload?.requestId !== session.requestId) {
+    captureSessions.delete(event.sender.id);
+    return { ok: false, error: "SCREEN_SELECTION_EXPIRED" };
+  }
+  const source = session.sources.find((candidate) => candidate.id === payload?.sourceId);
+  captureSessions.delete(event.sender.id);
+  return source ? { ok: true, source } : { ok: false, error: "SCREEN_SOURCE_UNAVAILABLE" };
 });
 
 ipcMain.on("picom-hosted-media:result", (event, result) => {
@@ -62,6 +92,8 @@ async function createClientWindow(config, rendererHtml, preloadPath) {
       partition: `picom-hosted-e2e-${config.label}-${Date.now()}`,
     },
   });
+  window.webContents.session.setPermissionCheckHandler((_webContents, permission) => permission === "media");
+  window.webContents.session.setPermissionRequestHandler((_webContents, permission, callback) => callback(permission === "media"));
   window.webContents.setAudioMuted(true);
   configsByWebContents.set(window.webContents.id, config);
   const ready = new Promise((resolve, reject) => {
@@ -88,13 +120,21 @@ function sendCommand(label, type, payload = null, timeoutMs = 60000) {
 }
 
 async function runMatrix(config) {
+  const rendererHtml = app.isPackaged ? path.join(__dirname, "index.html") : config.rendererHtml;
+  const preloadPath = app.isPackaged ? path.join(__dirname, "preload.cjs") : config.preloadPath;
+  if (config.nativeCapture) {
+    shareTargetWindow = new BrowserWindow({ width: 720, height: 420, show: true, title: "Picom Certification Share Target", webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+    await shareTargetWindow.loadURL("data:text/html,<title>Picom Certification Share Target</title><body style='margin:0;background:%2317353a;color:white;display:grid;place-items:center;font:32px sans-serif'>Picom native screen-share target</body>");
+  }
   const labels = config.clients.map((client) => client.label);
-  await Promise.all(config.clients.map((client) => createClientWindow(client, config.rendererHtml, config.preloadPath)));
+  await Promise.all(config.clients.map((client) => createClientWindow({ ...client, nativeCapture: Boolean(config.nativeCapture) }, rendererHtml, preloadPath)));
   const connected = await Promise.all(labels.map((label) => sendCommand(label, "connect")));
   const published = await Promise.all(labels.map((label) => sendCommand(label, "publish")));
   const media = await Promise.all(labels.map((label) => sendCommand(label, "verify-media", null, 90000)));
   for (const label of labels) await sendCommand(label, "mute-cycle");
   const controls = await Promise.all(labels.map((label) => sendCommand(label, "verify-controls", null, 30000)));
+  const screenRestart = config.nativeCapture ? await sendCommand("member", "screen-restart", null, 60000) : null;
+  const postRestartMedia = config.nativeCapture ? await Promise.all(labels.map((label) => sendCommand(label, "verify-media", null, 90000))) : null;
 
   let reconnect;
   try {
@@ -111,7 +151,7 @@ async function runMatrix(config) {
   const postReconnectMedia = await sendCommand("member", "verify-media", null, 90000);
 
   const cleanup = await Promise.all(labels.map((label) => sendCommand(label, "cleanup", null, 30000)));
-  return { connected, published, media, controls, reconnect, postReconnectMedia, cleanup };
+  return { connected, published, media, controls, screenRestart, postRestartMedia, reconnect, postReconnectMedia, cleanup };
 }
 
 void (async () => {
@@ -127,8 +167,11 @@ void (async () => {
   } finally {
     process.stdout.write(`${RESULT_PREFIX}${JSON.stringify(result)}\n`);
     for (const window of windows.values()) if (!window.isDestroyed()) window.destroy();
+    if (shareTargetWindow && !shareTargetWindow.isDestroyed()) shareTargetWindow.destroy();
+    shareTargetWindow = null;
     windows.clear();
     configsByWebContents.clear();
+    captureSessions.clear();
     setTimeout(() => app.quit(), 50);
   }
 })();

@@ -1,9 +1,14 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-const allowedCommands = new Set(["connect", "publish", "verify-media", "mute-cycle", "verify-controls", "simulate-reconnect", "wait-reconnected", "cleanup"]);
+const allowedCommands = new Set(["connect", "publish", "verify-media", "mute-cycle", "verify-controls", "screen-restart", "simulate-reconnect", "wait-reconnected", "cleanup"]);
 
 contextBridge.exposeInMainWorld("picomHostedMediaE2E", Object.freeze({
   getConfig: () => ipcRenderer.invoke("picom-hosted-media:get-config"),
+  screenCapture: Object.freeze({
+    getSources: () => ipcRenderer.invoke("picom-hosted-media:get-screen-sources"),
+    selectSource: (requestId, sourceId) => ipcRenderer.invoke("picom-hosted-media:select-screen-source", { requestId, sourceId }),
+    cancelSelection: (requestId) => ipcRenderer.invoke("picom-hosted-media:cancel-screen-selection", { requestId }),
+  }),
   onCommand: (callback) => {
     if (typeof callback !== "function") return () => undefined;
     const listener = (_event, command) => {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const workflow = read(".github/workflows/member-voice-screen-hosted.yml");
 const orchestrator = read("scripts/hosted-member-voice-screen-e2e.mjs");
 const main = read("scripts/fixtures/livekit-hosted-e2e/main.cjs");
