@@ -5,8 +5,9 @@ const apply = process.argv.includes("--apply");
 const approvedProjectRef = "ufmtvqtsklqsmqxefbbs";
 const migrationVersion = "20260712166000";
 const migrationPath = `supabase/migrations/${migrationVersion}_active_member_voice_screen_access.sql`;
+const rateLimitMigrationVersion = "20260712166200";
 const prerequisiteMigrationVersions = ["20260711150600"];
-const targetMigrationVersions = new Set([migrationVersion]);
+const targetMigrationVersions = new Set([migrationVersion, rateLimitMigrationVersion]);
 const evidencePath = "artifacts/evidence/task-661-livekit-token-staging.json";
 const requiredSecretNames = ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "PICOM_ALLOWED_ORIGINS", "PICOM_V1_VOICE_SCREEN_ENABLED"];
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -219,12 +220,12 @@ try {
   const verification = await management(`/projects/${projectRef}/database/query`, {
     method: "POST",
     body: JSON.stringify({
-      query: "select to_regprocedure('public.is_active_community_media_member(uuid,uuid)') is not null as member_gate, to_regprocedure('public.authorize_livekit_room(uuid,uuid,text)') is not null as token_gate, exists(select 1 from supabase_migrations.schema_migrations where version='20260712166000') as migration_recorded",
+      query: "select to_regprocedure('public.is_active_community_media_member(uuid,uuid)') is not null as member_gate, to_regprocedure('public.authorize_livekit_room(uuid,uuid,text)') is not null as token_gate, to_regprocedure('public.consume_current_user_action_rate_limit(text)') is not null as rate_limit_gate, exists(select 1 from supabase_migrations.schema_migrations where version='20260712166000') as migration_recorded, exists(select 1 from supabase_migrations.schema_migrations where version='20260712166200') as rate_limit_migration_recorded",
       read_only: true,
     }),
   });
   const verificationRow = Array.isArray(verification) ? verification[0] : null;
-  if (!verificationRow?.member_gate || !verificationRow?.token_gate || !verificationRow?.migration_recorded) throw new Error("Hosted migration verification failed.");
+  if (!verificationRow?.member_gate || !verificationRow?.token_gate || !verificationRow?.rate_limit_gate || !verificationRow?.migration_recorded || !verificationRow?.rate_limit_migration_recorded) throw new Error("Hosted migration verification failed.");
 
   const deploy = runSupabase(["functions", "deploy", "livekit-token", "--project-ref", projectRef]);
   if (deploy.status !== 0) throw new Error(`LiveKit token Function deployment failed: ${redact(deploy.stderr || deploy.stdout)}`);
