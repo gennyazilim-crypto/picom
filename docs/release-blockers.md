@@ -201,3 +201,7 @@ The native Linux x64 AppImage/DEB matrix now requires real hashes, package metad
 ## Task 580 macOS native meeting update
 
 The native macOS x64 matrix now requires post-staple DMG/ZIP hashes, Developer ID and nested signatures, hardened runtime/entitlements, accepted notarization, app/DMG staple, quarantined Gatekeeper launch, 27 packaged meeting/permission flows, and a distinct remote client. Task 580 ran on Windows without Apple signing/notary material, a macOS runner, final artifacts, TCC permission access, or remote rendered share. RB-04, RB-05, and RB-08 remain **BLOCKED**. Apple Silicon/universal support is not claimed without separate evidence.
+
+## Task 581 meeting security/privacy/RLS gate
+
+Fifteen deterministic migration/RLS/token/webhook/privacy/abuse/captions/observability/Electron IPC/secret/redaction controls pass, and no local critical finding is recorded. The final matrix now classifies eight identities across nine private meeting resources and defines five explicit remediation items. However, deployed unauthorized-access, private Realtime, final Edge/LiveKit, and native consent/media-indicator evidence remains blocked. Stable security status is **NO-GO**; RB-01 through RB-05 and applicable native package blockers remain open. Any future data/media or secret leak is release-blocking.

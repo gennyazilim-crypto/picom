@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "task": 581,
+  "roles": [
+    "owner",
+    "admin",
+    "moderator",
+    "member",
+    "visitor",
+    "guest",
+    "blocked",
+    "non_participant"
+  ],
+  "fixture": "private_invite_required_meeting_with_admitted_guest",
+  "accessAttempts": [
+    {
+      "resource": "room_metadata",
+      "allowedRoles": ["owner", "admin", "moderator", "member", "guest"],
+      "deniedRoles": ["visitor", "blocked", "non_participant"]
+    },
+    {
+      "resource": "participant_list",
+      "allowedRoles": ["owner", "admin", "moderator", "member", "guest"],
+      "deniedRoles": ["visitor", "blocked", "non_participant"]
+    },
+    {
+      "resource": "invite_management",
+      "allowedRoles": ["owner", "admin"],
+      "deniedRoles": ["moderator", "member", "visitor", "guest", "blocked", "non_participant"]
+    },
+    {
+      "resource": "attendance_history",
+      "allowedRoles": ["owner", "admin", "moderator"],
+      "deniedRoles": ["member", "visitor", "guest", "blocked", "non_participant"]
+    },
+    {
+      "resource": "meeting_chat",
+      "allowedRoles": ["owner", "admin", "moderator", "member", "guest"],
+      "deniedRoles": ["visitor", "blocked", "non_participant"]
+    },
+    {
+      "resource": "captions_transcript",
+      "allowedRoles": ["owner", "admin", "moderator", "member", "guest"],
+      "deniedRoles": ["visitor", "blocked", "non_participant"]
+    },
+    {
+      "resource": "moderation_controls",
+      "allowedRoles": ["owner", "admin", "moderator"],
+      "deniedRoles": ["member", "visitor", "guest", "blocked", "non_participant"]
+    },
+    {
+      "resource": "screen_share_publish",
+      "allowedRoles": ["owner", "admin", "moderator", "member"],
+      "deniedRoles": ["visitor", "guest", "blocked", "non_participant"]
+    },
+    {
+      "resource": "meeting_token",
+      "allowedRoles": ["owner", "admin", "moderator", "member", "guest"],
+      "deniedRoles": ["visitor", "blocked", "non_participant"]
+    }
+  ],
+  "securityControls": [
+    "token_ttl_and_identity_binding",
+    "least_privilege_media_grants",
+    "webhook_signature_and_body_hash",
+    "webhook_replay_idempotency",
+    "cors_allowlist",
+    "input_and_body_size_validation",
+    "server_authoritative_rate_limits",
+    "minimal_validated_electron_ipc",
+    "diagnostic_and_log_redaction",
+    "consent_and_media_indicators",
+    "retention_and_cleanup",
+    "raw_media_storage_prohibition",
+    "server_side_secret_custody"
+  ],
+  "releasePolicy": {
+    "dataOrMediaLeakSeverity": "release_blocking",
+    "hostedEvidenceRequired": true,
+    "nativeIndicatorEvidenceRequired": true,
+    "missingEvidenceDecision": "NO_GO"
+  }
+}

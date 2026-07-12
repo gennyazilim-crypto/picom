@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "task": 581,
+  "localGateStatus": "PASS",
+  "hostedGateStatus": "BLOCKED",
+  "nativeIndicatorStatus": "BLOCKED",
+  "stableDecision": "NO_GO",
+  "privateDataCaptured": false,
+  "rawMediaStored": false,
+  "sensitiveValuesRecorded": false,
+  "criticalFindings": [],
+  "localChecks": [
+    { "id": "migration_integrity", "status": "PASS" },
+    { "id": "meeting_rls_contract", "status": "PASS" },
+    { "id": "meeting_token_security", "status": "PASS" },
+    { "id": "webhook_security", "status": "PASS" },
+    { "id": "privacy_consent_audit", "status": "PASS" },
+    { "id": "abuse_rate_limits", "status": "PASS" },
+    { "id": "caption_retention_privacy", "status": "PASS" },
+    { "id": "observability_redaction", "status": "PASS" },
+    { "id": "electron_security", "status": "PASS" },
+    { "id": "desktop_ipc_security", "status": "PASS" },
+    { "id": "ipc_invalid_payload_fuzz", "status": "PASS" },
+    { "id": "screen_picker_ipc", "status": "PASS" },
+    { "id": "runtime_secret_scan", "status": "PASS" },
+    { "id": "diagnostics_redaction", "status": "PASS" },
+    { "id": "logging_redaction", "status": "PASS" }
+  ],
+  "releaseBlockers": [
+    "SEC-MTG-001",
+    "SEC-MTG-002",
+    "SEC-MTG-003",
+    "SEC-MTG-004",
+    "SEC-MTG-005"
+  ]
+}
