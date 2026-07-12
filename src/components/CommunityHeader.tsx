@@ -5,6 +5,7 @@ import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { getCommunityVerificationSummary } from "../utils/verificationHelpers";
+import { settingsNavigationPolicyService } from "../services/navigation/settingsNavigationPolicyService";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
 
@@ -22,17 +23,18 @@ type CommunityHeaderProps = {
 
 export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenModeratorPanel, onOpenMemberPanel, onOpenVisitorPanel, onOpenJoinCommunity, onOpenLeaveCommunity, onPlaceholderAction }: CommunityHeaderProps) {
   const openManagementCenter = () => {
-    if (access.isOwner || access.isAdmin) {
+    const destination = settingsNavigationPolicyService.resolveCommunityDestination(access);
+    if (destination === "admin") {
       onOpenAdminPanel();
       return;
     }
 
-    if (access.isModerator) {
+    if (destination === "moderator") {
       onOpenModeratorPanel();
       return;
     }
 
-    if (access.isVisitor) {
+    if (destination === "visitor") {
       onOpenVisitorPanel();
       return;
     }

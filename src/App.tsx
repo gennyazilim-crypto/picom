@@ -26,6 +26,7 @@ import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
+import { settingsNavigationPolicyService } from "./services/navigation/settingsNavigationPolicyService";
 import {
   AUTHENTICATED_DEFAULT_VIEW,
   authenticatedEntryRouter,
@@ -1331,12 +1332,6 @@ export function App() {
         return;
       }
 
-      if (!editing && shortcutService.matchesEvent("settings", event)) {
-        event.preventDefault();
-        openSettings();
-        return;
-      }
-
       if (!editing && shortcutService.matchesEvent("lockApp", event)) {
         event.preventDefault();
         lockApp();
@@ -1374,7 +1369,7 @@ export function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeChannel.id, channels, closeTransientOverlays, lockApp, openPalette, openSettings, pushToast, selectChannelByOffset, voiceSnapshot.deafened, voiceSnapshot.muted, voiceSnapshot.status]);
+  }, [activeChannel.id, channels, closeTransientOverlays, lockApp, openPalette, pushToast, selectChannelByOffset, voiceSnapshot.deafened, voiceSnapshot.muted, voiceSnapshot.status]);
 
   const maybeShowNotificationPermissionPrompt = useCallback((trigger: NotificationPermissionOnboardingTrigger) => {
     const prompt = notificationPermissionOnboardingService.getPrompt(trigger);
@@ -1445,12 +1440,6 @@ export function App() {
         return;
       }
 
-      if (action.type === "settings") {
-        openSettings();
-        pushToast("Opened settings from deep link.", "info");
-        return;
-      }
-
       if (action.type === "friends") {
         setActiveView("friends");
         closeTransientOverlays();
@@ -1506,17 +1495,10 @@ export function App() {
     };
 
     return deepLinkService.onDeepLink(handleDeepLinkAction);
-  }, [clearAuthError, clearChannelUnread, closeTransientOverlays, communities, openPodcastEpisodeSource, openSettings, pushToast, switchCommunity]);
+  }, [clearAuthError, clearChannelUnread, closeTransientOverlays, communities, openPodcastEpisodeSource, pushToast, switchCommunity]);
 
   useEffect(() => {
     const handleMenuAction = (payload: MenuActionPayload) => {
-      if (payload.action === "open-settings") {
-        closeTransientOverlays();
-        openSettings();
-        pushToast("Opened settings from the app menu foundation.", "info");
-        return;
-      }
-
       if (payload.action === "open-command-palette") {
         closeTransientOverlays();
         openPalette();
@@ -1546,9 +1528,7 @@ export function App() {
       }
 
       if (payload.action === "send-feedback") {
-        closeTransientOverlays();
-        openSettings();
-        pushToast("Feedback placeholder is available in Settings > Advanced.", "info");
+        pushToast("Send feedback from Help & Support in the global sidebar.", "info");
         return;
       }
 
@@ -1576,8 +1556,7 @@ export function App() {
       }
 
       if (payload.action === "open-help" || payload.action === "open-about") {
-        openSettings();
-        pushToast(`${payload.action === "open-help" ? "Help" : "About"} placeholder is kept in Settings for MVP.`, "info");
+        pushToast("Help & Support is available from the global sidebar.", "info");
         return;
       }
 
@@ -1587,7 +1566,7 @@ export function App() {
     };
 
     return menuService.onAction(handleMenuAction);
-  }, [closeTransientOverlays, directConversations, openPalette, openSettings, openSystemStatusPage, pushToast]);
+  }, [closeTransientOverlays, directConversations, openPalette, openSystemStatusPage, pushToast]);
 
   useEffect(() => {
     if (safeMode.active) return;
@@ -1597,13 +1576,6 @@ export function App() {
     const handleTrayAction = (payload: PicomTrayActionPayload) => {
       if (payload.action === "open") {
         pushToast("Picom restored from the system tray.", "info");
-        return;
-      }
-
-      if (payload.action === "settings") {
-        closeTransientOverlays();
-        openSettings();
-        pushToast("Opened settings from the system tray.", "info");
         return;
       }
 
@@ -1621,7 +1593,7 @@ export function App() {
     };
 
     return trayService.onAction(handleTrayAction);
-  }, [closeTransientOverlays, openSettings, pushToast, safeMode.active]);
+  }, [pushToast, safeMode.active]);
 
   const jumpToMessage = useCallback((community: Community, message: Message) => {
     const access = getCommunityAccess(currentUserId, community);
@@ -1645,16 +1617,6 @@ export function App() {
   const paletteResults = useMemo<PaletteResult[]>(() => {
     const q = paletteQuery.toLowerCase();
     const all: PaletteResult[] = [
-      {
-        id: "cmd-settings",
-        group: "Commands",
-        label: "Open settings",
-        detail: "Ctrl + ,",
-        run: () => {
-          openSettings();
-          closePalette();
-        },
-      },
       {
         id: "cmd-theme",
         group: "Commands",
@@ -1760,7 +1722,7 @@ export function App() {
     return all
       .filter((result) => !q || `${result.group} ${result.label} ${result.detail}`.toLowerCase().includes(q))
       .slice(0, 36);
-  }, [activeView, blockedUserIds, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, openPodcastEpisodeSource, openSettings, paletteEntityResults, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
+  }, [activeView, blockedUserIds, clearChannelUnread, closePalette, closeTransientOverlays, communities, directConversations, jumpToMessage, lockApp, openPodcastEpisodeSource, paletteEntityResults, paletteQuery, pushToast, setActiveChannelId, switchCommunity, theme]);
 
   const openMentionFeed = useCallback(() => {
     setActiveView("mentionFeed");
@@ -2800,6 +2762,13 @@ export function App() {
     if (target) openCommunityFromRail(target.id);
   };
 
+  const openGlobalUserSettings = () => {
+    const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest("Account");
+    settingsService.requestInitialSection(request.modalSection);
+    closeTransientOverlays();
+    openSettings();
+  };
+
   const communityServerRail = (
     <ServerRail
       communities={communities}
@@ -2843,8 +2812,8 @@ export function App() {
             availability={globalNavigationAvailability}
             currentUser={displayedCurrentUser}
             onNavigate={navigateGlobal}
-            onOpenSettings={openSettings}
-            onOpenHelpSupport={() => { settingsService.requestInitialSection("Help Center"); openSettings(); }}
+            onOpenSettings={openGlobalUserSettings}
+            onOpenHelpSupport={() => pushToast("Help & Support is a separate global workspace.", "info")}
             onOpenProfile={() => openProfilePage(displayedCurrentUser)}
             onOpenUserMenu={(event) => openContext(event, [
               { label: "@" + currentUser.username, disabled: true },
@@ -2965,18 +2934,13 @@ export function App() {
               dataState={dataSourceService.getStatus().isSupabase ? remoteProfileLoadState : "ready"}
               dataError={remoteProfileLoadError}
               onRetryData={() => setProfileReloadVersion((version) => version + 1)}
-              onEditProfile={() => { settingsService.requestInitialSection("Profile"); openSettings(); }}
-              onRequestVerification={() => { settingsService.requestInitialSection("Profile"); openSettings(); }}
               isBlocked={blockedUserIds.includes(selectedUserProfile.id)}
               relationshipBusy={profileRelationshipBusyUserId === selectedUserProfile.id}
               onOpenMore={(event, profile) => {
                 const request = friendState.requests.find((candidate) => candidate.userId === profile.id && candidate.status === "pending");
                 const friendAction = profile.friendshipStatus === "friends" ? "remove" : profile.friendshipStatus === "outgoing" ? "cancel" : profile.friendshipStatus === "incoming" ? "accept" : "add";
                 const friendLabel = friendAction === "remove" ? "Remove friend" : friendAction === "cancel" ? "Cancel friend request" : friendAction === "accept" ? "Accept friend request" : "Add friend";
-                const openProfileSettings = () => { settingsService.requestInitialSection("Profile"); openSettings(); };
                 openContext(event, profile.isCurrentUser ? [
-                  { label: "Edit profile", onSelect: openProfileSettings },
-                  { label: "Verification status and request", onSelect: openProfileSettings },
                   { label: "Copy user ID", onSelect: () => void clipboardService.copyText(profile.id) },
                 ] : [
                   { label: "Message", onSelect: () => openDirectMessages(profile.id), disabled: blockedUserIds.includes(profile.id) },

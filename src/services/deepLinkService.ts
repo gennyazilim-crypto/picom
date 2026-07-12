@@ -8,7 +8,6 @@ export type DeepLinkAction =
   | { type: "authCallback"; code?: string; error?: string }
   | { type: "passwordRecovery"; code?: string; error?: string }
   | { type: "emailVerification"; code?: string; error?: string }
-  | { type: "settings" }
   | { type: "friends" };
 
 export type DeepLinkParseResult =
@@ -156,10 +155,6 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
     if (segments.length === 3) return { ok: true, url: `picom://meeting/${communityId}/room/${roomId}`, action: { type: "meeting", communityId, roomId, ...(meetingInviteToken ? { inviteToken: meetingInviteToken } : {}) } };
     if (segments.length === 5 && segments[3] === "session" && isSafeSegment(segments[4])) return { ok: true, url: `picom://meeting/${communityId}/room/${roomId}/session/${segments[4]}`, action: { type: "meeting", communityId, roomId, sessionId: segments[4], ...(meetingInviteToken ? { inviteToken: meetingInviteToken } : {}) } };
     return { ok: false, reason: "INVALID_MEETING_LINK" };
-  }
-
-  if (route === "settings" && segments.length === 0) {
-    return { ok: true, url: "picom://settings", action: { type: "settings" } };
   }
 
   if (route === "friends" && segments.length === 0) {

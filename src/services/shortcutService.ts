@@ -1,4 +1,4 @@
-export type ShortcutAction = "commandPalette" | "settings" | "previousChannel" | "nextChannel" | "voiceMute" | "voiceDeafen" | "lockApp" | "escape";
+export type ShortcutAction = "commandPalette" | "previousChannel" | "nextChannel" | "voiceMute" | "voiceDeafen" | "lockApp" | "escape";
 
 export interface ShortcutBinding {
   action: ShortcutAction;
@@ -16,7 +16,6 @@ const storageKey = "picom:keyboard-shortcuts:v1";
 
 const defaults: ShortcutBinding[] = [
   { action: "commandPalette", actionLabel: "Command Palette", description: "Open quick navigation and commands.", label: "Ctrl + K", configurable: true },
-  { action: "settings", actionLabel: "Settings", description: "Open Picom settings.", label: "Ctrl + ,", configurable: true },
   { action: "previousChannel", actionLabel: "Previous channel", description: "Move to the previous visible channel.", label: "Alt + Up", configurable: true },
   { action: "nextChannel", actionLabel: "Next channel", description: "Move to the next visible channel.", label: "Alt + Down", configurable: true },
   { action: "voiceMute", actionLabel: "Mute / unmute microphone", description: "Toggle your microphone while connected to voice.", label: "Ctrl + Shift + M", configurable: true },

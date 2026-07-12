@@ -1,5 +1,4 @@
 export type MenuAction =
-  | "open-settings"
   | "open-command-palette"
   | "open-mention-feed"
   | "open-direct-messages"
@@ -26,7 +25,6 @@ type MenuActionListener = (payload: MenuActionPayload) => void;
 
 const listeners = new Set<MenuActionListener>();
 const menuLabels: Record<MenuAction, string> = {
-  "open-settings": "Open Settings",
   "open-command-palette": "Open Command Palette",
   "open-mention-feed": "Open Mention Feed",
   "open-direct-messages": "Open Direct Messages",

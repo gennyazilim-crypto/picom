@@ -81,14 +81,14 @@ function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessag
   if (isCurrentUser) {
     return (
       <div className="profile-action-buttons">
-        <button type="button" className="profile-primary-button" onClick={onEditProfile}>
+        {onEditProfile ? <button type="button" className="profile-primary-button" onClick={onEditProfile}>
           <AppIcon name="edit" size="sm" />
           Edit Profile
-        </button>
-        <button type="button" onClick={onRequestVerification}>
+        </button> : null}
+        {onRequestVerification ? <button type="button" onClick={onRequestVerification}>
           <AppIcon name="lock" size="sm" />
           Verification
-        </button>
+        </button> : null}
         <button type="button" onClick={(event) => onOpenMore?.(event, profile)}>
           <AppIcon name="more" size="sm" />
           More
