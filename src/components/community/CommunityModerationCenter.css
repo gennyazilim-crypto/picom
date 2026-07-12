@@ -1,1 +1,394 @@
-.community-moderation-center{display:grid;gap:16px;min-width:0}.moderation-center-section{display:grid;gap:12px;min-width:0}.moderation-center-section>header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}.moderation-center-section h3{margin:3px 0 0}.moderation-center-section>header label{display:flex;align-items:center;gap:7px;min-width:220px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-subtle)}.moderation-center-section>header input{min-width:0;width:100%;border:0;outline:0;background:transparent;color:var(--text-primary)}.moderation-review-reason{display:grid!important;gap:3px!important}.moderation-review-reason span{color:var(--text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.moderation-member-grid,.moderation-report-queue,.moderation-audit-list,.moderation-restriction-list{display:grid;gap:8px}.moderation-member-grid article,.moderation-report-queue article,.moderation-audit-list article,.moderation-restriction-list article{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-elevated)}.moderation-member-grid article>div:nth-child(2),.moderation-report-queue article>div:nth-child(2),.moderation-audit-list article>div,.moderation-restriction-list article>div{display:grid;gap:2px;min-width:0;flex:1}.moderation-member-grid span,.moderation-member-grid small,.moderation-report-queue span,.moderation-report-queue small,.moderation-audit-list span,.moderation-audit-list small,.moderation-restriction-list span{color:var(--text-muted);font-size:11px}.moderation-member-grid article>div:last-child,.moderation-report-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap}.moderation-member-grid button,.moderation-report-actions button,.moderation-restriction-list button,.moderation-reverse-confirm button{min-height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-subtle);color:var(--text-secondary);padding:6px 8px}.moderation-member-grid .danger-action{color:var(--danger)}.moderation-report-type{display:grid;justify-items:center;gap:3px;width:76px;color:var(--accent)}.moderation-report-type span{text-transform:capitalize}.restricted-source{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border-radius:999px;background:var(--surface-subtle)}.moderation-restriction-list h4{margin:4px 0}.moderation-center-notice{margin:0;padding:9px 11px;border-radius:var(--radius-sm);color:var(--success);background:color-mix(in srgb,var(--success) 10%,transparent)}.moderation-center-notice.error{color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}.moderation-reverse-confirm{position:sticky;bottom:0;z-index:5;display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;padding:14px;border:1px solid color-mix(in srgb,var(--warning) 40%,var(--border));border-radius:var(--radius-lg);background:var(--surface-elevated);box-shadow:var(--shadow-app)}.moderation-reverse-confirm p{margin:4px 0 8px;color:var(--text-secondary)}.moderation-reverse-confirm textarea{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-subtle);color:var(--text-primary);padding:8px}.moderation-reverse-confirm footer{grid-column:2;display:flex;justify-content:flex-end;gap:7px}@media(max-width:1280px){.moderation-center-section>header{align-items:stretch;flex-direction:column}.moderation-report-queue article{align-items:flex-start;flex-wrap:wrap}.moderation-report-actions{width:100%}}
+.community-management-modal .community-moderation-section {
+  display: grid;
+  gap: 14px;
+}
+
+.community-management-modal .community-moderation-section > header {
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .community-moderation-center {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-center-section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-members-toolbar,
+.community-management-modal .moderation-reports-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.community-management-modal .moderation-members-toolbar-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-members-toolbar-copy span,
+.community-management-modal .moderation-reports-toolbar span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .moderation-member-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: min(280px, 100%);
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 11px;
+  background: var(--surface-soft);
+}
+
+.community-management-modal .moderation-member-search .community-mgmt-input {
+  border: 0;
+  background: transparent;
+  padding-left: 0;
+  box-shadow: none;
+}
+
+.community-management-modal .moderation-member-metrics,
+.community-management-modal .moderation-report-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.community-management-modal .moderation-member-metric,
+.community-management-modal .moderation-report-metric {
+  display: grid;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .moderation-member-metric-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  margin-bottom: 2px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .moderation-member-metric--timeout .moderation-member-metric-icon {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.community-management-modal .moderation-member-metric--ban .moderation-member-metric-icon {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.community-management-modal .moderation-member-metric strong,
+.community-management-modal .moderation-report-metric strong {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.community-management-modal .moderation-member-metric > span:last-child,
+.community-management-modal .moderation-report-metric > span:last-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.community-management-modal .moderation-member-grid,
+.community-management-modal .moderation-report-queue,
+.community-management-modal .moderation-audit-list,
+.community-management-modal .moderation-ban-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.community-management-modal .moderation-member-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  transition: border-color 140ms ease;
+}
+
+.community-management-modal .moderation-member-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.community-management-modal .moderation-member-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-member-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-member-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .moderation-member-copy span,
+.community-management-modal .moderation-member-copy small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .moderation-member-copy small {
+  font-size: 11px;
+}
+
+.community-management-modal .moderation-role-badge {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--surface));
+}
+
+.community-management-modal .moderation-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.community-management-modal .moderation-ban-card,
+.community-management-modal .moderation-audit-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+}
+
+.community-management-modal .moderation-ban-icon,
+.community-management-modal .moderation-audit-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.community-management-modal .moderation-audit-icon {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .moderation-ban-copy,
+.community-management-modal .moderation-audit-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-ban-copy strong,
+.community-management-modal .moderation-audit-copy strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.community-management-modal .moderation-ban-copy span,
+.community-management-modal .moderation-audit-copy span,
+.community-management-modal .moderation-audit-copy small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.community-management-modal .moderation-reports-toolbar {
+  align-items: stretch;
+}
+
+.community-management-modal .moderation-review-reason {
+  min-width: min(320px, 100%);
+}
+
+.community-management-modal .moderation-report-card {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .moderation-report-type {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding-top: 2px;
+  color: var(--accent);
+  text-transform: capitalize;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.community-management-modal .moderation-report-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-report-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.community-management-modal .moderation-report-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .moderation-report-copy span,
+.community-management-modal .moderation-report-copy small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .moderation-report-copy small {
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.community-management-modal .moderation-report-status-badge {
+  text-transform: capitalize;
+}
+
+.community-management-modal .moderation-report-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+}
+
+.community-management-modal .moderation-restricted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.community-management-modal .moderation-audit-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.community-management-modal .moderation-reverse-confirm {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--warning) 34%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--warning) 6%, var(--surface));
+  box-shadow: var(--shadow-app);
+}
+
+.community-management-modal .moderation-reverse-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.community-management-modal .moderation-reverse-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.community-management-modal .moderation-reverse-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .moderation-reverse-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .moderation-reverse-confirm footer {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1080px) {
+  .community-management-modal .moderation-members-toolbar,
+  .community-management-modal .moderation-reports-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .community-management-modal .moderation-member-search,
+  .community-management-modal .moderation-review-reason {
+    min-width: 0;
+    width: 100%;
+  }
+}

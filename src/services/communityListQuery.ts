@@ -93,10 +93,23 @@ export function isMissingCommunityKindColumnError(error: unknown): boolean {
 }
 
 export async function listSupabaseCommunitySummaries(client: SupabaseClient<Database>): Promise<CommunityListQueryResult> {
-  const currentResult = await client
+  const { data: authData, error: authError } = await client.auth.getUser();
+  if (authError || !authData.user) return { data: null, error: authError ?? new Error("Authenticated community scope is unavailable.") };
+
+  const membershipResult = await client
+    .from("community_members")
+    .select("community_id")
+    .eq("user_id", authData.user.id);
+  if (membershipResult.error) return { data: null, error: membershipResult.error };
+
+  const joinedCommunityIds = [...new Set((membershipResult.data ?? []).map((membership) => membership.community_id))];
+  let currentQuery = client
     .from("communities")
-    .select(COMMUNITY_LIST_SELECT)
-    .order("created_at", { ascending: true });
+    .select(COMMUNITY_LIST_SELECT);
+  currentQuery = joinedCommunityIds.length
+    ? currentQuery.or(`owner_id.eq.${authData.user.id},id.in.(${joinedCommunityIds.join(",")})`)
+    : currentQuery.eq("owner_id", authData.user.id);
+  const currentResult = await currentQuery.order("created_at", { ascending: true });
 
   if (!currentResult.error) {
     return { data: (currentResult.data ?? []).map(mapCommunityListRow), error: null };
@@ -106,10 +119,13 @@ export async function listSupabaseCommunitySummaries(client: SupabaseClient<Data
     return { data: null, error: currentResult.error };
   }
 
-  const legacyResult = await client
+  let legacyQuery = client
     .from("communities")
-    .select(LEGACY_COMMUNITY_LIST_SELECT)
-    .order("created_at", { ascending: true });
+    .select(LEGACY_COMMUNITY_LIST_SELECT);
+  legacyQuery = joinedCommunityIds.length
+    ? legacyQuery.or(`owner_id.eq.${authData.user.id},id.in.(${joinedCommunityIds.join(",")})`)
+    : legacyQuery.eq("owner_id", authData.user.id);
+  const legacyResult = await legacyQuery.order("created_at", { ascending: true });
 
   if (legacyResult.error) {
     return { data: null, error: legacyResult.error };

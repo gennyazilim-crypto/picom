@@ -162,10 +162,22 @@ export function getDefaultCommunityRolePermissions(role: Role, kind: CommunityKi
   return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...MEETING_PERMISSIONS[status]])];
 }
 
+export function hasResolvedCommunityMembership(member: Member | undefined, community: Community): boolean {
+  if (!member) return false;
+  return getAssignedCommunityRoles(member, community).length > 0;
+}
+
 export function getCommunityAccess(userId: UserId, community: Community): CommunityAccess {
   const { member, role, roles } = getUserCommunityRole(userId, community);
   const owner = isCommunityOwner(userId, community);
-  const status = getStatus(role, owner);
+  const hasLocalMembership = Boolean(member);
+  const status = owner
+    ? "owner"
+    : roles.length > 0
+      ? getStatus(role, false)
+      : hasLocalMembership
+        ? "member"
+        : "visitor";
   const visibility = getCommunityVisibility(community);
   const publicReadEnabled = isCommunityPublicReadEnabled(community);
   const isVisitor = status === "visitor";
@@ -285,6 +297,7 @@ export function canSendMessage(access: CommunityAccess, channel: Channel): boole
   if (access.communityKind !== "text") return false;
   if (!canViewChannel(access, channel)) return false;
   if (access.isVisitor) return false;
+  if (channel.type === "voice") return hasCommunityPermission(access, "sendMessages");
   if (channel.type === "announcement") return hasCommunityPermission(access, "sendAnnouncements");
   if (channel.type !== "text") return false;
   return hasCommunityPermission(access, "sendMessages");
@@ -294,9 +307,10 @@ export function getComposerDisabledReason(access: CommunityAccess, channel: Chan
   if (!canViewChannel(access, channel)) return "You do not have access to this channel.";
   if (access.isVisitor) return "Join this community to send messages.";
   if (access.communityKind !== "text") return "Use this community's type-specific interaction controls.";
+  if (channel.type === "voice" && !hasCommunityPermission(access, "sendMessages")) return "You do not have permission to send messages in this voice room.";
   if (channel.type === "announcement" && !hasCommunityPermission(access, "sendAnnouncements")) return "This announcement channel is read-only.";
   if (channel.type === "forum") return "Create or open a forum post to participate.";
-  if (channel.type === "voice") return "Voice channels do not support text messages here.";
+  if (channel.type === "voice") return undefined;
   if (!hasCommunityPermission(access, "sendMessages")) return "You do not have permission to send messages in this channel.";
   return undefined;
 }

@@ -37,6 +37,19 @@ function errorResult(message?: string): RoleMutationResult {
 }
 
 export const communityRoleManagementService = {
+  async listCommunityRoles(communityId: string): Promise<{ ok: true; data: Role[] } | { ok: false; error: { message: string } }> {
+    if (!communityId.trim()) return { ok: false, error: { message: "Community ID is required." } };
+    if (dataSourceService.getStatus().isMock) return { ok: false, error: { message: "Community roles are not loaded from Supabase in mock mode." } };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: { message: "Supabase is not configured." } };
+    const { data, error } = await client
+      .from("roles")
+      .select("id, community_id, name, color, level, permissions, system_key, is_default, permissions_version, icon, display_order")
+      .eq("community_id", communityId)
+      .order("display_order", { ascending: true });
+    if (error || !data) return { ok: false, error: { message: error?.message ?? "Could not load community roles." } };
+    return { ok: true, data: data.map((row) => normalizeRow(row as Record<string, unknown>)) };
+  },
   async createRole(input: { community: Community; access: CommunityAccess; draft: CommunityRoleDraft; reason: string }): Promise<RoleMutationResult> {
     const invalid = validateDraft(input.access, input.draft); if (invalid) return invalid;
     if (dataSourceService.getStatus().isMock) { const role: Role = { id: crypto.randomUUID(), ...input.draft, name: input.draft.name.trim(), permissionValues: permissionsObject(input.draft.capabilities), displayOrder: Math.max(0, ...input.community.roles.map((item) => item.displayOrder ?? item.level * 100)) + 100 }; return { ok: true, data: { roles: [...input.community.roles, role], selectedRoleId: role.id } }; }

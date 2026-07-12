@@ -1,0 +1,306 @@
+.community-management-modal .community-bots-section {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+}
+
+.community-management-modal .community-bots-section > header {
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .bots-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.community-management-modal .bots-summary-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .bots-summary-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .bots-summary-copy span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .bots-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.community-management-modal .bots-metric {
+  display: grid;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .bots-metric-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  margin-bottom: 2px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .bots-metric--active .bots-metric-icon {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.community-management-modal .bots-metric--revoked .bots-metric-icon {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.community-management-modal .bots-metric strong {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.community-management-modal .bots-metric > span:last-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.community-management-modal .bots-token-banner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 40%, var(--surface));
+}
+
+.community-management-modal .bots-token-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.community-management-modal .bots-token-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .bots-token-copy span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .bots-token-copy code {
+  display: block;
+  margin-top: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 70%, var(--surface));
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.community-management-modal .bots-token-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.community-management-modal .bots-admin-list {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.community-management-modal .bots-admin-card {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  transition: border-color 140ms ease;
+}
+
+.community-management-modal .bots-admin-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.community-management-modal .bots-avatar {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.community-management-modal .bots-admin-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .bots-admin-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.community-management-modal .bots-admin-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .bots-admin-copy span,
+.community-management-modal .bots-admin-copy small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .bots-admin-copy small {
+  font-size: 11px;
+}
+
+.community-management-modal .bots-role-badge {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--surface));
+}
+
+.community-management-modal .bots-credential-badge--active {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+}
+
+.community-management-modal .bots-credential-badge--revoked {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 28%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+}
+
+.community-management-modal .bots-credential-badge--none {
+  color: var(--text-muted);
+}
+
+.community-management-modal .bots-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.community-management-modal .bots-empty-state {
+  gap: 10px;
+  padding: 36px 24px;
+}
+
+.community-management-modal .bots-empty-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .bot-remove-confirm {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  box-shadow: var(--shadow-app);
+}
+
+.community-management-modal .bot-remove-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.community-management-modal .bot-remove-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .bot-remove-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .bot-remove-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .bot-remove-confirm footer {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1080px) {
+  .community-management-modal .bots-token-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .community-management-modal .bots-token-actions {
+    justify-content: flex-start;
+  }
+}

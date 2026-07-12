@@ -1,6 +1,12 @@
 -- Task 532: least-privilege meeting RLS, capability authorization, and hierarchy-safe mutations.
 begin;
 
+alter table public.community_permission_definitions
+  drop constraint if exists community_permission_definitions_category_check;
+alter table public.community_permission_definitions
+  add constraint community_permission_definitions_category_check
+  check (category in ('common','text','voice','radio','podcast','meeting'));
+
 insert into public.community_permission_definitions(permission_key,category,allowed_kinds,delegable,owner_reserved,description) values
 ('createMeeting','meeting',array['text','radio','podcast'],true,false,'Create approved meeting rooms in this community.'),
 ('manageMeeting','meeting',array['text','radio','podcast'],true,false,'Manage meeting lifecycle, policy, and configuration.'),

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { communityTemplates } from "../data/communityTemplates";
 import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
+import { communityBrandingService } from "../services/communityBrandingService";
 import type { CommunityKind } from "../types/community";
 import type { CommunityTemplateId } from "../types/communityTemplates";
 import { AppIcon, type IconName } from "./AppIcon";
@@ -14,7 +15,7 @@ export type CreateCommunityFormValue = Readonly<{
   kind: CommunityKind;
   name: string;
   description?: string;
-  iconUrl?: string;
+  iconFile?: File;
   visibility: "public" | "private";
   publicReadEnabled: boolean;
   templateId?: CommunityTemplateId;
@@ -42,12 +43,7 @@ const KIND_OPTIONS: readonly KindOption[] = [
   { kind: "podcast", title: "Podcast Community", description: "An on-demand publishing space for shows, episodes, creators, and listeners.", capabilities: ["Episode publishing", "Series and creator context", "On-demand playback shell"], limitation: "Does not use the normal text-channel tree.", icon: "headphones" },
 ] as const;
 
-const STEPS = ["Community type", "Identity", "Access and setup"] as const;
-
-function isHttpsUrl(value: string): boolean {
-  if (!value) return true;
-  try { return new URL(value).protocol === "https:"; } catch { return false; }
-}
+const STEPS = ["Community type", "Identity", "Access & setup"] as const;
 
 export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModalProps) {
   const [creationRequestId] = useState(() => crypto.randomUUID());
@@ -55,7 +51,9 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
   const [kind, setKind] = useState<CommunityKind | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [iconUrl, setIconUrl] = useState("");
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [iconError, setIconError] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [publicReadEnabled, setPublicReadEnabled] = useState(true);
   const [templateId, setTemplateId] = useState<CommunityTemplateId>("custom");
@@ -66,12 +64,37 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
   const dialogRef = useDialogFocusTrap<HTMLElement>(saving ? () => undefined : onClose);
   const textTemplateChannels = useMemo(() => selectedTemplate.categories.flatMap((category) => category.channels), [selectedTemplate]);
 
+  useEffect(() => () => {
+    if (iconPreview) URL.revokeObjectURL(iconPreview);
+  }, [iconPreview]);
+
+  const selectIconFile = (file: File | null) => {
+    if (iconPreview) {
+      URL.revokeObjectURL(iconPreview);
+      setIconPreview(null);
+    }
+    if (!file) {
+      setIconFile(null);
+      setIconError(null);
+      return;
+    }
+    const validation = communityBrandingService.validate(file, "icon");
+    if (!validation.ok) {
+      setIconFile(null);
+      setIconError(validation.message);
+      return;
+    }
+    setIconFile(file);
+    setIconPreview(URL.createObjectURL(file));
+    setIconError(null);
+  };
+
   const validateIdentity = (): string | null => {
     const cleanedName = name.trim().replace(/\s+/g, " ");
     if (!cleanedName) return "Community name is required.";
     if (cleanedName.length > 80) return "Community name must be 80 characters or fewer.";
     if (description.trim().length > 500) return "Description must be 500 characters or fewer.";
-    if (iconUrl.trim().length > 2048 || !isHttpsUrl(iconUrl.trim())) return "Community icon must be a valid HTTPS URL.";
+    if (iconError) return iconError;
     return null;
   };
 
@@ -99,7 +122,7 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
         kind,
         name: name.trim().replace(/\s+/g, " "),
         description: description.trim() || undefined,
-        iconUrl: iconUrl.trim() || undefined,
+        iconFile: iconFile ?? undefined,
         visibility,
         publicReadEnabled: visibility === "public" && publicReadEnabled,
         templateId: kind === "text" ? templateId : "custom",
@@ -124,7 +147,7 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
         <div className="typed-community-wizard__body">
           {step === 0 ? <section className="typed-community-wizard__step" aria-labelledby="community-kind-heading"><div className="typed-community-wizard__intro"><span className="eyebrow">Required</span><h3 id="community-kind-heading">What are you creating?</h3><p>The selected type controls capabilities, navigation, and the shell opened after creation.</p></div><div className="community-kind-grid" role="radiogroup" aria-label="Community type">{KIND_OPTIONS.map((option, index) => <button key={option.kind} type="button" role="radio" aria-checked={kind === option.kind} className={`community-kind-card ${kind === option.kind ? "selected" : ""}`} onClick={() => selectKind(option.kind)} data-dialog-initial-focus={index === 0 ? true : undefined}><span className="community-kind-card__icon"><AppIcon name={option.icon} size="xl" /></span><span className="community-kind-card__copy"><strong>{option.title}</strong><small>{option.description}</small></span><ul>{option.capabilities.map((capability) => <li key={capability}>{capability}</li>)}</ul><span className="community-kind-card__limit"><AppIcon name="lock" size="xs" />{option.limitation}</span></button>)}</div></section> : null}
 
-          {step === 1 ? <section className="typed-community-wizard__step" aria-labelledby="community-identity-heading"><div className="typed-community-wizard__intro"><span className="eyebrow">{selectedKind?.title}</span><h3 id="community-identity-heading">Give the community an identity</h3><p>Name is required. Description and icon can be refined later in community settings.</p></div><div className="typed-community-wizard__fields"><label className="auth-field">Community name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} autoFocus data-dialog-initial-focus placeholder={kind === "radio" ? "Northwave Radio" : kind === "podcast" ? "Orbit Podcast" : "Aurora Studio"} /></label><label className="auth-field typed-community-wizard__wide">Description <span className="optional-label">optional</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={4} placeholder="What should members know about this community?" /></label><label className="auth-field typed-community-wizard__wide">Icon URL <span className="optional-label">optional HTTPS</span><div className="typed-community-wizard__icon-field"><span aria-hidden="true"><AppIcon name="image" size="md" /></span><input type="url" value={iconUrl} onChange={(event) => setIconUrl(event.target.value)} maxLength={2048} placeholder="https://example.com/community-icon.png" /></div></label></div></section> : null}
+          {step === 1 ? <section className="typed-community-wizard__step" aria-labelledby="community-identity-heading"><div className="typed-community-wizard__intro"><span className="eyebrow">{selectedKind?.title}</span><h3 id="community-identity-heading">Give the community an identity</h3><p>Name is required. Description and logo can be refined later in community settings.</p></div><div className="typed-community-wizard__fields"><label className="auth-field">Community name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} autoFocus data-dialog-initial-focus placeholder={kind === "radio" ? "Northwave Radio" : kind === "podcast" ? "Orbit Podcast" : "Aurora Studio"} /></label><label className="auth-field typed-community-wizard__wide">Description <span className="optional-label">optional</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={4} placeholder="What should members know about this community?" /></label><div className="typed-community-wizard__logo-upload typed-community-wizard__wide"><div className="typed-community-wizard__logo-copy"><strong>Community logo</strong><small>Optional · PNG, JPG, or WEBP up to 2 MB</small></div><div className="typed-community-wizard__logo-row"><div className="typed-community-wizard__logo-preview" aria-hidden="true">{iconPreview ? <img src={iconPreview} alt="" /> : <span>{name.trim().slice(0, 1).toUpperCase() || "?"}</span>}</div><div className="typed-community-wizard__logo-actions"><label className="secondary-action typed-community-wizard__file-trigger"><input type="file" accept="image/png,image/jpeg,image/webp" disabled={saving} onChange={(event) => selectIconFile(event.target.files?.[0] ?? null)} /><AppIcon name="image" size="sm" />Choose logo</label>{iconFile ? <button type="button" className="secondary-action" disabled={saving} onClick={() => selectIconFile(null)}>Remove</button> : null}</div></div>{iconError ? <p className="typed-community-wizard__logo-error" role="alert">{iconError}</p> : null}</div></div></section> : null}
 
           {step === 2 ? <section className="typed-community-wizard__step" aria-labelledby="community-access-heading"><div className="typed-community-wizard__intro"><span className="eyebrow">Final setup</span><h3 id="community-access-heading">Choose access and starter setup</h3><p>Visibility is enforced by Supabase policies; frontend controls are not the security boundary.</p></div><div className="community-visibility-grid" role="radiogroup" aria-label="Community visibility"><button type="button" role="radio" aria-checked={visibility === "public"} className={visibility === "public" ? "selected" : ""} onClick={() => setVisibility("public")}><AppIcon name="users" size="lg" /><strong>Public</strong><span>Discoverable community metadata with an optional public read policy.</span></button><button type="button" role="radio" aria-checked={visibility === "private"} className={visibility === "private" ? "selected" : ""} onClick={() => { setVisibility("private"); setPublicReadEnabled(false); }}><AppIcon name="lock" size="lg" /><strong>Private</strong><span>Membership or invite is required before community content can be read.</span></button></div><label className={`typed-community-wizard__policy ${visibility === "private" ? "disabled" : ""}`}><input type="checkbox" checked={visibility === "public" && publicReadEnabled} disabled={visibility === "private"} onChange={(event) => setPublicReadEnabled(event.target.checked)} /><span><strong>Allow public read</strong><small>Visitors may read non-private content but cannot participate.</small></span></label>
             {kind === "text" ? <div className="typed-community-wizard__templates"><div><strong>Starter template</strong><span>Optional channel structure for the Text community.</span></div><div className="template-picker" aria-label="Community template selection">{communityTemplates.map((template) => <button key={template.id} type="button" className={template.id === templateId ? "selected" : ""} onClick={() => setTemplateId(template.id)}><strong>{template.name}</strong><span>{template.description}</span></button>)}</div><div className="template-preview"><strong>{selectedTemplate.name} preview</strong><span>{textTemplateChannels.length} channels prepared</span><ul>{textTemplateChannels.slice(0, 6).map((channel) => <li key={`${selectedTemplate.id}-${channel.name}`}>{channel.type === "voice" ? "voice" : "#"} {channel.name}</li>)}</ul></div></div> : <div className="typed-community-wizard__type-summary"><span><AppIcon name={selectedKind?.icon ?? "home"} size="lg" /></span><div><strong>{selectedKind?.title}</strong><p>{kind === "radio" ? "Picom will open the live radio shell. Broadcast setup remains separate from text channels." : "Picom will open the podcast publishing shell. Episodes remain separate from text channels."}</p></div></div>}

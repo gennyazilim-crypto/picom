@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
-import { currentUserId, mockCommunities } from "./data/mockCommunities";
+import { currentUserId as mockCurrentUserId, mockCommunities } from "./data/mockCommunities";
 import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
 import { mockMentionItems } from "./data/mockMentions";
 import { getMockProfileForMember } from "./data/mockProfiles";
@@ -44,6 +44,7 @@ import { CommunityWorkspace } from "./components/community/CommunityWorkspace";
 import { CommunitySidebar } from "./components/CommunitySidebar";
 import { ChatMain } from "./components/ChatMain";
 import { MemberSidebar } from "./components/MemberSidebar";
+import { VoiceParticipantsRail } from "./components/voice/VoiceParticipantsRail";
 import { ImagePreviewModal } from "./components/ImagePreviewModal";
 import { UserProfilePopover } from "./components/UserProfilePopover";
 import { DesktopContextMenu } from "./components/DesktopContextMenu";
@@ -111,6 +112,7 @@ import { authService } from "./services/authService";
 import { appConfig } from "./config/appConfig";
 import { socialAuthService } from "./services/auth/socialAuthService";
 import { onboardingService } from "./services/onboarding/onboardingService";
+import { communityBrandingService } from "./services/communityBrandingService";
 import { communityService } from "./services/communityService";
 import { communityNavigationService, type CommunityShellView } from "./services/community/communityNavigationService";
 import { resolveCommunityJoinLanding } from "./services/community/communityJoinRoutingService";
@@ -121,6 +123,7 @@ import { communityStructureService } from "./services/community/communityStructu
 import { channelCategoryService } from "./services/channelCategoryService";
 import { privateChannelPermissionService } from "./services/privateChannelPermissionService";
 import { membersService } from "./services/membersService";
+import { communityRoleManagementService } from "./services/community/communityRoleManagementService";
 import { messageService, type MessageSummary } from "./services/messageService";
 import { reactionService } from "./services/reactionService";
 import { messageSendQueueService } from "./services/messageSendQueueService";
@@ -129,6 +132,7 @@ import { messageModerationFilterService } from "./services/messageModerationFilt
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
 import { ReportModal, type ReportModalTarget } from "./components/ReportModal";
 import { InvitePeopleModal } from "./components/CommunityInviteModals";
+import { CommunityJoinModal } from "./components/CommunityMenu";
 import { CreatePollModal } from "./components/CreatePollModal";
 import type { CreatePollDraft } from "./types/polls";
 import { pollService } from "./services/pollService";
@@ -152,6 +156,7 @@ import { useMvpAppState } from "./state/useMvpAppState";
 import { useLocalMessageState } from "./state/useLocalMessageState";
 import { useOverlayState, type OverlayMenuItem as MenuItem } from "./state/useOverlayState";
 import { useMemberSidebarState } from "./state/useMemberSidebarState";
+import { useVoiceParticipantsRailState } from "./state/useVoiceParticipantsRailState";
 import { useProtectedDesktopSession } from "./hooks/useProtectedDesktopSession";
 import { useSupabaseMessageRealtime } from "./hooks/useSupabaseMessageRealtime";
 import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
@@ -162,6 +167,14 @@ import { messageMentionsUser } from "./utils/mentionUtils";
 import { canManageChannels, canSendMessage, canViewChannel, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
 import { canModerateCommunityMember } from "./services/permissions/communityPermissions";
 import { memberManagementService } from "./services/memberManagementService";
+
+const UUID_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Real Supabase rows use UUID ids. Placeholder entities (e.g. the "fallback-community"
+// and "fallback-channel" shown before real data loads) are not queryable and would make
+// PostgREST reject the request with a 400.
+function isSupabaseEntityId(id: string): boolean {
+  return UUID_ID_PATTERN.test(id);
+}
 
 const SettingsModal = lazy(() => import("./components/SettingsModal").then((module) => ({ default: module.SettingsModal })));
 const GlobalEventsWorkspace = lazy(() => import("./components/navigation/GlobalEventsWorkspace").then((module) => ({ default: module.GlobalEventsWorkspace })));
@@ -181,7 +194,7 @@ const overlayIcons = mvpUiIconMap.overlays;
 
 const fallbackCurrentUser: Member = {
   id: "local-current-user",
-  userId: currentUserId,
+  userId: mockCurrentUserId,
   displayName: "Picom Pilot",
   username: "picom.pilot",
   avatarSeed: "picom-pilot",
@@ -391,6 +404,7 @@ export function App() {
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(() => feedUiStateService.getSelection().filter);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const followMutationInFlightRef = useRef(new Set<string>());
+  const friendsReturnViewRef = useRef<ActiveView>("community");
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [profileVerificationBadges, setProfileVerificationBadges] = useState<VerificationBadge[]>([]);
   const [profilePrivacyProjection,setProfilePrivacyProjection]=useState<ProfilePrivacyProjection>(defaultProfilePrivacyProjection);
@@ -432,9 +446,16 @@ export function App() {
   const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
   const [memberModerationTarget, setMemberModerationTarget] = useState<{ member: Member; action: MemberModerationAction } | null>(null);
   const [composerInviteOpen, setComposerInviteOpen] = useState(false);
+  const [communityJoinModalOpen, setCommunityJoinModalOpen] = useState(false);
+  const [membershipSyncVersion, setMembershipSyncVersion] = useState(0);
   const [pollCreateOpen, setPollCreateOpen] = useState(false);
   const [activeThread, setActiveThread] = useState<{ thread: ThreadRecord; parentMessage: Message } | null>(null);
   const [onboardingPhase, setOnboardingPhase] = useState<"checking" | "required" | "complete">("checking");
+  const isSupabaseMode = dataSourceService.getStatus().isSupabase;
+  const [supabaseCommunityLoadState, setSupabaseCommunityLoadState] = useState<{
+    userId: string | null;
+    status: "idle" | "loading" | "ready" | "error";
+  }>(() => ({ userId: null, status: isSupabaseMode ? "idle" : "ready" }));
   const {
     communities,
     appendLocalMessage,
@@ -460,7 +481,8 @@ export function App() {
     replaceCommunityCategories,
     replaceChannelMessages,
     replaceCommunityMembers,
-  } = useLocalMessageState(mockCommunities);
+    replaceCommunityRoles,
+  } = useLocalMessageState(isSupabaseMode ? [] : mockCommunities);
   const {
     activeCommunityId,
     activeCommunity,
@@ -470,10 +492,6 @@ export function App() {
     switchCommunity,
     selectChannelByOffset,
   } = useMvpAppState(communities);
-  const activeVoiceRooms = useMemo(
-    () => activeVoiceRoomDiscoveryService.getVisibleRooms({ communities, currentUserId, voiceSnapshot }),
-    [communities, voiceSnapshot],
-  );
   const {
     settingsOpen,
     paletteOpen,
@@ -525,7 +543,16 @@ export function App() {
     clearError: clearAuthError,
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
-  const directMessageUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? currentUserId : currentUserId;
+  const currentUserId = isSupabaseMode ? authSession?.user?.id ?? mockCurrentUserId : mockCurrentUserId;
+  const directMessageUserId = currentUserId;
+  const activeVoiceRooms = useMemo(
+    () => activeVoiceRoomDiscoveryService.getVisibleRooms({ communities, currentUserId, voiceSnapshot }),
+    [communities, currentUserId, voiceSnapshot],
+  );
+  const voiceOccupancyByChannelId = useMemo(
+    () => activeVoiceRoomDiscoveryService.getOccupancyByChannelId({ communities: [activeCommunity], currentUserId, voiceSnapshot }),
+    [activeCommunity, currentUserId, voiceSnapshot],
+  );
   useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
   useEffect(() => { if (!authSession || !activeDirectConversationId || !dataSourceService.getStatus().isSupabase) return; let active = true; void Promise.all([directMessageService.getDirectMessages(activeDirectConversationId), directMessageService.getDirectSharedMedia(activeDirectConversationId, { limit: 24 })]).then(([messages, media]) => { if (!active) return; if (!messages.ok) { pushToast(messages.error.message, "error"); return; } setDirectConversations((current) => current.map((conversation) => conversation.id === activeDirectConversationId ? { ...conversation, messages: messages.data, sharedMedia: media.ok ? media.data.items : conversation.sharedMedia } : conversation)); }); return () => { active = false; }; }, [activeDirectConversationId, authSession?.user?.id, pushToast]);
   useEffect(() => {
@@ -671,8 +698,9 @@ export function App() {
     if (intent) setActiveView(toLegacyActiveView(intent.route));
   }, [authSession?.user?.id]);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
-  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? fallbackCurrentUser;
-  const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
+  const { participantsVisible, toggleParticipantsVisible } = useVoiceParticipantsRailState(false);
+  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? { ...fallbackCurrentUser, userId: currentUserId };
+  const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity, currentUserId]);
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const visibleMentionItems = useMemo(() => mentionItems.filter((item) => {
     if (blockedUserIds.includes(item.authorId)) return false;
@@ -731,17 +759,33 @@ export function App() {
   }, [blockedUserIds, paletteOpen, paletteQuery, searchableCommunities, searchableSavedMessages, visibleMentionItems]);
   const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess).filter((channel) => isV1ChannelTypeEnabled(channel.type)), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
+  const joinedActiveVoiceChannel = useMemo(() => {
+    const connected = voiceSnapshot.status === "connected" || voiceSnapshot.status === "reconnecting";
+    return connected && voiceSnapshot.roomContext?.channelId === displayedActiveChannel.id;
+  }, [displayedActiveChannel.id, voiceSnapshot.roomContext?.channelId, voiceSnapshot.status]);
   const latestActiveMessageId = useMemo(() => {
     const channelMessages = activeCommunity.messages.filter((message) => message.channelId === displayedActiveChannel.id && !message.deletedAt);
     return channelMessages[channelMessages.length - 1]?.id ?? null;
   }, [activeCommunity.messages, displayedActiveChannel.id]);
+  const supabaseWorkspaceReady = !isSupabaseMode || (
+    supabaseCommunityLoadState.status === "ready"
+    && supabaseCommunityLoadState.userId === authSession?.user?.id
+  );
+  const hasHydratedActiveCommunity = !isSupabaseMode || (
+    supabaseWorkspaceReady
+    && communities.some((community) => community.id === activeCommunity.id)
+  );
+  const hasHydratedActiveChannel = !isSupabaseMode || (
+    hasHydratedActiveCommunity
+    && activeCommunity.categories.some((category) => category.channels.some((channel) => channel.id === activeChannel.id))
+  );
   useEffect(() => {
     diagnosticsService.setAppContext({ activeView, activeCommunityId: activeCommunity.id, activeChannelId: activeCommunity.kind === "text" ? displayedActiveChannel.id : null, authState: authSession?.user ? "authenticated" : "signed_out" });
   }, [activeChannel.id, activeCommunity.id, activeView, authSession, displayedActiveChannel.id]);
-  const supabaseCommunitiesLoadedRef = useRef(false);
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
+  const supabaseRolesLoadedRef = useRef(new Set<string>());
   const messageHighlightTimerRef = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -888,7 +932,7 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id, deleteLocalMessage]);
 
   const realtimeStatus = useSupabaseMessageRealtime({
-    enabled: Boolean(authSession) && !safeMode.active && activeView === "community" && activeCommunity.kind === "text",
+    enabled: Boolean(authSession) && !safeMode.active && activeView === "community" && activeCommunity.kind === "text" && hasHydratedActiveChannel,
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
     subscribeCommunityWide: true,
@@ -897,14 +941,14 @@ export function App() {
     onDelete: handleRealtimeMessageDelete,
   });
   const typingBroadcast = useSupabaseTypingBroadcast({
-    enabled: Boolean(authSession) && !safeMode.active && activeView === "community" && activeCommunity.kind === "text",
+    enabled: Boolean(authSession) && !safeMode.active && activeView === "community" && activeCommunity.kind === "text" && hasHydratedActiveChannel,
     communityId: activeCommunity.id,
     channelId: activeChannel.id,
     currentUserId: currentUser.userId,
     displayName: currentUser.displayName,
   });
   const presenceChannel = useSupabasePresenceChannel({
-    enabled: Boolean(authSession) && !safeMode.active,
+    enabled: Boolean(authSession) && !safeMode.active && hasHydratedActiveCommunity,
     communityId: activeCommunity.id,
     currentUserId: currentUser.userId,
     displayName: currentUser.displayName,
@@ -1049,13 +1093,13 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id]);
 
   useEffect(() => {
-    if (activeCommunity.kind !== "text" || activeView !== "community" || !isActiveMessageListNearBottom) return;
+    if (activeCommunity.kind !== "text" || activeView !== "community" || !isActiveMessageListNearBottom || !hasHydratedActiveChannel) return;
     clearChannelUnread({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id });
     void readStateService.markChannelRead({ channelId: displayedActiveChannel.id, lastReadMessageId: latestActiveMessageId });
-  }, [activeCommunity.id, activeView, clearChannelUnread, displayedActiveChannel.id, isActiveMessageListNearBottom, latestActiveMessageId]);
+  }, [activeCommunity.id, activeView, clearChannelUnread, displayedActiveChannel.id, hasHydratedActiveChannel, isActiveMessageListNearBottom, latestActiveMessageId]);
 
   useEffect(() => {
-    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity) return;
     let canceled = false;
     void readStateService.listCommunityUnread(activeCommunity.id).then((result) => {
       if (canceled || !result.ok) return;
@@ -1066,7 +1110,7 @@ export function App() {
       })));
     });
     return () => { canceled = true; };
-  }, [activeCommunity.id, authSession, safeMode.active, setCommunityUnreadState]);
+  }, [activeCommunity.id, authSession, hasHydratedActiveCommunity, isSupabaseMode, safeMode.active, setCommunityUnreadState]);
 
   useEffect(() => {
     if (activeCommunity.kind !== "text" || !visibleChannels.length) return;
@@ -1167,35 +1211,48 @@ export function App() {
   }, [handleLogout]);
 
   useEffect(() => {
-    if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
-
+    if (!isSupabaseMode) return;
+    const userId = authSession?.user?.id ?? null;
+    if (!userId) {
+      setSupabaseCommunityLoadState({ userId: null, status: "idle" });
+      replaceCommunities([]);
+      supabaseSidebarLoadedRef.current.clear();
+      supabaseMessagesLoadedRef.current.clear();
+      supabaseMembersLoadedRef.current.clear();
+      supabaseRolesLoadedRef.current.clear();
+      return;
+    }
     let canceled = false;
-    supabaseCommunitiesLoadedRef.current = true;
+    setSupabaseCommunityLoadState({ userId, status: "loading" });
+    replaceCommunities([]);
+    supabaseSidebarLoadedRef.current.clear();
+    supabaseMessagesLoadedRef.current.clear();
+    supabaseMembersLoadedRef.current.clear();
+    supabaseRolesLoadedRef.current.clear();
 
     communityService.listCommunities().then((result) => {
       if (canceled) return;
 
       if (!result.ok) {
-        supabaseCommunitiesLoadedRef.current = false;
+        setSupabaseCommunityLoadState({ userId, status: "error" });
         pushToast(result.error.message, "error");
         return;
       }
 
-      const nextCommunities = result.data.map(createCommunityFromSummary);
+      const nextCommunities = result.data.map((summary) => createCommunityFromSummary(summary, { includeTemplateChannels: false }));
       replaceCommunities(nextCommunities);
-
-      if (nextCommunities[0]) {
-        switchCommunity(nextCommunities[0].id);
-      }
+      setSupabaseCommunityLoadState({ userId, status: "ready" });
     });
 
     return () => {
       canceled = true;
     };
-  }, [authSession, pushToast, replaceCommunities, switchCommunity]);
+  }, [authSession?.user?.id, isSupabaseMode, pushToast, replaceCommunities]);
 
   useEffect(() => {
-    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
+    // Skip placeholder communities (e.g. "fallback-community" shown before the real list
+    // loads). Their non-UUID ids make PostgREST reject the query with a 400 error toast.
+    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity || !isSupabaseEntityId(activeCommunity.id) || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
     supabaseSidebarLoadedRef.current.add(activeCommunity.id);
@@ -1255,10 +1312,10 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeCommunity.id, activeCommunity.kind, authSession, pushToast, replaceCommunityCategories, safeMode.active]);
+  }, [activeCommunity.id, activeCommunity.kind, authSession, hasHydratedActiveCommunity, isSupabaseMode, pushToast, replaceCommunityCategories, safeMode.active]);
 
   useEffect(() => {
-    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveChannel || !isSupabaseEntityId(activeCommunity.id) || !isSupabaseEntityId(activeChannel.id)) return;
 
     const messageKey = `${activeCommunity.id}:${activeChannel.id}`;
     if (supabaseMessagesLoadedRef.current.has(messageKey)) return;
@@ -1286,10 +1343,34 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeChannel.id, activeCommunity.id, activeCommunity.kind, authSession, mapMessageSummaryToMessage, pushToast, replaceChannelMessages, safeMode.active]);
+  }, [activeChannel.id, activeCommunity.id, activeCommunity.kind, authSession, hasHydratedActiveChannel, isSupabaseMode, mapMessageSummaryToMessage, pushToast, replaceChannelMessages, safeMode.active]);
 
   useEffect(() => {
-    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
+    if (safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity || !communityAccess.canViewMemberList || !isSupabaseEntityId(activeCommunity.id) || supabaseRolesLoadedRef.current.has(activeCommunity.id)) return;
+
+    let canceled = false;
+    supabaseRolesLoadedRef.current.add(activeCommunity.id);
+
+    communityRoleManagementService.listCommunityRoles(activeCommunity.id).then((result) => {
+      if (canceled) return;
+
+      if (!result.ok) {
+        supabaseRolesLoadedRef.current.delete(activeCommunity.id);
+        return;
+      }
+
+      if (result.data.length > 0) {
+        replaceCommunityRoles(activeCommunity.id, result.data);
+      }
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [activeCommunity.id, authSession, communityAccess.canViewMemberList, hasHydratedActiveCommunity, isSupabaseMode, membershipSyncVersion, replaceCommunityRoles, safeMode.active]);
+
+  useEffect(() => {
+    if (safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity || !isSupabaseEntityId(activeCommunity.id) || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
     supabaseMembersLoadedRef.current.add(activeCommunity.id);
@@ -1299,7 +1380,7 @@ export function App() {
 
       if (!result.ok) {
         supabaseMembersLoadedRef.current.delete(activeCommunity.id);
-        pushToast(result.error.message, "error");
+        if (!communityAccess.isVisitor) pushToast(result.error.message, "error");
         return;
       }
 
@@ -1314,6 +1395,7 @@ export function App() {
         status: member.status ?? "offline",
         statusText: member.statusText ?? "Member",
         roleId: member.roleId ?? fallbackRole.id,
+        roleIds: member.roleIds?.length ? [...member.roleIds] : member.roleId ? [member.roleId] : [fallbackRole.id],
         bio: "Supabase community member.",
       }));
 
@@ -1325,7 +1407,7 @@ export function App() {
     return () => {
       canceled = true;
     };
-  }, [activeCommunity.id, activeCommunity.roles, authSession, pushToast, replaceCommunityMembers, safeMode.active]);
+  }, [activeCommunity.id, activeCommunity.roles, authSession, communityAccess.isVisitor, hasHydratedActiveCommunity, isSupabaseMode, membershipSyncVersion, pushToast, replaceCommunityMembers, safeMode.active]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -1463,6 +1545,9 @@ export function App() {
       }
 
       if (action.type === "friends") {
+        if (activeView !== "friends") {
+          friendsReturnViewRef.current = activeView;
+        }
         setActiveView("friends");
         closeTransientOverlays();
         pushToast("Opened friends foundation from deep link.", "info");
@@ -1517,7 +1602,7 @@ export function App() {
     };
 
     return deepLinkService.onDeepLink(handleDeepLinkAction);
-  }, [authSession?.user, blockedUserIds, clearAuthError, clearChannelUnread, closeTransientOverlays, communities, currentUserId, openPodcastEpisodeSource, pushToast, switchCommunity]);
+  }, [activeView, authSession?.user, blockedUserIds, clearAuthError, clearChannelUnread, closeTransientOverlays, communities, currentUserId, openPodcastEpisodeSource, pushToast, switchCommunity]);
 
   useEffect(() => {
     const handleMenuAction = (payload: MenuActionPayload) => {
@@ -1543,6 +1628,9 @@ export function App() {
       }
 
       if (payload.action === "open-friends") {
+        if (activeView !== "friends") {
+          friendsReturnViewRef.current = activeView;
+        }
         setActiveView("friends");
         closeTransientOverlays();
         pushToast("Opened friends from the app menu foundation.", "info");
@@ -1560,7 +1648,7 @@ export function App() {
     };
 
     return menuService.onAction(handleMenuAction);
-  }, [closeTransientOverlays, directConversations, openPalette, openSystemStatusPage, pushToast]);
+  }, [activeView, closeTransientOverlays, directConversations, openPalette, openSystemStatusPage, pushToast]);
 
   useEffect(() => {
     if (safeMode.active) return;
@@ -1660,6 +1748,9 @@ export function App() {
         label: "Open friends foundation",
         detail: "Local beta friends placeholder",
         run: () => {
+          if (activeView !== "friends") {
+            friendsReturnViewRef.current = activeView;
+          }
           setActiveView("friends");
           closeTransientOverlays();
           closePalette();
@@ -1755,25 +1846,67 @@ export function App() {
     setProfileRelationshipBusyUserId((current) => current === userId ? null : current);
   }, [directMessageUserId, followedUserIds, pushToast]);
 
-  const toggleMentionReaction = useCallback((id: string) => {
+  const toggleMentionReaction = useCallback((id: string, emoji: string) => {
     const item = mentionItems.find((candidate) => candidate.id === id);
     if (!item) { pushToast("This mention is no longer accessible.", "error"); return; }
+
     const previousReactions = item.reactions ?? [];
-    const [primaryReaction = { emoji: "\u{1F44D}", count: 0 }, ...rest] = previousReactions;
-    const wasReacted = Boolean(primaryReaction.reactedByCurrentUser);
-    const optimisticReaction = { ...primaryReaction, count: Math.max(0, primaryReaction.count + (wasReacted ? -1 : 1)), reactedByCurrentUser: !wasReacted };
-    setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, reactions: [optimisticReaction, ...rest] } : candidate));
+    const existingReaction = previousReactions.find((reaction) => reaction.emoji === emoji);
+    const wasReacted = Boolean(existingReaction?.reactedByCurrentUser);
+
+    const sortReactions = (reactions: typeof previousReactions) =>
+      reactions
+        .filter((reaction) => reaction.count > 0)
+        .sort((left, right) => right.count - left.count || left.emoji.localeCompare(right.emoji))
+        .slice(0, 4);
+
+    const buildOptimisticReactions = () => {
+      if (wasReacted) {
+        if (!existingReaction) return previousReactions;
+        if (existingReaction.count <= 1) return sortReactions(previousReactions.filter((reaction) => reaction.emoji !== emoji));
+        return sortReactions(previousReactions.map((reaction) =>
+          reaction.emoji === emoji
+            ? { ...reaction, count: reaction.count - 1, reactedByCurrentUser: false }
+            : reaction,
+        ));
+      }
+
+      if (existingReaction) {
+        return sortReactions(previousReactions.map((reaction) =>
+          reaction.emoji === emoji
+            ? { ...reaction, count: reaction.count + 1, reactedByCurrentUser: true }
+            : reaction,
+        ));
+      }
+
+      return sortReactions([...previousReactions, { emoji, count: 1, reactedByCurrentUser: true }]);
+    };
+
+    const optimisticReactions = buildOptimisticReactions();
+    setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, reactions: optimisticReactions } : candidate));
+
     void (async () => {
       const result = wasReacted
-        ? await reactionService.removeReaction({ messageId: item.messageId, emoji: primaryReaction.emoji })
-        : await reactionService.addReaction({ messageId: item.messageId, emoji: primaryReaction.emoji });
+        ? await reactionService.removeReaction({ messageId: item.messageId, emoji })
+        : await reactionService.addReaction({ messageId: item.messageId, emoji });
       if (!result.ok) {
         setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, reactions: previousReactions } : candidate));
         pushToast(result.error.message, "error");
         return;
       }
-      const authoritativeReaction = { ...primaryReaction, emoji: result.data.emoji, count: result.data.count, reactedByCurrentUser: result.data.reactedByCurrentUser };
-      setMentionItems((current) => current.map((candidate) => candidate.id === id ? { ...candidate, reactions: [authoritativeReaction, ...rest] } : candidate));
+
+      setMentionItems((current) => current.map((candidate) => {
+        if (candidate.id !== id) return candidate;
+        const nextReactions = (candidate.reactions ?? []).filter((reaction) => reaction.emoji !== emoji);
+        if (result.data.count > 0) {
+          nextReactions.push({
+            emoji: result.data.emoji,
+            count: result.data.count,
+            reactedByCurrentUser: result.data.reactedByCurrentUser,
+          });
+        }
+        return { ...candidate, reactions: sortReactions(nextReactions) };
+      }));
     })();
   }, [mentionItems, pushToast]);
 
@@ -1931,45 +2064,56 @@ export function App() {
     pushToast(`Opened ${channel.name}. Use Join room to connect.`, "info");
   }, [communities, pushToast, setActiveChannelId, switchCommunity]);
 
-  const joinActiveVoiceRoom = useCallback(() => {
+  const joinActiveVoiceRoom = useCallback(async () => {
     if (displayedActiveChannel.type !== "voice") {
       pushToast("Select a voice channel before joining voice.", "info");
       return;
     }
 
-    if (communityAccess.isVisitor || !authSession) {
-      pushToast(communityAccess.isVisitor ? "Join this community before entering voice." : "Sign in before entering voice.", "error");
-      return;
-    }
-    const voiceRoomsEnabled = displayedActiveCommunity.typeSettings?.voiceRoomsEnabled ?? displayedActiveCommunity.kind === "text";
-    if (!voiceRoomsEnabled) {
-      pushToast("Normal voice rooms are disabled for this community type.", "error");
-      return;
-    }
-    if (!communityAccess.permissions.includes("joinVoice")) {
-      pushToast("Your role cannot join this voice room.", "error");
+    if (!authSession) {
+      pushToast("Sign in before entering voice.", "error");
       return;
     }
 
-    void import("./services/voiceService").then(({ voiceService }) =>
-      voiceService.join({
+    if (!communityAccess.isMember) {
+      setCommunityJoinModalOpen(true);
+      return;
+    }
+
+    let channelId = displayedActiveChannel.id;
+    let channelName = displayedActiveChannel.name;
+    if (dataSourceService.getStatus().isSupabase) {
+      const remoteChannels = await channelService.listChannels(activeCommunity.id);
+      if (!remoteChannels.ok) {
+        pushToast(remoteChannels.error.message, "error");
+        return;
+      }
+      const normalizedName = displayedActiveChannel.name.trim().toLowerCase();
+      const remoteChannel = remoteChannels.data.find((channel) => channel.type === "voice" && channel.id === displayedActiveChannel.id)
+        ?? remoteChannels.data.find((channel) => channel.type === "voice" && channel.name.trim().toLowerCase() === normalizedName);
+      if (!remoteChannel) {
+        pushToast("This voice channel has not synchronized with Supabase yet.", "error");
+        return;
+      }
+      channelId = remoteChannel.id;
+      channelName = remoteChannel.name;
+    }
+
+    const { voiceService } = await import("./services/voiceService");
+    const result = await voiceService.join({
         communityId: activeCommunity.id,
         communityName: activeCommunity.name,
-        channelId: displayedActiveChannel.id,
-        channelName: displayedActiveChannel.name,
+        channelId,
+        channelName,
         participantName: displayedCurrentUser.displayName,
         intent: "voice",
-      }).then((result) => {
-        if (!result.ok) {
-          pushToast(result.error.message, "error");
-        }
-      }),
-    );
-  }, [activeCommunity.id, authSession, communityAccess.isVisitor, communityAccess.permissions, displayedActiveChannel.id, displayedActiveChannel.type, displayedActiveCommunity.kind, displayedActiveCommunity.typeSettings, displayedCurrentUser.displayName, pushToast]);
+      });
+    if (!result.ok) pushToast(result.error.message, "error");
+  }, [activeCommunity.id, activeCommunity.name, authSession, communityAccess.isMember, displayedActiveChannel.id, displayedActiveChannel.name, displayedActiveChannel.type, displayedCurrentUser.displayName, pushToast]);
 
   const leaveActiveVoiceRoom = useCallback(() => {
-    void import("./services/voiceService").then(({ voiceService }) => voiceService.leave());
-  }, []);
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.leave().then(() => pushToast("Sesli odadan ayrıldın.", "info")));
+  }, [pushToast]);
 
   const toggleActiveVoiceMute = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) =>
@@ -1985,6 +2129,59 @@ export function App() {
       if (!result.ok) pushToast(result.error.message, "error");
     });
   }, [pushToast, voiceSnapshot.deafened]);
+
+  const toggleActiveVoiceCamera = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) =>
+      voiceService.setCameraEnabled(!voiceSnapshot.cameraEnabled).then((result) => {
+        if (!result.ok) pushToast(result.error.message, "error");
+      }),
+    );
+  }, [pushToast, voiceSnapshot.cameraEnabled]);
+
+  const openConnectedVoiceRoom = useCallback(() => {
+    const roomContext = voiceSnapshot.roomContext;
+    if (!roomContext?.communityId || !roomContext.channelId) {
+      pushToast("Bağlı sesli oda bulunamadı.", "error");
+      return;
+    }
+
+    const targetCommunity = communities.find((candidate) => candidate.id === roomContext.communityId);
+    const targetChannel = targetCommunity?.categories
+      .flatMap((category) => category.channels)
+      .find((candidate) => candidate.id === roomContext.channelId);
+
+    if (!targetCommunity || !targetChannel) {
+      pushToast("Bağlı ses kanalı artık kullanılamıyor.", "error");
+      return;
+    }
+
+    setActiveView(communityViewForKind(targetCommunity.kind));
+    switchCommunity(roomContext.communityId, roomContext.channelId);
+    setActiveChannelId(roomContext.channelId);
+    closeTransientOverlays();
+  }, [closeTransientOverlays, communities, pushToast, setActiveChannelId, switchCommunity, voiceSnapshot.roomContext]);
+
+  const openCommunityVoiceScreenShare = useCallback(() => {
+    const room = activeVoiceRooms.find((candidate) => (
+      candidate.communityId === voiceSnapshot.roomContext?.communityId
+      && candidate.channelId === voiceSnapshot.roomContext?.channelId
+      && candidate.canJoin
+    ));
+    if (!room) {
+      pushToast("Bağlı sesli oda artık kullanılamıyor.", "error");
+      return;
+    }
+    const targetCommunity = communities.find((candidate) => candidate.id === room.communityId);
+    const targetChannel = targetCommunity?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === room.channelId);
+    if (!targetCommunity || !targetChannel) {
+      pushToast("Bağlı ses kanalı artık kullanılamıyor.", "error");
+      return;
+    }
+    setActiveView(communityViewForKind(targetCommunity.kind));
+    switchCommunity(room.communityId, room.channelId);
+    closeTransientOverlays();
+    pushToast("Ekran paylaşımı kontrolleri sesli odada açıldı.", "success");
+  }, [activeVoiceRooms, closeTransientOverlays, communities, pushToast, switchCommunity, voiceSnapshot.roomContext]);
 
   const startActiveVoiceScreenShare = useCallback((sourceId: string, preset: "presentation" | "balanced" | "performance", sourceLabel?: string) => {
     void import("./services/voiceService").then(({ voiceService }) =>
@@ -2045,6 +2242,12 @@ export function App() {
     setActiveView("profile");
     closeTransientOverlays();
   }, [activeView, closeTransientOverlays]);
+
+  const openDirectConversation = useCallback((conversation: DirectConversation) => {
+    setActiveDirectConversationId(conversation.id);
+    setActiveView("directMessages");
+    closeTransientOverlays();
+  }, [closeTransientOverlays]);
 
   const openDirectMessages = useCallback((userId?: string) => {
     if (userId && !userBlockingService.canMessageUser(userId)) { pushToast("Unblock this user before opening a direct message.", "error"); return; }
@@ -2223,8 +2426,16 @@ export function App() {
   const cancelCommunityEvent = useCallback(async (eventId:string) => { if(await communityEventService.cancelEvent(eventId)){setCommunityEvents((current)=>current.map((event)=>event.id===eventId?{...event,cancelledAt:new Date().toISOString()}:event));pushToast("Event cancelled.","success");} },[pushToast]);
 
   const openFriends = useCallback((tab: FriendViewTab = "all") => {
+    if (activeView !== "friends") {
+      friendsReturnViewRef.current = activeView;
+    }
     setFriendsViewTab(tab);
     setActiveView("friends");
+    closeTransientOverlays();
+  }, [activeView, closeTransientOverlays]);
+
+  const closeFriendsView = useCallback(() => {
+    setActiveView(friendsReturnViewRef.current);
     closeTransientOverlays();
   }, [closeTransientOverlays]);
 
@@ -2324,7 +2535,19 @@ export function App() {
     );
   }
 
-  if (passwordRecoveryMode || !authReady || !authSession) {
+  if (!authReady) {
+    return (
+      <DesktopAppShell>
+        <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
+        <main className="first-run-onboarding onboarding-loading">
+          <span className="onboarding-welcome-orb"><AppIcon name="user" size="xl" /></span>
+          <strong>Restoring your Picom session...</strong>
+        </main>
+      </DesktopAppShell>
+    );
+  }
+
+  if (passwordRecoveryMode || !authSession) {
     return (
       <>
         <DesktopAppShell>
@@ -2336,7 +2559,6 @@ export function App() {
               theme={theme}
               loading={!authReady || authLoading}
               error={authError}
-              onToggleTheme={toggleTheme}
               onSubmit={handleLogin}
               onPasswordResetRequest={handlePasswordResetRequest}
               recoveryMode={passwordRecoveryMode}
@@ -2381,6 +2603,19 @@ export function App() {
       <DesktopAppShell>
         <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
         <main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="home" size="xl" /></span><strong>Preparing your Picom workspace…</strong></main>
+      </DesktopAppShell>
+    );
+  }
+
+  if (isSupabaseMode && supabaseCommunityLoadState.status !== "ready") {
+    return (
+      <DesktopAppShell>
+        <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
+        <main className="first-run-onboarding onboarding-loading">
+          <span className="onboarding-welcome-orb"><AppIcon name="home" size="xl" /></span>
+          <strong>{supabaseCommunityLoadState.status === "error" ? "Picom could not load your communities." : "Loading your Picom workspace..."}</strong>
+        </main>
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </DesktopAppShell>
     );
   }
@@ -2444,8 +2679,8 @@ export function App() {
       communityId: activeCommunity.id,
       channelId: displayedActiveChannel.id,
       authorId: currentUser.userId,
-      attachmentIds: attachments?.map((attachment) => attachment.id),
       body,
+      attachmentIds: attachments?.map((attachment) => attachment.id),
       clientMessageId,
       replyToMessageId,
       localOrder,
@@ -2660,10 +2895,23 @@ export function App() {
       return false;
     }
 
+    supabaseMembersLoadedRef.current.delete(activeCommunity.id);
+    supabaseRolesLoadedRef.current.delete(activeCommunity.id);
+
+    const joinedMember = {
+      ...result.data.member,
+      roleIds: result.data.member.roleIds?.length
+        ? [...result.data.member.roleIds]
+        : result.data.member.roleId
+          ? [result.data.member.roleId]
+          : undefined,
+    };
+
     replaceCommunityMembers(activeCommunity.id, [
-      ...activeCommunity.members.filter((member) => member.userId !== result.data.member.userId),
-      result.data.member,
+      ...activeCommunity.members.filter((member) => member.userId !== joinedMember.userId),
+      joinedMember,
     ]);
+    setMembershipSyncVersion((version) => version + 1);
     const landing = openJoinedCommunity(activeCommunity);
     pushToast(result.data.status === "already_member" ? `You are already a member of ${activeCommunity.name}. Opened ${landing.landingLabel}.` : `Joined ${activeCommunity.name}. Opened ${landing.landingLabel}.`, "success");
     return true;
@@ -2694,7 +2942,7 @@ export function App() {
         setPendingInviteCode(null);
         return;
       }
-      target = addCommunity(createCommunityFromSummary(summary));
+      target = addCommunity(createCommunityFromSummary(summary, { includeTemplateChannels: dataSourceService.getStatus().isMock }));
     }
 
     const defaultRole = target.roles.find((role) => role.id === member.roleId) ?? target.roles.find((role) => role.name === "Member");
@@ -2707,13 +2955,47 @@ export function App() {
   };
 
   const handleCreateCommunity = async (value: CreateCommunityFormValue): Promise<CreateCommunitySubmitResult> => {
-    const result = await communityService.createCommunity(value);
+    let iconUrl: string | undefined;
+
+    if (value.iconFile) {
+      const validation = communityBrandingService.validate(value.iconFile, "icon");
+      if (!validation.ok) {
+        return { ok: false, error: validation.message };
+      }
+
+      if (dataSourceService.getStatus().isMock) {
+        const uploaded = await communityBrandingService.upload("draft", "icon", value.iconFile);
+        if (!uploaded.ok) {
+          return { ok: false, error: uploaded.message };
+        }
+        iconUrl = uploaded.data.url;
+      }
+    }
+
+    const { iconFile, ...createInput } = value;
+    const result = await communityService.createCommunity({ ...createInput, iconUrl });
 
     if (!result.ok) {
       return { ok: false, error: result.error.message };
     }
 
-    const community = addCommunity(createCommunityFromSummary(result.data));
+    let summary = result.data;
+
+    if (value.iconFile && dataSourceService.getStatus().isSupabase) {
+      const uploaded = await communityBrandingService.upload(summary.id, "icon", value.iconFile);
+      if (uploaded.ok) {
+        const updated = await communityService.updateCommunitySettings({ id: summary.id, iconUrl: uploaded.data.url });
+        if (updated.ok) {
+          summary = updated.data;
+        } else {
+          pushToast("Community created, but the logo could not be saved.", "error");
+        }
+      } else {
+        pushToast("Community created, but the logo upload failed.", "error");
+      }
+    }
+
+    const community = addCommunity(createCommunityFromSummary(summary, { includeTemplateChannels: dataSourceService.getStatus().isMock }));
     analyticsService.trackEvent("community_created", { mode: dataSourceService.getStatus().mode, kind: community.kind });
     switchCommunity(community.id);
     setActiveView(communityViewForKind(community.kind));
@@ -2760,8 +3042,8 @@ export function App() {
     pushToast(`#${channel.name} created.`, "success");
   };
 
-  const openProfile = (_event: MouseEvent, member: Member) => {
-    openProfilePage(member);
+  const openProfile = (event: MouseEvent, member: Member) => {
+    showProfile(member, event.clientX, event.clientY);
   };
 
   const activeGlobalRoute = resolveGlobalNavigationKey(activeView);
@@ -2802,6 +3084,22 @@ export function App() {
     openSettings();
   };
 
+  const openMicrophoneSettings = () => {
+    const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest("Voice & Audio");
+    settingsService.requestInitialSection(request.modalSection);
+    settingsService.requestInitialFocus("voice-microphone");
+    closeTransientOverlays();
+    openSettings();
+  };
+
+  const openHeadphoneSettings = () => {
+    const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest("Voice & Audio");
+    settingsService.requestInitialSection(request.modalSection);
+    settingsService.requestInitialFocus("voice-output");
+    closeTransientOverlays();
+    openSettings();
+  };
+
   const openGlobalHelpSupport = () => {
     helpSupportNavigationService.request("global-sidebar", "getting-started");
     closeTransientOverlays();
@@ -2826,7 +3124,7 @@ export function App() {
         const muted = notificationPolicyState.mutedCommunityIds.includes(community.id);
         openContext(event, [
           { label: community.name, disabled: true },
-          { label: muted ? "Unmute community" : "Mute community", onSelect: () => { notificationPolicyStateService.setCommunityMuted(community.id, !muted); pushToast(muted ? community.name + " notifications and feed items unmuted." : community.name + " notifications and feed items muted.", "success"); } },
+          { label: muted ? "Unmute community" : "Mute community", onSelect: () => { notificationPolicyStateService.setCommunityMuted(community.id, !muted); pushToast(muted ? `${community.name} notifications and feed items unmuted.` : `${community.name} notifications and feed items muted.`, "success"); } },
           { label: "Copy community ID", onSelect: () => void clipboardService.copyText(community.id).then(() => pushToast("Community ID copied.", "success")) },
         ]);
       }}
@@ -2897,9 +3195,11 @@ export function App() {
                 activeVoiceRooms={activeVoiceRooms}
                 followedUserIds={followedUserIds}
                 currentUserId={currentUserId}
+                directConversations={directConversations}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
                 onTabChange={changeMentionTab}
+                onOpenDirectConversation={openDirectConversation}
                 onOpenImage={openPreview}
                 onOpenInChannel={openMentionInChannel}
                 onToggleReaction={toggleMentionReaction}
@@ -2960,6 +3260,7 @@ export function App() {
                 suggestedUserIds={followSuggestionsV2.map((suggestion) => suggestion.member.userId)}
                 blockedUserIds={blockedUserIds}
                 activeFilter={mentionQuickFilter}
+                selectedProfileUserId={profile?.member.userId ?? null}
                 onFilterChange={toggleMentionFilter}
                 onOpenProfile={openProfile}
               />
@@ -3047,7 +3348,7 @@ export function App() {
               blockedUsers={userBlockingService.listBlockedUsers()}
               activeTab={friendsViewTab}
               onTabChange={setFriendsViewTab}
-              onBackToCommunity={() => setActiveView("community")}
+              onBackToCommunity={closeFriendsView}
               onOpenDirectMessage={openDirectMessages}
               onOpenProfile={(userId) => {
                 const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
@@ -3103,6 +3404,8 @@ export function App() {
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onEditChannel={setEditingChannel}
                 onDeleteChannel={setDeletingChannel}
+                onOpenSettings={openSettings}
+                onLogout={handleLogout}
                 onJoinCommunity={handleJoinCommunity}
                 onLeaveCommunity={handleLeaveCommunity}
                 pendingInviteCode={pendingInviteCode}
@@ -3125,6 +3428,18 @@ export function App() {
                 onCreateEvent={(input) => void createCommunityEvent(input)}
                 onUpdateEvent={(eventId, input) => void updateCommunityEvent(eventId, input)}
                 onCancelEvent={(eventId) => void cancelCommunityEvent(eventId)}
+                voiceOccupancyByChannelId={voiceOccupancyByChannelId}
+                voiceState={voiceSnapshot}
+                onToggleVoiceMute={toggleActiveVoiceMute}
+                onToggleVoiceDeafen={toggleActiveVoiceDeafen}
+                onToggleVoiceCamera={toggleActiveVoiceCamera}
+                onOpenVoiceRoom={openConnectedVoiceRoom}
+                onOpenVoiceScreenShare={openCommunityVoiceScreenShare}
+                onLeaveVoice={leaveActiveVoiceRoom}
+                canUseVoiceCamera={Boolean(voiceSnapshot.canSpeak) && (communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
+                canShareVoiceScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.permissions.includes("shareScreen")}
+                onOpenMicrophoneSettings={openMicrophoneSettings}
+                onOpenHeadphoneSettings={openHeadphoneSettings}
                 onCreateCategory={async (name) => {
                   const result = await communityStructureService.createTextCategory(activeCommunity.id, name);
                   if (!result.ok) { pushToast(result.error, "error"); return; }
@@ -3196,16 +3511,16 @@ export function App() {
                 <VoiceRoomView
                   community={displayedActiveCommunity}
                   channel={displayedActiveChannel}
+                  currentUserId={currentUser.userId}
                   snapshot={voiceSnapshot}
+                  voiceOccupancy={voiceOccupancyByChannelId[displayedActiveChannel.id]}
+                  pushToast={pushToast}
                   onJoin={joinActiveVoiceRoom}
                   onLeave={leaveActiveVoiceRoom}
                   onToggleMute={toggleActiveVoiceMute}
                   onToggleDeafen={toggleActiveVoiceDeafen}
-                  canSpeak={Boolean(voiceSnapshot.canSpeak) && (communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
-                  canShareScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.permissions.includes("shareScreen")}
-                  canMuteMembers={communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom")}
-                  canRemoveFromVoice={communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom")}
-                  onModerateParticipant={moderateActiveVoiceParticipant}
+                  canSpeak={Boolean(voiceSnapshot.canSpeak) && communityAccess.isMember}
+                  canShareScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.isMember}
                   onStartScreenShare={startActiveVoiceScreenShare}
                   onStopScreenShare={stopActiveVoiceScreenShare}
                 />
@@ -3216,7 +3531,6 @@ export function App() {
                 access={communityAccess}
                 channel={displayedActiveChannel}
                 messages={displayedActiveCommunity.messages}
-                realtimeStatus={realtimeStatus}
                 typingNames={typingBroadcast.typingNames}
                 onTypingStart={typingBroadcast.sendTypingStart}
                 onTypingStop={typingBroadcast.sendTypingStop}
@@ -3224,6 +3538,8 @@ export function App() {
                 onOpenInvite={() => setComposerInviteOpen(true)}
                 onOpenTopic={() => pushToast("Channel topic editing is prepared in the channel settings foundation.", "info")}
                 onOpenPoll={() => setPollCreateOpen(true)}
+                onOpenSavedMessages={() => setActiveView("savedMessages")}
+                onOpenMentionFeed={() => setActiveView("mentionFeed")}
                 onMessageListNearBottomChange={setIsActiveMessageListNearBottom}
                 currentUserId={currentUser.userId}
                 readReceiptsEnabled={userSafetySettings.enableReadReceipts}
@@ -3280,13 +3596,35 @@ export function App() {
                 onRetryMessage={(message) => void retryFailedMessage(message)}
                 onRemoveFailedMessage={removeFailedMessage}
                 blockedUserIds={blockedUserIds}
-                onOpenJoinCommunity={() => pushToast("Review and accept the community rules from the community menu before joining.", "info")}
+                onOpenJoinCommunity={() => setCommunityJoinModalOpen(true)}
                 pushToast={pushToast}
               />
               )}
-              {membersVisible && communityAccess.canViewMemberList ? (
+              {displayedActiveChannel.type === "voice" && joinedActiveVoiceChannel ? (
+                <VoiceParticipantsRail
+                  community={displayedActiveCommunity}
+                  channel={displayedActiveChannel}
+                  channelId={displayedActiveChannel.id}
+                  access={communityAccess}
+                  messages={displayedActiveCommunity.messages.filter((message) => message.channelId === displayedActiveChannel.id)}
+                  currentUser={displayedCurrentUser}
+                  currentUserId={currentUser.userId}
+                  snapshot={voiceSnapshot}
+                  voiceOccupancy={voiceOccupancyByChannelId[displayedActiveChannel.id]}
+                  expanded={participantsVisible}
+                  onToggleExpanded={toggleParticipantsVisible}
+                  onSendMessage={(body) => sendMessage(body)}
+                  onTypingStart={typingBroadcast.sendTypingStart}
+                  onTypingStop={typingBroadcast.sendTypingStop}
+                  pushToast={pushToast}
+                  canMuteMembers={communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom")}
+                  canRemoveFromVoice={communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom")}
+                  onModerateParticipant={moderateActiveVoiceParticipant}
+                />
+              ) : membersVisible && communityAccess.canViewMemberList ? (
                 <MemberSidebar
                   community={displayedActiveCommunity}
+                  channel={displayedActiveChannel}
                   onOpenProfile={openProfile}
                   onMemberContextMenu={(event, member) => {
                     const moderationActions: { action: MemberModerationAction; label: string }[] = [{ action: "timeout", label: "Timeout member" }, { action: "kick", label: "Remove member" }, { action: "ban", label: "Ban member" }];
@@ -3308,6 +3646,19 @@ export function App() {
       </DesktopAppShell>
       {isV1FeatureEnabled("radio") || isV1FeatureEnabled("podcasts") ? <GlobalAudioMiniPlayer hidden={activeView === "mentionFeed"} /> : null}
 
+      {communityJoinModalOpen ? (
+        <CommunityJoinModal
+          community={displayedActiveCommunity}
+          currentUserId={currentUser.userId}
+          isAuthenticated={Boolean(authSession)}
+          onClose={() => setCommunityJoinModalOpen(false)}
+          onConfirm={async (acceptance) => {
+            const joined = await handleJoinCommunity(acceptance);
+            if (joined) setCommunityJoinModalOpen(false);
+            return joined;
+          }}
+        />
+      ) : null}
       {createCommunityOpen ? <CreateCommunityModal onClose={() => setCreateCommunityOpen(false)} onSubmit={handleCreateCommunity} /> : null}
       {createChannelCategoryId ? (
         <CreateChannelModal
@@ -3399,7 +3750,23 @@ export function App() {
         />
       ) : null}
       {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={closeMenu} /> : null}
-      {profile ? <UserProfilePopover member={profile.member} community={activeCommunity} x={profile.x} y={profile.y} onClose={closeProfile} onViewProfile={openProfilePage} onReportUser={handleReportUser} isBlocked={blockedUserIds.includes(profile.member.userId)} onToggleBlock={handleToggleBlockUser} /> : null}
+      {profile ? (
+        <UserProfilePopover
+          member={profile.member}
+          community={activeCommunity}
+          x={profile.x}
+          y={profile.y}
+          onClose={closeProfile}
+          onOpenMessage={(member) => {
+            closeProfile();
+            openDirectMessages(member.userId);
+          }}
+          onViewProfile={openProfilePage}
+          onReportUser={handleReportUser}
+          isBlocked={blockedUserIds.includes(profile.member.userId)}
+          onToggleBlock={handleToggleBlockUser}
+        />
+      ) : null}
       {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
       {crashRecoveryRecord ? (
         <CrashRecoveryDialog

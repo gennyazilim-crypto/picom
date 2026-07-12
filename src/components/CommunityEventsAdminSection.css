@@ -1,0 +1,344 @@
+.community-management-modal .community-events-section {
+  display: grid;
+  gap: 14px;
+}
+
+.community-management-modal .community-events-section > header {
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .community-events-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.community-management-modal .community-events-summary-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .community-events-summary-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .community-events-summary-copy span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .community-events-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.community-management-modal .community-events-metric {
+  display: grid;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .community-events-metric-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  margin-bottom: 2px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .community-events-metric--going .community-events-metric-icon {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.community-management-modal .community-events-metric--reminders .community-events-metric-icon {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.community-management-modal .community-events-metric strong {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.community-management-modal .community-events-metric > span:last-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.community-management-modal .community-events-list {
+  display: grid;
+  gap: 10px;
+}
+
+.community-management-modal .community-events-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  transition: border-color 140ms ease;
+}
+
+.community-management-modal .community-events-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.community-management-modal .community-events-card-main {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.community-management-modal .community-events-card-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.community-management-modal .community-events-card-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .community-events-card-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.community-management-modal .community-events-card-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .community-events-card-copy span,
+.community-management-modal .community-events-card-copy small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .community-events-card-copy small {
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.community-management-modal .community-events-type-badge {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--surface));
+}
+
+.community-management-modal .community-events-card-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.community-management-modal .community-events-rsvp-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.community-management-modal .community-events-rsvp-group button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.community-management-modal .community-events-rsvp-group button:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.community-management-modal .community-events-rsvp-group button.is-active {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface));
+  color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.community-management-modal .community-events-reminder-btn.is-on {
+  border-color: color-mix(in srgb, var(--warning) 34%, var(--border));
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+}
+
+.community-management-modal .community-events-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+}
+
+.community-management-modal .community-events-empty {
+  gap: 10px;
+  padding: 36px 24px;
+}
+
+.community-management-modal .community-events-empty-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .community-events-cancel-confirm {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  box-shadow: var(--shadow-app);
+}
+
+.community-management-modal .community-events-cancel-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.community-management-modal .community-events-cancel-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .community-events-cancel-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .community-events-cancel-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .community-events-cancel-confirm footer {
+  grid-column: 1 / -1;
+}
+
+.community-events-editor-backdrop {
+  z-index: 96;
+}
+
+.community-events-editor-dialog {
+  width: min(620px, calc(100vw - 120px));
+  max-height: min(720px, calc(100vh - 100px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-app);
+}
+
+.community-events-editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-sidebar) 92%, var(--surface)), var(--surface));
+}
+
+.community-events-editor-header .eyebrow {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.community-events-editor-header h2 {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.community-events-editor-body {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.community-events-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.community-events-editor-dialog footer {
+  padding: 14px 20px 18px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+}

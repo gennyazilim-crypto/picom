@@ -116,7 +116,7 @@ function validateCreateInput(input: CreateCommunityInput): CommunityServiceError
 
   if (input.iconUrl) {
     const iconUrl = input.iconUrl.trim();
-    if (iconUrl.length > 2048 || !/^https:\/\//i.test(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a valid HTTPS URL." };
+    if ((!iconUrl.startsWith("data:image/") && iconUrl.length > 2048) || !isSafeBrandUrl(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a controlled HTTPS image upload." };
   }
 
   if (input.bannerUrl) {
@@ -160,7 +160,7 @@ function validateUpdateInput(input: UpdateCommunityInput): CommunityServiceError
 
   if (input.iconUrl) {
     const iconUrl = input.iconUrl.trim();
-    if (iconUrl.length > 2048 || !/^https:\/\//i.test(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a valid HTTPS URL." };
+    if ((!iconUrl.startsWith("data:image/") && iconUrl.length > 2048) || !isSafeBrandUrl(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a controlled HTTPS image upload." };
   }
 
   return null;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { MouseEvent } from "react";
 import { lazy, Suspense } from "react";
 import { useEffect } from "react";
@@ -12,6 +12,8 @@ import { UserMiniCard } from "./UserMiniCard";
 import { CommunityAdminPanel, CommunityJoinModal, CommunityLeaveModal, CommunityMemberPanel, CommunityModeratorPanel, CommunityVisitorPanel } from "./CommunityMenu";
 import type { CreateCommunityEventInput, UpdateCommunityEventInput } from "../services/communityEventService";
 import type { UpcomingEvent } from "../types/events";
+import type { VoiceRoomOccupancy } from "../types/voiceDiscovery";
+import type { VoiceServiceSnapshot } from "../services/voiceService";
 import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals";
 import type { InviteAcceptanceStatus } from "../services/community/communityInviteService";
 import type { ReportRecord } from "../types/reports";
@@ -19,6 +21,7 @@ import { isV1ChannelTypeEnabled } from "../config/v1ReleaseScope";
 import { ReportModal } from "./ReportModal";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { AppIcon } from "./AppIcon";
+import { SidebarVoiceConnectionBar } from "./SidebarVoiceConnectionBar";
 import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 
 const CommunityAdminDeferredSection = lazy(() => import("./CommunityAdminDeferredSection").then((module) => ({ default: module.CommunityAdminDeferredSection })));
@@ -36,6 +39,8 @@ type CommunitySidebarProps = {
   onCreateChannel: (categoryId: string) => void;
   onEditChannel: (channel: Channel) => void;
   onDeleteChannel: (channel: Channel) => void;
+  onOpenSettings: () => void;
+  onLogout: () => void | Promise<void>;
   onChannelContextMenu: (event: MouseEvent, channel: Channel) => void;
   onCreateCategory: (name: string) => void;
   onRenameCategory: (categoryId: string, name: string) => void;
@@ -57,11 +62,23 @@ type CommunitySidebarProps = {
   onCreateEvent: (input: CreateCommunityEventInput) => void;
   onUpdateEvent: (eventId: string, input: UpdateCommunityEventInput) => void;
   onCancelEvent: (eventId: string) => void;
+  voiceOccupancyByChannelId?: Readonly<Record<string, VoiceRoomOccupancy>>;
+  voiceState: VoiceServiceSnapshot;
+  onToggleVoiceMute: () => void;
+  onToggleVoiceDeafen: () => void;
+  onToggleVoiceCamera: () => void;
+  onOpenVoiceRoom: () => void;
+  onOpenVoiceScreenShare: () => void;
+  onLeaveVoice: () => void;
+  canUseVoiceCamera?: boolean;
+  canShareVoiceScreen?: boolean;
+  onOpenMicrophoneSettings: () => void;
+  onOpenHeadphoneSettings: () => void;
 };
 
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
-export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent, voiceOccupancyByChannelId = {}, voiceState, onToggleVoiceMute, onToggleVoiceDeafen, onToggleVoiceCamera, onOpenVoiceRoom, onOpenVoiceScreenShare, onLeaveVoice, canUseVoiceCamera = true, canShareVoiceScreen = true, onOpenMicrophoneSettings, onOpenHeadphoneSettings }: CommunitySidebarProps) {
   const visibleCategories = community.categories
     .map((category) => ({ ...category, channels: category.channels.filter((channel) => isV1ChannelTypeEnabled(channel.type)) }))
     .filter((category) => category.channels.length > 0);
@@ -130,11 +147,25 @@ export function CommunitySidebar({ community, communities, access, activeChannel
             canCreateChannel={canReorderChannels}
             showReorderControls={canReorderChannels}
             onMoveChannel={onMoveChannel}
+            voiceOccupancyByChannelId={voiceOccupancyByChannelId}
           />
         )) : <div className="empty-state compact">{community.kind === "text" ? "No public channels are visible." : `Open ${kindSummary.landingLabel} to explore this ${kindSummary.label.toLowerCase()}.`}</div>}
       </div>
 
-      <UserMiniCard member={currentUser} />
+      <div className="community-sidebar-footer">
+        <SidebarVoiceConnectionBar
+          voiceState={voiceState}
+          onOpenVoiceRoom={onOpenVoiceRoom}
+          onToggleMute={onToggleVoiceMute}
+          onToggleDeafen={onToggleVoiceDeafen}
+          onToggleCamera={onToggleVoiceCamera}
+          onOpenScreenShare={onOpenVoiceScreenShare}
+          onLeaveVoice={onLeaveVoice}
+          canUseCamera={canUseVoiceCamera}
+          canShareScreen={canShareVoiceScreen}
+        />
+        <UserMiniCard member={currentUser} onOpenMicrophoneSettings={onOpenMicrophoneSettings} onOpenHeadphoneSettings={onOpenHeadphoneSettings} />
+      </div>
 
       {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onCreateChannel={onCreateChannel} onMemberRolesChanged={onMemberRolesChanged} onCommunityRolesChanged={onCommunityRolesChanged} onCommunityUpdated={onCommunityUpdated} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
       {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} /> : null}

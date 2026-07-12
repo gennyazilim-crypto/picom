@@ -1,0 +1,251 @@
+.community-management-modal .community-stickers-section {
+  display: grid;
+  gap: 14px;
+}
+
+.community-management-modal .community-stickers-section > header {
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .sticker-create-card,
+.community-management-modal .sticker-upload-card {
+  gap: 12px;
+}
+
+.community-management-modal .sticker-form-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.community-management-modal .sticker-form-hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.community-management-modal .sticker-form-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.community-management-modal .sticker-form-fields--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.community-management-modal .sticker-form-fields--upload {
+  grid-template-columns: minmax(140px, 0.9fr) repeat(2, minmax(120px, 1fr)) minmax(180px, 1.1fr);
+  align-items: end;
+}
+
+.community-management-modal .sticker-file-field {
+  min-width: 0;
+}
+
+.community-management-modal .sticker-file-picker {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.community-management-modal .sticker-file-trigger {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.community-management-modal .sticker-file-picker input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.community-management-modal .sticker-file-picker input:disabled {
+  cursor: not-allowed;
+}
+
+.community-management-modal .sticker-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.community-management-modal .sticker-metric {
+  display: grid;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .sticker-metric-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  margin-bottom: 2px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .sticker-metric--disabled .sticker-metric-icon {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.community-management-modal .sticker-metric strong {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.community-management-modal .sticker-metric > span:last-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.community-management-modal .sticker-pack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.community-management-modal .sticker-pack-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  transition: border-color 140ms ease, opacity 140ms ease;
+}
+
+.community-management-modal .sticker-pack-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.community-management-modal .sticker-pack-card.is-disabled {
+  opacity: 0.72;
+}
+
+.community-management-modal .sticker-pack-thumb {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 70%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  color: var(--accent);
+  overflow: hidden;
+}
+
+.community-management-modal .sticker-pack-preview-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+
+.community-management-modal .sticker-pack-preview-grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.community-management-modal .sticker-pack-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .sticker-pack-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.community-management-modal .sticker-pack-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .sticker-pack-copy span,
+.community-management-modal .sticker-pack-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .sticker-pack-copy small {
+  font-size: 11px;
+}
+
+.community-management-modal .sticker-status-badge--active {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+}
+
+.community-management-modal .sticker-status-badge--disabled {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 28%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+}
+
+.community-management-modal .sticker-empty-state {
+  gap: 10px;
+  padding: 36px 24px;
+}
+
+.community-management-modal .sticker-empty-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+@media (max-width: 1080px) {
+  .community-management-modal .sticker-form-fields--upload {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

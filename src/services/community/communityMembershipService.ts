@@ -1,4 +1,5 @@
 ﻿import type { Community, Member } from "../../types/community";
+import { hasResolvedCommunityMembership } from "../permissions/communityPermissions";
 import { dataSourceService } from "../dataSourceService";
 import type { CommunityRulesAcceptanceInput } from "../../types/communityRules";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
@@ -104,8 +105,11 @@ export const communityMembershipService = {
     if (input.bannedUserIds?.includes(input.currentUser.userId)) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "You cannot join this community." } };
     if (input.community.ownerId && userBlockingService.isBlocked(input.community.ownerId)) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "This community cannot be joined while a blocking relationship is active." } };
 
+    const dataSource = dataSourceService.getStatus();
     const existingMember = input.community.members.find((member) => member.userId === input.currentUser.userId);
-    if (existingMember) return { ok: true, data: { member: existingMember, status: "already_member" } };
+    if (existingMember && (dataSource.isMock || hasResolvedCommunityMembership(existingMember, input.community))) {
+      return { ok: true, data: { member: existingMember, status: "already_member" } };
+    }
 
     if (input.community.rulesEnabled !== false) {
       const acceptance = input.rulesAcceptance;
@@ -115,7 +119,6 @@ export const communityMembershipService = {
       }
     }
 
-    const dataSource = dataSourceService.getStatus();
     if (dataSource.isMock) {
       return { ok: true, data: { member: createMockMember(input.community, input.currentUser), status: "joined" } };
     }
@@ -139,7 +142,8 @@ export const communityMembershipService = {
         avatarUrl: input.currentUser.avatarUrl,
         status: input.currentUser.status,
         statusText: membership.join_status === "already_member" ? "Already a community member" : "Joined this community",
-        roleId: membership.role_id ?? "member",
+        roleId: membership.role_id ?? input.currentUser.roleId,
+        roleIds: membership.role_id ? [membership.role_id] : undefined,
         bio: input.currentUser.bio,
       } },
     };

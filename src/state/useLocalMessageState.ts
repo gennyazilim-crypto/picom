@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { Attachment, Channel, ChannelCategory, ChannelId, ChannelType, Community, Member, Message, UserId } from "../types/community";
+import type { Attachment, Channel, ChannelCategory, ChannelId, ChannelType, Community, Member, Message, Role, UserId } from "../types/community";
 import type { PollData } from "../types/polls";
 
 type AppendLocalMessageInput = {
@@ -461,6 +461,12 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
+  const replaceCommunityRoles = useCallback((communityId: string, roles: Role[]) => {
+    setCommunities((current) =>
+      current.map((community) => community.id === communityId ? { ...community, roles } : community),
+    );
+  }, []);
+
   const addCategory = useCallback((input: AddLocalCategoryInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const category: ChannelCategory = {
@@ -622,5 +628,6 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     replaceCommunityCategories,
     replaceChannelMessages,
     replaceCommunityMembers,
+    replaceCommunityRoles,
   };
 }

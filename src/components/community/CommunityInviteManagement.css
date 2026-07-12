@@ -1,1 +1,360 @@
-.community-invite-management{display:grid;gap:14px;min-width:0}.invite-management-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-subtle)}.invite-management-toolbar>div{display:grid;gap:3px;min-width:0}.invite-management-toolbar span{color:var(--text-muted);font-size:11px}.invite-management-toolbar button,.invite-status-filters button,.invite-campaign-list button,.invite-revoke-confirm button{display:inline-flex;align-items:center;gap:6px;min-height:32px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-elevated);color:var(--text-secondary);padding:7px 10px}.invite-lifecycle-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.invite-lifecycle-metrics article{display:grid;gap:2px;padding:11px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-elevated)}.invite-lifecycle-metrics strong{color:var(--text-primary);font-size:18px}.invite-lifecycle-metrics span{color:var(--text-muted);font-size:11px}.invite-status-filters{display:flex;gap:6px;flex-wrap:wrap}.invite-status-filters button.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}.invite-campaign-list{display:grid;gap:8px;min-height:0}.invite-campaign-list article{display:grid;grid-template-columns:34px minmax(190px,1fr) 70px auto auto;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-elevated)}.invite-status-mark{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;color:var(--text-muted);background:var(--surface-subtle)}.invite-status-mark.active{color:var(--success);background:color-mix(in srgb,var(--success) 12%,transparent)}.invite-status-mark.revoked{color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}.invite-status-mark.expired,.invite-status-mark.exhausted{color:var(--warning);background:color-mix(in srgb,var(--warning) 12%,transparent)}.invite-campaign-copy{display:grid;gap:2px;min-width:0}.invite-campaign-copy strong,.invite-campaign-copy span,.invite-campaign-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.invite-campaign-copy span,.invite-campaign-copy small{color:var(--text-muted);font-size:11px}.invite-usage{display:grid;text-align:right}.invite-usage strong{color:var(--text-primary)}.invite-usage span{color:var(--text-muted);font-size:10px}.invite-status-pill{padding:5px 7px;border-radius:999px;color:var(--text-muted);background:var(--surface-subtle);font-size:10px;font-weight:800;white-space:nowrap}.invite-status-pill.active{color:var(--success);background:color-mix(in srgb,var(--success) 10%,transparent)}.invite-status-pill.revoked{color:var(--danger);background:color-mix(in srgb,var(--danger) 9%,transparent)}.invite-status-pill.expired,.invite-status-pill.exhausted{color:var(--warning);background:color-mix(in srgb,var(--warning) 10%,transparent)}.invite-management-notice{margin:0;padding:9px 11px;border-radius:var(--radius-sm);color:var(--success);background:color-mix(in srgb,var(--success) 10%,transparent)}.invite-management-notice.error{color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}.invite-revoke-confirm{position:sticky;bottom:0;z-index:3;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:14px;border:1px solid color-mix(in srgb,var(--danger) 42%,var(--border));border-radius:var(--radius-lg);background:var(--surface-elevated);box-shadow:var(--shadow-app)}.invite-revoke-confirm p{margin:4px 0 0;color:var(--text-secondary)}.invite-revoke-confirm footer{grid-column:2;display:flex;justify-content:flex-end;gap:7px}.invite-campaign-list .danger-action,.invite-revoke-confirm .danger-action{color:var(--danger)}@media(max-width:1280px){.invite-campaign-list article{grid-template-columns:32px minmax(170px,1fr) auto auto}.invite-usage{display:none}}
+.community-management-modal .community-invites-section {
+  display: grid;
+  gap: 14px;
+}
+
+.community-management-modal .community-invites-section > header {
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .community-invite-management {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.community-management-modal .invite-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.community-management-modal .invite-summary-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .invite-summary-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .invite-summary-copy span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .invite-lifecycle-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.community-management-modal .invite-metric {
+  display: grid;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .invite-metric-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  margin-bottom: 2px;
+}
+
+.community-management-modal .invite-metric--active .invite-metric-icon {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.community-management-modal .invite-metric--revoked .invite-metric-icon {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.community-management-modal .invite-metric--expired .invite-metric-icon,
+.community-management-modal .invite-metric--exhausted .invite-metric-icon {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.community-management-modal .invite-metric strong {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.community-management-modal .invite-metric > span:last-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.community-management-modal .invite-status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.community-management-modal .invite-status-filters button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.community-management-modal .invite-status-filters button:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.community-management-modal .invite-status-filters button.is-active {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface));
+  color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.community-management-modal .invite-campaign-list {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+}
+
+.community-management-modal .invite-campaign-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 72px auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.community-management-modal .invite-campaign-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.community-management-modal .invite-status-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+}
+
+.community-management-modal .invite-status-mark--active {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.community-management-modal .invite-status-mark--revoked {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.community-management-modal .invite-status-mark--expired,
+.community-management-modal .invite-status-mark--exhausted {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.community-management-modal .invite-campaign-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .invite-campaign-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.community-management-modal .invite-campaign-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .invite-campaign-copy span,
+.community-management-modal .invite-campaign-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .invite-campaign-copy small {
+  font-size: 11px;
+}
+
+.community-management-modal .invite-status-badge--active {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 28%, var(--border));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+}
+
+.community-management-modal .invite-status-badge--revoked {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface));
+}
+
+.community-management-modal .invite-status-badge--expired,
+.community-management-modal .invite-status-badge--exhausted {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 28%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+}
+
+.community-management-modal .invite-usage-bar {
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+  overflow: hidden;
+}
+
+.community-management-modal .invite-usage-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--picom-teal), var(--picom-aqua));
+}
+
+.community-management-modal .invite-usage {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.community-management-modal .invite-usage strong {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.community-management-modal .invite-usage span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.community-management-modal .invite-empty-state {
+  gap: 10px;
+  padding: 36px 24px;
+}
+
+.community-management-modal .invite-empty-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .invite-revoke-confirm {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  box-shadow: var(--shadow-app);
+}
+
+.community-management-modal .invite-revoke-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.community-management-modal .invite-revoke-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-management-modal .invite-revoke-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .invite-revoke-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .invite-revoke-confirm footer {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1280px) {
+  .community-management-modal .invite-lifecycle-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .community-management-modal .invite-campaign-card {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+
+  .community-management-modal .invite-usage {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .community-management-modal .invite-summary-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .community-management-modal .invite-summary-card .community-mgmt-action {
+    width: 100%;
+  }
+}

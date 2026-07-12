@@ -1,37 +1,130 @@
-.community-sensitive-action {
+.community-management-modal .community-danger-section {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
-.community-sensitive-field {
+.community-management-modal .community-danger-section-header {
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .community-danger-section-icon {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+}
+
+.community-management-modal .community-danger-grid,
+.community-management-modal .community-admin-tools-stack {
   display: grid;
-  gap: 6px;
+  gap: 12px;
   min-width: 0;
 }
 
-.community-sensitive-field > span {
-  color: var(--text-secondary);
+.community-management-modal .community-danger-action-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .community-danger-action-card--transfer {
+  border-color: color-mix(in srgb, var(--picom-rust) 30%, var(--border));
+  background: color-mix(in srgb, var(--picom-rust) 5%, var(--surface));
+}
+
+.community-management-modal .community-danger-action-card--archive {
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--border));
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+}
+
+.community-management-modal .community-danger-action-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.community-management-modal .community-danger-action-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background: var(--surface);
+}
+
+.community-management-modal .community-danger-action-card--transfer .community-danger-action-icon {
+  color: var(--picom-rust);
+  background: color-mix(in srgb, var(--picom-rust) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--picom-rust) 24%, var(--border));
+}
+
+.community-management-modal .community-danger-action-card--archive .community-danger-action-icon {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 24%, var(--border));
+}
+
+.community-management-modal .community-danger-action-header strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.community-management-modal .community-danger-action-header small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
   font-size: 12px;
-  font-weight: 700;
+  line-height: 1.45;
 }
 
-.community-sensitive-field textarea {
-  min-height: 76px;
-  resize: vertical;
-}
-
-.community-sensitive-warning {
+.community-management-modal .community-danger-warning {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   margin: 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--warning) 28%, var(--border));
+  background: color-mix(in srgb, var(--warning) 8%, var(--surface));
   color: var(--text-secondary);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
-.community-sensitive-warning .app-icon {
+.community-management-modal .community-danger-warning .app-icon {
   flex: 0 0 auto;
   color: var(--warning);
   margin-top: 1px;
+}
+
+.community-management-modal .community-danger-action-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.community-management-modal .community-danger-action-card .community-mgmt-notice {
+  margin-top: -2px;
+}
+
+@media (max-width: 720px) {
+  .community-management-modal .community-danger-action-footer {
+    justify-content: stretch;
+  }
+
+  .community-management-modal .community-danger-action-footer .community-mgmt-action {
+    width: 100%;
+  }
 }

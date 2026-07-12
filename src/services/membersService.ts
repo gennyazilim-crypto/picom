@@ -145,7 +145,11 @@ export const membersService = {
       .order("joined_at", { ascending: true });
 
     if (error || !data) {
-      return membersError("MEMBERS_LIST_FAILED", "Could not load community members.");
+      const detail = error?.message?.trim();
+      return membersError(
+        "MEMBERS_LIST_FAILED",
+        detail ? `Could not load community members: ${detail}` : "Could not load community members.",
+      );
     }
 
     const userIds = data.map((member) => member.user_id);

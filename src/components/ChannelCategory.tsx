@@ -1,5 +1,6 @@
 import type { MouseEvent } from "react";
 import type { Channel, ChannelCategory as ChannelCategoryType } from "../types/community";
+import type { VoiceRoomOccupancy } from "../types/voiceDiscovery";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { ChannelItem } from "./ChannelItem";
@@ -19,6 +20,7 @@ type ChannelCategoryProps = {
   canCreateChannel?: boolean;
   showReorderControls?: boolean;
   onMoveChannel?: (categoryId: string, channelId: string, direction: "up" | "down") => void;
+  voiceOccupancyByChannelId?: Readonly<Record<string, VoiceRoomOccupancy>>;
 };
 
 export function ChannelCategory({
@@ -33,6 +35,7 @@ export function ChannelCategory({
   canCreateChannel = true,
   showReorderControls = false,
   onMoveChannel,
+  voiceOccupancyByChannelId = {},
 }: ChannelCategoryProps) {
   return (
     <section className="channel-category">
@@ -57,6 +60,10 @@ export function ChannelCategory({
                 onSelect={onSelectChannel}
                 onContextMenu={onChannelContextMenu}
                 hasDraft={messageDraftService.hasDraft({ communityId, channelId: channel.id })}
+                voiceParticipants={voiceOccupancyByChannelId[channel.id]?.participants ?? voiceOccupancyByChannelId[channel.id]?.participantNames?.map((name, index) => ({
+                  identity: `${channel.id}:${index}:${name}`,
+                  name,
+                }))}
               />
               {showReorderControls ? (
                 <span className="channel-reorder-controls" aria-label={`Reorder ${channel.name}`}>
