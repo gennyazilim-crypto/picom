@@ -58,3 +58,32 @@ release gate.
 Source and workflow contract are prepared. Native PASS is recorded only after
 the protected Windows run uploads a redacted evidence artifact with
 `status=passed`.
+
+## Protected Windows completion evidence
+
+- GitHub Actions run: 29198913461
+- Result: passed
+- Candidate: Picom-0.1.1-beta.1-beta-Windows-x64.exe
+- Installer SHA-256: 2b9a7b4c4f1017bae3193f3da3bdfcae7d454e285936dea846faad21b43408cd
+- Installer size: 121626661 bytes
+- Installed executable SHA-256: 02729f6b74700b12acac7e5ccd29f3c91491d8a9c58535799b0dbd6d4e3af3dc
+- Platform: Windows Server 2025 Datacenter / 10.0.26100 / x64
+- Display: 1 monitor at 100 percent scale
+- Controlled install and normal restart: passed
+- Active authorization: 4/4
+- Denial authorization: 3/3
+- Roleless member and Voice channel RLS visibility: passed
+- Joined/microphone/screen publishers: 4/4/4
+- Simultaneous native window shares: 4
+- Remote audio receivers and screen renderers: 4/4
+- Speaking and mute-cycle clients: 4/4
+- Native picker cancel, selection, source-ended, restart: passed
+- Reconnect, post-reconnect media, room/track cleanup: passed
+- Ephemeral hosted fixture cleanup: passed
+- Evidence secret scan: containsSecrets=false
+- Temporary NSIS installation removal: passed
+
+The runner had one monitor, 100 percent scaling, no physical sound device, and
+used Chromium's controlled fake microphone device. Physical microphone hardware,
+multi-monitor behavior, 125/150 percent DPI, and trusted signing are not claimed.
+These limitations remain explicit release-lab checks rather than fabricated PASS.
