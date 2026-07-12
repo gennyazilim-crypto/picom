@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "task": 577,
+  "target": "approved_staging",
+  "productionAllowed": false,
+  "syntheticAccountsOnly": true,
+  "requiredConfirmation": "STAGING_ONLY",
+  "roles": [
+    "owner",
+    "admin",
+    "moderator",
+    "member",
+    "visitor",
+    "guest",
+    "blocked"
+  ],
+  "gates": [
+    {
+      "id": "committed_migrations_match_staging",
+      "required": true,
+      "requiredRoles": []
+    },
+    {
+      "id": "meeting_rls_role_matrix",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "private_room_isolation",
+      "required": true,
+      "requiredRoles": ["member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "private_participant_isolation",
+      "required": true,
+      "requiredRoles": ["member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "private_history_isolation",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "private_caption_isolation",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "meeting_token_edge_function",
+      "required": true,
+      "requiredRoles": ["member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "waiting_room_and_invites",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "webhook_signature_and_idempotency",
+      "required": true,
+      "requiredRoles": []
+    },
+    {
+      "id": "participant_session_reconciliation",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "guest"]
+    },
+    {
+      "id": "meeting_chat_access",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "reaction_and_hand_signaling",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "guest", "blocked"]
+    },
+    {
+      "id": "meeting_notifications",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member"]
+    },
+    {
+      "id": "caption_endpoint_when_enabled",
+      "required": false,
+      "notApplicableWhen": "caption_provider_disabled",
+      "requiredRoles": ["owner", "admin", "moderator", "member", "guest", "blocked"]
+    },
+    {
+      "id": "meeting_audit_logs",
+      "required": true,
+      "requiredRoles": ["owner", "admin", "moderator", "member", "blocked"]
+    },
+    {
+      "id": "realtime_private_delivery",
+      "required": true,
+      "requiredRoles": ["member", "visitor", "guest", "blocked"]
+    },
+    {
+      "id": "temporary_fixture_access_revoked",
+      "required": true,
+      "requiredRoles": []
+    },
+    {
+      "id": "secret_exposure_scan",
+      "required": true,
+      "requiredRoles": []
+    }
+  ]
+}

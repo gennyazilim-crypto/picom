@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "task": 577,
+  "environmentClass": "approved_staging",
+  "productionUsed": false,
+  "syntheticAccountsOnly": true,
+  "executionStatus": "BLOCKED",
+  "reasonCode": "protected_staging_matrix_unavailable",
+  "runId": null,
+  "tester": null,
+  "captionProviderEnabled": false,
+  "privateDataCaptured": false,
+  "rawMediaStored": false,
+  "redactionReviewed": true,
+  "migrations": {
+    "committedHead": null,
+    "stagingHead": null,
+    "checksumsMatch": false
+  },
+  "fixtureAccessRevocation": {
+    "status": "BLOCKED",
+    "revoked": false,
+    "revokedAt": null,
+    "reasonCode": "no_temporary_fixture_access_created"
+  },
+  "gateResults": [
+    { "id": "committed_migrations_match_staging", "status": "BLOCKED", "reasonCode": "staging_migration_inventory_unavailable", "evidenceReferences": [] },
+    { "id": "meeting_rls_role_matrix", "status": "BLOCKED", "reasonCode": "protected_role_accounts_unavailable", "evidenceReferences": [] },
+    { "id": "private_room_isolation", "status": "BLOCKED", "reasonCode": "private_room_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "private_participant_isolation", "status": "BLOCKED", "reasonCode": "private_participant_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "private_history_isolation", "status": "BLOCKED", "reasonCode": "meeting_history_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "private_caption_isolation", "status": "BLOCKED", "reasonCode": "caption_provider_and_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "meeting_token_edge_function", "status": "BLOCKED", "reasonCode": "deployed_meeting_token_endpoint_unavailable", "evidenceReferences": [] },
+    { "id": "waiting_room_and_invites", "status": "BLOCKED", "reasonCode": "waiting_and_invite_fixtures_unavailable", "evidenceReferences": [] },
+    { "id": "webhook_signature_and_idempotency", "status": "BLOCKED", "reasonCode": "protected_webhook_endpoint_unavailable", "evidenceReferences": [] },
+    { "id": "participant_session_reconciliation", "status": "BLOCKED", "reasonCode": "two_client_staging_session_unavailable", "evidenceReferences": [] },
+    { "id": "meeting_chat_access", "status": "BLOCKED", "reasonCode": "meeting_chat_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "reaction_and_hand_signaling", "status": "BLOCKED", "reasonCode": "realtime_signal_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "meeting_notifications", "status": "BLOCKED", "reasonCode": "notification_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "caption_endpoint_when_enabled", "status": "NOT_APPLICABLE", "reasonCode": "caption_provider_disabled", "evidenceReferences": [] },
+    { "id": "meeting_audit_logs", "status": "BLOCKED", "reasonCode": "hosted_audit_fixture_unavailable", "evidenceReferences": [] },
+    { "id": "realtime_private_delivery", "status": "BLOCKED", "reasonCode": "private_realtime_staging_unavailable", "evidenceReferences": [] },
+    { "id": "temporary_fixture_access_revoked", "status": "BLOCKED", "reasonCode": "no_temporary_fixture_access_created", "evidenceReferences": [] },
+    { "id": "secret_exposure_scan", "status": "BLOCKED", "reasonCode": "hosted_artifact_set_unavailable", "evidenceReferences": [] }
+  ]
+}

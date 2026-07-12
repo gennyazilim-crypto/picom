@@ -185,3 +185,7 @@ Two additional local quality gates currently prevent even an immutable Full MVP 
 | QB-02 | Third-party license report is stale | `licenses:smoke` passes; `licenses:check` fails | Finalize concurrent package/assets, regenerate, review and pass the check |
 
 Task 520 decision: **Full MVP Partial; Stable No-Go**. No artifact publication is authorized.
+
+## Task 577 final hosted meeting backend update
+
+The 18-gate owner/admin/moderator/member/visitor/guest/blocked staging matrix and fail-closed protected runner are now defined. Local migration, secret-boundary, and deterministic meeting contracts pass, but the protected staging role fixtures, committed-to-staging migration checksum comparison, deployed meeting token/webhook, private Realtime, two-client reconciliation, hosted audit records, and temporary fixture-access revocation evidence are unavailable. Captions are provider-disabled and only the endpoint execution is `NOT_APPLICABLE`; transcript/privacy isolation remains mandatory. RB-01, RB-02, RB-03, and RB-04 remain **BLOCKED** and the stable decision remains **No-Go**.
