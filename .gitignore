@@ -4,6 +4,7 @@ build/
 /release/
 .env
 .env.local
+.env.staging
 .env.production
 .env.*.local
 *.log
@@ -16,5 +17,8 @@ dist-electron/
 /tmp/
 /tmp-electron-dev.err
 /tmp-electron-dev.out
+
+# Supabase CLI link/session state is local and may contain environment metadata.
+/supabase/.temp/
 
 packages/shared/dist/

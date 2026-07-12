@@ -1,0 +1,32 @@
+{
+  "task": 659,
+  "capturedAt": "2026-07-12",
+  "classification": "redacted_hosted_environment_metadata",
+  "supabase": {
+    "projectAlias": "picom-staging",
+    "projectRef": "ufmtvqtsklqsmqxefbbs",
+    "edgeSecretNames": [
+      "LIVEKIT_URL",
+      "LIVEKIT_API_KEY",
+      "LIVEKIT_API_SECRET",
+      "PICOM_ALLOWED_ORIGINS",
+      "PICOM_V1_VOICE_SCREEN_ENABLED"
+    ],
+    "localCliAuthenticatedLink": "blocked_clipboard_isolation"
+  },
+  "github": {
+    "environment": "hosted-staging",
+    "branchRules": ["main"],
+    "requiredReviewerCount": 1,
+    "preventSelfReview": true,
+    "adminBypass": false,
+    "secretNames": [
+      "SUPABASE_ACCESS_TOKEN",
+      "PICOM_RLS_STAGING_URL",
+      "PICOM_RLS_STAGING_ANON_KEY"
+    ],
+    "variableNamesVerified": ["SUPABASE_PROJECT_REF"]
+  },
+  "secretValuesObservedInRepository": false,
+  "serverSecretsExposedToRenderer": false
+}
