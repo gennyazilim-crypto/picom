@@ -54,6 +54,10 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
     description: summary.description,
     visibility: summary.visibility,
     publicReadEnabled: summary.publicReadEnabled,
+    defaultNotificationLevel: summary.defaultNotificationLevel,
+    typeSettings: summary.typeSettings,
+    rulesEnabled: summary.rulesEnabled,
+    rulesVersion: summary.rulesVersion,
     roles,
     members: [
       {
