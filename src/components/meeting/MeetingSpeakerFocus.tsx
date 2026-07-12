@@ -26,6 +26,8 @@ export function MeetingSpeakerFocus({ snapshot, onOpenPeople }: { snapshot: Meet
       activeSpeakerIdentities: participants.filter((participant) => participant.isSpeaking && participant.cameraEnabled).map((participant) => participant.identity),
       focusedParticipantIdentity: focused?.cameraEnabled ? focused.identity : null,
       visibleTileCount: visible.length,
+      qualityPreset: "balanced" as const,
+      tileSizeByIdentity: Object.fromEntries(visible.filter((participant) => participant.cameraEnabled).map((participant) => [participant.identity, participant.id === focused?.id ? "focus" as const : "thumbnail" as const])),
     };
   }, [focused, visibleFilmstrip, participants]);
   const subscriptionKey = JSON.stringify(subscription);

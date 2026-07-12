@@ -3,12 +3,17 @@ import type { MeetingClientParticipant, MeetingClientSnapshot } from "./meetingC
 export const MEETING_VIDEO_PAGE_SIZE = 12;
 
 export type MeetingVideoGridLayout = "solo" | "duo" | "quad" | "six" | "nine" | "twelve";
+export type MeetingCameraQualityPreset = "data_saver" | "balanced" | "high_quality";
+export type MeetingVideoTileSize = "thumbnail" | "standard" | "focus";
 
 export type MeetingVideoSubscriptionPlan = Readonly<{
   visibleParticipantIdentities: readonly string[];
   activeSpeakerIdentities: readonly string[];
   focusedParticipantIdentity: string | null;
   visibleTileCount: number;
+  qualityPreset?: MeetingCameraQualityPreset;
+  tileSizeByIdentity?: Readonly<Record<string, MeetingVideoTileSize>>;
+  stageOnly?: boolean;
 }>;
 
 export type MeetingVideoGridPlan = Readonly<{
@@ -56,6 +61,8 @@ export function buildMeetingVideoGridPlan(snapshot: MeetingClientSnapshot, reque
       activeSpeakerIdentities: visible.filter((participant) => participant.isSpeaking && participant.cameraEnabled).map((participant) => participant.identity),
       focusedParticipantIdentity: visible.find((participant) => participant.id === snapshot.focusedParticipantId && participant.cameraEnabled)?.identity ?? null,
       visibleTileCount: visible.length,
+      qualityPreset: "balanced",
+      tileSizeByIdentity: Object.fromEntries(visible.filter((participant) => participant.cameraEnabled).map((participant) => [participant.identity, participant.id === snapshot.focusedParticipantId ? "focus" as const : visible.length <= 4 ? "standard" as const : "thumbnail" as const])),
     },
   };
 }

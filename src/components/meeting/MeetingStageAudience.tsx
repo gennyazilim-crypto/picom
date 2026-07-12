@@ -26,7 +26,7 @@ export function MeetingStageAudience({ snapshot, onFocusParticipant, onOpenPeopl
   const subscriptionKey = stage.map((participant) => `${participant.identity}:${participant.isSpeaking}`).join("|");
 
   useEffect(() => {
-    meetingService.setVideoSubscriptions({ visibleParticipantIdentities: stage.map((participant) => participant.identity), activeSpeakerIdentities: stage.filter((participant) => participant.isSpeaking).map((participant) => participant.identity), focusedParticipantIdentity: null, visibleTileCount: stage.length });
+    meetingService.setVideoSubscriptions({ visibleParticipantIdentities: stage.filter((participant) => participant.cameraEnabled).map((participant) => participant.identity), activeSpeakerIdentities: stage.filter((participant) => participant.isSpeaking && participant.cameraEnabled).map((participant) => participant.identity), focusedParticipantIdentity: null, visibleTileCount: stage.length, qualityPreset: "balanced", tileSizeByIdentity: Object.fromEntries(stage.filter((participant) => participant.cameraEnabled).map((participant) => [participant.identity, participant.isSpeaking ? "focus" as const : stage.length <= 4 ? "standard" as const : "thumbnail" as const])), stageOnly: true });
   }, [subscriptionKey]);
   useEffect(() => () => { meetingService.setVideoSubscriptions({ visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 }); }, []);
 

@@ -1,4 +1,4 @@
-import { ConnectionState, Room, RoomEvent, Track, VideoQuality, type RemoteParticipant } from "livekit-client";
+import { ConnectionState, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
 import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
@@ -6,9 +6,10 @@ import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConn
 import { getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "./voiceDeviceService";
 import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, MeetingTransportConnectionState } from "../types/meeting";
-import type { MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
+import type { MeetingCameraQualityPreset, MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
 import { voiceDiagnosticsRegistry, type VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 import { noiseShieldService } from "./noiseShieldService";
+import { DEFAULT_MEETING_CAMERA_QUALITY, cameraCaptureOptions, cameraPublishOptions, localPublishingQuality, remoteVideoQuality } from "./meeting/meetingMediaQualityPolicy";
 
 export type { VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 
@@ -90,6 +91,7 @@ let screenShares: VoiceScreenShare[] = [];
 const remoteScreenShareTracks = new Map<string, MediaStreamTrack>();
 let cameraTracks: VoiceCameraTrack[] = [];
 let videoSubscriptionPlan: MeetingVideoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
+let cameraQualityPreset: MeetingCameraQualityPreset = DEFAULT_MEETING_CAMERA_QUALITY;
 const participantConnectionQualities = new Map<string, MeetingConnectionQuality>();
 const remoteParticipantVolumes = new Map<string, number>();
 let focusedScreenShareId: string | null = null;
@@ -217,12 +219,6 @@ function removeParticipantCameraTracks(participantIdentity: string): void {
   emit({ cameraTracks });
 }
 
-function videoQualityFor(identity: string, plan: MeetingVideoSubscriptionPlan): VideoQuality {
-  if (identity === plan.focusedParticipantIdentity || plan.visibleTileCount <= 4) return VideoQuality.HIGH;
-  if (plan.activeSpeakerIdentities.includes(identity) || plan.visibleTileCount <= 9) return VideoQuality.MEDIUM;
-  return VideoQuality.LOW;
-}
-
 function applyRemoteVideoSubscriptionPlan(activeRoom: Room, plan: MeetingVideoSubscriptionPlan): void {
   const visible = new Set(plan.visibleParticipantIdentities);
   activeRoom.remoteParticipants.forEach((participant) => {
@@ -230,9 +226,14 @@ function applyRemoteVideoSubscriptionPlan(activeRoom: Room, plan: MeetingVideoSu
       if (publication.source !== Track.Source.Camera) return;
       const subscribed = visible.has(participant.identity);
       publication.setSubscribed(subscribed);
-      if (subscribed) publication.setVideoQuality(videoQualityFor(participant.identity, plan));
+      if (subscribed) publication.setVideoQuality(remoteVideoQuality(participant.identity, plan, connectionQuality as MeetingConnectionQuality));
     });
   });
+}
+
+function applyLocalCameraPublishingQuality(activeRoom: Room): void {
+  const track = activeRoom.localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack;
+  track?.setPublishingQuality(localPublishingQuality(cameraQualityPreset, connectionQuality as MeetingConnectionQuality));
 }
 
 function applyRemoteAudioSubscription(activeRoom: Room, subscribed: boolean): void {
@@ -400,7 +401,7 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
       const normalized = normalizeVoiceConnectionQuality(quality) as MeetingConnectionQuality;
       participantConnectionQualities.set(participant.identity, normalized);
-      if (participant.isLocal) connectionQuality = normalized;
+      if (participant.isLocal) { connectionQuality = normalized; applyLocalCameraPublishingQuality(activeRoom); applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan); }
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.DataReceived,(payload,participant,_kind,topic)=>{
@@ -593,8 +594,9 @@ async function connectWithToken(
   emit({ status: "connecting", roomName: token.roomName, roomContext, error: null, errorCode: null });
 
   const activeRoom = new Room({
-    adaptiveStream: true,
+    adaptiveStream: { pixelDensity: 1, pauseVideoInBackground: true },
     dynacast: true,
+    publishDefaults: cameraPublishOptions(cameraQualityPreset),
   });
 
   try {
@@ -621,7 +623,8 @@ async function connectWithToken(
 
     if (token.canPublishVideo && desiredCamera) {
       try {
-        await activeRoom.localParticipant.setCameraEnabled(true, cameraDeviceId === "default" ? undefined : { deviceId: cameraDeviceId });
+        await activeRoom.localParticipant.setCameraEnabled(true, cameraCaptureOptions(cameraQualityPreset, cameraDeviceId), cameraPublishOptions(cameraQualityPreset));
+        applyLocalCameraPublishingQuality(activeRoom);
         cameraEnabled = true;
       } catch {
         deviceErrorCount += 1;
@@ -711,9 +714,18 @@ export const voiceService = {
   },
 
   setVideoSubscriptionPlan(plan: MeetingVideoSubscriptionPlan): boolean {
-    videoSubscriptionPlan = plan;
+    videoSubscriptionPlan = { ...plan, qualityPreset: plan.qualityPreset ?? cameraQualityPreset };
     if (!room || room.state === ConnectionState.Disconnected) return false;
-    applyRemoteVideoSubscriptionPlan(room, plan);
+    applyRemoteVideoSubscriptionPlan(room, videoSubscriptionPlan);
+    return true;
+  },
+
+  setCameraQualityPreset(preset: MeetingCameraQualityPreset): boolean {
+    cameraQualityPreset = preset;
+    videoSubscriptionPlan = { ...videoSubscriptionPlan, qualityPreset: preset };
+    if (!room || room.state === ConnectionState.Disconnected) return false;
+    applyLocalCameraPublishingQuality(room);
+    applyRemoteVideoSubscriptionPlan(room, videoSubscriptionPlan);
     return true;
   },
 
@@ -946,7 +958,8 @@ export const voiceService = {
     if (!room) return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a meeting before changing camera state.");
     if (enabled && !snapshot.canUseCamera) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish camera video in this room.");
     try {
-      await room.localParticipant.setCameraEnabled(enabled, enabled && deviceId !== "default" ? { deviceId } : undefined);
+      await room.localParticipant.setCameraEnabled(enabled, enabled ? cameraCaptureOptions(cameraQualityPreset, deviceId) : undefined, enabled ? cameraPublishOptions(cameraQualityPreset) : undefined);
+      if (enabled) applyLocalCameraPublishingQuality(room);
       emit({ cameraEnabled: enabled, error: null, errorCode: null, participants: getParticipants(room) });
       return { ok: true, data: snapshot };
     } catch {

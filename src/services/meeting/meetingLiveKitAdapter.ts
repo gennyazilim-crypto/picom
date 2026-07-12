@@ -4,7 +4,7 @@ import { dataSourceService } from "../dataSourceService";
 import type { MeetingTokenAuthorizedResponse, MeetingTokenResponse, MeetingTokenResult } from "../livekit/meetingTokenTypes";
 import { meetingTokenService } from "../livekit/meetingTokenService";
 import { voiceService, type VoiceServiceResult, type VoiceServiceSnapshot, type VoiceTokenResponse } from "../voiceService";
-import type { MeetingVideoSubscriptionPlan } from "../../types/meetingVideoGrid";
+import type { MeetingCameraQualityPreset, MeetingVideoSubscriptionPlan } from "../../types/meetingVideoGrid";
 import { noiseShieldService } from "../noiseShieldService";
 
 type Listener = (snapshot: VoiceServiceSnapshot) => void;
@@ -46,6 +46,7 @@ export const meetingLiveKitAdapter = {
   startScreenShare(sourceId: string, sourceLabel?: string) { if (dataSourceService.getStatus().isMock) { publishMock({ screenSharing: true }); return Promise.resolve({ ok: true, data: mockSnapshot } as const); } return voiceService.startScreenShare(sourceId, "balanced", sourceLabel); },
   stopScreenShare() { if (dataSourceService.getStatus().isMock) { publishMock({ screenSharing: false, screenShares: mockSnapshot.screenShares.filter((share) => !share.isLocal) }); return Promise.resolve({ ok: true, data: mockSnapshot } as const); } return voiceService.stopScreenShare(); },
   setVideoSubscriptionPlan(plan: MeetingVideoSubscriptionPlan) { return dataSourceService.getStatus().isMock || voiceService.setVideoSubscriptionPlan(plan); },
+  setCameraQualityPreset(preset: MeetingCameraQualityPreset) { return dataSourceService.getStatus().isMock || voiceService.setCameraQualityPreset(preset); },
   setFocusedScreenShare(shareId: string | null) { return dataSourceService.getStatus().isMock || voiceService.setFocusedScreenShare(shareId); },
   setParticipantLocalVolume(participantIdentity: string, volume: number) { return dataSourceService.getStatus().isMock || voiceService.setRemoteParticipantVolume(participantIdentity, volume); },
   async reapplyNoiseShield():Promise<boolean>{if(dataSourceService.getStatus().isMock){noiseShieldService.markApplied(noiseShieldService.getSnapshot().appliedMode);return true}return voiceService.reapplyMicrophoneProcessing()},

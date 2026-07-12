@@ -10,6 +10,7 @@ import { meetingLiveKitAdapter } from "./meetingLiveKitAdapter";
 import { meetingRepository } from "./meetingRepository";
 import { noiseShieldService } from "../noiseShieldService";
 import type { NoiseShieldMode, NoiseShieldSnapshot } from "../../types/noiseShield";
+import type { MeetingCameraQualityPreset } from "../../types/meetingVideoGrid";
 
 let currentRequest: MeetingClientJoinRequest | null = null;
 let joinPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
@@ -175,6 +176,7 @@ export const meetingService = {
   setNoiseShield:meetingStore.setNoiseShield,
   async setNoiseShieldMode(mode:NoiseShieldMode):Promise<boolean>{if(currentRequest)currentRequest={...currentRequest,noiseShield:mode!=="off",noiseShieldMode:mode};const state=noiseShieldService.requestMode(mode),generation=meetingStore.getSnapshot().generation;meetingStore.patch(generation,{noiseShield:clientNoiseShield(state)});const reapplied=await meetingLiveKitAdapter.reapplyNoiseShield();meetingStore.patch(generation,{noiseShield:clientNoiseShield(noiseShieldService.getSnapshot())});return reapplied},
   setVideoSubscriptions:meetingLiveKitAdapter.setVideoSubscriptionPlan,
+  setCameraQualityPreset:(preset:MeetingCameraQualityPreset)=>meetingLiveKitAdapter.setCameraQualityPreset(preset),
   setFocusedScreenShare:meetingLiveKitAdapter.setFocusedScreenShare,
   async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});return result.ok;},
   setDeafened(deafened:boolean):boolean{const result=meetingLiveKitAdapter.setDeafened(deafened);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,deafened:result.data.deafened}});return result.ok;},
