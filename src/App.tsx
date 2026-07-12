@@ -27,6 +27,7 @@ import { DesktopAppShell } from "./components/DesktopAppShell";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
 import { settingsNavigationPolicyService } from "./services/navigation/settingsNavigationPolicyService";
+import { helpSupportNavigationService } from "./services/navigation/helpSupportNavigationService";
 import {
   AUTHENTICATED_DEFAULT_VIEW,
   authenticatedEntryRouter,
@@ -161,6 +162,7 @@ import { memberManagementService } from "./services/memberManagementService";
 
 const SettingsModal = lazy(() => import("./components/SettingsModal").then((module) => ({ default: module.SettingsModal })));
 const GlobalEventsWorkspace = lazy(() => import("./components/navigation/GlobalEventsWorkspace").then((module) => ({ default: module.GlobalEventsWorkspace })));
+const HelpSupportWorkspace = lazy(() => import("./components/support/HelpSupportWorkspace").then((module) => ({ default: module.HelpSupportWorkspace })));
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
 const ProfileView = lazy(() => import("./components/ProfileView").then((module) => ({ default: module.ProfileView })));
@@ -210,7 +212,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "support";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
   return communityNavigationService.getShellView(kind);
@@ -1527,36 +1529,8 @@ export function App() {
         return;
       }
 
-      if (payload.action === "send-feedback") {
-        pushToast("Send feedback from Help & Support in the global sidebar.", "info");
-        return;
-      }
-
       if (payload.action === "open-system-status") {
         void openSystemStatusPage();
-        return;
-      }
-
-      if (payload.action === "export-diagnostics") {
-        void feedbackService.exportSupportDiagnostics({
-          issueType: "other",
-          title: "App menu diagnostics export",
-          description: "Diagnostics export requested through the app menu foundation.",
-          includeDiagnostics: true,
-          includeLogs: true
-        }).then((result) => {
-          if (result.ok) {
-            pushToast(result.canceled ? "Diagnostics export canceled." : `Diagnostics exported via ${result.method}.`, result.canceled ? "info" : "success");
-            return;
-          }
-
-          pushToast(result.reason, "error");
-        });
-        return;
-      }
-
-      if (payload.action === "open-help" || payload.action === "open-about") {
-        pushToast("Help & Support is available from the global sidebar.", "info");
         return;
       }
 
@@ -2740,6 +2714,7 @@ export function App() {
   };
 
   const activeGlobalRoute = resolveGlobalNavigationKey(activeView);
+  const activeGlobalUtility = activeView === "support" ? "helpSupport" : null;
   const globalNavigationBadges = {
     dmUnread: directConversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
     communityUnread: 0,
@@ -2767,6 +2742,12 @@ export function App() {
     settingsService.requestInitialSection(request.modalSection);
     closeTransientOverlays();
     openSettings();
+  };
+
+  const openGlobalHelpSupport = () => {
+    helpSupportNavigationService.request("global-sidebar", "getting-started");
+    closeTransientOverlays();
+    setActiveView("support");
   };
 
   const communityServerRail = (
@@ -2808,12 +2789,13 @@ export function App() {
           <MaintenanceStatusBanner status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
           <AuthenticatedAppShell
             activeRoute={activeGlobalRoute}
+            activeUtility={activeGlobalUtility}
             badges={globalNavigationBadges}
             availability={globalNavigationAvailability}
             currentUser={displayedCurrentUser}
             onNavigate={navigateGlobal}
             onOpenSettings={openGlobalUserSettings}
-            onOpenHelpSupport={() => pushToast("Help & Support is a separate global workspace.", "info")}
+            onOpenHelpSupport={openGlobalHelpSupport}
             onOpenProfile={() => openProfilePage(displayedCurrentUser)}
             onOpenUserMenu={(event) => openContext(event, [
               { label: "@" + currentUser.username, disabled: true },
@@ -2821,7 +2803,11 @@ export function App() {
               { label: "Log out", tone: "danger", onSelect: () => void handleLogout() },
             ])}
           >
-          {activeView === "discovery" ? (
+          {activeView === "support" ? (
+            <DeferredViewBoundary label="Opening Help and Support">
+              <HelpSupportWorkspace onBack={() => setActiveView("mentionFeed")} pushToast={pushToast} />
+            </DeferredViewBoundary>
+          ) : activeView === "discovery" ? (
             <DeferredViewBoundary label="Opening discovery">
             <DiscoveryView
               communities={communities}

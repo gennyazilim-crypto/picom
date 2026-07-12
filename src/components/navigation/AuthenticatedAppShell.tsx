@@ -1,11 +1,12 @@
 import type { MouseEvent, ReactNode } from "react";
 import type { Member } from "../../types/community";
-import type { GlobalNavigationAvailability, GlobalNavigationBadgeState, GlobalNavigationKey } from "../../types/globalNavigation";
+import type { GlobalNavigationAvailability, GlobalNavigationBadgeState, GlobalNavigationKey, GlobalUtilityKey } from "../../types/globalNavigation";
 import { AppWorkspaceRouter } from "./AppWorkspaceRouter";
 import { GlobalAppSidebar } from "./GlobalAppSidebar";
 
 type AuthenticatedAppShellProps = Readonly<{
   activeRoute: GlobalNavigationKey | null;
+  activeUtility?: GlobalUtilityKey | null;
   badges: GlobalNavigationBadgeState;
   availability: GlobalNavigationAvailability;
   currentUser: Member;
@@ -18,10 +19,10 @@ type AuthenticatedAppShellProps = Readonly<{
 }>;
 
 export function AuthenticatedAppShell(props: AuthenticatedAppShellProps) {
-  const { children, activeRoute, ...sidebarProps } = props;
+  const { children, activeRoute, activeUtility = null, ...sidebarProps } = props;
   return (
     <div className="authenticated-app-shell">
-      <GlobalAppSidebar activeRoute={activeRoute} {...sidebarProps} />
+      <GlobalAppSidebar activeRoute={activeRoute} activeUtility={activeUtility} {...sidebarProps} />
       <AppWorkspaceRouter activeRoute={activeRoute}>{children}</AppWorkspaceRouter>
     </div>
   );

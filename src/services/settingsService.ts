@@ -10,7 +10,7 @@ export type DesktopDensity = "comfortable" | "compact";
 export type DateStylePreference = "system" | "numeric" | "descriptive";
 export type TimeFormatPreference = "system" | "12h" | "24h";
 import type { NotificationDigestMode } from "./notificationDigestService";
-export const settingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Help Center", "Diagnostics", "Legal", "Advanced"] as const;
+export const settingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"] as const;
 export type SettingsSection = typeof settingsSections[number];
 export type SettingsPersistenceScope = "local-device" | "user-account-synced" | "community-specific" | "server-controlled";
 export const settingsPersistenceRegistry = {

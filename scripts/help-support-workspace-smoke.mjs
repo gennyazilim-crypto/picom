@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import ts from "typescript";
+
+const navigationSource = await readFile("src/services/navigation/helpSupportNavigationService.ts", "utf8");
+const compiled = ts.transpileModule(navigationSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const navigation = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+assert.equal(navigation.helpSupportNavigationService.request("global-sidebar", "radio").sectionId, "radio");
+assert.equal(navigation.helpSupportNavigationService.consume().sectionId, "radio");
+assert.equal(navigation.helpSupportNavigationService.request("sanctioned-error-cta", "invalid").sectionId, "getting-started");
+
+const app = await readFile("src/App.tsx", "utf8");
+const workspace = await readFile("src/components/support/HelpSupportWorkspace.tsx", "utf8");
+const topics = await readFile("src/components/HelpCenterView.tsx", "utf8");
+const settings = await readFile("src/services/settingsService.ts", "utf8");
+const settingsModal = await readFile("src/components/SettingsModal.tsx", "utf8");
+const menu = await readFile("src/services/menuService.ts", "utf8");
+const sidebar = await readFile("src/components/navigation/GlobalAppSidebar.tsx", "utf8");
+assert.match(app, /activeView === "support"/);
+assert.match(app, /onOpenHelpSupport=\{openGlobalHelpSupport\}/);
+assert.match(sidebar, /activeUtility === item\.key/);
+for (const id of navigation.HELP_SUPPORT_SECTION_IDS) assert.match(topics, new RegExp(`id: "${id}"`));
+assert.match(workspace, /exportSupportDiagnostics/);
+assert.match(workspace, /copyReport/);
+assert.match(workspace, /Automated support submission is not configured/);
+assert.match(workspace, /LegalDocumentModal/);
+assert.doesNotMatch(settings, /"Help Center"/);
+assert.doesNotMatch(settingsModal, /active === "Help Center"|<HelpCenterView/);
+assert.doesNotMatch(menu, /open-help|open-about|send-feedback|export-diagnostics/);
+console.log("Global Help and Support workspace smoke PASS");

@@ -44,7 +44,6 @@ import { adminOperationsService, type AdminOperationsAccess } from "../services/
 import { analyticsService } from "../services/analyticsService";
 import { crashReporterService } from "../services/crashReporterService";
 import { AppIcon } from "./AppIcon";
-import { HelpCenterView } from "./HelpCenterView";
 import { KeyboardShortcutsSection } from "./KeyboardShortcutsSection";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
@@ -1014,8 +1013,6 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Keyboard Shortcuts" ? (
             <KeyboardShortcutsSection />
-          ) : active === "Help Center" ? (
-            <HelpCenterView />
           ) : active === "Diagnostics" ? (
             <div className="settings-diagnostics-stack">
               <FeedbackSection onNotice={pushToast} />
@@ -1056,7 +1053,6 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </div>
               {import.meta.env.DEV ? <div className="settings-actions-row">
                 <button onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
-                <button onClick={() => menuService.triggerPlaceholderAction("export-diagnostics")}>Simulate menu diagnostics</button>
                 <button
                   type="button"
                   aria-label="Reset first launch setup for development testing"

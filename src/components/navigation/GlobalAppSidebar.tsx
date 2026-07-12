@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 import type { Member } from "../../types/community";
-import type { GlobalNavigationAvailability, GlobalNavigationBadgeState, GlobalNavigationKey } from "../../types/globalNavigation";
+import type { GlobalNavigationAvailability, GlobalNavigationBadgeState, GlobalNavigationKey, GlobalUtilityKey } from "../../types/globalNavigation";
 import { primaryGlobalNavigationItems, utilityGlobalNavigationItems } from "../../services/navigation/globalNavigationRegistry";
 import { GlobalNavItem } from "./GlobalNavItem";
 import { GlobalUserCard } from "./GlobalUserCard";
@@ -8,6 +8,7 @@ import "./globalNavigation.css";
 
 type GlobalAppSidebarProps = Readonly<{
   activeRoute: GlobalNavigationKey | null;
+  activeUtility?: GlobalUtilityKey | null;
   badges: GlobalNavigationBadgeState;
   availability: GlobalNavigationAvailability;
   currentUser: Member;
@@ -19,7 +20,7 @@ type GlobalAppSidebarProps = Readonly<{
   onOpenUserMenu: (event: MouseEvent<HTMLButtonElement>) => void;
 }>;
 
-export function GlobalAppSidebar({ activeRoute, badges, availability, currentUser, compact = false, onNavigate, onOpenSettings, onOpenHelpSupport, onOpenProfile, onOpenUserMenu }: GlobalAppSidebarProps) {
+export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, availability, currentUser, compact = false, onNavigate, onOpenSettings, onOpenHelpSupport, onOpenProfile, onOpenUserMenu }: GlobalAppSidebarProps) {
   return (
     <aside className={`global-app-sidebar${compact ? " is-compact" : ""}`} aria-label="Picom global navigation">
       <button type="button" className="global-sidebar-brand" aria-label="Open Feed" onClick={() => onNavigate("feed")}>
@@ -35,7 +36,7 @@ export function GlobalAppSidebar({ activeRoute, badges, availability, currentUse
 
       <div className="global-sidebar-bottom">
         <nav className="global-sidebar-utilities" aria-label="Application utilities">
-          {utilityGlobalNavigationItems.map((item) => <GlobalNavItem key={item.key} item={item} active={false} compact={compact} disabled={false} badge={null} onClick={item.key === "settings" ? onOpenSettings : onOpenHelpSupport} />)}
+          {utilityGlobalNavigationItems.map((item) => <GlobalNavItem key={item.key} item={item} active={activeUtility === item.key} compact={compact} disabled={false} badge={null} onClick={item.key === "settings" ? onOpenSettings : onOpenHelpSupport} />)}
         </nav>
 
         <GlobalUserCard currentUser={currentUser} compact={compact} onOpenProfile={onOpenProfile} onOpenUserMenu={onOpenUserMenu} />
