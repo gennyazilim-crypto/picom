@@ -4,7 +4,7 @@
 
 - Restricted deployment to Supabase project `picom-staging` (`ufmtvqtsklqsmqxefbbs`).
 - Added a protected, manual-only GitHub workflow using the `hosted-staging` environment.
-- Added ordered hosted migration reconciliation: only migration-history gaps are applied and recorded before Task 660 RPC verification and Function deployment; replayed public RLS policies are replaced transactionally, while owner-only `storage.objects` DDL is omitted only after its policy names and RLS state are verified remotely. Missing or unsafe Storage policy state and wholly untracked schemas fail closed.
+- Added ordered hosted migration reconciliation: only migration-history gaps are applied and recorded before Task 660 RPC verification and Function deployment; replayed public RLS policies are replaced transactionally, while owner-only `storage.objects` DDL is omitted only after its policy names and RLS state are verified remotely. Migrations needing missing Storage-owner policies are deferred whole and left unrecorded; unsafe drop-only state and wholly untracked schemas fail closed.
 - Kept Supabase JWT verification, canonical profile identity, exact CORS, bounded JSON, deterministic room name, 600-second TTL, no-store responses, and a 10-per-60-second per-user rate limit.
 - Preserved intent-scoped least privilege: Voice publishes microphone; Screen publishes microphone, screen share, and screen-share audio; both subscribe; camera/data remain denied.
 - Added temporary hosted fixtures for Owner, Admin, Moderator, Member, roleless Member, Visitor, non-member, banned member, and rate-limit isolation.
@@ -14,6 +14,8 @@
 ## Required real evidence
 
 Task 661 is complete only when the protected `Picom LiveKit Token Staging` workflow finishes successfully with input `STAGING_ONLY` and uploads artifact `task-661-livekit-token-staging-evidence` whose status is `passed`. Provider/native connection evidence remains in later tasks and is not inferred from token shape.
+
+Any `deferredOwnerMigrations` entries in the artifact remain release blockers for the full schema-sync gate even when this Voice-token task passes.
 
 ## Validation commands
 

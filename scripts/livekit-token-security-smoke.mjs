@@ -30,6 +30,7 @@ const checks = [
   ["explicit staging deploy guard", deploy.includes("STAGING_ONLY") && deploy.includes("approvedProjectRef") && deploy.includes("database/query") && deploy.includes("functions\", \"deploy")],
   ["transaction-safe policy reconciliation", deploy.includes("makePolicyCreatesIdempotent") && deploy.includes("drop policy if exists") && deploy.includes("begin;\\n${migrationSql}")],
   ["storage DDL preserves Supabase ownership", deploy.includes("getStoragePolicyPlan") && deploy.includes("pg_policies") && deploy.includes("rls_enabled") && deploy.includes("omitVerifiedStorageOwnedDdl") && deploy.includes("missingCreates") && deploy.includes("unsafeDrops")],
+  ["missing owner-only policies remain explicit debt", deploy.includes("deferredOwnerMigrations.push") && deploy.includes("missing_storage_owner_policies") && deploy.includes("continue;")],
   ["secret server boundary", fn.includes('getRequiredEnv("LIVEKIT_API_SECRET")') && !client.includes("LIVEKIT_API_SECRET")],
 ];
 

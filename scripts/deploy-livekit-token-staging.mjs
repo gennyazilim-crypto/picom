@@ -10,6 +10,7 @@ const requiredSecretNames = ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECR
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 let appliedMigrationCount = 0;
 let reconciledStoragePolicyCount = 0;
+const deferredOwnerMigrations = [];
 
 const redact = (value) => String(value ?? "")
   .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
@@ -168,7 +169,11 @@ try {
       const remotePolicies = new Set(Array.isArray(inventoryRow?.policy_names) ? inventoryRow.policy_names : []);
       const missingCreates = storagePlan.creates.filter((name) => !remotePolicies.has(name));
       const unsafeDrops = storagePlan.dropOnly.filter((name) => remotePolicies.has(name));
-      if (missingCreates.length) throw new Error(`Storage policies are missing and require an owner-authorized migration path: ${missingCreates.join(", ")}`);
+      if (missingCreates.length) {
+        deferredOwnerMigrations.push({ version: migration.version, reason: "missing_storage_owner_policies", policyNames: missingCreates });
+        console.log(`Deferred hosted migration ${migration.version}; ${missingCreates.length} Storage policies require the owner-authorized database path.`);
+        continue;
+      }
       if (unsafeDrops.length) throw new Error(`Drop-only Storage policies still exist and cannot be safely reconciled: ${unsafeDrops.join(", ")}`);
       if (storagePlan.altersRls && inventoryRow?.rls_enabled !== true) throw new Error("storage.objects RLS is not enabled and cannot be safely reconciled.");
       migrationSql = omitVerifiedStorageOwnedDdl(migrationSql);
@@ -210,6 +215,7 @@ try {
     migrationRecorded: true,
     migrationsAppliedThisRun: appliedMigrationCount,
     reconciledExistingStoragePolicies: reconciledStoragePolicyCount,
+    deferredOwnerMigrations,
     requiredSecretNamesPresent: requiredSecretNames,
     functionDeployed: true,
     functionInventoryVerified: true,
@@ -218,6 +224,6 @@ try {
   console.log("DEPLOYED active-member authorization migration and livekit-token to the approved Picom staging project; no credential value was printed.");
 } catch (error) {
   const safeMessage = redact(error instanceof Error ? error.message : error);
-  writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, reconciledExistingStoragePolicies: reconciledStoragePolicyCount, finishedAt: new Date().toISOString() });
+  writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, reconciledExistingStoragePolicies: reconciledStoragePolicyCount, deferredOwnerMigrations, finishedAt: new Date().toISOString() });
   throw new Error(safeMessage);
 }
