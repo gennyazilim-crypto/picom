@@ -2,7 +2,7 @@ import { currentUserId } from "../data/mockCommunities";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { AttachmentScanStatus } from "./attachmentScanService";
-import type { UploadedAttachmentSummary } from "./uploadService";
+import { MESSAGE_ATTACHMENTS_BUCKET, type UploadedAttachmentSummary } from "./uploadService";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
 export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, scan_status, status, created_at" as const;
@@ -53,7 +53,8 @@ export type AttachmentServiceErrorCode =
   | "AUTH_REQUIRED"
   | "VALIDATION_ERROR"
   | "RATE_LIMITED"
-  | "ATTACHMENT_METADATA_CREATE_FAILED";
+  | "ATTACHMENT_METADATA_CREATE_FAILED"
+  | "ATTACHMENT_METADATA_LIST_FAILED";
 
 export type AttachmentServiceError = Readonly<{
   code: AttachmentServiceErrorCode;
@@ -89,6 +90,17 @@ function mapAttachmentMetadataRow(row: AttachmentMetadataRow): AttachmentMetadat
   };
 }
 
+const mockAttachmentMetadata = new Map<string, AttachmentMetadataSummary>();
+
+function cacheMockAttachment(attachment: AttachmentMetadataSummary): void {
+  mockAttachmentMetadata.set(attachment.id, attachment);
+  while (mockAttachmentMetadata.size > 200) {
+    const oldest = mockAttachmentMetadata.keys().next().value as string | undefined;
+    if (!oldest) break;
+    mockAttachmentMetadata.delete(oldest);
+  }
+}
+
 function getConfiguredSupabaseClient() {
   const status = getSupabaseClientStatus();
 
@@ -116,26 +128,28 @@ export const attachmentService = {
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
+      const attachment: AttachmentMetadataSummary = {
+        id: `mock-attachment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        messageId: null,
+        uploaderId: upload.userId || currentUserId,
+        storagePath: upload.storagePath,
+        fileName: upload.fileName,
+        mimeType: upload.mimeType,
+        sizeBytes: upload.sizeBytes,
+        attachmentType: "image",
+        publicUrl: upload.publicUrl,
+        thumbnailUrl: upload.thumbnailUrl,
+        width: upload.width,
+        height: upload.height,
+        blurhashPlaceholder: upload.blurhashPlaceholder,
+        scanStatus: upload.scanStatus,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+      cacheMockAttachment(attachment);
       return {
         ok: true,
-        data: {
-          id: `mock-attachment-${Date.now()}`,
-          messageId: null,
-          uploaderId: upload.userId || currentUserId,
-          storagePath: upload.storagePath,
-          fileName: upload.fileName,
-          mimeType: upload.mimeType,
-          sizeBytes: upload.sizeBytes,
-          attachmentType: "image",
-          publicUrl: upload.publicUrl,
-          thumbnailUrl: upload.thumbnailUrl,
-          width: upload.width,
-          height: upload.height,
-          blurhashPlaceholder: upload.blurhashPlaceholder,
-          scanStatus: upload.scanStatus,
-          status: "pending",
-          createdAt: new Date().toISOString(),
-        },
+        data: attachment,
       };
     }
 
@@ -180,5 +194,36 @@ export const attachmentService = {
       ok: true,
       data: mapAttachmentMetadataRow(data),
     };
+  },
+
+  attachMockToMessage(messageId: string, attachmentIds: readonly string[]): void {
+    if (!dataSourceService.getStatus().isMock || !messageId) return;
+    for (const attachmentId of attachmentIds) {
+      const attachment = mockAttachmentMetadata.get(attachmentId);
+      if (attachment) cacheMockAttachment({ ...attachment, messageId, status: "attached" });
+    }
+  },
+
+  async listForMessages(messageIds: readonly string[]): Promise<AttachmentServiceResult<AttachmentMetadataSummary[]>> {
+    const ids = [...new Set(messageIds.filter(Boolean))].slice(0, 100);
+    if (!ids.length) return { ok: true, data: [] };
+    if (dataSourceService.getStatus().isMock) {
+      return { ok: true, data: [...mockAttachmentMetadata.values()].filter((item) => Boolean(item.messageId && ids.includes(item.messageId)) && item.status === "attached") };
+    }
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+    const { data, error } = await configured.data
+      .from("attachments")
+      .select(ATTACHMENT_METADATA_SELECT)
+      .in("message_id", ids)
+      .eq("status", "attached")
+      .in("scan_status", ["clean", "skipped_development"]);
+    if (error) return attachmentError("ATTACHMENT_METADATA_LIST_FAILED", "Could not load message attachments.");
+    const items = await Promise.all(((data ?? []) as AttachmentMetadataRow[]).map(async (row) => {
+      const mapped = mapAttachmentMetadataRow(row);
+      const signed = await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).createSignedUrl(row.storage_path, 60 * 60);
+      return signed.data?.signedUrl ? { ...mapped, publicUrl: signed.data.signedUrl } : mapped;
+    }));
+    return { ok: true, data: items };
   },
 };

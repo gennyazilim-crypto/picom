@@ -1,0 +1,36 @@
+.meeting-chat-panel-v2{grid-template-rows:auto auto auto minmax(0,1fr) auto;background:var(--meeting-panel)}
+.meeting-chat-context{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-bottom:1px solid var(--meeting-line);background:var(--meeting-panel-soft)}
+.meeting-chat-context>div:first-child{min-width:0;display:grid;gap:2px}
+.meeting-chat-context small{color:var(--meeting-muted);font-size:7px;text-transform:uppercase;letter-spacing:.08em}
+.meeting-chat-context strong,.meeting-chat-context span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meeting-chat-context strong{font-size:10px}.meeting-chat-context span{color:var(--meeting-muted);font-size:7px}
+.meeting-chat-context>div:last-child{display:flex;align-items:center;gap:4px}
+.meeting-chat-context i{width:6px;height:6px;border-radius:50%;background:var(--warning)}.meeting-chat-context i.is-connected{background:var(--success)}
+.meeting-chat-context button,.meeting-chat-message__actions button,.meeting-chat-compose-context button{width:27px;height:27px;display:grid;place-items:center;border:1px solid var(--meeting-line);border-radius:8px;background:var(--meeting-panel);color:var(--meeting-muted);cursor:pointer}
+.meeting-chat-context button:hover:not(:disabled),.meeting-chat-message__actions button:hover:not(:disabled){color:var(--meeting-text);border-color:color-mix(in srgb,var(--accent) 42%,var(--meeting-line))}
+.meeting-chat-notice{margin:8px 8px 0;padding:7px 9px;border-radius:9px;background:color-mix(in srgb,var(--success) 10%,var(--meeting-panel));color:var(--meeting-text);font-size:8px}
+.meeting-chat-list{scrollbar-gutter:stable}.meeting-chat-message{position:relative;padding:3px;border-radius:12px}.meeting-chat-message:hover{background:color-mix(in srgb,var(--meeting-panel-soft) 75%,transparent)}
+.meeting-chat-message__content{min-width:0;display:grid;gap:4px}.meeting-chat-message__content>header{display:flex;align-items:center;gap:4px;min-width:0}
+.meeting-chat-message__content>header strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.meeting-chat-message__content>header time{margin-left:auto;color:var(--meeting-muted);font-size:7px}
+.meeting-chat-message__content>p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--meeting-text);font-size:10px;line-height:1.48}.meeting-chat-message__content>p a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.meeting-chat-reply-preview{min-width:0;display:grid;grid-template-columns:14px minmax(0,1fr);align-items:center;gap:5px;padding:5px 6px;border:0;border-left:2px solid var(--accent);border-radius:5px;background:var(--meeting-panel-soft);color:var(--meeting-muted);text-align:left;cursor:pointer}
+.meeting-chat-reply-preview span{min-width:0}.meeting-chat-reply-preview strong,.meeting-chat-reply-preview small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:7px}.meeting-chat-reply-preview strong{color:var(--meeting-text)}
+.meeting-chat-attachments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;max-width:220px}.meeting-chat-attachments.count-1{grid-template-columns:minmax(0,1fr)}
+.meeting-chat-attachments button{min-width:0;height:76px;padding:0;overflow:hidden;border:1px solid var(--meeting-line);border-radius:9px;background:var(--meeting-panel-soft);color:var(--meeting-muted);cursor:pointer}.meeting-chat-attachments.count-1 button{height:118px}
+.meeting-chat-attachments img{width:100%;height:100%;display:block;object-fit:cover}.meeting-chat-attachments button>span{height:100%;display:grid;place-items:center;align-content:center;gap:4px;font-size:7px}
+.meeting-chat-reactions{display:flex;flex-wrap:wrap;gap:3px}.meeting-chat-reactions button{height:22px;padding:0 6px;border:1px solid var(--meeting-line);border-radius:999px;background:var(--meeting-panel-soft);color:var(--meeting-muted);font-size:8px;cursor:pointer}
+.meeting-chat-reactions button.active{border-color:color-mix(in srgb,var(--accent) 55%,var(--meeting-line));background:var(--accent-soft);color:var(--accent)}
+.meeting-chat-message__meta{min-height:19px;display:flex;align-items:center;justify-content:space-between;gap:4px}.meeting-chat-message__meta>small{color:var(--meeting-muted);font-size:7px}
+.meeting-chat-message__actions{margin-left:auto;display:flex;gap:2px;opacity:0}.meeting-chat-message:hover .meeting-chat-message__actions,.meeting-chat-message:focus-within .meeting-chat-message__actions{opacity:1}
+.meeting-chat-message__actions button{width:23px;height:23px;border-radius:7px}.meeting-chat-message__actions button.danger{border-color:color-mix(in srgb,var(--danger) 54%,var(--meeting-line));color:var(--danger)}
+.meeting-chat-reaction-picker{display:flex;gap:3px;padding:4px;border:1px solid var(--meeting-line);border-radius:9px;background:var(--meeting-panel-soft)}.meeting-chat-reaction-picker button{width:27px;height:27px;border:0;border-radius:7px;background:transparent;cursor:pointer}.meeting-chat-reaction-picker button:hover{background:var(--meeting-panel)}
+.meeting-chat-edit{display:grid;gap:4px}.meeting-chat-edit textarea{min-width:0;resize:vertical;border:1px solid var(--meeting-line);border-radius:8px;background:var(--meeting-panel-soft);color:var(--meeting-text);padding:6px;font:inherit;font-size:9px}
+.meeting-chat-edit>span{display:flex;justify-content:flex-end;gap:4px}.meeting-chat-edit button{height:25px;padding:0 8px;border:1px solid var(--meeting-line);border-radius:7px;background:var(--meeting-panel);color:var(--meeting-text);font-size:8px}
+.meeting-chat-composer{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:5px!important}
+.meeting-chat-compose-context{min-width:0;display:grid;grid-template-columns:16px minmax(0,1fr) 27px;align-items:center;gap:5px;padding:5px 7px;border-radius:9px;background:var(--meeting-panel-soft)}
+.meeting-chat-compose-context span{min-width:0}.meeting-chat-compose-context strong,.meeting-chat-compose-context small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:7px}
+.meeting-chat-drafts{display:flex;gap:4px;overflow-x:auto}.meeting-chat-drafts figure{position:relative;flex:0 0 52px;height:52px;margin:0}.meeting-chat-drafts img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.meeting-chat-drafts button{position:absolute;right:2px;top:2px;width:19px!important;height:19px!important;border-radius:6px!important}
+.meeting-chat-compose-row{display:grid;grid-template-columns:30px minmax(0,1fr) 34px;align-items:end;gap:5px}.meeting-chat-compose-row>button{width:30px;height:34px;border:1px solid var(--meeting-line);border-radius:9px;background:var(--meeting-panel-soft);color:var(--meeting-muted)}
+.meeting-chat-compose-row>.meeting-chat-send{width:34px;border:0;background:var(--accent);color:var(--text-on-accent)}.meeting-chat-composer>small{color:var(--meeting-muted);font-size:7px}
+.meeting-chat-panel-v2 button:focus-visible,.meeting-chat-panel-v2 textarea:focus-visible,.meeting-chat-panel-v2 a:focus-visible{outline:none;box-shadow:var(--focus-ring)}

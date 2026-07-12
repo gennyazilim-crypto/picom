@@ -25,6 +25,14 @@ RLS projects meeting-linked messages through `can_view_message`, which also prot
 
 Opening a link must resolve the context again. A stale invite or expired session never grants access merely because a URL exists.
 
+## Right-dock UI contract
+
+The meeting dock reads and mutates the same canonical messages used by community chat. It supports replies, reactions, image attachments, edit/delete, reports, read state, safe HTTP(S) links, realtime refresh, and exact meeting/message deep links without owning a second message store. The narrow layout is a desktop dock variant, not a mobile chat.
+
+Composer and interaction controls require both the backend-derived context canWrite decision and the current meeting capability. Guests with read-only access receive a clear disabled state. Host/moderator delete controls remain subject to canonical message RLS and moderation policy. Images are loaded only after attachment RLS permits metadata access and a short-lived signed URL is created.
+
+Preserved meeting chat remains discoverable through its exact Picom source after the session ends. Temporary guest access never survives the session or configured expiry.
+
 ## Hosted evidence
 
 Apply the migration in staging, run `supabase/tests/meeting_chat_picom_messaging.sql`, and test member, active guest, expired guest, private channel, reply, reaction, attachment, report and preserved-history paths. Structural local tests do not replace hosted RLS evidence.
