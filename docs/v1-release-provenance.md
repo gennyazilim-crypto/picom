@@ -14,7 +14,7 @@ This document intentionally does not fabricate provenance for an unsigned or non
 | Audited package version | `0.1.1-beta.1` |
 | Audited base source SHA | `fec56816516dd50ece073428aef126cbae14025d` |
 | Production data source contract | Supabase-only, fail closed |
-| Voice/Screen Share | Hidden from V1 |
+| Voice/Screen Share | Included by Task 668; evidence runs 29197503222, 29198913461, 29199409039 |
 | Build result | Renderer and Electron bundle PASS |
 | Package result | NOT PRODUCED |
 | Signing result | NOT AVAILABLE |

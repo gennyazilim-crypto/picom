@@ -41,7 +41,7 @@ Hidden/post-V1 routes are filtered at global navigation, community kind, active 
 ## Fixes in this pass
 
 1. Updated the DM production smoke to the current centralized navigation architecture instead of requiring a removed prop.
-2. Updated diagnostics coverage to the aggregate `voiceDiagnosticsRegistry`; safe diagnostics may report a disabled provider, but Voice and Screen Share are hidden from V1.
+2. Updated diagnostics coverage to the aggregate `voiceDiagnosticsRegistry`; Task 668 includes Voice and Screen Share while diagnostics remain redacted and provider-secret-free.
 3. Added a V1 functional acceptance contract that guards scope, Feed landing, DM navigation, fail-closed production data source and truthful evidence labels.
 
 No product feature or UI behavior was changed because the targeted local contracts exposed no current functional defect.

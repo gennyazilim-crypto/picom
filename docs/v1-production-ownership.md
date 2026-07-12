@@ -21,7 +21,7 @@ No accountable owner assignment was supplied. A team label, placeholder, Codex, 
 | Legal documents and publication approval | UNASSIGNED | UNASSIGNED | UNASSIGNED | MISSING | BLOCKER |
 | Backup, restore and disaster-recovery drills | UNASSIGNED | UNASSIGNED | UNASSIGNED | MISSING | BLOCKER |
 | Secret rotation, revocation and recovery | UNASSIGNED | UNASSIGNED | UNASSIGNED | MISSING | BLOCKER |
-| LiveKit provider custody | UNASSIGNED | UNASSIGNED | UNASSIGNED | Feature hidden from V1 | POST-V1 |
+| LiveKit provider custody | UNASSIGNED | UNASSIGNED | UNASSIGNED | Required for included Voice/Screen | BLOCKED / NO-GO |
 
 ## Secret-custody register
 

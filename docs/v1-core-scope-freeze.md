@@ -1,81 +1,38 @@
 # Picom V1 Core Scope Freeze
 
-## Release identity
+Status date: 2026-07-12
+Release: Picom 1.0.0 stable
+Stable platform claim: Windows
 
-- Product: Picom
-- Release: `1.0.0`
-- Channel: `stable`
-- Supported stable platform: **Windows only**
-- Authoritative runtime registry: `src/config/v1ReleaseScope.ts`
-- Decision status at Task 617: **NO-GO** until the remaining release blockers close
+Task 668 amends the Task 617/621 freeze after real Voice and Screen Share evidence. Historical checkpoints remain unchanged; this file is the current authoritative release-scope copy.
 
-Linux and macOS remain engineering targets. Picom V1 release copy, About metadata, support guidance, and distribution claims must not describe either platform as stable.
-
-## Classification rules
+## Classifications
 
 | Classification | Meaning |
 | --- | --- |
-| `IN_V1` | Required, visible, production-backed V1 Core behavior. |
-| `CONDITIONAL` | Hidden by default and included only after named evidence is recorded. |
-| `HIDDEN_FROM_V1` | Code and data are retained, but no V1 navigation, onboarding, badge, deep link, help, or release-copy entry may expose it. |
-| `POST_V1` | Explicit roadmap work outside V1 Core. |
-| `BLOCKER` | Required release evidence or behavior that prevents a Go decision. |
+| IN_V1 | User-visible and required to pass its release gates. |
+| CONDITIONAL | Release-scoped only after an explicit operational prerequisite. |
+| HIDDEN_FROM_V1 | Source may remain, but V1 navigation, deep link, help, and release copy must not expose it. |
+| POST_V1 | Not part of Picom 1.0.0. |
+| BLOCKER | Prevents public release until closed. |
 
 ## IN_V1
 
-- Secure Electron desktop shell and Windows first launch
-- Supabase Auth and session restore
-- Text/community Feed
-- Text communities, channels, roles, membership, invites, moderation, and audit controls
-- Text messages, image attachments, replies, reactions, unread/read state
-- Profiles, avatar/cover, privacy, verification display
-- Friends and participant-only Direct Messages
-- User Settings, Help, redacted diagnostics, and V1-safe global search
+- secure Electron desktop shell and first launch;
+- Supabase Auth and production data source;
+- Feed, text communities, text messaging, attachments, replies, reactions, and read state;
+- Profile, Friends, Direct Messages, Settings, Community Admin, Help, diagnostics, and global search;
+- Voice Rooms for every authenticated active community member;
+- explicit-action Screen Share for every authenticated active community member.
 
-Production V1 must not fall back to mock data. Task 618 owns the final data-source enforcement and evidence.
+Voice and Screen Share inclusion is bound to protected runs 29197503222, 29198913461, and 29199409039. Ordinary media access is not role-gated. Visitors, non-members, removed, banned, and suspended users fail closed.
 
-## Task 621 final conditional decision
+## HIDDEN_FROM_V1 and POST_V1
 
-| Feature | V1 default | Required evidence |
-| --- | --- | --- |
-| Voice Rooms | `HIDDEN_FROM_V1` | Hosted token/two-client/device/reconnect evidence is incomplete. |
-| Screen Share | `HIDDEN_FROM_V1` | Packaged-Windows picker/remote-render/stop/cleanup evidence is incomplete. |
+Radio, Podcasts, Events, Bookmarks, Meeting Workspace, enhanced Noise Shield, discovery marketplace, platform operations, custom emoji/stickers, bots, webhooks as a product surface, plugins, enterprise, SSO/SCIM, billing, AI, recording, captions, and summaries remain gated according to src/config/v1ReleaseScope.ts.
 
-Task 621 made the binary `HIDDEN_FROM_V1` decision. A future release may reopen the evidence gate; V1.0.0 cannot.
+The LiveKit provider webhook is an internal Voice reliability boundary, not the post-V1 community webhook product.
 
-## HIDDEN_FROM_V1
+## Release boundary
 
-- Radio
-- Podcasts
-- Events workspace
-- Standalone Bookmarks workspace
-- Meeting Workspace, camera, and stage
-- Voice Rooms and Screen Share
-- Enhanced Noise Shield / Voice Focus controls
-- Public discovery marketplace
-- Public platform-admin operations
-
-## POST_V1
-
-- Bots, webhooks, plugins
-- Enterprise administration, SSO, SCIM, billing
-- AI features, recording, captions, AI summaries
-- Linux stable release claim
-- macOS stable release claim
-- Custom community emoji/sticker administration
-
-## Current blocker snapshot
-
-The scope freeze does not convert missing evidence into a pass. Task 621 closed Voice/Screen Share by removing them from V1 scope; hosted Supabase closure, Realtime/Edge evidence, trusted Windows signing and clean-machine installation, legal approval, production ownership, isolated backup/restore, and final RC evidence remain.
-
-GitHub Actions run `29184042109` also exposed a clean-checkout build blocker: tracked renderer files imported untracked `assets/brand/picom-logo.png`. Task 617 changes those consumers to tracked `assets/brand/picom-logo-concept.png`; subsequent CI must confirm the correction.
-
-## Change control
-
-Any V1 scope change requires all of the following:
-
-1. Update `src/config/v1ReleaseScope.ts`.
-2. Record evidence and rationale in the relevant checkpoint.
-3. Update this document and release notes.
-4. Re-run the V1 scope contract and relevant quality gates.
-5. Never expose a conditional or hidden feature through a route before its release evidence is approved.
+IN_V1 is a product-scope decision, not public-release authorization. Trusted Windows signing, clean-machine evidence, authorized legal approval, production ownership/custody, and immutable RC evidence remain separate blockers.

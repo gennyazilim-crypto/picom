@@ -1,24 +1,24 @@
-# Voice and screen permissions
+# Voice and Screen Permissions
 
-Picom treats normal voice rooms as a separate capability from Radio broadcasting and Podcast publishing.
+## V1 access rule
 
-## Permission contract
+Every authenticated active community member can view an existing Voice channel, join its room, publish microphone audio, start a selected Screen Share, and subscribe to remote audio/shares. This access is independent of Owner/Admin/Moderator/custom-role grants and channel permission overrides.
 
-| Permission | Purpose |
-| --- | --- |
-| `joinVoice` | Join an accessible configured voice channel. |
-| `speak` | Publish microphone audio. |
-| `shareScreen` | Publish an approved screen-share track. |
-| `muteMembers` | Server-mute a lower-ranked participant. |
-| `removeFromVoice` | Remove a lower-ranked participant. |
-| `manageVoiceRoom` | Administrative superset for room moderation. |
+Denied states are unauthenticated, visitor/non-member, non-active membership, removed, banned, suspended, ended/missing room, and unavailable provider.
 
-`speakInVoice` remains a compatibility alias for existing grants. Radio host/listener permissions never imply normal voice permission.
+## Security boundary
 
-## Type and enforcement contract
+- Supabase RLS/RPC and the livekit-token Edge Function enforce access.
+- Tokens are short-lived and intent-scoped.
+- Provider credentials remain server-only.
+- Capture starts only after explicit user action.
+- Raw microphone audio and shared-screen content are not logged, recorded, or stored.
+- Rate limits and emergency kill switches fail closed.
 
-`type_settings.voiceRoomsEnabled` defaults to `true` for Text and `false` for Radio/Podcast. The database checks this setting, active membership, bans, timeouts, channel visibility, private access, and scoped grants before issuing LiveKit capabilities. The renderer mirrors returned microphone/screen grants but is not the security boundary.
+## Moderation
 
-Mute/remove requires action-specific permission or `manageVoiceRoom` and strict actor-above-target hierarchy. Successful provider actions are appended to immutable `audit_log`. LiveKit secrets remain inside Edge Functions.
+Owner/Admin/Moderator moderation remains role-aware and hierarchy controlled. It is not an ordinary join/speak/share permission.
 
-Deploy the migration and both LiveKit Edge Functions, then validate all role/kind/private/ban/timeout cases in hosted staging. Hosted success is not claimed without those credentials.
+## Release state
+
+Voice Rooms and Screen Share are IN_V1 under Task 668. Public distribution still requires the separate immutable-RC and Go/No-Go gates.

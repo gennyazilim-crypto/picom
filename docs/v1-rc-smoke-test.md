@@ -30,7 +30,7 @@ Packaged release-candidate result: **BLOCKED / NOT RUN**
 | GitHub Actions contract | PASS after fix | Hosted workflow now uses `checkout@v7` and `setup-node@v6` |
 | Electron package configuration | PASS | No installer was produced |
 | V1 scope/data-source/Edge contracts | PASS | Supabase-only production and hidden feature boundaries |
-| V1 Voice/Screen decision | PASS | Both remain hidden from V1 |
+| V1 Voice/Screen decision | PASS | Included by Task 668; public release gates remain separate |
 | Legal/ownership guard | PASS as guard, release BLOCKED | It correctly refuses to claim approval |
 | Windows signing guard | PASS as guard, release BLOCKED | It correctly detects beta version/no signing evidence |
 

@@ -19,7 +19,7 @@ At least four automatic No-Go conditions are present: unsigned/untrusted Windows
 | Production data source | Stable/production is explicit Supabase-only and fails closed | PASS locally |
 | Hosted Supabase | Local schema/RLS/contracts pass; hosted actors, Realtime, Storage and Edge closure incomplete | BLOCKED |
 | Core functional acceptance | Deterministic V1 contracts pass; hosted and installed end-to-end flows incomplete | BLOCKED |
-| Voice/Screen Share | Both are inaccessible and `HIDDEN_FROM_V1` | PASS BY SCOPE |
+| Voice/Screen Share | Included for active members; runs 29197503222, 29198913461, and 29199409039 passed | PASS TECHNICAL / PUBLIC RELEASE STILL GATED |
 | Windows trust | No signing tool/certificate/workflow run/signed artifact/clean Windows matrix | BLOCKED |
 | Legal/license | Beta drafts and placeholder root license; no authorized approval | BLOCKED |
 | Production ownership | All accountable/recovery/custody owners remain unassigned | BLOCKED |

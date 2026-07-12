@@ -1,7 +1,7 @@
 # Picom V1 Community Member Media Policy
 
 Status date: 2026-07-12  
-Policy state: **LOCKED - implementation and production enablement pending**
+Policy state: **LOCKED - INCLUDED BY TASK 668; public release gates remain**
 
 ## Canonical rule
 
@@ -72,5 +72,5 @@ Every active member may publish one user-selected Screen Share track. Multiple m
 
 ## Release gate
 
-This policy does not enable Voice/Screen in V1. `src/config/v1ReleaseScope.ts` and the release manifest remain hidden until Tasks 658-667 provide real provider, hosted two-client, remote-render, packaged-Windows, security, reconnect, and cleanup evidence. Task 668 is the only decision point for `INCLUDED` or `BLOCKED`.
+Task 668 enables this policy in V1 after Tasks 658-667 supplied real provider, hosted multi-client, remote-render, packaged-Windows, security, reconnect, and cleanup evidence. `src/config/v1ReleaseScope.ts` and the release manifest now classify Voice Rooms and Screen Share as included.
 

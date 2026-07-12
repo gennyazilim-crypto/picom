@@ -19,7 +19,7 @@ for (const marker of ["desktopCapturer.getSources", 'types: ["screen", "window"]
 for (const marker of ["navigator.mediaDevices.getUserMedia", 'chromeMediaSource: "desktop"', "pickerCancelPassed", "windowSourceCount", "restartScreen", 'readyState === "ended"', "getVideoPlaybackQuality().totalVideoFrames"]) assert.ok(renderer.includes(marker), `native renderer proof missing ${marker}`);
 assert.ok(orchestrator.includes("PICOM_HOSTED_E2E_EXECUTABLE") && orchestrator.includes("rolelessMemberPassed") && orchestrator.includes("nativeWindowCapturePassed"), "hosted orchestrator must bind member/RLS proof to the packaged executable");
 for (const marker of ["createHash", "installerSha256", "normalRestartPassed", "physicalMicrophoneNotClaimed", "trustedSigningNotClaimed", "containsSecrets: false"]) assert.ok(certifier.includes(marker), `certifier evidence contract missing ${marker}`);
-assert.match(scope, /voiceRooms:\s*hidden\(/, "Task 666 must not include Voice before Task 668");
-assert.match(scope, /screenShare:\s*hidden\(/, "Task 666 must not include Screen Share before Task 668");
+assert.match(scope, /voiceRooms:\s*inV1\(/, "Task 668 must include certified Voice Rooms");
+assert.match(scope, /screenShare:\s*inV1\(/, "Task 668 must include certified Screen Share");
 
 console.log("Packaged Windows member Voice/Screen certification contract passed without native capture or network access.");

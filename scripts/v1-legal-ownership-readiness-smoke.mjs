@@ -20,7 +20,8 @@ const assert = (condition, message) => {
 assert(/placeholder/i.test(license), "Root LICENSE must remain visibly placeholder until authorized approval");
 assert(/requiresProfessionalReview:\s*true/.test(config), "Professional legal review guard must remain enabled");
 assert(/beta-/.test(config), "Unapproved legal versions must remain beta-labelled");
-assert(!/LiveKit|live-session metadata|Voice and screen share/i.test(legalDocuments), "V1 runtime legal drafts must not claim hidden Voice/Screen Share processing");
+assert(/LiveKit/.test(legalDocuments) && /microphone audio/.test(legalDocuments) && /selected screen or window/.test(legalDocuments), "V1 legal drafts must disclose included Voice/Screen transport");
+assert(/does not record or store raw microphone audio or shared-screen frames/.test(legalDocuments), "V1 legal drafts must preserve the no-raw-media-storage boundary");
 assert(!/radio|podcast|meeting|artificial intelligence/i.test(legalDocuments), "V1 runtime legal drafts must not claim post-V1 product processing");
 assert(/BLOCKED \/ NO-GO/.test(legalGate), "V1 legal gate must remain explicitly blocked without approval evidence");
 assert(/UNASSIGNED/.test(ownershipGate) && /BLOCKED \/ NO-GO/.test(ownershipGate), "V1 ownership gate must preserve missing assignments truthfully");

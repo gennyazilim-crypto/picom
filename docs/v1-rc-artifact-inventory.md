@@ -13,7 +13,7 @@ Decision: **BLOCKED / NO RELEASE CANDIDATE ARTIFACT**
 | Data source | Production Supabase only | Fail-closed contract passes; production hosted evidence is missing | BLOCKER |
 | Supabase target/region | Approved production project/region | Only synthetic staging evidence exists; production target is unassigned | BLOCKER |
 | Edge Functions | Deployed, versioned V1 allowlist | Local release-scope contract passes; hosted deployment is unverified | BLOCKER |
-| Voice/Screen Share | Included only with complete evidence | `HIDDEN_FROM_V1` | PASS BY SCOPE |
+| Voice/Screen Share | Included with hosted, packaged-Windows, and security evidence | `IN_V1` | PASS TECHNICAL |
 | Post-V1 features | Absent from V1 navigation/release claims | V1 scope contract passes | PASS BY SCOPE |
 | Legal versions | Approved immutable versions | Beta drafts; root license placeholder | BLOCKER |
 | Support/status/download URLs | Approved frozen HTTPS locations | Unassigned/unapproved | BLOCKER |

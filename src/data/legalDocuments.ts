@@ -17,9 +17,10 @@ export const legalDocuments: Record<LegalDocumentId, LegalDocument> = {
     { heading: "Termination and limitations", body: "Restrictions may be required for safety, legal, or operational reasons. Warranty, liability, dispute, governing-law, and regional consumer language remains pending." },
   ] },
   privacy: { id: "privacy", title: "Privacy Notice - Legal Review Draft", updatedLabel: label("privacy"), sections: [
-    { heading: "Data Picom may process", body: "Account/profile data, memberships, messages, attachments, settings, reports, diagnostics choices, and security events may be processed to provide and protect the V1 service." },
+    { heading: "Data Picom may process", body: "Account/profile data, memberships, messages, attachments, settings, reports, Voice session metadata, diagnostics choices, and security events may be processed to provide and protect the V1 service." },
+    { heading: "Voice and screen sharing", body: "After an explicit user action, microphone audio and the selected screen or window are transported through LiveKit to authorized room participants. Picom does not record or store raw microphone audio or shared-screen frames by default." },
     { heading: "Diagnostics", body: "Redacted diagnostics are user-controlled. Passwords, auth tokens, authorization headers, and private message content are excluded by design." },
-    { heading: "Providers and transfers", body: "Supabase is the planned V1 hosted provider. Final entities, regions, subprocessors, transfer mechanisms, and contracts require review." },
+    { heading: "Providers and transfers", body: "Supabase and LiveKit are the planned V1 hosted providers. Final entities, regions, subprocessors, transfer mechanisms, and contracts require review." },
     { heading: "User controls", body: "Authenticated export and reviewed account deletion workflows exist. Retention, legal holds, backup deletion, rights deadlines, and regional exceptions require approval." },
   ] },
   guidelines: { id: "guidelines", title: "Community Guidelines - Legal Review Draft", updatedLabel: `${label("guidelines")} - Moderation review required`, sections: [

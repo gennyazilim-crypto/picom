@@ -64,7 +64,7 @@ Every row applies to the exact post-signing hash from the protected workflow.
 | Restart and session/settings persistence | BLOCKED | BLOCKED |
 | Uninstall, retained user data, reinstall and explicit reset | BLOCKED | BLOCKED |
 
-Voice Rooms and Screen Share are hidden by Task 621 and are not part of this V1 matrix.
+Voice Rooms and Screen Share are included by Task 668. The clean-machine matrix must now verify active-member join, controlled microphone permission, source picker, share/stop, remote rendering, reconnect, and cleanup; Task 666's unsigned CI artifact does not replace trusted signing or physical-device coverage.
 
 ## SmartScreen policy
 

@@ -52,8 +52,8 @@ Deno.serve((request: Request) => {
     releaseChannel: readReleaseChannel(),
     featureFlags: {
       enableRealtime: true,
-      enableVoiceRooms: false,
-      enableScreenShare: false,
+      enableVoiceRooms: true,
+      enableScreenShare: true,
       enableDirectMessages: true,
       enableFriends: true,
       enableDiscovery: false,

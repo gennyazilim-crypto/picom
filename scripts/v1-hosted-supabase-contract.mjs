@@ -21,5 +21,5 @@ assert.ok(edgeRunner.includes("user-data-export rate limit") && edgeRunner.inclu
 assert.ok(workflow.includes("environment: hosted-staging") && workflow.includes("ALLOW_EPHEMERAL_WRITES"), "hosted workflow must use its protected environment and explicit mutation confirmation");
 assert.ok(!workflow.toLowerCase().includes("meeting"), "Meeting validation cannot block V1 hosted closure");
 assert.ok(!workflow.includes("LIVEKIT_API_SECRET"), "conditional provider secrets cannot leak into V1 hosted validation");
-assert.deepEqual([...manifest.releasePublic, ...manifest.releaseAuthenticated, ...manifest.releaseInternal].map((item) => item.name), ["client-config", "validate-file", "user-data-export"]);
+assert.deepEqual([...manifest.releasePublic, ...manifest.releaseAuthenticated, ...manifest.releaseInternal].map((item) => item.name), ["client-config", "validate-file", "user-data-export", "livekit-token", "livekit-moderation", "livekit-webhook"]);
 console.log("V1 hosted Supabase contract passed; this is local contract evidence, not hosted certification.");

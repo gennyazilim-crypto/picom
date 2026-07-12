@@ -118,7 +118,7 @@ The missing backup/operations ownership and production secret destination keep t
 | Region/data-residency approval | BLOCKED |
 | Production plan/capacity approval | BLOCKED |
 | Backup owner and cost owner | BLOCKED |
-| Hosted two-client media | PENDING_TASK_665 |
-| Packaged Windows media | PENDING_TASK_666 |
+| Hosted multi-client media | PASS_REAL - run 29197503222 |
+| Packaged Windows media | PASS_REAL - run 29198913461 |
 
-Voice/Screen remains `HIDDEN_FROM_V1`; Task 658 does not authorize release inclusion.
+Task 668 includes Voice/Screen in V1 after the hosted, packaged-Windows, and security gates passed. Production region, capacity, billing, backup, and custody approvals remain public-release blockers.

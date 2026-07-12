@@ -16,10 +16,10 @@ This record is an engineering release gate, not legal advice or legal approval. 
 | Acceptable Use Policy | `beta-*` legal-review draft, scoped to enabled V1 features | BLOCKER |
 | Diagnostics and log export | Redaction/user-control engineering contract exists; legal wording unapproved | BLOCKER |
 | Account deletion and data export | Engineering flows exist; retention, backup and regional wording unapproved | BLOCKER |
-| Voice/Screen Share consent | Not release-scoped because both features are hidden from V1 | POST-V1 |
+| Voice/Screen Share consent and provider disclosure | Technical copy updated for Task 668; authorized legal approval missing | BLOCKED / NO-GO |
 | Radio, Podcasts, Meetings and AI | Not part of V1 legal acceptance or public release claims | POST-V1 |
 
-`src/data/legalDocuments.ts` remains visibly labeled `Legal Review Draft`. Its V1 copy does not claim LiveKit, Voice, Screen Share, Radio, Podcast, Meeting, or AI processing as an enabled V1 capability.
+`src/data/legalDocuments.ts` remains visibly labeled `Legal Review Draft`. Its V1 copy truthfully describes LiveKit Voice/Screen transport and the no-default-recording boundary, while Radio, Podcast, Meeting, and AI remain excluded. The copy is not authorized legal approval.
 
 ## Surface integration audit
 

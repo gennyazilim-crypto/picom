@@ -21,8 +21,8 @@ for (const marker of ["server_managed", "release_gated", "screenPickerStatus", "
 for (const marker of ["Voice connection", "Token exchange", "Screen picker", "Screen sharing", "Voice attempts", "Voice error"]) assert.ok(diagnosticsUi.includes(marker), `diagnostics UI missing ${marker}`);
 assert.ok(!diagnostics.includes("LIVEKIT_API_SECRET") && !diagnostics.includes("LIVEKIT_API_KEY"), "renderer diagnostics must not reference LiveKit credentials");
 for (const marker of ["voice-screen-share", "Ordinary members do not need", "Settings > Voice & Audio", "Stop sharing", "Privacy & security > Microphone", "does not capture camera, system audio, or recordings"]) assert.ok(help.includes(marker), `voice help missing ${marker}`);
-assert.match(releaseScope, /voiceRooms:\s*hidden\(/, "Task 664 must not enable Voice Rooms before certification");
-assert.match(releaseScope, /screenShare:\s*hidden\(/, "Task 664 must not enable Screen Share before certification");
+assert.match(releaseScope, /voiceRooms:\s*inV1\(/, "Task 668 must expose certified Voice Rooms");
+assert.match(releaseScope, /screenShare:\s*inV1\(/, "Task 668 must expose certified Screen Share");
 assert.ok(!card.includes("host only") && !card.includes("moderator only"), "ordinary member media controls must not contain role-only copy");
 
 console.log("Member voice and screen UI smoke passed.");

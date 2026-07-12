@@ -30,7 +30,7 @@ assert.ok(migration.includes("channel.community_id=target_community_id") && !mig
 for (const marker of ["community.id=target_community_id", "member.community_id=target_community_id", "role_link.member_id=member.id", "revoke all on function public.community_user_max_role_level"]) assert.ok(hierarchyMigration.includes(marker), `moderation hierarchy helper missing ${marker}`);
 assert.ok(deploy.includes('moderationAmbiguityFixMigrationVersion = "20260712166500"') && deploy.includes('moderationRoleLevelHelperMigrationVersion = "20260712166510"') && deploy.includes('process.argv.includes("--migrations-only")') && workflow.includes("livekit:token:deploy:staging -- --apply --migrations-only"), "protected workflow must apply and verify the reviewed moderation fixes without rebuilding the already deployed Function");
 assert.ok(!orchestrator.includes("LIVEKIT_API_SECRET") && !orchestrator.includes("LIVEKIT_API_KEY"), "hosted client proof must use Edge-issued participant tokens, not provider credentials");
-assert.match(releaseScope, /voiceRooms:\s*hidden\(/, "Task 665 must not include Voice Rooms before native/security gates");
-assert.match(releaseScope, /screenShare:\s*hidden\(/, "Task 665 must not include Screen Share before native/security gates");
+assert.match(releaseScope, /voiceRooms:\s*inV1\(/, "Task 668 must include Voice Rooms after hosted/native/security gates");
+assert.match(releaseScope, /screenShare:\s*inV1\(/, "Task 668 must include Screen Share after hosted/native/security gates");
 
 console.log("Hosted member Voice/Screen E2E contract passed without network access.");

@@ -22,7 +22,7 @@ The existing `Picom-0.1.1-beta.1-beta-Windows-x64.exe` is an unsigned local cand
 | SHA-256 after signing | Blocked: no signed artifact |
 | Windows 10 clean-machine install | Blocked |
 | Windows 11 clean-machine install | Blocked |
-| Launch and included V1 Core flows (Voice/Screen Share hidden) | Blocked on clean candidate |
+| Launch and included V1 Core flows, including Voice/Screen Share | Blocked on trusted clean candidate |
 | Uninstall/reinstall/data retention | Blocked on clean candidate |
 
 ## Required completion

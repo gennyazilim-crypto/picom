@@ -1,43 +1,35 @@
 # Picom V1 Voice and Screen Share Decision
 
-Decision: **HIDDEN_FROM_V1**
+Decision: **INCLUDED**
+Decision date: 2026-07-12
+Authority: Task 668
 
-Decision date: 2026-07-12. This is a scope closure, not a provider certification.
+## Evidence
 
-## Evidence matrix
+| Gate | Evidence | Result |
+| --- | --- | --- |
+| Hosted active-member authorization and four-client media | GitHub Actions run 29197503222 | PASS |
+| Packaged Windows install, native picker, four shares, remote render, reconnect, cleanup | GitHub Actions run 29198913461 | PASS |
+| Security, abuse, rate limit, reconnect, leak, and cleanup gate | GitHub Actions run 29199409039 | PASS |
 
-| Include requirement | Evidence | Result |
-|---|---|---|
-| Hosted secure token issuance | Local authorization/secret-boundary contracts exist; `livekit-token` is not deployed by the V1 manifest | BLOCKED_HOSTED |
-| Authorized and unauthorized room tests | No protected staging credentials or immutable hosted run | BLOCKED_HOSTED |
-| Two-client audio, mute, participant state | Local structural state tests only; no two isolated media clients | BLOCKED_HOSTED |
-| Reconnect and cleanup | Local reconnect/cleanup contracts only | BLOCKED_HOSTED |
-| Packaged Windows microphone/device behavior | No exact installed V1 candidate device run | BLOCKED_NATIVE |
-| Packaged Windows source picker/cancel | IPC contract exists; no installed-candidate interactive run | BLOCKED_NATIVE |
-| Remote screen render | No real remote LiveKit participant evidence | BLOCKED_HOSTED / BLOCKED_NATIVE |
-| Stop/unpublish/cleanup | Structural contracts only | BLOCKED_HOSTED / BLOCKED_NATIVE |
-| Provider secret isolation | Renderer service contains no LiveKit API key/secret; token secrets remain Edge-only | PASS_LOCAL |
+The protected matrix proves Owner, Admin, Moderator, Member, and roleless active-member access; visitor, non-member, banned, and suspended denial; four microphone publishers; four simultaneous Screen Share publishers; remote audio and screen rendering; reconnect; and cleanup.
 
-One or more critical include requirements are blocked, so neither capability can be advertised or partially shipped in V1.0.0.
+## Included policy
 
-## V1 behavior
+Every authenticated active community member may see Voice channels, join, publish microphone audio, start a user-selected Screen Share, and subscribe to remote media. Ordinary access does not depend on role or channel overrides. Moderation remains separate and hierarchy controlled.
 
-- Voice and Screen Share are classified `HIDDEN_FROM_V1`, not `CONDITIONAL`.
-- Voice channels are filtered from sidebars and active/deep-linked channel resolution.
-- Connected Voice, active room discovery and screen-share controls are absent from Feed.
-- Voice & Video settings and Community Admin's voice toggle are gated out.
-- First Launch contains no voice, microphone or screen-share promise.
-- Help and beta release copy do not claim Voice support.
-- Authenticated voice/meeting routes fail the V1 route gate.
-- `client-config` keeps both feature flags false.
-- LiveKit token/moderation/webhook functions are excluded from the V1 deployment manifest.
+## Runtime alignment
 
-The underlying services, IPC, functions, migrations and stored data remain intact for future certification. No existing data was deleted.
+- voiceRooms and screenShare are IN_V1 in the central registry.
+- Local and hosted public feature flags are enabled.
+- Channel visibility, authenticated Voice routes, Settings, Help, diagnostics, and Connected Voice surfaces consume the central gate.
+- livekit-token, livekit-moderation, and signature-verified livekit-webhook are release-scoped.
+- Provider keys and participant tokens never enter renderer source, diagnostics, or release evidence.
 
-## Security boundary
+## Honest limitations
 
-LiveKit API key/secret values remain server-side Edge Function inputs. Renderer services receive only user-scoped token responses and contain no provider credential names. Electron remains context-isolated with validated preload methods; retaining dormant screen-capture IPC does not expose a V1 control.
+The Windows certification used a controlled Chromium microphone and one 100-percent-scale monitor. It does not claim physical microphone hardware, multi-monitor, 125/150-percent DPI, trusted signing, or fresh provider-side mute/remove/end execution. Legal approval, production ownership/capacity, signing, clean-machine, and immutable RC gates remain public-release blockers.
 
-## Reopening criteria
+## Handoff
 
-A future release must create a new scope decision and attach immutable hosted token/two-client evidence plus the exact signed Windows candidate's microphone, picker, remote-render, cancel, stop, reconnect and cleanup results. Local mock or structural tests are insufficient.
+Task 668 authorizes resuming Task 655 for the final immutable RC and then Task 656 for final Go/No-Go. Task 656 must remain No-Go until every independent public-release blocker is closed.

@@ -20,7 +20,7 @@ No beta/unsigned file may be renamed or linked as Picom V1. No placeholder URL, 
 
 ## Claim boundary
 
-If a later decision becomes GO, the public release is Windows-first only. It must not claim Linux/macOS stable support. Voice, Screen Share, Radio, Podcasts, Meetings, Noise Shield/Voice Focus, AI, bots, webhooks, plugins, enterprise/SSO/billing, discovery marketplace, recording and captions remain outside V1 unless a later approved scope and evidence package explicitly includes them.
+If a later decision becomes GO, the public release is Windows-first only. It must not claim Linux/macOS stable support. Task 668 includes Voice Rooms and Screen Share for active community members. Radio, Podcasts, Meetings, enhanced Noise Shield/Voice Focus, AI, bots, product webhooks, plugins, enterprise/SSO/billing, discovery marketplace, recording, and captions remain outside V1.
 
 ## Controlled publication sequence after GO
 

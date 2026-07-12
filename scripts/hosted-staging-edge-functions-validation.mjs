@@ -1,6 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
+import { readFileSync } from "node:fs";
 
 const shouldRun = process.argv.includes("--run");
+const releaseManifest = JSON.parse(readFileSync("supabase/functions/release-manifest.json", "utf8"));
+const releaseFunctionNames = [...releaseManifest.releasePublic, ...releaseManifest.releaseAuthenticated, ...releaseManifest.releaseInternal].map((item) => item.name);
+for (const name of ["client-config", "validate-file", "user-data-export", "livekit-token", "livekit-moderation", "livekit-webhook"]) {
+  if (!releaseFunctionNames.includes(name)) throw new Error("Release manifest is missing required V1 function: " + name);
+}
 const required = ["PICOM_EDGE_STAGING_URL", "PICOM_EDGE_STAGING_ANON_KEY", "PICOM_EDGE_STAGING_CONFIRM", "PICOM_EDGE_TEST_EMAIL", "PICOM_EDGE_TEST_PASSWORD", "PICOM_EDGE_ALLOWED_ORIGIN"];
 const fail = (message) => { throw new Error(message); };
 const pass = (message) => console.log(`PASS ${message}`);
@@ -28,7 +34,7 @@ try {
   const configResponse = await invoke("client-config", { method: "GET", authorization: null });
   if (configResponse.status !== 200) fail("client-config did not return 200.");
   const config = await configResponse.json();
-  if (config?.featureFlags?.enableDirectMessages !== true || config?.featureFlags?.enableVoiceRooms !== false) fail("Deployed client-config does not match V1 scope.");
+  if (config?.featureFlags?.enableDirectMessages !== true || config?.featureFlags?.enableVoiceRooms !== true || config?.featureFlags?.enableScreenShare !== true) fail("Deployed client-config does not match V1 scope.");
   pass("public client-config and V1 flags");
   const noJwt = await invoke("validate-file", { authorization: null, body: JSON.stringify({}) });
   if (noJwt.status !== 401) fail("validate-file did not reject a missing JWT.");
