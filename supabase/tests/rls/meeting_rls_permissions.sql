@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(30);
 
 -- Contract scenarios: visitor cannot see private room metadata.
 -- Contract scenarios: member cannot self-promote.
@@ -14,6 +14,8 @@ select has_function('public','can_view_meeting_sensitive',array['uuid'],'private
 select has_function('public','can_manage_meeting_participant',array['uuid','text'],'target hierarchy helper exists');
 select has_function('public','authorize_meeting_action',array['uuid','text'],'publish/share/caption authorization exists');
 select has_function('public','set_meeting_participant_role',array['uuid','text','text'],'safe stage mutation RPC exists');
+select has_function('public','authorize_livekit_meeting_moderation',array['uuid','uuid','uuid','text'],'server-authorized meeting media moderation exists');
+select has_function('public','record_livekit_meeting_moderation',array['uuid','uuid','uuid','text'],'meeting moderation audit RPC exists');
 select ok(public.meeting_role_rank('host')>public.meeting_role_rank('cohost') and public.meeting_role_rank('cohost')>public.meeting_role_rank('speaker'),'host/cohost hierarchy is ordered');
 select ok(public.meeting_role_rank('speaker')>public.meeting_role_rank('participant') and public.meeting_role_rank('participant')>public.meeting_role_rank('viewer'),'speaker/participant/viewer hierarchy is ordered');
 select ok(public.meeting_role_rank('viewer')>public.meeting_role_rank('guest'),'viewer outranks guest');

@@ -90,6 +90,7 @@ const remoteScreenShareTracks = new Map<string, MediaStreamTrack>();
 let cameraTracks: VoiceCameraTrack[] = [];
 let videoSubscriptionPlan: MeetingVideoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
 const participantConnectionQualities = new Map<string, MeetingConnectionQuality>();
+const remoteParticipantVolumes = new Map<string, number>();
 let focusedScreenShareId: string | null = null;
 let activeTokenIntent: VoiceIntent | null = null;
 let connectionQuality: VoiceConnectionQuality = "unknown";
@@ -238,6 +239,16 @@ function applyRemoteAudioSubscription(activeRoom: Room, subscribed: boolean): vo
     participant.audioTrackPublications.forEach((publication) => {
       publication.setSubscribed(subscribed);
     });
+  });
+}
+
+function applyRemoteParticipantVolume(activeRoom: Room, participantIdentity: string): void {
+  const participant = activeRoom.remoteParticipants.get(participantIdentity);
+  if (!participant) return;
+  const volume = remoteParticipantVolumes.get(participantIdentity) ?? 1;
+  participant.audioTrackPublications.forEach((publication) => {
+    const track = publication.track;
+    if (track?.kind === Track.Kind.Audio && "setVolume" in track && typeof track.setVolume === "function") track.setVolume(volume);
   });
 }
 
@@ -430,6 +441,7 @@ function bindRoomEvents(activeRoom: Room): void {
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+      if (track.kind === Track.Kind.Audio) applyRemoteParticipantVolume(activeRoom, participant.identity);
       if (publication.source === Track.Source.ScreenShare && track.kind === Track.Kind.Video) {
         const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
         if (focusedScreenShareId && focusedScreenShareId !== shareId) {
@@ -709,6 +721,13 @@ export const voiceService = {
     return true;
   },
 
+  setRemoteParticipantVolume(participantIdentity: string, volume: number): boolean {
+    if (!participantIdentity.trim() || !Number.isFinite(volume)) return false;
+    remoteParticipantVolumes.set(participantIdentity, Math.min(1, Math.max(0, volume)));
+    if (room && room.state !== ConnectionState.Disconnected) applyRemoteParticipantVolume(room, participantIdentity);
+    return true;
+  },
+
   async requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
     return requestToken(request);
   },
@@ -859,6 +878,7 @@ export const voiceService = {
     activeTokenIntent = null;
     speakingIdentities = new Set<string>();
     participantConnectionQualities.clear();
+    remoteParticipantVolumes.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
     cameraTracks = [];
     focusedScreenShareId = null;

@@ -46,4 +46,5 @@ export const meetingLiveKitAdapter = {
   stopScreenShare() { if (dataSourceService.getStatus().isMock) { publishMock({ screenSharing: false, screenShares: mockSnapshot.screenShares.filter((share) => !share.isLocal) }); return Promise.resolve({ ok: true, data: mockSnapshot } as const); } return voiceService.stopScreenShare(); },
   setVideoSubscriptionPlan(plan: MeetingVideoSubscriptionPlan) { return dataSourceService.getStatus().isMock || voiceService.setVideoSubscriptionPlan(plan); },
   setFocusedScreenShare(shareId: string | null) { return dataSourceService.getStatus().isMock || voiceService.setFocusedScreenShare(shareId); },
+  setParticipantLocalVolume(participantIdentity: string, volume: number) { return dataSourceService.getStatus().isMock || voiceService.setRemoteParticipantVolume(participantIdentity, volume); },
 };

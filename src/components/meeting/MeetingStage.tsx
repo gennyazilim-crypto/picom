@@ -5,39 +5,9 @@ import { MeetingVoiceLounge } from "./MeetingVoiceLounge";
 import { MeetingVideoGrid } from "./MeetingVideoGrid";
 import { MeetingSpeakerFocus } from "./MeetingSpeakerFocus";
 import { MeetingStageAudience } from "./MeetingStageAudience";
+import { MeetingParticipantTile } from "./MeetingParticipantTile";
 
 const MeetingScreenShareFocus = lazy(() => import("./MeetingScreenShareFocus").then((module) => ({ default: module.MeetingScreenShareFocus })));
-
-function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "P";
-}
-
-function ParticipantTile({
-  participant,
-  focused,
-  onFocus,
-}: {
-  participant: MeetingClientParticipant;
-  focused: boolean;
-  onFocus: () => void;
-}) {
-  const status = participant.isSpeaking ? "Speaking" : participant.microphoneEnabled ? "Connected" : "Muted";
-  return (
-    <button
-      type="button"
-      className={`meeting-participant-tile${participant.isSpeaking ? " is-speaking" : ""}${focused ? " is-focused" : ""}`}
-      aria-label={`Focus ${participant.displayName}`}
-      aria-pressed={focused}
-      onClick={onFocus}
-    >
-      <span className="meeting-participant-tile__avatar" aria-hidden="true">{initials(participant.displayName)}</span>
-      <span className="meeting-participant-tile__shade" aria-hidden="true" />
-      <span className="meeting-participant-tile__name"><strong>{participant.displayName}{participant.isLocal ? " (you)" : ""}</strong><small>{status}</small></span>
-      <span className="meeting-participant-tile__media" aria-label={participant.microphoneEnabled ? "Microphone on" : "Microphone muted"}><AppIcon name="microphone" size="xs" /></span>
-      {participant.handRaised ? <span className="meeting-participant-tile__hand">Hand raised</span> : null}
-    </button>
-  );
-}
 
 export function MeetingStage({
   snapshot,
@@ -76,11 +46,12 @@ export function MeetingStage({
       {participants.length ? (
         <div className={`meeting-stage__grid${focused ? " has-focus" : ""}`}>
           {participants.map((participant) => (
-            <ParticipantTile
+            <MeetingParticipantTile
               key={participant.id}
               participant={participant}
+              variant="grid"
               focused={participant.id === snapshot.focusedParticipantId}
-              onFocus={() => onFocusParticipant(participant.id === snapshot.focusedParticipantId ? null : participant.id)}
+              onActivate={() => onFocusParticipant(participant.id === snapshot.focusedParticipantId ? null : participant.id)}
             />
           ))}
         </div>

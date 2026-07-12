@@ -2082,6 +2082,22 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, communities, directConversations, pushToast]);
 
+  useEffect(() => {
+    const handleMeetingParticipantNavigation = (event: Event) => {
+      const request = (event as CustomEvent<{ action?: string; userId?: string }>).detail;
+      if (!request?.userId || (request.action !== "profile" && request.action !== "direct_message")) return;
+      const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === request.userId);
+      if (request.action === "profile") {
+        if (member) openProfilePage(member);
+        else pushToast("This participant profile is not available in your workspace.", "error");
+        return;
+      }
+      openDirectMessages(request.userId);
+    };
+    window.addEventListener("picom:meeting-participant-navigation", handleMeetingParticipantNavigation);
+    return () => window.removeEventListener("picom:meeting-participant-navigation", handleMeetingParticipantNavigation);
+  }, [communities, openDirectMessages, openProfilePage, pushToast]);
+
   const sendDirectMessageLocal = useCallback(async (conversationId: string, body: string, attachments: readonly DirectMessageAttachment[] = [], replyToMessageId?: string, retryClientMessageId?: string): Promise<boolean> => {
     const conversation = directConversations.find((candidate) => candidate.id === conversationId);
     if (conversation && !userBlockingService.canMessageUser(conversation.participantUserId)) { pushToast("Direct messages with this blocked user are disabled.", "error"); return false; }

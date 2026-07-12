@@ -7,6 +7,7 @@ import { MeetingRightDock } from "./MeetingRightDock";
 import { MeetingStage } from "./MeetingStage";
 import { MeetingTopBar } from "./MeetingTopBar";
 import { MeetingWorkspaceStatusSurface } from "./MeetingWorkspaceSurfaces";
+import { MeetingParticipantActionsProvider } from "./MeetingParticipantActionsProvider";
 import "./MeetingWorkspace.css";
 
 const layouts: readonly MeetingLayoutMode[]=["grid","speaker","screen_share","stage"];
@@ -28,7 +29,7 @@ export function MeetingWorkspace({onExit}:{onExit?:()=>void}={}) {
   const leaveShareLayout=(layout:Extract<MeetingLayoutMode,"grid"|"speaker">)=>{setShareLayoutOverride(true);autoShareLayoutRef.current=false;meetingService.setLayout(layout)};
   const exit=()=>{void meetingService.leave().finally(()=>onExit?.())};
   useEffect(()=>{if(hasScreenShare){if(!shareLayoutOverride&&snapshot.layout!=="screen_share"){previousLayoutRef.current=snapshot.layout;autoShareLayoutRef.current=true;meetingService.setLayout("screen_share")}return}if(autoShareLayoutRef.current){autoShareLayoutRef.current=false;meetingService.setLayout(previousLayoutRef.current);meetingService.setFocus(snapshot.focusedParticipantId,null)}if(shareLayoutOverride)setShareLayoutOverride(false)},[hasScreenShare,shareLayoutOverride,snapshot.focusedParticipantId,snapshot.layout]);
-  return <section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}${admissionOnly?" is-admission-only":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"}>
+  return <MeetingParticipantActionsProvider snapshot={snapshot}><section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}${admissionOnly?" is-admission-only":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"}>
     <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} />
     <div className="meeting-workspace__body">
       <main className="meeting-workspace__canvas">
@@ -38,5 +39,5 @@ export function MeetingWorkspace({onExit}:{onExit?:()=>void}={}) {
       {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={focusParticipant} onClose={()=>meetingService.setRightDock("none")} />:null}
     </div>
     {admissionOnly?null:<MeetingControlDock snapshot={snapshot} focusMode={focusMode} onCycleLayout={cycleLayout} onToggleDock={toggleDock} onToggleFocus={toggleFocus} onLeave={exit} />}
-  </section>;
+  </section></MeetingParticipantActionsProvider>;
 }

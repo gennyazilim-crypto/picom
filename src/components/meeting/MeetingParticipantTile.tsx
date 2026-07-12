@@ -1,8 +1,10 @@
-import { useEffect, useRef, type MouseEvent } from "react";
+import { useEffect, useRef, useSyncExternalStore, type MouseEvent } from "react";
 import type { MeetingClientParticipant } from "../../types/meetingClient";
+import { meetingParticipantLocalControlService } from "../../services/meeting/meetingParticipantLocalControlService";
 import { AppIcon } from "../AppIcon";
 import { VerifiedAvatarFrame } from "../VerifiedAvatarFrame";
 import { VerifiedBadge } from "../VerifiedBadge";
+import { useMeetingParticipantActionsOptional } from "./MeetingParticipantActionsProvider";
 import "./MeetingParticipantTile.css";
 
 export type MeetingParticipantTileVariant = "grid" | "focus" | "filmstrip" | "voice" | "stage" | "share";
@@ -42,10 +44,16 @@ function accessibleState(participant: MeetingClientParticipant): string {
 }
 
 export function MeetingParticipantTile({ participant, variant, selected = false, focused = false, auxiliaryLabel, onActivate, onContextMenu, onMore, className = "" }: Props) {
-  const liveCamera = participant.cameraEnabled && Boolean(participant.cameraStream);
+  useSyncExternalStore(meetingParticipantLocalControlService.subscribe, meetingParticipantLocalControlService.getRevision, meetingParticipantLocalControlService.getRevision);
+  const participantActions = useMeetingParticipantActionsOptional();
+  const localControls = meetingParticipantLocalControlService.get(participant.identity);
+  const selfViewHidden = participant.isLocal && !localControls.selfViewVisible;
+  const liveCamera = participant.cameraEnabled && Boolean(participant.cameraStream) && !selfViewHidden;
   const avatarSize = variant === "focus" ? 112 : variant === "voice" || variant === "stage" ? 64 : variant === "grid" ? 58 : 34;
-  const media = liveCamera ? <ParticipantVideo participant={participant} /> : <span className="meeting-participant-tile-v2__avatar"><VerifiedAvatarFrame userId={participant.userId} label={participant.displayName} avatarUrl={participant.avatarUrl} avatarSeed={participant.identity} verification={participant.verification} size={avatarSize <= 36 ? "compact" : "medium"} avatarSize={avatarSize} /><small>{participant.cameraEnabled ? "Connecting camera" : "Camera off"}</small></span>;
+  const media = liveCamera ? <ParticipantVideo participant={participant} /> : <span className="meeting-participant-tile-v2__avatar"><VerifiedAvatarFrame userId={participant.userId} label={participant.displayName} avatarUrl={participant.avatarUrl} avatarSeed={participant.identity} verification={participant.verification} size={avatarSize <= 36 ? "compact" : "medium"} avatarSize={avatarSize} /><small>{selfViewHidden ? "Self view hidden" : participant.cameraEnabled ? "Connecting camera" : "Camera off"}</small></span>;
   const label = `${participant.displayName}${participant.isLocal ? ", you" : ""}, ${accessibleState(participant)}`;
+  const handleContextMenu = onContextMenu ?? (participantActions ? (event: MouseEvent<HTMLElement>) => participantActions.openMenu(event, participant) : undefined);
+  const handleMore = onMore ?? (participantActions ? (event: MouseEvent<HTMLButtonElement>) => participantActions.openMenu(event, participant) : undefined);
   return (
     <article
       className={`meeting-participant-tile-v2${participant.isSpeaking ? " is-speaking" : ""}${selected ? " is-selected" : ""}${focused ? " is-focused" : ""} ${className}`.trim()}
@@ -53,7 +61,7 @@ export function MeetingParticipantTile({ participant, variant, selected = false,
       data-presence={participant.presence}
       data-quality={participant.connectionQuality}
       aria-label={label}
-      onContextMenu={onContextMenu}
+      onContextMenu={handleContextMenu}
     >
       {onActivate ? <button type="button" className="meeting-participant-tile-v2__media" aria-label={`${focused ? "Remove focus from" : "Focus"} ${participant.displayName}`} aria-pressed={focused || selected} onClick={onActivate}>{media}</button> : <div className="meeting-participant-tile-v2__media">{media}</div>}
       <span className="meeting-participant-tile-v2__shade" aria-hidden="true" />
@@ -70,7 +78,7 @@ export function MeetingParticipantTile({ participant, variant, selected = false,
         <span className="is-quality" aria-label={`${participant.connectionQuality} connection`}>{participant.connectionQuality}</span>
         <span className="is-microphone" aria-label={participant.microphoneEnabled ? "Microphone on" : "Microphone muted"}><AppIcon name={participant.microphoneEnabled ? "microphone" : "volumeOff"} size="xs" /></span>
       </span>
-      {onMore ? <button type="button" className="meeting-participant-tile-v2__more" aria-label={`Actions for ${participant.displayName}`} onClick={onMore}><AppIcon name="more" size="sm" /></button> : null}
+      {handleMore ? <button type="button" className="meeting-participant-tile-v2__more" aria-label={`Actions for ${participant.displayName}`} aria-haspopup="menu" onClick={handleMore}><AppIcon name="more" size="sm" /></button> : null}
     </article>
   );
 }

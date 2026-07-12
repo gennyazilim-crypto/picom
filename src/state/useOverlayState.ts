@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Attachment, Member } from "../types/community";
+import type { IconName } from "../components/AppIcon";
 
 export interface OverlayMenuItem {
   label: string;
+  detail?: string;
+  icon?: IconName;
   tone?: "normal" | "danger";
   disabled?: boolean;
   onSelect?: () => void;
