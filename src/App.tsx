@@ -22,6 +22,9 @@ import type { OnboardingCompletion } from "./types/onboarding";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
+import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
+import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
+import type { GlobalNavigationKey } from "./types/globalNavigation";
 import { WindowTitleBar } from "./components/WindowTitleBar";
 import { ServerRail } from "./components/ServerRail";
 import { CommunitySidebar } from "./components/CommunitySidebar";
@@ -147,6 +150,7 @@ import { canModerateCommunityMember } from "./services/permissions/communityPerm
 import { memberManagementService } from "./services/memberManagementService";
 
 const SettingsModal = lazy(() => import("./components/SettingsModal").then((module) => ({ default: module.SettingsModal })));
+const GlobalEventsWorkspace = lazy(() => import("./components/navigation/GlobalEventsWorkspace").then((module) => ({ default: module.GlobalEventsWorkspace })));
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
 const ProfileView = lazy(() => import("./components/ProfileView").then((module) => ({ default: module.ProfileView })));
@@ -196,7 +200,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
   return communityNavigationService.getShellView(kind);
@@ -2750,6 +2754,29 @@ export function App() {
     openProfilePage(member);
   };
 
+  const activeGlobalRoute = resolveGlobalNavigationKey(activeView);
+  const globalNavigationBadges = {
+    dmUnread: directConversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+    communityUnread: 0,
+    radioLive: communities.filter((community) => community.kind === "radio").length,
+    eventUpcoming: visibleCommunityEvents.length,
+    bookmarkCount: savedMessages.length,
+  };
+  const globalNavigationAvailability = {
+    hasRadioWorkspace: communities.some((community) => community.kind === "radio"),
+    hasPodcastWorkspace: communities.some((community) => community.kind === "podcast"),
+  };
+  const navigateGlobal = (route: GlobalNavigationKey) => {
+    closeTransientOverlays();
+    if (route === "feed") { setActiveView("mentionFeed"); return; }
+    if (route === "dm") { openDirectMessages(); return; }
+    if (route === "events") { setActiveView("events"); return; }
+    if (route === "bookmarks") { setActiveView("savedMessages"); return; }
+    const kind = route === "radio" ? "radio" : route === "podcasts" ? "podcast" : "text";
+    const target = communities.find((community) => community.kind === kind);
+    if (target) openCommunityFromRail(target.id);
+  };
+
   return (
     <>
       <DesktopAppShell>
@@ -2766,6 +2793,21 @@ export function App() {
             onRestartNormally={restartNormallyFromSafeMode}
           />
           <MaintenanceStatusBanner status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
+          <AuthenticatedAppShell
+            activeRoute={activeGlobalRoute}
+            badges={globalNavigationBadges}
+            availability={globalNavigationAvailability}
+            currentUser={currentUser}
+            onNavigate={navigateGlobal}
+            onOpenSettings={openSettings}
+            onOpenHelpSupport={() => { settingsService.requestInitialSection("Help Center"); openSettings(); }}
+            onOpenProfile={() => openProfilePage(currentUser)}
+            onOpenUserMenu={(event) => openContext(event, [
+              { label: "@" + currentUser.username, disabled: true },
+              { label: "Copy username", onSelect: () => void clipboardService.copyText(currentUser.username).then(() => pushToast("Username copied.", "success")) },
+              { label: "Log out", tone: "danger", onSelect: () => void handleLogout() },
+            ])}
+          >
           <ServerRail
             communities={communities}
             activeCommunityId={activeCommunityId}
@@ -2931,6 +2973,8 @@ export function App() {
               }}
             />
             </DeferredViewBoundary>
+          ) : activeView === "events" ? (
+            <GlobalEventsWorkspace events={visibleCommunityEvents} communities={communities} onOpenCommunity={(communityId) => openCommunityFromRail(communityId)} />
           ) : activeView === "savedMessages" ? (
             <DeferredViewBoundary label="Opening saved messages">
             <SavedMessagesView items={savedMessages} communities={communities} onBack={() => setActiveView("community")} onOpen={(item) => { const community=communities.find((candidate)=>candidate.id===item.communityId);const message=community?.messages.find((candidate)=>candidate.id===item.messageId);if(community&&message)jumpToMessage(community,message);else pushToast("This saved message is unavailable or inaccessible.","error"); }} onUnsave={(item) => { void savedMessageService.unsaveMessage(item.messageId).then(async (ok) => { if (ok) setSavedMessages(await savedMessageService.getSavedMessages()); else pushToast("Saved Messages could not be updated.", "error"); }); }} />
@@ -3232,6 +3276,7 @@ export function App() {
               ) : null}
             </>
           )}
+          </AuthenticatedAppShell>
         </div>
         )}
       </DesktopAppShell>
