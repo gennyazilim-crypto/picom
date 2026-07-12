@@ -20,6 +20,7 @@ Mixed schema/Storage migration `20260711149900` was split so its ordinary schema
 The protected workflow now requires applied Voice prerequisite `20260711150600` plus its canonical room/public-channel RPCs and executes only reviewed active-member target `20260712166000`; every other pending migration is reported as `outOfScopePendingMigrations` rather than becoming an unrelated Task 661 side effect.
 Forward migration `20260712166200` reconciles staging environments that recorded an older rate-limit function/constraint: it preserves all known message and Meeting action keys while enforcing `livekit_token` at ten requests per sixty seconds.
 Forward migration `20260712166300` replaces the limiter with an unambiguous `observed_at timestamptz` variable because PostgreSQL interpreted the historical `current_time` identifier as the `CURRENT_TIME` keyword (`timetz`).
+Forward migration `20260712166400` replaces `authorize_livekit_room` with fully qualified channel references because its `RETURNS TABLE community_id` output variable made the historical unqualified `community_id` predicate ambiguous (`42702`) on hosted PostgreSQL.
 
 ## Validation commands
 

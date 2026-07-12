@@ -6,6 +6,7 @@ const token = read("supabase/functions/_shared/livekit-token.ts");
 const memberMigration = read("supabase/migrations/20260712166000_active_member_voice_screen_access.sql");
 const rateLimitMigration = read("supabase/migrations/20260712166200_livekit_token_rate_limit_reconciliation.sql");
 const rateLimitKeywordFix = read("supabase/migrations/20260712166300_livekit_token_rate_limit_keyword_fix.sql");
+const authorizationAmbiguityFix = read("supabase/migrations/20260712166400_active_member_voice_authorization_ambiguity_fix.sql");
 const moderationMigration = read("supabase/migrations/20260712164500_v1_voice_permission_matrix.sql");
 const config = read("supabase/config.toml");
 const client = read("src/services/livekit/livekitService.ts");
@@ -24,6 +25,7 @@ const checks = [
   ["short least privilege token", fn.includes("10 * 60") && token.includes("canPublishSources") && fn.includes('"microphone"') && fn.includes('"screen_share"') && fn.includes('"screen_share_audio"') && fn.includes("canPublishData: false")],
   ["hosted LiveKit token rate limit is canonical", rateLimitMigration.includes("'livekit_token',10,60") && rateLimitMigration.includes("meeting_privileged_action") && rateLimitMigration.includes("consume_current_user_action_rate_limit")],
   ["rate-limit timestamp avoids SQL keyword collision", rateLimitKeywordFix.includes("observed_at timestamptz") && !rateLimitKeywordFix.includes("current_time timestamptz")],
+  ["authorization channel columns avoid RETURNS TABLE ambiguity", authorizationAmbiguityFix.includes("from public.channels channel") && authorizationAmbiguityFix.includes("channel.community_id=target_community_id") && !authorizationAmbiguityFix.includes("\n    and community_id=target_community_id")],
   ["capabilities returned to renderer", fn.includes("canPublishAudio: authorization.can_publish_audio") && fn.includes("canPublishScreen: authorization.can_publish_screen")],
   ["fail-closed restricted CORS", fn.includes("PICOM_ALLOWED_ORIGINS") && fn.includes("if (!allowedOrigins.size)") && fn.includes("Origin is not allowed") && !fn.includes('"Access-Control-Allow-Origin": "*"')],
   ["safe provider URL", fn.includes('url.protocol === "wss:"') && fn.includes('url.protocol === "ws:"') && fn.includes("url.username || url.password")],
@@ -42,7 +44,7 @@ const checks = [
   ["storage DDL preserves Supabase ownership", deploy.includes("getStoragePolicyPlan") && deploy.includes("pg_policies") && deploy.includes("rls_enabled") && deploy.includes("omitVerifiedStorageOwnedDdl") && deploy.includes("missingCreates") && deploy.includes("unsafeDrops")],
   ["missing owner-only policies remain explicit debt", deploy.includes("deferredOwnerMigrations.push") && deploy.includes("missing_storage_owner_policies") && deploy.includes("continue;")],
   ["deployment is scoped to reviewed Voice migrations", deploy.includes("prerequisiteMigrationVersions") && deploy.includes("targetMigrationVersions") && deploy.includes("outOfScopePendingMigrations")],
-  ["hosted deploy verifies rate-limit reconciliation", deploy.includes("rate_limit_gate") && deploy.includes("rate_limit_migration_recorded") && deploy.includes("rate_limit_keyword_fix_recorded")],
+  ["hosted deploy verifies Voice reconciliation", deploy.includes("rate_limit_gate") && deploy.includes("rate_limit_migration_recorded") && deploy.includes("rate_limit_keyword_fix_recorded") && deploy.includes("authorization_ambiguity_fix_recorded")],
   ["deploy diagnostics retain redacted failure tail", deploy.includes("[REDACTED_OUTPUT_TRUNCATED]") && deploy.includes("safe.slice(-750)")],
   ["secret server boundary", fn.includes('getRequiredEnv("LIVEKIT_API_SECRET")') && !client.includes("LIVEKIT_API_SECRET")],
 ];

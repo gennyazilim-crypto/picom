@@ -144,10 +144,10 @@ begin
   end if;
 
   select * into target_channel
-  from public.channels
-  where id=target_channel_id
-    and community_id=target_community_id
-    and type='voice';
+  from public.channels channel
+  where channel.id=target_channel_id
+    and channel.community_id=target_community_id
+    and channel.type='voice';
   if target_channel.id is null then
     raise exception 'VOICE_CHANNEL_FORBIDDEN' using errcode='42501';
   end if;
