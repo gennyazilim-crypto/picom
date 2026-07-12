@@ -52,6 +52,20 @@ function makePolicyCreatesIdempotent(sql) {
   );
 }
 
+function runStorageOwnedDdlAsStorageAdmin(sql) {
+  const wrap = (statement) => `set local role supabase_storage_admin;\n${statement}\nreset role;`;
+  return sql
+    .replace(/drop\s+policy\s+(?:if\s+exists\s+)?(?:"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)\s+on\s+storage\.objects\s*;/gi, wrap)
+    .replace(/create\s+policy\s+(?:"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)\s+on\s+storage\.objects[\s\S]*?;/gi, wrap)
+    .replace(/comment\s+on\s+policy\s+(?:"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)\s+on\s+storage\.objects\s+is\s+'(?:''|[^'])*'\s*;/gi, wrap)
+    .replace(/alter\s+table\s+storage\.objects[\s\S]*?;/gi, wrap);
+}
+
+const storageOwnershipProbe = runStorageOwnedDdlAsStorageAdmin(makePolicyCreatesIdempotent('create policy "task661_probe" on storage.objects for select using (true);'));
+if (!storageOwnershipProbe.includes('drop policy if exists "task661_probe" on storage.objects;') || (storageOwnershipProbe.match(/set local role supabase_storage_admin;/g) ?? []).length !== 2 || (storageOwnershipProbe.match(/reset role;/g) ?? []).length !== 2) {
+  throw new Error("Storage policy reconciliation self-test failed.");
+}
+
 if (!apply) {
   const cli = runSupabase(["--version"]);
   console.log(JSON.stringify({
@@ -125,7 +139,7 @@ try {
     if (index > 0 && index % 70 === 0) await new Promise((resolve) => setTimeout(resolve, 61_000));
     const migration = pending[index];
     const source = readFileSync(`supabase/migrations/${migration.file}`, "utf8").replace(/^\uFEFF/, "");
-    const migrationSql = makePolicyCreatesIdempotent(source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim());
+    const migrationSql = runStorageOwnedDdlAsStorageAdmin(makePolicyCreatesIdempotent(source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim()));
     if (!migrationSql || migrationSql.includes("$task661$")) throw new Error(`Migration ${migration.version} is empty or contains the reserved deployment delimiter.`);
     const trackedSql = `begin;\n${migrationSql}\ninsert into supabase_migrations.schema_migrations(version,statements,name) values ('${migration.version}',array[$task661$${migrationSql}$task661$],'${migration.name}') on conflict(version) do update set statements=excluded.statements,name=excluded.name;\ncommit;`;
     try {
