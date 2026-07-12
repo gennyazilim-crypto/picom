@@ -246,3 +246,7 @@ Status: **BLOCKED** (2026-07-12). Local audit found no signtool, code-signing ce
 ## Task 623 final legal approval and production ownership
 
 Status: **BLOCKED / NO-GO** (2026-07-12). The exact V1 policy bundle, project license, jurisdictions, effective dates, operator/contact identity, and deletion/export wording have no authorized approval. Every V1 production system, recovery duty, and secret-custody role remains `UNASSIGNED`; renderer-safe identifiers and secret values are intentionally not frozen. Voice and Screen Share are hidden from V1, so their provider/consent claims were removed from the V1 runtime drafts rather than presented as approved. RB-09 and RB-10 remain open.
+
+## Task 624 isolated backup restore and destructive lifecycle
+
+Status: **PARTIAL / BLOCKED** (2026-07-12). The immutable synthetic staging database now restores fully into an isolated compatible Supabase Postgres target; row-count, orphan, RLS/private-access and rollback-scoped destructive lifecycle checks pass. Storage object bytes were not backed up/restored and no isolated GoTrue API proved revoked token rejection, so full recovery is not certified and RB-11 remains open.

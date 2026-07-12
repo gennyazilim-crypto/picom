@@ -51,3 +51,11 @@ RB-11 remains open. Stable release is **No-Go**.
 ## Task 429 isolated rerun
 
 Backup hashes were recomputed and matched. Four isolated Docker strategies were attempted without touching existing containers. A fresh database avoided the managed Auth collision, but schema restore ultimately stopped because `extensions.gin_trgm_ops` was not bootstrapped. Every temporary container was removed. No complete restore, integrity matrix, destructive lifecycle, or promotion occurred; status remains **PARTIAL / BLOCKED**.
+
+## Task 624 isolated compatible restore
+
+On 2026-07-12 the same immutable synthetic staging dumps were restored successfully into an isolated `public.ecr.aws/supabase/postgres:17.6.1.141` container with no network and no published ports. A `template0` database, `extensions` schema, `pg_trgm` in that schema, and the provider `supabase_admin` restore actor resolved the prior compatibility blockers without editing or ignoring dump errors.
+
+Roles, schema, public data, and Auth/Storage metadata restored with `ON_ERROR_STOP`. Auth/profile counts matched at 27, measured orphan counts were zero, all checked sensitive tables retained RLS, all five Storage buckets remained private, outsider private-channel/DM reads returned zero, and a participant could read its DM fixture. The database lifecycle drill passed message/invite RPCs plus message/attachment/DM/channel/member/ban/ownership/profile/session and forward-fix operations in a rollback transaction.
+
+The database recovery path is now proven for this snapshot. Full recovery remains **PARTIAL / BLOCKED** because Storage object bytes were not exported/restored and no GoTrue service verified rejection of revoked refresh/access tokens. RB-11 remains open.
