@@ -181,6 +181,13 @@ commit;`);
   const rateLimitPreflight = await rateLimitSession.client.rpc("consume_current_user_action_rate_limit", { target_action: "livekit_token" });
   if (rateLimitPreflight.error) throw new Error(`Rate-limit RPC preflight failed ${safeDatabaseCode(rateLimitPreflight.error)}: ${safeDatabaseDiagnostic(rateLimitPreflight.error)}`);
   await query("delete from public.user_action_rate_limits where user_id=$1::uuid and action_key='livekit_token'", [rateLimitSession.userId]);
+  const ownerAuthorizationPreflight = await sessions.get("owner").client.rpc("authorize_livekit_room", {
+    target_community_id: normalizedCommunityId,
+    target_channel_id: normalizedPublicChannelId,
+    target_intent: "voice",
+  });
+  if (ownerAuthorizationPreflight.error) throw new Error(`Voice authorization RPC preflight failed ${safeDatabaseCode(ownerAuthorizationPreflight.error)}: ${safeDatabaseDiagnostic(ownerAuthorizationPreflight.error)}`);
+  if (!Array.isArray(ownerAuthorizationPreflight.data) || !ownerAuthorizationPreflight.data[0]) throw new Error("Voice authorization RPC preflight returned no row.");
   for (const label of activeLabels) {
     const session = sessions.get(label);
     const voice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "voice" } });
