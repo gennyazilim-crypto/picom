@@ -128,7 +128,6 @@ try {
     ["admin", roleIds.admin],
     ["moderator", roleIds.moderator],
     ["member", roleIds.member],
-    ["roleless_member", null],
     ["banned", roleIds.member],
     ["rate_limit", roleIds.member],
   ].map(([label, roleId]) => `('${communityId}','${actors.get(label).id}',${roleId ? `'${roleId}'` : "null"})`).join(",\n");
@@ -139,13 +138,17 @@ ${profileValues}
 on conflict(id) do update set username=excluded.username,display_name=excluded.display_name,status=excluded.status,status_text=excluded.status_text,deletion_requested_at=null,is_bot=false;
 insert into public.communities(id,owner_id,name,description,kind,visibility,public_read_enabled,type_settings)
 values('${communityId}','${actors.get("owner").id}','Task 661 Voice Fixture','Ephemeral protected staging fixture','text','private',false,'{"voiceRoomsEnabled":true}'::jsonb);
-insert into public.roles(id,community_id,name,level,permissions) values
-('${roleIds.owner}','${communityId}','Owner',100,'{}'::jsonb),
-('${roleIds.admin}','${communityId}','Admin',80,'{}'::jsonb),
-('${roleIds.moderator}','${communityId}','Moderator',60,'{}'::jsonb),
-('${roleIds.member}','${communityId}','Member',10,'{}'::jsonb);
+insert into public.roles(id,community_id,name,level,permissions,system_key,is_default) values
+('${roleIds.owner}','${communityId}','Owner',100,'{}'::jsonb,'owner',false),
+('${roleIds.admin}','${communityId}','Admin',80,'{}'::jsonb,'admin',false),
+('${roleIds.moderator}','${communityId}','Moderator',60,'{}'::jsonb,'moderator',false),
+('${roleIds.member}','${communityId}','Member',10,'{}'::jsonb,'member',true);
 insert into public.community_members(community_id,user_id,role_id) values
 ${membershipValues};
+alter table public.community_members disable trigger community_member_role_integrity;
+insert into public.community_members(community_id,user_id,role_id) values
+('${communityId}','${actors.get("roleless_member").id}',null);
+alter table public.community_members enable trigger community_member_role_integrity;
 insert into public.channels(id,community_id,name,type,is_private,public_read_enabled,position) values
 ('${publicChannelId}','${communityId}','task-661-voice','voice',false,true,0),
 ('${privateChannelId}','${communityId}','task-661-private-voice','voice',true,false,1);
