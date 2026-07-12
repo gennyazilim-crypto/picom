@@ -6,10 +6,6 @@ import { realtimeChannelNames } from "../supabase/realtimeService";
 
 export type FriendPresence = Readonly<{ status: UserStatus; statusText: string }>;
 export type FriendPresenceSnapshot = Readonly<Record<string, FriendPresence>>;
-export type FriendPresenceOptions = Readonly<{ sharePresence: boolean; ownStatus: UserStatus }>;
-
-let activePresenceSubscriptions = 0;
-let pendingOfflineTimer: ReturnType<typeof setTimeout> | null = null;
 
 function safePresence(status: unknown): FriendPresence {
   if (status === "online") return { status: "online", statusText: "Online" };
@@ -37,7 +33,6 @@ async function authenticatedClient() {
 
 async function subscribe(
   friendIds: string[],
-  options: FriendPresenceOptions,
   listener: (snapshot: FriendPresenceSnapshot) => void,
 ): Promise<() => void> {
   const normalizedIds = [...new Set(friendIds.filter(Boolean))].slice(0, 100);
@@ -48,14 +43,8 @@ async function subscribe(
 
   const auth = await authenticatedClient();
   if (!auth) return () => undefined;
-  activePresenceSubscriptions += 1;
-  if (pendingOfflineTimer) { clearTimeout(pendingOfflineTimer); pendingOfflineTimer = null; }
   let active = true;
-  let released = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-  const ownStatus = safePresence(options.ownStatus).status;
-  const publishOwnPresence = (status: UserStatus, sharePresence = options.sharePresence) =>
-    auth.client.rpc("set_my_friend_presence", { target_status: status, share_presence: sharePresence });
   const refresh = async () => {
     const { data, error } = await auth.client.rpc("list_friend_presence", { target_user_ids: normalizedIds });
     if (!active || error) return;
@@ -69,7 +58,6 @@ async function subscribe(
     refreshTimer = setTimeout(() => { void refresh(); }, 40);
   };
 
-  await publishOwnPresence(ownStatus);
   await refresh();
   const channel = normalizedIds.length
     ? auth.client.channel(realtimeChannelNames.friendPresence(auth.userId)).on(
@@ -78,22 +66,10 @@ async function subscribe(
       scheduleRefresh,
     ).subscribe()
     : null;
-  const heartbeat = setInterval(() => { void publishOwnPresence(ownStatus); }, 45_000);
-
   return () => {
-    if (released) return;
-    released = true;
     active = false;
-    clearInterval(heartbeat);
     if (refreshTimer) clearTimeout(refreshTimer);
     if (channel) void auth.client.removeChannel(channel);
-    activePresenceSubscriptions = Math.max(0, activePresenceSubscriptions - 1);
-    if (activePresenceSubscriptions === 0) {
-      pendingOfflineTimer = setTimeout(() => {
-        pendingOfflineTimer = null;
-        if (activePresenceSubscriptions === 0) void publishOwnPresence("offline", false);
-      }, 400);
-    }
   };
 }
 

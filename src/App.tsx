@@ -14,6 +14,8 @@ import type { Attachment, ChannelCategory, Community, Member, Message } from "./
 import type { DirectConversation, DirectMessage, DirectMessageAttachment, DirectSharedMediaItem } from "./types/directMessages";
 import type { FriendState, FriendViewTab } from "./types/friends";
 import { friendPresenceService } from "./services/friends/friendPresenceService";
+import { globalPresenceService } from "./services/presence/globalPresenceService";
+import { presencePreferenceService } from "./services/presence/presencePreferenceService";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import type { ProfileActivityItem, UserProfile } from "./types/profile";
 import type { FollowedUserStory } from "./types/stories";
@@ -368,7 +370,7 @@ export function App() {
     setAppearanceSettings(settingsService.updateAppearanceSettings({ themeMode: nextTheme }).appearanceSettings);
   };
   const toggleTheme = () => applyManualTheme(theme === "light" ? "dark" : "light");
-  const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>("online");
+  const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>(() => presencePreferenceService.get());
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
   const [passwordRecoveryMessage, setPasswordRecoveryMessage] = useState<string | null>(null);
@@ -600,7 +602,6 @@ export function App() {
     let unsubscribe: (() => void) | undefined;
     void friendPresenceService.subscribe(
       friendPresenceIds ? friendPresenceIds.split("|") : [],
-      { sharePresence: userSafetySettings.showOnlineStatus && trayPresenceStatus !== "invisible", ownStatus: trayPresenceStatus === "invisible" ? "offline" : trayPresenceStatus },
       (presence) => {
         if (!active) return;
         setFriendState((current) => {
@@ -610,7 +611,14 @@ export function App() {
       },
     ).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
     return () => { active = false; unsubscribe?.(); };
-  }, [authSession?.user?.id, friendPresenceIds, trayPresenceStatus, userSafetySettings.showOnlineStatus]);
+  }, [authSession?.user?.id, friendPresenceIds]);
+  useEffect(() => presencePreferenceService.subscribe(setTrayPresenceStatus), []);
+  useEffect(() => { globalPresenceService.setSharingEnabled(userSafetySettings.showOnlineStatus); }, [userSafetySettings.showOnlineStatus]);
+  useEffect(() => {
+    const userId = authSession?.user?.id;
+    if (!userId) { globalPresenceService.stop(); return; }
+    return globalPresenceService.start(userId);
+  }, [authSession?.user?.id]);
   const [legalAcceptancePhase, setLegalAcceptancePhase] = useState<"checking" | "accepted" | "required">("checking");
   const [legalAcceptanceLoading, setLegalAcceptanceLoading] = useState(false);
   const [legalAcceptanceError, setLegalAcceptanceError] = useState<string | null>(null);
@@ -1605,6 +1613,7 @@ export function App() {
       }
 
       if (payload.action === "online" || payload.action === "idle" || payload.action === "dnd" || payload.action === "invisible") {
+        globalPresenceService.setPreference(payload.action);
         setTrayPresenceStatus(payload.action);
         pushToast(`Status set to ${trayPresenceLabels[payload.action]}.`, "info");
       }
@@ -2810,11 +2819,11 @@ export function App() {
             activeRoute={activeGlobalRoute}
             badges={globalNavigationBadges}
             availability={globalNavigationAvailability}
-            currentUser={currentUser}
+            currentUser={displayedCurrentUser}
             onNavigate={navigateGlobal}
             onOpenSettings={openSettings}
             onOpenHelpSupport={() => { settingsService.requestInitialSection("Help Center"); openSettings(); }}
-            onOpenProfile={() => openProfilePage(currentUser)}
+            onOpenProfile={() => openProfilePage(displayedCurrentUser)}
             onOpenUserMenu={(event) => openContext(event, [
               { label: "@" + currentUser.username, disabled: true },
               { label: "Copy username", onSelect: () => void clipboardService.copyText(currentUser.username).then(() => pushToast("Username copied.", "success")) },
