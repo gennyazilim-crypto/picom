@@ -16,6 +16,8 @@
 
 Every active actor must join the same deterministic hosted room, publish a synthetic microphone track, publish a synthetic canvas screen track, subscribe to every other actor, receive non-zero remote RTP bytes, render every remote screen, observe speaking state, propagate mute/unmute state, reconnect, and release tracks/subscriptions on leave.
 
+Reconnect evidence accepts LiveKit's media reconnect or signal reconnect start event, requires the provider's `Reconnected` event, and then repeats remote audio subscription, screen subscription, RTP, and render assertions before cleanup.
+
 The simultaneous four-publisher matrix proves that ordinary media access is independent of Owner/Admin/Moderator status and that the active-sharer switcher has real multi-share provider input. Moderator hierarchy remains a separate RPC authorization matrix.
 
 Synthetic media contains only generated tones, Picom test text, and changing canvas frames. The harness never records, stores, uploads, or logs microphone input or user screen content.

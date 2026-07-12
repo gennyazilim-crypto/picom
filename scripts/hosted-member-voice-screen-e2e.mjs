@@ -238,6 +238,7 @@ commit;`);
   if (mediaRows.length !== activeLabels.length || !mediaRows.every((entry) => entry.remoteAudioTracks === activeLabels.length - 1 && entry.remoteScreenTracks === activeLabels.length - 1 && entry.renderedScreens >= activeLabels.length - 1 && entry.speakingObserved)) throw new Error("Bidirectional audio, speaking, or remote screen rendering evidence is incomplete.");
   if (controlsRows.length !== activeLabels.length || !controlsRows.every((entry) => entry.remoteMuteEvents >= activeLabels.length - 1 && entry.remoteUnmuteEvents >= activeLabels.length - 1)) throw new Error("Remote mute/unmute propagation evidence is incomplete.");
   if (!matrix.reconnect?.reconnecting || !matrix.reconnect?.reconnected) throw new Error("Hosted reconnect evidence is incomplete.");
+  if (matrix.postReconnectMedia?.remoteAudioTracks !== activeLabels.length - 1 || matrix.postReconnectMedia?.remoteScreenTracks !== activeLabels.length - 1 || matrix.postReconnectMedia?.renderedScreens < activeLabels.length - 1) throw new Error("Remote media did not recover after hosted reconnect.");
   if (cleanupRows.length !== activeLabels.length || !cleanupRows.every((entry) => entry.disconnected && entry.microphoneEnded && entry.screenEnded && entry.attachedElements === 0)) throw new Error("Hosted track or room cleanup evidence is incomplete.");
 
   evidence = {
@@ -255,6 +256,7 @@ commit;`);
       muteCycleClients: controlsRows.length,
       reconnectPassed: true,
       reconnectMode: matrix.reconnect.mode,
+      postReconnectMediaPassed: true,
       cleanupPassed: true,
     },
   };

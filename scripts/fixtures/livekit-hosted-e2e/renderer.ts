@@ -63,6 +63,7 @@ async function receivedBytes(track: RemoteTrack): Promise<number> {
 async function connect() {
   room = new Room({ adaptiveStream: false, dynacast: false, disconnectOnPageLeave: false });
   room.on(RoomEvent.Reconnecting, () => { reconnectingEvents += 1; });
+  room.on(RoomEvent.SignalReconnecting, () => { reconnectingEvents += 1; });
   room.on(RoomEvent.Reconnected, () => { reconnectedEvents += 1; });
   room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => { if (speakers.length > 0) speakingObserved = true; });
   room.on(RoomEvent.TrackMuted, (_publication, participant) => { if (!participant.isLocal) remoteMuteEvents += 1; });

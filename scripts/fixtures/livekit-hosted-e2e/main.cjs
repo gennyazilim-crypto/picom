@@ -108,8 +108,10 @@ async function runMatrix(config) {
     reconnect = await sendCommand("member", "wait-reconnected", null, 60000);
   }
 
+  const postReconnectMedia = await sendCommand("member", "verify-media", null, 90000);
+
   const cleanup = await Promise.all(labels.map((label) => sendCommand(label, "cleanup", null, 30000)));
-  return { connected, published, media, controls, reconnect, cleanup };
+  return { connected, published, media, controls, reconnect, postReconnectMedia, cleanup };
 }
 
 void (async () => {

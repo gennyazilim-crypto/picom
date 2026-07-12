@@ -20,7 +20,8 @@ for (const marker of ["contextIsolation: true", "nodeIntegration: false", "sandb
 assert.ok(orchestrator.includes('stdio: ["ignore", "pipe", "pipe", "pipe"]') && orchestrator.includes("child.stdio[3].end"), "hosted tokens must cross an inherited one-way pipe, not argv or disk");
 assert.ok(orchestrator.includes("configPipeError") && orchestrator.includes("process.env.DISPLAY"), "hosted Electron transport must catch pipe failures and require the outer Xvfb display");
 assert.ok(preload.includes("contextBridge.exposeInMainWorld") && !preload.includes("remote"), "preload must expose only a narrow validated IPC bridge");
-for (const marker of ["LocalAudioTrack", "LocalVideoTrack", "Track.Source.Microphone", "Track.Source.ScreenShare", "getRTCStatsReport", "bytesReceived", "videoWidth", "ActiveSpeakersChanged", "TrackMuted", "TrackUnmuted", "simulateScenario", "unpublishTrack", "readyState === \"ended\""]) assert.ok(renderer.includes(marker), `renderer media proof missing ${marker}`);
+for (const marker of ["LocalAudioTrack", "LocalVideoTrack", "Track.Source.Microphone", "Track.Source.ScreenShare", "getRTCStatsReport", "bytesReceived", "videoWidth", "ActiveSpeakersChanged", "SignalReconnecting", "TrackMuted", "TrackUnmuted", "simulateScenario", "unpublishTrack", "readyState === \"ended\""]) assert.ok(renderer.includes(marker), `renderer media proof missing ${marker}`);
+assert.ok(main.includes('sendCommand("member", "verify-media"') && orchestrator.includes("postReconnectMediaPassed"), "hosted reconnect must re-prove remote audio and screen rendering");
 for (const marker of ["actor_member.community_id", "actor_ban.community_id", "actor_timeout.community_id", "target_member.community_id", "community.community_id"]) {
   if (marker !== "community.community_id") assert.ok(migration.includes(marker), `moderation ambiguity migration missing ${marker}`);
 }
