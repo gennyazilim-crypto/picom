@@ -19,6 +19,7 @@ const checks = [
   [channels.includes("picom:screen-capture-select-source") && channels.includes("picom:screen-capture-cancel-selection"), "capture channels are whitelisted"],
   [service.includes("crypto.randomUUID") && service.includes("selectSource({ requestId, sourceId })"), "renderer uses unpredictable session id and validated selection"],
   [picker.includes('sources.length ? "Cancel"') && picker.includes("cancelSourceSelection"), "picker cancel is safe"],
+  [picker.includes(">Refresh</button>") && picker.includes("void loadSources()"), "picker refreshes through a new validated source session"],
   [picker.includes("startSelectedSource") && picker.includes("screenCaptureService.selectSource"), "start requires main-process selection approval"],
   [types.includes("selectSource:") && types.includes("cancelSelection:"), "renderer types match the bridge"],
 ];

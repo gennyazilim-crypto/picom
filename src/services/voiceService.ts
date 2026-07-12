@@ -58,6 +58,7 @@ export type VoiceServiceSnapshot = Readonly<{
   canSpeak?: boolean;
   canShareScreen?: boolean;
   screenSharing: boolean;
+  focusedScreenShareId?: string | null;
   cameraEnabled?: boolean;
   canUseCamera?: boolean;
   cameraTracks?: VoiceCameraTrack[];
@@ -135,6 +136,7 @@ let snapshot: VoiceServiceSnapshot = {
   canSpeak: false,
   canShareScreen: false,
   screenSharing: false,
+  focusedScreenShareId: null,
   cameraTracks: [],
   screenShares: [],
   participants: [],
@@ -306,11 +308,32 @@ function applyRemoteParticipantVolume(activeRoom: Room, participantIdentity: str
 
 function setScreenShares(nextShares: VoiceScreenShare[]): void {
   screenShares = nextShares;
-  emit({ screenShares });
+  emit({ screenShares, focusedScreenShareId });
 }
 
 function upsertScreenShare(share: VoiceScreenShare): void {
-  setScreenShares([...screenShares.filter((current) => current.id !== share.id), share]);
+  const index = screenShares.findIndex((current) => current.id === share.id);
+  if (index < 0) {
+    setScreenShares([...screenShares, share]);
+    return;
+  }
+  const next = [...screenShares];
+  next[index] = share;
+  setScreenShares(next);
+}
+
+function upsertRemoteScreenShareDescriptor(participant: Pick<RemoteParticipant, "identity" | "name">, trackSid: string, mediaTrack: MediaStreamTrack | null): string {
+  const id = remoteScreenShareId(participant.identity, trackSid);
+  const prior = screenShares.find((share) => share.id === id);
+  upsertScreenShare({
+    id,
+    participantIdentity: participant.identity,
+    participantName: participant.name || participant.identity,
+    isLocal: false,
+    stream: mediaTrack ? new MediaStream([mediaTrack]) : new MediaStream(),
+    sourceLabel: prior?.sourceLabel ?? "Shared screen",
+  });
+  return id;
 }
 
 function removeScreenShare(id: string): void {
@@ -337,11 +360,20 @@ function remoteScreenShareId(participantIdentity: string, trackSid: string): str
 
 function applyFocusedScreenShareSubscription(activeRoom: Room, requestedId: string | null = focusedScreenShareId): void {
   void import("./livekit/screenShareSubscriptionPolicy").then(({ applySingleScreenShareSubscription }) => {
-    if (room === activeRoom) focusedScreenShareId = applySingleScreenShareSubscription(activeRoom, requestedId);
+    if (room !== activeRoom) return;
+    focusedScreenShareId = applySingleScreenShareSubscription(activeRoom, requestedId);
+    emit({ focusedScreenShareId });
   });
 }
 
-function clearScreenShareState(): void {
+function releaseLocalScreenShareFocus(activeRoom: Room): void {
+  if (!focusedScreenShareId?.startsWith("local:")) return;
+  focusedScreenShareId = null;
+  emit({ focusedScreenShareId });
+  applyFocusedScreenShareSubscription(activeRoom);
+}
+
+function clearScreenShareState(activeRoom?: Room): void {
   const localTrack = screenShareMediaTrack;
   screenShareMediaTrack = null;
   if (localTrack) {
@@ -349,8 +381,9 @@ function clearScreenShareState(): void {
     if (localTrack.readyState === "live") localTrack.stop();
   }
   setScreenShares(screenShares.filter((share) => !share.isLocal));
-  if (focusedScreenShareId?.startsWith("local:")) focusedScreenShareId = null;
-  emit({ screenSharing: false });
+  if (activeRoom) releaseLocalScreenShareFocus(activeRoom);
+  else if (focusedScreenShareId?.startsWith("local:")) focusedScreenShareId = null;
+  emit({ screenSharing: false, focusedScreenShareId });
 }
 
 async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track_ended" = "user"): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
@@ -368,8 +401,10 @@ async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track
       await activeRoom.localParticipant.unpublishTrack(track, true);
       if (track.readyState === "live") track.stop();
       setScreenShares(screenShares.filter((share) => !share.isLocal));
+      releaseLocalScreenShareFocus(activeRoom);
       emit({
         screenSharing: false,
+        focusedScreenShareId,
         error: reason === "track_ended" ? "Screen sharing stopped because the selected source or system permission became unavailable." : null,
         errorCode: reason === "track_ended" ? "VOICE_SCREEN_SHARE_FAILED" : null,
         participants: getParticipants(activeRoom),
@@ -378,8 +413,10 @@ async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track
     } catch {
       if (track.readyState === "live") track.stop();
       setScreenShares(screenShares.filter((share) => !share.isLocal));
+      releaseLocalScreenShareFocus(activeRoom);
       emit({
         screenSharing: false,
+        focusedScreenShareId,
         participants: getParticipants(activeRoom),
       error: "Screen sharing stopped locally, but LiveKit unpublish failed.",
       errorCode: "VOICE_SCREEN_SHARE_FAILED",
@@ -474,19 +511,22 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ParticipantNameChanged, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackMuted, (publication, participant) => {
       if (publication.source === Track.Source.ScreenShare) {
-        removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
+        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, null);
         applyFocusedScreenShareSubscription(activeRoom);
       }
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.TrackUnmuted, (publication, participant) => {
       if (publication.source === Track.Source.ScreenShare && publication.track?.kind === Track.Kind.Video) {
-        const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
-        upsertScreenShare({ id: shareId, participantIdentity: participant.identity, participantName: participant.name || participant.identity, isLocal: false, stream: new MediaStream([publication.track.mediaStreamTrack]), sourceLabel: "Shared screen" });
+        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, publication.track.mediaStreamTrack);
       }
       emitParticipants(activeRoom);
     })
-    .on(RoomEvent.TrackPublished, () => {
+    .on(RoomEvent.TrackPublished, (publication, participant) => {
+      if (publication.source === Track.Source.ScreenShare) {
+        const mediaTrack = publication.track?.kind === Track.Kind.Video ? publication.track.mediaStreamTrack : null;
+        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, mediaTrack);
+      }
       applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
       applyFocusedScreenShareSubscription(activeRoom);
       emitParticipants(activeRoom);
@@ -500,7 +540,7 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.LocalTrackPublished, () => emitParticipants(activeRoom))
     .on(RoomEvent.LocalTrackUnpublished, (publication) => {
       if (publication.source === Track.Source.ScreenShare) {
-        clearScreenShareState();
+        clearScreenShareState(activeRoom);
       }
       emitParticipants(activeRoom);
     })
@@ -517,14 +557,7 @@ function bindRoomEvents(activeRoom: Room): void {
         if (previousTrack) previousTrack.onended = null;
         remoteScreenShareTracks.set(shareId, mediaTrack);
         mediaTrack.onended = () => removeScreenShare(shareId);
-        upsertScreenShare({
-          id: shareId,
-          participantIdentity: participant.identity,
-          participantName: participant.name || participant.identity,
-          isLocal: false,
-          stream: new MediaStream([mediaTrack]),
-          sourceLabel: "Shared screen",
-        });
+        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, mediaTrack);
       }
       if (publication.source === Track.Source.Camera && track.kind === Track.Kind.Video) {
         upsertCameraTrack({ id: remoteCameraId(participant.identity, publication.trackSid), participantIdentity: participant.identity, participantName: participant.name || participant.identity, isLocal: false, stream: new MediaStream([track.mediaStreamTrack]) });
@@ -533,7 +566,11 @@ function bindRoomEvents(activeRoom: Room): void {
     })
     .on(RoomEvent.TrackUnsubscribed, (_track, publication, participant) => {
       if (publication.source === Track.Source.ScreenShare) {
-        removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
+        const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
+        const remoteTrack = remoteScreenShareTracks.get(shareId);
+        if (remoteTrack) remoteTrack.onended = null;
+        remoteScreenShareTracks.delete(shareId);
+        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, null);
         applyFocusedScreenShareSubscription(activeRoom);
       }
       if (publication.source === Track.Source.Camera) removeCameraTrack(remoteCameraId(participant.identity, publication.trackSid));
@@ -567,6 +604,7 @@ function bindRoomEvents(activeRoom: Room): void {
         roomName: null,
         roomContext: null,
         screenSharing: false,
+        focusedScreenShareId: null,
         screenShares: [],
         cameraTracks: [],
         error: details?.message ?? null,
@@ -917,8 +955,10 @@ export const voiceService = {
   },
 
   setFocusedScreenShare(shareId: string | null): boolean {
+    if (shareId && !screenShares.some((share) => share.id === shareId)) return false;
     focusedScreenShareId = shareId;
     if (!room || room.state === ConnectionState.Disconnected) return false;
+    emit({ focusedScreenShareId });
     applyFocusedScreenShareSubscription(room, shareId);
     return true;
   },
@@ -973,7 +1013,7 @@ export const voiceService = {
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
     focusedScreenShareId = null;
-    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, focusedScreenShareId: null, screenShares: [], cameraTracks: [] });
 
     try {
       const token = await requestToken(tokenRequest);
@@ -1013,7 +1053,7 @@ export const voiceService = {
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
     focusedScreenShareId = null;
-    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, focusedScreenShareId: null, screenShares: [], cameraTracks: [] });
     try {
       const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext, Boolean(options.cameraEnabled), options.cameraDeviceId, lifecycleGeneration);
       if (!result.ok) joinFailureCount += 1;
@@ -1099,6 +1139,7 @@ export const voiceService = {
       canSpeak: false,
       canShareScreen: false,
       screenSharing: false,
+      focusedScreenShareId: null,
       cameraEnabled: false,
       canUseCamera: false,
       screenShares: [],
@@ -1167,15 +1208,11 @@ export const voiceService = {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");
     }
-    if (!snapshot.canShareScreen) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot share a screen in this room.");
+    if (!snapshot.canShareScreen) return voiceError("VOICE_PERMISSION_DENIED", "Screen sharing is unavailable for this voice session.");
 
     if (screenShareMediaTrack) {
       return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Stop the current screen share before choosing another source." } };
     }
-    if (screenShares.some((share) => !share.isLocal)) {
-      return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Another participant is already sharing in this meeting." } };
-    }
-
     if (!/^(screen|window):[a-zA-Z0-9:_-]{1,240}$/.test(sourceId)) {
       return voiceError("VOICE_SCREEN_SHARE_FAILED", "The selected screen source is invalid or expired.");
     }
@@ -1217,14 +1254,17 @@ export const voiceService = {
       }
 
       screenShareMediaTrack = track;
+      const localShareId = `local:${track.id}`;
+      focusedScreenShareId = localShareId;
       upsertScreenShare({
-        id: `local:${track.id}`,
+        id: localShareId,
         participantIdentity: activeRoom.localParticipant.identity,
         participantName: activeRoom.localParticipant.name || activeRoom.localParticipant.identity,
         isLocal: true,
         stream: new MediaStream([track]),
         sourceLabel: sourceLabel?.trim().slice(0, 80) || "Your shared screen",
       });
+      applyFocusedScreenShareSubscription(activeRoom, localShareId);
 
       track.onended = () => {
         if (screenShareMediaTrack === track && room === activeRoom) {
@@ -1232,7 +1272,7 @@ export const voiceService = {
         }
       };
 
-      emit({ screenSharing: true, error: null, errorCode: null, participants: getParticipants(activeRoom) });
+      emit({ screenSharing: true, focusedScreenShareId: localShareId, error: null, errorCode: null, participants: getParticipants(activeRoom) });
       return { ok: true, data: snapshot };
     } catch (error) {
       const denied = error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "SecurityError");

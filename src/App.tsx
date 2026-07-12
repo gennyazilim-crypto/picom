@@ -1993,6 +1993,12 @@ export function App() {
     );
   }, [pushToast]);
 
+  const focusActiveVoiceScreenShare = useCallback((shareId: string | null) => {
+    void import("./services/voiceService").then(({ voiceService }) => {
+      if (!voiceService.setFocusedScreenShare(shareId)) pushToast("That screen share is no longer available.", "info");
+    });
+  }, [pushToast]);
+
   const moderateActiveVoiceParticipant = useCallback((participant: import("./services/voiceService").VoiceParticipant, action: "mute" | "remove") => {
     void import("./services/voiceModerationService").then(({ voiceModerationService }) => voiceModerationService.moderate({
       communityId: activeCommunity.id,
@@ -3197,6 +3203,7 @@ export function App() {
                   onModerateParticipant={moderateActiveVoiceParticipant}
                   onStartScreenShare={startActiveVoiceScreenShare}
                   onStopScreenShare={stopActiveVoiceScreenShare}
+                  onFocusScreenShare={focusActiveVoiceScreenShare}
                 />
                 </DeferredViewBoundary>
               ) : (

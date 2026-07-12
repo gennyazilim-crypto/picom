@@ -103,9 +103,12 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
           <strong>Screen share source</strong>
           <small>{selectedSource ? selectedSource.name : "Choose a screen or application window"}</small>
         </div>
-        <button type="button" onClick={screenSharing ? onStop : sources.length ? () => void cancelSourceSelection() : () => void loadSources()} disabled={status === "loading"}>
-          {screenSharing ? "Stop sharing" : status === "loading" ? "Loading..." : sources.length ? "Cancel" : "Choose source"}
-        </button>
+        <div className="screen-share-picker-actions">
+          {!screenSharing && sources.length ? <button type="button" onClick={() => void loadSources()} disabled={status === "loading"}>Refresh</button> : null}
+          <button type="button" onClick={screenSharing ? onStop : sources.length ? () => void cancelSourceSelection() : () => void loadSources()} disabled={status === "loading"}>
+            {screenSharing ? "Stop sharing" : status === "loading" ? "Loading..." : sources.length ? "Cancel" : "Choose source"}
+          </button>
+        </div>
       </div>
 
       {error ? (

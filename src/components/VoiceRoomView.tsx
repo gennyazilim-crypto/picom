@@ -23,6 +23,7 @@ type VoiceRoomViewProps = {
   onModerateParticipant?: (participant: VoiceParticipant, action: "mute" | "remove") => void;
   onStartScreenShare?: (sourceId: string, preset: ScreenShareQualityPresetId, sourceLabel?: string) => void;
   onStopScreenShare?: () => void;
+  onFocusScreenShare?: (shareId: string | null) => void;
 };
 
 const statusLabels: Record<VoiceServiceSnapshot["status"], string> = {
@@ -182,6 +183,7 @@ export function VoiceRoomView({
   onModerateParticipant,
   onStartScreenShare,
   onStopScreenShare,
+  onFocusScreenShare,
 }: VoiceRoomViewProps) {
   const connected = snapshot.status === "connected" || snapshot.status === "reconnecting";
   const joining = snapshot.status === "requesting_token" || snapshot.status === "connecting";
@@ -201,7 +203,7 @@ export function VoiceRoomView({
         <VoiceConnectionStatus status={snapshot.status} />
       </div>
 
-      <ScreenSharePreview shares={snapshot.screenShares} onStop={onStopScreenShare} />
+      <ScreenSharePreview shares={snapshot.screenShares} focusedShareId={snapshot.focusedScreenShareId} onSelectShare={onFocusScreenShare} onStop={onStopScreenShare} />
 
       <div className="voice-room-grid">
         <article className="voice-room-card">
