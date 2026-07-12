@@ -37,6 +37,7 @@ const checks = [
   ["hosted failures expose only redacted response diagnostics", fixture.includes("safeResponseCode") && fixture.includes("safeResponseDiagnostic") && fixture.includes("^[A-Z0-9_]{1,64}$")],
   ["hosted rate-limit RPC has redacted diagnostic preflight", fixture.includes("safeDatabaseCode") && fixture.includes("safeDatabaseDiagnostic") && fixture.includes("[REDACTED_UUID]") && fixture.includes("delete from public.user_action_rate_limits")],
   ["hosted authorization RPC has redacted diagnostic preflight", fixture.includes("Voice authorization RPC preflight failed") && fixture.includes('rpc("authorize_livekit_room"')],
+  ["hosted HTTP contract checks pass JWT gateway", fixture.includes('contractAccessToken = sessions.get("owner").token') && fixture.includes("accessToken: contractAccessToken, method: \"GET\"") && fixture.includes("accessToken: contractAccessToken, rawBody") && fixture.includes("accessToken: contractAccessToken, origin")],
   ["hosted fixture usernames respect profile constraints", fixture.includes("actorCodes") && fixture.includes("username.length < 3 || username.length > 32")],
   ["roleless fixture restores membership integrity trigger", fixture.includes("disable trigger community_member_role_integrity") && fixture.includes("enable trigger community_member_role_integrity")],
   ["explicit staging deploy guard", deploy.includes("STAGING_ONLY") && deploy.includes("approvedProjectRef") && deploy.includes("database/query") && deploy.includes("functions\", \"deploy")],

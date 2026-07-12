@@ -206,11 +206,12 @@ commit;`);
     if (denied.response.status !== 403) throw new Error(`${label} expected 403, received ${denied.response.status}.`);
   }
 
-  const wrongMethod = await requestFunction({ publicKey, method: "GET" });
+  const contractAccessToken = sessions.get("owner").token;
+  const wrongMethod = await requestFunction({ publicKey, accessToken: contractAccessToken, method: "GET" });
   if (wrongMethod.response.status !== 405) throw new Error(`Wrong method expected 405, received ${wrongMethod.response.status}.`);
-  const malformed = await requestFunction({ publicKey, rawBody: "{" });
+  const malformed = await requestFunction({ publicKey, accessToken: contractAccessToken, rawBody: "{" });
   if (malformed.response.status !== 400) throw new Error(`Malformed body expected 400, received ${malformed.response.status}.`);
-  const deniedOrigin = await requestFunction({ publicKey, origin: "https://not-allowed.invalid", body: baseBody });
+  const deniedOrigin = await requestFunction({ publicKey, accessToken: contractAccessToken, origin: "https://not-allowed.invalid", body: baseBody });
   if (deniedOrigin.response.status !== 403) throw new Error(`Denied origin expected 403, received ${deniedOrigin.response.status}.`);
   const missingJwt = await requestFunction({ publicKey, body: baseBody });
   if (![401, 403].includes(missingJwt.response.status)) throw new Error(`Missing JWT was accepted with ${missingJwt.response.status}.`);
