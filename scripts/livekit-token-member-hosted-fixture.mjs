@@ -69,6 +69,8 @@ function assertToken(payload, userId, intent) {
   if (intent === "screen" && (!sources.includes("microphone") || !sources.includes("screen_share") || !sources.includes("screen_share_audio"))) throw new Error("Screen token source grants are incomplete.");
 }
 
+const safeResponseCode = (payload) => typeof payload?.code === "string" && /^[A-Z0-9_]{1,64}$/.test(payload.code) ? payload.code : "NO_SAFE_CODE";
+
 const requestFunction = async ({ publicKey, accessToken, body, method = "POST", origin = allowedOrigin, rawBody }) => {
   const response = await fetch(`https://${approvedProjectRef}.supabase.co/functions/v1/livekit-token`, {
     method,
@@ -169,13 +171,13 @@ commit;`);
   for (const label of activeLabels) {
     const session = sessions.get(label);
     const voice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "voice" } });
-    if (voice.response.status !== 200) throw new Error(`${label} Voice token expected 200, received ${voice.response.status}.`);
+    if (voice.response.status !== 200) throw new Error(`${label} Voice token expected 200, received ${voice.response.status} ${safeResponseCode(voice.payload)}.`);
     assertToken(voice.payload, session.userId, "voice");
     const screen = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "screen" } });
-    if (screen.response.status !== 200) throw new Error(`${label} Screen token expected 200, received ${screen.response.status}.`);
+    if (screen.response.status !== 200) throw new Error(`${label} Screen token expected 200, received ${screen.response.status} ${safeResponseCode(screen.payload)}.`);
     assertToken(screen.payload, session.userId, "screen");
     const privateVoice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, channelId: privateChannelId, intent: "voice" } });
-    if (privateVoice.response.status !== 200) throw new Error(`${label} private Voice token expected 200, received ${privateVoice.response.status}.`);
+    if (privateVoice.response.status !== 200) throw new Error(`${label} private Voice token expected 200, received ${privateVoice.response.status} ${safeResponseCode(privateVoice.payload)}.`);
     assertToken(privateVoice.payload, session.userId, "voice");
   }
 
