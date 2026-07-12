@@ -35,6 +35,7 @@ import {
 import type { GlobalNavigationKey } from "./types/globalNavigation";
 import { WindowTitleBar } from "./components/WindowTitleBar";
 import { ServerRail } from "./components/ServerRail";
+import { CommunityWorkspace } from "./components/community/CommunityWorkspace";
 import { CommunitySidebar } from "./components/CommunitySidebar";
 import { ChatMain } from "./components/ChatMain";
 import { MemberSidebar } from "./components/MemberSidebar";
@@ -2799,6 +2800,27 @@ export function App() {
     if (target) openCommunityFromRail(target.id);
   };
 
+  const communityServerRail = (
+    <ServerRail
+      communities={communities}
+      activeCommunityId={activeCommunityId}
+      onOpenDiscovery={() => { setActiveView("discovery"); closeTransientOverlays(); }}
+      onSelectCommunity={openCommunityFromRail}
+      onUtilityAction={(message) => {
+        if (message === "create-community") { setCreateCommunityOpen(true); return; }
+        pushToast(message, "info");
+      }}
+      onContextMenu={(event, community) => {
+        const muted = notificationPolicyState.mutedCommunityIds.includes(community.id);
+        openContext(event, [
+          { label: community.name, disabled: true },
+          { label: muted ? "Unmute community" : "Mute community", onSelect: () => { notificationPolicyStateService.setCommunityMuted(community.id, !muted); pushToast(muted ? community.name + " notifications and feed items unmuted." : community.name + " notifications and feed items muted.", "success"); } },
+          { label: "Copy community ID", onSelect: () => void clipboardService.copyText(community.id).then(() => pushToast("Community ID copied.", "success")) },
+        ]);
+      }}
+    />
+  );
+
   return (
     <>
       <DesktopAppShell>
@@ -2830,34 +2852,6 @@ export function App() {
               { label: "Log out", tone: "danger", onSelect: () => void handleLogout() },
             ])}
           >
-          <ServerRail
-            communities={communities}
-            activeCommunityId={activeCommunityId}
-            homeActive={activeView === "mentionFeed"}
-            directMessagesActive={activeView === "directMessages"}
-            discoveryActive={activeView === "discovery"}
-            onOpenHome={openMentionFeed}
-            onOpenDirectMessages={() => openDirectMessages()}
-            onOpenDiscovery={() => { setActiveView("discovery"); closeTransientOverlays(); }}
-            onSelectCommunity={openCommunityFromRail}
-            onOpenSettings={openSettings}
-            onUtilityAction={(message) => {
-              if (message === "create-community") {
-                setCreateCommunityOpen(true);
-                return;
-              }
-
-              pushToast(message, "info");
-            }}
-            onContextMenu={(event, community) => {
-              const muted = notificationPolicyState.mutedCommunityIds.includes(community.id);
-              openContext(event, [
-                { label: community.name, disabled: true },
-                { label: muted ? "Unmute community" : "Mute community", onSelect: () => { notificationPolicyStateService.setCommunityMuted(community.id, !muted); pushToast(muted ? `${community.name} notifications and feed items unmuted.` : `${community.name} notifications and feed items muted.`, "success"); } },
-                { label: "Copy community ID", onSelect: () => void clipboardService.copyText(community.id).then(() => pushToast("Community ID copied.", "success")) },
-              ]);
-            }}
-          />
           {activeView === "discovery" ? (
             <DeferredViewBoundary label="Opening discovery">
             <DiscoveryView
@@ -3079,7 +3073,7 @@ export function App() {
               />
             </DeferredViewBoundary>
           ) : (
-            <>
+            <CommunityWorkspace serverRail={communityServerRail}>
               <CommunitySidebar
                 community={displayedActiveCommunity}
                 communities={communities}
@@ -3097,8 +3091,6 @@ export function App() {
                 onCreateChannel={(categoryId) => setCreateChannelCategoryId(categoryId)}
                 onEditChannel={setEditingChannel}
                 onDeleteChannel={setDeletingChannel}
-                onOpenSettings={openSettings}
-                onLogout={handleLogout}
                 onJoinCommunity={handleJoinCommunity}
                 onLeaveCommunity={handleLeaveCommunity}
                 pendingInviteCode={pendingInviteCode}
@@ -3296,7 +3288,7 @@ export function App() {
                   }}
                 />
               ) : null}
-            </>
+            </CommunityWorkspace>
           )}
           </AuthenticatedAppShell>
         </div>

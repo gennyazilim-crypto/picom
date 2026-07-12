@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import type { MouseEvent } from "react";
 import { lazy, Suspense } from "react";
 import { useEffect } from "react";
@@ -35,8 +35,6 @@ type CommunitySidebarProps = {
   onCreateChannel: (categoryId: string) => void;
   onEditChannel: (channel: Channel) => void;
   onDeleteChannel: (channel: Channel) => void;
-  onOpenSettings: () => void;
-  onLogout: () => void;
   onChannelContextMenu: (event: MouseEvent, channel: Channel) => void;
   onCreateCategory: (name: string) => void;
   onRenameCategory: (categoryId: string, name: string) => void;
@@ -62,7 +60,7 @@ type CommunitySidebarProps = {
 
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
-export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onOpenSettings, onLogout, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -132,7 +130,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
         )) : <div className="empty-state compact">{community.kind === "text" ? "No public channels are visible." : `Open ${kindSummary.landingLabel} to explore this ${kindSummary.label.toLowerCase()}.`}</div>}
       </div>
 
-      <UserMiniCard member={currentUser} onOpenSettings={onOpenSettings} onLogout={onLogout} />
+      <UserMiniCard member={currentUser} />
 
       {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onCreateChannel={onCreateChannel} onMemberRolesChanged={onMemberRolesChanged} onCommunityRolesChanged={onCommunityRolesChanged} onCommunityUpdated={onCommunityUpdated} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
       {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} /> : null}
