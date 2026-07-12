@@ -57,7 +57,7 @@ jobs:
         run: npm run livekit:token:deploy:staging -- --apply
 
       - name: Run real hosted member voice and screen media matrix
-        run: npm run voice:screen:hosted:e2e -- --run
+        run: xvfb-run -a npm run voice:screen:hosted:e2e -- --run
 
       - name: Publish redacted evidence summary
         if: ${{ always() }}

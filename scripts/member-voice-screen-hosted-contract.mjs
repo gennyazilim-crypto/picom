@@ -12,11 +12,12 @@ const hierarchyMigration = read("supabase/migrations/20260712166510_voice_modera
 const deploy = read("scripts/deploy-livekit-token-staging.mjs");
 const releaseScope = read("src/config/v1ReleaseScope.ts");
 
-for (const marker of ["workflow_dispatch", "environment: hosted-staging", "permissions:\n  contents: read", "xvfb-run", "voice:screen:hosted:e2e", "task-665-hosted-member-voice-screen-evidence"]) assert.ok(workflow.includes(marker), `hosted workflow missing ${marker}`);
+for (const marker of ["workflow_dispatch", "environment: hosted-staging", "permissions:\n  contents: read", "xvfb-run -a npm run voice:screen:hosted:e2e", "voice:screen:hosted:e2e", "task-665-hosted-member-voice-screen-evidence"]) assert.ok(workflow.includes(marker), `hosted workflow missing ${marker}`);
 assert.ok(!workflow.includes("continue-on-error") && !workflow.includes("service-role"), "hosted workflow must fail closed and must not request service-role credentials");
 for (const marker of ["OWNER", "ADMIN", "MODERATOR", "MEMBER", "VISITOR", "NON_MEMBER", "BANNED", "authorize_livekit_voice_moderation", "canPublishAudio", "canPublishScreen", "runElectronHarness", "containsSecrets: false"]) assert.ok(orchestrator.includes(marker), `hosted orchestrator missing ${marker}`);
 for (const marker of ["contextIsolation: true", "nodeIntegration: false", "sandbox: true", "PICOM_HOSTED_E2E_CONFIG_FD", "new fs.ReadStream", "simulate-reconnect", "enableNetworkEmulation", "cleanup"]) assert.ok(main.includes(marker), `Electron harness missing ${marker}`);
 assert.ok(orchestrator.includes('stdio: ["ignore", "pipe", "pipe", "pipe"]') && orchestrator.includes("child.stdio[3].end"), "hosted tokens must cross an inherited one-way pipe, not argv or disk");
+assert.ok(orchestrator.includes("configPipeError") && orchestrator.includes("process.env.DISPLAY"), "hosted Electron transport must catch pipe failures and require the outer Xvfb display");
 assert.ok(preload.includes("contextBridge.exposeInMainWorld") && !preload.includes("remote"), "preload must expose only a narrow validated IPC bridge");
 for (const marker of ["LocalAudioTrack", "LocalVideoTrack", "Track.Source.Microphone", "Track.Source.ScreenShare", "getRTCStatsReport", "bytesReceived", "videoWidth", "ActiveSpeakersChanged", "TrackMuted", "TrackUnmuted", "simulateScenario", "unpublishTrack", "readyState === \"ended\""]) assert.ok(renderer.includes(marker), `renderer media proof missing ${marker}`);
 for (const marker of ["actor_member.community_id", "actor_ban.community_id", "actor_timeout.community_id", "target_member.community_id", "community.community_id"]) {
