@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppIcon } from "../AppIcon";
 import { screenCaptureService, type ScreenCaptureSource } from "../../services/screenCaptureService";
 import { screenShareQualityPresets, type ScreenShareQualityPresetId } from "../../utils/screenShareQuality";
@@ -22,6 +22,9 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
   const [guidance, setGuidance] = useState<string | null>(null);
   const [retryable, setRetryable] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const activeRequestId = useRef<string | null>(null);
+
+  useEffect(() => () => { if (activeRequestId.current) void screenCaptureService.cancelSelection(activeRequestId.current); }, []);
 
   async function loadSources(): Promise<void> {
     setStatus("loading");
@@ -30,6 +33,8 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
     setRetryable(false);
     setNotice(null);
 
+    if(activeRequestId.current)await screenCaptureService.cancelSelection(activeRequestId.current);
+    activeRequestId.current=null;
     const result = await screenCaptureService.listSources();
     if (!result.ok) {
       setSources([]);
@@ -43,6 +48,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
     }
 
     setSources(result.sources);
+    activeRequestId.current=result.requestId;
     setSourceRequestId(result.requestId);
     setSelectedSourceId(result.sources[0]?.id ?? null);
     setStatus("ready");
@@ -50,6 +56,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
 
   async function cancelSourceSelection(): Promise<void> {
     if (sourceRequestId) await screenCaptureService.cancelSelection(sourceRequestId);
+    activeRequestId.current=null;
     setSources([]);
     setSelectedSourceId(null);
     setSourceRequestId(null);
@@ -65,6 +72,7 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
     setStatus("loading");
     setError(null);
     const result = await screenCaptureService.selectSource(sourceRequestId, selectedSourceId);
+    activeRequestId.current=null;
     if (!result.ok) {
       setError(result.message);
       setGuidance(result.guidance);

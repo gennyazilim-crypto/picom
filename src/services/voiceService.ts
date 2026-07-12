@@ -978,6 +978,9 @@ export const voiceService = {
     if (screenShareMediaTrack) {
       return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Stop the current screen share before choosing another source." } };
     }
+    if (screenShares.some((share) => !share.isLocal)) {
+      return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Another participant is already sharing in this meeting." } };
+    }
 
     if (!/^(screen|window):[a-zA-Z0-9:_-]{1,240}$/.test(sourceId)) {
       return voiceError("VOICE_SCREEN_SHARE_FAILED", "The selected screen source is invalid or expired.");

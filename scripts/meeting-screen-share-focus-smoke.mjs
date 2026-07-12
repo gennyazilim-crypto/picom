@@ -12,8 +12,8 @@ const service = read("src/services/meeting/meetingService.ts");
 
 for (const scale of ['"fit"', '"fill"', '"actual"']) assert.ok(component.includes(scale), `share focus missing ${scale} scale`);
 for (const copy of ["Actual Size", "Return to Grid", "Speaker view", "Sharing now"]) assert.ok(component.includes(copy), `share focus missing ${copy}`);
-assert.ok(component.includes("ShareVideo") && component.includes("CompactParticipant") && component.includes("sourceLabel"), "share media/context missing");
-assert.ok(workspace.includes("autoShareLayoutRef") && workspace.includes("previousLayoutRef") && workspace.includes("shareLayoutOverride"), "automatic/explicit layout policy missing");
+assert.ok(component.includes("ShareVideo") && component.includes("MeetingParticipantTile") && component.includes("sourceLabel"), "share media/context missing");
+assert.ok(workspace.includes("resolveMeetingLayout") && workspace.includes("getValidMeetingLayoutPreferences") && workspace.includes("leaveShareLayout"), "automatic/explicit layout policy missing");
 assert.ok(stage.includes('snapshot.layout === "screen_share"') && stage.includes("MeetingScreenShareFocus"), "screen-share route missing");
 for (const marker of ["applyFocusedScreenShareSubscription", "TrackMuted", "TrackUnmuted", "TrackSubscriptionFailed", "setFocusedScreenShare"]) assert.ok(voice.includes(marker), `provider share recovery missing ${marker}`);
 assert.ok(policy.includes("applySingleScreenShareSubscription") && policy.includes("setSubscribed") && policy.includes("publications[0]"), "one-active-share policy missing");

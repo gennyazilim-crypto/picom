@@ -11,6 +11,7 @@ import { meetingRepository } from "./meetingRepository";
 import { noiseShieldService } from "../noiseShieldService";
 import type { NoiseShieldMode, NoiseShieldSnapshot } from "../../types/noiseShield";
 import type { MeetingCameraQualityPreset } from "../../types/meetingVideoGrid";
+import { meetingScreenShareLeaseService } from "./meetingScreenShareLeaseService";
 
 let currentRequest: MeetingClientJoinRequest | null = null;
 let joinPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
@@ -105,7 +106,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   sessionCleanups.push(meetingLiveKitAdapter.subscribe((provider)=>{
     if(meetingStore.getSnapshot().generation!==generation)return;
     const phase=provider.status==="connected"?"connected":provider.status==="reconnecting"?"reconnecting":provider.status==="disconnected"?"disconnected":provider.status==="connecting"?"connecting":provider.status==="requesting_token"?"token-loading":null;
-    if(phase)meetingStore.transition(generation,phase,{providerStatus:provider.status,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:Boolean(provider.cameraEnabled),screenSharing:provider.screenSharing},error:null});
+    if(phase){const wasSharing=meetingStore.getSnapshot().localMedia.screenSharing;meetingStore.transition(generation,phase,{providerStatus:provider.status,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:Boolean(provider.cameraEnabled),screenSharing:provider.screenSharing},error:null});if(wasSharing&&!provider.screenSharing&&currentRequest)void meetingScreenShareLeaseService.release(currentRequest.roomId,currentRequest.sessionId);}
     else if(provider.errorCode)meetingStore.setError(generation,fail(provider.errorCode==="VOICE_PERMISSION_DENIED"?"MEETING_PERMISSION_DENIED":"MEETING_PROVIDER_ERROR",provider.error??"The meeting provider reported an error.",true,provider.errorCode));
     meetingStore.patch(generation,{screenShares:provider.screenShares});
     applyProviderParticipants(generation,provider);
@@ -169,7 +170,7 @@ export const meetingService = {
     meetingStore.patch(snapshot.generation,{waitingEntry:{id:result.data.id,status:result.data.status},providerStatus:"waiting_cancelled",error:null});
     return{ok:true,data:meetingStore.getSnapshot()};
   },
-  async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation;stopBindings();await meetingLiveKitAdapter.disconnect();const shield=noiseShieldService.deactivateMeeting();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null,noiseShield:clientNoiseShield(shield)});currentRequest=null;},
+  async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation,request=currentRequest;stopBindings();await meetingLiveKitAdapter.disconnect();if(request)await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);const shield=noiseShieldService.deactivateMeeting();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null,noiseShield:clientNoiseShield(shield)});currentRequest=null;},
   setLayout:meetingStore.setLayout,
   setRightDock:meetingStore.setRightDock,
   setFocus:meetingStore.setFocus,
@@ -181,8 +182,8 @@ export const meetingService = {
   async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});return result.ok;},
   setDeafened(deafened:boolean):boolean{const result=meetingLiveKitAdapter.setDeafened(deafened);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,deafened:result.data.deafened}});return result.ok;},
   async setCameraEnabled(enabled:boolean,deviceId="default"):Promise<boolean>{const result=await meetingLiveKitAdapter.setCameraEnabled(enabled,deviceId);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,cameraEnabled:Boolean(result.data.cameraEnabled)}});return result.ok===true;},
-  async startScreenShare(sourceId:string,sourceLabel?:string):Promise<boolean>{const result=await meetingLiveKitAdapter.startScreenShare(sourceId,sourceLabel);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:Boolean(result.data.screenSharing)}});return result.ok===true;},
-  async stopScreenShare():Promise<boolean>{const result=await meetingLiveKitAdapter.stopScreenShare();if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:false}});return result.ok;},
+  async startScreenShare(sourceId:string,sourceLabel?:string):Promise<boolean>{const request=currentRequest;if(!request||meetingStore.getSnapshot().screenShares?.some((share)=>!share.isLocal))return false;const lease=await meetingScreenShareLeaseService.claim(request.roomId,request.sessionId);if(!lease.ok)return false;const result=await meetingLiveKitAdapter.startScreenShare(sourceId,sourceLabel);if(!result.ok){await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);return false}meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:Boolean(result.data.screenSharing)}});return true;},
+  async stopScreenShare():Promise<boolean>{const request=currentRequest,result=await meetingLiveKitAdapter.stopScreenShare();if(request)await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:false}});return result.ok;},
   sendReaction:meetingSignalService.sendReaction,
   applyHandAction:meetingSignalService.applyHandAction,
 };
