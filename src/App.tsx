@@ -24,6 +24,12 @@ import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
+import {
+  AUTHENTICATED_DEFAULT_VIEW,
+  authenticatedEntryRouter,
+  createAuthenticatedLandingIntent,
+  toLegacyActiveView,
+} from "./services/navigation/authenticatedRouteService";
 import type { GlobalNavigationKey } from "./types/globalNavigation";
 import { WindowTitleBar } from "./components/WindowTitleBar";
 import { ServerRail } from "./components/ServerRail";
@@ -366,7 +372,9 @@ export function App() {
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
   const [passwordRecoveryMessage, setPasswordRecoveryMessage] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<ActiveView>("community");
+  const [activeView, setActiveView] = useState<ActiveView>(() =>
+    toLegacyActiveView(AUTHENTICATED_DEFAULT_VIEW),
+  );
   const [isActiveMessageListNearBottom, setIsActiveMessageListNearBottom] = useState(true);
   const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
   const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(() => feedUiStateService.applySeenState(mockFollowedUserStories));
@@ -642,6 +650,11 @@ export function App() {
     });
     return () => { canceled = true; };
   }, [onboardingUserId]);
+
+  useEffect(() => {
+    const intent = authenticatedEntryRouter.onSessionChanged(authSession?.user?.id ?? null);
+    if (intent) setActiveView(toLegacyActiveView(intent.route));
+  }, [authSession?.user?.id]);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? fallbackCurrentUser;
   const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
@@ -2296,7 +2309,7 @@ export function App() {
     if (completion.startChoice === "createCommunity") setCreateCommunityOpen(true);
     if (completion.startChoice === "joinInvite" && completion.inviteCode) setPendingInviteCode(completion.inviteCode);
 
-    setActiveView("mentionFeed");
+    setActiveView(toLegacyActiveView(createAuthenticatedLandingIntent("onboarding_complete").route));
     pushToast("Picom setup completed.", "success");
   }, [profileSettings, pushToast]);
 
