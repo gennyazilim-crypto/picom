@@ -50,3 +50,33 @@ multi-monitor, and additional DPI limitations remain recorded by Task 666.
 
 The source and protected workflow gate are prepared. Completion is recorded only
 after the workflow produces a redacted Task 667 artifact with `status=passed`.
+
+## Protected completion evidence
+
+- GitHub Actions run: 29199409039
+- Result: passed
+- Local fail-closed security/reliability checks: 19/19
+- Authentication and active membership gate: passed
+- Roleless active-member access: passed
+- Visitor/non-member/banned/suspended denial: passed
+- Cross-community denial: passed
+- Canonical token room/identity and 600-second TTL: passed
+- Allowed CORS plus method/body/JWT/oversize denials: passed
+- Token rate limit: 10 per 60 seconds, request 11 returned 429
+- Token refresh: passed
+- Moderation hierarchy authorization: 4/4
+- IPC deterministic fuzz and Electron security: passed
+- Provider secret and raw-media exposure scan: passed
+- Hosted reconnect and post-reconnect media: passed
+- Native source-ended/restart and remote render: passed
+- Ghost participant, duplicate track/processor and listener/timer/AudioContext cleanup contracts: passed
+- Hosted room/track and ephemeral fixture cleanup: passed
+- Packaged normal restart and uninstall: passed
+- Windows evidence run: 29198913461
+- Windows installer SHA-256: 2b9a7b4c4f1017bae3193f3da3bdfcae7d454e285936dea846faad21b43408cd
+- Evidence secret scan: containsSecrets=false
+
+The gate does not claim a fresh provider-side mute/remove/end-room execution or
+physical microphone/multi-monitor certification. Moderation authorization and
+terminal provider-disconnect cleanup are verified, while those explicit native
+/provider actions remain honestly recorded as release-lab limitations.
