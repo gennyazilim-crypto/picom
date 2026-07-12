@@ -7,6 +7,7 @@ import { meetingParticipantLocalControlService } from "../../services/meeting/me
 import { meetingParticipantModerationService } from "../../services/meeting/meetingParticipantModerationService";
 import { meetingParticipantNavigationService } from "../../services/meeting/meetingParticipantNavigationService";
 import { meetingHostControlService } from "../../services/meeting/meetingHostControlService";
+import { meetingLayoutPreferenceService } from "../../services/meeting/meetingLayoutPreferenceService";
 import { ReportModal, type ReportModalTarget } from "../ReportModal";
 import { DesktopContextMenu } from "../DesktopContextMenu";
 import "./MeetingParticipantActionsProvider.css";
@@ -69,7 +70,9 @@ export function MeetingParticipantActionsProvider({ snapshot, children }: { snap
       return;
     }
     if (action === "pin") {
-      meetingService.setFocus(snapshot.focusedParticipantId === selected.id ? null : selected.id);
+      const next = snapshot.focusedParticipantId === selected.id ? null : selected.id;
+      meetingService.setFocus(next, snapshot.focusedShareId);
+      if (next) meetingLayoutPreferenceService.setPreference("speaker");
       setMenu(null);
       return;
     }

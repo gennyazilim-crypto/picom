@@ -30,8 +30,7 @@ export function MeetingScreenShareFocus({ snapshot, onReturnToGrid, onReturnToSp
   useEffect(() => {
     if (!share) return;
     meetingService.setFocusedScreenShare(share.id);
-    if (snapshot.focusedShareId !== share.id) meetingService.setFocus(snapshot.focusedParticipantId, share.id);
-  }, [share?.id, snapshot.focusedParticipantId, snapshot.focusedShareId]);
+  }, [share?.id]);
   useEffect(() => { meetingService.setVideoSubscriptions(subscription); }, [subscriptionKey]);
 
   if (!share) return null;
@@ -42,7 +41,7 @@ export function MeetingScreenShareFocus({ snapshot, onReturnToGrid, onReturnToSp
         <div className="meeting-share-scale" aria-label="Shared content scale">
           {(["fit", "fill", "actual"] as const).map((value) => <button type="button" key={value} className={scale === value ? "active" : ""} aria-pressed={scale === value} onClick={() => setScale(value)}>{value === "actual" ? "Actual Size" : value[0].toUpperCase() + value.slice(1)}</button>)}
         </div>
-        <button type="button" onClick={onOpenPeople}><AppIcon name="users" size="sm" />People</button>
+        <div className="meeting-share-header-actions"><button type="button" aria-pressed={snapshot.focusedShareId===share.id} onClick={()=>meetingService.setFocus(snapshot.focusedParticipantId,snapshot.focusedShareId===share.id?null:share.id)}><AppIcon name="pin" size="sm" />{snapshot.focusedShareId===share.id?"Unpin share":"Pin share"}</button><button type="button" onClick={onOpenPeople}><AppIcon name="users" size="sm" />People</button></div>
       </header>
       <div className="meeting-screen-share-focus__body">
         <div className={`meeting-screen-share-focus__viewer is-${scale}`}><ShareVideo share={share} scale={scale} /></div>
@@ -51,7 +50,7 @@ export function MeetingScreenShareFocus({ snapshot, onReturnToGrid, onReturnToSp
           <div className="meeting-share-participants__list">{compactParticipants.map((participant) => <MeetingParticipantTile key={participant.id} participant={participant} variant="share" />)}</div>
         </aside>
       </div>
-      <footer><span>{shares.length > 1 ? "Picom displays one active share at a time." : "Participant context remains visible while content is shared."}</span><button type="button" onClick={onReturnToGrid}>Return to Grid</button><button type="button" onClick={onReturnToSpeaker}>Speaker view</button></footer>
+      <footer><span>{shares.length > 1 ? "Choose and pin a shared track locally from the active-share controls." : "Participant context remains visible while content is shared."}</span>{shares.length>1?<div className="meeting-share-picker" aria-label="Active shared tracks">{shares.map((item)=><button type="button" aria-pressed={share.id===item.id} key={item.id} onClick={()=>meetingService.setFocus(snapshot.focusedParticipantId,item.id)}>{item.participantName}</button>)}</div>:null}<button type="button" onClick={onReturnToGrid}>Return to Grid</button><button type="button" onClick={onReturnToSpeaker}>Speaker view</button></footer>
     </section>
   );
 }
