@@ -1,0 +1,72 @@
+name: Picom LiveKit Token Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_confirmation:
+        description: Type STAGING_ONLY to deploy and run ephemeral hosted fixtures
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: livekit-token-staging-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-and-validate:
+    name: Deploy and validate member-authorized token issuer
+    if: ${{ inputs.staging_confirmation == 'STAGING_ONLY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: hosted-staging
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      PICOM_LIVEKIT_STAGING_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      PICOM_CONFIRM_LIVEKIT_EDGE_DEPLOY: STAGING_ONLY
+      PICOM_CONFIRM_LIVEKIT_MIGRATIONS_APPLIED: "YES"
+      PICOM_CONFIRM_LIVEKIT_HOSTED_FIXTURE: STAGING_ONLY
+      PICOM_EVIDENCE_RUN_ID: ${{ github.run_id }}
+    steps:
+      - name: Check out approved source
+        uses: actions/checkout@v7
+
+      - name: Set up project Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify local token security contract
+        run: npm run livekit:token:security:smoke
+
+      - name: Apply reviewed authorization migration and deploy token Function
+        run: npm run livekit:token:deploy:staging -- --apply
+
+      - name: Run ephemeral hosted member authorization matrix
+        run: node scripts/livekit-token-member-hosted-fixture.mjs
+
+      - name: Publish redacted evidence summary
+        if: ${{ always() }}
+        run: |
+          if [ -f artifacts/evidence/task-661-livekit-token-staging.json ]; then
+            node -e "const fs=require('fs');const p='artifacts/evidence/task-661-livekit-token-staging.json';const d=JSON.parse(fs.readFileSync(p,'utf8'));fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, ['## Task 661 LiveKit token staging', '', '- Status: '+d.status, '- Migration recorded: '+Boolean(d.migrationRecorded), '- Function deployed: '+Boolean(d.functionDeployed), '- Hosted active-member cases: '+(d.activeMemberCasesPassed?.length??0), '- Hosted denial cases: '+(d.deniedCasesPassed?.length??0), '- Rate limit: '+(d.rateLimitPassed??'not completed'), '- Contains secrets: '+Boolean(d.containsSecrets), ''].join('\\n'))"
+          else
+            echo "Task 661 evidence file was not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload redacted hosted evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: task-661-livekit-token-staging-evidence
+          path: artifacts/evidence/task-661-livekit-token-staging.json
+          if-no-files-found: warn
+          retention-days: 14

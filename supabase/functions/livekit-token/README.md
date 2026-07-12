@@ -18,20 +18,21 @@ The Function verifies the Supabase JWT through the user-scoped client, then requ
 
 ## Authorization
 
-`POST` JSON accepts `communityId`, `channelId`, optional deterministic `roomName`, legacy/non-authoritative `participantName`, and `intent` (`voice` or `screen`). The Function validates JWT, V1 server gate, 2 KiB JSON contract, exact origin allowlist, per-user rate limit, active profile, active community membership, bans/timeouts, voice channel, private access, and scoped `joinVoice`/`speakInVoice`/`shareScreen` permissions through `authorize_livekit_room`.
+`POST` JSON accepts `communityId`, `channelId`, optional deterministic `roomName`, legacy/non-authoritative `participantName`, and `intent` (`voice` or `screen`). The Function validates JWT, V1 server gate, 2 KiB JSON contract, exact origin allowlist, per-user rate limit, canonical profile, community/channel existence, accepted membership, active ban/timeout state, and Voice channel type through `authorize_livekit_room`.
 
-`voice` grants microphone publication only when allowed. `screen` grants screen-share sources only when allowed and preserves microphone publication only when independently authorized. Camera and data publication are denied. Tokens expire after ten minutes.
+Every active community member receives ordinary Voice and Screen authorization without an Owner, Admin, Moderator, custom-role, private-channel, or channel-override grant. Visitors, non-members, removed members, deletion-pending profiles, bots, banned members, and timed-out members are denied. Moderation is a separate RPC and remains role-hierarchy controlled.
 
-## Staging deployment
+`voice` grants microphone publication. `screen` grants microphone, screen-share, and screen-share-audio sources. Both intents grant subscription. Camera and data publication are denied. Tokens expire after ten minutes.
 
-The V1 release manifest intentionally continues to exclude this Function until Task 654. Use the explicit staging-only path:
+## Protected staging deployment
+
+Use the manual `Picom LiveKit Token Staging` workflow with input `STAGING_ONLY`. The job runs only in the protected `hosted-staging` GitHub environment. It applies the reviewed Task 660 authorization migration through the Supabase Management API, records the migration, deploys this Function, creates ephemeral synthetic fixtures, runs the hosted authorization matrix, removes all fixture data, and uploads a redacted evidence artifact.
+
+Local dry-run:
 
 ```powershell
 npm run livekit:token:deploy:staging
-$env:PICOM_CONFIRM_LIVEKIT_EDGE_DEPLOY="STAGING_ONLY"
-$env:PICOM_CONFIRM_LIVEKIT_MIGRATIONS_APPLIED="YES"
-npm run livekit:token:deploy:staging -- --apply
-npm run livekit:token:staging -- --run
+npm run livekit:token:security:smoke
 ```
 
-The apply command also requires the approved project-reference match and protected Supabase secret names. It never accepts or prints secret values. Production deployment is forbidden until the provider, hosted, security and Task 654 gates pass.
+No local or workflow output may contain a PAT, service-role/secret key, provider key, JWT, fixture password, or synthetic email.

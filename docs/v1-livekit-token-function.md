@@ -1,91 +1,54 @@
 # Picom V1 LiveKit Token Function
 
-Status date: 2026-07-12  
-Implementation status: **LOCAL SECURITY CONTRACT PASS / HOSTED DEPLOYMENT BLOCKED**
+Status date: 2026-07-12
 
 ## Purpose
 
-The `livekit-token` Supabase Edge Function is the sole V1 participant-token issuer for community Voice Rooms and Screen Share. Renderer components and Electron preload code never sign provider tokens.
+`livekit-token` is the sole V1 participant-token issuer for community Voice Rooms and Screen Share. Renderer components and Electron preload code never sign provider tokens and never receive provider credentials.
 
-## Implementation audit
+## Security contract
 
-- Client SDK: `livekit-client@2.20.0`.
-- Server package: no `livekit-server-sdk` dependency is installed.
-- Token signer: the existing Deno Web Crypto HMAC-SHA256 helper emits the minimal LiveKit JWT grant shape.
-- Hosted provider acceptance remains required to prove compatibility; local shape checks are not a substitute.
-- JWT verification: Supabase gateway `verify_jwt=true` plus `requireSupabaseUser`.
-- Canonical identity: authenticated `auth.uid()` must map to an active, non-bot `profiles` row.
-- Canonical name: `profiles.display_name`; renderer `participantName` is non-authoritative.
-- Release state: `PICOM_V1_VOICE_SCREEN_ENABLED=true` is required server-side.
-- Room authorization: `authorize_livekit_room` RPC.
-- Token TTL: 600 seconds.
-- Provider URL: `wss://` only, except `ws://localhost`/`127.0.0.1` for local development.
-- CORS: exact configured origins; missing allowlist fails closed.
-- Body: JSON only, supported keys only, 2 KiB maximum.
-- Rate limit: `consume_current_user_action_rate_limit('livekit_token')`.
-- Cache: `no-store`.
-- Logs: the Function contains no token/secret logging.
+- Supabase gateway JWT verification plus `requireSupabaseUser`.
+- Canonical `auth.uid()` identity and `profiles.display_name` participant label.
+- Deletion-pending and bot profiles denied.
+- `PICOM_V1_VOICE_SCREEN_ENABLED=true` required server-side.
+- `authorize_livekit_room` is the server authorization boundary.
+- Active membership, community/channel ownership, Voice type, archived state, ban, and timeout checks are server-side.
+- Role, role position, custom role, private-channel permission, and channel overrides do not restrict ordinary member Voice or Screen access.
+- Moderation remains separate and role-hierarchy controlled.
+- Exact CORS allowlist, JSON-only 2 KiB body, supported keys only, deterministic room naming, 600-second TTL, and no-store response.
+- Per-user `livekit_token` rate limit is 10 requests per 60 seconds.
+- No Function code logs token, credential, microphone content, or shared-screen content.
 
 ## Grant contract
 
-| Intent | Join | Subscribe | Microphone | Screen | Camera | Data |
-| --- | --- | --- | --- | --- | --- | --- |
-| Voice without speak permission | Yes | Yes | No | No | No | No |
-| Voice with speak permission | Yes | Yes | Yes | No | No | No |
-| Screen with share permission | Yes | Yes | Independently authorized | Yes | No | No |
-| Visitor/banned/timed-out/private denial | No token | No token | No token | No token | No token | No token |
-| V1 server gate disabled | 503, no token | - | - | - | - | - |
+| Caller / intent | Join | Subscribe | Microphone | Screen | Screen audio | Camera | Data |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Active member / Voice | Yes | Yes | Yes | No | No | No | No |
+| Active member / Screen | Yes | Yes | Yes | Yes | Yes | No | No |
+| Active roleless member | Same member grants | Same member grants | Same member grants | Same member grants | Same member grants | No | No |
+| Visitor / non-member / removed / banned / timed out | No token | No token | No token | No token | No token | No token | No token |
+| V1 server gate disabled | 503, no token | - | - | - | - | - | - |
 
-No V1 data-packet permission exists, so `canPublishData` remains false rather than granting an unused capability.
+## Protected hosted workflow
 
-## Hosted test matrix
+`.github/workflows/livekit-token-staging.yml` is manual-only and requires `STAGING_ONLY`. The `hosted-staging` environment supplies the Supabase PAT and approved project reference. The workflow:
 
-The staging validator is prepared to test:
+1. runs the source security contract;
+2. applies and records migration `20260712166000` through the official Supabase Management API database query endpoint;
+3. verifies the member and token RPCs;
+4. deploys `livekit-token` with Supabase CLI `2.109.1`;
+5. creates temporary confirmed Auth identities and a private fixture community;
+6. proves Owner, Admin, Moderator, Member, and roleless Member Voice/Screen/private-Voice grants;
+7. proves Visitor, non-member, and banned denial;
+8. proves JWT, CORS, method, body, camera/data, and 10-per-minute rate-limit behavior;
+9. removes the fixture community and users;
+10. uploads only a redacted JSON result artifact.
 
-- valid member Voice and Screen tokens;
-- missing and expired JWT;
-- visitor;
-- unauthorized member;
-- banned member;
-- private channel;
-- wrong HTTP method;
-- malformed body;
-- denied origin;
-- canonical profile display name;
-- 10-minute TTL;
-- room/identity/source/data grants;
-- absence of provider credential fields;
-- separate V1-hidden mode.
+The workflow never prints or uploads the PAT, Supabase server key, LiveKit secret, generated JWT, fixture password, email, or raw user/community/channel identifier.
 
-Rate-limit exhaustion must be exercised in an approved isolated fixture because intentionally flooding a shared staging account is not safe.
+## Evidence boundary
 
-## Deployment path
+The committed evidence contract is `docs/evidence/task-661-livekit-token-hosted-evidence-contract.json`. The real run produces artifact `task-661-livekit-token-staging-evidence` containing `task-661-livekit-token-staging.json`. A green source commit alone is not hosted proof; the protected workflow run and artifact are mandatory.
 
-`npm run livekit:token:deploy:staging` is dry-run by default. `--apply` requires:
-
-- Supabase CLI;
-- `STAGING_ONLY` confirmation;
-- exact approved project-reference match;
-- reviewed migration confirmation;
-- required protected secret names.
-
-The Function remains excluded from `supabase/functions/release-manifest.json` until Task 654. The staging-only path cannot publish a V1 release.
-
-## Hosted evidence
-
-| Evidence | Result |
-| --- | --- |
-| Approved provider project | BLOCKED by Task 643 |
-| Linked staging Supabase project | BLOCKED |
-| Protected secret-name inventory | BLOCKED |
-| Function deployment revision | BLOCKED |
-| Allowed/denied hosted matrix | BLOCKED |
-| Provider accepts generated token | BLOCKED |
-| Hosted logs redaction review | BLOCKED |
-| V1 hidden-state hosted probe | BLOCKED |
-
-No deploy or network request was made in Task 644 because no approved project, provider, protected environment or credential custody exists.
-
-## Release decision
-
-The local implementation is safer and testable, but Task 644 does not meet its hosted acceptance criteria. Voice Rooms and Screen Share remain `HIDDEN_FROM_V1`.
+Provider connection and two-client native media evidence remain separate Tasks 663-668. Task 661 proves the deployed issuer and grant/denial contract without claiming native microphone or screen-capture success.

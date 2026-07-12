@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "task": 661,
+  "evidenceType": "protected-hosted-workflow-artifact",
+  "workflow": ".github/workflows/livekit-token-staging.yml",
+  "workflowName": "Picom LiveKit Token Staging",
+  "artifactName": "task-661-livekit-token-staging-evidence",
+  "artifactFile": "task-661-livekit-token-staging.json",
+  "approvedProject": "picom-staging",
+  "approvedProjectRef": "ufmtvqtsklqsmqxefbbs",
+  "requiredStatus": "passed",
+  "containsSecrets": false,
+  "notes": "The real run ID, timestamps, deployment result, active-member cases, denial cases, and rate-limit result are generated only by the protected hosted workflow. This contract is not itself a PASS claim."
+}
