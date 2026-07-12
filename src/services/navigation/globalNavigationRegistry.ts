@@ -15,7 +15,7 @@ export const globalNavigationRegistry: readonly GlobalNavigationRegistryItem[] =
   { key: "radio", label: "Radio", ariaLabel: "Open Radio", icon: "volume", section: "primary", status: (availability) => availability.hasRadioWorkspace ? "available" : "unavailable", unavailableReason: "No accessible Radio community is available.", badgeSelector: (state) => state.radioLive ? "Live" : null },
   { key: "podcasts", label: "Podcasts", ariaLabel: "Open Podcasts", icon: "headphones", section: "primary", status: (availability) => availability.hasPodcastWorkspace ? "available" : "unavailable", unavailableReason: "No accessible Podcast community is available.", badgeSelector: noBadge },
   { key: "events", label: "Events", ariaLabel: "Open upcoming events", icon: "bell", section: "primary", status: available, badgeSelector: (state) => state.eventUpcoming },
-  { key: "bookmarks", label: "Bookmarks", ariaLabel: "Open bookmarks", icon: "pin", section: "primary", status: available, badgeSelector: (state) => state.bookmarkCount },
+  { key: "bookmarks", label: "Bookmarks", ariaLabel: "Open bookmarks", icon: "pin", section: "primary", status: available, badgeSelector: noBadge },
   { key: "settings", label: "Settings", ariaLabel: "Open user settings", icon: "settings", section: "utility", status: available, badgeSelector: noBadge },
   { key: "helpSupport", label: "Help & Support", ariaLabel: "Open Help and Support", icon: "user", section: "utility", status: available, badgeSelector: noBadge },
 ];

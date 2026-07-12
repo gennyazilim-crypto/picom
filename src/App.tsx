@@ -28,6 +28,8 @@ import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppS
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
 import { settingsNavigationPolicyService } from "./services/navigation/settingsNavigationPolicyService";
 import { helpSupportNavigationService } from "./services/navigation/helpSupportNavigationService";
+import { globalNavigationBadgeService } from "./services/navigation/globalNavigationBadgeService";
+import { notificationNavigationPolicyService } from "./services/navigation/notificationNavigationPolicyService";
 import {
   AUTHENTICATED_DEFAULT_VIEW,
   authenticatedEntryRouter,
@@ -1442,6 +1444,17 @@ export function App() {
         return;
       }
 
+      const navigationDecision = notificationNavigationPolicyService.validate(action, {
+        isAuthenticated: Boolean(authSession?.user),
+        currentUserId,
+        communities,
+        blockedUserIds,
+      });
+      if (!navigationDecision.allowed) {
+        pushToast(navigationDecision.reason, "error");
+        return;
+      }
+
       if (action.type === "friends") {
         setActiveView("friends");
         closeTransientOverlays();
@@ -1497,7 +1510,7 @@ export function App() {
     };
 
     return deepLinkService.onDeepLink(handleDeepLinkAction);
-  }, [clearAuthError, clearChannelUnread, closeTransientOverlays, communities, openPodcastEpisodeSource, pushToast, switchCommunity]);
+  }, [authSession?.user, blockedUserIds, clearAuthError, clearChannelUnread, closeTransientOverlays, communities, currentUserId, openPodcastEpisodeSource, pushToast, switchCommunity]);
 
   useEffect(() => {
     const handleMenuAction = (payload: MenuActionPayload) => {
@@ -2143,29 +2156,54 @@ export function App() {
   });
 
   const openNotificationSource = useCallback((item: NotificationCenterItem) => {
-    notificationCenterService.markRead(item.id);
     setNotificationCenterOpen(false);
-    if (item.context.kind === "dm" && item.context.userId) { openDirectMessages(item.context.userId); return; }
+    if (!authSession?.user) { pushToast("Sign in before opening this notification.", "error"); return; }
+    if (item.context.deepLink) {
+      const parsed = deepLinkService.parseDeepLink(item.context.deepLink);
+      if (!parsed.ok) { pushToast("This notification destination is invalid or no longer available.", "error"); return; }
+      const decision = notificationNavigationPolicyService.validate(parsed.action, { isAuthenticated: true, currentUserId, communities, blockedUserIds });
+      if (!decision.allowed) { pushToast(decision.reason, "error"); return; }
+      notificationCenterService.markRead(item.id);
+      deepLinkService.handleDeepLink(item.context.deepLink);
+      return;
+    }
+    if (item.context.kind === "dm" && item.context.userId) {
+      if (blockedUserIds.includes(item.context.userId)) { pushToast("This direct message is unavailable because the user is blocked.", "error"); return; }
+      notificationCenterService.markRead(item.id);
+      openDirectMessages(item.context.userId);
+      return;
+    }
     if (item.context.kind === "community" && item.context.communityId && item.context.radioSessionId) {
-      const target = communities.find((community) => community.id === item.context.communityId);
-      const access = target ? getCommunityAccess(currentUserId, target) : null;
-      if (target?.kind === "radio" && access && (access.isMember || access.canViewPublicContent)) {
+      const decision = notificationNavigationPolicyService.validate({ type: "radio", communityId: item.context.communityId, sessionId: item.context.radioSessionId }, { isAuthenticated: true, currentUserId, communities, blockedUserIds });
+      if (decision.allowed) {
+        notificationCenterService.markRead(item.id);
         communityNavigationService.rememberRadioSession(item.context.communityId, item.context.radioSessionId);
         setActiveView("radioCommunity");
         switchCommunity(item.context.communityId);
-      } else pushToast("This Radio session is unavailable or private.", "error");
+      } else pushToast(decision.reason, "error");
       return;
     }
-    if (item.context.kind === "community" && item.context.communityId && item.context.podcastEpisodeId) { void openPodcastEpisodeSource(item.context.communityId, item.context.podcastEpisodeId, "Opened the Podcast mention."); return; }
+    if (item.context.kind === "community" && item.context.communityId && item.context.podcastEpisodeId) {
+      const decision = notificationNavigationPolicyService.validate({ type: "podcast", communityId: item.context.communityId, episodeId: item.context.podcastEpisodeId }, { isAuthenticated: true, currentUserId, communities, blockedUserIds });
+      if (!decision.allowed) { pushToast(decision.reason, "error"); return; }
+      notificationCenterService.markRead(item.id);
+      void openPodcastEpisodeSource(item.context.communityId, item.context.podcastEpisodeId, "Opened the Podcast mention.");
+      return;
+    }
     if (item.context.kind === "community" && item.context.communityId) {
+      const decision = notificationNavigationPolicyService.validate({ type: "community", communityId: item.context.communityId, channelId: item.context.channelId, messageId: item.context.messageId }, { isAuthenticated: true, currentUserId, communities, blockedUserIds });
+      if (!decision.allowed) { pushToast(decision.reason, "error"); return; }
       const target = communities.find((community) => community.id === item.context.communityId);
+      if (!target) { pushToast("This notification destination is no longer available.", "error"); return; }
+      notificationCenterService.markRead(item.id);
       setActiveView(target ? communityViewForKind(target.kind) : "community"); switchCommunity(item.context.communityId, target?.kind === "text" ? item.context.channelId : undefined);
       if (target?.kind === "text" && item.context.channelId) setActiveChannelId(item.context.channelId);
       if (item.context.messageId) setHighlightedMessageId(item.context.messageId);
       return;
     }
+    notificationCenterService.markRead(item.id);
     pushToast(item.title, "info");
-  }, [communities, openDirectMessages, openPodcastEpisodeSource, pushToast, setActiveChannelId, switchCommunity]);
+  }, [authSession?.user, blockedUserIds, communities, currentUserId, openDirectMessages, openPodcastEpisodeSource, pushToast, setActiveChannelId, switchCommunity]);
 
   const createCommunityEvent = useCallback(async (input: CreateCommunityEventInput) => { const event=await communityEventService.createEvent(input);if(event){setCommunityEvents((current)=>[event,...current]);pushToast("Event created.","success");}else pushToast("Event could not be created.","error"); },[pushToast]);
   const updateCommunityEvent = useCallback(async (eventId: string, input: UpdateCommunityEventInput) => { const event = await communityEventService.updateEvent(eventId, input); if (event) { setCommunityEvents((current) => current.map((item) => item.id === eventId ? event : item)); pushToast("Event updated.", "success"); } else pushToast("Event could not be updated.", "error"); }, [pushToast]);
@@ -2715,13 +2753,15 @@ export function App() {
 
   const activeGlobalRoute = resolveGlobalNavigationKey(activeView);
   const activeGlobalUtility = activeView === "support" ? "helpSupport" : null;
-  const globalNavigationBadges = {
-    dmUnread: directConversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
-    communityUnread: 0,
-    radioLive: communities.filter((community) => community.kind === "radio").length,
-    eventUpcoming: visibleCommunityEvents.length,
-    bookmarkCount: savedMessages.length,
-  };
+  const globalNavigationBadges = globalNavigationBadgeService.deriveBadges({
+    communities,
+    directConversations,
+    activeVoiceRooms,
+    visibleEvents: visibleCommunityEvents,
+    blockedUserIds,
+    notificationPolicy: notificationPolicyState,
+    canViewChannel: (community, channel) => canViewChannel(getCommunityAccess(currentUserId, community), channel),
+  });
   const globalNavigationAvailability = {
     hasRadioWorkspace: communities.some((community) => community.kind === "radio"),
     hasPodcastWorkspace: communities.some((community) => community.kind === "podcast"),

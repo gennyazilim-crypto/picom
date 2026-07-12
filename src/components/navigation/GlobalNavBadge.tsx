@@ -1,5 +1,6 @@
-export function GlobalNavBadge({ value }: { value: number | string | null }) {
+export function GlobalNavBadge({ value, destination }: { value: number | string | null; destination: string }) {
   if (value === null || value === 0 || value === "") return null;
   const label = typeof value === "number" && value > 99 ? "99+" : String(value);
-  return <span className="global-nav-badge" aria-label={`${label} notifications`}>{label}</span>;
+  const accessibleLabel = typeof value === "string" ? `${destination}: ${label}` : `${destination}: ${label} unread`;
+  return <span className="global-nav-badge" aria-label={accessibleLabel}>{label}</span>;
 }

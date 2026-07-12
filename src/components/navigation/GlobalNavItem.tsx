@@ -28,7 +28,7 @@ export function GlobalNavItem({ item, active, compact, disabled, badge, onClick 
     >
       <span className="global-nav-item__icon" aria-hidden="true"><AppIcon name={item.icon} size="lg" /></span>
       <span className="global-nav-item__label" title={!compact ? item.label : undefined}>{item.label}</span>
-      <GlobalNavBadge value={badge} />
+      <GlobalNavBadge value={badge} destination={item.label} />
     </button>
   );
 }
