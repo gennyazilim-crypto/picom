@@ -39,6 +39,7 @@ const checks = [
   ["missing owner-only policies remain explicit debt", deploy.includes("deferredOwnerMigrations.push") && deploy.includes("missing_storage_owner_policies") && deploy.includes("continue;")],
   ["deployment is scoped to reviewed Voice migrations", deploy.includes("prerequisiteMigrationVersions") && deploy.includes("targetMigrationVersions") && deploy.includes("outOfScopePendingMigrations")],
   ["hosted deploy verifies rate-limit reconciliation", deploy.includes("rate_limit_gate") && deploy.includes("rate_limit_migration_recorded")],
+  ["deploy diagnostics retain redacted failure tail", deploy.includes("[REDACTED_OUTPUT_TRUNCATED]") && deploy.includes("safe.slice(-750)")],
   ["secret server boundary", fn.includes('getRequiredEnv("LIVEKIT_API_SECRET")') && !client.includes("LIVEKIT_API_SECRET")],
 ];
 

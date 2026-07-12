@@ -16,11 +16,13 @@ let reconciledStoragePolicyCount = 0;
 const deferredOwnerMigrations = [];
 const outOfScopePendingMigrations = [];
 
-const redact = (value) => String(value ?? "")
-  .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
-  .replace(/sb_(?:secret|publishable)_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_KEY]")
-  .replace(/eyJ[A-Za-z0-9._-]+/g, "[REDACTED_JWT]")
-  .slice(0, 1200);
+const redact = (value) => {
+  const safe = String(value ?? "")
+    .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
+    .replace(/sb_(?:secret|publishable)_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_KEY]")
+    .replace(/eyJ[A-Za-z0-9._-]+/g, "[REDACTED_JWT]");
+  return safe.length <= 1200 ? safe : `${safe.slice(0, 400)}\n...[REDACTED_OUTPUT_TRUNCATED]...\n${safe.slice(-750)}`;
+};
 
 function writeEvidence(patch) {
   mkdirSync("artifacts/evidence", { recursive: true });
