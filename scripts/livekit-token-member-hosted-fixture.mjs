@@ -5,12 +5,13 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 const approvedProjectRef = "ufmtvqtsklqsmqxefbbs";
 const evidencePath = "artifacts/evidence/task-661-livekit-token-staging.json";
 const allowedOrigin = "http://127.0.0.1:5173";
-const actorLabels = ["owner", "admin", "moderator", "member", "roleless_member", "visitor", "non_member", "banned", "rate_limit"];
-const actorCodes = { owner: "ow", admin: "ad", moderator: "mo", member: "me", roleless_member: "rl", visitor: "vi", non_member: "nm", banned: "ba", rate_limit: "rt" };
+const actorLabels = ["owner", "admin", "moderator", "member", "roleless_member", "visitor", "non_member", "banned", "suspended", "rate_limit"];
+const actorCodes = { owner: "ow", admin: "ad", moderator: "mo", member: "me", roleless_member: "rl", visitor: "vi", non_member: "nm", banned: "ba", suspended: "su", rate_limit: "rt" };
 const activeLabels = ["owner", "admin", "moderator", "member", "roleless_member"];
-const deniedLabels = ["visitor", "non_member", "banned"];
+const deniedLabels = ["visitor", "non_member", "banned", "suspended"];
 const createdUsers = [];
 let communityId = null;
+let secondaryCommunityId = null;
 
 const redact = (value) => String(value ?? "")
   .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
@@ -120,8 +121,10 @@ try {
   }
 
   communityId = randomUUID();
+  secondaryCommunityId = randomUUID();
   const publicChannelId = randomUUID();
   const privateChannelId = randomUUID();
+  const secondaryChannelId = randomUUID();
   const roleIds = { owner: randomUUID(), admin: randomUUID(), moderator: randomUUID(), member: randomUUID() };
   const profileValues = actorLabels.map((label) => {
     const actor = actors.get(label);
@@ -135,6 +138,7 @@ try {
     ["moderator", roleIds.moderator],
     ["member", roleIds.member],
     ["banned", roleIds.member],
+    ["suspended", roleIds.member],
     ["rate_limit", roleIds.member],
   ].map(([label, roleId]) => `('${communityId}','${actors.get(label).id}',${roleId ? `'${roleId}'` : "null"})`).join(",\n");
   await query(`
@@ -142,8 +146,9 @@ begin;
 insert into public.profiles(id,username,display_name,status,status_text) values
 ${profileValues}
 on conflict(id) do update set username=excluded.username,display_name=excluded.display_name,status=excluded.status,status_text=excluded.status_text,deletion_requested_at=null,is_bot=false;
-insert into public.communities(id,owner_id,name,description,kind,visibility,public_read_enabled,type_settings)
-values('${communityId}','${actors.get("owner").id}','Task 661 Voice Fixture','Ephemeral protected staging fixture','text','private',false,'{"voiceRoomsEnabled":true}'::jsonb);
+insert into public.communities(id,owner_id,name,description,kind,visibility,public_read_enabled,type_settings) values
+('${communityId}','${actors.get("owner").id}','Task 661 Voice Fixture','Ephemeral protected staging fixture','text','private',false,'{"voiceRoomsEnabled":true}'::jsonb),
+('${secondaryCommunityId}','${actors.get("owner").id}','Task 667 Cross Community','Ephemeral cross-community denial fixture','text','private',false,'{"voiceRoomsEnabled":true}'::jsonb);
 insert into public.roles(id,community_id,name,level,permissions,system_key,is_default) values
 ('${roleIds.owner}','${communityId}','Owner',100,'{}'::jsonb,'owner',false),
 ('${roleIds.admin}','${communityId}','Admin',80,'{}'::jsonb,'admin',false),
@@ -157,9 +162,12 @@ insert into public.community_members(community_id,user_id,role_id) values
 alter table public.community_members enable trigger community_member_role_integrity;
 insert into public.channels(id,community_id,name,type,is_private,public_read_enabled,position) values
 ('${publicChannelId}','${communityId}','task-661-voice','voice',false,true,0),
-('${privateChannelId}','${communityId}','task-661-private-voice','voice',true,false,1);
+('${privateChannelId}','${communityId}','task-661-private-voice','voice',true,false,1),
+('${secondaryChannelId}','${secondaryCommunityId}','task-667-cross-voice','voice',false,true,0);
 insert into public.community_bans(community_id,user_id,banned_by,reason,revoked_at)
 values('${communityId}','${actors.get("banned").id}','${actors.get("owner").id}','task-661 synthetic denial',null);
+insert into public.community_member_timeouts(community_id,user_id,timed_out_by,reason,expires_at)
+values('${communityId}','${actors.get("suspended").id}','${actors.get("owner").id}','task-667 synthetic suspension',now()+interval '30 minutes');
 commit;`);
 
   const sessions = new Map();
@@ -177,6 +185,7 @@ commit;`);
   const normalizedPrivateChannelId = privateChannelId.trim().toLowerCase();
   if (![normalizedCommunityId, normalizedPublicChannelId, normalizedPrivateChannelId].every((id) => fixtureUuidPattern.test(id))) throw new Error("Synthetic community/channel UUID validation failed locally.");
   const baseBody = { communityId: normalizedCommunityId, channelId: normalizedPublicChannelId };
+  let rolelessVoiceToken = null;
   const rateLimitSession = sessions.get("rate_limit");
   const rateLimitPreflight = await rateLimitSession.client.rpc("consume_current_user_action_rate_limit", { target_action: "livekit_token" });
   if (rateLimitPreflight.error) throw new Error(`Rate-limit RPC preflight failed ${safeDatabaseCode(rateLimitPreflight.error)}: ${safeDatabaseDiagnostic(rateLimitPreflight.error)}`);
@@ -193,6 +202,7 @@ commit;`);
     const voice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "voice" } });
     if (voice.response.status !== 200) throw new Error(`${label} Voice token expected 200, received ${voice.response.status} ${safeResponseCode(voice.payload)}: ${safeResponseDiagnostic(voice.payload)}`);
     assertToken(voice.payload, session.userId, "voice");
+    if (label === "roleless_member") rolelessVoiceToken = voice.payload.token;
     const screen = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "screen" } });
     if (screen.response.status !== 200) throw new Error(`${label} Screen token expected 200, received ${screen.response.status} ${safeResponseCode(screen.payload)}: ${safeResponseDiagnostic(screen.payload)}`);
     assertToken(screen.payload, session.userId, "screen");
@@ -206,11 +216,24 @@ commit;`);
     if (denied.response.status !== 403) throw new Error(`${label} expected 403, received ${denied.response.status}.`);
   }
 
+  const crossCommunity = await requestFunction({ publicKey, accessToken: sessions.get("member").token, body: { communityId: secondaryCommunityId, channelId: secondaryChannelId, intent: "voice" } });
+  if (crossCommunity.response.status !== 403) throw new Error(`Cross-community token expected 403, received ${crossCommunity.response.status}.`);
+
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  const refreshed = await requestFunction({ publicKey, accessToken: sessions.get("roleless_member").token, body: { ...baseBody, intent: "voice" } });
+  if (refreshed.response.status !== 200) throw new Error(`Roleless-member token refresh expected 200, received ${refreshed.response.status}.`);
+  assertToken(refreshed.payload, sessions.get("roleless_member").userId, "voice");
+  if (!rolelessVoiceToken || refreshed.payload.token === rolelessVoiceToken) throw new Error("Hosted token refresh did not rotate the participant token.");
+
   const contractAccessToken = sessions.get("owner").token;
+  const preflight = await requestFunction({ publicKey, method: "OPTIONS", origin: allowedOrigin });
+  if (![200, 204].includes(preflight.response.status) || preflight.response.headers.get("access-control-allow-origin") !== allowedOrigin) throw new Error(`Allowed CORS preflight failed with ${preflight.response.status}.`);
   const wrongMethod = await requestFunction({ publicKey, accessToken: contractAccessToken, method: "GET" });
   if (wrongMethod.response.status !== 405) throw new Error(`Wrong method expected 405, received ${wrongMethod.response.status}.`);
   const malformed = await requestFunction({ publicKey, accessToken: contractAccessToken, rawBody: "{" });
   if (malformed.response.status !== 400) throw new Error(`Malformed body expected 400, received ${malformed.response.status}.`);
+  const oversized = await requestFunction({ publicKey, accessToken: contractAccessToken, rawBody: JSON.stringify({ communityId, channelId: publicChannelId, intent: "voice", padding: "x".repeat(70000) }) });
+  if (oversized.response.status !== 413) throw new Error(`Oversized body expected 413, received ${oversized.response.status}.`);
   const deniedOrigin = await requestFunction({ publicKey, accessToken: contractAccessToken, origin: "https://not-allowed.invalid", body: baseBody });
   if (deniedOrigin.response.status !== 403) throw new Error(`Denied origin expected 403, received ${deniedOrigin.response.status}.`);
   const missingJwt = await requestFunction({ publicKey, body: baseBody });
@@ -235,6 +258,11 @@ commit;`);
     screenShareAudioGrantPassed: true,
     cameraAndDataDenied: true,
     corsMethodBodyJwtPassed: true,
+    tokenTtlCanonicalIdentityPassed: true,
+    tokenRefreshPassed: true,
+    suspendedDenied: true,
+    crossCommunityDenied: true,
+    oversizedBodyDenied: true,
     rateLimitPassed: "10_per_60s_then_429",
     providerCredentialsAbsentFromResponses: true,
     syntheticUserCount: actorLabels.length,
@@ -249,6 +277,9 @@ commit;`);
 } finally {
   if (communityId) {
     try { await query("delete from public.communities where id=$1::uuid", [communityId]); } catch {}
+  }
+  if (secondaryCommunityId) {
+    try { await query("delete from public.communities where id=$1::uuid", [secondaryCommunityId]); } catch {}
   }
   for (const userId of createdUsers.reverse()) {
     try { await admin.auth.admin.deleteUser(userId); } catch {}

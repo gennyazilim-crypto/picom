@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const memberAccess = read("supabase/migrations/20260712166000_active_member_voice_screen_access.sql");
 const moderation = read("supabase/migrations/20260712164500_v1_voice_permission_matrix.sql");
 const edge = read("supabase/functions/livekit-moderation/index.ts");
@@ -28,7 +28,7 @@ for (const required of [
 for (const forbidden of ["effective_community_permission", "viewPrivateChannels", "community.kind='text'"]) {
   if (ordinarySection.includes(forbidden)) throw new Error(`Ordinary member media access still depends on ${forbidden}.`);
 }
-if (!ordinarySection.includes("target_channel.is_private") || !ordinarySection.includes("true,\n    true")) {
+if (!ordinarySection.includes("target_channel.is_private") || !/true,\s*true,\s*true/.test(ordinarySection)) {
   throw new Error("Private Voice access or unconditional ordinary publishing grants are missing.");
 }
 if (!moderation.includes("authorize_livekit_voice_moderation") || !moderation.includes("VOICE_ROLE_HIERARCHY_DENIED") || !moderation.includes("effective_community_permission")) {

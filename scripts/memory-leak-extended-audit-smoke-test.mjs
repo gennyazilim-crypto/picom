@@ -10,6 +10,7 @@ const messageRealtime = read("src/hooks/useSupabaseMessageRealtime.ts");
 const typingRealtime = read("src/hooks/useSupabaseTypingBroadcast.ts");
 const presenceRealtime = read("src/hooks/useSupabasePresenceChannel.ts");
 const dmRealtime = read("src/hooks/useDirectMessageRealtime.ts");
+const dmRealtimeService = read("src/services/directMessages/directRealtimeService.ts");
 const voice = read("src/services/voiceService.ts");
 const voiceDevices = read("src/services/voiceDeviceService.ts");
 const network = read("src/services/networkStatusService.ts");
@@ -25,7 +26,8 @@ for (const [label, source, markers] of [
   ["message realtime", messageRealtime, ["subscriptionGenerationRef", "canceled = true", "client.removeChannel(channel)"]],
   ["typing realtime", typingRealtime, ["window.clearInterval(cleanupTimer)", "client.removeChannel(channel)", "latestTypingEventAtRef.current = {}"]],
   ["presence realtime", presenceRealtime, ["window.clearTimeout", "window.clearInterval", "channel.untrack()", "client.removeChannel(channel)"]],
-  ["DM realtime", dmRealtime, ["canceled = true", "client.removeChannel(channel)", "eventDeduperRef.current.clear()"]],
+  ["DM realtime hook", dmRealtime, ["return directRealtimeService.subscribeActive", "return directRealtimeService.subscribeList"]],
+  ["DM realtime service", dmRealtimeService, ["canceled = true", "client.removeChannel(channel)", "guard.clear()"]],
 ]) for (const marker of markers) assert(source.includes(marker), `${label} cleanup is missing ${marker}`);
 
 for (const marker of ["stopLocalTracks(activeRoom)", "activeRoom.removeAllListeners()", "if (room === activeRoom) room = null", "unpublishTrack(track, true)", "track.stop()"])

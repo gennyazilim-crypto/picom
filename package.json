@@ -419,6 +419,8 @@
     "voice:screen:hosted:e2e": "node scripts/hosted-member-voice-screen-e2e.mjs",
     "voice:screen:windows:contract": "node scripts/windows-member-voice-screen-certification-contract.mjs",
     "voice:screen:windows:certify": "node scripts/windows-member-voice-screen-certification.mjs",
+    "voice:screen:security:gate": "node scripts/voice-screen-security-reliability-gate.mjs",
+    "voice:screen:security:finalize": "node scripts/voice-screen-security-reliability-gate.mjs --finalize-hosted",
     "screen-share:quality:test": "node scripts/screen-share-quality-test.mjs",
     "stories:header:smoke": "node scripts/followed-people-stories-header-smoke-test.mjs",
     "stories:supabase:smoke": "node scripts/followed-stories-supabase-smoke.mjs",

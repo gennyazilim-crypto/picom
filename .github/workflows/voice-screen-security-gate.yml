@@ -1,0 +1,107 @@
+name: Picom Voice Screen Security Reliability Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_confirmation:
+        description: Type STAGING_ONLY to run the protected Voice/Screen security gate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: voice-screen-security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  security-reliability:
+    name: Active-member Voice Screen security and cleanup
+    if: ${{ inputs.staging_confirmation == 'STAGING_ONLY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: hosted-staging
+    env:
+      PICOM_HOSTED_MEDIA_CONFIRM: STAGING_ONLY
+      PICOM_HOSTED_MEDIA_RUN_ID: ${{ github.run_id }}
+      PICOM_CONFIRM_LIVEKIT_HOSTED_FIXTURE: STAGING_ONLY
+      PICOM_CONFIRM_LIVEKIT_EDGE_DEPLOY: STAGING_ONLY
+      PICOM_CONFIRM_LIVEKIT_MIGRATIONS_APPLIED: "YES"
+      PICOM_EVIDENCE_RUN_ID: ${{ github.run_id }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      PICOM_HOSTED_MEDIA_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      PICOM_LIVEKIT_STAGING_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      PICOM_HOSTED_MEDIA_ORIGIN: ${{ vars.PICOM_EDGE_ALLOWED_ORIGIN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out approved source
+        uses: actions/checkout@v7
+
+      - name: Set up project Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run local security reliability matrix
+        run: npm run voice:screen:security:gate
+
+      - name: Verify reviewed hosted authorization migrations
+        run: npm run livekit:token:deploy:staging -- --apply --migrations-only
+
+      - name: Run hosted token denial TTL CORS and rate matrix
+        run: node scripts/livekit-token-member-hosted-fixture.mjs
+
+      - name: Configure Electron SUID sandbox
+        run: |
+          node -e "require('electron'); console.log('Electron binary ready.')"
+          test -f node_modules/electron/dist/chrome-sandbox
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+          test "$(stat -c '%a:%U' node_modules/electron/dist/chrome-sandbox)" = "4755:root"
+
+      - name: Run hosted media reconnect and cleanup matrix
+        run: xvfb-run -a npm run voice:screen:hosted:e2e -- --run
+
+      - name: Download approved Task 666 Windows evidence
+        run: |
+          mkdir -p artifacts/evidence/task666
+          gh run download 29198913461 -R gennyazilim-crypto/picom -n task-666-packaged-windows-member-voice-screen-evidence -D artifacts/evidence/task666
+
+      - name: Finalize redacted Task 667 evidence
+        env:
+          PICOM_TASK666_EVIDENCE_PATH: artifacts/evidence/task666/task-666-packaged-windows-member-voice-screen.json
+        run: npm run voice:screen:security:finalize
+
+      - name: Run full quality regression
+        run: |
+          npm run typecheck
+          npm run mock:smoke
+          npm run build
+          npm run qa:smoke
+          npm run performance:budget:ci
+
+      - name: Publish redacted security summary
+        if: ${{ always() }}
+        run: |
+          if [ -f artifacts/evidence/task-667-voice-screen-security-reliability.json ]; then
+            node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('artifacts/evidence/task-667-voice-screen-security-reliability.json','utf8'));fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,['## Task 667 Voice/Screen gate','','- Status: '+d.status,'- Local checks: '+d.evidence.localCheckCount,'- Cross-community denied: '+d.security.crossCommunityDenied,'- Suspended denied: '+d.security.visitorNonMemberBannedSuspendedDenied,'- Reconnect: '+d.reliability.networkReconnectPassed,'- Cleanup: '+d.reliability.hostedRoomTrackCleanupPassed,'- Contains secrets: '+d.containsSecrets,''].join('\n'))"
+          else
+            echo "Task 667 final evidence was not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload redacted Task 667 evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: task-667-voice-screen-security-reliability-evidence
+          path: artifacts/evidence/task-667-voice-screen-security-reliability.json
+          if-no-files-found: warn
+          retention-days: 14
