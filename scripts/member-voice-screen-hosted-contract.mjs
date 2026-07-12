@@ -8,6 +8,7 @@ const main = read("scripts/fixtures/livekit-hosted-e2e/main.cjs");
 const preload = read("scripts/fixtures/livekit-hosted-e2e/preload.cjs");
 const renderer = read("scripts/fixtures/livekit-hosted-e2e/renderer.ts");
 const migration = read("supabase/migrations/20260712166500_fix_livekit_voice_moderation_ambiguity.sql");
+const hierarchyMigration = read("supabase/migrations/20260712166510_voice_moderation_role_level_helper.sql");
 const deploy = read("scripts/deploy-livekit-token-staging.mjs");
 const releaseScope = read("src/config/v1ReleaseScope.ts");
 
@@ -21,7 +22,8 @@ for (const marker of ["actor_member.community_id", "actor_ban.community_id", "ac
   if (marker !== "community.community_id") assert.ok(migration.includes(marker), `moderation ambiguity migration missing ${marker}`);
 }
 assert.ok(migration.includes("channel.community_id=target_community_id") && !migration.includes("where community_id=target_community_id"), "moderation migration must qualify colliding community_id references");
-assert.ok(deploy.includes('moderationAmbiguityFixMigrationVersion = "20260712166500"') && workflow.includes("livekit:token:deploy:staging -- --apply"), "protected workflow must apply and verify the reviewed moderation fix");
+for (const marker of ["community.id=target_community_id", "member.community_id=target_community_id", "role_link.member_id=member.id", "revoke all on function public.community_user_max_role_level"]) assert.ok(hierarchyMigration.includes(marker), `moderation hierarchy helper missing ${marker}`);
+assert.ok(deploy.includes('moderationAmbiguityFixMigrationVersion = "20260712166500"') && deploy.includes('moderationRoleLevelHelperMigrationVersion = "20260712166510"') && workflow.includes("livekit:token:deploy:staging -- --apply"), "protected workflow must apply and verify the reviewed moderation fixes");
 assert.ok(!orchestrator.includes("LIVEKIT_API_SECRET") && !orchestrator.includes("LIVEKIT_API_KEY"), "hosted client proof must use Edge-issued participant tokens, not provider credentials");
 assert.match(releaseScope, /voiceRooms:\s*hidden\(/, "Task 665 must not include Voice Rooms before native/security gates");
 assert.match(releaseScope, /screenShare:\s*hidden\(/, "Task 665 must not include Screen Share before native/security gates");

@@ -6,6 +6,7 @@
 - Protected environment: `hosted-staging`.
 - Fixture lifecycle: the protected Supabase Management API creates an isolated ephemeral community, Voice channel, roles, ban, profiles, and Auth identities for this run; all are deleted in the same process even when a media assertion fails.
 - Hosted schema repair: forward migration `20260712166500` qualifies `community_id` references in the moderation RPC after real staging evidence exposed PostgreSQL `42702`; it does not alter ordinary member Voice/Screen grants.
+- Staging rollout compatibility: forward migration `20260712166510` supplies the multi-role hierarchy helper absent from the older hosted migration subset, without replaying unrelated Task 645 schema work.
 - Authorization boundary: authenticated Supabase sessions call the deployed `livekit-token` Edge Function; no LiveKit provider API key or secret reaches the client or workflow output.
 - Media runtime: four isolated sandboxed Electron renderer clients under Xvfb use the installed `livekit-client` SDK and Edge-issued participant tokens.
 - Active actor classes: Owner, Admin, Moderator, and Member.
