@@ -17,7 +17,7 @@ assert.ok(migration.includes("meeting_waiting_entries")&&migration.includes("acc
 for(const marker of ["meeting_user_is_restricted","can_join_meeting_room","MEETING_CAPACITY_REACHED","meeting_role_for_user","publishAudio","publishVideo","shareScreen","MEETING_SOURCE_FORBIDDEN","consume_meeting_request_limit('livekit_token')"])assert.ok(migration.includes(marker),`missing authorization marker ${marker}`);
 assert.ok(room.includes("createPicomMeetingLiveKitRoomName")&&migration.includes("meeting_livekit_room_name")&&edge.includes("matchesPicomMeetingLiveKitRoomName"),"canonical room naming missing");
 for(const source of ["camera","microphone","screen_share","screen_share_audio"])assert.ok(token.includes(`"${source}"`)&&edge.includes(`"${source}"`),`missing source grant ${source}`);
-assert.ok(edge.includes("tokenTtlSeconds = 5 * 60")&&edge.includes("canPublishData: authorization.can_publish_data"),"short token/data grant missing");
+assert.ok(edge.includes("tokenTtlSeconds = 5 * 60")&&edge.includes("request_data: false")&&edge.includes("canPublishData: false"),"short token or server-authoritative data boundary missing");
 assert.ok(!service.includes("LIVEKIT_API_SECRET")&&!service.includes("LIVEKIT_API_KEY")&&!edge.includes("console."),"provider secret/logging boundary violated");
 assert.ok(staging.includes("Missing JWT was accepted")&&staging.includes("waiting user")&&staging.includes("blocked user")&&staging.includes("token or secret was printed"),"allowed/denied staging matrix missing");
 console.log("Secure LiveKit meeting token JWT, waiting, role, source, CORS, rate-limit, and secret-boundary smoke: PASS");

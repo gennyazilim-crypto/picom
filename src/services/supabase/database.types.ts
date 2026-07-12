@@ -270,6 +270,10 @@ export type Database = {
         Insert: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_events"]["Row"],"room_id"|"event_type"|"event_source"|"idempotency_key"|"occurred_at">;
         Update: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]>;Relationships:[];
       };
+      meeting_reaction_signals:{
+        Row:{id:string;room_id:string;session_id:string;user_id:string;kind:"thumbs_up"|"heart"|"celebrate"|"laugh"|"surprised"|"clap";created_at:string;expires_at:string};
+        Insert:never;Update:never;Relationships:[];
+      };
       meeting_notification_jobs:{
         Row:{id:string;recipient_id:string;actor_id:string|null;room_id:string;session_id:string|null;event_kind:"reminder"|"started"|"schedule_changed"|"cancelled"|"invite_received"|"waiting_request"|"admission_result"|"cohost_assigned"|"stage_request";event_key:string;title:string;preview:string;context_label:string;deep_link:string;meeting_starts_at:string|null;available_at:string;expires_at:string;attempt_count:number;max_attempts:number;processed_at:string|null;last_error_code:string|null;created_at:string;updated_at:string};
         Insert:never;Update:never;Relationships:[];
@@ -968,6 +972,7 @@ export type Database = {
       get_meeting_join_preview:{Args:{target_room_id:string;target_token_hash?:string|null};Returns:Json};
       list_meeting_invites:{Args:{target_room_id:string};Returns:Json};
       authorize_livekit_meeting_token:{Args:{target_room_id:string;target_session_id:string;request_audio?:boolean;request_video?:boolean;request_screen?:boolean;request_data?:boolean};Returns:Array<{room_id:string;session_id:string;community_id:string;provider_room_name:string;participant_identity:string;participant_name:string;meeting_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";access_state:"authorized"|"waiting";waiting_entry_id:string|null;can_subscribe:boolean;can_publish_audio:boolean;can_publish_video:boolean;can_publish_screen:boolean;can_publish_data:boolean}>};
+      send_meeting_reaction:{Args:{target_room_id:string;target_session_id:string;target_event_id:string;target_kind:"thumbs_up"|"heart"|"celebrate"|"laugh"|"surprised"|"clap"};Returns:Json};
       get_meeting_participant_snapshot:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
       get_meeting_history:{Args:{target_community_id:string;target_scope?:"community"|"mine";result_limit?:number};Returns:Json};
       get_meeting_attendance_history:{Args:{target_session_id:string};Returns:Json};

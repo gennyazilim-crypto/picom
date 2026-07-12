@@ -1,0 +1,16 @@
+import {readFileSync} from "node:fs";
+const read=(path)=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
+const expect=(source,markers,label)=>{for(const marker of markers)if(!source.includes(marker))throw new Error(`${label}: missing ${marker}`)};
+const migration=read("supabase/migrations/20260711164000_meeting_abuse_prevention_rate_limits.sql"),pgtap=read("supabase/tests/meeting_abuse_prevention_rate_limits.sql"),token=read("supabase/functions/meeting-token/index.ts"),join=read("supabase/functions/meeting-join/index.ts"),signal=read("src/services/meeting/meetingSignalService.ts"),waiting=read("src/services/meeting/meetingWaitingRoomService.ts"),participant=read("src/components/meeting/MeetingParticipantActionsProvider.tsx"),chat=read("src/components/meeting/MeetingChatPanel.tsx"),reports=read("src/services/reportService.ts"),types=read("src/services/supabase/database.types.ts");
+expect(migration,["meeting_waiting_request","meeting_chat_send","meeting_reaction","meeting_privileged_action","meeting_reaction_signals_participant_select","send_meeting_reaction","meeting_user_is_restricted","PICOM_MEETING_ABUSE","meeting_waiting_insert_abuse_guard","meeting_chat_link_abuse_guard","meeting_privileged_action_abuse_guard"],"meeting abuse migration");
+expect(pgtap,["select plan(20)","clients cannot forge reaction rows","waiting insert is rate limited","privileged actions are rate limited transactionally"],"meeting abuse pgTAP");
+expect(token,["maxBodyBytes = 2048","request_data: false","canPublishData: false","You cannot join this meeting."],"meeting token boundary");
+expect(join,["maxBodyBytes = 1024","invitePattern","Too many meeting requests","Meeting access is temporarily unavailable."],"invite/join boundary");
+expect(signal,['rpc("send_meeting_reaction"','table:"meeting_reaction_signals"',"MEETING_REACTION_RATE_LIMITED"],"reaction service");
+expect(waiting,["MEETING_WAITING_RATE_LIMITED","Too many join requests were submitted"],"waiting feedback");
+expect(participant,["ReportModal","Report participant","targetType: \"user\""],"participant report integration");
+expect(chat,["reportMessage","Report submitted to community moderation"],"content report integration");
+expect(reports,["submit_safety_report","list_community_report_queue","review_community_report","REPORT_RATE_LIMITED"],"moderator review integration");
+expect(types,["meeting_reaction_signals","send_meeting_reaction"],"database types");
+if(/inviteToken|message_body|request_message|raw_audio|raw_video|access_token|provider_identity/.test(migration.match(/raise log[^;]+/gi)?.join("\n")??""))throw new Error("Sensitive value appears in server abuse log marker");
+console.log("Task 570 meeting abuse prevention structural smoke PASS (hosted rate/RLS evidence remains BLOCKED)");

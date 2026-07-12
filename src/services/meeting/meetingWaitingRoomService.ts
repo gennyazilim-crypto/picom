@@ -71,7 +71,7 @@ export const meetingWaitingRoomService = {
     }
     const client = getSupabaseClient(); if (!client) return fail("DATA_SOURCE_NOT_CONFIGURED", "Supabase is not configured.");
     const { data, error } = await client.rpc("request_meeting_waiting_admission", { target_room_id: input.roomId, target_session_id: input.sessionId, target_request_message: input.message?.trim() ?? "", target_idempotency_key: input.idempotencyKey ?? crypto.randomUUID() });
-    const mapped = mapRequest(data); return error || !mapped ? fail("MEETING_WAITING_REQUEST_FAILED", "Picom could not submit this join request.") : { ok: true, data: mapped };
+    const mapped = mapRequest(data); const limited = error?.message.includes("RATE_LIMITED") === true; return error || !mapped ? fail(limited ? "MEETING_WAITING_RATE_LIMITED" : "MEETING_WAITING_REQUEST_FAILED", limited ? "Too many join requests were submitted. Please wait before trying again." : "Picom could not submit this join request.") : { ok: true, data: mapped };
   },
 
   async list(roomId: string): Promise<MeetingWaitingServiceResult<readonly MeetingWaitingEntry[]>> {

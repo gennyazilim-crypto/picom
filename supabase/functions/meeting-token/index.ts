@@ -87,7 +87,7 @@ Deno.serve(async (request: Request) => {
     request_audio: requested.microphone === true,
     request_video: requested.camera === true,
     request_screen: requested.screenShare === true,
-    request_data: requested.data === true,
+    request_data: false,
   });
   const authorization = Array.isArray(data) ? data[0] as AuthorizationRow | undefined : undefined;
   if (error || !authorization) {
@@ -117,6 +117,6 @@ Deno.serve(async (request: Request) => {
   if (canPublishAudio) publishSources.push("microphone");
   if (authorization.can_publish_video) publishSources.push("camera");
   if (canPublishScreen) publishSources.push("screen_share", "screen_share_audio");
-  const { token, expiresAt } = await createLiveKitToken({ apiKey, apiSecret, identity: authorization.participant_identity, name: authorization.participant_name, roomName: authorization.provider_room_name, ttlSeconds: tokenTtlSeconds, canPublish: publishSources.length > 0, canSubscribe: authorization.can_subscribe, canPublishData: authorization.can_publish_data, canPublishSources: publishSources });
-  return respond(jsonResponse({ state: "authorized", token, url: livekitUrl, roomId: authorization.room_id, sessionId: authorization.session_id, communityId: authorization.community_id, roomName: authorization.provider_room_name, identity: authorization.participant_identity, participantName: authorization.participant_name, role: authorization.meeting_role, canSubscribe: authorization.can_subscribe, canPublishAudio, canPublishVideo: authorization.can_publish_video, canPublishScreen, canPublishData: authorization.can_publish_data, captionConsentRequired: authorization.can_publish_audio && !canPublishAudio, expiresAt }));
+  const { token, expiresAt } = await createLiveKitToken({ apiKey, apiSecret, identity: authorization.participant_identity, name: authorization.participant_name, roomName: authorization.provider_room_name, ttlSeconds: tokenTtlSeconds, canPublish: publishSources.length > 0, canSubscribe: authorization.can_subscribe, canPublishData: false, canPublishSources: publishSources });
+  return respond(jsonResponse({ state: "authorized", token, url: livekitUrl, roomId: authorization.room_id, sessionId: authorization.session_id, communityId: authorization.community_id, roomName: authorization.provider_room_name, identity: authorization.participant_identity, participantName: authorization.participant_name, role: authorization.meeting_role, canSubscribe: authorization.can_subscribe, canPublishAudio, canPublishVideo: authorization.can_publish_video, canPublishScreen, canPublishData: false, captionConsentRequired: authorization.can_publish_audio && !canPublishAudio, expiresAt }));
 });
