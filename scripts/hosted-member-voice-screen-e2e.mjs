@@ -83,6 +83,7 @@ async function management(path, options = {}) {
 
 const keyValue = (record) => typeof record?.api_key === "string" ? record.api_key : typeof record?.value === "string" ? record.value : null;
 const keyName = (record) => String(record?.name ?? record?.type ?? "").toLowerCase();
+const safeDatabaseError = (error) => safeMessage([error?.code, error?.message, error?.details, error?.hint].filter(Boolean).join(" | "));
 
 async function signIn(label, baseUrl, publicKey) {
   const actor = actors.get(label);
@@ -219,7 +220,7 @@ commit;`);
     const actor = sessions.get(actorLabel);
     const target = sessions.get(targetLabel);
     const result = await actor.client.rpc("authorize_livekit_voice_moderation", { target_community_id: communityId, target_channel_id: channelId, target_user_id: target.userId, target_action: "remove" });
-    if (allowed && result.error) throw new Error(`${actorLabel.toLowerCase()} expected moderation authorization.`);
+    if (allowed && result.error) throw new Error(`${actorLabel.toLowerCase()} expected moderation authorization: ${safeDatabaseError(result.error)}`);
     if (!allowed && !result.error) throw new Error(`${actorLabel.toLowerCase()} unexpectedly received higher-role moderation authorization.`);
   }
 
