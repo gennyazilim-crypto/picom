@@ -23,6 +23,7 @@ Synthetic media contains only generated tones, Picom test text, and changing can
 ## Security
 
 - Test windows use `contextIsolation: true`, `nodeIntegration: false`, and `sandbox: true`.
+- Linux CI configures Electron's SUID sandbox helper with root ownership and mode `4755`; `--no-sandbox` is prohibited.
 - The preload exposes only validated config/command/result IPC for the ephemeral harness.
 - Tokens travel to the child process over an inherited one-way pipe and to each isolated renderer over IPC; they are never written to argv, disk, logs, or evidence.
 - Evidence excludes emails, passwords, access tokens, user IDs, room names, provider URLs, and private channel identifiers.
