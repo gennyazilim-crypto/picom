@@ -1,4 +1,4 @@
-﻿import type { Channel, Community, Member, Role, UserId } from "./community";
+import type { Channel, Community, Member, Role, UserId } from "./community";
 
 import type { CommunityKind } from "./community";
 
@@ -19,6 +19,8 @@ export type CommunityPermissionKey =
   | "sendAnnouncements"
   | "uploadAttachments"
   | "addReactions"
+  | "viewVoiceRoom"
+  | "joinVoiceRoom"
   | "joinVoice"
   | "speak"
   | "speakInVoice"

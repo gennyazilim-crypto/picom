@@ -1940,7 +1940,7 @@ export function App() {
       pushToast("Normal voice rooms are disabled for this community type.", "error");
       return;
     }
-    if (!communityAccess.permissions.includes("joinVoice")) {
+    if (!communityAccess.permissions.includes("joinVoiceRoom") && !communityAccess.permissions.includes("joinVoice")) {
       pushToast("Your role cannot join this voice room.", "error");
       return;
     }
@@ -3195,7 +3195,7 @@ export function App() {
                   onLeave={leaveActiveVoiceRoom}
                   onToggleMute={toggleActiveVoiceMute}
                   onToggleDeafen={toggleActiveVoiceDeafen}
-                  canSpeak={Boolean(voiceSnapshot.canSpeak) && (communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
+                  canSpeak={Boolean(voiceSnapshot.canSpeak) && (communityAccess.permissions.includes("publishAudio") || communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
                   canShareScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.permissions.includes("shareScreen")}
                   canMuteMembers={communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom")}
                   canRemoveFromVoice={communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom")}

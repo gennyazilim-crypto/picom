@@ -94,6 +94,9 @@ jobs:
       PICOM_LIVEKIT_COMMUNITY_ID: ${{ vars.PICOM_RLS_COMMUNITY_ID }}
       PICOM_LIVEKIT_VOICE_CHANNEL_ID: ${{ vars.PICOM_LIVEKIT_VOICE_CHANNEL_ID }}
       PICOM_LIVEKIT_PRIVATE_CHANNEL_ID: ${{ vars.PICOM_LIVEKIT_PRIVATE_CHANNEL_ID }}
+      PICOM_VOICE_PERMISSIONS_COMMUNITY_ID: ${{ vars.PICOM_RLS_COMMUNITY_ID }}
+      PICOM_VOICE_PERMISSIONS_CHANNEL_ID: ${{ vars.PICOM_LIVEKIT_VOICE_CHANNEL_ID }}
+      PICOM_VOICE_PERMISSIONS_PRIVATE_CHANNEL_ID: ${{ vars.PICOM_LIVEKIT_PRIVATE_CHANNEL_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -118,3 +121,5 @@ jobs:
         run: npm run edge:staging:test
       - name: Run hosted LiveKit token authorization matrix
         run: npm run livekit:token:staging -- --run
+      - name: Run hosted Voice permission and RLS matrix
+        run: npm run voice:permissions:hosted -- --run

@@ -1,4 +1,4 @@
-﻿import type { Channel, ChannelCategory, Community, Member, Role, UserId } from "../../types/community";
+import type { Channel, ChannelCategory, Community, Member, Role, UserId } from "../../types/community";
 import type { CommunityAccess, CommunityMembershipStatus, CommunityPermissionKey, CommunityPermissionOverride, CommunityPermissionScope, CommunityVisibility } from "../../types/communityAccess";
 import type { MemberModerationAction } from "../../types/memberModeration";
 import type { CommunityKind } from "../../types/community";
@@ -45,10 +45,10 @@ const MEMBER_PERMISSIONS: CommunityPermissionKey[] = [];
 
 const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<CommunityMembershipStatus, readonly CommunityPermissionKey[]>>>> = {
   text: {
-    owner: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
-    admin: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
-    moderator: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice"],
-    member: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speak", "speakInVoice", "shareScreen"],
+    owner: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom", "joinVoice", "speak", "speakInVoice"],
+    admin: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom", "joinVoice", "speak", "speakInVoice"],
+    moderator: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "muteMembers", "removeFromVoice", "joinVoice", "speak", "speakInVoice"],
+    member: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "joinVoice", "speak", "speakInVoice"],
     visitor: [],
   },
   radio: {

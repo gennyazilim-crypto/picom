@@ -27,9 +27,11 @@ export const COMMUNITY_PERMISSION_GROUPS: readonly CommunityPermissionGroup[] = 
     { key: "addReactions", label: "Add reactions", description: "Add and remove own message reactions.", kinds: text },
   ] },
   { name: "Voice", permissions: [
-    { key: "joinVoice", label: "Join voice", description: "Join a configured and accessible voice channel.", kinds: all },
-    { key: "speak", label: "Speak", description: "Publish microphone audio in normal voice rooms.", kinds: all },
-    { key: "speakInVoice", label: "Speak in voice (legacy)", description: "Compatibility alias for existing grants.", kinds: all },
+    { key: "viewVoiceRoom", label: "View voice rooms", description: "Discover accessible Text-community voice rooms.", kinds: text },
+    { key: "joinVoiceRoom", label: "Join voice rooms", description: "Join an accessible Text-community voice room.", kinds: text },
+    { key: "publishAudio", label: "Publish audio", description: "Publish microphone audio in authorized voice or meeting rooms.", kinds: text },
+
+
     { key: "shareScreen", label: "Share screen", description: "Publish an approved screen-share track.", kinds: all },
     { key: "muteMembers", label: "Mute members", description: "Server-mute lower-ranked voice participants.", kinds: all },
     { key: "removeFromVoice", label: "Remove from voice", description: "Remove lower-ranked participants from a voice room.", kinds: all },
@@ -39,7 +41,7 @@ export const COMMUNITY_PERMISSION_GROUPS: readonly CommunityPermissionGroup[] = 
     { key: "createMeeting", label: "Create meetings", description: "Create approved meeting rooms.", kinds: all },
     { key: "manageMeeting", label: "Manage meetings", description: "Manage meeting lifecycle and policy.", kinds: all },
     { key: "joinMeeting", label: "Join meetings", description: "Join accessible open meetings.", kinds: all },
-    { key: "publishAudio", label: "Publish audio", description: "Publish microphone audio in meetings.", kinds: all },
+
     { key: "publishVideo", label: "Publish video", description: "Publish camera video in meetings.", kinds: all },
     { key: "admitGuests", label: "Admit guests", description: "Admit or deny waiting-room guests.", kinds: all },
     { key: "manageParticipants", label: "Manage participants", description: "Moderate lower-ranked meeting participants.", kinds: all },

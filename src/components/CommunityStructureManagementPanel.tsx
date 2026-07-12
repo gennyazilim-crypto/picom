@@ -23,7 +23,7 @@ type Props = Readonly<{
   onMoveChannel: (categoryId: string, channelId: string, direction: "up" | "down") => void | Promise<void>;
 }>;
 
-const overridePermissions: readonly CommunityPermissionKey[] = ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speakInVoice"];
+const overridePermissions: readonly CommunityPermissionKey[] = ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "viewVoiceRoom", "joinVoiceRoom", "publishAudio"];
 
 export function CommunityStructureManagementPanel(props: Props) {
   const { community, access } = props;

@@ -413,6 +413,7 @@
     "search:relevance:test": "node scripts/search-relevance-tuning-test.mjs",
     "presence:accuracy:test": "node scripts/advanced-presence-accuracy-test.mjs",
     "voice:quality:test": "node scripts/voice-quality-metrics-test.mjs",
+    "voice:permissions:hosted": "node scripts/v1-voice-permissions-hosted-validation.mjs",
     "screen-share:quality:test": "node scripts/screen-share-quality-test.mjs",
     "stories:header:smoke": "node scripts/followed-people-stories-header-smoke-test.mjs",
     "stories:supabase:smoke": "node scripts/followed-stories-supabase-smoke.mjs",
