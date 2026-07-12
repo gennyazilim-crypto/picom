@@ -9,7 +9,7 @@ on:
         type: string
   push:
     branches:
-      - codex/v1-live-validation
+      - main
 
 permissions:
   contents: read
