@@ -13,6 +13,7 @@ import { CommunityBotsAdminSection } from "./CommunityBotsAdminSection";
 import { CommunityWebhooksAdminSection } from "./CommunityWebhooksAdminSection";
 import { CommunityEmojisAdminSection } from "./CommunityEmojisAdminSection";
 import { CommunityStickersAdminSection } from "./CommunityStickersAdminSection";
+import { MeetingHistoryPanel } from "./meeting/MeetingHistoryPanel";
 
 export type CommunityAdminDeferredSectionId = "overview" | "channels" | "events" | "moderation" | "bots" | "webhooks" | "emojis" | "stickers" | "danger-zone";
 type Props = {
@@ -39,7 +40,7 @@ type Props = {
 export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCommunityMembersChanged, onOpenModerationSource, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
   if (section === "overview") return <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />;
   if (section === "channels") return <CommunityStructureManagementPanel community={community} currentUser={currentUser} access={access} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} />;
-  if (section === "events") return <CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} />;
+  if (section === "events") return <div className="community-admin-events-stack"><CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} /><MeetingHistoryPanel communityId={community.id} scope="community" canViewAttendance={access.permissions.includes("viewMeetingHistory")} /></div>;
   if (section === "moderation") return <CommunityModerationCenter community={community} access={access} mode="all" onMembersChanged={onCommunityMembersChanged} onOpenSource={onOpenModerationSource} />;
   if (section === "bots") return <CommunityBotsAdminSection communityId={community.id} ownerId={community.ownerId ?? currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;
   if (section === "webhooks") return <CommunityWebhooksAdminSection community={community} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageChannels")} />;

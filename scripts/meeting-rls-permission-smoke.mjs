@@ -23,7 +23,8 @@ for (const value of ["MEETING_SELF_ESCALATION_FORBIDDEN","MEETING_ROLE_HIERARCHY
 for (const kind of ["text","radio","podcast"]) if (!matrix.communityKinds.includes(kind)) failures.push(`hosted matrix missing ${kind}`);
 for (const role of ["owner","admin","moderator","member","viewer","guest"]) if (!matrix.roles[role]) failures.push(`hosted matrix missing ${role}`);
 if (matrix.invariants.length < 10) failures.push("hosted matrix needs complete privacy/hierarchy invariants");
-if (!pgTap.includes("select plan(28)") || !pgTap.includes("meeting_participants_select_sensitive")) failures.push("pgTAP contract incomplete");
+const pgTapPlan = Number(pgTap.match(/select plan\((\d+)\)/)?.[1] ?? 0);
+if (pgTapPlan < 28 || !pgTap.includes("meeting_participants_select_sensitive")) failures.push("pgTAP contract incomplete");
 if (!databaseTypes.includes("authorize_meeting_action:") || !databaseTypes.includes("set_meeting_participant_role:")) failures.push("generated RPC types missing");
 
 if (failures.length) { for (const failure of failures) console.error(`FAIL: ${failure}`); process.exit(1); }

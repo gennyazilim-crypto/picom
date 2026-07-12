@@ -1,0 +1,14 @@
+import {readFileSync} from "node:fs";
+const read=(path)=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
+const migration=read("supabase/migrations/20260711162000_meeting_history_attendance.sql"),types=read("src/types/meetingHistory.ts"),service=read("src/services/meeting/meetingHistoryService.ts"),panel=read("src/components/meeting/MeetingHistoryPanel.tsx"),admin=read("src/components/CommunityAdminDeferredSection.tsx"),info=read("src/components/meeting/MeetingInfoPanel.tsx"),webhook=read("supabase/migrations/20260711153600_livekit_webhook_session_sync.sql");
+const expect=(source,markers,label)=>{for(const marker of markers)if(!source.includes(marker))throw new Error(`${label}: missing ${marker}`)};
+expect(webhook,["LIVEKIT_WEBHOOK_SERVICE_ROLE_REQUIRED","room_finished","meeting_attendance"],"verified webhook source");
+expect(migration,["sync_verified_meeting_history_outcome","verified_livekit_webhook","get_meeting_history","get_meeting_attendance_history","viewMeetingHistory","can_view_all or attendance.user_id=auth.uid()","'recordingAvailable',false","'transcriptRetained',false"],"history migration");
+expect(types,["MeetingHistoryItem","MeetingAttendanceItem","recordingAvailable:false","transcriptRetained:false"],"history types");
+expect(service,["get_meeting_history","get_meeting_attendance_history","meetingChatContextService.resolve","deepLinkService.handleDeepLink"],"history service");
+expect(panel,["Recent and upcoming sessions","Open chat","Open meeting","No recordings or retained transcript text"],"history UI");
+expect(admin,["MeetingHistoryPanel","viewMeetingHistory"],"community event integration");
+expect(info,["MeetingHistoryPanel","scope=\"mine\""],"meeting info integration");
+if(/getSupabaseClient|supabase\.from|livekit-client/.test(panel))throw new Error("MeetingHistoryPanel bypasses the service boundary");
+if(/recordingAvailable:true|transcriptRetained:true/.test([migration,types,service,panel].join("\n")))throw new Error("History incorrectly claims retained media");
+console.log("Task 568 meeting history/attendance structural smoke PASS (hosted RLS/webhook evidence remains separate)");
