@@ -1,0 +1,23 @@
+begin;
+select plan(18);
+select has_table('public','feed_items','canonical Feed items table exists');
+select has_table('public','feed_engagement_rollups','Feed rollup table exists');
+select has_table('public','feed_user_states','Feed user-state table exists');
+select has_table('public','feed_impressions','Feed impression table exists');
+select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid='public.feed_items'::regclass),'feed_items forces RLS');
+select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid='public.feed_engagement_rollups'::regclass),'rollups force RLS');
+select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid='public.feed_user_states'::regclass),'user states force RLS');
+select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid='public.feed_impressions'::regclass),'impressions force RLS');
+select ok(not has_table_privilege('authenticated','public.feed_items','INSERT'),'renderer cannot forge Feed items');
+select ok(not has_table_privilege('authenticated','public.feed_engagement_rollups','UPDATE'),'renderer cannot forge scores');
+select ok(has_table_privilege('authenticated','public.feed_user_states','INSERT'),'authenticated users may create protected own state');
+select ok(has_table_privilege('authenticated','public.feed_impressions','INSERT'),'authenticated users may create protected impressions');
+select has_function('public','can_view_feed_item',array['uuid'],'source visibility helper exists');
+select ok(has_function_privilege('authenticated','public.can_view_feed_item(uuid)','EXECUTE'),'authenticated can evaluate source visibility');
+select ok((select count(*)=0 from information_schema.columns where table_schema='public' and table_name in ('feed_items','feed_engagement_rollups','feed_user_states','feed_impressions') and column_name in ('body','content','message_body','description')),'derived tables contain no source body columns');
+select ok((select count(*)=1 from pg_constraint where conrelid='public.feed_items'::regclass and conname='feed_items_source_unique'),'duplicate source rows are prevented');
+select ok((select count(*)=1 from pg_constraint where conrelid='public.feed_user_states'::regclass and conname='feed_user_states_user_item_unique'),'duplicate user state is prevented');
+select ok((select count(*)=1 from pg_constraint where conrelid='public.feed_impressions'::regclass and conname='feed_impressions_session_item_unique'),'duplicate session impressions are prevented');
+select * from finish();
+rollback;
+

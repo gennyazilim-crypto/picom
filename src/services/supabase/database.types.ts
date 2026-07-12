@@ -341,6 +341,40 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      feed_items: {
+        Row: {
+          id: string; source_type: "text_message" | "radio_session" | "radio_comment" | "podcast_episode" | "podcast_comment";
+          source_id: string; parent_source_id: string | null; community_id: string | null; channel_id: string | null; author_id: string;
+          content_kind: "text_only" | "image_only" | "text_image" | "video_only" | "text_video" | "image_video" | "text_image_video" | null;
+          base_score: number; moderation_state: "visible" | "hidden" | "removed"; deleted_at: string | null;
+          source_created_at: string; source_updated_at: string; last_engagement_at: string | null; score_version: number; created_at: string; updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["feed_items"]["Row"]> & Pick<Database["public"]["Tables"]["feed_items"]["Row"], "source_type" | "source_id" | "author_id" | "base_score" | "source_created_at" | "source_updated_at">;
+        Update: Partial<Database["public"]["Tables"]["feed_items"]["Row"]>;
+        Relationships: [];
+      };
+      feed_engagement_rollups: {
+        Row: {
+          feed_item_id: string; unique_external_reactors: number; unique_external_commenters: number; additional_reply_count: number;
+          unique_external_savers: number; unique_external_viewers: number; external_supporter_count: number;
+          reaction_score: number; comment_score: number; save_score: number; view_score: number; raw_score: number; score_version: number; updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["feed_engagement_rollups"]["Row"]> & Pick<Database["public"]["Tables"]["feed_engagement_rollups"]["Row"], "feed_item_id">;
+        Update: Partial<Database["public"]["Tables"]["feed_engagement_rollups"]["Row"]>;
+        Relationships: [];
+      };
+      feed_user_states: {
+        Row: { id: string; user_id: string; feed_item_id: string; read_at: string | null; saved_at: string | null; hidden_at: string | null; first_seen_at: string | null; last_seen_at: string | null; opened_at: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database["public"]["Tables"]["feed_user_states"]["Row"]> & Pick<Database["public"]["Tables"]["feed_user_states"]["Row"], "user_id" | "feed_item_id">;
+        Update: Partial<Database["public"]["Tables"]["feed_user_states"]["Row"]>;
+        Relationships: [];
+      };
+      feed_impressions: {
+        Row: { id: string; user_id: string; feed_item_id: string; session_id: string; position: number; surface: "mention_feed"; feed_mode: "feed" | "friends"; score_version: number; as_of: string; shown_at: string; opened_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["feed_impressions"]["Row"]> & Pick<Database["public"]["Tables"]["feed_impressions"]["Row"], "user_id" | "feed_item_id" | "session_id" | "position" | "feed_mode" | "as_of">;
+        Update: Partial<Database["public"]["Tables"]["feed_impressions"]["Row"]>;
+        Relationships: [];
+      };
       voice_story_events: {
         Row: { id: string; author_id: string; community_id: string; channel_id: string; title: string; created_at: string; ended_at: string | null };
         Insert: Partial<Database["public"]["Tables"]["voice_story_events"]["Row"]> & Pick<Database["public"]["Tables"]["voice_story_events"]["Row"], "author_id" | "community_id" | "channel_id" | "title">;

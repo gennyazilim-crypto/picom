@@ -420,6 +420,7 @@
     "mentions:unified:smoke": "node scripts/unified-content-mentions-smoke.mjs",
     "feed:classification:smoke": "node scripts/feed-source-classification-smoke.mjs",
     "feed:score:v1:smoke": "node scripts/feed-score-v1-smoke.mjs",
+    "feed:rollup:schema:smoke": "node scripts/feed-rollup-schema-smoke.mjs",
     "feed:query:smoke": "node scripts/unified-feed-query-smoke.mjs",
     "feed:cards:smoke": "node scripts/unified-feed-cards-smoke.mjs",
     "feed:tabs-stories:smoke": "node scripts/feed-tabs-stories-filters-smoke.mjs",
