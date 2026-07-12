@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const repository=readFileSync("src/services/feed/feedRepository.ts","utf8");const service=readFileSync("src/services/feed/feedService.ts","utf8");const migration=readFileSync("supabase/migrations/20260712204000_feed_service_rpc_v1.sql","utf8");const types=readFileSync("src/types/feed.ts","utf8");
+assert.ok(repository.includes('client.rpc("get_feed_page"')&&repository.includes('client.rpc("get_feed_item_metadata"'),"production repository RPCs missing");
+assert.ok(repository.includes('.in("id",commenterIds)'),"commenter profiles must be batched");
+assert.ok(!repository.includes("mockFeed")&&!repository.includes("mockMention"),"repository must never fall back to mock data");
+assert.ok(service.includes('dataSourceService.getStatus().isMock')&&service.includes('await import("../../data/mockFeedV1")'),"explicit lazy mock mode missing");
+assert.ok(service.includes("for(let attempt=0;attempt<2")&&service.includes("retryable"),"bounded safe retry missing");
+assert.ok(repository.includes("FEED_ACCESS_LOST")&&service.includes('sourceStatus:metadata?"ready":"access_lost"'),"access-lost/partial deletion handling missing");
+assert.ok(service.includes('loggingService.logInfo("Feed page loaded"')&&service.includes("durationMs")&&service.includes("itemCount"),"safe latency/count metrics missing");
+for(const forbidden of ["access_token","refresh_token","message_body","service_role"])assert.ok(!service.toLowerCase().includes(forbidden)&&!repository.toLowerCase().includes(forbidden),`unsafe service field ${forbidden}`);
+for(const marker of ["get_feed_item_metadata","set_feed_user_state_v1","record_feed_impressions_v1","limit 50","public.can_view_feed_item"])assert.ok(migration.includes(marker),`missing service RPC contract ${marker}`);
+assert.ok(types.includes('export type FeedPage')&&types.includes('export type FeedServiceResult'),"canonical Feed service types missing");
+console.log("Production Feed repository/service structural smoke: PASS");

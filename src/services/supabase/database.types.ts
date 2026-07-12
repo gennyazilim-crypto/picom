@@ -1080,6 +1080,12 @@ export type Database = {
           author_display_name:string;author_username:string;author_avatar_url:string|null;community_name:string|null;community_icon_url:string|null;
         }>;
       };
+      get_feed_item_metadata: {
+        Args: { target_feed_item_ids: string[] };
+        Returns: Array<{ feed_item_id:string;source_payload:Json;reaction_summary:Json;commenter_ids:string[];comment_count:number }>;
+      };
+      set_feed_user_state_v1: { Args: { target_feed_item_id:string;target_action:"read"|"save"|"unsave"|"hide"|"seen"|"opened" }; Returns:Json };
+      record_feed_impressions_v1: { Args: { target_session_id:string;target_feed_item_ids:string[];target_positions:number[];target_feed_mode:"feed"|"friends";target_as_of:string }; Returns:number };
       list_ranked_unified_feed: {
         Args: { feed_mode?: "popular" | "following"; ranking_epoch_input?: string; cursor_rank?: number | null; cursor_created_at?: string | null; cursor_feed_item_id?: string | null; source_types?: string[] | null; created_after?: string | null; unread_only?: boolean; saved_only?: boolean; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["unified_content_feed_view"]["Row"] & { reaction_count: number; comment_count: number; listener_count: number; is_unread: boolean; is_saved: boolean; is_follow_related: boolean; ranking_score: number; ranking_epoch: string }>;

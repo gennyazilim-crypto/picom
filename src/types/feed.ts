@@ -69,7 +69,13 @@ export type FeedUserState = Readonly<{
   isFriendAuthored: boolean;
   isFriendEngaged: boolean;
   isRecentCommunity: boolean;
+  isHidden: boolean;
 }>;
+
+export type FeedMediaSummary = Readonly<{ id: string; type: "image" | "video"; url: string; thumbnailUrl?: string; fileName?: string; width?: number; height?: number }>;
+export type FeedReactionSummary = Readonly<{ emoji: string; count: number; reactedByCurrentUser: boolean }>;
+export type FeedCommenterSummary = Readonly<{ id: string; displayName: string; username: string; avatarUrl?: string }>;
+export type FeedScoreSummary = Readonly<{ version: number; base: number; raw: number; relevance: number; freshness: number; final: number; groupPriority: number }>;
 
 export type FeedSourceMetadata =
   | Readonly<{ type: "text_message"; contentKind: FeedContentKind }>
@@ -84,12 +90,26 @@ export type FeedItem = Readonly<{
   sourceMetadata: FeedSourceMetadata;
   author: FeedAuthorSummary;
   community?: FeedCommunitySummary;
+  title?: string;
   bodyPreview?: string;
+  media: readonly FeedMediaSummary[];
+  reactions: readonly FeedReactionSummary[];
+  commenters: readonly FeedCommenterSummary[];
+  commentCount: number;
   createdAt: string;
   updatedAt: string;
   engagement: FeedEngagementSummary;
   userState: FeedUserState;
+  score: FeedScoreSummary;
+  sourceStatus: "ready" | "deleted" | "access_lost";
 }>;
+
+export type FeedMode = "feed" | "friends";
+export type FeedCursor = Readonly<{ groupPriority:number;finalScore:number;createdAt:string;feedItemId:string;asOf:string }>;
+export type FeedQuery = Readonly<{ mode:FeedMode;cursor?:FeedCursor|null;limit?:number;sourceTypes?:readonly FeedSourceType[];unreadOnly?:boolean;savedOnly?:boolean;communityId?:string }>;
+export type FeedPage = Readonly<{ items:readonly FeedItem[];nextCursor:FeedCursor|null;asOf:string;emptyState:"no_items"|"no_friend_items"|"filtered_empty"|null }>;
+export type FeedServiceErrorCode = "FEED_BACKEND_UNAVAILABLE"|"FEED_REQUEST_FAILED"|"FEED_ACCESS_LOST"|"FEED_INVALID_RESPONSE"|"FEED_STATE_FAILED";
+export type FeedServiceResult<T> = Readonly<{ok:true;data:T}|{ok:false;error:Readonly<{code:FeedServiceErrorCode;message:string;retryable:boolean}>}>;
 
 export type UnifiedFeedMode = "popular" | "following";
 export type UnifiedFeedMetrics = Readonly<{ reactions: number; comments: number; listeners: number; mentionCount: number }>;
