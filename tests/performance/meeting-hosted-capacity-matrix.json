@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "task": 576,
+  "target": "isolated_staging",
+  "productionAllowed": false,
+  "syntheticAccountsOnly": true,
+  "requiredConfirmation": "STAGING_ONLY",
+  "scenarios": [
+    {
+      "id": "camera_grid_12",
+      "participants": 12,
+      "broadcasters": 12,
+      "viewers": 0,
+      "maxActiveSubscriptionsPerClient": 12,
+      "requiredMetrics": [
+        "joinLatencyP95Ms",
+        "clientCpuAveragePercent",
+        "clientCpuPeakPercent",
+        "heapGrowthMiB",
+        "inboundKbpsPeak",
+        "outboundKbpsPeak",
+        "activeSubscriptionsPeak",
+        "reconnectSuccessRate",
+        "uiResponseP95Ms"
+      ]
+    },
+    {
+      "id": "voice_only_12",
+      "participants": 12,
+      "broadcasters": 12,
+      "viewers": 0,
+      "maxActiveSubscriptionsPerClient": 11,
+      "requiredMetrics": [
+        "joinLatencyP95Ms",
+        "clientCpuAveragePercent",
+        "clientCpuPeakPercent",
+        "heapGrowthMiB",
+        "inboundKbpsPeak",
+        "outboundKbpsPeak",
+        "activeSubscriptionsPeak",
+        "reconnectSuccessRate",
+        "uiResponseP95Ms"
+      ]
+    },
+    {
+      "id": "screen_share_12",
+      "participants": 12,
+      "broadcasters": 1,
+      "viewers": 11,
+      "maxActiveSubscriptionsPerClient": 7,
+      "requiredMetrics": [
+        "joinLatencyP95Ms",
+        "clientCpuAveragePercent",
+        "clientCpuPeakPercent",
+        "heapGrowthMiB",
+        "inboundKbpsPeak",
+        "outboundKbpsPeak",
+        "activeSubscriptionsPeak",
+        "reconnectSuccessRate",
+        "uiResponseP95Ms"
+      ]
+    },
+    {
+      "id": "stage_4_broadcasters_8_viewers",
+      "participants": 12,
+      "broadcasters": 4,
+      "viewers": 8,
+      "maxActiveSubscriptionsPerClient": 4,
+      "requiredMetrics": [
+        "joinLatencyP95Ms",
+        "clientCpuAveragePercent",
+        "clientCpuPeakPercent",
+        "heapGrowthMiB",
+        "inboundKbpsPeak",
+        "outboundKbpsPeak",
+        "activeSubscriptionsPeak",
+        "reconnectSuccessRate",
+        "uiResponseP95Ms",
+        "viewerPublishedAudioTracks",
+        "viewerPublishedVideoTracks",
+        "viewerPublishedScreenTracks"
+      ]
+    }
+  ],
+  "rateLimitCases": [
+    {
+      "id": "hand_signal_12_per_60_seconds",
+      "actionKey": "meeting_signal_write",
+      "allowed": 12,
+      "windowSeconds": 60
+    },
+    {
+      "id": "reaction_8_per_3_seconds",
+      "actionKey": "meeting_reaction",
+      "allowed": 8,
+      "windowSeconds": 3
+    },
+    {
+      "id": "meeting_chat_20_per_30_seconds",
+      "actionKey": "meeting_chat_send",
+      "allowed": 20,
+      "windowSeconds": 30
+    }
+  ]
+}

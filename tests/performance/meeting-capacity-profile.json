@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "task": 576,
+  "approvalScope": "full_mvp_non_production_validation",
+  "localContractStatus": "PASS",
+  "hostedCertificationStatus": "BLOCKED",
+  "targetEnvironment": "isolated_staging",
+  "productionAllowed": false,
+  "syntheticAccountsOnly": true,
+  "limits": {
+    "maxParticipantsPerRoom": 12,
+    "cameraGrid": {
+      "participants": 12,
+      "maxVisibleVideos": 12
+    },
+    "voiceOnly": {
+      "participants": 12,
+      "maxRemoteAudioSubscriptionsPerClient": 11
+    },
+    "screenShare": {
+      "participants": 12,
+      "maxActiveShares": 1,
+      "maxCompanionCameraSubscriptions": 6,
+      "maxTotalVideoSubscriptionsPerViewer": 7
+    },
+    "stageAudience": {
+      "participants": 12,
+      "broadcasters": 4,
+      "viewers": 8,
+      "viewerCanPublish": false,
+      "maxStageVideoSubscriptionsPerViewer": 4
+    }
+  },
+  "runtimeBudgets": {
+    "joinLatencyP95Ms": 5000,
+    "localControlFeedbackP95Ms": 100,
+    "layoutPlanP95Ms": 8,
+    "longSessionHeapGrowthMiB": 32,
+    "clientCpuAveragePercent": 70,
+    "clientCpuPeakPercent": 85,
+    "reconnectSuccessRate": 0.99
+  },
+  "bandwidthModelKbps": {
+    "audioPublisher": 48,
+    "cameraPublisher": 900,
+    "screenSharePublisher": 1500,
+    "classification": "planning_estimate_not_hosted_measurement"
+  },
+  "serverRateLimits": [
+    {
+      "feature": "hand_signal",
+      "actionKey": "meeting_signal_write",
+      "maximumRequests": 12,
+      "windowSeconds": 60
+    },
+    {
+      "feature": "reaction",
+      "actionKey": "meeting_reaction",
+      "maximumRequests": 8,
+      "windowSeconds": 3
+    },
+    {
+      "feature": "meeting_chat",
+      "actionKey": "meeting_chat_send",
+      "maximumRequests": 20,
+      "windowSeconds": 30
+    }
+  ],
+  "evidenceBoundary": {
+    "localContractCovers": [
+      "layout_planner",
+      "subscription_bounds",
+      "stage_viewer_publish_policy",
+      "rate_limit_configuration",
+      "reconnect_churn",
+      "retained_heap_growth"
+    ],
+    "hostedEvidenceRequired": [
+      "join_latency",
+      "client_cpu",
+      "measured_memory",
+      "measured_bandwidth",
+      "provider_active_subscriptions",
+      "two_region_reconnect",
+      "provider_quota_and_cost"
+    ]
+  }
+}

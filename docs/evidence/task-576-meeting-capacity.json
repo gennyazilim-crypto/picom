@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "task": 576,
+  "environmentClass": "isolated_staging",
+  "productionUsed": false,
+  "syntheticAccountsOnly": true,
+  "executionStatus": "BLOCKED",
+  "reasonCode": "hosted_capacity_environment_unavailable",
+  "runId": null,
+  "tester": null,
+  "rawMediaStored": false,
+  "redactionReviewed": true,
+  "scenarioResults": [
+    {
+      "id": "camera_grid_12",
+      "status": "BLOCKED",
+      "reasonCode": "hosted_clients_unavailable",
+      "metrics": null,
+      "evidenceReferences": []
+    },
+    {
+      "id": "voice_only_12",
+      "status": "BLOCKED",
+      "reasonCode": "hosted_clients_unavailable",
+      "metrics": null,
+      "evidenceReferences": []
+    },
+    {
+      "id": "screen_share_12",
+      "status": "BLOCKED",
+      "reasonCode": "hosted_clients_unavailable",
+      "metrics": null,
+      "evidenceReferences": []
+    },
+    {
+      "id": "stage_4_broadcasters_8_viewers",
+      "status": "BLOCKED",
+      "reasonCode": "hosted_clients_unavailable",
+      "metrics": null,
+      "evidenceReferences": []
+    }
+  ],
+  "rateLimitResults": [
+    {
+      "id": "hand_signal_12_per_60_seconds",
+      "status": "BLOCKED",
+      "reasonCode": "hosted_database_unavailable",
+      "acceptedRequests": null,
+      "overflowRejected": null,
+      "retryAfterObserved": null
+    },
+    {
+      "id": "reaction_8_per_3_seconds",
+      "status": "BLOCKED",
+      "reasonCode": "hosted_database_unavailable",
+      "acceptedRequests": null,
+      "overflowRejected": null,
+      "retryAfterObserved": null
+    },
+    {
+      "id": "meeting_chat_20_per_30_seconds",
+      "status": "BLOCKED",
+      "reasonCode": "hosted_database_unavailable",
+      "acceptedRequests": null,
+      "overflowRejected": null,
+      "retryAfterObserved": null
+    }
+  ],
+  "providerReview": {
+    "quotaStatus": "BLOCKED",
+    "costStatus": "BLOCKED",
+    "reasonCode": "provider_dashboard_and_budget_owner_required"
+  }
+}
