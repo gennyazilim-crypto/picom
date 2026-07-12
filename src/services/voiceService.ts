@@ -73,6 +73,8 @@ export type VoiceServiceErrorCode =
   | "VOICE_CONNECTION_FAILED"
   | "VOICE_ROOM_UNAVAILABLE"
   | "VOICE_PERMISSION_DENIED"
+  | "VOICE_RATE_LIMITED"
+  | "VOICE_PROVIDER_UNAVAILABLE"
   | "VOICE_SCREEN_SHARE_CONFLICT"
   | "VOICE_SCREEN_SHARE_FAILED"
   | "VOICE_DATA_UNAVAILABLE"
@@ -198,7 +200,7 @@ function disconnectDetails(reason: DisconnectReason | undefined): VoiceDisconnec
 
 function voiceError(code: VoiceServiceErrorCode, message: string): VoiceServiceResult<never> {
   const status: VoiceConnectionStatus =
-    code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : code === "VOICE_TOKEN_FAILED" ? "token_error" : "error";
+    code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : code === "VOICE_TOKEN_FAILED" || code === "VOICE_RATE_LIMITED" ? "token_error" : "error";
 
   emit({
     error: message,
@@ -618,8 +620,19 @@ async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceRes
 
   const token = await liveKitService.fetchToken(request);
   if (!token.ok) {
-    const code = token.error.code === "LIVEKIT_NOT_CONFIGURED" ? "VOICE_NOT_CONFIGURED" : "VOICE_TOKEN_FAILED";
-    return voiceError(code, token.error.message);
+    switch (token.error.code) {
+      case "LIVEKIT_NOT_CONFIGURED":
+        return voiceError("VOICE_NOT_CONFIGURED", token.error.message);
+      case "LIVEKIT_AUTH_REQUIRED":
+      case "LIVEKIT_ACCESS_DENIED":
+        return voiceError("VOICE_ACCESS_REVOKED", token.error.message);
+      case "LIVEKIT_RATE_LIMITED":
+        return voiceError("VOICE_RATE_LIMITED", token.error.message);
+      case "LIVEKIT_PROVIDER_UNAVAILABLE":
+        return voiceError("VOICE_PROVIDER_UNAVAILABLE", token.error.message);
+      default:
+        return voiceError("VOICE_TOKEN_FAILED", token.error.message);
+    }
   }
 
   return { ok: true, data: token.data };
@@ -1046,6 +1059,7 @@ export const voiceService = {
       || snapshot.status === "reconnecting"
       || snapshot.errorCode === "VOICE_CONNECTION_FAILED"
       || snapshot.errorCode === "VOICE_ROOM_UNAVAILABLE"
+      || snapshot.errorCode === "VOICE_PROVIDER_UNAVAILABLE"
     );
   },
 
@@ -1100,7 +1114,7 @@ export const voiceService = {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before changing microphone state.");
     }
-    if (!muted && !snapshot.canSpeak) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish microphone audio in this room.");
+    if (!muted && !snapshot.canSpeak) return voiceError("VOICE_PERMISSION_DENIED", "Microphone publishing is unavailable for this voice session.");
 
     desiredMicrophoneMuted = muted;
     try {

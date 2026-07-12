@@ -1,5 +1,5 @@
 import type { Channel, Community, Member } from "../types/community";
-import type { VoiceParticipant, VoiceServiceSnapshot } from "../services/voiceService";
+import type { VoiceParticipant, VoiceServiceErrorCode, VoiceServiceSnapshot } from "../services/voiceService";
 import { AppIcon } from "./AppIcon";
 import { VoiceDevicePanel } from "./VoiceDevicePanel";
 import { MemberAvatar } from "./MemberAvatar";
@@ -36,6 +36,24 @@ const statusLabels: Record<VoiceServiceSnapshot["status"], string> = {
   error: "Connection error",
   disconnected: "Disconnected",
 };
+
+const errorGuidance: Partial<Record<VoiceServiceErrorCode, string>> = {
+  VOICE_NOT_CONFIGURED: "Voice is unavailable in this environment. Check service status before retrying.",
+  VOICE_TOKEN_FAILED: "Retry to request fresh room authorization.",
+  VOICE_CONNECTION_FAILED: "Check your network, then retry the room connection.",
+  VOICE_PROVIDER_UNAVAILABLE: "The provider is temporarily unavailable. Retry shortly.",
+  VOICE_RATE_LIMITED: "Wait briefly before retrying; repeated joins are rate limited.",
+  VOICE_PERMISSION_DENIED: "Allow microphone access in system settings or stay connected while muted.",
+  VOICE_ACCESS_REVOKED: "Confirm that your Picom session and active community membership are still valid.",
+  VOICE_ROOM_ENDED: "This room has ended. Choose another available voice channel.",
+  VOICE_SESSION_REPLACED: "Close the other Picom voice session before reconnecting here.",
+};
+
+function getConnectionQualityLabel(participant: VoiceParticipant): string {
+  return participant.connectionQuality === "unknown"
+    ? "Quality pending"
+    : `${participant.connectionQuality[0].toUpperCase()}${participant.connectionQuality.slice(1)} connection`;
+}
 
 function findMemberForParticipant(community: Community, participant: VoiceParticipant): Member | undefined {
   return community.members.find((member) => member.userId === participant.identity || member.displayName === participant.name);
@@ -134,7 +152,7 @@ export function VoiceParticipantList({ community, participants, canMuteMembers =
             <span>
               <strong>{member?.displayName ?? participant.name}</strong>
               <small>
-                {getParticipantStatus(participant)}
+                {getParticipantStatus(participant)} - {getConnectionQualityLabel(participant)}
                 <SpeakingIndicator participant={participant} />
               </small>
             </span>
@@ -209,7 +227,7 @@ export function VoiceRoomView({
           />
           <NoiseShieldQuickControl connected={connected && canSpeak} />
 
-          {snapshot.error ? <p className="voice-room-error">{snapshot.error}</p> : null}
+          {snapshot.error ? <div className="voice-room-error" role="alert" data-error-code={snapshot.errorCode ?? "VOICE_ERROR"}>{snapshot.error}{snapshot.errorCode && errorGuidance[snapshot.errorCode] ? ` ${errorGuidance[snapshot.errorCode]}` : null}</div> : null}
           <p className="voice-room-note">LiveKit tokens are requested through the Supabase Edge Function. Secrets never enter the renderer.</p>
 
           <VoiceDevicePanel />
