@@ -257,8 +257,9 @@ commit;`);
   if (cleanupRows.length !== activeLabels.length || !cleanupRows.every((entry) => entry.disconnected && entry.microphoneEnded && entry.screenEnded && entry.attachedElements === 0)) throw new Error("Hosted track or room cleanup evidence is incomplete.");
   if (packagedExecutable) {
     if (!matrix.published.every((entry) => entry.nativeMicrophonePermission && entry.nativeScreenCapture && entry.pickerCancelPassed && entry.screenSourceCount >= 1 && entry.windowSourceCount >= 1 && entry.selectedSourceType === "window")) throw new Error("Packaged Windows microphone permission or native picker evidence is incomplete.");
+    if (!mediaRows.every((entry) => entry.renderedVideoFrames >= activeLabels.length - 1)) throw new Error("Packaged Windows remote screen frame rendering evidence is incomplete.");
     if (!matrix.screenRestart?.sourceEnded || !matrix.screenRestart?.restarted || matrix.screenRestart?.selectedSourceType !== "window") throw new Error("Packaged Windows source-ended/restart evidence is incomplete.");
-    if (!Array.isArray(matrix.postRestartMedia) || !matrix.postRestartMedia.every((entry) => entry.remoteAudioTracks === activeLabels.length - 1 && entry.remoteScreenTracks === activeLabels.length - 1 && entry.renderedScreens >= activeLabels.length - 1)) throw new Error("Packaged Windows media did not recover after screen restart.");
+    if (!Array.isArray(matrix.postRestartMedia) || !matrix.postRestartMedia.every((entry) => entry.remoteAudioTracks === activeLabels.length - 1 && entry.remoteScreenTracks === activeLabels.length - 1 && entry.renderedScreens >= activeLabels.length - 1 && entry.renderedVideoFrames >= activeLabels.length - 1)) throw new Error("Packaged Windows media did not recover after screen restart.");
   }
 
   evidence = {

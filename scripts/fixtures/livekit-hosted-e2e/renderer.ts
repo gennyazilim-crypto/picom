@@ -192,14 +192,18 @@ async function verifyMedia() {
     await video.play().catch(() => undefined);
   }
   await waitFor(() => attachedElements.filter((element) => element instanceof HTMLVideoElement && element.videoWidth > 0 && element.videoHeight > 0).length >= config.expectedRemoteCount, 30000, "remote screen rendering");
+  if (config.nativeCapture) {
+    await waitFor(() => attachedElements.filter((element) => element instanceof HTMLVideoElement && element.getVideoPlaybackQuality().totalVideoFrames > 0).length >= config.expectedRemoteCount, 30000, "remote native screen rendered frames");
+  }
   await waitFor(async () => (await Promise.all(audioTracks.map(receivedBytes))).every((bytes) => bytes > 0), 30000, "remote audio RTP bytes");
-  await waitFor(async () => (await Promise.all(screenTracks.map(receivedBytes))).every((units) => units > 0), 30000, "remote screen RTP delivery counters");
+  if (!config.nativeCapture) await waitFor(async () => (await Promise.all(screenTracks.map(receivedBytes))).every((units) => units > 0), 30000, "remote screen RTP delivery counters");
   await waitFor(() => speakingObserved, 20000, "speaking indicator event");
   return {
     remoteParticipants: room.remoteParticipants.size,
     remoteAudioTracks: audioTracks.length,
     remoteScreenTracks: screenTracks.length,
     renderedScreens: attachedElements.filter((element) => element instanceof HTMLVideoElement && element.videoWidth > 0).length,
+    renderedVideoFrames: attachedElements.filter((element) => element instanceof HTMLVideoElement && element.getVideoPlaybackQuality().totalVideoFrames > 0).length,
     speakingObserved,
   };
 }
