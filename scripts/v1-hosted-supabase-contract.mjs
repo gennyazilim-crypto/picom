@@ -1,0 +1,25 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const read = (path) => readFileSync(path, "utf8");
+const matrix = JSON.parse(read("supabase/tests/hosted/v1-core-rls-matrix.json"));
+const manifest = JSON.parse(read("supabase/functions/release-manifest.json"));
+const workflow = read(".github/workflows/hosted-validation.yml");
+const rlsRunner = read("scripts/hosted-staging-rls-validation.mjs");
+const realtimeRunner = read("scripts/hosted-staging-realtime-validation.mjs");
+const edgeRunner = read("scripts/hosted-staging-edge-functions-validation.mjs");
+assert.deepEqual(Object.keys(matrix.actors), ["anonymous", "owner", "admin", "moderator", "member", "visitor", "blocked", "dm_non_participant"]);
+for (const domain of ["text", "feed", "stories", "profile", "friends", "direct_messages", "settings", "audit", "storage", "realtime"]) assert.ok(matrix.coverage.domains.includes(domain), `missing V1 domain ${domain}`);
+for (const hidden of ["radio", "podcast", "meeting", "discovery"]) assert.ok(!JSON.stringify(matrix).toLowerCase().includes(hidden), `${hidden} leaked into the V1 hosted matrix`);
+for (const id of ["text.private-channel", "text.private-message", "text.private-attachment", "feed.private-mention", "dm.conversation", "dm.message", "dm.attachment", "dm.reaction", "audit.community-log"]) assert.ok(matrix.readCases.some((item) => item.id === id), `missing RLS case ${id}`);
+assert.ok(matrix.profileCases.some((item) => item.id === "profile.private-projection"), "private profile projection case missing");
+for (const id of ["storage.text-private", "storage.profile-private", "storage.dm-private"]) assert.ok(matrix.storageCases.some((item) => item.id === id), `missing Storage case ${id}`);
+for (const id of ["realtime.community-presence", "realtime.public-channel-typing", "realtime.private-channel-room", "realtime.dm-typing", "realtime.invalid-topic"]) assert.ok(matrix.realtimeCases.some((item) => item.id === id), `missing Realtime case ${id}`);
+assert.ok(rlsRunner.includes("v1-core-rls-matrix.json") && rlsRunner.includes("realtime.setAuth"), "V1 RLS runner must load the V1 matrix and authenticate private Realtime");
+assert.ok(realtimeRunner.includes("realtime.setAuth(data.session.access_token)"), "two-client Realtime runner must propagate the session JWT before joining");
+assert.ok(edgeRunner.includes("user-data-export rate limit") && edgeRunner.includes("invalid.picom.test"), "Edge runner must cover rate limit and CORS denial");
+assert.ok(workflow.includes("environment: hosted-staging") && workflow.includes("ALLOW_EPHEMERAL_WRITES"), "hosted workflow must use its protected environment and explicit mutation confirmation");
+assert.ok(!workflow.toLowerCase().includes("meeting"), "Meeting validation cannot block V1 hosted closure");
+assert.ok(!workflow.includes("LIVEKIT_API_SECRET"), "conditional provider secrets cannot leak into V1 hosted validation");
+assert.deepEqual([...manifest.releasePublic, ...manifest.releaseAuthenticated, ...manifest.releaseInternal].map((item) => item.name), ["client-config", "validate-file", "user-data-export"]);
+console.log("V1 hosted Supabase contract passed; this is local contract evidence, not hosted certification.");

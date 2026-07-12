@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
 const shouldRun = process.argv.includes("--run");
-const matrix = JSON.parse(readFileSync("supabase/tests/hosted/full-mvp-rls-matrix.json", "utf8"));
+const matrix = JSON.parse(readFileSync("supabase/tests/hosted/v1-core-rls-matrix.json", "utf8"));
 const baseEnvironment = [
   "PICOM_RLS_STAGING_URL",
   "PICOM_RLS_STAGING_ANON_KEY",
@@ -14,6 +14,7 @@ const actorEnvironment = Object.entries(matrix.actors)
   .flatMap(([, actor]) => [`${actor.envPrefix}_EMAIL`, `${actor.envPrefix}_PASSWORD`]);
 const fixtureEnvironment = [...new Set([
   ...matrix.readCases.map((testCase) => testCase.fixtureEnv),
+  ...(matrix.profileCases ?? []).map((testCase) => testCase.fixtureEnv),
   ...matrix.storageCases.flatMap((testCase) => [testCase.bucketEnv, testCase.pathEnv]),
   ...Object.values(matrix.fixtures),
 ])];
@@ -60,7 +61,8 @@ async function authenticateActors() {
       email: process.env[`${actor.envPrefix}_EMAIL`],
       password: process.env[`${actor.envPrefix}_PASSWORD`],
     });
-    if (error || !data.user) fail(`${name} synthetic account could not authenticate.`);
+    if (error || !data.user || !data.session?.access_token) fail(`${name} synthetic account could not authenticate.`);
+    await client.realtime.setAuth(data.session.access_token);
     actors.set(name, { client, user: data.user });
   }
   return actors;
@@ -109,6 +111,22 @@ async function runReadMatrix(actors) {
       if (result.visible !== expected) fail(`${testCase.id} visibility mismatch for ${name}; expected ${expected}.`);
     }
     pass(`${testCase.id}: SELECT boundary`);
+  }
+}
+
+async function runProfileMatrix(actors) {
+  for (const testCase of matrix.profileCases ?? []) {
+    for (const [name, session] of actors) {
+      const expected = testCase.allow.includes(name);
+      const { data, error } = await session.client.rpc(testCase.rpc, {
+        target_user_id: process.env[testCase.fixtureEnv],
+        result_limit: 1,
+      });
+      const payload = Array.isArray(data) ? data[0] : data;
+      const visible = !error && payload?.privacy?.can_view_profile === true;
+      if (visible !== expected) fail(`${testCase.id} profile projection mismatch for ${name}; expected ${expected}.`);
+    }
+    pass(`${testCase.id}: privacy projection boundary`);
   }
 }
 
@@ -256,17 +274,17 @@ async function runMutationMatrix(actors) {
   const ownerId = actors.get("owner").user.id;
   for (const [name, session] of actors) {
     if (!session.user) continue;
-    await runTextMutationProbe(name, session, suites.text_message_crud_reply_reaction.allow.includes(name));
-    await runDmMutationProbe(name, session, suites.dm_message_crud.allow.includes(name));
-    await runSettingsProbe(name, session, ownerId);
-    await runRadioListenerProbe(name, session, suites.radio_listener_join_leave.allow.includes(name));
-    await runPodcastCommentProbe(name, session, suites.podcast_comment_create_delete.allow.includes(name));
+    if (suites.text_message_crud_reply_reaction) await runTextMutationProbe(name, session, suites.text_message_crud_reply_reaction.allow.includes(name));
+    if (suites.dm_message_crud) await runDmMutationProbe(name, session, suites.dm_message_crud.allow.includes(name));
+    if (suites.settings_own_update_cross_user_deny) await runSettingsProbe(name, session, ownerId);
+    if (suites.radio_listener_join_leave) await runRadioListenerProbe(name, session, suites.radio_listener_join_leave.allow.includes(name));
+    if (suites.podcast_comment_create_delete) await runPodcastCommentProbe(name, session, suites.podcast_comment_create_delete.allow.includes(name));
   }
-  pass("Text/DM/settings/Radio/Podcast INSERT, UPDATE, and DELETE probes");
+  pass("V1 Text/DM/settings INSERT, UPDATE, and DELETE probes");
 }
 
 if (!shouldRun) {
-  console.log("Hosted Full MVP RLS matrix requires --run plus STAGING_ONLY and ALLOW_EPHEMERAL_WRITES confirmations.");
+  console.log("Hosted V1 Core RLS matrix requires --run plus STAGING_ONLY and ALLOW_EPHEMERAL_WRITES confirmations.");
   console.log(`Required configuration names: ${requiredNames.join(", ")}`);
   console.log(`Actors: ${Object.keys(matrix.actors).join(", ")}`);
   console.log(`Coverage: ${matrix.coverage.domains.join(", ")} / ${matrix.coverage.operations.join(", ")}`);
@@ -279,10 +297,11 @@ const actors = await authenticateActors();
 try {
   await verifyRoleFixtures(actors);
   await runReadMatrix(actors);
+  await runProfileMatrix(actors);
   await runStorageMatrix(actors);
   await runRealtimeMatrix(actors);
   await runMutationMatrix(actors);
 } finally {
   await signOutActors(actors);
 }
-console.log("Hosted Full MVP RLS role/content matrix passed. Output contains labels only; no IDs, credentials, tokens, URLs, or content were printed.");
+console.log("Hosted V1 Core RLS role/content matrix passed. Output contains labels only; no IDs, credentials, tokens, URLs, or content were printed.");

@@ -219,3 +219,16 @@ Task 520 local-quality superseding status:
 | QB-03 | **OPEN** | `RegisterScreen` imports `assets/brand/picom-logo.png`, but that user-owned asset is not tracked in HEAD. A clean-clone build is not reproducible until the approved asset is committed or the import is corrected. |
 
 No signed/native/final artifact, checksum, provenance, deployment, or publication was produced by Task 582.
+
+
+## Task 619 - V1 hosted Supabase closure update
+
+Status: **BLOCKED** (2026-07-12).
+
+- RB-01 remains open: the protected GitHub environment and complete synthetic actor/fixture inventory are not configured, so no immutable hosted matrix run exists.
+- RB-02 remains open: local policy and client contracts pass structurally, but the prior private Presence Unauthorized result needs a fresh two-client staging run after migration parity is verified.
+- RB-03 remains open: the V1 Edge release manifest is narrowed to client-config, validate-file, and user-data-export, but those exact deployed functions have not completed the protected hosted boundary run.
+- Dashboard access confirms a dedicated picom-staging project exists; this is environment discovery only, not release certification.
+- Meeting, Radio, Podcast, LiveKit-provider, account-finalization, placeholder and post-V1 functions no longer block this V1 hosted workflow.
+
+Closure procedure and secret-safe fixture contract: [V1 hosted Supabase closure](v1-hosted-supabase-closure.md).

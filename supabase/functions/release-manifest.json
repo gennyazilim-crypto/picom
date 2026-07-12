@@ -1,33 +1,24 @@
 {
-  "schemaVersion": 1,
-  "releasePublic": [
-    { "name": "health", "verifyJwt": false },
-    { "name": "client-config", "verifyJwt": false }
-  ],
+  "schemaVersion": 2,
+  "releasePublic": [{ "name": "client-config", "verifyJwt": false }],
   "releaseAuthenticated": [
-    { "name": "livekit-token", "verifyJwt": true },
-    { "name": "meeting-token", "verifyJwt": true },
-    { "name": "livekit-moderation", "verifyJwt": true },
     { "name": "validate-file", "verifyJwt": true },
-    { "name": "user-data-export", "verifyJwt": true },
-    { "name": "account-deletion", "verifyJwt": true }
+    { "name": "user-data-export", "verifyJwt": true }
   ],
-  "releaseInternal": [
-    { "name": "account-deletion-finalize", "verifyJwt": false, "guard": "worker-secret-and-disabled-by-default" },
-    { "name": "livekit-webhook", "verifyJwt": false, "guard": "livekit-signature-body-hash-and-idempotency" }
-  ],
+  "releaseInternal": [],
   "excluded": [
-    { "name": "accept-invite", "classification": "placeholder", "reason": "Invite acceptance uses the RLS-protected database RPC in Full MVP." },
-    { "name": "moderation-helper", "classification": "placeholder", "reason": "Returns an explicit not-implemented response and performs no action." },
-    { "name": "notification-fanout", "classification": "placeholder", "reason": "Provider delivery is not configured for Full MVP." },
-    { "name": "webhook-message", "classification": "post-release", "reason": "Production webhooks are outside locked Full MVP scope." }
+    { "name": "health", "classification": "blocked_placeholder", "reason": "Dependency checks still report placeholder states and cannot certify hosted readiness." },
+    { "name": "livekit-token", "classification": "conditional_post_gate", "reason": "Voice and screen share remain disabled until Task 621 provider evidence is complete." },
+    { "name": "livekit-moderation", "classification": "conditional_post_gate", "reason": "Voice moderation is outside the enabled V1 surface until Task 621." },
+    { "name": "livekit-webhook", "classification": "conditional_post_gate", "reason": "LiveKit webhook deployment requires Task 621 secret and signature evidence." },
+    { "name": "meeting-token", "classification": "post_v1", "reason": "Meeting workspace is hidden by the V1 Core scope registry." },
+    { "name": "meeting-livekit-webhook", "classification": "post_v1", "reason": "Meeting workspace is hidden by the V1 Core scope registry." },
+    { "name": "account-deletion", "classification": "blocked_operations", "reason": "Production deletion requires Task 623 legal and operations approval." },
+    { "name": "account-deletion-finalize", "classification": "blocked_operations", "reason": "Finalization remains disabled until Task 623 worker ownership and recovery evidence exist." },
+    { "name": "accept-invite", "classification": "excluded_placeholder", "reason": "The function returns 501; V1 invitation acceptance uses the RLS-protected database service path." },
+    { "name": "moderation-helper", "classification": "excluded_placeholder", "reason": "The function returns 501; V1 moderation uses existing RLS/RPC services." },
+    { "name": "notification-fanout", "classification": "excluded_placeholder", "reason": "No production notification provider is configured." },
+    { "name": "webhook-message", "classification": "post_v1", "reason": "Webhooks are explicitly hidden from V1 Core." }
   ],
-  "requiredSecretNames": [
-    "PICOM_ALLOWED_ORIGINS",
-    "LIVEKIT_URL",
-    "LIVEKIT_API_KEY",
-    "LIVEKIT_API_SECRET",
-    "ACCOUNT_DELETION_FINALIZATION_ENABLED",
-    "ACCOUNT_DELETION_WORKER_SECRET"
-  ]
+  "requiredSecretNames": ["PICOM_ALLOWED_ORIGINS"]
 }

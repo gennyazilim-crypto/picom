@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       staging_confirmation:
-        description: Type STAGING_ONLY to run protected hosted checks
+        description: Type STAGING_ONLY to run destructive-safe staging probes
         required: true
         type: string
 
@@ -12,26 +12,21 @@ permissions:
   contents: read
 
 concurrency:
-  group: hosted-validation-${{ github.ref }}
+  group: hosted-v1-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  hosted-validation:
-    name: Hosted staging validation
+  v1-hosted-supabase:
+    name: V1 hosted Supabase closure
+    if: ${{ inputs.staging_confirmation == 'STAGING_ONLY' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     environment: hosted-staging
-    timeout-minutes: 45
     env:
       PICOM_RLS_STAGING_URL: ${{ secrets.PICOM_RLS_STAGING_URL }}
       PICOM_RLS_STAGING_ANON_KEY: ${{ secrets.PICOM_RLS_STAGING_ANON_KEY }}
       PICOM_RLS_STAGING_CONFIRM: STAGING_ONLY
-      PICOM_RLS_COMMUNITY_ID: ${{ secrets.PICOM_RLS_COMMUNITY_ID }}
-      PICOM_RLS_PUBLIC_CHANNEL_ID: ${{ secrets.PICOM_RLS_PUBLIC_CHANNEL_ID }}
-      PICOM_RLS_PRIVATE_CHANNEL_ID: ${{ secrets.PICOM_RLS_PRIVATE_CHANNEL_ID }}
-      PICOM_RLS_PRIVATE_MESSAGE_ID: ${{ secrets.PICOM_RLS_PRIVATE_MESSAGE_ID }}
-      PICOM_RLS_PRIVATE_ATTACHMENT_ID: ${{ secrets.PICOM_RLS_PRIVATE_ATTACHMENT_ID }}
-      PICOM_RLS_PRIVATE_STORAGE_BUCKET: ${{ secrets.PICOM_RLS_PRIVATE_STORAGE_BUCKET }}
-      PICOM_RLS_PRIVATE_STORAGE_PATH: ${{ secrets.PICOM_RLS_PRIVATE_STORAGE_PATH }}
+      PICOM_RLS_MUTATION_CONFIRM: ALLOW_EPHEMERAL_WRITES
       PICOM_RLS_OWNER_EMAIL: ${{ secrets.PICOM_RLS_OWNER_EMAIL }}
       PICOM_RLS_OWNER_PASSWORD: ${{ secrets.PICOM_RLS_OWNER_PASSWORD }}
       PICOM_RLS_ADMIN_EMAIL: ${{ secrets.PICOM_RLS_ADMIN_EMAIL }}
@@ -42,88 +37,67 @@ jobs:
       PICOM_RLS_MEMBER_PASSWORD: ${{ secrets.PICOM_RLS_MEMBER_PASSWORD }}
       PICOM_RLS_VISITOR_EMAIL: ${{ secrets.PICOM_RLS_VISITOR_EMAIL }}
       PICOM_RLS_VISITOR_PASSWORD: ${{ secrets.PICOM_RLS_VISITOR_PASSWORD }}
-      PICOM_REALTIME_STAGING_URL: ${{ secrets.PICOM_REALTIME_STAGING_URL }}
-      PICOM_REALTIME_STAGING_ANON_KEY: ${{ secrets.PICOM_REALTIME_STAGING_ANON_KEY }}
+      PICOM_RLS_BLOCKED_EMAIL: ${{ secrets.PICOM_RLS_BLOCKED_EMAIL }}
+      PICOM_RLS_BLOCKED_PASSWORD: ${{ secrets.PICOM_RLS_BLOCKED_PASSWORD }}
+      PICOM_RLS_DM_NON_PARTICIPANT_EMAIL: ${{ secrets.PICOM_RLS_DM_NON_PARTICIPANT_EMAIL }}
+      PICOM_RLS_DM_NON_PARTICIPANT_PASSWORD: ${{ secrets.PICOM_RLS_DM_NON_PARTICIPANT_PASSWORD }}
+      PICOM_RLS_COMMUNITY_ID: ${{ vars.PICOM_RLS_COMMUNITY_ID }}
+      PICOM_RLS_PUBLIC_CHANNEL_ID: ${{ vars.PICOM_RLS_PUBLIC_CHANNEL_ID }}
+      PICOM_RLS_PRIVATE_CHANNEL_ID: ${{ vars.PICOM_RLS_PRIVATE_CHANNEL_ID }}
+      PICOM_RLS_PRIVATE_MESSAGE_ID: ${{ vars.PICOM_RLS_PRIVATE_MESSAGE_ID }}
+      PICOM_RLS_PRIVATE_REPLY_ID: ${{ vars.PICOM_RLS_PRIVATE_REPLY_ID }}
+      PICOM_RLS_PRIVATE_ATTACHMENT_ID: ${{ vars.PICOM_RLS_PRIVATE_ATTACHMENT_ID }}
+      PICOM_RLS_PRIVATE_REACTION_ID: ${{ vars.PICOM_RLS_PRIVATE_REACTION_ID }}
+      PICOM_RLS_PUBLIC_CONTENT_MENTION_ID: ${{ vars.PICOM_RLS_PUBLIC_CONTENT_MENTION_ID }}
+      PICOM_RLS_PRIVATE_CONTENT_MENTION_ID: ${{ vars.PICOM_RLS_PRIVATE_CONTENT_MENTION_ID }}
+      PICOM_RLS_FOLLOWED_STORY_ID: ${{ vars.PICOM_RLS_FOLLOWED_STORY_ID }}
+      PICOM_RLS_OWNER_MEMBER_FRIEND_REQUEST_ID: ${{ vars.PICOM_RLS_OWNER_MEMBER_FRIEND_REQUEST_ID }}
+      PICOM_RLS_PRIVATE_PROFILE_USER_ID: ${{ vars.PICOM_RLS_PRIVATE_PROFILE_USER_ID }}
+      PICOM_RLS_DM_CONVERSATION_ID: ${{ vars.PICOM_RLS_DM_CONVERSATION_ID }}
+      PICOM_RLS_DM_MESSAGE_ID: ${{ vars.PICOM_RLS_DM_MESSAGE_ID }}
+      PICOM_RLS_DM_ATTACHMENT_ID: ${{ vars.PICOM_RLS_DM_ATTACHMENT_ID }}
+      PICOM_RLS_DM_REACTION_ID: ${{ vars.PICOM_RLS_DM_REACTION_ID }}
+      PICOM_RLS_AUDIT_LOG_ID: ${{ vars.PICOM_RLS_AUDIT_LOG_ID }}
+      PICOM_RLS_PRIVATE_STORAGE_BUCKET: ${{ vars.PICOM_RLS_PRIVATE_STORAGE_BUCKET }}
+      PICOM_RLS_PRIVATE_STORAGE_PATH: ${{ vars.PICOM_RLS_PRIVATE_STORAGE_PATH }}
+      PICOM_RLS_PROFILE_MEDIA_BUCKET: ${{ vars.PICOM_RLS_PROFILE_MEDIA_BUCKET }}
+      PICOM_RLS_PRIVATE_PROFILE_MEDIA_PATH: ${{ vars.PICOM_RLS_PRIVATE_PROFILE_MEDIA_PATH }}
+      PICOM_RLS_DM_STORAGE_BUCKET: ${{ vars.PICOM_RLS_DM_STORAGE_BUCKET }}
+      PICOM_RLS_DM_STORAGE_PATH: ${{ vars.PICOM_RLS_DM_STORAGE_PATH }}
+      PICOM_REALTIME_STAGING_URL: ${{ secrets.PICOM_RLS_STAGING_URL }}
+      PICOM_REALTIME_STAGING_ANON_KEY: ${{ secrets.PICOM_RLS_STAGING_ANON_KEY }}
       PICOM_REALTIME_STAGING_CONFIRM: STAGING_ONLY
       PICOM_REALTIME_CLIENT_A_EMAIL: ${{ secrets.PICOM_REALTIME_CLIENT_A_EMAIL }}
       PICOM_REALTIME_CLIENT_A_PASSWORD: ${{ secrets.PICOM_REALTIME_CLIENT_A_PASSWORD }}
       PICOM_REALTIME_CLIENT_B_EMAIL: ${{ secrets.PICOM_REALTIME_CLIENT_B_EMAIL }}
       PICOM_REALTIME_CLIENT_B_PASSWORD: ${{ secrets.PICOM_REALTIME_CLIENT_B_PASSWORD }}
-      PICOM_REALTIME_COMMUNITY_ID: ${{ secrets.PICOM_REALTIME_COMMUNITY_ID }}
-      PICOM_REALTIME_CHANNEL_ID: ${{ secrets.PICOM_REALTIME_CHANNEL_ID }}
-      PICOM_EDGE_STAGING_URL: ${{ secrets.PICOM_EDGE_STAGING_URL }}
-      PICOM_EDGE_STAGING_ANON_KEY: ${{ secrets.PICOM_EDGE_STAGING_ANON_KEY }}
+      PICOM_REALTIME_COMMUNITY_ID: ${{ vars.PICOM_REALTIME_COMMUNITY_ID }}
+      PICOM_REALTIME_CHANNEL_ID: ${{ vars.PICOM_REALTIME_CHANNEL_ID }}
+      PICOM_EDGE_STAGING_URL: ${{ secrets.PICOM_RLS_STAGING_URL }}
+      PICOM_EDGE_STAGING_ANON_KEY: ${{ secrets.PICOM_RLS_STAGING_ANON_KEY }}
       PICOM_EDGE_STAGING_CONFIRM: STAGING_ONLY
-      PICOM_EDGE_STAGING_USER_EMAIL: ${{ secrets.PICOM_EDGE_STAGING_USER_EMAIL }}
-      PICOM_EDGE_STAGING_USER_PASSWORD: ${{ secrets.PICOM_EDGE_STAGING_USER_PASSWORD }}
-      PICOM_EDGE_STAGING_ORIGIN: ${{ secrets.PICOM_EDGE_STAGING_ORIGIN }}
-      PICOM_EDGE_COMMUNITY_ID: ${{ secrets.PICOM_EDGE_COMMUNITY_ID }}
-      PICOM_EDGE_VOICE_CHANNEL_ID: ${{ secrets.PICOM_EDGE_VOICE_CHANNEL_ID }}
-      PICOM_EDGE_INVITE_CODE: ${{ secrets.PICOM_EDGE_INVITE_CODE }}
+      PICOM_EDGE_TEST_EMAIL: ${{ secrets.PICOM_EDGE_TEST_EMAIL }}
+      PICOM_EDGE_TEST_PASSWORD: ${{ secrets.PICOM_EDGE_TEST_PASSWORD }}
+      PICOM_EDGE_ALLOWED_ORIGIN: ${{ vars.PICOM_EDGE_ALLOWED_ORIGIN }}
     steps:
-      - name: Require explicit staging confirmation
-        shell: bash
-        run: |
-          if [ "${{ inputs.staging_confirmation }}" != "STAGING_ONLY" ]; then
-            echo "Hosted validation blocked: staging_confirmation must equal STAGING_ONLY." >&2
-            exit 1
-          fi
-
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use project Node version
+        uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
+      - name: Install locked dependencies
         run: npm ci
-
-      - name: Validate Full MVP staging E2E matrix contract
-        run: node scripts/full-mvp-staging-e2e-contract.mjs
-
-      - name: Validate hosted Supabase RLS and storage boundaries
+      - name: Verify migration integrity
+        run: npm run supabase:migrations:check
+      - name: Verify V1 hosted contract
+        run: node scripts/v1-hosted-supabase-contract.mjs
+      - name: Verify V1 Edge release scope
+        run: node scripts/edge-functions-release-scope-smoke.mjs
+      - name: Run V1 RLS, Storage, and Realtime authorization matrix
         run: npm run supabase:rls:hosted:test
-
-      - name: Validate hosted Supabase Realtime with two clients
+      - name: Run two-client private Realtime validation
         run: npm run realtime:staging:test
-
-      - name: Validate hosted Edge Function JWT boundaries
+      - name: Run deployed V1 Edge Function boundary validation
         run: npm run edge:staging:test
-
-      - name: Validate final hosted meeting backend gate
-        env:
-          PICOM_FINAL_MEETING_CONFIRM: STAGING_ONLY
-          PICOM_HOSTED_MEETING_CONFIRM: STAGING_ONLY
-          PICOM_MEETING_LIVEKIT_STAGING_URL: ${{ secrets.PICOM_MEETING_LIVEKIT_STAGING_URL }}
-          PICOM_MEETING_LIVEKIT_STAGING_ANON_KEY: ${{ secrets.PICOM_MEETING_LIVEKIT_STAGING_ANON_KEY }}
-          PICOM_MEETING_LIVEKIT_STAGING_ORIGIN: ${{ secrets.PICOM_MEETING_LIVEKIT_STAGING_ORIGIN }}
-          PICOM_MEETING_LIVEKIT_STAGING_CONFIRM: STAGING_ONLY
-          PICOM_MEETING_ALLOWED_EMAIL: ${{ secrets.PICOM_MEETING_ALLOWED_EMAIL }}
-          PICOM_MEETING_ALLOWED_PASSWORD: ${{ secrets.PICOM_MEETING_ALLOWED_PASSWORD }}
-          PICOM_MEETING_WAITING_EMAIL: ${{ secrets.PICOM_MEETING_WAITING_EMAIL }}
-          PICOM_MEETING_WAITING_PASSWORD: ${{ secrets.PICOM_MEETING_WAITING_PASSWORD }}
-          PICOM_MEETING_BLOCKED_EMAIL: ${{ secrets.PICOM_MEETING_BLOCKED_EMAIL }}
-          PICOM_MEETING_BLOCKED_PASSWORD: ${{ secrets.PICOM_MEETING_BLOCKED_PASSWORD }}
-          PICOM_MEETING_ROOM_ID: ${{ secrets.PICOM_MEETING_ROOM_ID }}
-          PICOM_MEETING_SESSION_ID: ${{ secrets.PICOM_MEETING_SESSION_ID }}
-          PICOM_LIVEKIT_WEBHOOK_STAGING_URL: ${{ secrets.PICOM_LIVEKIT_WEBHOOK_STAGING_URL }}
-          PICOM_LIVEKIT_WEBHOOK_STAGING_CONFIRM: STAGING_ONLY
-          PICOM_LIVEKIT_WEBHOOK_API_KEY: ${{ secrets.PICOM_LIVEKIT_WEBHOOK_API_KEY }}
-          PICOM_LIVEKIT_WEBHOOK_API_SECRET: ${{ secrets.PICOM_LIVEKIT_WEBHOOK_API_SECRET }}
-          PICOM_LIVEKIT_WEBHOOK_ROOM_ID: ${{ secrets.PICOM_LIVEKIT_WEBHOOK_ROOM_ID }}
-          PICOM_LIVEKIT_WEBHOOK_SESSION_ID: ${{ secrets.PICOM_LIVEKIT_WEBHOOK_SESSION_ID }}
-        run: node scripts/hosted-final-meeting-backend-validation.mjs --run
-
-      - name: Add safe failure summary
-        if: failure()
-        shell: bash
-        run: |
-          {
-            echo "## Hosted validation blocked or failed"
-            echo "Confirm the protected hosted-staging environment and inspect the failed step."
-            echo "A missing environment is not certified as a pass."
-          } >> "$GITHUB_STEP_SUMMARY"
