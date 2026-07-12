@@ -16,6 +16,7 @@
 Task 661 is complete only when the protected `Picom LiveKit Token Staging` workflow finishes successfully with input `STAGING_ONLY` and uploads artifact `task-661-livekit-token-staging-evidence` whose status is `passed`. Provider/native connection evidence remains in later tasks and is not inferred from token shape.
 
 Any `deferredOwnerMigrations` entries in the artifact remain release blockers for the full schema-sync gate even when this Voice-token task passes.
+Mixed schema/Storage migration `20260711149900` was split so its ordinary schema and RPC contract can apply independently; owner-only branding Storage policy DDL remains explicit in `20260712166100` and must not be marked applied by this workflow when policies are absent.
 
 ## Validation commands
 
