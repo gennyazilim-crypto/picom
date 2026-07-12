@@ -30,12 +30,26 @@ const runNode = (script) => {
   if (result.status !== 0) throw new Error(`${path.basename(script)} failed: ${safeError(result.stderr || result.stdout)}`);
 };
 
+const removeWithRetry = async (target) => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    try {
+      await rm(target, { recursive: true, force: true, maxRetries: 2, retryDelay: 200 });
+      return;
+    } catch (error) {
+      if (attempt === 19) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+};
+
 const collectMachine = () => {
   const command = [
     "Add-Type -AssemblyName System.Windows.Forms",
     "$sound=@(Get-CimInstance Win32_SoundDevice -ErrorAction SilentlyContinue)",
     "$gpu=@(Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue)",
-    "$value=[pscustomobject]@{monitorCount=[System.Windows.Forms.Screen]::AllScreens.Count;displayScalePercent=100;soundDeviceCount=$sound.Count;gpuModels=@($gpu|ForEach-Object{$_.Name})}",
+    "$dpi=(Get-ItemProperty -LiteralPath 'HKCU:\\Control Panel\\Desktop\\WindowMetrics' -Name AppliedDPI -ErrorAction SilentlyContinue).AppliedDPI",
+    "if(-not $dpi){$dpi=96}",
+    "$value=[pscustomobject]@{monitorCount=[System.Windows.Forms.Screen]::AllScreens.Count;displayScalePercent=[math]::Round(($dpi/96)*100);soundDeviceCount=$sound.Count;gpuModels=@($gpu|ForEach-Object{$_.Name})}",
     "$value|ConvertTo-Json -Compress",
   ].join(";");
   const result = spawnSync("powershell.exe", ["-NoProfile", "-Command", command], { encoding: "utf8", windowsHide: true });
@@ -45,7 +59,7 @@ const collectMachine = () => {
 
 const verifyNormalRestart = async (executable) => {
   const userData = path.resolve(".tmp/task-666-normal-restart");
-  await rm(userData, { recursive: true, force: true });
+  await removeWithRetry(userData);
   const env = { ...process.env };
   delete env.PICOM_WINDOWS_MEMBER_MEDIA_CERTIFICATION;
   delete env.PICOM_HOSTED_E2E_CONFIG_FD;
@@ -54,7 +68,8 @@ const verifyNormalRestart = async (executable) => {
   await new Promise((resolve) => setTimeout(resolve, 8000));
   if (child.exitCode !== null) throw new Error(`Packaged normal restart exited early with code ${child.exitCode}.`);
   spawnSync("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
-  await rm(userData, { recursive: true, force: true });
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  await removeWithRetry(userData);
   return true;
 };
 
