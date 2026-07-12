@@ -418,6 +418,7 @@
     "mentions:supabase:smoke": "node scripts/mention-feed-supabase-smoke.mjs",
     "mentions:extraction:smoke": "node scripts/message-mentions-extraction-smoke.mjs",
     "mentions:unified:smoke": "node scripts/unified-content-mentions-smoke.mjs",
+    "feed:classification:smoke": "node scripts/feed-source-classification-smoke.mjs",
     "feed:query:smoke": "node scripts/unified-feed-query-smoke.mjs",
     "feed:cards:smoke": "node scripts/unified-feed-cards-smoke.mjs",
     "feed:tabs-stories:smoke": "node scripts/feed-tabs-stories-filters-smoke.mjs",
