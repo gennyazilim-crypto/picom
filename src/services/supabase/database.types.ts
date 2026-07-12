@@ -256,7 +256,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]>;Relationships:[];
       };
       meeting_waiting_entries: {
-        Row: { id:string;room_id:string;session_id:string|null;user_id:string;display_name:string;requested_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"waiting"|"admitted"|"denied"|"expired"|"cancelled";idempotency_key:string;request_message:string;invite_id:string|null;invited_by_user_id:string|null;requested_at:string;expires_at:string;resolved_at:string|null;resolved_by_user_id:string|null;denial_reason_code:string|null;decision_note:string|null;decision_metadata:Json;cancelled_at:string|null;host_notified_at:string|null;created_at:string;updated_at:string };
+        Row: { id:string;room_id:string;session_id:string|null;user_id:string;display_name:string;requested_role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";status:"waiting"|"admitted"|"denied"|"expired"|"cancelled";idempotency_key:string;request_message:string;invite_id:string|null;invited_by_user_id:string|null;requested_at:string;expires_at:string;resolved_at:string|null;resolved_by_user_id:string|null;denial_reason_code:string|null;decision_note:string|null;decision_metadata:Json;cancelled_at:string|null;host_notified_at:string|null;retention_until:string;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"],"room_id"|"user_id"|"display_name"|"idempotency_key">;
         Update: Partial<Database["public"]["Tables"]["meeting_waiting_entries"]["Row"]>;Relationships:[];
       };
@@ -266,7 +266,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["meeting_invites"]["Row"]>;Relationships:[];
       };
       meeting_events: {
-        Row: { id:string;room_id:string;session_id:string|null;actor_user_id:string|null;actor_participant_id:string|null;event_type:string;event_source:"backend"|"livekit"|"webhook"|"client";provider_event_id:string|null;idempotency_key:string;sequence:number;payload:Json;occurred_at:string;created_at:string };
+        Row: { id:string;room_id:string;session_id:string|null;actor_user_id:string|null;actor_participant_id:string|null;event_type:string;event_source:"backend"|"livekit"|"webhook"|"client";provider_event_id:string|null;idempotency_key:string;sequence:number;payload:Json;occurred_at:string;retention_until:string;created_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_events"]["Row"],"room_id"|"event_type"|"event_source"|"idempotency_key"|"occurred_at">;
         Update: Partial<Database["public"]["Tables"]["meeting_events"]["Row"]>;Relationships:[];
       };
@@ -280,7 +280,7 @@ export type Database = {
         Update:Partial<Database["public"]["Tables"]["meeting_invite_redemptions"]["Row"]>;Relationships:[];
       };
       meeting_attendance: {
-        Row: { id:string;session_id:string;user_id:string|null;participant_identity_hash:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";joined_at:string;left_at:string|null;duration_seconds:number|null;reconnect_count:number;final_state:"left"|"removed"|"disconnected"|"ended";created_at:string;updated_at:string };
+        Row: { id:string;session_id:string;user_id:string|null;participant_identity_hash:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";joined_at:string;left_at:string|null;duration_seconds:number|null;reconnect_count:number;final_state:"left"|"removed"|"disconnected"|"ended";retention_until:string;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_attendance"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_attendance"]["Row"],"session_id"|"participant_identity_hash"|"role"|"joined_at">;
         Update: Partial<Database["public"]["Tables"]["meeting_attendance"]["Row"]>;Relationships:[];
       };
@@ -554,7 +554,7 @@ export type Database = {
         Relationships: [];
       };
       audit_log: {
-        Row: { id: string; community_id: string; actor_id: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; meeting_room_id: string | null; meeting_session_id: string | null; created_at: string };
+        Row: { id: string; community_id: string; actor_id: string | null; actor_kind:"user"|"system"; action_type: string; target_type: string; target_id: string | null; reason: string | null; meeting_room_id: string | null; meeting_session_id: string | null; meeting_event_id:string|null;event_source:"backend"|"livekit"|"client"|"caption_service"|"system";metadata:Json;retention_until:string;created_at: string };
         Insert: never;
         Update: never;
         Relationships: [];

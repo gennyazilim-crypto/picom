@@ -128,6 +128,7 @@ export function MeetingWaitingRoomHostQueue({ roomId, canAdmit, query }: { roomI
       </span> : null}
     </header>
     {error ? <p className="meeting-dock-error" role="alert">{error}</p> : null}
+    <p className="meeting-waiting-privacy-note"><AppIcon name="lock" size="xs" /> Waiting requests are visible only to authorized hosts/cohosts and include the submitted display name, requested role, invite state, and optional request message.</p>
     <span className="sr-only" aria-live="polite">{announcement}</span>
     {visibleWaiting.map((entry) => <article key={entry.id}>
       <span className="meeting-waiting-avatar" aria-hidden="true">{entry.displayName.slice(0, 1).toUpperCase()}</span>

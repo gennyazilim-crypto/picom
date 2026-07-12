@@ -7,7 +7,7 @@ const MAX_LIST_RECORDS = 500;
 const MAX_EXPORT_RECORDS = 5000;
 
 type Result<T> = { ok: true; data: T } | { ok: false; message: string };
-type AuditRow = { id: string; community_id: string; actor_id: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; created_at: string };
+type AuditRow = { id: string; community_id: string; actor_id: string | null; actor_kind: string; action_type: string; target_type: string; target_id: string | null; reason: string | null; created_at: string };
 
 const AUDIT_SECRET_PATTERN = /(bearer\s+)[a-z0-9._~+\/-]+|((?:password|token|secret|authorization|cookie|api[_-]?key)\s*[:=]\s*)[^,;\s]+/gi;
 
@@ -60,7 +60,7 @@ function mapRow(row: AuditRow): AuditLogRecord {
   return sanitizeAuditRecord({
     id: row.id,
     communityId: row.community_id,
-    actorId: row.actor_id,
+    actorId: row.actor_id ?? (row.actor_kind === "system" ? "system" : "unknown-actor"),
     actionType: row.action_type as AuditLogRecord["actionType"],
     targetType: row.target_type,
     targetId: row.target_id ?? undefined,
@@ -120,7 +120,7 @@ export const auditLogService = {
     if (dataSourceService.getStatus().isMock) return { ok: true, data: readLocal().filter((item) => item.communityId === communityId).slice(0, MAX_LIST_RECORDS) };
     const client = getSupabaseClient();
     if (!client) return { ok: false, message: "Audit log is unavailable." };
-    const { data, error } = await client.from("audit_log").select("id,community_id,actor_id,action_type,target_type,target_id,reason,created_at").eq("community_id", communityId).order("created_at", { ascending: false }).limit(MAX_LIST_RECORDS);
+    const { data, error } = await client.from("audit_log").select("id,community_id,actor_id,actor_kind,action_type,target_type,target_id,reason,created_at").eq("community_id", communityId).order("created_at", { ascending: false }).limit(MAX_LIST_RECORDS);
     return error ? { ok: false, message: "Picom could not load the audit log." } : { ok: true, data: (data ?? []).map(mapRow) };
   },
 

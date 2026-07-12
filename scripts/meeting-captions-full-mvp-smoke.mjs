@@ -10,7 +10,7 @@ const checks=[
   ["LiveKit text stream",read("src/services/voiceService.ts"),["registerTextStreamHandler(\"lk.transcription\"","lk.transcription_final","subscribeTranscriptions","unregisterTextStreamHandler"]],
   ["caption service",read("src/services/meeting/meetingCaptionService.ts"),["segments:current.slice(-200)","meeting-captions","Live captions are unavailable in mock mode","recordConsent"]],
   ["caption UI",read("src/components/meeting/MeetingCaptionPanel.tsx"),["Ephemeral by design","Allow live transcription?","Request captions","Stop captions"]],
-  ["room indicator and overlay",read("src/components/meeting/MeetingWorkspace.tsx")+read("src/components/meeting/MeetingTopBar.tsx"),["MeetingCaptionsOverlay","meetingCaptionService.activate","Captions live","Caption consent"]],
+  ["room indicator and overlay",read("src/components/meeting/MeetingWorkspace.tsx")+read("src/components/meeting/MeetingTopBar.tsx")+read("src/components/meeting/MeetingMediaPrivacyIndicator.tsx"),["MeetingCaptionsOverlay","meetingCaptionService.activate","Captions live","Caption consent"]],
 ];
 for(const [label,source,markers] of checks){for(const marker of markers){if(!source.includes(marker))throw new Error(`${label}: missing ${marker}`)}}
 const forbidden=["fake caption","mock transcript","VITE_DEEPGRAM","dangerouslySetInnerHTML"];
