@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 const run=process.argv.includes("--run");
-const accountNames=["OWNER","ADMIN","MODERATOR","MEMBER","VISITOR","BLOCKED"];
+const accountNames=["OWNER","ADMIN","MODERATOR","MEMBER","ROLELESS_MEMBER","VISITOR","BLOCKED"];
 const names=[
   "PICOM_RLS_STAGING_URL","PICOM_RLS_STAGING_ANON_KEY","PICOM_RLS_STAGING_CONFIRM",
   ...accountNames.flatMap((name)=>[`PICOM_RLS_${name}_EMAIL`,`PICOM_RLS_${name}_PASSWORD`]),
@@ -54,7 +54,7 @@ const expectDenied=async(name,intent="voice",targetChannelId=channelId)=>{
 };
 
 try{
-  for(const name of ["owner","admin","moderator","member"]){
+  for(const name of ["owner","admin","moderator","member","roleless_member"]){
     const rooms=await actors.get(name).client.rpc("list_visible_voice_rooms",{target_community_id:communityId});
     if(rooms.error||!rooms.data?.some((room)=>room.channel_id===channelId))throw new Error(`${name} cannot discover the permitted Voice room.`);
     const grant=await expectAuthorized(name);
@@ -72,9 +72,7 @@ try{
     await expectDenied(name);
   }
 
-  for(const name of ["moderator","member","visitor","blocked","unauthorized"])await expectDenied(name,"voice",privateChannelId);
-  await expectAuthorized("owner","voice",privateChannelId);
-  await expectAuthorized("admin","voice",privateChannelId);
+  for(const name of ["owner","admin","moderator","member","roleless_member"])await expectAuthorized(name,"voice",privateChannelId);
 
   const hierarchy=[
     ["owner","admin",true],

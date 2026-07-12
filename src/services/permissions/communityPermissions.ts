@@ -131,9 +131,27 @@ export function isCommunityOwner(userId: UserId, community: Community): boolean 
   return community.ownerId === userId || isOwnerRole(role);
 }
 
-function getStatus(role?: Role, isOwner = false): CommunityMembershipStatus {
+const ORDINARY_COMMUNITY_MEDIA_PERMISSIONS = new Set<CommunityPermissionKey>([
+  "viewVoiceRoom",
+  "joinVoiceRoom",
+  "joinVoice",
+  "speak",
+  "speakInVoice",
+  "publishAudio",
+  "shareScreen",
+]);
+
+export function isOrdinaryCommunityMediaPermission(permission: CommunityPermissionKey): boolean {
+  return ORDINARY_COMMUNITY_MEDIA_PERMISSIONS.has(permission);
+}
+
+export function isActiveCommunityMember(userId: UserId, community: Community): boolean {
+  return community.members.some((member) => member.userId === userId);
+}
+
+function getStatus(role?: Role, isOwner = false, hasMembership = false): CommunityMembershipStatus {
   if (isOwner) return "owner";
-  if (!role) return "visitor";
+  if (!role) return hasMembership ? "member" : "visitor";
   if (role.systemKey === "admin" || role.name === "Admin") return "admin";
   if (role.name === "Radio Producer") return "member";
   if (role.systemKey === "moderator" || role.name === "Moderator") return "moderator";
@@ -165,7 +183,8 @@ export function getDefaultCommunityRolePermissions(role: Role, kind: CommunityKi
 export function getCommunityAccess(userId: UserId, community: Community): CommunityAccess {
   const { member, role, roles } = getUserCommunityRole(userId, community);
   const owner = isCommunityOwner(userId, community);
-  const status = getStatus(role, owner);
+  const isActiveMember = isActiveCommunityMember(userId, community);
+  const status = getStatus(role, owner, isActiveMember);
   const visibility = getCommunityVisibility(community);
   const publicReadEnabled = isCommunityPublicReadEnabled(community);
   const isVisitor = status === "visitor";
@@ -188,6 +207,7 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
     isAdmin: status === "admin",
     isModerator: status === "moderator",
     isMember: !isVisitor,
+    isActiveMember,
     isVisitor,
     canOpenAdminPanel: status === "owner" || status === "admin",
     canOpenModeratorPanel: status === "owner" || status === "admin" || status === "moderator",
@@ -200,6 +220,7 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
 }
 
 export function hasCommunityPermission(access: CommunityAccess, permission: CommunityPermissionKey): boolean {
+  if (isOrdinaryCommunityMediaPermission(permission)) return access.isActiveMember;
   return access.permissions.includes(permission);
 }
 
@@ -210,6 +231,7 @@ export function resolveCommunityPermission(
   overrides: readonly CommunityPermissionOverride[] = [],
 ): boolean {
   if (!isCommunityPermissionAvailableForKind(access.communityKind, permission)) return false;
+  if (isOrdinaryCommunityMediaPermission(permission)) return access.isActiveMember;
   let allowed = hasCommunityPermission(access, permission);
   if (access.isOwner || !access.role) return allowed;
   const roleIds = access.member?.roleIds?.length ? access.member.roleIds : [access.role.id];
@@ -273,6 +295,7 @@ export function isVisitor(access: CommunityAccess): boolean {
 }
 
 export function canViewChannel(access: CommunityAccess, channel: Channel): boolean {
+  if (channel.type === "voice") return access.isActiveMember;
   if (access.isVisitor) {
     return access.canViewPublicContent && !channel.isPrivate && (channel.publicReadEnabled ?? true);
   }

@@ -1931,8 +1931,8 @@ export function App() {
       return;
     }
 
-    if (communityAccess.isVisitor || !authSession) {
-      pushToast(communityAccess.isVisitor ? "Join this community before entering voice." : "Sign in before entering voice.", "error");
+    if (!communityAccess.isActiveMember || !authSession) {
+      pushToast(!communityAccess.isActiveMember ? "Join this community before entering voice." : "Sign in before entering voice.", "error");
       return;
     }
     const voiceRoomsEnabled = displayedActiveCommunity.typeSettings?.voiceRoomsEnabled ?? displayedActiveCommunity.kind === "text";
@@ -1940,11 +1940,6 @@ export function App() {
       pushToast("Normal voice rooms are disabled for this community type.", "error");
       return;
     }
-    if (!communityAccess.permissions.includes("joinVoiceRoom") && !communityAccess.permissions.includes("joinVoice")) {
-      pushToast("Your role cannot join this voice room.", "error");
-      return;
-    }
-
     void import("./services/voiceService").then(({ voiceService }) =>
       voiceService.join({
         communityId: activeCommunity.id,
@@ -1959,7 +1954,7 @@ export function App() {
         }
       }),
     );
-  }, [activeCommunity.id, authSession, communityAccess.isVisitor, communityAccess.permissions, displayedActiveChannel.id, displayedActiveChannel.type, displayedActiveCommunity.kind, displayedActiveCommunity.typeSettings, displayedCurrentUser.displayName, pushToast]);
+  }, [activeCommunity.id, authSession, communityAccess.isActiveMember, displayedActiveChannel.id, displayedActiveChannel.type, displayedActiveCommunity.kind, displayedActiveCommunity.typeSettings, displayedCurrentUser.displayName, pushToast]);
 
   const leaveActiveVoiceRoom = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.leave());
@@ -3195,8 +3190,8 @@ export function App() {
                   onLeave={leaveActiveVoiceRoom}
                   onToggleMute={toggleActiveVoiceMute}
                   onToggleDeafen={toggleActiveVoiceDeafen}
-                  canSpeak={Boolean(voiceSnapshot.canSpeak) && (communityAccess.permissions.includes("publishAudio") || communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
-                  canShareScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.permissions.includes("shareScreen")}
+                  canSpeak={Boolean(voiceSnapshot.canSpeak) && communityAccess.isActiveMember}
+                  canShareScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.isActiveMember}
                   canMuteMembers={communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom")}
                   canRemoveFromVoice={communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom")}
                   onModerateParticipant={moderateActiveVoiceParticipant}

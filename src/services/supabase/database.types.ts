@@ -887,6 +887,7 @@ export type Database = {
         Returns: Array<Database["public"]["Tables"]["communities"]["Row"]>;
       };
       community_voice_rooms_enabled: { Args: { target_community_id: string }; Returns: boolean };
+      is_active_community_media_member: { Args: { target_community_id: string; target_user_id?: string | null }; Returns: boolean };
       list_visible_voice_rooms: { Args: { target_community_id?: string | null }; Returns: Array<{ community_id: string; channel_id: string; channel_name: string; channel_topic: string | null; channel_private: boolean; can_join: boolean; can_publish_audio: boolean; can_share_screen: boolean }> };
       authorize_livekit_room: { Args: { target_community_id: string; target_channel_id: string; target_intent: "voice" | "screen" }; Returns: Array<{ community_id: string; channel_id: string; community_kind: Database["public"]["Enums"]["community_kind"]; channel_private: boolean; can_publish_audio: boolean; can_publish_screen: boolean }> };
       authorize_livekit_voice_moderation: { Args: { target_community_id: string; target_channel_id: string; target_user_id: string; target_action: "mute" | "remove" }; Returns: Array<{ community_id: string; channel_id: string; moderated_user_id: string; action: "mute" | "remove" }> };

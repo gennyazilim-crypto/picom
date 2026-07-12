@@ -88,6 +88,7 @@ export type CommunityAccess = {
   isAdmin: boolean;
   isModerator: boolean;
   isMember: boolean;
+  isActiveMember: boolean;
   isVisitor: boolean;
   canOpenAdminPanel: boolean;
   canOpenModeratorPanel: boolean;
