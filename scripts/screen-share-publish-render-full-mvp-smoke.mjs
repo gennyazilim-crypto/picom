@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [voice, viewer, preview, feed, app, edge] = await Promise.all([
+const [voice, viewer, preview, connectedVoiceCard, app, edge] = await Promise.all([
   read("src/services/voiceService.ts"), read("src/components/voice/ScreenShareViewer.tsx"),
-  read("src/components/voice/ScreenSharePreview.tsx"), read("src/components/FeedCompanionRail.tsx"), read("src/App.tsx"),
+  read("src/components/voice/ScreenSharePreview.tsx"), read("src/components/voice/ConnectedVoiceCard.tsx"), read("src/App.tsx"),
   read("supabase/functions/livekit-token/index.ts"),
 ]);
 
@@ -23,7 +23,7 @@ const checks = [
   [viewer.includes("muted={share.isLocal}"), "local preview cannot echo audio"],
   [viewer.includes("hasRenderableVideo") && viewer.includes("screen-share-video-pending"), "unsubscribed remote share descriptors render a safe loading state"],
   [preview.includes('role="tablist"') && preview.includes("focusedShareId") && preview.includes("onSelectShare"), "multiple active sharers have a focused switcher"],
-  [feed.includes("Screen sharing active") && feed.includes("voiceState.screenSharing"), "Connected Voice reflects active sharing"],
+  [connectedVoiceCard.includes("Screen sharing active") && connectedVoiceCard.includes("voiceState.screenSharing"), "Connected Voice reflects active sharing"],
   [app.includes('pushToast("Screen sharing started."') && app.includes('pushToast("Screen sharing stopped."'), "start and stop outcomes are visible"],
   [!app.includes("startActiveVoiceScreenShare()"), "capture never starts automatically"],
 ];

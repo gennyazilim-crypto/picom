@@ -956,7 +956,7 @@ body{
 }
 .voice-mini-controls{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(auto-fit,minmax(34px,1fr));
   gap:8px;
 }
 .voice-mini-controls button,

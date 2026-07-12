@@ -6,9 +6,12 @@ import { voiceDiagnosticsRegistry } from "../voiceDiagnosticsRegistry";
 import type { VoiceConnectionQuality, VoiceDurationBucket } from "../../utils/voiceQualityMetrics";
 import { dataSourceService } from "../dataSourceService";
 import { meetingDiagnosticsRegistry, type MeetingDiagnosticsSummary } from "../meetingDiagnosticsRegistry";
+import { isV1FeatureEnabled } from "../../config/v1ReleaseScope";
 
 export type DiagnosticsRealtimeStatus = RealtimeConnectionStatus | "unknown";
 export type SupabaseDiagnosticsStatus = "mock" | "configured" | "not_configured";
+export type LiveKitDiagnosticsStatus = "mock" | "server_managed" | "release_gated" | "not_configured";
+export type VoiceTokenExchangeStatus = "not_requested" | "attempted" | "succeeded" | "failed";
 
 export type DiagnosticsErrorSummary = Readonly<{
   id: string;
@@ -41,15 +44,21 @@ export type DiagnosticsSnapshot = Readonly<{
     realtimeStatus: DiagnosticsRealtimeStatus;
     supabaseStatus: SupabaseDiagnosticsStatus;
     supabaseHost: string | null;
-    liveKitStatus: "configured" | "not_configured";
+    liveKitStatus: LiveKitDiagnosticsStatus;
     voiceStatus: VoiceConnectionStatus;
     voice: {
+      connected: boolean;
       participantCount: number;
       muted: boolean;
       deafened: boolean;
       screenSharing: boolean;
+      remoteScreenShareCount: number;
+      screenPickerStatus: "available" | "unavailable";
+      tokenExchangeStatus: VoiceTokenExchangeStatus;
+      lastErrorCode: string | null;
       connectionQuality: VoiceConnectionQuality;
       reconnectCount: number;
+      joinAttemptCount: number;
       joinFailureCount: number;
       deviceErrorCount: number;
       sessionDurationBucket: VoiceDurationBucket;
@@ -107,6 +116,23 @@ function getSupabaseStatus(): SupabaseDiagnosticsStatus {
   return status.configured ? "configured" : "not_configured";
 }
 
+function getLiveKitStatus(): LiveKitDiagnosticsStatus {
+  const status = dataSourceService.getStatus();
+  if (status.isMock) return "mock";
+  if (!isV1FeatureEnabled("voiceRooms") && !isV1FeatureEnabled("screenShare")) return "release_gated";
+  return status.configured ? "server_managed" : "not_configured";
+}
+
+function getVoiceTokenExchangeStatus(joinAttemptCount: number, connected: boolean, lastErrorCode: string | null): VoiceTokenExchangeStatus {
+  if (connected) return "succeeded";
+  if (lastErrorCode === "VOICE_TOKEN_FAILED") return "failed";
+  return joinAttemptCount > 0 ? "attempted" : "not_requested";
+}
+
+function getScreenPickerStatus(): "available" | "unavailable" {
+  return typeof window !== "undefined" && typeof window.picomDesktop?.screenCapture?.getSources === "function" ? "available" : "unavailable";
+}
+
 function formatExportAsText(payload: DiagnosticsExportPayload): string {
   const lines = [
     "Picom diagnostics",
@@ -121,7 +147,12 @@ function formatExportAsText(payload: DiagnosticsExportPayload): string {
     `Realtime: ${payload.serviceStatus.realtimeStatus}`,
     `LiveKit: ${payload.serviceStatus.liveKitStatus}`,
     `Voice: ${payload.serviceStatus.voiceStatus}`,
+    `Voice connected: ${payload.serviceStatus.voice.connected}`,
+    `Voice token exchange: ${payload.serviceStatus.voice.tokenExchangeStatus}`,
     `Voice quality: ${payload.serviceStatus.voice.connectionQuality}`,
+    `Screen picker: ${payload.serviceStatus.voice.screenPickerStatus}`,
+    `Local screen sharing: ${payload.serviceStatus.voice.screenSharing}`,
+    `Remote screen shares: ${payload.serviceStatus.voice.remoteScreenShareCount}`,
     `Voice reconnects: ${payload.serviceStatus.voice.reconnectCount}`,
     `Voice device errors: ${payload.serviceStatus.voice.deviceErrorCount}`,
     `Meeting phase: ${payload.serviceStatus.meeting.phase}`,
@@ -177,15 +208,21 @@ export const diagnosticsService = {
         realtimeStatus,
         supabaseStatus: getSupabaseStatus(),
         supabaseHost,
-        liveKitStatus: appConfig.liveKit.url ? "configured" : "not_configured",
+        liveKitStatus: getLiveKitStatus(),
         voiceStatus: voiceDiagnostics.status,
         voice: {
+          connected: voiceDiagnostics.connected,
           participantCount: voiceDiagnostics.participantCount,
           muted: voiceDiagnostics.muted,
           deafened: voiceDiagnostics.deafened,
           screenSharing: voiceDiagnostics.screenSharing,
+          remoteScreenShareCount: voiceDiagnostics.remoteScreenShareCount,
+          screenPickerStatus: getScreenPickerStatus(),
+          tokenExchangeStatus: getVoiceTokenExchangeStatus(voiceDiagnostics.joinAttemptCount, voiceDiagnostics.connected, voiceDiagnostics.lastErrorCode),
+          lastErrorCode: voiceDiagnostics.lastErrorCode,
           connectionQuality: voiceDiagnostics.connectionQuality,
           reconnectCount: voiceDiagnostics.reconnectCount,
+          joinAttemptCount: voiceDiagnostics.joinAttemptCount,
           joinFailureCount: voiceDiagnostics.joinFailureCount,
           deviceErrorCount: voiceDiagnostics.deviceErrorCount,
           sessionDurationBucket: voiceDiagnostics.sessionDurationBucket,

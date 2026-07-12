@@ -2977,6 +2977,12 @@ export function App() {
               dataState={dataSourceService.getStatus().isSupabase ? remoteProfileLoadState : "ready"}
               dataError={remoteProfileLoadError}
               onRetryData={() => setProfileReloadVersion((version) => version + 1)}
+              voiceState={voiceSnapshot}
+              onToggleVoiceMute={toggleFeedVoiceMute}
+              onToggleVoiceDeafen={toggleFeedVoiceDeafen}
+              onLeaveVoice={leaveFeedVoice}
+              onOpenVoiceRoom={openFeedScreenShare}
+              onOpenScreenShare={openFeedScreenShare}
               isBlocked={blockedUserIds.includes(selectedUserProfile.id)}
               relationshipBusy={profileRelationshipBusyUserId === selectedUserProfile.id}
               onOpenMore={(event, profile) => {
@@ -3010,6 +3016,12 @@ export function App() {
               currentUserId={directMessageUserId}
               currentUserDisplayName={currentUser.displayName}
               friendRequestCount={friendState.counts.pending}
+              voiceState={voiceSnapshot}
+              onToggleVoiceMute={toggleFeedVoiceMute}
+              onToggleVoiceDeafen={toggleFeedVoiceDeafen}
+              onLeaveVoice={leaveFeedVoice}
+              onOpenVoiceRoom={openFeedScreenShare}
+              onOpenScreenShare={openFeedScreenShare}
               onSelectConversation={(conversationId) => { setActiveDirectConversationId(conversationId); setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, unreadCount: 0 } : item)); void directMessageService.markDirectConversationRead(conversationId); }}
               onSendMessage={sendDirectMessageLocal}
               onEditMessage={editDirectMessageLocal}

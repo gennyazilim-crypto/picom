@@ -10,6 +10,8 @@ import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { useAudioCatalogState } from "../hooks/useAudioCatalog";
 import { ProfileAudioSections } from "./audio/ProfileAudioSections";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
+import type { VoiceServiceSnapshot } from "../services/voiceService";
+import { ConnectedVoiceCard } from "./voice/ConnectedVoiceCard";
 
 type ProfileViewProps = {
   profile: UserProfile;
@@ -31,7 +33,15 @@ type ProfileViewProps = {
   dataState?: "idle" | "loading" | "ready" | "error";
   dataError?: string | null;
   onRetryData?: () => void;
+  voiceState: VoiceServiceSnapshot;
+  onToggleVoiceMute: () => void;
+  onToggleVoiceDeafen: () => void;
+  onLeaveVoice: () => void;
+  onOpenVoiceRoom: () => void;
+  onOpenScreenShare: () => void;
 };
+
+type ProfileVoiceSurfaceProps = Pick<ProfileViewProps, "voiceState" | "onToggleVoiceMute" | "onToggleVoiceDeafen" | "onLeaveVoice" | "onOpenVoiceRoom" | "onOpenScreenShare">;
 
 type ProfileActionButtonsProps = {
   profile: UserProfile;
@@ -132,7 +142,13 @@ export function ProfileLeftCard({
   isBlocked,
   relationshipBusy,
   onOpenMore,
-}: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
+  voiceState,
+  onToggleVoiceMute,
+  onToggleVoiceDeafen,
+  onLeaveVoice,
+  onOpenVoiceRoom,
+  onOpenScreenShare,
+}: ProfileActionButtonsProps & { member: Member; onBack: () => void } & ProfileVoiceSurfaceProps) {
   const verification = getUserVerificationSummary(member.userId, profile.verificationBadges ?? [], profile.verification ?? member.verification);
   return (
     <aside className="profile-left-card" aria-label="Profile summary">
@@ -140,6 +156,15 @@ export function ProfileLeftCard({
         <AppIcon name="chevronRight" size="sm" />
         Back
       </button>
+
+      <ConnectedVoiceCard
+        voiceState={voiceState}
+        onToggleMute={onToggleVoiceMute}
+        onToggleDeafen={onToggleVoiceDeafen}
+        onLeaveVoice={onLeaveVoice}
+        onOpenVoiceRoom={onOpenVoiceRoom}
+        onOpenScreenShare={onOpenScreenShare}
+      />
 
       <div className="profile-portrait-panel">
         <div className="profile-cover-art" style={{ backgroundImage: `url(${profile.coverUrl})` }} />
@@ -485,6 +510,12 @@ export function ProfileView({
   dataState,
   dataError,
   onRetryData,
+  voiceState,
+  onToggleVoiceMute,
+  onToggleVoiceDeafen,
+  onLeaveVoice,
+  onOpenVoiceRoom,
+  onOpenScreenShare,
 }: ProfileViewProps) {
   const isCurrentUser = profile.isCurrentUser ?? profile.id === currentUserId;
 
@@ -504,6 +535,12 @@ export function ProfileView({
           isBlocked={isBlocked}
           relationshipBusy={relationshipBusy}
           onOpenMore={onOpenMore}
+          voiceState={voiceState}
+          onToggleVoiceMute={onToggleVoiceMute}
+          onToggleVoiceDeafen={onToggleVoiceDeafen}
+          onLeaveVoice={onLeaveVoice}
+          onOpenVoiceRoom={onOpenVoiceRoom}
+          onOpenScreenShare={onOpenScreenShare}
         />
         <ProfileMainPanel profile={profile} communities={communities} currentUserId={currentUserId} dataState={dataState} dataError={dataError} onRetryData={onRetryData} onOpenActivity={onOpenActivity} onOpenImage={onOpenImage} onOpenCommunity={onOpenCommunity} />
       </div>

@@ -48,6 +48,12 @@ export function DiagnosticsSection({ onNotice }: { onNotice: (message: string, t
         <article><span>Realtime</span><strong>{snapshot.serviceStatus.realtimeStatus}</strong></article>
         <article><span>LiveKit</span><strong>{snapshot.serviceStatus.liveKitStatus}</strong></article>
         <article><span>Voice</span><strong>{snapshot.serviceStatus.voiceStatus}</strong></article>
+        <article><span>Voice connection</span><strong>{snapshot.serviceStatus.voice.connected ? "Connected" : "Not connected"}</strong></article>
+        <article><span>Token exchange</span><strong>{snapshot.serviceStatus.voice.tokenExchangeStatus}</strong></article>
+        <article><span>Screen picker</span><strong>{snapshot.serviceStatus.voice.screenPickerStatus}</strong></article>
+        <article><span>Screen sharing</span><strong>{snapshot.serviceStatus.voice.screenSharing ? "Local active" : `${snapshot.serviceStatus.voice.remoteScreenShareCount} remote`}</strong></article>
+        <article><span>Voice attempts</span><strong>{snapshot.serviceStatus.voice.joinAttemptCount} / {snapshot.serviceStatus.voice.joinFailureCount} failed</strong></article>
+        <article><span>Voice error</span><strong>{snapshot.serviceStatus.voice.lastErrorCode ?? "None"}</strong></article>
         <article><span>Current view</span><strong>{snapshot.serviceStatus.activeView}</strong></article>
         <article><span>Recent errors</span><strong>{snapshot.recentErrors.length}</strong></article>
         <article><span>Last API error</span><strong title={snapshot.serviceStatus.lastApiError?.message}>{snapshot.serviceStatus.lastApiError?.message ?? "None"}</strong></article>

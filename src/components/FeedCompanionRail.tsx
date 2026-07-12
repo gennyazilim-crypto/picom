@@ -9,7 +9,7 @@ import type { AudioPlayableItem } from "../types/audio";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { AudioMiniPlayer } from "./audio/AudioMiniPlayer";
-import { NoiseShieldCompactStatus } from "./voice/NoiseShieldControl";
+import { ConnectedVoiceCard } from "./voice/ConnectedVoiceCard";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
 
 type FeedCompanionRailProps = {
@@ -50,53 +50,6 @@ function getEventIcon(type: UpcomingEventType): IconName {
   if (type === "review") return "eye";
   if (type === "social") return "users";
   return "bell";
-}
-
-function VoiceMiniControlCard({
-  voiceState,
-  onToggleMute,
-  onToggleDeafen,
-  onLeaveVoice,
-  onOpenScreenShare,
-}: Pick<FeedCompanionRailProps, "voiceState" | "onToggleMute" | "onToggleDeafen" | "onLeaveVoice" | "onOpenScreenShare">) {
-  if (!isV1FeatureEnabled("voiceRooms") || (voiceState.status !== "connected" && voiceState.status !== "reconnecting")) return null;
-
-  return (
-    <section className="voice-mini-card" aria-label="Current voice room controls">
-      <header>
-        <span className="voice-mini-icon">
-          <AppIcon name="voice" size="lg" />
-        </span>
-        <div>
-          <p className="eyebrow">Connected Voice</p>
-          <strong>{voiceState.roomContext?.channelName ?? voiceState.roomName ?? "Voice room"}</strong>
-          <small>{voiceState.screenSharing ? "Screen sharing active" : voiceState.status === "reconnecting" ? "Restoring connection..." : "LiveKit connected"}</small>
-        </div>
-      </header>
-      <div className="voice-mini-meta">
-        <span>
-          <i />
-          Live
-        </span>
-        <span>{voiceState.participants.length} listening</span>
-        <NoiseShieldCompactStatus interactive />
-      </div>
-      <div className="voice-mini-controls">
-        <button type="button" aria-label={voiceState.muted ? "Unmute microphone" : "Mute microphone"} aria-pressed={voiceState.muted} onClick={onToggleMute}>
-          <AppIcon name="microphone" size="sm" />
-        </button>
-        <button type="button" aria-label={voiceState.deafened ? "Undeafen audio" : "Deafen audio"} aria-pressed={voiceState.deafened} onClick={onToggleDeafen}>
-          <AppIcon name="headphones" size="sm" />
-        </button>
-        <button type="button" aria-label={voiceState.screenSharing ? "Open active screen share controls" : "Open screen share controls"} aria-pressed={voiceState.screenSharing} onClick={onOpenScreenShare}>
-          <AppIcon name="image" size="sm" />
-        </button>
-        <button type="button" className="voice-mini-leave" aria-label="Leave voice room" onClick={onLeaveVoice}>
-          <AppIcon name="close" size="sm" />
-        </button>
-      </div>
-    </section>
-  );
 }
 
 function FriendStatusRow({
@@ -289,11 +242,12 @@ export function FeedCompanionRail({
     <aside className="feed-companion-rail" aria-label="Feed companion rail">
       <div className="feed-rail-sticky-stack">
         <AudioMiniPlayer item={audioItem ?? undefined} onClose={onCloseAudio} />
-        <VoiceMiniControlCard
+        <ConnectedVoiceCard
           voiceState={voiceState}
           onToggleMute={onToggleMute}
           onToggleDeafen={onToggleDeafen}
           onLeaveVoice={onLeaveVoice}
+          onOpenVoiceRoom={onOpenScreenShare}
           onOpenScreenShare={onOpenScreenShare}
         />
       </div>

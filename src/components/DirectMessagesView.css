@@ -84,6 +84,13 @@
   padding: 11px 12px 7px;
 }
 
+.direct-connected-voice {
+  position: static;
+  margin: 0 12px 4px;
+  padding: 11px;
+  border-radius: 16px;
+}
+
 .direct-shortcuts button {
   height: 38px;
   display: grid;

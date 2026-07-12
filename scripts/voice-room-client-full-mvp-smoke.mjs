@@ -1,12 +1,12 @@
 import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [service, view, devicePanel, app, feed, discovery, tokenService, tokenTypes] = await Promise.all([
+const [service, view, devicePanel, app, connectedVoiceCard, discovery, tokenService, tokenTypes] = await Promise.all([
   read("src/services/voiceService.ts"),
   read("src/components/VoiceRoomView.tsx"),
   read("src/components/VoiceDevicePanel.tsx"),
   read("src/App.tsx"),
-  read("src/components/FeedCompanionRail.tsx"),
+  read("src/components/voice/ConnectedVoiceCard.tsx"),
   read("src/services/activeVoiceRoomDiscoveryService.ts"),
   read("src/services/livekit/livekitService.ts"),
   read("src/services/livekit/livekitTypes.ts"),
@@ -33,7 +33,7 @@ const checks = [
   [app.includes("communityName: activeCommunity.name"), "join carries community display context"],
   [app.includes("channelName: displayedActiveChannel.name"), "join carries channel display context"],
   [joinHandler.includes("communityAccess.isActiveMember") && !joinHandler.includes("permissions.includes"), "ordinary join uses active membership rather than role permissions"],
-  [feed.includes("voiceState.roomContext?.channelName"), "Connected Voice shows the channel label"],
+  [connectedVoiceCard.includes("voiceState.roomContext?.channelName"), "Connected Voice shows the channel label"],
   [discovery.includes("voiceSnapshot.roomContext?.channelId === channel.id"), "room discovery uses stable channel identity"],
   [tokenService.includes("readSafeFunctionFailure") && tokenService.includes("context.clone().json()"), "safe Edge Function failure codes are classified"],
   [["LIVEKIT_AUTH_REQUIRED", "LIVEKIT_ACCESS_DENIED", "LIVEKIT_RATE_LIMITED", "LIVEKIT_PROVIDER_UNAVAILABLE"].every((code) => tokenTypes.includes(code)), "typed token errors cover active-member runtime failures"],
