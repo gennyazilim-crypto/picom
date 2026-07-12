@@ -186,7 +186,8 @@ insert into public.community_role_permissions(community_id,role_id,permission_ke
 ('${communityId}','${roleIds.ADMIN}','removeFromVoice',true),
 ('${communityId}','${roleIds.ADMIN}','manageVoiceRoom',true),
 ('${communityId}','${roleIds.MODERATOR}','muteMembers',true),
-('${communityId}','${roleIds.MODERATOR}','removeFromVoice',true);
+('${communityId}','${roleIds.MODERATOR}','removeFromVoice',true)
+on conflict(role_id,permission_key) do update set allowed=true;
 insert into public.community_members(community_id,user_id,role_id) values
 ${membershipValues};
 insert into public.channels(id,community_id,name,type,is_private,public_read_enabled,position)
