@@ -1,139 +1,84 @@
 # Picom V1 LiveKit Secret Custody
 
 Status date: 2026-07-12  
-Custody result: **BLOCKED - required owners and protected stores are unassigned**
+Custody result: **PARTIAL - projects separated; protected runtime installation pending**
 
-This document defines the control model without containing secret values.
+This document defines custody without containing secret values.
+
+## Current provider inventory
+
+| Environment | Project alias | Credential state | Approved runtime destination |
+| --- | --- | --- | --- |
+| Staging | `Picom Staging` | One project-local key record exists; secret not revealed in Task 658 | Supabase staging Edge Function secrets |
+| Production | `Picom Production` | One distinct project-local key record exists; secret not revealed in Task 658 | Production Supabase/approved production secret manager only |
+
+Task 658 created/separated the projects and verified their public endpoints. Task 659 owns staging secret installation. Production credentials must not be installed in staging or ordinary GitHub QA.
 
 ## Secret inventory and approved stores
 
 | Name/category | Sensitivity | Approved location | Renderer/package |
 | --- | --- | --- | --- |
-| `LIVEKIT_URL` | Public endpoint but environment-controlled | Supabase Function secrets or approved server config | Optional public URL only; no credentials |
+| `LIVEKIT_URL` | Public endpoint but environment-controlled | Supabase Function secrets or approved server config | Public WSS URL may be supplied through approved runtime config |
 | `LIVEKIT_API_KEY` | Provider credential | Supabase Function secrets / production secret manager | Forbidden |
 | `LIVEKIT_API_SECRET` | Critical signing secret | Supabase Function secrets / production secret manager | Forbidden |
 | `PICOM_ALLOWED_ORIGINS` | Security configuration | Supabase Function secrets/config | Forbidden as mutable renderer authority |
+| `PICOM_V1_VOICE_SCREEN_ENABLED` | Server-side release gate | Supabase Function secrets/config | Forbidden as renderer authority |
 | Supabase deployment token | Critical deployment credential | Protected CI/operator secret store | Forbidden |
-| Supabase project reference | Deployment metadata | Protected environment configuration | Not a renderer authority |
-| Synthetic staging passwords | Test credentials | Protected hosted-staging environment | Forbidden |
+| Synthetic staging passwords | Test credentials | Protected `hosted-staging` environment | Forbidden |
 | Participant JWTs | Short-lived bearer credentials | Memory only | Never persisted/logged |
 
 ## Ownership matrix
 
-Every row must be assigned in the private operations register before Task 643 can pass.
-
-| Responsibility | Required owner | Current status |
+| Responsibility | Required assignment | Current status |
 | --- | --- | --- |
-| LiveKit organization/account administrator | Named primary and backup | UNASSIGNED |
-| LiveKit staging project operator | Named least-privilege operator | UNASSIGNED |
-| LiveKit production project operator | Separate named operator/approver | UNASSIGNED |
-| Provider billing and quota | Named finance/operations owner | UNASSIGNED |
+| LiveKit account/project administrator | Named primary and backup | Primary account present; backup UNASSIGNED |
+| Staging operator | Least-privilege named operator | UNASSIGNED in private register |
+| Production approver | Separate named approver | UNASSIGNED |
+| Billing/quota owner | Named owner and budget | UNASSIGNED |
 | Supabase Edge deployment | Named backend/release owner | UNASSIGNED |
-| LiveKit secret rotation | Named security owner and backup | UNASSIGNED |
-| Incident response | On-call owner and escalation path | UNASSIGNED |
-| Emergency revocation/kill switch | Two-person authorized path | UNASSIGNED |
-| Access review | Quarterly reviewer | UNASSIGNED |
-| Offboarding | Account/secret removal owner | UNASSIGNED |
+| Secret rotation | Security owner and backup | UNASSIGNED |
+| Incident response | On-call and escalation | UNASSIGNED |
+| Emergency revoke | Authorized two-person path | UNASSIGNED |
+| Quarterly access review | Named reviewer | UNASSIGNED |
 
-A role name in this public document is not an assignment. The private register must contain the accountable identity, backup, approval date and review date.
+A role label in this public document is not an identity assignment. The private register must hold names, backups, approval dates, and review dates.
 
-## Access policy
+## Custody rules
 
-- Least privilege and separate staging/production access.
-- Multi-factor authentication required for provider and deployment administrators.
-- No shared personal account.
-- Production secret read/write access limited to authorized operators.
-- Routine CI jobs receive no provider secret.
-- Hosted validation uses a protected environment and synthetic staging accounts.
-- Renderer, preload, support bundle, diagnostics, screenshots and release artifacts receive no API secret or token.
-- Secret names/status may be audited; values must not be printed.
-- Access changes require an audit entry in the private operations register.
+- Staging and production projects, endpoints, and credentials stay separate.
+- MFA and least privilege are required for provider and deployment administrators.
+- Provider secrets never enter Vite variables, renderer code, preload DTOs, local settings, diagnostics, support bundles, screenshots, docs, package metadata, or release artifacts.
+- Pull-request and ordinary QA jobs receive no provider secret.
+- Hosted tests use protected staging environment secrets and synthetic accounts.
+- Production credentials are unavailable to staging jobs.
+- Secret names/presence may be reported; values may not be printed.
 
-## Secret lifecycle
+## Safe transfer procedure
 
-### Initial issue
+1. Open the target LiveKit project and target Supabase project in controlled authenticated sessions.
+2. Reveal/copy one secret only when immediately transferring it to that environment's protected Edge Function secret form or CLI stdin.
+3. Never paste it into terminal history, files, chat, screenshots, clipboard logs, or Codex output.
+4. Save `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `PICOM_ALLOWED_ORIGINS`, and the server release gate in the target environment.
+5. Verify names/presence and token issuance without echoing values.
+6. Clear the temporary clipboard and close secret-reveal UI.
+7. Record actor/reviewer/time in the private register.
 
-1. Provider administrator creates a project credential.
-2. Secret custodian stores it directly in the approved secret manager.
-3. Edge deployment operator references the secret by name.
-4. A second reviewer verifies project/environment mapping without exposing value.
-5. Hosted token tests confirm the credential works.
-6. Original copy/paste buffers and temporary files are cleared according to operations policy.
+## Rotation and emergency revoke
 
-### Rotation
+- Review at least quarterly and immediately after suspected exposure, owner departure, provider incident, or environment mix-up.
+- Create replacement credential, validate staging, then change production under approval.
+- Revoke old credential after successful cutover.
+- On incident, activate Voice/Screen kill switches, revoke provider credential, inspect redacted deployment/provider logs, and rerun hosted authorization/two-client/cleanup gates.
 
-- Scheduled review at least quarterly.
-- Immediate rotation after suspected exposure, owner departure, provider incident or environment mix-up.
-- Create replacement credential.
-- Update staging and validate.
-- Update production only under change approval.
-- Revoke old credential.
-- Verify token issuance and provider room access.
-- Record dates, actor, reviewer and incident/change identifier without the value.
+## Task 658 evidence
 
-### Emergency revocation
-
-1. Activate `disableVoice` and `disableScreenShare`.
-2. Revoke provider credential.
-3. Disable or roll back token function if authorization integrity is uncertain.
-4. Audit provider rooms, token function logs and deployment history.
-5. Rotate affected Supabase/deployment credentials where required.
-6. Keep Chat/Feed/DM available in degraded mode.
-7. Resume only after hosted authorization, two-client media and cleanup gates pass.
-
-## Environment mix-up prevention
-
-- Staging and production use different LiveKit projects and credentials.
-- Protected workflow environments have distinct names and approvers.
-- Deployment scripts require an explicit environment confirmation and approved project match.
-- Production package metadata contains no staging endpoint.
-- A release gate checks the public endpoint classification without printing its value.
-- Staging users and room identifiers are synthetic.
-- Production credentials are never available to pull-request or ordinary QA jobs.
-
-## Repository and CI findings
-
-Names-only checks on 2026-07-12 found:
-
-- Relevant repository-level GitHub Action secret names: none.
-- GitHub `hosted-staging` environment: absent.
-- Current process LiveKit/Supabase provider variables: absent.
-- Linked Supabase project evidence: absent.
-- Protected owner/custody record: unavailable.
-- Result: **BLOCKED**.
-
-## Secret scan evidence
-
-The following checks passed without printing secret values:
-
-- `npm run env:placeholders:check`
-- `npm run secrets:smoke`
-- `npm run secrets:ci:smoke`
-
-They verified placeholder-only committed env examples, renderer/server name separation, gitignore coverage and no known service-role/LiveKit/signing secret in runtime code. This is repository evidence only; it cannot inspect external provider dashboards or untracked logs on other machines.
-
-## Build output and log controls
-
-Before Tasks 655-656:
-
-- scan tracked source and generated application bundles;
-- scan package metadata, provenance and support bundle fixtures;
-- exclude `.env*`, token payloads, raw Electron logs and local release directories from artifacts;
-- verify diagnostics redact Authorization headers, JWTs, API keys, device IDs and room-sensitive metadata;
-- verify no captured audio/frame/thumbnail is logged or uploaded;
-- keep secret-scanner allowlist narrow, reviewed and documented.
+- Real `Picom Staging` and `Picom Production` projects exist.
+- Their public endpoints resolve and complete TLS on port 443.
+- Agent observability is disabled in both projects.
+- Distinct project-local API key records exist.
+- No key/secret/token value was read or emitted.
+- Protected runtime stores and backup ownership remain incomplete.
 
 ## Pass criteria
 
-Task 643 may change from `BLOCKED` to `PASS` only when:
-
-- real staging and production provider projects exist;
-- region/plan/capacity are approved;
-- all owner rows are assigned with backups;
-- secret names exist in the correct protected stores;
-- staging/production separation is reviewed;
-- outbound Edge and packaged-client connectivity is evidenced;
-- secret scan and incident/rotation drills pass;
-- no value is exposed.
-
-Until then, Voice Rooms and Screen Share remain `HIDDEN_FROM_V1`.
+Full custody becomes PASS only when staging and production secret names are present in their separate protected stores, backup/rotation/billing/incident owners are assigned, environment mapping is independently reviewed, and no value appears in source, logs, artifacts, or diagnostics.

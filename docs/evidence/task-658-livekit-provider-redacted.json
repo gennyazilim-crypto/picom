@@ -1,0 +1,43 @@
+{
+  "task": 658,
+  "capturedAt": "2026-07-12",
+  "classification": "redacted_provider_metadata",
+  "provider": "LiveKit Cloud",
+  "environments": [
+    {
+      "alias": "Picom Staging",
+      "endpointHost": "picom-blmsm07k.livekit.cloud",
+      "plan": "build",
+      "agentObservability": "disabled",
+      "apiKeyRecords": 1,
+      "dns": "pass",
+      "tcp443": "pass",
+      "tlsHttpStatus": 200
+    },
+    {
+      "alias": "Picom Production",
+      "endpointHost": "picom-production-czs6d3th.livekit.cloud",
+      "plan": "build",
+      "agentObservability": "disabled",
+      "apiKeyRecords": 1,
+      "dns": "pass",
+      "tcp443": "pass",
+      "tlsHttpStatus": 200
+    }
+  ],
+  "quota": {
+    "concurrentParticipants": 100,
+    "concurrentEgress": 2,
+    "concurrentIngress": 2,
+    "sharedFreeAllowance": true
+  },
+  "secretValuesObserved": false,
+  "credentialValuesCommitted": false,
+  "openBlockers": [
+    "protected staging secret installation",
+    "production secret destination",
+    "EU data-residency decision or region pinning",
+    "production capacity and cost approval",
+    "backup provider and operations owners"
+  ]
+}
