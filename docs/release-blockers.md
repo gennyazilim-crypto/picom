@@ -197,3 +197,7 @@ The Windows x64 exact-artifact certification matrix now requires a trusted times
 ## Task 579 Linux native meeting update
 
 The native Linux x64 AppImage/DEB matrix now requires real hashes, package metadata, Wayland and X11 sessions, PipeWire/portal/audio/device inventory, 23 packaged flows, and a distinct remote client. Task 579 ran on Windows; no Linux-produced artifact, desktop session, portal picker, native device, or remote rendered share was available, and Windows cross-build output was explicitly rejected as evidence. RB-04, RB-05, and RB-07 remain **BLOCKED**. RPM, ARM64, Flatpak, and Snap are not claimed.
+
+## Task 580 macOS native meeting update
+
+The native macOS x64 matrix now requires post-staple DMG/ZIP hashes, Developer ID and nested signatures, hardened runtime/entitlements, accepted notarization, app/DMG staple, quarantined Gatekeeper launch, 27 packaged meeting/permission flows, and a distinct remote client. Task 580 ran on Windows without Apple signing/notary material, a macOS runner, final artifacts, TCC permission access, or remote rendered share. RB-04, RB-05, and RB-08 remain **BLOCKED**. Apple Silicon/universal support is not claimed without separate evidence.
