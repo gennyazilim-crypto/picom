@@ -13,6 +13,7 @@ import {
   clipboard,
   screen,
   powerMonitor,
+  safeStorage,
   type OpenDialogOptions,
   type SaveDialogOptions
 } from "electron";
@@ -33,8 +34,14 @@ import {
   parseScreenCaptureListPayload,
   parseScreenCaptureSelectionPayload,
   isSafeScreenCaptureSourceId,
+  isAuthStorageKey,
+  isOAuthIdentifier,
+  parseAuthStorageSetPayload,
+  parseOAuthAttemptStartPayload,
+  parseOAuthCallbackUrl,
   type TrayStatus,
 } from "./ipcPayloadValidation.cjs";
+import { OAuthAttemptManager, ProtectedAuthStore, type OAuthDelivery } from "./oauthFoundation.cjs";
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
 
@@ -72,6 +79,8 @@ let trayMuted = false;
 let closeToTrayEnabled = false;
 let isQuitting = false;
 const pendingDeepLinks: string[] = [];
+let protectedAuthStore: ProtectedAuthStore | null = null;
+let oauthAttemptManager: OAuthAttemptManager | null = null;
 let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null;
 const screenCaptureSessions = new WeakMap<object, ScreenCaptureSession>();
 const SCREEN_CAPTURE_SESSION_TTL_MS = 60_000;
@@ -129,44 +138,61 @@ function extractDeepLinkFromArgs(args: string[]): string | null {
   return args.find((arg) => isSafeDeepLink(arg)) ?? null;
 }
 
-function sendDeepLinkToRenderer(deepLink: string): void {
-  if (!isSafeDeepLink(deepLink)) {
-    return;
-  }
+async function initializeAuthFoundation(): Promise<void> {
+  const backend = process.platform === "linux" && typeof safeStorage.getSelectedStorageBackend === "function"
+    ? safeStorage.getSelectedStorageBackend()
+    : process.platform === "win32" ? "dpapi" : process.platform === "darwin" ? "keychain" : "unknown";
+  const available = safeStorage.isEncryptionAvailable() && backend !== "basic_text";
+  protectedAuthStore = new ProtectedAuthStore(path.join(app.getPath("userData"), "protected-auth-state.bin"), {
+    available,
+    backend: available ? backend : "unavailable",
+    encryptString: (value) => safeStorage.encryptString(value),
+    decryptString: (value) => safeStorage.decryptString(value),
+  });
+  oauthAttemptManager = new OAuthAttemptManager(protectedAuthStore);
+}
 
+function sendOAuthDeliveryToRenderer(delivery: OAuthDelivery): void {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoadingMainFrame()) return;
+  mainWindow.webContents.send(IPC_CHANNELS.authOAuthResult, delivery);
+}
+async function sendPendingOAuthResult(): Promise<void> {
+  const result = await oauthAttemptManager?.getPendingResult();
+  if (result) sendOAuthDeliveryToRenderer(result);
+}
+function sendDeepLinkToRenderer(deepLink: string): void {
+  if (!isSafeDeepLink(deepLink)) return;
   if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoadingMainFrame()) {
     pendingDeepLinks.push(deepLink);
     return;
   }
-
   mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
 }
-
-function handleNativeDeepLink(deepLink: unknown): void {
-  if (!isSafeDeepLink(deepLink)) {
+async function routeNativeDeepLink(deepLink: string): Promise<void> {
+  const callback = parseOAuthCallbackUrl(deepLink);
+  if (callback) {
+    if (!oauthAttemptManager) {
+      sendOAuthDeliveryToRenderer({ status: "rejected", error: "OAUTH_FOUNDATION_UNAVAILABLE" });
+      return;
+    }
+    const completion = await oauthAttemptManager.completeCallback(callback);
+    sendOAuthDeliveryToRenderer(completion.ok ? completion.result : { status: "rejected", error: completion.error });
     return;
   }
-
+  sendDeepLinkToRenderer(deepLink);
+}
+function handleNativeDeepLink(deepLink: unknown): void {
+  if (!isSafeDeepLink(deepLink)) return;
   if (!app.isReady()) {
     pendingDeepLinks.push(deepLink);
     return;
   }
-
   focusMainWindow();
-  sendDeepLinkToRenderer(deepLink);
+  void routeNativeDeepLink(deepLink);
 }
-
-function flushPendingDeepLinks(): void {
-  if (!mainWindow || mainWindow.isDestroyed()) {
-    return;
-  }
-
-  while (pendingDeepLinks.length > 0) {
-    const deepLink = pendingDeepLinks.shift();
-    if (deepLink) {
-      mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
-    }
-  }
+async function flushPendingDeepLinks(): Promise<void> {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  for (const deepLink of pendingDeepLinks.splice(0)) await routeNativeDeepLink(deepLink);
 }
 
 function registerProtocolHandler(): void {
@@ -426,7 +452,10 @@ function registerWindowStateForwarding(window: BrowserWindow): void {
     void persistWindowState(window);
   });
   window.webContents.on("did-finish-load", forwardState);
-  window.webContents.on("did-finish-load", flushPendingDeepLinks);
+  window.webContents.on("did-finish-load", () => {
+    void flushPendingDeepLinks();
+    void sendPendingOAuthResult();
+  });
 }
 
 function registerIpcHandlers(): void {
@@ -741,6 +770,53 @@ function registerIpcHandlers(): void {
     }
   });
 
+  ipcMain.handle(IPC_CHANNELS.authOAuthStart, async (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    const request = parseOAuthAttemptStartPayload(payload);
+    if (!request || !oauthAttemptManager) return { ok: false, native: true, error: "INVALID_OAUTH_START_REQUEST" } as const;
+    try { return { ok: true, native: true, attempt: await oauthAttemptManager.start(request.provider, request.purpose) } as const; }
+    catch { return { ok: false, native: true, error: "OAUTH_FOUNDATION_UNAVAILABLE" } as const; }
+  });
+  ipcMain.handle(IPC_CHANNELS.authOAuthCancel, async (event, attemptId: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    if (!isOAuthIdentifier(attemptId) || !oauthAttemptManager) return { ok: false, native: true, error: "INVALID_OAUTH_ATTEMPT_ID" } as const;
+    return { ok: await oauthAttemptManager.cancel(attemptId), native: true } as const;
+  });
+  ipcMain.handle(IPC_CHANNELS.authOAuthGetPendingResult, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, result: await oauthAttemptManager?.getPendingResult() ?? null } as const;
+  });
+  ipcMain.handle(IPC_CHANNELS.authOAuthAcknowledge, async (event, resultId: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    if (!isOAuthIdentifier(resultId) || !oauthAttemptManager) return { ok: false, native: true, error: "INVALID_OAUTH_RESULT_ID" } as const;
+    return { ok: await oauthAttemptManager.acknowledge(resultId), native: true } as const;
+  });
+  ipcMain.handle(IPC_CHANNELS.authSecureStorageGet, async (event, key: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    if (!isAuthStorageKey(key) || !protectedAuthStore) return { ok: false, native: true, error: "INVALID_AUTH_STORAGE_KEY" } as const;
+    try { return { ok: true, native: true, value: await protectedAuthStore.getItem(key) } as const; }
+    catch { return { ok: false, native: true, error: "AUTH_STORAGE_READ_FAILED" } as const; }
+  });
+  ipcMain.handle(IPC_CHANNELS.authSecureStorageSet, async (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    const request = parseAuthStorageSetPayload(payload);
+    if (!request || !protectedAuthStore) return { ok: false, native: true, error: "INVALID_AUTH_STORAGE_PAYLOAD" } as const;
+    try { await protectedAuthStore.setItem(request.key, request.value); return { ok: true, native: true } as const; }
+    catch { return { ok: false, native: true, error: "AUTH_STORAGE_WRITE_FAILED" } as const; }
+  });
+  ipcMain.handle(IPC_CHANNELS.authSecureStorageRemove, async (event, key: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    if (!isAuthStorageKey(key) || !protectedAuthStore) return { ok: false, native: true, error: "INVALID_AUTH_STORAGE_KEY" } as const;
+    try { await protectedAuthStore.removeItem(key); return { ok: true, native: true } as const; }
+    catch { return { ok: false, native: true, error: "AUTH_STORAGE_REMOVE_FAILED" } as const; }
+  });
+  ipcMain.handle(IPC_CHANNELS.authSecureStorageStatus, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return protectedAuthStore
+      ? { ok: true, native: true, status: protectedAuthStore.getStatus() } as const
+      : { ok: false, native: true, error: "OAUTH_FOUNDATION_UNAVAILABLE" } as const;
+  });
+
   ipcMain.handle(IPC_CHANNELS.externalOpenUrl, async (event, payload: unknown) => {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const safeUrl = normalizeExternalUrl(payload);
@@ -835,9 +911,10 @@ if (!hasSingleInstanceLock) {
     }
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
     registerProtocolHandler();
+    await initializeAuthFoundation();
     registerIpcHandlers();
     powerMonitor.on("resume", sendPowerResumeToRenderer);
 

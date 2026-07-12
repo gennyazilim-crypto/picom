@@ -5,7 +5,6 @@ export type DeepLinkAction =
   | { type: "podcast"; communityId: string; episodeId: string }
   | { type: "meeting"; communityId: string; channelId?: string; roomId: string; sessionId?: string; messageId?: string; inviteToken?: string }
   | { type: "meetingChat"; communityId: string; channelId: string; roomId: string; sessionId?: string; messageId?: string }
-  | { type: "authCallback"; code?: string; error?: string }
   | { type: "passwordRecovery"; code?: string; error?: string }
   | { type: "emailVerification"; code?: string; error?: string }
   | { type: "friends" };
@@ -77,16 +76,6 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   const route = parsed.hostname;
   const segments = parsed.pathname.split("/").filter(Boolean);
-
-  if (route === "auth" && segments.length === 1 && segments[0] === "callback" && !parsed.hash) {
-    const allowedKeys = new Set(["code", "error", "error_description"]);
-    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
-    const code = parsed.searchParams.get("code") ?? undefined;
-    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
-    if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: raw, action: { type: "authCallback", code } };
-    if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: "authCallback", error } };
-    return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
-  }
 
   if (route === "auth" && segments.length === 1 && segments[0] === "reset-password" && !parsed.hash) {
     const allowedKeys = new Set(["code", "type", "error", "error_description"]);

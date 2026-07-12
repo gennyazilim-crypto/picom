@@ -1,5 +1,16 @@
 export type WindowAction = "minimize" | "maximize" | "close";
 export type TrayStatus = "online" | "idle" | "dnd" | "invisible";
+export type OAuthProvider = "google" | "apple" | "epic" | "steam";
+export type OAuthPurpose = "sign_in" | "link";
+export type OAuthCallbackPayload = Readonly<{
+  attemptId: string;
+  state: string;
+  nonce: string;
+  provider: OAuthProvider;
+  purpose: OAuthPurpose;
+  code?: string;
+  error?: string;
+}>;
 export type SafeNotificationPayload = Readonly<{ title: string; body?: string; silent?: boolean; deepLink?: string }>;
 export const MAX_CLIPBOARD_TEXT_LENGTH = 1024 * 1024;
 export type ScreenCaptureListPayload = Readonly<{ requestId: string; userInitiated: true }>;
@@ -8,6 +19,10 @@ export type ScreenCaptureSelectionPayload = Readonly<{ requestId: string; source
 const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 const safeScreenCaptureRequestIdPattern = /^[a-f0-9-]{16,64}$/i;
 const safeScreenCaptureSourceIdPattern = /^(screen|window):[a-zA-Z0-9:_-]{1,240}$/;
+const oauthIdentifierPattern = /^[a-f0-9]{32}$/i;
+const oauthStatePattern = /^[A-Za-z0-9_-]{32,96}$/;
+const authStorageKeyPattern = /^sb-[a-zA-Z0-9._:-]{1,156}$/;
+const oauthCodePattern = /^[a-zA-Z0-9._~-]{8,1024}$/;
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -15,6 +30,50 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 function hasOnlyKeys(record: Record<string, unknown>, allowed: readonly string[]): boolean {
   return Object.keys(record).every((key) => allowed.includes(key));
+}
+
+export function isOAuthIdentifier(value: unknown): value is string {
+  return typeof value === "string" && oauthIdentifierPattern.test(value);
+}
+
+export function parseOAuthAttemptStartPayload(value: unknown): Readonly<{ provider: OAuthProvider; purpose: OAuthPurpose }> | null {
+  if (!isPlainRecord(value) || !hasOnlyKeys(value, ["provider", "purpose"])) return null;
+  const provider = value.provider;
+  const purpose = value.purpose;
+  if ((provider !== "google" && provider !== "apple" && provider !== "epic" && provider !== "steam") || (purpose !== "sign_in" && purpose !== "link")) return null;
+  return { provider, purpose };
+}
+
+export function parseOAuthCallbackUrl(value: unknown): OAuthCallbackPayload | null {
+  if (typeof value !== "string" || !value || value.length > 4096) return null;
+  let parsed: URL;
+  try { parsed = new URL(value); } catch { return null; }
+  if (parsed.protocol !== "picom:" || parsed.hostname !== "auth" || parsed.pathname !== "/callback" || parsed.username || parsed.password || parsed.hash) return null;
+  const allowed = ["attempt_id", "state", "nonce", "provider", "purpose", "code", "error", "error_description"];
+  if ([...parsed.searchParams.keys()].some((key) => !allowed.includes(key)) || allowed.some((key) => parsed.searchParams.getAll(key).length > 1)) return null;
+  const attemptId = parsed.searchParams.get("attempt_id");
+  const state = parsed.searchParams.get("state");
+  const nonce = parsed.searchParams.get("nonce");
+  const provider = parsed.searchParams.get("provider");
+  const purpose = parsed.searchParams.get("purpose");
+  const code = parsed.searchParams.get("code") ?? undefined;
+  const rawError = parsed.searchParams.get("error") ?? parsed.searchParams.get("error_description") ?? undefined;
+  if (!attemptId || !oauthIdentifierPattern.test(attemptId) || !state || !oauthStatePattern.test(state) || !nonce || !oauthStatePattern.test(nonce)) return null;
+  if (provider !== "google" && provider !== "apple" && provider !== "epic" && provider !== "steam") return null;
+  if (purpose !== "sign_in" && purpose !== "link") return null;
+  if (Boolean(code) === Boolean(rawError)) return null;
+  if (code && !oauthCodePattern.test(code)) return null;
+  if (rawError && (rawError.length > 240 || /[\u0000-\u001f]/.test(rawError))) return null;
+  return { attemptId, state, nonce, provider, purpose, code, error: rawError };
+}
+
+export function isAuthStorageKey(value: unknown): value is string {
+  return typeof value === "string" && authStorageKeyPattern.test(value);
+}
+
+export function parseAuthStorageSetPayload(value: unknown): Readonly<{ key: string; value: string }> | null {
+  if (!isPlainRecord(value) || !hasOnlyKeys(value, ["key", "value"]) || !isAuthStorageKey(value.key) || typeof value.value !== "string" || value.value.length > 512 * 1024) return null;
+  return { key: value.key, value: value.value };
 }
 
 export function isSafeScreenCaptureSourceId(value: unknown): value is string {
@@ -68,13 +127,7 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
   if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.hash) return false;
   const route = parsed.hostname;
   const segments = parsed.pathname.split("/").filter(Boolean);
-  if (route === "auth" && segments.length === 1 && segments[0] === "callback") {
-    const allowedKeys = new Set(["code", "error", "error_description"]);
-    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
-    const code = parsed.searchParams.get("code");
-    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
-    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
-  }
+  if (route === "auth" && segments.length === 1 && segments[0] === "callback") return parseOAuthCallbackUrl(parsed.href) !== null;
   if (route === "auth" && segments.length === 1 && segments[0] === "reset-password") {
     const allowedKeys = new Set(["code", "type", "error", "error_description"]);
     if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
@@ -121,7 +174,7 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
 }
 
 export function isSafeDeepLink(value: unknown): value is string {
-  if (typeof value !== "string" || !value || value.length > 2048) return false;
+  if (typeof value !== "string" || !value || value.length > 4096) return false;
   if (/(?:^|\/)\.{1,2}(?:\/|$)/.test(value)) return false;
   try { return isSupportedPicomDeepLink(new URL(value)); } catch { return false; }
 }

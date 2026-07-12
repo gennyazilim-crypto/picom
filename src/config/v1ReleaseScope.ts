@@ -158,7 +158,7 @@ export function isV1ActiveViewEnabled(activeView: string): boolean {
 }
 
 export function isV1DeepLinkTypeEnabled(type: DeepLinkAction["type"]): boolean {
-  if (["authCallback", "passwordRecovery", "emailVerification", "invite", "friends"].includes(type)) return true;
+  if (["passwordRecovery", "emailVerification", "invite", "friends"].includes(type)) return true;
   if (type === "community") return isV1FeatureEnabled("textCommunities");
   if (type === "radio") return isV1FeatureEnabled("radio");
   if (type === "podcast") return isV1FeatureEnabled("podcasts");

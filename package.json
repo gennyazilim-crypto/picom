@@ -9,6 +9,7 @@
   "scripts": {
     "first-launch:smoke": "node scripts/first-launch-setup-smoke.mjs",
     "auth:onboarding:production:smoke": "node scripts/supabase-auth-onboarding-production-smoke.mjs",
+    "auth:electron-foundation:smoke": "npm run electron:build && node scripts/electron-oauth-foundation-smoke-test.mjs",
     "installer:branding:smoke": "node scripts/installer-branding-smoke.mjs",
     "settings:completeness:test": "node scripts/settings-menu-completeness-smoke.mjs",
     "settings:architecture:smoke": "node scripts/settings-architecture-persistence-smoke.mjs",

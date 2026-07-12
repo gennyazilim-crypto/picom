@@ -30,6 +30,64 @@ declare global {
     dataUrl: string;
   };
 
+  type PicomOAuthProvider = "google" | "apple" | "epic" | "steam";
+  type PicomOAuthPurpose = "sign_in" | "link";
+  type PicomSecureAuthStorageStatus = {
+    mode: "os_protected" | "memory_only";
+    persistent: boolean;
+    backend: string;
+    reason?: "OS_PROTECTED_STORAGE_UNAVAILABLE";
+  };
+  type PicomOAuthAttempt = {
+    attemptId: string;
+    provider: PicomOAuthProvider;
+    purpose: PicomOAuthPurpose;
+    redirectUrl: string;
+    expiresAt: number;
+    storage: PicomSecureAuthStorageStatus;
+  };
+  type PicomOAuthCompletionResult = {
+    resultId: string;
+    attemptId: string;
+    provider: PicomOAuthProvider;
+    purpose: PicomOAuthPurpose;
+    status: "success" | "error";
+    code?: string;
+    error?: "OAUTH_PROVIDER_CANCELLED" | "OAUTH_PROVIDER_ERROR";
+    receivedAt: number;
+    expiresAt: number;
+  };
+  type PicomOAuthDelivery = PicomOAuthCompletionResult | { status: "rejected"; error: string };
+
+  type PicomOAuthProvider = "google" | "apple" | "epic" | "steam";
+  type PicomOAuthPurpose = "sign_in" | "link";
+  type PicomSecureAuthStorageStatus = {
+    mode: "os_protected" | "memory_only";
+    persistent: boolean;
+    backend: string;
+    reason?: "OS_PROTECTED_STORAGE_UNAVAILABLE";
+  };
+  type PicomOAuthAttempt = {
+    attemptId: string;
+    provider: PicomOAuthProvider;
+    purpose: PicomOAuthPurpose;
+    redirectUrl: string;
+    expiresAt: number;
+    storage: PicomSecureAuthStorageStatus;
+  };
+  type PicomOAuthCompletionResult = {
+    resultId: string;
+    attemptId: string;
+    provider: PicomOAuthProvider;
+    purpose: PicomOAuthPurpose;
+    status: "success" | "error";
+    code?: string;
+    error?: "OAUTH_PROVIDER_CANCELLED" | "OAUTH_PROVIDER_ERROR";
+    receivedAt: number;
+    expiresAt: number;
+  };
+  type PicomOAuthDelivery = PicomOAuthCompletionResult | { status: "rejected"; error: string };
+
   interface Window {
     picomDesktop?: {
       contractVersion: 1;
@@ -140,6 +198,25 @@ declare global {
           | { ok: true; native: true; url: string }
           | { ok: false; native: true; error: string }
         >;
+      };
+      auth?: {
+        startOAuthAttempt: (request: { provider: PicomOAuthProvider; purpose: PicomOAuthPurpose }) => Promise<
+          | { ok: true; native: true; attempt: PicomOAuthAttempt }
+          | { ok: false; native: true; error: string }
+        >;
+        cancelOAuthAttempt: (attemptId: string) => Promise<{ ok: boolean; native: true; error?: string }>;
+        getPendingOAuthResult: () => Promise<
+          | { ok: true; native: true; result: PicomOAuthCompletionResult | null }
+          | { ok: false; native: true; error: string }
+        >;
+        acknowledgeOAuthResult: (resultId: string) => Promise<{ ok: boolean; native: true; error?: string }>;
+        onOAuthResult: (callback: (result: PicomOAuthDelivery) => void) => () => void;
+        secureStorage: {
+          getItem: (key: string) => Promise<{ ok: true; native: true; value: string | null } | { ok: false; native: true; error: string }>;
+          setItem: (key: string, value: string) => Promise<{ ok: true; native: true } | { ok: false; native: true; error: string }>;
+          removeItem: (key: string) => Promise<{ ok: true; native: true } | { ok: false; native: true; error: string }>;
+          getStatus: () => Promise<{ ok: true; native: true; status: PicomSecureAuthStorageStatus } | { ok: false; native: true; error: string }>;
+        };
       };
       deepLinks?: {
         onOpen: (callback: (url: string) => void) => () => void;

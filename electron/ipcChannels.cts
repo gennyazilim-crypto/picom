@@ -20,11 +20,18 @@ export const IPC_CHANNELS = Object.freeze({
   clipboardWriteText: "picom:clipboard-write-text",
   externalOpenUrl: "picom:external-open-url",
   deepLinkOpen: "picom:deep-link-open",
+  authOAuthStart: "picom:auth-oauth-start",
+  authOAuthCancel: "picom:auth-oauth-cancel",
+  authOAuthGetPendingResult: "picom:auth-oauth-get-pending-result",
+  authOAuthAcknowledge: "picom:auth-oauth-acknowledge",
+  authOAuthResult: "picom:auth-oauth-result",
+  authSecureStorageGet: "picom:auth-secure-storage-get",
+  authSecureStorageSet: "picom:auth-secure-storage-set",
+  authSecureStorageRemove: "picom:auth-secure-storage-remove",
+  authSecureStorageStatus: "picom:auth-secure-storage-status",
   powerResume: "picom:power-resume"
 });
-
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
-
 export function isIpcChannel(channel: unknown): channel is IpcChannel {
   return typeof channel === "string" && Object.values(IPC_CHANNELS).includes(channel as IpcChannel);
 }

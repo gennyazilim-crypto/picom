@@ -1415,6 +1415,12 @@ export function App() {
     return true;
   }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
 
+  useEffect(() => socialAuthService.onOAuthDelivery((delivery) => {
+    void socialAuthService.completeOAuthDelivery(delivery).then((result) => {
+      pushToast(result.ok ? result.data.message : result.error, result.ok ? "success" : "error");
+    });
+  }), [pushToast]);
+
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
       if (!isV1DeepLinkTypeEnabled(action.type)) {
@@ -1439,18 +1445,6 @@ export function App() {
         void authService.confirmEmailVerification(action.code).then((result) => pushToast(result.ok ? result.data.message : result.error.message, result.ok ? "success" : "error"));
         return;
       }
-      if (action.type === "authCallback") {
-        if (!action.code) {
-          pushToast(action.error || "Social sign in was canceled.", "error");
-          return;
-        }
-
-        void socialAuthService.completeOAuthCallback(action.code).then((result) => {
-          pushToast(result.ok ? "Social sign in completed." : result.error, result.ok ? "success" : "error");
-        });
-        return;
-      }
-
       const navigationDecision = notificationNavigationPolicyService.validate(action, {
         isAuthenticated: Boolean(authSession?.user),
         currentUserId,
