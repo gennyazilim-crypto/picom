@@ -691,7 +691,7 @@ export function App() {
         bio: "",
       }
     : { ...fallbackCurrentUser, userId: currentUserId });
-  const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
+  const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity, currentUserId]);
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const visibleMentionItems = useMemo(() => mentionItems.filter((item) => {
     if (blockedUserIds.includes(item.authorId)) return false;

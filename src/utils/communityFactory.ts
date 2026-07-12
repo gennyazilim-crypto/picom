@@ -23,6 +23,7 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
   ];
   const roles = summary.kind === "radio" ? radioRoles : summary.kind === "podcast" ? podcastRoles : mockRoles;
   const ownerRole = roles.find((role) => role.name === "Owner") ?? roles[0];
+  const ownerUserId = summary.ownerId ?? currentUserId;
   const categories: ChannelCategory[] = (supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
     const categoryId = `${summary.id}-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "category"}`;
 
@@ -57,10 +58,10 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
     members: [
       {
         id: `${summary.id}-owner-member`,
-        userId: currentUserId,
+        userId: ownerUserId,
         displayName: "Picom User",
         username: "picom.user",
-        avatarSeed: `${summary.id}-owner`,
+        avatarSeed: ownerUserId,
         status: "online",
         statusText: "Setting up the community",
         roleId: ownerRole.id,

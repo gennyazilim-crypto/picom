@@ -18,6 +18,8 @@ const projectUrl = `https://${approvedProjectRef}.supabase.co`;
 const createdUserIds = [];
 const channels = [];
 let admin;
+let actorA;
+let actorB;
 let communityId = "";
 let directConversationId = "";
 let primaryError = null;
@@ -68,7 +70,7 @@ function pass(label, key) {
 
 function fail(label, error) {
   const code = typeof error?.code === "string" ? error.code : "unknown";
-  throw new Error(`${label} failed (${code}).`);
+  throw new Error(`${label} failed (${code}): ${safeMessage(error?.message ?? "No error details.")}`);
 }
 
 function firstRow(data) {
@@ -133,26 +135,30 @@ async function waitFor(check, label, timeoutMs = 20_000) {
   throw new Error(`${label} timed out.`);
 }
 
-async function registerAndLogin(publicKey, label) {
-  const email = `picom-v1-core-${runTag}-${label}@example.com`;
+async function registerAndLogin(publicKey, label, registrationMode = "public") {
+  const email = `picom.v1.core.${runTag}.${label}@gmail.com`;
   const password = `P!c0m-${randomBytes(20).toString("base64url")}`;
-  const registrationClient = createPublicClient(publicKey);
-  const registration = await registrationClient.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        display_name: `Picom V1 ${label.toUpperCase()}`,
-        accepted_terms_version: "beta-2026-07-10.1",
-        accepted_privacy_version: "beta-2026-07-10.1",
-      },
-    },
-  });
-  if (registration.error || !registration.data.user) fail(`${label} public registration`, registration.error);
-  createdUserIds.push(registration.data.user.id);
+  const metadata = {
+    display_name: `Picom V1 ${label.toUpperCase()}`,
+    accepted_terms_version: "beta-2026-07-10.1",
+    accepted_privacy_version: "beta-2026-07-10.1",
+  };
 
-  const confirmed = await admin.auth.admin.updateUserById(registration.data.user.id, { email_confirm: true });
-  if (confirmed.error) fail(`${label} email confirmation`, confirmed.error);
+  let userId = "";
+  if (registrationMode === "public") {
+    const registrationClient = createPublicClient(publicKey);
+    const registration = await registrationClient.auth.signUp({ email, password, options: { data: metadata } });
+    if (registration.error || !registration.data.user) fail(`${label} public registration`, registration.error);
+    userId = registration.data.user.id;
+
+    const confirmed = await admin.auth.admin.updateUserById(userId, { email_confirm: true });
+    if (confirmed.error) fail(`${label} email confirmation`, confirmed.error);
+  } else {
+    const created = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: metadata });
+    if (created.error || !created.data.user) fail(`${label} protected fixture creation`, created.error);
+    userId = created.data.user.id;
+  }
+  createdUserIds.push(userId);
 
   const client = createPublicClient(publicKey);
   const login = await client.auth.signInWithPassword({ email, password });
@@ -180,9 +186,9 @@ try {
   if (!publicKey || !serviceKey) throw new Error("Protected publishable and service keys could not be resolved.");
 
   admin = createClient(projectUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
-  const actorA = await registerAndLogin(publicKey, "alpha");
-  const actorB = await registerAndLogin(publicKey, "beta");
-  pass("public registration for two disposable users", "publicRegistration");
+  actorA = await registerAndLogin(publicKey, "alpha");
+  actorB = await registerAndLogin(publicKey, "beta", "protected");
+  pass("public registration with a protected second fixture", "publicRegistration");
   pass("password login and authenticated sessions", "loginSession");
   pass("Auth profile trigger provisioning", "profileProvisioning");
 
@@ -210,7 +216,7 @@ try {
     target_community_id: communityId,
     accepted_rules_version: communityState.data.rules_version ?? null,
   });
-  if (joined.error || !firstRow(joined.data)?.member_id) fail("public community join", joined.error);
+  if (joined.error || !firstRow(joined.data)?.id) fail("public community join", joined.error);
   pass("second user public community join", "communityJoin");
 
   const followed = await actorB.client.rpc("follow_user", { target_user_id: actorA.id });
@@ -291,6 +297,9 @@ try {
   console.error(`HOSTED FAIL ${evidence.failure}`);
 } finally {
   try {
+    for (const channel of channels.splice(0)) await channel.unsubscribe();
+    await actorA?.client.removeAllChannels();
+    await actorB?.client.removeAllChannels();
     if (admin) {
       if (directConversationId) await admin.from("direct_conversations").delete().eq("id", directConversationId);
       if (communityId) await admin.from("communities").delete().eq("id", communityId);

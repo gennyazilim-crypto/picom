@@ -39,6 +39,7 @@ export type Database = {
           id: string;
           kind: Database["public"]["Enums"]["community_kind"];
           owner_id: string;
+          founder_id: string;
           name: string;
           description: string | null;
           icon_url: string | null;
