@@ -9,10 +9,10 @@ const ALLOWED_TRANSITIONS: Readonly<Record<MeetingClientPhase, readonly MeetingC
   "token-loading": ["prejoin", "waiting", "connecting", "failed", "ended"],
   connecting: ["connected", "reconnecting", "disconnected", "failed", "ended"],
   connected: ["reconnecting", "disconnected", "failed", "ended"],
-  reconnecting: ["connected", "disconnected", "failed", "ended"],
-  disconnected: ["idle", "prejoin", "token-loading", "failed", "ended"],
+  reconnecting: ["token-loading", "connected", "disconnected", "failed", "ended"],
+  disconnected: ["idle", "prejoin", "token-loading", "reconnecting", "failed", "ended"],
   ended: ["idle", "prejoin"],
-  failed: ["idle", "prejoin", "token-loading", "ended"],
+  failed: ["idle", "prejoin", "token-loading", "reconnecting", "ended"],
 });
 
 const noCapabilities = getMeetingCapabilities("guest", {

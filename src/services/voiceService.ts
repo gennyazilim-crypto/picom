@@ -1,4 +1,4 @@
-import { ConnectionState, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
+import { ConnectionState, DisconnectReason, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
 import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
@@ -74,7 +74,10 @@ export type VoiceServiceErrorCode =
   | "VOICE_PERMISSION_DENIED"
   | "VOICE_SCREEN_SHARE_CONFLICT"
   | "VOICE_SCREEN_SHARE_FAILED"
-  | "VOICE_DATA_UNAVAILABLE";
+  | "VOICE_DATA_UNAVAILABLE"
+  | "VOICE_ACCESS_REVOKED"
+  | "VOICE_ROOM_ENDED"
+  | "VOICE_SESSION_REPLACED";
 
 export type VoiceServiceResult<T> =
   | Readonly<{ ok: true; data: T }>
@@ -112,6 +115,9 @@ let joinInFlight = false;
 let lastJoinRequest: VoiceJoinRequest | null = null;
 let reconnectInFlight: Promise<VoiceServiceResult<VoiceServiceSnapshot>> | null = null;
 let reconnectGeneration = 0;
+let roomLifecycleGeneration = 0;
+let reconnectDelayTimer: number | null = null;
+let reconnectDelayResolve: (() => void) | null = null;
 const reconnectBackoffMs = [0, 750, 2_000] as const;
 let appliedInputPreferenceKey = "";
 let appliedOutputDeviceId = "";
@@ -138,8 +144,22 @@ function hasScreenPublishToken(): boolean {
   return activeTokenIntent === "screen";
 }
 
+function cancelReconnectDelay(): void {
+  if (reconnectDelayTimer !== null) window.clearTimeout(reconnectDelayTimer);
+  reconnectDelayTimer = null;
+  const resolve = reconnectDelayResolve;
+  reconnectDelayResolve = null;
+  resolve?.();
+}
+
 const waitForReconnectDelay = (delayMs: number) => new Promise<void>((resolve) => {
-  window.setTimeout(resolve, delayMs);
+  cancelReconnectDelay();
+  reconnectDelayResolve = resolve;
+  reconnectDelayTimer = window.setTimeout(() => {
+    reconnectDelayTimer = null;
+    reconnectDelayResolve = null;
+    resolve();
+  }, delayMs);
 });
 
 const canceledReconnectResult = (): VoiceServiceResult<VoiceServiceSnapshot> => ({
@@ -150,6 +170,26 @@ const canceledReconnectResult = (): VoiceServiceResult<VoiceServiceSnapshot> => 
 function emit(next: Partial<VoiceServiceSnapshot>): void {
   snapshot = { ...snapshot, ...next };
   listeners.forEach((listener) => listener(snapshot));
+}
+
+type VoiceDisconnectDetails = Readonly<{ code: VoiceServiceErrorCode; message: string }>;
+
+function disconnectDetails(reason: DisconnectReason | undefined): VoiceDisconnectDetails | null {
+  switch (reason) {
+    case DisconnectReason.CLIENT_INITIATED:
+      return null;
+    case DisconnectReason.DUPLICATE_IDENTITY:
+      return { code: "VOICE_SESSION_REPLACED", message: "This meeting was opened in another Picom window. Close the other session before reconnecting." };
+    case DisconnectReason.PARTICIPANT_REMOVED:
+      return { code: "VOICE_ACCESS_REVOKED", message: "A meeting host removed this participant. Rejoin only after access is restored." };
+    case DisconnectReason.ROOM_DELETED:
+    case DisconnectReason.ROOM_CLOSED:
+      return { code: "VOICE_ROOM_ENDED", message: "The host ended this meeting." };
+    case DisconnectReason.JOIN_FAILURE:
+      return { code: "VOICE_TOKEN_FAILED", message: "Meeting authorization expired or was rejected. Picom can request a fresh credential." };
+    default:
+      return { code: "VOICE_CONNECTION_FAILED", message: "The meeting connection was interrupted. Picom will retry with fresh authorization." };
+  }
 }
 
 function voiceError(code: VoiceServiceErrorCode, message: string): VoiceServiceResult<never> {
@@ -381,7 +421,6 @@ function bindRoomEvents(activeRoom: Room): void {
         reconnectingActive = false;
         connectionQuality = "unknown";
         speakingIdentities = new Set<string>();
-        emit({ status: "disconnected" });
       }
     })
     .on(RoomEvent.ParticipantConnected, () => {
@@ -487,14 +526,16 @@ function bindRoomEvents(activeRoom: Room): void {
       applyFocusedScreenShareSubscription(activeRoom);
       emit({ error: "The shared screen could not be loaded. Picom will keep participant context available.", errorCode: "VOICE_SCREEN_SHARE_FAILED" });
     })
-    .on(RoomEvent.Disconnected, () => {
+    .on(RoomEvent.Disconnected, (reason) => {
       if (sessionStartedAtMs) lastSessionDurationMs = Date.now() - sessionStartedAtMs;
       sessionStartedAtMs = null;
       reconnectingActive = false;
       connectionQuality = "unknown";
-        speakingIdentities = new Set<string>();
-        participantConnectionQualities.clear();
-        cameraTracks = [];
+      speakingIdentities = new Set<string>();
+      participantConnectionQualities.clear();
+      cameraTracks = [];
+      roomLifecycleGeneration += 1;
+      const details = disconnectDetails(reason);
       stopLocalTracks(activeRoom);
       activeTokenIntent = null;
       activeRoom.removeAllListeners();
@@ -507,8 +548,8 @@ function bindRoomEvents(activeRoom: Room): void {
         screenSharing: false,
         screenShares: [],
         cameraTracks: [],
-        error: "This voice room ended or the connection was closed.",
-        errorCode: "VOICE_ROOM_UNAVAILABLE",
+        error: details?.message ?? null,
+        errorCode: details?.code ?? null,
       });
     });
 }
@@ -523,6 +564,17 @@ function stopLocalTracks(activeRoom: Room): void {
   clearRemoteScreenShareTracks();
   cameraTracks = [];
   focusedScreenShareId = null;
+}
+
+async function disposeRoom(activeRoom: Room): Promise<void> {
+  stopLocalTracks(activeRoom);
+  activeRoom.removeAllListeners();
+  if (room === activeRoom) room = null;
+  try {
+    await activeRoom.disconnect(false);
+  } catch {
+    // Tracks are already stopped locally; provider shutdown errors are non-fatal cleanup failures.
+  }
 }
 
 function createElectronScreenShareConstraints(sourceId: string): MediaStreamConstraints {
@@ -600,6 +652,7 @@ async function connectWithToken(
   roomContext: VoiceRoomContext,
   desiredCamera = false,
   cameraDeviceId = "default",
+  lifecycleGeneration = roomLifecycleGeneration,
 ): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
   emit({ status: "connecting", roomName: token.roomName, roomContext, error: null, errorCode: null });
   desiredMicrophoneMuted = desiredMuted;
@@ -618,6 +671,10 @@ async function connectWithToken(
     room = activeRoom;
     bindRoomEvents(activeRoom);
     await activeRoom.connect(token.url, token.token);
+    if (lifecycleGeneration !== roomLifecycleGeneration || room !== activeRoom) {
+      await disposeRoom(activeRoom);
+      return canceledReconnectResult();
+    }
     activeTokenIntent = token.intent;
 
     let microphoneEnabled = token.canPublishAudio;
@@ -646,6 +703,10 @@ async function connectWithToken(
 
     if (desiredDeafened) applyRemoteAudioSubscription(activeRoom, false);
     applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
+    if (lifecycleGeneration !== roomLifecycleGeneration || room !== activeRoom) {
+      await disposeRoom(activeRoom);
+      return canceledReconnectResult();
+    }
     emitParticipants(activeRoom);
     emit({
       status: "connected",
@@ -667,9 +728,8 @@ async function connectWithToken(
 
     return { ok: true, data: snapshot };
   } catch (error) {
-    activeRoom.removeAllListeners();
-    activeRoom.disconnect();
-    if (room === activeRoom) room = null;
+    await disposeRoom(activeRoom);
+    if (lifecycleGeneration !== roomLifecycleGeneration) return canceledReconnectResult();
     activeTokenIntent = null;
     loggingService.logWarn("LiveKit room connection failed", {
       errorName: error instanceof Error ? error.name : "UnknownError",
@@ -801,11 +861,13 @@ export const voiceService = {
     );
     if (switchesRoom) {
       reconnectGeneration += 1;
+      cancelReconnectDelay();
       reconnectInFlight = null;
     }
     joinInFlight = true;
     joinAttemptCount += 1;
     lastJoinRequest = request;
+    const lifecycleGeneration = ++roomLifecycleGeneration;
     const { communityName, channelName, ...tokenRequest } = request;
     const roomContext: VoiceRoomContext = {
       communityId: request.communityId,
@@ -816,10 +878,7 @@ export const voiceService = {
     const desiredMuted = snapshot.muted;
     const desiredDeafened = snapshot.deafened;
     if (room) {
-      stopLocalTracks(room);
-      room.removeAllListeners();
-      room.disconnect();
-      room = null;
+      await disposeRoom(room);
       activeTokenIntent = null;
     }
     speakingIdentities = new Set<string>();
@@ -839,7 +898,7 @@ export const voiceService = {
         return token;
       }
 
-      const result = await connectWithToken(token.data, desiredMuted, desiredDeafened, roomContext);
+      const result = await connectWithToken(token.data, desiredMuted, desiredDeafened, roomContext, false, "default", lifecycleGeneration);
       if (!result.ok) joinFailureCount += 1;
       return result;
     } finally {
@@ -852,15 +911,14 @@ export const voiceService = {
     joinInFlight = true;
     joinAttemptCount += 1;
     lastJoinRequest = null;
+    const lifecycleGeneration = ++roomLifecycleGeneration;
     reconnectGeneration += 1;
+    cancelReconnectDelay();
     reconnectInFlight = null;
     const desiredMuted = options.muted ?? snapshot.muted;
     const desiredDeafened = snapshot.deafened;
     if (room) {
-      stopLocalTracks(room);
-      room.removeAllListeners();
-      room.disconnect();
-      room = null;
+      await disposeRoom(room);
       activeTokenIntent = null;
     }
     speakingIdentities = new Set<string>();
@@ -873,7 +931,7 @@ export const voiceService = {
     focusedScreenShareId = null;
     emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
     try {
-      const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext, Boolean(options.cameraEnabled), options.cameraDeviceId);
+      const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext, Boolean(options.cameraEnabled), options.cameraDeviceId, lifecycleGeneration);
       if (!result.ok) joinFailureCount += 1;
       return result;
     } finally {
@@ -889,6 +947,7 @@ export const voiceService = {
 
     const request = lastJoinRequest;
     const generation = ++reconnectGeneration;
+    cancelReconnectDelay();
     reconnectCount += 1;
     reconnectInFlight = (async () => {
       let lastResult: VoiceServiceResult<VoiceServiceSnapshot> = canceledReconnectResult();
@@ -920,15 +979,14 @@ export const voiceService = {
   },
 
   async leave(): Promise<void> {
-    if (room) {
-      stopLocalTracks(room);
-      room.removeAllListeners();
-      room.disconnect();
-      room = null;
-    }
+    roomLifecycleGeneration += 1;
+    reconnectGeneration += 1;
+    cancelReconnectDelay();
+    const activeRoom = room;
+    room = null;
+    if (activeRoom) await disposeRoom(activeRoom);
     joinInFlight = false;
     lastJoinRequest = null;
-    reconnectGeneration += 1;
     reconnectInFlight = null;
     reconnectingActive = false;
     mediaRecoveryPromise = null;

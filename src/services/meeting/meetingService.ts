@@ -18,13 +18,63 @@ let currentRequest: MeetingClientJoinRequest | null = null;
 let joinPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
 let joinKey: string | null = null;
 let authorizationRefreshPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
+let reconnectPromise: Promise<void> | null = null;
+let reconnectSequence = 0;
+let reconnectWaitCleanup: (() => void) | null = null;
 let sessionCleanups: Array<() => void> = [];
+const meetingReconnectBackoffMs = [500, 1_500, 3_500] as const;
 
 const keyOf = (request: MeetingClientJoinRequest) => `${request.roomId}:${request.sessionId}`;
 const fail = (code: MeetingClientError["code"], message: string, recoverable = true, providerCode?: string): MeetingClientError => ({ code, message, recoverable, providerCode });
 const stale = (): MeetingClientResult<MeetingClientSnapshot> => ({ ok: false, error: fail("MEETING_STALE_OPERATION", "A newer meeting action replaced this request.", true) });
 
-function stopBindings(): void { for (const cleanup of sessionCleanups.splice(0)) cleanup(); meetingSignalService.stop(); }
+function stopBindings(): void {
+  for (const cleanup of sessionCleanups.splice(0)) {
+    try { cleanup(); } catch { /* Continue draining independent session resources. */ }
+  }
+  try { meetingSignalService.stop(); } catch { /* A failed signal cleanup must not retain media resources. */ }
+}
+
+function cancelMeetingReconnect(): void {
+  reconnectSequence += 1;
+  reconnectWaitCleanup?.();
+  reconnectWaitCleanup = null;
+}
+
+function waitForReconnectWindow(delayMs: number, sequence: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    let delayElapsed = delayMs === 0;
+    let online = typeof navigator === "undefined" || navigator.onLine;
+    let settled = false;
+    const timers: number[] = [];
+    const finish = (ready: boolean) => {
+      if (settled) return;
+      settled = true;
+      timers.forEach((timer) => window.clearTimeout(timer));
+      window.removeEventListener("online", onOnline);
+      if (reconnectWaitCleanup === cancel) reconnectWaitCleanup = null;
+      resolve(ready && sequence === reconnectSequence);
+    };
+    const maybeFinish = () => { if (delayElapsed && online) finish(true); };
+    const onOnline = () => { online = true; maybeFinish(); };
+    const cancel = () => finish(false);
+    reconnectWaitCleanup = cancel;
+    window.addEventListener("online", onOnline);
+    timers.push(window.setTimeout(() => {
+      delayElapsed = true;
+      online = typeof navigator === "undefined" || navigator.onLine;
+      maybeFinish();
+    }, delayMs));
+    timers.push(window.setTimeout(() => finish(false), delayMs + 8_000));
+    maybeFinish();
+  });
+}
+
+function terminalDisconnect(errorCode: string | null): "ended" | "revoked" | null {
+  if (errorCode === "VOICE_ROOM_ENDED") return "ended";
+  if (errorCode === "VOICE_ACCESS_REVOKED" || errorCode === "VOICE_SESSION_REPLACED") return "revoked";
+  return null;
+}
 
 function capabilities(role: MeetingRole, token?: Readonly<{ canPublishAudio:boolean;canPublishVideo:boolean;canPublishScreen:boolean;canPublishData:boolean }>): MeetingCapabilities {
   const base = getMeetingCapabilities(role);
@@ -94,9 +144,43 @@ function applyAuthoritativeParticipants(generation: number, snapshot: MeetingPar
 
 function applyProviderParticipants(generation:number,snapshot:ReturnType<typeof meetingLiveKitAdapter.getSnapshot>):void {
   const current=meetingStore.getSnapshot(); if(current.generation!==generation)return;
-  const byIdentity=new Map(current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean).map((participant)=>[participant.identity,participant]));
-  for(const item of snapshot.participants){const prior=byIdentity.get(item.identity);const cameraTrack=(snapshot.cameraTracks??[]).find((track)=>track.participantIdentity===item.identity);byIdentity.set(item.identity,{id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,username:prior?.username,avatarUrl:prior?.avatarUrl,role:prior?.role??current.role??"participant",communityRole:prior?.communityRole,verification:prior?.verification,presence:snapshot.status==="reconnecting"?"reconnecting":"connected",isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:item.isCameraEnabled||Boolean(cameraTrack),cameraStream:cameraTrack?.stream,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),screenShareAllowed:prior?.screenShareAllowed??true,handRaised:prior?.handRaised??false,connectionQuality:item.connectionQuality})}
-  meetingStore.replaceParticipants(generation,[...byIdentity.values()]);
+  const priorByIdentity=new Map(current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean).map((participant)=>[participant.identity,participant]));
+  const participants=snapshot.participants.map((item)=>{
+    const prior=priorByIdentity.get(item.identity);
+    const cameraTrack=(snapshot.cameraTracks??[]).find((track)=>track.participantIdentity===item.identity);
+    return {id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,username:prior?.username,avatarUrl:prior?.avatarUrl,role:prior?.role??current.role??"participant",communityRole:prior?.communityRole,verification:prior?.verification,presence:snapshot.status==="reconnecting"?"reconnecting" as const:"connected" as const,isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:item.isCameraEnabled||Boolean(cameraTrack),cameraStream:cameraTrack?.stream,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),screenShareAllowed:prior?.screenShareAllowed??true,handRaised:prior?.handRaised??false,connectionQuality:item.connectionQuality};
+  });
+  meetingStore.replaceParticipants(generation,participants);
+}
+
+function scheduleMeetingReconnect(generation:number,request:MeetingClientJoinRequest):void {
+  if(reconnectPromise)return;
+  const sequence=++reconnectSequence;
+  const operation=(async()=>{
+    let lastError:MeetingClientError|null=null;
+    for(let attempt=0;attempt<meetingReconnectBackoffMs.length;attempt+=1){
+      if(sequence!==reconnectSequence||meetingStore.getSnapshot().generation!==generation||currentRequest!==request)return;
+      meetingStore.transition(generation,"reconnecting",{providerStatus:`reconnecting_${attempt+1}_of_${meetingReconnectBackoffMs.length}`,error:lastError});
+      const ready=await waitForReconnectWindow(meetingReconnectBackoffMs[attempt],sequence);
+      if(!ready){
+        if(sequence!==reconnectSequence)return;
+        lastError=fail("MEETING_RECONNECT_FAILED","Picom is offline. Reconnect will resume when the network is available.",true,"offline");
+        continue;
+      }
+      const result=await joinSerialized(request,true);
+      if(result.ok)return;
+      lastError=result.error;
+      if(!result.error.recoverable)return;
+    }
+    if(sequence===reconnectSequence&&meetingStore.getSnapshot().generation===generation&&currentRequest===request){
+      const message=lastError?.providerCode==="offline"
+        ? "Picom could not reconnect because this device is offline. Check the network and try again."
+        : "Picom could not reconnect after several attempts. The meeting may be unavailable; try again when the connection is stable.";
+      meetingStore.setError(generation,fail("MEETING_RECONNECT_FAILED",message,true,lastError?.providerCode??"retry_exhausted"));
+    }
+  })();
+  reconnectPromise=operation;
+  void operation.finally(()=>{if(reconnectPromise===operation)reconnectPromise=null;});
 }
 
 const clientNoiseShield=(state:NoiseShieldSnapshot):MeetingClientSnapshot["noiseShield"]=>({requested:state.requestedMode!=="off",applied:state.appliedMode!=="off"&&(state.status==="applied"||state.status==="fallback"),requestedMode:state.requestedMode,appliedMode:state.appliedMode,availableModes:state.availableModes,provider:state.provider,status:state.status,fallbackReason:state.fallbackReason});
@@ -106,8 +190,26 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   sessionCleanups.push(noiseShieldService.subscribe(()=>meetingStore.patch(generation,{noiseShield:clientNoiseShield(noiseShieldService.getSnapshot())})));
   sessionCleanups.push(meetingLiveKitAdapter.subscribe((provider)=>{
     if(meetingStore.getSnapshot().generation!==generation)return;
-    const phase=provider.status==="connected"?"connected":provider.status==="reconnecting"?"reconnecting":provider.status==="disconnected"?"disconnected":provider.status==="connecting"?"connecting":provider.status==="requesting_token"?"token-loading":null;
-    if(phase){const wasSharing=meetingStore.getSnapshot().localMedia.screenSharing;meetingStore.transition(generation,phase,{providerStatus:provider.status,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:Boolean(provider.cameraEnabled),screenSharing:provider.screenSharing},error:null});if(wasSharing&&!provider.screenSharing&&currentRequest)void meetingScreenShareLeaseService.release(currentRequest.roomId,currentRequest.sessionId);}
+    const wasSharing=meetingStore.getSnapshot().localMedia.screenSharing;
+    if(provider.status==="disconnected"){
+      if(wasSharing)void meetingScreenShareLeaseService.release(request.roomId,request.sessionId);
+      meetingStore.patch(generation,{screenShares:provider.screenShares,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:false,screenSharing:false}});
+      applyProviderParticipants(generation,provider);
+      const terminal=terminalDisconnect(provider.errorCode);
+      if(terminal==="ended"){
+        cancelMeetingReconnect();
+        meetingStore.transition(generation,"ended",{providerStatus:provider.errorCode??"room_ended",error:fail("MEETING_ENDED",provider.error??"The host ended this meeting.",false,provider.errorCode??"room_ended")});
+      }else if(terminal==="revoked"){
+        cancelMeetingReconnect();
+        meetingStore.setError(generation,fail("MEETING_PERMISSION_DENIED",provider.error??"Meeting access was revoked.",false,provider.errorCode??"access_revoked"));
+      }else{
+        meetingStore.transition(generation,"reconnecting",{providerStatus:provider.errorCode??"connection_interrupted",error:fail("MEETING_RECONNECT_FAILED",provider.error??"The meeting connection was interrupted. Picom is requesting fresh authorization.",true,provider.errorCode??"connection_interrupted")});
+        scheduleMeetingReconnect(generation,request);
+      }
+      return;
+    }
+    const phase=provider.status==="connected"?"connected":provider.status==="reconnecting"?"reconnecting":provider.status==="connecting"?"connecting":provider.status==="requesting_token"?"token-loading":null;
+    if(phase){meetingStore.transition(generation,phase,{providerStatus:provider.status,localMedia:{muted:provider.muted,deafened:provider.deafened,cameraEnabled:Boolean(provider.cameraEnabled),screenSharing:provider.screenSharing},error:null});if(wasSharing&&!provider.screenSharing)void meetingScreenShareLeaseService.release(request.roomId,request.sessionId);}
     else if(provider.errorCode)meetingStore.setError(generation,fail(provider.errorCode==="VOICE_PERMISSION_DENIED"?"MEETING_PERMISSION_DENIED":"MEETING_PROVIDER_ERROR",provider.error??"The meeting provider reported an error.",true,provider.errorCode));
     meetingStore.patch(generation,{screenShares:provider.screenShares});
     applyProviderParticipants(generation,provider);
@@ -126,7 +228,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
 }
 
 async function prepare(request:MeetingClientJoinRequest):Promise<number> {
-  stopBindings(); await meetingLiveKitAdapter.disconnect(); currentRequest=request;
+  cancelMeetingReconnect(); stopBindings(); await meetingLiveKitAdapter.disconnect(); currentRequest=request;
   const generation=meetingStore.begin({roomId:request.roomId,sessionId:request.sessionId,communityId:request.communityId,communityName:request.communityName,channelId:request.channelId,channelName:request.channelName,roomTitle:request.roomTitle,roomMode:request.roomMode});
   const shield=noiseShieldService.activateMeeting(request.roomId,request.noiseShieldMode??(request.noiseShield?"standard":"off"));meetingStore.patch(generation,{noiseShield:clientNoiseShield(shield)});
   if(request.roomMode==="stage")meetingStore.setLayout("stage");
@@ -148,19 +250,25 @@ async function performJoin(request:MeetingClientJoinRequest,force:boolean):Promi
   meetingStore.transition(generation,"connected",{providerStatus:"connected",error:null});applyProviderParticipants(generation,connected.data);return{ok:true,data:meetingStore.getSnapshot()};
 }
 
+function joinSerialized(request:MeetingClientJoinRequest,force=false):Promise<MeetingClientResult<MeetingClientSnapshot>> {
+  const nextKey=keyOf(request);
+  if(joinPromise){if(joinKey===nextKey)return joinPromise;return Promise.resolve({ok:false,error:fail("MEETING_JOIN_IN_PROGRESS","Finish the current meeting connection before joining another room.",true)});}
+  joinKey=nextKey;
+  joinPromise=performJoin(request,force).finally(()=>{joinPromise=null;joinKey=null;});
+  return joinPromise;
+}
+
 export const meetingService = {
   store: meetingStore,
   prepare,
-  join(request:MeetingClientJoinRequest,force=false):Promise<MeetingClientResult<MeetingClientSnapshot>> {
-    const nextKey=keyOf(request);if(joinPromise){if(joinKey===nextKey)return joinPromise;return Promise.resolve({ok:false,error:fail("MEETING_JOIN_IN_PROGRESS","Finish the current meeting connection before joining another room.",true)});}
-    joinKey=nextKey;joinPromise=performJoin(request,force).finally(()=>{joinPromise=null;joinKey=null});return joinPromise;
-  },
-  retry():Promise<MeetingClientResult<MeetingClientSnapshot>> {return currentRequest?this.join(currentRequest,true):Promise.resolve({ok:false,error:fail("MEETING_CONTEXT_INVALID","Choose a meeting before retrying.",false)});},
+  join(request:MeetingClientJoinRequest,force=false):Promise<MeetingClientResult<MeetingClientSnapshot>> {return joinSerialized(request,force);},
+  retry():Promise<MeetingClientResult<MeetingClientSnapshot>> {cancelMeetingReconnect();return currentRequest?joinSerialized(currentRequest,true):Promise.resolve({ok:false,error:fail("MEETING_CONTEXT_INVALID","Choose a meeting before retrying.",false)});},
   refreshAuthorization():Promise<MeetingClientResult<MeetingClientSnapshot>> {
     if(authorizationRefreshPromise)return authorizationRefreshPromise;
     if(joinPromise)return joinPromise;
     if(!currentRequest)return Promise.resolve({ok:false,error:fail("MEETING_CONTEXT_INVALID","Meeting authorization cannot be refreshed without an active room.",false)});
     const request=currentRequest;
+    cancelMeetingReconnect();
     authorizationRefreshPromise=(async()=>{await prepare(request);return performJoin(request,true);})().finally(()=>{authorizationRefreshPromise=null;});
     return authorizationRefreshPromise;
   },
@@ -172,7 +280,7 @@ export const meetingService = {
     meetingStore.patch(snapshot.generation,{waitingEntry:{id:result.data.id,status:result.data.status},providerStatus:"waiting_cancelled",error:null});
     return{ok:true,data:meetingStore.getSnapshot()};
   },
-  async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation,request=currentRequest;stopBindings();await meetingLiveKitAdapter.disconnect();if(request)await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);const shield=noiseShieldService.deactivateMeeting();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null,noiseShield:clientNoiseShield(shield)});currentRequest=null;},
+  async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation,request=currentRequest;currentRequest=null;cancelMeetingReconnect();stopBindings();await meetingLiveKitAdapter.disconnect();if(request)await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);const shield=noiseShieldService.deactivateMeeting();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null,participantsById:{},participantIds:[],screenShares:[],localMedia:{muted:true,deafened:false,cameraEnabled:false,screenSharing:false},noiseShield:clientNoiseShield(shield)});},
   setLayout:meetingStore.setLayout,
   setRightDock:meetingStore.setRightDock,
   setFocus:meetingStore.setFocus,
