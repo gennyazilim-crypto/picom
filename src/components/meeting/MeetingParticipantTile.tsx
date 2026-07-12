@@ -5,6 +5,7 @@ import { AppIcon } from "../AppIcon";
 import { VerifiedAvatarFrame } from "../VerifiedAvatarFrame";
 import { VerifiedBadge } from "../VerifiedBadge";
 import { useMeetingParticipantActionsOptional } from "./MeetingParticipantActionsProvider";
+import { MeetingReactionOverlay } from "./MeetingReactionOverlay";
 import "./MeetingParticipantTile.css";
 
 export type MeetingParticipantTileVariant = "grid" | "focus" | "filmstrip" | "voice" | "stage" | "share";
@@ -65,6 +66,7 @@ export function MeetingParticipantTile({ participant, variant, selected = false,
     >
       {onActivate ? <button type="button" className="meeting-participant-tile-v2__media" aria-label={`${focused ? "Remove focus from" : "Focus"} ${participant.displayName}`} aria-pressed={focused || selected} onClick={onActivate}>{media}</button> : <div className="meeting-participant-tile-v2__media">{media}</div>}
       <span className="meeting-participant-tile-v2__shade" aria-hidden="true" />
+      <MeetingReactionOverlay participantIdentity={participant.identity} participantName={participant.displayName} />
       <span className="meeting-participant-tile-v2__presence" aria-label={`${participant.displayName} is ${participant.presence}`} />
       <span className="meeting-participant-tile-v2__identity">
         <span className="meeting-participant-tile-v2__name"><strong>{participant.displayName}{participant.isLocal ? " (you)" : ""}</strong><VerifiedBadge verification={participant.verification} size={variant === "focus" ? "sm" : "xs"} /></span>
