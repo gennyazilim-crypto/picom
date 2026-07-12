@@ -1,10 +1,12 @@
 import { createRequire } from "node:module";
+import { randomBytes, randomUUID } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import { build } from "vite";
 
+const approvedProjectRef = "ufmtvqtsklqsmqxefbbs";
 const run = process.argv.includes("--run");
 const buildOnly = process.argv.includes("--build-only");
 const evidencePath = resolve("artifacts/evidence/task-665-hosted-member-voice-screen.json");
@@ -14,26 +16,25 @@ const require = createRequire(import.meta.url);
 const electronPath = require("electron");
 const activeLabels = ["OWNER", "ADMIN", "MODERATOR", "MEMBER"];
 const deniedLabels = ["VISITOR", "NON_MEMBER", "BANNED"];
-const requiredNames = [
-  "PICOM_HOSTED_MEDIA_CONFIRM", "PICOM_HOSTED_MEDIA_SUPABASE_URL", "PICOM_HOSTED_MEDIA_SUPABASE_ANON_KEY", "PICOM_HOSTED_MEDIA_ORIGIN",
-  "PICOM_HOSTED_MEDIA_COMMUNITY_ID", "PICOM_HOSTED_MEDIA_CHANNEL_ID",
-  ...[...activeLabels, ...deniedLabels].flatMap((label) => [`PICOM_HOSTED_MEDIA_${label}_EMAIL`, `PICOM_HOSTED_MEDIA_${label}_PASSWORD`]),
-];
+const actorLabels = [...activeLabels, ...deniedLabels];
+const actorCodes = { OWNER: "ow", ADMIN: "ad", MODERATOR: "mo", MEMBER: "me", VISITOR: "vi", NON_MEMBER: "nm", BANNED: "ba" };
+const requiredNames = ["PICOM_HOSTED_MEDIA_CONFIRM", "SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF", "PICOM_HOSTED_MEDIA_PROJECT_REF", "PICOM_HOSTED_MEDIA_ORIGIN"];
 
-const safeMessage = (error) => String(error instanceof Error ? error.message : error).replace(/eyJ[A-Za-z0-9._-]+/g, "[redacted-token]").replace(/(?:https?|wss):\/\/\S+/g, "[redacted-url]").slice(0, 300);
+const safeMessage = (error) => String(error instanceof Error ? error.message : error)
+  .replace(/sbp_[A-Za-z0-9_-]+/g, "[redacted-supabase-token]")
+  .replace(/sb_(?:secret|publishable)_[A-Za-z0-9_-]+/g, "[redacted-supabase-key]")
+  .replace(/eyJ[A-Za-z0-9._-]+/g, "[redacted-jwt]")
+  .replace(/(?:https?|wss):\/\/\S+/g, "[redacted-url]")
+  .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi, "[redacted-id]")
+  .replace(/[A-Za-z0-9._%+-]+@example\.com/g, "[redacted-fixture-email]")
+  .slice(0, 300);
 
 async function buildHarness() {
-  await build({
-    configFile: false,
-    root: fixtureRoot,
-    base: "./",
-    logLevel: "error",
-    build: { outDir: rendererOutput, emptyOutDir: true, minify: true, rollupOptions: { input: resolve(fixtureRoot, "index.html") } },
-  });
+  await build({ configFile: false, root: fixtureRoot, base: "./", logLevel: "error", build: { outDir: rendererOutput, emptyOutDir: true, minify: true, rollupOptions: { input: resolve(fixtureRoot, "index.html") } } });
 }
 
 if (!run && !buildOnly) {
-  console.log("Hosted member Voice/Screen E2E is BLOCKED until --run and protected STAGING_ONLY credentials are supplied.");
+  console.log("Hosted member Voice/Screen E2E is BLOCKED until --run and protected STAGING_ONLY management access are supplied.");
   console.log(`Required configuration names: ${requiredNames.join(", ")}`);
   console.log("No network request was made and no credential value was printed.");
   process.exit(0);
@@ -46,14 +47,15 @@ if (buildOnly) {
   process.exit(0);
 }
 
-const missing = requiredNames.filter((name) => !process.env[name]?.trim());
-if (missing.length) throw new Error(`Missing hosted media configuration names: ${missing.join(", ")}`);
-if (process.env.PICOM_HOSTED_MEDIA_CONFIRM !== "STAGING_ONLY") throw new Error("PICOM_HOSTED_MEDIA_CONFIRM must equal STAGING_ONLY.");
-if (/service[_-]?role|sb_secret_/i.test(process.env.PICOM_HOSTED_MEDIA_SUPABASE_ANON_KEY)) throw new Error("Use an anon/publishable key, never service-role.");
-if (new URL(process.env.PICOM_HOSTED_MEDIA_SUPABASE_URL).protocol !== "https:") throw new Error("Hosted Supabase URL must use HTTPS.");
-
+const createdUsers = [];
+const actors = new Map();
 const sessions = new Map();
-let stage = "authentication";
+let communityId = null;
+let admin = null;
+let query = null;
+let stage = "configuration";
+let failure = null;
+let fixtureCleanupPassed = true;
 let evidence = {
   schemaVersion: 1,
   task: 665,
@@ -63,28 +65,40 @@ let evidence = {
   runId: process.env.PICOM_HOSTED_MEDIA_RUN_ID ?? "local-manual",
   activeActorClasses: activeLabels.map((label) => label.toLowerCase()),
   deniedActorClasses: ["visitor", "non_member", "banned"],
+  fixture: "ephemeral-managed-cleanup",
   containsSecrets: false,
 };
 
-async function signIn(label) {
-  const client = createClient(process.env.PICOM_HOSTED_MEDIA_SUPABASE_URL, process.env.PICOM_HOSTED_MEDIA_SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-  const result = await client.auth.signInWithPassword({ email: process.env[`PICOM_HOSTED_MEDIA_${label}_EMAIL`], password: process.env[`PICOM_HOSTED_MEDIA_${label}_PASSWORD`] });
-  if (result.error || !result.data.session || !result.data.user) throw new Error(`${label.toLowerCase()} hosted authentication failed.`);
+async function management(path, options = {}) {
+  const response = await fetch(`https://api.supabase.com/v1${path}`, {
+    ...options,
+    headers: { Authorization: `Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`, "Content-Type": "application/json", ...(options.headers ?? {}) },
+    signal: AbortSignal.timeout(30000),
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`Supabase Management API request failed (${response.status}): ${safeMessage(text)}`);
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+const keyValue = (record) => typeof record?.api_key === "string" ? record.api_key : typeof record?.value === "string" ? record.value : null;
+const keyName = (record) => String(record?.name ?? record?.type ?? "").toLowerCase();
+
+async function signIn(label, baseUrl, publicKey) {
+  const actor = actors.get(label);
+  const client = createClient(baseUrl, publicKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const result = await client.auth.signInWithPassword({ email: actor.email, password: actor.password });
+  if (result.error || !result.data.session || !result.data.user) throw new Error(`${label.toLowerCase()} hosted fixture authentication failed.`);
   const session = { client, accessToken: result.data.session.access_token, userId: result.data.user.id };
   sessions.set(label, session);
   return session;
 }
 
-async function requestToken(session, intent = "screen") {
-  const response = await fetch(`${process.env.PICOM_HOSTED_MEDIA_SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/livekit-token`, {
+async function requestToken(session, baseUrl, publicKey, community, channel, intent = "screen") {
+  const response = await fetch(`${baseUrl}/functions/v1/livekit-token`, {
     method: "POST",
-    headers: {
-      apikey: process.env.PICOM_HOSTED_MEDIA_SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${session.accessToken}`,
-      Origin: process.env.PICOM_HOSTED_MEDIA_ORIGIN,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ communityId: process.env.PICOM_HOSTED_MEDIA_COMMUNITY_ID, channelId: process.env.PICOM_HOSTED_MEDIA_CHANNEL_ID, intent }),
+    headers: { apikey: publicKey, Authorization: `Bearer ${session.accessToken}`, Origin: process.env.PICOM_HOSTED_MEDIA_ORIGIN, "Content-Type": "application/json" },
+    body: JSON.stringify({ communityId: community, channelId: channel, intent }),
     signal: AbortSignal.timeout(25000),
   });
   const text = await response.text();
@@ -112,8 +126,7 @@ async function runElectronHarness(clients) {
     child.on("error", (error) => { clearTimeout(timer); reject(error); });
     child.on("exit", (code) => { clearTimeout(timer); resolveExit(code ?? 1); });
   });
-  const output = stdout.join("");
-  const resultLine = output.split(/\r?\n/).find((line) => line.startsWith("PICOM_HOSTED_E2E_RESULT="));
+  const resultLine = stdout.join("").split(/\r?\n/).find((line) => line.startsWith("PICOM_HOSTED_E2E_RESULT="));
   if (!resultLine) throw new Error(`Hosted Electron harness returned no result (${safeMessage(stderr.join("").slice(-1000))}).`);
   const result = JSON.parse(resultLine.slice("PICOM_HOSTED_E2E_RESULT=".length));
   if (exitCode !== 0 || result.status !== "passed") throw new Error(`Hosted Electron harness failed: ${safeMessage(result.error ?? "unknown failure")}`);
@@ -121,20 +134,72 @@ async function runElectronHarness(clients) {
 }
 
 try {
-  for (const label of [...activeLabels, ...deniedLabels]) await signIn(label);
+  const missing = requiredNames.filter((name) => !process.env[name]?.trim());
+  if (missing.length) throw new Error(`Missing hosted media configuration names: ${missing.join(", ")}`);
+  if (process.env.PICOM_HOSTED_MEDIA_CONFIRM !== "STAGING_ONLY") throw new Error("PICOM_HOSTED_MEDIA_CONFIRM must equal STAGING_ONLY.");
+  if (process.env.SUPABASE_PROJECT_REF !== approvedProjectRef || process.env.PICOM_HOSTED_MEDIA_PROJECT_REF !== approvedProjectRef) throw new Error("Hosted media fixture is restricted to the approved Picom staging project.");
+
+  stage = "ephemeral-fixture";
+  const keys = await management(`/projects/${approvedProjectRef}/api-keys?reveal=true`);
+  const rows = Array.isArray(keys) ? keys : [];
+  const publicRecord = rows.find((item) => /(^|[^a-z])(anon|publishable)([^a-z]|$)/.test(keyName(item))) ?? rows.find((item) => keyName(item).includes("publishable"));
+  const secretRecord = rows.find((item) => /service.?role/.test(keyName(item))) ?? rows.find((item) => keyName(item).includes("secret"));
+  const publicKey = keyValue(publicRecord);
+  const serviceKey = keyValue(secretRecord);
+  if (!publicKey || !serviceKey) throw new Error("Protected staging keys could not be resolved through the Management API.");
+  const baseUrl = `https://${approvedProjectRef}.supabase.co`;
+  admin = createClient(baseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  query = (sql, parameters = [], readOnly = false) => management(`/projects/${approvedProjectRef}/database/query`, { method: "POST", body: JSON.stringify({ query: sql, parameters, read_only: readOnly }) });
+
+  const runTag = `${Date.now().toString(36)}${randomBytes(3).toString("hex")}`;
+  for (const label of actorLabels) {
+    const email = `picom-task665-${runTag}-${label.toLowerCase().replaceAll("_", "-")}@example.com`;
+    const password = `P!c0m-${randomBytes(18).toString("base64url")}`;
+    const created = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { display_name: `Task 665 ${label.toLowerCase()}` } });
+    if (created.error || !created.data.user) throw new Error(`Could not create the ${label.toLowerCase()} synthetic staging identity.`);
+    createdUsers.push(created.data.user.id);
+    actors.set(label, { id: created.data.user.id, email, password });
+  }
+
+  communityId = randomUUID();
+  const channelId = randomUUID();
+  const roleIds = { OWNER: randomUUID(), ADMIN: randomUUID(), MODERATOR: randomUUID(), MEMBER: randomUUID() };
+  const profileValues = actorLabels.map((label) => `('${actors.get(label).id}','t665${runTag}${actorCodes[label]}','Task 665 ${label.toLowerCase()}','online','Hosted media fixture')`).join(",\n");
+  const membershipValues = [["OWNER", roleIds.OWNER], ["ADMIN", roleIds.ADMIN], ["MODERATOR", roleIds.MODERATOR], ["MEMBER", roleIds.MEMBER], ["BANNED", roleIds.MEMBER]].map(([label, roleId]) => `('${communityId}','${actors.get(label).id}','${roleId}')`).join(",\n");
+  await query(`
+begin;
+insert into public.profiles(id,username,display_name,status,status_text) values
+${profileValues}
+on conflict(id) do update set username=excluded.username,display_name=excluded.display_name,status=excluded.status,status_text=excluded.status_text,deletion_requested_at=null,is_bot=false;
+insert into public.communities(id,owner_id,name,description,kind,visibility,public_read_enabled,type_settings)
+values('${communityId}','${actors.get("OWNER").id}','Task 665 Hosted Media','Ephemeral protected media fixture','text','private',false,'{"voiceRoomsEnabled":true}'::jsonb);
+insert into public.roles(id,community_id,name,level,permissions,system_key,is_default) values
+('${roleIds.OWNER}','${communityId}','Owner',100,'{}'::jsonb,'owner',false),
+('${roleIds.ADMIN}','${communityId}','Admin',80,'{}'::jsonb,'admin',false),
+('${roleIds.MODERATOR}','${communityId}','Moderator',60,'{}'::jsonb,'moderator',false),
+('${roleIds.MEMBER}','${communityId}','Member',10,'{}'::jsonb,'member',true);
+insert into public.community_members(community_id,user_id,role_id) values
+${membershipValues};
+insert into public.channels(id,community_id,name,type,is_private,public_read_enabled,position)
+values('${channelId}','${communityId}','task-665-hosted-voice','voice',false,true,0);
+insert into public.community_bans(community_id,user_id,banned_by,reason,revoked_at)
+values('${communityId}','${actors.get("BANNED").id}','${actors.get("OWNER").id}','task-665 synthetic denial',null);
+commit;`);
+
+  stage = "authentication";
+  for (const label of actorLabels) await signIn(label, baseUrl, publicKey);
 
   stage = "token-authorization";
   const activeTokens = [];
   for (const label of activeLabels) {
-    const tokenResult = await requestToken(sessions.get(label));
+    const tokenResult = await requestToken(sessions.get(label), baseUrl, publicKey, communityId, channelId);
     if (tokenResult.response.status !== 200 || typeof tokenResult.payload?.token !== "string" || typeof tokenResult.payload?.url !== "string" || typeof tokenResult.payload?.roomName !== "string") throw new Error(`${label.toLowerCase()} did not receive a complete hosted screen token.`);
     if (!tokenResult.payload.canPublishAudio || !tokenResult.payload.canPublishScreen || tokenResult.payload.canPublishVideo === true) throw new Error(`${label.toLowerCase()} received an invalid hosted media grant.`);
     activeTokens.push({ label: label.toLowerCase(), url: tokenResult.payload.url, token: tokenResult.payload.token, expectedRemoteCount: activeLabels.length - 1, roomName: tokenResult.payload.roomName });
   }
   if (new Set(activeTokens.map((entry) => entry.roomName)).size !== 1 || new Set(activeTokens.map((entry) => entry.url)).size !== 1) throw new Error("Active actors did not receive one deterministic hosted room/provider target.");
-
   for (const label of deniedLabels) {
-    const denied = await requestToken(sessions.get(label), "voice");
+    const denied = await requestToken(sessions.get(label), baseUrl, publicKey, communityId, channelId, "voice");
     if (denied.response.status !== 403) throw new Error(`${label.toLowerCase()} expected hosted denial but received ${denied.response.status}.`);
   }
 
@@ -143,7 +208,7 @@ try {
   for (const [actorLabel, targetLabel, allowed] of moderationCases) {
     const actor = sessions.get(actorLabel);
     const target = sessions.get(targetLabel);
-    const result = await actor.client.rpc("authorize_livekit_voice_moderation", { target_community_id: process.env.PICOM_HOSTED_MEDIA_COMMUNITY_ID, target_channel_id: process.env.PICOM_HOSTED_MEDIA_CHANNEL_ID, target_user_id: target.userId, target_action: "remove" });
+    const result = await actor.client.rpc("authorize_livekit_voice_moderation", { target_community_id: communityId, target_channel_id: channelId, target_user_id: target.userId, target_action: "remove" });
     if (allowed && result.error) throw new Error(`${actorLabel.toLowerCase()} expected moderation authorization.`);
     if (!allowed && !result.error) throw new Error(`${actorLabel.toLowerCase()} unexpectedly received higher-role moderation authorization.`);
   }
@@ -180,11 +245,27 @@ try {
   };
   console.log("Hosted active-member Voice/Screen media matrix passed for Owner, Admin, Moderator, and Member; denial, moderation, RTP, render, mute, reconnect, and cleanup evidence is redacted.");
 } catch (error) {
+  failure = error;
   evidence = { ...evidence, status: "failed", failedStage: stage, error: safeMessage(error) };
-  throw error;
 } finally {
+  for (const session of sessions.values()) await session.client.auth.signOut({ scope: "local" }).catch(() => undefined);
+  if (communityId && query) {
+    try { await query("delete from public.communities where id=$1::uuid", [communityId]); } catch { fixtureCleanupPassed = false; }
+  }
+  if (admin) {
+    for (const userId of createdUsers.reverse()) {
+      try { const deleted = await admin.auth.admin.deleteUser(userId); if (deleted.error) fixtureCleanupPassed = false; } catch { fixtureCleanupPassed = false; }
+    }
+  }
+  if (!fixtureCleanupPassed) {
+    evidence = { ...evidence, status: "failed", fixtureCleanupPassed: false, error: evidence.error ?? "Ephemeral hosted fixture cleanup failed." };
+    failure ??= new Error("Ephemeral hosted fixture cleanup failed.");
+  } else {
+    evidence = { ...evidence, fixtureCleanupPassed: true };
+  }
   await mkdir(resolve("artifacts/evidence"), { recursive: true });
   await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, "utf8");
   await rm(rendererOutput, { recursive: true, force: true });
-  for (const session of sessions.values()) await session.client.auth.signOut({ scope: "local" }).catch(() => undefined);
 }
+
+if (failure) throw new Error(safeMessage(failure));

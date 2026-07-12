@@ -4,6 +4,7 @@
 
 - Manual protected workflow: `Picom Hosted Member Voice Screen E2E`.
 - Protected environment: `hosted-staging`.
+- Fixture lifecycle: the protected Supabase Management API creates an isolated ephemeral community, Voice channel, roles, ban, profiles, and Auth identities for this run; all are deleted in the same process even when a media assertion fails.
 - Authorization boundary: authenticated Supabase sessions call the deployed `livekit-token` Edge Function; no LiveKit provider API key or secret reaches the client or workflow output.
 - Media runtime: four isolated sandboxed Electron renderer clients under Xvfb use the installed `livekit-client` SDK and Edge-issued participant tokens.
 - Active actor classes: Owner, Admin, Moderator, and Member.
