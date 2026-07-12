@@ -4,7 +4,7 @@ const service = fs.readFileSync("src/services/diagnostics/diagnosticsService.ts"
 const section = fs.readFileSync("src/components/settings/DiagnosticsSection.tsx", "utf8");
 const settings = fs.readFileSync("src/components/SettingsModal.tsx", "utf8");
 
-for (const needle of ["voiceStatus", "voiceService.getDiagnosticsSummary().status", "recentErrors", "recentLogs", "loggingService.redactDiagnosticsValue", "commitShort", "releaseChannel"]) {
+for (const needle of ["voiceStatus", "voiceDiagnosticsRegistry.getSummary()", "recentErrors", "recentLogs", "loggingService.redactDiagnosticsValue", "commitShort", "releaseChannel"]) {
   if (!service.includes(needle)) throw new Error(`Diagnostics export is missing ${needle}`);
 }
 for (const needle of ['exportDiagnostics("json"', "Copy diagnostics", "Export diagnostics", "snapshot.serviceStatus.voiceStatus", "snapshot.recentErrors.length"]) {

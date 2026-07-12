@@ -1,11 +1,12 @@
 import fs from "node:fs";
 const service=fs.readFileSync("src/services/supabase/directMessageService.ts","utf8");const realtime=fs.readFileSync("src/services/directMessages/directRealtimeService.ts","utf8");const migration=fs.readFileSync("supabase/migrations/20260710187000_direct_messages_backend_production.sql","utf8");const app=fs.readFileSync("src/App.tsx","utf8");const doc=fs.readFileSync("docs/direct-messages-production.md","utf8");
-const view=fs.readFileSync("src/components/DirectMessagesView.tsx","utf8");const rail=fs.readFileSync("src/components/ServerRail.tsx","utf8");
+const view=fs.readFileSync("src/components/DirectMessagesView.tsx","utf8");const navigation=fs.readFileSync("src/services/navigation/globalNavigationRegistry.ts","utf8");const scope=fs.readFileSync("src/config/v1ReleaseScope.ts","utf8");
 for(const marker of ["loadDirectConversations","getDirectMessagesPage","send_direct_message_v3","markDirectConversationRead","limit + 1"])if(!service.includes(marker))throw new Error(`DM service missing ${marker}`);
 for(const marker of ["dm_privacy","users_are_blocked","friendships","GROUP_DM_NOT_SUPPORTED","count(*) from public.direct_conversation_members","revoke insert on public.direct_messages"])if(!migration.includes(marker))throw new Error(`DM migration missing ${marker}`);
 for(const marker of ["subscribeToActiveDirectConversation", "subscribeToDirectConversationList", "direct_conversation_participants", ".eq(\"user_id\", input.currentUserId)", "messageIds", "removeChannel"])if(!realtime.includes(marker))throw new Error(`DM realtime access/cleanup missing ${marker}`);
 if(!app.includes("directMessageService.loadDirectConversations")||!app.includes("directMessageUserId"))throw new Error("Supabase DM App integration missing.");
 for(const marker of ["Promise<boolean>","aria-busy","Message was not sent.","direct-message-recovery","unreadCount"])if(!view.includes(marker))throw new Error(`DM UI missing ${marker}`);
-if(!rail.includes("onOpenDirectMessages")||!rail.includes("Direct messages"))throw new Error("ServerRail DM entry missing.");
+if(!navigation.includes('key: "dm"')||!navigation.includes('activeView === "directMessages"')||!navigation.includes("isV1GlobalNavigationEnabled"))throw new Error("V1 global navigation DM entry missing.");
+if(!scope.includes('directMessages: inV1('))throw new Error("Direct Messages is not enabled by the V1 scope registry.");
 for(const marker of ["two participants", "block", "privacy", "No group DM", "access-boundary checklist"])if(!doc.includes(marker))throw new Error(`DM docs missing ${marker}`);
 console.log("Direct messages production smoke passed.");
