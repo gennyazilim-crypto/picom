@@ -23,6 +23,7 @@
     "voice:mini-card:test": "node scripts/voice-mini-card-production-smoke.mjs",
     "voice:screen:ui:smoke": "node scripts/member-voice-screen-ui-smoke.mjs",
     "voice:client:smoke": "node scripts/voice-room-client-full-mvp-smoke.mjs",
+    "voice:self-hosted:member:smoke": "node scripts/self-hosted-active-member-voice-client-smoke.mjs",
     "voice:reconnect:full-mvp:smoke": "node scripts/voice-devices-reconnect-full-mvp-smoke.mjs",
     "voice:discovery:test": "node scripts/active-voice-rooms-discovery-smoke.mjs",
     "screen-share:preview:test": "node scripts/screen-share-preview-controls-smoke.mjs",

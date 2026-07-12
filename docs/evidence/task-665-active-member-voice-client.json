@@ -1,0 +1,14 @@
+{
+  "task": 665,
+  "status": "client_ready_local_provider_passed",
+  "voiceFeatureVisibleInV1": true,
+  "activeMemberRoleIndependentJoin": true,
+  "unauthorizedUsersDenied": true,
+  "edgeFunctionOnlyTokenPath": true,
+  "mockFallbackInProduction": false,
+  "duplicateRoomGuard": true,
+  "devicesAndStandardNoiseShield": true,
+  "localTwoClientAudioEvidence": "docs/evidence/task-659-local-self-hosted-livekit.json",
+  "hostedStagingEvidence": "blocked_missing_self_hosted_staging",
+  "secretsIncluded": false
+}

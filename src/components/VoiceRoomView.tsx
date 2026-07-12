@@ -198,7 +198,7 @@ export function VoiceRoomView({
         <div className="voice-room-heading">
           <span className="eyebrow">Voice room</span>
           <h2>{channel.name}</h2>
-          <p>{channel.topic || `${community.name} members can join this room when LiveKit is configured.`}</p>
+          <p>{channel.topic || `${community.name} active members can join through Picom's self-hosted voice service.`}</p>
         </div>
         <VoiceConnectionStatus status={snapshot.status} />
       </div>
@@ -230,7 +230,7 @@ export function VoiceRoomView({
           <NoiseShieldQuickControl connected={connected && canSpeak} />
 
           {snapshot.error ? <div className="voice-room-error" role="alert" data-error-code={snapshot.errorCode ?? "VOICE_ERROR"}>{snapshot.error}{snapshot.errorCode && errorGuidance[snapshot.errorCode] ? ` ${errorGuidance[snapshot.errorCode]}` : null}</div> : null}
-          <p className="voice-room-note">LiveKit tokens are requested through the Supabase Edge Function. Secrets never enter the renderer.</p>
+          <p className="voice-room-note">A short-lived Supabase token connects this room to Picom's self-hosted LiveKit server. Provider secrets never enter the renderer.</p>
 
           <VoiceDevicePanel />
 
