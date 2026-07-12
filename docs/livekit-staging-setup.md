@@ -71,7 +71,7 @@ The response must be `401`. A signed-in user without channel visibility must rec
 - Room: `community:<communityId>:voice:<channelId>`
 - Participant identity: authenticated Supabase `auth.uid()`
 - Display name: bounded provider/profile metadata or request display name
-- Token expiry: one hour in the current MVP
+- Token expiry: ten minutes in the current V1 token function
 - Subscribe: enabled
 - Publish: enabled for microphone audio and screen-share tracks
 - Data publish: enabled for room control/presence foundations

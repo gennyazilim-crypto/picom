@@ -33,7 +33,7 @@ The API key/secret must never enter Vite, Electron preload DTOs, local settings,
 
 - Issuer: `LIVEKIT_API_KEY`.
 - Signature: HMAC SHA-256 with `LIVEKIT_API_SECRET` inside the Edge Function only.
-- TTL: 3600 seconds (one hour).
+- TTL: 600 seconds (ten minutes), matching the V1 token Edge Function.
 - Identity: authenticated Supabase `auth.user.id`.
 - Display name: bounded user metadata/email fallback, never used as authorization identity.
 - Room: `community:{communityId}:voice:{channelId}`.
