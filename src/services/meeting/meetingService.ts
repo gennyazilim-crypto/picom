@@ -186,7 +186,7 @@ function scheduleMeetingReconnect(generation:number,request:MeetingClientJoinReq
   void operation.finally(()=>{if(reconnectPromise===operation)reconnectPromise=null;});
 }
 
-const clientNoiseShield=(state:NoiseShieldSnapshot):MeetingClientSnapshot["noiseShield"]=>({requested:state.requestedMode!=="off",applied:state.appliedMode!=="off"&&(state.status==="applied"||state.status==="fallback"),requestedMode:state.requestedMode,appliedMode:state.appliedMode,availableModes:state.availableModes,provider:state.provider,status:state.status,fallbackReason:state.fallbackReason});
+const clientNoiseShield=(state:NoiseShieldSnapshot):MeetingClientSnapshot["noiseShield"]=>({requested:state.requestedMode!=="off",applied:state.appliedMode!=="off"&&["applied","active","fallback","fallback-standard"].includes(state.status),requestedMode:state.requestedMode,appliedMode:state.appliedMode,availableModes:state.availableModes,provider:state.provider,status:state.status,fallbackReason:state.fallbackReason});
 
 function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   stopBindings();

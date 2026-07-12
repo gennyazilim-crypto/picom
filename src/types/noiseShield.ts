@@ -10,8 +10,8 @@ import type {
 } from "./audioProcessing";
 
 export type NoiseShieldMode = NoiseCancellationMode;
-export type NoiseShieldStatus = "off" | "requested" | "applied" | "fallback" | "unavailable" | "failed";
-export type NoiseShieldProvider = "none" | "chromium_native";
+export type NoiseShieldStatus = "off" | "idle" | "loading" | "ready" | "requested" | "active" | "applied" | "fallback" | "fallback-standard" | "unsupported" | "unavailable" | "failed" | "disposed";
+export type NoiseShieldProvider = "none" | "chromium_native" | "livekit_krisp";
 
 export type NoiseShieldMicrophoneConstraints = AudioCaptureConstraints;
 
@@ -27,6 +27,8 @@ export type NoiseShieldSnapshot = Readonly<{
   status: NoiseShieldStatus;
   fallbackReason: string | null;
   errorCode: AudioProcessingErrorCode | null;
+  processorStatus: "idle" | "loading" | "ready" | "active" | "unsupported" | "failed" | "disposed" | "fallback-standard";
+  processorInitializationDurationMs: number | null;
   application: AudioProcessingApplicationResult | null;
   appliedSettings: AppliedAudioProcessingSettings;
   revision: number;

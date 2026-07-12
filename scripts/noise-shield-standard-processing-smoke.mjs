@@ -25,7 +25,7 @@ assert.match(service, /createBasicFallback/);
 assert.match(facade, /noiseCancellationService as noiseShieldService/);
 assert.match(voice, /Track\.Source\.Microphone/);
 assert.match(voice, /setMicrophoneWithProcessing/);
-assert.match(voice, /verifyAppliedTrack\(localMicrophoneTrack/);
+assert.match(voice, /verifyAppliedTrack\(microphoneTrack\?\.mediaStreamTrack/);
 assert.match(voice, /deactivateSession/);
 assert.doesNotMatch(players, /noiseShield|noiseCancellation/i);
 

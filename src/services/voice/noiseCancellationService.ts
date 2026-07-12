@@ -10,6 +10,8 @@ import type {
 import { voiceDeviceService } from "../voiceDeviceService";
 import { audioCapabilitiesService } from "./audioCapabilitiesService";
 import { audioCaptureOptionsService } from "./audioCaptureOptionsService";
+import { enhancedNoiseFilterService } from "./enhancedNoiseFilterService";
+import type { ProcessableMicrophoneTrack } from "./enhancedNoiseProcessorTypes";
 
 const STORAGE_KEY = "picom.noise-shield.settings.v1";
 let lastCapturePlan: NoiseShieldCapturePlan | null = null;
@@ -204,6 +206,31 @@ export const noiseCancellationService = {
     return noiseShieldStore.patch({ appliedMode: "off", provider: "none", status: "fallback", fallbackReason: reason, errorCode: "STANDARD_PARTIAL", lastAppliedAt: new Date().toISOString() });
   },
 
+  async applyEnhancedToTrack(track: ProcessableMicrophoneTrack | null, source: "microphone" | "screen-share" | "media-playback" = "microphone"): Promise<NoiseShieldSnapshot> {
+    const current = noiseShieldStore.getSnapshot();
+    if (current.requestedMode !== "enhanced" && current.requestedMode !== "voice-focus") {
+      await enhancedNoiseFilterService.detach("Standard or Off mode selected.");
+      return noiseShieldStore.patch({ processorStatus: "disposed", processorInitializationDurationMs: null });
+    }
+    if (!track) return this.markFailed("The local LiveKit microphone track was unavailable for Enhanced processing.", "PROCESSOR_ATTACH_FAILED");
+    const processor = await enhancedNoiseFilterService.attach(track, source, current.requestedMode);
+    if (processor.status === "active") {
+      return noiseShieldStore.patch({ appliedMode: current.requestedMode, provider: "livekit_krisp", status: "active", fallbackReason: null, errorCode: null, processorStatus: processor.status, processorInitializationDurationMs: processor.initializationDurationMs, lastAppliedAt: new Date().toISOString() });
+    }
+    const standardApplied = current.application?.applied.noiseSuppression === true || current.appliedMode === "standard";
+    return noiseShieldStore.patch({ appliedMode: standardApplied ? "standard" : "off", provider: standardApplied ? "chromium_native" : "none", status: "fallback-standard", fallbackReason: processor.reason, errorCode: processor.errorCode, processorStatus: processor.status, processorInitializationDurationMs: processor.initializationDurationMs, lastAppliedAt: new Date().toISOString() });
+  },
+
+  async detachProcessor(reason?: string): Promise<NoiseShieldSnapshot> {
+    const processor = await enhancedNoiseFilterService.detach(reason);
+    return noiseShieldStore.patch({ processorStatus: processor.status, processorInitializationDurationMs: processor.initializationDurationMs });
+  },
+
+  async disposeProcessor(): Promise<NoiseShieldSnapshot> {
+    const processor = await enhancedNoiseFilterService.dispose();
+    return noiseShieldStore.patch({ processorStatus: processor.status, processorInitializationDurationMs: processor.initializationDurationMs });
+  },
+
   markFailed(reason: string, errorCode: NoiseShieldSnapshot["errorCode"] = "STANDARD_PARTIAL"): NoiseShieldSnapshot {
     return noiseShieldStore.patch({ appliedMode: "off", provider: "none", status: "failed", fallbackReason: reason, errorCode, lastAppliedAt: null });
   },
@@ -229,6 +256,8 @@ export const noiseCancellationService = {
       verified: state.application?.verified ?? false,
       fallbackReason: state.fallbackReason,
       errorCode: state.errorCode,
+      processorStatus: state.processorStatus,
+      processorInitializationDurationMs: state.processorInitializationDurationMs,
     } as const;
   },
 };

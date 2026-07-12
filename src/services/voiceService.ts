@@ -1,4 +1,4 @@
-import { ConnectionState, DisconnectReason, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
+import { ConnectionState, DisconnectReason, LocalAudioTrack, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
 import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
@@ -584,6 +584,7 @@ function stopLocalTracks(activeRoom: Room): void {
 }
 
 async function disposeRoom(activeRoom: Room): Promise<void> {
+  await noiseShieldService.disposeProcessor();
   stopLocalTracks(activeRoom);
   removeTranscriptionHandler(activeRoom);
   activeRoom.removeAllListeners();
@@ -626,12 +627,14 @@ function inputPreferenceKey(preferences: VoiceDeviceSnapshot): string {
   return [preferences.selectedInputId, preferences.permission, preferences.deviceRevision, preferences.echoCancellation, preferences.noiseSuppression, preferences.autoGainControl, noiseShieldService.getSnapshot().revision].join(":");
 }
 
-function localMicrophoneTrack(activeRoom: Room): MediaStreamTrack | null {
-  return activeRoom.localParticipant.getTrackPublication(Track.Source.Microphone)?.track?.mediaStreamTrack ?? null;
+function localMicrophoneTrack(activeRoom: Room): LocalAudioTrack | null {
+  const track = activeRoom.localParticipant.getTrackPublication(Track.Source.Microphone)?.track;
+  return track instanceof LocalAudioTrack ? track : null;
 }
 
 async function setMicrophoneWithProcessing(activeRoom: Room, enabled: boolean): Promise<void> {
   if (!enabled) {
+    await noiseShieldService.detachProcessor("Microphone capture was disabled.");
     await activeRoom.localParticipant.setMicrophoneEnabled(false);
     return;
   }
@@ -639,7 +642,9 @@ async function setMicrophoneWithProcessing(activeRoom: Room, enabled: boolean): 
   const plan = noiseShieldService.createMicrophoneCapturePlan(base);
   try {
     await activeRoom.localParticipant.setMicrophoneEnabled(true, plan.constraints);
-    noiseShieldService.verifyAppliedTrack(localMicrophoneTrack(activeRoom), plan);
+    const microphoneTrack = localMicrophoneTrack(activeRoom);
+    noiseShieldService.verifyAppliedTrack(microphoneTrack?.mediaStreamTrack, plan);
+    await noiseShieldService.applyEnhancedToTrack(microphoneTrack as never, "microphone");
   } catch (error) {
     if (plan.appliedMode !== "off") {
       await activeRoom.localParticipant.setMicrophoneEnabled(true, noiseShieldService.createBasicFallback(base));
