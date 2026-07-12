@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const repository=readFileSync("src/services/feed/feedRepository.ts","utf8");const service=readFileSync("src/services/feed/feedService.ts","utf8");const migration=readFileSync("supabase/migrations/20260712204000_feed_service_rpc_v1.sql","utf8");const types=readFileSync("src/types/feed.ts","utf8");
-assert.ok(repository.includes('client.rpc("get_feed_page"')&&repository.includes('client.rpc("get_feed_item_metadata"'),"production repository RPCs missing");
+assert.ok(repository.includes('client.rpc("get_feed_page"')&&repository.includes('client.rpc("get_feed_item_metadata_v2"'),"production repository RPCs missing");
 assert.ok(repository.includes('.in("id",commenterIds)'),"commenter profiles must be batched");
 assert.ok(!repository.includes("mockFeed")&&!repository.includes("mockMention"),"repository must never fall back to mock data");
 assert.ok(service.includes('dataSourceService.getStatus().isMock')&&service.includes('await import("../../data/mockFeedV1")'),"explicit lazy mock mode missing");

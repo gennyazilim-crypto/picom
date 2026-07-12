@@ -75,6 +75,7 @@ export type FeedUserState = Readonly<{
 export type FeedMediaSummary = Readonly<{ id: string; type: "image" | "video"; url: string; thumbnailUrl?: string; fileName?: string; width?: number; height?: number }>;
 export type FeedReactionSummary = Readonly<{ emoji: string; count: number; reactedByCurrentUser: boolean }>;
 export type FeedCommenterSummary = Readonly<{ id: string; displayName: string; username: string; avatarUrl?: string }>;
+export type FeedCommentPreview = Readonly<{ id:string;authorId:string;author?:FeedCommenterSummary;body:string;createdAt:string }>;
 export type FeedScoreSummary = Readonly<{ version: number; base: number; raw: number; relevance: number; freshness: number; final: number; groupPriority: number }>;
 
 export type FeedSourceMetadata =
@@ -96,6 +97,7 @@ export type FeedItem = Readonly<{
   reactions: readonly FeedReactionSummary[];
   commenters: readonly FeedCommenterSummary[];
   commentCount: number;
+  commentPreviews: readonly FeedCommentPreview[];
   createdAt: string;
   updatedAt: string;
   engagement: FeedEngagementSummary;

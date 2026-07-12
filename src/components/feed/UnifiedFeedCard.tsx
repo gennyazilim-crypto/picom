@@ -1,0 +1,13 @@
+import type { FeedItem,FeedMediaSummary } from "../../types/feed";
+import { AppIcon } from "../AppIcon";
+import { FeedCardFooter } from "./FeedCardFooter";
+import { FeedCardShell } from "./FeedCardShell";
+import { FeedPodcastBody,FeedRadioBody,FeedTextBody } from "./FeedSourceBodies";
+import "./feedCards.css";
+
+export type UnifiedFeedCardActions={onOpen?:(item:FeedItem)=>void;onToggleSave?:(item:FeedItem)=>void;onMarkRead?:(item:FeedItem)=>void;onReact?:(item:FeedItem,emoji?:string)=>void;onPreviewMedia?:(media:FeedMediaSummary,item:FeedItem)=>void;onOpenProfile?:(userId:string)=>void;onPlayAudio?:(item:FeedItem)=>void};
+function reason(item:FeedItem){if(item.userState.isDirectMention)return "Mentioned you";if(item.userState.isFriendAuthored)return "Shared by a friend";if(item.userState.isFriendEngaged)return "A friend joined this conversation";return item.community?`Popular in ${item.community.name}`:"Popular on Picom";}
+function openLabel(item:FeedItem){if(item.source.type==="text_message")return "Open in channel";if(item.source.type.startsWith("radio"))return "Open Radio";return "Open Episode";}
+export function UnifiedFeedCard({item,...actions}:{item:FeedItem}&UnifiedFeedCardActions){if(item.sourceStatus!=="ready")return <article className="feed-v1-card feed-v1-unavailable" role="status"><span><AppIcon name="lock" size="lg"/></span><div><strong>Content unavailable</strong><p>This source was deleted or your access changed. Refresh the Feed to continue safely.</p></div></article>;const isRadio=item.source.type.startsWith("radio");const isPodcast=item.source.type.startsWith("podcast");return <FeedCardShell item={item} reason={reason(item)} onOpenProfile={actions.onOpenProfile}><>{isRadio?<FeedRadioBody item={item} onPlay={actions.onPlayAudio?()=>actions.onPlayAudio?.(item):undefined}/>:isPodcast?<FeedPodcastBody item={item} onPlay={actions.onPlayAudio?()=>actions.onPlayAudio?.(item):undefined}/>:<FeedTextBody item={item} onPreview={actions.onPreviewMedia?media=>actions.onPreviewMedia?.(media,item):undefined}/>}<FeedCardFooter item={item} openLabel={openLabel(item)} onOpen={actions.onOpen?()=>actions.onOpen?.(item):undefined} onToggleSave={actions.onToggleSave?()=>actions.onToggleSave?.(item):undefined} onMarkRead={actions.onMarkRead?()=>actions.onMarkRead?.(item):undefined} onReact={actions.onReact?emoji=>actions.onReact?.(item,emoji):undefined}/></></FeedCardShell>;}
+export function UnifiedFeedCardList({items,...actions}:{items:readonly FeedItem[]}&UnifiedFeedCardActions){return <div className="feed-v1-list">{items.map(item=><UnifiedFeedCard key={item.id} item={item} {...actions}/>)}</div>;}
+

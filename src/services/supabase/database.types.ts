@@ -1084,6 +1084,11 @@ export type Database = {
         Args: { target_feed_item_ids: string[] };
         Returns: Array<{ feed_item_id:string;source_payload:Json;reaction_summary:Json;commenter_ids:string[];comment_count:number }>;
       };
+      get_feed_item_metadata_v2: {
+        Args:{target_feed_item_ids:string[]};
+        Returns:Array<{feed_item_id:string;source_payload:Json;reaction_summary:Json;commenter_ids:string[];comment_count:number;comment_previews:Json}>;
+      };
+      get_feed_author_verifications:{Args:{target_user_ids:string[]};Returns:Array<{user_id:string;verification_type:"verified_user"|"picom_staff"|"verified_bot"}>};
       set_feed_user_state_v1: { Args: { target_feed_item_id:string;target_action:"read"|"save"|"unsave"|"hide"|"seen"|"opened" }; Returns:Json };
       record_feed_impressions_v1: { Args: { target_session_id:string;target_feed_item_ids:string[];target_positions:number[];target_feed_mode:"feed"|"friends";target_as_of:string }; Returns:number };
       list_ranked_unified_feed: {

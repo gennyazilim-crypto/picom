@@ -3,9 +3,10 @@ import { getSupabaseClient } from "../supabase/supabaseClient";
 import type { FeedMode, FeedQuery, FeedServiceErrorCode, FeedServiceResult } from "../../types/feed";
 
 export type RankedFeedRow = Database["public"]["Functions"]["get_feed_page"]["Returns"][number];
-export type FeedMetadataRow = Database["public"]["Functions"]["get_feed_item_metadata"]["Returns"][number];
+export type FeedMetadataRow = Database["public"]["Functions"]["get_feed_item_metadata_v2"]["Returns"][number];
 export type FeedProfileRow = Readonly<{id:string;display_name:string;username:string;avatar_url:string|null}>;
-export type FeedRepositoryPage = Readonly<{rows:readonly RankedFeedRow[];metadata:readonly FeedMetadataRow[];profiles:readonly FeedProfileRow[]}>;
+export type FeedVerificationRow=Database["public"]["Functions"]["get_feed_author_verifications"]["Returns"][number];
+export type FeedRepositoryPage = Readonly<{rows:readonly RankedFeedRow[];metadata:readonly FeedMetadataRow[];profiles:readonly FeedProfileRow[];verifications:readonly FeedVerificationRow[]}>;
 
 function failure<T>(code:FeedServiceErrorCode,message:string,retryable=true):FeedServiceResult<T>{return {ok:false,error:{code,message,retryable}};}
 function errorCode(error:{code?:string}|null):FeedServiceErrorCode{return error?.code==="42501"?"FEED_ACCESS_LOST":"FEED_REQUEST_FAILED";}
@@ -23,16 +24,21 @@ export const feedRepository = {
     });
     if(page.error)return failure(errorCode(page.error),page.error.code==="42501"?"Feed access changed. Refresh to continue.":"Picom could not load the Feed.",page.error.code!=="42501");
     const rows=page.data??[];const ids=rows.map(row=>row.feed_item_id);
-    if(!ids.length)return {ok:true,data:{rows:[],metadata:[],profiles:[]}};
-    const metadataResult=await client.rpc("get_feed_item_metadata",{target_feed_item_ids:ids});
+    if(!ids.length)return {ok:true,data:{rows:[],metadata:[],profiles:[],verifications:[]}};
+    const authorIds=[...new Set(rows.map(row=>row.author_id))];
+    const [metadataResult,verificationResult]=await Promise.all([
+      client.rpc("get_feed_item_metadata_v2",{target_feed_item_ids:ids}),
+      client.rpc("get_feed_author_verifications",{target_user_ids:authorIds}),
+    ]);
     if(metadataResult.error)return failure(errorCode(metadataResult.error),"Picom could not load Feed card details.");
+    if(verificationResult.error)return failure(errorCode(verificationResult.error),"Picom could not load Feed identity summaries.");
     const metadata=metadataResult.data??[];
     const commenterIds=[...new Set(metadata.flatMap(row=>row.commenter_ids??[]))];
     const profilesResult=commenterIds.length
       ?await client.from("profiles").select("id,display_name,username,avatar_url").in("id",commenterIds)
       :{data:[] as FeedProfileRow[],error:null};
     if(profilesResult.error)return failure("FEED_REQUEST_FAILED","Picom could not load Feed participant summaries.");
-    return {ok:true,data:{rows,metadata,profiles:(profilesResult.data??[]) as FeedProfileRow[]}};
+    return {ok:true,data:{rows,metadata,profiles:(profilesResult.data??[]) as FeedProfileRow[],verifications:verificationResult.data??[]}};
   },
   async setUserState(feedItemId:string,action:"read"|"save"|"unsave"|"hide"|"seen"|"opened"):Promise<FeedServiceResult<Json>>{
     const client=getSupabaseClient();if(!client)return failure("FEED_BACKEND_UNAVAILABLE","The Feed service is not configured.",false);
@@ -46,4 +52,3 @@ export const feedRepository = {
     return result.error?failure(errorCode(result.error),"Picom could not record Feed visibility."):{ok:true,data:Number(result.data)||0};
   },
 };
-
