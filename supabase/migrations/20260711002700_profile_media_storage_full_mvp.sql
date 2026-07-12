@@ -42,8 +42,9 @@ alter table public.profiles add constraint profiles_avatar_url_safe check (
   avatar_url is null or (char_length(avatar_url) <= 2048 and avatar_url !~* '^(javascript|data):')
 );
 
-alter table public.profiles drop constraint if exists profiles_cover_url_safe;
-alter table public.profiles add constraint profiles_cover_url_safe check (
+alter table public.profile_details drop constraint if exists profiles_cover_url_safe;
+alter table public.profile_details drop constraint if exists profile_details_cover_url_safe;
+alter table public.profile_details add constraint profile_details_cover_url_safe check (
   cover_url is null or (char_length(cover_url) <= 2048 and cover_url !~* '^(javascript|data):')
 );
 
