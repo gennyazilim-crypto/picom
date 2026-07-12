@@ -43,6 +43,7 @@ function authoritativeParticipant(item: MeetingParticipantAuthority): MeetingCli
     microphoneEnabled: item.tracks.some((track) => track.source === "microphone" && track.state === "published"),
     cameraEnabled: item.tracks.some((track) => track.source === "camera" && track.state === "published"),
     screenSharing: item.tracks.some((track) => track.source === "screen_share" && track.state === "published"),
+    screenShareAllowed: item.capabilities.canShareScreen !== false,
     handRaised: item.handState.raised,
     connectionQuality: "unknown",
   };
@@ -71,20 +72,25 @@ function applyAuthoritativeParticipants(generation: number, snapshot: MeetingPar
   });
   const nextLocal = participants.find((participant) => participant.identity === previousLocal?.identity);
   meetingStore.replaceParticipants(generation, participants);
-  if (!previousLocal || !nextLocal || previousLocal.role === nextLocal.role) return;
+  if (!previousLocal || !nextLocal) return;
+  const roleChanged = previousLocal.role !== nextLocal.role;
+  const screenPolicyChanged = previousLocal.screenShareAllowed !== nextLocal.screenShareAllowed;
+  if (!roleChanged && !screenPolicyChanged) return;
 
-  const nextCapabilities = capabilities(nextLocal.role);
+  const baseCapabilities = capabilities(nextLocal.role);
+  const nextCapabilities = nextLocal.screenShareAllowed === false ? { ...baseCapabilities, canShareScreen: false } : baseCapabilities;
   meetingStore.setCapabilities(generation, nextLocal.role, nextCapabilities);
   if (!nextCapabilities.canPublishAudio && !meetingStore.getSnapshot().localMedia.muted) {
     queueMicrotask(() => { void meetingService.setMuted(true); });
   }
+  if (!nextCapabilities.canShareScreen && meetingStore.getSnapshot().localMedia.screenSharing) queueMicrotask(() => { void meetingService.stopScreenShare(); });
   queueMicrotask(() => { void meetingService.refreshAuthorization(); });
 }
 
 function applyProviderParticipants(generation:number,snapshot:ReturnType<typeof meetingLiveKitAdapter.getSnapshot>):void {
   const current=meetingStore.getSnapshot(); if(current.generation!==generation)return;
   const byIdentity=new Map(current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean).map((participant)=>[participant.identity,participant]));
-  for(const item of snapshot.participants){const prior=byIdentity.get(item.identity);const cameraTrack=(snapshot.cameraTracks??[]).find((track)=>track.participantIdentity===item.identity);byIdentity.set(item.identity,{id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,username:prior?.username,avatarUrl:prior?.avatarUrl,role:prior?.role??current.role??"participant",communityRole:prior?.communityRole,verification:prior?.verification,presence:snapshot.status==="reconnecting"?"reconnecting":"connected",isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:item.isCameraEnabled||Boolean(cameraTrack),cameraStream:cameraTrack?.stream,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),handRaised:prior?.handRaised??false,connectionQuality:item.connectionQuality})}
+  for(const item of snapshot.participants){const prior=byIdentity.get(item.identity);const cameraTrack=(snapshot.cameraTracks??[]).find((track)=>track.participantIdentity===item.identity);byIdentity.set(item.identity,{id:prior?.id??`provider:${item.identity}`,userId:prior?.userId,identity:item.identity,displayName:item.name,username:prior?.username,avatarUrl:prior?.avatarUrl,role:prior?.role??current.role??"participant",communityRole:prior?.communityRole,verification:prior?.verification,presence:snapshot.status==="reconnecting"?"reconnecting":"connected",isLocal:item.isLocal,isSpeaking:item.isSpeaking,microphoneEnabled:item.isMicrophoneEnabled,cameraEnabled:item.isCameraEnabled||Boolean(cameraTrack),cameraStream:cameraTrack?.stream,screenSharing:snapshot.screenShares.some((share)=>share.participantIdentity===item.identity),screenShareAllowed:prior?.screenShareAllowed??true,handRaised:prior?.handRaised??false,connectionQuality:item.connectionQuality})}
   meetingStore.replaceParticipants(generation,[...byIdentity.values()]);
 }
 

@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(36);
 
 -- Contract scenarios: visitor cannot see private room metadata.
 -- Contract scenarios: member cannot self-promote.
@@ -16,6 +16,12 @@ select has_function('public','authorize_meeting_action',array['uuid','text'],'pu
 select has_function('public','set_meeting_participant_role',array['uuid','text','text'],'safe stage mutation RPC exists');
 select has_function('public','authorize_livekit_meeting_moderation',array['uuid','uuid','uuid','text'],'server-authorized meeting media moderation exists');
 select has_function('public','record_livekit_meeting_moderation',array['uuid','uuid','uuid','text'],'meeting moderation audit RPC exists');
+select has_function('public','get_meeting_host_control_state',array['uuid','uuid'],'cross-client host control state exists');
+select has_function('public','set_meeting_participant_cohost',array['uuid','boolean','text'],'cohost assignment RPC exists');
+select has_function('public','transfer_meeting_host',array['uuid','text'],'host transfer RPC exists');
+select has_function('public','set_meeting_participant_screen_share_policy',array['uuid','boolean','text'],'participant screen policy RPC exists');
+select has_function('public','cancel_scheduled_meeting_room',array['uuid','text'],'scheduled meeting cancellation RPC exists');
+select ok(exists(select 1 from pg_trigger where tgname='meeting_host_departure_reconciliation' and not tgisinternal),'host departure reconciliation trigger exists');
 select ok(public.meeting_role_rank('host')>public.meeting_role_rank('cohost') and public.meeting_role_rank('cohost')>public.meeting_role_rank('speaker'),'host/cohost hierarchy is ordered');
 select ok(public.meeting_role_rank('speaker')>public.meeting_role_rank('participant') and public.meeting_role_rank('participant')>public.meeting_role_rank('viewer'),'speaker/participant/viewer hierarchy is ordered');
 select ok(public.meeting_role_rank('viewer')>public.meeting_role_rank('guest'),'viewer outranks guest');

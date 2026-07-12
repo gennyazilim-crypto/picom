@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { meetingService } from "../../services/meeting/meetingService";
+import { meetingHostControlService } from "../../services/meeting/meetingHostControlService";
 import type { MeetingLayoutMode, MeetingSidePanel } from "../../types/meeting";
 import { MeetingControlDock } from "./MeetingControlDock";
 import { MeetingPreJoin } from "./MeetingPreJoin";
@@ -14,6 +15,7 @@ const layouts: readonly MeetingLayoutMode[]=["grid","speaker","screen_share","st
 
 export function MeetingWorkspace({onExit}:{onExit?:()=>void}={}) {
   const snapshot=useSyncExternalStore(meetingService.store.subscribe,meetingService.store.getSnapshot,meetingService.store.getSnapshot);
+  const hostState=useSyncExternalStore(meetingHostControlService.subscribe,meetingHostControlService.getSnapshot,meetingHostControlService.getSnapshot);
   const [focusMode,setFocusMode]=useState(false);
   const [shareLayoutOverride,setShareLayoutOverride]=useState(false);
   const autoShareLayoutRef=useRef(false);
@@ -29,6 +31,8 @@ export function MeetingWorkspace({onExit}:{onExit?:()=>void}={}) {
   const leaveShareLayout=(layout:Extract<MeetingLayoutMode,"grid"|"speaker">)=>{setShareLayoutOverride(true);autoShareLayoutRef.current=false;meetingService.setLayout(layout)};
   const exit=()=>{void meetingService.leave().finally(()=>onExit?.())};
   useEffect(()=>{if(hasScreenShare){if(!shareLayoutOverride&&snapshot.layout!=="screen_share"){previousLayoutRef.current=snapshot.layout;autoShareLayoutRef.current=true;meetingService.setLayout("screen_share")}return}if(autoShareLayoutRef.current){autoShareLayoutRef.current=false;meetingService.setLayout(previousLayoutRef.current);meetingService.setFocus(snapshot.focusedParticipantId,null)}if(shareLayoutOverride)setShareLayoutOverride(false)},[hasScreenShare,shareLayoutOverride,snapshot.focusedParticipantId,snapshot.layout]);
+  useEffect(()=>{const context=snapshot.context;if(!context)return;return meetingHostControlService.start(context.roomId,context.sessionId)},[snapshot.context?.roomId,snapshot.context?.sessionId]);
+  useEffect(()=>{if((hostState.sessionStatus==="ended"||hostState.roomStatus==="ended"||hostState.roomStatus==="cancelled")&&!['idle','ended'].includes(snapshot.phase))void meetingService.leave()},[hostState.roomStatus,hostState.sessionStatus,snapshot.phase]);
   return <MeetingParticipantActionsProvider snapshot={snapshot}><section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}${admissionOnly?" is-admission-only":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"}>
     <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} />
     <div className="meeting-workspace__body">

@@ -74,6 +74,7 @@ export type MeetingClientParticipant = Readonly<{
   cameraEnabled: boolean;
   cameraStream?: MediaStream;
   screenSharing: boolean;
+  screenShareAllowed?: boolean;
   handRaised: boolean;
   connectionQuality: MeetingConnectionQuality;
 }>;

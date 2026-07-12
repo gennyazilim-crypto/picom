@@ -3,10 +3,10 @@ import type { MeetingClientParticipant } from "../../types/meetingClient";
 import type { MeetingPreJoinSnapshot } from "../../types/meetingPreJoin";
 import { dataSourceService } from "../dataSourceService";
 import { screenCaptureService, type ScreenCaptureSource } from "../screenCaptureService";
-import { getSupabaseClient } from "../supabase/supabaseClient";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "../voiceDeviceService";
 import { meetingPreJoinService } from "./meetingPreJoinService";
 import { meetingService } from "./meetingService";
+import { meetingHostControlService } from "./meetingHostControlService";
 
 export type MeetingControlResult<T = true> = Readonly<{ ok: true; data: T } | { ok: false; error: Readonly<{ code: string; message: string }> }>;
 export type MeetingControlDevices = Readonly<{
@@ -21,17 +21,11 @@ export type MeetingSessionControlState = Readonly<{ roomId: string; sessionId: s
 
 const ok = <T>(data: T): MeetingControlResult<T> => ({ ok: true, data });
 const fail = <T>(code: string, message: string): MeetingControlResult<T> => ({ ok: false, error: { code, message } });
-const record = (value: unknown): Record<string, unknown> | null => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 const localParticipant = (): MeetingClientParticipant | null => { const snapshot=meetingService.store.getSnapshot();return snapshot.participantIds.map((id)=>snapshot.participantsById[id]).find((participant)=>participant?.isLocal)??null; };
 const deviceSnapshot = (): MeetingControlDevices => { const voice=voiceDeviceService.getSnapshot(),prejoin=meetingPreJoinService.getSnapshot();return{microphones:voice.inputDevices,cameras:prejoin.cameras,selectedMicrophoneId:voice.selectedInputId,selectedCameraId:prejoin.selectedCameraId,loading:voice.isLoading||prejoin.busy}; };
 
 async function sessionControl(action: "lock"|"unlock"|"end"): Promise<MeetingControlResult<MeetingSessionControlState>> {
-  const context=meetingService.store.getSnapshot().context;if(!context)return fail("MEETING_CONTEXT_INVALID","Join a meeting before using room controls.");
-  if(dataSourceService.getStatus().isMock)return ok({roomId:context.roomId,sessionId:context.sessionId,action,status:action==="end"?"ended":action==="lock"?"locked":"live",locked:action==="lock",ended:action==="end"});
-  const client=getSupabaseClient();if(!client)return fail("DATA_SOURCE_NOT_CONFIGURED","Supabase is not configured.");
-  const{data,error}=await client.rpc("control_meeting_session",{target_room_id:context.roomId,target_session_id:context.sessionId,control_action:action});const row=record(data);
-  if(error||!row)return fail("MEETING_CONTROL_FAILED",error?.message??"Picom could not update the meeting.");
-  return ok({roomId:String(row.roomId??context.roomId),sessionId:String(row.sessionId??context.sessionId),action,status:String(row.status??""),locked:row.locked===true,ended:row.ended===true});
+  return meetingHostControlService.controlSession(action);
 }
 
 export const meetingControlService = {
@@ -50,5 +44,7 @@ export const meetingControlService = {
   async sendReaction(kind:MeetingReactionKind):Promise<MeetingControlResult>{const result=await meetingService.sendReaction(kind);return result.ok?ok(true):fail(result.error.code,result.error.message);},
   async toggleHand():Promise<MeetingControlResult>{const participant=localParticipant();if(!participant)return fail("MEETING_PARTICIPANT_MISSING","Your meeting participant is not connected.");const raised=!participant.handRaised;if(dataSourceService.getStatus().isMock){const snapshot=meetingService.store.getSnapshot();meetingService.store.replaceParticipants(snapshot.generation,snapshot.participantIds.map((id)=>snapshot.participantsById[id]).filter(Boolean).map((item)=>item.id===participant.id?{...item,handRaised:raised}:item));meetingService.store.patch(snapshot.generation,{handRaised:raised});return ok(true);}const result=await meetingService.applyHandAction(participant.id,raised?"raise":"lower");return result.ok?ok(true):fail(result.error.code,result.error.message);},
   setRoomLocked: (locked:boolean) => sessionControl(locked?"lock":"unlock"),
+  muteAll: (snapshot: Parameters<typeof meetingHostControlService.muteAll>[0]) => meetingHostControlService.muteAll(snapshot),
+  cancelScheduledRoom: (reason:string) => meetingHostControlService.cancelScheduled(reason),
   async endForEveryone():Promise<MeetingControlResult<MeetingSessionControlState>>{const result=await sessionControl("end");if(result.ok)await meetingService.leave();return result;},
 };

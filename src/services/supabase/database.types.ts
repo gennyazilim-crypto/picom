@@ -251,7 +251,7 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["meeting_sessions"]["Row"]>;Relationships:[];
       };
       meeting_session_participants: {
-        Row: { id:string;session_id:string;user_id:string|null;provider_identity:string;display_name:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";state:"invited"|"waiting"|"joining"|"connected"|"reconnecting"|"left"|"removed";capabilities:Json;joined_at:string|null;left_at:string|null;last_seen_at:string|null;provider_joined_at:string|null;provider_left_at:string|null;last_provider_event_at:string|null;last_provider_event_id:string|null;last_provider_event_type:string|null;connection_generation:number;removed_by_user_id:string|null;removal_reason_code:string|null;created_at:string;updated_at:string };
+        Row: { id:string;session_id:string;user_id:string|null;provider_identity:string;display_name:string;role:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest";state:"invited"|"waiting"|"joining"|"connected"|"reconnecting"|"left"|"removed";capabilities:Json;screen_share_allowed:boolean;joined_at:string|null;left_at:string|null;last_seen_at:string|null;provider_joined_at:string|null;provider_left_at:string|null;last_provider_event_at:string|null;last_provider_event_id:string|null;last_provider_event_type:string|null;connection_generation:number;removed_by_user_id:string|null;removal_reason_code:string|null;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]> & Pick<Database["public"]["Tables"]["meeting_session_participants"]["Row"],"session_id"|"provider_identity"|"display_name"|"role">;
         Update: Partial<Database["public"]["Tables"]["meeting_session_participants"]["Row"]>;Relationships:[];
       };
@@ -978,6 +978,12 @@ export type Database = {
       get_meeting_hand_queue:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
       manage_meeting_stage_participant:{Args:{target_participant_id:string;stage_action:"promote"|"demote"|"remove";change_reason?:string};Returns:Json};
       control_meeting_session:{Args:{target_room_id:string;target_session_id:string;control_action:"lock"|"unlock"|"end"};Returns:Json};
+      get_meeting_host_control_state:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
+      set_meeting_participant_cohost:{Args:{target_participant_id:string;target_enabled:boolean;change_reason:string};Returns:Json};
+      transfer_meeting_host:{Args:{target_participant_id:string;change_reason:string};Returns:Json};
+      set_meeting_participant_screen_share_policy:{Args:{target_participant_id:string;target_allowed:boolean;change_reason:string};Returns:Json};
+      cancel_scheduled_meeting_room:{Args:{target_room_id:string;cancellation_reason:string};Returns:Json};
+      enforce_my_meeting_media_policy:{Args:{target_room_id:string;target_session_id:string};Returns:Json};
       cleanup_stale_meeting_participants:{Args:{target_session_id:string;target_stale_before?:string};Returns:Json};
       process_livekit_webhook_event:{Args:{target_event_id:string;target_event_type:string;target_occurred_at:string;target_room_id:string;target_session_id:string;target_room_name:string;target_payload_digest:string;target_participant_identity?:string|null;target_participant_name?:string|null;target_track_sid?:string|null;target_track_kind?:string|null;target_track_source?:string|null};Returns:Json};
       expire_meeting_waiting_entries:{Args:{target_room_id?:string|null};Returns:number};

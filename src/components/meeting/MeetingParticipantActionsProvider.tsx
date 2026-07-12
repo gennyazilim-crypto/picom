@@ -6,11 +6,12 @@ import { meetingService } from "../../services/meeting/meetingService";
 import { meetingParticipantLocalControlService } from "../../services/meeting/meetingParticipantLocalControlService";
 import { meetingParticipantModerationService } from "../../services/meeting/meetingParticipantModerationService";
 import { meetingParticipantNavigationService } from "../../services/meeting/meetingParticipantNavigationService";
+import { meetingHostControlService } from "../../services/meeting/meetingHostControlService";
 import { ReportModal, type ReportModalTarget } from "../ReportModal";
 import { DesktopContextMenu } from "../DesktopContextMenu";
 import "./MeetingParticipantActionsProvider.css";
 
-type MeetingParticipantMenuAction = "view_profile" | "send_message" | "pin" | "toggle_local_mute" | "toggle_self_view" | "toggle_self_microphone" | "toggle_self_camera" | "report" | MeetingParticipantModerationAction;
+type MeetingParticipantMenuAction = "view_profile" | "send_message" | "pin" | "toggle_local_mute" | "toggle_self_view" | "toggle_self_microphone" | "toggle_self_camera" | "report" | "assign_cohost" | "remove_cohost" | "transfer_host" | "enable_screen_share" | "disable_screen_share" | MeetingParticipantModerationAction;
 
 type MenuState = Readonly<{ participantId: string; x: number; y: number; trigger: HTMLElement | null }>;
 type VolumeState = Readonly<{ participantId: string; x: number; y: number }>;
@@ -104,6 +105,15 @@ export function MeetingParticipantActionsProvider({ snapshot, children }: { snap
       setMenu(null);
       return;
     }
+    if (action === "assign_cohost" || action === "remove_cohost" || action === "transfer_host" || action === "enable_screen_share" || action === "disable_screen_share") {
+      if ((action === "transfer_host") && !window.confirm(`Transfer host ownership to ${selected.displayName}? You will become a cohost.`)) return;
+      setBusyAction(action);
+      const result = action === "assign_cohost" ? await meetingHostControlService.setCohost(selected, true)
+        : action === "remove_cohost" ? await meetingHostControlService.setCohost(selected, false)
+          : action === "transfer_host" ? await meetingHostControlService.transferHost(selected)
+            : await meetingHostControlService.setScreenShareAllowed(selected, action === "enable_screen_share");
+      setBusyAction(null); announce(result.ok ? `${selected.displayName}'s meeting permissions were updated.` : result.error.message); if (result.ok) setMenu(null); return;
+    }
     if (action === "remove" && !window.confirm(`Remove ${selected.displayName} from this meeting?`)) return;
     setBusyAction(action);
     const result = await meetingParticipantModerationService.perform(snapshot, selected, action);
@@ -135,11 +145,16 @@ export function MeetingParticipantActionsProvider({ snapshot, children }: { snap
       items.push(item("Mute participant for everyone", "mute", "microphone", { detail: "Server authorized" }));
       items.push(item(onStage ? "Move to audience" : "Promote to speaker", onStage ? "demote" : "promote", "users", { detail: "Server authorized" }));
       if (selected.screenSharing) items.push(item("Stop screen share", "deny_screen_share", "image", { detail: "Server authorized" }));
+      items.push(item(selected.screenShareAllowed === false ? "Enable screen sharing" : "Disable screen sharing", selected.screenShareAllowed === false ? "enable_screen_share" : "disable_screen_share", "image", { detail: "Updates future token grants" }));
       items.push(item("Remove participant", "remove", "trash", { tone: "danger", detail: "Requires confirmation" }));
+    }
+    if (snapshot.role === "host" && !selected.isLocal && selected.userId && selected.role !== "host") {
+      items.push(item(selected.role === "cohost" ? "Remove cohost" : "Assign cohost", selected.role === "cohost" ? "remove_cohost" : "assign_cohost", "users", { detail: "Host-only role control" }));
+      items.push(item("Transfer host", "transfer_host", "user", { tone: "danger", detail: "You become cohost" }));
     }
     if (!selected.isLocal) items.push(item("Report participant", "report", "bell", { disabled: !selected.userId }));
     return items;
-  }, [menu?.x, menu?.y, run, selected, snapshot.capabilities.canManageParticipants, snapshot.focusedParticipantId, snapshot.localMedia.cameraEnabled, snapshot.localMedia.muted]);
+  }, [menu?.x, menu?.y, run, selected, snapshot.capabilities.canManageParticipants, snapshot.focusedParticipantId, snapshot.localMedia.cameraEnabled, snapshot.localMedia.muted, snapshot.role]);
 
   const contextValue = useMemo<ParticipantActionsContextValue>(() => ({ openMenu }), [openMenu]);
   return <ParticipantActionsContext.Provider value={contextValue}>
