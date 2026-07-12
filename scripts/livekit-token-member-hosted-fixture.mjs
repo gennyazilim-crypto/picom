@@ -6,6 +6,7 @@ const approvedProjectRef = "ufmtvqtsklqsmqxefbbs";
 const evidencePath = "artifacts/evidence/task-661-livekit-token-staging.json";
 const allowedOrigin = "http://127.0.0.1:5173";
 const actorLabels = ["owner", "admin", "moderator", "member", "roleless_member", "visitor", "non_member", "banned", "rate_limit"];
+const actorCodes = { owner: "ow", admin: "ad", moderator: "mo", member: "me", roleless_member: "rl", visitor: "vi", non_member: "nm", banned: "ba", rate_limit: "rt" };
 const activeLabels = ["owner", "admin", "moderator", "member", "roleless_member"];
 const deniedLabels = ["visitor", "non_member", "banned"];
 const createdUsers = [];
@@ -118,7 +119,9 @@ try {
   const roleIds = { owner: randomUUID(), admin: randomUUID(), moderator: randomUUID(), member: randomUUID() };
   const profileValues = actorLabels.map((label) => {
     const actor = actors.get(label);
-    return `('${actor.id}','task661${runTag}${label.replaceAll("_", "")}', 'Task 661 ${label}', 'online', 'Hosted staging fixture')`;
+    const username = `t661${runTag}${actorCodes[label]}`;
+    if (username.length < 3 || username.length > 32) throw new Error(`Synthetic username length is invalid for ${label}.`);
+    return `('${actor.id}','${username}', 'Task 661 ${label}', 'online', 'Hosted staging fixture')`;
   }).join(",\n");
   const membershipValues = [
     ["owner", roleIds.owner],
