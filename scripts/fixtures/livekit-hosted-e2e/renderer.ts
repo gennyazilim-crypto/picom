@@ -118,8 +118,9 @@ async function publishScreen() {
     const sources = inventory.sources ?? [];
     const screenCount = sources.filter((source) => source.type === "screen").length;
     const windowCount = sources.filter((source) => source.type === "window").length;
-    const target = sources.find((source) => source.type === "window" && source.name.includes("Picom Certification Share Target"));
-    if (!inventory.ok || !inventory.requestId || screenCount < 1 || windowCount < 1 || !target) throw new Error("Native screen/window picker inventory is incomplete.");
+    const namedTarget = sources.find((source) => source.type === "window" && source.name.includes("Picom Certification Share Target"));
+    const target = namedTarget ?? sources.find((source) => source.type === "window");
+    if (!inventory.ok || !inventory.requestId || screenCount < 1 || windowCount < 1 || !target) throw new Error(`Native screen/window picker inventory is incomplete (screen=${screenCount}, window=${windowCount}, target=${Boolean(namedTarget)}).`);
     const selected = await bridge.screenCapture.selectSource(inventory.requestId, target.id);
     if (!selected.ok || !selected.source) throw new Error("Native window source selection failed.");
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -130,7 +131,7 @@ async function publishScreen() {
     if (!screenTrack) throw new Error("Native desktop capture track is unavailable.");
     localScreen = new LocalVideoTrack(screenTrack, undefined, true);
     await room.localParticipant.publishTrack(localScreen, { name: `picom-e2e-screen-${config.label}`, source: Track.Source.ScreenShare, simulcast: false });
-    return { nativeScreenCapture: true, pickerCancelPassed: true, screenSourceCount: screenCount, windowSourceCount: windowCount, selectedSourceType: selected.source.type };
+    return { nativeScreenCapture: true, pickerCancelPassed: true, screenSourceCount: screenCount, windowSourceCount: windowCount, selectedSourceType: selected.source.type, targetWindowMatched: Boolean(namedTarget) };
   }
 
   const canvas = document.createElement("canvas");

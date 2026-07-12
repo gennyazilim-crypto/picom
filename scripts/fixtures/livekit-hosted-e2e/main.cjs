@@ -123,8 +123,12 @@ async function runMatrix(config) {
   const rendererHtml = app.isPackaged ? path.join(__dirname, "index.html") : config.rendererHtml;
   const preloadPath = app.isPackaged ? path.join(__dirname, "preload.cjs") : config.preloadPath;
   if (config.nativeCapture) {
-    shareTargetWindow = new BrowserWindow({ width: 720, height: 420, show: true, title: "Picom Certification Share Target", webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+    shareTargetWindow = new BrowserWindow({ width: 720, height: 420, show: false, title: "Picom Certification Share Target", webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
     await shareTargetWindow.loadURL("data:text/html,<title>Picom Certification Share Target</title><body style='margin:0;background:%2317353a;color:white;display:grid;place-items:center;font:32px sans-serif'>Picom native screen-share target</body>");
+    shareTargetWindow.setAlwaysOnTop(true, "screen-saver");
+    shareTargetWindow.show();
+    shareTargetWindow.focus();
+    await delay(750);
   }
   const labels = config.clients.map((client) => client.label);
   await Promise.all(config.clients.map((client) => createClientWindow({ ...client, nativeCapture: Boolean(config.nativeCapture) }, rendererHtml, preloadPath)));

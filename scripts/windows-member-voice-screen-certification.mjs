@@ -125,7 +125,12 @@ try {
   };
 } catch (error) {
   failure = error;
-  evidence = { ...evidence, status: "failed", error: safeError(error) };
+  let hostedFailure = null;
+  try {
+    const hostedEvidence = JSON.parse(await readFile("artifacts/evidence/task-665-hosted-member-voice-screen.json", "utf8"));
+    hostedFailure = { stage: hostedEvidence.failedStage ?? null, error: safeError(hostedEvidence.error ?? "") };
+  } catch {}
+  evidence = { ...evidence, status: "failed", error: safeError(error), hostedFailure };
 } finally {
   await mkdir(path.dirname(evidencePath), { recursive: true });
   await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, "utf8");
