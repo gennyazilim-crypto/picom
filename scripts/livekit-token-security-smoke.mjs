@@ -31,6 +31,7 @@ const checks = [
   ["transaction-safe policy reconciliation", deploy.includes("makePolicyCreatesIdempotent") && deploy.includes("drop policy if exists") && deploy.includes("begin;\\n${migrationSql}")],
   ["storage DDL preserves Supabase ownership", deploy.includes("getStoragePolicyPlan") && deploy.includes("pg_policies") && deploy.includes("rls_enabled") && deploy.includes("omitVerifiedStorageOwnedDdl") && deploy.includes("missingCreates") && deploy.includes("unsafeDrops")],
   ["missing owner-only policies remain explicit debt", deploy.includes("deferredOwnerMigrations.push") && deploy.includes("missing_storage_owner_policies") && deploy.includes("continue;")],
+  ["deployment is scoped to reviewed Voice migrations", deploy.includes("prerequisiteMigrationVersions") && deploy.includes("targetMigrationVersions") && deploy.includes("outOfScopePendingMigrations")],
   ["secret server boundary", fn.includes('getRequiredEnv("LIVEKIT_API_SECRET")') && !client.includes("LIVEKIT_API_SECRET")],
 ];
 

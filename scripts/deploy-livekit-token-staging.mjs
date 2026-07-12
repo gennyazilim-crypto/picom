@@ -5,12 +5,15 @@ const apply = process.argv.includes("--apply");
 const approvedProjectRef = "ufmtvqtsklqsmqxefbbs";
 const migrationVersion = "20260712166000";
 const migrationPath = `supabase/migrations/${migrationVersion}_active_member_voice_screen_access.sql`;
+const prerequisiteMigrationVersions = ["20260711150600"];
+const targetMigrationVersions = new Set(["20260712164500", migrationVersion]);
 const evidencePath = "artifacts/evidence/task-661-livekit-token-staging.json";
 const requiredSecretNames = ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "PICOM_ALLOWED_ORIGINS", "PICOM_V1_VOICE_SCREEN_ENABLED"];
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 let appliedMigrationCount = 0;
 let reconciledStoragePolicyCount = 0;
 const deferredOwnerMigrations = [];
+const outOfScopePendingMigrations = [];
 
 const redact = (value) => String(value ?? "")
   .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
@@ -148,8 +151,18 @@ try {
       const match = /^(\d+)_(.+)\.sql$/i.exec(file);
       return { file, version: match[1], name: match[2] };
     });
-  const pending = migrations.filter((migration) => !appliedVersions.has(migration.version));
-  writeEvidence({ migrationsAppliedBefore: appliedVersions.size, pendingMigrationCount: pending.length });
+  for (const version of prerequisiteMigrationVersions) {
+    if (!appliedVersions.has(version)) throw new Error(`Required Voice prerequisite migration is not applied: ${version}`);
+  }
+  const allPending = migrations.filter((migration) => !appliedVersions.has(migration.version));
+  const pending = allPending.filter((migration) => targetMigrationVersions.has(migration.version));
+  outOfScopePendingMigrations.push(...allPending.filter((migration) => !targetMigrationVersions.has(migration.version)).map((migration) => migration.version));
+  writeEvidence({
+    migrationsAppliedBefore: appliedVersions.size,
+    pendingMigrationCount: pending.length,
+    outOfScopePendingCount: outOfScopePendingMigrations.length,
+    outOfScopePendingMigrations,
+  });
 
   for (let index = 0; index < pending.length; index += 1) {
     if (index > 0 && index % 70 === 0) await new Promise((resolve) => setTimeout(resolve, 61_000));
@@ -216,6 +229,7 @@ try {
     migrationsAppliedThisRun: appliedMigrationCount,
     reconciledExistingStoragePolicies: reconciledStoragePolicyCount,
     deferredOwnerMigrations,
+    outOfScopePendingMigrations,
     requiredSecretNamesPresent: requiredSecretNames,
     functionDeployed: true,
     functionInventoryVerified: true,
@@ -224,6 +238,6 @@ try {
   console.log("DEPLOYED active-member authorization migration and livekit-token to the approved Picom staging project; no credential value was printed.");
 } catch (error) {
   const safeMessage = redact(error instanceof Error ? error.message : error);
-  writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, reconciledExistingStoragePolicies: reconciledStoragePolicyCount, deferredOwnerMigrations, finishedAt: new Date().toISOString() });
+  writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, reconciledExistingStoragePolicies: reconciledStoragePolicyCount, deferredOwnerMigrations, outOfScopePendingMigrations, finishedAt: new Date().toISOString() });
   throw new Error(safeMessage);
 }
