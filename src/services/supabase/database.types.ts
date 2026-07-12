@@ -1061,6 +1061,25 @@ export type Database = {
         Args: { cursor_created_at?: string | null; cursor_mention_id?: string | null; source_types?: string[] | null; community_filter?: string | null; result_limit?: number };
         Returns: Array<Pick<Database["public"]["Tables"]["content_mentions"]["Row"], "id" | "source_type" | "source_id" | "parent_source_id" | "community_id" | "channel_id" | "author_id" | "mentioned_user_id" | "preview" | "source_created_at" | "source_updated_at" | "visibility_context">>;
       };
+      get_feed_page: {
+        Args: {
+          feed_tab?: "feed" | "friends"; cursor_group_priority?: number | null; cursor_final_score?: number | null;
+          cursor_created_at?: string | null; cursor_feed_item_id?: string | null; as_of_input?: string | null;
+          source_filters?: Array<"text_message" | "radio_session" | "radio_comment" | "podcast_episode" | "podcast_comment"> | null;
+          unread_only?: boolean; saved_only?: boolean; result_limit?: number; community_scope?: string | null;
+        };
+        Returns: Array<{
+          feed_item_id:string;source_type:"text_message"|"radio_session"|"radio_comment"|"podcast_episode"|"podcast_comment";
+          source_id:string;parent_source_id:string|null;community_id:string|null;channel_id:string|null;author_id:string;
+          content_kind:"text_only"|"image_only"|"text_image"|"video_only"|"text_video"|"image_video"|"text_image_video"|null;
+          base_score:number;source_created_at:string;source_updated_at:string;unique_external_reactors:number;unique_external_commenters:number;
+          additional_reply_count:number;unique_external_savers:number;unique_external_viewers:number;external_supporter_count:number;
+          reaction_score:number;comment_score:number;save_score:number;view_score:number;raw_score:number;score_version:number;
+          is_direct_mention:boolean;is_friend_author:boolean;is_friend_engaged:boolean;is_unread:boolean;is_saved:boolean;
+          relevance_score:number;freshness_decay:number;final_score:number;group_priority:number;ranking_as_of:string;
+          author_display_name:string;author_username:string;author_avatar_url:string|null;community_name:string|null;community_icon_url:string|null;
+        }>;
+      };
       list_ranked_unified_feed: {
         Args: { feed_mode?: "popular" | "following"; ranking_epoch_input?: string; cursor_rank?: number | null; cursor_created_at?: string | null; cursor_feed_item_id?: string | null; source_types?: string[] | null; created_after?: string | null; unread_only?: boolean; saved_only?: boolean; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["unified_content_feed_view"]["Row"] & { reaction_count: number; comment_count: number; listener_count: number; is_unread: boolean; is_saved: boolean; is_follow_related: boolean; ranking_score: number; ranking_epoch: string }>;
