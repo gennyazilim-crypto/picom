@@ -9,6 +9,7 @@ import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, 
 import type { MeetingCameraQualityPreset, MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
 import { voiceDiagnosticsRegistry, type VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 import { noiseShieldService } from "./noiseShieldService";
+import { microphoneTrackLifecycleService, type MicrophoneLifecycleEventCode } from "./voice/microphoneTrackLifecycleService";
 import { DEFAULT_MEETING_CAMERA_QUALITY, cameraCaptureOptions, cameraPublishOptions, localPublishingQuality, remoteVideoQuality } from "./meeting/meetingMediaQualityPolicy";
 
 export type { VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
@@ -415,7 +416,7 @@ function bindRoomEvents(activeRoom: Room): void {
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
         applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
         if (restoredFromReconnect) {
-          void setMicrophoneWithProcessing(activeRoom,!snapshot.muted).catch(() => {
+          void setMicrophoneWithProcessing(activeRoom, !snapshot.muted, "reconnect").catch(() => {
             deviceErrorCount += 1;
             emit({ muted: true, error: "Microphone state could not be restored after reconnect.", errorCode: "VOICE_PERMISSION_DENIED" });
           });
@@ -552,6 +553,7 @@ function bindRoomEvents(activeRoom: Room): void {
       cameraTracks = [];
       roomLifecycleGeneration += 1;
       const details = disconnectDetails(reason);
+      void microphoneTrackLifecycleService.cleanup("room_disconnected", () => noiseShieldService.disposeProcessor(), true, localMicrophoneTrack(activeRoom)?.id);
       stopLocalTracks(activeRoom);
       activeTokenIntent = null;
       removeTranscriptionHandler(activeRoom);
@@ -584,7 +586,7 @@ function stopLocalTracks(activeRoom: Room): void {
 }
 
 async function disposeRoom(activeRoom: Room): Promise<void> {
-  await noiseShieldService.disposeProcessor();
+  await microphoneTrackLifecycleService.cleanup("room_cleanup", () => noiseShieldService.disposeProcessor(), true, localMicrophoneTrack(activeRoom)?.id);
   stopLocalTracks(activeRoom);
   removeTranscriptionHandler(activeRoom);
   activeRoom.removeAllListeners();
@@ -632,30 +634,48 @@ function localMicrophoneTrack(activeRoom: Room): LocalAudioTrack | null {
   return track instanceof LocalAudioTrack ? track : null;
 }
 
-async function setMicrophoneWithProcessing(activeRoom: Room, enabled: boolean): Promise<void> {
-  if (!enabled) {
-    await noiseShieldService.detachProcessor("Microphone capture was disabled.");
-    await activeRoom.localParticipant.setMicrophoneEnabled(false);
-    return;
-  }
-  const base = voiceDeviceService.getAudioCaptureConstraints();
-  const plan = noiseShieldService.createMicrophoneCapturePlan(base);
-  try {
-    await activeRoom.localParticipant.setMicrophoneEnabled(true, plan.constraints);
-    const microphoneTrack = localMicrophoneTrack(activeRoom);
-    noiseShieldService.verifyAppliedTrack(microphoneTrack?.mediaStreamTrack, plan);
-    await noiseShieldService.applyEnhancedToTrack(microphoneTrack as never, "microphone");
-  } catch (error) {
-    if (plan.appliedMode !== "off") {
-      await activeRoom.localParticipant.setMicrophoneEnabled(true, noiseShieldService.createBasicFallback(base));
-      noiseShieldService.markFallback("Standard Noise Shield could not be applied. Basic microphone audio remains connected.");
+async function setMicrophoneWithProcessing(
+  activeRoom: Room,
+  enabled: boolean,
+  event: MicrophoneLifecycleEventCode = enabled ? "unmute" : "mute",
+  stopTrackOnDisable = false,
+): Promise<void> {
+  await microphoneTrackLifecycleService.runExclusive(event, async () => {
+    if (!enabled) {
+      await microphoneTrackLifecycleService.prepareProcessorReplacement(() => noiseShieldService.detachProcessor("Microphone capture was disabled."));
+      await activeRoom.localParticipant.setMicrophoneEnabled(false);
+      microphoneTrackLifecycleService.releaseCurrent("track_released", stopTrackOnDisable);
       return;
     }
-    throw error;
-  }
+
+    await microphoneTrackLifecycleService.prepareProcessorReplacement(() => noiseShieldService.detachProcessor("Microphone processing is being reapplied."));
+    const base = voiceDeviceService.getAudioCaptureConstraints();
+    const plan = noiseShieldService.createMicrophoneCapturePlan(base);
+    try {
+      await activeRoom.localParticipant.setMicrophoneEnabled(true, plan.constraints);
+      const microphoneTrack = localMicrophoneTrack(activeRoom);
+      noiseShieldService.verifyAppliedTrack(microphoneTrack?.mediaStreamTrack, plan);
+      if (!microphoneTrack) throw new Error("MICROPHONE_TRACK_UNAVAILABLE");
+      microphoneTrackLifecycleService.adoptTrack(microphoneTrack, "microphone", event);
+      const applied = await noiseShieldService.applyEnhancedToTrack(microphoneTrack as never, "microphone");
+      if (applied.processorStatus === "active") microphoneTrackLifecycleService.markProcessorAttached(microphoneTrack.id);
+    } catch (error) {
+      if (plan.appliedMode !== "off") {
+        await activeRoom.localParticipant.setMicrophoneEnabled(true, noiseShieldService.createBasicFallback(base));
+        const fallbackTrack = localMicrophoneTrack(activeRoom);
+        if (fallbackTrack) microphoneTrackLifecycleService.adoptTrack(fallbackTrack, "microphone", event);
+        microphoneTrackLifecycleService.noteFallback();
+        noiseShieldService.markFallback("Standard Noise Shield could not be applied. Basic microphone audio remains connected.");
+        return;
+      }
+      throw error;
+    }
+  });
 }
 
 async function applyVoiceDevicePreferences(activeRoom: Room, preferences: VoiceDeviceSnapshot): Promise<void> {
+  microphoneTrackLifecycleService.notePermission(preferences.permission);
+  microphoneTrackLifecycleService.noteDeviceState(preferences.selectedInputId, Boolean(preferences.notice?.includes("removed")));
   if (preferences.selectedOutputId !== appliedOutputDeviceId) {
     try {
       await activeRoom.switchActiveDevice("audiooutput", preferences.selectedOutputId, preferences.selectedOutputId !== "default");
@@ -670,7 +690,7 @@ async function applyVoiceDevicePreferences(activeRoom: Room, preferences: VoiceD
   if (nextInputKey === appliedInputPreferenceKey) return;
   try {
     if (preferences.permission !== "granted") {
-      await activeRoom.localParticipant.setMicrophoneEnabled(false);
+      await setMicrophoneWithProcessing(activeRoom, false, "permission_denied");
       emit({ muted: true, error: preferences.permission === "denied" ? "Microphone permission was revoked. Picom kept the meeting connected with microphone off." : snapshot.error, errorCode: preferences.permission === "denied" ? "VOICE_PERMISSION_DENIED" : snapshot.errorCode });
       appliedInputPreferenceKey = nextInputKey;
       return;
@@ -678,8 +698,9 @@ async function applyVoiceDevicePreferences(activeRoom: Room, preferences: VoiceD
     if (desiredMicrophoneMuted) {
       await activeRoom.switchActiveDevice("audioinput", preferences.selectedInputId, preferences.selectedInputId !== "default");
     } else {
-      await setMicrophoneWithProcessing(activeRoom,false);
-      await setMicrophoneWithProcessing(activeRoom,true);
+      await setMicrophoneWithProcessing(activeRoom, false, "device_switch", true);
+      await activeRoom.switchActiveDevice("audioinput", preferences.selectedInputId, preferences.selectedInputId !== "default");
+      await setMicrophoneWithProcessing(activeRoom, true, "device_switch");
     }
     appliedInputPreferenceKey = nextInputKey;
     emit({ muted: desiredMicrophoneMuted, participants: getParticipants(activeRoom), error: null, errorCode: null });
@@ -728,7 +749,7 @@ async function connectWithToken(
     try {
       const devicePreferences = voiceDeviceService.getSnapshot();
       if (token.canPublishAudio) {
-        await setMicrophoneWithProcessing(activeRoom,!desiredMuted);
+        await setMicrophoneWithProcessing(activeRoom, !desiredMuted, "initial_attach");
         appliedInputPreferenceKey = inputPreferenceKey(devicePreferences);
         await applyVoiceDevicePreferences(activeRoom, devicePreferences);
       }
@@ -788,6 +809,8 @@ voiceDeviceService.subscribePreferences((preferences) => {
   const activeRoom = room;
   if (activeRoom && activeRoom.state !== ConnectionState.Disconnected) void applyVoiceDevicePreferences(activeRoom, preferences);
 });
+
+microphoneTrackLifecycleService.bindShutdown(() => noiseShieldService.disposeProcessor());
 
 export const voiceService = {
   getSnapshot(): VoiceServiceSnapshot {
@@ -1071,7 +1094,7 @@ export const voiceService = {
     });
   },
 
-  async reapplyMicrophoneProcessing():Promise<boolean>{if(!room)return false;if(snapshot.muted)return true;try{await setMicrophoneWithProcessing(room,false);await setMicrophoneWithProcessing(room,true);appliedInputPreferenceKey=inputPreferenceKey(voiceDeviceService.getSnapshot());emit({participants:getParticipants(room),error:null,errorCode:null});return true}catch{noiseShieldService.markFailed("Noise Shield and the fallback microphone track could not be restored.");return false}},
+  async reapplyMicrophoneProcessing():Promise<boolean>{if(!room)return false;if(snapshot.muted)return true;try{await setMicrophoneWithProcessing(room,false,"mode_switch",true);await setMicrophoneWithProcessing(room,true,"mode_switch");appliedInputPreferenceKey=inputPreferenceKey(voiceDeviceService.getSnapshot());emit({participants:getParticipants(room),error:null,errorCode:null});return true}catch{noiseShieldService.markFailed("Noise Shield and the fallback microphone track could not be restored.");return false}},
 
   async setMuted(muted: boolean): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!room) {
@@ -1081,7 +1104,7 @@ export const voiceService = {
 
     desiredMicrophoneMuted = muted;
     try {
-      await setMicrophoneWithProcessing(room,!muted);
+      await setMicrophoneWithProcessing(room, !muted, muted ? "mute" : "unmute");
       if (!muted) appliedInputPreferenceKey = inputPreferenceKey(voiceDeviceService.getSnapshot());
       emit({
         muted,
