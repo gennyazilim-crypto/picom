@@ -10,7 +10,7 @@ import "./MeetingControlDock.css";
 
 type Menu = "microphone"|"camera"|"share"|"noise"|"reactions"|"more"|null;
 
-const noiseShieldLabels={off:"Off",standard:"Standard",enhanced:"Enhanced",voice_focus:"Voice Focus"} as const;
+const noiseShieldLabels={off:"Off",standard:"Standard",enhanced:"Enhanced","voice-focus":"Voice Focus"} as const;
 
 function ControlButton({icon,label,active=false,off=false,disabled=false,busy=false,shortcut,controlAction,onClick}:{icon:IconName;label:string;active?:boolean;off?:boolean;disabled?:boolean;busy?:boolean;shortcut?:string;controlAction?:string;onClick:MouseEventHandler<HTMLButtonElement>}){return <button type="button" className={`${active?"is-active ":""}${off?"is-off ":""}${busy?"is-loading":""}`.trim()} disabled={disabled||busy} aria-label={label} aria-pressed={active} aria-keyshortcuts={shortcut} data-meeting-shortcut-action={controlAction} onClick={onClick}><AppIcon name={icon} size="md" /><span>{busy?"Working":label}</span></button>}
 

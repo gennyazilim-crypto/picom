@@ -3,7 +3,7 @@ import { meetingPreJoinService } from "../../services/meeting/meetingPreJoinServ
 import { AppIcon } from "../AppIcon";
 import "./MeetingPreJoin.css";
 
-const noiseShieldLabels={off:"Off",standard:"Standard",enhanced:"Enhanced",voice_focus:"Voice Focus"} as const;
+const noiseShieldLabels={off:"Off",standard:"Standard",enhanced:"Enhanced","voice-focus":"Voice Focus"} as const;
 
 function CameraPreview({ stream }: { stream: MediaStream | null }) {
   const ref = useRef<HTMLVideoElement>(null);

@@ -12,7 +12,7 @@ function experienceLabel(snapshot: ReturnType<typeof meetingService.store.getSna
   return "Voice meeting";
 }
 
-const noiseShieldLabels: Record<NoiseShieldMode,string>={off:"Off",standard:"Standard",enhanced:"Enhanced",voice_focus:"Voice Focus"};
+const noiseShieldLabels: Record<NoiseShieldMode,string>={off:"Off",standard:"Standard",enhanced:"Enhanced","voice-focus":"Voice Focus"};
 
 function nextNoiseShieldMode(availableModes: readonly NoiseShieldMode[],current:NoiseShieldMode):NoiseShieldMode{const currentIndex=availableModes.indexOf(current);return availableModes[(currentIndex+1)%availableModes.length]??"off";}
 

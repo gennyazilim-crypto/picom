@@ -33,10 +33,10 @@ function readPreferences(): SafePreferences {
       selectedCameraId: typeof value.selectedCameraId === "string" ? value.selectedCameraId : "default",
       joinMuted: value.joinMuted !== false,
       joinCameraOff: value.joinCameraOff !== false,
-      noiseShieldMode: ["off", "standard", "enhanced", "voice_focus"].includes(value.noiseShieldMode ?? "") ? value.noiseShieldMode as MeetingNoiseShieldMode : "off",
+      noiseShieldMode: ["off", "standard", "enhanced", "voice-focus", "voice_focus"].includes(String(value.noiseShieldMode ?? "")) ? (String(value.noiseShieldMode) === "voice_focus" ? "voice-focus" : String(value.noiseShieldMode)) as MeetingNoiseShieldMode : "standard",
     };
   } catch {
-    return { selectedCameraId: "default", joinMuted: true, joinCameraOff: true, noiseShieldMode: "off" };
+    return { selectedCameraId: "default", joinMuted: true, joinCameraOff: true, noiseShieldMode: "standard" };
   }
 }
 
