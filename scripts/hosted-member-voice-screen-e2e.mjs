@@ -178,6 +178,15 @@ insert into public.roles(id,community_id,name,level,permissions,system_key,is_de
 ('${roleIds.ADMIN}','${communityId}','Admin',80,'{}'::jsonb,'admin',false),
 ('${roleIds.MODERATOR}','${communityId}','Moderator',60,'{}'::jsonb,'moderator',false),
 ('${roleIds.MEMBER}','${communityId}','Member',10,'{}'::jsonb,'member',true);
+insert into public.community_role_permissions(community_id,role_id,permission_key,allowed) values
+('${communityId}','${roleIds.OWNER}','muteMembers',true),
+('${communityId}','${roleIds.OWNER}','removeFromVoice',true),
+('${communityId}','${roleIds.OWNER}','manageVoiceRoom',true),
+('${communityId}','${roleIds.ADMIN}','muteMembers',true),
+('${communityId}','${roleIds.ADMIN}','removeFromVoice',true),
+('${communityId}','${roleIds.ADMIN}','manageVoiceRoom',true),
+('${communityId}','${roleIds.MODERATOR}','muteMembers',true),
+('${communityId}','${roleIds.MODERATOR}','removeFromVoice',true);
 insert into public.community_members(community_id,user_id,role_id) values
 ${membershipValues};
 insert into public.channels(id,community_id,name,type,is_private,public_read_enabled,position)
