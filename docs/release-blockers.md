@@ -254,3 +254,7 @@ Status: **PARTIAL / BLOCKED** (2026-07-12). The immutable synthetic staging data
 ## Task 625 Picom v1.0.0 release candidate build
 
 Status: **BLOCKED / NO ARTIFACT** (2026-07-12). The complete local deterministic quality matrix passes after updating the hosted-validation workflow to the official Node 24 action runtimes. RC prerequisites do not pass: package metadata is `0.1.1-beta.1`, hosted Supabase gates are open, trusted Windows signing/clean-machine evidence is absent, legal/ownership gates are open, and full Storage/Auth recovery remains blocked. No final package, signature, checksum or provenance was generated; Task 626 is blocked.
+
+## Task 626 final V1 Go/No-Go and public release
+
+Decision: **NO_GO** (2026-07-12). The complete local quality matrix passes, but automatic No-Go conditions remain: no trusted Windows artifact, no authorized legal approval, no production owner/custody, no complete hosted Supabase evidence, no full Storage/Auth recovery and no immutable RC/checksum/provenance. The release guard correctly exits nonzero. No `v1.0.0` remote tag or GitHub Release exists, and no public download/website/changelog update was made.
