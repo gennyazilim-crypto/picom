@@ -35,7 +35,7 @@ Status date: 2026-07-12
 `.github/workflows/livekit-token-staging.yml` is manual-only and requires `STAGING_ONLY`. The `hosted-staging` environment supplies the Supabase PAT and approved project reference. The workflow:
 
 1. runs the source security contract;
-2. compares hosted migration history with the ordered repository migration set, applies and records only pending migrations through the official Supabase Management API database query endpoint, transactionally normalizes replayed policy creation with `drop policy if exists`, scopes `storage.objects` DDL to `supabase_storage_admin`, and fails closed if an existing schema has no migration history;
+2. compares hosted migration history with the ordered repository migration set, applies and records only pending migrations through the official Supabase Management API database query endpoint, transactionally normalizes replayed policy creation with `drop policy if exists`, verifies pre-existing `storage.objects` policy names and RLS state before omitting owner-only replay DDL, and fails closed on missing/unsafe Storage policy state or an existing schema without migration history;
 3. verifies migration `20260712166000` plus the member and token RPCs;
 4. deploys `livekit-token` with Supabase CLI `2.109.1`;
 5. creates temporary confirmed Auth identities and a private fixture community;

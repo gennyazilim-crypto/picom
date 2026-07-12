@@ -9,6 +9,7 @@ const evidencePath = "artifacts/evidence/task-661-livekit-token-staging.json";
 const requiredSecretNames = ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "PICOM_ALLOWED_ORIGINS", "PICOM_V1_VOICE_SCREEN_ENABLED"];
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 let appliedMigrationCount = 0;
+let reconciledStoragePolicyCount = 0;
 
 const redact = (value) => String(value ?? "")
   .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
@@ -52,19 +53,33 @@ function makePolicyCreatesIdempotent(sql) {
   );
 }
 
-function runStorageOwnedDdlAsStorageAdmin(sql) {
-  const wrap = (statement) => `set local role supabase_storage_admin;\n${statement}\nreset role;`;
-  return sql
-    .replace(/drop\s+policy\s+(?:if\s+exists\s+)?(?:"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)\s+on\s+storage\.objects\s*;/gi, wrap)
-    .replace(/create\s+policy\s+(?:"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)\s+on\s+storage\.objects[\s\S]*?;/gi, wrap)
-    .replace(/comment\s+on\s+policy\s+(?:"(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)\s+on\s+storage\.objects\s+is\s+'(?:''|[^'])*'\s*;/gi, wrap)
-    .replace(/alter\s+table\s+storage\.objects[\s\S]*?;/gi, wrap);
+const storagePolicyNamePattern = '("(?:[^"]|"")+"|[a-zA-Z_][a-zA-Z0-9_]*)';
+const unquotePolicyName = (name) => name.startsWith('"') ? name.slice(1, -1).replaceAll('""', '"') : name;
+
+function getStoragePolicyPlan(sql) {
+  const creates = [...sql.matchAll(new RegExp(`create\\s+policy\\s+${storagePolicyNamePattern}\\s+on\\s+storage\\.objects`, "gi"))].map((match) => unquotePolicyName(match[1]));
+  const drops = [...sql.matchAll(new RegExp(`drop\\s+policy\\s+(?:if\\s+exists\\s+)?${storagePolicyNamePattern}\\s+on\\s+storage\\.objects`, "gi"))].map((match) => unquotePolicyName(match[1]));
+  return {
+    creates: [...new Set(creates)],
+    dropOnly: [...new Set(drops.filter((name) => !creates.includes(name)))],
+    altersRls: /alter\s+table\s+storage\.objects\s+enable\s+row\s+level\s+security\s*;/i.test(sql),
+  };
 }
 
-const storageOwnershipProbe = runStorageOwnedDdlAsStorageAdmin(makePolicyCreatesIdempotent('create policy "task661_probe" on storage.objects for select using (true);'));
-if (!storageOwnershipProbe.includes('drop policy if exists "task661_probe" on storage.objects;') || (storageOwnershipProbe.match(/set local role supabase_storage_admin;/g) ?? []).length !== 2 || (storageOwnershipProbe.match(/reset role;/g) ?? []).length !== 2) {
-  throw new Error("Storage policy reconciliation self-test failed.");
+function omitVerifiedStorageOwnedDdl(sql) {
+  const result = sql
+    .replace(new RegExp(`drop\\s+policy\\s+(?:if\\s+exists\\s+)?${storagePolicyNamePattern}\\s+on\\s+storage\\.objects\\s*;`, "gi"), "")
+    .replace(new RegExp(`create\\s+policy\\s+${storagePolicyNamePattern}\\s+on\\s+storage\\.objects[\\s\\S]*?;`, "gi"), "")
+    .replace(new RegExp(`comment\\s+on\\s+policy\\s+${storagePolicyNamePattern}\\s+on\\s+storage\\.objects\\s+is\\s+'(?:''|[^'])*'\\s*;`, "gi"), "")
+    .replace(/alter\s+table\s+storage\.objects\s+enable\s+row\s+level\s+security\s*;/gi, "");
+  if (/(?:create|drop)\s+policy[\s\S]*?on\s+storage\.objects|comment\s+on\s+policy[\s\S]*?on\s+storage\.objects|alter\s+table\s+storage\.objects/i.test(result)) {
+    throw new Error("Unsupported storage-owned DDL remains after reconciliation.");
+  }
+  return result;
 }
+
+const storagePlanProbe = getStoragePolicyPlan(makePolicyCreatesIdempotent('create policy "task661_probe" on storage.objects for select using (true);'));
+if (!storagePlanProbe.creates.includes("task661_probe") || storagePlanProbe.dropOnly.length || omitVerifiedStorageOwnedDdl(makePolicyCreatesIdempotent('create policy "task661_probe" on storage.objects for select using (true);')).includes("storage.objects")) throw new Error("Storage policy reconciliation self-test failed.");
 
 if (!apply) {
   const cli = runSupabase(["--version"]);
@@ -139,7 +154,27 @@ try {
     if (index > 0 && index % 70 === 0) await new Promise((resolve) => setTimeout(resolve, 61_000));
     const migration = pending[index];
     const source = readFileSync(`supabase/migrations/${migration.file}`, "utf8").replace(/^\uFEFF/, "");
-    const migrationSql = runStorageOwnedDdlAsStorageAdmin(makePolicyCreatesIdempotent(source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim()));
+    let migrationSql = makePolicyCreatesIdempotent(source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim());
+    const storagePlan = getStoragePolicyPlan(migrationSql);
+    if (storagePlan.creates.length || storagePlan.dropOnly.length || storagePlan.altersRls) {
+      const storageInventory = await management(`/projects/${projectRef}/database/query`, {
+        method: "POST",
+        body: JSON.stringify({
+          query: "select coalesce((select jsonb_agg(policyname order by policyname) from pg_policies where schemaname='storage' and tablename='objects'),'[]'::jsonb) as policy_names,coalesce((select relrowsecurity from pg_class where oid='storage.objects'::regclass),false) as rls_enabled",
+          read_only: true,
+        }),
+      });
+      const inventoryRow = Array.isArray(storageInventory) ? storageInventory[0] : null;
+      const remotePolicies = new Set(Array.isArray(inventoryRow?.policy_names) ? inventoryRow.policy_names : []);
+      const missingCreates = storagePlan.creates.filter((name) => !remotePolicies.has(name));
+      const unsafeDrops = storagePlan.dropOnly.filter((name) => remotePolicies.has(name));
+      if (missingCreates.length) throw new Error(`Storage policies are missing and require an owner-authorized migration path: ${missingCreates.join(", ")}`);
+      if (unsafeDrops.length) throw new Error(`Drop-only Storage policies still exist and cannot be safely reconciled: ${unsafeDrops.join(", ")}`);
+      if (storagePlan.altersRls && inventoryRow?.rls_enabled !== true) throw new Error("storage.objects RLS is not enabled and cannot be safely reconciled.");
+      migrationSql = omitVerifiedStorageOwnedDdl(migrationSql);
+      reconciledStoragePolicyCount += storagePlan.creates.length;
+      console.log(`Verified ${storagePlan.creates.length} existing Storage policies for hosted migration ${migration.version}.`);
+    }
     if (!migrationSql || migrationSql.includes("$task661$")) throw new Error(`Migration ${migration.version} is empty or contains the reserved deployment delimiter.`);
     const trackedSql = `begin;\n${migrationSql}\ninsert into supabase_migrations.schema_migrations(version,statements,name) values ('${migration.version}',array[$task661$${migrationSql}$task661$],'${migration.name}') on conflict(version) do update set statements=excluded.statements,name=excluded.name;\ncommit;`;
     try {
@@ -174,6 +209,7 @@ try {
     migrationApplied: true,
     migrationRecorded: true,
     migrationsAppliedThisRun: appliedMigrationCount,
+    reconciledExistingStoragePolicies: reconciledStoragePolicyCount,
     requiredSecretNamesPresent: requiredSecretNames,
     functionDeployed: true,
     functionInventoryVerified: true,
@@ -182,6 +218,6 @@ try {
   console.log("DEPLOYED active-member authorization migration and livekit-token to the approved Picom staging project; no credential value was printed.");
 } catch (error) {
   const safeMessage = redact(error instanceof Error ? error.message : error);
-  writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, finishedAt: new Date().toISOString() });
+  writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, reconciledExistingStoragePolicies: reconciledStoragePolicyCount, finishedAt: new Date().toISOString() });
   throw new Error(safeMessage);
 }

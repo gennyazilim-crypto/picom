@@ -29,7 +29,7 @@ const checks = [
   ["hosted source and rate assertions", fixture.includes("screen_share_audio") && fixture.includes("camera") && fixture.includes("RATE_LIMITED") && fixture.includes("attempt <= 10")],
   ["explicit staging deploy guard", deploy.includes("STAGING_ONLY") && deploy.includes("approvedProjectRef") && deploy.includes("database/query") && deploy.includes("functions\", \"deploy")],
   ["transaction-safe policy reconciliation", deploy.includes("makePolicyCreatesIdempotent") && deploy.includes("drop policy if exists") && deploy.includes("begin;\\n${migrationSql}")],
-  ["storage DDL preserves Supabase ownership", deploy.includes("runStorageOwnedDdlAsStorageAdmin") && deploy.includes("set local role supabase_storage_admin") && deploy.includes("reset role")],
+  ["storage DDL preserves Supabase ownership", deploy.includes("getStoragePolicyPlan") && deploy.includes("pg_policies") && deploy.includes("rls_enabled") && deploy.includes("omitVerifiedStorageOwnedDdl") && deploy.includes("missingCreates") && deploy.includes("unsafeDrops")],
   ["secret server boundary", fn.includes('getRequiredEnv("LIVEKIT_API_SECRET")') && !client.includes("LIVEKIT_API_SECRET")],
 ];
 
