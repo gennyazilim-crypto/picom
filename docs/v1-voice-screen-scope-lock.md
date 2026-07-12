@@ -3,6 +3,14 @@
 Status date: 2026-07-12  
 Current classification: **HIDDEN_FROM_V1 / BLOCKED FOR INCLUSION**
 
+> Policy amendment (2026-07-12): Tasks 657-668 supersede the role-restricted
+> ordinary-media requirements in Tasks 645-654. Every authenticated active
+> community member is eligible to join, speak, subscribe, and share. Role and
+> hierarchy checks remain only for moderation. See
+> `docs/v1-community-member-media-policy.md` and
+> `docs/v1-voice-screen-amendment.md`. This amendment does not enable the
+> production feature gate.
+
 ## Purpose
 
 This document defines the only acceptable path for adding Voice Rooms and Screen Share to the Windows-first Picom V1 release. It does not enable either capability.
@@ -29,7 +37,7 @@ If and only if Task 654 records a complete PASS matrix, V1 may include:
 - Participant list and speaking indicator.
 - Approved device selection and recovery.
 - Bounded reconnect/token refresh/session cleanup.
-- Role-aware join/speak/moderation enforcement.
+- Active-member join/speak enforcement with role-aware moderation only.
 - Redacted diagnostics and clear unavailable/error states.
 - Connected Voice controls in the Feed companion rail.
 
