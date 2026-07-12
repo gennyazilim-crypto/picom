@@ -1,13 +1,6 @@
--- Reconcile staging environments that recorded the historical rate-limit
--- migration before the livekit_token action was added to its canonical source.
+-- Replace the hosted limiter after the historical current_time variable was
+-- parsed as PostgreSQL CURRENT_TIME (timetz) instead of the intended timestamp.
 begin;
-
-alter table public.user_action_rate_limits drop constraint if exists user_action_rate_limits_action_key_check;
-alter table public.user_action_rate_limits add constraint user_action_rate_limits_action_key_check check(action_key in(
-  'message_send','attachment_metadata','reaction_write','relationship_write','feed_interaction','livekit_token',
-  'meeting_schedule_write','meeting_invite_write','meeting_join_preview','meeting_signal_write',
-  'meeting_waiting_request','meeting_chat_send','meeting_reaction','meeting_privileged_action'
-));
 
 create or replace function public.consume_current_user_action_rate_limit(target_action text)
 returns table(is_allowed boolean,retry_after_seconds integer)
@@ -45,6 +38,6 @@ $$;
 
 revoke all on function public.consume_current_user_action_rate_limit(text) from public,anon;
 grant execute on function public.consume_current_user_action_rate_limit(text) to authenticated;
-comment on function public.consume_current_user_action_rate_limit(text) is 'Canonical content-free per-user action limiter; LiveKit token issuance is limited to ten requests per rolling sixty-second window.';
+comment on function public.consume_current_user_action_rate_limit(text) is 'Canonical content-free per-user action limiter using an unambiguous timestamptz observation point.';
 
 commit;
