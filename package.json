@@ -130,6 +130,8 @@
     "livekit:token:security:smoke": "node scripts/livekit-token-security-smoke.mjs",
     "livekit:token:staging": "node scripts/livekit-token-staging-validation.mjs",
     "livekit:token:deploy:staging": "node scripts/deploy-livekit-token-staging.mjs",
+    "livekit:token:self-hosted:deploy:staging": "node scripts/deploy-self-hosted-livekit-token-staging.mjs",
+    "livekit:token:self-hosted:contract": "node scripts/self-hosted-livekit-token-service-smoke.mjs",
     "qa:smoke": "node scripts/qa-smoke-gate.mjs",
     "qa:supabase": "node scripts/supabase-qa-gate.mjs",
     "supabase:status": "supabase status",

@@ -1,0 +1,11 @@
+{
+  "task": 664,
+  "status": "prepared_not_deployed",
+  "provider": "self-hosted-livekit",
+  "sourceHardeningRetained": true,
+  "protectedSecretEnvFilePrepared": true,
+  "activeMemberRoleMatrixPrepared": true,
+  "visitorNonMemberBannedDenialPrepared": true,
+  "realSelfHostedWssConnection": "blocked_missing_staging_provider",
+  "secretValuesIncluded": false
+}

@@ -26,6 +26,10 @@ Every active community member receives ordinary Voice and Screen authorization w
 
 ## Protected staging deployment
 
+The provider is the Picom-operated self-hosted LiveKit endpoint. LiveKit Cloud is not required. The protected wrapper `npm run livekit:token:self-hosted:deploy:staging -- --run` reads the API key/secret only from the root-owned host config outside the repository, derives the trusted `wss://` URL from protected network metadata, transfers values with a temporary `0600` Supabase CLI env file, and then invokes the existing hardened migration/function deployment plus hosted authorization/media fixtures.
+
+The wrapper must not run until Tasks 660-663 have real staging host, trusted TLS/TURN, secret custody, and owner evidence. Dry-run mode performs no network request.
+
 Use the manual `Picom LiveKit Token Staging` workflow with input `STAGING_ONLY`. The job runs only in the protected `hosted-staging` GitHub environment. It compares hosted migration history with the repository, applies and records pending migrations in order through the Supabase Management API, verifies the Task 660 authorization RPCs, deploys this Function, creates ephemeral synthetic fixtures, runs the hosted authorization matrix, removes all fixture data, and uploads a redacted evidence artifact. Existing schemas without migration history fail closed rather than replaying unknown DDL.
 
 Local dry-run:
