@@ -18,6 +18,7 @@ export function GlobalNavItem({ item, active, compact, disabled, badge, onClick 
     <button
       type="button"
       className={`global-nav-item${active ? " is-active" : ""}`}
+      data-global-navigation-button="true"
       aria-label={item.ariaLabel}
       aria-current={active ? "page" : undefined}
       aria-disabled={disabled || undefined}
@@ -26,7 +27,7 @@ export function GlobalNavItem({ item, active, compact, disabled, badge, onClick 
       onClick={onClick}
     >
       <span className="global-nav-item__icon" aria-hidden="true"><AppIcon name={item.icon} size="lg" /></span>
-      <span className="global-nav-item__label">{item.label}</span>
+      <span className="global-nav-item__label" title={!compact ? item.label : undefined}>{item.label}</span>
       <GlobalNavBadge value={badge} />
     </button>
   );

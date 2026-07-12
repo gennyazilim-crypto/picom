@@ -14,14 +14,14 @@ export function PresenceMenu({ open, compact, preference, boundaryRef, onChange,
   preference: PresencePreference;
   boundaryRef: RefObject<HTMLElement | null>;
   onChange: (preference: PresencePreference) => void;
-  onClose: () => void;
+  onClose: (restoreFocus?: boolean) => void;
 }>) {
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
       if (!boundaryRef.current?.contains(event.target as Node)) onClose();
     };
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(true); };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
@@ -46,7 +46,7 @@ export function PresenceMenu({ open, compact, preference, boundaryRef, onChange,
           aria-checked={preference === option.value}
           className={`global-nav-item${preference === option.value ? " is-active" : ""}`}
           style={{ minHeight: 34, gridTemplateColumns: "18px minmax(0, 1fr) auto", paddingBlock: 3 }}
-          onClick={() => { onChange(option.value); onClose(); }}
+          onClick={() => { onChange(option.value); onClose(true); }}
         >
           <i className={`global-presence-dot is-${option.dot}`} style={{ position: "static", display: "block", borderColor: "var(--surface-elevated, var(--surface))" }} aria-hidden="true" />
           <span className="global-nav-item__label">{option.label}</span>
