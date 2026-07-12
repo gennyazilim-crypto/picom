@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { NoiseCancellationMode } from "../../types/audioProcessing";
 import type { NoiseShieldSnapshot } from "../../types/noiseShield";
 import { noiseShieldService } from "../../services/noiseShieldService";
 import { noiseShieldControlService } from "../../services/voice/noiseShieldControlService";
+import { noiseShieldDiagnosticsService } from "../../services/voice/noiseShieldDiagnosticsService";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "../../services/voiceDeviceService";
 import { AppIcon } from "../AppIcon";
 import "./NoiseShieldControl.css";
@@ -72,8 +73,43 @@ export function NoiseShieldSettingsPanel() {
         <label><span><strong>Remember for this device</strong><small>Store the mode and independent processing preferences locally.</small></span><input type="checkbox" checked={snapshot.settings.rememberForDevice} disabled={busy} onChange={(event) => void run(() => noiseShieldControlService.updateSettings({ rememberForDevice: event.target.checked, preferredInputDeviceId: devices.selectedInputId }))} /></label>
       </div>
 
+      <NoiseShieldDiagnosticsPanel />
+
       <p className="noise-shield-voice-focus-warning"><strong>Voice Focus:</strong> may suppress other real speakers near a shared microphone. It is never the default and is not intended for music or studio use.</p>
     </section>
+  );
+}
+
+export function NoiseShieldDiagnosticsPanel() {
+  const diagnostics = useSyncExternalStore(
+    noiseShieldDiagnosticsService.subscribe,
+    noiseShieldDiagnosticsService.getSnapshot,
+    noiseShieldDiagnosticsService.getSnapshot,
+  );
+  const supported = Object.entries(diagnostics.supportedConstraints).filter(([, value]) => value).map(([key]) => key).join(", ") || "none reported";
+  const applied = diagnostics.appliedTrackSettings;
+
+  return (
+    <details className="noise-shield-diagnostics">
+      <summary><span><AppIcon name="settings" size="xs" />Support diagnostics</span><small>Privacy-safe</small></summary>
+      <div className="noise-shield-diagnostics-body">
+        <dl>
+          <div><dt>Requested / applied</dt><dd>{diagnostics.requestedMode} / {diagnostics.appliedMode}</dd></div>
+          <div><dt>Provider / status</dt><dd>{diagnostics.provider} / {diagnostics.status}</dd></div>
+          <div><dt>Processor</dt><dd>{diagnostics.processorState ?? "not attached"}</dd></div>
+          <div><dt>Initialization</dt><dd>{diagnostics.processorInitializationDurationMs === null ? "not measured" : `${Math.round(diagnostics.processorInitializationDurationMs)} ms`}</dd></div>
+          <div><dt>Input device</dt><dd>{diagnostics.inputDeviceKey}</dd></div>
+          <div><dt>Permission</dt><dd>{diagnostics.permission}</dd></div>
+          <div><dt>Lifecycle</dt><dd>{diagnostics.lifecycle.lastEvent} / generation {diagnostics.lifecycle.generation}</dd></div>
+          <div><dt>CPU approximation</dt><dd>{diagnostics.performance.cpuApproximation}</dd></div>
+          <div><dt>Renderer memory</dt><dd>{diagnostics.performance.rendererMemoryBucket}</dd></div>
+        </dl>
+        <p><strong>Supported:</strong> {supported}</p>
+        <p><strong>Applied track:</strong> echo {String(applied?.echoCancellation ?? "unknown")}, noise {String(applied?.noiseSuppression ?? "unknown")}, gain {String(applied?.autoGainControl ?? "unknown")}</p>
+        {diagnostics.fallbackReason || diagnostics.errorCode ? <p className="noise-shield-diagnostics-warning"><strong>{diagnostics.errorCode ?? "Fallback"}:</strong> {diagnostics.fallbackReason ?? "See the current processing state."}</p> : null}
+        <p className="noise-shield-diagnostics-privacy">No raw audio, waveform, full device identifier, device label, token, or room/session object is captured by this panel.</p>
+      </div>
+    </details>
   );
 }
 

@@ -34,6 +34,21 @@
 .noise-shield-independent-controls small { color: var(--text-muted); line-height: 1.35; }
 .noise-shield-voice-focus-warning { padding: 9px 11px; color: var(--text-secondary); border-left: 3px solid var(--warning); border-radius: var(--radius-sm); background: var(--surface); font-size: 12px; line-height: 1.45; }
 
+.noise-shield-diagnostics { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+.noise-shield-diagnostics > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; cursor: pointer; color: var(--text-primary); list-style: none; }
+.noise-shield-diagnostics > summary::-webkit-details-marker { display: none; }
+.noise-shield-diagnostics > summary span { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; }
+.noise-shield-diagnostics > summary small { color: var(--text-muted); }
+.noise-shield-diagnostics[open] > summary { border-bottom: 1px solid var(--border); }
+.noise-shield-diagnostics-body { display: grid; gap: 10px; padding: 12px; }
+.noise-shield-diagnostics-body dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.noise-shield-diagnostics-body dl div { display: grid; gap: 2px; min-width: 0; padding: 8px; border-radius: var(--radius-sm); background: var(--surface-soft); }
+.noise-shield-diagnostics-body dt { color: var(--text-muted); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
+.noise-shield-diagnostics-body dd { overflow: hidden; margin: 0; color: var(--text-primary); font: 11px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; text-overflow: ellipsis; }
+.noise-shield-diagnostics-body p { color: var(--text-secondary); font-size: 11px; line-height: 1.45; }
+.noise-shield-diagnostics-body .noise-shield-diagnostics-warning { color: var(--warning); }
+.noise-shield-diagnostics-body .noise-shield-diagnostics-privacy { padding-top: 8px; border-top: 1px solid var(--border); color: var(--text-muted); }
+
 .noise-shield-quick-control { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; align-items: center; margin-top: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); background: var(--surface-soft); }
 .noise-shield-quick-control > span { display: grid; min-width: 0; }
 .noise-shield-quick-control small { overflow: hidden; color: var(--text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
@@ -44,6 +59,7 @@ button.noise-shield-compact-status:hover:not(:disabled) { color: var(--text-prim
 
 .noise-shield-settings button:focus-visible,
 .noise-shield-settings input:focus-visible,
+.noise-shield-diagnostics > summary:focus-visible,
 .noise-shield-quick-control select:focus-visible,
 .noise-shield-compact-status:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
