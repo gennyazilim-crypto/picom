@@ -12,7 +12,7 @@ import { MeetingWorkspaceStatusSurface } from "./MeetingWorkspaceSurfaces";
 import { MeetingParticipantActionsProvider } from "./MeetingParticipantActionsProvider";
 import "./MeetingWorkspace.css";
 
-export function MeetingWorkspace({onExit}:{onExit?:()=>void}={}) {
+export function MeetingWorkspace({onExit,onMinimize}:{onExit?:()=>void;onMinimize?:()=>void}={}) {
   const snapshot=useSyncExternalStore(meetingService.store.subscribe,meetingService.store.getSnapshot,meetingService.store.getSnapshot);
   const hostState=useSyncExternalStore(meetingHostControlService.subscribe,meetingHostControlService.getSnapshot,meetingHostControlService.getSnapshot);
   const layoutPreference=useSyncExternalStore(meetingLayoutPreferenceService.subscribe,meetingLayoutPreferenceService.getSnapshot,meetingLayoutPreferenceService.getSnapshot).preference;
@@ -33,7 +33,7 @@ export function MeetingWorkspace({onExit}:{onExit?:()=>void}={}) {
   useEffect(()=>{const context=snapshot.context;if(!context)return;return meetingHostControlService.start(context.roomId,context.sessionId)},[snapshot.context?.roomId,snapshot.context?.sessionId]);
   useEffect(()=>{if((hostState.sessionStatus==="ended"||hostState.roomStatus==="ended"||hostState.roomStatus==="cancelled")&&!['idle','ended'].includes(snapshot.phase))void meetingService.leave()},[hostState.roomStatus,hostState.sessionStatus,snapshot.phase]);
   return <MeetingParticipantActionsProvider snapshot={snapshot}><section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}${admissionOnly?" is-admission-only":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"}>
-    <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} />
+    <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} onMinimize={onMinimize} />
     <div className="meeting-workspace__body">
       <main className="meeting-workspace__canvas">
         {admissionOnly?null:snapshot.phase==="prejoin"?<MeetingPreJoin onCancel={exit}/>:<MeetingStage snapshot={snapshot} onFocusParticipant={focusParticipant} onOpenPeople={()=>meetingService.setRightDock("people")} onReturnToGrid={()=>leaveShareLayout("grid")} onReturnToSpeaker={()=>leaveShareLayout("speaker")} />}
