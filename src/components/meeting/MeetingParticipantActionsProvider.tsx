@@ -30,6 +30,7 @@ export function MeetingParticipantActionsProvider({ snapshot, children }: { snap
   const [notice, setNotice] = useState("");
   const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
   const statusTimer = useRef<number | null>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const sessionKey = `${snapshot.context?.roomId ?? "none"}:${snapshot.context?.sessionId ?? "none"}`;
   const priorSessionKey = useRef(sessionKey);
   const selected = menu ? snapshot.participantsById[menu.participantId] : null;
@@ -57,9 +58,10 @@ export function MeetingParticipantActionsProvider({ snapshot, children }: { snap
     event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
     setNotice("");
+    returnFocus.current = event.currentTarget;
     setMenu({ participantId: participant.id, x: event.clientX || rect.right, y: event.clientY || rect.bottom, trigger: event.currentTarget });
   }, []);
-  const closeMenu = useCallback(() => { if (!busyAction) setMenu(null); }, [busyAction]);
+  const closeMenu = useCallback(() => { if (!busyAction) { setMenu(null); window.requestAnimationFrame(() => returnFocus.current?.isConnected && returnFocus.current.focus()); } }, [busyAction]);
 
   const run = useCallback(async (action: MeetingParticipantMenuAction) => {
     if (!selected || busyAction) return;

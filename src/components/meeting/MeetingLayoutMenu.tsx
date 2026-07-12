@@ -37,7 +37,7 @@ export function MeetingLayoutMenu({ snapshot }: { snapshot: MeetingClientSnapsho
   };
 
   return <div className="meeting-layout-menu" ref={root} onKeyDown={move}>
-    <button ref={trigger} type="button" aria-haspopup="menu" aria-expanded={open} aria-label={`Meeting layout: ${metadata[preference].label}`} onClick={() => setOpen((value) => !value)}><AppIcon name="maximize" size="sm" /><span>{metadata[preference].label}</span><AppIcon name="chevronDown" size="xs" /></button>
+    <button ref={trigger} type="button" aria-haspopup="menu" aria-expanded={open} aria-keyshortcuts="L" aria-label={`Meeting layout: ${metadata[preference].label}`} onClick={() => setOpen((value) => !value)}><AppIcon name="maximize" size="sm" /><span>{metadata[preference].label}</span><AppIcon name="chevronDown" size="xs" /></button>
     {open ? <div className="meeting-layout-menu__popover" role="menu" aria-label="Choose meeting layout">
       {options.map((option) => <button type="button" role="menuitemradio" aria-checked={preference === option} key={option} onClick={() => { meetingLayoutPreferenceService.setPreference(option); setOpen(false); trigger.current?.focus(); }}><AppIcon name={metadata[option].icon} size="sm" /><span><strong>{metadata[option].label}</strong><small>{metadata[option].detail}</small></span>{preference === option ? <span className="meeting-layout-menu__selected" aria-hidden="true">●</span> : null}</button>)}
     </div> : null}

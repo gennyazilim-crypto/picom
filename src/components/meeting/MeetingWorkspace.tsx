@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useMeetingKeyboardShortcuts } from "../../hooks/useMeetingKeyboardShortcuts";
 import { meetingService } from "../../services/meeting/meetingService";
 import { meetingHostControlService } from "../../services/meeting/meetingHostControlService";
 import { meetingCaptionService } from "../../services/meeting/meetingCaptionService";
@@ -12,6 +13,7 @@ import { MeetingStage } from "./MeetingStage";
 import { MeetingTopBar } from "./MeetingTopBar";
 import { MeetingWorkspaceStatusSurface } from "./MeetingWorkspaceSurfaces";
 import { MeetingParticipantActionsProvider } from "./MeetingParticipantActionsProvider";
+import { MeetingAccessibilityNavigation } from "./MeetingAccessibilityNavigation";
 import "./MeetingWorkspace.css";
 import "./MeetingCaptions.css";
 
@@ -29,7 +31,10 @@ export function MeetingWorkspace({onExit,onMinimize}:{onExit?:()=>void;onMinimiz
   const toggleFocus=()=>setFocusMode((current)=>!current);
   const focusParticipant=(id:string|null)=>{meetingService.setFocus(id,snapshot.focusedShareId);if(id)meetingLayoutPreferenceService.setPreference("speaker")};
   const leaveShareLayout=(layout:Extract<MeetingLayoutMode,"grid"|"speaker">)=>meetingLayoutPreferenceService.setPreference(layout);
+  const openShortcutPanel=(panel:Extract<MeetingSidePanel,"people"|"chat">)=>meetingService.setRightDock(panel);
+  const closeDock=()=>{const restore=document.getElementById("meeting-side-panel")?.contains(document.activeElement);meetingService.setRightDock("none");if(restore)window.requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>("[data-meeting-panel-toggle]")?.focus())};
   const exit=()=>{document.body.classList.remove("picom-meeting-focus");void meetingService.leave().finally(()=>onExit?.())};
+  const shortcutAnnouncement=useMeetingKeyboardShortcuts({enabled:!admissionOnly,onOpenPanel:openShortcutPanel,onCycleLayout:cycleLayout});
   useEffect(()=>{const roomId=snapshot.context?.roomId;if(roomId)meetingLayoutPreferenceService.activate(roomId)},[snapshot.context?.roomId]);
   useEffect(()=>{const valid=getValidMeetingLayoutPreferences(snapshot);if(layoutPreference!=="auto"&&!valid.includes(layoutPreference)){meetingLayoutPreferenceService.reset();return}const resolved=resolveMeetingLayout(snapshot,layoutPreference);if(snapshot.layout!==resolved)meetingService.setLayout(resolved)},[layoutPreference,snapshot.context?.roomMode,snapshot.layout,snapshot.participantIds.length,snapshot.screenShares]);
   useEffect(()=>{const participantValid=!snapshot.focusedParticipantId||snapshot.participantIds.includes(snapshot.focusedParticipantId),shareValid=!snapshot.focusedShareId||(snapshot.screenShares??[]).some((share)=>share.id===snapshot.focusedShareId);if(!participantValid||!shareValid)meetingService.setFocus(participantValid?snapshot.focusedParticipantId:null,shareValid?snapshot.focusedShareId:null)},[snapshot.focusedParticipantId,snapshot.focusedShareId,snapshot.participantIds,snapshot.screenShares]);
@@ -37,15 +42,18 @@ export function MeetingWorkspace({onExit,onMinimize}:{onExit?:()=>void;onMinimiz
   useEffect(()=>{const context=snapshot.context;if(!context)return;return meetingHostControlService.start(context.roomId,context.sessionId)},[snapshot.context?.roomId,snapshot.context?.sessionId]);
   useEffect(()=>{const context=snapshot.context;if(!context||!["connected","reconnecting"].includes(snapshot.phase))return;return meetingCaptionService.activate({roomId:context.roomId,sessionId:context.sessionId,canStart:snapshot.capabilities.canStartCaptions})},[snapshot.context?.roomId,snapshot.context?.sessionId,snapshot.phase,snapshot.capabilities.canStartCaptions]);
   useEffect(()=>{if((hostState.sessionStatus==="ended"||hostState.roomStatus==="ended"||hostState.roomStatus==="cancelled")&&!['idle','ended'].includes(snapshot.phase))void meetingService.leave()},[hostState.roomStatus,hostState.sessionStatus,snapshot.phase]);
-  return <MeetingParticipantActionsProvider snapshot={snapshot}><section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}${admissionOnly?" is-admission-only":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"}>
+  return <MeetingParticipantActionsProvider snapshot={snapshot}><section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}${admissionOnly?" is-admission-only":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"} aria-describedby="meeting-keyboard-help">
+    <MeetingAccessibilityNavigation dockAvailable={!admissionOnly} panelAvailable={dockOpen}/>
+    <p id="meeting-keyboard-help" className="sr-only">Meeting keyboard shortcuts: M microphone, V camera, S screen share, H raise hand, C chat panel, P people panel, L layout, and Control Shift L to focus the leave control. Shortcuts are paused while typing or while a menu or dialog is open.</p>
+    <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{shortcutAnnouncement}</span>
     <MeetingTopBar snapshot={snapshot} captions={captions} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} onMinimize={onMinimize} />
     <div className="meeting-workspace__body">
-      <main className="meeting-workspace__canvas">
+      <main id="meeting-media-stage" className="meeting-workspace__canvas" tabIndex={-1} aria-label="Meeting media stage and connection status">
         {admissionOnly?null:snapshot.phase==="prejoin"?<MeetingPreJoin onCancel={exit}/>:<MeetingStage snapshot={snapshot} onFocusParticipant={focusParticipant} onOpenPeople={()=>meetingService.setRightDock("people")} onReturnToGrid={()=>leaveShareLayout("grid")} onReturnToSpeaker={()=>leaveShareLayout("speaker")} />}
         {admissionOnly?null:<MeetingCaptionsOverlay caption={captions}/>}
         <MeetingWorkspaceStatusSurface snapshot={snapshot} onRetry={()=>{void meetingService.retry()}} onLeave={exit} onCancelWaiting={async()=>{const result=await meetingService.cancelWaitingRequest();return result.ok}} />
       </main>
-      {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={focusParticipant} onClose={()=>meetingService.setRightDock("none")} />:null}
+      {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={focusParticipant} onClose={closeDock} />:null}
     </div>
     {admissionOnly?null:<MeetingControlDock snapshot={snapshot} focusMode={focusMode} onCycleLayout={cycleLayout} onToggleDock={toggleDock} onToggleFocus={toggleFocus} onLeave={exit} />}
   </section></MeetingParticipantActionsProvider>;
