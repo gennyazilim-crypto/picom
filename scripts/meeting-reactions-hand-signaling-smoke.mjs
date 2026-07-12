@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const read=(path)=>readFileSync(path,"utf8");
-const migration=read("supabase/migrations/20260711154000_meeting_reactions_hand_signaling.sql"),hardening=read("supabase/migrations/20260711164000_meeting_abuse_prevention_rate_limits.sql"),signal=read("src/services/meeting/meetingSignalService.ts"),edge=read("supabase/functions/meeting-token/index.ts"),types=read("src/types/meetingSignals.ts"),participant=read("src/services/meeting/meetingParticipantReconciliationService.ts"),db=read("src/services/supabase/database.types.ts"),sql=read("supabase/tests/meeting_reactions_hand_signaling.sql");
+const migration=read("supabase/migrations/20260711154000_meeting_reactions_hand_signaling.sql"),hardening=read("supabase/migrations/20260711164000_meeting_abuse_prevention_rate_limits.sql"),signal=read("src/services/meeting/meetingSignalService.ts"),meeting=read("src/services/meeting/meetingService.ts"),edge=read("supabase/functions/meeting-token/index.ts"),types=read("src/types/meetingSignals.ts"),participant=read("src/services/meeting/meetingParticipantReconciliationService.ts"),db=read("src/services/supabase/database.types.ts"),sql=read("supabase/tests/meeting_reactions_hand_signaling.sql");
 for(const marker of ["acknowledged_by_user_id","stage_request_status","meeting_signal_write","update_meeting_hand_signal","get_meeting_hand_queue","close_meeting_signal_on_participant_exit"])assert.ok(migration.includes(marker),`missing ${marker}`);
 for(const action of ["raise","lower","acknowledge","request_stage","cancel_stage","approve_stage","deny_stage"])assert.ok(migration.includes(`'${action}'`)&&types.includes(action),`missing hand action ${action}`);
 assert.ok(migration.includes("revoke execute on function public.set_meeting_participant_hand_state")&&participant.includes('"update_meeting_hand_signal"'),"legacy unbounded hand path remains active");
@@ -9,6 +9,7 @@ assert.ok(hardening.includes("meeting_reaction_signals")&&hardening.includes("se
 assert.ok(signal.includes('rpc("send_meeting_reaction"')&&signal.includes('table:"meeting_reaction_signals"')&&signal.includes("OUTBOUND_LIMIT")&&signal.includes("INBOUND_LIMIT"),"reaction validation/rate-limit/reconnect contract missing");
 assert.ok(!signal.includes("senderIdentity:text(row")&&!types.includes("senderIdentity:string;roomId"),"reaction payload can claim sender identity");
 assert.ok(edge.includes("request_data: false")&&edge.includes("canPublishData: false"),"client-forgeable LiveKit data publication remains enabled");
+assert.ok(meeting.includes("canReact: base.canReact")&&!meeting.includes("canReact: base.canReact&&token.canPublishData"),"server reaction capability is still coupled to LiveKit data grants");
 for(const rpc of ["update_meeting_hand_signal","get_meeting_hand_queue","send_meeting_reaction"])assert.ok(db.includes(`${rpc}:`),`database type missing ${rpc}`);
 assert.ok(sql.includes("legacy hand RPC bypass")&&sql.includes("participant-exit signal cleanup"),"SQL security/cleanup test missing");
 console.log("Meeting server reaction, payload validation, rate limiting, authoritative hand queue, stage request and reconnect smoke: PASS");

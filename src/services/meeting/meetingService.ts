@@ -78,7 +78,7 @@ function terminalDisconnect(errorCode: string | null): "ended" | "revoked" | nul
 
 function capabilities(role: MeetingRole, token?: Readonly<{ canPublishAudio:boolean;canPublishVideo:boolean;canPublishScreen:boolean;canPublishData:boolean }>): MeetingCapabilities {
   const base = getMeetingCapabilities(role);
-  return token ? { ...base, canPublishAudio: base.canPublishAudio&&token.canPublishAudio, canPublishVideo: base.canPublishVideo&&token.canPublishVideo, canShareScreen: base.canShareScreen&&token.canPublishScreen, canReact: base.canReact&&token.canPublishData } : base;
+  return token ? { ...base, canPublishAudio: base.canPublishAudio&&token.canPublishAudio, canPublishVideo: base.canPublishVideo&&token.canPublishVideo, canShareScreen: base.canShareScreen&&token.canPublishScreen, canReact: base.canReact } : base;
 }
 
 function authoritativeParticipant(item: MeetingParticipantAuthority): MeetingClientParticipant {
