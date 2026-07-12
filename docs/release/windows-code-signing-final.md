@@ -158,7 +158,7 @@ Test on clean supported Windows versions/architectures in the release matrix:
 1. Download from the intended distribution path and verify checksum/signature before opening.
 2. Confirm SmartScreen/UAC publisher text and no unexpected unsigned helper executable.
 3. Install per-user without elevation (`asInvoker`) and with custom install location.
-4. Start Picom; verify custom titlebar, auth, community/chat, uploads, voice/screen share permissions, protocol link, tray/notifications where enabled.
+4. Start Picom; verify the custom titlebar and V1 Auth, Feed, text community/chat, uploads, Profile, Friends/DM, Settings, Community Admin, Help and diagnostics flows. Voice and Screen Share are hidden from V1.
 5. Upgrade from previous known-good signed version; preserve settings/session/local migrations safely.
 6. Repair/reinstall if supported and uninstall; verify shortcuts/protocol registration cleanup.
 7. Inspect installed executables/uninstaller/helper binaries expected to be signed by the release process.

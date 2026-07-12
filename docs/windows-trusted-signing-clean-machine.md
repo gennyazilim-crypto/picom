@@ -11,7 +11,7 @@ No trusted code-signing certificate or protected signing environment was availab
 | SHA-256 after signing | BLOCKED |
 | Clean-machine install and first launch | BLOCKED |
 | Auth/feed/profile/community/message/upload/DM | BLOCKED |
-| Voice and screen share | BLOCKED |
+| Voice and Screen Share | N/A for V1; hidden by Task 621 |
 | Restart/settings persistence | BLOCKED |
 | Uninstall/retention/reinstall | BLOCKED |
 | Window controls/native menu/startup | BLOCKED on signed RC |

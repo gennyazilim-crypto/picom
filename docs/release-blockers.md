@@ -164,7 +164,7 @@ Backup hashes matched and isolated random-port Docker attempts were cleaned safe
 | RB-03 | Hosted Edge Functions and Storage lifecycle | Local contracts pass; protected deployment/config absent | Deploy release-scoped function and run hosted Storage lifecycle checks |
 | RB-04 | CLOSED_BY_SCOPE: Hosted LiveKit | Evidence remains incomplete; Voice is hidden from V1 | Reopen only for a future scoped release |
 | RB-05 | CLOSED_BY_SCOPE: Native screen share | Evidence remains incomplete; Screen Share is hidden from V1 | Reopen only for a future scoped release |
-| RB-06 | Trusted Windows release | Unsigned beta smoke exists | Sign with trusted certificate and validate on a clean Windows machine |
+| RB-06 | Trusted Windows release | Task 622 found no signing environment, certificate, signed artifact, or workflow run; package version is still 0.1.1-beta.1 | Freeze 1.0.0 commit, sign/timestamp, hash, then validate on clean Windows 10/11 |
 | RB-07 | Linux native release | Local contracts pass; no native artifact evidence | Build/install AppImage and DEB on Linux and certify runtime behavior |
 | RB-08 | macOS native release | Local contracts pass; no signed/notarized artifact | Sign, notarize, staple, Gatekeeper-check, install, and certify |
 | RB-09 | Production ownership/freeze | Roles and custodians remain unassigned | Record named accountable owners and approved freeze evidence |
@@ -237,3 +237,8 @@ Closure procedure and secret-safe fixture contract: [V1 hosted Supabase closure]
 ## Task 621 V1 Voice and Screen Share decision
 
 Decision: **HIDDEN_FROM_V1** (2026-07-12). RB-04 and RB-05 are closed by V1 scope, not by provider or native certification. Voice channels, settings, Connected Voice, Community Admin controls, onboarding/help promises, deep links, Edge deployment and release copy are gated out. The incomplete hosted/native evidence remains recorded for any future release that reopens this scope.
+
+
+## Task 622 trusted Windows V1 candidate
+
+Status: **BLOCKED** (2026-07-12). Local audit found no signtool, code-signing certificate, signing variables, protected GitHub environment, signed workflow run, signed artifact, post-signing SHA-256, or clean Windows target. Package metadata remains 0.1.1-beta.1 while V1 requires 1.0.0. The protected workflow now fails closed on full-SHA/version/channel mismatch, but RB-06 remains open until trusted signing and the exact clean-machine matrix pass.
