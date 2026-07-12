@@ -1,0 +1,13 @@
+import {readFileSync} from "node:fs";
+const read=(path)=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
+const expect=(source,markers,label)=>{for(const marker of markers)if(!source.includes(marker))throw new Error(`${label}: missing ${marker}`)};
+const registry=read("src/services/meetingDiagnosticsRegistry.ts"),meeting=read("src/services/meeting/meetingService.ts"),captions=read("src/services/meeting/meetingCaptionService.ts"),diagnostics=read("src/services/diagnostics/diagnosticsService.ts"),feedback=read("src/services/feedbackService.ts"),privacy=read("docs/meeting-observability-diagnostics.md");
+expect(registry,["tokenFailureCount","lastJoinLatencyBucket","stateTransitionCounts","reconnectCount","participantCount","trackPublishFailureCount","screenShareFailureCount","captionFailureCount","connectionQualityCounts","providerRegion","deviceCapabilities","explicit_user_action","remoteUploadEnabled:false","Meeting operation failed"],"meeting diagnostics registry");
+expect(meeting,["meetingDiagnosticsRegistry.observeSnapshot","beginJoin","recordTokenFailure","completeJoin","recordTrackPublishFailure","recordScreenShareFailure"],"meeting instrumentation");
+expect(captions,["recordCaptionFailure","CAPTION_PROVIDER_FAILED","CAPTION_REQUEST_FAILED"],"caption instrumentation");
+expect(diagnostics,["meeting: MeetingDiagnosticsSummary","meetingDiagnosticsRegistry.getSummary()","Meeting join latency","room/session identities, media, transcripts"],"diagnostics export integration");
+expect(feedback,["includeDiagnostics","MeetingDiagnosticsSummary","explicit user action","aggregate-only"],"support opt-in integration");
+expect(privacy,["Token failure rate","Join p95","Provider outage suspicion","remain BLOCKED"],"hosted dashboard contract");
+const forbidden=/\b(roomId|sessionId|participantName|providerIdentity|messageBody|transcriptText|accessToken|refreshToken|livekitToken)\s*:/;
+if(forbidden.test(registry))throw new Error("Meeting diagnostics registry contains forbidden identifying/content field");
+console.log("Task 571 privacy-safe meeting observability/diagnostics structural smoke PASS (hosted dashboards and alert evidence remain BLOCKED)");

@@ -5,6 +5,7 @@ import type { VoiceConnectionStatus } from "../voiceService";
 import { voiceDiagnosticsRegistry } from "../voiceDiagnosticsRegistry";
 import type { VoiceConnectionQuality, VoiceDurationBucket } from "../../utils/voiceQualityMetrics";
 import { dataSourceService } from "../dataSourceService";
+import { meetingDiagnosticsRegistry, type MeetingDiagnosticsSummary } from "../meetingDiagnosticsRegistry";
 
 export type DiagnosticsRealtimeStatus = RealtimeConnectionStatus | "unknown";
 export type SupabaseDiagnosticsStatus = "mock" | "configured" | "not_configured";
@@ -53,6 +54,7 @@ export type DiagnosticsSnapshot = Readonly<{
       deviceErrorCount: number;
       sessionDurationBucket: VoiceDurationBucket;
     };
+    meeting: MeetingDiagnosticsSummary;
     authState: "authenticated" | "signed_out";
     activeView: string;
     activeCommunityId: string | null;
@@ -122,6 +124,11 @@ function formatExportAsText(payload: DiagnosticsExportPayload): string {
     `Voice quality: ${payload.serviceStatus.voice.connectionQuality}`,
     `Voice reconnects: ${payload.serviceStatus.voice.reconnectCount}`,
     `Voice device errors: ${payload.serviceStatus.voice.deviceErrorCount}`,
+    `Meeting phase: ${payload.serviceStatus.meeting.phase}`,
+    `Meeting provider region: ${payload.serviceStatus.meeting.providerRegion}`,
+    `Meeting join latency: ${payload.serviceStatus.meeting.lastJoinLatencyBucket}`,
+    `Meeting reconnects: ${payload.serviceStatus.meeting.reconnectCount}`,
+    `Meeting last failure domain: ${payload.serviceStatus.meeting.lastFailureDomain}`,
     "",
     "Recent errors:",
     ...(payload.recentErrors.length ? payload.recentErrors.map((entry) => `${entry.timestamp} [${entry.source ?? "client"}] ${entry.message}`) : ["None"]),
@@ -183,6 +190,7 @@ export const diagnosticsService = {
           deviceErrorCount: voiceDiagnostics.deviceErrorCount,
           sessionDurationBucket: voiceDiagnostics.sessionDurationBucket,
         },
+        meeting: meetingDiagnosticsRegistry.getSummary(),
         authState: appContext.authState,
         activeView: appContext.activeView,
         activeCommunityId: appContext.activeCommunityId,
@@ -203,7 +211,7 @@ export const diagnosticsService = {
       serviceStatus: safeServiceStatus,
       recentErrors: snapshot.recentErrors,
       recentLogs: loggingService.getRecentLogs(options.recentLogLimit ?? 75),
-      note: "Redacted Picom diagnostics. Passwords, tokens, cookies, authorization headers, service-role keys, private keys, LiveKit secrets, and private message content fields are excluded.",
+      note: "Redacted Picom diagnostics created by explicit user action. Meeting evidence is local, ephemeral, and aggregate-only. Passwords, tokens, cookies, authorization headers, service-role keys, private keys, LiveKit secrets, room/session identities, media, transcripts, and private message content fields are excluded.",
     });
   },
   exportDiagnostics(format: "json" | "text" = "json", options: { recentLogLimit?: number } = {}): string {

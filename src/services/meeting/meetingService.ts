@@ -13,6 +13,7 @@ import type { NoiseShieldMode, NoiseShieldSnapshot } from "../../types/noiseShie
 import type { MeetingCameraQualityPreset } from "../../types/meetingVideoGrid";
 import { meetingScreenShareLeaseService } from "./meetingScreenShareLeaseService";
 import { meetingDeviceRecoveryService } from "./meetingDeviceRecoveryService";
+import { meetingDiagnosticsRegistry } from "../meetingDiagnosticsRegistry";
 
 let currentRequest: MeetingClientJoinRequest | null = null;
 let joinPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
@@ -23,6 +24,8 @@ let reconnectSequence = 0;
 let reconnectWaitCleanup: (() => void) | null = null;
 let sessionCleanups: Array<() => void> = [];
 const meetingReconnectBackoffMs = [500, 1_500, 3_500] as const;
+
+meetingStore.subscribe(()=>{const snapshot=meetingStore.getSnapshot();meetingDiagnosticsRegistry.observeSnapshot({generation:snapshot.generation,phase:snapshot.phase,providerStatus:snapshot.providerStatus,participantQualities:snapshot.participantIds.map((id)=>snapshot.participantsById[id]?.connectionQuality??"unknown"),errorCode:snapshot.error?.providerCode??snapshot.error?.code??null})});
 
 const keyOf = (request: MeetingClientJoinRequest) => `${request.roomId}:${request.sessionId}`;
 const fail = (code: MeetingClientError["code"], message: string, recoverable = true, providerCode?: string): MeetingClientError => ({ code, message, recoverable, providerCode });
@@ -239,15 +242,15 @@ async function performJoin(request:MeetingClientJoinRequest,force:boolean):Promi
   let generation=meetingStore.getSnapshot().generation;
   if(meetingStore.getSnapshot().context?.roomId!==request.roomId||meetingStore.getSnapshot().context?.sessionId!==request.sessionId||meetingStore.getSnapshot().phase==="idle"||meetingStore.getSnapshot().phase==="ended")generation=await prepare(request);
   if(!force&&meetingStore.getSnapshot().phase==="connected")return{ok:true,data:meetingStore.getSnapshot()};
-  if(!meetingStore.transition(generation,"token-loading",{error:null,providerStatus:"requesting_token"}))return stale();
+  if(!meetingStore.transition(generation,"token-loading",{error:null,providerStatus:"requesting_token"}))return stale();const joinStartedAt=meetingDiagnosticsRegistry.beginJoin();
   const tokenResult=await meetingLiveKitAdapter.authorize(request);if(meetingStore.getSnapshot().generation!==generation)return stale();
-  if(!tokenResult.ok){const error=fail("MEETING_TOKEN_UNAVAILABLE",tokenResult.error.message,true,tokenResult.error.code);meetingStore.setError(generation,error);return{ok:false,error};}
+  if(!tokenResult.ok){meetingDiagnosticsRegistry.recordTokenFailure(tokenResult.error.code);meetingDiagnosticsRegistry.completeJoin(joinStartedAt,"failed",tokenResult.error.code);const error=fail("MEETING_TOKEN_UNAVAILABLE",tokenResult.error.message,true,tokenResult.error.code);meetingStore.setError(generation,error);return{ok:false,error};}
   const token=tokenResult.data;meetingStore.setCapabilities(generation,token.role,token.state==="authorized"?capabilities(token.role,token):capabilities(token.role));
-  if(token.state==="waiting"){bindSession(generation,request);meetingStore.transition(generation,"waiting",{waitingEntry:{id:token.waitingEntryId,status:"waiting"},providerStatus:"waiting_room"});return{ok:true,data:meetingStore.getSnapshot()};}
+  if(token.state==="waiting"){meetingDiagnosticsRegistry.completeJoin(joinStartedAt,"waiting");bindSession(generation,request);meetingStore.transition(generation,"waiting",{waitingEntry:{id:token.waitingEntryId,status:"waiting"},providerStatus:"waiting_room"});return{ok:true,data:meetingStore.getSnapshot()};}
   if(!meetingStore.transition(generation,"connecting",{waitingEntry:null,providerStatus:"connecting"}))return stale();bindSession(generation,request);
   const connected=await meetingLiveKitAdapter.connect(token,request);if(meetingStore.getSnapshot().generation!==generation){await meetingLiveKitAdapter.disconnect();return stale();}
-  if(!connected.ok){const error=fail(connected.error.code==="VOICE_PERMISSION_DENIED"?"MEETING_PERMISSION_DENIED":"MEETING_CONNECTION_FAILED",connected.error.message,true,connected.error.code);meetingStore.setError(generation,error);return{ok:false,error};}
-  meetingStore.transition(generation,"connected",{providerStatus:"connected",error:null});applyProviderParticipants(generation,connected.data);return{ok:true,data:meetingStore.getSnapshot()};
+  if(!connected.ok){meetingDiagnosticsRegistry.completeJoin(joinStartedAt,"failed",connected.error.code);const error=fail(connected.error.code==="VOICE_PERMISSION_DENIED"?"MEETING_PERMISSION_DENIED":"MEETING_CONNECTION_FAILED",connected.error.message,true,connected.error.code);meetingStore.setError(generation,error);return{ok:false,error};}
+  meetingDiagnosticsRegistry.completeJoin(joinStartedAt,"connected");meetingStore.transition(generation,"connected",{providerStatus:"connected",error:null});applyProviderParticipants(generation,connected.data);return{ok:true,data:meetingStore.getSnapshot()};
 }
 
 function joinSerialized(request:MeetingClientJoinRequest,force=false):Promise<MeetingClientResult<MeetingClientSnapshot>> {
@@ -289,11 +292,11 @@ export const meetingService = {
   setVideoSubscriptions:meetingLiveKitAdapter.setVideoSubscriptionPlan,
   setCameraQualityPreset:(preset:MeetingCameraQualityPreset)=>meetingLiveKitAdapter.setCameraQualityPreset(preset),
   setFocusedScreenShare:meetingLiveKitAdapter.setFocusedScreenShare,
-  async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});return result.ok;},
+  async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});else if(!muted)meetingDiagnosticsRegistry.recordTrackPublishFailure("microphone",result.error.code);return result.ok;},
   setDeafened(deafened:boolean):boolean{const result=meetingLiveKitAdapter.setDeafened(deafened);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,deafened:result.data.deafened}});return result.ok;},
-  async setCameraEnabled(enabled:boolean,deviceId="default"):Promise<boolean>{const result=await meetingLiveKitAdapter.setCameraEnabled(enabled,deviceId);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,cameraEnabled:Boolean(result.data.cameraEnabled)}});return result.ok===true;},
-  async startScreenShare(sourceId:string,sourceLabel?:string):Promise<boolean>{const request=currentRequest;if(!request||meetingStore.getSnapshot().screenShares?.some((share)=>!share.isLocal))return false;const lease=await meetingScreenShareLeaseService.claim(request.roomId,request.sessionId);if(!lease.ok)return false;const result=await meetingLiveKitAdapter.startScreenShare(sourceId,sourceLabel);if(!result.ok){await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);return false}meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:Boolean(result.data.screenSharing)}});return true;},
-  async stopScreenShare():Promise<boolean>{const request=currentRequest,result=await meetingLiveKitAdapter.stopScreenShare();if(request)await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:false}});return result.ok;},
+  async setCameraEnabled(enabled:boolean,deviceId="default"):Promise<boolean>{const result=await meetingLiveKitAdapter.setCameraEnabled(enabled,deviceId);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,cameraEnabled:Boolean(result.data.cameraEnabled)}});else if(enabled)meetingDiagnosticsRegistry.recordTrackPublishFailure("camera",result.error.code);return result.ok===true;},
+  async startScreenShare(sourceId:string,sourceLabel?:string):Promise<boolean>{const request=currentRequest;if(!request){meetingDiagnosticsRegistry.recordScreenShareFailure("MEETING_CONTEXT_MISSING");return false}if(meetingStore.getSnapshot().screenShares?.some((share)=>!share.isLocal)){meetingDiagnosticsRegistry.recordScreenShareFailure("SCREEN_SHARE_CONFLICT");return false}const lease=await meetingScreenShareLeaseService.claim(request.roomId,request.sessionId);if(!lease.ok){meetingDiagnosticsRegistry.recordScreenShareFailure(`SCREEN_SHARE_LEASE_${lease.code}`);return false}const result=await meetingLiveKitAdapter.startScreenShare(sourceId,sourceLabel);if(!result.ok){meetingDiagnosticsRegistry.recordScreenShareFailure(result.error.code);await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);return false}meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:Boolean(result.data.screenSharing)}});return true;},
+  async stopScreenShare():Promise<boolean>{const request=currentRequest,result=await meetingLiveKitAdapter.stopScreenShare();if(request)await meetingScreenShareLeaseService.release(request.roomId,request.sessionId);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,screenSharing:false}});else meetingDiagnosticsRegistry.recordScreenShareFailure(result.error.code);return result.ok;},
   sendReaction:meetingSignalService.sendReaction,
   applyHandAction:meetingSignalService.applyHandAction,
 };

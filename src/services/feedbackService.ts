@@ -2,6 +2,7 @@ import { diagnosticsService } from "./diagnosticsService";
 import { fileService } from "./fileService";
 import { loggingService, type LogEntry } from "./loggingService";
 import { clipboardService } from "./clipboardService";
+import type { MeetingDiagnosticsSummary } from "./meetingDiagnosticsRegistry";
 
 export type FeedbackIssueType =
   | "install_package"
@@ -73,6 +74,7 @@ export type SupportDiagnosticsPayload = Readonly<{
     supabaseStatus: string;
     supabaseHost: string | null;
     liveKitStatus: string;
+    meeting: MeetingDiagnosticsSummary;
     authState: "authenticated" | "signed_out";
     activeView: string;
     activeCommunityId: string | null;
@@ -142,7 +144,7 @@ export const feedbackService = {
       },
       feedback: redactedFeedback,
       recentLogs: feedback?.includeLogs ? loggingService.getRecentLogs(75) : [],
-      note: "Picom beta diagnostics placeholder. Payload is redacted by loggingService and must not include passwords, tokens, cookies, authorization headers, privileged server keys, or private secrets."
+      note: "Picom support diagnostics are included only after explicit user action and are redacted by loggingService. Meeting evidence is aggregate-only and must not include room/session identities, media, captions, chat content, passwords, tokens, cookies, authorization headers, privileged server keys, or private secrets."
     });
   },
 
