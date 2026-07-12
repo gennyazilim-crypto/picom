@@ -71,6 +71,7 @@ function assertToken(payload, userId, intent) {
 }
 
 const safeResponseCode = (payload) => typeof payload?.code === "string" && /^[A-Z0-9_]{1,64}$/.test(payload.code) ? payload.code : "NO_SAFE_CODE";
+const safeResponseDiagnostic = (payload) => redact(typeof payload?.message === "string" ? payload.message : "No safe response message.");
 const safeDatabaseCode = (error) => typeof error?.code === "string" && /^[A-Z0-9]{5}$/.test(error.code) ? error.code : "NO_DB_CODE";
 const safeDatabaseDiagnostic = (error) => redact([error?.message, error?.details].filter(Boolean).join(" | "));
 
@@ -178,13 +179,13 @@ commit;`);
   for (const label of activeLabels) {
     const session = sessions.get(label);
     const voice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "voice" } });
-    if (voice.response.status !== 200) throw new Error(`${label} Voice token expected 200, received ${voice.response.status} ${safeResponseCode(voice.payload)}.`);
+    if (voice.response.status !== 200) throw new Error(`${label} Voice token expected 200, received ${voice.response.status} ${safeResponseCode(voice.payload)}: ${safeResponseDiagnostic(voice.payload)}`);
     assertToken(voice.payload, session.userId, "voice");
     const screen = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "screen" } });
-    if (screen.response.status !== 200) throw new Error(`${label} Screen token expected 200, received ${screen.response.status} ${safeResponseCode(screen.payload)}.`);
+    if (screen.response.status !== 200) throw new Error(`${label} Screen token expected 200, received ${screen.response.status} ${safeResponseCode(screen.payload)}: ${safeResponseDiagnostic(screen.payload)}`);
     assertToken(screen.payload, session.userId, "screen");
     const privateVoice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, channelId: privateChannelId, intent: "voice" } });
-    if (privateVoice.response.status !== 200) throw new Error(`${label} private Voice token expected 200, received ${privateVoice.response.status} ${safeResponseCode(privateVoice.payload)}.`);
+    if (privateVoice.response.status !== 200) throw new Error(`${label} private Voice token expected 200, received ${privateVoice.response.status} ${safeResponseCode(privateVoice.payload)}: ${safeResponseDiagnostic(privateVoice.payload)}`);
     assertToken(privateVoice.payload, session.userId, "voice");
   }
 

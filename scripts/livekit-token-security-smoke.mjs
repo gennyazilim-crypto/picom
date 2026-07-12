@@ -31,7 +31,7 @@ const checks = [
   ["deterministic identity room", fn.includes("auth.user.id") && fn.includes("createPicomLiveKitRoomName") && fn.includes("matchesPicomLiveKitRoomName")],
   ["hosted roleless and denial matrix", ["owner", "admin", "moderator", "member", "roleless_member", "visitor", "non_member", "banned", "rate_limit"].every((actor) => fixture.includes(`\"${actor}\"`))],
   ["hosted source and rate assertions", fixture.includes("screen_share_audio") && fixture.includes("camera") && fixture.includes("RATE_LIMITED") && fixture.includes("attempt <= 10")],
-  ["hosted failures expose only bounded response codes", fixture.includes("safeResponseCode") && fixture.includes("^[A-Z0-9_]{1,64}$")],
+  ["hosted failures expose only redacted response diagnostics", fixture.includes("safeResponseCode") && fixture.includes("safeResponseDiagnostic") && fixture.includes("^[A-Z0-9_]{1,64}$")],
   ["hosted rate-limit RPC has redacted diagnostic preflight", fixture.includes("safeDatabaseCode") && fixture.includes("safeDatabaseDiagnostic") && fixture.includes("[REDACTED_UUID]") && fixture.includes("delete from public.user_action_rate_limits")],
   ["hosted fixture usernames respect profile constraints", fixture.includes("actorCodes") && fixture.includes("username.length < 3 || username.length > 32")],
   ["roleless fixture restores membership integrity trigger", fixture.includes("disable trigger community_member_role_integrity") && fixture.includes("enable trigger community_member_role_integrity")],
