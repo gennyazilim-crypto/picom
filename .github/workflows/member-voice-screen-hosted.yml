@@ -51,7 +51,7 @@ jobs:
       - name: Set up project Node.js
         uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
+          node-version: 24
           cache: npm
           cache-dependency-path: package-lock.json
 
