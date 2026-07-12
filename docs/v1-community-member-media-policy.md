@@ -1,7 +1,7 @@
 # Picom V1 Community Member Media Policy
 
 Status date: 2026-07-12  
-Policy state: **LOCKED - INCLUDED BY TASK 668; public release gates remain**
+Policy state: **LOCKED - IN_V1 WITH SELF_HOSTED_LIVEKIT**
 
 ## Canonical rule
 
@@ -72,5 +72,5 @@ Every active member may publish one user-selected Screen Share track. Multiple m
 
 ## Release gate
 
-Task 668 enables this policy in V1 after Tasks 658-667 supplied real provider, hosted multi-client, remote-render, packaged-Windows, security, reconnect, and cleanup evidence. `src/config/v1ReleaseScope.ts` and the release manifest now classify Voice Rooms and Screen Share as included.
+Task 657 keeps this policy enabled in V1 and replaces the provider model with self-hosted LiveKit. The canonical wording lives in `docs/community-member-media-policy.md`. Tasks 658-673 must replace prior Cloud evidence before public release; missing infrastructure evidence does not hide the feature.
 

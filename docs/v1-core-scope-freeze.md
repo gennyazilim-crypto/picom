@@ -4,7 +4,7 @@ Status date: 2026-07-12
 Release: Picom 1.0.0 stable
 Stable platform claim: Windows
 
-Task 668 amends the Task 617/621 freeze after real Voice and Screen Share evidence. Historical checkpoints remain unchanged; this file is the current authoritative release-scope copy.
+Task 657 replaces the LiveKit Cloud operating model with SELF_HOSTED_LIVEKIT. Voice and Screen Share remain IN_V1 and visible; public release is blocked until the replacement self-hosted evidence sequence passes.
 
 ## Classifications
 
@@ -25,7 +25,7 @@ Task 668 amends the Task 617/621 freeze after real Voice and Screen Share eviden
 - Voice Rooms for every authenticated active community member;
 - explicit-action Screen Share for every authenticated active community member.
 
-Voice and Screen Share inclusion is bound to protected runs 29197503222, 29198913461, and 29199409039. Ordinary media access is not role-gated. Visitors, non-members, removed, banned, and suspended users fail closed.
+Previous Cloud runs remain historical engineering evidence, not self-hosted release certification. Ordinary media access is not role-gated. Visitors, non-members, removed, banned, and suspended users fail closed.
 
 ## HIDDEN_FROM_V1 and POST_V1
 

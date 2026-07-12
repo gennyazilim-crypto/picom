@@ -16,8 +16,11 @@ const flags = read("src/services/featureFlagService.ts");
 const config = read("supabase/functions/client-config/index.ts");
 const manifest = JSON.parse(read("supabase/functions/release-manifest.json"));
 const voiceRenderer = read("src/services/voiceService.ts");
+const infrastructure = read("src/config/voiceInfrastructureContract.ts");
 const decision = read("docs/v1-voice-screen-share-decision.md");
 const policy = read("docs/v1-community-member-media-policy.md");
+const selfHostedPolicy = read("docs/community-member-media-policy.md");
+const amendment = read("docs/self-hosted-livekit-amendment.md");
 const support = read("docs/v1-voice-screen-support-matrix.md");
 const blockers = read("docs/release-blockers.md");
 
@@ -41,8 +44,10 @@ assert.equal(release.get("livekit-webhook")?.guard, "livekit-signature-body-hash
 for (const secretName of ["PICOM_ALLOWED_ORIGINS", "LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"]) assert.ok(manifest.requiredSecretNames.includes(secretName), "release manifest missing secret name " + secretName);
 assert.ok(!voiceRenderer.includes("LIVEKIT_API_SECRET") && !voiceRenderer.includes("LIVEKIT_API_KEY"), "provider credentials must never reach renderer services");
 for (const marker of [/authenticated Picom user with an accepted, active membership/i, /visitor, public-read user/i, /ban, suspension, kick\/removal/i, /moderation remains role-aware/i]) assert.ok(marker.test(policy), "member policy missing " + marker);
-for (const runId of ["29197503222", "29198913461", "29199409039"]) assert.ok(decision.includes(runId), "decision missing evidence run " + runId);
-assert.ok(decision.includes("Decision: **INCLUDED**") && decision.includes("Task 655") && decision.includes("Task 656"), "decision must include Voice/Screen and authorize final release handoff");
+assert.ok(infrastructure.includes('hostingMode: "SELF_HOSTED_LIVEKIT"') && infrastructure.includes('productScope: "IN_V1"'), "self-hosted infrastructure contract must keep Voice/Screen in V1");
+assert.ok(amendment.includes("REPLACES") && /remain visible/i.test(amendment) && amendment.includes("Tasks 658-673"), "self-hosted amendment must supersede Cloud without hiding Voice");
+assert.ok(/authenticated active community member/i.test(selfHostedPolicy) && /explicit user action/i.test(selfHostedPolicy), "canonical self-hosted member media policy missing");
+assert.ok(decision.includes("Decision: **INCLUDED IN PRODUCT SCOPE**") && decision.includes("SELF_HOSTED_LIVEKIT") && decision.includes("Task 674"), "decision must keep Voice/Screen included while self-hosted evidence proceeds");
 assert.ok(/INCLUDED/.test(support) && /active community member/i.test(support) && /No raw media storage/i.test(support), "support matrix must state the included policy and media boundary");
-assert.ok(blockers.includes("BLOCKED / NO-GO") && blockers.includes("CLOSED_BY_EVIDENCE"), "Voice inclusion must not hide remaining public-release blockers");
-console.log("V1 Voice and Screen Share final inclusion contract passed: INCLUDED for active community members.");
+assert.ok(blockers.includes("BLOCKED / NO-GO") && blockers.includes("SELF_HOSTED"), "Voice inclusion must not hide remaining self-hosted public-release blockers");
+console.log("V1 Voice and Screen Share contract passed: active in product scope with SELF_HOSTED_LIVEKIT.");

@@ -1,5 +1,7 @@
 # Picom V1 LiveKit Production Environment
 
+> Historical LiveKit Cloud record. Task 657 supersedes this operating model with SELF_HOSTED_LIVEKIT. Project names, quotas, endpoints, and Cloud run evidence below are retained for history and are not current self-hosted release certification.
+
 Status date: 2026-07-12  
 Task result: **PARTIALLY PROVISIONED - hosted staging usable; production governance BLOCKED**
 

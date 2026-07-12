@@ -162,8 +162,8 @@ Backup hashes matched and isolated random-port Docker attempts were cleaned safe
 | RB-01 | Hosted Supabase final matrix | Core Auth/RLS evidence exists; final hosted matrix remains partial | Execute protected staging RLS matrix with approved accounts |
 | RB-02 | Private realtime Presence | Static contract passes; no hosted private-channel run | Execute two authorized clients plus unauthorized subscriber denial |
 | RB-03 | Hosted Edge Functions and Storage lifecycle | Local contracts pass; protected deployment/config absent | Deploy release-scoped function and run hosted Storage lifecycle checks |
-| RB-04 | CLOSED_BY_EVIDENCE: Hosted LiveKit | Protected four-client Voice/Screen run 29197503222 and security run 29199409039 passed | Task 668 inclusion |
-| RB-05 | CLOSED_BY_EVIDENCE: Native screen share | Packaged Windows run 29198913461 passed picker, publish, remote render, reconnect, and cleanup | Task 668 inclusion |
+| RB-04 | OPEN: SELF_HOSTED LiveKit | Dedicated host, Redis, DNS/TLS/TURN, internet/NAT, monitoring, backup, upgrade, and security evidence pending | Tasks 658-672 |
+| RB-05 | OPEN: SELF_HOSTED native media | LAN, packaged Windows, native macOS, physical-device, remote-render, reconnect, and cleanup evidence pending | Tasks 671-673 |
 | RB-06 | Trusted Windows release | Task 622 found no signing environment, certificate, signed artifact, or workflow run; package version is still 0.1.1-beta.1 | Freeze 1.0.0 commit, sign/timestamp, hash, then validate on clean Windows 10/11 |
 | RB-07 | Linux native release | Local contracts pass; no native artifact evidence | Build/install AppImage and DEB on Linux and certify runtime behavior |
 | RB-08 | macOS native release | Local contracts pass; no signed/notarized artifact | Sign, notarize, staple, Gatekeeper-check, install, and certify |
@@ -236,7 +236,7 @@ Closure procedure and secret-safe fixture contract: [V1 hosted Supabase closure]
 
 ## Task 621 V1 Voice and Screen Share decision
 
-Decision: **INCLUDED** (2026-07-12). RB-04 and RB-05 are closed by real hosted, packaged-Windows, security, reconnect, and cleanup evidence. Voice channels, Settings, Connected Voice, Community Admin controls, Help, authenticated routes, Edge deployment, and release copy are V1-scoped. This does not close trusted signing, clean-machine, legal, production ownership/capacity, immutable-RC, or final Go/No-Go blockers.
+Decision: **INCLUDED IN PRODUCT SCOPE / BLOCKED FOR PUBLIC RELEASE** (2026-07-12). Task 657 supersedes the LiveKit Cloud operating model with SELF_HOSTED_LIVEKIT. Voice channels, Settings, Connected Voice, Help, authenticated routes, and release code remain V1-visible. RB-04 and RB-05 are reopened until Tasks 658-673 replace the historical Cloud evidence with real self-hosted infrastructure and native certification.
 
 
 ## Task 622 trusted Windows V1 candidate

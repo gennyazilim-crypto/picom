@@ -4,7 +4,7 @@ The authoritative registry is src/config/v1ReleaseScope.ts. Renderer navigation,
 
 ## Voice and Screen Share
 
-Task 668 classifies Voice Rooms and Screen Share as IN_V1.
+Task 657 preserves Voice Rooms and Screen Share as IN_V1 while replacing the provider model with SELF_HOSTED_LIVEKIT. Infrastructure readiness may show a clear unavailable/degraded state, but it must not silently hide the V1 Voice surface.
 
 - Voice channels are V1-visible when the user can access the text community.
 - An authenticated active community member may join, publish microphone audio, subscribe to remote audio, start an explicit Screen Share, and subscribe to remote shares.

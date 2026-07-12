@@ -1,5 +1,7 @@
 # Picom V1 LiveKit Secret Custody
 
+> Historical LiveKit Cloud custody record. Task 657 replaces provider-project custody with separate development, self-hosted staging, and self-hosted production secret stores. No value in this file is current self-hosted production evidence.
+
 Status date: 2026-07-12  
 Custody result: **PARTIAL - projects separated; protected runtime installation pending**
 
