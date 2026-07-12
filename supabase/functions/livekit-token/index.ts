@@ -123,16 +123,25 @@ Deno.serve(async (request: Request) => {
 
   const { communityId, channelId } = parsed.body;
   const intent = parseIntent(parsed.body.intent);
-  if (!communityId || !channelId || !uuidPattern.test(communityId) || !uuidPattern.test(channelId)) return respond(errorResponse("VALIDATION_ERROR", "A valid communityId and channelId are required.", 400));
+  const communityIdValid = typeof communityId === "string" && uuidPattern.test(communityId);
+  const channelIdValid = typeof channelId === "string" && uuidPattern.test(channelId);
+  if (!communityIdValid || !channelIdValid) return respond(errorResponse("VALIDATION_ERROR", "A valid communityId and channelId are required.", 400, {
+    communityIdPresent: typeof communityId === "string",
+    communityIdValid,
+    channelIdPresent: typeof channelId === "string",
+    channelIdValid,
+  }));
+  const validatedCommunityId = communityId as string;
+  const validatedChannelId = channelId as string;
   if (!intent) return respond(errorResponse("VALIDATION_ERROR", "intent must be voice or screen.", 400));
   if (parsed.body.participantName !== undefined && (typeof parsed.body.participantName !== "string" || !participantNamePattern.test(parsed.body.participantName.trim()))) return respond(errorResponse("VALIDATION_ERROR", "participantName must contain 1-80 safe characters.", 400));
 
-  const { data: authorizationRows, error: authorizationError } = await auth.supabase.rpc("authorize_livekit_room", { target_community_id: communityId, target_channel_id: channelId, target_intent: intent });
+  const { data: authorizationRows, error: authorizationError } = await auth.supabase.rpc("authorize_livekit_room", { target_community_id: validatedCommunityId, target_channel_id: validatedChannelId, target_intent: intent });
   const authorization = Array.isArray(authorizationRows) ? authorizationRows[0] as AuthorizationRow | undefined : undefined;
   if (authorizationError || !authorization) return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "You cannot join this voice channel.", 403));
 
-  const roomName = createPicomLiveKitRoomName(communityId, channelId);
-  if (parsed.body.roomName && !matchesPicomLiveKitRoomName(parsed.body.roomName, communityId, channelId)) return respond(errorResponse("VALIDATION_ERROR", "roomName does not match the requested community/channel.", 400));
+  const roomName = createPicomLiveKitRoomName(validatedCommunityId, validatedChannelId);
+  if (parsed.body.roomName && !matchesPicomLiveKitRoomName(parsed.body.roomName, validatedCommunityId, validatedChannelId)) return respond(errorResponse("VALIDATION_ERROR", "roomName does not match the requested community/channel.", 400));
 
   const canPublish = intent === "screen" ? authorization.can_publish_screen : authorization.can_publish_audio;
   const publishSources: Array<"microphone" | "screen_share" | "screen_share_audio"> = intent === "screen"

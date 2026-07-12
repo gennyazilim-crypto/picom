@@ -28,6 +28,7 @@ const checks = [
   ["fail-closed restricted CORS", fn.includes("PICOM_ALLOWED_ORIGINS") && fn.includes("if (!allowedOrigins.size)") && fn.includes("Origin is not allowed") && !fn.includes('"Access-Control-Allow-Origin": "*"')],
   ["safe provider URL", fn.includes('url.protocol === "wss:"') && fn.includes('url.protocol === "ws:"') && fn.includes("url.username || url.password")],
   ["method and bounded JSON", fn.includes("maxBodyBytes = 2048") && fn.includes("Content-Type must be application/json") && fn.includes("methodNotAllowed")],
+  ["UUID validation diagnostics contain booleans only", fn.includes("communityIdPresent") && fn.includes("communityIdValid") && fn.includes("channelIdPresent") && fn.includes("channelIdValid") && fixture.includes("booleanDetails")],
   ["deterministic identity room", fn.includes("auth.user.id") && fn.includes("createPicomLiveKitRoomName") && fn.includes("matchesPicomLiveKitRoomName")],
   ["hosted roleless and denial matrix", ["owner", "admin", "moderator", "member", "roleless_member", "visitor", "non_member", "banned", "rate_limit"].every((actor) => fixture.includes(`\"${actor}\"`))],
   ["hosted source and rate assertions", fixture.includes("screen_share_audio") && fixture.includes("camera") && fixture.includes("RATE_LIMITED") && fixture.includes("attempt <= 10")],

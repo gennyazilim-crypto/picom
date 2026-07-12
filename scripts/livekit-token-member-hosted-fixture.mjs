@@ -71,7 +71,11 @@ function assertToken(payload, userId, intent) {
 }
 
 const safeResponseCode = (payload) => typeof payload?.code === "string" && /^[A-Z0-9_]{1,64}$/.test(payload.code) ? payload.code : "NO_SAFE_CODE";
-const safeResponseDiagnostic = (payload) => redact(typeof payload?.message === "string" ? payload.message : "No safe response message.");
+const safeResponseDiagnostic = (payload) => {
+  const booleanDetails = payload?.details && typeof payload.details === "object" && !Array.isArray(payload.details)
+    && Object.values(payload.details).every((value) => typeof value === "boolean") ? payload.details : null;
+  return redact(`${typeof payload?.message === "string" ? payload.message : "No safe response message."}${booleanDetails ? ` ${JSON.stringify(booleanDetails)}` : ""}`);
+};
 const safeDatabaseCode = (error) => typeof error?.code === "string" && /^[A-Z0-9]{5}$/.test(error.code) ? error.code : "NO_DB_CODE";
 const safeDatabaseDiagnostic = (error) => redact([error?.message, error?.details].filter(Boolean).join(" | "));
 
@@ -171,7 +175,12 @@ commit;`);
     sessions.set(label, { client, token: signedIn.data.session.access_token, userId: actor.id });
   }
 
-  const baseBody = { communityId, channelId: publicChannelId };
+  const fixtureUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const normalizedCommunityId = communityId.trim().toLowerCase();
+  const normalizedPublicChannelId = publicChannelId.trim().toLowerCase();
+  const normalizedPrivateChannelId = privateChannelId.trim().toLowerCase();
+  if (![normalizedCommunityId, normalizedPublicChannelId, normalizedPrivateChannelId].every((id) => fixtureUuidPattern.test(id))) throw new Error("Synthetic community/channel UUID validation failed locally.");
+  const baseBody = { communityId: normalizedCommunityId, channelId: normalizedPublicChannelId };
   const rateLimitSession = sessions.get("rate_limit");
   const rateLimitPreflight = await rateLimitSession.client.rpc("consume_current_user_action_rate_limit", { target_action: "livekit_token" });
   if (rateLimitPreflight.error) throw new Error(`Rate-limit RPC preflight failed ${safeDatabaseCode(rateLimitPreflight.error)}: ${safeDatabaseDiagnostic(rateLimitPreflight.error)}`);
@@ -184,7 +193,7 @@ commit;`);
     const screen = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, intent: "screen" } });
     if (screen.response.status !== 200) throw new Error(`${label} Screen token expected 200, received ${screen.response.status} ${safeResponseCode(screen.payload)}: ${safeResponseDiagnostic(screen.payload)}`);
     assertToken(screen.payload, session.userId, "screen");
-    const privateVoice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, channelId: privateChannelId, intent: "voice" } });
+    const privateVoice = await requestFunction({ publicKey, accessToken: session.token, body: { ...baseBody, channelId: normalizedPrivateChannelId, intent: "voice" } });
     if (privateVoice.response.status !== 200) throw new Error(`${label} private Voice token expected 200, received ${privateVoice.response.status} ${safeResponseCode(privateVoice.payload)}: ${safeResponseDiagnostic(privateVoice.payload)}`);
     assertToken(privateVoice.payload, session.userId, "voice");
   }
