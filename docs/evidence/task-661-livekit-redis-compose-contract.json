@@ -1,0 +1,22 @@
+{
+  "task": 661,
+  "status": "prepared_not_deployed",
+  "environment": "staging",
+  "images": {
+    "livekit": "1.13.1_pinned_digest",
+    "redis": "7.4.9-alpine_pinned_digest"
+  },
+  "contract": {
+    "hostNetworking": true,
+    "redisLoopbackOnly": true,
+    "signalApiPubliclyExposed": false,
+    "metricsPubliclyExposed": false,
+    "turnEnabled": false,
+    "secretFilesOnly": true,
+    "healthChecks": true,
+    "gracefulShutdown": true,
+    "rollbackPreservesData": true
+  },
+  "realStagingEvidence": "blocked_missing_dedicated_linux_host",
+  "secretsIncluded": false
+}

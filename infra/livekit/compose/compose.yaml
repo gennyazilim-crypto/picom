@@ -1,0 +1,105 @@
+name: picom-livekit
+
+services:
+  redis:
+    image: redis:7.4.9-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+    pull_policy: if_not_present
+    network_mode: host
+    command: ["redis-server", "/run/secrets/redis_config"]
+    secrets:
+      - redis_config
+    group_add:
+      - "${PICOM_LIVEKIT_GID:?PICOM_LIVEKIT_GID is required}"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(sed -n 's/^requirepass //p' /run/secrets/redis_config)\" redis-cli -h 127.0.0.1 -p \"$$(sed -n 's/^port //p' /run/secrets/redis_config)\" ping | grep -qx PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          memory: 256M
+    logging:
+      driver: local
+      options:
+        max-size: 20m
+        max-file: "5"
+    labels:
+      com.picom.service: redis
+      com.picom.environment: staging
+
+  livekit:
+    image: livekit/livekit-server:v1.13.1@sha256:2c6869d2d5ff6c9c0166f47be1c92dad6928bfecfa5e4060a6ece48db8accfa3
+    pull_policy: if_not_present
+    network_mode: host
+    command: ["--config", "/run/secrets/livekit_config", "--bind", "0.0.0.0"]
+    secrets:
+      - livekit_config
+    group_add:
+      - "${PICOM_LIVEKIT_GID:?PICOM_LIVEKIT_GID is required}"
+    depends_on:
+      redis:
+        condition: service_healthy
+        restart: true
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: ["ALL"]
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "livekit-server", "--config", "/run/secrets/livekit_config", "list-nodes"]
+      interval: 15s
+      timeout: 8s
+      retries: 6
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "3.0"
+          memory: 6G
+        reservations:
+          memory: 1G
+    logging:
+      driver: local
+      options:
+        max-size: 20m
+        max-file: "5"
+    labels:
+      com.picom.service: livekit
+      com.picom.environment: staging
+
+secrets:
+  livekit_config:
+    file: ${PICOM_LIVEKIT_SECRET_DIR:-/etc/picom-livekit/secrets}/livekit.yaml
+  redis_config:
+    file: ${PICOM_LIVEKIT_SECRET_DIR:-/etc/picom-livekit/secrets}/redis.conf
+
+volumes:
+  redis_data:
+    name: picom-livekit-redis-data
+    labels:
+      com.picom.service: redis-data
+      com.picom.environment: staging
