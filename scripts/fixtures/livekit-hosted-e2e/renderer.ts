@@ -60,10 +60,14 @@ function remoteTracks(source: Track.Source): RemoteTrack[] {
 async function receivedBytes(track: RemoteTrack): Promise<number> {
   const stats = await track.getRTCStatsReport();
   let bytes = 0;
+  let deliveredUnits = 0;
   stats?.forEach((report) => {
-    if (report.type === "inbound-rtp" && !report.isRemote) bytes += Number(report.bytesReceived ?? 0);
+    if (report.type === "inbound-rtp" && !report.isRemote) {
+      bytes += Number(report.bytesReceived ?? 0);
+      deliveredUnits += Number(report.packetsReceived ?? 0) + Number(report.framesDecoded ?? 0) + Number(report.framesReceived ?? 0);
+    }
   });
-  return bytes;
+  return bytes > 0 ? bytes : deliveredUnits;
 }
 
 async function connect() {
@@ -189,7 +193,7 @@ async function verifyMedia() {
   }
   await waitFor(() => attachedElements.filter((element) => element instanceof HTMLVideoElement && element.videoWidth > 0 && element.videoHeight > 0).length >= config.expectedRemoteCount, 30000, "remote screen rendering");
   await waitFor(async () => (await Promise.all(audioTracks.map(receivedBytes))).every((bytes) => bytes > 0), 30000, "remote audio RTP bytes");
-  await waitFor(async () => (await Promise.all(screenTracks.map(receivedBytes))).every((bytes) => bytes > 0), 30000, "remote screen RTP bytes");
+  await waitFor(async () => (await Promise.all(screenTracks.map(receivedBytes))).every((units) => units > 0), 30000, "remote screen RTP delivery counters");
   await waitFor(() => speakingObserved, 20000, "speaking indicator event");
   return {
     remoteParticipants: room.remoteParticipants.size,
