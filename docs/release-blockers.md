@@ -205,3 +205,17 @@ The native macOS x64 matrix now requires post-staple DMG/ZIP hashes, Developer I
 ## Task 581 meeting security/privacy/RLS gate
 
 Fifteen deterministic migration/RLS/token/webhook/privacy/abuse/captions/observability/Electron IPC/secret/redaction controls pass, and no local critical finding is recorded. The final matrix now classifies eight identities across nine private meeting resources and defines five explicit remediation items. However, deployed unauthorized-access, private Realtime, final Edge/LiveKit, and native consent/media-indicator evidence remains blocked. Stable security status is **NO-GO**; RB-01 through RB-05 and applicable native package blockers remain open. Any future data/media or secret leak is release-blocking.
+
+## Task 582 meeting workspace production-readiness audit
+
+Tasks 528-581 have 54/54 checkpoints and 54/54 exact task commit subjects. Meeting implementation and deterministic local contracts are complete, including 44/44 meeting contract checks and 15/15 local security controls. Hosted two-client/backend/capacity evidence and Windows/Linux/macOS native certification remain **BLOCKED**, so RB-01 through RB-11 stay open and stable remains **NO-GO**.
+
+Task 520 local-quality superseding status:
+
+| ID | Status | Task 582 evidence |
+| --- | --- | --- |
+| QB-01 | **CLOSED at hard-cap level** | Initial JS 1191.8 KiB passes its 1200 KiB target; initial CSS 235.1 KiB and total assets 3404.0 KiB pass hard caps but remain target-level warnings. |
+| QB-02 | **CLOSED** | `licenses:smoke` and `licenses:check` both pass at audit base `baceeec`. |
+| QB-03 | **OPEN** | `RegisterScreen` imports `assets/brand/picom-logo.png`, but that user-owned asset is not tracked in HEAD. A clean-clone build is not reproducible until the approved asset is committed or the import is corrected. |
+
+No signed/native/final artifact, checksum, provenance, deployment, or publication was produced by Task 582.
