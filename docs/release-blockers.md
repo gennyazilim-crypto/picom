@@ -193,3 +193,7 @@ The 18-gate owner/admin/moderator/member/visitor/guest/blocked staging matrix an
 ## Task 578 Windows native meeting update
 
 The Windows x64 exact-artifact certification matrix now requires a trusted timestamped signature, controlled Windows 10/11 machine inventory, 22 packaged meeting flows, and a distinct remote client. No signed final candidate, clean/controlled test target, hosted room, native device run, interactive picker, or remote screen/window render was available during Task 578. Local Electron/meeting/screen-share contracts pass, but they are not native certification. RB-04, RB-05, and RB-06 remain **BLOCKED** and no Windows production support claim is authorized.
+
+## Task 579 Linux native meeting update
+
+The native Linux x64 AppImage/DEB matrix now requires real hashes, package metadata, Wayland and X11 sessions, PipeWire/portal/audio/device inventory, 23 packaged flows, and a distinct remote client. Task 579 ran on Windows; no Linux-produced artifact, desktop session, portal picker, native device, or remote rendered share was available, and Windows cross-build output was explicitly rejected as evidence. RB-04, RB-05, and RB-07 remain **BLOCKED**. RPM, ARM64, Flatpak, and Snap are not claimed.
