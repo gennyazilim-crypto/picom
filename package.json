@@ -415,6 +415,8 @@
     "presence:accuracy:test": "node scripts/advanced-presence-accuracy-test.mjs",
     "voice:quality:test": "node scripts/voice-quality-metrics-test.mjs",
     "voice:permissions:hosted": "node scripts/v1-voice-permissions-hosted-validation.mjs",
+    "voice:screen:hosted:contract": "node scripts/member-voice-screen-hosted-contract.mjs",
+    "voice:screen:hosted:e2e": "node scripts/hosted-member-voice-screen-e2e.mjs",
     "screen-share:quality:test": "node scripts/screen-share-quality-test.mjs",
     "stories:header:smoke": "node scripts/followed-people-stories-header-smoke-test.mjs",
     "stories:supabase:smoke": "node scripts/followed-stories-supabase-smoke.mjs",
