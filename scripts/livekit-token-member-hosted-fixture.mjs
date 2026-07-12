@@ -16,6 +16,7 @@ const redact = (value) => String(value ?? "")
   .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
   .replace(/sb_(?:secret|publishable)_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_KEY]")
   .replace(/eyJ[A-Za-z0-9._-]+/g, "[REDACTED_JWT]")
+  .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi, "[REDACTED_UUID]")
   .replace(/[A-Za-z0-9._%+-]+@example\.com/g, "[REDACTED_FIXTURE_EMAIL]")
   .slice(0, 1200);
 
@@ -71,6 +72,7 @@ function assertToken(payload, userId, intent) {
 
 const safeResponseCode = (payload) => typeof payload?.code === "string" && /^[A-Z0-9_]{1,64}$/.test(payload.code) ? payload.code : "NO_SAFE_CODE";
 const safeDatabaseCode = (error) => typeof error?.code === "string" && /^[A-Z0-9]{5}$/.test(error.code) ? error.code : "NO_DB_CODE";
+const safeDatabaseDiagnostic = (error) => redact([error?.message, error?.details].filter(Boolean).join(" | "));
 
 const requestFunction = async ({ publicKey, accessToken, body, method = "POST", origin = allowedOrigin, rawBody }) => {
   const response = await fetch(`https://${approvedProjectRef}.supabase.co/functions/v1/livekit-token`, {
@@ -171,7 +173,7 @@ commit;`);
   const baseBody = { communityId, channelId: publicChannelId };
   const rateLimitSession = sessions.get("rate_limit");
   const rateLimitPreflight = await rateLimitSession.client.rpc("consume_current_user_action_rate_limit", { target_action: "livekit_token" });
-  if (rateLimitPreflight.error) throw new Error(`Rate-limit RPC preflight failed ${safeDatabaseCode(rateLimitPreflight.error)}.`);
+  if (rateLimitPreflight.error) throw new Error(`Rate-limit RPC preflight failed ${safeDatabaseCode(rateLimitPreflight.error)}: ${safeDatabaseDiagnostic(rateLimitPreflight.error)}`);
   await query("delete from public.user_action_rate_limits where user_id=$1::uuid and action_key='livekit_token'", [rateLimitSession.userId]);
   for (const label of activeLabels) {
     const session = sessions.get(label);
