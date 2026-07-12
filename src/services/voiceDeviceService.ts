@@ -310,14 +310,14 @@ export const voiceDeviceService = {
     publishPreferences();
   },
 
-  async startMicrophoneTest(): Promise<boolean> {
+  async startMicrophoneTest(captureConstraints?: VoiceAudioCaptureOptions): Promise<boolean> {
     if (!mediaDevices?.getUserMedia || typeof AudioContext === "undefined") {
       emit({ error: "Microphone testing is unavailable in this runtime." });
       return false;
     }
     voiceDeviceService.stopMicrophoneTest();
     try {
-      microphoneTestStream = await mediaDevices.getUserMedia({ audio: createAudioConstraints(), video: false });
+      microphoneTestStream = await mediaDevices.getUserMedia({ audio: captureConstraints ?? createAudioConstraints(), video: false });
       microphoneTestContext = new AudioContext();
       const source = microphoneTestContext.createMediaStreamSource(microphoneTestStream);
       const analyser = microphoneTestContext.createAnalyser();

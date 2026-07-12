@@ -8,6 +8,7 @@ import { voiceDeviceService, type VoiceDeviceSnapshot } from "./voiceDeviceServi
 import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, MeetingTransportConnectionState } from "../types/meeting";
 import type { MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
 import { voiceDiagnosticsRegistry, type VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
+import { noiseShieldService } from "./noiseShieldService";
 
 export type { VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 
@@ -353,7 +354,7 @@ function bindRoomEvents(activeRoom: Room): void {
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
         applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
         if (restoredFromReconnect) {
-          void activeRoom.localParticipant.setMicrophoneEnabled(!snapshot.muted).catch(() => {
+          void setMicrophoneWithMeetingProcessing(activeRoom,!snapshot.muted).catch(() => {
             deviceErrorCount += 1;
             emit({ muted: true, error: "Microphone state could not be restored after reconnect.", errorCode: "VOICE_PERMISSION_DENIED" });
           });
@@ -547,8 +548,10 @@ async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceRes
 }
 
 function inputPreferenceKey(preferences: VoiceDeviceSnapshot): string {
-  return [preferences.selectedInputId, preferences.echoCancellation, preferences.noiseSuppression, preferences.autoGainControl].join(":");
+  return [preferences.selectedInputId, preferences.echoCancellation, preferences.noiseSuppression, preferences.autoGainControl, noiseShieldService.getSnapshot().revision].join(":");
 }
+
+async function setMicrophoneWithMeetingProcessing(activeRoom:Room,enabled:boolean):Promise<void>{if(!enabled){await activeRoom.localParticipant.setMicrophoneEnabled(false);return}const base=voiceDeviceService.getAudioCaptureConstraints(),plan=noiseShieldService.createMicrophoneCapturePlan(base);try{await activeRoom.localParticipant.setMicrophoneEnabled(true,plan.constraints);noiseShieldService.markApplied(plan.appliedMode)}catch(error){if(plan.appliedMode!=="off"){const fallback={...base,noiseSuppression:false};await activeRoom.localParticipant.setMicrophoneEnabled(true,fallback);noiseShieldService.markFallback("Noise Shield could not be attached to the replacement microphone track. Unprocessed microphone audio remains connected.");return}throw error}}
 
 async function applyVoiceDevicePreferences(activeRoom: Room, preferences: VoiceDeviceSnapshot): Promise<void> {
   if (preferences.selectedOutputId !== appliedOutputDeviceId) {
@@ -567,8 +570,8 @@ async function applyVoiceDevicePreferences(activeRoom: Room, preferences: VoiceD
     if (snapshot.muted) {
       await activeRoom.switchActiveDevice("audioinput", preferences.selectedInputId, preferences.selectedInputId !== "default");
     } else {
-      await activeRoom.localParticipant.setMicrophoneEnabled(false);
-      await activeRoom.localParticipant.setMicrophoneEnabled(true, voiceDeviceService.getAudioCaptureConstraints());
+      await setMicrophoneWithMeetingProcessing(activeRoom,false);
+      await setMicrophoneWithMeetingProcessing(activeRoom,true);
     }
     appliedInputPreferenceKey = nextInputKey;
     emit({ participants: getParticipants(activeRoom), error: null, errorCode: null });
@@ -607,7 +610,7 @@ async function connectWithToken(
     try {
       const devicePreferences = voiceDeviceService.getSnapshot();
       if (token.canPublishAudio) {
-        await activeRoom.localParticipant.setMicrophoneEnabled(!desiredMuted, voiceDeviceService.getAudioCaptureConstraints());
+        await setMicrophoneWithMeetingProcessing(activeRoom,!desiredMuted);
         appliedInputPreferenceKey = inputPreferenceKey(devicePreferences);
         await applyVoiceDevicePreferences(activeRoom, devicePreferences);
       }
@@ -902,6 +905,8 @@ export const voiceService = {
     });
   },
 
+  async reapplyMicrophoneProcessing():Promise<boolean>{if(!room)return false;if(snapshot.muted)return true;try{await setMicrophoneWithMeetingProcessing(room,false);await setMicrophoneWithMeetingProcessing(room,true);appliedInputPreferenceKey=inputPreferenceKey(voiceDeviceService.getSnapshot());emit({participants:getParticipants(room),error:null,errorCode:null});return true}catch{noiseShieldService.markFailed("Noise Shield and the fallback microphone track could not be restored.");return false}},
+
   async setMuted(muted: boolean): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before changing microphone state.");
@@ -909,7 +914,7 @@ export const voiceService = {
     if (!muted && !snapshot.canSpeak) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish microphone audio in this room.");
 
     try {
-      await room.localParticipant.setMicrophoneEnabled(!muted, voiceDeviceService.getAudioCaptureConstraints());
+      await setMicrophoneWithMeetingProcessing(room,!muted);
       if (!muted) appliedInputPreferenceKey = inputPreferenceKey(voiceDeviceService.getSnapshot());
       emit({
         muted,

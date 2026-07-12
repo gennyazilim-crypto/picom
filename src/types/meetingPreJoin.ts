@@ -1,9 +1,10 @@
 import type { MeetingClientJoinRequest, MeetingClientResult, MeetingClientSnapshot } from "./meetingClient";
 import type { MeetingJoinPolicy } from "./meeting";
 import type { VoiceDeviceOption, VoiceDevicePermission } from "../services/voiceDeviceService";
+import type { NoiseShieldMode, NoiseShieldStatus } from "./noiseShield";
 
 export type MeetingPreJoinErrorCode = "CAMERA_DENIED"|"CAMERA_MISSING"|"CAMERA_BUSY"|"CAMERA_UNSUPPORTED"|"MICROPHONE_DENIED"|"DEVICE_UNAVAILABLE"|"TOKEN_FAILED";
-export type MeetingNoiseShieldMode = "off"|"standard";
+export type MeetingNoiseShieldMode = NoiseShieldMode;
 
 export type MeetingPreJoinRoomInfo = Readonly<{
   communityName:string;
@@ -28,6 +29,9 @@ export type MeetingPreJoinSnapshot = Readonly<{
   joinMuted:boolean;
   joinCameraOff:boolean;
   noiseShieldMode:MeetingNoiseShieldMode;
+  noiseShieldAvailableModes:readonly MeetingNoiseShieldMode[];
+  noiseShieldStatus:NoiseShieldStatus;
+  noiseShieldFallbackReason:string|null;
   cameraPreviewActive:boolean;
   cameraPreviewStream:MediaStream|null;
   microphoneTestActive:boolean;

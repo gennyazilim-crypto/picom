@@ -5,6 +5,7 @@ import type { MeetingTokenAuthorizedResponse, MeetingTokenResponse, MeetingToken
 import { meetingTokenService } from "../livekit/meetingTokenService";
 import { voiceService, type VoiceServiceResult, type VoiceServiceSnapshot, type VoiceTokenResponse } from "../voiceService";
 import type { MeetingVideoSubscriptionPlan } from "../../types/meetingVideoGrid";
+import { noiseShieldService } from "../noiseShieldService";
 
 type Listener = (snapshot: VoiceServiceSnapshot) => void;
 const mockListeners = new Set<Listener>();
@@ -47,4 +48,5 @@ export const meetingLiveKitAdapter = {
   setVideoSubscriptionPlan(plan: MeetingVideoSubscriptionPlan) { return dataSourceService.getStatus().isMock || voiceService.setVideoSubscriptionPlan(plan); },
   setFocusedScreenShare(shareId: string | null) { return dataSourceService.getStatus().isMock || voiceService.setFocusedScreenShare(shareId); },
   setParticipantLocalVolume(participantIdentity: string, volume: number) { return dataSourceService.getStatus().isMock || voiceService.setRemoteParticipantVolume(participantIdentity, volume); },
+  async reapplyNoiseShield():Promise<boolean>{if(dataSourceService.getStatus().isMock){noiseShieldService.markApplied(noiseShieldService.getSnapshot().appliedMode);return true}return voiceService.reapplyMicrophoneProcessing()},
 };

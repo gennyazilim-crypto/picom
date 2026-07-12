@@ -2,6 +2,7 @@ import type { MeetingCapabilities, MeetingConnectionQuality, MeetingLayoutMode, 
 import type { MeetingRequestedSources } from "../services/livekit/meetingTokenTypes";
 import type { VerificationSummary } from "./verification";
 import type { MeetingHandQueueEntry } from "./meetingSignals";
+import type { NoiseShieldMode, NoiseShieldProvider, NoiseShieldStatus } from "./noiseShield";
 
 export type MeetingClientPhase =
   | "idle"
@@ -55,6 +56,7 @@ export type MeetingClientJoinRequest = MeetingClientContext & Readonly<{
   joinCameraOff?: boolean;
   cameraDeviceId?: string;
   noiseShield?: boolean;
+  noiseShieldMode?: NoiseShieldMode;
 }>;
 
 export type MeetingClientParticipant = Readonly<{
@@ -117,7 +119,7 @@ export type MeetingClientSnapshot = Readonly<{
     permission: "prompt" | "granted" | "denied" | "unsupported";
   }>;
   localMedia: Readonly<{ muted: boolean; deafened: boolean; cameraEnabled: boolean; screenSharing: boolean }>;
-  noiseShield: Readonly<{ requested: boolean; applied: boolean; status: "off" | "requested" | "applied" | "unavailable" | "failed" }>;
+  noiseShield: Readonly<{ requested: boolean; applied: boolean; requestedMode: NoiseShieldMode; appliedMode: NoiseShieldMode; availableModes: readonly NoiseShieldMode[]; provider: NoiseShieldProvider; status: NoiseShieldStatus; fallbackReason: string | null }>;
   handRaised: boolean;
   stageQueue?: readonly MeetingHandQueueEntry[];
   reactions: readonly MeetingClientReaction[];

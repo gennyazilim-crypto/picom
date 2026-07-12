@@ -29,7 +29,7 @@ function initialSnapshot(generation = 0): MeetingClientSnapshot {
     focusedParticipantId: null, focusedShareId: null, screenShares: [],
     localDevices: { inputId: "default", outputId: "default", permission: "prompt" },
     localMedia: { muted: true, deafened: false, cameraEnabled: false, screenSharing: false },
-    noiseShield: { requested: false, applied: false, status: "off" }, handRaised: false, stageQueue: [], reactions: [],
+    noiseShield: { requested: false, applied: false, requestedMode: "off", appliedMode: "off", availableModes: ["off"], provider: "none", status: "off", fallbackReason: null }, handRaised: false, stageQueue: [], reactions: [],
     providerStatus: "idle", realtimeStatus: "idle", error: null, updatedAt: new Date(0).toISOString(),
   };
 }
@@ -85,7 +85,7 @@ export function createMeetingStore(seed: MeetingClientSnapshot = initialSnapshot
     setLayout(layout) { publish({ ...snapshot, layout, updatedAt: new Date().toISOString() }); },
     setRightDock(rightDock) { publish({ ...snapshot, rightDock, updatedAt: new Date().toISOString() }); },
     setFocus(focusedParticipantId, focusedShareId = null) { publish({ ...snapshot, focusedParticipantId, focusedShareId, updatedAt: new Date().toISOString() }); },
-    setNoiseShield(requested, applied, status) { publish({ ...snapshot, noiseShield: { requested, applied, status }, updatedAt: new Date().toISOString() }); },
+    setNoiseShield(requested, applied, status) { publish({ ...snapshot, noiseShield: { ...snapshot.noiseShield, requested, applied, requestedMode: requested ? "standard" : "off", appliedMode: applied ? "standard" : "off", status, fallbackReason: status === "unavailable" || status === "failed" ? snapshot.noiseShield.fallbackReason : null }, updatedAt: new Date().toISOString() }); },
     setError(generation, error) { return this.transition(generation, "failed", { error, providerStatus: error.providerCode ?? "error" }); },
     appendReaction(generation, reaction) {
       const now = Date.now();

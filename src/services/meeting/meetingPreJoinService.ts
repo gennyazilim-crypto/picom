@@ -9,6 +9,8 @@ import { meetingStore } from "../../stores/meetingStore";
 import { voiceDeviceService } from "../voiceDeviceService";
 import { meetingService } from "./meetingService";
 import { meetingInviteCredentialService } from "./meetingInviteCredentialService";
+import { noiseShieldService } from "../noiseShieldService";
+import type { MeetingNoiseShieldMode } from "../../types/meetingPreJoin";
 
 const STORAGE_KEY = "picom.meeting-prejoin.v1";
 type Listener = () => void;
@@ -31,7 +33,7 @@ function readPreferences(): SafePreferences {
       selectedCameraId: typeof value.selectedCameraId === "string" ? value.selectedCameraId : "default",
       joinMuted: value.joinMuted !== false,
       joinCameraOff: value.joinCameraOff !== false,
-      noiseShieldMode: value.noiseShieldMode === "standard" ? "standard" : "off",
+      noiseShieldMode: ["off", "standard", "enhanced", "voice_focus"].includes(value.noiseShieldMode ?? "") ? value.noiseShieldMode as MeetingNoiseShieldMode : "off",
     };
   } catch {
     return { selectedCameraId: "default", joinMuted: true, joinCameraOff: true, noiseShieldMode: "off" };
@@ -40,6 +42,7 @@ function readPreferences(): SafePreferences {
 
 const preferences = readPreferences();
 const voiceSnapshot = voiceDeviceService.getSnapshot();
+const initialNoiseShield = noiseShieldService.getSnapshot();
 let snapshot: MeetingPreJoinSnapshot = {
   request: null,
   roomInfo: null,
@@ -54,6 +57,9 @@ let snapshot: MeetingPreJoinSnapshot = {
   joinMuted: preferences.joinMuted,
   joinCameraOff: preferences.joinCameraOff,
   noiseShieldMode: preferences.noiseShieldMode,
+  noiseShieldAvailableModes: initialNoiseShield.availableModes,
+  noiseShieldStatus: initialNoiseShield.status,
+  noiseShieldFallbackReason: initialNoiseShield.fallbackReason,
   cameraPreviewActive: false,
   cameraPreviewStream: null,
   microphoneTestActive: false,
@@ -68,6 +74,8 @@ const emit = (patch: Partial<MeetingPreJoinSnapshot>) => {
   snapshot = { ...snapshot, ...patch };
   listeners.forEach((listener) => listener());
 };
+
+noiseShieldService.subscribe(() => { const state = noiseShieldService.getSnapshot(); emit({ noiseShieldMode: state.requestedMode, noiseShieldAvailableModes: state.availableModes, noiseShieldStatus: state.status, noiseShieldFallbackReason: state.fallbackReason }); });
 
 const persist = () => {
   try {
@@ -343,7 +351,7 @@ export const meetingPreJoinService = {
   },
 
   async selectMicrophone(deviceId: string): Promise<boolean> {
-    return voiceDeviceService.selectInput(deviceId);
+    const restartTest=snapshot.microphoneTestActive;if(restartTest)voiceDeviceService.stopMicrophoneTest();const selected=await voiceDeviceService.selectInput(deviceId);if(selected&&restartTest)await this.testMicrophone();return selected;
   },
 
   selectSpeaker(deviceId: string): boolean {
@@ -351,7 +359,7 @@ export const meetingPreJoinService = {
     return voiceDeviceService.selectOutput(deviceId, { notifyConsumers: false });
   },
 
-  testMicrophone: () => voiceDeviceService.startMicrophoneTest(),
+  testMicrophone: () => voiceDeviceService.startMicrophoneTest(noiseShieldService.createMicrophoneCapturePlan(voiceDeviceService.getAudioCaptureConstraints()).constraints),
   stopMicrophoneTest: () => voiceDeviceService.stopMicrophoneTest(),
   testSpeaker: () => voiceDeviceService.testOutput(),
 
@@ -370,26 +378,8 @@ export const meetingPreJoinService = {
     persist();
   },
 
-  setNoiseShield(enabled: boolean): void {
-    const supported = voiceDeviceService.getSnapshot().supportedConstraints.noiseSuppression;
-    if (enabled && !supported) {
-      emit({
-        noiseShieldMode: "off",
-        error: createError("DEVICE_UNAVAILABLE", "Noise Shield is unavailable for this microphone/runtime."),
-      });
-      meetingStore.setNoiseShield(true, false, "unavailable");
-      return;
-    }
-    const noiseShieldMode = enabled ? "standard" : "off";
-    voiceDeviceService.updateProcessingOptions({
-      noiseSuppression: enabled,
-      echoCancellation: enabled,
-      autoGainControl: enabled,
-    });
-    emit({ noiseShieldMode, error: null });
-    meetingStore.setNoiseShield(enabled, enabled, enabled ? "applied" : "off");
-    persist();
-  },
+  setNoiseShieldMode(noiseShieldMode: MeetingNoiseShieldMode): void { const state=noiseShieldService.requestMode(noiseShieldMode);emit({noiseShieldMode:state.requestedMode,noiseShieldAvailableModes:state.availableModes,noiseShieldStatus:state.status,noiseShieldFallbackReason:state.fallbackReason,error:state.status==="unavailable"?createError("DEVICE_UNAVAILABLE",state.fallbackReason??"Noise Shield is unavailable for this microphone/runtime."):null});meetingStore.patch(meetingStore.getSnapshot().generation,{noiseShield:{requested:noiseShieldMode!=="off",applied:state.status==="applied",requestedMode:state.requestedMode,appliedMode:state.appliedMode,availableModes:state.availableModes,provider:state.provider,status:state.status,fallbackReason:state.fallbackReason}});persist();},
+  setNoiseShield(enabled: boolean): void { this.setNoiseShieldMode(enabled?"standard":"off"); },
 
   async submit(): Promise<MeetingPreJoinSubmitResult> {
     const request = snapshot.request;
@@ -412,7 +402,8 @@ export const meetingPreJoinService = {
       joinMuted: snapshot.joinMuted,
       joinCameraOff: snapshot.joinCameraOff,
       cameraDeviceId: snapshot.selectedCameraId,
-      noiseShield: snapshot.noiseShieldMode === "standard",
+      noiseShield: snapshot.noiseShieldMode !== "off",
+      noiseShieldMode: snapshot.noiseShieldMode,
       requestedSources: {
         ...request.requestedSources,
         camera: request.requestedSources.camera && !snapshot.joinCameraOff && snapshot.cameraPermission === "granted",

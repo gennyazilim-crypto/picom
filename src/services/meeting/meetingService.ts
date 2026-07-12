@@ -8,6 +8,8 @@ import { meetingWaitingRoomService } from "./meetingWaitingRoomService";
 import { getMeetingCapabilities } from "./meetingCapabilityService";
 import { meetingLiveKitAdapter } from "./meetingLiveKitAdapter";
 import { meetingRepository } from "./meetingRepository";
+import { noiseShieldService } from "../noiseShieldService";
+import type { NoiseShieldMode, NoiseShieldSnapshot } from "../../types/noiseShield";
 
 let currentRequest: MeetingClientJoinRequest | null = null;
 let joinPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
@@ -94,8 +96,11 @@ function applyProviderParticipants(generation:number,snapshot:ReturnType<typeof 
   meetingStore.replaceParticipants(generation,[...byIdentity.values()]);
 }
 
+const clientNoiseShield=(state:NoiseShieldSnapshot):MeetingClientSnapshot["noiseShield"]=>({requested:state.requestedMode!=="off",applied:state.appliedMode!=="off"&&(state.status==="applied"||state.status==="fallback"),requestedMode:state.requestedMode,appliedMode:state.appliedMode,availableModes:state.availableModes,provider:state.provider,status:state.status,fallbackReason:state.fallbackReason});
+
 function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   stopBindings();
+  sessionCleanups.push(noiseShieldService.subscribe(()=>meetingStore.patch(generation,{noiseShield:clientNoiseShield(noiseShieldService.getSnapshot())})));
   sessionCleanups.push(meetingLiveKitAdapter.subscribe((provider)=>{
     if(meetingStore.getSnapshot().generation!==generation)return;
     const phase=provider.status==="connected"?"connected":provider.status==="reconnecting"?"reconnecting":provider.status==="disconnected"?"disconnected":provider.status==="connecting"?"connecting":provider.status==="requesting_token"?"token-loading":null;
@@ -119,6 +124,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
 async function prepare(request:MeetingClientJoinRequest):Promise<number> {
   stopBindings(); await meetingLiveKitAdapter.disconnect(); currentRequest=request;
   const generation=meetingStore.begin({roomId:request.roomId,sessionId:request.sessionId,communityId:request.communityId,communityName:request.communityName,channelId:request.channelId,channelName:request.channelName,roomTitle:request.roomTitle,roomMode:request.roomMode});
+  const shield=noiseShieldService.activateMeeting(request.roomId,request.noiseShieldMode??(request.noiseShield?"standard":"off"));meetingStore.patch(generation,{noiseShield:clientNoiseShield(shield)});
   if(request.roomMode==="stage")meetingStore.setLayout("stage");
   const devices=voiceDeviceService.getSnapshot();meetingStore.patch(generation,{localDevices:{inputId:devices.selectedInputId,outputId:devices.selectedOutputId,permission:devices.permission}});return generation;
 }
@@ -162,11 +168,12 @@ export const meetingService = {
     meetingStore.patch(snapshot.generation,{waitingEntry:{id:result.data.id,status:result.data.status},providerStatus:"waiting_cancelled",error:null});
     return{ok:true,data:meetingStore.getSnapshot()};
   },
-  async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation;stopBindings();await meetingLiveKitAdapter.disconnect();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null});currentRequest=null;},
+  async leave():Promise<void>{const generation=meetingStore.getSnapshot().generation;stopBindings();await meetingLiveKitAdapter.disconnect();const shield=noiseShieldService.deactivateMeeting();meetingStore.transition(generation,"ended",{providerStatus:"disconnected",waitingEntry:null,error:null,noiseShield:clientNoiseShield(shield)});currentRequest=null;},
   setLayout:meetingStore.setLayout,
   setRightDock:meetingStore.setRightDock,
   setFocus:meetingStore.setFocus,
   setNoiseShield:meetingStore.setNoiseShield,
+  async setNoiseShieldMode(mode:NoiseShieldMode):Promise<boolean>{if(currentRequest)currentRequest={...currentRequest,noiseShield:mode!=="off",noiseShieldMode:mode};const state=noiseShieldService.requestMode(mode),generation=meetingStore.getSnapshot().generation;meetingStore.patch(generation,{noiseShield:clientNoiseShield(state)});const reapplied=await meetingLiveKitAdapter.reapplyNoiseShield();meetingStore.patch(generation,{noiseShield:clientNoiseShield(noiseShieldService.getSnapshot())});return reapplied},
   setVideoSubscriptions:meetingLiveKitAdapter.setVideoSubscriptionPlan,
   setFocusedScreenShare:meetingLiveKitAdapter.setFocusedScreenShare,
   async setMuted(muted:boolean):Promise<boolean>{const result=await meetingLiveKitAdapter.setMuted(muted);if(result.ok)meetingStore.patch(meetingStore.getSnapshot().generation,{localMedia:{...meetingStore.getSnapshot().localMedia,muted:result.data.muted}});return result.ok;},

@@ -3,6 +3,8 @@ import { meetingPreJoinService } from "../../services/meeting/meetingPreJoinServ
 import { AppIcon } from "../AppIcon";
 import "./MeetingPreJoin.css";
 
+const noiseShieldLabels={off:"Off",standard:"Standard",enhanced:"Enhanced",voice_focus:"Voice Focus"} as const;
+
 function CameraPreview({ stream }: { stream: MediaStream | null }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -159,10 +161,7 @@ export function MeetingPreJoin({ onCancel }: { onCancel?: () => void }) {
             <span><strong>Join with camera off</strong><small>Camera publishing remains disabled until you enable it.</small></span>
             <input type="checkbox" checked={state.joinCameraOff} onChange={(event) => meetingPreJoinService.setJoinCameraOff(event.target.checked)} />
           </label>
-          <label>
-            <span><strong>Noise Shield</strong><small>Use supported echo cancellation, noise suppression, and automatic gain control.</small></span>
-            <input type="checkbox" checked={state.noiseShieldMode === "standard"} onChange={(event) => meetingPreJoinService.setNoiseShield(event.target.checked)} />
-          </label>
+          <fieldset className="meeting-prejoin__noise"><legend><strong>Noise Shield</strong><small>Applied only to your meeting microphone. Available modes come from this runtime.</small></legend><div>{state.noiseShieldAvailableModes.map((mode)=><button type="button" role="radio" aria-checked={state.noiseShieldMode===mode} key={mode} onClick={()=>meetingPreJoinService.setNoiseShieldMode(mode)}>{noiseShieldLabels[mode]}</button>)}</div>{state.noiseShieldFallbackReason?<p role="status">{state.noiseShieldFallbackReason}</p>:null}</fieldset>
         </div>
 
         {state.notice ? <p className="meeting-prejoin__notice" role="status" aria-live="polite">{state.notice}</p> : null}

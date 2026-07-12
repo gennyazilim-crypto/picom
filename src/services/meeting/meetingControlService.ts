@@ -7,6 +7,7 @@ import { voiceDeviceService, type VoiceDeviceSnapshot } from "../voiceDeviceServ
 import { meetingPreJoinService } from "./meetingPreJoinService";
 import { meetingService } from "./meetingService";
 import { meetingHostControlService } from "./meetingHostControlService";
+import type { NoiseShieldMode } from "../../types/noiseShield";
 
 export type MeetingControlResult<T = true> = Readonly<{ ok: true; data: T } | { ok: false; error: Readonly<{ code: string; message: string; retryAfterMs?: number }> }>;
 export type MeetingControlDevices = Readonly<{
@@ -37,7 +38,8 @@ export const meetingControlService = {
   async setMuted(muted:boolean):Promise<MeetingControlResult>{return await meetingService.setMuted(muted)?ok(true):fail("MEETING_MICROPHONE_FAILED","Picom could not change microphone state.");},
   async setCameraEnabled(enabled:boolean):Promise<MeetingControlResult>{const deviceId=meetingPreJoinService.getSnapshot().selectedCameraId;return await meetingService.setCameraEnabled(enabled,deviceId)?ok(true):fail("MEETING_CAMERA_FAILED","Picom could not change camera state.");},
   setDeafened(deafened:boolean):MeetingControlResult{return meetingService.setDeafened(deafened)?ok(true):fail("MEETING_AUDIO_FAILED","Picom could not change meeting audio playback.");},
-  setNoiseShield(enabled:boolean):MeetingControlResult { meetingPreJoinService.setNoiseShield(enabled);const state=meetingService.store.getSnapshot().noiseShield;return enabled&&state.status!=="applied"?fail("MEETING_NOISE_SHIELD_UNAVAILABLE","Noise Shield is unavailable for this microphone/runtime."):ok(true); },
+  async setNoiseShieldMode(mode:NoiseShieldMode):Promise<MeetingControlResult>{const supported=meetingService.store.getSnapshot().noiseShield.availableModes.includes(mode);if(!supported)return fail("MEETING_NOISE_SHIELD_UNAVAILABLE",`${mode.replace("_"," ")} is not available from the configured microphone provider.`);return await meetingService.setNoiseShieldMode(mode)?ok(true):fail("MEETING_NOISE_SHIELD_FAILED","Picom kept the microphone connected, but Noise Shield could not be reapplied.")},
+  setNoiseShield(enabled:boolean):Promise<MeetingControlResult>{return meetingControlService.setNoiseShieldMode(enabled?"standard":"off")},
   async listShareSources():Promise<MeetingControlResult<MeetingShareSources>>{if(dataSourceService.getStatus().isMock)return ok({requestId:"mock-screen-request",sources:[{id:"screen:mock-primary",name:"Primary display",type:"screen",thumbnailDataUrl:null,appIconDataUrl:null}]});const result=await screenCaptureService.listSources();return result.ok?ok({requestId:result.requestId,sources:result.sources}):fail(result.error,result.message);},
   async startScreenShare(requestId:string,sourceId:string):Promise<MeetingControlResult>{let id=sourceId,label="Shared screen";if(!dataSourceService.getStatus().isMock){const selected=await screenCaptureService.selectSource(requestId,sourceId);if(!selected.ok)return fail("MEETING_SCREEN_SHARE_SELECTION_FAILED",selected.message);id=selected.source.id;label=selected.source.name;}return await meetingService.startScreenShare(id,label)?ok(true):fail("MEETING_SCREEN_SHARE_FAILED","Picom could not start screen sharing.");},
   async stopScreenShare():Promise<MeetingControlResult>{return await meetingService.stopScreenShare()?ok(true):fail("MEETING_SCREEN_SHARE_FAILED","Picom could not stop screen sharing.");},
