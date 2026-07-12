@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import { windowService } from "../services/windowService";
+import { dataSourceService } from "../services/dataSourceService";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { mvpUiIconMap } from "./iconRegistry";
@@ -19,6 +20,7 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
   const [isMaximized, setIsMaximized] = useState(false);
   const [pendingAction, setPendingAction] = useState<"minimize" | "maximize" | "close" | null>(null);
   const [controlStatus, setControlStatus] = useState("");
+  const connectionLabel = dataSourceService.getStatus().isSupabase ? "Live data" : "Mock mode";
 
   useEffect(() => {
     let mounted = true;
@@ -72,7 +74,7 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
 
       <div className="titlebar-actions">
         <span className="connection-pill">
-          <span />Mock online
+          <span />{connectionLabel}
         </span>
         {onOpenNotifications ? <button type="button" className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}><AppIcon name="bell" size="sm" />{notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}</button> : null}
         <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />

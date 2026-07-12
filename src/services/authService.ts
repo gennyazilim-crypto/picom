@@ -79,9 +79,30 @@ function authError(code: AuthServiceErrorCode, message: string): AuthServiceResu
 
 function mapSupabaseError(error: AuthError): AuthServiceError {
   const status = error.status ?? 0;
+  const providerCode = typeof error.code === "string" ? error.code.toLowerCase() : "";
 
   if (isRateLimitError(error)) {
     return { code: "AUTH_RATE_LIMITED", message: rateLimitUserMessage };
+  }
+
+  if (providerCode === "email_not_confirmed") {
+    return { code: "AUTH_INVALID_CREDENTIALS", message: "Verify your email address before signing in." };
+  }
+
+  if (providerCode === "user_already_exists" || providerCode === "email_exists") {
+    return { code: "AUTH_INVALID_INPUT", message: "An account already exists for this email. Sign in or reset your password." };
+  }
+
+  if (providerCode === "weak_password") {
+    return { code: "AUTH_INVALID_INPUT", message: "Choose a stronger password that meets Picom's password requirements." };
+  }
+
+  if (providerCode === "signup_disabled") {
+    return { code: "AUTH_PROVIDER_ERROR", message: "New account registration is temporarily unavailable." };
+  }
+
+  if (providerCode === "email_address_invalid" || status === 422) {
+    return { code: "AUTH_INVALID_INPUT", message: "Enter a valid email address and check the registration details." };
   }
 
   if (status === 400 || status === 401) {

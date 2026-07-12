@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const main = readFileSync("src/components/MentionFeedMain.tsx", "utf8");
 const rail = readFileSync("src/components/FeedCompanionRail.tsx", "utf8");
+const connectedVoiceCard = readFileSync("src/components/voice/ConnectedVoiceCard.tsx", "utf8");
 const friends = readFileSync("src/data/mockFriends.ts", "utf8");
 const events = readFileSync("src/data/mockEvents.ts", "utf8");
 const styles = readFileSync("src/components/MentionFeedMain.css", "utf8");
@@ -10,12 +11,12 @@ const app = readFileSync("src/App.tsx", "utf8");
 const checks = [
   [main.includes("mention-feed-body-grid"), "body grid below mention feed header"],
   [main.includes("<FeedCompanionRail"), "companion rail mounted beside mention cards"],
-  [rail.includes("VoiceMiniControlCard"), "voice mini control card component"],
+  [rail.includes("ConnectedVoiceCard") && connectedVoiceCard.includes("Current voice room controls"), "connected voice control card component"],
   [rail.includes("FriendsStatusSection"), "friends status section"],
   [rail.includes("UpcomingEventsSection"), "upcoming events section"],
   [rail.includes("onLeaveVoice"), "leave voice handler wired"],
-  [rail.includes("aria-label={voiceState.muted"), "mute button accessible label"],
-  [rail.includes("aria-label={voiceState.deafened"), "deafen button accessible label"],
+  [connectedVoiceCard.includes('aria-label={voiceState.muted ? "Unmute microphone" : "Mute microphone"}'), "mute button accessible label"],
+  [connectedVoiceCard.includes('aria-label={voiceState.deafened ? "Undeafen audio" : "Deafen audio"}'), "deafen button accessible label"],
   [(friends.match(/status: "online"/g) ?? []).length >= 6, "six online friends"],
   [(friends.match(/status: "offline"/g) ?? []).length >= 6, "six offline friends"],
   [(friends.match(/status: "idle"|status: "dnd"/g) ?? []).length >= 2, "idle or busy friends"],

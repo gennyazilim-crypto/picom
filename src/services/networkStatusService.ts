@@ -40,7 +40,7 @@ function getHealthUrl(): string | null {
     return null;
   }
 
-  return `${appConfig.supabase.url.replace(/\/+$/, "")}/functions/v1/health`;
+  return `${appConfig.supabase.url.replace(/\/+$/, "")}/auth/v1/health`;
 }
 
 function getBrowserOnline(): boolean {

@@ -38,7 +38,7 @@ function getStatusUrl(): string | null {
     return null;
   }
 
-  return `${appConfig.supabase.url.replace(/\/+$/, "")}/functions/v1/health`;
+  return `${appConfig.supabase.url.replace(/\/+$/, "")}/auth/v1/health`;
 }
 
 function toServiceStatus(value: unknown): MaintenanceServiceStatus {
@@ -92,7 +92,7 @@ export const maintenanceStatusService = {
 
       return emit({
         status,
-        message: typeof body.message === "string" ? body.message : response.ok ? "Picom services are operational." : "Picom service status is degraded.",
+        message: response.ok && typeof body.message === "string" ? body.message : response.ok ? "Picom services are operational." : `Picom backend health check returned ${response.status}.`,
         startedAt: typeof body.startedAt === "string" ? body.startedAt : null,
         estimatedEndAt: typeof body.estimatedEndAt === "string" ? body.estimatedEndAt : null,
         checkedAt: new Date().toISOString(),

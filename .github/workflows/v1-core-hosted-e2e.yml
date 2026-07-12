@@ -1,0 +1,56 @@
+name: Picom V1 Core Hosted E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_confirmation:
+        description: Type STAGING_ONLY to run disposable hosted core fixtures
+        required: true
+        type: string
+  push:
+    branches:
+      - codex/v1-live-validation
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-core-hosted-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hosted-core:
+    name: Auth Community Feed DM Realtime
+    if: ${{ github.event_name == 'push' || inputs.staging_confirmation == 'STAGING_ONLY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: hosted-staging
+    env:
+      PICOM_V1_CORE_CONFIRM: STAGING_ONLY
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - name: Checkout Picom
+        uses: actions/checkout@v5
+
+      - name: Set up project Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run disposable hosted V1 core E2E
+        run: node scripts/hosted-v1-core-e2e.mjs
+
+      - name: Publish redacted V1 core summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -f artifacts/evidence/v1-core-hosted-e2e.json ]; then
+            node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('artifacts/evidence/v1-core-hosted-e2e.json','utf8'));const rows=Object.entries(d.checks||{}).map(([k,v])=>'- '+k+': '+(v?'pass':'fail'));fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,['## Picom V1 hosted core E2E','','- Status: '+d.status,'- Contains secrets: '+Boolean(d.containsSecrets),...rows,''].join('\n'))"
+          else
+            echo "V1 core evidence was not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi

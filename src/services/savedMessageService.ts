@@ -42,7 +42,11 @@ export function isMessageSaved(messageId: string): boolean { return read().some(
 export function subscribe(onChange: () => void): () => void {
   if (dataSourceService.getStatus().isMock) return () => undefined;
   const client = getSupabaseClient(); if (!client) return () => undefined;
-  const channel: RealtimeChannel = client.channel("saved-messages:current-user").on("postgres_changes", { event: "*", schema: "public", table: "saved_messages" }, onChange).subscribe();
+  const subscriptionId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const channel: RealtimeChannel = client
+    .channel(`saved-messages:current-user:${subscriptionId}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "saved_messages" }, onChange)
+    .subscribe();
   return () => { void client.removeChannel(channel); };
 }
 

@@ -158,6 +158,7 @@ import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
 import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
 import { readStateService } from "./services/supabase/readStateService";
 import { createCommunityFromSummary } from "./utils/communityFactory";
+import { isUuid } from "./utils/uuid";
 import { messageMentionsUser } from "./utils/mentionUtils";
 import { canManageChannels, canSendMessage, canViewChannel, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
 import { canModerateCommunityMember } from "./services/permissions/communityPermissions";
@@ -385,11 +386,11 @@ export function App() {
     toLegacyActiveView(AUTHENTICATED_DEFAULT_VIEW),
   );
   const [isActiveMessageListNearBottom, setIsActiveMessageListNearBottom] = useState(true);
-  const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
-  const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(() => feedUiStateService.applySeenState(mockFollowedUserStories));
+  const [mentionItems, setMentionItems] = useState<MentionItem[]>(() => dataSourceService.getStatus().isMock ? mockMentionItems : []);
+  const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(() => dataSourceService.getStatus().isMock ? feedUiStateService.applySeenState(mockFollowedUserStories) : []);
   const [mentionTab, setMentionTab] = useState<MentionFeedTab>(() => feedUiStateService.getSelection().tab);
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(() => feedUiStateService.getSelection().filter);
-  const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
+  const [followedUserIds, setFollowedUserIds] = useState<string[]>(() => dataSourceService.getStatus().isMock ? currentUserFollowedUserIds : []);
   const followMutationInFlightRef = useRef(new Set<string>());
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [profileVerificationBadges, setProfileVerificationBadges] = useState<VerificationBadge[]>([]);
@@ -401,8 +402,8 @@ export function App() {
   const [remoteProfileLoadError,setRemoteProfileLoadError]=useState<string|null>(null);
   const [profileReloadVersion,setProfileReloadVersion]=useState(0);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
-  const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
-  const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
+  const [directConversations, setDirectConversations] = useState<DirectConversation[]>(() => dataSourceService.getStatus().isMock ? mockDirectConversations : []);
+  const [activeDirectConversationId, setActiveDirectConversationId] = useState(() => dataSourceService.getStatus().isMock ? mockDirectConversations[0]?.id ?? "" : "");
   const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
   const [profileRelationshipBusyUserId, setProfileRelationshipBusyUserId] = useState<string | null>(null);
   const [friendsViewTab, setFriendsViewTab] = useState<FriendViewTab>("all");
@@ -460,7 +461,7 @@ export function App() {
     replaceCommunityCategories,
     replaceChannelMessages,
     replaceCommunityMembers,
-  } = useLocalMessageState(mockCommunities);
+  } = useLocalMessageState(dataSourceService.getStatus().isMock ? mockCommunities : []);
   const {
     activeCommunityId,
     activeCommunity,
@@ -672,7 +673,24 @@ export function App() {
     if (intent) setActiveView(toLegacyActiveView(intent.route));
   }, [authSession?.user?.id]);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
-  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? { ...fallbackCurrentUser, userId: currentUserId };
+  const sessionIdentityName = authSession?.user?.displayName?.trim()
+    || authSession?.user?.email?.split("@")[0]?.trim()
+    || "Picom User";
+  const sessionIdentityUsername = (authSession?.user?.email?.split("@")[0] ?? `user-${currentUserId.slice(0, 8)}`)
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "")
+    .slice(0, 32) || `user-${currentUserId.slice(0, 8)}`;
+  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? (dataSourceService.getStatus().isSupabase
+    ? {
+        ...fallbackCurrentUser,
+        userId: currentUserId,
+        displayName: sessionIdentityName,
+        username: sessionIdentityUsername,
+        avatarSeed: currentUserId,
+        statusText: "Connected to Picom",
+        bio: "",
+      }
+    : { ...fallbackCurrentUser, userId: currentUserId });
   const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const visibleMentionItems = useMemo(() => mentionItems.filter((item) => {
@@ -743,6 +761,26 @@ export function App() {
   const supabaseSidebarLoadedRef = useRef(new Set<string>());
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
+  const lastSupabaseUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!dataSourceService.getStatus().isSupabase) return;
+    const nextUserId = authSession?.user?.id ?? null;
+    if (lastSupabaseUserIdRef.current === nextUserId) return;
+
+    lastSupabaseUserIdRef.current = nextUserId;
+    supabaseCommunitiesLoadedRef.current = false;
+    supabaseSidebarLoadedRef.current.clear();
+    supabaseMessagesLoadedRef.current.clear();
+    supabaseMembersLoadedRef.current.clear();
+    replaceCommunities([]);
+    setDirectConversations([]);
+    setActiveDirectConversationId("");
+    setMentionItems([]);
+    setStoryItems([]);
+    setFollowedUserIds([]);
+    setFriendState(mockFriendState);
+  }, [authSession?.user?.id, replaceCommunities]);
   const messageHighlightTimerRef = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -1052,11 +1090,13 @@ export function App() {
   useEffect(() => {
     if (activeCommunity.kind !== "text" || activeView !== "community" || !isActiveMessageListNearBottom) return;
     clearChannelUnread({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id });
-    void readStateService.markChannelRead({ channelId: displayedActiveChannel.id, lastReadMessageId: latestActiveMessageId });
+    if (isUuid(displayedActiveChannel.id) && (latestActiveMessageId === null || isUuid(latestActiveMessageId))) {
+      void readStateService.markChannelRead({ channelId: displayedActiveChannel.id, lastReadMessageId: latestActiveMessageId });
+    }
   }, [activeCommunity.id, activeView, clearChannelUnread, displayedActiveChannel.id, isActiveMessageListNearBottom, latestActiveMessageId]);
 
   useEffect(() => {
-    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (activeCommunity.kind !== "text" || !isUuid(activeCommunity.id) || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
     let canceled = false;
     void readStateService.listCommunityUnread(activeCommunity.id).then((result) => {
       if (canceled || !result.ok) return;
@@ -1168,7 +1208,7 @@ export function App() {
   }, [handleLogout]);
 
   useEffect(() => {
-    if (!authSession || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
+    if (!authSession?.user?.id || !dataSourceService.getStatus().isSupabase || supabaseCommunitiesLoadedRef.current) return;
 
     let canceled = false;
     supabaseCommunitiesLoadedRef.current = true;
@@ -1196,7 +1236,7 @@ export function App() {
   }, [authSession, pushToast, replaceCommunities, switchCommunity]);
 
   useEffect(() => {
-    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
+    if (activeCommunity.kind !== "text" || !isUuid(activeCommunity.id) || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
     supabaseSidebarLoadedRef.current.add(activeCommunity.id);
@@ -1259,7 +1299,7 @@ export function App() {
   }, [activeCommunity.id, activeCommunity.kind, authSession, pushToast, replaceCommunityCategories, safeMode.active]);
 
   useEffect(() => {
-    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (activeCommunity.kind !== "text" || !isUuid(activeCommunity.id) || !isUuid(activeChannel.id) || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
 
     const messageKey = `${activeCommunity.id}:${activeChannel.id}`;
     if (supabaseMessagesLoadedRef.current.has(messageKey)) return;
@@ -1290,7 +1330,7 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id, activeCommunity.kind, authSession, mapMessageSummaryToMessage, pushToast, replaceChannelMessages, safeMode.active]);
 
   useEffect(() => {
-    if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
+    if (!isUuid(activeCommunity.id) || safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
     supabaseMembersLoadedRef.current.add(activeCommunity.id);

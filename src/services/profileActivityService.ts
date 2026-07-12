@@ -129,9 +129,18 @@ async function load(input: ProfileLoadInput): Promise<ProfileLoadResult> {
   if (status.isMock) return { ok: true, data: base };
   const client = getSupabaseClient();
   if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Profile activity is unavailable until Picom reconnects." } };
-  const { data, error } = await client.rpc("get_profile_domain_v1", { target_user_id: input.member.userId, result_limit: 30 });
-  if (error || !data) return { ok: false, error: { code: "PROFILE_ACTIVITY_LOAD_FAILED", message: "Picom could not load this profile's activity." } };
-  return { ok: true, data: mapPayload(data, base) };
+  const primary = await client.rpc("get_profile_domain_v1", { target_user_id: input.member.userId, result_limit: 30 });
+  if (!primary.error && primary.data) return { ok: true, data: mapPayload(primary.data, base) };
+
+  const missingDomainRpc = primary.error?.code === "PGRST202"
+    || primary.error?.code === "42883"
+    || primary.error?.message?.toLowerCase().includes("function") === true;
+  if (missingDomainRpc) {
+    const compatible = await client.rpc("get_profile_activity_v3", { target_user_id: input.member.userId, result_limit: 30 });
+    if (!compatible.error && compatible.data) return { ok: true, data: mapPayload(compatible.data, base) };
+  }
+
+  return { ok: false, error: { code: "PROFILE_ACTIVITY_LOAD_FAILED", message: "Picom could not load this profile's activity." } };
 }
 
 export const profileActivityService = { load, emptyProductionProfile };

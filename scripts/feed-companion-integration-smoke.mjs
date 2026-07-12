@@ -10,6 +10,7 @@ const rejectText = (source, value, label) => {
 
 const app = read("src/App.tsx");
 const rail = read("src/components/FeedCompanionRail.tsx");
+const connectedVoiceCard = read("src/components/voice/ConnectedVoiceCard.tsx");
 const feed = read("src/components/MentionFeedMain.tsx");
 const styles = read("src/components/MentionFeedMain.css");
 const miniPlayer = read("src/components/audio/AudioMiniPlayer.tsx");
@@ -19,7 +20,7 @@ const presence = read("src/services/friends/friendPresenceService.ts");
 requireText(app, 'hidden={activeView === "mentionFeed"}', "single audio presentation owner");
 requireText(rail, 'className="feed-rail-sticky-stack"', "sticky companion controls");
 requireText(rail, "<AudioMiniPlayer item={audioItem ?? undefined}", "rail audio player");
-requireText(rail, "voiceState.status !== \"connected\"", "actual voice connection state");
+requireText(connectedVoiceCard, 'voiceState.status !== "connected" && voiceState.status !== "reconnecting"', "actual voice connection state");
 requireText(rail, "onToggleMute", "voice mute control");
 requireText(rail, "onToggleDeafen", "voice deafen control");
 requireText(rail, "onLeaveVoice", "voice leave control");

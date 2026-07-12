@@ -1,5 +1,6 @@
 import { dataSourceService } from "../dataSourceService";
 import { loggingService } from "../loggingService";
+import { isUuid } from "../../utils/uuid";
 import { getSupabaseClient } from "./supabaseClient";
 
 export type ChannelUnreadSummary = {
@@ -19,6 +20,7 @@ function unavailable<T>(): ReadStateResult<T> {
 export const readStateService = {
   async listCommunityUnread(communityId: string): Promise<ReadStateResult<ChannelUnreadSummary[]>> {
     if (!dataSourceService.getStatus().isSupabase) return { ok: true, data: [] };
+    if (!isUuid(communityId)) return { ok: true, data: [] };
     const client = getSupabaseClient();
     if (!client) return unavailable();
 
@@ -39,6 +41,9 @@ export const readStateService = {
 
   async markChannelRead(input: { channelId: string; lastReadMessageId: string | null }): Promise<ReadStateResult<boolean>> {
     if (!dataSourceService.getStatus().isSupabase) return { ok: true, data: true };
+    if (!isUuid(input.channelId) || (input.lastReadMessageId !== null && !isUuid(input.lastReadMessageId))) {
+      return { ok: true, data: false };
+    }
     const client = getSupabaseClient();
     if (!client) return unavailable();
 
