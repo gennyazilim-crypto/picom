@@ -6,6 +6,8 @@ import { deepLinkService } from "./services/deepLinkService";
 import { safeModeService } from "./services/safeModeService";
 import { crashReporterService } from "./services/crashReporterService";
 import { localDataMigrationService } from "./services/localDataMigrationService";
+import { productionRuntimeConfigService } from "./services/productionRuntimeConfigService";
+import { ProductionConfigurationError } from "./components/ProductionConfigurationError";
 import "./styles.css";
 import "./screenShareQuality.css";
 
@@ -57,6 +59,17 @@ function scheduleOptionalRendererServices(safeModeActive: boolean): void {
 
 function bootstrapRenderer(): void {
   markRuntime();
+  const productionConfiguration = productionRuntimeConfigService.getConfiguration();
+  if (!productionConfiguration.ready) {
+    ReactDOM.createRoot(getRootElement()).render(
+      <React.StrictMode>
+        <DesktopStartupErrorBoundary>
+          <ProductionConfigurationError configuration={productionConfiguration} />
+        </DesktopStartupErrorBoundary>
+      </React.StrictMode>,
+    );
+    return;
+  }
   const migration = localDataMigrationService.migrateOnStartup();
   if (!migration.ok) safeModeService.enableSafeMode("local_data_migration_failed");
   const safeMode = safeModeService.getStartupState();

@@ -23,7 +23,6 @@ import { audioFeedReadStateService } from "../services/audio/audioFeedReadStateS
 import { communityNavigationService } from "../services/community/communityNavigationService";
 import { getCommunityAccess } from "../services/permissions/communityPermissions";
 import { feedQueryService } from "../services/feed/feedQueryService";
-import { dataSourceService } from "../services/dataSourceService";
 import type { UnifiedFeedItem } from "../types/feed";
 import { isV1FeatureEnabled, isV1MentionQuickFilterEnabled } from "../config/v1ReleaseScope";
 
@@ -166,14 +165,13 @@ export function MentionFeedMain({
   useEffect(() => {
     let active = true;
     setQueriedFeedItems(null);
-    const hostedStateFilters = dataSourceService.getStatus().isSupabase;
     void feedQueryService.refresh({
       mode: activeTab === "feed" ? "popular" : "following",
       sourceTypes: sourceTypesForFilter(activeFilter),
       followedAuthorIds: followedUserIds,
       createdAfter: createdAfterForFilter(activeFilter),
-      unreadOnly: hostedStateFilters && activeFilter === "unread",
-      savedOnly: hostedStateFilters && activeFilter === "saved",
+      unreadOnly: activeFilter === "unread",
+      savedOnly: activeFilter === "saved",
       limit: 50,
     }).then((result) => {
       if (!active) return;

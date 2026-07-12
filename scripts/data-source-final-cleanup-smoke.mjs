@@ -4,10 +4,17 @@ import { join, relative } from "node:path";
 
 const read = (path) => readFileSync(path, "utf8");
 const policy = read("src/config/dataSourcePolicy.ts");
+const appConfig = read("src/config/appConfig.ts");
 const service = read("src/services/dataSourceService.ts");
 assert.ok(policy.includes('normalized === "mock" || normalized === "supabase"'), "data source values must be explicit");
 assert.ok(policy.includes('mode: "supabase"') && policy.includes("Fake data fallback is disabled"), "invalid mode must fail toward Supabase, not mock");
-assert.ok(service.includes("resolveDataSourceDecision") && !service.includes('appConfig.dataSource === "mock"'), "central service must use strict policy");
+assert.ok(policy.includes("isProductionRuntime") && policy.includes("V1 stable and production builds require VITE_DATA_SOURCE=supabase"), "production must reject mock and missing data-source selection");
+assert.ok(appConfig.includes("resolveDataSourceDecision") && appConfig.includes("dataSourceConfigurationError"), "app config must consume the authoritative data-source decision");
+assert.ok(service.includes("appConfig.dataSourceConfigurationError") && !service.includes("resolveDataSourceDecision"), "central status must consume the app-level decision without re-resolving it");
+const startup = read("src/services/productionRuntimeConfigService.ts");
+const main = read("src/main.tsx");
+assert.ok(startup.includes("PRODUCTION_MOCK_FORBIDDEN") && startup.includes("SUPABASE_CONFIGURATION_INVALID"), "startup configuration gate is incomplete");
+assert.ok(main.includes("productionRuntimeConfigService.getConfiguration()") && main.includes("ProductionConfigurationError"), "renderer must stop before App mounts when production data is unavailable");
 const gatedFixtures = ["mockCommunities", "mockFollows", "mockMentions", "mockDirectMessages", "mockFriends", "mockEvents", "mockStories", "mockFollowSuggestions", "mockProfiles", "mockStickers", "mockUnifiedContentMentions"];
 for (const name of gatedFixtures) assert.ok(read(`src/data/${name}.ts`).includes("selectMockFixture"), `${name} is not gated`);
 const profile = read("src/services/profileActivityService.ts");

@@ -1,12 +1,9 @@
 import { resolveReleaseChannel, type ReleaseChannel } from "./releaseChannel";
 import { v1ReleaseScope } from "./v1ReleaseScope";
+import { resolveDataSourceDecision, type DataSourceMode } from "./dataSourcePolicy";
 
-export type DataSourceMode = "mock" | "supabase";
+export type { DataSourceMode } from "./dataSourcePolicy";
 export type { ReleaseChannel } from "./releaseChannel";
-
-function getDataSourceMode(value: string | undefined): DataSourceMode {
-  return value === "supabase" ? "supabase" : "mock";
-}
 
 function getBooleanFlag(value: string | undefined): boolean {
   return value?.trim().toLowerCase() === "true";
@@ -15,14 +12,18 @@ function getBooleanFlag(value: string | undefined): boolean {
 const environment = import.meta.env.VITE_APP_ENV ?? "development";
 const gitCommit = import.meta.env.VITE_GIT_COMMIT ?? "local";
 const appVersion = import.meta.env.VITE_APP_VERSION ?? v1ReleaseScope.version;
+const releaseChannel = resolveReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment, appVersion) satisfies ReleaseChannel;
+const dataSourceDecision = resolveDataSourceDecision(import.meta.env.VITE_DATA_SOURCE, { environment, releaseChannel });
 
 export const appConfig = Object.freeze({
   name: import.meta.env.VITE_APP_NAME ?? "Picom",
   version: appVersion,
   identifier: import.meta.env.VITE_APP_IDENTIFIER ?? "com.picom.desktop",
   environment,
-  releaseChannel: resolveReleaseChannel(import.meta.env.VITE_RELEASE_CHANNEL, environment, appVersion) satisfies ReleaseChannel,
-  dataSource: getDataSourceMode(import.meta.env.VITE_DATA_SOURCE),
+  releaseChannel,
+  dataSource: dataSourceDecision.mode satisfies DataSourceMode,
+  dataSourceExplicit: dataSourceDecision.explicit,
+  dataSourceConfigurationError: dataSourceDecision.reason,
   statusPageUrl: import.meta.env.VITE_STATUS_PAGE_URL ?? "",
   remoteConfigUrl: import.meta.env.VITE_REMOTE_CONFIG_URL ?? "",
   realtimeScalingMode: import.meta.env.VITE_REALTIME_SCALING_MODE ?? "supabase_managed",

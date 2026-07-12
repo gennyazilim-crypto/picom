@@ -1,5 +1,4 @@
 import { appConfig, type DataSourceMode } from "../config/appConfig";
-import { resolveDataSourceDecision } from "../config/dataSourcePolicy";
 
 export type DataSourceStatus = Readonly<{
   mode: DataSourceMode;
@@ -35,23 +34,24 @@ function getSupabaseConfiguredReason(): string | undefined {
 
 export const dataSourceService = {
   getMode(): DataSourceMode {
-    return resolveDataSourceDecision().mode;
+    return appConfig.dataSource;
   },
 
   getStatus(): DataSourceStatus {
-    const decision = resolveDataSourceDecision();
-    if (decision.mode === "mock" && decision.explicit) {
+    if (appConfig.dataSource === "mock") {
+      const reason = appConfig.dataSourceConfigurationError ?? (!appConfig.dataSourceExplicit ? "VITE_DATA_SOURCE=mock must be selected explicitly." : undefined);
       return {
         mode: "mock",
         label: "Mock",
         isMock: true,
         isSupabase: false,
-        configured: true,
-        explicit: true,
+        configured: !reason,
+        explicit: appConfig.dataSourceExplicit,
+        reason,
       };
     }
 
-    const reason = decision.reason ?? getSupabaseConfiguredReason();
+    const reason = appConfig.dataSourceConfigurationError ?? getSupabaseConfiguredReason();
 
     return {
       mode: "supabase",
@@ -59,7 +59,7 @@ export const dataSourceService = {
       isMock: false,
       isSupabase: true,
       configured: !reason,
-      explicit: decision.explicit,
+      explicit: appConfig.dataSourceExplicit,
       reason,
     };
   },
