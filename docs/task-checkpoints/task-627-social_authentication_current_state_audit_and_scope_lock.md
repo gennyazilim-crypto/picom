@@ -1,70 +1,52 @@
-# Task 627 Checkpoint: Social Authentication Current-State Audit and Scope Lock
+# Task 627 checkpoint: Social authentication audit and scope lock
 
 Status: complete
 Date: 2026-07-12
-Baseline: origin/main at c332730
+Baseline: `origin/main` at `b7d3b4f`
 
-## Objective
+## Result
 
-Audit the social-auth foundation and lock Tasks 628-641 without changing product code.
+The prior Task 627 audit was refreshed against the current post-Task-628 implementation. Product source was not changed.
+
+## Confirmed
+
+- Electron 43.0.0, Supabase JS 2.110.0 and electron-builder 26.15.3.
+- Supabase PKCE with URL auto-detection disabled.
+- System-browser provider launch through a narrow Electron bridge.
+- Exact `picom://auth/callback` parser and protocol registration.
+- Cold/running callback paths for Windows/Linux plus macOS `open-url`.
+- Protected pending-attempt/result lifecycle with expiry, replay rejection, pull and acknowledgement.
+- Supabase session/PKCE persistence through OS `safeStorage`; memory-only fallback when secure storage is unavailable.
+- Existing email/password, recovery, legal, onboarding, profile trigger and Feed landing remain in scope.
+
+## Provider status
+
+| Provider | Status |
+| --- | --- |
+| Email/password | READY_TO_IMPLEMENT |
+| Google | CREDENTIAL_BLOCKED |
+| Apple | CREDENTIAL_BLOCKED |
+| Epic | APPROVAL_BLOCKED |
+| Steam | ARCHITECTURE_BLOCKED |
+
+No hosted provider dashboard, real provider login or packaged callback was claimed. No secret value was read, printed or added.
 
 ## Outputs
 
-- docs/social-auth-current-state-audit.md
-- docs/social-auth-scope-lock.md
-- docs/task-checkpoints/task-627-social_authentication_current_state_audit_and_scope_lock.md
+- `docs/social-auth-current-state-audit.md`
+- `docs/social-auth-scope-lock.md`
+- `docs/task-checkpoints/task-627-social_authentication_current_state_audit_and_scope_lock.md`
 
-## Inspected
+## Validation posture
 
-- Login, registration, recovery, legal acceptance, onboarding, and authenticated landing.
-- Google/Apple UI, socialAuthService, Auth wrapper, Supabase client, profile trigger/backfill, local Auth config, and Edge Function inventory.
-- Electron main, preload, IPC validation, single-instance, open-url, system browser, and builder protocol declaration.
-- Deep-link parser, Settings connected accounts, and Epic/Steam POC documents.
-- Locked dependency versions and current official provider/framework documentation.
-- Current environment and GitHub secret-name access for presence only.
-
-## Findings
-
-| Area | Result |
-| --- | --- |
-| Supabase session authority | Retained |
-| System browser | Implemented through validated IPC |
-| PKCE | Enabled |
-| Callback parser | Bounded and allowlisted |
-| Native event paths | Present in source; not packaged-certified |
-| Session persistence | Blocked because default renderer storage is used |
-| Callback delivery | Blocked because it is event-only and unacknowledged |
-| Google | ARCHITECTURE_BLOCKED; hosted config unverified |
-| Apple | APPROVAL_BLOCKED; config/rotation ownership unverified |
-| Epic | APPROVAL_BLOCKED; no verified provider contract |
-| Steam | ARCHITECTURE_BLOCKED; public browser contract is OpenID 2.0 |
-| Account linking | Partial; no recent-auth, unlink, or last-method control |
-| Profile normalization | Inconsistent between trigger and social upsert |
-| Real provider evidence | Absent |
-
-## Hosted-state limits
-
-- Current shell had none of the audited Supabase/provider variables.
-- Repository files contain placeholders only; no secret was added or printed.
-- GitHub returned HTTP 403 for repository secret names.
-- Hosted Supabase/provider consoles were not verified.
-- No real provider login or packaged callback was attempted.
-
-## Validation
-
-- The isolated task worktree was clean before edits.
-- Changes are documentation-only.
-- Official references match the locked runtime and current provider contracts.
-- No app test/build was run because Task 627 is a read-only audit with no product modification. Task 628 owns implementation validation.
-
-## Release decision
-
-Social auth remains No-Go. Google/Apple remain disabled in release config. Epic/Steam remain unexposed. No success claim is authorized.
+- Documentation-only change.
+- Existing OAuth foundation smoke is the targeted local contract.
+- Complete auth/security/quality and real hosted matrices remain Tasks 640-641.
 
 ## Next task
 
-Task 628: Electron PKCE/deep-link/secure-session foundation, including secure async storage, durable callback delivery, attempt lifecycle, replay protection, and packaged-platform test contracts.
+Task 628 revalidates the already-present Electron PKCE, durable callback and secure-session foundation against this refreshed baseline and closes any verified gaps without creating a second auth stack.
 
 ## Commit
 
-Intended message: docs audit Picom social authentication
+`docs audit Picom social authentication`
