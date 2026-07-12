@@ -15,6 +15,7 @@ import type { UpcomingEvent } from "../types/events";
 import { InvitePeopleModal, JoinWithInviteModal } from "./CommunityInviteModals";
 import type { InviteAcceptanceStatus } from "../services/community/communityInviteService";
 import type { ReportRecord } from "../types/reports";
+import { isV1ChannelTypeEnabled } from "../config/v1ReleaseScope";
 import { ReportModal } from "./ReportModal";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { AppIcon } from "./AppIcon";
@@ -61,6 +62,9 @@ type CommunitySidebarProps = {
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
 export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent }: CommunitySidebarProps) {
+  const visibleCategories = community.categories
+    .map((category) => ({ ...category, channels: category.channels.filter((channel) => isV1ChannelTypeEnabled(channel.type)) }))
+    .filter((category) => category.channels.length > 0);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -112,7 +116,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
           </div>
         ) : null}
 
-        {community.categories.length ? community.categories.map((category) => (
+        {visibleCategories.length ? visibleCategories.map((category) => (
           <ChannelCategory
             key={category.id}
             category={category}

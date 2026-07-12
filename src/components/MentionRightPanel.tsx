@@ -4,6 +4,7 @@ import type { MentionItem, MentionQuickFilter } from "../types/mentions";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
+import { isV1MentionQuickFilterEnabled } from "../config/v1ReleaseScope";
 
 type MentionRightPanelProps = {
   items: MentionItem[];
@@ -61,7 +62,7 @@ export function MentionRightPanel({
   const popularPeople = getMembers(communities, popularUserIds.filter((userId) => !blocked.has(userId))).slice(0, 8);
   const followedPeople = getMembers(communities, followedUserIds.filter((userId) => !blocked.has(userId))).slice(0, 6);
   const suggestedPeople = getMembers(communities, suggestedUserIds.filter((userId) => !blocked.has(userId))).slice(0, 4);
-  const filters: Array<{ id: MentionQuickFilter; label: string }> = [
+  const allFilters: Array<{ id: MentionQuickFilter; label: string }> = [
     { id: "today", label: "Today" },
     { id: "week", label: "This week" },
     { id: "unread", label: "Unread" },
@@ -70,6 +71,7 @@ export function MentionRightPanel({
     { id: "radio", label: "Radio" },
     { id: "podcast", label: "Podcast" },
   ];
+  const filters = allFilters.filter((filter) => isV1MentionQuickFilterEnabled(filter.id));
 
   return (
     <aside className="mention-right-panel" aria-label="Mention feed details">

@@ -4,6 +4,7 @@ import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { getCommunityIconLabel } from "../utils/generatedIdentity";
 import { getCommunityVerificationSummary, getVerificationType } from "../utils/verificationHelpers";
+import { isV1CommunityKindEnabled, isV1FeatureEnabled } from "../config/v1ReleaseScope";
 
 const railIcons = mvpUiIconMap.serverRail;
 
@@ -17,10 +18,11 @@ type ServerRailProps = {
 };
 
 export function ServerRail({ communities, activeCommunityId, onSelectCommunity, onOpenDiscovery, onUtilityAction, onContextMenu }: ServerRailProps) {
+  const visibleCommunities = communities.filter((community) => isV1CommunityKindEnabled(community.kind));
   return (
     <nav className="server-rail" aria-label="Community switcher">
       <div className="server-stack" style={{ flex: "1 1 auto" }}>
-        {communities.map((community) => (
+        {visibleCommunities.map((community) => (
           <button
             key={community.id}
             className={`server-button ${community.id === activeCommunityId ? "active" : ""}`}
@@ -39,9 +41,9 @@ export function ServerRail({ communities, activeCommunityId, onSelectCommunity, 
         <button className="server-button utility" aria-label="Add community" onClick={() => onUtilityAction?.("create-community")}>
           <AppIcon name={railIcons.addCommunity} size="lg" />
         </button>
-        <button className={`server-button utility `} aria-label="Discover communities" onClick={onOpenDiscovery}>
+        {isV1FeatureEnabled("discoveryMarketplace") ? <button className={`server-button utility `} aria-label="Discover communities" onClick={onOpenDiscovery}>
           <AppIcon name={railIcons.discover} size="lg" />
-        </button>
+        </button> : null}
       </div>
     </nav>
   );

@@ -1,4 +1,5 @@
 import { resolveReleaseChannel, type ReleaseChannel } from "./releaseChannel";
+import { v1ReleaseScope } from "./v1ReleaseScope";
 
 export type DataSourceMode = "mock" | "supabase";
 export type { ReleaseChannel } from "./releaseChannel";
@@ -13,7 +14,7 @@ function getBooleanFlag(value: string | undefined): boolean {
 
 const environment = import.meta.env.VITE_APP_ENV ?? "development";
 const gitCommit = import.meta.env.VITE_GIT_COMMIT ?? "local";
-const appVersion = import.meta.env.VITE_APP_VERSION ?? "0.1.1-beta.1";
+const appVersion = import.meta.env.VITE_APP_VERSION ?? v1ReleaseScope.version;
 
 export const appConfig = Object.freeze({
   name: import.meta.env.VITE_APP_NAME ?? "Picom",
@@ -26,7 +27,8 @@ export const appConfig = Object.freeze({
   remoteConfigUrl: import.meta.env.VITE_REMOTE_CONFIG_URL ?? "",
   realtimeScalingMode: import.meta.env.VITE_REALTIME_SCALING_MODE ?? "supabase_managed",
   runtimeTarget: "electron" as const,
-  supportedPlatforms: ["windows", "linux", "macos"] as const,
+  releaseScope: v1ReleaseScope.releaseId,
+  supportedPlatforms: v1ReleaseScope.supportedPlatforms,
   build: Object.freeze({
     date: import.meta.env.VITE_BUILD_DATE ?? "development",
     commit: gitCommit,

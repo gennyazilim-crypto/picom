@@ -25,6 +25,7 @@ import { getCommunityAccess } from "../services/permissions/communityPermissions
 import { feedQueryService } from "../services/feed/feedQueryService";
 import { dataSourceService } from "../services/dataSourceService";
 import type { UnifiedFeedItem } from "../types/feed";
+import { isV1FeatureEnabled, isV1MentionQuickFilterEnabled } from "../config/v1ReleaseScope";
 
 type MentionFeedMainProps = {
   items: MentionItem[];
@@ -153,14 +154,15 @@ export function MentionFeedMain({
   }), [communities, currentUserId, stories]);
   const storyIds = useMemo(() => visibleStories.map((story) => story.id), [visibleStories]);
   const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
-  const accessibleAudioItems = useMemo(() => audioCatalog.feedItems.filter((item) => {
+  const accessibleAudioItems = useMemo(() => isV1FeatureEnabled("radio") || isV1FeatureEnabled("podcasts") ? audioCatalog.feedItems.filter((item) => {
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
     const access = getCommunityAccess(currentUserId, community);
     return access.isMember || access.canViewPublicContent;
-  }), [audioCatalog.feedItems, communities, currentUserId]);
+  }) : [], [audioCatalog.feedItems, communities, currentUserId]);
   const followedAudioItems = useMemo(() => accessibleAudioItems.filter((item) => followedUserIds.includes(item.mentionAuthorUserId ?? item.authorUserId ?? item.hostUserId ?? "")), [accessibleAudioItems, followedUserIds]);
-  const locallyVisibleAudioItems = useMemo(() => applyAudioQuickFilter(activeTab === "feed" ? accessibleAudioItems : followedAudioItems, activeFilter, savedAudioIds, readAudioIds), [accessibleAudioItems, activeFilter, activeTab, followedAudioItems, readAudioIds, savedAudioIds]);
+  const effectiveFilter = isV1MentionQuickFilterEnabled(activeFilter) ? activeFilter : null;
+  const locallyVisibleAudioItems = useMemo(() => applyAudioQuickFilter(activeTab === "feed" ? accessibleAudioItems : followedAudioItems, effectiveFilter, savedAudioIds, readAudioIds), [accessibleAudioItems, activeTab, effectiveFilter, followedAudioItems, readAudioIds, savedAudioIds]);
   useEffect(() => {
     let active = true;
     setQueriedFeedItems(null);
@@ -184,7 +186,7 @@ export function MentionFeedMain({
   const visibleItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleItems : locallyVisibleItems.filter((item) => queriedSourceOrder.has(item.messageId)).sort((left, right) => (queriedSourceOrder.get(left.messageId) ?? 999) - (queriedSourceOrder.get(right.messageId) ?? 999)), [locallyVisibleItems, queriedSourceOrder]);
   const visibleAudioItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleAudioItems.slice(0, 12) : locallyVisibleAudioItems.filter((item) => queriedSourceOrder.has(item.sourceId ?? item.id.replace(/^feed-/, ""))).sort((left, right) => (queriedSourceOrder.get(left.sourceId ?? left.id.replace(/^feed-/, "")) ?? 999) - (queriedSourceOrder.get(right.sourceId ?? right.id.replace(/^feed-/, "")) ?? 999)).slice(0, 12), [locallyVisibleAudioItems, queriedSourceOrder]);
   const audioReminderFeedIds = useMemo(() => new Set([...reminderState.reminderIds].map((id) => "feed-" + id)), [reminderState.reminderIds]);
-  const radioEvents = useMemo<UpcomingEvent[]>(() => audioCatalog.radioSessions
+  const radioEvents = useMemo<UpcomingEvent[]>(() => isV1FeatureEnabled("radio") ? audioCatalog.radioSessions
     .filter((session) => session.status === "scheduled")
     .map((session) => ({
       id: "radio-event-" + session.id,
@@ -200,7 +202,7 @@ export function MentionFeedMain({
       radioSessionId: session.id,
       reminderSet: reminderState.reminderIds.has(session.id),
       currentUserRsvp: reminderState.reminderIds.has(session.id) ? "interested" : undefined,
-    })), [audioCatalog.radioSessions, reminderState.reminderIds]);
+    })) : [], [audioCatalog.radioSessions, reminderState.reminderIds]);
   const companionEvents = useMemo(() => [...radioEvents, ...events.filter((event) => !radioEvents.some((radioEvent) => radioEvent.id === event.id))]
     .sort((left, right) => Date.parse(left.startsAt) - Date.parse(right.startsAt))
     .slice(0, 8), [events, radioEvents]);

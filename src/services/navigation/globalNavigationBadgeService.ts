@@ -4,6 +4,7 @@ import type { UpcomingEvent } from "../../types/events";
 import type { GlobalNavigationBadgeState } from "../../types/globalNavigation";
 import type { ActiveVoiceRoomSummary } from "../../types/voiceDiscovery";
 import type { NotificationPolicyState } from "../notificationPolicyStateService";
+import { isV1FeatureEnabled } from "../../config/v1ReleaseScope";
 
 type BadgeDerivationInput = Readonly<{
   communities: readonly Community[];
@@ -59,7 +60,13 @@ function deriveBadges(input: BadgeDerivationInput): GlobalNavigationBadgeState {
     })
     .map((event) => event.id)).size;
 
-  return { dmUnread, communityUnread, radioLive, eventUpcoming, bookmarkCount: 0 };
+  return {
+    dmUnread,
+    communityUnread,
+    radioLive: isV1FeatureEnabled("radio") ? radioLive : 0,
+    eventUpcoming: isV1FeatureEnabled("events") ? eventUpcoming : 0,
+    bookmarkCount: 0,
+  };
 }
 
 export const globalNavigationBadgeService = { deriveBadges };

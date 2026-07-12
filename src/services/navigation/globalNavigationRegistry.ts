@@ -4,11 +4,12 @@ import type {
   GlobalNavigationKey,
   GlobalNavigationRegistryItem,
 } from "../../types/globalNavigation";
+import { isV1GlobalNavigationEnabled } from "../../config/v1ReleaseScope";
 
 const available = () => "available" as const;
 const noBadge = () => null;
 
-export const globalNavigationRegistry: readonly GlobalNavigationRegistryItem[] = [
+const allGlobalNavigationItems: readonly GlobalNavigationRegistryItem[] = [
   { key: "feed", label: "Feed", ariaLabel: "Open Feed", icon: "home", section: "primary", status: available, badgeSelector: noBadge },
   { key: "dm", label: "DM", ariaLabel: "Open direct messages", icon: "inbox", section: "primary", status: available, badgeSelector: (state) => state.dmUnread },
   { key: "communities", label: "Communities", ariaLabel: "Open communities", icon: "users", section: "primary", status: available, badgeSelector: (state) => state.communityUnread },
@@ -20,18 +21,21 @@ export const globalNavigationRegistry: readonly GlobalNavigationRegistryItem[] =
   { key: "helpSupport", label: "Help & Support", ariaLabel: "Open Help and Support", icon: "user", section: "utility", status: available, badgeSelector: noBadge },
 ];
 
+export const globalNavigationRegistry: readonly GlobalNavigationRegistryItem[] = allGlobalNavigationItems.filter((item) => isV1GlobalNavigationEnabled(item.key));
+
 export const primaryGlobalNavigationItems = globalNavigationRegistry.filter((item) => item.section === "primary");
 export const utilityGlobalNavigationItems = globalNavigationRegistry.filter((item) => item.section === "utility");
 
 export function resolveGlobalNavigationKey(activeView: string): GlobalNavigationKey | null {
-  if (activeView === "mentionFeed") return "feed";
-  if (activeView === "directMessages") return "dm";
-  if (activeView === "community") return "communities";
-  if (activeView === "radioCommunity") return "radio";
-  if (activeView === "podcastCommunity") return "podcasts";
-  if (activeView === "events") return "events";
-  if (activeView === "savedMessages") return "bookmarks";
-  return null;
+  const resolved = activeView === "mentionFeed" ? "feed"
+    : activeView === "directMessages" ? "dm"
+      : activeView === "community" ? "communities"
+        : activeView === "radioCommunity" ? "radio"
+          : activeView === "podcastCommunity" ? "podcasts"
+            : activeView === "events" ? "events"
+              : activeView === "savedMessages" ? "bookmarks"
+                : null;
+  return resolved && isV1GlobalNavigationEnabled(resolved) ? resolved : null;
 }
 
 export const emptyGlobalNavigationBadges: GlobalNavigationBadgeState = {

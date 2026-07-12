@@ -9,6 +9,7 @@ import { MemberAvatar } from "../MemberAvatar";
 import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 import type { CommunitySummary } from "../../services/communityService";
 import { CommunitySettingsEditor } from "./CommunitySettingsEditor";
+import { isV1CommunityAdminSectionEnabled } from "../../config/v1ReleaseScope";
 
 const CommunityRoleManagement = lazy(() => import("./CommunityRoleManagement").then((module) => ({ default: module.CommunityRoleManagement })));
 const CommunityMemberRoleAssignment = lazy(() => import("./CommunityMemberRoleAssignment").then((module) => ({ default: module.CommunityMemberRoleAssignment })));
@@ -17,7 +18,7 @@ const CommunityInviteManagement = lazy(() => import("./CommunityInviteManagement
 export type AdminSectionId = "overview" | "insights" | "community-settings" | "verification" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
 
-export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string; permission?: CommunityAccess["permissions"][number]; ownerOnly?: boolean; icon: IconName }> = [
+const allAdminSectionDefinitions: Array<{ id: AdminSectionId; label: string; permission?: CommunityAccess["permissions"][number]; ownerOnly?: boolean; icon: IconName }> = [
   { id: "overview", label: "Overview", icon: "home" },
   { id: "insights", label: "Insights", permission: "viewInsights", icon: "inbox" },
   { id: "community-settings", label: "Community Settings", permission: "manageCommunity", icon: "settings" },
@@ -35,6 +36,8 @@ export const adminSectionDefinitions: Array<{ id: AdminSectionId; label: string;
   { id: "audit-log", label: "Audit Log", permission: "viewAuditLog", icon: "inbox" },
   { id: "danger-zone", label: "Danger Zone", ownerOnly: true, icon: "trash" },
 ];
+
+export const adminSectionDefinitions = allAdminSectionDefinitions.filter((section) => isV1CommunityAdminSectionEnabled(section.id));
 
 export const moderatorSectionDefinitions: Array<{ id: ModeratorSectionId; label: string; permission: CommunityAccess["permissions"][number]; icon: IconName }> = [
   { id: "reports", label: "Reports", permission: "moderateMessages", icon: "bell" },

@@ -10,6 +10,7 @@ import { OnboardingStepFinish } from "./OnboardingStepFinish";
 import { OnboardingStepFollow } from "./OnboardingStepFollow";
 import { OnboardingStepProfile } from "./OnboardingStepProfile";
 import { OnboardingStepTheme } from "./OnboardingStepTheme";
+import { isV1FeatureEnabled } from "../../config/v1ReleaseScope";
 
 type Props = {
   userId: string;
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export function OnboardingFlow({ userId, initialDisplayName, initialUsername = "", initialStatusText = "Ready to explore Picom", initialFollowedUserIds, suggestions, theme, onThemeChange, onComplete }: Props) {
+  const visibleSuggestions = isV1FeatureEnabled("friends") ? suggestions : [];
   const variant = useMemo(() => onboardingExperimentService.getVariant(userId), [userId]);
   const steps = useMemo(() => onboardingExperimentService.getSteps(variant), [variant]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -36,7 +38,7 @@ export function OnboardingFlow({ userId, initialDisplayName, initialUsername = "
   const currentStep = steps[stepIndex];
   const canContinue = currentStep.id !== "profile" || profile.displayName.trim().length > 0;
   const canSkip = currentStep.id === "theme" || currentStep.id === "community" || currentStep.id === "follow";
-  const selectedSuggestionCount = useMemo(() => suggestions.filter((member) => followedUserIds.includes(member.userId)).length, [followedUserIds, suggestions]);
+  const selectedSuggestionCount = useMemo(() => visibleSuggestions.filter((member) => followedUserIds.includes(member.userId)).length, [followedUserIds, visibleSuggestions]);
   useEffect(() => { onboardingExperimentService.recordStarted(variant); }, [variant]);
 
   const advance = () => setStepIndex((index) => Math.min(steps.length - 1, index + 1));
@@ -82,7 +84,7 @@ export function OnboardingFlow({ userId, initialDisplayName, initialUsername = "
             {currentStep.id === "profile" ? <OnboardingStepProfile value={profile} onChange={setProfile} /> : null}
             {currentStep.id === "theme" ? <OnboardingStepTheme theme={theme} onChange={onThemeChange} /> : null}
             {currentStep.id === "community" ? <OnboardingStepCommunity value={startChoice} inviteCode={inviteCode} onChange={setStartChoice} onInviteCodeChange={setInviteCode} /> : null}
-            {currentStep.id === "follow" ? <OnboardingStepFollow suggestions={suggestions} followedUserIds={followedUserIds} onToggleFollow={toggleFollow} /> : null}
+            {currentStep.id === "follow" ? <OnboardingStepFollow suggestions={visibleSuggestions} followedUserIds={followedUserIds} onToggleFollow={toggleFollow} /> : null}
             {currentStep.id === "finish" ? <OnboardingStepFinish profile={profile} selectedSuggestionCount={selectedSuggestionCount} theme={theme} startChoice={startChoice} /> : null}
           </div>
           {error ? <p className="onboarding-error" role="alert">{error}</p> : null}

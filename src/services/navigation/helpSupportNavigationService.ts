@@ -1,5 +1,13 @@
-export const HELP_SUPPORT_SECTION_IDS = ["getting-started", "install-update", "feed", "communities", "direct-messages", "voice-screen-share", "radio", "podcasts", "troubleshooting", "export-diagnostics", "report-problem"] as const;
-export type HelpSupportSectionId = (typeof HELP_SUPPORT_SECTION_IDS)[number];
+import { isV1FeatureEnabled } from "../../config/v1ReleaseScope";
+
+const allHelpSupportSectionIds = ["getting-started", "install-update", "feed", "communities", "direct-messages", "voice-screen-share", "radio", "podcasts", "troubleshooting", "export-diagnostics", "report-problem"] as const;
+export type HelpSupportSectionId = (typeof allHelpSupportSectionIds)[number];
+export const HELP_SUPPORT_SECTION_IDS: readonly HelpSupportSectionId[] = allHelpSupportSectionIds.filter((sectionId) => {
+  if (sectionId === "voice-screen-share") return isV1FeatureEnabled("voiceRooms") || isV1FeatureEnabled("screenShare");
+  if (sectionId === "radio") return isV1FeatureEnabled("radio");
+  if (sectionId === "podcasts") return isV1FeatureEnabled("podcasts");
+  return true;
+});
 export type HelpSupportEntrySource = "global-sidebar" | "sanctioned-error-cta";
 
 let pendingRequest: Readonly<{ source: HelpSupportEntrySource; sectionId: HelpSupportSectionId }> | null = null;

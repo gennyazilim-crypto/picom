@@ -9,6 +9,7 @@ import { VerificationBadgeList } from "./VerificationBadgeList";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { useAudioCatalogState } from "../hooks/useAudioCatalog";
 import { ProfileAudioSections } from "./audio/ProfileAudioSections";
+import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
 
 type ProfileViewProps = {
   profile: UserProfile;
@@ -441,7 +442,7 @@ export function ProfileMainPanel({
   if (dataState === "error") return <section className="profile-main-panel" aria-label="Profile loading error"><div className="profile-section profile-source-state error" role="alert"><span className="profile-source-state-icon"><AppIcon name="close" size="lg" /></span><div><p className="eyebrow">Profile unavailable</p><h2>Profile details could not be loaded</h2><p>{dataError ?? "Picom could not load this access-filtered profile."}</p>{onRetryData ? <button type="button" onClick={onRetryData}>Try again</button> : null}</div></div></section>;
   if(profile.privacyRestricted)return <section className="profile-main-panel" aria-label="Private profile"><div className="profile-section profile-empty-panel"><AppIcon name="lock" size="lg" /><strong>Limited profile</strong><p>This person shares profile details only with their selected audience.</p></div></section>;
   const visibleCommunityIds = new Set(communities.map((community) => community.id));
-  const audioVisible = profile.privacy.showAudio;
+  const audioVisible = profile.privacy.showAudio && (isV1FeatureEnabled("radio") || isV1FeatureEnabled("podcasts"));
   const hostedRadio = audioVisible ? audioCatalog.snapshot.radioSessions.filter((session) => session.hostUserId === profile.id && visibleCommunityIds.has(session.communityId)) : [];
   const podcastEpisodes = audioVisible ? audioCatalog.snapshot.podcastEpisodes.filter((episode) => episode.authorUserId === profile.id && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
   const savedRadio = audioVisible && profile.isCurrentUser ? audioCatalog.snapshot.radioSessions.filter((session) => session.isSavedByCurrentUser && visibleCommunityIds.has(session.communityId)) : [];

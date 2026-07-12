@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import logoUrl from "../../assets/brand/picom-logo.png";
+import logoUrl from "../../assets/brand/picom-logo-concept.png";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";

@@ -26,6 +26,7 @@ import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
+import { isV1CommunityKindEnabled, isV1DeepLinkTypeEnabled, isV1FeatureEnabled, isV1GlobalNavigationEnabled, isV1SearchCategoryEnabled } from "./config/v1ReleaseScope";
 import { settingsNavigationPolicyService } from "./services/navigation/settingsNavigationPolicyService";
 import { helpSupportNavigationService } from "./services/navigation/helpSupportNavigationService";
 import { globalNavigationBadgeService } from "./services/navigation/globalNavigationBadgeService";
@@ -1416,6 +1417,12 @@ export function App() {
 
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
+      if (!isV1DeepLinkTypeEnabled(action.type)) {
+        setActiveView("mentionFeed");
+        closeTransientOverlays();
+        pushToast("This destination is not included in Picom V1 Core.", "info");
+        return;
+      }
       if (action.type === "passwordRecovery") {
         if (!action.code) { setPasswordRecoveryMode(false); pushToast(action.error || "This password reset link is invalid or expired.", "error"); return; }
         void authService.preparePasswordRecovery(action.code).then((result) => {
@@ -1658,7 +1665,6 @@ export function App() {
           closePalette();
         },
       },
-      { id: "cmd-saved-messages", group: "Navigation", label: "Open saved messages", detail: "Private bookmarks", run: () => { setActiveView("savedMessages"); closeTransientOverlays(); closePalette(); } },
       {
         id: "cmd-create-community",
         group: "Actions",
@@ -1672,6 +1678,7 @@ export function App() {
     ];
 
     for (const result of paletteEntityResults) {
+      if (!isV1SearchCategoryEnabled(result.category)) continue;
       const resultMember = result.userId ? communities.flatMap((community) => community.members).find((candidate) => candidate.userId === result.userId) : undefined;
       const resultCommunity = result.communityId ? communities.find((community) => community.id === result.communityId) : undefined;
       const verification = result.category === "People" && resultMember
@@ -1718,10 +1725,16 @@ export function App() {
 
   const openCommunityFromRail = useCallback((communityId: string) => {
     const target = communities.find((community) => community.id === communityId);
+    if (!target || !isV1CommunityKindEnabled(target.kind)) {
+      setActiveView("mentionFeed");
+      closeTransientOverlays();
+      pushToast("This community type is not included in Picom V1 Core.", "info");
+      return;
+    }
     setActiveView(target ? communityViewForKind(target.kind) : "community");
     switchCommunity(communityId);
     closeTransientOverlays();
-  }, [closeTransientOverlays, communities, switchCommunity]);
+  }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
 
   const toggleFollowUser = useCallback(async (userId: string) => {
     if (userId === directMessageUserId || followMutationInFlightRef.current.has(userId)) return;
@@ -2768,6 +2781,11 @@ export function App() {
   };
   const navigateGlobal = (route: GlobalNavigationKey) => {
     closeTransientOverlays();
+    if (!isV1GlobalNavigationEnabled(route)) {
+      setActiveView("mentionFeed");
+      pushToast("This destination is not included in Picom V1 Core.", "info");
+      return;
+    }
     if (route === "feed") { setActiveView("mentionFeed"); return; }
     if (route === "dm") { openDirectMessages(); return; }
     if (route === "events") { setActiveView("events"); return; }
@@ -2794,7 +2812,11 @@ export function App() {
     <ServerRail
       communities={communities}
       activeCommunityId={activeCommunityId}
-      onOpenDiscovery={() => { setActiveView("discovery"); closeTransientOverlays(); }}
+      onOpenDiscovery={() => {
+        if (isV1FeatureEnabled("discoveryMarketplace")) setActiveView("discovery");
+        else pushToast("Community discovery is not included in Picom V1 Core.", "info");
+        closeTransientOverlays();
+      }}
       onSelectCommunity={openCommunityFromRail}
       onUtilityAction={(message) => {
         if (message === "create-community") { setCreateCommunityOpen(true); return; }
@@ -2869,7 +2891,7 @@ export function App() {
                 items={visibleMentionItems}
                 communities={communities}
                 friends={friendState.friends}
-                events={visibleCommunityEvents}
+                events={isV1FeatureEnabled("events") ? visibleCommunityEvents : []}
                 stories={visibleStoryItems}
                 voiceState={voiceSnapshot}
                 activeVoiceRooms={activeVoiceRooms}
@@ -3284,7 +3306,7 @@ export function App() {
         </div>
         )}
       </DesktopAppShell>
-      <GlobalAudioMiniPlayer hidden={activeView === "mentionFeed"} />
+      {isV1FeatureEnabled("radio") || isV1FeatureEnabled("podcasts") ? <GlobalAudioMiniPlayer hidden={activeView === "mentionFeed"} /> : null}
 
       {createCommunityOpen ? <CreateCommunityModal onClose={() => setCreateCommunityOpen(false)} onSubmit={handleCreateCommunity} /> : null}
       {createChannelCategoryId ? (

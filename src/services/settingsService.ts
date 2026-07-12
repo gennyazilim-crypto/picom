@@ -10,8 +10,13 @@ export type DesktopDensity = "comfortable" | "compact";
 export type DateStylePreference = "system" | "numeric" | "descriptive";
 export type TimeFormatPreference = "system" | "12h" | "24h";
 import type { NotificationDigestMode } from "./notificationDigestService";
-export const settingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"] as const;
-export type SettingsSection = typeof settingsSections[number];
+import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
+const allSettingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"] as const;
+export type SettingsSection = typeof allSettingsSections[number];
+export const settingsSections: readonly SettingsSection[] = allSettingsSections.filter((section) => {
+  if (section === "Voice & Video") return isV1FeatureEnabled("voiceRooms") || isV1FeatureEnabled("screenShare");
+  return true;
+});
 export type SettingsPersistenceScope = "local-device" | "user-account-synced" | "community-specific" | "server-controlled";
 export const settingsPersistenceRegistry = {
   theme: "local-device",

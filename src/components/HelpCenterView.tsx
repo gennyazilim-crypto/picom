@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { HelpSupportSectionId } from "../services/navigation/helpSupportNavigationService";
+import { HELP_SUPPORT_SECTION_IDS, type HelpSupportSectionId } from "../services/navigation/helpSupportNavigationService";
 import { AppIcon } from "./AppIcon";
 
 type HelpTopic = Readonly<{
@@ -10,19 +10,18 @@ type HelpTopic = Readonly<{
   steps: readonly string[];
 }>;
 
-export const helpTopics: readonly HelpTopic[] = [
-  { id: "getting-started", category: "Basics", title: "Getting started", summary: "Sign in, complete your profile, and learn Picom's desktop navigation.", steps: ["Complete first-run onboarding after authentication.", "Use the global sidebar for Feed, Direct Messages, Communities, audio, events, bookmarks, Settings, and Help.", "Use Ctrl + K for quick navigation. User Settings opens only from the global sidebar."] },
-  { id: "install-update", category: "Desktop", title: "Install and update", summary: "Install Picom safely and recover from package or update problems.", steps: ["Use only an approved Picom release package and verify its SHA-256 checksum.", "Windows and Linux packages may show operating-system trust prompts during beta.", "Production auto-update is not enabled; install approved beta updates manually."] },
+const allHelpTopics: readonly HelpTopic[] = [
+  { id: "getting-started", category: "Basics", title: "Getting started", summary: "Sign in, complete your profile, and learn Picom's desktop navigation.", steps: ["Complete first-run onboarding after authentication.", "Use the global sidebar for Feed, Direct Messages, Communities, Settings, and Help.", "Use Ctrl + K for quick navigation. User Settings opens only from the global sidebar."] },
+  { id: "install-update", category: "Desktop", title: "Install and update", summary: "Install Picom safely and recover from package problems.", steps: ["Use only an approved Picom V1 Windows package and verify its SHA-256 checksum.", "Windows may show an operating-system trust prompt until trusted signing evidence is complete.", "Production auto-update is not enabled; install approved updates manually."] },
   { id: "feed", category: "Feed", title: "Feed", summary: "Review mentions, stories, reactions, comments, and saved context.", steps: ["Select Feed in the global sidebar, then choose Feed or Takip Ettigin Kisiler.", "Use filters and read/save controls to organize local feed state.", "Open in channel returns to the source only while your access still permits it."] },
   { id: "communities", category: "Communities", title: "Communities", summary: "Join, browse, and administer communities without mixing settings scopes.", steps: ["Open Communities globally, then select a community from its nested rail.", "Visitors see only explicitly public content and cannot participate until joining.", "Community administration opens only from Community Header and follows role permissions."] },
   { id: "direct-messages", category: "Messages", title: "Direct Messages", summary: "Use participant-only conversations and privacy controls.", steps: ["Select Direct Messages globally and choose a conversation.", "Enter sends; Shift + Enter adds a line. Reply, reactions, attachments, mute, block, and report remain conversation-scoped.", "Only conversation participants may access DM metadata or content."] },
-  { id: "voice-screen-share", category: "Voice", title: "Voice and screen share", summary: "Join voice, control audio, and share one selected desktop source.", steps: ["Join from a voice channel after reviewing room and device state.", "Mute stops microphone publishing; deafen also stops incoming audio.", "Screen share requires explicit source selection and may require operating-system permission."] },
-  { id: "radio", category: "Audio", title: "Radio", summary: "Find live community radio sessions and host/listener controls.", steps: ["Select Radio in the global sidebar.", "Publishing and production controls require community permissions.", "If unavailable, check membership, visibility, and realtime connectivity."] },
-  { id: "podcasts", category: "Audio", title: "Podcasts", summary: "Browse published episodes and community podcast metadata.", steps: ["Select Podcasts in the global sidebar.", "Only approved publishers may create or edit podcast content.", "Report inaccessible or unsafe episode content from in-context actions."] },
   { id: "troubleshooting", category: "Support", title: "Troubleshooting", summary: "Recover from startup, network, realtime, upload, voice, or package problems.", steps: ["Confirm Picom version, platform, network state, and data-source mode.", "Restart normally; use Safe Mode only when local settings or optional services block startup.", "Record reproducible steps and export redacted diagnostics before contacting support."] },
   { id: "export-diagnostics", category: "Support", title: "Export diagnostics", summary: "Create a redacted support bundle after explicit user action.", steps: ["Use Export Diagnostics in the support actions panel.", "Inspect generated JSON before sharing it.", "Never add passwords, tokens, authorization headers, private keys, or private messages."] },
   { id: "report-problem", category: "Support", title: "Report a problem", summary: "Prepare a redacted report without claiming an unavailable submission backend.", steps: ["Describe reproducible steps without private content or credentials.", "Copy the redacted report or export diagnostics.", "Automated submission is not configured in beta; use an approved support channel when provided."] },
 ];
+
+export const helpTopics: readonly HelpTopic[] = allHelpTopics.filter((topic) => HELP_SUPPORT_SECTION_IDS.includes(topic.id));
 
 export function HelpCenterView({ initialTopicId = "getting-started" }: Readonly<{ initialTopicId?: HelpSupportSectionId }>) {
   const [query, setQuery] = useState("");
