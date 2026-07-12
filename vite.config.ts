@@ -26,6 +26,14 @@ function realtimeOrigin(value: string | undefined): string | null {
   return parsed.origin;
 }
 
+function httpOrigin(value: string | undefined): string | null {
+  const origin = safeOrigin(value);
+  if (!origin) return null;
+  const parsed = new URL(origin);
+  if (parsed.protocol === "wss:") parsed.protocol = "https:";
+  return parsed.origin;
+}
+
 function unique(values: Array<string | null>): string[] {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
 }
@@ -35,7 +43,9 @@ export function createProductionCsp(env: Record<string, string>): string {
   const connectOrigins = unique([
     supabaseOrigin,
     realtimeOrigin(env.VITE_SUPABASE_URL),
+    httpOrigin(env.VITE_LIVEKIT_URL),
     safeOrigin(env.VITE_LIVEKIT_URL),
+    realtimeOrigin(env.VITE_LIVEKIT_URL),
     safeOrigin(env.VITE_REMOTE_CONFIG_URL),
     safeOrigin(env.VITE_STATUS_PAGE_URL),
   ]);

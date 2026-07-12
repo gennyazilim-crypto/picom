@@ -33,7 +33,7 @@ const viteConfig = readFileSync(viteConfigPath, "utf8");
 for (const directive of ["default-src 'self'", "script-src 'self'", "object-src 'none'", "frame-src 'none'", "frame-ancestors 'none'", "connect-src 'self'", "form-action 'none'"]) {
   if (!viteConfig.includes(directive)) throw new Error(`Production Vite CSP is missing ${directive}`);
 }
-for (const marker of ["VITE_SUPABASE_URL", "VITE_LIVEKIT_URL", "safeOrigin", "Content-Security-Policy", "SECURITY_HEADERS"]) {
+for (const marker of ["VITE_SUPABASE_URL", "VITE_LIVEKIT_URL", "safeOrigin", "httpOrigin(env.VITE_LIVEKIT_URL)", "realtimeOrigin(env.VITE_LIVEKIT_URL)", "Content-Security-Policy", "SECURITY_HEADERS"]) {
   if (!viteConfig.includes(marker)) throw new Error(`Vite CSP integration is missing ${marker}`);
 }
 const productionSection = viteConfig.slice(viteConfig.indexOf("CSP_PRODUCTION_DIRECTIVES"), viteConfig.indexOf("return CSP_PRODUCTION_DIRECTIVES"));

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
-import { currentUserId, mockCommunities } from "./data/mockCommunities";
+import { currentUserId as mockCurrentUserId, mockCommunities } from "./data/mockCommunities";
 import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
 import { mockMentionItems } from "./data/mockMentions";
 import { getMockProfileForMember } from "./data/mockProfiles";
@@ -181,7 +181,7 @@ const overlayIcons = mvpUiIconMap.overlays;
 
 const fallbackCurrentUser: Member = {
   id: "local-current-user",
-  userId: currentUserId,
+  userId: mockCurrentUserId,
   displayName: "Picom Pilot",
   username: "picom.pilot",
   avatarSeed: "picom-pilot",
@@ -470,10 +470,6 @@ export function App() {
     switchCommunity,
     selectChannelByOffset,
   } = useMvpAppState(communities);
-  const activeVoiceRooms = useMemo(
-    () => activeVoiceRoomDiscoveryService.getVisibleRooms({ communities, currentUserId, voiceSnapshot }),
-    [communities, voiceSnapshot],
-  );
   const {
     settingsOpen,
     paletteOpen,
@@ -525,7 +521,12 @@ export function App() {
     clearError: clearAuthError,
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
-  const directMessageUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? currentUserId : currentUserId;
+  const currentUserId = dataSourceService.getStatus().isSupabase ? authSession?.user?.id ?? mockCurrentUserId : mockCurrentUserId;
+  const directMessageUserId = currentUserId;
+  const activeVoiceRooms = useMemo(
+    () => activeVoiceRoomDiscoveryService.getVisibleRooms({ communities, currentUserId, voiceSnapshot }),
+    [communities, currentUserId, voiceSnapshot],
+  );
   useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
   useEffect(() => { if (!authSession || !activeDirectConversationId || !dataSourceService.getStatus().isSupabase) return; let active = true; void Promise.all([directMessageService.getDirectMessages(activeDirectConversationId), directMessageService.getDirectSharedMedia(activeDirectConversationId, { limit: 24 })]).then(([messages, media]) => { if (!active) return; if (!messages.ok) { pushToast(messages.error.message, "error"); return; } setDirectConversations((current) => current.map((conversation) => conversation.id === activeDirectConversationId ? { ...conversation, messages: messages.data, sharedMedia: media.ok ? media.data.items : conversation.sharedMedia } : conversation)); }); return () => { active = false; }; }, [activeDirectConversationId, authSession?.user?.id, pushToast]);
   useEffect(() => {
@@ -671,7 +672,7 @@ export function App() {
     if (intent) setActiveView(toLegacyActiveView(intent.route));
   }, [authSession?.user?.id]);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
-  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? fallbackCurrentUser;
+  const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? { ...fallbackCurrentUser, userId: currentUserId };
   const communityAccess = useMemo<CommunityAccess>(() => getCommunityAccess(currentUserId, activeCommunity), [activeCommunity]);
   const blockedUserIds = useMemo(() => userBlockingService.listBlockedUserIds(), [blockedUserVersion]);
   const visibleMentionItems = useMemo(() => mentionItems.filter((item) => {
@@ -1935,11 +1936,6 @@ export function App() {
       pushToast(!communityAccess.isActiveMember ? "Join this community before entering voice." : "Sign in before entering voice.", "error");
       return;
     }
-    const voiceRoomsEnabled = displayedActiveCommunity.typeSettings?.voiceRoomsEnabled ?? displayedActiveCommunity.kind === "text";
-    if (!voiceRoomsEnabled) {
-      pushToast("Normal voice rooms are disabled for this community type.", "error");
-      return;
-    }
     void import("./services/voiceService").then(({ voiceService }) =>
       voiceService.join({
         communityId: activeCommunity.id,
@@ -1954,7 +1950,7 @@ export function App() {
         }
       }),
     );
-  }, [activeCommunity.id, authSession, communityAccess.isActiveMember, displayedActiveChannel.id, displayedActiveChannel.type, displayedActiveCommunity.kind, displayedActiveCommunity.typeSettings, displayedCurrentUser.displayName, pushToast]);
+  }, [activeCommunity.id, authSession, communityAccess.isActiveMember, displayedActiveChannel.id, displayedActiveChannel.type, displayedCurrentUser.displayName, pushToast]);
 
   const leaveActiveVoiceRoom = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.leave());
