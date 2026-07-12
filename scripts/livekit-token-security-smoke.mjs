@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 const read=(file)=>readFileSync(file,"utf8");
 const fn=read("supabase/functions/livekit-token/index.ts"),token=read("supabase/functions/_shared/livekit-token.ts"),migration=read("supabase/migrations/20260711150600_voice_screen_permissions_moderation.sql"),config=read("supabase/config.toml"),client=read("src/services/livekit/livekitService.ts");
 const checks=[
- ["JWT verified",fn.includes("requireSupabaseUser")&&config.includes("[functions.livekit-token]\nverify_jwt = true")],
+ ["JWT verified",fn.includes("requireSupabaseUser")&&/\[functions\.livekit-token\]\s*verify_jwt\s*=\s*true/.test(config)],
  ["member and type configuration authorization RPC",fn.includes('rpc("authorize_livekit_room"')&&migration.includes("VOICE_MEMBERSHIP_REQUIRED")&&migration.includes("community_voice_rooms_enabled")],
  ["visitor private ban timeout denial",migration.includes("community_bans")&&migration.includes("community_member_timeouts")&&migration.includes("VOICE_PRIVATE_CHANNEL_FORBIDDEN")],
  ["kind-aware scoped permissions",["viewChannel","viewRadioContent","viewPodcastContent","viewPrivateChannels","joinVoice","speak","shareScreen"].every((permission)=>migration.includes(`'${permission}'`))],
