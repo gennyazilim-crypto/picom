@@ -1,6 +1,6 @@
 # Picom LiveKit Token Function
 
-Authenticated Supabase Edge Function for short-lived, least-privilege Text-community voice-room tokens.
+Authenticated Supabase Edge Function for short-lived, least-privilege Picom Voice Room and Screen Share tokens.
 
 ## Server-only configuration
 
@@ -8,25 +8,30 @@ Authenticated Supabase Edge Function for short-lived, least-privilege Text-commu
 - `LIVEKIT_API_KEY`
 - `LIVEKIT_API_SECRET`
 - `PICOM_ALLOWED_ORIGINS`, comma-separated exact desktop/dev origins
+- `PICOM_V1_VOICE_SCREEN_ENABLED`, explicit server-side release gate
 
-Set these only with Supabase secret storage. Never use `VITE_` variables, renderer/preload values, logs, diagnostics, or committed files.
+Set these only with Supabase secret storage. Never use `VITE_` variables, renderer/preload values, logs, diagnostics, or committed files. Missing allowlist, missing credentials, invalid provider URL, or a release gate other than `true` fails closed.
+
+## Authentication and identity
+
+The Function verifies the Supabase JWT through the user-scoped client, then requires the canonical `profiles` row for the same `auth.uid()`. Profiles pending deletion and bot profiles are denied. The token participant identity is `auth.uid()`; the display name comes from canonical `profiles.display_name`, never renderer-provided auth metadata or custom text.
 
 ## Authorization
 
-`POST` JSON accepts `communityId`, `channelId`, optional deterministic `roomName`, optional safe `participantName`, and `intent` (`voice` or `screen`). The function verifies the Supabase JWT, rate limit, 2 KiB JSON contract, origin allowlist, active Text community, active membership, bans/timeouts, voice channel, private access, and scoped `joinVoice`/`speakInVoice`/`shareScreen` permissions through `authorize_livekit_room`.
+`POST` JSON accepts `communityId`, `channelId`, optional deterministic `roomName`, legacy/non-authoritative `participantName`, and `intent` (`voice` or `screen`). The Function validates JWT, V1 server gate, 2 KiB JSON contract, exact origin allowlist, per-user rate limit, active profile, active community membership, bans/timeouts, voice channel, private access, and scoped `joinVoice`/`speakInVoice`/`shareScreen` permissions through `authorize_livekit_room`.
 
-`voice` intent grants microphone publication only. After an explicit approved source selection, the client reconnects to the same deterministic room with `screen` intent; that short-lived token grants screen publication and preserves microphone publication only when `can_publish_audio` is independently true. Screen permission never implies microphone permission.
+`voice` grants microphone publication only when allowed. `screen` grants screen-share sources only when allowed and preserves microphone publication only when independently authorized. Camera and data publication are denied. Tokens expire after ten minutes.
 
-Tokens expire after ten minutes. Voice tokens publish microphone only when `speakInVoice` is allowed. Screen tokens publish screen-share sources only when `shareScreen` is allowed. Camera and data publishing are not granted.
+## Staging deployment
 
-## Deployment
+The V1 release manifest intentionally continues to exclude this Function until Task 654. Use the explicit staging-only path:
 
 ```powershell
-supabase link --project-ref <staging-project-ref>
-supabase db push
-supabase secrets set LIVEKIT_URL=<wss-url> LIVEKIT_API_KEY=<server-key> LIVEKIT_API_SECRET=<server-secret> PICOM_ALLOWED_ORIGINS=<exact-origins>
-supabase functions deploy livekit-token
-node scripts/livekit-token-staging-validation.mjs --run
+npm run livekit:token:deploy:staging
+$env:PICOM_CONFIRM_LIVEKIT_EDGE_DEPLOY="STAGING_ONLY"
+$env:PICOM_CONFIRM_LIVEKIT_MIGRATIONS_APPLIED="YES"
+npm run livekit:token:deploy:staging -- --apply
+npm run livekit:token:staging -- --run
 ```
 
-Use synthetic staging users/rooms. Do not print tokens or secret values. Production deployment requires separate approval.
+The apply command also requires the approved project-reference match and protected Supabase secret names. It never accepts or prints secret values. Production deployment is forbidden until the provider, hosted, security and Task 654 gates pass.

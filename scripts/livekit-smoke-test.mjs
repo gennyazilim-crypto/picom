@@ -107,6 +107,8 @@ const functionRequired = [
   "VOICE_CHANNEL_FORBIDDEN",
   "authorize_livekit_room",
   "PICOM_ALLOWED_ORIGINS",
+  "PICOM_V1_VOICE_SCREEN_ENABLED",
+  "deletion_requested_at",
   "createLiveKitToken"
 ];
 

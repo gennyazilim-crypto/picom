@@ -6,6 +6,7 @@ import { createPicomLiveKitRoomName, matchesPicomLiveKitRoomName } from "../_sha
 type LiveKitIntent = "voice" | "screen";
 type LiveKitTokenRequest = { communityId?: string; channelId?: string; roomName?: string; participantName?: string; intent?: LiveKitIntent };
 type AuthorizationRow = { community_id: string; channel_id: string; community_kind: string; channel_private: boolean; can_publish_audio: boolean; can_publish_screen: boolean };
+type CanonicalProfile = { id: string; display_name: string; deletion_requested_at: string | null; is_bot: boolean };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 const participantNamePattern = /^[^\u0000-\u001f\u007f]{1,80}$/;
@@ -18,14 +19,29 @@ function getRequiredEnv(name: string): string | null {
   return value && value.trim().length > 0 ? value.trim() : null;
 }
 
-function getAllowedOrigins(): Set<string> {
-  const configured = getRequiredEnv("PICOM_ALLOWED_ORIGINS") ?? "http://127.0.0.1:5173,http://localhost:5173";
-  return new Set(configured.split(",").map((value) => value.trim()).filter(Boolean));
+function isV1VoiceScreenEnabled(): boolean {
+  return getRequiredEnv("PICOM_V1_VOICE_SCREEN_ENABLED")?.toLowerCase() === "true";
 }
 
-function corsHeadersFor(request: Request): HeadersInit | null {
+function isSafeLiveKitUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.username || url.password || url.search || url.hash) return false;
+    if (url.protocol === "wss:") return true;
+    return url.protocol === "ws:" && (url.hostname === "127.0.0.1" || url.hostname === "localhost");
+  } catch {
+    return false;
+  }
+}
+
+function getAllowedOrigins(): Set<string> {
+  const configured = getRequiredEnv("PICOM_ALLOWED_ORIGINS");
+  return new Set((configured ?? "").split(",").map((value) => value.trim()).filter(Boolean));
+}
+
+function corsHeadersFor(request: Request, allowedOrigins: ReadonlySet<string>): HeadersInit | null {
   const origin = request.headers.get("Origin");
-  if (origin && !getAllowedOrigins().has(origin)) return null;
+  if (origin && !allowedOrigins.has(origin)) return null;
   return {
     ...(origin ? { "Access-Control-Allow-Origin": origin } : {}),
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-picom-api-version, x-picom-client-version",
@@ -65,8 +81,11 @@ function parseIntent(value: unknown): LiveKitIntent | null {
 }
 
 Deno.serve(async (request: Request) => {
-  const corsHeaders = corsHeadersFor(request);
-  if (!corsHeaders) return new Response(JSON.stringify({ code: "VALIDATION_ERROR", message: "Origin is not allowed." }), { status: 403, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+  const allowedOrigins = getAllowedOrigins();
+  if (!allowedOrigins.size) return new Response(JSON.stringify({ code: "VOICE_NOT_CONFIGURED", message: "Voice service is not configured." }), { status: 503, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+
+  const corsHeaders = corsHeadersFor(request, allowedOrigins);
+  if (!corsHeaders) return new Response(JSON.stringify({ code: "VALIDATION_ERROR", message: "Origin is not allowed." }), { status: 403, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   const respond = (response: Response) => withCors(response, corsHeaders);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   if (request.method !== "POST") return respond(methodNotAllowed(["POST", "OPTIONS"]));
@@ -75,6 +94,19 @@ Deno.serve(async (request: Request) => {
   if (!parsed.ok) return respond(parsed.response);
   const auth = await requireSupabaseUser(request);
   if (!auth.ok) return respond(auth.response);
+  if (!isV1VoiceScreenEnabled()) return respond(errorResponse("VOICE_NOT_CONFIGURED", "Voice service is not enabled for this release.", 503));
+
+  const { data: profileRow, error: profileError } = await auth.supabase
+    .from("profiles")
+    .select("id,display_name,deletion_requested_at,is_bot")
+    .eq("id", auth.user.id)
+    .maybeSingle();
+  const profile = profileRow as CanonicalProfile | null;
+  if (profileError || !profile || profile.id !== auth.user.id || profile.deletion_requested_at || profile.is_bot) {
+    return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "You cannot join this voice channel.", 403));
+  }
+  const canonicalParticipantName = profile.display_name.trim().slice(0, 80);
+  if (!participantNamePattern.test(canonicalParticipantName)) return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "Your profile cannot join voice yet.", 403));
 
   const { data: limitRows, error: limitError } = await auth.supabase.rpc("consume_current_user_action_rate_limit", { target_action: "livekit_token" });
   if (limitError) return respond(errorResponse("INTERNAL_ERROR", "Voice authorization is temporarily unavailable.", 503, undefined, { "Retry-After": "30" }));
@@ -87,7 +119,7 @@ Deno.serve(async (request: Request) => {
   const livekitUrl = getRequiredEnv("LIVEKIT_URL");
   const livekitApiKey = getRequiredEnv("LIVEKIT_API_KEY");
   const livekitApiSecret = getRequiredEnv("LIVEKIT_API_SECRET");
-  if (!livekitUrl || !livekitApiKey || !livekitApiSecret) return respond(errorResponse("VOICE_NOT_CONFIGURED", "Voice service is not configured.", 503));
+  if (!livekitUrl || !isSafeLiveKitUrl(livekitUrl) || !livekitApiKey || !livekitApiSecret) return respond(errorResponse("VOICE_NOT_CONFIGURED", "Voice service is not configured.", 503));
 
   const { communityId, channelId } = parsed.body;
   const intent = parseIntent(parsed.body.intent);
@@ -99,8 +131,6 @@ Deno.serve(async (request: Request) => {
   const authorization = Array.isArray(authorizationRows) ? authorizationRows[0] as AuthorizationRow | undefined : undefined;
   if (authorizationError || !authorization) return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "You cannot join this voice channel.", 403));
 
-  const displayName = typeof auth.user.user_metadata?.display_name === "string" ? auth.user.user_metadata.display_name : auth.user.email?.split("@")[0] ?? "Picom user";
-  const participantName = parsed.body.participantName?.trim() || displayName.slice(0, 80);
   const roomName = createPicomLiveKitRoomName(communityId, channelId);
   if (parsed.body.roomName && !matchesPicomLiveKitRoomName(parsed.body.roomName, communityId, channelId)) return respond(errorResponse("VALIDATION_ERROR", "roomName does not match the requested community/channel.", 400));
 
@@ -108,6 +138,6 @@ Deno.serve(async (request: Request) => {
   const publishSources: Array<"microphone" | "screen_share" | "screen_share_audio"> = intent === "screen"
     ? canPublish ? [...(authorization.can_publish_audio ? ["microphone" as const] : []), "screen_share", "screen_share_audio"] : []
     : canPublish ? ["microphone"] : [];
-  const { token, expiresAt } = await createLiveKitToken({ apiKey: livekitApiKey, apiSecret: livekitApiSecret, identity: auth.user.id, name: participantName, roomName, ttlSeconds: tokenTtlSeconds, canPublish, canSubscribe: true, canPublishData: false, canPublishSources: publishSources });
-  return respond(jsonResponse({ token, url: livekitUrl, roomName, identity: auth.user.id, participantName, intent, canPublishAudio: authorization.can_publish_audio, canPublishScreen: authorization.can_publish_screen, expiresAt }));
+  const { token, expiresAt } = await createLiveKitToken({ apiKey: livekitApiKey, apiSecret: livekitApiSecret, identity: auth.user.id, name: canonicalParticipantName, roomName, ttlSeconds: tokenTtlSeconds, canPublish, canSubscribe: true, canPublishData: false, canPublishSources: publishSources });
+  return respond(jsonResponse({ token, url: livekitUrl, roomName, identity: auth.user.id, participantName: canonicalParticipantName, intent, canPublishAudio: authorization.can_publish_audio, canPublishScreen: authorization.can_publish_screen, expiresAt }));
 });

@@ -79,6 +79,21 @@ jobs:
       PICOM_EDGE_TEST_EMAIL: ${{ secrets.PICOM_EDGE_TEST_EMAIL }}
       PICOM_EDGE_TEST_PASSWORD: ${{ secrets.PICOM_EDGE_TEST_PASSWORD }}
       PICOM_EDGE_ALLOWED_ORIGIN: ${{ vars.PICOM_EDGE_ALLOWED_ORIGIN }}
+      PICOM_LIVEKIT_STAGING_URL: ${{ secrets.PICOM_RLS_STAGING_URL }}
+      PICOM_LIVEKIT_STAGING_ANON_KEY: ${{ secrets.PICOM_RLS_STAGING_ANON_KEY }}
+      PICOM_LIVEKIT_STAGING_ORIGIN: ${{ vars.PICOM_EDGE_ALLOWED_ORIGIN }}
+      PICOM_LIVEKIT_STAGING_CONFIRM: STAGING_ONLY
+      PICOM_LIVEKIT_MEMBER_EMAIL: ${{ secrets.PICOM_RLS_MEMBER_EMAIL }}
+      PICOM_LIVEKIT_MEMBER_PASSWORD: ${{ secrets.PICOM_RLS_MEMBER_PASSWORD }}
+      PICOM_LIVEKIT_VISITOR_EMAIL: ${{ secrets.PICOM_RLS_VISITOR_EMAIL }}
+      PICOM_LIVEKIT_VISITOR_PASSWORD: ${{ secrets.PICOM_RLS_VISITOR_PASSWORD }}
+      PICOM_LIVEKIT_UNAUTHORIZED_EMAIL: ${{ secrets.PICOM_LIVEKIT_UNAUTHORIZED_EMAIL }}
+      PICOM_LIVEKIT_UNAUTHORIZED_PASSWORD: ${{ secrets.PICOM_LIVEKIT_UNAUTHORIZED_PASSWORD }}
+      PICOM_LIVEKIT_BANNED_EMAIL: ${{ secrets.PICOM_RLS_BLOCKED_EMAIL }}
+      PICOM_LIVEKIT_BANNED_PASSWORD: ${{ secrets.PICOM_RLS_BLOCKED_PASSWORD }}
+      PICOM_LIVEKIT_COMMUNITY_ID: ${{ vars.PICOM_RLS_COMMUNITY_ID }}
+      PICOM_LIVEKIT_VOICE_CHANNEL_ID: ${{ vars.PICOM_LIVEKIT_VOICE_CHANNEL_ID }}
+      PICOM_LIVEKIT_PRIVATE_CHANNEL_ID: ${{ vars.PICOM_LIVEKIT_PRIVATE_CHANNEL_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -101,3 +116,5 @@ jobs:
         run: npm run realtime:staging:test
       - name: Run deployed V1 Edge Function boundary validation
         run: npm run edge:staging:test
+      - name: Run hosted LiveKit token authorization matrix
+        run: npm run livekit:token:staging -- --run
