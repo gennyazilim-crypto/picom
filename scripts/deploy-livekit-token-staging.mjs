@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const apply = process.argv.includes("--apply");
@@ -8,6 +8,7 @@ const migrationPath = `supabase/migrations/${migrationVersion}_active_member_voi
 const evidencePath = "artifacts/evidence/task-661-livekit-token-staging.json";
 const requiredSecretNames = ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "PICOM_ALLOWED_ORIGINS", "PICOM_V1_VOICE_SCREEN_ENABLED"];
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
+let appliedMigrationCount = 0;
 
 const redact = (value) => String(value ?? "")
   .replace(/sbp_[A-Za-z0-9_-]+/g, "[REDACTED_SUPABASE_PAT]")
@@ -83,25 +84,54 @@ try {
   const names = new Set((Array.isArray(secrets) ? secrets : []).map((item) => item?.name).filter((name) => typeof name === "string"));
   for (const name of requiredSecretNames) if (!names.has(name)) throw new Error(`Required Supabase secret name is missing: ${name}`);
 
-  const source = readFileSync(migrationPath, "utf8");
-  const migrationSql = source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim();
-  if (!migrationSql.includes("is_active_community_media_member") || !migrationSql.includes("authorize_livekit_room")) throw new Error("Reviewed active-member authorization migration contract is incomplete.");
-  if (migrationSql.includes("$task661$")) throw new Error("Migration contains the reserved evidence delimiter.");
+  await management(`/projects/${projectRef}/database/query`, {
+    method: "POST",
+    body: JSON.stringify({
+      query: "create schema if not exists supabase_migrations; create table if not exists supabase_migrations.schema_migrations(version text primary key, statements text[], name text)",
+      read_only: false,
+    }),
+  });
+  const historyRows = await management(`/projects/${projectRef}/database/query`, {
+    method: "POST",
+    body: JSON.stringify({ query: "select version from supabase_migrations.schema_migrations order by version", read_only: true }),
+  });
+  const appliedVersions = new Set((Array.isArray(historyRows) ? historyRows : []).map((row) => String(row?.version ?? "")).filter(Boolean));
+  const schemaProbe = await management(`/projects/${projectRef}/database/query`, {
+    method: "POST",
+    body: JSON.stringify({ query: "select to_regclass('public.profiles') is not null as profiles_exists", read_only: true }),
+  });
+  if (!appliedVersions.size && Array.isArray(schemaProbe) && schemaProbe[0]?.profiles_exists) {
+    throw new Error("Hosted schema exists without migration history; automatic reconciliation is blocked to avoid replaying unknown DDL.");
+  }
 
-  const trackedSql = `
-begin;
-create schema if not exists supabase_migrations;
-create table if not exists supabase_migrations.schema_migrations (
-  version text primary key,
-  statements text[],
-  name text
-);
-${migrationSql}
-insert into supabase_migrations.schema_migrations(version,statements,name)
-values ('${migrationVersion}',array[$task661$${migrationSql}$task661$],'active_member_voice_screen_access')
-on conflict(version) do update set statements=excluded.statements,name=excluded.name;
-commit;`;
-  await management(`/projects/${projectRef}/database/query`, { method: "POST", body: JSON.stringify({ query: trackedSql, read_only: false }) });
+  const migrations = readdirSync("supabase/migrations")
+    .filter((file) => /^\d+_[a-z0-9_]+\.sql$/i.test(file))
+    .sort((left, right) => left.localeCompare(right, "en"))
+    .map((file) => {
+      const match = /^(\d+)_(.+)\.sql$/i.exec(file);
+      return { file, version: match[1], name: match[2] };
+    });
+  const pending = migrations.filter((migration) => !appliedVersions.has(migration.version));
+  writeEvidence({ migrationsAppliedBefore: appliedVersions.size, pendingMigrationCount: pending.length });
+
+  for (let index = 0; index < pending.length; index += 1) {
+    if (index > 0 && index % 70 === 0) await new Promise((resolve) => setTimeout(resolve, 61_000));
+    const migration = pending[index];
+    const source = readFileSync(`supabase/migrations/${migration.file}`, "utf8").replace(/^\uFEFF/, "");
+    const migrationSql = source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim();
+    if (!migrationSql || migrationSql.includes("$task661$")) throw new Error(`Migration ${migration.version} is empty or contains the reserved deployment delimiter.`);
+    const trackedSql = `begin;\n${migrationSql}\ninsert into supabase_migrations.schema_migrations(version,statements,name) values ('${migration.version}',array[$task661$${migrationSql}$task661$],'${migration.name}') on conflict(version) do update set statements=excluded.statements,name=excluded.name;\ncommit;`;
+    try {
+      await management(`/projects/${projectRef}/database/query`, { method: "POST", body: JSON.stringify({ query: trackedSql, read_only: false }) });
+      appliedMigrationCount += 1;
+      console.log(`Applied hosted migration ${migration.version}.`);
+    } catch (error) {
+      throw new Error(`Hosted migration ${migration.version} failed: ${redact(error instanceof Error ? error.message : error)}`);
+    }
+  }
+
+  const memberSource = readFileSync(migrationPath, "utf8");
+  if (!memberSource.includes("is_active_community_media_member") || !memberSource.includes("authorize_livekit_room")) throw new Error("Reviewed active-member authorization migration contract is incomplete.");
 
   const verification = await management(`/projects/${projectRef}/database/query`, {
     method: "POST",
@@ -122,6 +152,7 @@ commit;`;
     status: "deployed",
     migrationApplied: true,
     migrationRecorded: true,
+    migrationsAppliedThisRun: appliedMigrationCount,
     requiredSecretNamesPresent: requiredSecretNames,
     functionDeployed: true,
     functionInventoryVerified: true,
@@ -130,6 +161,6 @@ commit;`;
   console.log("DEPLOYED active-member authorization migration and livekit-token to the approved Picom staging project; no credential value was printed.");
 } catch (error) {
   const safeMessage = redact(error instanceof Error ? error.message : error);
-  writeEvidence({ status: "failed", failure: safeMessage, finishedAt: new Date().toISOString() });
+  writeEvidence({ status: "failed", failure: safeMessage, migrationsAppliedThisRun: appliedMigrationCount, finishedAt: new Date().toISOString() });
   throw new Error(safeMessage);
 }

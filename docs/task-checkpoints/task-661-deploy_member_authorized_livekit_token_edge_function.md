@@ -4,7 +4,7 @@
 
 - Restricted deployment to Supabase project `picom-staging` (`ufmtvqtsklqsmqxefbbs`).
 - Added a protected, manual-only GitHub workflow using the `hosted-staging` environment.
-- Applied and recorded the Task 660 active-member authorization migration before Function deployment.
+- Added ordered hosted migration reconciliation: only migration-history gaps are applied and recorded before Task 660 RPC verification and Function deployment; an existing untracked schema fails closed.
 - Kept Supabase JWT verification, canonical profile identity, exact CORS, bounded JSON, deterministic room name, 600-second TTL, no-store responses, and a 10-per-60-second per-user rate limit.
 - Preserved intent-scoped least privilege: Voice publishes microphone; Screen publishes microphone, screen share, and screen-share audio; both subscribe; camera/data remain denied.
 - Added temporary hosted fixtures for Owner, Admin, Moderator, Member, roleless Member, Visitor, non-member, banned member, and rate-limit isolation.

@@ -26,7 +26,7 @@ Every active community member receives ordinary Voice and Screen authorization w
 
 ## Protected staging deployment
 
-Use the manual `Picom LiveKit Token Staging` workflow with input `STAGING_ONLY`. The job runs only in the protected `hosted-staging` GitHub environment. It applies the reviewed Task 660 authorization migration through the Supabase Management API, records the migration, deploys this Function, creates ephemeral synthetic fixtures, runs the hosted authorization matrix, removes all fixture data, and uploads a redacted evidence artifact.
+Use the manual `Picom LiveKit Token Staging` workflow with input `STAGING_ONLY`. The job runs only in the protected `hosted-staging` GitHub environment. It compares hosted migration history with the repository, applies and records pending migrations in order through the Supabase Management API, verifies the Task 660 authorization RPCs, deploys this Function, creates ephemeral synthetic fixtures, runs the hosted authorization matrix, removes all fixture data, and uploads a redacted evidence artifact. Existing schemas without migration history fail closed rather than replaying unknown DDL.
 
 Local dry-run:
 
