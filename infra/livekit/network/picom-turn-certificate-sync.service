@@ -1,0 +1,19 @@
+[Unit]
+Description=Validate and sync Caddy-managed TURN certificate for Picom LiveKit
+After=caddy.service
+Requires=caddy.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/picom-turn-certificate-sync
+User=root
+Group=root
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/caddy /etc/picom-livekit/network.env
+ReadWritePaths=/etc/picom-livekit/tls /run/docker.sock /opt/picom-livekit
+
+[Install]
+WantedBy=multi-user.target

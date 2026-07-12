@@ -51,6 +51,8 @@ services:
     command: ["--config", "/run/secrets/livekit_config", "--bind", "0.0.0.0"]
     secrets:
       - livekit_config
+    volumes:
+      - ${PICOM_LIVEKIT_TLS_DIR:-/etc/picom-livekit/tls}:/run/picom-tls:ro
     group_add:
       - "${PICOM_LIVEKIT_GID:?PICOM_LIVEKIT_GID is required}"
     depends_on:

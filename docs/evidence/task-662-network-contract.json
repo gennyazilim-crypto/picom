@@ -1,0 +1,15 @@
+{
+  "task": 662,
+  "status": "prepared_not_configured",
+  "publicPorts": {
+    "tcp": [80, 443, 7881, 5349],
+    "udp": [3478, "50000-60000"]
+  },
+  "internalOnlyPorts": [7880, 6379, 6789],
+  "udpMuxEnabled": false,
+  "certificateAutomationPrepared": true,
+  "turnTlsAdvertisedPort": 5349,
+  "tcp443OnlyTurnCoverage": "blocked_requires_l4_or_second_ip_decision",
+  "realDnsTlsTurnFirewallEvidence": "blocked_missing_host_domains_and_external_networks",
+  "secretsIncluded": false
+}
