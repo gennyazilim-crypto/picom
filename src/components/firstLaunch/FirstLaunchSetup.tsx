@@ -9,7 +9,7 @@ type FirstLaunchSetupProps = {
   onComplete: () => void;
 };
 
-type SetupStep = "welcome" | "theme" | "permissions" | "voice" | "complete";
+type SetupStep = "welcome" | "theme" | "permissions" | "complete";
 
 function PermissionCard({ icon, title, children }: { icon: IconName; title: string; children: string }) {
   return <article className="first-launch-info-card"><span><AppIcon name={icon} size="lg" /></span><div><strong>{title}</strong><p>{children}</p></div></article>;
@@ -18,13 +18,11 @@ function PermissionCard({ icon, title, children }: { icon: IconName; title: stri
 export function FirstLaunchSetup({ theme, onThemeChange, onComplete }: FirstLaunchSetupProps) {
   const [locale, setLocale] = useState<SetupLocale>(() => typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("tr") ? "tr" : "en");
   const [stepIndex, setStepIndex] = useState(0);
-  const [permissionGuideOpen, setPermissionGuideOpen] = useState(false);
   const copy = firstLaunchCopy[locale];
   const steps: ReadonlyArray<{ id: SetupStep; label: string; icon: IconName }> = useMemo(() => [
     { id: "welcome", label: copy.steps.welcome, icon: "home" },
     { id: "theme", label: copy.steps.theme, icon: "sun" },
     { id: "permissions", label: copy.steps.permissions, icon: "lock" },
-    { id: "voice", label: copy.steps.voice, icon: "microphone" },
     { id: "complete", label: copy.steps.complete, icon: "send" },
   ], [copy]);
   const current = steps[stepIndex];
@@ -46,13 +44,11 @@ export function FirstLaunchSetup({ theme, onThemeChange, onComplete }: FirstLaun
 
           {current.id === "theme" ? <div className="first-launch-step"><p className="eyebrow">{copy.theme.eyebrow}</p><h1>{copy.theme.title}</h1><p>{copy.theme.body}</p><div className="first-launch-theme-grid"><button type="button" className={theme === "light" ? "selected" : ""} onClick={() => onThemeChange("light")}><span className="theme-preview light"><AppIcon name="sun" size="xl" /></span><strong>{copy.theme.light}</strong><small>{copy.theme.lightHint}</small></button><button type="button" className={theme === "dark" ? "selected" : ""} onClick={() => onThemeChange("dark")}><span className="theme-preview dark"><AppIcon name="moon" size="xl" /></span><strong>{copy.theme.dark}</strong><small>{copy.theme.darkHint}</small></button></div></div> : null}
 
-          {current.id === "permissions" ? <div className="first-launch-step"><p className="eyebrow">{copy.permissions.eyebrow}</p><h1>{copy.permissions.title}</h1><p>{copy.permissions.body}</p><div className="first-launch-card-grid"><PermissionCard icon="bell" title={copy.permissions.notifications}>{copy.permissions.notificationsBody}</PermissionCard><PermissionCard icon="microphone" title={copy.permissions.microphone}>{copy.permissions.microphoneBody}</PermissionCard><PermissionCard icon="image" title={copy.permissions.screen}>{copy.permissions.screenBody}</PermissionCard></div>{permissionGuideOpen ? <section className="first-launch-permission-guide" aria-label={copy.permissions.guideTitle}><header><AppIcon name="lock" size="md" /><div><strong>{copy.permissions.guideTitle}</strong><small>{copy.permissions.guideHint}</small></div></header><div><article><strong>Windows</strong><p>{copy.permissions.windowsBody}</p></article><article><strong>macOS</strong><p>{copy.permissions.macBody}</p></article><article><strong>Linux</strong><p>{copy.permissions.linuxBody}</p></article></div></section> : null}</div> : null}
-
-          {current.id === "voice" ? <div className="first-launch-step"><p className="eyebrow">{copy.voice.eyebrow}</p><h1>{copy.voice.title}</h1><p>{copy.voice.body}</p><div className="first-launch-card-grid"><PermissionCard icon="voice" title={copy.voice.rooms}>{copy.voice.roomsBody}</PermissionCard><PermissionCard icon="microphone" title={copy.voice.device}>{copy.voice.deviceBody}</PermissionCard><PermissionCard icon="image" title={copy.voice.source}>{copy.voice.sourceBody}</PermissionCard></div><div className="first-launch-safety-note"><AppIcon name="lock" size="sm" /><span>{copy.voice.note}</span></div></div> : null}
+          {current.id === "permissions" ? <div className="first-launch-step"><p className="eyebrow">{copy.permissions.eyebrow}</p><h1>{copy.permissions.title}</h1><p>{copy.permissions.body}</p><div className="first-launch-card-grid"><PermissionCard icon="bell" title={copy.permissions.notifications}>{copy.permissions.notificationsBody}</PermissionCard></div></div> : null}
 
           {current.id === "complete" ? <div className="first-launch-step first-launch-complete"><span className="first-launch-complete-mark"><AppIcon name="send" size="xl" /></span><p className="eyebrow">{copy.finish.eyebrow}</p><h1>{copy.finish.title}</h1><p>{copy.finish.body}</p></div> : null}
 
-          <footer className="first-launch-actions"><button type="button" className="secondary" disabled={stepIndex === 0} onClick={() => setStepIndex((index) => Math.max(0, index - 1))}>{copy.actions.back}</button>{current.id === "permissions" || current.id === "voice" ? <button type="button" className="secondary" onClick={() => setStepIndex(steps.length - 1)}>{copy.actions.later}</button> : null}{current.id === "permissions" ? <button type="button" className="secondary" aria-expanded={permissionGuideOpen} onClick={() => setPermissionGuideOpen((open) => !open)}>{permissionGuideOpen ? copy.actions.hideGuide : copy.actions.viewGuide}</button> : null}{current.id === "complete" ? <button type="button" className="primary" onClick={onComplete}>{copy.actions.continueToPicom} <AppIcon name="chevronRight" size="sm" /></button> : <button type="button" className="primary" onClick={next}>{copy.actions.continue} <AppIcon name="chevronRight" size="sm" /></button>}</footer>
+          <footer className="first-launch-actions"><button type="button" className="secondary" disabled={stepIndex === 0} onClick={() => setStepIndex((index) => Math.max(0, index - 1))}>{copy.actions.back}</button>{current.id === "permissions" ? <button type="button" className="secondary" onClick={() => setStepIndex(steps.length - 1)}>{copy.actions.later}</button> : null}{current.id === "complete" ? <button type="button" className="primary" onClick={onComplete}>{copy.actions.continueToPicom} <AppIcon name="chevronRight" size="sm" /></button> : <button type="button" className="primary" onClick={next}>{copy.actions.continue} <AppIcon name="chevronRight" size="sm" /></button>}</footer>
         </div>
       </section>
     </main>

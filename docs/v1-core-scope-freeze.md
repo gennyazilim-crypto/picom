@@ -34,14 +34,14 @@ Linux and macOS remain engineering targets. Picom V1 release copy, About metadat
 
 Production V1 must not fall back to mock data. Task 618 owns the final data-source enforcement and evidence.
 
-## CONDITIONAL
+## Task 621 final conditional decision
 
 | Feature | V1 default | Required evidence |
 | --- | --- | --- |
-| Voice Rooms | Hidden | Task 621 hosted LiveKit, two-client, Windows microphone/device, disconnect/reconnect, and permission evidence |
-| Screen Share | Hidden | Task 621 Windows desktop capture, source selection, LiveKit publication, stop/recovery, and permission evidence |
+| Voice Rooms | `HIDDEN_FROM_V1` | Hosted token/two-client/device/reconnect evidence is incomplete. |
+| Screen Share | `HIDDEN_FROM_V1` | Packaged-Windows picker/remote-render/stop/cleanup evidence is incomplete. |
 
-Conditional does not mean available. Both features remain disabled until the registry is deliberately changed after evidence closure.
+Task 621 made the binary `HIDDEN_FROM_V1` decision. A future release may reopen the evidence gate; V1.0.0 cannot.
 
 ## HIDDEN_FROM_V1
 
@@ -50,6 +50,7 @@ Conditional does not mean available. Both features remain disabled until the reg
 - Events workspace
 - Standalone Bookmarks workspace
 - Meeting Workspace, camera, and stage
+- Voice Rooms and Screen Share
 - Enhanced Noise Shield / Voice Focus controls
 - Public discovery marketplace
 - Public platform-admin operations
@@ -65,7 +66,7 @@ Conditional does not mean available. Both features remain disabled until the reg
 
 ## Current blocker snapshot
 
-The scope freeze does not convert missing evidence into a pass. At Task 617 the release remains blocked by hosted Supabase closure, Realtime/Edge Function evidence, conditional Voice/Screen Share disposition, trusted Windows signing and clean-machine installation, legal approval, production ownership, isolated backup/restore, and final RC evidence.
+The scope freeze does not convert missing evidence into a pass. Task 621 closed Voice/Screen Share by removing them from V1 scope; hosted Supabase closure, Realtime/Edge evidence, trusted Windows signing and clean-machine installation, legal approval, production ownership, isolated backup/restore, and final RC evidence remain.
 
 GitHub Actions run `29184042109` also exposed a clean-checkout build blocker: tracked renderer files imported untracked `assets/brand/picom-logo.png`. Task 617 changes those consumers to tracked `assets/brand/picom-logo-concept.png`; subsequent CI must confirm the correction.
 

@@ -10,6 +10,7 @@ import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { AudioMiniPlayer } from "./audio/AudioMiniPlayer";
 import { NoiseShieldCompactStatus } from "./voice/NoiseShieldControl";
+import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
 
 type FeedCompanionRailProps = {
   voiceState: VoiceServiceSnapshot;
@@ -58,7 +59,7 @@ function VoiceMiniControlCard({
   onLeaveVoice,
   onOpenScreenShare,
 }: Pick<FeedCompanionRailProps, "voiceState" | "onToggleMute" | "onToggleDeafen" | "onLeaveVoice" | "onOpenScreenShare">) {
-  if (voiceState.status !== "connected" && voiceState.status !== "reconnecting") return null;
+  if (!isV1FeatureEnabled("voiceRooms") || (voiceState.status !== "connected" && voiceState.status !== "reconnecting")) return null;
 
   return (
     <section className="voice-mini-card" aria-label="Current voice room controls">
@@ -296,7 +297,7 @@ export function FeedCompanionRail({
           onOpenScreenShare={onOpenScreenShare}
         />
       </div>
-      <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} />
+      {isV1FeatureEnabled("voiceRooms") ? <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} /> : null}
       <FriendsStatusSection friends={friends} communities={communities} onOpenProfile={onOpenProfile} />
       <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} onToggleEventReminder={onToggleEventReminder} />
     </aside>

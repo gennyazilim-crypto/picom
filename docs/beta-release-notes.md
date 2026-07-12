@@ -48,7 +48,7 @@ Picom is desktop-only. A mobile app and mobile layout are not part of this beta.
 
 - Mention Feed with `Feed` and `Takip Ettiğin Kişiler` tabs
 - Followed People Stories with local seen/unseen state
-- Feed Companion Rail with local voice controls, friend presence, and upcoming events
+- Feed Companion Rail with friend presence and upcoming events
 - Mention social proof footer with views, emoji summary, commenters, and comments
 
 ### Backend and realtime
@@ -60,9 +60,8 @@ Picom is desktop-only. A mobile app and mobile layout are not part of this beta.
 
 ### Voice and screen share
 
-- LiveKit voice-room UI and service integration path
-- Join, leave, mute, deafen, participant, and speaking states
-- Electron desktop-capture source picker and screen-share controls
+- Not included in Picom V1.0.0 Core.
+- Existing implementation code is retained for a later evidence-backed release, but no V1 navigation, onboarding, settings, channel, feed, help, or release control exposes it.
 - LiveKit token Edge Function contract and staging setup instructions
 
 ## Not included
@@ -105,7 +104,7 @@ Picom is desktop-only. A mobile app and mobile layout are not part of this beta.
 7. Upload a valid image and open it in Image Preview.
 8. Test Mention Feed tabs, stories, social footer, companion rail, and Full Profile Page.
 9. In Supabase staging, run a two-window realtime test and verify private-channel isolation.
-10. In LiveKit staging, join with two clients and test mute, deafen, speaking, leave, and screen share.
+10. Verify Voice Rooms and Screen Share are absent from V1 navigation, onboarding, settings, channels, feed companion controls, help, and deep links.
 11. Export redacted diagnostics and submit feedback from the in-app support surfaces.
 12. Run the platform-specific install/uninstall smoke checklist.
 

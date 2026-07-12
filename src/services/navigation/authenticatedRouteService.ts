@@ -1,3 +1,5 @@
+import { isV1FeatureEnabled, type V1FeatureKey } from "../../config/v1ReleaseScope";
+
 export type AuthenticatedRouteKey =
   | "feed"
   | "directMessages"
@@ -74,6 +76,25 @@ const REQUIRED_DEEP_LINK_PARAM: Partial<Record<AuthenticatedRouteKey, string>> =
   voice: "channelId",
 };
 
+const routeFeature: Readonly<Record<AuthenticatedRouteKey, V1FeatureKey>> = {
+  feed: "feed",
+  directMessages: "directMessages",
+  communities: "textCommunities",
+  radio: "radio",
+  podcasts: "podcasts",
+  events: "events",
+  bookmarks: "bookmarks",
+  settings: "userSettings",
+  support: "helpSupport",
+  profile: "profile",
+  meeting: "meetingWorkspace",
+  voice: "voiceRooms",
+};
+
+export function isV1AuthenticatedRouteEnabled(route: AuthenticatedRouteKey): boolean {
+  return isV1FeatureEnabled(routeFeature[route]);
+}
+
 export function normalizeAuthenticatedRouteKey(
   value: string | null | undefined,
 ): AuthenticatedRouteKey | null {
@@ -127,7 +148,7 @@ export function resolveAuthenticatedDeepLink(
 ): AuthenticatedRouteIntent | null {
   if (!isAuthenticated) return null;
   const route = normalizeAuthenticatedRouteKey(routeValue);
-  if (!route) return null;
+  if (!route || !isV1AuthenticatedRouteEnabled(route)) return null;
 
   const requiredParam = REQUIRED_DEEP_LINK_PARAM[route];
   if (requiredParam && !params[requiredParam]?.trim()) return null;

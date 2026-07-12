@@ -26,7 +26,7 @@ import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
-import { isV1CommunityKindEnabled, isV1DeepLinkTypeEnabled, isV1FeatureEnabled, isV1GlobalNavigationEnabled, isV1SearchCategoryEnabled } from "./config/v1ReleaseScope";
+import { isV1ChannelTypeEnabled, isV1CommunityKindEnabled, isV1DeepLinkTypeEnabled, isV1FeatureEnabled, isV1GlobalNavigationEnabled, isV1SearchCategoryEnabled } from "./config/v1ReleaseScope";
 import { settingsNavigationPolicyService } from "./services/navigation/settingsNavigationPolicyService";
 import { helpSupportNavigationService } from "./services/navigation/helpSupportNavigationService";
 import { globalNavigationBadgeService } from "./services/navigation/globalNavigationBadgeService";
@@ -729,7 +729,7 @@ export function App() {
     }, 180);
     return () => { canceled = true; window.clearTimeout(timeoutId); };
   }, [blockedUserIds, paletteOpen, paletteQuery, searchableCommunities, searchableSavedMessages, visibleMentionItems]);
-  const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess), [activeCommunity, communityAccess]);
+  const visibleChannels = useMemo(() => getVisibleChannelsForCurrentUser(activeCommunity, communityAccess).filter((channel) => isV1ChannelTypeEnabled(channel.type)), [activeCommunity, communityAccess]);
   const displayedActiveChannel = useMemo(() => visibleChannels.find((channel) => channel.id === activeChannel.id) ?? visibleChannels[0] ?? activeChannel, [activeChannel, visibleChannels]);
   const latestActiveMessageId = useMemo(() => {
     const channelMessages = activeCommunity.messages.filter((message) => message.channelId === displayedActiveChannel.id && !message.deletedAt);

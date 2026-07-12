@@ -21,10 +21,7 @@ assert(scope.includes('supportedPlatforms: Object.freeze(["windows"] as const)')
 for (const key of ["feed", "textCommunities", "textMessaging", "directMessages", "profile", "userSettings", "communityAdmin"]) {
   assert(new RegExp(`${key}: inV1\\(`).test(scope), `${key} must be classified IN_V1.`);
 }
-for (const key of ["voiceRooms", "screenShare"]) {
-  assert(new RegExp(`${key}: conditional\\(`).test(scope), `${key} must remain conditional until evidence closure.`);
-}
-for (const key of ["radio", "podcasts", "events", "bookmarks", "meetingWorkspace", "discoveryMarketplace"]) {
+for (const key of ["voiceRooms", "screenShare", "radio", "podcasts", "events", "bookmarks", "meetingWorkspace", "discoveryMarketplace"]) {
   assert(new RegExp(`${key}: hidden\\(`).test(scope), `${key} must be hidden from V1.`);
 }
 for (const key of ["bots", "webhooks", "plugins", "enterprise", "ssoScim", "billing", "aiFeatures"]) {
@@ -61,4 +58,4 @@ if (failures.length) {
 
 console.log("Picom V1 Core scope contract passed.");
 console.log("Release: Picom 1.0.0 stable | Supported stable platform: Windows");
-console.log("Conditional: voiceRooms, screenShare | Hidden/post-V1 surfaces remain retained but inaccessible.");
+console.log("Task 621 decision: voiceRooms and screenShare are HIDDEN_FROM_V1; retained source remains inaccessible.");

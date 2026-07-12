@@ -10,7 +10,7 @@ Frontend gating is a release-surface control, not an authorization boundary. Sup
 
 - Global navigation includes only registry entries whose feature is enabled.
 - Community ServerRail includes only enabled community kinds.
-- Voice channels are absent while Voice Rooms remain conditional and disabled.
+- Voice channels are absent because Task 621 classified Voice Rooms and Screen Share `HIDDEN_FROM_V1`.
 - Hidden settings and community-admin sections are not selectable.
 - Hidden Help topics and quick filters are not rendered.
 - Global search omits hidden categories.
@@ -34,9 +34,9 @@ A blocked deep link or stale local navigation request must:
 
 Do not delete Radio, Podcast, Events, Bookmarks, Meeting, Voice, Screen Share, bot, webhook, or other post-V1 source code and stored data solely because the surface is gated. The V1 gate prevents navigation and rendering; it is intentionally reversible after a future scope decision and evidence review.
 
-## Conditional features
+## Task 621 final decision
 
-Voice Rooms and Screen Share use the same disabled-by-default contract as hidden features until Task 621. They may be changed to enabled only when the named real-environment evidence exists. A local mock or placeholder is not release evidence.
+Voice Rooms and Screen Share are `HIDDEN_FROM_V1`. Their source and stored data remain intact, but V1 navigation, onboarding, settings, channels, feed controls, help, deep links, Edge deployment and release copy must not expose them. A future release requires a new scoped decision plus real hosted and packaged-Windows evidence.
 
 ## Test contract
 

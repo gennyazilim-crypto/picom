@@ -55,7 +55,6 @@ export type V1ReleaseFeature = Readonly<{
 }>;
 
 const inV1 = (reason: string): V1ReleaseFeature => Object.freeze({ classification: "IN_V1", enabled: true, reason });
-const conditional = (reason: string): V1ReleaseFeature => Object.freeze({ classification: "CONDITIONAL", enabled: false, reason });
 const hidden = (reason: string): V1ReleaseFeature => Object.freeze({ classification: "HIDDEN_FROM_V1", enabled: false, reason });
 const postV1 = (reason: string): V1ReleaseFeature => Object.freeze({ classification: "POST_V1", enabled: false, reason });
 
@@ -84,8 +83,8 @@ export const v1ReleaseScope = Object.freeze({
     helpSupport: inV1("Offline core help and safe support entry points."),
     safeDiagnostics: inV1("Redacted diagnostics and local recovery controls."),
     globalSearch: inV1("Search limited to V1-visible entities."),
-    voiceRooms: conditional("Include only after Task 621 records real hosted LiveKit and Windows device evidence."),
-    screenShare: conditional("Include only after Task 621 records real Windows desktop-capture and LiveKit evidence."),
+    voiceRooms: hidden("Task 621 found no hosted two-client or packaged-Windows device evidence; Voice Rooms are excluded from V1."),
+    screenShare: hidden("Task 621 found no packaged-Windows picker, remote-render, stop, and cleanup evidence; Screen Share is excluded from V1."),
     radio: hidden("Radio data and code are retained but excluded from Picom V1 Core."),
     podcasts: hidden("Podcast data and code are retained but excluded from Picom V1 Core."),
     events: hidden("The event workspace is not a V1 Core surface."),

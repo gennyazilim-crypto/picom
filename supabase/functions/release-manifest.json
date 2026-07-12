@@ -8,9 +8,9 @@
   "releaseInternal": [],
   "excluded": [
     { "name": "health", "classification": "blocked_placeholder", "reason": "Dependency checks still report placeholder states and cannot certify hosted readiness." },
-    { "name": "livekit-token", "classification": "conditional_post_gate", "reason": "Voice and screen share remain disabled until Task 621 provider evidence is complete." },
-    { "name": "livekit-moderation", "classification": "conditional_post_gate", "reason": "Voice moderation is outside the enabled V1 surface until Task 621." },
-    { "name": "livekit-webhook", "classification": "conditional_post_gate", "reason": "LiveKit webhook deployment requires Task 621 secret and signature evidence." },
+    { "name": "livekit-token", "classification": "hidden_v1", "reason": "Task 621 excluded Voice and Screen Share from V1 because hosted and packaged-Windows evidence is incomplete." },
+    { "name": "livekit-moderation", "classification": "hidden_v1", "reason": "Voice moderation is retained for post-V1 certification but is not deployed in V1." },
+    { "name": "livekit-webhook", "classification": "hidden_v1", "reason": "LiveKit webhook code is retained but not deployed in V1." },
     { "name": "meeting-token", "classification": "post_v1", "reason": "Meeting workspace is hidden by the V1 Core scope registry." },
     { "name": "meeting-livekit-webhook", "classification": "post_v1", "reason": "Meeting workspace is hidden by the V1 Core scope registry." },
     { "name": "account-deletion", "classification": "blocked_operations", "reason": "Production deletion requires Task 623 legal and operations approval." },
