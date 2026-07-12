@@ -45,3 +45,30 @@ Synthetic media contains only generated tones, Picom test text, and changing can
 - Retention: 14 days
 
 Hosted PASS must not be claimed until the protected workflow completes successfully and the redacted artifact reports `status: passed`, `containsSecrets: false`, four joined/publishing/rendering clients, three denied actor classes, reconnect success, and cleanup success.
+
+## Hosted completion evidence
+
+- Protected workflow: Picom Hosted Member Voice Screen E2E
+- GitHub Actions run: 29197503222
+- Result: passed
+- Environment/provider: hosted-staging / LiveKit Cloud
+- Active actor authorization: owner, admin, moderator, and member (4/4)
+- Denied actor authorization: visitor, non-member, and banned (3/3)
+- Moderation hierarchy checks: 4/4
+- Joined Electron clients: 4
+- Microphone publishers: 4
+- Simultaneous screen publishers: 4
+- Remote audio receivers: 4
+- Remote screen renderers: 4
+- Speaking indicator clients: 4
+- Mute/unmute cycle clients: 4
+- Provider signal reconnect: passed
+- Media after reconnect: passed
+- Room/media cleanup: passed
+- Ephemeral Supabase fixture cleanup: passed
+- Evidence secret scan: containsSecrets=false
+
+The protected workflow verifies reviewed migrations without rebuilding the already
+deployed Edge Function. This keeps authorization verification blocking while
+avoiding an unrelated public ECR image-pull rate limit during media certification.
+The uploaded evidence artifact contains only aggregate, redacted results.
