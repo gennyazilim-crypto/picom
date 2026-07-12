@@ -92,6 +92,10 @@ const remoteScreenShareTracks = new Map<string, MediaStreamTrack>();
 let cameraTracks: VoiceCameraTrack[] = [];
 let videoSubscriptionPlan: MeetingVideoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
 let cameraQualityPreset: MeetingCameraQualityPreset = DEFAULT_MEETING_CAMERA_QUALITY;
+let desiredMicrophoneMuted = true;
+let desiredCameraEnabled = false;
+let desiredCameraDeviceId = "default";
+let mediaRecoveryPromise: Promise<boolean> | null = null;
 const participantConnectionQualities = new Map<string, MeetingConnectionQuality>();
 const remoteParticipantVolumes = new Map<string, number>();
 let focusedScreenShareId: string | null = null;
@@ -549,7 +553,7 @@ async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceRes
 }
 
 function inputPreferenceKey(preferences: VoiceDeviceSnapshot): string {
-  return [preferences.selectedInputId, preferences.echoCancellation, preferences.noiseSuppression, preferences.autoGainControl, noiseShieldService.getSnapshot().revision].join(":");
+  return [preferences.selectedInputId, preferences.permission, preferences.deviceRevision, preferences.echoCancellation, preferences.noiseSuppression, preferences.autoGainControl, noiseShieldService.getSnapshot().revision].join(":");
 }
 
 async function setMicrophoneWithMeetingProcessing(activeRoom:Room,enabled:boolean):Promise<void>{if(!enabled){await activeRoom.localParticipant.setMicrophoneEnabled(false);return}const base=voiceDeviceService.getAudioCaptureConstraints(),plan=noiseShieldService.createMicrophoneCapturePlan(base);try{await activeRoom.localParticipant.setMicrophoneEnabled(true,plan.constraints);noiseShieldService.markApplied(plan.appliedMode)}catch(error){if(plan.appliedMode!=="off"){const fallback={...base,noiseSuppression:false};await activeRoom.localParticipant.setMicrophoneEnabled(true,fallback);noiseShieldService.markFallback("Noise Shield could not be attached to the replacement microphone track. Unprocessed microphone audio remains connected.");return}throw error}}
@@ -568,14 +572,20 @@ async function applyVoiceDevicePreferences(activeRoom: Room, preferences: VoiceD
   const nextInputKey = inputPreferenceKey(preferences);
   if (nextInputKey === appliedInputPreferenceKey) return;
   try {
-    if (snapshot.muted) {
+    if (preferences.permission !== "granted") {
+      await activeRoom.localParticipant.setMicrophoneEnabled(false);
+      emit({ muted: true, error: preferences.permission === "denied" ? "Microphone permission was revoked. Picom kept the meeting connected with microphone off." : snapshot.error, errorCode: preferences.permission === "denied" ? "VOICE_PERMISSION_DENIED" : snapshot.errorCode });
+      appliedInputPreferenceKey = nextInputKey;
+      return;
+    }
+    if (desiredMicrophoneMuted) {
       await activeRoom.switchActiveDevice("audioinput", preferences.selectedInputId, preferences.selectedInputId !== "default");
     } else {
       await setMicrophoneWithMeetingProcessing(activeRoom,false);
       await setMicrophoneWithMeetingProcessing(activeRoom,true);
     }
     appliedInputPreferenceKey = nextInputKey;
-    emit({ participants: getParticipants(activeRoom), error: null, errorCode: null });
+    emit({ muted: desiredMicrophoneMuted, participants: getParticipants(activeRoom), error: null, errorCode: null });
   } catch (error) {
     deviceErrorCount += 1;
     emit({ error: "The selected microphone or processing options could not be applied.", errorCode: "VOICE_PERMISSION_DENIED" });
@@ -592,6 +602,9 @@ async function connectWithToken(
   cameraDeviceId = "default",
 ): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
   emit({ status: "connecting", roomName: token.roomName, roomContext, error: null, errorCode: null });
+  desiredMicrophoneMuted = desiredMuted;
+  desiredCameraEnabled = desiredCamera;
+  desiredCameraDeviceId = cameraDeviceId;
 
   const activeRoom = new Room({
     adaptiveStream: { pixelDensity: 1, pauseVideoInBackground: true },
@@ -727,6 +740,36 @@ export const voiceService = {
     applyLocalCameraPublishingQuality(room);
     applyRemoteVideoSubscriptionPlan(room, videoSubscriptionPlan);
     return true;
+  },
+
+  recoverMediaDevices(cameraDeviceId = desiredCameraDeviceId, cameraPermission: "prompt" | "granted" | "denied" | "unsupported" = "prompt"): Promise<boolean> {
+    if (mediaRecoveryPromise) return mediaRecoveryPromise;
+    const activeRoom = room;
+    if (!activeRoom || activeRoom.state === ConnectionState.Disconnected) return Promise.resolve(false);
+    mediaRecoveryPromise = (async () => {
+      try {
+        await applyVoiceDevicePreferences(activeRoom, voiceDeviceService.getSnapshot());
+        if (desiredCameraEnabled && cameraPermission === "granted") {
+          await activeRoom.localParticipant.setCameraEnabled(false);
+          await activeRoom.localParticipant.setCameraEnabled(true, cameraCaptureOptions(cameraQualityPreset, cameraDeviceId), cameraPublishOptions(cameraQualityPreset));
+          desiredCameraDeviceId = cameraDeviceId;
+          applyLocalCameraPublishingQuality(activeRoom);
+          emit({ cameraEnabled: true, participants: getParticipants(activeRoom), error: null, errorCode: null });
+        } else if (activeRoom.localParticipant.isCameraEnabled && cameraPermission === "denied") {
+          await activeRoom.localParticipant.setCameraEnabled(false);
+          emit({ cameraEnabled: false, error: "Camera permission was revoked. Picom kept the meeting connected with camera off.", errorCode: "VOICE_PERMISSION_DENIED", participants: getParticipants(activeRoom) });
+        }
+        return true;
+      } catch (error) {
+        deviceErrorCount += 1;
+        loggingService.logWarn("Meeting media device recovery failed", { errorName: error instanceof Error ? error.name : "UnknownError" }, "voice");
+        emit({ error: "Picom could not restore one of the selected meeting devices. System defaults remain available.", errorCode: "VOICE_PERMISSION_DENIED", participants: getParticipants(activeRoom) });
+        return false;
+      } finally {
+        mediaRecoveryPromise = null;
+      }
+    })();
+    return mediaRecoveryPromise;
   },
 
   setFocusedScreenShare(shareId: string | null): boolean {
@@ -888,9 +931,13 @@ export const voiceService = {
     reconnectGeneration += 1;
     reconnectInFlight = null;
     reconnectingActive = false;
+    mediaRecoveryPromise = null;
     sessionStartedAtMs = null;
     connectionQuality = "unknown";
     activeTokenIntent = null;
+    desiredMicrophoneMuted = true;
+    desiredCameraEnabled = false;
+    desiredCameraDeviceId = "default";
     speakingIdentities = new Set<string>();
     participantConnectionQualities.clear();
     remoteParticipantVolumes.clear();
@@ -925,6 +972,7 @@ export const voiceService = {
     }
     if (!muted && !snapshot.canSpeak) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish microphone audio in this room.");
 
+    desiredMicrophoneMuted = muted;
     try {
       await setMicrophoneWithMeetingProcessing(room,!muted);
       if (!muted) appliedInputPreferenceKey = inputPreferenceKey(voiceDeviceService.getSnapshot());
@@ -957,6 +1005,8 @@ export const voiceService = {
   async setCameraEnabled(enabled: boolean, deviceId = "default"): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!room) return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a meeting before changing camera state.");
     if (enabled && !snapshot.canUseCamera) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish camera video in this room.");
+    desiredCameraEnabled = enabled;
+    if (enabled) desiredCameraDeviceId = deviceId;
     try {
       await room.localParticipant.setCameraEnabled(enabled, enabled ? cameraCaptureOptions(cameraQualityPreset, deviceId) : undefined, enabled ? cameraPublishOptions(cameraQualityPreset) : undefined);
       if (enabled) applyLocalCameraPublishingQuality(room);

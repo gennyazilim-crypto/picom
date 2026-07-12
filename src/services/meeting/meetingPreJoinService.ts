@@ -268,6 +268,12 @@ export const meetingPreJoinService = {
     }
   },
 
+  async handleCameraPermissionChange(state:PermissionState):Promise<void>{
+    if(state==="denied"){this.stopCameraPreview();emit({cameraPermission:"denied",notice:"Camera access changed; the meeting camera was turned off.",error:createError("CAMERA_DENIED","Camera permission was revoked. Enable it in system settings before retrying.")});return}
+    if(state==="granted"){emit({cameraPermission:"granted",notice:"Camera permission is available again. Picom is refreshing camera devices.",error:null});await this.refreshDevices();return}
+    if(snapshot.cameraPermission!=="granted")emit({cameraPermission:"prompt"});
+  },
+
   async requestMicrophoneAccess(): Promise<boolean> {
     emit({ busy: true, error: null, notice: null });
     const devices = await voiceDeviceService.refresh(true);

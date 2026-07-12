@@ -12,6 +12,7 @@ import { noiseShieldService } from "../noiseShieldService";
 import type { NoiseShieldMode, NoiseShieldSnapshot } from "../../types/noiseShield";
 import type { MeetingCameraQualityPreset } from "../../types/meetingVideoGrid";
 import { meetingScreenShareLeaseService } from "./meetingScreenShareLeaseService";
+import { meetingDeviceRecoveryService } from "./meetingDeviceRecoveryService";
 
 let currentRequest: MeetingClientJoinRequest | null = null;
 let joinPromise: Promise<MeetingClientResult<MeetingClientSnapshot>> | null = null;
@@ -121,6 +122,7 @@ function bindSession(generation:number,request:MeetingClientJoinRequest):void {
   sessionCleanups.push(meetingSignalService.subscribeReactions((reaction)=>meetingStore.appendReaction(generation,{id:reaction.eventId,senderIdentity:reaction.senderIdentity,kind:reaction.kind,createdAt:reaction.sentAt,expiresAt:reaction.expiresAt})));
   sessionCleanups.push(meetingSignalService.subscribeHandQueue(request.roomId,request.sessionId,{onSnapshot:(queue)=>{const current=meetingStore.getSnapshot();const participants=current.participantIds.map((id)=>current.participantsById[id]).filter(Boolean);const handByParticipant=new Map(queue.entries.map((entry)=>[entry.participantId,entry.handRaised]));const next=participants.map((participant)=>handByParticipant.has(participant.id)?{...participant,handRaised:handByParticipant.get(participant.id)??false}:participant);const local=next.find((participant)=>participant.isLocal);meetingStore.replaceParticipants(generation,next);meetingStore.patch(generation,{handRaised:local?.handRaised??false,stageQueue:queue.entries});},onStatus:(realtimeStatus)=>meetingStore.patch(generation,{realtimeStatus}),onError:(message)=>meetingStore.patch(generation,{error:fail("MEETING_PROVIDER_ERROR",message,true)})}));
   sessionCleanups.push(voiceDeviceService.subscribe((devices)=>meetingStore.patch(generation,{localDevices:{inputId:devices.selectedInputId,outputId:devices.selectedOutputId,permission:devices.permission}})));
+  sessionCleanups.push(meetingDeviceRecoveryService.start((notice)=>meetingStore.patch(generation,{deviceNotice:notice.message})));
 }
 
 async function prepare(request:MeetingClientJoinRequest):Promise<number> {

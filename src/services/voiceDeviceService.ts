@@ -34,6 +34,7 @@ export type VoiceDeviceSnapshot = {
   isLoading: boolean;
   error: string | null;
   notice: string | null;
+  deviceRevision: number;
 };
 
 const STORAGE_KEY = "picom.voice-device-preferences.v1";
@@ -87,6 +88,7 @@ let snapshot: VoiceDeviceSnapshot = {
   isLoading: false,
   error: null,
   notice: null,
+  deviceRevision: 0,
 };
 
 const listeners = new Set<(next: VoiceDeviceSnapshot) => void>();
@@ -99,6 +101,9 @@ let outputTestContext: AudioContext | null = null;
 let outputTestTimer: ReturnType<typeof setTimeout> | null = null;
 let outputTestResolve: (() => void) | null = null;
 let outputTestGeneration = 0;
+let deviceChangeTimer: ReturnType<typeof setTimeout> | null = null;
+let microphonePermissionStatus: PermissionStatus | null = null;
+let permissionStatusCleanup: (() => void) | null = null;
 
 const emit = (next: Partial<VoiceDeviceSnapshot>) => {
   snapshot = { ...snapshot, ...next };
@@ -168,6 +173,49 @@ const permissionFromError = (error: unknown): VoiceDevicePermission =>
     ? "denied"
     : snapshot.permission;
 
+const deviceErrorMessage = (error: unknown): string => error instanceof DOMException && (error.name === "NotReadableError" || error.name === "AbortError")
+  ? "The selected microphone is busy in another application. Picom can fall back to the system default input."
+  : error instanceof DOMException && (error.name === "NotFoundError" || error.name === "OverconstrainedError")
+    ? "The selected microphone is no longer available."
+    : "Voice devices could not be loaded.";
+
+async function applyObservedMicrophonePermission(state: PermissionState): Promise<void> {
+  if (state === "denied") {
+    voiceDeviceService.stopMicrophoneTest();
+    emit({ permission: "denied", deviceRevision: snapshot.deviceRevision + 1, error: "Microphone permission was revoked. Enable it in system settings, then retry from Picom.", notice: "Microphone access changed; the meeting microphone was turned off." });
+    publishPreferences();
+    return;
+  }
+  if (state === "granted") {
+    emit({ permission: "granted", deviceRevision: snapshot.deviceRevision + 1, error: null, notice: "Microphone permission is available again. Picom is restoring your meeting device preference." });
+    await voiceDeviceService.refresh(false);
+    publishPreferences();
+    return;
+  }
+  if (snapshot.permission !== "granted") emit({ permission: "prompt", error: null });
+}
+
+async function attachPermissionStatusListener(): Promise<void> {
+  if (microphonePermissionStatus || !navigator.permissions?.query) return;
+  try {
+    const status = await navigator.permissions.query({ name: "microphone" as PermissionName });
+    if (!listeners.size) return;
+    microphonePermissionStatus = status;
+    const onChange = () => { void applyObservedMicrophonePermission(status.state); };
+    status.addEventListener("change", onChange);
+    permissionStatusCleanup = () => status.removeEventListener("change", onChange);
+    if (status.state === "granted" || status.state === "denied") await applyObservedMicrophonePermission(status.state);
+  } catch {
+    // Permission API support varies; explicit user actions remain the fallback.
+  }
+}
+
+function detachPermissionStatusListener(): void {
+  permissionStatusCleanup?.();
+  permissionStatusCleanup = null;
+  microphonePermissionStatus = null;
+}
+
 export const voiceDeviceService = {
   getSnapshot(): VoiceDeviceSnapshot {
     return snapshot;
@@ -180,6 +228,7 @@ export const voiceDeviceService = {
     if (!listeningForDeviceChanges && mediaDevices) {
       mediaDevices?.addEventListener("devicechange", voiceDeviceService.handleDeviceChange);
       listeningForDeviceChanges = true;
+      void attachPermissionStatusListener();
     }
 
     return () => {
@@ -187,12 +236,20 @@ export const voiceDeviceService = {
       if (listeners.size === 0 && listeningForDeviceChanges) {
         mediaDevices?.removeEventListener("devicechange", voiceDeviceService.handleDeviceChange);
         listeningForDeviceChanges = false;
+        if (deviceChangeTimer) clearTimeout(deviceChangeTimer);
+        deviceChangeTimer = null;
+        detachPermissionStatusListener();
       }
     };
   },
 
   handleDeviceChange(): void {
-    void voiceDeviceService.refresh(false);
+    if (deviceChangeTimer) clearTimeout(deviceChangeTimer);
+    deviceChangeTimer = setTimeout(() => {
+      deviceChangeTimer = null;
+      emit({ deviceRevision: snapshot.deviceRevision + 1 });
+      void voiceDeviceService.refresh(false).then(() => publishPreferences());
+    }, 350);
   },
 
   subscribePreferences(listener: (next: VoiceDeviceSnapshot) => void): () => void {
@@ -261,7 +318,7 @@ export const voiceDeviceService = {
         permission,
         isLoading: false,
         notice: null,
-        error: permission === "denied" ? "Microphone permission was denied. Enable it in system settings and try again." : "Voice devices could not be loaded.",
+        error: permission === "denied" ? "Microphone permission was denied. Enable it in system settings and try again." : deviceErrorMessage(error),
       });
     }
     return snapshot;
@@ -284,7 +341,15 @@ export const voiceDeviceService = {
       if (restartMicrophoneTest) await voiceDeviceService.startMicrophoneTest();
       return true;
     } catch (error) {
-      emit({ permission: permissionFromError(error), error: "The selected microphone is unavailable." });
+      if (deviceId !== "default" && snapshot.inputDevices.some((device) => device.deviceId === "default")) {
+        try {
+          const fallback = await mediaDevices!.getUserMedia({ audio: createAudioConstraints({ ...snapshot, selectedInputId: "default" }), video: false });
+          fallback.getTracks().forEach((track) => track.stop());
+          emit({ selectedInputId: "default", permission: "granted", deviceRevision: snapshot.deviceRevision + 1, error: null, notice: "The selected microphone was unavailable. Picom switched to the system default input." });
+          persist();publishPreferences();return true;
+        } catch { /* Report the original selection failure below. */ }
+      }
+      emit({ permission: permissionFromError(error), error: deviceErrorMessage(error) });
       return false;
     }
   },

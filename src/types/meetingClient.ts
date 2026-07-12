@@ -119,6 +119,7 @@ export type MeetingClientSnapshot = Readonly<{
     permission: "prompt" | "granted" | "denied" | "unsupported";
   }>;
   localMedia: Readonly<{ muted: boolean; deafened: boolean; cameraEnabled: boolean; screenSharing: boolean }>;
+  deviceNotice: string | null;
   noiseShield: Readonly<{ requested: boolean; applied: boolean; requestedMode: NoiseShieldMode; appliedMode: NoiseShieldMode; availableModes: readonly NoiseShieldMode[]; provider: NoiseShieldProvider; status: NoiseShieldStatus; fallbackReason: string | null }>;
   handRaised: boolean;
   stageQueue?: readonly MeetingHandQueueEntry[];
