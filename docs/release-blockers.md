@@ -189,3 +189,7 @@ Task 520 decision: **Full MVP Partial; Stable No-Go**. No artifact publication i
 ## Task 577 final hosted meeting backend update
 
 The 18-gate owner/admin/moderator/member/visitor/guest/blocked staging matrix and fail-closed protected runner are now defined. Local migration, secret-boundary, and deterministic meeting contracts pass, but the protected staging role fixtures, committed-to-staging migration checksum comparison, deployed meeting token/webhook, private Realtime, two-client reconciliation, hosted audit records, and temporary fixture-access revocation evidence are unavailable. Captions are provider-disabled and only the endpoint execution is `NOT_APPLICABLE`; transcript/privacy isolation remains mandatory. RB-01, RB-02, RB-03, and RB-04 remain **BLOCKED** and the stable decision remains **No-Go**.
+
+## Task 578 Windows native meeting update
+
+The Windows x64 exact-artifact certification matrix now requires a trusted timestamped signature, controlled Windows 10/11 machine inventory, 22 packaged meeting flows, and a distinct remote client. No signed final candidate, clean/controlled test target, hosted room, native device run, interactive picker, or remote screen/window render was available during Task 578. Local Electron/meeting/screen-share contracts pass, but they are not native certification. RB-04, RB-05, and RB-06 remain **BLOCKED** and no Windows production support claim is authorized.

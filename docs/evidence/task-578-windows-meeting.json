@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "task": 578,
+  "platform": "windows",
+  "executionStatus": "BLOCKED",
+  "reasonCode": "controlled_signed_candidate_environment_unavailable",
+  "productionUsed": false,
+  "controlledMachine": false,
+  "privateDataCaptured": false,
+  "rawMediaStored": false,
+  "redactionReviewed": true,
+  "runId": null,
+  "tester": null,
+  "artifact": {
+    "fileName": null,
+    "version": null,
+    "sha256": null,
+    "signatureStatus": "BLOCKED",
+    "trustedTimestamp": false
+  },
+  "machine": {
+    "osFamily": "Windows",
+    "osVersion": null,
+    "supportedWindowsVersion": false,
+    "architecture": null,
+    "displayScalePercent": null,
+    "monitorCount": null,
+    "cameraModels": [],
+    "microphoneModels": [],
+    "speakerModels": [],
+    "gpuModels": []
+  },
+  "remoteClient": {
+    "status": "BLOCKED",
+    "distinctClientConfirmed": false,
+    "platform": null
+  },
+  "flowResults": [
+    { "id": "install_exact_candidate", "status": "BLOCKED", "reasonCode": "signed_candidate_unavailable", "evidenceReferences": [] },
+    { "id": "first_launch_setup", "status": "BLOCKED", "reasonCode": "controlled_machine_unavailable", "evidenceReferences": [] },
+    { "id": "media_permissions", "status": "BLOCKED", "reasonCode": "native_devices_not_tested", "evidenceReferences": [] },
+    { "id": "meeting_prejoin", "status": "BLOCKED", "reasonCode": "hosted_meeting_unavailable", "evidenceReferences": [] },
+    { "id": "voice_publish_remote_receive", "status": "BLOCKED", "reasonCode": "remote_client_unavailable", "evidenceReferences": [] },
+    { "id": "camera_publish_remote_render", "status": "BLOCKED", "reasonCode": "remote_client_unavailable", "evidenceReferences": [] },
+    { "id": "device_switch_microphone_camera_speaker", "status": "BLOCKED", "reasonCode": "native_devices_not_tested", "evidenceReferences": [] },
+    { "id": "noise_shield_runtime", "status": "BLOCKED", "reasonCode": "native_microphone_not_tested", "evidenceReferences": [] },
+    { "id": "grid_and_speaker_focus", "status": "BLOCKED", "reasonCode": "two_client_meeting_unavailable", "evidenceReferences": [] },
+    { "id": "meeting_chat", "status": "BLOCKED", "reasonCode": "hosted_meeting_unavailable", "evidenceReferences": [] },
+    { "id": "meeting_reactions", "status": "BLOCKED", "reasonCode": "hosted_realtime_unavailable", "evidenceReferences": [] },
+    { "id": "raise_hand_and_host_acknowledge", "status": "BLOCKED", "reasonCode": "hosted_realtime_unavailable", "evidenceReferences": [] },
+    { "id": "waiting_room_admit_deny", "status": "BLOCKED", "reasonCode": "hosted_waiting_room_unavailable", "evidenceReferences": [] },
+    { "id": "entire_screen_share", "status": "BLOCKED", "reasonCode": "interactive_picker_not_tested", "evidenceReferences": [] },
+    { "id": "window_share", "status": "BLOCKED", "reasonCode": "interactive_picker_not_tested", "evidenceReferences": [] },
+    { "id": "remote_screen_render_and_stop", "status": "BLOCKED", "reasonCode": "remote_client_unavailable", "evidenceReferences": [] },
+    { "id": "network_reconnect_recovery", "status": "BLOCKED", "reasonCode": "controlled_network_test_unavailable", "evidenceReferences": [] },
+    { "id": "cross_app_mini_meeting", "status": "BLOCKED", "reasonCode": "packaged_app_not_tested", "evidenceReferences": [] },
+    { "id": "leave_and_host_end", "status": "BLOCKED", "reasonCode": "two_client_meeting_unavailable", "evidenceReferences": [] },
+    { "id": "custom_window_controls", "status": "BLOCKED", "reasonCode": "packaged_app_not_tested", "evidenceReferences": [] },
+    { "id": "meeting_focus_mode", "status": "BLOCKED", "reasonCode": "packaged_app_not_tested", "evidenceReferences": [] },
+    { "id": "uninstall_reinstall_same_candidate", "status": "BLOCKED", "reasonCode": "controlled_machine_unavailable", "evidenceReferences": [] }
+  ]
+}
