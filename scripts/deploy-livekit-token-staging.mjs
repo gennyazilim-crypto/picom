@@ -45,6 +45,13 @@ const runSupabase = (args) => spawnSync(npx, ["-y", "supabase@2.109.1", ...args]
   env: process.env,
 });
 
+function makePolicyCreatesIdempotent(sql) {
+  return sql.replace(
+    /(^|\n)([ \t]*)create\s+policy\s+("(?:[^"]|"")+")\s+on\s+((?:public|storage)\.[a-zA-Z_][a-zA-Z0-9_]*)/gi,
+    (_match, lineStart, indent, policyName, tableName) => `${lineStart}${indent}drop policy if exists ${policyName} on ${tableName};\n${indent}create policy ${policyName} on ${tableName}`,
+  );
+}
+
 if (!apply) {
   const cli = runSupabase(["--version"]);
   console.log(JSON.stringify({
@@ -118,7 +125,7 @@ try {
     if (index > 0 && index % 70 === 0) await new Promise((resolve) => setTimeout(resolve, 61_000));
     const migration = pending[index];
     const source = readFileSync(`supabase/migrations/${migration.file}`, "utf8").replace(/^\uFEFF/, "");
-    const migrationSql = source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim();
+    const migrationSql = makePolicyCreatesIdempotent(source.replace(/^\s*begin;\s*/i, "").replace(/\s*commit;\s*$/i, "").trim());
     if (!migrationSql || migrationSql.includes("$task661$")) throw new Error(`Migration ${migration.version} is empty or contains the reserved deployment delimiter.`);
     const trackedSql = `begin;\n${migrationSql}\ninsert into supabase_migrations.schema_migrations(version,statements,name) values ('${migration.version}',array[$task661$${migrationSql}$task661$],'${migration.name}') on conflict(version) do update set statements=excluded.statements,name=excluded.name;\ncommit;`;
     try {

@@ -28,6 +28,7 @@ const checks = [
   ["hosted roleless and denial matrix", ["owner", "admin", "moderator", "member", "roleless_member", "visitor", "non_member", "banned", "rate_limit"].every((actor) => fixture.includes(`\"${actor}\"`))],
   ["hosted source and rate assertions", fixture.includes("screen_share_audio") && fixture.includes("camera") && fixture.includes("RATE_LIMITED") && fixture.includes("attempt <= 10")],
   ["explicit staging deploy guard", deploy.includes("STAGING_ONLY") && deploy.includes("approvedProjectRef") && deploy.includes("database/query") && deploy.includes("functions\", \"deploy")],
+  ["transaction-safe policy reconciliation", deploy.includes("makePolicyCreatesIdempotent") && deploy.includes("drop policy if exists") && deploy.includes("begin;\\n${migrationSql}")],
   ["secret server boundary", fn.includes('getRequiredEnv("LIVEKIT_API_SECRET")') && !client.includes("LIVEKIT_API_SECRET")],
 ];
 
