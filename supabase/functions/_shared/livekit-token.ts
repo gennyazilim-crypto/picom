@@ -16,6 +16,13 @@ export interface LiveKitTokenResult {
   expiresAt: string;
 }
 
+export interface LiveKitRoomAdminTokenInput {
+  apiKey: string;
+  apiSecret: string;
+  roomName: string;
+  ttlSeconds?: number;
+}
+
 const encoder = new TextEncoder();
 
 function encodeBase64Url(value: string | Uint8Array): string {
@@ -77,4 +84,20 @@ export async function createLiveKitToken({
     token: `${unsignedToken}.${signature}`,
     expiresAt: new Date(expiresAtSeconds * 1000).toISOString(),
   };
+}
+
+export async function createLiveKitRoomAdminToken({ apiKey, apiSecret, roomName, ttlSeconds = 60 }: LiveKitRoomAdminTokenInput): Promise<LiveKitTokenResult> {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const expiresAtSeconds = nowSeconds + Math.min(Math.max(ttlSeconds, 30), 300);
+  const header = encodeBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const payload = encodeBase64Url(JSON.stringify({
+    iss: apiKey,
+    sub: `picom-captions-dispatch-${crypto.randomUUID()}`,
+    nbf: nowSeconds - 5,
+    exp: expiresAtSeconds,
+    video: { room: roomName, roomAdmin: true },
+  }));
+  const unsignedToken = `${header}.${payload}`;
+  const signature = await signHmacSha256(unsignedToken, apiSecret);
+  return { token: `${unsignedToken}.${signature}`, expiresAt: new Date(expiresAtSeconds * 1000).toISOString() };
 }

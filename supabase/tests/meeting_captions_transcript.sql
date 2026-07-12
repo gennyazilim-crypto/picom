@@ -1,0 +1,18 @@
+begin;
+select plan(14);
+select has_table('public','meeting_caption_sessions','caption lifecycle table exists');
+select has_table('public','meeting_caption_consents','caption consent table exists');
+select has_table('public','meeting_caption_dispatches','private dispatch table exists');
+select has_function('public','get_meeting_caption_state',array['uuid','uuid'],'safe caption state RPC exists');
+select has_function('public','meeting_caption_audio_allowed',array['uuid'],'audio consent gate exists');
+select ok((select relrowsecurity from pg_class where oid='public.meeting_caption_sessions'::regclass),'caption sessions use RLS');
+select ok((select relrowsecurity from pg_class where oid='public.meeting_caption_consents'::regclass),'caption consents use RLS');
+select ok((select relrowsecurity from pg_class where oid='public.meeting_caption_dispatches'::regclass),'dispatch metadata uses RLS');
+select ok(not has_table_privilege('authenticated','public.meeting_caption_dispatches','SELECT'),'clients cannot read dispatch metadata');
+select ok(not exists(select 1 from information_schema.tables where table_schema='public' and table_name='meeting_transcript_segments'),'ephemeral policy creates no transcript text table');
+select ok(position('retention_mode=''ephemeral''' in pg_get_constraintdef((select oid from pg_constraint where conrelid='public.meeting_caption_sessions'::regclass and contype='c' and pg_get_constraintdef(oid) like '%retention_mode%'))) > 0,'retention is constrained to ephemeral');
+select ok(not has_function_privilege('authenticated','public.prepare_meeting_caption_dispatch(uuid,uuid)','execute'),'renderer clients cannot prepare provider dispatches');
+select ok(has_function_privilege('service_role','public.prepare_meeting_caption_dispatch(uuid,uuid)','execute'),'service role can prepare provider dispatches');
+select ok(has_function_privilege('authenticated','public.record_meeting_caption_consent(uuid,uuid,text,text)','EXECUTE'),'participants can use consent RPC');
+select * from finish();
+rollback;

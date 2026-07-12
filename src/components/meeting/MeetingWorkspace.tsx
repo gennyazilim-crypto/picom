@@ -1,9 +1,11 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { meetingService } from "../../services/meeting/meetingService";
 import { meetingHostControlService } from "../../services/meeting/meetingHostControlService";
+import { meetingCaptionService } from "../../services/meeting/meetingCaptionService";
 import { getValidMeetingLayoutPreferences, meetingLayoutPreferenceService, resolveMeetingLayout } from "../../services/meeting/meetingLayoutPreferenceService";
 import type { MeetingLayoutMode, MeetingSidePanel } from "../../types/meeting";
 import { MeetingControlDock } from "./MeetingControlDock";
+import { MeetingCaptionsOverlay } from "./MeetingCaptionsOverlay";
 import { MeetingPreJoin } from "./MeetingPreJoin";
 import { MeetingRightDock } from "./MeetingRightDock";
 import { MeetingStage } from "./MeetingStage";
@@ -11,10 +13,12 @@ import { MeetingTopBar } from "./MeetingTopBar";
 import { MeetingWorkspaceStatusSurface } from "./MeetingWorkspaceSurfaces";
 import { MeetingParticipantActionsProvider } from "./MeetingParticipantActionsProvider";
 import "./MeetingWorkspace.css";
+import "./MeetingCaptions.css";
 
 export function MeetingWorkspace({onExit,onMinimize}:{onExit?:()=>void;onMinimize?:()=>void}={}) {
   const snapshot=useSyncExternalStore(meetingService.store.subscribe,meetingService.store.getSnapshot,meetingService.store.getSnapshot);
   const hostState=useSyncExternalStore(meetingHostControlService.subscribe,meetingHostControlService.getSnapshot,meetingHostControlService.getSnapshot);
+  const captions=useSyncExternalStore(meetingCaptionService.subscribe,meetingCaptionService.getSnapshot,meetingCaptionService.getSnapshot);
   const layoutPreference=useSyncExternalStore(meetingLayoutPreferenceService.subscribe,meetingLayoutPreferenceService.getSnapshot,meetingLayoutPreferenceService.getSnapshot).preference;
   const [focusMode,setFocusMode]=useState(false);
   const admissionOnly=Boolean(snapshot.waitingEntry&&snapshot.waitingEntry.status!=="admitted"&&snapshot.phase!=="connected");
@@ -31,12 +35,14 @@ export function MeetingWorkspace({onExit,onMinimize}:{onExit?:()=>void;onMinimiz
   useEffect(()=>{const participantValid=!snapshot.focusedParticipantId||snapshot.participantIds.includes(snapshot.focusedParticipantId),shareValid=!snapshot.focusedShareId||(snapshot.screenShares??[]).some((share)=>share.id===snapshot.focusedShareId);if(!participantValid||!shareValid)meetingService.setFocus(participantValid?snapshot.focusedParticipantId:null,shareValid?snapshot.focusedShareId:null)},[snapshot.focusedParticipantId,snapshot.focusedShareId,snapshot.participantIds,snapshot.screenShares]);
   useEffect(()=>{document.body.classList.toggle("picom-meeting-focus",focusMode);const key=(event:KeyboardEvent)=>{if(event.key==="Escape"&&focusMode){event.preventDefault();setFocusMode(false)}};document.addEventListener("keydown",key);return()=>{document.removeEventListener("keydown",key);document.body.classList.remove("picom-meeting-focus")}},[focusMode]);
   useEffect(()=>{const context=snapshot.context;if(!context)return;return meetingHostControlService.start(context.roomId,context.sessionId)},[snapshot.context?.roomId,snapshot.context?.sessionId]);
+  useEffect(()=>{const context=snapshot.context;if(!context||!["connected","reconnecting"].includes(snapshot.phase))return;return meetingCaptionService.activate({roomId:context.roomId,sessionId:context.sessionId,canStart:snapshot.capabilities.canStartCaptions})},[snapshot.context?.roomId,snapshot.context?.sessionId,snapshot.phase,snapshot.capabilities.canStartCaptions]);
   useEffect(()=>{if((hostState.sessionStatus==="ended"||hostState.roomStatus==="ended"||hostState.roomStatus==="cancelled")&&!['idle','ended'].includes(snapshot.phase))void meetingService.leave()},[hostState.roomStatus,hostState.sessionStatus,snapshot.phase]);
   return <MeetingParticipantActionsProvider snapshot={snapshot}><section className={`meeting-workspace${focusMode?" is-focus-mode":""}${dockOpen?" has-right-dock":""}${admissionOnly?" is-admission-only":""}`} aria-label={snapshot.context?.roomTitle?`${snapshot.context.roomTitle} meeting workspace`:"Picom meeting workspace"}>
-    <MeetingTopBar snapshot={snapshot} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} onMinimize={onMinimize} />
+    <MeetingTopBar snapshot={snapshot} captions={captions} focusMode={focusMode} onToggleFocus={toggleFocus} onToggleDock={toggleDock} onMinimize={onMinimize} />
     <div className="meeting-workspace__body">
       <main className="meeting-workspace__canvas">
         {admissionOnly?null:snapshot.phase==="prejoin"?<MeetingPreJoin onCancel={exit}/>:<MeetingStage snapshot={snapshot} onFocusParticipant={focusParticipant} onOpenPeople={()=>meetingService.setRightDock("people")} onReturnToGrid={()=>leaveShareLayout("grid")} onReturnToSpeaker={()=>leaveShareLayout("speaker")} />}
+        {admissionOnly?null:<MeetingCaptionsOverlay caption={captions}/>}
         <MeetingWorkspaceStatusSurface snapshot={snapshot} onRetry={()=>{void meetingService.retry()}} onLeave={exit} onCancelWaiting={async()=>{const result=await meetingService.cancelWaitingRequest();return result.ok}} />
       </main>
       {dockOpen?<MeetingRightDock snapshot={snapshot} onSelect={selectDock} onFocusParticipant={focusParticipant} onClose={()=>meetingService.setRightDock("none")} />:null}

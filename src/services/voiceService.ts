@@ -86,6 +86,8 @@ export type VoiceServiceResult<T> =
 export type VoiceStateListener = (snapshot: VoiceServiceSnapshot) => void;
 export type VoiceDataPacket = Readonly<{topic:string;payload:Uint8Array;senderIdentity:string;receivedAt:string}>;
 export type VoiceDataPacketListener = (packet:VoiceDataPacket)=>void;
+export type VoiceTranscriptionSegment = Readonly<{id:string;speakerIdentity:string;speakerName:string;text:string;isFinal:boolean;receivedAt:string}>;
+export type VoiceTranscriptionListener = (segment:VoiceTranscriptionSegment)=>void;
 
 let room: Room | null = null;
 let speakingIdentities = new Set<string>();
@@ -139,6 +141,7 @@ let snapshot: VoiceServiceSnapshot = {
 
 const listeners = new Set<VoiceStateListener>();
 const dataPacketListeners = new Set<VoiceDataPacketListener>();
+const transcriptionListeners = new Set<VoiceTranscriptionListener>();
 
 function hasScreenPublishToken(): boolean {
   return activeTokenIntent === "screen";
@@ -389,7 +392,20 @@ async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track
 }
 
 
+function removeTranscriptionHandler(activeRoom:Room):void{try{activeRoom.unregisterTextStreamHandler("lk.transcription")}catch{ /* The handler may already be removed during provider shutdown. */ }}
+
 function bindRoomEvents(activeRoom: Room): void {
+  activeRoom.registerTextStreamHandler("lk.transcription",async(reader,participantInfo)=>{
+    try{
+      const text=(await reader.readAll()).trim().slice(0,4096);if(!text)return;
+      const info=reader.info as unknown as {attributes?:Record<string,string>};
+      const participant=participantInfo as unknown as {identity?:string;name?:string};
+      const speakerIdentity=(participant.identity??info.attributes?.["lk.participant_identity"]??"unknown").slice(0,160);
+      const speaker=activeRoom.remoteParticipants.get(speakerIdentity);
+      const segment:VoiceTranscriptionSegment={id:(info.attributes?.["lk.segment_id"]??crypto.randomUUID()).slice(0,180),speakerIdentity,speakerName:(participant.name??speaker?.name??speakerIdentity).slice(0,120),text,isFinal:info.attributes?.["lk.transcription_final"]==="true",receivedAt:new Date().toISOString()};
+      transcriptionListeners.forEach((listener)=>listener(segment));
+    }catch{ /* Caption payloads are optional and must never destabilize meeting media. */ }
+  });
   activeRoom
     .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
       if (state === ConnectionState.Connected) {
@@ -538,6 +554,7 @@ function bindRoomEvents(activeRoom: Room): void {
       const details = disconnectDetails(reason);
       stopLocalTracks(activeRoom);
       activeTokenIntent = null;
+      removeTranscriptionHandler(activeRoom);
       activeRoom.removeAllListeners();
       if (room === activeRoom) room = null;
       emit({
@@ -568,6 +585,7 @@ function stopLocalTracks(activeRoom: Room): void {
 
 async function disposeRoom(activeRoom: Room): Promise<void> {
   stopLocalTracks(activeRoom);
+  removeTranscriptionHandler(activeRoom);
   activeRoom.removeAllListeners();
   if (room === activeRoom) room = null;
   try {
@@ -751,6 +769,8 @@ export const voiceService = {
   getLocalParticipantIdentity():string|null{return room?.localParticipant.identity??null;},
 
   subscribeDataPackets(listener:VoiceDataPacketListener):()=>void{dataPacketListeners.add(listener);return()=>{dataPacketListeners.delete(listener)};},
+
+  subscribeTranscriptions(listener:VoiceTranscriptionListener):()=>void{transcriptionListeners.add(listener);return()=>{transcriptionListeners.delete(listener)};},
 
   async publishDataPacket(topic:string,payload:Uint8Array,reliable=false):Promise<VoiceServiceResult<void>>{
     if(!room||room.state===ConnectionState.Disconnected)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Join the meeting before sending a signal."}};

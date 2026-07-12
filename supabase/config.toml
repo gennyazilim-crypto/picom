@@ -60,6 +60,12 @@ verify_jwt = true
 [functions.meeting-token]
 verify_jwt = true
 
+[functions.meeting-captions]
+verify_jwt = true
+
+[functions.meeting-captions-agent]
+verify_jwt = false
+
 [functions.livekit-webhook]
 verify_jwt = false
 
