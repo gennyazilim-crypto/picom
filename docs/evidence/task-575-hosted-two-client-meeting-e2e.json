@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "task": 575,
+  "target": "staging",
+  "productionUsed": false,
+  "executionStatus": "BLOCKED",
+  "runId": null,
+  "tester": null,
+  "captionsProviderConfigured": false,
+  "rawMediaStored": false,
+  "redactionReviewed": true,
+  "clients": {
+    "host_client": { "status": "BLOCKED", "platform": "unassigned" },
+    "participant_client": { "status": "BLOCKED", "platform": "unassigned" }
+  },
+  "blockers": [
+    "protected_staging_configuration_missing",
+    "synthetic_test_accounts_missing",
+    "livekit_provider_configuration_missing",
+    "supabase_cli_missing",
+    "second_native_client_not_available"
+  ],
+  "flowResults": [
+    { "id": "room-discovery", "status": "BLOCKED", "reasonCode": "staging_configuration_missing", "evidenceReferences": [] },
+    { "id": "prejoin-device-consent", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "token-authorization", "status": "BLOCKED", "reasonCode": "staging_configuration_missing", "evidenceReferences": [] },
+    { "id": "waiting-admission", "status": "BLOCKED", "reasonCode": "synthetic_accounts_missing", "evidenceReferences": [] },
+    { "id": "unauthorized-user-denied", "status": "BLOCKED", "reasonCode": "synthetic_accounts_missing", "evidenceReferences": [] },
+    { "id": "two-client-audio", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "two-client-camera", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "grid-speaker-focus", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "durable-chat", "status": "BLOCKED", "reasonCode": "staging_configuration_missing", "evidenceReferences": [] },
+    { "id": "reaction-and-raised-hand", "status": "BLOCKED", "reasonCode": "staging_configuration_missing", "evidenceReferences": [] },
+    { "id": "screen-share", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "layout-switch", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "mini-meeting-navigation", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "reconnect-reconciliation", "status": "BLOCKED", "reasonCode": "livekit_provider_missing", "evidenceReferences": [] },
+    { "id": "leave-and-host-end", "status": "BLOCKED", "reasonCode": "livekit_provider_missing", "evidenceReferences": [] },
+    { "id": "webhook-attendance", "status": "BLOCKED", "reasonCode": "webhook_configuration_missing", "evidenceReferences": [] },
+    { "id": "meeting-notifications", "status": "BLOCKED", "reasonCode": "staging_configuration_missing", "evidenceReferences": [] },
+    { "id": "noise-shield-state", "status": "BLOCKED", "reasonCode": "native_clients_unavailable", "evidenceReferences": [] },
+    { "id": "captions-provider", "status": "NOT_APPLICABLE", "reasonCode": "caption_provider_not_configured", "evidenceReferences": [] }
+  ]
+}

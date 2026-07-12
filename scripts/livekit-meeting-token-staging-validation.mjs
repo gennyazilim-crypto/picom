@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 const run=process.argv.includes("--run");
 const names=["PICOM_MEETING_LIVEKIT_STAGING_URL","PICOM_MEETING_LIVEKIT_STAGING_ANON_KEY","PICOM_MEETING_LIVEKIT_STAGING_ORIGIN","PICOM_MEETING_LIVEKIT_STAGING_CONFIRM","PICOM_MEETING_ALLOWED_EMAIL","PICOM_MEETING_ALLOWED_PASSWORD","PICOM_MEETING_WAITING_EMAIL","PICOM_MEETING_WAITING_PASSWORD","PICOM_MEETING_BLOCKED_EMAIL","PICOM_MEETING_BLOCKED_PASSWORD","PICOM_MEETING_ROOM_ID","PICOM_MEETING_SESSION_ID"];
 if(!run){console.log("LiveKit meeting staging validation is BLOCKED until --run and STAGING_ONLY fixture configuration are supplied.");console.log(`Required variable names: ${names.join(", ")}`);console.log("No network request was made and no token or secret was printed.");process.exit(0)}
@@ -6,6 +5,7 @@ const missing=names.filter((name)=>!process.env[name]?.trim());if(missing.length
 if(process.env.PICOM_MEETING_LIVEKIT_STAGING_CONFIRM!=="STAGING_ONLY")throw new Error("PICOM_MEETING_LIVEKIT_STAGING_CONFIRM must equal STAGING_ONLY.");
 if(/service[_-]?role|sb_secret_/i.test(process.env.PICOM_MEETING_LIVEKIT_STAGING_ANON_KEY))throw new Error("Use an anon/publishable key, never service-role.");
 if(new URL(process.env.PICOM_MEETING_LIVEKIT_STAGING_URL).protocol!=="https:")throw new Error("Staging URL must use HTTPS.");
+const {createClient}=await import("@supabase/supabase-js");
 const base=process.env.PICOM_MEETING_LIVEKIT_STAGING_URL.replace(/\/+$/,""),anon=process.env.PICOM_MEETING_LIVEKIT_STAGING_ANON_KEY,origin=process.env.PICOM_MEETING_LIVEKIT_STAGING_ORIGIN;
 const auth=async(email,password)=>{const client=createClient(base,anon,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});const result=await client.auth.signInWithPassword({email,password});if(result.error||!result.data.session)throw new Error("Synthetic staging authentication failed.");return{client,user:result.data.user,token:result.data.session.access_token}};
 const call=async(token,body)=>{const response=await fetch(`${base}/functions/v1/meeting-token`,{method:"POST",headers:{apikey:anon,Origin:origin,"Content-Type":"application/json",...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});const text=await response.text();let payload=null;try{payload=text?JSON.parse(text):null}catch{}return{response,payload}};

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "task": 575,
+  "target": "staging",
+  "productionAllowed": false,
+  "requiredConfirmation": "STAGING_ONLY",
+  "clients": ["host_client", "participant_client"],
+  "flows": [
+    { "id": "room-discovery", "required": true, "evidence": ["redacted_log"] },
+    { "id": "prejoin-device-consent", "required": true, "evidence": ["redacted_screenshot"] },
+    { "id": "token-authorization", "required": true, "evidence": ["redacted_log"] },
+    { "id": "waiting-admission", "required": true, "evidence": ["redacted_screenshot", "redacted_log"] },
+    { "id": "unauthorized-user-denied", "required": true, "evidence": ["redacted_log"] },
+    { "id": "two-client-audio", "required": true, "evidence": ["observer_check"] },
+    { "id": "two-client-camera", "required": true, "evidence": ["redacted_screenshot"] },
+    { "id": "grid-speaker-focus", "required": true, "evidence": ["redacted_screenshot"] },
+    { "id": "durable-chat", "required": true, "evidence": ["redacted_screenshot", "redacted_log"] },
+    { "id": "reaction-and-raised-hand", "required": true, "evidence": ["redacted_screenshot"] },
+    { "id": "screen-share", "required": true, "evidence": ["redacted_screenshot", "observer_check"] },
+    { "id": "layout-switch", "required": true, "evidence": ["redacted_screenshot"] },
+    { "id": "mini-meeting-navigation", "required": true, "evidence": ["redacted_screenshot"] },
+    { "id": "reconnect-reconciliation", "required": true, "evidence": ["redacted_log", "observer_check"] },
+    { "id": "leave-and-host-end", "required": true, "evidence": ["redacted_log"] },
+    { "id": "webhook-attendance", "required": true, "evidence": ["redacted_log"] },
+    { "id": "meeting-notifications", "required": true, "evidence": ["redacted_screenshot"] },
+    { "id": "noise-shield-state", "required": true, "evidence": ["redacted_screenshot", "observer_check"] },
+    { "id": "captions-provider", "required": false, "evidence": ["redacted_screenshot", "observer_check"] }
+  ]
+}
