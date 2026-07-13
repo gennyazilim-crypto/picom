@@ -61,6 +61,26 @@ migrations during this session).
   exists` + `create policy`, and guarded `update ... where ... is distinct from` — safe
   to apply and re-apply.
 
+## Task 011 — fake-runtime / anti-pattern scan (whole app)
+
+Comprehensive scan of production/Supabase paths — the codebase is clean:
+
+- **Admin from email:** none found (roles come from protected tables/claims, per Task 003).
+- **React components calling Supabase directly:** none (all `.from`/`.rpc` matches were
+  `Array.from` etc.; components go through the service/repository layer).
+- **Fake-ID queries** (`welcome`/`general`/`focus-room`/`fallback-*`): none. The
+  `welcome`/`general` reference in `communityJoinRoutingService` is a landing-channel
+  heuristic over already-loaded real channels (uses real ids), not a query by fake id.
+  Community loaders skip non-UUID placeholders (`isSupabaseEntityId`).
+- **Fake success toasts:** none. Settings saves either check a real service result with
+  rollback on failure (`saveProfileSettings`, friend-request privacy, unblock) or are
+  honestly labelled "saved locally"; notification/appearance settings sync to the
+  `user_settings` account row (asserted by the auth-onboarding smoke).
+- **Silent empty catches:** ~21, predominantly benign `localStorage`/`JSON.parse`/
+  clipboard guards; none observed swallowing a real Supabase/service error path.
+- **Mock in Supabase mode:** mock stores (invites, insights, audit) are gated to
+  `dataSourceService.getStatus().isMock`; Supabase mode uses real RPCs/queries.
+
 ## Startup fixes applied this session
 - Community loaders skip placeholder (non-UUID) community/channel ids (removes reload 400 error toasts).
 - Auth-loading guard separated from the signed-out login guard (no login flash on refresh).
