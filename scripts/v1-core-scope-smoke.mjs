@@ -18,10 +18,10 @@ const gateDoc = read("docs/v1-feature-gate-contract.md");
 
 assert(scope.includes('version: "1.0.0"'), "V1 scope must declare version 1.0.0.");
 assert(scope.includes('supportedPlatforms: Object.freeze(["windows"] as const)'), "V1 stable platform claim must be Windows-only.");
-for (const key of ["feed", "textCommunities", "textMessaging", "directMessages", "profile", "userSettings", "communityAdmin"]) {
+for (const key of ["feed", "textCommunities", "textMessaging", "directMessages", "profile", "userSettings", "communityAdmin", "voiceRooms", "screenShare"]) {
   assert(new RegExp(`${key}: inV1\\(`).test(scope), `${key} must be classified IN_V1.`);
 }
-for (const key of ["voiceRooms", "screenShare", "radio", "podcasts", "events", "bookmarks", "meetingWorkspace", "discoveryMarketplace"]) {
+for (const key of ["radio", "podcasts", "events", "bookmarks", "meetingWorkspace", "discoveryMarketplace"]) {
   assert(new RegExp(`${key}: hidden\\(`).test(scope), `${key} must be hidden from V1.`);
 }
 for (const key of ["bots", "webhooks", "plugins", "enterprise", "ssoScim", "billing", "aiFeatures"]) {
@@ -42,13 +42,19 @@ const trackedLogoConsumers = [
   "src/components/LoginScreen.tsx",
   "src/components/RegisterScreen.tsx",
   "src/components/WindowTitleBar.tsx",
+  "src/components/navigation/GlobalAppSidebar.tsx",
+  "src/config/brandAssets.ts",
   "src/config/brandConfig.ts",
 ];
 for (const file of trackedLogoConsumers) {
   const source = read(file);
   assert(!source.includes("picom-logo.png"), `${file} must not depend on an untracked logo.`);
-  assert(source.includes("picom-logo-concept.png"), `${file} must use the tracked Picom logo.`);
+  assert(
+    source.includes("brandLogoUrl") || source.includes("picom-logo-waveform-v2.png"),
+    `${file} must use the tracked Picom logo.`,
+  );
 }
+assert(fs.existsSync(path.join(root, "assets/brand/picom-logo-waveform-v2.png")), "Tracked Picom logo asset must exist.");
 
 if (failures.length) {
   console.error("Picom V1 Core scope contract failed:");
@@ -58,4 +64,4 @@ if (failures.length) {
 
 console.log("Picom V1 Core scope contract passed.");
 console.log("Release: Picom 1.0.0 stable | Supported stable platform: Windows");
-console.log("Task 621 decision: voiceRooms and screenShare are HIDDEN_FROM_V1; retained source remains inaccessible.");
+console.log("Voice Rooms and Screen Share are mandatory IN_V1; release readiness remains evidence-gated.");

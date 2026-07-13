@@ -40,7 +40,7 @@ const tr: Record<LocalizationKey, string> = {
 const sectionTr: Record<SettingsSection, string> = {
   "Account": "Hesap", "Profile": "Profil", "Privacy & Safety": "Gizlilik ve Güvenlik", "Appearance": "Görünüm",
   "Notifications": "Bildirimler", "Voice & Video": "Ses ve Video", "Keyboard Shortcuts": "Klavye Kısayolları",
-  "Diagnostics": "Tanılama", "Legal": "Yasal", "Advanced": "Gelişmiş",
+  "Diagnostics": "Tanılama", "Admin Operations": "Yönetim", "Legal": "Yasal", "Advanced": "Gelişmiş",
 };
 
 let activeLanguage: UiLanguage = "en";

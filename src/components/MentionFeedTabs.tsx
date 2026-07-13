@@ -1,3 +1,4 @@
+import { AppIcon } from "./AppIcon";
 import type { MentionFeedTab } from "../types/mentions";
 
 type MentionFeedTabsProps = {
@@ -9,7 +10,7 @@ type MentionFeedTabsProps = {
 
 export function MentionFeedTabs({ activeTab, feedCount, followingCount, onTabChange }: MentionFeedTabsProps) {
   return (
-    <div className="mention-tabs" role="tablist" aria-label="Mention feed sections">
+    <div className="mention-tabs mention-tabs--segmented" role="tablist" aria-label="Mention feed sections">
       <button
         className={activeTab === "feed" ? "active" : ""}
         type="button"
@@ -17,19 +18,25 @@ export function MentionFeedTabs({ activeTab, feedCount, followingCount, onTabCha
         aria-selected={activeTab === "feed"}
         onClick={() => onTabChange("feed")}
       >
+        <AppIcon name="home" size="xs" />
         <span className="mention-tab-label">Feed</span>
-        <span className="mention-tab-count">{feedCount}</span>
+        <span className="mention-tab-count" aria-label={`${feedCount} gönderi`}>
+          {feedCount}
+        </span>
       </button>
       <button
         className={activeTab === "following" ? "active" : ""}
         type="button"
         role="tab"
         aria-selected={activeTab === "following"}
-        title="Takip Ettiğin Kişiler"
+        title="Takip ettiğin kişiler"
         onClick={() => onTabChange("following")}
       >
-        <span className="mention-tab-label">Takip Ettiğin Kişiler</span>
-        <span className="mention-tab-count">{followingCount}</span>
+        <AppIcon name="users" size="xs" />
+        <span className="mention-tab-label">Takip</span>
+        <span className="mention-tab-count" aria-label={`${followingCount} gönderi`}>
+          {followingCount}
+        </span>
       </button>
     </div>
   );

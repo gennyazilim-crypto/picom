@@ -1,4 +1,5 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import type { PresencePreference } from "../../types/presence";
 
 const options: ReadonlyArray<Readonly<{ value: PresencePreference; label: string; dot: "online" | "idle" | "dnd" | "offline" }>> = [
@@ -8,35 +9,85 @@ const options: ReadonlyArray<Readonly<{ value: PresencePreference; label: string
   { value: "invisible", label: "Invisible", dot: "offline" },
 ];
 
-export function PresenceMenu({ open, compact, preference, boundaryRef, onChange, onClose }: Readonly<{
+const MENU_WIDTH = 190;
+const MENU_ESTIMATED_HEIGHT = 168;
+
+function getMenuPosition(trigger: HTMLElement) {
+  const rect = trigger.getBoundingClientRect();
+  const spaceAbove = rect.top;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const openUp = spaceAbove >= MENU_ESTIMATED_HEIGHT + 8 || spaceBelow < MENU_ESTIMATED_HEIGHT + 8;
+  const left = Math.min(Math.max(8, rect.left), window.innerWidth - MENU_WIDTH - 8);
+  const top = openUp ? rect.top - MENU_ESTIMATED_HEIGHT - 8 : rect.bottom + 8;
+  return { top, left };
+}
+
+export function PresenceMenu({
+  open,
+  preference,
+  boundaryRef,
+  triggerRef,
+  onChange,
+  onClose,
+}: Readonly<{
   open: boolean;
-  compact: boolean;
+  compact?: boolean;
   preference: PresencePreference;
   boundaryRef: RefObject<HTMLElement | null>;
+  triggerRef: RefObject<HTMLElement | null>;
   onChange: (preference: PresencePreference) => void;
   onClose: (restoreFocus?: boolean) => void;
 }>) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) {
+      setPosition(null);
+      return;
+    }
+    setPosition(getMenuPosition(triggerRef.current));
+  }, [open, triggerRef]);
+
   useEffect(() => {
     if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!boundaryRef.current?.contains(event.target as Node)) onClose();
-    };
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(true); };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
+    let active = true;
+    let removeListeners: (() => void) | undefined;
+    const frame = window.requestAnimationFrame(() => {
+      if (!active) return;
+      const onPointerDown = (event: PointerEvent) => {
+        const target = event.target as Node;
+        if (triggerRef.current?.contains(target)) return;
+        if (menuRef.current?.contains(target)) return;
+        if (boundaryRef.current?.contains(target)) return;
+        onClose();
+      };
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") onClose(true);
+      };
+      document.addEventListener("pointerdown", onPointerDown);
+      document.addEventListener("keydown", onKeyDown);
+      removeListeners = () => {
+        document.removeEventListener("pointerdown", onPointerDown);
+        document.removeEventListener("keydown", onKeyDown);
+      };
+    });
     return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
+      active = false;
+      window.cancelAnimationFrame(frame);
+      removeListeners?.();
     };
-  }, [boundaryRef, onClose, open]);
+  }, [boundaryRef, onClose, open, triggerRef]);
 
-  if (!open) return null;
-  return (
+  if (!open || !position) return null;
+
+  return createPortal(
     <div
+      ref={menuRef}
       className="global-presence-menu"
       role="menu"
       aria-label="Set presence"
-      style={{ position: "absolute", left: compact ? "calc(100% + 8px)" : 0, bottom: compact ? 0 : "calc(100% + 8px)", zIndex: 80, width: 190, display: "grid", gap: 3, padding: 7, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface-elevated, var(--surface))", boxShadow: "var(--shadow-app)" }}
+      style={{ top: position.top, left: position.left, width: MENU_WIDTH }}
     >
       {options.map((option) => (
         <button
@@ -44,15 +95,18 @@ export function PresenceMenu({ open, compact, preference, boundaryRef, onChange,
           type="button"
           role="menuitemradio"
           aria-checked={preference === option.value}
-          className={`global-nav-item${preference === option.value ? " is-active" : ""}`}
-          style={{ minHeight: 34, gridTemplateColumns: "18px minmax(0, 1fr) auto", paddingBlock: 3 }}
-          onClick={() => { onChange(option.value); onClose(true); }}
+          className={`global-presence-menu__option${preference === option.value ? " is-active" : ""}`}
+          onClick={() => {
+            onChange(option.value);
+            onClose(true);
+          }}
         >
-          <i className={`global-presence-dot is-${option.dot}`} style={{ position: "static", display: "block", borderColor: "var(--surface-elevated, var(--surface))" }} aria-hidden="true" />
-          <span className="global-nav-item__label">{option.label}</span>
+          <i className={`global-presence-dot is-${option.dot}`} aria-hidden="true" />
+          <span>{option.label}</span>
           <span aria-hidden="true">{preference === option.value ? "✓" : ""}</span>
         </button>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }

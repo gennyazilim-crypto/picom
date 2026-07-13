@@ -11,6 +11,7 @@ export type ChannelUnreadSummary = {
 };
 
 type ReadStateResult<T> = { ok: true; data: T } | { ok: false; error: "READ_STATE_UNAVAILABLE" | "READ_STATE_FAILED" };
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function unavailable<T>(): ReadStateResult<T> {
   return { ok: false, error: "READ_STATE_UNAVAILABLE" };
@@ -39,6 +40,12 @@ export const readStateService = {
 
   async markChannelRead(input: { channelId: string; lastReadMessageId: string | null }): Promise<ReadStateResult<boolean>> {
     if (!dataSourceService.getStatus().isSupabase) return { ok: true, data: true };
+    // Newly loaded communities briefly use local template channel IDs until the
+    // authoritative Supabase channels arrive. Never send those placeholders to
+    // UUID-typed RPC arguments.
+    if (!UUID_PATTERN.test(input.channelId) || (input.lastReadMessageId !== null && !UUID_PATTERN.test(input.lastReadMessageId))) {
+      return { ok: true, data: false };
+    }
     const client = getSupabaseClient();
     if (!client) return unavailable();
 

@@ -73,28 +73,79 @@ export function ProfileMediaEditor({ displayName, avatarUrl, coverUrl, onProfile
     onNotice(`${kind === "avatar" ? "Profile photo" : "Cover image"} removed.`, "success");
   };
 
-  const renderSlot = (kind: ProfileMediaKind) => {
+  const renderToolbar = (kind: ProfileMediaKind) => {
     const slot = stateFor(kind);
     const currentUrl = kind === "avatar" ? avatarUrl : coverUrl;
-    const preview = slot.previewUrl ?? currentUrl;
-    const label = kind === "avatar" ? "Profile photo" : "Cover image";
     return (
-      <article className={`profile-media-slot ${kind}`}>
-        <div className="profile-media-preview" aria-label={`${label} preview`}>
-          {preview ? <img src={preview} alt={`${displayName} ${label.toLowerCase()}`} /> : <AppIcon name={kind === "avatar" ? "user" : "image"} size="xl" />}
-        </div>
-        <div className="profile-media-copy"><strong>{label}</strong><small>{kind === "avatar" ? "Square PNG, JPG, or WEBP; 128 px minimum; 5 MB maximum." : "Wide PNG, JPG, or WEBP; 640 x 200 minimum; 8 MB maximum."}</small></div>
-        <label className="profile-media-choose">
+      <div className="profile-media-toolbar" role="group" aria-label={kind === "avatar" ? "Profile photo actions" : "Cover image actions"}>
+        <label className="settings-inline-action settings-inline-action--ghost profile-media-action profile-media-choose">
           <input type="file" accept="image/png,image/jpeg,image/webp" disabled={slot.busy} onChange={(event) => void selectFile(kind, event.target.files?.[0] ?? null)} />
-          <AppIcon name="image" size="sm" />Choose
+          <AppIcon name="image" size="sm" />
+          <span>Choose</span>
         </label>
-        <button type="button" disabled={!slot.file || slot.busy} onClick={() => void upload(kind)}>{slot.error ? "Retry upload" : slot.busy ? "Uploading..." : "Upload"}</button>
-        <button type="button" className="profile-media-remove" disabled={!currentUrl || slot.busy} onClick={() => void remove(kind)}><AppIcon name="trash" size="sm" />Remove</button>
-        {slot.progress ? <div className="profile-media-progress" aria-live="polite"><progress max={100} value={slot.progress.percent} /><span>{slot.progress.stage} {slot.progress.percent}%</span></div> : null}
-        {slot.error ? <p role="alert">{slot.error}</p> : null}
-      </article>
+        <button type="button" className="settings-inline-action profile-media-action" disabled={!slot.file || slot.busy} onClick={() => void upload(kind)}>
+          {slot.error ? "Retry upload" : slot.busy ? "Uploading..." : "Upload"}
+        </button>
+        <button type="button" className="settings-inline-action settings-inline-action--ghost profile-media-action profile-media-remove" disabled={!currentUrl || slot.busy} onClick={() => void remove(kind)}>
+          <AppIcon name="trash" size="sm" />
+          <span>Remove</span>
+        </button>
+      </div>
     );
   };
 
-  return <section className="profile-media-editor" aria-label="Profile images"><div className="profile-media-editor-grid">{renderSlot("avatar")}{renderSlot("cover")}</div></section>;
+  const renderProgress = (kind: ProfileMediaKind) => {
+    const slot = stateFor(kind);
+    if (!slot.progress && !slot.error) return null;
+    return (
+      <div className="profile-media-feedback">
+        {slot.progress ? (
+          <div className="profile-media-progress" aria-live="polite">
+            <progress max={100} value={slot.progress.percent} />
+            <span>{slot.progress.stage} {slot.progress.percent}%</span>
+          </div>
+        ) : null}
+        {slot.error ? <p role="alert">{slot.error}</p> : null}
+      </div>
+    );
+  };
+
+  const coverPreview = cover.previewUrl ?? coverUrl;
+  const avatarPreview = avatar.previewUrl ?? avatarUrl;
+
+  return (
+    <section className="profile-media-editor" aria-label="Profile images">
+      <article className="profile-media-card">
+        <div className="profile-media-preview cover" aria-label="Cover image preview">
+          {coverPreview ? <img src={coverPreview} alt={`${displayName} cover`} /> : <AppIcon name="image" size="xl" />}
+        </div>
+        <div className="profile-media-card-body">
+          <div className="profile-media-card-head">
+            <div className="profile-media-card-copy">
+              <strong>Cover image</strong>
+              <small>Wide PNG, JPG, or WEBP; 640 × 200 minimum; 8 MB maximum.</small>
+            </div>
+            {renderToolbar("cover")}
+          </div>
+          {renderProgress("cover")}
+        </div>
+      </article>
+
+      <article className="profile-media-card profile-media-card--avatar">
+        <div className="profile-media-card-layout">
+          <div className="profile-media-preview avatar" aria-label="Profile photo preview">
+            {avatarPreview ? <img src={avatarPreview} alt={`${displayName} profile photo`} /> : <AppIcon name="user" size="xl" />}
+          </div>
+          <div className="profile-media-card-body">
+            <div className="profile-media-card-copy">
+              <strong>Profile photo</strong>
+              <small>Square PNG, JPG, or WEBP; 128 px minimum; 5 MB maximum.</small>
+            </div>
+            {renderToolbar("avatar")}
+            {renderProgress("avatar")}
+          </div>
+        </div>
+      </article>
+    </section>
+  );
 }

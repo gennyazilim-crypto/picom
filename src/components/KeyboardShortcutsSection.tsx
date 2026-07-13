@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { shortcutService, type ShortcutAction, type ShortcutBinding } from "../services/shortcutService";
+import "./KeyboardShortcutsSection.css";
 
 export function KeyboardShortcutsSection() {
   const [bindings, setBindings] = useState<ShortcutBinding[]>(() => shortcutService.getBindings());
@@ -31,22 +32,49 @@ export function KeyboardShortcutsSection() {
   };
 
   return (
-    <section className="shortcut-settings" aria-labelledby="shortcut-settings-title">
-      <header>
-        <div><h3 id="shortcut-settings-title">Keyboard Shortcuts</h3><p>Customize Picom shortcuts locally. Operating-system and desktop-runtime shortcuts are protected.</p></div>
-        <button type="button" onClick={() => { setBindings(shortcutService.resetDefaults()); setRecording(null); setMessage("Default shortcuts restored."); }}>Reset defaults</button>
-      </header>
-      <div className="shortcut-list">
-        {bindings.map((binding) => (
-          <article key={binding.action}>
-            <span><strong>{binding.actionLabel}</strong><small>{binding.description}</small></span>
-            <button type="button" className={recording === binding.action ? "recording" : ""} disabled={!binding.configurable} aria-label={binding.configurable ? `Change ${binding.actionLabel} shortcut. Current binding ${binding.label}.` : `${binding.actionLabel} shortcut is fixed to ${binding.label}.`} onClick={() => { setRecording(binding.action); setMessage(`Press a new combination for ${binding.actionLabel}. Escape cancels.`); }} onKeyDown={(event) => capture(event, binding.action)}>
-              {recording === binding.action ? "Press keys..." : binding.label}
-            </button>
-          </article>
-        ))}
-      </div>
-      <p className="shortcut-settings-message" role="status">{message}</p>
-    </section>
+    <div className="keyboard-shortcuts-stack">
+      <section className="keyboard-shortcuts-section" aria-labelledby="shortcut-settings-title">
+        <div className="keyboard-shortcuts-toolbar">
+          <p id="shortcut-settings-title" className="settings-section-description">Customize Picom shortcuts locally. Operating-system and desktop-runtime shortcuts are protected.</p>
+          <button
+            type="button"
+            className="settings-inline-action settings-inline-action--ghost"
+            onClick={() => {
+              setBindings(shortcutService.resetDefaults());
+              setRecording(null);
+              setMessage("Default shortcuts restored.");
+            }}
+          >
+            Reset defaults
+          </button>
+        </div>
+
+        <div className="keyboard-shortcuts-list">
+          {bindings.map((binding) => (
+            <article key={binding.action} className="keyboard-shortcut-row">
+              <div className="keyboard-shortcut-copy">
+                <strong>{binding.actionLabel}</strong>
+                <small>{binding.description}</small>
+              </div>
+              <button
+                type="button"
+                className={`keyboard-shortcut-key${recording === binding.action ? " is-recording" : ""}${!binding.configurable ? " is-fixed" : ""}`}
+                disabled={!binding.configurable}
+                aria-label={binding.configurable ? `Change ${binding.actionLabel} shortcut. Current binding ${binding.label}.` : `${binding.actionLabel} shortcut is fixed to ${binding.label}.`}
+                onClick={() => {
+                  setRecording(binding.action);
+                  setMessage(`Press a new combination for ${binding.actionLabel}. Escape cancels.`);
+                }}
+                onKeyDown={(event) => capture(event, binding.action)}
+              >
+                {recording === binding.action ? "Press keys..." : binding.label}
+              </button>
+            </article>
+          ))}
+        </div>
+
+        <p className="keyboard-shortcuts-message" role="status">{message}</p>
+      </section>
+    </div>
   );
 }

@@ -8,7 +8,7 @@ export type MentionFeedListProps = {
   communities: Community[];
   onOpenImage: (attachment: Attachment) => void;
   onOpenInChannel: (item: MentionItem) => void;
-  onToggleReaction: (id: string) => void;
+  onToggleReaction: (id: string, emoji: string) => void;
   onToggleSaved: (id: string) => void;
   onMarkRead: (id: string) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
@@ -66,6 +66,10 @@ export function MentionFeedCardEntry({ item, communities, onOpenImage, onOpenInC
   const author = getMember(communities, item.authorId);
   const mentionedMembers = item.mentionedUserIds.map((userId) => getMember(communities, userId)).filter(Boolean) as Member[];
   const commenters = getMembers(communities, item.commenterIds);
-  const commentPreviewMembers = Object.fromEntries((item.commentPreview ?? []).map((comment) => [comment.authorId, getMember(communities, comment.authorId)]));
-  return <MentionFeedCard item={item} author={author} community={community} channel={channel} mentionedMembers={mentionedMembers} commenters={commenters} commentPreviewMembers={commentPreviewMembers} onOpenImage={onOpenImage} onOpenInChannel={onOpenInChannel} onToggleReaction={onToggleReaction} onToggleSaved={onToggleSaved} onMarkRead={onMarkRead} onOpenProfile={onOpenProfile} onOpenMore={onOpenMore} />;
+  const commentPreviewMembers = Object.fromEntries(
+    [...new Set([...(item.commentPreview ?? []).map((comment) => comment.authorId), ...(item.commenterIds ?? [])])]
+      .map((userId) => [userId, getMember(communities, userId)]),
+  );
+  const resolveMember = (userId: string) => getMember(communities, userId);
+  return <MentionFeedCard item={item} author={author} community={community} channel={channel} mentionedMembers={mentionedMembers} commenters={commenters} commentPreviewMembers={commentPreviewMembers} resolveMember={resolveMember} onOpenImage={onOpenImage} onOpenInChannel={onOpenInChannel} onToggleReaction={onToggleReaction} onToggleSaved={onToggleSaved} onMarkRead={onMarkRead} onOpenProfile={onOpenProfile} onOpenMore={onOpenMore} />;
 }

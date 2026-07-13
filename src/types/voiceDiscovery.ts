@@ -1,3 +1,10 @@
+export type VoiceChannelParticipant = Readonly<{
+  identity: string;
+  name: string;
+  isSpeaking?: boolean;
+  isMicrophoneEnabled?: boolean;
+}>;
+
 export type ActiveVoiceRoomSummary = Readonly<{
   communityId: string;
   communityName: string;
@@ -14,4 +21,5 @@ export type ActiveVoiceRoomSummary = Readonly<{
 export type VoiceRoomOccupancy = Readonly<{
   participantCount: number;
   participantNames?: string[];
+  participants?: VoiceChannelParticipant[];
 }>;

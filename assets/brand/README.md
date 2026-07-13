@@ -4,7 +4,10 @@ These are the approved Picom desktop application icon assets for Electron packag
 
 ## Files
 
-- `picom-logo-concept.png`: source logo concept provided by the project owner.
+- `picom-logo-waveform-v3.png`: latest transparent red P + microphone + waveform logo (owner-provided, July 2026).
+- `picom-logo-waveform-v2.png`: current UI wordmark (transparent red P + microphone + waveform) used across login, title bar, and global sidebar.
+- `picom-logo-v2.png`: previous black-background logo variant retained for reference.
+- `picom-logo-concept.png`: previous logo concept retained for reference.
 - `app-icon.png`: 1024px package/tray icon generated from the owner-provided `desktop_icon_v2.png`.
 - `app-icon.ico`: multi-size Windows package/installer icon generated from the same approved source.
 - `icons/`: generated 16, 32, 64, 128, 256, 512, and 1024px PNG sizes for Linux packaging.

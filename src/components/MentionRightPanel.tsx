@@ -14,6 +14,7 @@ type MentionRightPanelProps = {
   suggestedUserIds: string[];
   blockedUserIds: string[];
   activeFilter: MentionQuickFilter | null;
+  selectedProfileUserId?: string | null;
   onFilterChange: (filter: MentionQuickFilter) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
 };
@@ -26,10 +27,23 @@ function getMembers(communities: Community[], userIds: string[]) {
   return userIds.map((userId) => getMember(communities, userId)).filter(Boolean) as Member[];
 }
 
-function PanelMemberButton({ member, onOpenProfile }: { member: Member; onOpenProfile: (event: MouseEvent, member: Member) => void }) {
+function PanelMemberButton({
+  member,
+  isSelected,
+  onOpenProfile,
+}: {
+  member: Member;
+  isSelected: boolean;
+  onOpenProfile: (event: MouseEvent, member: Member) => void;
+}) {
   const verification = getUserVerificationSummary(member.userId, [], member.verification);
   return (
-    <button className="mention-panel-member" type="button" onClick={(event) => onOpenProfile(event, member)}>
+    <button
+      className={`mention-panel-member${isSelected ? " is-selected" : ""}`}
+      type="button"
+      aria-pressed={isSelected}
+      onClick={(event) => onOpenProfile(event, member)}
+    >
       <VerifiedAvatarFrame
         user={member}
         size="compact"
@@ -51,6 +65,7 @@ export function MentionRightPanel({
   suggestedUserIds,
   blockedUserIds,
   activeFilter,
+  selectedProfileUserId = null,
   onFilterChange,
   onOpenProfile,
 }: MentionRightPanelProps) {
@@ -88,21 +103,42 @@ export function MentionRightPanel({
       <section className="mention-panel-card">
         <p className="eyebrow">Popular People</p>
         <div className="mention-panel-list">
-          {popularPeople.map((member) => <PanelMemberButton key={`popular-${member.userId}`} member={member} onOpenProfile={onOpenProfile} />)}
+          {popularPeople.map((member) => (
+            <PanelMemberButton
+              key={`popular-${member.userId}`}
+              member={member}
+              isSelected={selectedProfileUserId === member.userId}
+              onOpenProfile={onOpenProfile}
+            />
+          ))}
         </div>
       </section>
 
       {suggestedPeople.length ? <section className="mention-panel-card">
         <p className="eyebrow">Suggested follows</p>
         <div className="mention-panel-list">
-          {suggestedPeople.map((member) => <PanelMemberButton key={`suggested-${member.userId}`} member={member} onOpenProfile={onOpenProfile} />)}
+          {suggestedPeople.map((member) => (
+            <PanelMemberButton
+              key={`suggested-${member.userId}`}
+              member={member}
+              isSelected={selectedProfileUserId === member.userId}
+              onOpenProfile={onOpenProfile}
+            />
+          ))}
         </div>
       </section> : null}
 
       <section className="mention-panel-card">
         <p className="eyebrow">Following</p>
         <div className="mention-panel-list">
-          {followedPeople.map((member) => <PanelMemberButton key={`following-${member.userId}`} member={member} onOpenProfile={onOpenProfile} />)}
+          {followedPeople.map((member) => (
+            <PanelMemberButton
+              key={`following-${member.userId}`}
+              member={member}
+              isSelected={selectedProfileUserId === member.userId}
+              onOpenProfile={onOpenProfile}
+            />
+          ))}
         </div>
       </section>
 

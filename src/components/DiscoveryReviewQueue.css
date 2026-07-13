@@ -1,0 +1,257 @@
+.settings-modal .discovery-review-queue {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.settings-modal .discovery-review-header {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 32%, var(--surface));
+}
+
+.settings-modal .discovery-review-header-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-modal .discovery-review-header-copy strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.settings-modal .discovery-review-header-copy p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .discovery-review-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-modal .discovery-review-filter,
+.settings-modal .discovery-review-select {
+  height: 36px;
+  min-width: 132px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  outline: 0;
+}
+
+.settings-modal .discovery-review-filter:focus,
+.settings-modal .discovery-review-select:focus,
+.settings-modal .discovery-review-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.settings-modal .discovery-review-notice {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-soft) 48%, var(--surface));
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-modal .discovery-review-list {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.settings-modal .discovery-review-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .discovery-review-card-head {
+  display: grid;
+  gap: 8px;
+}
+
+.settings-modal .discovery-review-card-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-modal .discovery-review-card-title strong {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.settings-modal .discovery-review-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-modal .discovery-review-badge--pending {
+  border: 1px solid color-mix(in srgb, var(--warning) 34%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  color: var(--warning);
+}
+
+.settings-modal .discovery-review-badge--approved {
+  border: 1px solid color-mix(in srgb, var(--success) 34%, var(--border));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+  color: var(--success);
+}
+
+.settings-modal .discovery-review-badge--rejected,
+.settings-modal .discovery-review-badge--suspended {
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--danger);
+}
+
+.settings-modal .discovery-review-badge--hidden {
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+
+.settings-modal .discovery-review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-modal .discovery-review-meta span {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 70%, var(--surface));
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.settings-modal .discovery-review-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-modal .discovery-review-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-modal .discovery-review-flag {
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.settings-modal .discovery-review-flag--muted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.settings-modal .discovery-review-actions {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1.3fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+}
+
+.settings-modal .discovery-review-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settings-modal .discovery-review-field--grow {
+  min-width: 0;
+}
+
+.settings-modal .discovery-review-field span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-modal .discovery-review-input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+}
+
+.settings-modal .discovery-review-empty {
+  display: grid;
+  gap: 6px;
+  padding: 28px 20px;
+  border: 1px dashed color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-soft) 55%, var(--surface));
+  text-align: center;
+}
+
+.settings-modal .discovery-review-empty strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .discovery-review-empty p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 960px) {
+  .settings-modal .discovery-review-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

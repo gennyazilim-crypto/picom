@@ -27,8 +27,10 @@ export type RemoteNotificationInboxItem = Readonly<{
 
 type InboxResult<T> = { ok: true; data: T } | { ok: false; error: "NOTIFICATION_INBOX_UNAVAILABLE" | "NOTIFICATION_INBOX_FAILED" };
 const selectColumns = "id,category,title,preview,context_kind,context_label,community_id,channel_id,message_id,podcast_episode_id,meeting_room_id,meeting_session_id,meeting_starts_at,deep_link,user_id,created_at,read_at";
+const baseSelectColumns = "id,category,title,preview,context_kind,context_label,community_id,channel_id,message_id,user_id,created_at,read_at";
+type NotificationProjection = Pick<NotificationRow, "id" | "category" | "title" | "preview" | "context_kind" | "context_label" | "community_id" | "channel_id" | "message_id" | "user_id" | "created_at" | "read_at"> & Partial<Pick<NotificationRow, "podcast_episode_id" | "meeting_room_id" | "meeting_session_id" | "meeting_starts_at" | "deep_link">>;
 
-function mapRow(row: Pick<NotificationRow, "id" | "category" | "title" | "preview" | "context_kind" | "context_label" | "community_id" | "channel_id" | "message_id" | "podcast_episode_id" | "meeting_room_id" | "meeting_session_id" | "meeting_starts_at" | "deep_link" | "user_id" | "created_at" | "read_at">): RemoteNotificationInboxItem {
+function mapRow(row: NotificationProjection): RemoteNotificationInboxItem {
   return {
     id: row.id,
     category: row.category,
@@ -61,6 +63,12 @@ export const notificationInboxService = {
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: "NOTIFICATION_INBOX_UNAVAILABLE" };
     const { data, error } = await client.from("notifications").select(selectColumns).is("deleted_at", null).order("created_at", { ascending: false }).limit(Math.min(250, Math.max(1, limit)));
+    if (error?.code === "42703") {
+      loggingService.logWarn("Notification inbox is using the base schema until hosted migrations are applied", { operation: "list", code: error.code }, "notification-inbox");
+      const fallback = await client.from("notifications").select(baseSelectColumns).is("deleted_at", null).order("created_at", { ascending: false }).limit(Math.min(250, Math.max(1, limit)));
+      if (fallback.error) { logFailure("list-base-schema", fallback.error.code); return { ok: false, error: "NOTIFICATION_INBOX_FAILED" }; }
+      return { ok: true, data: (fallback.data ?? []).map((row) => mapRow(row)) };
+    }
     if (error) { logFailure("list", error.code); return { ok: false, error: "NOTIFICATION_INBOX_FAILED" }; }
     return { ok: true, data: (data ?? []).map((row) => mapRow(row)) };
   },
@@ -94,7 +102,8 @@ export const notificationInboxService = {
     if (!client) return () => undefined;
     const { data: { user } } = await client.auth.getUser();
     if (!user) return () => undefined;
-    const channel = client.channel(`notification-inbox:${user.id}`).on(
+    const subscriptionId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const channel = client.channel(`notification-inbox:${user.id}:${subscriptionId}`).on(
       "postgres_changes",
       { event: "*", schema: "public", table: "notifications", filter: `recipient_id=eq.${user.id}` },
       (payload) => {

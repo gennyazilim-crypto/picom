@@ -4,6 +4,22 @@ import type { Database } from "./database.types";
 
 let client: SupabaseClient<Database> | null = null;
 
+const AUTH_REMEMBER_FLAG_KEY = "picom.auth.rememberMe";
+
+/**
+ * Records the user's "remember me" preference. Supabase persists the session in
+ * localStorage by default, so the user stays signed in across restarts until an
+ * explicit sign-out. When "remember me" is off we clear the persisted session on
+ * the next sign-out request. The raw password is never stored.
+ */
+export function setAuthRememberMe(remember: boolean): void {
+  try {
+    localStorage.setItem(AUTH_REMEMBER_FLAG_KEY, remember ? "true" : "false");
+  } catch {
+    // Storage unavailable (private mode) — falls back to the default persistent session.
+  }
+}
+
 export type SupabaseClientStatus = {
   enabled: boolean;
   configured: boolean;

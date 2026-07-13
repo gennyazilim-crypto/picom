@@ -3,7 +3,7 @@ export const brandConfig = Object.freeze({
   tagline: "Desktop community chat, shaped for focused groups.",
   logoAlt: "Picom logo",
   assets: Object.freeze({
-    sourceLogo: "/assets/brand/picom-logo-concept.png",
+    sourceLogo: "/assets/brand/picom-logo-waveform-v2.png",
     appIconPng: "/assets/brand/app-icon.png",
     appIconSvg: "/assets/brand/app-icon.svg",
     appIconIco: "/assets/brand/app-icon.ico"

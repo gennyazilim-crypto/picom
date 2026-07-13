@@ -1,0 +1,18 @@
+TASK 006 - COMMUNITY, MEMBERSHIP, CHANNELS, CHAT
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Make create/join/leave, roles, rules, categories/channels, members, chat, reactions, typing, unread/read, and Realtime real.
+Creator and first real member are Owner. Rejoin cannot downgrade Owner. Public join is authenticated, atomic, idempotent.
+Create default roles/categories/text/voice channels transactionally. Never query with welcome/general/focus-room fallback IDs.
+Test create, owner, second-user join, channels, message/edit/delete/reply/reaction, members, leave, private denial, and restart.
+Acceptance: no category/message/member errors or join loop; real channels persist; chat is realtime.

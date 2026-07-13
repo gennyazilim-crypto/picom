@@ -15,10 +15,15 @@ if (appStart === -1) {
 }
 
 const appBody = appSource.slice(appStart);
-const authGuardIndex = appBody.indexOf("if (passwordRecoveryMode || !authReady || !authSession)");
-if (authGuardIndex === -1) {
-  throw new Error("Protected auth/session guard was not found in App.");
+const authReadyGuardIndex = appBody.indexOf("if (!authReady)");
+const protectedSessionGuardIndex = appBody.indexOf("if (passwordRecoveryMode || !authSession)");
+if (authReadyGuardIndex === -1 || protectedSessionGuardIndex === -1) {
+  throw new Error("Protected auth readiness/session guards were not found in App.");
 }
+if (protectedSessionGuardIndex <= authReadyGuardIndex) {
+  throw new Error("Protected session guard must run after auth readiness is resolved.");
+}
+const authGuardIndex = authReadyGuardIndex;
 
 const requiredHooksBeforeAuthGuard = [
   "useState",

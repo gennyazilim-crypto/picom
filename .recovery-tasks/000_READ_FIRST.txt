@@ -1,0 +1,20 @@
+PICOM LIVE SYSTEM RECOVERY - EXECUTION RULES
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Execute Tasks 001 through 012 in order.
+Before every task run git status --short and git diff --stat.
+Never use git reset --hard, git clean -fd, force push, destructive DB reset, or RLS disable.
+Use unique temporary test data and clean up only test-created records.
+Never print Supabase service-role, LiveKit secret, JWT secret, signing key, or private key.
+Mock tests are not live proof. Do not claim V1 GO without hosted Supabase, Realtime, Storage, and LiveKit evidence.
+Required: real auth, profiles, friendship, communities/chat, DM, Feed, Voice audio, Screen Share, clean refresh, and passing quality gates.

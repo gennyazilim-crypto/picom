@@ -9,6 +9,7 @@ import { localDataMigrationService } from "./services/localDataMigrationService"
 import { productionRuntimeConfigService } from "./services/productionRuntimeConfigService";
 import { ProductionConfigurationError } from "./components/ProductionConfigurationError";
 import "./styles.css";
+import "./components/SettingsModal.css";
 import "./screenShareQuality.css";
 
 function markRuntime(): void {

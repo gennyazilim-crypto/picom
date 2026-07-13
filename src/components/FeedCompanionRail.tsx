@@ -285,21 +285,26 @@ export function FeedCompanionRail({
   audioItem,
   onCloseAudio,
 }: FeedCompanionRailProps) {
+  const voiceConnected = isV1FeatureEnabled("voiceRooms") && (voiceState.status === "connected" || voiceState.status === "reconnecting");
+  const showStickyStack = Boolean(audioItem) || voiceConnected;
+
   return (
     <aside className="feed-companion-rail" aria-label="Feed companion rail">
-      <div className="feed-rail-sticky-stack">
-        <AudioMiniPlayer item={audioItem ?? undefined} onClose={onCloseAudio} />
-        <VoiceMiniControlCard
-          voiceState={voiceState}
-          onToggleMute={onToggleMute}
-          onToggleDeafen={onToggleDeafen}
-          onLeaveVoice={onLeaveVoice}
-          onOpenScreenShare={onOpenScreenShare}
-        />
-      </div>
-      {isV1FeatureEnabled("voiceRooms") ? <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} /> : null}
       <FriendsStatusSection friends={friends} communities={communities} onOpenProfile={onOpenProfile} />
       <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} onToggleEventReminder={onToggleEventReminder} />
+      {isV1FeatureEnabled("voiceRooms") ? <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} /> : null}
+      {showStickyStack ? (
+        <div className="feed-rail-sticky-stack">
+          <AudioMiniPlayer item={audioItem ?? undefined} onClose={onCloseAudio} />
+          <VoiceMiniControlCard
+            voiceState={voiceState}
+            onToggleMute={onToggleMute}
+            onToggleDeafen={onToggleDeafen}
+            onLeaveVoice={onLeaveVoice}
+            onOpenScreenShare={onOpenScreenShare}
+          />
+        </div>
+      ) : null}
     </aside>
   );
 }

@@ -142,7 +142,13 @@ function VoiceParticipantStageTile({
   return (
     <article className={tileState} aria-label={`${displayName} in voice room`}>
       <div className="voice-room-tile__signal" aria-hidden="true">
-        {participant.isSpeaking ? <AppIcon name="voice" size="xs" /> : !participant.isMicrophoneEnabled ? <AppIcon name="microphone" size="xs" /> : null}
+        {participant.isSpeaking ? (
+          <AppIcon name="voice" size="xs" />
+        ) : !participant.isMicrophoneEnabled ? (
+          <AppIcon name="microphone" size="xs" />
+        ) : (
+          <AppIcon name="headphones" size="xs" />
+        )}
       </div>
       <div className="voice-room-tile__avatar">
         <MemberAvatar member={member} label={displayName} size={96} />
@@ -226,8 +232,48 @@ function VoiceRoomLobbyScreen({
   );
 }
 
+function VoiceRoomWelcomeTile({
+  community,
+  currentUserId,
+  connected,
+  joining,
+  onJoin,
+}: {
+  community: Community;
+  currentUserId: string;
+  connected: boolean;
+  joining: boolean;
+  onJoin?: () => void;
+}) {
+  const member = community.members.find((entry) => entry.userId === currentUserId);
+  const displayName = member?.displayName ?? "You";
+
+  return (
+    <article className="voice-room-tile voice-room-tile--welcome" aria-label="Your voice seat">
+      <div className="voice-room-tile__signal" aria-hidden="true">
+        <AppIcon name="headphones" size="xs" />
+      </div>
+      <div className="voice-room-tile__avatar">
+        <MemberAvatar member={member} label={displayName} size={96} />
+      </div>
+      <div className="voice-room-tile__shade" aria-hidden="true" />
+      <div className="voice-room-tile__identity">
+        <strong>{connected ? "You are alone in the room" : displayName}</strong>
+        <small>{connected ? "Invite friends or wait for others to join." : "Voice room is open"}</small>
+        {!connected ? (
+          <button type="button" className="voice-room-tile__join" onClick={onJoin} disabled={joining}>
+            <AppIcon name="voice" size="sm" />
+            {joining ? "Joining..." : "Join room"}
+          </button>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
 function VoiceParticipantStageGrid({
   community,
+  currentUserId,
   participants,
   connected,
   joining,
@@ -235,6 +281,7 @@ function VoiceParticipantStageGrid({
   onInvite,
 }: {
   community: Community;
+  currentUserId: string;
   participants: VoiceParticipant[];
   connected: boolean;
   joining: boolean;
@@ -259,18 +306,13 @@ function VoiceParticipantStageGrid({
   if (!participants.length) {
     return (
       <section className={`voice-room-stage-grid ${densityClass}`} aria-label="Voice room participants">
-        <article className="voice-room-tile voice-room-tile--welcome">
-          <div className="voice-room-tile__welcome-copy">
-            <strong>{connected ? "You are alone in the room" : "Voice room is open"}</strong>
-            <span>{connected ? "Invite friends or wait for others to join." : "Join the room to take a seat and start talking."}</span>
-            {!connected ? (
-              <button type="button" className="voice-room-tile__join" onClick={onJoin} disabled={joining}>
-                <AppIcon name="voice" size="sm" />
-                {joining ? "Joining..." : "Join room"}
-              </button>
-            ) : null}
-          </div>
-        </article>
+        <VoiceRoomWelcomeTile
+          community={community}
+          currentUserId={currentUserId}
+          connected={connected}
+          joining={joining}
+          onJoin={onJoin}
+        />
         <VoiceRoomInviteTile onInvite={onInvite} />
       </section>
     );
@@ -343,6 +385,7 @@ function VoiceRoomControlDock({
   onToggleDeafen,
   onStopScreenShare,
   onOpenSettings,
+  settingsOpen = false,
 }: {
   connected: boolean;
   joining: boolean;
@@ -358,6 +401,7 @@ function VoiceRoomControlDock({
   onToggleDeafen?: () => void;
   onStopScreenShare?: () => void;
   onOpenSettings: () => void;
+  settingsOpen?: boolean;
 }) {
   return (
     <footer className="voice-room-control-dock" aria-label="Voice room controls">
@@ -402,7 +446,13 @@ function VoiceRoomControlDock({
           <AppIcon name="maximize" size="md" />
           <span>{screenSharing ? "Stop share" : "Share"}</span>
         </button>
-        <button type="button" aria-label="Open audio and share settings" onClick={onOpenSettings}>
+        <button
+          type="button"
+          className={settingsOpen ? "is-active" : ""}
+          aria-label="Open audio and share settings"
+          aria-pressed={settingsOpen}
+          onClick={onOpenSettings}
+        >
           <AppIcon name="settings" size="md" />
           <span>Settings</span>
         </button>
@@ -481,7 +531,7 @@ export function VoiceRoomView({
         )}
       </header>
 
-      <div className={`voice-room-body${connected && settingsOpen ? " has-settings-rail" : ""}`}>
+      <div className={`voice-room-body${settingsOpen ? " has-settings-rail" : ""}`}>
         <main className={`voice-room-stage${hasScreenShare && connected ? " has-screen-share" : ""}`}>
           {hasScreenShare && connected ? (
             <div className="voice-room-stage__share">
@@ -490,6 +540,7 @@ export function VoiceRoomView({
           ) : null}
           <VoiceParticipantStageGrid
             community={community}
+            currentUserId={currentUserId}
             participants={participants}
             connected={connected}
             joining={joining}
@@ -498,7 +549,7 @@ export function VoiceRoomView({
           />
         </main>
 
-        {connected && settingsOpen ? (
+        {settingsOpen ? (
         <aside className="voice-room-settings-rail" aria-label="Voice room audio and share settings">
           <header className="voice-room-settings-rail__head">
             <strong>Audio &amp; share</strong>
@@ -580,6 +631,7 @@ export function VoiceRoomView({
         onToggleDeafen={onToggleDeafen}
         onStopScreenShare={onStopScreenShare}
         onOpenSettings={openSettings}
+        settingsOpen={settingsOpen}
       />
     </section>
   );

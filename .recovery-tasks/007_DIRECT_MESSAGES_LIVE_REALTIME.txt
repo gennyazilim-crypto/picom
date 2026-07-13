@@ -1,0 +1,19 @@
+TASK 007 - DIRECT MESSAGES LIVE AND REALTIME
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Connect list, create/open, send/edit/delete, replies, reactions, attachments, reads, media, mute/block/report, and Realtime.
+Conversation create is atomic/duplicate-safe. Use client_message_id dedupe. Register callbacks before subscribe and clean up on switch.
+Participant-only RLS protects all DM data. Blocked users cannot send.
+Replace stale RPC calls; never convert errors to fake empty conversations.
+Test A/B realtime plus third-user denial, reconnect, uploads, edit/delete/reply/reaction/read, and restart.
+Acceptance: DM is real, private, persistent, realtime, and duplicate-free.

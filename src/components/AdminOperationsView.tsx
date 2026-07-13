@@ -15,9 +15,8 @@ export function AdminOperationsView({ access }: AdminOperationsViewProps) {
   }
 
   return (
-    <div className="admin-operations-view" data-access-source={access.source}>
+    <div className="admin-operations-settings-stack" data-access-source={access.source}>
       <AdminOperationsPanel access={access} />
     </div>
   );
 }
-

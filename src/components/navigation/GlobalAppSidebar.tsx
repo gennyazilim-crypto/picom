@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import type { Member } from "../../types/community";
 import type { GlobalNavigationAvailability, GlobalNavigationBadgeState, GlobalNavigationKey, GlobalUtilityKey } from "../../types/globalNavigation";
 import { primaryGlobalNavigationItems, utilityGlobalNavigationItems } from "../../services/navigation/globalNavigationRegistry";
+import { brandLogoUrl } from "../../config/brandAssets";
+import { brandConfig } from "../../config/brandConfig";
+import { AppIcon } from "../AppIcon";
 import { GlobalNavItem } from "./GlobalNavItem";
 import { GlobalUserCard } from "./GlobalUserCard";
 import "./globalNavigation.css";
@@ -21,6 +24,7 @@ type GlobalAppSidebarProps = Readonly<{
 }>;
 
 const compactSidebarQuery = "(max-width: 1320px)";
+const sidebarCollapsedStorageKey = "picom.global-sidebar.collapsed";
 
 function useResponsiveCompactMode(): boolean {
   const [matches, setMatches] = useState(() => typeof window !== "undefined" && window.matchMedia(compactSidebarQuery).matches);
@@ -36,10 +40,33 @@ function useResponsiveCompactMode(): boolean {
   return matches;
 }
 
+function useSidebarCollapsedPreference(): readonly [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(sidebarCollapsedStorageKey) === "1";
+  });
+
+  const toggle = useCallback(() => {
+    setCollapsed((previous) => {
+      const next = !previous;
+      try {
+        window.localStorage.setItem(sidebarCollapsedStorageKey, next ? "1" : "0");
+      } catch {
+        /* Best effort only. */
+      }
+      return next;
+    });
+  }, []);
+
+  return [collapsed, toggle];
+}
+
 export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, availability, currentUser, compact = false, onNavigate, onOpenSettings, onOpenHelpSupport, onOpenProfile, onOpenUserMenu }: GlobalAppSidebarProps) {
   const rootRef = useRef<HTMLElement>(null);
   const responsiveCompact = useResponsiveCompactMode();
-  const isCompact = compact || responsiveCompact;
+  const [userCollapsed, toggleCollapsed] = useSidebarCollapsedPreference();
+  const isCompact = compact || responsiveCompact || userCollapsed;
+  const canToggle = !compact && !responsiveCompact;
 
   const moveNavigationFocus = (event: KeyboardEvent<HTMLElement>) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
@@ -54,10 +81,34 @@ export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, av
   };
 
   return (
-    <aside ref={rootRef} className={`global-app-sidebar${isCompact ? " is-compact" : ""}`} data-navigation-mode={isCompact ? "compact" : "wide"} aria-label="Picom global navigation" onKeyDown={moveNavigationFocus}>
-      <button type="button" className="global-sidebar-brand" data-global-navigation-button="true" aria-label="Open Feed" title={isCompact ? "Feed" : undefined} onClick={() => onNavigate("feed")}>
-        <span aria-hidden="true">P</span><strong>Picom</strong>
-      </button>
+    <aside
+      ref={rootRef}
+      className={`global-app-sidebar${isCompact ? " is-compact" : ""}`}
+      data-navigation-mode={isCompact ? "compact" : "wide"}
+      aria-label="Picom global navigation"
+      aria-expanded={!isCompact}
+      onKeyDown={moveNavigationFocus}
+    >
+      <div className="global-sidebar-head">
+        <button type="button" className="global-sidebar-brand" data-global-navigation-button="true" aria-label="Open Feed" title={isCompact ? "Feed" : undefined} onClick={() => onNavigate("feed")}>
+          <span className="global-sidebar-brand__mark" aria-hidden="true">
+            <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
+          </span>
+          <strong>{brandConfig.name}</strong>
+        </button>
+        {canToggle ? (
+          <button
+            type="button"
+            className="global-sidebar-toggle"
+            aria-label={isCompact ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!isCompact}
+            title={isCompact ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={toggleCollapsed}
+          >
+            <AppIcon name="chevronRight" size="sm" className={`global-sidebar-toggle__icon${isCompact ? "" : " is-expanded"}`} aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
 
       <nav className="global-sidebar-primary" aria-label="Main navigation">
         {primaryGlobalNavigationItems.map((item) => {
@@ -68,7 +119,9 @@ export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, av
 
       <div className="global-sidebar-bottom">
         <nav className="global-sidebar-utilities" aria-label="Application utilities">
-          {utilityGlobalNavigationItems.map((item) => <GlobalNavItem key={item.key} item={item} active={activeUtility === item.key} compact={isCompact} disabled={false} badge={null} onClick={item.key === "settings" ? onOpenSettings : onOpenHelpSupport} />)}
+          {utilityGlobalNavigationItems.map((item) => (
+            <GlobalNavItem key={item.key} item={item} active={activeUtility === item.key} compact={isCompact} disabled={false} badge={null} onClick={item.key === "settings" ? onOpenSettings : onOpenHelpSupport} />
+          ))}
         </nav>
 
         <GlobalUserCard currentUser={currentUser} compact={isCompact} onOpenProfile={onOpenProfile} onOpenUserMenu={onOpenUserMenu} />

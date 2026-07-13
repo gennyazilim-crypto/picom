@@ -1,0 +1,19 @@
+TASK 003 - AUTH, LOGIN, REGISTER, SESSION, RECOVERY
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Make register, confirmation behavior, login, logout, restore, refresh, password recovery, revoked sessions, and protected routing work with Supabase Auth.
+Profile creation after signup must be atomic and idempotent.
+Do not derive admin from email in UI; use protected claims/tables.
+Separate auth-loading from signed-out rendering so refresh never flashes login.
+Test new account, wrong password, logout/login, Electron restart, reset, and two windows.
+Acceptance: users register/login, profiles exist, sessions persist, and Supabase mode never uses mock auth.

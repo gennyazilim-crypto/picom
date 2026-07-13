@@ -8,7 +8,7 @@ function getIcon(name: string): string {
   return name.trim().slice(0, 1).toUpperCase() || "P";
 }
 
-export function createCommunityFromSummary(summary: CommunitySummary): Community {
+export function createCommunityFromSummary(summary: CommunitySummary, options: { includeTemplateChannels?: boolean } = {}): Community {
   const template = getCommunityTemplate(summary.templateId);
   const radioRoles: Role[] = [
     { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"] },
@@ -23,7 +23,7 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
   ];
   const roles = summary.kind === "radio" ? radioRoles : summary.kind === "podcast" ? podcastRoles : mockRoles;
   const ownerRole = roles.find((role) => role.name === "Owner") ?? roles[0];
-  const categories: ChannelCategory[] = (supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
+  const categories: ChannelCategory[] = (options.includeTemplateChannels !== false && supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
     const categoryId = `${summary.id}-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "category"}`;
 
     return {
@@ -53,11 +53,15 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
     description: summary.description,
     visibility: summary.visibility,
     publicReadEnabled: summary.publicReadEnabled,
+    defaultNotificationLevel: summary.defaultNotificationLevel,
+    typeSettings: summary.typeSettings,
+    rulesEnabled: summary.rulesEnabled,
+    rulesVersion: summary.rulesVersion,
     roles,
     members: [
       {
         id: `${summary.id}-owner-member`,
-        userId: currentUserId,
+        userId: summary.ownerId ?? currentUserId,
         displayName: "Picom User",
         username: "picom.user",
         avatarSeed: `${summary.id}-owner`,

@@ -1,0 +1,20 @@
+TASK 010 - LIVEKIT VOICE ROOM AND SCREEN SHARE
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Voice Rooms and Screen Share are mandatory IN_V1; infrastructure blockers may keep release No-Go but cannot hide them.
+Complete the existing canonical LiveKit Cloud or self-hosted design; do not create a second provider.
+Deploy authenticated token Edge Function; secrets stay server-side; validate user, accepted membership, channel, room, and grants.
+Implement join/leave, microphone, remote audio, mute/deafen, devices, speaking, participants, reconnect, desktopCapturer, share publish/render/stop, and cleanup.
+Return precise operational errors.
+Test two clients for audio/share/reconnect and non-member/invalid-room denial.
+Acceptance: real token, audio, remote Screen Share, and no secret leak.

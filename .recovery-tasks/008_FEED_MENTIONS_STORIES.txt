@@ -1,0 +1,19 @@
+TASK 008 - FEED, MENTIONS, STORIES, COMMENTS
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Build Feed/Following from accessible Supabase messages, mentions, follows, stories, comments, reactions, save/read, and media.
+Production cannot use mockMentions/mockStories. Exclude blocked, muted, inaccessible, and private content.
+Use deterministic cursor pagination, canonical profile data, and bounded Realtime invalidation.
+Open in Channel uses real IDs.
+Test mention delivery, Following, comment/reaction/save/read, Realtime, Open in Channel, and private denial.
+Acceptance: Feed is real/realtime and query errors are not disguised as empty data.

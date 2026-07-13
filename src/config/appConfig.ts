@@ -46,7 +46,9 @@ export const appConfig = Object.freeze({
     emailVerificationRedirectUrl: import.meta.env.VITE_SUPABASE_EMAIL_VERIFICATION_REDIRECT_URL ?? "picom://auth/verify-email",
     requireEmailVerification: getBooleanFlag(import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION),
     googleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_GOOGLE_OAUTH_ENABLED),
-    appleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_APPLE_OAUTH_ENABLED)
+    appleOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_APPLE_OAUTH_ENABLED),
+    steamOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_STEAM_OAUTH_ENABLED),
+    epicOAuthEnabled: getBooleanFlag(import.meta.env.VITE_SUPABASE_EPIC_OAUTH_ENABLED)
   }),
   liveKit: Object.freeze({
     enabled: getBooleanFlag(import.meta.env.VITE_LIVEKIT_ENABLED),

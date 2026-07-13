@@ -13,8 +13,11 @@ interface ImportMetaEnv {
   readonly VITE_REQUIRE_EMAIL_VERIFICATION?: string;
   readonly VITE_SUPABASE_GOOGLE_OAUTH_ENABLED?: string;
   readonly VITE_SUPABASE_APPLE_OAUTH_ENABLED?: string;
+  readonly VITE_SUPABASE_STEAM_OAUTH_ENABLED?: string;
+  readonly VITE_SUPABASE_EPIC_OAUTH_ENABLED?: string;
   readonly VITE_LIVEKIT_URL?: string;
   readonly VITE_LIVEKIT_ENABLED?: string;
+  readonly VITE_RELEASE_CHANNEL?: "dev" | "beta" | "stable" | string;
   readonly VITE_DEV_SERVER_URL?: string;
 }
 

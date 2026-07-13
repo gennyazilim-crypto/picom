@@ -58,5 +58,23 @@ export function AdminOperationsPanel({ access }: { access: AdminOperationsAccess
                   ? <div className="admin-ops-detail"><strong>{snapshot.realtimeStatus}</strong><p>Browser online: {String(snapshot.network.browserOnline)} - Backend reachable: {String(snapshot.network.backendReachable)}</p></div>
                   : <div className="admin-ops-log-list">{snapshot.recentErrors.length ? snapshot.recentErrors.map((entry) => <article key={entry.id}><div><strong>{entry.message}</strong><span>{entry.source ?? "client"}</span></div><time>{dateTimeService.formatFullTimestamp(entry.timestamp)}</time></article>) : <div className="admin-ops-detail"><strong>No recent redacted errors</strong><p>Only loggingService output can appear here.</p></div>}</div>;
 
-  return <section className="admin-operations-panel" aria-label="Restricted app admin operations"><header><div><p className="eyebrow">Restricted app operations</p><h3>Admin Operations</h3><span>App-level health only. This is separate from community administration.</span></div><em>{access.source === "development" ? "Development" : "App admin"}</em></header><div className="admin-ops-layout"><nav aria-label="Admin operation sections">{sections.map((section) => <button key={section.id} type="button" className={active === section.id ? "active" : ""} onClick={() => setActive(section.id)}><AppIcon name={section.icon} size="sm" />{section.label}</button>)}</nav><div className="admin-ops-content">{content}</div></div></section>;
+  return (
+    <section className="admin-operations-panel" aria-label="Restricted app admin operations">
+      <div className="admin-ops-intro">
+        <p className="settings-section-description">App-level health only. This is separate from community administration.</p>
+        <span className="admin-ops-access-badge">{access.source === "development" ? "Development" : "App admin"}</span>
+      </div>
+      <div className="admin-ops-layout">
+        <nav aria-label="Admin operation sections">
+          {sections.map((section) => (
+            <button key={section.id} type="button" className={active === section.id ? "active" : ""} onClick={() => setActive(section.id)}>
+              <AppIcon name={section.icon} size="sm" />
+              {section.label}
+            </button>
+          ))}
+        </nav>
+        <div className="admin-ops-content">{content}</div>
+      </div>
+    </section>
+  );
 }

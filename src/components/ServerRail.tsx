@@ -41,7 +41,7 @@ export function ServerRail({ communities, activeCommunityId, onSelectCommunity, 
         <button className="server-button utility" aria-label="Add community" onClick={() => onUtilityAction?.("create-community")}>
           <AppIcon name={railIcons.addCommunity} size="lg" />
         </button>
-        {isV1FeatureEnabled("discoveryMarketplace") ? <button className={`server-button utility `} aria-label="Discover communities" onClick={onOpenDiscovery}>
+        {isV1FeatureEnabled("discoveryMarketplace") ? <button className="server-button utility" aria-label="Discover communities" onClick={onOpenDiscovery}>
           <AppIcon name={railIcons.discover} size="lg" />
         </button> : null}
       </div>

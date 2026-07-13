@@ -1,9 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
+import { readFileSync } from "node:fs";
 
 const shouldRun = process.argv.includes("--run");
 const required = ["PICOM_EDGE_STAGING_URL", "PICOM_EDGE_STAGING_ANON_KEY", "PICOM_EDGE_STAGING_CONFIRM", "PICOM_EDGE_TEST_EMAIL", "PICOM_EDGE_TEST_PASSWORD", "PICOM_EDGE_ALLOWED_ORIGIN"];
+const releaseManifest = JSON.parse(readFileSync("supabase/functions/release-manifest.json", "utf8"));
+const releaseFunctions = new Set([...releaseManifest.releasePublic, ...releaseManifest.releaseAuthenticated, ...releaseManifest.releaseInternal].map((item) => item.name));
 const fail = (message) => { throw new Error(message); };
 const pass = (message) => console.log(`PASS ${message}`);
+for (const name of ["client-config", "validate-file", "user-data-export"]) if (!releaseFunctions.has(name)) fail(`Hosted validation target is not release-scoped: ${name}`);
 if (!shouldRun) {
   console.log(`Hosted V1 Edge validation requires --run and configuration names: ${required.join(", ")}`);
   console.log("No network request was made and no configuration value was printed.");
@@ -28,7 +32,7 @@ try {
   const configResponse = await invoke("client-config", { method: "GET", authorization: null });
   if (configResponse.status !== 200) fail("client-config did not return 200.");
   const config = await configResponse.json();
-  if (config?.featureFlags?.enableDirectMessages !== true || config?.featureFlags?.enableVoiceRooms !== false) fail("Deployed client-config does not match V1 scope.");
+  if (config?.featureFlags?.enableDirectMessages !== true || config?.featureFlags?.enableVoiceRooms !== true || config?.featureFlags?.enableScreenShare !== true) fail("Deployed client-config does not match V1 scope.");
   pass("public client-config and V1 flags");
   const noJwt = await invoke("validate-file", { authorization: null, body: JSON.stringify({}) });
   if (noJwt.status !== 401) fail("validate-file did not reject a missing JWT.");

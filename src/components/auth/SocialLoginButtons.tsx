@@ -1,14 +1,45 @@
-import { useState } from "react";
-import { socialAuthService, type SocialAuthProvider } from "../../services/auth/socialAuthService";
-import { AppIcon } from "../AppIcon";
+import { useMemo, useState } from "react";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
+import {
+  getSocialAuthProviderLabel,
+  SOCIAL_AUTH_PROVIDER_ORDER,
+  socialAuthService,
+  type SocialAuthProvider,
+} from "../../services/auth/socialAuthService";
+import { SocialProviderLogo } from "./SocialProviderLogo";
 
 type Props = { disabled?: boolean };
 
+const LOGO_SIZE = 20;
+
+const gridVariants: Variants = {
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 },
+  },
+};
+
+const buttonVariants: Variants = {
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+  },
+};
+
 export function SocialLoginButtons({ disabled = false }: Props) {
+  const reduceMotion = useReducedMotion();
   const [activeProvider, setActiveProvider] = useState<SocialAuthProvider | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const google = socialAuthService.getProviderAvailability("google");
-  const apple = socialAuthService.getProviderAvailability("apple");
+  const providers = useMemo(
+    () => SOCIAL_AUTH_PROVIDER_ORDER.map((provider) => ({
+      provider,
+      label: getSocialAuthProviderLabel(provider),
+      availability: socialAuthService.getProviderAvailability(provider),
+    })),
+    [],
+  );
+  const configMessage = providers.find((entry) => !entry.availability.enabled)?.availability.reason;
 
   const begin = async (provider: SocialAuthProvider) => {
     setActiveProvider(provider);
@@ -20,19 +51,39 @@ export function SocialLoginButtons({ disabled = false }: Props) {
 
   return (
     <section className="social-login" aria-label="Social sign in options">
-      <div className="social-login-grid">
-        <button type="button" disabled={disabled || !google.enabled || activeProvider !== null} onClick={() => void begin("google")} title={google.reason}>
-          <AppIcon name="user" size="sm" />
-          {activeProvider === "google" ? "Opening Google…" : "Continue with Google"}
-        </button>
-        <button type="button" disabled={disabled || !apple.enabled || activeProvider !== null} onClick={() => void begin("apple")} title={apple.reason}>
-          <AppIcon name="user" size="sm" />
-          {activeProvider === "apple" ? "Opening Apple…" : "Continue with Apple"}
-        </button>
-      </div>
+      <motion.div
+        className="social-login-grid"
+        variants={reduceMotion ? undefined : gridVariants}
+        initial={false}
+        animate={reduceMotion ? undefined : "visible"}
+      >
+        {providers.map(({ provider, label, availability }) => {
+          const isActive = activeProvider === provider;
+          const isDisabled = disabled || !availability.enabled || activeProvider !== null;
+
+          return (
+            <motion.button
+              key={provider}
+              type="button"
+              className={`social-login-provider social-login-provider--${provider}${isActive ? " is-active" : ""}`}
+              disabled={isDisabled}
+              onClick={() => void begin(provider)}
+              title={availability.reason ?? label}
+              aria-label={isActive ? `Opening ${label}` : `Continue with ${label}`}
+              variants={reduceMotion ? undefined : buttonVariants}
+              whileHover={reduceMotion || isDisabled ? undefined : { y: -1, scale: 1.04 }}
+              whileTap={reduceMotion || isDisabled ? undefined : { scale: 0.96 }}
+              layout={!reduceMotion}
+            >
+              <span className="social-login-provider-mark" aria-hidden="true">
+                <SocialProviderLogo provider={provider} size={LOGO_SIZE} />
+              </span>
+            </motion.button>
+          );
+        })}
+      </motion.div>
       {message ? <p className="social-login-note" role="status">{message}</p> : null}
-      {!google.enabled || !apple.enabled ? <p className="social-login-config">{google.reason ?? apple.reason}</p> : null}
-      <div className="auth-divider"><span>or use email</span></div>
+      {configMessage ? <p className="social-login-config">{configMessage}</p> : null}
     </section>
   );
 }

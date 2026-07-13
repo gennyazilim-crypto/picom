@@ -6,9 +6,9 @@ const read = (path) => readFileSync(path, "utf8");
 const policy = read("src/config/dataSourcePolicy.ts");
 const appConfig = read("src/config/appConfig.ts");
 const service = read("src/services/dataSourceService.ts");
-assert.ok(policy.includes('normalized === "mock" || normalized === "supabase"'), "data source values must be explicit");
-assert.ok(policy.includes('mode: "supabase"') && policy.includes("Fake data fallback is disabled"), "invalid mode must fail toward Supabase, not mock");
-assert.ok(policy.includes("isProductionRuntime") && policy.includes("V1 stable and production builds require VITE_DATA_SOURCE=supabase"), "production must reject mock and missing data-source selection");
+assert.ok(policy.includes('normalized === "supabase"'), "Supabase must be the only accepted runtime data source");
+assert.ok(policy.includes('normalized === "mock"') && policy.includes("Mock data source is disabled"), "mock selection must be rejected explicitly");
+assert.ok(policy.includes("return productionValue") && !policy.includes("return decision.explicit"), "mock fixtures must always resolve to production-empty values");
 assert.ok(appConfig.includes("resolveDataSourceDecision") && appConfig.includes("dataSourceConfigurationError"), "app config must consume the authoritative data-source decision");
 assert.ok(service.includes("appConfig.dataSourceConfigurationError") && !service.includes("resolveDataSourceDecision"), "central status must consume the app-level decision without re-resolving it");
 const startup = read("src/services/productionRuntimeConfigService.ts");
@@ -30,4 +30,4 @@ for (const path of walk("src/services").filter((item) => /\.(ts|tsx)$/.test(item
   assert.ok(source.includes("dataSourceService"), `${normalized} imports mock data without central mode selection`);
 }
 assert.ok(!read("src/components/StickerPicker.tsx").includes("dataSourceService"), "components must not branch on data source mode");
-console.log("Explicit mock mode, production-empty fixtures, centralized branching, and no-silent-fallback audit: PASS");
+console.log("Supabase-only runtime, production-empty fixtures, centralized branching, and no-silent-fallback audit: PASS");

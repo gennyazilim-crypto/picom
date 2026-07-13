@@ -67,7 +67,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
   return Object.freeze({
     enableRealtime: true,
     enableVoiceRooms: true,
-    enableScreenShare: false,
+    enableScreenShare: true,
     enableDirectMessages: false,
     enableFriends: false,
     enableDiscovery: false,

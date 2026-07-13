@@ -31,17 +31,19 @@ Linux and macOS remain engineering targets. Picom V1 release copy, About metadat
 - Profiles, avatar/cover, privacy, verification display
 - Friends and participant-only Direct Messages
 - User Settings, Help, redacted diagnostics, and V1-safe global search
+- Voice Rooms for authenticated active community members
+- Screen Share from connected Voice Rooms
 
 Production V1 must not fall back to mock data. Task 618 owns the final data-source enforcement and evidence.
 
-## Task 621 final conditional decision
+## Voice and Screen Share scope amendment
 
 | Feature | V1 default | Required evidence |
 | --- | --- | --- |
-| Voice Rooms | `HIDDEN_FROM_V1` | Hosted token/two-client/device/reconnect evidence is incomplete. |
-| Screen Share | `HIDDEN_FROM_V1` | Packaged-Windows picker/remote-render/stop/cleanup evidence is incomplete. |
+| Voice Rooms | `IN_V1` | Public release remains blocked until hosted token/two-client/device/reconnect evidence passes. |
+| Screen Share | `IN_V1` | Public release remains blocked until packaged-Windows picker/remote-render/stop/cleanup evidence passes. |
 
-Task 621 made the binary `HIDDEN_FROM_V1` decision. A future release may reopen the evidence gate; V1.0.0 cannot.
+Task 621 records the infrastructure state at that time. Its product-scope conclusion is superseded: Voice and Screen Share remain mandatory V1 scope while readiness is evidence-gated.
 
 ## HIDDEN_FROM_V1
 
@@ -50,7 +52,6 @@ Task 621 made the binary `HIDDEN_FROM_V1` decision. A future release may reopen 
 - Events workspace
 - Standalone Bookmarks workspace
 - Meeting Workspace, camera, and stage
-- Voice Rooms and Screen Share
 - Enhanced Noise Shield / Voice Focus controls
 - Public discovery marketplace
 - Public platform-admin operations
@@ -66,7 +67,7 @@ Task 621 made the binary `HIDDEN_FROM_V1` decision. A future release may reopen 
 
 ## Current blocker snapshot
 
-The scope freeze does not convert missing evidence into a pass. Task 621 closed Voice/Screen Share by removing them from V1 scope; hosted Supabase closure, Realtime/Edge evidence, trusted Windows signing and clean-machine installation, legal approval, production ownership, isolated backup/restore, and final RC evidence remain.
+The scope amendment does not convert missing evidence into a pass. Voice/Screen Share remain IN_V1, while hosted Supabase/LiveKit, TURN, native Windows, trusted signing, clean-machine installation, legal, operations, backup/restore, and final RC evidence remain release blockers.
 
 GitHub Actions run `29184042109` also exposed a clean-checkout build blocker: tracked renderer files imported untracked `assets/brand/picom-logo.png`. Task 617 changes those consumers to tracked `assets/brand/picom-logo-concept.png`; subsequent CI must confirm the correction.
 

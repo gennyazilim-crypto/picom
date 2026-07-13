@@ -10,8 +10,8 @@ Stable decision: **No-Go until all mandatory blockers are closed**
 | RB-01 | Hosted Supabase role/isolation matrix has not run against an approved staging/production-like project | Anonymous/visitor/member/mod/admin/owner tests pass for private/public communities, channels, messages, attachments, profile activity, Mention Feed, and DMs | Security/backend owner |
 | RB-02 | Private Storage and historical attachment signed-URL refresh are not production-proven | Unauthorized reads fail; authorized reload/refresh/download works without public-path leakage | Storage owner |
 | RB-03 | Hosted Realtime and Edge Functions are not production-proven | Two-client insert/update/delete/deduplication and Edge token/auth tests pass without service-role exposure | Backend owner |
-| RB-04 | CLOSED_BY_SCOPE: LiveKit voice is not a V1 capability | Task 621 hides all Voice entry points; future inclusion requires a new evidence gate | Realtime owner |
-| RB-05 | CLOSED_BY_SCOPE: Screen Share is not a V1 capability | Task 621 hides all Screen Share entry points; future inclusion requires a new evidence gate | Desktop owner |
+| RB-04 | Voice Rooms are IN_V1 but hosted LiveKit/TURN/two-client evidence is incomplete | Token deployment, unauthorized denial, two-client audio, reconnect and public-network traversal pass | Realtime owner |
+| RB-05 | Screen Share is IN_V1 but packaged-Windows and remote-render evidence is incomplete | Picker, remote render, stop, cleanup and reconnect pass on the release candidate | Desktop owner |
 | RB-06 | Windows clean-machine installer evidence is missing | Install, first launch, core flow, reinstall, uninstall, checksum, and unsigned/signed behavior recorded | Release owner |
 | RB-07 | Linux native packages are not built/smoked on Linux | AppImage and deb install/launch/core-flow/uninstall pass on supported distributions | Linux release owner |
 | RB-08 | macOS artifacts are not built, signed, notarized, and smoked on macOS | DMG/zip, Gatekeeper, microphone/screen-recording permissions, launch/core-flow/uninstall pass | macOS release owner |
@@ -236,7 +236,7 @@ Closure procedure and secret-safe fixture contract: [V1 hosted Supabase closure]
 
 ## Task 621 V1 Voice and Screen Share decision
 
-Decision: **HIDDEN_FROM_V1** (2026-07-12). RB-04 and RB-05 are closed by V1 scope, not by provider or native certification. Voice channels, settings, Connected Voice, Community Admin controls, onboarding/help promises, deep links, Edge deployment and release copy are gated out. The incomplete hosted/native evidence remains recorded for any future release that reopens this scope.
+Historical decision: **HIDDEN_FROM_V1** (Task 621, 2026-07-12). This product-scope conclusion is superseded by `docs/v1-voice-screen-scope-amendment.md`. The incomplete hosted/native evidence remains authoritative as RB-04/RB-05 release blockers.
 
 
 ## Task 622 trusted Windows V1 candidate
