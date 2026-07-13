@@ -39,6 +39,28 @@ Data source: Supabase (renderer `VITE_DATA_SOURCE=supabase`), no mock fallback.
 - **Two-user / hosted evidence (feeds Task 003/005/006/007/010/012):** creating auth accounts and entering passwords is out of scope for the automation, so multi-user acceptance and RLS negative-path proofs require the operator to sign in the test users; verified single-user this session.
 - **`supabase db dump`** cannot run locally (bundled `pg_dump` 15.8 vs hosted Postgres 17.6), so remote schema reconciliation relies on `supabase migration list` and the SQL editor.
 
+## Task 002 — SQL / migration / RLS reconciliation
+
+Hosted history is now nearly aligned (the operator applied the previously-pending
+migrations during this session).
+
+- **Pending local → remote (1):** `20260713010000_open_all_community_channels_to_members`
+  (this session's private-removal migration). Apply with `npx supabase db push`.
+- **Remote-only, not in repo (~10):** `20260712166xxx` (6) and `20260712206xxx` (4),
+  applied directly to the hosted project. Bring them into the repo with
+  `supabase db pull` — currently blocked locally by a `pg_dump` version mismatch
+  (15.8 vs hosted 17.6); upgrade the local Postgres client tools, then pull.
+- **Schema presence (via `supabase gen types typescript --linked`, 10.3k lines):**
+  `channel_categories`, `communities`, `community_members`, `audit_log`,
+  `set_my_presence_session`, `authorize_livekit_room`, `can_view_channel` all PRESENT.
+  The earlier `set_my_presence_session` 404 is **RESOLVED** (presence migration applied).
+- **Generated types:** the repo's `src/services/supabase/database.types.ts` is a
+  hand-curated subset (1049 lines) that typechecks clean; it is intentionally not the
+  full 10.3k-line auto-generated file, so it is left as maintained rather than replaced.
+- Idempotency: the pending forward migration uses `create or replace`, `drop policy if
+  exists` + `create policy`, and guarded `update ... where ... is distinct from` — safe
+  to apply and re-apply.
+
 ## Startup fixes applied this session
 - Community loaders skip placeholder (non-UUID) community/channel ids (removes reload 400 error toasts).
 - Auth-loading guard separated from the signed-out login guard (no login flash on refresh).
