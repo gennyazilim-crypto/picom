@@ -17,7 +17,6 @@ type ChannelItemProps = {
 };
 
 function getChannelIcon(channel: Channel) {
-  if (channel.isPrivate) return sidebarIcons.privateChannel;
   if (channel.type === "voice") return sidebarIcons.voiceChannel;
   if (channel.type === "announcement") return "bell";
   if (channel.type === "forum") return "inbox";
@@ -47,9 +46,9 @@ export function ChannelItem({ channel, active, onSelect, onContextMenu, hasDraft
   return (
     <div className={`channel-voice-entry${showVoiceParticipants ? " has-participants" : ""}`}>
       <button
-        className={`channel-item channel-type-${channel.type}${channel.isPrivate ? " is-private" : ""} ${active ? "active" : ""} ${mentionCount ? "has-mentions" : ""}`}
+        className={`channel-item channel-type-${channel.type} ${active ? "active" : ""} ${mentionCount ? "has-mentions" : ""}`}
         aria-current={active ? "page" : undefined}
-        aria-label={channel.isPrivate ? `Private channel ${channel.name}` : channel.name}
+        aria-label={channel.name}
         onClick={() => onSelect(channel)}
         onContextMenu={(event) => onContextMenu(event, channel)}
       >

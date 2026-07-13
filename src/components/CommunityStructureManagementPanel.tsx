@@ -111,8 +111,7 @@ export function CommunityStructureManagementPanel(props: Props) {
           <div className="structure-channel-list">
             {category.channels.map((channel, channelIndex) => <div key={channel.id} className="structure-channel-row">
               <AppIcon name={channel.type === "voice" ? "volume" : "hash"} size="sm" />
-              <span><strong>{channel.name}</strong><small>{channel.type} / {channel.isPrivate ? "private" : channel.publicReadEnabled ? "public read" : "members only"}</small></span>
-              <div className="structure-access-badges">{channel.isPrivate ? <span><AppIcon name="lock" size="xs" />Private</span> : null}</div>
+              <span><strong>{channel.name}</strong><small>{channel.type}</small></span>
               <div className="structure-row-actions">
                 <button type="button" className="community-mgmt-action community-mgmt-action--ghost community-mgmt-action--icon structure-move-up" disabled={busy || channelIndex === 0} aria-label={`Move ${channel.name} up`} onClick={() => void run(() => Promise.resolve(props.onMoveChannel(category.id, channel.id, "up")))}><AppIcon name="chevronDown" size="sm" /></button>
                 <button type="button" className="community-mgmt-action community-mgmt-action--ghost community-mgmt-action--icon" disabled={busy || channelIndex === category.channels.length - 1} aria-label={`Move ${channel.name} down`} onClick={() => void run(() => Promise.resolve(props.onMoveChannel(category.id, channel.id, "down")))}><AppIcon name="chevronDown" size="sm" /></button>

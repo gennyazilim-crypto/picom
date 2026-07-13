@@ -42,7 +42,7 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [visibility, setVisibility] = useState<"public" | "private">(community.visibility ?? "private");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [publicReadEnabled, setPublicReadEnabled] = useState(community.publicReadEnabled ?? false);
   const [defaultNotificationLevel, setDefaultNotificationLevel] = useState<CommunityNotificationLevel>(community.defaultNotificationLevel ?? "mentions");
   const [rulesEnabled, setRulesEnabled] = useState(community.rulesEnabled ?? false);
@@ -188,9 +188,8 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
         <div className="community-settings-fields community-settings-fields--split">
           <label className="community-settings-field">
             <FieldLabel>Visibility</FieldLabel>
-            <select className="community-settings-select" value={visibility} onChange={(event) => { const next = event.target.value as "public" | "private"; setVisibility(next); if (next === "private") setPublicReadEnabled(false); }}>
+            <select className="community-settings-select" value="public" onChange={() => setVisibility("public")} disabled>
               <option value="public">Public</option>
-              <option value="private">Private</option>
             </select>
           </label>
           <label className="community-settings-field">
@@ -204,10 +203,9 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
         </div>
         <ToggleRow
           checked={publicReadEnabled}
-          disabled={visibility === "private"}
           onChange={setPublicReadEnabled}
           title="Allow visitors to read public content"
-          description={visibility === "private" ? "Only available when the community is public." : "Visitors can browse read-only content without joining."}
+          description="Visitors can browse read-only content without joining."
         />
       </section>
 
