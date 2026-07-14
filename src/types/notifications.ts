@@ -11,4 +11,5 @@ export type NotificationCategory =
   | "radio_live"
   | "radio_reminder"
   | "podcast_release"
-  | "event_reminder";
+  | "event_reminder"
+  | "incoming_call";

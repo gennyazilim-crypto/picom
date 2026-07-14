@@ -10,6 +10,8 @@ import { ScreenSharePreview } from "./voice/ScreenSharePreview";
 import { resolveVoiceParticipants } from "./voice/voiceParticipantsModel";
 import type { ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 import { NoiseShieldQuickControl } from "./voice/NoiseShieldControl";
+import { VoiceInvitePicker } from "./voice/VoiceInvitePicker";
+import { voiceCallInviteService } from "../services/voice/voiceCallInviteService";
 import "./VoiceRoomView.css";
 
 type ToastTone = "info" | "error" | "success";
@@ -492,6 +494,7 @@ export function VoiceRoomView({
   onStopScreenShare,
 }: VoiceRoomViewProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [invitePickerOpen, setInvitePickerOpen] = useState(false);
   const connected = snapshot.status === "connected" || snapshot.status === "reconnecting";
   const joining = snapshot.status === "requesting_token" || snapshot.status === "connecting";
   const participants = useMemo(
@@ -503,10 +506,29 @@ export function VoiceRoomView({
   const inVoiceLobby = !connected && participantCount > 0;
 
   const openSettings = () => setSettingsOpen((current) => !current);
-  const handleInviteToVoice = () => pushToast("Voice invites from the stage are coming soon.", "info");
+  const handleInviteToVoice = () => setInvitePickerOpen(true);
+  const handleSelectInvitee = (member: Member) => {
+    setInvitePickerOpen(false);
+    void voiceCallInviteService
+      .invite(
+        { id: member.userId, name: member.displayName, avatarUrl: member.avatarUrl },
+        { communityId: community.id, communityName: community.name, channelId: channel.id, channelName: channel.name },
+      )
+      .then((call) => {
+        pushToast(call && call.status !== "failed" ? `Ringing ${member.displayName}…` : "Could not ring this member.", call && call.status !== "failed" ? "info" : "error");
+      });
+  };
 
   return (
     <section className="voice-room-view" aria-label={`${channel.name} voice room`}>
+      {invitePickerOpen ? (
+        <VoiceInvitePicker
+          members={community.members}
+          currentUserId={currentUserId}
+          onSelect={handleSelectInvitee}
+          onClose={() => setInvitePickerOpen(false)}
+        />
+      ) : null}
       <header className="voice-room-top-bar">
         <div className="voice-room-top-bar__identity">
           <span className="voice-room-top-bar__mark" aria-hidden="true">

@@ -66,6 +66,9 @@ import type { ReportRecord } from "./types/reports";
 import { AppLockScreen } from "./components/AppLockScreen";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
+import { useVoiceCallInvites } from "./hooks/useVoiceCallInvites";
+import { VoiceCallOverlays } from "./components/voice/VoiceCallOverlays";
+import type { VoiceCallRoom } from "./services/voice/voiceCallInviteService";
 import type { DirectReactionRow } from "./services/directMessages/directRealtimeService";
 import { directMessageService } from "./services/directMessages/directMessageService";
 import { directAttachmentUploadService } from "./services/directMessages/directAttachmentUploadService";
@@ -2064,6 +2067,26 @@ export function App() {
     pushToast(`Opened ${channel.name}. Use Join room to connect.`, "info");
   }, [communities, pushToast, setActiveChannelId, switchCommunity]);
 
+  const handleAcceptVoiceCall = useCallback((room: VoiceCallRoom) => {
+    const community = communities.find((candidate) => candidate.id === room.communityId);
+    if (community) {
+      setActiveView(communityViewForKind(community.kind));
+      switchCommunity(community.id, room.channelId);
+      setActiveChannelId(room.channelId);
+    }
+    void import("./services/voiceService").then(({ voiceService }) =>
+      voiceService
+        .join({ communityId: room.communityId, communityName: room.communityName, channelId: room.channelId, channelName: room.channelName, participantName: displayedCurrentUser.displayName, intent: "voice" })
+        .then((result) => { if (!result.ok) pushToast(result.error.message, "error"); }),
+    );
+  }, [communities, displayedCurrentUser.displayName, pushToast, setActiveChannelId, switchCommunity]);
+
+  const voiceCalls = useVoiceCallInvites({
+    currentUser: authSession ? { id: currentUserId, name: displayedCurrentUser.displayName, avatarUrl: displayedCurrentUser.avatarUrl } : null,
+    enabled: Boolean(authSession) && dataSourceService.getStatus().isSupabase,
+    onAccept: handleAcceptVoiceCall,
+  });
+
   const joinActiveVoiceRoom = useCallback(async () => {
     if (displayedActiveChannel.type !== "voice") {
       pushToast("Select a voice channel before joining voice.", "info");
@@ -3778,6 +3801,14 @@ export function App() {
         />
       ) : null}
       {isAppLocked ? <AppLockScreen currentUser={displayedCurrentUser} onUnlock={unlockApp} onLogout={logoutFromLockScreen} /> : null}
+      <VoiceCallOverlays
+        incoming={voiceCalls.incoming}
+        outgoing={voiceCalls.outgoing}
+        onAccept={voiceCalls.accept}
+        onDecline={voiceCalls.decline}
+        onCancelOutgoing={voiceCalls.cancelOutgoing}
+        onDismissOutgoing={voiceCalls.dismissOutgoing}
+      />
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>
   );
