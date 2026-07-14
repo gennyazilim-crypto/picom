@@ -77,9 +77,21 @@ No `file:`, `javascript:`, `data:`, shell, command, unknown protocol, credential
 
 `power.onResume(callback)` receives a validated timestamp payload and returns unsubscribe. It does not expose Electron powerMonitor.
 
+## Updates
+
+The renderer never owns the updater. `electron-updater` runs only in the main process (`electron/updater.cts`) and is disabled by default; it activates only when `PICOM_UPDATE_FEED_URL` points at an HTTPS feed and the app is packaged (or `PICOM_UPDATE_ALLOW_DEV=1` for local tests). Policy is auto-download, manual install (`autoDownload = true`, `autoInstallOnAppQuit = false`): installation always waits for an explicit, user-approved restart.
+
+- `updates.getState()` returns the current normalized, non-sensitive updater state (`status`, `enabled`, `version`, `releaseChannel`, bounded `message`, `progress`, `checkedAt`).
+- `updates.check()` requests a check for the configured channel.
+- `updates.download()` requests download of an available update (no-op unless one is available).
+- `updates.install()` requests the user-approved quit-and-install of a downloaded update.
+- `updates.onStateChange(callback)` receives validated updater-state pushes and returns unsubscribe.
+
+The bridge never exposes `autoUpdater`, feed URLs, artifact paths, signing material, or raw Electron objects. Main-process handlers verify the sender; the pushed state is shape-validated in preload before reaching the renderer. Signature/checksum verification (SHA-512 feed manifest plus the platform publisher signature) is never bypassed. The committed build ships with `publish: null`, so no feed is configured until an operator sets one for a signed release.
+
 ## IPC channels
 
-Version 1 uses only:
+The contract uses only:
 
 - `picom:window-control`
 - `picom:window-is-maximized`
@@ -103,6 +115,11 @@ Version 1 uses only:
 - `picom:external-open-url`
 - `picom:deep-link-open`
 - `picom:power-resume`
+- `picom:update-get-state`
+- `picom:update-check`
+- `picom:update-download`
+- `picom:update-install`
+- `picom:update-state-changed`
 
 ## Change policy
 

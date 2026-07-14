@@ -20,7 +20,12 @@ export const IPC_CHANNELS = Object.freeze({
   clipboardWriteText: "picom:clipboard-write-text",
   externalOpenUrl: "picom:external-open-url",
   deepLinkOpen: "picom:deep-link-open",
-  powerResume: "picom:power-resume"
+  powerResume: "picom:power-resume",
+  updateGetState: "picom:update-get-state",
+  updateCheck: "picom:update-check",
+  updateDownload: "picom:update-download",
+  updateInstall: "picom:update-install",
+  updateStateChanged: "picom:update-state-changed"
 });
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

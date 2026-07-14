@@ -21,6 +21,14 @@ import { promises as fs } from "node:fs";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
 import {
+  checkForUpdates as updaterCheckForUpdates,
+  downloadUpdate as updaterDownloadUpdate,
+  getUpdaterState,
+  initUpdater,
+  quitAndInstall as updaterQuitAndInstall,
+  type UpdaterState,
+} from "./updater.cjs";
+import {
   MAX_CLIPBOARD_TEXT_LENGTH,
   isSafeDeepLink,
   isTrayStatus,
@@ -429,6 +437,13 @@ function registerWindowStateForwarding(window: BrowserWindow): void {
   window.webContents.on("did-finish-load", flushPendingDeepLinks);
 }
 
+function broadcastUpdaterState(updaterState: UpdaterState): void {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isDestroyed()) {
+    return;
+  }
+  mainWindow.webContents.send(IPC_CHANNELS.updateStateChanged, updaterState);
+}
+
 function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.windowControl, (event, action: unknown) => {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
@@ -755,6 +770,26 @@ function registerIpcHandlers(): void {
       return { ok: false, native: true, error: "EXTERNAL_URL_OPEN_FAILED" } as const;
     }
   });
+
+  ipcMain.handle(IPC_CHANNELS.updateGetState, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: getUpdaterState() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.updateCheck, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: await updaterCheckForUpdates() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.updateDownload, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: await updaterDownloadUpdate() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.updateInstall, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: updaterQuitAndInstall() } as const;
+  });
 }
 
 async function createMainWindow(): Promise<void> {
@@ -848,6 +883,7 @@ if (!hasSingleInstanceLock) {
 
     void createMainWindow();
     createTray();
+    initUpdater(broadcastUpdaterState);
 
     app.on("activate", focusMainWindow);
   });

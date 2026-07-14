@@ -29,6 +29,26 @@ declare global {
     size: number;
     dataUrl: string;
   };
+  type PicomUpdaterStatus =
+    | "idle"
+    | "checking"
+    | "available"
+    | "downloading"
+    | "download_failed"
+    | "ready_to_install"
+    | "install_failed"
+    | "up_to_date"
+    | "error"
+    | "unsupported";
+  type PicomUpdaterState = {
+    status: PicomUpdaterStatus;
+    enabled: boolean;
+    version: string | null;
+    releaseChannel: string;
+    message: string;
+    progress: number | null;
+    checkedAt: string | null;
+  };
 
   interface Window {
     picomDesktop?: {
@@ -146,6 +166,25 @@ declare global {
       };
       power?: {
         onResume: (callback: (payload: { timestamp: string }) => void) => () => void;
+      };
+      updates?: {
+        getState: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        check: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        download: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        install: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        onStateChange: (callback: (state: PicomUpdaterState) => void) => () => void;
       };
     };
   }

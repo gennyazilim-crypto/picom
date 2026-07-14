@@ -350,6 +350,7 @@
     "startup:smoke": "node scripts/launch-on-startup-smoke-test.mjs",
     "update:failure:smoke": "node scripts/update-failure-recovery-smoke-test.mjs",
     "update:beta:rollout:smoke": "node scripts/desktop-auto-update-beta-rollout-smoke-test.mjs",
+    "update:native:wiring:smoke": "node scripts/desktop-updater-native-wiring-smoke.mjs",
     "update:rollback:simulate": "node scripts/update-rollback-simulation.mjs",
     "app-lock:smoke": "node scripts/app-lock-smoke-test.mjs",
     "e2ee:architecture:smoke": "node scripts/e2ee-architecture-smoke-test.mjs",
@@ -462,6 +463,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
     "@vitejs/plugin-react": "latest",
+    "electron-updater": "^6.6.2",
     "framer-motion": "^12.42.2",
     "livekit-client": "^2.20.0",
     "react": "latest",

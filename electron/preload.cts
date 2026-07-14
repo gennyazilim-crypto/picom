@@ -51,6 +51,30 @@ type PicomRuntimeInfo = Readonly<{
   }>;
 }>;
 
+type UpdaterState = Readonly<{
+  status: string;
+  enabled: boolean;
+  version: string | null;
+  releaseChannel: string;
+  message: string;
+  progress: number | null;
+  checkedAt: string | null;
+}>;
+
+function isUpdaterState(value: unknown): value is UpdaterState {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.status === "string" &&
+    typeof record.enabled === "boolean" &&
+    (record.version === null || typeof record.version === "string") &&
+    typeof record.releaseChannel === "string" &&
+    typeof record.message === "string" &&
+    (record.progress === null || typeof record.progress === "number") &&
+    (record.checkedAt === null || typeof record.checkedAt === "string")
+  );
+}
+
 const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function isWindowAction(action: unknown): action is WindowAction {
@@ -361,6 +385,41 @@ const bridge = Object.freeze({
 
       return () => {
         ipcRenderer.removeListener(IPC_CHANNELS.powerResume, listener);
+      };
+    }
+  },
+  updates: {
+    getState: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateGetState) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    check: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateCheck) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    download: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateDownload) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    install: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateInstall) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    onStateChange: (callback: (state: UpdaterState) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (isUpdaterState(value)) {
+          callback(value);
+        }
+      };
+
+      ipcRenderer.on(IPC_CHANNELS.updateStateChanged, listener);
+
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.updateStateChanged, listener);
       };
     }
   }
