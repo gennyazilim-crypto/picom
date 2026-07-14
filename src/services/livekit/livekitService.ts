@@ -19,7 +19,9 @@ async function getTokenFailureMessage(error: unknown): Promise<string> {
     ? (error as { context?: unknown }).context
     : undefined;
   let payload: EdgeFunctionErrorPayload | null = null;
+  let responseStatus: number | null = null;
   if (context instanceof Response) {
+    responseStatus = context.status;
     payload = await context.clone().json().catch(() => null) as EdgeFunctionErrorPayload | null;
   }
 
@@ -41,6 +43,17 @@ async function getTokenFailureMessage(error: unknown): Promise<string> {
         ? "The selected voice channel has not synchronized with Supabase."
         : "The Voice service rejected invalid channel data.";
     default:
+      // Surface the real server-provided reason (and status) so an unexpected
+      // failure is diagnosable instead of hidden behind a generic message.
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        const detail = payload.message.trim().slice(0, 200);
+        return responseStatus
+          ? `Voice token request failed (${responseStatus}): ${detail}`
+          : `Voice token request failed: ${detail}`;
+      }
+      if (responseStatus) {
+        return `Could not fetch a LiveKit token from the Edge Function (server responded ${responseStatus}).`;
+      }
       return "Could not fetch a LiveKit token from the Edge Function.";
   }
 }
