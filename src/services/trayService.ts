@@ -5,7 +5,10 @@ export type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 const CLOSE_TO_TRAY_KEY = "picom.tray.closeToTray.v1";
 
 function readCloseToTrayPreference(): boolean {
-  try { return window.localStorage.getItem(CLOSE_TO_TRAY_KEY) === "true"; } catch { return false; }
+  // Default ON: closing the window keeps Picom running in the system tray. Only an
+  // explicit opt-out ("false") disables it, so an unset or unreadable preference
+  // still keeps the app resident instead of fully quitting on close.
+  try { return window.localStorage.getItem(CLOSE_TO_TRAY_KEY) !== "false"; } catch { return true; }
 }
 
 function writeCloseToTrayPreference(enabled: boolean): void {
