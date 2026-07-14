@@ -9,6 +9,7 @@ import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, 
 import type { MeetingCameraQualityPreset, MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
 import { voiceDiagnosticsRegistry, type VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 import { noiseShieldService } from "./noiseShieldService";
+import { voicePresenceChime } from "./voice/voicePresenceChime";
 import { microphoneTrackLifecycleService, type MicrophoneLifecycleEventCode } from "./voice/microphoneTrackLifecycleService";
 import { DEFAULT_MEETING_CAMERA_QUALITY, cameraCaptureOptions, cameraPublishOptions, localPublishingQuality, remoteVideoQuality } from "./meeting/meetingMediaQualityPolicy";
 
@@ -413,6 +414,7 @@ function bindRoomEvents(activeRoom: Room): void {
         const restoredFromReconnect = reconnectingActive;
         sessionStartedAtMs ??= Date.now();
         reconnectingActive = false;
+        if (!restoredFromReconnect) voicePresenceChime.playJoin();
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
         applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
         if (restoredFromReconnect) {
@@ -441,12 +443,14 @@ function bindRoomEvents(activeRoom: Room): void {
       }
     })
     .on(RoomEvent.ParticipantConnected, () => {
+      voicePresenceChime.playJoin();
       if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
       applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
       applyFocusedScreenShareSubscription(activeRoom);
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.ParticipantDisconnected, (participant) => {
+      voicePresenceChime.playLeave();
       speakingIdentities.delete(participant.identity);
       participantConnectionQualities.delete(participant.identity);
       removeParticipantScreenShares(participant.identity);
@@ -544,6 +548,7 @@ function bindRoomEvents(activeRoom: Room): void {
       emit({ error: "The shared screen could not be loaded. Picom will keep participant context available.", errorCode: "VOICE_SCREEN_SHARE_FAILED" });
     })
     .on(RoomEvent.Disconnected, (reason) => {
+      voicePresenceChime.playLeave();
       if (sessionStartedAtMs) lastSessionDurationMs = Date.now() - sessionStartedAtMs;
       sessionStartedAtMs = null;
       reconnectingActive = false;
