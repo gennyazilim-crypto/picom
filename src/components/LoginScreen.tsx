@@ -89,7 +89,7 @@ export function LoginScreen({ theme, loading, error, onSubmit, onPasswordResetRe
         <div className="auth-logo-orb auth-logo-orb--brand">
           <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
         </div>
-        <p className="eyebrow">Desktop community chat</p>
+        <p className="eyebrow">Desktop community chat <span className="picom-beta-badge">Beta · Frontend preview</span></p>
         <h1>Welcome back to Picom.</h1>
         <p>
           Sign in to continue into your Windows, Linux, or macOS desktop workspace. The MVP keeps the chat shell fast,

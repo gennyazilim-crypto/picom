@@ -1194,9 +1194,9 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 <h3 className="advanced-settings-section-title">Runtime & build</h3>
                 {developerPortalAvailable ? <div className="settings-status-card settings-feature-card" aria-label="Developer Portal restricted beta"><span>Developer Portal</span><strong>Restricted beta</strong><small>Review safe bot/webhook metadata and developer guidance. No raw keys, application registration, or public publishing.</small><button type="button" className="settings-inline-action" onClick={() => setDeveloperPortalOpen(true)}>Open Developer Portal</button></div> : null}
                 <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="About Picom build metadata">
-                  <span>About Picom</span>
+                  <span>About Picom <span className="picom-beta-badge">Beta · Frontend preview</span></span>
                   <strong>{appConfig.name} {appConfig.version} ({appConfig.releaseChannel})</strong>
-                  <small>Build: {appConfig.build.date}. Commit: {appConfig.build.commitShort}. Runtime: {appConfig.build.desktopRuntime}. API compatibility: {appConfig.build.backendApiCompatibilityVersion}.</small>
+                  <small>Frontend-only beta: the desktop app is feature-complete, but some backend services may not be fully enabled yet. Build: {appConfig.build.date}. Commit: {appConfig.build.commitShort}. Runtime: {appConfig.build.desktopRuntime}. API compatibility: {appConfig.build.backendApiCompatibilityVersion}.</small>
                 </div>
                 <div className="security-card-grid" aria-label="Advanced runtime summary">
                   <article className="security-card"><span>Release</span><strong>{appConfig.releaseChannel}</strong><small>{appConfig.version} / {appConfig.build.commitShort} / {appConfig.build.date}</small></article>
