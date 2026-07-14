@@ -512,7 +512,7 @@ export function VoiceRoomView({
     void voiceCallInviteService
       .invite(
         { id: member.userId, name: member.displayName, avatarUrl: member.avatarUrl },
-        { communityId: community.id, communityName: community.name, channelId: channel.id, channelName: channel.name },
+        { kind: "community", communityId: community.id, communityName: community.name, channelId: channel.id, channelName: channel.name },
       )
       .then((call) => {
         pushToast(call && call.status !== "failed" ? `Ringing ${member.displayName}…` : "Could not ring this member.", call && call.status !== "failed" ? "info" : "error");

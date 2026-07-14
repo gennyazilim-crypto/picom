@@ -68,7 +68,7 @@ import { MentionRightPanel } from "./components/MentionRightPanel";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import { useVoiceCallInvites } from "./hooks/useVoiceCallInvites";
 import { VoiceCallOverlays } from "./components/voice/VoiceCallOverlays";
-import type { VoiceCallRoom } from "./services/voice/voiceCallInviteService";
+import { voiceCallInviteService, type VoiceCallRoom } from "./services/voice/voiceCallInviteService";
 import type { DirectReactionRow } from "./services/directMessages/directRealtimeService";
 import { directMessageService } from "./services/directMessages/directMessageService";
 import { directAttachmentUploadService } from "./services/directMessages/directAttachmentUploadService";
@@ -2067,7 +2067,24 @@ export function App() {
     pushToast(`Opened ${channel.name}. Use Join room to connect.`, "info");
   }, [communities, pushToast, setActiveChannelId, switchCommunity]);
 
+  const connectDirectVoice = useCallback(async (conversationId: string, peerName: string): Promise<boolean> => {
+    const { liveKitService } = await import("./services/livekit/livekitService");
+    const token = await liveKitService.fetchDirectToken({ conversationId, participantName: displayedCurrentUser.displayName, intent: "voice" });
+    if (!token.ok) {
+      pushToast(token.error.code === "LIVEKIT_TOKEN_FAILED" ? "Direct voice calls aren't enabled on this server yet." : token.error.message, "error");
+      return false;
+    }
+    const { voiceService } = await import("./services/voiceService");
+    const result = await voiceService.connectAuthorizedToken(token.data, { communityId: conversationId, communityName: peerName, channelId: conversationId, channelName: "Direct call" });
+    if (!result.ok) { pushToast(result.error.message, "error"); return false; }
+    return true;
+  }, [displayedCurrentUser.displayName, pushToast]);
+
   const handleAcceptVoiceCall = useCallback((room: VoiceCallRoom) => {
+    if (room.kind === "direct") {
+      void connectDirectVoice(room.conversationId, room.peerName);
+      return;
+    }
     const community = communities.find((candidate) => candidate.id === room.communityId);
     if (community) {
       setActiveView(communityViewForKind(community.kind));
@@ -2079,7 +2096,14 @@ export function App() {
         .join({ communityId: room.communityId, communityName: room.communityName, channelId: room.channelId, channelName: room.channelName, participantName: displayedCurrentUser.displayName, intent: "voice" })
         .then((result) => { if (!result.ok) pushToast(result.error.message, "error"); }),
     );
-  }, [communities, displayedCurrentUser.displayName, pushToast, setActiveChannelId, switchCommunity]);
+  }, [communities, connectDirectVoice, displayedCurrentUser.displayName, pushToast, setActiveChannelId, switchCommunity]);
+
+  const startDirectCall = useCallback(async (conversationId: string, peer: { id: string; name: string; avatarUrl?: string }) => {
+    const connected = await connectDirectVoice(conversationId, peer.name);
+    if (!connected) return;
+    const call = await voiceCallInviteService.invite({ id: peer.id, name: peer.name, avatarUrl: peer.avatarUrl }, { kind: "direct", conversationId, peerName: peer.name });
+    pushToast(call && call.status !== "failed" ? `Ringing ${peer.name}…` : "Could not ring this member.", call && call.status !== "failed" ? "info" : "error");
+  }, [connectDirectVoice, pushToast]);
 
   const voiceCalls = useVoiceCallInvites({
     currentUser: authSession ? { id: currentUserId, name: displayedCurrentUser.displayName, avatarUrl: displayedCurrentUser.avatarUrl } : null,
@@ -3359,6 +3383,7 @@ export function App() {
                 const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
                 if (member) openProfilePage(member);
               }}
+              onStartCall={(conversationId, peer) => void startDirectCall(conversationId, peer)}
             />
             </DeferredViewBoundary>
           ) : activeView === "friends" ? (

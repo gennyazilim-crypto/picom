@@ -56,12 +56,14 @@ export function useVoiceCallInvites({ currentUser, enabled, onAccept }: UseVoice
     }
     ringtoneService.start();
     if (typeof document === "undefined" || !document.hasFocus()) {
+      const body = incoming.room.kind === "community" ? `Voice call in ${incoming.room.channelName}` : "Direct voice call";
+      const deepLink = incoming.room.kind === "community" ? `picom://community/${incoming.room.communityId}/channel/${incoming.room.channelId}` : undefined;
       void notificationService.showNotification({
         title: `${incoming.caller.name} is calling`,
-        body: `Voice call in ${incoming.room.channelName}`,
+        body,
         category: "incoming_call",
         tag: `voice-call-${incoming.inviteId}`,
-        deepLink: `picom://community/${incoming.room.communityId}/channel/${incoming.room.channelId}`,
+        ...(deepLink ? { deepLink } : {}),
         routing: { appFocused: false },
       });
     }

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 const read=(file)=>readFileSync(file,"utf8");
-const fn=read("supabase/functions/livekit-token/index.ts"),token=read("supabase/functions/_shared/livekit-token.ts"),migration=read("supabase/migrations/20260711150600_voice_screen_permissions_moderation.sql"),config=read("supabase/config.toml"),client=read("src/services/livekit/livekitService.ts");
+const fn=read("supabase/functions/livekit-token/index.ts"),token=read("supabase/functions/_shared/livekit-token.ts"),migration=read("supabase/migrations/20260711150600_voice_screen_permissions_moderation.sql"),directMigration=read("supabase/migrations/20260715000000_direct_voice_call_authorization.sql"),config=read("supabase/config.toml"),client=read("src/services/livekit/livekitService.ts");
 const checks=[
  ["JWT verified",fn.includes("requireSupabaseUser")&&/\[functions\.livekit-token\]\s*verify_jwt\s*=\s*true/.test(config)],
  ["member and type configuration authorization RPC",fn.includes('rpc("authorize_livekit_room"')&&migration.includes("VOICE_MEMBERSHIP_REQUIRED")&&migration.includes("community_voice_rooms_enabled")],
@@ -8,7 +8,8 @@ const checks=[
  ["kind-aware scoped permissions",["viewChannel","viewRadioContent","viewPodcastContent","viewPrivateChannels","joinVoice","speak","shareScreen"].every((permission)=>migration.includes(`'${permission}'`))],
  ["radio broadcast remains separate",!migration.includes("'hostRadio'")&&!migration.includes("'listenRadio'")],
  ["short least privilege token",fn.includes("10 * 60")&&token.includes("canPublishSources")&&fn.includes('"microphone"')&&fn.includes('"screen_share"')&&fn.includes("authorization.can_publish_audio")&&fn.includes("canPublishData: false")],
- ["capabilities returned to renderer",fn.includes("canPublishAudio: authorization.can_publish_audio")&&fn.includes("canPublishScreen: authorization.can_publish_screen")],
+ ["capabilities returned to renderer",fn.includes("canPublishAudio, canPublishScreen, expiresAt")&&fn.includes("canPublishAudio = authorization.can_publish_audio")&&fn.includes("canPublishScreen = authorization.can_publish_screen")],
+ ["direct DM call authorized by conversation participation",fn.includes('rpc("authorize_direct_livekit_room"')&&fn.includes("createPicomDirectLiveKitRoomName")&&fn.includes("VOICE_DIRECT_FORBIDDEN")&&directMigration.includes("direct_conversation_participants")&&directMigration.includes("security definer")&&/grant execute on function public\.authorize_direct_livekit_room/.test(directMigration)],
  ["restricted CORS",fn.includes("PICOM_ALLOWED_ORIGINS")&&fn.includes("Origin is not allowed")&&!fn.includes('"Access-Control-Allow-Origin": "*"')],
  ["method and bounded JSON",fn.includes("maxBodyBytes = 2048")&&fn.includes("Content-Type must be application/json")&&fn.includes("methodNotAllowed")],
  ["deterministic identity room",fn.includes("auth.user.id")&&fn.includes("createPicomLiveKitRoomName")&&fn.includes("matchesPicomLiveKitRoomName")],

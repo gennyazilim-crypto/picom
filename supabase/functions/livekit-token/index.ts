@@ -1,17 +1,18 @@
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
 import { createLiveKitToken } from "../_shared/livekit-token.ts";
 import { requireSupabaseUser } from "../_shared/auth.ts";
-import { createPicomLiveKitRoomName, matchesPicomLiveKitRoomName } from "../_shared/livekit-room.ts";
+import { createPicomDirectLiveKitRoomName, createPicomLiveKitRoomName, matchesPicomDirectLiveKitRoomName, matchesPicomLiveKitRoomName } from "../_shared/livekit-room.ts";
 
 type LiveKitIntent = "voice" | "screen";
-type LiveKitTokenRequest = { communityId?: string; channelId?: string; roomName?: string; participantName?: string; intent?: LiveKitIntent };
+type LiveKitTokenRequest = { communityId?: string; channelId?: string; conversationId?: string; roomName?: string; participantName?: string; intent?: LiveKitIntent };
 type AuthorizationRow = { community_id: string; channel_id: string; community_kind: string; channel_private: boolean; can_publish_audio: boolean; can_publish_screen: boolean };
+type DirectAuthorizationRow = { conversation_id: string; can_publish_audio: boolean; can_publish_screen: boolean };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 const participantNamePattern = /^[^\u0000-\u001f\u007f]{1,80}$/;
 const maxBodyBytes = 2048;
 const tokenTtlSeconds = 10 * 60;
-const allowedRequestKeys = new Set(["communityId", "channelId", "roomName", "participantName", "intent"]);
+const allowedRequestKeys = new Set(["communityId", "channelId", "conversationId", "roomName", "participantName", "intent"]);
 
 function getRequiredEnv(name: string): string | null {
   const value = Deno.env.get(name);
@@ -89,25 +90,43 @@ Deno.serve(async (request: Request) => {
   const livekitApiSecret = getRequiredEnv("LIVEKIT_API_SECRET");
   if (!livekitUrl || !livekitApiKey || !livekitApiSecret) return respond(errorResponse("VOICE_NOT_CONFIGURED", "Voice service is not configured.", 503));
 
-  const { communityId, channelId } = parsed.body;
   const intent = parseIntent(parsed.body.intent);
-  if (!communityId || !channelId || !uuidPattern.test(communityId) || !uuidPattern.test(channelId)) return respond(errorResponse("VALIDATION_ERROR", "A valid communityId and channelId are required.", 400));
   if (!intent) return respond(errorResponse("VALIDATION_ERROR", "intent must be voice or screen.", 400));
   if (parsed.body.participantName !== undefined && (typeof parsed.body.participantName !== "string" || !participantNamePattern.test(parsed.body.participantName.trim()))) return respond(errorResponse("VALIDATION_ERROR", "participantName must contain 1-80 safe characters.", 400));
 
-  const { data: authorizationRows, error: authorizationError } = await auth.supabase.rpc("authorize_livekit_room", { target_community_id: communityId, target_channel_id: channelId, target_intent: intent });
-  const authorization = Array.isArray(authorizationRows) ? authorizationRows[0] as AuthorizationRow | undefined : undefined;
-  if (authorizationError || !authorization) return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "You cannot join this voice channel.", 403));
-
   const displayName = typeof auth.user.user_metadata?.display_name === "string" ? auth.user.user_metadata.display_name : auth.user.email?.split("@")[0] ?? "Picom user";
   const participantName = parsed.body.participantName?.trim() || displayName.slice(0, 80);
-  const roomName = createPicomLiveKitRoomName(communityId, channelId);
-  if (parsed.body.roomName && !matchesPicomLiveKitRoomName(parsed.body.roomName, communityId, channelId)) return respond(errorResponse("VALIDATION_ERROR", "roomName does not match the requested community/channel.", 400));
 
-  const canPublish = intent === "screen" ? authorization.can_publish_screen : authorization.can_publish_audio;
+  const { communityId, channelId, conversationId } = parsed.body;
+  let roomName: string;
+  let canPublishAudio: boolean;
+  let canPublishScreen: boolean;
+
+  if (conversationId !== undefined) {
+    // Direct (1:1) DM call: authorize by conversation participation, not community.
+    if (communityId || channelId || !uuidPattern.test(conversationId)) return respond(errorResponse("VALIDATION_ERROR", "A direct call requires only a valid conversationId.", 400));
+    const { data: directRows, error: directError } = await auth.supabase.rpc("authorize_direct_livekit_room", { target_conversation_id: conversationId, target_intent: intent });
+    const directAuthorization = Array.isArray(directRows) ? directRows[0] as DirectAuthorizationRow | undefined : undefined;
+    if (directError || !directAuthorization) return respond(errorResponse("VOICE_DIRECT_FORBIDDEN", "You cannot start a voice call in this conversation.", 403));
+    roomName = createPicomDirectLiveKitRoomName(conversationId);
+    if (parsed.body.roomName && !matchesPicomDirectLiveKitRoomName(parsed.body.roomName, conversationId)) return respond(errorResponse("VALIDATION_ERROR", "roomName does not match the requested conversation.", 400));
+    canPublishAudio = directAuthorization.can_publish_audio;
+    canPublishScreen = directAuthorization.can_publish_screen;
+  } else {
+    if (!communityId || !channelId || !uuidPattern.test(communityId) || !uuidPattern.test(channelId)) return respond(errorResponse("VALIDATION_ERROR", "A valid communityId and channelId are required.", 400));
+    const { data: authorizationRows, error: authorizationError } = await auth.supabase.rpc("authorize_livekit_room", { target_community_id: communityId, target_channel_id: channelId, target_intent: intent });
+    const authorization = Array.isArray(authorizationRows) ? authorizationRows[0] as AuthorizationRow | undefined : undefined;
+    if (authorizationError || !authorization) return respond(errorResponse("VOICE_CHANNEL_FORBIDDEN", "You cannot join this voice channel.", 403));
+    roomName = createPicomLiveKitRoomName(communityId, channelId);
+    if (parsed.body.roomName && !matchesPicomLiveKitRoomName(parsed.body.roomName, communityId, channelId)) return respond(errorResponse("VALIDATION_ERROR", "roomName does not match the requested community/channel.", 400));
+    canPublishAudio = authorization.can_publish_audio;
+    canPublishScreen = authorization.can_publish_screen;
+  }
+
+  const canPublish = intent === "screen" ? canPublishScreen : canPublishAudio;
   const publishSources: Array<"microphone" | "screen_share" | "screen_share_audio"> = intent === "screen"
-    ? canPublish ? [...(authorization.can_publish_audio ? ["microphone" as const] : []), "screen_share", "screen_share_audio"] : []
+    ? canPublish ? [...(canPublishAudio ? ["microphone" as const] : []), "screen_share", "screen_share_audio"] : []
     : canPublish ? ["microphone"] : [];
   const { token, expiresAt } = await createLiveKitToken({ apiKey: livekitApiKey, apiSecret: livekitApiSecret, identity: auth.user.id, name: participantName, roomName, ttlSeconds: tokenTtlSeconds, canPublish, canSubscribe: true, canPublishData: false, canPublishSources: publishSources });
-  return respond(jsonResponse({ token, url: livekitUrl, roomName, identity: auth.user.id, participantName, intent, canPublishAudio: authorization.can_publish_audio, canPublishScreen: authorization.can_publish_screen, expiresAt }));
+  return respond(jsonResponse({ token, url: livekitUrl, roomName, identity: auth.user.id, participantName, intent, canPublishAudio, canPublishScreen, expiresAt }));
 });

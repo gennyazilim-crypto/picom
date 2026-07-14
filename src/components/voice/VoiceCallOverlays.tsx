@@ -18,12 +18,16 @@ function initials(name: string): string {
   return `${first}${second}`.toUpperCase();
 }
 
+function roomSecondary(call: OutgoingVoiceCall): string {
+  return call.room.kind === "community" ? call.room.channelName : "Direct call";
+}
+
 function outgoingText(call: OutgoingVoiceCall): { primary: string; secondary: string } {
   switch (call.status) {
     case "ringing":
-      return { primary: `Ringing ${call.target.name}…`, secondary: call.room.channelName };
+      return { primary: `Ringing ${call.target.name}…`, secondary: roomSecondary(call) };
     case "accepted":
-      return { primary: `${call.target.name} joined`, secondary: call.room.channelName };
+      return { primary: `${call.target.name} joined`, secondary: roomSecondary(call) };
     case "declined":
       return { primary: `${call.target.name} declined`, secondary: "Call ended" };
     case "timeout":
@@ -33,7 +37,7 @@ function outgoingText(call: OutgoingVoiceCall): { primary: string; secondary: st
     case "failed":
       return { primary: "Call could not be sent", secondary: "Try again in a moment" };
     default:
-      return { primary: call.target.name, secondary: call.room.channelName };
+      return { primary: call.target.name, secondary: roomSecondary(call) };
   }
 }
 
@@ -49,9 +53,15 @@ export function VoiceCallOverlays({ incoming, outgoing, onAccept, onDecline, onC
             <div>
               <div className="voice-call-title">{incoming.caller.name}</div>
               <div className="voice-call-subtitle">
-                is inviting you to voice in <strong>{incoming.room.channelName}</strong>
-                <br />
-                {incoming.room.communityName}
+                {incoming.room.kind === "community" ? (
+                  <>
+                    is inviting you to voice in <strong>{incoming.room.channelName}</strong>
+                    <br />
+                    {incoming.room.communityName}
+                  </>
+                ) : (
+                  <>is calling you to a direct voice chat</>
+                )}
               </div>
             </div>
             <div className="voice-call-actions">

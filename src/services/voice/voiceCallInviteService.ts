@@ -12,12 +12,21 @@ import { getSupabaseClient } from "../supabase/supabaseClient";
 // swapped for an RLS-backed table later without touching the UI. Server-side abuse
 // hardening (only community members / friends may ring a user) is a follow-up.
 
-export type VoiceCallRoom = Readonly<{
+export type VoiceCallCommunityRoom = Readonly<{
+  kind: "community";
   communityId: string;
   communityName: string;
   channelId: string;
   channelName: string;
 }>;
+
+export type VoiceCallDirectRoom = Readonly<{
+  kind: "direct";
+  conversationId: string;
+  peerName: string;
+}>;
+
+export type VoiceCallRoom = VoiceCallCommunityRoom | VoiceCallDirectRoom;
 
 export type VoiceCallParty = Readonly<{
   id: string;
@@ -85,9 +94,15 @@ function isParty(value: unknown): value is VoiceCallParty {
 
 function isRoom(value: unknown): value is VoiceCallRoom {
   const record = value as Record<string, unknown> | null;
-  return typeof record === "object" && record !== null
-    && typeof record.communityId === "string" && typeof record.channelId === "string"
-    && typeof record.communityName === "string" && typeof record.channelName === "string";
+  if (typeof record !== "object" || record === null) return false;
+  if (record.kind === "community") {
+    return typeof record.communityId === "string" && typeof record.channelId === "string"
+      && typeof record.communityName === "string" && typeof record.channelName === "string";
+  }
+  if (record.kind === "direct") {
+    return typeof record.conversationId === "string" && typeof record.peerName === "string";
+  }
+  return false;
 }
 
 function parseInvite(payload: unknown): IncomingVoiceCall | null {

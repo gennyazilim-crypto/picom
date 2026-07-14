@@ -97,4 +97,43 @@ export const liveKitService = {
 
     return { ok: true, data };
   },
+
+  // Direct (1:1) DM call token: authorized by conversation participation instead of
+  // community membership. Requires the livekit-token Edge Function `conversationId`
+  // branch + the authorize_direct_livekit_room RPC to be deployed.
+  async fetchDirectToken(request: { conversationId: string; intent?: "voice" | "screen"; participantName?: string }): Promise<LiveKitServiceResult<LiveKitTokenResponse>> {
+    const status = getSupabaseClientStatus();
+    if (!status.configured) {
+      return liveKitError("LIVEKIT_NOT_CONFIGURED", status.reason ?? "Supabase is not configured for LiveKit tokens.");
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return liveKitError("LIVEKIT_NOT_CONFIGURED", "Supabase client is unavailable.");
+    }
+
+    const { data, error } = await supabase.functions
+      .invoke<LiveKitTokenResponse>("livekit-token", {
+        headers: getApiCompatibilityRequestHeaders(),
+        body: {
+          conversationId: request.conversationId,
+          participantName: request.participantName,
+          intent: request.intent ?? "voice",
+        },
+      })
+      .catch(() => ({
+        data: null,
+        error: new Error("Could not reach the LiveKit token Edge Function."),
+      }));
+
+    if (error) {
+      return liveKitError("LIVEKIT_TOKEN_FAILED", await getTokenFailureMessage(error));
+    }
+
+    if (!isTokenResponse(data)) {
+      return liveKitError("LIVEKIT_INVALID_TOKEN_RESPONSE", "LiveKit token response was incomplete.");
+    }
+
+    return { ok: true, data };
+  },
 };
