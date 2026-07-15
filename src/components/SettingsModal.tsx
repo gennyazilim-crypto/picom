@@ -9,6 +9,8 @@ import { settingsSections, settingsService, type AccessibilitySettings, type App
 import { appearanceService } from "../services/appearanceService";
 import { localizationService, type LocalizationKey } from "../services/localizationService";
 import { statusPageService } from "../services/statusPageService";
+import { dataSourceService } from "../services/dataSourceService";
+import { maintenanceStatusService, type MaintenanceStatusSnapshot } from "../services/maintenanceStatusService";
 import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";
 import { socialAuthService, SOCIAL_AUTH_PROVIDER_ORDER, getSocialAuthProviderLabel, type SocialAuthProvider, type SocialProviderAccountState } from "../services/auth/socialAuthService";
 import { accountDeletionService } from "../services/accountDeletionService";
@@ -309,14 +311,28 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
 
     pushToast(result.reason, "error");
   };
-  const openSystemStatus = async () => {
-    const result = await statusPageService.openStatusPage();
-    if (result.ok) {
-      pushToast(`Opened system status: ${statusPageService.getDisplayDomain()}.`, "success");
-      return;
-    }
+  const [systemStatusOpen, setSystemStatusOpen] = useState(false);
+  const [systemStatusChecking, setSystemStatusChecking] = useState(false);
+  const [maintenanceSnapshot, setMaintenanceSnapshot] = useState<MaintenanceStatusSnapshot>(() => maintenanceStatusService.getSnapshot());
+  const supabaseHost = (() => { try { return appConfig.supabase.url ? new URL(appConfig.supabase.url).hostname : "not configured"; } catch { return "invalid URL"; } })();
+  const dataStatus = dataSourceService.getStatus();
 
-    pushToast(result.reason === "STATUS_PAGE_URL_NOT_CONFIGURED" ? "System status page is not configured yet." : "System status page could not be opened.", "info");
+  const refreshSystemStatus = async () => {
+    setSystemStatusChecking(true);
+    setMaintenanceSnapshot(await maintenanceStatusService.refresh());
+    setSystemStatusChecking(false);
+  };
+
+  const openSystemStatus = async () => {
+    // Show the live in-app system status. If a hosted public status page is also
+    // configured, open it in the browser as well; otherwise the in-app panel is the
+    // source of truth (no external status page is required).
+    setSystemStatusOpen(true);
+    void refreshSystemStatus();
+    if (statusPageService.isConfigured()) {
+      const result = await statusPageService.openStatusPage();
+      pushToast(result.ok ? `Opened system status: ${statusPageService.getDisplayDomain()}.` : "The external status page could not be opened; showing in-app status.", result.ok ? "success" : "info");
+    }
   };
   const updateLaunchOnStartup = async (enabled: boolean) => {
     const next = await startupService.setLaunchOnStartupEnabled(enabled);
@@ -1234,6 +1250,27 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   </button>
                 </div> : null}
                 <button type="button" className="settings-inline-action" onClick={openSystemStatus}>Open system status</button>
+                {systemStatusOpen ? (
+                  <div className="settings-status-card settings-feature-card system-status-panel" aria-label="Live system status" aria-live="polite">
+                    <span>System status</span>
+                    <strong className={`system-status-pill system-status-pill--${maintenanceSnapshot.status}`}>
+                      {maintenanceSnapshot.status === "operational" ? "All systems operational" : maintenanceSnapshot.status === "degraded" ? "Some services degraded" : "Under maintenance"}
+                    </strong>
+                    <small>{maintenanceSnapshot.message}</small>
+                    <dl className="system-status-list">
+                      <div><dt>App</dt><dd>{appConfig.name} {appConfig.version} · {appConfig.releaseChannel} · {appConfig.build.commitShort}</dd></div>
+                      <div><dt>Backend</dt><dd>{dataStatus.isSupabase ? `Supabase · ${supabaseHost}` : "Mock data"} · {dataStatus.configured ? "configured" : "not configured"}</dd></div>
+                      <div><dt>Voice (LiveKit)</dt><dd>{appConfig.liveKit.enabled && appConfig.liveKit.url ? "Configured" : "Not configured"}</dd></div>
+                      <div><dt>Realtime</dt><dd>{appConfig.realtimeScalingMode}</dd></div>
+                      <div><dt>Network</dt><dd>{typeof navigator !== "undefined" && navigator.onLine ? "Online" : "Offline"}</dd></div>
+                      <div><dt>Last checked</dt><dd>{maintenanceSnapshot.checkedAt ? new Date(maintenanceSnapshot.checkedAt).toLocaleString() : "—"}</dd></div>
+                    </dl>
+                    <div className="settings-actions-row">
+                      <button type="button" className="settings-inline-action" disabled={systemStatusChecking} onClick={() => void refreshSystemStatus()}>{systemStatusChecking ? "Checking…" : "Refresh"}</button>
+                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSystemStatusOpen(false)}>Hide</button>
+                    </div>
+                  </div>
+                ) : null}
               </section>
 
               <section className="advanced-settings-section">
