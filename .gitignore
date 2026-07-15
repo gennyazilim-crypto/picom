@@ -18,3 +18,9 @@ dist-electron/
 /tmp-electron-dev.out
 
 packages/shared/dist/
+
+# Official LiveKit generator output contains deployment credentials.
+# Commit only the runbook and deployment tools, never generated config/secrets.
+/infra/livekit/generated/
+/infra/livekit/secrets/
+.intelligence-tasks/
