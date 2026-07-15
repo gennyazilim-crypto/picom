@@ -37,14 +37,17 @@ export type AnalyticsEnvelope = Readonly<{
 }>;
 
 // The ONLY metadata keys permitted per event. Everything else is dropped.
+// Keys MUST NOT match SENSITIVE_KEY (below) or they are silently stripped — enforced by
+// scripts/intelligence-event-taxonomy-validate.mjs. (This is why the release track is
+// `releaseTrack`, not `releaseChannel`/`channel`, which collide with `channel`.)
 const ALLOWED_METADATA: Record<AnalyticsEventName, readonly string[]> = {
-  session_started: ["runtime", "releaseChannel"],
+  session_started: ["runtime", "releaseTrack"],
   session_heartbeat: ["durationBucket"],
   session_ended: ["durationBucket"],
   view_opened: ["view"],
   download_started: ["kind"],
   download_completed: ["kind", "sizeBucket"],
-  install_activated: ["channel"],
+  install_activated: ["releaseTrack"],
   feed_card_opened: ["cardType", "dwellBucket"],
   community_opened: ["mode"],
   community_joined: ["mode"],

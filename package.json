@@ -11,6 +11,7 @@
     "auth:onboarding:production:smoke": "node scripts/supabase-auth-onboarding-production-smoke.mjs",
     "auth:social:steam-epic:smoke": "node scripts/social-auth-steam-epic-smoke.mjs",
     "intelligence:event-schema:smoke": "node scripts/intelligence-event-schema-smoke.mjs",
+    "intelligence:taxonomy:validate": "node scripts/intelligence-event-taxonomy-validate.mjs",
     "installer:branding:smoke": "node scripts/installer-branding-smoke.mjs",
     "settings:completeness:test": "node scripts/settings-menu-completeness-smoke.mjs",
     "settings:architecture:smoke": "node scripts/settings-architecture-persistence-smoke.mjs",
