@@ -221,6 +221,7 @@ export const authService = {
       email: normalizedEmail,
       password,
       options: {
+        emailRedirectTo: appConfig.supabase.emailVerificationRedirectUrl,
         data: { ...(displayName ? { display_name: displayName } : {}), accepted_terms_version: legalConfig.termsVersion, accepted_privacy_version: legalConfig.privacyVersion },
       },
     });
