@@ -24,3 +24,4 @@ packages/shared/dist/
 /infra/livekit/generated/
 /infra/livekit/secrets/
 .intelligence-tasks/
+.intelligence-platform/
