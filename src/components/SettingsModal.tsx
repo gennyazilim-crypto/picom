@@ -34,6 +34,7 @@ import { profileService } from "../services/profileService";
 import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";
 import { ProfileMediaEditor } from "./settings/ProfileMediaEditor";
 import type { ProfileSummary } from "../services/profileService";
+import { EmailPreferencesPanel } from "./settings/EmailPreferencesPanel";
 import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
 import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";
 import type { ProfilePrivacySettings } from "../types/profilePrivacy";
@@ -1033,6 +1034,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             <div className="notification-settings-stack">
               <p className="settings-section-description">Choose which Picom activity can reach your inbox and desktop. Native delivery remains behind the safe preload bridge.</p>
 
+              <EmailPreferencesPanel />
               <section className="notification-settings-section">
                 <h3 className="notification-settings-section-title">Runtime & delivery</h3>
                 <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Notification runtime status">

@@ -1,5 +1,5 @@
 // Short join/leave chimes for voice rooms, synthesized with WebAudio (no bundled
-// asset, CSP-safe). Like Discord, the sound is played locally on each client in
+// asset, CSP-safe). The sound is played locally on each client in
 // response to LiveKit participant events, so everyone in the room hears a peer
 // connect/disconnect without any audio being sent through the room itself.
 

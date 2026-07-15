@@ -1,0 +1,25 @@
+# Spacemail Precheck
+
+**Status:** PARTIAL PASS
+
+**Reviewed:** 2026-07-15
+
+## Result
+
+mail.spacemail.com:465 completed an authorized TLS 1.3 handshake. Webmail confirmed SMTP host, SSL, ports 465/587, and username info@picom.gg. Authentication and sending remain blocked until the mailbox password is supplied through the server secret store.
+
+## Production contract
+
+- Sender identity: **Picom <info@picom.gg>**.
+- Default Reply-To: **info@picom.gg**.
+- SMTP credentials are server-only and must never use a VITE_ variable.
+- Renderer code submits named intents to the protected Edge API; it cannot select arbitrary From addresses or relay raw email.
+- Delivery state is recorded by the durable PostgreSQL queue and Ubuntu worker.
+
+## Security and privacy
+
+RLS denies direct client access to operational email records. Queue claims and completion are service-role-only. Logs and admin views expose domains, status, correlation identifiers, and stable error codes rather than message bodies or credentials.
+
+## Evidence and next action
+
+Repository evidence is covered by `npm run email:smoke` and `npm run email:sender:scan`. Live claims remain blocked unless this report explicitly records verified provider or hosted evidence.

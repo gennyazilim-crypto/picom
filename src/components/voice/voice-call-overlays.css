@@ -34,7 +34,7 @@
   font-size: 34px;
   font-weight: 700;
   color: var(--text-on-accent, #fff);
-  background: var(--accent, #5865f2);
+  background: var(--accent);
   overflow: hidden;
 }
 
@@ -50,7 +50,7 @@
   position: absolute;
   inset: -6px;
   border-radius: 50%;
-  border: 2px solid var(--accent, #5865f2);
+  border: 2px solid var(--accent);
   animation: voice-call-ring 1800ms ease-out infinite;
 }
 
@@ -139,7 +139,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent, #5865f2);
+  background: var(--accent);
 }
 
 .voice-call-bar--ringing .voice-call-bar__dot {
@@ -239,7 +239,7 @@
   overflow: hidden;
   font-weight: 700;
   color: var(--text-on-accent, #fff);
-  background: var(--accent, #5865f2);
+  background: var(--accent);
 }
 
 .voice-invite-picker__avatar img {

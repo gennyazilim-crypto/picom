@@ -1,0 +1,24 @@
+[Unit]
+Description=Picom transactional email worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=picom-email
+Group=picom-email
+WorkingDirectory=/opt/picom
+EnvironmentFile=/etc/picom/email-worker.env
+ExecStart=/usr/bin/node /opt/picom/services/email-worker/index.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/picom
+RestrictAddressFamilies=AF_INET AF_INET6
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
