@@ -34,6 +34,6 @@ podcast_play (episodeId, positionBucket, Task 02) ──► completion/drop-off 
 
 ## Risks / blockers
 - Requires a recorded-audio feature surface (roadmap); analytics ready to attach when it
-  ships. Uses Warehouse (23), Funnel (20).
+  ships. Uses Warehouse (23), Growth Analytics (19).
 
 **Next:** Task 43 — Download Funnel.

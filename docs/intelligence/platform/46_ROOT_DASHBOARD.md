@@ -5,14 +5,14 @@ screen" for health, growth, safety, cost, and performance — all aggregate.
 
 ## Architecture
 ```
-Growth (19) · Retention (17) · Realtime (26) · Perf (38) · Cost (39) · Safety (35/37) · Trends (32)
+Growth+Retention (19) · Realtime (26) · Perf (38) · Cost (39) · Safety (35/37) · Trends (32)
         └─────────────────────► Root Dashboard (role-scoped tiles) ◄─────────────────────┘
 ```
 
 ## Sections
 - **North-star**: activation, active communities, retention.
 - **Live**: concurrent users/rooms (26), ingest/error (38).
-- **Growth**: acquisition→activation funnel (20), growth trend (19).
+- **Growth**: acquisition→activation funnel + growth trend (19), download funnel (43).
 - **Safety**: risk/fraud queue depth, report SLA (45).
 - **Cost/Perf**: spend trend (39), p95 latency, crash-free (38).
 - **Signals**: active trends/anomalies (32).
@@ -37,6 +37,6 @@ Growth (19) · Retention (17) · Realtime (26) · Perf (38) · Cost (39) · Safe
 - [ ] aggregates only · [ ] role-scoped · [ ] no new collection · [ ] freshness surfaced
 
 ## Risks / blockers
-- Metric sprawl → curate to north-star + a few per domain. Depends on 17/19/20/26/32/38/39/45.
+- Metric sprawl → curate to north-star + a few per domain. Depends on 19/26/32/35/37/38/39/43/44/45.
 
 **Next:** Task 47 — Data Export.

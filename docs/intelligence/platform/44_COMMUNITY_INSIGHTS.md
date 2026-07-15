@@ -5,7 +5,7 @@ channel health — scoped by RLS so an admin only ever sees their space, always 
 
 ## Architecture
 ```
-marts (23) + quality (31) + retention (17) ──► per-community views (RLS) ──► Community Insights UI
+marts (23) + quality (31) + growth/retention (19) ──► per-community views (RLS) ──► Community Insights UI
 ```
 
 ## Metrics
@@ -37,6 +37,6 @@ marts (23) + quality (31) + retention (17) ──► per-community views (RLS) �
 
 ## Risks / blockers
 - Small communities → suppression may hide most cells (documented, expected). Uses
-  Warehouse (23), Quality (31), Retention (17).
+  Warehouse (23), Quality (31), Growth Analytics (19).
 
 **Next:** Task 45 — Admin Intelligence.

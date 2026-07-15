@@ -20,7 +20,7 @@ membership + category + co-activity graph (23) ──► clustering ──► cl
 - `topic_clusters(cluster_id, label, members)`; `community_cluster(community_id, cluster_id)`.
 
 ## APIs / jobs
-- Periodic clustering job; feeds Recommendations (18) and discovery.
+- Periodic clustering job; feeds AI Recommendation Engine (11) and discovery.
 
 ## Dashboard metrics
 - Cluster sizes, cross-cluster overlap, coverage.

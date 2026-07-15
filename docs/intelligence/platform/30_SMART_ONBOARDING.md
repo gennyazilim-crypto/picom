@@ -36,6 +36,6 @@ onboarding_step (stepId, outcome, Task 02) ──► funnel rollup ──► onb
 - [ ] no per-user profiling
 
 ## Risks / blockers
-- Over-instrumenting onboarding → keep to key steps. Uses Funnel (20).
+- Over-instrumenting onboarding → keep to key steps. Uses Growth Analytics (19).
 
 **Next:** Task 31 — Content Quality Scoring.

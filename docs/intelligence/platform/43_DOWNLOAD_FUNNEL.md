@@ -38,6 +38,6 @@ app: first_launch/activation (Task 02) ──►┘
 
 ## Risks / blockers
 - Cross-surface stitching without identifiers is coarse → use aggregate rates, not
-  user-joins. Ties to updater (electron-updater feed), Funnel (20).
+  user-joins. Ties to updater (electron-updater feed), Growth Analytics (19).
 
 **Next:** Task 44 — Community Insights.
