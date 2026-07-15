@@ -15,7 +15,10 @@ export type SocialProviderAccountState = Readonly<{
   reason?: string;
 }>;
 
-export const SOCIAL_AUTH_PROVIDER_ORDER: readonly SocialAuthProvider[] = ["google", "apple", "steam", "epic"];
+// Steam and Epic are intentionally omitted from the offered providers: Supabase Auth
+// has no native Steam/Epic OAuth provider, so they cannot complete a real sign-in
+// without a custom OIDC integration. Only Supabase-supported providers are surfaced.
+export const SOCIAL_AUTH_PROVIDER_ORDER: readonly SocialAuthProvider[] = ["google", "apple"];
 
 const providerLabels: Record<SocialAuthProvider, SocialAuthProviderLabel> = {
   google: "Google",
@@ -86,12 +89,12 @@ export const socialAuthService = {
     return enabled ? { enabled: true } : { enabled: false, reason: `${getSocialAuthProviderLabel(provider)} provider setup is required.` };
   },
 
-  async beginOAuth(provider: SocialAuthProvider): Promise<SocialAuthResult<{ provider: SocialAuthProvider }>> {
+  async beginOAuth(provider: SocialAuthProvider, preparedWindow?: Window | null): Promise<SocialAuthResult<{ provider: SocialAuthProvider }>> {
     const availability = this.getProviderAvailability(provider);
-    if (!availability.enabled) return { ok: false, error: availability.reason ?? "This social provider is unavailable." };
+    if (!availability.enabled) { preparedWindow?.close(); return { ok: false, error: availability.reason ?? "This social provider is unavailable." }; }
 
     const client = getSupabaseClient();
-    if (!client) return { ok: false, error: "Supabase Auth is not configured." };
+    if (!client) { preparedWindow?.close(); return { ok: false, error: "Supabase Auth is not configured." }; }
 
     const { data, error } = await client.auth.signInWithOAuth({
       provider: provider as Provider,
@@ -101,9 +104,24 @@ export const socialAuthService = {
       },
     });
 
-    if (error || !data.url) return { ok: false, error: `Picom could not start ${provider} sign in.` };
+    if (error || !data.url) { preparedWindow?.close(); return { ok: false, error: `Picom could not start ${provider} sign in.` }; }
+
+    // On the desktop app the native opener launches the system browser. In a plain
+    // browser, navigate the popup that was opened synchronously on the click so it
+    // survives the popup blocker (window.open after an await is otherwise blocked).
+    const hasNativeOpener = Boolean(window.picomDesktop?.externalLinks?.openUrl);
+    if (preparedWindow && !hasNativeOpener) {
+      try {
+        preparedWindow.location.href = data.url;
+        return { ok: true, data: { provider } };
+      } catch {
+        preparedWindow.close();
+        return { ok: false, error: externalLinkService.getUserFriendlyError("EXTERNAL_URL_OPEN_FAILED") };
+      }
+    }
+
     const openResult = await externalLinkService.openExternalUrl(data.url);
-    if (!openResult.ok) return { ok: false, error: externalLinkService.getUserFriendlyError(openResult.reason) };
+    if (!openResult.ok) { preparedWindow?.close(); return { ok: false, error: externalLinkService.getUserFriendlyError(openResult.reason) }; }
     return { ok: true, data: { provider } };
   },
 
