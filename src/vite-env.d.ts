@@ -19,6 +19,7 @@ interface ImportMetaEnv {
   readonly VITE_LIVEKIT_ENABLED?: string;
   readonly VITE_RELEASE_CHANNEL?: "dev" | "beta" | "stable" | string;
   readonly VITE_DEV_SERVER_URL?: string;
+  readonly VITE_ANALYTICS_SINK_URL?: string;
 }
 
 interface ImportMeta {
