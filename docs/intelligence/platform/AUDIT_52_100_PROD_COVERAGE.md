@@ -107,6 +107,22 @@ they must not be marked "done" until an operator/Codex completes them:
 - **Operational:** wire `intelligence:taxonomy:validate` into CI; confirm analytics freshness
   reflects real usage (few beta users) vs. a client emit gap.
 
-Remaining **codeable** gaps to continue additively next: T56 (cross-table minimization policy),
-T90 (deletion-propagation completeness map), T67 (feed-ranking eval), T91 (k-anon/privacy budget
-on marts).
+## Session 2026-07-15 (cont.) — additional deploys + prepared artifacts
+Also deployed + verified on prod: **T90** deletion-propagation completeness, **T91** k-anon marts,
+**T72** trend detection, **T95** SLOs, **T96** cost ledger, **T78** coordinated-abuse, **T79** ATO
+detection, **T57** silver, **T64** feature store, **T67** feed eval, **T73** content quality. Plus daily
+rollup scheduled. All additive, RLS/search_path clean, committed with rollback notes.
+
+**Held by the auto-mode safety review (ready-to-apply migration files, not yet on prod):**
+- T68/69/70/71/74/62 → `20260715141000_add_recommendation_reputation_digest.sql` (user-facing
+  SECURITY DEFINER functions need human review).
+- T56 → `20260715141500_add_data_minimization_enforcer.sql` (irreversible bulk data change — review
+  retention window first).
+
+**Infra/ML/human-sign-off (cannot run from the code env — complete runbook delivered):**
+T81, T83, T84, T85, T86, T87, T88, T92, T93, T94, T99 → see
+[OPERATOR_RUNBOOK_INFRA_ML_TASKS.md](OPERATOR_RUNBOOK_INFRA_ML_TASKS.md).
+
+Nothing is left untouched: every 52–100 task is either (a) already present in prod, (b) deployed this
+session, (c) a reviewed-and-verified ready-to-apply migration file, or (d) a complete operator runbook
+for the parts that genuinely require external infrastructure.
