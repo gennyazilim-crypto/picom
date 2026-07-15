@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { LegalDocumentId } from "../../data/legalDocuments";
 import { feedbackService } from "../../services/feedbackService";
+import { emailOperationsService } from "../../services/emailOperationsService";
 import { helpSupportNavigationService } from "../../services/navigation/helpSupportNavigationService";
 import { AppIcon } from "../AppIcon";
 import { HelpCenterView } from "../HelpCenterView";
@@ -11,7 +12,7 @@ type Toast = (message: string, tone?: "info" | "success" | "error") => void;
 export function HelpSupportWorkspace({ onBack, pushToast }: Readonly<{ onBack: () => void; pushToast: Toast }>) {
   const [entry] = useState(() => helpSupportNavigationService.consume());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
-  const [busy, setBusy] = useState<"export" | "copy" | null>(null);
+  const [busy, setBusy] = useState<"export" | "submit" | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,13 +33,21 @@ export function HelpSupportWorkspace({ onBack, pushToast }: Readonly<{ onBack: (
     pushToast(result.canceled ? "Diagnostics export canceled." : "Redacted diagnostics exported.", result.canceled ? "info" : "success");
   };
 
-  const copyReport = async () => {
+  const submitReport = async () => {
     if (!title.trim() || !description.trim()) { setError("Add a short title and description before creating the report."); return; }
-    setBusy("copy"); setError(null);
-    const result = await feedbackService.copyReport({ issueType: "bug", severity: "major", title: title.trim(), description: description.trim(), includeDiagnostics: true, includeLogs: false });
+    setBusy("submit"); setError(null);
+    if (!online) {
+      const result = await feedbackService.copyReport({ issueType: "bug", severity: "major", title: title.trim(), description: description.trim(), includeDiagnostics: true, includeLogs: false });
+      setBusy(null);
+      if (!result.ok) { setError(result.reason); return; }
+      pushToast("Offline report copied. Submit it after reconnecting.", "info");
+      return;
+    }
+    const result = await emailOperationsService.submitSupport({ subject: title.trim(), message: description.trim() });
     setBusy(null);
-    if (!result.ok) { setError(result.reason); return; }
-    pushToast("Redacted report copied. Automated support submission is not configured in this beta.", "success");
+    if (!result.ok) { setError(result.message); return; }
+    setTitle(""); setDescription("");
+    pushToast("Support request queued. A confirmation email will follow.", "success");
   };
 
   return (
@@ -53,7 +62,7 @@ export function HelpSupportWorkspace({ onBack, pushToast }: Readonly<{ onBack: (
         <aside aria-label="Support actions" style={{ minWidth: 0, minHeight: 0, overflow: "auto", display: "grid", alignContent: "start", gap: 12 }}>
           {!online ? <div className="empty-state compact" role="status">Articles, report copying, and diagnostics export remain available offline. Online submission is unavailable.</div> : null}
           <section style={{ display: "grid", gap: 9, padding: 14, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}><strong>Export diagnostics</strong><small style={{ color: "var(--text-muted)", lineHeight: 1.45 }}>Creates a user-initiated JSON bundle redacted by Picom. Tokens, secrets, private message content, and raw credentials are excluded.</small><button type="button" className="secondary-button" disabled={busy !== null} onClick={() => void exportDiagnostics()}><AppIcon name="paperclip" size="sm" />{busy === "export" ? "Exporting..." : "Export redacted diagnostics"}</button></section>
-          <section style={{ display: "grid", gap: 9, padding: 14, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}><strong>Report a problem</strong><label style={{ display: "grid", gap: 5, fontSize: 11, color: "var(--text-muted)" }}>Title<input value={title} maxLength={120} onChange={(event) => setTitle(event.target.value)} /></label><label style={{ display: "grid", gap: 5, fontSize: 11, color: "var(--text-muted)" }}>Description<textarea value={description} maxLength={2000} rows={5} onChange={(event) => setDescription(event.target.value)} /></label><button type="button" className="secondary-button" disabled={busy !== null} onClick={() => void copyReport()}><AppIcon name="send" size="sm" />{busy === "copy" ? "Preparing..." : "Copy redacted report"}</button><small style={{ color: "var(--text-muted)", lineHeight: 1.45 }}>Automated support submission is not configured in this beta. Copying or exporting never claims a report was sent.</small></section>
+          <section style={{ display: "grid", gap: 9, padding: 14, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}><strong>Report a problem</strong><label style={{ display: "grid", gap: 5, fontSize: 11, color: "var(--text-muted)" }}>Title<input value={title} maxLength={120} onChange={(event) => setTitle(event.target.value)} /></label><label style={{ display: "grid", gap: 5, fontSize: 11, color: "var(--text-muted)" }}>Description<textarea value={description} maxLength={2000} rows={5} onChange={(event) => setDescription(event.target.value)} /></label><button type="button" className="secondary-button" disabled={busy !== null} onClick={() => void submitReport()}><AppIcon name="send" size="sm" />{busy === "submit" ? "Submitting..." : online ? "Submit securely" : "Copy offline report"}</button><small style={{ color: "var(--text-muted)", lineHeight: 1.45 }}>Online reports are queued through Picom's protected support service. Diagnostics are included only when you explicitly export them.</small></section>
           <section style={{ display: "grid", gap: 8, padding: 14, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}><strong>Legal</strong>{(["terms", "privacy", "guidelines", "acceptableUse"] as const).map((documentId) => <button key={documentId} type="button" className="global-nav-item" onClick={() => setLegalDocumentId(documentId)}><AppIcon name="lock" size="sm" /><span className="global-nav-item__label">{documentId === "acceptableUse" ? "Acceptable Use" : documentId[0].toUpperCase() + documentId.slice(1)}</span><AppIcon name="chevronRight" size="xs" /></button>)}</section>
           {error ? <div className="auth-error" role="alert">{error}</div> : null}
         </aside>

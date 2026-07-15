@@ -32,6 +32,7 @@ import { profileService } from "../services/profileService";
 import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";
 import { ProfileMediaEditor } from "./settings/ProfileMediaEditor";
 import type { ProfileSummary } from "../services/profileService";
+import { EmailPreferencesPanel } from "./settings/EmailPreferencesPanel";
 import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
 import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";
 import type { ProfilePrivacySettings } from "../types/profilePrivacy";
@@ -880,6 +881,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             <div className="placeholder-panel action-panel">
               <strong>Notification preferences</strong>
               <p>Choose which Picom activity can reach your inbox and desktop. Native delivery remains behind the safe preload bridge.</p>
+              <EmailPreferencesPanel />
               <div className="settings-status-card" aria-label="Notification runtime status">
                 <span>Runtime support</span>
                 <strong>{notificationStatus.supported ? "Available" : "Fallback only"}</strong>

@@ -45,6 +45,17 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
+# Hosted/staging/production Auth password-reset and verification mail must send as
+# info@picom.gg via custom SMTP (Dashboard Authentication > SMTP, or
+# `npm run auth:smtp:sender`). Local Inbucket keeps using the built-in catcher.
+# [auth.email.smtp]
+# enabled = true
+# host = "env(SMTP_HOST)"
+# port = 587
+# user = "env(SMTP_USER)"
+# pass = "env(SMTP_PASS)"
+# admin_email = "info@picom.gg"
+# sender_name = "Picom"
 [functions.health]
 verify_jwt = false
 
@@ -94,4 +105,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.account-deletion-finalize]
+verify_jwt = false
+
+[functions.email-api]
 verify_jwt = false

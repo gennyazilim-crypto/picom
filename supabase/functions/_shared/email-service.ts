@@ -1,142 +1,88 @@
-export type EmailProvider = "log" | "smtp_placeholder";
+export const EMAIL_LOCALES = ["tr", "en", "de", "fr", "es", "it", "pt", "ru", "ar", "ja"] as const;
+export type EmailLocale = typeof EMAIL_LOCALES[number];
 
-export type EmailIntentType =
-  | "email_verification_placeholder"
-  | "password_reset_placeholder"
-  | "invite_placeholder"
-  | "security_alert_placeholder"
-  | "notification_digest_placeholder";
+export const EMAIL_CATEGORIES = [
+  "required_account_security",
+  "support_updates",
+  "community_updates",
+  "product_announcements",
+  "radio_podcast_updates",
+  "optional_digest",
+  "marketing_advertising",
+  "billing",
+] as const;
+export type EmailCategory = typeof EMAIL_CATEGORIES[number];
 
-export type EmailMessage = {
+export const EMAIL_TEMPLATE_IDS = [
+  "welcome", "support_ticket_received", "support_internal_contact", "support_reply", "support_ticket_closed",
+  "account_warning", "suspension_notice", "appeal_received", "appeal_decision", "community_ownership_transfer",
+  "community_invitation", "content_removal", "temporary_restriction", "community_quarantine", "security_alert",
+  "new_login", "security_settings_changed", "subscription_confirmation", "payment_failure", "refund_status",
+  "incident_status", "optional_digest", "radio_podcast_update", "product_announcement", "marketing_announcement",
+] as const;
+export type EmailTemplateId = typeof EMAIL_TEMPLATE_IDS[number];
+
+type RpcResult = PromiseLike<{ data: unknown; error: { message?: string; code?: string } | null }>;
+export type EmailQueueClient = { rpc(name: string, args: Record<string, unknown>): RpcResult };
+
+export type QueueEmailInput = Readonly<{
   to: string;
-  subject: string;
-  text: string;
-  html?: string;
-  intentType?: EmailIntentType;
-  metadata?: Record<string, string | number | boolean | null>;
-};
+  recipientUserId?: string | null;
+  templateId: EmailTemplateId;
+  templateVersion?: number;
+  category: EmailCategory;
+  locale?: EmailLocale;
+  parameters?: Record<string, string | number | boolean | null>;
+  idempotencyKey: string;
+  correlationId: string;
+  priority?: number;
+}>;
 
-export type EmailSendResult =
-  | { ok: true; provider: EmailProvider; messageId: string }
-  | { ok: false; provider: EmailProvider; code: "SMTP_PROVIDER_NOT_CONFIGURED" | "EMAIL_VALIDATION_FAILED"; message: string };
+export type EmailQueueResult =
+  | { ok: true; status: "queued"; messageId: string }
+  | { ok: false; code: "EMAIL_VALIDATION_FAILED" | "EMAIL_QUEUE_FAILED"; message: string };
 
-type EmailServiceOptions = {
-  provider?: EmailProvider;
-  logger?: Pick<Console, "info" | "warn">;
-};
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function getProviderFromEnv(): EmailProvider {
-  try {
-    return Deno.env.get("EMAIL_PROVIDER") === "smtp_placeholder" ? "smtp_placeholder" : "log";
-  } catch {
-    return "log";
-  }
+function validHeaderSafeText(value: string, min: number, max: number): boolean {
+  return value.length >= min && value.length <= max && !/[\r\n]/.test(value);
 }
 
-function isValidEmailAddress(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function getEmailDomain(value: string): string {
-  return value.split("@")[1]?.toLowerCase() ?? "unknown-domain";
-}
-
-function redactTokenPreview(value: string | undefined): string {
-  if (!value) {
-    return "not-provided";
-  }
-
-  if (value.length <= 8) {
-    return "[redacted]";
-  }
-
-  return `${value.slice(0, 4)}...[redacted]`;
-}
-
-function createMessageId(intentType: EmailIntentType | undefined): string {
-  return `email_${intentType ?? "generic"}_${Date.now()}`;
-}
-
-export function createEmailService(options: EmailServiceOptions = {}) {
-  const provider = options.provider ?? getProviderFromEnv();
-  const logger = options.logger ?? console;
-
-  async function sendEmail(message: EmailMessage): Promise<EmailSendResult> {
-    const subject = message.subject.trim();
-    if (!isValidEmailAddress(message.to) || !subject || !message.text.trim()) {
-      return {
-        ok: false,
-        provider,
-        code: "EMAIL_VALIDATION_FAILED",
-        message: "Email recipient, subject, and text body are required.",
-      };
+export function createEmailQueueService(client: EmailQueueClient) {
+  async function enqueue(input: QueueEmailInput): Promise<EmailQueueResult> {
+    const recipient = input.to.trim().toLowerCase();
+    const parameters = input.parameters ?? {};
+    if (!emailPattern.test(recipient) || recipient.length > 320
+      || !EMAIL_TEMPLATE_IDS.includes(input.templateId)
+      || !EMAIL_CATEGORIES.includes(input.category)
+      || !EMAIL_LOCALES.includes(input.locale ?? "en")
+      || !validHeaderSafeText(input.idempotencyKey, 8, 200)
+      || !validHeaderSafeText(input.correlationId, 8, 120)
+      || (input.recipientUserId && !uuidPattern.test(input.recipientUserId))
+      || JSON.stringify(parameters).length > 16_384) {
+      return { ok: false, code: "EMAIL_VALIDATION_FAILED", message: "The email request is invalid." };
     }
 
-    if (provider === "smtp_placeholder") {
-      logger.warn("SMTP email provider placeholder is not configured", {
-        intentType: message.intentType ?? "unknown",
-        toDomain: getEmailDomain(message.to),
-      });
-      return {
-        ok: false,
-        provider,
-        code: "SMTP_PROVIDER_NOT_CONFIGURED",
-        message: "SMTP provider placeholder is not configured.",
-      };
-    }
-
-    logger.info("Email placeholder intent", {
-      intentType: message.intentType ?? "unknown",
-      toDomain: getEmailDomain(message.to),
-      subject,
-      metadata: message.metadata ?? {},
+    const { data, error } = await client.rpc("enqueue_email_message", {
+      p_recipient_email: recipient,
+      p_recipient_user_id: input.recipientUserId ?? null,
+      p_template_id: input.templateId,
+      p_template_version: input.templateVersion ?? 1,
+      p_category: input.category,
+      p_locale: input.locale ?? "en",
+      p_parameters: parameters,
+      p_idempotency_key: input.idempotencyKey,
+      p_correlation_id: input.correlationId,
+      p_priority: Math.min(Math.max(Math.round(input.priority ?? 50), 0), 100),
     });
 
-    return {
-      ok: true,
-      provider,
-      messageId: createMessageId(message.intentType),
-    };
+    if (error || typeof data !== "string") {
+      return { ok: false, code: "EMAIL_QUEUE_FAILED", message: "The email could not be queued." };
+    }
+    return { ok: true, status: "queued", messageId: data };
   }
 
-  return {
-    sendEmail,
-
-    sendPasswordResetEmailPlaceholder(input: { to: string; resetToken?: string }) {
-      return sendEmail({
-        to: input.to,
-        subject: "Picom password reset placeholder",
-        text: "A password reset was requested for your Picom account. This is a placeholder email intent.",
-        intentType: "password_reset_placeholder",
-        metadata: {
-          resetTokenPreview: redactTokenPreview(input.resetToken),
-        },
-      });
-    },
-
-    sendVerificationEmailPlaceholder(input: { to: string; verificationToken?: string }) {
-      return sendEmail({
-        to: input.to,
-        subject: "Picom email verification placeholder",
-        text: "Verify your Picom email address. This is a placeholder email intent.",
-        intentType: "email_verification_placeholder",
-        metadata: {
-          verificationTokenPreview: redactTokenPreview(input.verificationToken),
-        },
-      });
-    },
-
-    sendInviteEmailPlaceholder(input: { to: string; communityName: string; inviteCode?: string }) {
-      return sendEmail({
-        to: input.to,
-        subject: `Picom invite placeholder: ${input.communityName}`,
-        text: "You were invited to a Picom community. This is a placeholder email intent.",
-        intentType: "invite_placeholder",
-        metadata: {
-          communityName: input.communityName,
-          inviteCodePreview: redactTokenPreview(input.inviteCode),
-        },
-      });
-    },
-  };
+  return { enqueue };
 }
+

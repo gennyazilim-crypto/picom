@@ -489,12 +489,17 @@
     "supabase:types:check": "node scripts/generate-supabase-types.mjs --check",
     "supabase:config:smoke": "node scripts/supabase-config-contract.mjs",
     "supabase:migrations:check": "node scripts/supabase-migration-integrity.mjs",
-    "supabase:qa": "node scripts/supabase-qa-gate.mjs"
+    "supabase:qa": "node scripts/supabase-qa-gate.mjs",
+    "email:sender:scan": "node scripts/email-sender-policy-scan.mjs",
+    "email:worker": "node services/email-worker/index.mjs",
+    "email:smtp:health": "node scripts/email-smtp-healthcheck.mjs",
+    "auth:smtp:sender": "node scripts/set-auth-smtp-sender.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
     "@vitejs/plugin-react": "latest",
     "livekit-client": "^2.20.0",
+    "nodemailer": "^9.0.3",
     "react": "latest",
     "react-dom": "latest",
     "typescript": "latest",
