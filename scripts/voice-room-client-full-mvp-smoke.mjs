@@ -22,7 +22,7 @@ const checks = [
   [devicePanel.includes("voiceDeviceService.selectOutput"), "speaker selection reaches the device service"],
   [app.includes("leaveVoiceOnWindowClose"), "window shutdown releases the active voice room"],
   [app.includes("communityName: activeCommunity.name"), "join carries community display context"],
-  [app.includes("channelName: displayedActiveChannel.name"), "join carries channel display context"],
+  [app.includes("channelName = displayedActiveChannel.name"), "join carries channel display context"],
   [feed.includes("voiceState.roomContext?.channelName"), "Connected Voice shows the channel label"],
   [discovery.includes("voiceSnapshot.roomContext?.channelId === channel.id"), "room discovery uses stable channel identity"],
 ];

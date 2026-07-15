@@ -7,6 +7,7 @@ import {
   type SocialAuthProvider,
 } from "../../services/auth/socialAuthService";
 import { SocialProviderLogo } from "./SocialProviderLogo";
+import { externalLinkService } from "../../services/desktop/externalLinkService";
 
 type Props = { disabled?: boolean };
 
@@ -47,8 +48,7 @@ export function SocialLoginButtons({ disabled = false }: Props) {
     // Pre-open the popup synchronously within the click gesture so the browser popup
     // blocker allows it; the desktop app ignores this and uses its native opener.
     const hasNativeOpener = Boolean(window.picomDesktop?.externalLinks?.openUrl);
-    const preparedWindow = hasNativeOpener ? null : window.open("about:blank", "_blank");
-    if (preparedWindow) preparedWindow.opener = null;
+    const preparedWindow = hasNativeOpener ? null : externalLinkService.prepareExternalWindow();
     const result = await socialAuthService.beginOAuth(provider, preparedWindow);
     setMessage(result.ok ? "Continue in your browser. Picom will reopen after authorization." : result.error);
     setActiveProvider(null);

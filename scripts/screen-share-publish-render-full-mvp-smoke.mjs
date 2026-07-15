@@ -9,7 +9,7 @@ const [voice, viewer, feed, app, edge] = await Promise.all([
 
 const checks = [
   [voice.includes('intent: "screen"') && voice.includes("hasScreenPublishToken"), "explicit share upgrades to a screen-scoped token"],
-  [edge.includes("canPublish ? [...(authorization.can_publish_audio") && edge.includes('"screen_share_audio"'), "screen token requires screen permission and preserves microphone only with independent permission"],
+  [edge.includes("canPublish ? [...(canPublishAudio") && edge.includes('"screen_share_audio"'), "screen token requires screen permission and preserves microphone only with independent permission"],
   [voice.includes("VOICE_SCREEN_SHARE_CONFLICT"), "conflicting local shares are rejected"],
   [voice.includes("publishTrack(track") && voice.includes("Track.Source.ScreenShare"), "selected source publishes to LiveKit"],
   [voice.includes("RoomEvent.TrackSubscribed") && voice.includes("new MediaStream([mediaTrack])"), "remote screen track enters render state"],
