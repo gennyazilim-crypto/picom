@@ -12,8 +12,8 @@ is present (may still need hardening); `PARTIAL` = building blocks exist; `GAP` 
 |---|------|--------|------------------------|
 | 51 | Event taxonomy governance | DONE (client) | Added canonical registry + CI validator this session; prod has `sanitize_analytics_metadata` server-side |
 | 52 | Analytics ingestion gateway | EXISTS | `record_analytics_event`, `process_analytics_event_queue`, `analytics_event_queue`, `sanitize_analytics_metadata` |
-| 53 | Consent enforcement middleware | PARTIAL | `user_consents`, `cookie_consents` tables + `sanitize_analytics_metadata`; no explicit server-side consent gate on ingestion → **gap: enforce consent in record_analytics_event path** |
-| 54 | PII detection & redaction | GAP | Only key-allowlist sanitization; no value-level PII scan/redaction |
+| 53 | Consent enforcement middleware | EXISTS | `record_analytics_event` enforces consent: for `analytics`/`ads` it reads `cookie_consents` and returns null if not granted (fail-closed). No gap. |
+| 54 | PII detection & redaction | GAP → fixing | `sanitize_analytics_metadata` drops a key **denylist** but does not scan string **values**; hardened this session to redact email/phone/IP/token in values |
 | 55 | Pseudonymous identity service | GAP | No pseudonymization/salt service found |
 | 56 | Data minimization enforcer | PARTIAL | `sanitize_analytics_metadata` (key allowlist) + `anonymize_analytics_for_deleted_profile`; no cross-table minimization policy |
 | 57 | Warehouse bronze/silver/gold | PARTIAL | `analytics_events`(bronze) → `rollup_piso_daily_analytics` → `daily_metrics`/`community_metrics`/`revenue_metrics`/`moderation_metrics` (gold). No explicit silver layer |
