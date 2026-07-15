@@ -15,10 +15,22 @@ export type SocialProviderAccountState = Readonly<{
   reason?: string;
 }>;
 
-// Steam and Epic are intentionally omitted from the offered providers: Supabase Auth
-// has no native Steam/Epic OAuth provider, so they cannot complete a real sign-in
-// without a custom OIDC integration. Only Supabase-supported providers are surfaced.
-export const SOCIAL_AUTH_PROVIDER_ORDER: readonly SocialAuthProvider[] = ["google", "apple"];
+// Google/Apple use Supabase's native OAuth. Steam (OpenID 2.0) and Epic (OAuth2) have
+// no native Supabase provider, so they run through the custom steam-auth / epic-auth
+// Edge Functions (nonce + poll handoff). All four are gated by their own env flag, so a
+// provider only appears once its backend is deployed and enabled.
+export const SOCIAL_AUTH_PROVIDER_ORDER: readonly SocialAuthProvider[] = ["google", "apple", "steam", "epic"];
+const CUSTOM_OAUTH_PROVIDERS: ReadonlySet<SocialAuthProvider> = new Set(["steam", "epic"]);
+
+export function isCustomOAuthProvider(provider: SocialAuthProvider): boolean {
+  return CUSTOM_OAUTH_PROVIDERS.has(provider);
+}
+
+function generateNonce(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
 
 const providerLabels: Record<SocialAuthProvider, SocialAuthProviderLabel> = {
   google: "Google",
@@ -123,6 +135,50 @@ export const socialAuthService = {
     const openResult = await externalLinkService.openExternalUrl(data.url);
     if (!openResult.ok) { preparedWindow?.close(); return { ok: false, error: externalLinkService.getUserFriendlyError(openResult.reason) }; }
     return { ok: true, data: { provider } };
+  },
+
+  // Custom (non-Supabase-native) providers: Steam (OpenID 2.0) and Epic (OAuth2). The
+  // provider-specific Edge Function verifies the external identity and mints a Supabase
+  // session; the client opens the login page then polls the function for the session
+  // (nonce-keyed, single-use). Inert until the function is deployed and the provider
+  // flag is enabled.
+  async beginCustomOAuth(provider: SocialAuthProvider, preparedWindow?: Window | null): Promise<SocialAuthResult<{ provider: SocialAuthProvider }>> {
+    const availability = this.getProviderAvailability(provider);
+    if (!availability.enabled) { preparedWindow?.close(); return { ok: false, error: availability.reason ?? "This social provider is unavailable." }; }
+    const client = getSupabaseClient();
+    if (!client) { preparedWindow?.close(); return { ok: false, error: "Supabase Auth is not configured." }; }
+    const base = appConfig.supabase.url.replace(/\/+$/, "");
+    if (!base) { preparedWindow?.close(); return { ok: false, error: `${getSocialAuthProviderLabel(provider)} sign in is not configured.` }; }
+
+    const nonce = generateNonce();
+    const functionUrl = `${base}/functions/v1/${provider}-auth`;
+    const loginUrl = `${functionUrl}?action=login&nonce=${encodeURIComponent(nonce)}`;
+    const hasNativeOpener = Boolean(window.picomDesktop?.externalLinks?.openUrl);
+    if (preparedWindow && !hasNativeOpener) {
+      try { preparedWindow.location.href = loginUrl; } catch { preparedWindow.close(); return { ok: false, error: externalLinkService.getUserFriendlyError("EXTERNAL_URL_OPEN_FAILED") }; }
+    } else {
+      const openResult = await externalLinkService.openExternalUrl(loginUrl);
+      if (!openResult.ok) { preparedWindow?.close(); return { ok: false, error: externalLinkService.getUserFriendlyError(openResult.reason) }; }
+    }
+
+    const deadline = Date.now() + 150_000;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      let payload: { status?: string; session?: { access_token?: string; refresh_token?: string } | null } | null = null;
+      try {
+        const response = await fetch(`${functionUrl}?action=poll&nonce=${encodeURIComponent(nonce)}`, { headers: { apikey: appConfig.supabase.anonKey } });
+        payload = await response.json();
+      } catch { payload = null; }
+      if (!payload) continue;
+      if (payload.status === "ready" && payload.session?.access_token && payload.session.refresh_token) {
+        const { data, error } = await client.auth.setSession({ access_token: payload.session.access_token, refresh_token: payload.session.refresh_token });
+        if (error || !data.user) return { ok: false, error: `${getSocialAuthProviderLabel(provider)} sign in could not be completed.` };
+        const profileResult = await ensureProfile(data.user);
+        return profileResult.ok ? { ok: true, data: { provider } } : { ok: false, error: profileResult.error };
+      }
+      if (payload.status === "expired" || payload.status === "consumed") break;
+    }
+    return { ok: false, error: `${getSocialAuthProviderLabel(provider)} sign in timed out. Please try again.` };
   },
 
   async getAccountProviderStates(): Promise<SocialAuthResult<SocialProviderAccountState[]>> {

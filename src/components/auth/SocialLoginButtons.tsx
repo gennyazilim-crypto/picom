@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import {
   getSocialAuthProviderLabel,
+  isCustomOAuthProvider,
   SOCIAL_AUTH_PROVIDER_ORDER,
   socialAuthService,
   type SocialAuthProvider,
@@ -49,7 +50,9 @@ export function SocialLoginButtons({ disabled = false }: Props) {
     // blocker allows it; the desktop app ignores this and uses its native opener.
     const hasNativeOpener = Boolean(window.picomDesktop?.externalLinks?.openUrl);
     const preparedWindow = hasNativeOpener ? null : externalLinkService.prepareExternalWindow();
-    const result = await socialAuthService.beginOAuth(provider, preparedWindow);
+    const result = isCustomOAuthProvider(provider)
+      ? await socialAuthService.beginCustomOAuth(provider, preparedWindow)
+      : await socialAuthService.beginOAuth(provider, preparedWindow);
     setMessage(result.ok ? "Continue in your browser. Picom will reopen after authorization." : result.error);
     setActiveProvider(null);
   };
