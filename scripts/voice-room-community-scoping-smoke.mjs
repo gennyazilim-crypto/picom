@@ -7,8 +7,13 @@ import fs from "node:fs";
 // "in voice" in rooms they never joined.
 
 const service = fs.readFileSync("src/services/activeVoiceRoomDiscoveryService.ts", "utf8");
+const roomView = fs.readFileSync("src/components/VoiceRoomView.tsx", "utf8");
 
 const checks = [
+  [roomView.includes("snapshot.roomContext?.communityId === community.id && snapshot.roomContext?.channelId === channel.id"),
+    "VoiceRoomView must scope connected/joining to THIS community's channel (sessionHere)"],
+  [roomView.includes("const connected = sessionHere &&"),
+    "VoiceRoomView 'connected' must require sessionHere — never bare snapshot.status"],
   [service.includes("voiceSnapshot.roomContext?.communityId === community.id"),
     "local-session match must require the community to match (not just the channel)"],
   [service.includes(":${communityId.toLowerCase()}:"),
