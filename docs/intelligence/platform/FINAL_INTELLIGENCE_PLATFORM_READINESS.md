@@ -27,10 +27,10 @@ live OUTSIDE this platform (below) remain operator-owned.
 |---|---|---|---|
 | 1 | T99 hosted multi-user acceptance not yet executed (checklist ready) | Operator | CRITICAL |
 | 2 | SMTP/verification email not provisioned → sign-up flow incomplete | Operator | CRITICAL |
-| 3 | Client emitters not wired to `record_analytics_event`/`analyticsQueue` → freshness stays red without traffic signal clarity | Codex/dev | HIGH |
-| 4 | T56 minimization not applied (file ready; 0 rows affected today) | User (one command) | HIGH (compliance) |
+| 3 | ~~Client emitters not wired~~ **CLOSED**: legacy `analyticsService.trackEvent` now bridges into the canonical `analyticsQueue` (CANONICAL_BRIDGE; enforced by the taxonomy validator) | — | done |
+| 4 | ~~T56 minimization~~ **FUNCTION DEPLOYED** (0 rows modified); only the weekly `cron.schedule` one-liner remains a deliberate operator action | Operator (one line) | LOW |
 | 5 | Backups: PITR off (Pro-plan gate) → RPO 24h | Operator | HIGH |
-| 6 | `intelligence:taxonomy:validate` not yet in CI pipeline | Operator | MEDIUM |
+| 6 | ~~Taxonomy validate not in CI~~ **CLOSED**: `qa.yml` now runs `intelligence:event-schema:smoke` + `intelligence:taxonomy:validate` | — | done |
 
 ## Risk register (accepted/monitored)
 - Prod schema diverges from local repo (built by a second codebase) → all future DB work must be

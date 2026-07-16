@@ -49,6 +49,12 @@ jobs:
       - name: Verify API versioning enforcement
         run: npm run api:versioning:enforcement:smoke
 
+      - name: Verify intelligence event schema contract
+        run: npm run intelligence:event-schema:smoke
+
+      - name: Validate event taxonomy governance
+        run: npm run intelligence:taxonomy:validate
+
       - name: Typecheck
         run: npm run typecheck
 

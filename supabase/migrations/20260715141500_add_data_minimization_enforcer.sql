@@ -1,14 +1,13 @@
 -- T56 — data minimization enforcer. Additive DEFINITION, but the function performs an
 -- IRREVERSIBLE bulk modification of historical production data when RUN.
 --
--- STATUS: NOT APPLIED / NOT SCHEDULED. The auto-mode safety classifier correctly flags a
--- recurring mass-UPDATE that nulls actor_user_id and redacts query text across whole tables by
--- time cutoff only — this cannot be undone. Review the retention window and enable deliberately:
---   1) apply this migration (creates the function only — no data change yet),
---   2) dry-run intent: SELECT count(*) FROM analytics_events WHERE actor_user_id IS NOT NULL
+-- STATUS: FUNCTION APPLIED to prod 2026-07-15 (definition only — zero rows modified; verified no
+-- data older than the 180d window even exists yet). NOT scheduled/executed: the destructive step
+-- stays a deliberate operator action, per the safety review. To enable:
+--   1) dry-run intent: SELECT count(*) FROM analytics_events WHERE actor_user_id IS NOT NULL
 --        AND created_at < now() - interval '180 days';
---   3) run once manually: SELECT public.enforce_analytics_minimization(180);
---   4) optionally schedule weekly:
+--   2) run once manually: SELECT public.enforce_analytics_minimization(180);
+--   3) schedule weekly:
 --        SELECT cron.schedule('analytics-minimization','30 3 * * 0',
 --          $$select public.enforce_analytics_minimization(180);$$);
 --

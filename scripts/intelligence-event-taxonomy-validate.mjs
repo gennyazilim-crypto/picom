@@ -100,6 +100,16 @@ for (const entry of registry.legacyMap) {
   }
 }
 
+// --- Rule 6: the legacy service bridges into the canonical queue (call sites wired) ---
+const legacySvc = read("src/services/analyticsService.ts");
+if (!legacySvc.includes("analyticsQueue.enqueue") || !legacySvc.includes("CANONICAL_BRIDGE")) {
+  err("analyticsService.ts must bridge legacy events into analyticsQueue (CANONICAL_BRIDGE + enqueue)");
+}
+if (/releaseTrack/.test(read("src/services/analytics/eventSchema.ts")) && legacySvc.includes('releaseChannel: ')) {
+  // legacy metadata key may exist internally, but the bridge must map it to releaseTrack
+  if (!legacySvc.includes("releaseTrack")) err("bridge must map releaseChannel -> releaseTrack");
+}
+
 function toSnake(s) {
   return s.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
 }
