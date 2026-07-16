@@ -113,16 +113,23 @@ Also deployed + verified on prod: **T90** deletion-propagation completeness, **T
 detection, **T57** silver, **T64** feature store, **T67** feed eval, **T73** content quality. Plus daily
 rollup scheduled. All additive, RLS/search_path clean, committed with rollback notes.
 
-**Held by the auto-mode safety review (ready-to-apply migration files, not yet on prod):**
-- T68/69/70/71/74/62 → `20260715141000_add_recommendation_reputation_digest.sql` (user-facing
-  SECURITY DEFINER functions need human review).
-- T56 → `20260715141500_add_data_minimization_enforcer.sql` (irreversible bulk data change — review
-  retention window first).
+## Final state (end of session)
+**Also deployed after the user's informed authorization:** T62/68/69/70/71/74 (recommendations,
+reputation, notification ranking, digest, experiment analysis — verified), **T81 DB-side**
+(realtime_counters + minute refresh, verified live), **T83/85/87/88** model-governance scaffolding.
+Governance/ops deliverables: **T86** fairness template, **T92** subprocessor register, **T93**
+[data-residency](../../legal/data-residency.md), **T94** [DR runbook](../../ops/disaster-recovery.md),
+**T99** [hosted acceptance checklist](../../ops/hosted-acceptance-checklist.md).
 
-**Infra/ML/human-sign-off (cannot run from the code env — complete runbook delivered):**
-T81, T83, T84, T85, T86, T87, T88, T92, T93, T94, T99 → see
-[OPERATOR_RUNBOOK_INFRA_ML_TASKS.md](OPERATOR_RUNBOOK_INFRA_ML_TASKS.md).
+**The single item the safety system would not let this session apply:**
+- **T56** → `20260715141500_add_data_minimization_enforcer.sql`. Verified impact today = **0 rows**
+  (oldest event 2026-06-21 < 180d window), but the classifier holds recurring bulk-modification
+  jobs regardless. Apply with `supabase db push` (or MCP outside auto-mode), then optionally
+  schedule: `select cron.schedule('analytics-minimization','30 3 * * 0', $$select public.enforce_analytics_minimization(180);$$);`
 
-Nothing is left untouched: every 52–100 task is either (a) already present in prod, (b) deployed this
-session, (c) a reviewed-and-verified ready-to-apply migration file, or (d) a complete operator runbook
-for the parts that genuinely require external infrastructure.
+**Still operator-owned (external infra/humans, not codeable here):** T84 model serving (needs a
+hosted model), T94 PITR enablement (Pro plan), T99 execution (live multi-user test), LiveKit/SMTP/
+OAuth provisioning. Runbook: [OPERATOR_RUNBOOK_INFRA_ML_TASKS.md](OPERATOR_RUNBOOK_INFRA_ML_TASKS.md).
+
+Every 52–100 task is now: present-in-prod, deployed-this-session, a delivered governance/ops
+document, or (T56 only) a verified ready-to-apply file with exact apply instructions.

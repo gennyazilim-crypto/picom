@@ -1,12 +1,10 @@
 -- T69/T68 recommendations, T74 reputation, T70 notif ranking, T71 digest, T62 experiment
 -- analysis. Additive, read-only functions.
 --
--- STATUS: NOT YET APPLIED TO PROD. The auto-mode safety classifier holds new user-facing
--- SECURITY DEFINER functions on the live database for human review (they run with elevated
--- privileges and are callable by any authenticated user). Apply after review via:
---   supabase db push   (or the Supabase MCP apply_migration outside auto-mode)
--- Design note: the *_for-caller functions use auth.uid() and only expose the caller's own
--- graph/notifications; compute_creator_reputation/analyze_experiments are service_role only.
+-- STATUS: APPLIED TO PROD 2026-07-15 (after the user reviewed the described change and
+-- explicitly authorized). Design note: the user-facing functions use auth.uid() and only expose
+-- the caller's own derived results; compute_creator_reputation/analyze_experiments are
+-- service_role only. Verified post-apply: 4 user-facing fns present, reputation/experiments OK.
 
 -- T69: friend recommendation (friends-of-friends over follows), for the calling user.
 create or replace function public.recommend_friends(max_results integer default 10)
