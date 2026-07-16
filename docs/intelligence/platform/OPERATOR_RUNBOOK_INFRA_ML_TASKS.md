@@ -15,38 +15,37 @@ Deliverable to add when infra chosen: `realtime_counters(metric,window,value,upd
 
 ## T83 / T84 — Model registry & serving
 Current: heuristic SQL scoring (`piso_feed_weight`, `get_content_quality_scores`, risk detectors).
-- **T83 registry:** create `model_registry(model_key,version,artifact_uri,metrics jsonb,status,created_at)`
-  + `model_deployments(model_key,version,env,active)`; admin-read RLS. (Additive SQL — can be applied.)
+- **T83 registry: ✅ DEPLOYED** — `model_registry` + `model_deployments` (admin-read RLS) +
+  `register_model()` writer applied to prod.
 - **T84 serving:** requires an external inference service (Supabase Edge Function calling a hosted
   model, or a separate container). Wire the app to call it behind a feature flag; fall back to the
   existing SQL heuristics when unavailable (matches the graceful-degradation pattern already used).
 
 ## T85 — Model monitoring & drift
-Needs a served model first (T84). Then: log prediction inputs/outputs (pseudonymized via
-`pseudonymize_actor`), compute population-stability index vs a baseline window, alert on drift.
-DB side deployable now: `model_drift_metrics(model_key,metric,value,window,computed_at)`.
-
-## T86 — Bias & fairness review
-Process + artifacts (not a running system): define protected-cohort proxies that are **privacy-safe**
-(no special-category data — the charter forbids collecting it), evaluate score parity across coarse
-cohorts on aggregates, document a review checklist per model release. Deliverable: a DPIA-linked
-fairness review template committed under `docs/intelligence/` and run at each model release.
+DB side **✅ DEPLOYED**: `model_drift_metrics(model_key,metric,value,window_label,computed_at)`
+(admin-read). Populating it needs a served model (T84): log prediction inputs/outputs (pseudonymized
+via `pseudonymize_actor`), compute population-stability index vs a baseline window, alert on drift.
 
 ## T87 — AI explainability
-For heuristic scorers, expose the feature contributions already computed (e.g., reputation returns
-its components — followers/posts/likes/reports). For any ML model (T84), require the serving layer to
-return top feature attributions. Deliverable: an `explanation jsonb` column on prediction logs.
+DB side **✅ DEPLOYED**: `model_predictions(model_key, subject_hash, score, explanation jsonb)`
+(admin-read). Heuristic scorers already return their components; any ML model (T84) must populate
+`explanation` with top feature attributions.
 
 ## T88 — Feedback learning loop
-Capture explicit/implicit feedback (accept/dismiss on recommendations, report outcomes) into a
-`feedback_events(subject_type,subject_id,signal,weight,created_at)` table (additive — applyable), then
-periodically recompute `recommendation_features` (store already deployed, T64). Closing the loop into a
-trained model needs T84.
+DB side **✅ DEPLOYED**: `feedback_events` + `record_feedback_signal()`. Capture accept/dismiss /
+report outcomes, then recompute `recommendation_features` (T64, deployed). Closing into a trained
+model needs T84.
+
+## T86 — Bias & fairness review
+Process + artifacts (not a running system). **✅ Template delivered:**
+[`docs/intelligence/fairness-review-template.md`](../fairness-review-template.md) — privacy-safe
+cohort-parity review (no special-category data), run and signed at each model release, attached to the
+`model_registry` version and the DPIA (Task 49).
 
 ## T92 — Third-party processor governance
-Governance doc, not code: maintain a register of sub-processors (Supabase, LiveKit, email/SMTP,
-Steam/Epic OAuth) with purpose, data categories, region, DPA link. Deliverable: `docs/legal/subprocessors.md`
-reviewed quarterly. Links to Consent/Compliance (Task 48/49).
+**✅ Deliverable delivered:** [`docs/legal/subprocessors.md`](../../legal/subprocessors.md) — sub-processor
+register (Supabase, LiveKit, email/SMTP, Steam/Epic OAuth) with purpose, data categories, region, DPA.
+Review quarterly. Links to Consent/Compliance (Task 48/49). Open operator items noted in that file.
 
 ## T93 — Data residency strategy
 Current: `piso` is in `eu-central-1` (EU). Deliverable: document the residency posture (EU-only
