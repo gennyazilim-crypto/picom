@@ -25,7 +25,7 @@ const raw = fs.readFileSync(output, "utf8");
 const provenance = JSON.parse(raw);
 
 for (const [key, expected] of Object.entries({
-  productName: "Picom",
+  productName: "Picom Desktop",
   releaseChannel: "beta",
   buildDate: "2026-07-06T00:00:00.000Z",
   platform: process.platform,

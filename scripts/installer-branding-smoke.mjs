@@ -18,10 +18,10 @@ const requiredFiles = [
 for (const file of requiredFiles) if (!existsSync(file)) throw new Error(`Missing installer branding asset/doc: ${file}`);
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
-if (pkg.name !== "picom" || pkg.desktopName !== "Picom") throw new Error("Package identity is not Picom.");
+if (pkg.name !== "picom" || pkg.desktopName !== "Picom Desktop") throw new Error("Package identity is not Picom.");
 
 const builder = readFileSync("electron-builder.yml", "utf8");
-for (const marker of ["appId: com.picom.desktop", "productName: Picom", "installerIcon: assets/brand/app-icon.ico", "createDesktopShortcut: true", "createStartMenuShortcut: true", "target: AppImage", "target: deb", "target: dmg"]) {
+for (const marker of ["appId: com.picom.desktop", "productName: Picom Desktop", "installerIcon: assets/brand/app-icon.ico", "createDesktopShortcut: true", "createStartMenuShortcut: true", "target: AppImage", "target: deb", "target: dmg"]) {
   if (!builder.includes(marker)) throw new Error(`Missing package branding marker: ${marker}`);
 }
 for (const marker of ["oneClick: false", "perMachine: false", "allowElevation: false", "runAfterFinish: true", "deleteAppDataOnUninstall: false", "installerHeader: assets/installer/windows/installer-header.bmp", "installerSidebar: assets/installer/windows/installer-sidebar.bmp"]) {
@@ -30,7 +30,7 @@ for (const marker of ["oneClick: false", "perMachine: false", "allowElevation: f
 for (const marker of ["background: assets/installer/macos/dmg-background.png", "path: /Applications", "NSMicrophoneUsageDescription", "NSScreenCaptureUsageDescription"]) {
   if (!builder.includes(marker)) throw new Error(`Missing macOS installer marker: ${marker}`);
 }
-for (const marker of ["synopsis: Desktop community workspace", "Comment: Desktop community workspace", "Categories: Network;Chat;Utility;", 'Terminal: "false"', "StartupWMClass: Picom"]) {
+for (const marker of ["synopsis: Desktop community workspace", "Comment: Desktop community workspace", "Categories: Network;Chat;Utility;", 'Terminal: "false"', "StartupWMClass: Picom Desktop"]) {
   if (!builder.includes(marker)) throw new Error(`Missing Linux installer marker: ${marker}`);
 }
 if (builder.includes(".placeholder.")) throw new Error("Placeholder installer artwork must not be referenced by packaging.");

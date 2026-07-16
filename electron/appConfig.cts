@@ -1,5 +1,5 @@
 export const ELECTRON_APP_CONFIG = Object.freeze({
-  name: "Picom",
+  name: "Picom Desktop",
   appId: "com.picom.desktop",
   window: Object.freeze({
     defaultWidth: 1440,

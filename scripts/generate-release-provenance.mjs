@@ -83,7 +83,7 @@ const artifacts = listArtifacts(args.artifactsDir);
 
 const provenance = {
   schemaVersion: 1,
-  productName: "Picom",
+  productName: "Picom Desktop",
   appVersion: packageJson.version,
   releaseChannel: getReleaseChannel(packageJson.version),
   gitCommit,
