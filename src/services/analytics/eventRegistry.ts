@@ -25,6 +25,9 @@ export type EventDomain =
   | "navigation"
   | "acquisition"
   | "engagement"
+  | "auth"
+  | "media"
+  | "voice"
   | "search";
 
 export type PropertySpec = Readonly<{

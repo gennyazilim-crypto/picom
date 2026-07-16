@@ -23,6 +23,19 @@ export type AnalyticsEventName =
   | "feed_card_opened"
   | "community_opened"
   | "community_joined"
+  | "community_created"
+  | "message_activity_counted"
+  // auth
+  | "auth_succeeded"
+  // media
+  | "upload_completed"
+  | "upload_failed"
+  // voice & screen
+  | "voice_joined"
+  | "voice_join_failed"
+  | "screen_share_started"
+  // feature usage
+  | "feature_used_counted"
   // search
   | "search_performed";
 
@@ -51,6 +64,15 @@ const ALLOWED_METADATA: Record<AnalyticsEventName, readonly string[]> = {
   feed_card_opened: ["cardType", "dwellBucket"],
   community_opened: ["mode"],
   community_joined: ["mode"],
+  community_created: ["mode"],
+  message_activity_counted: ["count", "mode"],
+  auth_succeeded: ["mode"],
+  upload_completed: ["kind", "sizeBucket"],
+  upload_failed: ["kind"],
+  voice_joined: ["mode"],
+  voice_join_failed: ["mode"],
+  screen_share_started: ["mode"],
+  feature_used_counted: ["feature", "count"],
   search_performed: ["resultBucket"],
 };
 

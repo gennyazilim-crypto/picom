@@ -1,4 +1,5 @@
 import { analyticsQueue } from "./analytics/analyticsQueue";
+import type { AnalyticsEventName as CanonicalEventName } from "./analytics/eventSchema";
 
 export type AnalyticsEventName = "app_started" | "login_success" | "community_created" | "message_sent_count_only" | "upload_success" | "upload_failure" | "voice_joined" | "voice_join_failure" | "screen_share_started" | "settings_opened" | "feature_usage_count_only";
 export type AnalyticsFeatureName = "mention_feed" | "community_chat" | "direct_messages" | "friends" | "saved_messages" | "discovery" | "profile" | "voice" | "screen_share" | "settings";
@@ -12,13 +13,25 @@ export type AnalyticsDashboardSnapshot = Readonly<{
 const ENABLED_KEY = "picom.analytics.enabled.v1"; const QUEUE_KEY = "picom.analytics.localQueue.v1"; const SENSITIVE = /(message|body|password|token|secret|channel|attachment|email|username|user_id|session|authorization)/i;
 const allowedMetadata: Record<AnalyticsEventName, readonly string[]> = { app_started: ["runtime", "releaseChannel"], login_success: ["mode"], community_created: ["mode"], message_sent_count_only: ["count", "mode"], upload_success: ["kind", "sizeBucket"], upload_failure: ["kind"], voice_joined: ["mode"], voice_join_failure: ["mode"], screen_share_started: ["mode"], settings_opened: ["section"], feature_usage_count_only: ["feature", "count"] };
 const allowedFeatures = new Set<AnalyticsFeatureName>(["mention_feed", "community_chat", "direct_messages", "friends", "saved_messages", "discovery", "profile", "voice", "screen_share", "settings"]);
-// Task 051 bridge: forward legacy events to the canonical, versioned queue where an ACTIVE
-// canonical equivalent exists (see src/services/analytics/event-registry.json legacyMap).
-// Note the releaseChannel -> releaseTrack rename: keys matching the SENSITIVE blocklist are
-// silently stripped by the canonical schema, so the bridge maps to the safe key.
-const CANONICAL_BRIDGE: Partial<Record<AnalyticsEventName, (metadata: Record<string, unknown>) => { name: "session_started" | "view_opened"; metadata: Record<string, string | number | boolean> }>> = {
+// Task 051 bridge: every legacy event now forwards to its ACTIVE canonical equivalent
+// (see src/services/analytics/event-registry.json legacyMap). The canonical schema's
+// allowlist+sanitizer still applies on enqueue. Note the releaseChannel -> releaseTrack
+// rename: keys matching the SENSITIVE blocklist are silently stripped by the canonical
+// schema, so the bridge maps to the safe key.
+const toCanonicalMetadata = (metadata: Record<string, unknown>): Record<string, string | number | boolean> =>
+  Object.fromEntries(Object.entries(metadata).filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))) as Record<string, string | number | boolean>;
+const CANONICAL_BRIDGE: Record<AnalyticsEventName, (metadata: Record<string, unknown>) => { name: CanonicalEventName; metadata: Record<string, string | number | boolean> }> = {
   app_started: (m) => ({ name: "session_started", metadata: { ...(typeof m.runtime === "string" ? { runtime: m.runtime } : {}), ...(typeof m.releaseChannel === "string" ? { releaseTrack: m.releaseChannel } : {}) } }),
   settings_opened: () => ({ name: "view_opened", metadata: { view: "settings" } }),
+  login_success: (m) => ({ name: "auth_succeeded", metadata: toCanonicalMetadata(m) }),
+  community_created: (m) => ({ name: "community_created", metadata: toCanonicalMetadata(m) }),
+  message_sent_count_only: (m) => ({ name: "message_activity_counted", metadata: toCanonicalMetadata(m) }),
+  upload_success: (m) => ({ name: "upload_completed", metadata: toCanonicalMetadata(m) }),
+  upload_failure: (m) => ({ name: "upload_failed", metadata: toCanonicalMetadata(m) }),
+  voice_joined: (m) => ({ name: "voice_joined", metadata: toCanonicalMetadata(m) }),
+  voice_join_failure: (m) => ({ name: "voice_join_failed", metadata: toCanonicalMetadata(m) }),
+  screen_share_started: (m) => ({ name: "screen_share_started", metadata: toCanonicalMetadata(m) }),
+  feature_usage_count_only: (m) => ({ name: "feature_used_counted", metadata: toCanonicalMetadata(m) }),
 };
 function readQueue(): AnalyticsEvent[] { try { const parsed = JSON.parse(window.localStorage.getItem(QUEUE_KEY) ?? "[]") as AnalyticsEvent[]; return Array.isArray(parsed) ? parsed : []; } catch { return []; } }
 function sanitize(name: AnalyticsEventName, metadata: Record<string, unknown>): Record<string, string | number | boolean> { const allow = new Set(allowedMetadata[name]); return Object.fromEntries(Object.entries(metadata).filter(([key, value]) => allow.has(key) && !SENSITIVE.test(key) && ["string", "number", "boolean"].includes(typeof value) && (typeof value !== "number" || Number.isFinite(value)) && (key !== "feature" || (typeof value === "string" && allowedFeatures.has(value as AnalyticsFeatureName)))).map(([key, value]) => [key, typeof value === "string" ? value.slice(0, 40) : typeof value === "number" && key === "count" ? Math.min(Math.max(Math.trunc(value), 0), 10_000) : value as number | boolean])) as Record<string, string | number | boolean>; }
