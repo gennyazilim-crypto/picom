@@ -30,20 +30,34 @@ type AnalyticsEnvelope = {
 
 | Name | Family | Allowed metadata | Tier |
 |---|---|---|---|
-| `session_started` | lifecycle | `runtime`, `releaseChannel` | analytics |
+| `session_started` | lifecycle | `runtime`, `releaseTrack` | analytics |
 | `session_heartbeat` | lifecycle | `durationBucket` | analytics |
 | `session_ended` | lifecycle | `durationBucket` | analytics |
 | `view_opened` | navigation | `view` (allowlisted) | analytics |
 | `download_started` | downloads | `kind` | analytics |
 | `download_completed` | downloads | `kind`, `sizeBucket` | analytics |
-| `install_activated` | downloads | `channel` | analytics |
+| `install_activated` | downloads | `releaseTrack` | analytics |
 | `feed_card_opened` | feed | `cardType`, `dwellBucket` | recommendations |
 | `community_opened` | community | `mode` | analytics |
 | `community_joined` | community | `mode` | analytics |
+| `community_created` | community | `mode` | analytics |
+| `message_activity_counted` | community | `count`, `mode` (**count only, never content**) | analytics |
+| `auth_succeeded` | auth | `mode` | analytics |
+| `upload_completed` | media | `kind`, `sizeBucket` | analytics |
+| `upload_failed` | media | `kind` | analytics |
+| `voice_joined` | voice | `mode` | analytics |
+| `voice_join_failed` | voice | `mode` | analytics |
+| `screen_share_started` | voice | `mode` | analytics |
+| `feature_used_counted` | engagement | `feature` (allowlisted), `count` | analytics |
 | `search_performed` | search | `resultBucket` (**no query text**) | analytics |
 
-The legacy count-only events (`message_sent_count_only`, `feature_usage_count_only`, …)
-remain in `analyticsService` and are unchanged.
+> Naming note: the release track keys are `releaseTrack` — `releaseChannel`/`channel` collide
+> with the SENSITIVE blocklist (`channel`) and would be silently stripped. Enforced by
+> `intelligence:taxonomy:validate`.
+
+Every legacy `analyticsService` event now forwards to its canonical equivalent via the
+`CANONICAL_BRIDGE` (see `src/services/analytics/event-registry.json` `legacyMap`); the
+governed registry and this schema are kept in 1:1 lockstep by CI.
 
 ## Privacy enforcement (in the schema, not just docs)
 
