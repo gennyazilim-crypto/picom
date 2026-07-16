@@ -80,13 +80,13 @@ legacy analyticsService.ts events ─► legacyMap ─► canonical / proposed n
 - [x] legacy events mapped to canonical/proposed names
 - [x] validator proven to fail on drift + collision (negative-tested)
 
-## Remaining blockers
-- **Promote proposed canonicals**: `login_success`, `community_created`, upload/voice/
-  screen-share, `feature_usage_count_only` need canonical events added to `eventSchema.ts`
-  when their emitters are wired (Task 02 follow-up) — then flip `proposed` → `active`.
-- **Legacy `analyticsService.ts`** carries the same `releaseChannel`→(stripped) issue; fixed
-  canonically in `eventSchema.ts`, but the legacy service's `app_started` metadata should be
-  renamed to `release_track` when that path is retired/merged.
-- **CI wiring** (operator): add `intelligence:taxonomy:validate` to the pipeline job.
+## Status (all original blockers closed)
+- ✅ **Proposed canonicals promoted**: all 9 are now ACTIVE in `eventSchema.ts` + registry
+  (20 ⇄ 20 lockstep enforced in CI). Every legacy event maps via `replacedBy`.
+- ✅ **Legacy service bridged**: `analyticsService.trackEvent` forwards every legacy event to
+  the canonical queue (`CANONICAL_BRIDGE`, validator-enforced), including the
+  `releaseChannel` → `releaseTrack` safe-key mapping.
+- ✅ **CI wired**: `qa.yml` runs `intelligence:event-schema:smoke` + `intelligence:taxonomy:validate`
+  (activates on the next push of this branch).
 
 **Next task:** 052 — Analytics Ingestion Gateway.
