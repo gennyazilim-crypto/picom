@@ -14,10 +14,14 @@ type DiscoveryInput = Readonly<{
 
 const stableMockCount = (channelId: string) => (Array.from(channelId).reduce((total, value) => total + value.charCodeAt(0), 0) % 5) + 1;
 
-const isCurrentRoom = (roomName: string | null, channelId: string, channelName: string) => {
+// Rooms are scoped per community AND channel (picom:{communityId}:voice:{channelId}).
+// Never match by channel name or bare channel-id suffix: default channel names repeat across
+// communities, so a name/suffix match leaks one community's live session into every community
+// that has a same-named voice channel.
+const isCurrentRoom = (roomName: string | null, communityId: string, channelId: string) => {
   if (!roomName) return false;
   const normalized = roomName.toLowerCase();
-  return normalized === channelId.toLowerCase() || normalized === channelName.toLowerCase() || normalized.endsWith(`:${channelId.toLowerCase()}`);
+  return normalized.includes(`:${communityId.toLowerCase()}:`) && normalized.endsWith(`:${channelId.toLowerCase()}`);
 };
 
 function resolveVoiceChannelOccupancy(
@@ -29,9 +33,11 @@ function resolveVoiceChannelOccupancy(
   isMock: boolean,
   connected: boolean,
 ): VoiceRoomOccupancy | null {
+  // Communities are independent: the local session only counts here when BOTH the community
+  // and the channel match (channel ids are unique, but stay strict for defense in depth).
   const activeHere = connected && (
-    voiceSnapshot.roomContext?.channelId === channel.id
-    || isCurrentRoom(voiceSnapshot.roomName, channel.id, channel.name)
+    (voiceSnapshot.roomContext?.channelId === channel.id && voiceSnapshot.roomContext?.communityId === community.id)
+    || isCurrentRoom(voiceSnapshot.roomName, community.id, channel.id)
   );
   const participantCount = suppliedOccupancy?.participantCount ?? (activeHere ? voiceSnapshot.participants.length : isMock ? stableMockCount(channel.id) : 0);
   if (participantCount <= 0) return null;
@@ -53,8 +59,10 @@ function resolveVoiceChannelOccupancy(
     };
   }
 
+  // Only REAL occupancy data may name participants. Never fabricate names from the community's
+  // online members — that showed users "in voice" in rooms (and communities) they never joined.
   const participantNames = access.canViewMemberList
-    ? (suppliedOccupancy?.participantNames ?? community.members.filter((member) => member.status !== "offline").map((member) => member.displayName)).slice(0, participantCount)
+    ? (suppliedOccupancy?.participantNames ?? []).slice(0, participantCount)
     : [];
 
   return {

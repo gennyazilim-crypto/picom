@@ -26,6 +26,7 @@
     "voice:client:smoke": "node scripts/voice-room-client-full-mvp-smoke.mjs",
     "voice:reconnect:full-mvp:smoke": "node scripts/voice-devices-reconnect-full-mvp-smoke.mjs",
     "voice:discovery:test": "node scripts/active-voice-rooms-discovery-smoke.mjs",
+    "voice:scoping:smoke": "node scripts/voice-room-community-scoping-smoke.mjs",
     "screen-share:preview:test": "node scripts/screen-share-preview-controls-smoke.mjs",
     "screen-share:bridge:full-mvp:smoke": "node scripts/screen-share-picker-bridge-full-mvp-smoke.mjs",
     "screen-share:publish:full-mvp:smoke": "node scripts/screen-share-publish-render-full-mvp-smoke.mjs",
