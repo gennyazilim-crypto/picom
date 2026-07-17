@@ -5,6 +5,7 @@ import { mvpUiIconMap } from "./iconRegistry";
 import { getCommunityIconLabel } from "../utils/generatedIdentity";
 import { getCommunityVerificationSummary, getVerificationType } from "../utils/verificationHelpers";
 import { isV1CommunityKindEnabled, isV1FeatureEnabled } from "../config/v1ReleaseScope";
+import "./ServerRail.css";
 
 const railIcons = mvpUiIconMap.serverRail;
 
@@ -38,10 +39,12 @@ export function ServerRail({ communities, activeCommunityId, onSelectCommunity, 
             {community.id === "aurora" ? <i className="unread-dot" /> : null}
           </button>
         ))}
+      </div>
+      <div className="server-rail-footer">
         <button className="server-button utility" aria-label="Add community" onClick={() => onUtilityAction?.("create-community")}>
           <AppIcon name={railIcons.addCommunity} size="lg" />
         </button>
-        {isV1FeatureEnabled("discoveryMarketplace") ? <button className="server-button utility" aria-label="Discover communities" onClick={onOpenDiscovery}>
+        {isV1FeatureEnabled("discoveryMarketplace") ? <button className="server-button utility server-button--discover" aria-label="Discover communities" title="Discover communities" onClick={onOpenDiscovery}>
           <AppIcon name={railIcons.discover} size="lg" />
         </button> : null}
       </div>

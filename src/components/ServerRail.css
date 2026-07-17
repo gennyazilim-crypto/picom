@@ -1,0 +1,24 @@
+/* Pin the utility actions (Add community + Discover) to the bottom of the server rail so they
+   stay visible no matter how many communities scroll in the list above. */
+.server-rail-footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding-top: 12px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
+/* Make the Discover action read as the anchored entry point, not just another server icon. */
+.server-button--discover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.server-button--discover:hover {
+  color: var(--text-on-accent);
+  background: var(--accent);
+}
