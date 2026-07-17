@@ -8,6 +8,7 @@ const kannelUrl = process.env.KANNEL_SEND_URL?.trim() || "http://127.0.0.1:13013
 const kannelUsername = process.env.KANNEL_USERNAME?.trim() || "";
 const kannelPassword = process.env.KANNEL_PASSWORD?.trim() || "";
 const sender = process.env.KANNEL_FROM?.trim() || "Picom";
+const transportReady = process.env.PICOM_SMS_TRANSPORT_READY === "true";
 const maximumBodyBytes = 16 * 1024;
 const signatureWindowSeconds = 90;
 const usedNonces = new Map();
@@ -54,6 +55,7 @@ function validPayload(value) {
   return Number.isFinite(expiry) && expiry > Date.now() && expiry <= Date.now() + 10 * 60 * 1000;
 }
 async function sendSms(payload) {
+  if (!transportReady) throw new Error("SMS transport is not certified ready.");
   const form = new URLSearchParams({
     username: kannelUsername,
     password: kannelPassword,
@@ -72,7 +74,7 @@ async function sendSms(payload) {
 }
 
 const server = createServer((request, response) => {
-  if (request.method === "GET" && request.url === "/healthz") return sendJson(response, 200, { ok: true, transport: "kannel" });
+  if (request.method === "GET" && request.url === "/healthz") return sendJson(response, 200, { ok: true, transport: "kannel", transportReady });
   if (request.method !== "POST" || request.url !== "/v1/messages/send") return sendJson(response, 404, { ok: false });
   const chunks = [];
   let size = 0;

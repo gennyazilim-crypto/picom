@@ -20,6 +20,7 @@ const checks=[
   ["gateway replay protection",gateway.includes("usedNonces")&&gateway.includes("signatureWindowSeconds")],
   ["gateway payload limit",gateway.includes("maximumBodyBytes")],
   ["Kannel transport",gateway.includes("KANNEL_SEND_URL")&&gateway.includes("/cgi-bin/sendsms")],
+  ["transport readiness fails closed",gateway.includes("PICOM_SMS_TRANSPORT_READY")&&gateway.includes("SMS transport is not certified ready")],
   ["loopback defaults",gateway.includes('"127.0.0.1"')&&gateway.includes("loopback")],
   ["hardened systemd unit",service.includes("NoNewPrivileges=true")&&service.includes("ProtectSystem=strict")],
   ["SMS user experience",flow.includes("Send SMS code")&&flow.includes("Code from the SMS")&&!flow.includes("Call me with a code")],

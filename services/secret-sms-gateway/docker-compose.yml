@@ -1,0 +1,17 @@
+services:
+  secret-sms-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: picom-secret-sms-gateway
+    network_mode: host
+    env_file:
+      - /etc/picom/secret-sms-gateway.env
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m

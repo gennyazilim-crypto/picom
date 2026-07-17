@@ -29,6 +29,8 @@ Gateway-only secrets:
 
 Never commit these values. The public gateway URL must use HTTPS. Kannel remains loopback-only.
 
+PICOM_SMS_TRANSPORT_READY must remain false until a real modem/SIM or SMPP route passes an end-to-end delivery test. The gateway fails closed while it is false.
+
 ## Required physical transport
 
 Sending an SMS to a public phone number always requires access to the mobile network. For the Picom-owned route, install Kannel with a supported GSM modem and active SIM on the server, or configure a controlled SMPP account. The application and verification control plane are self-hosted, but a GSM modem, SIM, or SMPP transport is still required for delivery.

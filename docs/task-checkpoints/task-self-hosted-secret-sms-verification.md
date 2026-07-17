@@ -8,4 +8,4 @@
 - Privacy: raw phone and OTP are never persisted in Picom tables or gateway logs.
 - Compatibility: the legacy eligibility RPC output name remains for old desktop clients but is backed by `sms_verified_at`.
 - Old voice challenge RPCs: disabled for service-role execution; historical records preserved.
-- Operational blocker: real SMS delivery cannot pass until Kannel has an active mobile-network transport and the HTTPS gateway is deployed.
+- Operational blocker: real SMS delivery cannot pass until Kannel has an active mobile-network transport and PICOM_SMS_TRANSPORT_READY=true is set after an end-to-end test.
