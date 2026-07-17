@@ -70,5 +70,32 @@ export const communityDiscoveryService = {
     if (error || !data) return { ok: false, message: "Picom could not join or request access to this community." };
     return { ok: true, action: data };
   },
+
+  // Owner/admin opt-in: list this community in Discovery (or delist it). Listing forces the
+  // community public + publicly-readable server-side and enqueues a pending moderator review.
+  // Backed by the set_community_discovery_listing RPC (migration 20260717100000). That RPC is a
+  // forward reference not yet in the generated Database types, so it is called through a
+  // narrowly-typed wrapper until `supabase gen types` is re-run after deploy.
+  async setDiscoveryListing(
+    communityId: string,
+    listed: boolean,
+    options: Readonly<{ category?: DiscoveryCategory; joinPolicy?: DiscoveryJoinPolicy }> = {},
+  ): Promise<{ ok: true } | { ok: false; message: string }> {
+    if (dataSourceService.getStatus().isMock) return { ok: false, message: "Discovery listing requires the production backend." };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, message: "Discovery listing is unavailable." };
+    const invokeRpc = client.rpc as unknown as (
+      fn: "set_community_discovery_listing",
+      args: { target_community_id: string; next_listed: boolean; next_category: string | null; next_join_policy: string | null },
+    ) => Promise<{ error: { message?: string } | null }>;
+    const { error } = await invokeRpc("set_community_discovery_listing", {
+      target_community_id: communityId,
+      next_listed: listed,
+      next_category: options.category ?? null,
+      next_join_policy: options.joinPolicy ?? null,
+    });
+    if (error) return { ok: false, message: error.message ?? "Picom could not update the Discovery listing." };
+    return { ok: true };
+  },
 };
 
