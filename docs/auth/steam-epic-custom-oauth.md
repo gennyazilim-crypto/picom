@@ -12,6 +12,21 @@ contract is untouched).
 > review MUST sign off before deploy/enable. Everything below is inert until an operator
 > completes it.
 
+> 🔴 **SECURITY BLOCKER — DO NOT ENABLE until fixed (found 2026-07-18 in security review).**
+> `mintSessionForIdentity` (`supabase/functions/_shared/social-auth-session.ts`) resolves the
+> account by a **guessable synthetic email** (`steam_<steamid64>@steam.users.picom.local`,
+> `epic_<accountid>@epic.users.picom.local`) and treats "already registered" as success. Since
+> SteamID64/EpicAccountId are public, an attacker can pre-register that exact email via normal
+> email+password signup (`authService.signUpWithEmailPassword` has no domain allowlist); when the
+> real user later signs in with Steam/Epic, the session is minted for the **attacker-owned** row
+> → account takeover / session confusion. `verifyOtp` completes server-side regardless of email
+> confirmation, so enabling email verification does NOT mitigate it.
+> **Required fix before enabling:** resolve identity via a dedicated `external_identities(provider,
+> external_id) -> user_id` mapping table written only by this trusted service-role path (not by
+> email equality); or, on "already registered", fetch the existing row and reject unless its
+> `user_metadata` provider + `steam_id`/`epic_account_id` matches. Also add a signup domain guard so
+> the `*.users.picom.local` synthetic space cannot be self-registered.
+
 ## Pieces (already in the repo)
 
 - `supabase/migrations/20260715010000_social_auth_handoffs.sql` — service-role-only,
