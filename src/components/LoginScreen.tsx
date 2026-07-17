@@ -32,7 +32,8 @@ function readRememberedEmail(): string {
 }
 
 export function LoginScreen({ theme, loading, error, onSubmit, onPasswordResetRequest, recoveryMode = false, recoveryMessage, onConfirmPasswordReset, onCancelPasswordRecovery, onSwitchToRegister }: LoginScreenProps) {
-  const rememberedEmail = readRememberedEmail();
+  // Read persisted email once at mount, not on every render.
+  const [rememberedEmail] = useState(readRememberedEmail);
   const [email, setEmail] = useState(rememberedEmail || (isMockMode ? localSeed.email : ""));
   const [password, setPassword] = useState(isMockMode ? localSeed.password : "");
   const [rememberMe, setRememberMe] = useState(rememberedEmail !== "" || !isMockMode);
@@ -43,10 +44,14 @@ export function LoginScreen({ theme, loading, error, onSubmit, onPasswordResetRe
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [recoveryResult, setRecoveryResult] = useState<string | null>(null);
+  const [recoverySucceeded, setRecoverySucceeded] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // Guard against a double submit when the Enter key fires while a sign-in is in flight
+    // (the button is disabled, but the form's submit handler still runs on Enter).
+    if (loading) return;
     // Keep me signed in until an explicit sign-out when checked; drop the session
     // on app close when unchecked. The raw password is never stored.
     setAuthRememberMe(rememberMe);
@@ -69,13 +74,13 @@ export function LoginScreen({ theme, loading, error, onSubmit, onPasswordResetRe
     <main className="auth-desktop-frame" aria-label="Picom password recovery">
       <LoginBackgroundAnimation theme={theme} />
       <section className="auth-hero" aria-hidden="true"><div className="auth-logo-orb auth-logo-orb--brand"><img className="picom-brand-logo" src={brandLogoUrl} alt="" /></div><p className="eyebrow">Secure account recovery</p><h1>Choose a new password.</h1><p>Use a unique password you do not use elsewhere. Picom never displays, stores, or logs recovery codes.</p></section>
-      <form className="auth-card" onSubmit={(event) => { event.preventDefault(); void (async () => { if (newPassword !== confirmNewPassword) { setRecoveryResult("Passwords do not match."); return; } if (!onConfirmPasswordReset) return; setRecoveryLoading(true); const result = await onConfirmPasswordReset(newPassword); setRecoveryLoading(false); setRecoveryResult(result.message); if (result.ok) { setNewPassword(""); setConfirmNewPassword(""); } })(); }}>
+      <form className="auth-card" onSubmit={(event) => { event.preventDefault(); void (async () => { if (recoveryLoading) return; if (newPassword !== confirmNewPassword) { setRecoverySucceeded(false); setRecoveryResult("Passwords do not match."); return; } if (!onConfirmPasswordReset) return; setRecoveryLoading(true); const result = await onConfirmPasswordReset(newPassword); setRecoveryLoading(false); setRecoverySucceeded(result.ok); setRecoveryResult(result.message); if (result.ok) { setNewPassword(""); setConfirmNewPassword(""); } })(); }}>
         <div className="auth-card-header"><div><p className="eyebrow">Password recovery</p><h2>Set new password</h2></div></div>
         <p className="auth-note">{recoveryMessage ?? "Recovery link accepted. Enter a new password."}</p>
         <label className="auth-field"><span>New password</span><input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
         <label className="auth-field"><span>Confirm new password</span><input type="password" autoComplete="new-password" minLength={12} value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} required /></label>
         <small className="auth-note">Use at least 12 characters. All existing sessions are signed out after a successful reset.</small>
-        {error || recoveryResult ? <div className={recoveryResult?.startsWith("Password updated") ? "auth-success" : "auth-error"} role="status">{recoveryResult ?? error}</div> : null}
+        {recoveryResult || error ? <div className={recoverySucceeded ? "auth-success" : "auth-error"} role="status">{recoveryResult ?? error}</div> : null}
         <button className="auth-submit" type="submit" disabled={recoveryLoading || newPassword.length < 12 || newPassword !== confirmNewPassword}>{recoveryLoading ? "Updating password..." : "Update password"}<AppIcon name="lock" size="sm" /></button>
         <button className="auth-seed-button" type="button" disabled={recoveryLoading} onClick={onCancelPasswordRecovery}>Back to sign in</button>
       </form>

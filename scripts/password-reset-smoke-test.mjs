@@ -18,4 +18,9 @@ assert.match(loginScreen, /Reset your password/);
 assert.match(loginScreen, /whether an account exists or not/);
 assert.doesNotMatch(loginScreen, /No account found/i);
 
+// Recovery success/error styling must come from the returned `ok` flag, not brittle
+// string-matching on the message text (which breaks on any wording/localization change).
+assert.match(loginScreen, /setRecoverySucceeded\(result\.ok\)/);
+assert.doesNotMatch(loginScreen, /startsWith\("Password updated"\)/);
+
 console.log("OK password reset production smoke test completed");
