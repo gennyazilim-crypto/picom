@@ -34,7 +34,7 @@ function writeMockStatuses(value: Record<string, DiscoveryReviewStatus>): void {
 function listMockQueue(statusFilter: DiscoveryReviewStatus | null): DiscoveryReviewItem[] {
   const statuses = readMockStatuses();
   return mockCommunities
-    .filter((community) => community.visibility !== "private" && community.discoveryListed !== false)
+    .filter((community) => community.visibility === "public" && community.discoveryListed !== false)
     .map((community, index): DiscoveryReviewItem => ({
       communityId: community.id,
       communityName: community.name,

@@ -3,7 +3,7 @@
 import type { CommunityKind } from "./community";
 
 export type CommunityMembershipStatus = "owner" | "admin" | "moderator" | "member" | "visitor";
-export type CommunityVisibility = "public" | "private";
+export type CommunityVisibility = "public" | "private" | "secret";
 export type CommunityPermissionKey =
   | "manageCommunity"
   | "manageChannels"

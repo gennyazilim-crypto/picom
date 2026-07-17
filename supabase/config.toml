@@ -56,6 +56,7 @@ otp_expiry = 3600
 # pass = "env(SMTP_PASS)"
 # admin_email = "info@picom.gg"
 # sender_name = "Picom"
+
 [functions.health]
 verify_jwt = false
 
@@ -63,6 +64,15 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.livekit-token]
+verify_jwt = true
+
+[functions.voice-occupancy]
+verify_jwt = true
+
+[functions.voice-call-authorize]
+verify_jwt = true
+
+[functions.admin-health]
 verify_jwt = true
 
 [functions.meeting-join]
@@ -107,5 +117,14 @@ verify_jwt = true
 [functions.account-deletion-finalize]
 verify_jwt = false
 
+[functions.steam-auth]
+verify_jwt = false
+
+[functions.epic-auth]
+verify_jwt = false
+
 [functions.email-api]
 verify_jwt = false
+
+[functions.secret-community-verification]
+verify_jwt = true

@@ -157,7 +157,7 @@ export interface Community {
   accentColor: string;
   verification?: VerificationSummary;
   description?: string | null;
-  visibility?: "public" | "private";
+  visibility?: "public" | "private" | "secret";
   publicReadEnabled?: boolean;
   rulesEnabled?: boolean;
   rulesVersion?: string;

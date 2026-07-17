@@ -1,3 +1,4 @@
+import { SecretCommunityEligibilityPanel } from "./SecretCommunityFlows";
 import { useEffect, useMemo, useState } from "react";
 import { communityTemplates } from "../data/communityTemplates";
 import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
@@ -16,7 +17,7 @@ export type CreateCommunityFormValue = Readonly<{
   name: string;
   description?: string;
   iconFile?: File;
-  visibility: "public" | "private";
+  visibility: "public" | "private" | "secret";
   publicReadEnabled: boolean;
   templateId?: CommunityTemplateId;
 }>;
@@ -54,8 +55,9 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [iconError, setIconError] = useState<string | null>(null);
-  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [visibility, setVisibility] = useState<"public" | "private" | "secret">("public");
   const [publicReadEnabled, setPublicReadEnabled] = useState(true);
+  const [secretEligible, setSecretEligible] = useState(false);
   const [templateId, setTemplateId] = useState<CommunityTemplateId>("custom");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -112,7 +114,8 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
     if (!kind) { setStep(0); setError("Choose a community type before creating it."); return; }
     const identityError = validateIdentity();
     if (identityError) { setStep(1); setError(identityError); return; }
-    if (visibility !== "public" && visibility !== "private") { setError("Choose a valid community visibility."); return; }
+    if (visibility !== "public" && visibility !== "private" && visibility !== "secret") { setError("Choose a valid community visibility."); return; }
+    if (visibility === "secret" && !secretEligible) { setError("Complete phone and voice-call verification before creating a secret community."); return; }
 
     setSaving(true);
     setError(null);
@@ -149,13 +152,18 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
 
           {step === 1 ? <section className="typed-community-wizard__step" aria-labelledby="community-identity-heading"><div className="typed-community-wizard__intro"><span className="eyebrow">{selectedKind?.title}</span><h3 id="community-identity-heading">Give the community an identity</h3><p>Name is required. Description and logo can be refined later in community settings.</p></div><div className="typed-community-wizard__fields"><label className="auth-field">Community name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={80} autoFocus data-dialog-initial-focus placeholder={kind === "radio" ? "Northwave Radio" : kind === "podcast" ? "Orbit Podcast" : "Aurora Studio"} /></label><label className="auth-field typed-community-wizard__wide">Description <span className="optional-label">optional</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={4} placeholder="What should members know about this community?" /></label><div className="typed-community-wizard__logo-upload typed-community-wizard__wide"><div className="typed-community-wizard__logo-copy"><strong>Community logo</strong><small>Optional · PNG, JPG, or WEBP up to 2 MB</small></div><div className="typed-community-wizard__logo-row"><div className="typed-community-wizard__logo-preview" aria-hidden="true">{iconPreview ? <img src={iconPreview} alt="" /> : <span>{name.trim().slice(0, 1).toUpperCase() || "?"}</span>}</div><div className="typed-community-wizard__logo-actions"><label className="secondary-action typed-community-wizard__file-trigger"><input type="file" accept="image/png,image/jpeg,image/webp" disabled={saving} onChange={(event) => selectIconFile(event.target.files?.[0] ?? null)} /><AppIcon name="image" size="sm" />Choose logo</label>{iconFile ? <button type="button" className="secondary-action" disabled={saving} onClick={() => selectIconFile(null)}>Remove</button> : null}</div></div>{iconError ? <p className="typed-community-wizard__logo-error" role="alert">{iconError}</p> : null}</div></div></section> : null}
 
-          {step === 2 ? <section className="typed-community-wizard__step" aria-labelledby="community-access-heading"><div className="typed-community-wizard__intro"><span className="eyebrow">Final setup</span><h3 id="community-access-heading">Choose access and starter setup</h3><p>Visibility is enforced by Supabase policies; frontend controls are not the security boundary.</p></div><div className="community-visibility-grid" role="radiogroup" aria-label="Community visibility"><button type="button" role="radio" aria-checked className="selected" onClick={() => setVisibility("public")}><AppIcon name="users" size="lg" /><strong>Public</strong><span>Anyone can discover and join. Members can access every channel.</span></button></div><label className="typed-community-wizard__policy"><input type="checkbox" checked={publicReadEnabled} onChange={(event) => setPublicReadEnabled(event.target.checked)} /><span><strong>Allow public read</strong><small>Visitors may read content without joining.</small></span></label>
+          {step === 2 ? <section className="typed-community-wizard__step" aria-labelledby="community-access-heading"><div className="typed-community-wizard__intro"><span className="eyebrow">Final setup</span><h3 id="community-access-heading">Choose access and starter setup</h3><p>Visibility is enforced by Supabase policies; frontend controls are not the security boundary.</p></div><div className="community-visibility-grid" role="radiogroup" aria-label="Community visibility">
+              <button type="button" role="radio" aria-checked={visibility === "public"} className={visibility === "public" ? "selected" : ""} onClick={() => setVisibility("public")}><AppIcon name="users" size="lg" /><strong>Public</strong><span>Discoverable. Anyone may join; public read remains optional.</span></button>
+              <button type="button" role="radio" aria-checked={visibility === "private"} className={visibility === "private" ? "selected" : ""} onClick={() => setVisibility("private")}><AppIcon name="lock" size="lg" /><strong>Private</strong><span>Not publicly readable. Standard invitations and membership policies apply.</span></button>
+              <button type="button" role="radio" aria-checked={visibility === "secret"} className={visibility === "secret" ? "selected" : ""} onClick={() => { setVisibility("secret"); setPublicReadEnabled(false); }}><AppIcon name="lock" size="lg" /><strong>Secret</strong><span>Recipient-only invitations, voice verification, no discovery or global feed exposure.</span></button>
+            </div><label className={"typed-community-wizard__policy " + (visibility !== "public" ? "is-disabled" : "")}><input type="checkbox" checked={visibility === "public" && publicReadEnabled} disabled={visibility !== "public"} onChange={(event) => setPublicReadEnabled(event.target.checked)} /><span><strong>Allow public read</strong><small>Available only to public communities.</small></span></label>
+            {visibility === "secret" ? <SecretCommunityEligibilityPanel onEligibilityChange={setSecretEligible} /> : null}
             {kind === "text" ? <div className="typed-community-wizard__templates"><div><strong>Starter template</strong><span>Optional channel structure for the Text community.</span></div><div className="template-picker" aria-label="Community template selection">{communityTemplates.map((template) => <button key={template.id} type="button" className={template.id === templateId ? "selected" : ""} onClick={() => setTemplateId(template.id)}><strong>{template.name}</strong><span>{template.description}</span></button>)}</div><div className="template-preview"><strong>{selectedTemplate.name} preview</strong><span>{textTemplateChannels.length} channels prepared</span><ul>{textTemplateChannels.slice(0, 6).map((channel) => <li key={`${selectedTemplate.id}-${channel.name}`}>{channel.type === "voice" ? "voice" : "#"} {channel.name}</li>)}</ul></div></div> : <div className="typed-community-wizard__type-summary"><span><AppIcon name={selectedKind?.icon ?? "home"} size="lg" /></span><div><strong>{selectedKind?.title}</strong><p>{kind === "radio" ? "Picom will open the live radio shell. Broadcast setup remains separate from text channels." : "Picom will open the podcast publishing shell. Episodes remain separate from text channels."}</p></div></div>}
           </section> : null}
         </div>
 
         {error ? <div className="auth-error typed-community-wizard__error" role="alert">{error}</div> : null}
-        <footer className="typed-community-wizard__footer"><button type="button" className="secondary-action" onClick={step === 0 ? onClose : () => { setStep((current) => Math.max(0, current - 1)); setError(null); }} disabled={saving}>{step === 0 ? "Cancel" : "Back"}</button>{step < STEPS.length - 1 ? <button type="button" className="send-button" onClick={goNext} disabled={saving || (step === 0 && !kind)}>{step === 0 ? "Continue" : "Next"}<AppIcon name="chevronRight" size="sm" /></button> : <button type="button" className="send-button" onClick={() => void submit()} disabled={saving || !kind || !name.trim()}><AppIcon name="plus" size="sm" />{saving ? "Creating..." : `Create ${selectedKind?.title ?? "community"}`}</button>}</footer>
+        <footer className="typed-community-wizard__footer"><button type="button" className="secondary-action" onClick={step === 0 ? onClose : () => { setStep((current) => Math.max(0, current - 1)); setError(null); }} disabled={saving}>{step === 0 ? "Cancel" : "Back"}</button>{step < STEPS.length - 1 ? <button type="button" className="send-button" onClick={goNext} disabled={saving || (step === 0 && !kind)}>{step === 0 ? "Continue" : "Next"}<AppIcon name="chevronRight" size="sm" /></button> : <button type="button" className="send-button" onClick={() => void submit()} disabled={saving || !kind || !name.trim() || (visibility === "secret" && !secretEligible)}><AppIcon name="plus" size="sm" />{saving ? "Creating..." : `Create ${selectedKind?.title ?? "community"}`}</button>}</footer>
       </section>
     </div>
   );

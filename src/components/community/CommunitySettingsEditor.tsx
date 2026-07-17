@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { Community } from "../../types/community";
 import type { CommunityRule } from "../../types/communityRules";
-import type { CommunityAccess } from "../../types/communityAccess";
+import type { CommunityAccess, CommunityVisibility } from "../../types/communityAccess";
 import { getDefaultCommunityTypeSettings, normalizeCommunityTypeSettings, type CommunityNotificationLevel, type CommunityTypeSettings } from "../../types/communitySettings";
 import { communityBrandingService } from "../../services/communityBrandingService";
 import { communityRulesService } from "../../services/communityRulesService";
@@ -42,7 +42,7 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [visibility] = useState<CommunityVisibility>(community.visibility ?? "private");
   const [publicReadEnabled, setPublicReadEnabled] = useState(community.publicReadEnabled ?? false);
   const [defaultNotificationLevel, setDefaultNotificationLevel] = useState<CommunityNotificationLevel>(community.defaultNotificationLevel ?? "mentions");
   const [rulesEnabled, setRulesEnabled] = useState(community.rulesEnabled ?? false);
@@ -188,8 +188,10 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
         <div className="community-settings-fields community-settings-fields--split">
           <label className="community-settings-field">
             <FieldLabel>Visibility</FieldLabel>
-            <select className="community-settings-select" value="public" onChange={() => setVisibility("public")} disabled>
+            <select className="community-settings-select" value={visibility} disabled>
               <option value="public">Public</option>
+              <option value="private">Private</option>
+              <option value="secret">Secret (managed secure lifecycle)</option>
             </select>
           </label>
           <label className="community-settings-field">
@@ -202,7 +204,8 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
           </label>
         </div>
         <ToggleRow
-          checked={publicReadEnabled}
+          checked={visibility === "public" && publicReadEnabled}
+          disabled={visibility !== "public"}
           onChange={setPublicReadEnabled}
           title="Allow visitors to read public content"
           description="Visitors can browse read-only content without joining."

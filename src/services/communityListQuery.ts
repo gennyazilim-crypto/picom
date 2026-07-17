@@ -17,7 +17,7 @@ export type CommunityListRow = Readonly<{
   icon_url: string | null;
   banner_url?: string | null;
   accent_color: string;
-  visibility: "public" | "private";
+  visibility: "public" | "private" | "secret";
   public_read_enabled: boolean;
   default_notification_level?: CommunityNotificationLevel;
   type_settings?: unknown;
