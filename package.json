@@ -496,7 +496,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
     "@vitejs/plugin-react": "latest",
-    "livekit-client": "^2.20.0",
+    "livekit-client": "^2.20.1",
     "react": "latest",
     "react-dom": "latest",
     "typescript": "latest",
