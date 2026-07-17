@@ -182,7 +182,7 @@ export function useSupabaseMessageRealtime({
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
+        { event: "UPDATE", schema: "public", table: "messages", filter: insertFilter },
         (payload) => {
           if (!isCurrentSubscription()) return;
           if ((payload.new as MessageRow).thread_id) return;
@@ -209,7 +209,7 @@ export function useSupabaseMessageRealtime({
       )
       .on(
         "postgres_changes",
-        { event: "DELETE", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
+        { event: "DELETE", schema: "public", table: "messages", filter: insertFilter },
         (payload) => {
           if (!isCurrentSubscription()) return;
           const oldRow = payload.old as Partial<MessageRow>;
