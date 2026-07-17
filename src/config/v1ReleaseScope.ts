@@ -91,7 +91,7 @@ export const v1ReleaseScope = Object.freeze({
     bookmarks: hidden("The standalone bookmarks workspace is not a V1 Core surface."),
     meetingWorkspace: hidden("Meeting workspace, stage, and camera surfaces are not in V1 Core."),
     enhancedNoiseShield: hidden("Enhanced noise-shield controls are not release-certified for V1 Core."),
-    discoveryMarketplace: hidden("Public discovery marketplace is excluded from V1 Core."),
+    discoveryMarketplace: inV1("Public discovery marketplace is enabled on stable."),
     platformAdminOperations: hidden("Internal platform operations are not a public V1 user surface."),
     customCommunityEmoji: postV1("Custom community emoji administration remains after V1 Core."),
     customCommunityStickers: postV1("Custom community sticker administration remains after V1 Core."),
@@ -158,7 +158,7 @@ export function isV1ActiveViewEnabled(activeView: string): boolean {
 }
 
 export function isV1DeepLinkTypeEnabled(type: DeepLinkAction["type"]): boolean {
-  if (["authCallback", "passwordRecovery", "emailVerification", "invite", "friends"].includes(type)) return true;
+  if (["authCallback", "passwordRecovery", "emailVerification", "invite", "friends", "directMessage"].includes(type)) return true;
   if (type === "community") return isV1FeatureEnabled("textCommunities");
   if (type === "radio") return isV1FeatureEnabled("radio");
   if (type === "podcast") return isV1FeatureEnabled("podcasts");

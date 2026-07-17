@@ -21,7 +21,7 @@ assert(scope.includes('supportedPlatforms: Object.freeze(["windows"] as const)')
 for (const key of ["feed", "textCommunities", "textMessaging", "directMessages", "profile", "userSettings", "communityAdmin", "voiceRooms", "screenShare"]) {
   assert(new RegExp(`${key}: inV1\\(`).test(scope), `${key} must be classified IN_V1.`);
 }
-for (const key of ["radio", "podcasts", "events", "bookmarks", "meetingWorkspace", "discoveryMarketplace"]) {
+for (const key of ["radio", "podcasts", "events", "bookmarks", "meetingWorkspace"]) {
   assert(new RegExp(`${key}: hidden\\(`).test(scope), `${key} must be hidden from V1.`);
 }
 for (const key of ["bots", "webhooks", "plugins", "enterprise", "ssoScim", "billing", "aiFeatures"]) {
