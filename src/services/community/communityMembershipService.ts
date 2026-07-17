@@ -97,7 +97,7 @@ export const communityMembershipService = {
       return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before joining a community." } };
     }
 
-    if (input.community.visibility === "private" && !input.inviteValidated) {
+    if (input.community.visibility !== "public" && !input.inviteValidated) {
       return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "Private communities require a valid invite." } };
     }
 

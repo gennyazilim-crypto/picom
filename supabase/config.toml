@@ -95,3 +95,6 @@ verify_jwt = true
 
 [functions.account-deletion-finalize]
 verify_jwt = false
+
+[functions.secret-community-verification]
+verify_jwt = true

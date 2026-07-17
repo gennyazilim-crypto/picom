@@ -41,7 +41,7 @@ export const communityDiscoveryService = {
   async listPublicCommunities(mockCommunities: Community[]): Promise<DiscoveryCommunity[]> {
     if (dataSourceService.getStatus().isMock) {
       return mockCommunities
-        .filter((community) => community.visibility !== "private" && community.publicReadEnabled !== false && community.discoveryListed !== false)
+        .filter((community) => community.visibility === "public" && community.publicReadEnabled !== false && community.discoveryListed !== false)
         .map(fromCommunity);
     }
 

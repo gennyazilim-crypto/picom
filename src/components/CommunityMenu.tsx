@@ -335,7 +335,7 @@ export function CommunityJoinModal({ community, currentUserId, isAuthenticated, 
         <dl>
           <div><dt>Kind</dt><dd>{kindSummary.label}</dd></div>
           <div><dt>Members</dt><dd>{community.members.length}</dd></div>
-          <div><dt>Visibility</dt><dd>{community.visibility ?? "private"}</dd></div>
+          <div><dt>Visibility</dt><dd>{community.visibility === "secret" ? "Secret" : community.visibility ?? "private"}</dd></div>
           <div><dt>Opens at</dt><dd>{kindSummary.landingLabel}</dd></div>
           <div><dt>Rules</dt><dd>{rulesLoading ? "Loading..." : requiresRulesAcceptance ? `${requiredRules.length} required - version ${rulesVersion}` : "Acceptance not required"}</dd></div>
         </dl>

@@ -1,3 +1,4 @@
+import { secretCommunityService } from "./community/secretCommunityService";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import { getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow } from "./communityListQuery";
@@ -16,7 +17,7 @@ export type CommunitySummary = Readonly<{
   iconUrl: string | null;
   bannerUrl: string | null;
   accentColor: string;
-  visibility: "public" | "private";
+  visibility: "public" | "private" | "secret";
   publicReadEnabled: boolean;
   defaultNotificationLevel: CommunityNotificationLevel;
   typeSettings: CommunityTypeSettings;
@@ -35,7 +36,7 @@ export type CreateCommunityInput = Readonly<{
   iconUrl?: string | null;
   bannerUrl?: string | null;
   accentColor?: string;
-  visibility?: "public" | "private";
+  visibility?: "public" | "private" | "secret";
   publicReadEnabled?: boolean;
   defaultNotificationLevel?: CommunityNotificationLevel;
   rulesEnabled?: boolean;
@@ -52,7 +53,7 @@ export type UpdateCommunityInput = Readonly<{
   iconUrl?: string | null;
   bannerUrl?: string | null;
   accentColor?: string;
-  visibility?: "public" | "private";
+  visibility?: "public" | "private" | "secret";
   publicReadEnabled?: boolean;
   defaultNotificationLevel?: CommunityNotificationLevel;
   rulesEnabled?: boolean;
@@ -130,7 +131,7 @@ function validateCreateInput(input: CreateCommunityInput): CommunityServiceError
   if (input.rules && (input.rules.length > 10 || input.rules.some((rule) => !rule.title.trim() || rule.title.trim().length > 120 || !rule.body.trim() || rule.body.trim().length > 2000))) return { code: "VALIDATION_ERROR", message: "Add up to 10 complete rules with valid titles and text." };
   if (input.rulesEnabled && !input.rules?.length) return { code: "VALIDATION_ERROR", message: "Publish at least one rule before requiring acceptance." };
 
-  if (input.visibility !== undefined && input.visibility !== "public" && input.visibility !== "private") return { code: "VALIDATION_ERROR", message: "Community visibility must be public or private." };
+  if (input.visibility !== undefined && input.visibility !== "public" && input.visibility !== "private" && input.visibility !== "secret") return { code: "VALIDATION_ERROR", message: "Community visibility must be public, private, or secret." };
   if (input.publicReadEnabled !== undefined && typeof input.publicReadEnabled !== "boolean") return { code: "VALIDATION_ERROR", message: "Public read policy must be enabled or disabled." };
   if (input.templateId !== undefined && input.templateId !== null && !isCommunityTemplateId(input.templateId)) return { code: "VALIDATION_ERROR", message: "Choose a supported community template." };
 
@@ -241,6 +242,23 @@ export const communityService = {
     const publicReadEnabled = visibility === "public" ? input.publicReadEnabled ?? true : false;
     const creationRequestId = input.creationRequestId?.trim() || crypto.randomUUID();
     const templateId = kind === "text" ? input.templateId ?? "custom" : "custom";
+
+    if (visibility === "secret") {
+      const result = await secretCommunityService.createCommunity({
+        creationRequestId,
+        kind,
+        name,
+        description: input.description?.trim() || undefined,
+        iconUrl: iconUrl ?? undefined,
+        accentColor: input.accentColor,
+        templateId,
+      });
+      if (!result.ok) {
+        return { ok: false, error: { code: "COMMUNITY_CREATE_FAILED", message: result.error.message } };
+      }
+      return result;
+    }
+
     const dataSource = dataSourceService.getStatus();
 
     if (dataSource.isMock) {
@@ -385,7 +403,7 @@ export const communityService = {
           bannerUrl: input.bannerUrl?.trim() || null,
           accentColor: input.accentColor ?? "#007571",
           visibility: input.visibility ?? "public",
-          publicReadEnabled: input.visibility === "private" ? false : input.publicReadEnabled ?? true,
+          publicReadEnabled: input.visibility !== "public" ? false : input.publicReadEnabled ?? true,
           defaultNotificationLevel: input.defaultNotificationLevel ?? "mentions",
           typeSettings: input.typeSettings ?? getDefaultCommunityTypeSettings(kind),
           rulesEnabled: input.rulesEnabled ?? false,
@@ -399,7 +417,7 @@ export const communityService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data, error } = await configured.data.rpc("update_community_settings", {
+    const { data, error } = await configured.data.rpc(input.visibility === "secret" ? "update_secret_community_settings" : "update_community_settings", {
       target_community_id: input.id,
       next_name: nextName ?? null,
       next_description: input.description === undefined ? null : input.description?.trim() || null,

@@ -27,7 +27,7 @@ export type CommunityInvitePreview = Readonly<{
   communityName: string;
   communityKind: CommunityKind;
   description: string | null;
-  visibility: "public" | "private";
+  visibility: "public" | "private" | "secret";
   memberCount: number;
   expiresAt: string | null;
 }>;
