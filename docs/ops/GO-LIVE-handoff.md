@@ -27,6 +27,29 @@ Optional: if the intelligence platform (analytics/RLS hardening/pg_cron) should 
 app's own backend, `supabase db push --project-ref ufmtvqtsklqsmqxefbbs` (those migrations were
 applied to `piso`, not `ufmtv`).
 
+## 🟣 Discovery — why it shows empty, and the 3-step flow to populate it
+Discovery is enabled (UI on stable; `list_public_discovery_communities` + `join_or_request_...`
+are deployed and working — the list RPC returns `[]`, not an error). It is empty because a
+community only appears when `visibility='public'` AND `public_read_enabled=true` AND
+`discovery_listed=true` AND it has an **approved** row in `community_discovery_reviews`. Nothing
+ever set `discovery_listed=true` (no owner control existed), so the review queue is always empty.
+
+Missing piece added this session: `set_community_discovery_listing(...)` RPC
+(migration `20260717100000_community_discovery_listing_optin.sql`). To finish, Codex:
+1. `supabase functions`/`db push` the migration to ufmtv:
+   `supabase db push --project-ref ufmtvqtsklqsmqxefbbs` (or apply that one migration).
+2. **Client call** — add to `communityDiscoveryService` (needs the RPC in regenerated
+   `database.types.ts` first, so run `supabase gen types` after the migration):
+   ```ts
+   await client.rpc("set_community_discovery_listing", {
+     target_community_id, next_listed: true, next_category: "gaming", next_join_policy: "open",
+   });
+   ```
+3. **UI toggle** — a "List this community in Discovery" switch (+ category + join policy) in the
+   community management/settings surface, calling the above for owners/admins.
+Then: owner lists community → server auto-enqueues a pending review (existing trigger) →
+moderator approves it in Admin Operations → **Discovery Review Queue** → it appears in Discovery.
+
 ## 🟠 Operator — Supabase dashboard (ufmtv), not code
 1. **Google + Apple sign-in**: Auth → Providers → enable Google and Apple, add client id/secret.
    Live auth settings currently report `google:false, apple:false`, so those login buttons cannot
