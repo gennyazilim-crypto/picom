@@ -39,7 +39,7 @@ const messages:Record<string,string>={
   SECRET_INVITE_RECIPIENT_NOT_FOUND:"No Picom account matches that username.",
   SECRET_INVITE_RECIPIENT_ALREADY_MEMBER:"That account is already a member.",
   SECRET_INVITE_FORBIDDEN:"Your role cannot create secret-community invitations.",
-  VOICE_VERIFICATION_NOT_CONFIGURED:"Voice-call verification is not configured on this Picom environment.",
+  VOICE_VERIFICATION_NOT_CONFIGURED:"Picom's self-hosted voice verification service is not configured on this environment.",
 };
 const fail=<T>(code:string,fallback:string):Result<T>=>({ok:false,error:{code,message:messages[code]??fallback}});
 const errorCode=(error:{message?:string;code?:string}|null|undefined,fallback:string)=>{
@@ -64,7 +64,7 @@ export const secretCommunityService={
     if(!client||dataSourceService.getStatus().isMock)return fail("VOICE_VERIFICATION_NOT_CONFIGURED",messages.VOICE_VERIFICATION_NOT_CONFIGURED);
     const {data,error}=await client.functions.invoke("secret-community-verification",{body:{action:"start",phone}});
     const payload=data as {error?:{code?:string;message?:string}}|null;
-    if(error||payload?.error)return fail(payload?.error?.code??"VOICE_VERIFICATION_START_FAILED",payload?.error?.message??"Picom could not start the verification call.");
+    if(error||payload?.error)return fail(payload?.error?.code??"VOICE_VERIFICATION_START_FAILED",payload?.error?.message??"Picom could not start its verification call.");
     return {ok:true,data:true};
   },
   async checkVoiceVerification(phone:string,code:string):Promise<Result<true>>{

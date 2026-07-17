@@ -6,18 +6,17 @@ Secret communities use the canonical visibility value SECRET. They are never ret
 
 ## Creation eligibility
 
-Creation is allowed only when the authenticated account has a unique phone verified through a Twilio Verify voice call, is not suspended, and has no active community-creation restriction. Picom stores an HMAC-SHA256 phone fingerprint, last four digits, and calling-code metadata; it never stores the raw phone number.
+Creation is allowed only when the authenticated account has a unique phone verified through Picom's self-hosted voice verification gateway, is not suspended, and has no active community-creation restriction. Picom stores an HMAC-SHA256 phone fingerprint, last four digits, and calling-code metadata; it never stores the raw phone number or verification code.
 
 Required Edge Function secrets:
 
-- TWILIO_API_KEY
-- TWILIO_API_SECRET
-- TWILIO_VERIFY_SERVICE_SID
+- PICOM_VOICE_VERIFY_BASE_URL
+- PICOM_VOICE_VERIFY_SHARED_SECRET
 - PHONE_VERIFICATION_HASH_SECRET
 - SUPABASE_SERVICE_ROLE_KEY
 - PICOM_ALLOWED_ORIGINS
 
-If the provider or secrets are unavailable, the feature fails closed and reports VOICE_VERIFICATION_NOT_CONFIGURED.
+The gateway signs every call request with timestamped HMAC-SHA256 authentication and rejects replayed nonces. The Picom server uses Asterisk ARI to originate the call through a separately configured SIP/PSTN trunk. If the gateway, SIP transport, TLS, or secrets are unavailable, the feature fails closed and reports an exact operational error.
 
 ## Invitation contract
 

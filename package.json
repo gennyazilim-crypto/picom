@@ -146,6 +146,7 @@
     "edge:staging:contract:test": "node scripts/edge-functions-staging-contract-test.mjs",
     "supabase:types": "node scripts/generate-supabase-types.mjs",
     "supabase:smoke": "node scripts/supabase-schema-smoke-test.mjs && node scripts/secret-community-security-smoke.mjs",
+    "secret:voice:self-hosted:smoke": "node scripts/self-hosted-secret-voice-verification-smoke.mjs",
     "mock:smoke": "node scripts/mock-mode-smoke-test.mjs",
     "dm:production:smoke": "node scripts/direct-messages-production-smoke-test.mjs",
     "dm:services:realtime:smoke": "node scripts/direct-messages-services-realtime-smoke.mjs",
