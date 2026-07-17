@@ -9,8 +9,9 @@ import { ProfileVerificationAdmin } from "./ProfileVerificationAdmin";
 import { AdminOperationsPagedList, AdminSystemStatusV2 } from "./AdminOperationsV2Sections";
 import { AbuseEventsDashboard } from "./AbuseEventsDashboard";
 import { VerificationAdminReviewQueue } from "./VerificationRequestPanel";
+import { SecretCommunitiesPage } from "./rootDashboard/modules/SecretCommunitiesPage";
 
-type SectionId = "productHealth" | "system" | "observability" | "trustSafety" | "verification" | "discoveryReview" | "users" | "communities" | "reports" | "abuse" | "storage" | "realtime" | "errors";
+type SectionId = "productHealth" | "system" | "observability" | "trustSafety" | "verification" | "discoveryReview" | "users" | "communities" | "secretCommunities" | "reports" | "abuse" | "storage" | "realtime" | "errors";
 
 const sections: Array<{ id: SectionId; label: string; icon: IconName }> = [
   { id: "productHealth", label: "Product health", icon: "settings" },
@@ -21,6 +22,7 @@ const sections: Array<{ id: SectionId; label: string; icon: IconName }> = [
   { id: "discoveryReview", label: "Discovery review", icon: "search" },
   { id: "users", label: "Users overview", icon: "users" },
   { id: "communities", label: "Communities", icon: "home" },
+  { id: "secretCommunities", label: "Secret communities", icon: "lock" },
   { id: "reports", label: "Reports", icon: "bell" },
   { id: "abuse", label: "Abuse events", icon: "lock" },
   { id: "storage", label: "Storage", icon: "image" },
@@ -48,7 +50,9 @@ export function AdminOperationsPanel({ access }: { access: AdminOperationsAccess
         ? <><AdminOperationsPagedList access={access} section="users" /><ProfileVerificationAdmin access={access} /></>
         : active === "communities"
           ? <AdminOperationsPagedList access={access} section="communities" />
-          : active === "reports"
+          : active === "secretCommunities"
+          ? <SecretCommunitiesPage />
+        : active === "reports"
             ? <AdminOperationsPagedList access={access} section="reports" />
               : active === "abuse"
                 ? <AbuseEventsDashboard access={access} />
