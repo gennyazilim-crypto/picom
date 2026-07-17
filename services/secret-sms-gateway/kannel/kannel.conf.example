@@ -1,0 +1,32 @@
+group = core
+admin-port = 13000
+admin-password = replace-admin-password
+status-password = replace-status-password
+smsbox-port = 13001
+box-deny-ip = "*.*.*.*"
+box-allow-ip = "127.0.0.1"
+log-file = "/var/log/kannel/bearerbox.log"
+log-level = 1
+
+group = smsc
+smsc = at
+smsc-id = picom-gsm
+modemtype = auto
+device = /dev/ttyUSB0
+speed = 115200
+my-number = replace-with-sim-number
+connect-allow-ip = "127.0.0.1"
+
+group = smsbox
+bearerbox-host = 127.0.0.1
+sendsms-port = 13013
+log-file = "/var/log/kannel/smsbox.log"
+log-level = 1
+
+group = sendsms-user
+username = picom-gateway
+password = replace-kannel-password
+user-deny-ip = "*.*.*.*"
+user-allow-ip = "127.0.0.1"
+concatenation = true
+max-messages = 1

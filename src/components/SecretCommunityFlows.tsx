@@ -15,26 +15,26 @@ export function SecretCommunityEligibilityPanel({purpose="create",onEligibilityC
     const result=await secretCommunityService.getEligibility();
     if(!result.ok){setMessage(result.error.message);onEligibilityChange(false);return;}
     setEligibility(result.data);
-    onEligibilityChange(result.data.phoneVerified&&result.data.voiceCallVerified&&!result.data.accountSuspended&&(purpose==="join"||!result.data.creationRestricted));
+    onEligibilityChange(result.data.phoneVerified&&result.data.smsVerified&&!result.data.accountSuspended&&(purpose==="join"||!result.data.creationRestricted));
   },[onEligibilityChange,purpose]);
   useEffect(()=>{void load();},[load]);
-  const start=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.startVoiceVerification(phone);
-    setMessage(result.ok?"Picom started the verification call. Enter the spoken code below.":result.error.message);setBusy(false);};
-  const verify=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.checkVoiceVerification(phone,code);
-    if(result.ok){setMessage("Phone and voice-call verification completed.");await load();}else setMessage(result.error.message);setBusy(false);};
+  const start=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.startSmsVerification(phone);
+    setMessage(result.ok?"Picom sent a six-digit verification code by SMS.":result.error.message);setBusy(false);};
+  const verify=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.checkSmsVerification(phone,code);
+    if(result.ok){setMessage("Phone and SMS verification completed.");await load();}else setMessage(result.error.message);setBusy(false);};
   return <section className="secret-eligibility" aria-label="Secret community account verification">
-    <header><AppIcon name="lock" size="md"/><div><strong>Verified private access</strong><small>A unique phone number and a completed voice call are required.</small></div></header>
+    <header><AppIcon name="lock" size="md"/><div><strong>Verified private access</strong><small>A unique phone number and a completed SMS verification are required.</small></div></header>
     <ul className="secret-status-list">
       <li className={eligibility?.phoneVerified?"is-ready":""}><span/>Phone ownership {eligibility?.phoneLast4?"ending "+eligibility.phoneLast4:"not verified"}</li>
-      <li className={eligibility?.voiceCallVerified?"is-ready":""}><span/>Voice-call verification {eligibility?.voiceCallVerified?"complete":"required"}</li>
+      <li className={eligibility?.smsVerified?"is-ready":""}><span/>SMS verification {eligibility?.smsVerified?"complete":"required"}</li>
       <li className={!eligibility?.accountSuspended?"is-ready":"is-blocked"}><span/>Account {eligibility?.accountSuspended?"suspended":"active"}</li>
       {purpose==="create"?<li className={!eligibility?.creationRestricted?"is-ready":"is-blocked"}><span/>Community creation {eligibility?.creationRestricted?"restricted":"allowed"}</li>:null}
     </ul>
-    {!eligibility?.phoneVerified||!eligibility?.voiceCallVerified?<div className="secret-verification-form">
+    {!eligibility?.phoneVerified||!eligibility?.smsVerified?<div className="secret-verification-form">
       <label>Phone number in international format<input value={phone} onChange={(event)=>setPhone(event.target.value)} placeholder="+491234567890" autoComplete="tel"/></label>
-      <button type="button" className="secondary-action" disabled={busy||!/^\+[1-9][0-9]{7,14}$/.test(phone.replace(/[\s()-]/g,""))} onClick={()=>void start()}><AppIcon name="voice" size="sm"/>Call me with a code</button>
-      <label>Code from the call<input value={code} onChange={(event)=>setCode(event.target.value.replace(/\D/g,""))} inputMode="numeric" maxLength={10}/></label>
-      <button type="button" className="secondary-action" disabled={busy||!/^[0-9]{4,10}$/.test(code)} onClick={()=>void verify()}>Verify code</button>
+      <button type="button" className="secondary-action" disabled={busy||!/^\+[1-9][0-9]{7,14}$/.test(phone.replace(/[\s()-]/g,""))} onClick={()=>void start()}><AppIcon name="send" size="sm"/>Send SMS code</button>
+      <label>Code from the SMS<input value={code} onChange={(event)=>setCode(event.target.value.replace(/\D/g,""))} inputMode="numeric" autoComplete="one-time-code" maxLength={6}/></label>
+      <button type="button" className="secondary-action" disabled={busy||!/^[0-9]{6}$/.test(code)} onClick={()=>void verify()}>Verify code</button>
     </div>:null}
     {message?<p className="secret-flow-message" role="status">{message}</p>:null}
   </section>;
@@ -82,7 +82,7 @@ export function SecretAwareJoinWithInviteModal({initialCode="",isAuthenticated,c
       if(!active)return;
       if(standard.ok){setPreview({kind:"standard",data:standard.data});setLoading(false);return;}
       const secret=await secretCommunityService.previewInvite(code);if(!active)return;
-      if(secret.ok){setPreview({kind:"secret",data:secret.data});setVerificationReady(secret.data.verification.phoneVerified&&secret.data.verification.voiceCallVerified&&!secret.data.verification.accountSuspended&&!secret.data.verification.accountRestricted);}
+      if(secret.ok){setPreview({kind:"secret",data:secret.data});setVerificationReady(secret.data.verification.phoneVerified&&secret.data.verification.smsVerified&&!secret.data.verification.accountSuspended&&!secret.data.verification.accountRestricted);}
       else setError(secret.error.message);setLoading(false);
     },250);
     return()=>{active=false;window.clearTimeout(timer);};

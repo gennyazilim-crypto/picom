@@ -43,7 +43,7 @@ function validGatewayUrl(value: string) {
   try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
   catch { return false; }
 }
-async function startGatewayCall(baseUrl: string, sharedSecret: string, payload: GatewayPayload) {
+async function sendGatewaySms(baseUrl: string, sharedSecret: string, payload: GatewayPayload) {
   const body = JSON.stringify(payload);
   const timestamp = String(Math.floor(Date.now() / 1000));
   const nonce = crypto.randomUUID();
@@ -51,7 +51,7 @@ async function startGatewayCall(baseUrl: string, sharedSecret: string, payload: 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
   try {
-    const response = await fetch(new URL("/v1/calls/start", baseUrl), { method: "POST", headers: {
+    const response = await fetch(new URL("/v1/messages/send", baseUrl), { method: "POST", headers: {
       "content-type": "application/json", "x-picom-timestamp": timestamp,
       "x-picom-nonce": nonce, "x-picom-signature": `sha256=${signature}`,
     }, body, signal: controller.signal });
@@ -69,10 +69,10 @@ Deno.serve(async (request) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const hashSecret = Deno.env.get("PHONE_VERIFICATION_HASH_SECRET") ?? "";
-  const gatewayUrl = Deno.env.get("PICOM_VOICE_VERIFY_BASE_URL") ?? "";
-  const gatewaySecret = Deno.env.get("PICOM_VOICE_VERIFY_SHARED_SECRET") ?? "";
+  const gatewayUrl = Deno.env.get("PICOM_SMS_VERIFY_BASE_URL") ?? "";
+  const gatewaySecret = Deno.env.get("PICOM_SMS_VERIFY_SHARED_SECRET") ?? "";
   if (!supabaseUrl || !anonKey || !serviceKey || hashSecret.length < 32 || gatewaySecret.length < 32 || !validGatewayUrl(gatewayUrl)) {
-    return respond({ error: { code: "VOICE_VERIFICATION_NOT_CONFIGURED", message: "Picom's voice verification service is not configured on this environment." } }, 503, origin);
+    return respond({ error: { code: "SMS_VERIFICATION_NOT_CONFIGURED", message: "Picom's self-hosted SMS verification service is not configured on this environment." } }, 503, origin);
   }
 
   const authorization = request.headers.get("authorization") ?? "";
@@ -93,7 +93,7 @@ Deno.serve(async (request) => {
   const bucket = await hmacHex(hashSecret, `${authData.user.id}:${phone}:${body.action}`);
   const { data: allowed, error: rateError } = await serviceClient.rpc("consume_secret_verification_rate_limit", {
     target_user_id: authData.user.id, target_bucket_hash: bucket,
-    target_action: body.action === "start" ? "start_call" : "check_code",
+    target_action: body.action === "start" ? "start_sms" : "check_code",
   });
   if (rateError) return respond({ error: { code: "VERIFICATION_RATE_LIMIT_UNAVAILABLE", message: "Picom could not validate the verification rate limit." } }, 503, origin);
   if (!allowed) return respond({ error: { code: "VERIFICATION_RATE_LIMITED", message: "Too many verification attempts. Wait ten minutes and try again." } }, 429, origin);
@@ -103,24 +103,24 @@ Deno.serve(async (request) => {
     const requestId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + challengeLifetimeMs).toISOString();
     const codeHash = await hmacHex(hashSecret, `${authData.user.id}:${phoneHash}:${code}`);
-    const { error: challengeError } = await serviceClient.rpc("create_secret_phone_voice_challenge", {
+    const { error: challengeError } = await serviceClient.rpc("create_secret_phone_sms_challenge", {
       target_request_id: requestId, target_user_id: authData.user.id, target_phone_hash: phoneHash,
       target_phone_last4: phone.slice(-4), target_country_calling_code: callingCode(phone),
       target_code_hash: codeHash, target_expires_at: expiresAt,
     });
-    if (challengeError) return respond({ error: { code: "VERIFICATION_CHALLENGE_FAILED", message: "Picom could not create a secure verification challenge." } }, 503, origin);
-    const queued = await startGatewayCall(gatewayUrl, gatewaySecret, { requestId, phone, code, expiresAt });
+    if (challengeError) return respond({ error: { code: "VERIFICATION_CHALLENGE_FAILED", message: "Picom could not create a secure SMS verification challenge." } }, 503, origin);
+    const queued = await sendGatewaySms(gatewayUrl, gatewaySecret, { requestId, phone, code, expiresAt });
     if (!queued) {
-      await serviceClient.rpc("cancel_secret_phone_voice_challenge", { target_request_id: requestId, target_user_id: authData.user.id });
-      return respond({ error: { code: "VERIFICATION_GATEWAY_UNAVAILABLE", message: "Picom's voice verification service is temporarily unavailable." } }, 503, origin);
+      await serviceClient.rpc("cancel_secret_phone_sms_challenge", { target_request_id: requestId, target_user_id: authData.user.id });
+      return respond({ error: { code: "SMS_GATEWAY_UNAVAILABLE", message: "Picom's SMS verification service is temporarily unavailable." } }, 503, origin);
     }
-    return respond({ ok: true, status: "pending", channel: "picom_voice" }, 200, origin);
+    return respond({ ok: true, status: "pending", channel: "picom_sms" }, 200, origin);
   }
 
   const code = body.code?.trim() ?? "";
-  if (!/^[0-9]{6}$/.test(code)) return respond({ error: { code: "VERIFICATION_CODE_INVALID", message: "Enter the six-digit code from the verification call." } }, 400, origin);
+  if (!/^[0-9]{6}$/.test(code)) return respond({ error: { code: "VERIFICATION_CODE_INVALID", message: "Enter the six-digit code from the SMS." } }, 400, origin);
   const codeHash = await hmacHex(hashSecret, `${authData.user.id}:${phoneHash}:${code}`);
-  const { data: verificationStatus, error: verificationError } = await serviceClient.rpc("verify_secret_phone_voice_challenge", {
+  const { data: verificationStatus, error: verificationError } = await serviceClient.rpc("verify_secret_phone_sms_challenge", {
     target_user_id: authData.user.id, target_phone_hash: phoneHash, target_code_hash: codeHash,
   });
   if (verificationError) {
@@ -128,7 +128,7 @@ Deno.serve(async (request) => {
     return respond({ error: { code: duplicate ? "PHONE_ALREADY_IN_USE" : "VERIFICATION_RECORD_FAILED", message: duplicate ? "This phone number is already verified for another Picom account." : "Picom could not save the verification result." } }, duplicate ? 409 : 500, origin);
   }
   if (verificationStatus !== "approved") {
-    const messages: Record<string, string> = { expired: "The verification code expired. Start a new call.", locked: "Too many incorrect attempts. Start a new verification call later.", not_found: "No active verification call was found for this phone number.", invalid: "The code was not approved. Check the code and try again." };
+    const messages: Record<string, string> = { expired: "The SMS code expired. Request a new code.", locked: "Too many incorrect attempts. Request a new SMS code later.", not_found: "No active SMS verification was found for this phone number.", invalid: "The code was not approved. Check the SMS and try again." };
     const state = String(verificationStatus ?? "invalid");
     return respond({ error: { code: `VERIFICATION_CODE_${state.toUpperCase()}`, message: messages[state] ?? messages.invalid } }, 400, origin);
   }
