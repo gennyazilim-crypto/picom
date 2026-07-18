@@ -1,5 +1,15 @@
 # Picom Beta Release Notes
 
+## 0.1.1-beta.4 (2026-07-18)
+
+Windows x64 installer: `Picom-0.1.1-beta.4-beta-Windows-x64.exe`
+
+- Profile and cover image upload fixed (Electron native picker data URL decoding).
+- Voice call invite service wired to the live `voice-call-authorize` backend.
+- General stability improvements.
+
+Download: `https://picom.gg/downloads/windows/latest/Picom-0.1.1-beta.4-beta-Windows-x64.exe`
+
 ## Release identity
 
 | Field | Value |

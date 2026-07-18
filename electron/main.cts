@@ -28,6 +28,7 @@ import {
   quitAndInstall as updaterQuitAndInstall,
   type UpdaterState,
 } from "./updater.cjs";
+import { getActivitySnapshot } from "./activityPresence.cjs";
 import {
   MAX_CLIPBOARD_TEXT_LENGTH,
   isSafeDeepLink,
@@ -35,6 +36,8 @@ import {
   isWindowAction,
   normalizeExternalUrl,
   parseClipboardWritePayload,
+  parseIncomingCallToastAction,
+  parseIncomingCallToastPayload,
   parseNotificationPayload,
   parseSaveTextPayload,
   parseScreenCaptureCancelPayload,
@@ -43,8 +46,23 @@ import {
   isSafeScreenCaptureSourceId,
   type TrayStatus,
 } from "./ipcPayloadValidation.cjs";
+import {
+  dismissIncomingCallToast,
+  handleIncomingCallToastResponse,
+  isIncomingCallToastSender,
+  resolveIncomingCallPreloadPath,
+  setIncomingCallToastActionHandler,
+  showIncomingCallToast,
+} from "./incomingCallToast.cjs";
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
+const APP_ICON_PATH = path.join(
+  __dirname,
+  "..",
+  "assets",
+  "brand",
+  process.platform === "win32" ? "app-icon.ico" : "app-icon.png"
+);
 
 type SafeScreenCaptureSource = Readonly<{
   id: string;
@@ -211,7 +229,7 @@ function sendTrayAction(action: TrayAction): void {
 function createTrayMenu(): Electron.Menu {
   return Menu.buildFromTemplate([
     {
-      label: "Open Picom",
+      label: "Open Picom Desktop",
       click: () => {
         focusMainWindow();
         sendTrayAction("open");
@@ -257,7 +275,7 @@ function refreshTray(): void {
     return;
   }
 
-  tray.setToolTip(`Picom - ${trayStatus}${trayMuted ? " - muted" : ""}`);
+  tray.setToolTip(`Picom Desktop - ${trayStatus}${trayMuted ? " - muted" : ""}`);
   tray.setContextMenu(createTrayMenu());
 }
 
@@ -278,8 +296,7 @@ function createTray(): void {
     return;
   }
 
-  const iconPath = path.join(__dirname, "..", "assets", "brand", "app-icon.png");
-  const icon = nativeImage.createFromPath(iconPath);
+  const icon = nativeImage.createFromPath(APP_ICON_PATH);
 
   try {
     tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
@@ -598,6 +615,38 @@ function registerIpcHandlers(): void {
     }
   });
 
+  setIncomingCallToastActionHandler((action, inviteId) => {
+    focusMainWindow();
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send(IPC_CHANNELS.incomingCallAction, { action, inviteId });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.incomingCallShow, (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
+    const safePayload = parseIncomingCallToastPayload(payload);
+    if (!safePayload) return { ok: false, native: true, error: "INVALID_INCOMING_CALL_PAYLOAD" } as const;
+    try {
+      showIncomingCallToast(safePayload, resolveIncomingCallPreloadPath());
+      return { ok: true, native: true } as const;
+    } catch {
+      return { ok: false, native: true, error: "INCOMING_CALL_SHOW_FAILED" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.incomingCallDismiss, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
+    dismissIncomingCallToast();
+    return { ok: true, native: true } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.incomingCallRespond, (event, action: unknown) => {
+    if (!isIncomingCallToastSender(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
+    const safeAction = parseIncomingCallToastAction(action);
+    if (!safeAction) return { ok: false, native: true, error: "INVALID_INCOMING_CALL_ACTION" } as const;
+    handleIncomingCallToastResponse(safeAction);
+    return { ok: true, native: true } as const;
+  });
+
   ipcMain.handle(IPC_CHANNELS.traySetStatus, (event, status: unknown) => {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     if (!isTrayStatus(status)) {
@@ -790,6 +839,12 @@ function registerIpcHandlers(): void {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     return { ok: true, native: true, state: updaterQuitAndInstall() } as const;
   });
+
+  ipcMain.handle(IPC_CHANNELS.activityGetSnapshot, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    const snapshot = await getActivitySnapshot(process.platform);
+    return { ok: true, native: true, snapshot } as const;
+  });
 }
 
 async function createMainWindow(): Promise<void> {
@@ -807,6 +862,7 @@ async function createMainWindow(): Promise<void> {
     transparent: false,
     autoHideMenuBar: true,
     title: ELECTRON_APP_CONFIG.name,
+    icon: APP_ICON_PATH,
     backgroundColor: ELECTRON_APP_CONFIG.window.backgroundColor,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -854,6 +910,10 @@ async function createMainWindow(): Promise<void> {
   }
 }
 
+// Keep user data in the original "Picom" directory: the display rename to "Picom Desktop"
+// (productName) would otherwise move userData to a new folder and existing installs would
+// lose sessions/preferences after updating.
+app.setPath("userData", path.join(app.getPath("appData"), "Picom"));
 app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();

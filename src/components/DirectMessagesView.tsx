@@ -14,11 +14,13 @@ import type { DirectMuteDuration } from "../types/directMessageSafety";
 import { directMuteDurationLabels } from "../types/directMessageSafety";
 import { useDirectTypingBroadcast } from "../hooks/useDirectTypingBroadcast";
 import { AppIcon } from "./AppIcon";
+import { DesktopContextMenu } from "./DesktopContextMenu";
 import { EmojiPicker } from "./EmojiPicker";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { ImagePreviewModal } from "./ImagePreviewModal";
+import type { OverlayMenuItem } from "../state/useOverlayState";
 
 type NoticeKind = "info" | "success" | "error";
 type SendDirectMessage = (conversationId: string, body: string, attachments?: readonly DirectMessageAttachment[], replyToMessageId?: string, retryClientMessageId?: string) => Promise<boolean>;
@@ -40,7 +42,7 @@ type DirectMessagesViewProps = {
   onToggleReaction: (message: DirectMessage, emoji: string) => Promise<boolean>;
   onRemoveFailedMessage: (messageId: string) => void;
   onSetMuted: (conversationId: string, mutedUntil: string | null) => Promise<boolean>;
-  onArchive: (conversationId: string) => Promise<boolean>;
+  onDeleteConversation: (conversationId: string) => Promise<boolean>;
   onBlockUser: (userId: string) => Promise<boolean>;
   onReportUser: (userId: string, conversationId: string) => void;
   onReportMessage: (message: DirectMessage, conversation: DirectConversation) => void;
@@ -48,7 +50,7 @@ type DirectMessagesViewProps = {
   onStartCall?: (conversationId: string, peer: { id: string; name: string; avatarUrl?: string }) => void;
 };
 
-type ConversationListProps = Pick<DirectMessagesViewProps, "conversations" | "activeConversationId" | "onSelectConversation">;
+type ConversationListProps = Pick<DirectMessagesViewProps, "conversations" | "activeConversationId" | "onSelectConversation" | "onDeleteConversation">;
 type DirectMessagesSidebarProps = ConversationListProps & Pick<DirectMessagesViewProps, "friendRequestCount" | "onOpenFriends" | "onOpenPendingFriends">;
 
 function DirectAvatar({ conversation, large = false, compact = false }: { conversation: DirectConversation; large?: boolean; compact?: boolean }) {
@@ -56,29 +58,65 @@ function DirectAvatar({ conversation, large = false, compact = false }: { conver
   return <span className={`direct-avatar-shell status-${conversation.participantStatus} ${large ? "large" : ""} ${compact ? "compact" : ""}`}><VerifiedAvatarFrame userId={conversation.participantUserId} label={conversation.participantName} avatarUrl={conversation.participantAvatarUrl} size={compact ? "compact" : "medium"} avatarSize={large ? 64 : compact ? 38 : 42} verification={verification} /><i className="direct-status-dot" role="img" aria-label={`${conversation.participantName} is ${conversation.participantStatus}`} /></span>;
 }
 
-export function DirectConversationItem({ conversation, active, onSelect }: { conversation: DirectConversation; active: boolean; onSelect: () => void }) {
+export function DirectConversationItem({ conversation, active, onSelect, onDelete }: { conversation: DirectConversation; active: boolean; onSelect: () => void; onDelete: () => void }) {
   const verification = getUserVerificationSummary(conversation.participantUserId);
   const hasDraft = messageDraftService.hasDraft({ directConversationId: conversation.id });
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuItems: OverlayMenuItem[] = [
+    { label: "Open chat", icon: "inbox", onSelect },
+    { label: "Delete chat", icon: "trash", tone: "danger", detail: "Remove from your inbox", onSelect: () => setConfirmDelete(true) },
+  ];
+  const removeChat = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    await onDelete();
+    setDeleting(false);
+    setConfirmDelete(false);
+  };
   return (
-    <button type="button" className={`direct-conversation ${active ? "active" : ""}${conversation.unreadCount ? " has-unread" : ""}`} onClick={onSelect} aria-current={active ? "page" : undefined}>
-      <DirectAvatar conversation={conversation} />
-      <span className="direct-copy">
-        <span className="direct-copy-top">
-          <strong><span>{conversation.participantName}</span><VerifiedBadge verification={verification} size="xs" /></strong>
-          <time dateTime={conversation.updatedAt}>{dateTimeService.formatMessageTime(conversation.updatedAt)}</time>
+    <>
+      <button
+        type="button"
+        className={`direct-conversation ${active ? "active" : ""}${conversation.unreadCount ? " has-unread" : ""}`}
+        onClick={onSelect}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setMenu({ x: event.clientX, y: event.clientY });
+        }}
+        aria-current={active ? "page" : undefined}
+      >
+        <DirectAvatar conversation={conversation} />
+        <span className="direct-copy">
+          <span className="direct-copy-top">
+            <strong><span>{conversation.participantName}</span><VerifiedBadge verification={verification} size="xs" /></strong>
+            <time dateTime={conversation.updatedAt}>{dateTimeService.formatMessageTime(conversation.updatedAt)}</time>
+          </span>
+          <span className="direct-copy-bottom">
+            <small>{conversation.lastMessagePreview || "Start a conversation"}</small>
+            {conversation.unreadCount ? <em aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}</em> : hasDraft ? <i className="direct-draft-indicator">Draft</i> : null}
+          </span>
         </span>
-        <span className="direct-copy-bottom">
-          <small>{conversation.lastMessagePreview || "Start a conversation"}</small>
-          {conversation.unreadCount ? <em aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}</em> : hasDraft ? <i className="direct-draft-indicator">Draft</i> : null}
-        </span>
-      </span>
-    </button>
+      </button>
+      {menu ? <DesktopContextMenu x={menu.x} y={menu.y} items={menuItems} ariaLabel={`${conversation.participantName} chat actions`} onClose={() => setMenu(null)} /> : null}
+      {confirmDelete ? (
+        <div className="direct-list-delete-confirm" role="alertdialog" aria-label={`Delete chat with ${conversation.participantName}`}>
+          <strong>Delete chat?</strong>
+          <span>Removes this chat from your inbox only.</span>
+          <div>
+            <button type="button" disabled={deleting} onClick={() => setConfirmDelete(false)}>Cancel</button>
+            <button type="button" className="danger" disabled={deleting} onClick={() => void removeChat()}>{deleting ? "Deleting…" : "Delete"}</button>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
-export function DirectConversationList({ conversations, activeConversationId, onSelectConversation }: ConversationListProps) {
+export function DirectConversationList({ conversations, activeConversationId, onSelectConversation, onDeleteConversation }: ConversationListProps) {
   if (!conversations.length) return <div className="direct-list-empty"><AppIcon name="inbox" size="xl" /><strong>No conversations found</strong><span>Search friends or open a profile to start a private conversation.</span></div>;
-  return <div className="direct-conversation-list" aria-label="Recent direct conversations">{conversations.map((conversation) => <DirectConversationItem key={conversation.id} conversation={conversation} active={conversation.id === activeConversationId} onSelect={() => onSelectConversation(conversation.id)} />)}</div>;
+  return <div className="direct-conversation-list" aria-label="Recent direct conversations">{conversations.map((conversation) => <DirectConversationItem key={conversation.id} conversation={conversation} active={conversation.id === activeConversationId} onSelect={() => onSelectConversation(conversation.id)} onDelete={() => void onDeleteConversation(conversation.id)} />)}</div>;
 }
 
 export function DirectMessagesSidebar(props: DirectMessagesSidebarProps) {
@@ -115,14 +153,44 @@ export function DirectMessagesSidebar(props: DirectMessagesSidebarProps) {
         <span className="direct-list-section-label">Chats</span>
         <span className="direct-list-section-count">{filtered.length}</span>
       </div>
-      <DirectConversationList conversations={filtered} activeConversationId={props.activeConversationId} onSelectConversation={props.onSelectConversation} />
+      <DirectConversationList conversations={filtered} activeConversationId={props.activeConversationId} onSelectConversation={props.onSelectConversation} onDeleteConversation={props.onDeleteConversation} />
     </aside>
   );
 }
 
-export function DirectChatHeader({ conversation, searchOpen, searchQuery, detailsOpen, onSearchOpen, onSearchChange, onDetailsToggle, onBack, onOpenProfile, onStartCall }: { conversation: DirectConversation; searchOpen: boolean; searchQuery: string; detailsOpen: boolean; onSearchOpen: () => void; onSearchChange: (value: string) => void; onDetailsToggle: () => void; onBack: () => void; onOpenProfile: (userId: string) => void; onStartCall?: () => void }) {
+export function DirectChatHeader({ conversation, searchOpen, searchQuery, detailsOpen, onSearchOpen, onSearchChange, onDetailsToggle, onBack, onOpenProfile, onStartCall, onDeleteConversation }: { conversation: DirectConversation; searchOpen: boolean; searchQuery: string; detailsOpen: boolean; onSearchOpen: () => void; onSearchChange: (value: string) => void; onDetailsToggle: () => void; onBack: () => void; onOpenProfile: (userId: string) => void; onStartCall?: () => void; onDeleteConversation?: () => Promise<boolean> }) {
   const verification = getUserVerificationSummary(conversation.participantUserId);
-  return <header className="direct-chat-header"><div className="direct-chat-header-inner"><button className="icon-button direct-back-button" aria-label="Back to community chat" title="Back to community chat" onClick={onBack}><AppIcon name="chevronRight" size="sm" /></button><button className="direct-chat-identity" onClick={() => onOpenProfile(conversation.participantUserId)}><DirectAvatar conversation={conversation} /><span><strong><span>{conversation.participantName}</span><VerifiedBadge verification={verification} size="sm" /></strong><small>@{conversation.participantUsername} / {conversation.participantStatusText}</small></span></button>{searchOpen ? <label className="direct-header-search"><AppIcon name="search" size="sm" /><input autoFocus value={searchQuery} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search this conversation" aria-label="Search this conversation" /></label> : null}<div className="direct-header-actions">{onStartCall ? <button className="icon-button" type="button" aria-label={`Start a voice call with ${conversation.participantName}`} title="Start voice call" onClick={onStartCall}><AppIcon name="voice" size="sm" /></button> : null}<button className="icon-button" type="button" aria-label="Search conversation" title="Search conversation" onClick={onSearchOpen}><AppIcon name={searchOpen ? "close" : "search"} size="sm" /></button><button className={`icon-button ${detailsOpen ? "active" : ""}`} type="button" aria-label="Toggle conversation details and shared media" aria-expanded={detailsOpen} aria-pressed={detailsOpen} title="Conversation details" onClick={onDetailsToggle}><AppIcon name="image" size="sm" /></button></div></div></header>;
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const removeChat = async () => {
+    if (!onDeleteConversation || deleting) return;
+    setDeleting(true);
+    const deleted = await onDeleteConversation();
+    setDeleting(false);
+    if (deleted) setConfirmDelete(false);
+  };
+  return (
+    <header className="direct-chat-header">
+      <div className="direct-chat-header-inner">
+        <button className="icon-button direct-back-button" aria-label="Back to community chat" title="Back to community chat" onClick={onBack}><AppIcon name="chevronRight" size="sm" /></button>
+        <button className="direct-chat-identity" onClick={() => onOpenProfile(conversation.participantUserId)}><DirectAvatar conversation={conversation} /><span><strong><span>{conversation.participantName}</span><VerifiedBadge verification={verification} size="sm" /></strong><small>@{conversation.participantUsername} / {conversation.participantStatusText}</small></span></button>
+        {searchOpen ? <label className="direct-header-search"><AppIcon name="search" size="sm" /><input autoFocus value={searchQuery} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search this conversation" aria-label="Search this conversation" /></label> : null}
+        <div className="direct-header-actions">
+          {onStartCall ? <button className="icon-button" type="button" aria-label={`Start a voice call with ${conversation.participantName}`} title="Start voice call" onClick={onStartCall}><AppIcon name="voice" size="sm" /></button> : null}
+          <button className="icon-button" type="button" aria-label="Search conversation" title="Search conversation" onClick={onSearchOpen}><AppIcon name={searchOpen ? "close" : "search"} size="sm" /></button>
+          <button className={`icon-button ${detailsOpen ? "active" : ""}`} type="button" aria-label="Toggle conversation details and shared media" aria-expanded={detailsOpen} aria-pressed={detailsOpen} title="Conversation details" onClick={onDetailsToggle}><AppIcon name="image" size="sm" /></button>
+          {onDeleteConversation ? <button className="icon-button" type="button" aria-label="Delete chat" title="Delete chat" onClick={() => setConfirmDelete(true)}><AppIcon name="trash" size="sm" /></button> : null}
+        </div>
+      </div>
+      {confirmDelete ? (
+        <div className="direct-chat-delete-confirm" role="alertdialog" aria-label="Delete chat">
+          <span>Delete this chat from your inbox? {conversation.participantName} keeps their copy.</span>
+          <button type="button" disabled={deleting} onClick={() => setConfirmDelete(false)}>Cancel</button>
+          <button type="button" className="danger" disabled={deleting} onClick={() => void removeChat()}>{deleting ? "Deleting…" : "Delete"}</button>
+        </div>
+      ) : null}
+    </header>
+  );
 }
 
 function toPreviewAttachment(attachment: DirectMessageAttachment): Attachment { return { id: attachment.id, type: "image", url: attachment.url, publicUrl: attachment.url, storagePath: attachment.storagePath, mimeType: attachment.mimeType, width: attachment.width, height: attachment.height, alt: attachment.name }; }
@@ -241,11 +309,11 @@ export function DirectMessageComposer({ conversation, replyTo, onCancelReply, on
   </form>;
 }
 
-export function DirectChatMain({ conversation, currentUserId, typingNames, detailsOpen, onDetailsToggle, onBack, onOpenProfile, onPreview, onSendMessage, onEditMessage, onDeleteMessage, onToggleReaction, onReportMessage, onRemoveFailedMessage, onTypingStart, onTypingStop, onNotice, onStartCall }: { conversation?: DirectConversation; currentUserId: string; typingNames: string[]; detailsOpen: boolean; onDetailsToggle: () => void; onBack: () => void; onOpenProfile: (userId: string) => void; onPreview: (attachment: Attachment) => void; onSendMessage: SendDirectMessage; onEditMessage: DirectMessagesViewProps["onEditMessage"]; onDeleteMessage: DirectMessagesViewProps["onDeleteMessage"]; onToggleReaction: DirectMessagesViewProps["onToggleReaction"]; onReportMessage: DirectMessagesViewProps["onReportMessage"]; onRemoveFailedMessage: DirectMessagesViewProps["onRemoveFailedMessage"]; onTypingStart: () => void; onTypingStop: () => void; onNotice: DirectMessagesViewProps["onNotice"]; onStartCall?: DirectMessagesViewProps["onStartCall"] }) {
+export function DirectChatMain({ conversation, currentUserId, typingNames, detailsOpen, onDetailsToggle, onBack, onOpenProfile, onPreview, onSendMessage, onEditMessage, onDeleteMessage, onToggleReaction, onReportMessage, onRemoveFailedMessage, onTypingStart, onTypingStop, onNotice, onStartCall, onDeleteConversation }: { conversation?: DirectConversation; currentUserId: string; typingNames: string[]; detailsOpen: boolean; onDetailsToggle: () => void; onBack: () => void; onOpenProfile: (userId: string) => void; onPreview: (attachment: Attachment) => void; onSendMessage: SendDirectMessage; onEditMessage: DirectMessagesViewProps["onEditMessage"]; onDeleteMessage: DirectMessagesViewProps["onDeleteMessage"]; onToggleReaction: DirectMessagesViewProps["onToggleReaction"]; onReportMessage: DirectMessagesViewProps["onReportMessage"]; onRemoveFailedMessage: DirectMessagesViewProps["onRemoveFailedMessage"]; onTypingStart: () => void; onTypingStop: () => void; onNotice: DirectMessagesViewProps["onNotice"]; onStartCall?: DirectMessagesViewProps["onStartCall"]; onDeleteConversation: DirectMessagesViewProps["onDeleteConversation"] }) {
   const [searchOpen, setSearchOpen] = useState(false); const [searchQuery, setSearchQuery] = useState(""); const [replyTo, setReplyTo] = useState<DirectMessage | undefined>();
   useEffect(() => { setSearchOpen(false); setSearchQuery(""); setReplyTo(undefined); }, [conversation?.id]);
   if (!conversation) return <main className="direct-chat-panel"><div className="direct-chat-empty"><AppIcon name="inbox" size="xl" /><strong>Select a conversation</strong><p>Choose a recent conversation or start one from Friends.</p></div></main>;
-  return <main className="direct-chat-panel"><DirectChatHeader conversation={conversation} searchOpen={searchOpen} searchQuery={searchQuery} detailsOpen={detailsOpen} onSearchOpen={() => { setSearchOpen((open) => !open); if (searchOpen) setSearchQuery(""); }} onSearchChange={setSearchQuery} onDetailsToggle={onDetailsToggle} onBack={onBack} onOpenProfile={onOpenProfile} onStartCall={onStartCall ? () => onStartCall(conversation.id, { id: conversation.participantUserId, name: conversation.participantName, avatarUrl: conversation.participantAvatarUrl }) : undefined} /><div className="direct-chat-body"><DirectMessageList conversation={conversation} currentUserId={currentUserId} query={searchQuery} typingNames={typingNames} onPreview={onPreview} onReply={setReplyTo} onEdit={onEditMessage} onDelete={onDeleteMessage} onToggleReaction={onToggleReaction} onReport={(message) => onReportMessage(message, conversation)} onRetry={(message) => onSendMessage(conversation.id, message.body, message.attachments, message.replyToMessageId, message.clientMessageId)} onRemoveFailed={onRemoveFailedMessage} onNotice={onNotice} /></div><div className="direct-chat-footer"><DirectMessageComposer conversation={conversation} replyTo={replyTo} onCancelReply={() => setReplyTo(undefined)} onSendMessage={onSendMessage} onTypingStart={onTypingStart} onTypingStop={onTypingStop} onNotice={onNotice} /></div></main>;
+  return <main className="direct-chat-panel"><DirectChatHeader conversation={conversation} searchOpen={searchOpen} searchQuery={searchQuery} detailsOpen={detailsOpen} onSearchOpen={() => { setSearchOpen((open) => !open); if (searchOpen) setSearchQuery(""); }} onSearchChange={setSearchQuery} onDetailsToggle={onDetailsToggle} onBack={onBack} onOpenProfile={onOpenProfile} onStartCall={onStartCall ? () => onStartCall(conversation.id, { id: conversation.participantUserId, name: conversation.participantName, avatarUrl: conversation.participantAvatarUrl }) : undefined} onDeleteConversation={() => onDeleteConversation(conversation.id)} /><div className="direct-chat-body"><DirectMessageList conversation={conversation} currentUserId={currentUserId} query={searchQuery} typingNames={typingNames} onPreview={onPreview} onReply={setReplyTo} onEdit={onEditMessage} onDelete={onDeleteMessage} onToggleReaction={onToggleReaction} onReport={(message) => onReportMessage(message, conversation)} onRetry={(message) => onSendMessage(conversation.id, message.body, message.attachments, message.replyToMessageId, message.clientMessageId)} onRemoveFailed={onRemoveFailedMessage} onNotice={onNotice} /></div><div className="direct-chat-footer"><DirectMessageComposer conversation={conversation} replyTo={replyTo} onCancelReply={() => setReplyTo(undefined)} onSendMessage={onSendMessage} onTypingStart={onTypingStart} onTypingStop={onTypingStop} onNotice={onNotice} /></div></main>;
 }
 
 const dmDetailsContainerVariants: Variants = {
@@ -260,13 +328,14 @@ const dmDetailsItemVariants: Variants = {
 
 const dmMuteDurations: DirectMuteDuration[] = ["one_hour", "eight_hours", "one_day", "until_changed"];
 
-export function DMDetailsPanel({ conversation, open, onOpenProfile, onOpenCommunity, onPreview, onClose, onSetMuted, onArchive, onBlockUser, onReportUser, onNotice }: { conversation?: DirectConversation; open?: boolean; onOpenProfile: (userId: string) => void; onOpenCommunity: (communityId: string) => void; onPreview: (attachment: Attachment) => void; onClose: () => void; onSetMuted: DirectMessagesViewProps["onSetMuted"]; onArchive: DirectMessagesViewProps["onArchive"]; onBlockUser: DirectMessagesViewProps["onBlockUser"]; onReportUser: DirectMessagesViewProps["onReportUser"]; onNotice: DirectMessagesViewProps["onNotice"] }) {
+export function DMDetailsPanel({ conversation, open, onOpenProfile, onOpenCommunity, onPreview, onClose, onSetMuted, onDeleteConversation, onBlockUser, onReportUser, onNotice }: { conversation?: DirectConversation; open?: boolean; onOpenProfile: (userId: string) => void; onOpenCommunity: (communityId: string) => void; onPreview: (attachment: Attachment) => void; onClose: () => void; onSetMuted: DirectMessagesViewProps["onSetMuted"]; onDeleteConversation: DirectMessagesViewProps["onDeleteConversation"]; onBlockUser: DirectMessagesViewProps["onBlockUser"]; onReportUser: DirectMessagesViewProps["onReportUser"]; onNotice: DirectMessagesViewProps["onNotice"] }) {
   const reduceMotion = useReducedMotion();
   const [muted, setMuted] = useState(Boolean(conversation?.muted));
   const [muteDuration, setMuteDuration] = useState<DirectMuteDuration>("one_hour");
   const [confirmBlock, setConfirmBlock] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
-  useEffect(() => { setMuted(Boolean(conversation?.muted)); setConfirmBlock(false); }, [conversation?.id, conversation?.muted]);
+  useEffect(() => { setMuted(Boolean(conversation?.muted)); setConfirmBlock(false); setConfirmDelete(false); }, [conversation?.id, conversation?.muted]);
 
   if (!conversation) {
     return (
@@ -303,11 +372,11 @@ export function DMDetailsPanel({ conversation, open, onOpenProfile, onOpenCommun
     if (saved) setConfirmBlock(false);
   };
 
-  const archive = async () => {
+  const deleteChat = async () => {
     setSaving(true);
-    const saved = await onArchive(conversation.id);
+    const saved = await onDeleteConversation(conversation.id);
     setSaving(false);
-    if (saved) onNotice("Conversation archived.", "success");
+    if (saved) setConfirmDelete(false);
   };
 
   return (
@@ -443,10 +512,39 @@ export function DMDetailsPanel({ conversation, open, onOpenProfile, onOpenCommun
           )}
 
           <div className="dm-action-list">
-            <button type="button" className="dm-action-row" disabled={saving} onClick={() => void archive()}>
-              <span className="dm-action-icon"><AppIcon name="inbox" size="sm" /></span>
-              <span className="dm-action-copy"><strong>Archive conversation</strong><small>Hide from your inbox without deleting</small></span>
-            </button>
+            <AnimatePresence initial={false}>
+              {confirmDelete ? (
+                <motion.div
+                  className="dm-block-confirm"
+                  role="alertdialog"
+                  aria-label={`Delete chat with ${conversation.participantName}`}
+                  initial={reduceMotion ? false : { opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.2 }}
+                >
+                  <strong>Delete chat with {conversation.participantName}?</strong>
+                  <p>This removes the conversation from your inbox only. They keep their copy, and messaging them again restores the chat.</p>
+                  <div>
+                    <button type="button" disabled={saving} onClick={() => setConfirmDelete(false)}>Cancel</button>
+                    <button type="button" disabled={saving} className="danger" onClick={() => void deleteChat()}>Delete chat</button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="delete-chat"
+                  type="button"
+                  className="dm-action-row danger"
+                  disabled={saving}
+                  initial={false}
+                  animate={{ opacity: 1 }}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <span className="dm-action-icon"><AppIcon name="trash" size="sm" /></span>
+                  <span className="dm-action-copy"><strong>Delete chat</strong><small>Remove from your inbox</small></span>
+                </motion.button>
+              )}
+            </AnimatePresence>
 
             <AnimatePresence initial={false}>
               {confirmBlock ? (
@@ -498,5 +596,5 @@ export function DirectMessagesView(props: DirectMessagesViewProps) {
   const typing = useDirectTypingBroadcast({ enabled: Boolean(activeConversation), conversationId: activeConversation?.id ?? "", currentUserId: props.currentUserId, displayName: props.currentUserDisplayName });
   useEffect(() => { if (typeof window === "undefined") return; const media = window.matchMedia("(min-width: 1321px)"); const sync = () => setDetailsOpen(media.matches); media.addEventListener("change", sync); return () => media.removeEventListener("change", sync); }, []);
   useEffect(() => { if (typeof window !== "undefined") setDetailsOpen(window.matchMedia("(min-width: 1321px)").matches); }, [props.activeConversationId]);
-  return <><section className={`direct-messages-view ${detailsOpen ? "details-open" : ""}`} aria-label="Direct messages"><DirectMessagesSidebar conversations={props.conversations} activeConversationId={props.activeConversationId} friendRequestCount={props.friendRequestCount} onSelectConversation={props.onSelectConversation} onOpenFriends={props.onOpenFriends} onOpenPendingFriends={props.onOpenPendingFriends} /><DirectChatMain conversation={activeConversation} currentUserId={props.currentUserId} typingNames={typing.typingNames} detailsOpen={detailsOpen} onDetailsToggle={() => setDetailsOpen((open) => !open)} onBack={props.onBackToCommunity} onOpenProfile={props.onOpenProfile} onPreview={setPreviewAttachment} onSendMessage={props.onSendMessage} onEditMessage={props.onEditMessage} onDeleteMessage={props.onDeleteMessage} onToggleReaction={props.onToggleReaction} onReportMessage={props.onReportMessage} onRemoveFailedMessage={props.onRemoveFailedMessage} onTypingStart={typing.sendTypingStart} onTypingStop={typing.sendTypingStop} onNotice={props.onNotice} onStartCall={props.onStartCall} /><DMDetailsPanel conversation={activeConversation} open={detailsOpen} onOpenProfile={props.onOpenProfile} onOpenCommunity={props.onOpenCommunity} onPreview={setPreviewAttachment} onClose={() => setDetailsOpen(false)} onSetMuted={props.onSetMuted} onArchive={props.onArchive} onBlockUser={props.onBlockUser} onReportUser={props.onReportUser} onNotice={props.onNotice} /></section>{previewAttachment ? <ImagePreviewModal image={previewAttachment} onClose={() => setPreviewAttachment(null)} /> : null}</>;
+  return <><section className={`direct-messages-view ${detailsOpen ? "details-open" : ""}`} aria-label="Direct messages"><DirectMessagesSidebar conversations={props.conversations} activeConversationId={props.activeConversationId} friendRequestCount={props.friendRequestCount} onSelectConversation={props.onSelectConversation} onOpenFriends={props.onOpenFriends} onOpenPendingFriends={props.onOpenPendingFriends} onDeleteConversation={props.onDeleteConversation} /><DirectChatMain conversation={activeConversation} currentUserId={props.currentUserId} typingNames={typing.typingNames} detailsOpen={detailsOpen} onDetailsToggle={() => setDetailsOpen((open) => !open)} onBack={props.onBackToCommunity} onOpenProfile={props.onOpenProfile} onPreview={setPreviewAttachment} onSendMessage={props.onSendMessage} onEditMessage={props.onEditMessage} onDeleteMessage={props.onDeleteMessage} onToggleReaction={props.onToggleReaction} onReportMessage={props.onReportMessage} onRemoveFailedMessage={props.onRemoveFailedMessage} onTypingStart={typing.sendTypingStart} onTypingStop={typing.sendTypingStop} onNotice={props.onNotice} onStartCall={props.onStartCall} onDeleteConversation={props.onDeleteConversation} /><DMDetailsPanel conversation={activeConversation} open={detailsOpen} onOpenProfile={props.onOpenProfile} onOpenCommunity={props.onOpenCommunity} onPreview={setPreviewAttachment} onClose={() => setDetailsOpen(false)} onSetMuted={props.onSetMuted} onDeleteConversation={props.onDeleteConversation} onBlockUser={props.onBlockUser} onReportUser={props.onReportUser} onNotice={props.onNotice} /></section>{previewAttachment ? <ImagePreviewModal image={previewAttachment} onClose={() => setPreviewAttachment(null)} /> : null}</>;
 }

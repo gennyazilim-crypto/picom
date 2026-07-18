@@ -1,6 +1,6 @@
 {
   "name": "picom",
-  "version": "0.1.1-beta.1",
+  "version": "0.1.1-beta.4",
   "description": "Picom premium desktop community chat app.",
   "desktopName": "Picom Desktop",
   "author": "Picom Contributors",
@@ -472,8 +472,7 @@
     "supabase:qa": "node scripts/supabase-qa-gate.mjs",
     "email:sender:scan": "node scripts/email-sender-policy-scan.mjs",
     "email:worker": "node services/email-worker/index.mjs",
-    "email:smtp:health": "node scripts/email-smtp-healthcheck.mjs",
-    "auth:smtp:sender": "node scripts/set-auth-smtp-sender.mjs"
+    "email:smtp:health": "node scripts/email-smtp-healthcheck.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
