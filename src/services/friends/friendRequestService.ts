@@ -263,25 +263,25 @@ const supabaseFriendDataSource: FriendRequestDataSource = {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to respond.");
     const { data, error } = await auth.client.rpc("respond_friend_request", { target_request_id: requestId, accept_request: true });
-    return error ? classifyRemoteError(error, "Could not accept the friend request.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "This friend request is no longer pending.") : { ok: true, data };
   },
   async declineRequest(requestId) {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to respond.");
     const { data, error } = await auth.client.rpc("respond_friend_request", { target_request_id: requestId, accept_request: false });
-    return error ? classifyRemoteError(error, "Could not decline the friend request.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "This friend request is no longer pending.") : { ok: true, data };
   },
   async cancelRequest(requestId) {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to cancel the request.");
     const { data, error } = await auth.client.rpc("cancel_friend_request", { target_request_id: requestId });
-    return error ? classifyRemoteError(error, "Could not cancel the friend request.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "This friend request is no longer pending.") : { ok: true, data };
   },
   async removeFriend(userId) {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to remove a friend.");
     const { data, error } = await auth.client.rpc("remove_friend", { other_user_id: userId });
-    return error ? classifyRemoteError(error, "Could not remove the friend.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "You are no longer connected with this user.") : { ok: true, data };
   },
   async blockFriend(friend) {
     return await userBlockingService.setBlockedUser(friend, true)

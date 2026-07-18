@@ -47,7 +47,7 @@ export function subscribeToActiveDirectConversation(input: ActiveSubscribeInput)
   void (async () => {
     const [membership, messages] = await Promise.all([
       client.from("direct_conversation_participants").select("conversation_id").eq("conversation_id", input.conversationId).eq("user_id", input.currentUserId).maybeSingle(),
-      client.from("direct_messages").select("id").eq("conversation_id", input.conversationId).limit(500),
+      client.from("direct_messages").select("id").eq("conversation_id", input.conversationId).order("created_at", { ascending: false }).limit(500),
     ]);
     if (canceled) return;
     if (membership.error || !membership.data || messages.error) { input.onStatus("disconnected"); return; }

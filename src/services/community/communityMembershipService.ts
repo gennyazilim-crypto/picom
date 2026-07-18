@@ -175,6 +175,15 @@ export const communityMembershipService = {
       return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before leaving a community." } };
     }
 
+    // The owner-leave guard above ran against the caller-supplied currentUserId, but the delete
+    // targets the authoritative session id. If they diverge (e.g. a stale closure), re-check the
+    // guard against the id we are actually about to delete so an owner cannot skip the transfer step.
+    const authoritativeMember = input.community.members.find((member) => member.userId === userId);
+    const authoritativeRole = input.community.roles.find((role) => role.id === authoritativeMember?.roleId);
+    if (input.community.ownerId === userId || authoritativeRole?.name === "Owner") {
+      return { ok: false, error: { code: "LEAVE_NOT_ALLOWED", message: "Transfer ownership before leaving this community." } };
+    }
+
     const { error } = await configured.data
       .from("community_members")
       .delete()

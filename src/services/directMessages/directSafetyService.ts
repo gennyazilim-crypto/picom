@@ -36,13 +36,19 @@ export const directSafetyService = {
     if (dataSourceService.getStatus().isMock) return readLocalPrivacy();
     const client = getSupabaseClient();
     if (!client) return readLocalPrivacy();
-    const { data, error } = await client.rpc("get_direct_message_privacy");
-    if (error || typeof data !== "string" || !allowedPrivacy.has(data as DirectMessagePrivacy)) {
-      loggingService.logWarn("Direct-message privacy refresh failed", { code: error?.code }, "privacy");
+    try {
+      const { data, error } = await client.rpc("get_direct_message_privacy");
+      if (error || typeof data !== "string" || !allowedPrivacy.has(data as DirectMessagePrivacy)) {
+        loggingService.logWarn("Direct-message privacy refresh failed", { code: error?.code }, "privacy");
+        return readLocalPrivacy();
+      }
+      writeLocalPrivacy(data as DirectMessagePrivacy);
+      return data as DirectMessagePrivacy;
+    } catch (caught) {
+      // supabase-js can reject (not just resolve with { error }) on total network loss / abort.
+      loggingService.logWarn("Direct-message privacy refresh threw", { code: (caught as { code?: string })?.code }, "privacy");
       return readLocalPrivacy();
     }
-    writeLocalPrivacy(data as DirectMessagePrivacy);
-    return data as DirectMessagePrivacy;
   },
 
   async updatePrivacy(value: DirectMessagePrivacy): Promise<{ ok: boolean; value: DirectMessagePrivacy }> {
@@ -52,12 +58,20 @@ export const directSafetyService = {
     if (dataSourceService.getStatus().isMock) return { ok: true, value };
     const client = getSupabaseClient();
     if (!client) { writeLocalPrivacy(previous); return { ok: false, value: previous }; }
-    const { data, error } = await client.rpc("update_direct_message_privacy", { next_privacy: value });
-    if (error || data !== true) {
+    try {
+      const { data, error } = await client.rpc("update_direct_message_privacy", { next_privacy: value });
+      if (error || data !== true) {
+        writeLocalPrivacy(previous);
+        loggingService.logWarn("Direct-message privacy update failed", { code: error?.code }, "privacy");
+        return { ok: false, value: previous };
+      }
+      return { ok: true, value };
+    } catch (caught) {
+      // A thrown rejection would otherwise leave the optimistic local write un-rolled-back, so the
+      // client would believe privacy changed when the server never received the update.
       writeLocalPrivacy(previous);
-      loggingService.logWarn("Direct-message privacy update failed", { code: error?.code }, "privacy");
+      loggingService.logWarn("Direct-message privacy update threw", { code: (caught as { code?: string })?.code }, "privacy");
       return { ok: false, value: previous };
     }
-    return { ok: true, value };
   },
 };
