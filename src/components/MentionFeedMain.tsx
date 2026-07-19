@@ -3,6 +3,7 @@ import "./MentionFeedMain.css";
 import type { Attachment, Community, Member } from "../types/community";
 import type { UpcomingEvent } from "../types/events";
 import type { FriendConnection } from "../types/friends";
+import type { DirectConversation } from "../types/directMessages";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "../types/mentions";
 import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
@@ -36,15 +37,19 @@ type MentionFeedMainProps = {
   activeVoiceRooms: ActiveVoiceRoomSummary[];
   followedUserIds: string[];
   currentUserId: string;
+  directConversations: readonly DirectConversation[];
   activeTab: MentionFeedTab;
   activeFilter: MentionQuickFilter | null;
   onTabChange: (tab: MentionFeedTab) => void;
+  onOpenDirectConversation: (conversation: DirectConversation) => void;
   onOpenImage: (attachment: Attachment) => void;
   onOpenInChannel: (item: MentionItem) => void;
-  onToggleReaction: (id: string) => void;
+  onToggleReaction: (id: string, emoji: string) => void;
   onToggleSaved: (id: string) => void;
   onMarkRead: (id: string) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
+  onOpenFriendProfile: (member: Member) => void;
+  onFriendContextMenu: (event: MouseEvent, member: Member) => void;
   onOpenMore: (event: MouseEvent, item: MentionItem) => void;
   onMarkStorySeen: (storyId: string) => void;
   onOpenStoryInChannel: (story: FollowedUserStory) => void;
@@ -107,15 +112,19 @@ export function MentionFeedMain({
   activeVoiceRooms,
   followedUserIds,
   currentUserId,
+  directConversations,
   activeTab,
   activeFilter,
   onTabChange,
+  onOpenDirectConversation,
   onOpenImage,
   onOpenInChannel,
   onToggleReaction,
   onToggleSaved,
   onMarkRead,
   onOpenProfile,
+  onOpenFriendProfile,
+  onFriendContextMenu,
   onOpenMore,
   onMarkStorySeen,
   onOpenStoryInChannel,
@@ -282,7 +291,10 @@ export function MentionFeedMain({
         activeTab={activeTab}
         feedCount={feedItems.length + accessibleAudioItems.length}
         followingCount={followingItems.length + followedAudioItems.length}
+        directConversations={directConversations}
+        currentUserId={currentUserId}
         onTabChange={onTabChange}
+        onOpenDirectConversation={onOpenDirectConversation}
       />
       <div className="mention-feed-body-grid">
         <div className="mention-feed-primary-list">
@@ -323,7 +335,8 @@ export function MentionFeedMain({
           onLeaveVoice={onLeaveVoice}
           onOpenVoiceRoom={onOpenVoiceRoom}
           onOpenScreenShare={onOpenScreenShare}
-          onOpenProfile={onOpenProfile}
+          onOpenFriendProfile={onOpenFriendProfile}
+          onFriendContextMenu={onFriendContextMenu}
           onOpenEventCommunity={onOpenEventCommunity}
           onEventDetails={onEventDetails}
           onToggleEventReminder={toggleEventReminder}

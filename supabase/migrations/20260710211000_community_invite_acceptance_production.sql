@@ -2,7 +2,6 @@
 
 create unique index if not exists idx_community_invites_code_lower
   on public.community_invites(lower(code));
-
 create or replace function public.accept_community_invite_v2(invite_code text)
 returns table(id uuid, community_id uuid, user_id uuid, role_id uuid, joined_at timestamptz, acceptance_status text)
 language plpgsql
@@ -67,9 +66,7 @@ begin
     created_membership.role_id, created_membership.joined_at, 'joined'::text;
 end;
 $$;
-
 revoke all on function public.accept_community_invite_v2(text) from public, anon;
 grant execute on function public.accept_community_invite_v2(text) to authenticated;
-
 comment on function public.accept_community_invite_v2(text) is
   'Atomically validates invite state, bans, membership, default role, use count, and redacted audit metadata. Never exposes invite secrets in audit logs.';

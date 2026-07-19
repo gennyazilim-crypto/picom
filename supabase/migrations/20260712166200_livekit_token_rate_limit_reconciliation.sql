@@ -17,7 +17,7 @@ declare
   configured_maximum_requests integer;
   configured_window_seconds integer;
   current_row public.user_action_rate_limits%rowtype;
-  observed_at timestamptz:=clock_timestamp();
+  current_time timestamptz:=clock_timestamp();
 begin
   if current_user_id is null then return query select false,60; return; end if;
   select configured.maximum_requests,configured.window_seconds
@@ -30,21 +30,19 @@ begin
   where configured.action_key=target_action;
   if configured_maximum_requests is null then raise exception 'RATE_LIMIT_ACTION_INVALID'; end if;
   insert into public.user_action_rate_limits(user_id,action_key,window_started_at,request_count,updated_at)
-  values(current_user_id,target_action,observed_at,1,observed_at)
+  values(current_user_id,target_action,current_time,1,current_time)
   on conflict(user_id,action_key) do update set
-    window_started_at=case when user_action_rate_limits.window_started_at<=observed_at-make_interval(secs=>configured_window_seconds) then observed_at else user_action_rate_limits.window_started_at end,
-    request_count=case when user_action_rate_limits.window_started_at<=observed_at-make_interval(secs=>configured_window_seconds) then 1 else user_action_rate_limits.request_count+1 end,
-    updated_at=observed_at returning * into current_row;
+    window_started_at=case when user_action_rate_limits.window_started_at<=current_time-make_interval(secs=>configured_window_seconds) then current_time else user_action_rate_limits.window_started_at end,
+    request_count=case when user_action_rate_limits.window_started_at<=current_time-make_interval(secs=>configured_window_seconds) then 1 else user_action_rate_limits.request_count+1 end,
+    updated_at=current_time returning * into current_row;
   if current_row.request_count>configured_maximum_requests then
-    update public.user_action_rate_limits set denied_count=denied_count+1,last_denied_at=observed_at,updated_at=observed_at where user_id=current_user_id and action_key=target_action;
+    update public.user_action_rate_limits set denied_count=denied_count+1,last_denied_at=current_time,updated_at=current_time where user_id=current_user_id and action_key=target_action;
   end if;
   return query select current_row.request_count<=configured_maximum_requests,
-    case when current_row.request_count<=configured_maximum_requests then 0 else greatest(1,ceil(extract(epoch from(current_row.window_started_at+make_interval(secs=>configured_window_seconds)-observed_at)))::integer) end;
+    case when current_row.request_count<=configured_maximum_requests then 0 else greatest(1,ceil(extract(epoch from(current_row.window_started_at+make_interval(secs=>configured_window_seconds)-current_time)))::integer) end;
 end;
 $$;
 
 revoke all on function public.consume_current_user_action_rate_limit(text) from public,anon;
 grant execute on function public.consume_current_user_action_rate_limit(text) to authenticated;
-comment on function public.consume_current_user_action_rate_limit(text) is 'Canonical content-free per-user action limiter; LiveKit token issuance is limited to ten requests per rolling sixty-second window.';
-
-commit;
+comment on function public.consume_current_user_action_rate_limit(text) is 'Canonical content-free per-user action limiter; LiveKit token issuance is limited to ten requests per rolling sixty-second window.';;

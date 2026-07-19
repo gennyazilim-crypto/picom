@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import logoUrl from "../../assets/brand/picom-logo-concept.png";
+import { isMockMode } from "../config/appConfig";
+import { brandLogoUrl } from "../config/brandAssets";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
@@ -18,10 +19,10 @@ type RegisterScreenProps = {
 };
 
 export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, onSubmit, onSwitchToLogin }: RegisterScreenProps) {
-  const [displayName, setDisplayName] = useState("Picom User");
-  const [email, setEmail] = useState("new@picom.local");
-  const [password, setPassword] = useState("PicomDev123!");
-  const [confirmPassword, setConfirmPassword] = useState("PicomDev123!");
+  const [displayName, setDisplayName] = useState(isMockMode ? "Picom User" : "");
+  const [email, setEmail] = useState(isMockMode ? "new@picom.local" : "");
+  const [password, setPassword] = useState(isMockMode ? "PicomDev123!" : "");
+  const [confirmPassword, setConfirmPassword] = useState(isMockMode ? "PicomDev123!" : "");
   const [localError, setLocalError] = useState<string | null>(null);
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
@@ -51,8 +52,8 @@ export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, o
   return (
     <main className="auth-desktop-frame" aria-label="Create Picom account">
       <section className="auth-hero" aria-hidden="true">
-        <div className="auth-logo-orb">
-          <img src={logoUrl} alt="" />
+        <div className="auth-logo-orb auth-logo-orb--brand">
+          <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
         </div>
         <p className="eyebrow">Create workspace access</p>
         <h1>Start your Picom desktop account.</h1>
@@ -75,8 +76,6 @@ export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, o
           </div>
           <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         </div>
-
-        <SocialLoginButtons disabled={loading || !acceptedLegal} />
 
         <label className="auth-field">
           <span>Display name</span>
@@ -134,6 +133,9 @@ export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, o
 
         {localError || error ? <div className="auth-error" role="alert">{localError ?? error}</div> : null}
         {!localError && !error && notice ? <div className="auth-success" role="status">{notice}</div> : null}
+
+        <div className="auth-divider"><span>or continue with</span></div>
+        <SocialLoginButtons disabled={loading || !acceptedLegal} />
 
         <button className="auth-submit" type="submit" disabled={loading || !acceptedLegal}>
           {loading ? "Creating account..." : "Create account"}

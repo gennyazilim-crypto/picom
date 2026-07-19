@@ -51,7 +51,7 @@ Mock fixture modules use `selectMockFixture`. Their public exports resolve to em
 | Community Admin | typed services/RPCs under RLS | Permission/configuration error |
 | Help/Diagnostics | local help and redacted diagnostics | Remains available without exposing secrets |
 
-Task 668 includes Voice and Screen Share through protected Supabase/LiveKit service boundaries. Radio, Podcasts, Events, Bookmarks, Meeting Workspace, bots, product webhooks, and other post-V1 surfaces remain gated by the Task 617 registry.
+Voice and Screen Share remain disabled conditional features until Task 621. Radio, Podcasts, Events, Bookmarks, Meeting Workspace, bots, webhooks, and other post-V1 surfaces remain gated by the Task 617 registry.
 
 ## Diagnostics
 

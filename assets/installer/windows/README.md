@@ -2,7 +2,20 @@
 
 The assisted NSIS installer uses original Picom bitmap artwork:
 
-- `installer-header.bmp`: 150 x 57 wizard header.
 - `installer-sidebar.bmp`: 164 x 314 welcome/finish and uninstall sidebar.
+- `installer-custom.nsh`: electron-builder NSIS include (no binding license page).
 
-The artwork is intentionally simple and can be replaced only by approved Picom-owned final art with the same required dimensions. Do not use copied third-party artwork.
+There is **no top header strip** (`installerHeader` is intentionally unset). Branding
+lives in the sidebar only.
+
+Regenerate bitmaps from the approved app logo:
+
+```bash
+npm run installer:windows:art
+```
+
+Requires Pillow (`pip install pillow`). Languages: `en_US` + `tr_TR` with
+`displayLanguageSelector` in `electron-builder.yml`. Review copy in
+`docs/installer/bilingual-copy.md`.
+
+Do not use copied third-party artwork.

@@ -1,4 +1,4 @@
-import type { Channel, ChannelCategory, Community, Member, Role, UserId } from "../../types/community";
+﻿import type { Channel, ChannelCategory, Community, Member, Role, UserId } from "../../types/community";
 import type { CommunityAccess, CommunityMembershipStatus, CommunityPermissionKey, CommunityPermissionOverride, CommunityPermissionScope, CommunityVisibility } from "../../types/communityAccess";
 import type { MemberModerationAction } from "../../types/memberModeration";
 import type { CommunityKind } from "../../types/community";
@@ -45,10 +45,10 @@ const MEMBER_PERMISSIONS: CommunityPermissionKey[] = [];
 
 const KIND_PERMISSIONS: Readonly<Record<CommunityKind, Readonly<Record<CommunityMembershipStatus, readonly CommunityPermissionKey[]>>>> = {
   text: {
-    owner: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom", "joinVoice", "speak", "speakInVoice"],
-    admin: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom", "joinVoice", "speak", "speakInVoice"],
-    moderator: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "muteMembers", "removeFromVoice", "joinVoice", "speak", "speakInVoice"],
-    member: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "viewVoiceRoom", "joinVoiceRoom", "publishAudio", "shareScreen", "joinVoice", "speak", "speakInVoice"],
+    owner: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    admin: ["manageTextCommunity", "viewChannel", "sendMessages", "sendAnnouncements", "uploadAttachments", "addReactions", "viewPrivateChannels", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice", "manageVoiceRoom"],
+    moderator: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speak", "speakInVoice", "shareScreen", "muteMembers", "removeFromVoice"],
+    member: ["viewChannel", "sendMessages", "uploadAttachments", "addReactions", "joinVoice", "speak", "speakInVoice", "shareScreen"],
     visitor: [],
   },
   radio: {
@@ -131,27 +131,9 @@ export function isCommunityOwner(userId: UserId, community: Community): boolean 
   return community.ownerId === userId || isOwnerRole(role);
 }
 
-const ORDINARY_COMMUNITY_MEDIA_PERMISSIONS = new Set<CommunityPermissionKey>([
-  "viewVoiceRoom",
-  "joinVoiceRoom",
-  "joinVoice",
-  "speak",
-  "speakInVoice",
-  "publishAudio",
-  "shareScreen",
-]);
-
-export function isOrdinaryCommunityMediaPermission(permission: CommunityPermissionKey): boolean {
-  return ORDINARY_COMMUNITY_MEDIA_PERMISSIONS.has(permission);
-}
-
-export function isActiveCommunityMember(userId: UserId, community: Community): boolean {
-  return community.members.some((member) => member.userId === userId);
-}
-
-function getStatus(role?: Role, isOwner = false, hasMembership = false): CommunityMembershipStatus {
+function getStatus(role?: Role, isOwner = false): CommunityMembershipStatus {
   if (isOwner) return "owner";
-  if (!role) return hasMembership ? "member" : "visitor";
+  if (!role) return "visitor";
   if (role.systemKey === "admin" || role.name === "Admin") return "admin";
   if (role.name === "Radio Producer") return "member";
   if (role.systemKey === "moderator" || role.name === "Moderator") return "moderator";
@@ -180,11 +162,22 @@ export function getDefaultCommunityRolePermissions(role: Role, kind: CommunityKi
   return [...new Set([...common, ...KIND_PERMISSIONS[kind][status], ...MEETING_PERMISSIONS[status]])];
 }
 
+export function hasResolvedCommunityMembership(member: Member | undefined, community: Community): boolean {
+  if (!member) return false;
+  return getAssignedCommunityRoles(member, community).length > 0;
+}
+
 export function getCommunityAccess(userId: UserId, community: Community): CommunityAccess {
   const { member, role, roles } = getUserCommunityRole(userId, community);
   const owner = isCommunityOwner(userId, community);
-  const isActiveMember = isActiveCommunityMember(userId, community);
-  const status = getStatus(role, owner, isActiveMember);
+  const hasLocalMembership = Boolean(member);
+  const status = owner
+    ? "owner"
+    : roles.length > 0
+      ? getStatus(role, false)
+      : hasLocalMembership
+        ? "member"
+        : "visitor";
   const visibility = getCommunityVisibility(community);
   const publicReadEnabled = isCommunityPublicReadEnabled(community);
   const isVisitor = status === "visitor";
@@ -207,7 +200,6 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
     isAdmin: status === "admin",
     isModerator: status === "moderator",
     isMember: !isVisitor,
-    isActiveMember,
     isVisitor,
     canOpenAdminPanel: status === "owner" || status === "admin",
     canOpenModeratorPanel: status === "owner" || status === "admin" || status === "moderator",
@@ -220,7 +212,6 @@ export function getCommunityAccess(userId: UserId, community: Community): Commun
 }
 
 export function hasCommunityPermission(access: CommunityAccess, permission: CommunityPermissionKey): boolean {
-  if (isOrdinaryCommunityMediaPermission(permission)) return access.isActiveMember;
   return access.permissions.includes(permission);
 }
 
@@ -231,7 +222,6 @@ export function resolveCommunityPermission(
   overrides: readonly CommunityPermissionOverride[] = [],
 ): boolean {
   if (!isCommunityPermissionAvailableForKind(access.communityKind, permission)) return false;
-  if (isOrdinaryCommunityMediaPermission(permission)) return access.isActiveMember;
   let allowed = hasCommunityPermission(access, permission);
   if (access.isOwner || !access.role) return allowed;
   const roleIds = access.member?.roleIds?.length ? access.member.roleIds : [access.role.id];
@@ -295,7 +285,6 @@ export function isVisitor(access: CommunityAccess): boolean {
 }
 
 export function canViewChannel(access: CommunityAccess, channel: Channel): boolean {
-  if (channel.type === "voice") return access.isActiveMember;
   if (access.isVisitor) {
     return access.canViewPublicContent && !channel.isPrivate && (channel.publicReadEnabled ?? true);
   }
@@ -308,6 +297,7 @@ export function canSendMessage(access: CommunityAccess, channel: Channel): boole
   if (access.communityKind !== "text") return false;
   if (!canViewChannel(access, channel)) return false;
   if (access.isVisitor) return false;
+  if (channel.type === "voice") return hasCommunityPermission(access, "sendMessages");
   if (channel.type === "announcement") return hasCommunityPermission(access, "sendAnnouncements");
   if (channel.type !== "text") return false;
   return hasCommunityPermission(access, "sendMessages");
@@ -317,9 +307,10 @@ export function getComposerDisabledReason(access: CommunityAccess, channel: Chan
   if (!canViewChannel(access, channel)) return "You do not have access to this channel.";
   if (access.isVisitor) return "Join this community to send messages.";
   if (access.communityKind !== "text") return "Use this community's type-specific interaction controls.";
+  if (channel.type === "voice" && !hasCommunityPermission(access, "sendMessages")) return "You do not have permission to send messages in this voice room.";
   if (channel.type === "announcement" && !hasCommunityPermission(access, "sendAnnouncements")) return "This announcement channel is read-only.";
   if (channel.type === "forum") return "Create or open a forum post to participate.";
-  if (channel.type === "voice") return "Voice channels do not support text messages here.";
+  if (channel.type === "voice") return undefined;
   if (!hasCommunityPermission(access, "sendMessages")) return "You do not have permission to send messages in this channel.";
   return undefined;
 }

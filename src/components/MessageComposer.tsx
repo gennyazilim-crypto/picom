@@ -10,7 +10,6 @@ import { EmojiPicker } from "./EmojiPicker";
 import { mvpUiIconMap } from "./iconRegistry";
 import { slashCommandService, type SlashCommand } from "../services/slashCommandService";
 import { SlashCommandPopover } from "./SlashCommandPopover";
-import { StickerPicker } from "./StickerPicker";
 import type { CreatePollDraft } from "../types/polls";
 import { analyticsService } from "../services/analyticsService";
 
@@ -81,7 +80,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [slashDismissed, setSlashDismissed] = useState(false);
-  const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewsRef = useRef<ComposerAttachmentItem[]>([]);
   const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -132,7 +130,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     setEmojiPickerOpen(false);
     setSlashDismissed(false);
     setSlashSelectedIndex(0);
-    setStickerPickerOpen(false);
     setBody(messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   }, [channel.id, communityId]);
 
@@ -389,66 +386,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           {disabledActionLabel && onDisabledAction ? <button type="button" onClick={onDisabledAction}>{disabledActionLabel}</button> : null}
         </div>
       ) : null}
-      <div className="composer-bar">
-        <input
-          ref={fileInputRef}
-          className="composer-file-input"
-          type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          multiple
-          onChange={(event) => {
-            if (event.target.files?.length) addFiles(event.target.files);
-            event.target.value = "";
-          }}
-        />
-        <button className="composer-tool" aria-label="Attach image" disabled={Boolean(disabledReason)} onClick={() => fileInputRef.current?.click()}>
-          <AppIcon name={composerIcons.attach} size="lg" />
-        </button>
-        <textarea
-          value={body}
-          placeholder={disabledReason ?? `Message #${channel.name}`}
-          rows={1}
-          disabled={Boolean(disabledReason)}
-          onChange={(event) => {
-            const nextBody = event.target.value;
-            setBody(nextBody);
-            setSlashDismissed(false);
-            setSlashSelectedIndex(0);
-            messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
-            notifyTyping(nextBody);
-          }}
-          onBlur={stopTypingNow}
-          onPaste={(event) => {
-            if (disabledReason) return;
-            const files = getClipboardFiles(event.clipboardData);
-            if (!files.length) return;
-
-            event.preventDefault();
-            addFiles(files);
-          }}
-          onKeyDown={(event) => {
-            if (disabledReason) return;
-            if (slashSuggestions.length && event.key === "ArrowDown") { event.preventDefault(); setSlashSelectedIndex((index) => (index + 1) % slashSuggestions.length); return; }
-            if (slashSuggestions.length && event.key === "ArrowUp") { event.preventDefault(); setSlashSelectedIndex((index) => (index - 1 + slashSuggestions.length) % slashSuggestions.length); return; }
-            if (slashSuggestions.length && event.key === "Escape") { event.preventDefault(); setSlashDismissed(true); return; }
-            if (slashSuggestions.length && event.key === "Enter" && !event.shiftKey) { event.preventDefault(); applySlashCommand(slashSuggestions[Math.min(slashSelectedIndex, slashSuggestions.length - 1)]); return; }
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              send();
-            }
-          }}
-        />
-        <button className="composer-tool" aria-label="Emoji" disabled={Boolean(disabledReason)} onClick={() => setEmojiPickerOpen((current) => !current)}>
-          <AppIcon name={composerIcons.emoji} size="lg" />
-        </button>
-        <button className="composer-tool text-tool" aria-label="GIF placeholder" disabled={Boolean(disabledReason)}>GIF</button>
-        <button className="composer-tool text-tool" aria-label="Stickers" disabled={Boolean(disabledReason)} onClick={() => setStickerPickerOpen((current) => !current)}>Sticker</button>
-        <button className="composer-tool text-tool" aria-label="Create poll" disabled={Boolean(disabledReason) || !canCreatePoll} onClick={onOpenPoll}>Poll</button>
-        <button className="send-button" disabled={Boolean(disabledReason) || sending || previews.some((preview) => preview.status === "uploading") || (!body.trim() && !previews.length)} onClick={send}>
-          <AppIcon name={composerIcons.send} size="sm" /> {sending ? "Sending..." : "Send"}
-        </button>
-      </div>
-      <SlashCommandPopover commands={slashSuggestions} selectedIndex={Math.min(slashSelectedIndex, Math.max(0, slashSuggestions.length - 1))} onSelect={applySlashCommand} />
       {previews.length ? (
         <div className="composer-previews">
           {previews.map((preview) => (
@@ -470,6 +407,78 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           ))}
         </div>
       ) : null}
+      <div className="composer-bar">
+        <input
+          ref={fileInputRef}
+          className="composer-file-input"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          multiple
+          onChange={(event) => {
+            if (event.target.files?.length) addFiles(event.target.files);
+            event.target.value = "";
+          }}
+        />
+        <div className="composer-leading">
+          <button className="composer-tool" aria-label="Attach image" disabled={Boolean(disabledReason)} onClick={() => fileInputRef.current?.click()}>
+            <AppIcon name={composerIcons.attach} size="md" />
+          </button>
+        </div>
+        <div className="composer-input-wrap">
+          <textarea
+            value={body}
+            placeholder={disabledReason ?? `Message #${channel.name}`}
+            rows={1}
+            disabled={Boolean(disabledReason)}
+            onChange={(event) => {
+              const nextBody = event.target.value;
+              setBody(nextBody);
+              setSlashDismissed(false);
+              setSlashSelectedIndex(0);
+              messageDraftService.saveDraft({ communityId, channelId: channel.id }, nextBody);
+              notifyTyping(nextBody);
+            }}
+            onBlur={stopTypingNow}
+            onPaste={(event) => {
+              if (disabledReason) return;
+              const files = getClipboardFiles(event.clipboardData);
+              if (!files.length) return;
+
+              event.preventDefault();
+              addFiles(files);
+            }}
+            onKeyDown={(event) => {
+              if (disabledReason) return;
+              if (slashSuggestions.length && event.key === "ArrowDown") { event.preventDefault(); setSlashSelectedIndex((index) => (index + 1) % slashSuggestions.length); return; }
+              if (slashSuggestions.length && event.key === "ArrowUp") { event.preventDefault(); setSlashSelectedIndex((index) => (index - 1 + slashSuggestions.length) % slashSuggestions.length); return; }
+              if (slashSuggestions.length && event.key === "Escape") { event.preventDefault(); setSlashDismissed(true); return; }
+              if (slashSuggestions.length && event.key === "Enter" && !event.shiftKey) { event.preventDefault(); applySlashCommand(slashSuggestions[Math.min(slashSelectedIndex, slashSuggestions.length - 1)]); return; }
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                send();
+              }
+            }}
+          />
+        </div>
+        <div className="composer-actions">
+          <div className="composer-secondary-actions" aria-label="Composer tools">
+            <button className="composer-tool" aria-label="Emoji" disabled={Boolean(disabledReason)} onClick={() => setEmojiPickerOpen((current) => !current)}>
+              <AppIcon name={composerIcons.emoji} size="md" />
+            </button>
+            <button className="composer-tool composer-chip" type="button" aria-label="GIF placeholder" disabled={Boolean(disabledReason)}>GIF</button>
+          </div>
+          <button
+            className="send-button"
+            type="button"
+            disabled={Boolean(disabledReason) || sending || previews.some((preview) => preview.status === "uploading") || (!body.trim() && !previews.length)}
+            onClick={send}
+          >
+            <AppIcon name={composerIcons.send} size="sm" />
+            <span>{sending ? "Sending..." : "Send"}</span>
+          </button>
+        </div>
+      </div>
+      <SlashCommandPopover commands={slashSuggestions} selectedIndex={Math.min(slashSelectedIndex, Math.max(0, slashSuggestions.length - 1))} onSelect={applySlashCommand} />
       {emojiPickerOpen ? (
         <EmojiPicker
           className="composer-emoji-picker"
@@ -485,7 +494,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           communityId={communityId}
         />
       ) : null}
-      {stickerPickerOpen ? <StickerPicker onClose={() => setStickerPickerOpen(false)} onSelect={(stickerId) => { setStickerPickerOpen(false); void onSendMessage(`[sticker:${stickerId}]`, [], replyToMessage?.id ?? null); }} /> : null}
       {dragging ? <div className="drop-hint"><AppIcon name={composerIcons.image} /> Drop images to attach</div> : null}
     </footer>
   );

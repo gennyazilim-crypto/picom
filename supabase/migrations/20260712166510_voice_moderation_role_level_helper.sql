@@ -25,6 +25,4 @@ language sql stable security definer set search_path=public,pg_temp as $$
 $$;
 
 revoke all on function public.community_user_max_role_level(uuid,uuid) from public,anon,authenticated;
-comment on function public.community_user_max_role_level(uuid,uuid) is 'Security-definer Voice moderation hierarchy helper; owner invariant and multi-role maximum only.';
-
-commit;
+comment on function public.community_user_max_role_level(uuid,uuid) is 'Security-definer Voice moderation hierarchy helper; owner invariant and multi-role maximum only.';;

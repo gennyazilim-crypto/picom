@@ -24,7 +24,6 @@ using (
     )
   )
 );
-
 create or replace function public.can_access_picom_realtime_topic(
   target_topic text,
   target_extension text
@@ -71,12 +70,9 @@ exception
     return false;
 end;
 $$;
-
 revoke all on function public.can_access_picom_realtime_topic(text,text) from public, anon;
 grant execute on function public.can_access_picom_realtime_topic(text,text) to authenticated;
-
 alter table realtime.messages enable row level security;
-
 drop policy if exists "picom members receive private realtime topics" on realtime.messages;
 create policy "picom members receive private realtime topics"
 on realtime.messages
@@ -86,7 +82,6 @@ using (
   extension in ('broadcast', 'presence')
   and public.can_access_picom_realtime_topic((select realtime.topic()), extension::text)
 );
-
 drop policy if exists "picom members send private realtime topics" on realtime.messages;
 create policy "picom members send private realtime topics"
 on realtime.messages
@@ -96,7 +91,5 @@ with check (
   extension in ('broadcast', 'presence')
   and public.can_access_picom_realtime_topic((select realtime.topic()), extension::text)
 );
-
 comment on function public.can_access_picom_realtime_topic(text,text) is
   'Authorizes Picom private typing Broadcast topics by visible member channel and Presence topics by active community membership.';
-

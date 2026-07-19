@@ -1,6 +1,10 @@
 -- Task 532: least-privilege meeting RLS, capability authorization, and hierarchy-safe mutations.
 begin;
-
+alter table public.community_permission_definitions
+  drop constraint if exists community_permission_definitions_category_check;
+alter table public.community_permission_definitions
+  add constraint community_permission_definitions_category_check
+  check (category in ('common','text','voice','radio','podcast','meeting'));
 insert into public.community_permission_definitions(permission_key,category,allowed_kinds,delegable,owner_reserved,description) values
 ('createMeeting','meeting',array['text','radio','podcast'],true,false,'Create approved meeting rooms in this community.'),
 ('manageMeeting','meeting',array['text','radio','podcast'],true,false,'Manage meeting lifecycle, policy, and configuration.'),
@@ -14,7 +18,6 @@ insert into public.community_permission_definitions(permission_key,category,allo
 ('viewMeetingHistory','meeting',array['text','radio','podcast'],true,false,'View privacy-bounded meeting history and attendance.'),
 ('enableCaptions','meeting',array['text','radio','podcast'],true,false,'Enable a configured consent-gated captions provider.')
 on conflict(permission_key) do update set category=excluded.category,allowed_kinds=excluded.allowed_kinds,delegable=excluded.delegable,owner_reserved=excluded.owner_reserved,description=excluded.description,updated_at=now();
-
 insert into public.community_role_permissions(community_id,role_id,permission_key,allowed)
 select role.community_id,role.id,permission_key,true
 from public.roles role
@@ -26,12 +29,10 @@ cross join lateral unnest(case
   else array[]::text[] end
 ) permission_key
 on conflict(role_id,permission_key) do nothing;
-
 create or replace function public.meeting_role_rank(target_role text)
 returns integer language sql immutable set search_path=public,pg_temp as $$
   select case target_role when 'host' then 100 when 'cohost' then 80 when 'speaker' then 50 when 'participant' then 30 when 'viewer' then 10 when 'guest' then 0 else -1 end;
 $$;
-
 create or replace function public.meeting_role_for_user(target_room_id uuid,target_user_id uuid)
 returns text language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; system_role text; participant_role text; invite_role text;
@@ -65,7 +66,6 @@ begin
   return coalesce(invite_role,'guest');
 end;
 $$;
-
 create or replace function public.meeting_user_is_restricted(target_room_id uuid,target_user_id uuid)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype;
@@ -78,7 +78,6 @@ begin
     or public.users_are_blocked(target_user_id,target_room.host_user_id);
 end;
 $$;
-
 create or replace function public.can_view_meeting_room(target_room_id uuid)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; target_community public.communities%rowtype; channel_private boolean:=false; active_invite boolean:=false;
@@ -99,7 +98,6 @@ begin
   return target_community.visibility='public' and target_community.public_read_enabled and target_room.join_policy='open' and not coalesce(channel_private,false);
 end;
 $$;
-
 create or replace function public.can_join_meeting_room(target_room_id uuid)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; target_community public.communities%rowtype; channel_private boolean:=false; active_invite boolean:=false;
@@ -116,7 +114,6 @@ begin
   return target_community.visibility='public' and target_community.public_read_enabled and target_room.join_policy='open' and not coalesce(channel_private,false);
 end;
 $$;
-
 create or replace function public.meeting_join_disposition(target_room_id uuid)
 returns text language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype;
@@ -128,7 +125,6 @@ begin
   return 'direct';
 end;
 $$;
-
 create or replace function public.can_view_meeting_sensitive(target_room_id uuid)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype;
@@ -139,7 +135,6 @@ begin
     or exists(select 1 from public.meeting_sessions session join public.meeting_session_participants participant on participant.session_id=session.id where session.room_id=target_room_id and participant.user_id=auth.uid() and participant.state in ('joining','connected','reconnecting'));
 end;
 $$;
-
 create or replace function public.can_manage_meeting_participant(target_participant_id uuid,proposed_role text default null)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_participant public.meeting_session_participants%rowtype; target_room public.meeting_rooms%rowtype; actor_role text; next_role text;
@@ -156,7 +151,6 @@ begin
   return public.meeting_role_rank(actor_role)>public.meeting_role_rank(target_participant.role) and public.meeting_role_rank(actor_role)>public.meeting_role_rank(next_role);
 end;
 $$;
-
 create or replace function public.authorize_meeting_action(target_room_id uuid,target_action text)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; actor_role text; member boolean; allowed boolean:=false; required_permission text;
@@ -181,7 +175,6 @@ begin
   return jsonb_build_object('roomId',target_room_id,'role',actor_role,'action',target_action,'authorized',true,'joinDisposition',case when target_action='join' then public.meeting_join_disposition(target_room_id) else null end);
 end;
 $$;
-
 create or replace function public.enforce_meeting_participant_hierarchy()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room_id uuid; assigned_role text;
@@ -202,10 +195,8 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists trg_meeting_participant_hierarchy on public.meeting_session_participants;
 create trigger trg_meeting_participant_hierarchy before insert or update of role,user_id,session_id on public.meeting_session_participants for each row execute function public.enforce_meeting_participant_hierarchy();
-
 create or replace function public.set_meeting_participant_role(target_participant_id uuid,next_role text,change_reason text)
 returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_participant public.meeting_session_participants%rowtype; target_room public.meeting_rooms%rowtype; previous_role text;
@@ -223,7 +214,6 @@ begin
   return jsonb_build_object('participantId',target_participant.id,'previousRole',previous_role,'role',next_role);
 end;
 $$;
-
 drop policy if exists meeting_rooms_select_accessible on public.meeting_rooms;
 create policy meeting_rooms_select_accessible on public.meeting_rooms for select to authenticated using(public.can_view_meeting_room(id));
 drop policy if exists meeting_rooms_insert_creator on public.meeting_rooms;
@@ -232,7 +222,6 @@ drop policy if exists meeting_rooms_update_manager on public.meeting_rooms;
 create policy meeting_rooms_update_manager on public.meeting_rooms for update to authenticated using(public.effective_community_permission(community_id,'manageMeeting',null,null)) with check(public.effective_community_permission(community_id,'manageMeeting',null,null));
 drop policy if exists meeting_rooms_delete_manager on public.meeting_rooms;
 create policy meeting_rooms_delete_manager on public.meeting_rooms for delete to authenticated using(status not in ('live','locked') and public.effective_community_permission(community_id,'manageMeeting',null,null));
-
 drop policy if exists meeting_sessions_select_sensitive on public.meeting_sessions;
 create policy meeting_sessions_select_sensitive on public.meeting_sessions for select to authenticated using(public.can_view_meeting_sensitive(room_id));
 drop policy if exists meeting_sessions_insert_manager on public.meeting_sessions;
@@ -241,7 +230,6 @@ drop policy if exists meeting_sessions_update_manager on public.meeting_sessions
 create policy meeting_sessions_update_manager on public.meeting_sessions for update to authenticated using((public.authorize_meeting_action(room_id,'manage')->>'authorized')::boolean) with check((public.authorize_meeting_action(room_id,'manage')->>'authorized')::boolean);
 drop policy if exists meeting_sessions_delete_manager on public.meeting_sessions;
 create policy meeting_sessions_delete_manager on public.meeting_sessions for delete to authenticated using(status in ('ended','failed') and (public.authorize_meeting_action(room_id,'manage')->>'authorized')::boolean);
-
 drop policy if exists meeting_participants_select_sensitive on public.meeting_session_participants;
 create policy meeting_participants_select_sensitive on public.meeting_session_participants for select to authenticated using(exists(select 1 from public.meeting_sessions session where session.id=session_id and public.can_view_meeting_sensitive(session.room_id)));
 drop policy if exists meeting_participants_insert_self on public.meeting_session_participants;
@@ -250,7 +238,6 @@ drop policy if exists meeting_participants_update_self_or_manager on public.meet
 create policy meeting_participants_update_self_or_manager on public.meeting_session_participants for update to authenticated using(user_id=auth.uid() or public.can_manage_meeting_participant(id,role)) with check((user_id=auth.uid() and role=public.meeting_role_for_user((select session.room_id from public.meeting_sessions session where session.id=session_id),auth.uid())) or public.can_manage_meeting_participant(id,role));
 drop policy if exists meeting_participants_delete_self_or_manager on public.meeting_session_participants;
 create policy meeting_participants_delete_self_or_manager on public.meeting_session_participants for delete to authenticated using(user_id=auth.uid() or public.can_manage_meeting_participant(id,role));
-
 drop policy if exists meeting_waiting_select_self_or_manager on public.meeting_waiting_entries;
 create policy meeting_waiting_select_self_or_manager on public.meeting_waiting_entries for select to authenticated using(user_id=auth.uid() or (public.authorize_meeting_action(room_id,'admit')->>'authorized')::boolean);
 drop policy if exists meeting_waiting_insert_self on public.meeting_waiting_entries;
@@ -259,7 +246,6 @@ drop policy if exists meeting_waiting_update_manager on public.meeting_waiting_e
 create policy meeting_waiting_update_manager on public.meeting_waiting_entries for update to authenticated using((public.authorize_meeting_action(room_id,'admit')->>'authorized')::boolean) with check((public.authorize_meeting_action(room_id,'admit')->>'authorized')::boolean);
 drop policy if exists meeting_waiting_delete_self_or_manager on public.meeting_waiting_entries;
 create policy meeting_waiting_delete_self_or_manager on public.meeting_waiting_entries for delete to authenticated using((user_id=auth.uid() and status='waiting') or (public.authorize_meeting_action(room_id,'admit')->>'authorized')::boolean);
-
 drop policy if exists meeting_invites_select_target_or_manager on public.meeting_invites;
 create policy meeting_invites_select_target_or_manager on public.meeting_invites for select to authenticated using(invited_user_id=auth.uid() or (public.authorize_meeting_action(room_id,'manage')->>'authorized')::boolean);
 drop policy if exists meeting_invites_insert_manager on public.meeting_invites;
@@ -268,23 +254,18 @@ drop policy if exists meeting_invites_update_manager on public.meeting_invites;
 create policy meeting_invites_update_manager on public.meeting_invites for update to authenticated using((public.authorize_meeting_action(room_id,'manage')->>'authorized')::boolean) with check((public.authorize_meeting_action(room_id,'manage')->>'authorized')::boolean);
 drop policy if exists meeting_invites_delete_manager on public.meeting_invites;
 create policy meeting_invites_delete_manager on public.meeting_invites for delete to authenticated using((public.authorize_meeting_action(room_id,'manage')->>'authorized')::boolean);
-
 drop policy if exists meeting_events_select_sensitive on public.meeting_events;
 create policy meeting_events_select_sensitive on public.meeting_events for select to authenticated using(public.can_view_meeting_sensitive(room_id));
 drop policy if exists meeting_events_insert_client_signal on public.meeting_events;
 create policy meeting_events_insert_client_signal on public.meeting_events for insert to authenticated with check(actor_user_id=auth.uid() and event_source='client' and event_type in ('reaction','raised_hand_changed','connection_changed') and public.can_join_meeting_room(room_id));
-
 drop policy if exists meeting_attendance_select_self_or_history_manager on public.meeting_attendance;
 create policy meeting_attendance_select_self_or_history_manager on public.meeting_attendance for select to authenticated using(user_id=auth.uid() or exists(select 1 from public.meeting_sessions session join public.meeting_rooms room on room.id=session.room_id where session.id=session_id and public.effective_community_permission(room.community_id,'viewMeetingHistory',null,null)));
-
 grant select,insert,update,delete on public.meeting_rooms,public.meeting_sessions,public.meeting_session_participants,public.meeting_waiting_entries,public.meeting_invites to authenticated;
 grant select,insert on public.meeting_events to authenticated;
 grant select on public.meeting_attendance to authenticated;
 revoke all on public.meeting_rooms,public.meeting_sessions,public.meeting_session_participants,public.meeting_waiting_entries,public.meeting_invites,public.meeting_events,public.meeting_attendance from anon;
-
 revoke all on function public.meeting_role_rank(text),public.meeting_role_for_user(uuid,uuid),public.meeting_user_is_restricted(uuid,uuid),public.can_view_meeting_room(uuid),public.can_join_meeting_room(uuid),public.meeting_join_disposition(uuid),public.can_view_meeting_sensitive(uuid),public.can_manage_meeting_participant(uuid,text),public.authorize_meeting_action(uuid,text),public.set_meeting_participant_role(uuid,text,text) from public,anon;
 grant execute on function public.can_view_meeting_room(uuid),public.can_join_meeting_room(uuid),public.meeting_join_disposition(uuid),public.can_view_meeting_sensitive(uuid),public.authorize_meeting_action(uuid,text),public.set_meeting_participant_role(uuid,text,text) to authenticated;
-
 comment on function public.authorize_meeting_action(uuid,text) is 'Authoritative JWT-scoped meeting capability decision; frontend capability checks are UX only.';
 comment on function public.set_meeting_participant_role(uuid,text,text) is 'Hierarchy-safe stage role mutation. Self-escalation and host assignment are forbidden.';
 commit;

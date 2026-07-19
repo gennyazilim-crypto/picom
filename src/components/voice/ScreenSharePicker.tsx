@@ -8,11 +8,18 @@ type PickerStatus = "idle" | "loading" | "ready" | "error";
 type ScreenSharePickerProps = {
   connected: boolean;
   screenSharing: boolean;
+  variant?: "default" | "rail";
   onStart?: (sourceId: string, preset: ScreenShareQualityPresetId, sourceLabel?: string) => void;
   onStop?: () => void;
 };
 
-export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }: ScreenSharePickerProps) {
+export function ScreenSharePicker({
+  connected,
+  screenSharing,
+  variant = "default",
+  onStart,
+  onStop,
+}: ScreenSharePickerProps) {
   const [status, setStatus] = useState<PickerStatus>("idle");
   const [sources, setSources] = useState<ScreenCaptureSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
@@ -92,6 +99,120 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId);
   const startDisabled = !connected || status === "loading" || (!screenSharing && (!selectedSourceId || !sourceRequestId));
+  const primaryActionLabel = screenSharing
+    ? "Stop sharing"
+    : status === "loading"
+      ? "Loading..."
+      : sources.length
+        ? "Cancel selection"
+        : "Choose source";
+
+  const handlePrimaryAction = () => {
+    if (screenSharing) {
+      onStop?.();
+      return;
+    }
+    if (sources.length) {
+      void cancelSourceSelection();
+      return;
+    }
+    void loadSources();
+  };
+
+  const statusCopy = screenSharing
+    ? "Screen sharing is active."
+    : selectedSource
+      ? `Selected: ${selectedSource.name}`
+      : "No source selected yet.";
+
+  if (variant === "rail") {
+    return (
+      <div className="screen-share-picker screen-share-picker--rail">
+        <p className="screen-share-picker-rail-status" role="status">
+          {statusCopy}
+        </p>
+
+        <button
+          type="button"
+          className="screen-share-picker-rail-action"
+          onClick={handlePrimaryAction}
+          disabled={status === "loading"}
+        >
+          {primaryActionLabel}
+        </button>
+
+        {error ? (
+          <div className="screen-share-picker-rail-error" role="alert">
+            <strong>{error}</strong>
+            {guidance ? <p>{guidance}</p> : null}
+            {retryable ? (
+              <button type="button" onClick={() => void loadSources()} disabled={status === "loading"}>
+                Try again
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {notice ? <p className="screen-share-picker-rail-note" role="status">{notice}</p> : null}
+
+        <label className="screen-share-quality-control screen-share-quality-control--rail">
+          <span>Quality</span>
+          <select
+            value={qualityPreset}
+            onChange={(event) => setQualityPreset(event.target.value as ScreenShareQualityPresetId)}
+            disabled={screenSharing}
+            aria-label="Screen share quality"
+          >
+            {screenShareQualityPresets.map((preset) => (
+              <option key={preset.id} value={preset.id} title={preset.description}>
+                {preset.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {sources.length ? (
+          <>
+            <div className="screen-source-grid screen-source-grid--rail" aria-label="Available screen capture sources">
+              {sources.map((source) => (
+                <button
+                  className={`screen-source-card ${source.id === selectedSourceId ? "is-selected" : ""}`}
+                  key={source.id}
+                  type="button"
+                  onClick={() => setSelectedSourceId(source.id)}
+                  aria-pressed={source.id === selectedSourceId}
+                >
+                  {source.thumbnailDataUrl ? <img src={source.thumbnailDataUrl} alt="" /> : <span className="screen-source-fallback" />}
+                  <span>
+                    <strong>{source.name}</strong>
+                    <small>{source.type === "screen" ? "Screen" : "Window"}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <button
+              className="screen-share-start-button screen-share-start-button--rail"
+              type="button"
+              disabled={startDisabled}
+              onClick={() => {
+                if (screenSharing) {
+                  onStop?.();
+                  return;
+                }
+                void startSelectedSource();
+              }}
+            >
+              {screenSharing ? "Stop sharing" : connected ? "Start sharing" : "Join room to share"}
+            </button>
+          </>
+        ) : (
+          <p className="screen-share-picker-rail-footnote">
+            Sources load only after you tap Choose source, so startup never triggers capture prompts.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="screen-share-picker">
@@ -103,12 +224,9 @@ export function ScreenSharePicker({ connected, screenSharing, onStart, onStop }:
           <strong>Screen share source</strong>
           <small>{selectedSource ? selectedSource.name : "Choose a screen or application window"}</small>
         </div>
-        <div className="screen-share-picker-actions">
-          {!screenSharing && sources.length ? <button type="button" onClick={() => void loadSources()} disabled={status === "loading"}>Refresh</button> : null}
-          <button type="button" onClick={screenSharing ? onStop : sources.length ? () => void cancelSourceSelection() : () => void loadSources()} disabled={status === "loading"}>
-            {screenSharing ? "Stop sharing" : status === "loading" ? "Loading..." : sources.length ? "Cancel" : "Choose source"}
-          </button>
-        </div>
+        <button type="button" onClick={screenSharing ? onStop : sources.length ? () => void cancelSourceSelection() : () => void loadSources()} disabled={status === "loading"}>
+          {screenSharing ? "Stop sharing" : status === "loading" ? "Loading..." : sources.length ? "Cancel" : "Choose source"}
+        </button>
       </div>
 
       {error ? (

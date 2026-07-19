@@ -65,6 +65,4 @@ $$;
 
 revoke all on function public.authorize_livekit_room(uuid,uuid,text) from public,anon;
 grant execute on function public.authorize_livekit_room(uuid,uuid,text) to authenticated;
-comment on function public.authorize_livekit_room(uuid,uuid,text) is 'Active-member Voice and Screen token authorization with fully qualified schema references.';
-
-commit;
+comment on function public.authorize_livekit_room(uuid,uuid,text) is 'Active-member Voice and Screen token authorization with fully qualified schema references.';;

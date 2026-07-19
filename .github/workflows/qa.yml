@@ -35,6 +35,10 @@ jobs:
 
       - name: Scan repository for exposed secrets
         run: npm run secrets:smoke
+      - name: Verify Picom email sender policy
+        run: npm run email:sender:scan
+      - name: Verify Picom email system contract
+        run: npm run email:smoke
 
       - name: Verify third-party license inventory
         run: npm run licenses:check
@@ -44,6 +48,12 @@ jobs:
 
       - name: Verify API versioning enforcement
         run: npm run api:versioning:enforcement:smoke
+
+      - name: Verify intelligence event schema contract
+        run: npm run intelligence:event-schema:smoke
+
+      - name: Validate event taxonomy governance
+        run: npm run intelligence:taxonomy:validate
 
       - name: Typecheck
         run: npm run typecheck

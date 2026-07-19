@@ -15,7 +15,6 @@ as $$
       and public.can_view_channel(message.channel_id)
   );
 $$;
-
 create or replace function public.can_attach_file_to_message(target_message_id uuid)
 returns boolean
 language sql
@@ -32,14 +31,10 @@ as $$
         and public.can_view_channel(message.channel_id)
     );
 $$;
-
 grant execute on function public.can_view_message(uuid) to authenticated;
 grant execute on function public.can_attach_file_to_message(uuid) to authenticated;
-
 grant select, insert, update, delete on public.attachments to authenticated;
-
 alter table public.attachments enable row level security;
-
 drop policy if exists "attachments_select_visible_message_or_own_pending" on public.attachments;
 create policy "attachments_select_visible_message_or_own_pending"
 on public.attachments
@@ -49,7 +44,6 @@ using (
   (message_id is null and uploader_id = auth.uid())
   or public.can_view_message(message_id)
 );
-
 drop policy if exists "attachments_insert_own_pending_or_own_message" on public.attachments;
 create policy "attachments_insert_own_pending_or_own_message"
 on public.attachments
@@ -59,7 +53,6 @@ with check (
   uploader_id = auth.uid()
   and public.can_attach_file_to_message(message_id)
 );
-
 drop policy if exists "attachments_update_own_pending_or_own_message" on public.attachments;
 create policy "attachments_update_own_pending_or_own_message"
 on public.attachments
@@ -76,7 +69,6 @@ with check (
   uploader_id = auth.uid()
   and public.can_attach_file_to_message(message_id)
 );
-
 drop policy if exists "attachments_delete_own_or_owner_visible_message" on public.attachments;
 create policy "attachments_delete_own_or_owner_visible_message"
 on public.attachments
@@ -92,7 +84,6 @@ using (
       and public.can_view_channel(message.channel_id)
   )
 );
-
 -- Keep the compatibility view from bypassing table RLS in Supabase/Postgres 15+.
 drop view if exists public.message_attachments;
 create view public.message_attachments

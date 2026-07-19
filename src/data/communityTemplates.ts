@@ -38,7 +38,7 @@ export const communityTemplates: readonly CommunityTemplate[] = [
       {
         name: "Information",
         channels: [
-          { name: "announcements", type: "text" },
+          { name: "announcements", type: "announcement" },
           { name: "rules", type: "text" }
         ]
       },
@@ -63,7 +63,7 @@ export const communityTemplates: readonly CommunityTemplate[] = [
       {
         name: "Information",
         channels: [
-          { name: "announcements", type: "text" },
+          { name: "announcements", type: "announcement" },
           { name: "resources", type: "text" }
         ]
       },
@@ -88,7 +88,7 @@ export const communityTemplates: readonly CommunityTemplate[] = [
       {
         name: "Work Space",
         channels: [
-          { name: "announcements", type: "text" },
+          { name: "announcements", type: "announcement" },
           { name: "planning", type: "text" },
           { name: "development", type: "text" },
           { name: "standup", type: "voice" }
@@ -126,7 +126,7 @@ export const communityTemplates: readonly CommunityTemplate[] = [
       {
         name: "Studio",
         channels: [
-          { name: "announcements", type: "text" },
+          { name: "announcements", type: "announcement" },
           { name: "critique", type: "text" },
           { name: "inspiration", type: "text" },
           { name: "review-room", type: "voice" }
@@ -145,7 +145,7 @@ export const communityTemplates: readonly CommunityTemplate[] = [
       {
         name: "Work Space",
         channels: [
-          { name: "announcements", type: "text" },
+          { name: "announcements", type: "announcement" },
           { name: "general", type: "text" },
           { name: "project-updates", type: "text" },
           { name: "meeting-room", type: "voice", isPrivate: true }

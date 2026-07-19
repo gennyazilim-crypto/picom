@@ -1,5 +1,3 @@
-begin;
-
 create or replace function public.subject_effective_community_permission(target_user_id uuid,target_community_id uuid,target_permission text,target_scope_type text default null,target_scope_id uuid default null)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare community_kind text; community_owner uuid; target_member_id uuid; primary_role_id uuid; member_role_ids uuid[]; result boolean:=false; category_scope uuid; explicit_effect text;
@@ -60,5 +58,4 @@ create policy "picom members receive private realtime topics" on realtime.messag
 drop policy if exists "picom members send private realtime topics" on realtime.messages;
 create policy "picom members send private realtime topics" on realtime.messages for insert to authenticated with check(public.can_access_picom_realtime_topic_for_subject(nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'sub',(select realtime.topic()),extension::text));
 
-comment on function public.can_access_picom_realtime_topic_for_subject(text,text,text) is 'Deny-by-default authorization for Picom community presence/typing/messages and participant-only DM typing topics.';
-commit;
+comment on function public.can_access_picom_realtime_topic_for_subject(text,text,text) is 'Deny-by-default authorization for Picom community presence/typing/messages and participant-only DM typing topics.';;

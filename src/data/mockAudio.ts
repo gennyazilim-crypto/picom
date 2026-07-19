@@ -20,7 +20,7 @@ const reactions = (offset: number): readonly AudioReactionSummary[] => [
   { emoji: "\u{1F4A1}", count: 3 + offset },
 ];
 
-export const mockRadioSessions: RadioSession[] = [
+export const mockRadioSessions: RadioSession[] = import.meta.env.PROD ? [] : [
   { id: "radio-aurora-live-design", communityId: "picom-radio", programId: "radio-program-design-desk", hostUserId: "user-me", title: "Design Desk Live", description: "A focused live desk session about building calm community interfaces.", status: "live", startsAt: "2026-07-10T15:00:00.000Z", actualStartedAt: "2026-07-10T15:00:00.000Z", listenerCount: 128, speakerCount: 2, coverUrl: makeAudioCover("Design Desk", 0), tags: ["Design", "Community", "Live"], reactionSummary: reactions(5), isFeatured: true, isSavedByCurrentUser: true },
   { id: "radio-north-live-release", communityId: "picom-radio", programId: "radio-program-release-room", hostUserId: "north-user-1", title: "Release Room Radio", description: "Release notes, desktop QA stories, and a quiet soundtrack-free conversation.", status: "live", startsAt: "2026-07-10T16:20:00.000Z", actualStartedAt: "2026-07-10T16:20:00.000Z", listenerCount: 74, speakerCount: 3, coverUrl: makeAudioCover("Release Room", 2), tags: ["Release", "Desktop"], reactionSummary: reactions(2), isFeatured: true, isSavedByCurrentUser: false },
   { id: "radio-terra-scheduled-lab", communityId: "picom-radio", hostUserId: "terra-user-1", title: "Tomorrow's Lab Notes", description: "A scheduled community roundtable for product experiments.", status: "scheduled", startsAt: "2026-07-11T17:30:00.000Z", listenerCount: 39, speakerCount: 2, coverUrl: makeAudioCover("Lab Notes", 4), tags: ["Research", "Roundtable"], isFeatured: false, isSavedByCurrentUser: true },
@@ -30,21 +30,21 @@ export const mockRadioSessions: RadioSession[] = [
   { id: "radio-pixel-cancelled-creator", communityId: "picom-radio", hostUserId: "pixel-user-2", title: "Creator Desk Update", description: "A cancelled session retained to verify schedule and notification lifecycle handling.", status: "cancelled", startsAt: "2026-07-09T18:30:00.000Z", listenerCount: 0, speakerCount: 0, coverUrl: makeAudioCover("Creator Update", 1), tags: ["Creators", "Cancelled"], isFeatured: false, isSavedByCurrentUser: false },
 ];
 
-export const mockRadioPrograms: RadioProgram[] = [
+export const mockRadioPrograms: RadioProgram[] = import.meta.env.PROD ? [] : [
   { id: "radio-program-design-desk", communityId: "picom-radio", title: "Design Desk", description: "A recurring live desk for calm product and community design.", hostUserId: "user-me", hostUserIds: ["user-me", "aurora-user-2"], slug: "design-desk", coverUrl: makeAudioCover("Design Desk", 0), tags: ["Design", "Community"], defaultDurationMinutes: 60, isActive: true, createdAt: "2026-06-15T09:00:00.000Z" },
   { id: "radio-program-release-room", communityId: "picom-radio", title: "Release Room", description: "Desktop release notes and evidence-focused conversations.", hostUserId: "north-user-1", hostUserIds: ["north-user-1"], slug: "release-room", coverUrl: makeAudioCover("Release Room", 2), tags: ["Release", "Desktop"], defaultDurationMinutes: 75, isActive: true, createdAt: "2026-06-18T09:00:00.000Z" },
 ];
 
-export const mockRadioProgramSchedules: RadioProgramSchedule[] = [
+export const mockRadioProgramSchedules: RadioProgramSchedule[] = import.meta.env.PROD ? [] : [
   { id: "radio-schedule-design-desk", programId: "radio-program-design-desk", communityId: "picom-radio", weekday: 2, startsAtLocal: "18:00:00", durationMinutes: 60, timezone: "Europe/Berlin", effectiveFrom: "2026-06-15", isActive: true },
   { id: "radio-schedule-release-room", programId: "radio-program-release-room", communityId: "picom-radio", weekday: 4, startsAtLocal: "19:30:00", durationMinutes: 75, timezone: "Europe/Berlin", effectiveFrom: "2026-06-18", isActive: true },
 ];
 
-export const mockRadioAnnouncements: RadioAnnouncement[] = [
+export const mockRadioAnnouncements: RadioAnnouncement[] = import.meta.env.PROD ? [] : [
   { id: "radio-announcement-schedule", communityId: "picom-radio", authorUserId: "user-me", body: "This week's station schedule is confirmed. Listener Chat remains governed by channel access.", publishedAt: "2026-07-09T08:00:00.000Z" },
 ];
 
-export const mockPodcastEpisodes: PodcastEpisode[] = [
+export const mockPodcastEpisodes: PodcastEpisode[] = import.meta.env.PROD ? [] : [
   { id: "podcast-aurora-01", communityId: "picom-podcast", authorUserId: "user-me", title: "Why desktop rhythm matters", description: "A compact conversation about spacing, hierarchy, and keeping community software calm.", coverUrl: makeAudioCover("Desktop Rhythm", 0), durationSeconds: 1640, publishedAt: "2026-07-09T09:00:00.000Z", tags: ["Design", "Desktop"], reactionSummary: reactions(7), commentPreview: [{ id: "audio-comment-1", authorId: "aurora-user-1", body: "The spacing examples were practical.", createdAt: "2026-07-09T10:20:00.000Z" }], commentCount: 18, listenerCount: 642, isSavedByCurrentUser: true, isExplicit: false, status: "published" },
   { id: "podcast-aurora-02", communityId: "picom-podcast", authorUserId: "aurora-user-2", title: "Community moderation without noise", description: "Simple operational habits for clear and accountable moderation. @picom.pilot, the escalation checklist is ready for review.", coverUrl: makeAudioCover("Moderation", 3), durationSeconds: 2085, publishedAt: "2026-07-06T12:00:00.000Z", tags: ["Moderation", "Safety"], reactionSummary: reactions(4), commentPreview: [{ id: "audio-comment-2", authorId: "user-me", body: "Clear escalation paths make a difference.", createdAt: "2026-07-06T13:05:00.000Z" }], commentCount: 11, listenerCount: 418, isSavedByCurrentUser: false, status: "published" },
   { id: "podcast-north-01", communityId: "picom-podcast", authorUserId: "north-user-1", title: "Shipping a desktop beta", description: "A release-engineering discussion focused on evidence, rollback, and calm rollout decisions.", coverUrl: makeAudioCover("Desktop Beta", 2), durationSeconds: 1920, publishedAt: "2026-07-08T14:00:00.000Z", tags: ["Release", "QA"], reactionSummary: reactions(6), commentPreview: [{ id: "audio-comment-3", authorId: "north-user-2", body: "@picom.pilot, the rollback checklist is excellent and ready to verify.", createdAt: "2026-07-08T16:10:00.000Z" }], commentCount: 15, listenerCount: 533, isSavedByCurrentUser: true, status: "published" },
@@ -57,7 +57,7 @@ export const mockPodcastEpisodes: PodcastEpisode[] = [
   { id: "podcast-orbit-draft", communityId: "picom-podcast", authorUserId: "orbit-user-2", title: "Orbit planning notes", description: "An unpublished mock episode retained to exercise draft filtering.", coverUrl: makeAudioCover("Planning Notes", 4), durationSeconds: 980, publishedAt: "2026-07-15T10:00:00.000Z", tags: ["Planning"], reactionSummary: [], commentPreview: [], commentCount: 0, listenerCount: 0, isSavedByCurrentUser: false, status: "draft" },
 ];
 
-export const mockAudioFeedItems: AudioFeedItem[] = [
+export const mockAudioFeedItems: AudioFeedItem[] = import.meta.env.PROD ? [] : [
   ...mockRadioSessions.slice(0, 4).map((session): AudioFeedItem => ({ id: `feed-${session.id}`, type: session.status === "live" ? "radio_live" : "radio_scheduled", communityId: session.communityId, hostUserId: session.hostUserId, title: session.title, body: session.description, coverUrl: session.coverUrl, createdAt: session.startsAt, startsAt: session.startsAt, listenerCount: session.listenerCount, isUnread: session.status === "live", isSaved: session.isSavedByCurrentUser })),
   ...mockPodcastEpisodes.filter((episode) => episode.status === "published").slice(0, 6).map((episode): AudioFeedItem => ({ id: `feed-${episode.id}`, type: "podcast_episode", communityId: episode.communityId, authorUserId: episode.authorUserId, title: episode.title, body: episode.description, coverUrl: episode.coverUrl, createdAt: episode.publishedAt, durationSeconds: episode.durationSeconds, listenerCount: episode.listenerCount, reactionSummary: episode.reactionSummary, commentPreview: episode.commentPreview, commentCount: episode.commentCount, isUnread: false, isSaved: episode.isSavedByCurrentUser })),
 ];

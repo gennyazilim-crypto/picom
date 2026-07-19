@@ -38,6 +38,8 @@ const allowedViteNames = new Set([
   "VITE_REQUIRE_EMAIL_VERIFICATION",
   "VITE_SUPABASE_GOOGLE_OAUTH_ENABLED",
   "VITE_SUPABASE_APPLE_OAUTH_ENABLED",
+  "VITE_SUPABASE_STEAM_OAUTH_ENABLED",
+  "VITE_SUPABASE_EPIC_OAUTH_ENABLED",
   "VITE_LIVEKIT_ENABLED",
   "VITE_LIVEKIT_URL",
   "VITE_STATUS_PAGE_URL",
@@ -108,8 +110,8 @@ if (!appConfig.includes('runtimeTarget: "electron"')) {
   throw new Error("App config must keep Electron runtime target explicit.");
 }
 
-if (!readFileSync(resolve(root, ".env.example"), "utf8").includes("VITE_DATA_SOURCE=mock")) {
-  throw new Error("Default .env.example must keep mock mode as the safe local default.");
+if (!readFileSync(resolve(root, ".env.example"), "utf8").includes("VITE_DATA_SOURCE=supabase")) {
+  throw new Error("Default .env.example must enforce the Supabase-only runtime.");
 }
 
 console.log("✓ environment examples exist");

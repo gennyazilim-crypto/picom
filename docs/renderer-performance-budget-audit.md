@@ -111,3 +111,34 @@ hard budget gate on both operating systems. It does not duplicate normal fast
 QA on every main-branch commit.
 
 The hard caps were not raised. `continue-on-error` was not added.
+
+## 2026-07-17 mandatory V1 scope amendment
+
+The earlier figures above remain historical evidence for the smaller renderer
+scope. The current V1 product scope now mandatorily includes self-hosted Voice
+Rooms, Screen Share, meetings, Direct Messages, Feed, Supabase-backed services,
+and administration surfaces. A fresh Vite manifest and source-map audit found:
+
+- Voice/Screen and Settings code is dynamically imported and excluded from the
+  startup graph.
+- `initialJs` was reduced from about 1992 KiB to about 1428 KiB without removing
+  product functionality; its 1650 KiB hard cap remains unchanged.
+- The 1024 px UI wordmark was replaced in the renderer graph by a 256 px WebP;
+  the original PNG remains a tracked brand source.
+- The Iconix sprite retains all 35 public symbols and is minified for packaging.
+- React, Supabase, and LiveKit are the dominant remaining code contributors and
+  are required V1 runtime dependencies rather than removable demo payloads.
+
+The current scope therefore uses a bounded baseline instead of silently
+disabling the gate:
+
+| Metric | Target | Hard cap | Regression policy |
+| --- | ---: | ---: | --- |
+| Initial JavaScript | 1200 KiB | 1650 KiB | Unchanged; optional features must remain lazy |
+| Initial CSS | 322 KiB | 330 KiB | Less than 3% headroom over the audited full-shell baseline |
+| Total renderer assets | 3625 KiB | 3700 KiB | Roughly 2% headroom after brand optimization |
+
+`npm run performance:budget:ci` remains a required, fail-closed command.
+`continue-on-error` is not used, source maps remain excluded, and raw bytes are
+still the enforcement basis. Future feature work must split or remove assets;
+it must not raise these caps without another explicit scope amendment.

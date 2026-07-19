@@ -1,45 +1,329 @@
-.community-structure-manager { display: grid; gap: 16px; min-width: 0; }
-.community-structure-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-elevated); }
-.community-structure-heading h3 { margin: 4px 0 5px; color: var(--text-primary); }
-.community-structure-heading p { margin: 0; color: var(--text-secondary); max-width: 680px; }
-.structure-create-row, .structure-toolbar, .structure-category-card > header, .structure-channel-row, .structure-override-editor > header, .structure-override-form, .structure-inline-confirm footer { display: flex; align-items: center; gap: 10px; }
-.structure-create-row, .structure-toolbar { justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-subtle); }
-.structure-create-row label { flex: 1; min-width: 0; }
-.structure-create-row label span, .structure-override-form label span, .audio-structure-list label > span { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-.structure-create-row input, .structure-category-card input, .structure-override-form select, .audio-structure-list input, .audio-structure-list select { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--input-bg); color: var(--text-primary); padding: 8px 10px; }
-.structure-category-list, .structure-channel-list, .audio-structure-list { display: grid; gap: 10px; min-width: 0; }
-.structure-category-card { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-elevated); }
-.structure-category-card > header { justify-content: space-between; padding: 13px 14px; border-bottom: 1px solid var(--border); }
-.structure-category-card > header > div:first-child, .structure-channel-row > span { display: grid; min-width: 0; }
-.structure-category-card small, .structure-channel-row small, .structure-override-editor small { color: var(--text-muted); }
-.structure-channel-list { padding: 10px; }
-.structure-channel-row { min-width: 0; padding: 9px 10px; border-radius: var(--radius-md); background: var(--surface-subtle); }
-.structure-channel-row > span { flex: 1; }
-.structure-channel-row strong, .structure-channel-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.structure-row-actions { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
-.structure-row-actions button, .structure-create-row button, .structure-toolbar button, .structure-add-channel, .structure-override-form button { min-height: 30px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-elevated); color: var(--text-secondary); padding: 6px 9px; }
-.structure-row-actions .danger-action, .structure-inline-confirm .danger-action { color: var(--danger); }
-.structure-move-up svg { transform: rotate(180deg); }
-.structure-add-channel { justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
-.structure-access-badges span { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 999px; color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); font-size: 11px; }
-.structure-notice { margin: 0; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--success); background: color-mix(in srgb, var(--success) 10%, transparent); }
-.structure-notice.error { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
-.structure-override-editor { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--focus-ring); border-radius: var(--radius-lg); background: var(--surface-elevated); }
-.structure-override-editor > header { justify-content: space-between; }
-.structure-override-editor > header > div { display: grid; }
-.structure-override-form { align-items: end; flex-wrap: wrap; }
-.structure-override-form label { flex: 1 1 150px; }
-.structure-override-list { display: flex; flex-wrap: wrap; gap: 7px; }
-.structure-override-list span { display: inline-flex; gap: 5px; padding: 6px 8px; border-radius: 999px; background: var(--surface-subtle); color: var(--text-secondary); font-size: 12px; }
-.structure-inline-confirm { position: sticky; bottom: 0; z-index: 2; padding: 14px; border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border)); border-radius: var(--radius-lg); background: var(--surface-elevated); box-shadow: var(--shadow-app); }
-.structure-inline-confirm p { color: var(--text-secondary); }
-.structure-inline-confirm footer { justify-content: flex-end; }
-.audio-structure-list article { display: grid; grid-template-columns: 38px minmax(150px, 1fr) 145px 94px auto auto; align-items: end; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-elevated); }
-.audio-structure-list article.active { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent); }
-.audio-structure-icon { align-self: center; display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--radius-sm); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.audio-structure-meta { align-self: center; display: grid; }
-.audio-structure-meta strong { color: var(--text-primary); }
-.audio-structure-meta small { color: var(--text-muted); }
-.audio-structure-meta span { color: var(--success); font-size: 10px; font-weight: 700; text-transform: uppercase; }
-.audio-structure-toggle { align-self: center; display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
-@media (max-width: 1320px) { .audio-structure-list article { grid-template-columns: 36px minmax(140px, 1fr) 130px auto; } .audio-structure-meta, .audio-structure-toggle { grid-column: span 1; } .audio-structure-list .structure-row-actions { grid-column: 2 / -1; justify-self: end; } }
+.community-management-modal .community-structure-manager {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.community-management-modal .structure-create-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+}
+
+.community-management-modal .structure-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .structure-category-list,
+.community-management-modal .structure-channel-list,
+.community-management-modal .audio-structure-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.community-management-modal .structure-category-card {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .structure-category-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 35%, var(--surface));
+}
+
+.community-management-modal .structure-category-card > header > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.community-management-modal .structure-category-card strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .structure-category-card small,
+.community-management-modal .structure-channel-row small,
+.community-management-modal .structure-override-editor small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.community-management-modal .structure-channel-list {
+  padding: 12px;
+}
+
+.community-management-modal .structure-channel-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px 12px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 50%, var(--surface));
+}
+
+.community-management-modal .structure-channel-row > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.community-management-modal .structure-channel-row strong,
+.community-management-modal .structure-channel-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-management-modal .structure-channel-row strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.community-management-modal .structure-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.community-management-modal .structure-move-up svg {
+  transform: rotate(180deg);
+}
+
+.community-management-modal .structure-add-channel {
+  justify-self: start;
+  margin-top: 2px;
+}
+
+.community-management-modal .structure-access-badges span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warning) 24%, var(--border));
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.community-management-modal .structure-override-editor {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .structure-override-editor > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.community-management-modal .structure-override-editor > header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.community-management-modal .structure-override-editor > header strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.community-management-modal .structure-override-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.community-management-modal .structure-override-form label {
+  flex: 1 1 150px;
+}
+
+.community-management-modal .structure-override-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.community-management-modal .structure-override-list span {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.community-management-modal .structure-override-list p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.community-management-modal .structure-inline-confirm {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.community-management-modal .structure-inline-confirm strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.community-management-modal .structure-inline-confirm p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.community-management-modal .audio-structure-list article {
+  display: grid;
+  grid-template-columns: 40px minmax(150px, 1fr) 145px 94px auto auto;
+  align-items: end;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.community-management-modal .audio-structure-list article:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.community-management-modal .audio-structure-list article.active {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.community-management-modal .audio-structure-icon {
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-management-modal .audio-structure-meta {
+  align-self: center;
+  display: grid;
+  gap: 2px;
+}
+
+.community-management-modal .audio-structure-meta strong {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.community-management-modal .audio-structure-meta small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.community-management-modal .audio-structure-meta span {
+  color: var(--success);
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.community-management-modal .audio-structure-toggle {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.community-management-modal .audio-structure-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 1100px) {
+  .community-management-modal .structure-channel-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .community-management-modal .structure-access-badges,
+  .community-management-modal .structure-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .community-management-modal .structure-create-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1320px) {
+  .community-management-modal .audio-structure-list article {
+    grid-template-columns: 40px minmax(140px, 1fr) 130px auto;
+  }
+
+  .community-management-modal .audio-structure-list .structure-row-actions {
+    grid-column: 2 / -1;
+    justify-self: end;
+  }
+}

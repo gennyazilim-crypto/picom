@@ -1,5 +1,3 @@
-begin;
-
 create table if not exists public.content_mentions (
   id uuid primary key default gen_random_uuid(),
   source_type text not null check (source_type in ('text_message', 'radio_session', 'radio_chat', 'podcast_episode', 'podcast_comment')),
@@ -305,6 +303,4 @@ grant execute on function public.list_unified_content_mentions(timestamptz, uuid
 
 select public.refresh_message_content_mentions(message.id) from public.messages message where message.deleted_at is null;
 select public.refresh_radio_content_mentions(session.id) from public.radio_sessions session where session.status <> 'cancelled';
-select public.refresh_podcast_episode_content_mentions(episode.id) from public.podcast_episodes episode where episode.status = 'published';
-
-commit;
+select public.refresh_podcast_episode_content_mentions(episode.id) from public.podcast_episodes episode where episode.status = 'published';;

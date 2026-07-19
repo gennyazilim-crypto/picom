@@ -1,5 +1,3 @@
-begin;
-
 alter table public.radio_sessions
   add column if not exists stream_url text;
 
@@ -75,6 +73,4 @@ revoke all on function public.heartbeat_current_user_radio_listener(uuid) from p
 grant execute on function public.heartbeat_current_user_radio_listener(uuid) to authenticated;
 
 comment on column public.radio_sessions.stream_url is 'Listener-safe HTTPS media endpoint only. Provider credentials and signed query tokens must not be stored here.';
-comment on function public.heartbeat_current_user_radio_listener(uuid) is 'Refreshes only the authenticated listener active-row heartbeat for a visible live Radio session.';
-
-commit;
+comment on function public.heartbeat_current_user_radio_listener(uuid) is 'Refreshes only the authenticated listener active-row heartbeat for a visible live Radio session.';;

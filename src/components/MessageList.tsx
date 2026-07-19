@@ -9,6 +9,7 @@ type ToastTone = "info" | "error" | "success";
 type MessageListProps = {
   community: Community;
   messages: Message[];
+  searchQuery?: string;
   currentUserId: string;
   readReceiptsEnabled: boolean;
   highlightedMessageId?: string | null;
@@ -46,6 +47,7 @@ function canModerate(roleLevel: number | undefined) {
 export function MessageList({
   community,
   messages,
+  searchQuery = "",
   currentUserId,
   readReceiptsEnabled,
   highlightedMessageId,
@@ -69,13 +71,18 @@ export function MessageList({
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
-  const lastMessageId = messages[messages.length - 1]?.id;
   const memberByUserId = useMemo(() => new Map(community.members.map((member) => [member.userId, member])), [community.members]);
   const roleById = useMemo(() => new Map(community.roles.map((role) => [role.id, role])), [community.roles]);
   const messageById = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages]);
   const blockedUserIdSet = useMemo(() => new Set(blockedUserIds), [blockedUserIds]);
   const currentMember = memberByUserId.get(currentUserId);
   const currentRole = roleById.get(currentMember?.roleId ?? "");
+  const visibleMessages = useMemo(() => {
+    const value = searchQuery.trim().toLowerCase();
+    if (!value) return messages;
+    return messages.filter((message) => message.body.toLowerCase().includes(value));
+  }, [messages, searchQuery]);
+  const lastMessageId = visibleMessages[visibleMessages.length - 1]?.id;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -110,7 +117,7 @@ export function MessageList({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [highlightedMessageId, messages.length]);
+  }, [highlightedMessageId, visibleMessages.length]);
 
   if (!messages.length) {
     return (
@@ -121,9 +128,18 @@ export function MessageList({
     );
   }
 
+  if (!visibleMessages.length) {
+    return (
+      <div className="message-list empty-state">
+        <h2>No matching messages</h2>
+        <p>Try a different search term in this channel.</p>
+      </div>
+    );
+  }
+
   return (
     <div className={`message-list ${announcement ? "announcement-message-list" : ""}`} ref={listRef} onScroll={handleScroll}>
-      {messages.map((message, index) => {
+      {visibleMessages.map((message, index) => {
         const resolvedMember = memberByUserId.get(message.authorId);
         const member: Member = resolvedMember ?? { id: `deleted-${message.authorId}`, userId: message.authorId, displayName: "Deleted User", username: "deleted-account", avatarSeed: "deleted-user", status: "offline", statusText: "Account deleted", roleId: "member" };
         const profileUnavailable = !resolvedMember || member.displayName.trim().toLowerCase() === "deleted user";

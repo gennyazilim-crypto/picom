@@ -1,0 +1,142 @@
+.sidebar-voice-connection {
+  margin: 0 10px 8px;
+  padding: 10px 10px 12px;
+  display: grid;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--success) 22%, var(--border));
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--picom-aqua) 16%, transparent), transparent 42%),
+    color-mix(in srgb, var(--success) 7%, var(--surface-soft));
+  box-shadow: var(--shadow-soft);
+}
+
+.sidebar-voice-connection-copy {
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 140ms ease;
+}
+
+.sidebar-voice-connection-copy:hover {
+  background: color-mix(in srgb, var(--surface) 42%, transparent);
+}
+
+.sidebar-voice-connection-copy:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.sidebar-voice-connection-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--picom-teal);
+  background: color-mix(in srgb, var(--picom-aqua) 14%, var(--surface));
+}
+
+.sidebar-voice-connection-text {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.sidebar-voice-connection-text strong {
+  overflow: hidden;
+  color: color-mix(in srgb, var(--picom-teal) 88%, var(--text-primary));
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-voice-connection-text small {
+  overflow: hidden;
+  color: color-mix(in srgb, var(--picom-teal) 62%, var(--text-secondary));
+  font-size: 10px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-voice-connection-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.sidebar-voice-control {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.sidebar-voice-control:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-voice-control[aria-pressed="true"] {
+  color: var(--picom-rust);
+  border-color: color-mix(in srgb, var(--picom-orange) 34%, var(--border));
+  background: color-mix(in srgb, var(--picom-orange) 12%, var(--surface));
+}
+
+.sidebar-voice-control-disconnect {
+  border-color: transparent;
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 8px 18px color-mix(in srgb, #dc2626 28%, transparent);
+}
+
+.sidebar-voice-control-disconnect:hover {
+  filter: brightness(1.03);
+  color: #fff;
+}
+
+.sidebar-voice-control:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.community-sidebar-footer {
+  min-width: 0;
+  display: grid;
+  gap: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-sidebar) 92%, var(--surface));
+}
+
+.community-sidebar-footer .sidebar-voice-connection {
+  margin-top: 8px;
+}
+
+.community-sidebar-footer .user-mini-card {
+  border-top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-voice-control {
+    transition: none;
+  }
+}

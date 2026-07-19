@@ -322,4 +322,4 @@ drop policy if exists "comment authors or audio managers delete comments" on pub
 create policy "comment authors or podcast moderators delete comments" on public.podcast_episode_comments for delete to authenticated using (author_id = auth.uid() or exists (select 1 from public.podcast_episodes episode where episode.id = episode_id and public.can_manage_community_kind(episode.community_id, 'podcast'::public.community_kind, 'moderatePodcastComments')));
 
 comment on function public.can_manage_community_kind(uuid, public.community_kind, text) is 'Canonical role and capability check that rejects cross-kind authorization.';
-comment on function public.enforce_community_kind_reference() is 'Rejects Radio or Podcast source rows attached to a different community kind.';
+comment on function public.enforce_community_kind_reference() is 'Rejects Radio or Podcast source rows attached to a different community kind.';;

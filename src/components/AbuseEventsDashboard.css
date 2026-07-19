@@ -1,0 +1,348 @@
+.settings-modal .abuse-events-dashboard {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.settings-modal .abuse-events-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-soft) 32%, var(--surface));
+}
+
+.settings-modal .abuse-events-header-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settings-modal .abuse-events-header-copy strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.settings-modal .abuse-events-header-copy p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .abuse-events-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-modal .abuse-events-metrics article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .abuse-events-metrics span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.settings-modal .abuse-events-metrics strong {
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.settings-modal .abuse-events-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-modal .abuse-events-filter-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.settings-modal .abuse-events-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.settings-modal .abuse-events-filter-chip:hover {
+  background: var(--surface-soft);
+  color: var(--text-primary);
+}
+
+.settings-modal .abuse-events-filter-chip.is-active {
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  color: var(--text-primary);
+}
+
+.settings-modal .abuse-events-severity-field {
+  display: grid;
+  gap: 6px;
+  min-width: 148px;
+}
+
+.settings-modal .abuse-events-severity-field span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-modal .abuse-events-severity-select {
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 12px;
+  outline: 0;
+}
+
+.settings-modal .abuse-events-severity-select:focus {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.settings-modal .abuse-events-privacy {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-soft) 38%, var(--surface));
+}
+
+.settings-modal .abuse-events-privacy strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.settings-modal .abuse-events-privacy p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .abuse-events-error {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-modal .abuse-events-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.settings-modal .abuse-events-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .abuse-events-card-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+
+.settings-modal .abuse-events-card-icon.severity-warning {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+}
+
+.settings-modal .abuse-events-card-icon.severity-critical {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+}
+
+.settings-modal .abuse-events-card-icon.severity-info {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 60%, var(--surface));
+}
+
+.settings-modal .abuse-events-card-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.settings-modal .abuse-events-card-copy strong,
+.settings-modal .abuse-events-card-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-modal .abuse-events-card-copy strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .abuse-events-card-copy span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.settings-modal .abuse-events-card-meta {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+}
+
+.settings-modal .abuse-events-severity-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-modal .abuse-events-severity-badge.severity-info {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.settings-modal .abuse-events-severity-badge.severity-warning {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warning) 28%, var(--border));
+}
+
+.settings-modal .abuse-events-severity-badge.severity-critical {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border));
+}
+
+.settings-modal .abuse-events-card-meta time {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.settings-modal .abuse-events-empty {
+  display: grid;
+  gap: 6px;
+  padding: 28px 20px;
+  border: 1px dashed color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-soft) 55%, var(--surface));
+  text-align: center;
+}
+
+.settings-modal .abuse-events-empty strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .abuse-events-empty p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-modal .abuse-events-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.settings-modal .abuse-events-footer span,
+.settings-modal .abuse-events-footer em {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+@media (max-width: 960px) {
+  .settings-modal .abuse-events-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-modal .abuse-events-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .settings-modal .abuse-events-card-meta {
+    grid-column: 1 / -1;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .settings-modal .abuse-events-filter-segment {
+    width: 100%;
+  }
+}

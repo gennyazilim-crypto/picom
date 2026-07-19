@@ -6,6 +6,10 @@ export const IPC_CHANNELS = Object.freeze({
   screenCaptureSelectSource: "picom:screen-capture-select-source",
   screenCaptureCancelSelection: "picom:screen-capture-cancel-selection",
   notificationShow: "picom:notification-show",
+  incomingCallShow: "picom:incoming-call-show",
+  incomingCallDismiss: "picom:incoming-call-dismiss",
+  incomingCallRespond: "picom:incoming-call-respond",
+  incomingCallAction: "picom:incoming-call-action",
   traySetStatus: "picom:tray-set-status",
   traySetMuted: "picom:tray-set-muted",
   traySetCloseToTray: "picom:tray-set-close-to-tray",
@@ -20,18 +24,17 @@ export const IPC_CHANNELS = Object.freeze({
   clipboardWriteText: "picom:clipboard-write-text",
   externalOpenUrl: "picom:external-open-url",
   deepLinkOpen: "picom:deep-link-open",
-  authOAuthStart: "picom:auth-oauth-start",
-  authOAuthCancel: "picom:auth-oauth-cancel",
-  authOAuthGetPendingResult: "picom:auth-oauth-get-pending-result",
-  authOAuthAcknowledge: "picom:auth-oauth-acknowledge",
-  authOAuthResult: "picom:auth-oauth-result",
-  authSecureStorageGet: "picom:auth-secure-storage-get",
-  authSecureStorageSet: "picom:auth-secure-storage-set",
-  authSecureStorageRemove: "picom:auth-secure-storage-remove",
-  authSecureStorageStatus: "picom:auth-secure-storage-status",
-  powerResume: "picom:power-resume"
+  powerResume: "picom:power-resume",
+  updateGetState: "picom:update-get-state",
+  updateCheck: "picom:update-check",
+  updateDownload: "picom:update-download",
+  updateInstall: "picom:update-install",
+  updateStateChanged: "picom:update-state-changed",
+  activityGetSnapshot: "picom:activity-get-snapshot",
 });
+
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
+
 export function isIpcChannel(channel: unknown): channel is IpcChannel {
   return typeof channel === "string" && Object.values(IPC_CHANNELS).includes(channel as IpcChannel);
 }

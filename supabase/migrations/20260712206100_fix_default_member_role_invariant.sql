@@ -1,10 +1,8 @@
 begin;
-
 update public.roles
 set is_default = true
 where system_key = 'member'
   and is_default = false;
-
 create or replace function public.enforce_community_role_invariants()
 returns trigger
 language plpgsql
@@ -74,8 +72,6 @@ begin
   return new;
 end;
 $$;
-
 comment on function public.enforce_community_role_invariants() is
   'Central role invariant: every built-in Member role is the sole default role; owner and hierarchy protections remain enforced.';
-
 commit;

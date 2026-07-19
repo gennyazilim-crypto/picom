@@ -9,10 +9,13 @@ alter table public.user_settings enable row level security;
 revoke all on public.user_settings from public,anon;
 grant select,insert,update on public.user_settings to authenticated;
 drop policy if exists "user_settings_select_own" on public.user_settings;
+drop policy if exists "user_settings_select_own" on public.user_settings;
 create policy "user_settings_select_own" on public.user_settings for select to authenticated using(user_id=auth.uid());
+drop policy if exists "user_settings_insert_own" on public.user_settings;
 drop policy if exists "user_settings_insert_own" on public.user_settings;
 create policy "user_settings_insert_own" on public.user_settings for insert to authenticated with check(user_id=auth.uid());
 drop policy if exists "user_settings_update_own" on public.user_settings;
+drop policy if exists "user_settings_update_own" on public.user_settings;
 create policy "user_settings_update_own" on public.user_settings for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
 
-comment on table public.user_settings is 'Account-synced Picom preferences only. Device-local, community-specific, and server-controlled settings are intentionally excluded.';
+comment on table public.user_settings is 'Account-synced Picom preferences only. Device-local, community-specific, and server-controlled settings are intentionally excluded.';;

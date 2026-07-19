@@ -1,22 +1,17 @@
 -- Task 533: type-aware Community Admin room lifecycle with active-session and audit safeguards.
 begin;
-
 alter table public.meeting_rooms add column if not exists audience_mode boolean not null default false;
 alter table public.meeting_rooms add column if not exists moderation_policy jsonb not null default '{}'::jsonb;
 alter table public.meeting_rooms add column if not exists position integer not null default 0;
 alter table public.meeting_rooms add column if not exists archived_at timestamptz;
 alter table public.meeting_rooms add column if not exists archived_by_user_id uuid references public.profiles(id) on delete set null;
-
 do $$ begin alter table public.meeting_rooms add constraint meeting_rooms_position_range check(position between 0 and 10000); exception when duplicate_object then null; end $$;
 do $$ begin alter table public.meeting_rooms add constraint meeting_rooms_audience_mode check(not audience_mode or mode='stage'); exception when duplicate_object then null; end $$;
 do $$ begin alter table public.meeting_rooms add constraint meeting_rooms_moderation_policy_object check(jsonb_typeof(moderation_policy)='object' and not moderation_policy ?| array['raw_audio','raw_video','raw_screen','recording','access_token','livekit_token']); exception when duplicate_object then null; end $$;
-
 create index if not exists idx_meeting_rooms_community_position on public.meeting_rooms(community_id,position,id) where archived_at is null;
 create index if not exists idx_meeting_rooms_archived on public.meeting_rooms(community_id,archived_at) where archived_at is not null;
-
 drop policy if exists meeting_rooms_select_accessible on public.meeting_rooms;
 create policy meeting_rooms_select_accessible on public.meeting_rooms for select to authenticated using(archived_at is null and public.can_view_meeting_room(id));
-
 create or replace function public.assert_meeting_room_admin(target_room_id uuid,target_permission text default 'manageMeeting')
 returns public.meeting_rooms language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype;
@@ -26,7 +21,6 @@ begin
   return target_room;
 end;
 $$;
-
 create or replace function public.sanitize_meeting_capabilities(target_mode text,input_capabilities jsonb)
 returns jsonb language sql immutable set search_path=public,pg_temp as $$
   select jsonb_build_object(
@@ -38,7 +32,6 @@ returns jsonb language sql immutable set search_path=public,pg_temp as $$
     'canRaiseHand',case when jsonb_typeof(coalesce(input_capabilities,'{}'::jsonb)->'canRaiseHand')='boolean' then (input_capabilities->>'canRaiseHand')::boolean else true end
   );
 $$;
-
 create or replace function public.list_community_meeting_rooms(target_community_id uuid)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare result jsonb;
@@ -52,7 +45,6 @@ begin
   return result;
 end;
 $$;
-
 create or replace function public.create_community_meeting_room(
   target_community_id uuid,target_category_id uuid,room_name text,room_description text,room_mode text,
   room_capabilities jsonb,room_waiting_enabled boolean,room_audience_mode boolean,room_join_policy text,
@@ -78,7 +70,6 @@ begin
   return to_jsonb(created_room)||jsonb_build_object('active_session_count',0,'workspace',case room_mode when 'voice' then 'voice_lounge' when 'stage' then 'stage' else 'meeting' end);
 end;
 $$;
-
 create or replace function public.update_community_meeting_room(
   target_room_id uuid,room_name text,room_description text,room_mode text,room_capabilities jsonb,
   room_waiting_enabled boolean,room_audience_mode boolean,room_join_policy text,room_participant_limit integer,
@@ -101,7 +92,6 @@ begin
   return to_jsonb(updated_room)||jsonb_build_object('active_session_count',active_count,'workspace',case room_mode when 'voice' then 'voice_lounge' when 'stage' then 'stage' else 'meeting' end);
 end;
 $$;
-
 create or replace function public.archive_community_meeting_room(target_room_id uuid,confirmation_title text,active_policy text default 'deny',replacement_room_id uuid default null)
 returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; replacement public.meeting_rooms%rowtype; active_count integer; source_channel uuid;
@@ -123,7 +113,6 @@ begin
   return true;
 end;
 $$;
-
 create or replace function public.move_community_meeting_room(target_room_id uuid,move_direction text)
 returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; adjacent public.meeting_rooms%rowtype; old_position integer;
@@ -138,7 +127,6 @@ begin
   return true;
 end;
 $$;
-
 create or replace function public.guard_active_meeting_room_mutation()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -149,7 +137,6 @@ end;
 $$;
 drop trigger if exists trg_guard_active_meeting_room_mutation on public.meeting_rooms;
 create trigger trg_guard_active_meeting_room_mutation before update of archived_at or delete on public.meeting_rooms for each row execute function public.guard_active_meeting_room_mutation();
-
 create or replace function public.audit_meeting_room_mutation()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare row_value public.meeting_rooms%rowtype; action_name text; actor uuid;
@@ -164,9 +151,7 @@ end;
 $$;
 drop trigger if exists trg_audit_meeting_room_mutation on public.meeting_rooms;
 create trigger trg_audit_meeting_room_mutation after insert or update or delete on public.meeting_rooms for each row execute function public.audit_meeting_room_mutation();
-
 revoke all on function public.assert_meeting_room_admin(uuid,text),public.list_community_meeting_rooms(uuid),public.create_community_meeting_room(uuid,uuid,text,text,text,jsonb,boolean,boolean,text,integer,uuid,jsonb),public.update_community_meeting_room(uuid,text,text,text,jsonb,boolean,boolean,text,integer,uuid,jsonb),public.archive_community_meeting_room(uuid,text,text,uuid),public.move_community_meeting_room(uuid,text) from public,anon;
 grant execute on function public.list_community_meeting_rooms(uuid),public.create_community_meeting_room(uuid,uuid,text,text,text,jsonb,boolean,boolean,text,integer,uuid,jsonb),public.update_community_meeting_room(uuid,text,text,text,jsonb,boolean,boolean,text,integer,uuid,jsonb),public.archive_community_meeting_room(uuid,text,text,uuid),public.move_community_meeting_room(uuid,text) to authenticated;
-
 comment on function public.archive_community_meeting_room(uuid,text,text,uuid) is 'Archives metadata and requires explicit deny/end/transfer policy for active sessions; audit history remains.';
 commit;

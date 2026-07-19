@@ -12,7 +12,7 @@ assert.ok(list.includes("Date.parse(right.createdAt)"), "mixed source order must
 assert.ok(main.includes("<UnifiedFeedList") && !main.includes("<AudioFeedSection"), "Mention Feed must render one unified list");
 assert.ok(textCard.includes("unified-feed-card--text"), "Text card must use unified card language");
 assert.ok(audioCard.includes("unified-feed-card--audio"), "Audio card must use unified card language");
-for (const marker of ["Live now", "Scheduled radio", "Podcast mention", "listening", "Open episode", "Open in Radio", "mentionHighlight", "reactionTotal", "visibleCommenters"]) {
+for (const marker of ["Live now", "Scheduled radio", "Podcast mention", "listening", "Open episode", "Open in Radio", "mentionHighlight", "EmojiReactionSummary", "CommentEngagementSummary"]) {
   assert.ok(audioCard.includes(marker), `missing source-correct audio card contract: ${marker}`);
 }
 assert.ok(audioCard.includes('role="menu"') && audioCard.includes("onToggleSaved(item)") && audioCard.includes("onMarkRead(item)"), "Audio More menu must expose real safe actions");

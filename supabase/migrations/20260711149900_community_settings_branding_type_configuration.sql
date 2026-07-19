@@ -58,13 +58,16 @@ grant execute on function public.update_community_settings(uuid,text,text,text,t
 create or replace function public.text_message_setting_allows(target_channel_id uuid,target_body text,target_capability text default 'message') returns boolean language sql stable security definer set search_path=public as $$
   select coalesce((select case when community.kind<>'text' then true when target_capability='attachment' then coalesce((community.type_settings->>'attachmentsEnabled')::boolean,true) when target_capability='reaction' then coalesce((community.type_settings->>'reactionsEnabled')::boolean,true) else char_length(coalesce(target_body,''))<=coalesce((community.type_settings->>'maxMessageLength')::integer,4000) end from public.channels channel join public.communities community on community.id=channel.community_id where channel.id=target_channel_id),false);
 $$;
+drop policy if exists "text message settings insert guard" on public.messages;
 create policy "text message settings insert guard" on public.messages as restrictive for insert to authenticated with check(public.text_message_setting_allows(channel_id,body,'message'));
+drop policy if exists "text attachment settings insert guard" on public.attachments;
 create policy "text attachment settings insert guard" on public.attachments as restrictive for insert to authenticated with check(exists(select 1 from public.messages message where message.id=message_id and public.text_message_setting_allows(message.channel_id,null,'attachment')));
+drop policy if exists "text reaction settings insert guard" on public.message_reactions;
 create policy "text reaction settings insert guard" on public.message_reactions as restrictive for insert to authenticated with check(exists(select 1 from public.messages message where message.id=message_id and public.text_message_setting_allows(message.channel_id,null,'reaction')));
+drop policy if exists "radio schedule visibility settings guard" on public.radio_program_schedules;
 create policy "radio schedule visibility settings guard" on public.radio_program_schedules as restrictive for select to authenticated using(exists(select 1 from public.radio_community_settings settings where settings.community_id=community_id and (settings.schedule_visibility='public' or public.is_community_member(community_id))));
+drop policy if exists "podcast comments settings guard" on public.podcast_episode_comments;
 create policy "podcast comments settings guard" on public.podcast_episode_comments as restrictive for insert to authenticated with check(exists(select 1 from public.podcast_episodes episode join public.podcast_community_settings settings on settings.community_id=episode.community_id where episode.id=episode_id and settings.comments_enabled));
 create or replace function public.apply_podcast_explicit_default() returns trigger language plpgsql security definer set search_path=public as $$ begin if not new.is_explicit and exists(select 1 from public.podcast_community_settings where community_id=new.community_id and explicit_content_default) then new.is_explicit:=true; end if; return new; end $$;
 drop trigger if exists podcast_episode_explicit_default on public.podcast_episodes;
-create trigger podcast_episode_explicit_default before insert on public.podcast_episodes for each row execute function public.apply_podcast_explicit_default();
-
-commit;
+create trigger podcast_episode_explicit_default before insert on public.podcast_episodes for each row execute function public.apply_podcast_explicit_default();;

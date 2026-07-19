@@ -1,0 +1,188 @@
+.profile-popover {
+  width: min(320px, calc(100vw - 40px));
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.profile-popover-cover {
+  height: 88px;
+  background:
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--picom-orange) 42%, transparent), transparent 38%),
+    linear-gradient(125deg, var(--picom-teal) 0%, var(--picom-aqua) 52%, color-mix(in srgb, var(--picom-orange) 72%, var(--picom-aqua)) 100%);
+}
+
+.profile-popover-body {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.profile-popover-identity {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: end;
+  gap: 12px;
+  margin-top: -36px;
+}
+
+.profile-popover-identity .verified-avatar-frame {
+  border: 3px solid var(--surface);
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-popover-heading {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+
+.profile-popover-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.profile-popover-handle {
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-popover-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.profile-popover-status span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-popover-role {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, currentColor 24%, var(--border));
+  background: color-mix(in srgb, currentColor 10%, var(--surface));
+}
+
+.profile-popover-bio {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.profile-popover-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.profile-popover-action {
+  height: 38px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.profile-popover-action:hover {
+  background: var(--surface-hover);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
+.profile-popover-action.primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--picom-teal), var(--picom-aqua));
+  color: var(--text-on-accent);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--picom-teal) 24%, transparent);
+}
+
+.profile-popover-action.primary:hover {
+  filter: saturate(1.04) brightness(1.02);
+  border-color: transparent;
+}
+
+.profile-popover-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+}
+
+.profile-popover-secondary button {
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.profile-popover-secondary button:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.profile-popover-secondary button.danger {
+  color: var(--danger);
+}
+
+.profile-popover-secondary button.danger:hover {
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+}
+
+.profile-popover-action:focus-visible,
+.profile-popover-secondary button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-popover-action {
+    transition: none;
+  }
+}

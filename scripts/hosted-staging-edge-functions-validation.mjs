@@ -2,14 +2,12 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 
 const shouldRun = process.argv.includes("--run");
-const releaseManifest = JSON.parse(readFileSync("supabase/functions/release-manifest.json", "utf8"));
-const releaseFunctionNames = [...releaseManifest.releasePublic, ...releaseManifest.releaseAuthenticated, ...releaseManifest.releaseInternal].map((item) => item.name);
-for (const name of ["client-config", "validate-file", "user-data-export", "livekit-token", "livekit-moderation", "livekit-webhook"]) {
-  if (!releaseFunctionNames.includes(name)) throw new Error("Release manifest is missing required V1 function: " + name);
-}
 const required = ["PICOM_EDGE_STAGING_URL", "PICOM_EDGE_STAGING_ANON_KEY", "PICOM_EDGE_STAGING_CONFIRM", "PICOM_EDGE_TEST_EMAIL", "PICOM_EDGE_TEST_PASSWORD", "PICOM_EDGE_ALLOWED_ORIGIN"];
+const releaseManifest = JSON.parse(readFileSync("supabase/functions/release-manifest.json", "utf8"));
+const releaseFunctions = new Set([...releaseManifest.releasePublic, ...releaseManifest.releaseAuthenticated, ...releaseManifest.releaseInternal].map((item) => item.name));
 const fail = (message) => { throw new Error(message); };
 const pass = (message) => console.log(`PASS ${message}`);
+for (const name of ["client-config", "validate-file", "user-data-export"]) if (!releaseFunctions.has(name)) fail(`Hosted validation target is not release-scoped: ${name}`);
 if (!shouldRun) {
   console.log(`Hosted V1 Edge validation requires --run and configuration names: ${required.join(", ")}`);
   console.log("No network request was made and no configuration value was printed.");

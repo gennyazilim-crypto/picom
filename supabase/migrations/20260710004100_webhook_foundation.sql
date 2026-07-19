@@ -12,6 +12,5 @@ grant select, insert, update on public.webhooks to authenticated;
 create policy "webhooks_manager_select" on public.webhooks for select to authenticated using (public.can_manage_channel_webhooks(community_id));
 create policy "webhooks_manager_insert" on public.webhooks for insert to authenticated with check (created_by = auth.uid() and public.can_manage_channel_webhooks(community_id) and exists (select 1 from public.channels channel where channel.id = channel_id and channel.community_id = community_id));
 create policy "webhooks_manager_revoke" on public.webhooks for update to authenticated using (public.can_manage_channel_webhooks(community_id)) with check (public.can_manage_channel_webhooks(community_id));
-
 alter table public.audit_log drop constraint if exists audit_log_action_type_check;
 alter table public.audit_log add constraint audit_log_action_type_check check (action_type in ('community_update','channel_create','channel_update','channel_delete','role_change','member_change','moderation_action','invite_create','invite_revoke','webhook_create','webhook_revoke'));

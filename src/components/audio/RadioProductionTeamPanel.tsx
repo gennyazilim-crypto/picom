@@ -124,12 +124,18 @@ export function RadioProductionTeamPanel({ community, currentUser, session }: Pr
 
   return <>
     <section className="radio-production-team">
-      <header><div><small>PRODUCTION TEAM</small><strong>Role-backed assignments</strong></div><AppIcon name="users" size="md" /></header>
+      <header>
+        <div className="radio-production-side-header-copy">
+          <p className="radio-production-eyebrow">Production team</p>
+          <strong>Role-backed assignments</strong>
+        </div>
+        <span className="radio-production-side-icon" aria-hidden="true"><AppIcon name="users" size="md" /></span>
+      </header>
       {notice ? <p className={notice.error ? "radio-inline-error" : "radio-inline-status"} role={notice.error ? "alert" : "status"}>{notice.text}</p> : null}
       {canAssignTeam ? <>
         <label><span>Common-role member</span><select value={hostUserId} disabled={busy} onChange={(event) => setHostUserId(event.target.value)}><option value="">Choose eligible member</option>{candidates.map((member) => <option key={member.userId} value={member.userId}>{member.displayName} · {memberRole(community, member)?.name}</option>)}</select></label>
         <label><span>Session assignment</span><select value={hostRole} disabled={busy || !allowedOptions.length} onChange={(event) => setHostRole(event.target.value as RadioSessionHostRole)}>{allowedOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
-        <button type="button" disabled={!hostUserId || busy} onClick={() => void assign()}>Save assignment</button>
+        <button type="button" className="radio-production-btn accent" disabled={!hostUserId || busy} onClick={() => void assign()}>Save assignment</button>
       </> : <p>Only Owner, Admin, or a common Radio Producer role can manage production assignments.</p>}
       <div className="radio-production-team-list">
         {visibleAssignments.map((assignment) => {
@@ -144,7 +150,13 @@ export function RadioProductionTeamPanel({ community, currentUser, session }: Pr
       </div>
     </section>
     <section className="radio-audit-history">
-      <header><div><small>SESSION AUDIT</small><strong>Recent protected actions</strong></div><span>{auditEntries.length}</span></header>
+      <header>
+        <div className="radio-production-side-header-copy">
+          <p className="radio-production-eyebrow">Session audit</p>
+          <strong>Recent protected actions</strong>
+        </div>
+        <span className="radio-production-side-badge">{auditEntries.length}</span>
+      </header>
       {auditEntries.length ? <div>{auditEntries.slice(0, 8).map((entry) => <article key={entry.id}><AppIcon name="inbox" size="sm" /><span><strong>{entry.reason ?? entry.targetType.replace(/_/g, " ")}</strong><small>{community.members.find((member) => member.userId === entry.actorUserId)?.displayName ?? "Authorized operator"} · {dateTimeService.formatNotificationTimestamp(entry.createdAt)}</small></span></article>)}</div> : <p>No session actions have been recorded in this local view yet.</p>}
     </section>
     {pendingRemoval ? <div className="radio-inline-confirmation" role="alertdialog" aria-modal="true"><strong>Remove this production assignment?</strong><p>The primary host cannot be removed here. This action is written to the audit log.</p><footer><button type="button" onClick={() => setPendingRemoval(null)}>Keep assignment</button><button type="button" className="danger" disabled={busy} onClick={() => void remove()}>Confirm removal</button></footer></div> : null}

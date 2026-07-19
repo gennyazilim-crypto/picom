@@ -30,6 +30,7 @@ export const semanticIconRegistry = {
   attachFile: "paperclip",
   lightTheme: "sun",
   darkTheme: "moon",
+  logout: "logout",
 } as const satisfies Record<string, IconName>;
 
 export type SemanticIconName = keyof typeof semanticIconRegistry;
@@ -51,6 +52,7 @@ export const mvpUiIconMap = {
     addCommunity: semanticIconRegistry.add,
     discover: semanticIconRegistry.search,
     settings: semanticIconRegistry.settings,
+    logout: semanticIconRegistry.logout,
   },
   communitySidebar: {
     textChannel: semanticIconRegistry.textChannel,

@@ -9,6 +9,25 @@ declare global {
     silent?: boolean;
     deepLink?: string;
   };
+  type PicomIncomingCallToastAction = "accept" | "decline" | "message";
+  type PicomIncomingCallToastPayload = {
+    inviteId: string;
+    callId: string;
+    conversationId: string;
+    callerId: string;
+    callerDisplayName: string;
+    callerUsername?: string;
+    callerAvatarPath?: string;
+    callerAvatarUrl?: string;
+    callerAvatarUpdatedAt?: string;
+    callType: "voice" | "video";
+    startedAt: string;
+    subtitle?: string;
+  };
+  type PicomIncomingCallActionPayload = {
+    action: PicomIncomingCallToastAction;
+    inviteId: string;
+  };
   type PicomTrayStatus = "online" | "idle" | "dnd" | "invisible";
   type PicomTrayAction = "open" | "settings" | "mute" | "quit" | PicomTrayStatus;
   type PicomTrayActionPayload = {
@@ -29,64 +48,26 @@ declare global {
     size: number;
     dataUrl: string;
   };
-
-  type PicomOAuthProvider = "google" | "apple" | "epic" | "steam";
-  type PicomOAuthPurpose = "sign_in" | "link";
-  type PicomSecureAuthStorageStatus = {
-    mode: "os_protected" | "memory_only";
-    persistent: boolean;
-    backend: string;
-    reason?: "OS_PROTECTED_STORAGE_UNAVAILABLE";
+  type PicomUpdaterStatus =
+    | "idle"
+    | "checking"
+    | "available"
+    | "downloading"
+    | "download_failed"
+    | "ready_to_install"
+    | "install_failed"
+    | "up_to_date"
+    | "error"
+    | "unsupported";
+  type PicomUpdaterState = {
+    status: PicomUpdaterStatus;
+    enabled: boolean;
+    version: string | null;
+    releaseChannel: string;
+    message: string;
+    progress: number | null;
+    checkedAt: string | null;
   };
-  type PicomOAuthAttempt = {
-    attemptId: string;
-    provider: PicomOAuthProvider;
-    purpose: PicomOAuthPurpose;
-    redirectUrl: string;
-    expiresAt: number;
-    storage: PicomSecureAuthStorageStatus;
-  };
-  type PicomOAuthCompletionResult = {
-    resultId: string;
-    attemptId: string;
-    provider: PicomOAuthProvider;
-    purpose: PicomOAuthPurpose;
-    status: "success" | "error";
-    code?: string;
-    error?: "OAUTH_PROVIDER_CANCELLED" | "OAUTH_PROVIDER_ERROR";
-    receivedAt: number;
-    expiresAt: number;
-  };
-  type PicomOAuthDelivery = PicomOAuthCompletionResult | { status: "rejected"; error: string };
-
-  type PicomOAuthProvider = "google" | "apple" | "epic" | "steam";
-  type PicomOAuthPurpose = "sign_in" | "link";
-  type PicomSecureAuthStorageStatus = {
-    mode: "os_protected" | "memory_only";
-    persistent: boolean;
-    backend: string;
-    reason?: "OS_PROTECTED_STORAGE_UNAVAILABLE";
-  };
-  type PicomOAuthAttempt = {
-    attemptId: string;
-    provider: PicomOAuthProvider;
-    purpose: PicomOAuthPurpose;
-    redirectUrl: string;
-    expiresAt: number;
-    storage: PicomSecureAuthStorageStatus;
-  };
-  type PicomOAuthCompletionResult = {
-    resultId: string;
-    attemptId: string;
-    provider: PicomOAuthProvider;
-    purpose: PicomOAuthPurpose;
-    status: "success" | "error";
-    code?: string;
-    error?: "OAUTH_PROVIDER_CANCELLED" | "OAUTH_PROVIDER_ERROR";
-    receivedAt: number;
-    expiresAt: number;
-  };
-  type PicomOAuthDelivery = PicomOAuthCompletionResult | { status: "rejected"; error: string };
 
   interface Window {
     picomDesktop?: {
@@ -114,6 +95,25 @@ declare global {
         | { ok: true; native: true }
         | { ok: false; native: true; error: string }
       >;
+      incomingCall?: {
+        show: (
+          payload: PicomIncomingCallToastPayload
+        ) => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        dismiss: () => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        respond: (
+          action: PicomIncomingCallToastAction
+        ) => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        onAction: (callback: (payload: PicomIncomingCallActionPayload) => void) => () => void;
+      };
       screenCapture?: {
         getSources: (request: { requestId: string; userInitiated: true }) => Promise<
           | { ok: true; native: true; requestId: string; sources: PicomScreenCaptureSource[] }
@@ -199,30 +199,47 @@ declare global {
           | { ok: false; native: true; error: string }
         >;
       };
-      auth?: {
-        startOAuthAttempt: (request: { provider: PicomOAuthProvider; purpose: PicomOAuthPurpose }) => Promise<
-          | { ok: true; native: true; attempt: PicomOAuthAttempt }
-          | { ok: false; native: true; error: string }
-        >;
-        cancelOAuthAttempt: (attemptId: string) => Promise<{ ok: boolean; native: true; error?: string }>;
-        getPendingOAuthResult: () => Promise<
-          | { ok: true; native: true; result: PicomOAuthCompletionResult | null }
-          | { ok: false; native: true; error: string }
-        >;
-        acknowledgeOAuthResult: (resultId: string) => Promise<{ ok: boolean; native: true; error?: string }>;
-        onOAuthResult: (callback: (result: PicomOAuthDelivery) => void) => () => void;
-        secureStorage: {
-          getItem: (key: string) => Promise<{ ok: true; native: true; value: string | null } | { ok: false; native: true; error: string }>;
-          setItem: (key: string, value: string) => Promise<{ ok: true; native: true } | { ok: false; native: true; error: string }>;
-          removeItem: (key: string) => Promise<{ ok: true; native: true } | { ok: false; native: true; error: string }>;
-          getStatus: () => Promise<{ ok: true; native: true; status: PicomSecureAuthStorageStatus } | { ok: false; native: true; error: string }>;
-        };
-      };
       deepLinks?: {
         onOpen: (callback: (url: string) => void) => () => void;
       };
       power?: {
         onResume: (callback: (payload: { timestamp: string }) => void) => () => void;
+      };
+      updates?: {
+        getState: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        check: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        download: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        install: () => Promise<
+          | { ok: true; native: true; state: PicomUpdaterState }
+          | { ok: false; native: true; error: string }
+        >;
+        onStateChange: (callback: (state: PicomUpdaterState) => void) => () => void;
+      };
+      activity?: {
+        getSnapshot: () => Promise<
+          | {
+              ok: true;
+              native: true;
+              snapshot: Readonly<{
+                kind: "none" | "game" | "music";
+                statusText: string | null;
+                source: string | null;
+                title: string | null;
+                detail: string | null;
+                supported: boolean;
+              }>;
+            }
+          | { ok: false; native: true; error: string }
+        >;
       };
     };
   }

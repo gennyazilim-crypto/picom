@@ -113,17 +113,3 @@ A real synthetic staging export was created with schema/public/Auth-Storage/role
 ## Task 429 restore lesson
 
 Random-port isolated containers remove the prior port collision, and a fresh database avoids pre-existing Auth table collisions. A valid target still requires the exact provider extension bootstrap. Creating only the `extensions` schema is insufficient because `pg_trgm` operator classes such as `extensions.gin_trgm_ops` must exist before index restore. Do not ignore those index failures or rewrite the dump ad hoc; use a version-matched Supabase restore target and provider-supported role/bootstrap procedure.
-
-## Task 624 verified isolated procedure
-
-For the immutable synthetic Task 414 snapshot, run from the repository root:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/v1-isolated-backup-restore-drill.ps1 `
-  -BackupPath "<local synthetic staging backup directory>" `
-  -ConfirmSyntheticStaging
-```
-
-The script accepts only the four known SHA-256 files, refuses paths labelled production, requires explicit confirmation, creates a unique no-network/no-port container, restores through the compatible provider actor with `ON_ERROR_STOP`, checks row counts/orphans/RLS, runs rollback-scoped lifecycle fixtures, writes redacted evidence outside the repository, and removes the container in `finally`.
-
-Database success is not full recovery success. Separately restore authorized Storage object bytes and prove object/metadata parity plus private signed access. Start an isolated Auth service and prove revoked sessions/refresh tokens and already-issued credentials follow the approved rejection policy. Missing either check leaves RB-11 open.

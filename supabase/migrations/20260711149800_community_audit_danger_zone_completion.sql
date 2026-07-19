@@ -113,5 +113,4 @@ grant execute on function public.transfer_community_ownership(uuid, uuid, text, 
 grant execute on function public.archive_community(uuid, text, text) to authenticated;
 
 comment on function public.transfer_community_ownership(uuid, uuid, text, text) is 'Owner-only atomic ownership and multi-role transfer to an active member. The desktop service requires current-password reauthentication before invocation.';
-comment on function public.archive_community(uuid, text, text) is 'Owner-only recoverable archive with typed confirmation, reason, retained rows, and append-only audit evidence.';
-commit;
+comment on function public.archive_community(uuid, text, text) is 'Owner-only recoverable archive with typed confirmation, reason, retained rows, and append-only audit evidence.';;

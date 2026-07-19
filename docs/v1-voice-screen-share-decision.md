@@ -1,14 +1,29 @@
 # Picom V1 Voice and Screen Share Decision
 
-Decision: **INCLUDED IN PRODUCT SCOPE**
-Hosting mode: **SELF_HOSTED_LIVEKIT**
-Public release: **BLOCKED / NO-GO PENDING SELF-HOSTED EVIDENCE**
-Authority: Task 657 amendment; final confirmation Task 674
+Current decision: **IN_V1**
 
-Voice Rooms and Screen Share remain visible and enabled in the V1 product. The previous LiveKit Cloud runs are retained as historical engineering evidence, but do not certify the new self-hosted staging or production path.
+The former Task 621 `HIDDEN_FROM_V1` conclusion is retained as historical infrastructure evidence but is superseded by the product-scope amendment dated 2026-07-12.
 
-Every authenticated active community member may join, publish microphone audio, start a selected Screen Share, and subscribe to remote media. Ordinary access is not role-gated. Moderation remains separate and hierarchy controlled.
+## Scope versus readiness
 
-Tasks 658-673 must certify the self-hosted host, Redis, DNS/TLS/TURN, firewall, secret custody, token deployment, client, Screen Share, reconnect, operations, security, LAN, internet/NAT, Windows, and macOS paths. Task 674 reconfirms inclusion without hiding the product surface.
+- Voice Rooms are mandatory Picom V1 product scope.
+- Screen Share is mandatory Picom V1 product scope.
+- Missing hosted, TURN, native-device, signing, or clean-machine evidence blocks public release; it does not remove either feature from V1.
+- Task 674 confirms release readiness rather than reclassifying scope.
 
-No public package, tag, rollout, or release is authorized until Tasks 675-676 pass their independent signing, legal, ownership, immutable-RC, and Go/No-Go gates.
+## Current evidence
+
+| Requirement | Current result |
+|---|---|
+| Local renderer, preload, picker, token and secret-boundary contracts | PASS_LOCAL |
+| Hosted secure token issuance and unauthorized denial | BLOCKED_HOSTED |
+| Two-client audio, reconnect and cleanup | BLOCKED_HOSTED |
+| TURN/public-network traversal | BLOCKED_HOSTED |
+| Packaged Windows microphone and source picker | BLOCKED_NATIVE |
+| Remote screen render, stop and cleanup | BLOCKED_HOSTED / BLOCKED_NATIVE |
+
+The release therefore remains No-Go until the blocked evidence passes. UI entry points remain visible and report precise operational errors when infrastructure is unavailable.
+
+## Security boundary
+
+LiveKit API key and secret values remain Edge Function secrets. The renderer receives only short-lived, authenticated participant tokens. Active community membership permits ordinary join, microphone publishing and screen sharing; private-channel access and moderation remain server enforced.

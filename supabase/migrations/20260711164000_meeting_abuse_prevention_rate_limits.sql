@@ -1,14 +1,12 @@
 -- Task 570: production meeting abuse prevention and server-authoritative reactions.
 -- Counters and logs contain no media, message body, invite secret, provider identity, or credential.
 begin;
-
 alter table public.user_action_rate_limits drop constraint if exists user_action_rate_limits_action_key_check;
 alter table public.user_action_rate_limits add constraint user_action_rate_limits_action_key_check check(action_key in(
   'message_send','attachment_metadata','reaction_write','relationship_write','feed_interaction','livekit_token',
   'meeting_schedule_write','meeting_invite_write','meeting_join_preview','meeting_signal_write',
   'meeting_waiting_request','meeting_chat_send','meeting_reaction','meeting_privileged_action'
 ));
-
 create or replace function public.consume_current_user_action_rate_limit(target_action text)
 returns table(is_allowed boolean,retry_after_seconds integer)
 language plpgsql volatile security definer set search_path=public,pg_temp as $$
@@ -35,7 +33,6 @@ begin
     case when current_row.request_count<=configured_maximum_requests then 0 else greatest(1,ceil(extract(epoch from(current_row.window_started_at+make_interval(secs=>configured_window_seconds)-current_time)))::integer) end;
 end;
 $$;
-
 create or replace function public.consume_meeting_request_limit(target_action text)
 returns void language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare result_row record;
@@ -47,7 +44,6 @@ begin
   end if;
 end;
 $$;
-
 create table if not exists public.meeting_reaction_signals(
   id uuid primary key,
   room_id uuid not null references public.meeting_rooms(id) on delete cascade,
@@ -69,7 +65,6 @@ create policy meeting_reaction_signals_participant_select on public.meeting_reac
     where participant.session_id=meeting_reaction_signals.session_id and participant.user_id=auth.uid() and participant.state in('joining','connected','reconnecting')
   )
 );
-
 create or replace function public.send_meeting_reaction(target_room_id uuid,target_session_id uuid,target_event_id uuid,target_kind text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare actor_id uuid:=auth.uid();room_record public.meeting_rooms%rowtype;session_record public.meeting_sessions%rowtype;signal_record public.meeting_reaction_signals%rowtype;
@@ -92,7 +87,6 @@ begin
   return jsonb_build_object('schemaVersion',1,'eventId',signal_record.id,'roomId',signal_record.room_id,'sessionId',signal_record.session_id,'kind',signal_record.kind,'senderIdentity',signal_record.user_id,'sentAt',signal_record.created_at,'expiresAt',signal_record.expires_at);
 end;
 $$;
-
 create or replace function public.enforce_meeting_waiting_abuse_guard()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -104,7 +98,6 @@ end;
 $$;
 drop trigger if exists meeting_waiting_insert_abuse_guard on public.meeting_waiting_entries;
 create trigger meeting_waiting_insert_abuse_guard before insert on public.meeting_waiting_entries for each row execute function public.enforce_meeting_waiting_abuse_guard();
-
 create or replace function public.enforce_meeting_chat_abuse_guard()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -116,7 +109,6 @@ end;
 $$;
 drop trigger if exists meeting_chat_link_abuse_guard on public.meeting_chat_message_links;
 create trigger meeting_chat_link_abuse_guard before insert on public.meeting_chat_message_links for each row execute function public.enforce_meeting_chat_abuse_guard();
-
 create or replace function public.enforce_meeting_privileged_abuse_guard()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -129,16 +121,13 @@ end;
 $$;
 drop trigger if exists meeting_privileged_action_abuse_guard on public.audit_log;
 create trigger meeting_privileged_action_abuse_guard before insert on public.audit_log for each row execute function public.enforce_meeting_privileged_abuse_guard();
-
 do $$ begin
   alter publication supabase_realtime add table public.meeting_reaction_signals;
 exception when duplicate_object then null; when undefined_object then null;
 end $$;
-
 revoke all on function public.send_meeting_reaction(uuid,uuid,uuid,text) from public,anon;
 grant execute on function public.send_meeting_reaction(uuid,uuid,uuid,text) to authenticated;
 revoke all on function public.enforce_meeting_waiting_abuse_guard(),public.enforce_meeting_chat_abuse_guard(),public.enforce_meeting_privileged_abuse_guard() from public,anon,authenticated;
-
 comment on table public.meeting_reaction_signals is 'Short-lived server-authoritative meeting reactions. No custom payload, message text, provider identity, media, or credential is stored.';
 comment on function public.consume_meeting_request_limit(text) is 'Raises a content-free server log marker and a generic rate-limit error; never logs room, user, invite, message, media, token, or provider data.';
 commit;

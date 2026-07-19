@@ -1,5 +1,4 @@
 begin;
-
 -- No identity-document upload, public evidence bucket, or paid verification is part of this MVP.
 
 alter table public.profile_verifications
@@ -12,7 +11,6 @@ alter table public.community_verifications
   add column if not exists official_links text[] not null default '{}',
   add column if not exists supporting_text text,
   add column if not exists decision_reason text;
-
 alter table public.profile_verifications drop constraint if exists profile_verifications_category_check;
 alter table public.profile_verifications add constraint profile_verifications_category_check check (category in ('individual', 'creator', 'organization', 'bot', 'staff', 'other'));
 alter table public.community_verifications drop constraint if exists community_verifications_category_check;
@@ -25,14 +23,12 @@ alter table public.profile_verifications drop constraint if exists profile_verif
 alter table public.profile_verifications add constraint profile_verifications_decision_reason_check check (decision_reason is null or char_length(decision_reason) <= 1000);
 alter table public.community_verifications drop constraint if exists community_verifications_decision_reason_check;
 alter table public.community_verifications add constraint community_verifications_decision_reason_check check (decision_reason is null or char_length(decision_reason) <= 1000);
-
 create or replace function public.validate_verification_links(links text[])
 returns boolean language sql immutable set search_path = public
 as $$
   select cardinality(coalesce(links, '{}')) <= 5
     and not exists (select 1 from unnest(coalesce(links, '{}')) link where link !~ '^https://[^[:space:]]+$' or char_length(link) > 2048);
 $$;
-
 create or replace function public.request_profile_verification(request_type text, request_category text, request_reason text, request_links text[] default '{}', request_supporting_text text default null)
 returns jsonb language plpgsql security definer set search_path = public
 as $$
@@ -49,7 +45,6 @@ begin
   return jsonb_build_object('id', created.id, 'targetType', 'profile', 'targetId', created.user_id, 'targetName', 'Your profile', 'type', created.type, 'status', created.status, 'category', created.category, 'reason', created.reason, 'officialLinks', created.official_links, 'supportingText', created.supporting_text, 'requestedAt', created.requested_at, 'reviewedAt', created.reviewed_at, 'decisionReason', created.decision_reason);
 end;
 $$;
-
 create or replace function public.request_community_verification(target_community_id uuid, request_category text, request_reason text, request_links text[] default '{}', request_supporting_text text default null)
 returns jsonb language plpgsql security definer set search_path = public
 as $$
@@ -66,14 +61,12 @@ begin
   return jsonb_build_object('id', created.id, 'targetType', 'community', 'targetId', created.community_id, 'targetName', community_name, 'type', created.type, 'status', created.status, 'category', created.category, 'reason', created.reason, 'officialLinks', created.official_links, 'supportingText', created.supporting_text, 'requestedAt', created.requested_at, 'reviewedAt', created.reviewed_at, 'decisionReason', created.decision_reason);
 end;
 $$;
-
 create or replace function public.get_own_profile_verification_requests()
 returns jsonb language sql stable security definer set search_path = public
 as $$
   select coalesce(jsonb_agg(jsonb_build_object('id', request.id, 'targetType', 'profile', 'targetId', request.user_id, 'targetName', 'Your profile', 'type', request.type, 'status', request.status, 'category', request.category, 'requestedAt', request.requested_at, 'reviewedAt', request.reviewed_at, 'decisionReason', request.decision_reason) order by request.requested_at desc), '[]'::jsonb)
   from public.profile_verifications request where request.user_id = auth.uid();
 $$;
-
 create or replace function public.get_community_verification_requests(target_community_id uuid)
 returns jsonb language plpgsql stable security definer set search_path = public
 as $$
@@ -85,7 +78,6 @@ begin
   return result;
 end;
 $$;
-
 create or replace function public.list_verification_review_requests(request_status text default null)
 returns jsonb language plpgsql stable security definer set search_path = public
 as $$
@@ -101,7 +93,6 @@ begin
   return result;
 end;
 $$;
-
 create or replace function public.review_verification_request(target_type text, target_request_id uuid, next_status text, review_reason text)
 returns jsonb language plpgsql security definer set search_path = public
 as $$
@@ -121,11 +112,8 @@ begin
   return result;
 end;
 $$;
-
 revoke all on function public.validate_verification_links(text[]), public.request_profile_verification(text, text, text, text[], text), public.request_community_verification(uuid, text, text, text[], text), public.get_own_profile_verification_requests(), public.get_community_verification_requests(uuid), public.list_verification_review_requests(text), public.review_verification_request(text, uuid, text, text) from public, anon;
 grant execute on function public.request_profile_verification(text, text, text, text[], text), public.request_community_verification(uuid, text, text, text[], text), public.get_own_profile_verification_requests(), public.get_community_verification_requests(uuid), public.list_verification_review_requests(text), public.review_verification_request(text, uuid, text, text) to authenticated;
-
 comment on function public.request_profile_verification(text, text, text, text[], text) is 'MVP request metadata only. Identity-document upload and paid verification are intentionally unsupported.';
 comment on function public.list_verification_review_requests(text) is 'Private reviewer queue. Request reasons and supporting text are never returned by public badge reads.';
-
 commit;

@@ -11,11 +11,9 @@ create table if not exists public.community_invites (
   revoked_at timestamptz,
   created_at timestamptz not null default now()
 );
-
 create index if not exists idx_community_invites_community_created on public.community_invites(community_id, created_at desc);
 create index if not exists idx_community_invites_active on public.community_invites(code) where revoked_at is null;
 alter table public.community_invites enable row level security;
-
 create or replace function public.can_create_community_invite(target_community_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select public.is_community_owner(target_community_id) or exists (
@@ -26,14 +24,11 @@ returns boolean language sql stable security definer set search_path = public as
       and (role.level >= 60 or coalesce((role.permissions ->> 'createInvites')::boolean, false))
   );
 $$;
-
 grant execute on function public.can_create_community_invite(uuid) to authenticated;
 grant select, insert, update on public.community_invites to authenticated;
-
 create policy "community_invites_manage_select" on public.community_invites for select to authenticated using (public.can_create_community_invite(community_id));
 create policy "community_invites_create" on public.community_invites for insert to authenticated with check (created_by = auth.uid() and public.can_create_community_invite(community_id));
 create policy "community_invites_revoke" on public.community_invites for update to authenticated using (public.can_create_community_invite(community_id)) with check (public.can_create_community_invite(community_id));
-
 create or replace function public.accept_community_invite(invite_code text)
 returns table (id uuid, community_id uuid, user_id uuid, role_id uuid, joined_at timestamptz)
 language plpgsql security definer set search_path = public as $$
@@ -59,6 +54,5 @@ begin
   return query select membership.id, membership.community_id, membership.user_id, membership.role_id, membership.joined_at from public.community_members membership where membership.community_id = target_invite.community_id and membership.user_id = auth.uid();
 end;
 $$;
-
 revoke all on function public.accept_community_invite(text) from public;
 grant execute on function public.accept_community_invite(text) to authenticated;

@@ -142,9 +142,3 @@ If restore drill fails:
 - `docs/incident-response.md`
 - `docs/staging-smoke-test.md`
 - `docs/production-deployment-checklist.md`
-
-## Task 624 verified V1 database drill
-
-The known synthetic staging dump now restores into a no-network Supabase Postgres 17.6 target when `pg_trgm` is installed in the `extensions` schema and the provider `supabase_admin` actor runs the dump. Use `scripts/v1-isolated-backup-restore-drill.ps1` only with `-ConfirmSyntheticStaging`; it verifies immutable source hashes, aborts on the first SQL error, validates core/Auth counts, orphan/RLS/private-access invariants, runs rollback-scoped lifecycle assertions, and always removes its target.
-
-This verified database restore does not replace the Application smoke test after restore. A staging desktop/API/Auth/Storage stack must still prove login and revoked-token behavior, Storage object-byte recovery/private access, Realtime, Edge Functions and user-visible workflows before the full drill can pass.

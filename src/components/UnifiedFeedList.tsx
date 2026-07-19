@@ -14,7 +14,7 @@ type UnifiedFeedListProps = {
   reminderAudioIds: ReadonlySet<string>;
   onOpenImage: (attachment: Attachment) => void;
   onOpenTextInChannel: (item: MentionItem) => void;
-  onToggleTextReaction: (id: string) => void;
+  onToggleTextReaction: (id: string, emoji: string) => void;
   onToggleTextSaved: (id: string) => void;
   onMarkTextRead: (id: string) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;

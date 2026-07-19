@@ -1,5 +1,3 @@
-begin;
-
 alter table public.podcast_series
   add column if not exists cover_storage_path text,
   add column if not exists tags text[] not null default '{}';
@@ -131,20 +129,27 @@ drop trigger if exists podcast_comment_reply_guard on public.podcast_episode_com
 create trigger podcast_comment_reply_guard before insert or update of episode_id,reply_to_comment_id on public.podcast_episode_comments for each row execute function public.validate_podcast_comment_reply();
 
 alter table public.podcast_playback_progress enable row level security;
+drop policy if exists "users read own visible podcast progress" on public.podcast_playback_progress;
 create policy "users read own visible podcast progress" on public.podcast_playback_progress for select to authenticated using (user_id=auth.uid() and public.can_view_podcast_episode(episode_id));
+drop policy if exists "users create own visible podcast progress" on public.podcast_playback_progress;
 create policy "users create own visible podcast progress" on public.podcast_playback_progress for insert to authenticated with check (user_id=auth.uid() and public.can_view_podcast_episode(episode_id));
+drop policy if exists "users update own visible podcast progress" on public.podcast_playback_progress;
 create policy "users update own visible podcast progress" on public.podcast_playback_progress for update to authenticated using (user_id=auth.uid()) with check (user_id=auth.uid() and public.can_view_podcast_episode(episode_id));
+drop policy if exists "users delete own podcast progress" on public.podcast_playback_progress;
 create policy "users delete own podcast progress" on public.podcast_playback_progress for delete to authenticated using (user_id=auth.uid());
 
 drop policy if exists "podcast episodes created by permitted publishers" on public.podcast_episodes;
+drop policy if exists "podcast episodes created by permitted publishers" on public.podcast_episodes;
 create policy "podcast episodes created by permitted publishers" on public.podcast_episodes for insert to authenticated with check (author_user_id=auth.uid() and public.can_manage_community_audio(community_id,'publishPodcasts'));
 drop policy if exists "podcast episodes managed by author publisher or editor" on public.podcast_episodes;
+drop policy if exists "podcast episodes managed by publisher or editor" on public.podcast_episodes;
 drop policy if exists "podcast episodes managed by publisher or editor" on public.podcast_episodes;
 create policy "podcast episodes managed by publisher or editor" on public.podcast_episodes for update to authenticated
 using (public.can_manage_community_audio(community_id,'publishPodcasts') or public.can_manage_community_audio(community_id,'editPodcastMetadata'))
 with check (public.can_manage_community_audio(community_id,'publishPodcasts') or public.can_manage_community_audio(community_id,'editPodcastMetadata'));
 drop policy if exists "podcast episodes deleted by host or community audio managers" on public.podcast_episodes;
 drop policy if exists "podcast episodes deleted by author or community audio managers" on public.podcast_episodes;
+drop policy if exists "podcast episodes deleted by publishers" on public.podcast_episodes;
 create policy "podcast episodes deleted by publishers" on public.podcast_episodes for delete to authenticated using (public.can_manage_community_audio(community_id,'publishPodcasts'));
 
 create or replace function public.can_manage_podcast_episode(target_episode_id uuid)
@@ -205,20 +210,28 @@ $$;
 grant execute on function public.can_view_podcast_audio_object(text),public.can_manage_podcast_audio_object(text),public.can_view_podcast_cover_object(text),public.can_manage_podcast_cover_object(text) to authenticated;
 
 drop policy if exists "podcast audio read follows episode visibility" on storage.objects;
+drop policy if exists "podcast audio read follows episode visibility" on storage.objects;
 create policy "podcast audio read follows episode visibility" on storage.objects for select to authenticated using (bucket_id='podcast-audio' and public.can_view_podcast_audio_object(name));
+drop policy if exists "podcast audio writers manage authorized episode objects" on storage.objects;
 drop policy if exists "podcast audio writers manage authorized episode objects" on storage.objects;
 create policy "podcast audio writers manage authorized episode objects" on storage.objects for insert to authenticated with check (bucket_id='podcast-audio' and public.can_manage_podcast_audio_object(name));
 drop policy if exists "podcast audio writers update authorized episode objects" on storage.objects;
+drop policy if exists "podcast audio writers update authorized episode objects" on storage.objects;
 create policy "podcast audio writers update authorized episode objects" on storage.objects for update to authenticated using (bucket_id='podcast-audio' and public.can_manage_podcast_audio_object(name)) with check (bucket_id='podcast-audio' and public.can_manage_podcast_audio_object(name));
+drop policy if exists "podcast audio writers delete authorized episode objects" on storage.objects;
 drop policy if exists "podcast audio writers delete authorized episode objects" on storage.objects;
 create policy "podcast audio writers delete authorized episode objects" on storage.objects for delete to authenticated using (bucket_id='podcast-audio' and public.can_manage_podcast_audio_object(name));
 
 drop policy if exists "audio covers read follows radio or podcast visibility" on storage.objects;
+drop policy if exists "audio covers read follows radio or podcast visibility" on storage.objects;
 create policy "audio covers read follows radio or podcast visibility" on storage.objects for select to authenticated using (bucket_id='audio-covers' and (public.can_view_radio_cover_object(name) or public.can_view_podcast_cover_object(name)));
+drop policy if exists "audio cover writers manage authorized audio objects" on storage.objects;
 drop policy if exists "audio cover writers manage authorized audio objects" on storage.objects;
 create policy "audio cover writers manage authorized audio objects" on storage.objects for insert to authenticated with check (bucket_id='audio-covers' and (public.can_manage_radio_cover_object(name) or public.can_manage_podcast_cover_object(name)));
 drop policy if exists "audio cover writers update authorized audio objects" on storage.objects;
+drop policy if exists "audio cover writers update authorized audio objects" on storage.objects;
 create policy "audio cover writers update authorized audio objects" on storage.objects for update to authenticated using (bucket_id='audio-covers' and (public.can_manage_radio_cover_object(name) or public.can_manage_podcast_cover_object(name))) with check (bucket_id='audio-covers' and (public.can_manage_radio_cover_object(name) or public.can_manage_podcast_cover_object(name)));
+drop policy if exists "audio cover writers delete authorized audio objects" on storage.objects;
 drop policy if exists "audio cover writers delete authorized audio objects" on storage.objects;
 create policy "audio cover writers delete authorized audio objects" on storage.objects for delete to authenticated using (bucket_id='audio-covers' and (public.can_manage_radio_cover_object(name) or public.can_manage_podcast_cover_object(name)));
 
@@ -226,6 +239,4 @@ revoke all on public.podcast_playback_progress from anon;
 grant select,insert,update,delete on public.podcast_playback_progress to authenticated;
 comment on table public.podcast_playback_progress is 'Private per-user Podcast resume state; episode visibility remains RLS-authoritative.';
 comment on column public.podcast_episodes.audio_storage_path is 'Private podcast-audio object path; UI resolves a short-lived signed URL through the service layer.';
-comment on column public.podcast_episodes.audio_url is 'Legacy compatibility field. New publishing uses audio_storage_path and private signed URLs.';
-
-commit;
+comment on column public.podcast_episodes.audio_url is 'Legacy compatibility field. New publishing uses audio_storage_path and private signed URLs.';;

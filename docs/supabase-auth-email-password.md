@@ -31,7 +31,7 @@ For staging/production, review these settings in Supabase Dashboard before launc
 
 - Enable email confirmations when appropriate.
 - Configure production site URL and allowed redirect URLs.
-- Configure SMTP sender/domain settings.
+- Configure SMTP sender/domain settings. Production Auth From address is `info@picom.gg` (see `docs/password-reset-production.md` and `npm run auth:smtp:sender`).
 - Keep refresh token rotation enabled.
 - Do not expose service-role keys to the Electron renderer.
 - Never log passwords, access tokens, refresh tokens, authorization headers, or magic-link tokens.

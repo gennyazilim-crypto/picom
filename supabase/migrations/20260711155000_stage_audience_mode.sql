@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.manage_meeting_stage_participant(
   target_participant_id uuid,
   stage_action text,
@@ -62,11 +61,8 @@ begin
   );
 end;
 $$;
-
 revoke all on function public.manage_meeting_stage_participant(uuid, text, text) from public, anon;
 grant execute on function public.manage_meeting_stage_participant(uuid, text, text) to authenticated;
-
 comment on function public.manage_meeting_stage_participant(uuid, text, text) is
   'Hierarchy-safe stage promotion/demotion wrapper. Canonical role mutation records the audit trail and clients must refresh authorization after their own role changes.';
-
 commit;

@@ -54,7 +54,7 @@ const voiceViewRequired = [
   "VoiceParticipantList",
   "SpeakingIndicator",
   "Join room",
-  "Leave room",
+  "Disconnect",
   "Mute",
   "Deafen"
 ];
@@ -107,8 +107,6 @@ const functionRequired = [
   "VOICE_CHANNEL_FORBIDDEN",
   "authorize_livekit_room",
   "PICOM_ALLOWED_ORIGINS",
-  "PICOM_V1_VOICE_SCREEN_ENABLED",
-  "deletion_requested_at",
   "createLiveKitToken"
 ];
 
@@ -138,7 +136,7 @@ const screenShareRequired = [
   [screenSharePreview, "ScreenShareViewer", "ScreenSharePreview wrapper"],
   [screenShareService, "screenCaptureService.listSources", "desktop screenShareService source listing"],
   [voiceRoomView, "ScreenShareControls", "VoiceRoomView screen-share controls"],
-  [voiceRoomView, "ScreenSharePreview", "VoiceRoomView screen-share preview"],
+  [voiceRoomView, "VoiceParticipantScreenShare", "VoiceRoomView screen-share preview"],
   [voiceService, "publishTrack", "LiveKit publish screen track"],
   [voiceService, "unpublishTrack", "LiveKit unpublish screen track"]
 ];

@@ -1,27 +1,123 @@
 {
   "schemaVersion": 2,
-  "releasePublic": [{ "name": "client-config", "verifyJwt": false }],
+  "releasePublic": [
+    {
+      "name": "client-config",
+      "verifyJwt": false
+    },
+    {
+      "name": "health",
+      "verifyJwt": false
+    },
+    {
+      "name": "steam-auth",
+      "verifyJwt": false,
+      "guard": "steam-openid-verification-nonce-single-use-and-rate-limit"
+    },
+    {
+      "name": "epic-auth",
+      "verifyJwt": false,
+      "guard": "epic-oauth-state-single-use-and-rate-limit"
+    }
+  ],
   "releaseAuthenticated": [
-    { "name": "validate-file", "verifyJwt": true },
-    { "name": "user-data-export", "verifyJwt": true },
-    { "name": "livekit-token", "verifyJwt": true },
-    { "name": "livekit-moderation", "verifyJwt": true }
+    {
+      "name": "validate-file",
+      "verifyJwt": true
+    },
+    {
+      "name": "user-data-export",
+      "verifyJwt": true
+    },
+    {
+      "name": "livekit-token",
+      "verifyJwt": true
+    },
+    {
+      "name": "admin-health",
+      "verifyJwt": true
+    },
+    {
+      "name": "livekit-moderation",
+      "verifyJwt": true
+    },
+    {
+      "name": "voice-occupancy",
+      "verifyJwt": true
+    },
+    {
+      "name": "voice-call-authorize",
+      "verifyJwt": true
+    },
+    {
+      "name": "meeting-join",
+      "verifyJwt": true
+    },
+    {
+      "name": "meeting-token",
+      "verifyJwt": true
+    },
+    {
+      "name": "meeting-captions",
+      "verifyJwt": true
+    }
   ],
   "releaseInternal": [
-    { "name": "livekit-webhook", "verifyJwt": false, "guard": "livekit-signature-body-hash-and-idempotency" }
+    {
+      "name": "livekit-webhook",
+      "verifyJwt": false,
+      "guard": "livekit-signature-body-hash-and-idempotency"
+    },
+    {
+      "name": "meeting-captions-agent",
+      "verifyJwt": false,
+      "guard": "internal-caption-agent-key"
+    }
   ],
   "excluded": [
-    { "name": "health", "classification": "blocked_placeholder", "reason": "Dependency checks still report placeholder states and cannot certify hosted readiness." },
-    { "name": "meeting-token", "classification": "post_v1", "reason": "Meeting workspace is hidden by the V1 Core scope registry." },
-    { "name": "meeting-join", "classification": "post_v1", "reason": "Meeting workspace is hidden by the V1 Core scope registry." },
-    { "name": "meeting-captions", "classification": "post_v1", "reason": "Meeting captions are hidden by the V1 Core scope registry." },
-    { "name": "meeting-captions-agent", "classification": "post_v1", "reason": "Meeting captions provider work is hidden by the V1 Core scope registry." },
-    { "name": "account-deletion", "classification": "blocked_operations", "reason": "Production deletion requires Task 623 legal and operations approval." },
-    { "name": "account-deletion-finalize", "classification": "blocked_operations", "reason": "Finalization remains disabled until Task 623 worker ownership and recovery evidence exist." },
-    { "name": "accept-invite", "classification": "excluded_placeholder", "reason": "The function returns 501; V1 invitation acceptance uses the RLS-protected database service path." },
-    { "name": "moderation-helper", "classification": "excluded_placeholder", "reason": "The function returns 501; V1 moderation uses existing RLS/RPC services." },
-    { "name": "notification-fanout", "classification": "excluded_placeholder", "reason": "No production notification provider is configured." },
-    { "name": "webhook-message", "classification": "post_v1", "reason": "Webhooks are explicitly hidden from V1 Core." }
+    {
+      "name": "account-deletion",
+      "classification": "blocked_operations",
+      "reason": "Production deletion requires Task 623 legal and operations approval."
+    },
+    {
+      "name": "account-deletion-finalize",
+      "classification": "blocked_operations",
+      "reason": "Finalization remains disabled until Task 623 worker ownership and recovery evidence exist."
+    },
+    {
+      "name": "accept-invite",
+      "classification": "excluded_placeholder",
+      "reason": "The function returns 501; V1 invitation acceptance uses the RLS-protected database service path."
+    },
+    {
+      "name": "moderation-helper",
+      "classification": "excluded_placeholder",
+      "reason": "The function returns 501; V1 moderation uses existing RLS/RPC services."
+    },
+    {
+      "name": "notification-fanout",
+      "classification": "excluded_placeholder",
+      "reason": "No production notification provider is configured."
+    },
+    {
+      "name": "webhook-message",
+      "classification": "post_v1",
+      "reason": "Webhooks are explicitly hidden from V1 Core."
+    }
   ],
-  "requiredSecretNames": ["PICOM_ALLOWED_ORIGINS", "LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"]
+  "requiredSecretNames": [
+    "PICOM_ALLOWED_ORIGINS",
+    "LIVEKIT_URL",
+    "LIVEKIT_API_KEY",
+    "LIVEKIT_API_SECRET",
+    "PICOM_LIVEKIT_DEPLOYMENT",
+    "PICOM_LIVEKIT_TURN_DOMAIN",
+    "PICOM_LIVEKIT_REDIS_CONFIGURED",
+    "SOCIAL_AUTH_RATE_LIMIT_SALT",
+    "STEAM_WEB_API_KEY",
+    "EPIC_CLIENT_ID",
+    "EPIC_CLIENT_SECRET",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

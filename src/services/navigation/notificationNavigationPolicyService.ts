@@ -14,9 +14,10 @@ export type NotificationNavigationDecision = Readonly<{ allowed: true } | { allo
 
 function validate(action: DeepLinkAction, context: NavigationContext): NotificationNavigationDecision {
   if (!isV1DeepLinkTypeEnabled(action.type)) return { allowed: false, reason: "This destination is not included in Picom V1 Core." };
-  if (action.type === "passwordRecovery" || action.type === "emailVerification" || action.type === "invite") return { allowed: true };
+  if (action.type === "authCallback" || action.type === "passwordRecovery" || action.type === "emailVerification" || action.type === "invite") return { allowed: true };
   if (!context.isAuthenticated) return { allowed: false, reason: "Sign in before opening this notification." };
   if (action.type === "friends") return { allowed: true };
+  if (action.type === "directMessage") return { allowed: true };
 
   const community = context.communities.find((candidate) => candidate.id === action.communityId);
   if (!community) return { allowed: false, reason: "This destination is no longer available." };

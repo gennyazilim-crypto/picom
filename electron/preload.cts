@@ -1,15 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IPC_CHANNELS, isIpcChannel } from "./ipcChannels.cjs";
-import {
-  isAuthStorageKey,
-  isOAuthIdentifier,
-  parseAuthStorageSetPayload,
-  parseOAuthAttemptStartPayload,
-  parseOAuthCallbackUrl,
-  parseScreenCaptureCancelPayload,
-  parseScreenCaptureListPayload,
-  parseScreenCaptureSelectionPayload,
-} from "./ipcPayloadValidation.cjs";
+import { parseScreenCaptureCancelPayload, parseScreenCaptureListPayload, parseScreenCaptureSelectionPayload } from "./ipcPayloadValidation.cjs";
 
 type WindowAction = "minimize" | "maximize" | "close";
 type MaximizeStateHandler = (isMaximized: boolean) => void;
@@ -28,6 +19,17 @@ type NativeNotificationPayload = Readonly<{
   tag?: string;
   silent?: boolean;
   deepLink?: string;
+}>;
+type IncomingCallToastPayload = Readonly<{
+  inviteId: string;
+  callerName: string;
+  subtitle: string;
+  avatarUrl?: string;
+}>;
+type IncomingCallToastAction = "accept" | "decline" | "message";
+type IncomingCallActionPayload = Readonly<{
+  action: IncomingCallToastAction;
+  inviteId: string;
 }>;
 type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 type TrayAction = "open" | "settings" | "mute" | "quit" | TrayStatus;
@@ -50,21 +52,6 @@ type PowerResumePayload = Readonly<{
   timestamp: string;
 }>;
 
-type OAuthProvider = "google" | "apple" | "epic" | "steam";
-type OAuthPurpose = "sign_in" | "link";
-type OAuthCompletionResult = Readonly<{
-  resultId: string;
-  attemptId: string;
-  provider: OAuthProvider;
-  purpose: OAuthPurpose;
-  status: "success" | "error";
-  code?: string;
-  error?: "OAUTH_PROVIDER_CANCELLED" | "OAUTH_PROVIDER_ERROR";
-  receivedAt: number;
-  expiresAt: number;
-}>;
-type OAuthDelivery = OAuthCompletionResult | Readonly<{ status: "rejected"; error: string }>;
-
 type PicomRuntimeInfo = Readonly<{
   runtime: "electron";
   platform: string;
@@ -74,6 +61,30 @@ type PicomRuntimeInfo = Readonly<{
     node?: string;
   }>;
 }>;
+
+type UpdaterState = Readonly<{
+  status: string;
+  enabled: boolean;
+  version: string | null;
+  releaseChannel: string;
+  message: string;
+  progress: number | null;
+  checkedAt: string | null;
+}>;
+
+function isUpdaterState(value: unknown): value is UpdaterState {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.status === "string" &&
+    typeof record.enabled === "boolean" &&
+    (record.version === null || typeof record.version === "string") &&
+    typeof record.releaseChannel === "string" &&
+    typeof record.message === "string" &&
+    (record.progress === null || typeof record.progress === "number") &&
+    (record.checkedAt === null || typeof record.checkedAt === "string")
+  );
+}
 
 const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 
@@ -123,7 +134,11 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
   const segments = parsed.pathname.split("/").filter(Boolean);
 
   if (route === "auth" && segments.length === 1 && segments[0] === "callback") {
-    return parseOAuthCallbackUrl(parsed.href) !== null;
+    const allowedKeys = new Set(["code", "error", "error_description"]);
+    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
+    const code = parsed.searchParams.get("code");
+    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
+    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
   }
 
   if (route === "auth" && segments.length === 1 && segments[0] === "reset-password") {
@@ -184,17 +199,6 @@ function isSafeDeepLink(value: unknown): value is string {
   } catch {
     return false;
   }
-}
-
-function isOAuthDelivery(value: unknown): value is OAuthDelivery {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const record = value as Record<string, unknown>;
-  if (record.status === "rejected") return typeof record.error === "string" && record.error.startsWith("OAUTH_");
-  if (!isOAuthIdentifier(record.resultId) || !isOAuthIdentifier(record.attemptId)) return false;
-  if ((record.provider !== "google" && record.provider !== "apple" && record.provider !== "epic" && record.provider !== "steam") || (record.purpose !== "sign_in" && record.purpose !== "link")) return false;
-  if (typeof record.receivedAt !== "number" || typeof record.expiresAt !== "number") return false;
-  if (record.status === "success") return typeof record.code === "string" && /^[a-zA-Z0-9._~-]{8,1024}$/.test(record.code);
-  return record.status === "error" && (record.error === "OAUTH_PROVIDER_CANCELLED" || record.error === "OAUTH_PROVIDER_ERROR");
 }
 
 function isPowerResumePayload(value: unknown): value is PowerResumePayload {
@@ -279,6 +283,39 @@ const bridge = Object.freeze({
       | { ok: true; native: true }
       | { ok: false; native: true; error: string }
     >,
+  incomingCall: {
+    show: (payload: IncomingCallToastPayload) =>
+      invokeWhitelisted(IPC_CHANNELS.incomingCallShow, payload) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    dismiss: () =>
+      invokeWhitelisted(IPC_CHANNELS.incomingCallDismiss) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    respond: (action: IncomingCallToastAction) =>
+      invokeWhitelisted(IPC_CHANNELS.incomingCallRespond, action) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    onAction: (callback: (payload: IncomingCallActionPayload) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (!value || typeof value !== "object") return;
+        const record = value as Record<string, unknown>;
+        if (
+          (record.action === "accept" || record.action === "decline" || record.action === "message")
+          && typeof record.inviteId === "string"
+        ) {
+          callback({ action: record.action, inviteId: record.inviteId });
+        }
+      };
+      ipcRenderer.on(IPC_CHANNELS.incomingCallAction, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.incomingCallAction, listener);
+      };
+    },
+  },
   tray: {
     setStatus: (status: TrayStatus) => {
       if (!isTrayStatus(status)) {
@@ -365,45 +402,6 @@ const bridge = Object.freeze({
         | { ok: false; native: true; error: string }
       >
   },
-  auth: {
-    startOAuthAttempt: (request: { provider: OAuthProvider; purpose: OAuthPurpose }) => {
-      const safe = parseOAuthAttemptStartPayload(request);
-      if (!safe) return Promise.resolve({ ok: false, native: true, error: "INVALID_OAUTH_START_REQUEST" } as const);
-      return invokeWhitelisted(IPC_CHANNELS.authOAuthStart, safe) as Promise<any>;
-    },
-    cancelOAuthAttempt: (attemptId: string) => {
-      if (!isOAuthIdentifier(attemptId)) return Promise.resolve({ ok: false, native: true, error: "INVALID_OAUTH_ATTEMPT_ID" } as const);
-      return invokeWhitelisted(IPC_CHANNELS.authOAuthCancel, attemptId) as Promise<any>;
-    },
-    getPendingOAuthResult: () => invokeWhitelisted(IPC_CHANNELS.authOAuthGetPendingResult) as Promise<any>,
-    acknowledgeOAuthResult: (resultId: string) => {
-      if (!isOAuthIdentifier(resultId)) return Promise.resolve({ ok: false, native: true, error: "INVALID_OAUTH_RESULT_ID" } as const);
-      return invokeWhitelisted(IPC_CHANNELS.authOAuthAcknowledge, resultId) as Promise<any>;
-    },
-    onOAuthResult: (callback: (result: OAuthDelivery) => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
-        if (isOAuthDelivery(value)) callback(value);
-      };
-      ipcRenderer.on(IPC_CHANNELS.authOAuthResult, listener);
-      return () => ipcRenderer.removeListener(IPC_CHANNELS.authOAuthResult, listener);
-    },
-    secureStorage: {
-      getItem: (key: string) => {
-        if (!isAuthStorageKey(key)) return Promise.resolve({ ok: false, native: true, error: "INVALID_AUTH_STORAGE_KEY" } as const);
-        return invokeWhitelisted(IPC_CHANNELS.authSecureStorageGet, key) as Promise<any>;
-      },
-      setItem: (key: string, value: string) => {
-        const safe = parseAuthStorageSetPayload({ key, value });
-        if (!safe) return Promise.resolve({ ok: false, native: true, error: "INVALID_AUTH_STORAGE_PAYLOAD" } as const);
-        return invokeWhitelisted(IPC_CHANNELS.authSecureStorageSet, safe) as Promise<any>;
-      },
-      removeItem: (key: string) => {
-        if (!isAuthStorageKey(key)) return Promise.resolve({ ok: false, native: true, error: "INVALID_AUTH_STORAGE_KEY" } as const);
-        return invokeWhitelisted(IPC_CHANNELS.authSecureStorageRemove, key) as Promise<any>;
-      },
-      getStatus: () => invokeWhitelisted(IPC_CHANNELS.authSecureStorageStatus) as Promise<any>,
-    },
-  },
   deepLinks: {
     onOpen: (callback: (url: string) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
@@ -433,6 +431,59 @@ const bridge = Object.freeze({
         ipcRenderer.removeListener(IPC_CHANNELS.powerResume, listener);
       };
     }
+  },
+  updates: {
+    getState: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateGetState) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    check: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateCheck) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    download: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateDownload) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    install: () =>
+      invokeWhitelisted(IPC_CHANNELS.updateInstall) as Promise<
+        | { ok: true; native: true; state: UpdaterState }
+        | { ok: false; native: true; error: string }
+      >,
+    onStateChange: (callback: (state: UpdaterState) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (isUpdaterState(value)) {
+          callback(value);
+        }
+      };
+
+      ipcRenderer.on(IPC_CHANNELS.updateStateChanged, listener);
+
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.updateStateChanged, listener);
+      };
+    }
+  },
+  activity: {
+    getSnapshot: () =>
+      invokeWhitelisted(IPC_CHANNELS.activityGetSnapshot) as Promise<
+        | {
+            ok: true;
+            native: true;
+            snapshot: Readonly<{
+              kind: "none" | "game" | "music";
+              statusText: string | null;
+              source: string | null;
+              title: string | null;
+              detail: string | null;
+              supported: boolean;
+            }>;
+          }
+        | { ok: false; native: true; error: string }
+      >
   }
 });
 

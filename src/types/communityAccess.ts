@@ -1,4 +1,4 @@
-import type { Channel, Community, Member, Role, UserId } from "./community";
+﻿import type { Channel, Community, Member, Role, UserId } from "./community";
 
 import type { CommunityKind } from "./community";
 
@@ -19,8 +19,6 @@ export type CommunityPermissionKey =
   | "sendAnnouncements"
   | "uploadAttachments"
   | "addReactions"
-  | "viewVoiceRoom"
-  | "joinVoiceRoom"
   | "joinVoice"
   | "speak"
   | "speakInVoice"
@@ -88,7 +86,6 @@ export type CommunityAccess = {
   isAdmin: boolean;
   isModerator: boolean;
   isMember: boolean;
-  isActiveMember: boolean;
   isVisitor: boolean;
   canOpenAdminPanel: boolean;
   canOpenModeratorPanel: boolean;

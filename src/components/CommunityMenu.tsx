@@ -11,10 +11,12 @@ import { communityRulesService } from "../services/communityRulesService";
 import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
+import { getCommunityIconLabel, resolveCommunityMarkSrc } from "../utils/generatedIdentity";
 import "../communityGuidelines.css";
 import { CommunityInsightsView } from "./CommunityInsightsView";
 import { CommunityVerificationRequestCard } from "./VerificationRequestPanel";
 import {
+  adminNavGroups,
   adminSectionDefinitions,
   moderatorSectionDefinitions,
   CommunityAdminOverview,
@@ -137,6 +139,7 @@ export function CommunityVisitorMenu({ community, access, onJoin }: { community:
 
 export function CommunityMenu({ community, access, callbacks, onClose }: CommunityMenuProps) {
   const items = getCommunityMenuItems(access);
+  const markSrc = resolveCommunityMarkSrc(community);
 
   useEffect(() => {
     const close = () => onClose();
@@ -152,7 +155,9 @@ export function CommunityMenu({ community, access, callbacks, onClose }: Communi
   return (
     <section className="community-menu-popover" role="menu" aria-label={`${community.name} menu`} onPointerDown={(event) => event.stopPropagation()}>
       <header>
-        <div className="community-menu-mark" style={{ background: community.accentColor }}>{community.icon}</div>
+        <div className="community-menu-mark" style={markSrc ? undefined : { background: community.accentColor }}>
+          {markSrc ? <img src={markSrc} alt="" draggable={false} /> : getCommunityIconLabel(community.name, community.icon)}
+        </div>
         <div>
           <strong>{community.name}</strong>
           <span>{access.isVisitor ? "Visitor preview" : "Community controls"}</span>
@@ -188,6 +193,81 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
   );
 }
 
+function CommunityManagementShell({ community, title, eyebrow, onClose, children, className = "", headerAction }: { community: Community; title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string; headerAction?: ReactNode }) {
+  const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
+  const markSrc = resolveCommunityMarkSrc(community);
+
+  return (
+    <div className="modal-backdrop community-mgmt-backdrop" onMouseDown={onClose}>
+      <section ref={dialogRef} tabIndex={-1} className={`community-access-modal community-management-modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="community-access-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+        <header className="community-mgmt-header">
+          <div className="community-mgmt-brand">
+            <div className="community-mgmt-mark" style={markSrc ? undefined : { background: community.accentColor }} aria-hidden="true">
+              {markSrc ? <img src={markSrc} alt="" draggable={false} /> : getCommunityIconLabel(community.name, community.icon)}
+            </div>
+            <div className="community-mgmt-titleblock">
+              <p className="eyebrow">{eyebrow}</p>
+              <h2 id="community-access-modal-title">{title}</h2>
+            </div>
+          </div>
+          <div className="community-mgmt-header-actions">
+            {headerAction}
+            <button className="icon-button modal-close community-mgmt-close" type="button" aria-label={`Close ${title}`} onClick={onClose}>
+              <AppIcon name="close" size="lg" />
+            </button>
+          </div>
+        </header>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+function CommunityAdminNav({ sections, groups, activeSection, onSelect, onOpenGuidelines }: { sections: typeof adminSectionDefinitions; groups: typeof adminNavGroups; activeSection: AdminSectionId; onSelect: (sectionId: AdminSectionId) => void; onOpenGuidelines: () => void }) {
+  const availableIds = new Set(sections.map((section) => section.id));
+
+  return (
+    <nav className="community-admin-nav" aria-label="Community admin sections">
+      {groups.map((group) => {
+        const groupSections = group.ids
+          .filter((id) => availableIds.has(id))
+          .map((id) => sections.find((section) => section.id === id))
+          .filter((section): section is (typeof adminSectionDefinitions)[number] => Boolean(section));
+
+        if (!groupSections.length) return null;
+
+        return (
+          <div key={group.label} className="community-admin-nav-group">
+            <span className="community-admin-nav-group-label">{group.label}</span>
+            {groupSections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                className={`community-admin-nav-item${activeSection === section.id ? " is-active" : ""}${section.id === "danger-zone" ? " is-danger" : ""}`}
+                aria-current={activeSection === section.id ? "page" : undefined}
+                onClick={() => onSelect(section.id)}
+              >
+                <span className="community-admin-nav-icon" aria-hidden="true">
+                  <AppIcon name={section.icon} size="sm" />
+                </span>
+                <span className="community-admin-nav-text">{section.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+      })}
+      <div className="community-admin-nav-footer">
+        <button type="button" className="community-admin-nav-item is-muted" onClick={onOpenGuidelines}>
+          <span className="community-admin-nav-icon" aria-hidden="true">
+            <AppIcon name="lock" size="sm" />
+          </span>
+          <span className="community-admin-nav-text">Guidelines</span>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onMemberRolesChanged, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onMemberRolesChanged: (memberId: string, roleIds: string[], primaryRoleId: string) => void; onCommunityRolesChanged: (roles: Community["roles"]) => void; onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("overview");
   const sections = adminSectionDefinitions.filter((section) => {
@@ -219,24 +299,17 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
   })();
 
   return (
-    <ModalShell title={`${community.name} management center`} eyebrow="Community administration" onClose={onClose} className="community-management-modal">
+    <CommunityManagementShell community={community} title={`${community.name} management center`} eyebrow="Community administration" onClose={onClose}>
       <div className="community-admin-panel">
-        <nav aria-label="Community admin sections">
-          {sections.map((section) => {
-            return (
-              <button key={section.id} className={activeSection === section.id ? "active" : ""} onClick={() => setActiveSection(section.id)}>
-                <AppIcon name={section.icon} size="sm" /> {section.label}
-              </button>
-            );
-          })}
-          <button type="button" onClick={onOpenGuidelines}>Community Guidelines</button>
-        </nav>
-        <div className="community-admin-content">
-          {sectionContent}
-          {activeSection !== "channels" && activeSection !== "moderation" && activeSection !== "danger-zone" ? sectionTools?.[activeSection] : null}
+        <CommunityAdminNav sections={sections} groups={adminNavGroups} activeSection={activeSection} onSelect={setActiveSection} onOpenGuidelines={onOpenGuidelines} />
+        <div className="community-admin-content" data-admin-section={activeSection}>
+          <div className="community-admin-content-inner">
+            {sectionContent}
+            {activeSection !== "channels" && activeSection !== "moderation" && activeSection !== "danger-zone" ? sectionTools?.[activeSection] : null}
+          </div>
         </div>
       </div>
-    </ModalShell>
+    </CommunityManagementShell>
   );
 }
 
@@ -252,16 +325,51 @@ export function CommunityModeratorPanel({ community, access, onClose, onOpenInvi
   const content = selectedSection === "flagged-messages" ? <ModeratorBlockedItemsSection communityId={community.id} /> : <Suspense fallback={<div className="community-admin-empty" role="status">Loading moderation tools...</div>}><CommunityModerationCenter community={community} access={access} mode={selectedSection === "reports" ? "reports" : selectedSection === "member-moderation" ? "members" : selectedSection === "message-moderation" ? "messages" : "log"} onMembersChanged={onMembersChanged} onOpenSource={onOpenModerationSource} /></Suspense>;
 
   return (
-    <ModalShell title={`${community.name} moderator panel`} eyebrow="Moderation" onClose={onClose} className="community-management-modal">
+    <CommunityManagementShell
+      community={community}
+      title={`${community.name} moderator panel`}
+      eyebrow="Moderation"
+      onClose={onClose}
+      headerAction={access.permissions.includes("createInvites") ? (
+        <button type="button" className="community-mgmt-header-action" onClick={onOpenInvite}>
+          <AppIcon name="users" size="sm" />
+          Invite people
+        </button>
+      ) : null}
+    >
       <div className="community-admin-panel moderator-admin-panel">
-        <nav aria-label="Moderator sections">
-          {sections.map((section) => <button key={section.id} className={selectedSection === section.id ? "active" : ""} onClick={() => setActiveSection(section.id)}><AppIcon name={section.icon} size="sm" /> {section.label}</button>)}
-          <button type="button" onClick={onOpenGuidelines}>Community Guidelines</button>
+        <nav className="community-admin-nav" aria-label="Moderator sections">
+          <div className="community-admin-nav-group">
+            <span className="community-admin-nav-group-label">Moderation</span>
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                className={`community-admin-nav-item${selectedSection === section.id ? " is-active" : ""}`}
+                aria-current={selectedSection === section.id ? "page" : undefined}
+                onClick={() => setActiveSection(section.id)}
+              >
+                <span className="community-admin-nav-icon" aria-hidden="true">
+                  <AppIcon name={section.icon} size="sm" />
+                </span>
+                <span className="community-admin-nav-text">{section.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="community-admin-nav-footer">
+            <button type="button" className="community-admin-nav-item is-muted" onClick={onOpenGuidelines}>
+              <span className="community-admin-nav-icon" aria-hidden="true">
+                <AppIcon name="lock" size="sm" />
+              </span>
+              <span className="community-admin-nav-text">Guidelines</span>
+            </button>
+          </div>
         </nav>
-        <div className="community-admin-content">{content}</div>
+        <div className="community-admin-content" data-admin-section={selectedSection}>
+          <div className="community-admin-content-inner">{content}</div>
+        </div>
       </div>
-      {access.permissions.includes("createInvites") ? <button type="button" className="moderator-invite-action" onClick={onOpenInvite}><AppIcon name="users" size="sm" /> Invite people</button> : null}
-    </ModalShell>
+    </CommunityManagementShell>
   );
 }
 
@@ -321,8 +429,10 @@ export function CommunityJoinModal({ community, currentUserId, isAuthenticated, 
     let active = true;
     void communityRulesService.loadPublishedRules(community.id).then((result) => {
       if (!active) return;
-      if (result.ok) { setRules(result.rules); setRulesError(null); }
-      else setRulesError(result.message);
+      if (result.ok) {
+        setRules(result.rules);
+        setRulesError(null);
+      } else setRulesError(result.message);
       setRulesLoading(false);
     });
     return () => { active = false; };

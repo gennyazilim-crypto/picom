@@ -2,7 +2,14 @@
 
 ## Status
 
-Proposed, disabled by default. Picom does not enable production auto-update as part of this plan.
+Phase 3 implemented, disabled by default. The real `electron-updater` integration now lives
+in the Electron main process (`electron/updater.cts`) behind a narrow, sender-trusted IPC
+bridge (`window.picomDesktop.updates`); the renderer `updateService` consumes normalized states
+without owning any updater API. It activates only when `PICOM_UPDATE_FEED_URL` (HTTPS) is set
+and the app is packaged (or `PICOM_UPDATE_ALLOW_DEV=1`), using auto-download + manual install.
+The committed build stays disabled (`electron-builder.yml` keeps `publish: null`, no feed
+configured). Production enablement still requires the signing, hosting, certification, and
+security-review gates below. Contract change recorded in `docs/electron-preload-api.md`.
 
 ## Goals
 

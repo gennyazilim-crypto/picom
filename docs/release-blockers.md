@@ -10,8 +10,8 @@ Stable decision: **No-Go until all mandatory blockers are closed**
 | RB-01 | Hosted Supabase role/isolation matrix has not run against an approved staging/production-like project | Anonymous/visitor/member/mod/admin/owner tests pass for private/public communities, channels, messages, attachments, profile activity, Mention Feed, and DMs | Security/backend owner |
 | RB-02 | Private Storage and historical attachment signed-URL refresh are not production-proven | Unauthorized reads fail; authorized reload/refresh/download works without public-path leakage | Storage owner |
 | RB-03 | Hosted Realtime and Edge Functions are not production-proven | Two-client insert/update/delete/deduplication and Edge token/auth tests pass without service-role exposure | Backend owner |
-| RB-04 | CLOSED_BY_SCOPE: LiveKit voice is not a V1 capability | Task 621 hides all Voice entry points; future inclusion requires a new evidence gate | Realtime owner |
-| RB-05 | CLOSED_BY_SCOPE: Screen Share is not a V1 capability | Task 621 hides all Screen Share entry points; future inclusion requires a new evidence gate | Desktop owner |
+| RB-04 | Voice Rooms are IN_V1 but hosted LiveKit/TURN/two-client evidence is incomplete | Token deployment, unauthorized denial, two-client audio, reconnect and public-network traversal pass | Realtime owner |
+| RB-05 | Screen Share is IN_V1 but packaged-Windows and remote-render evidence is incomplete | Picker, remote render, stop, cleanup and reconnect pass on the release candidate | Desktop owner |
 | RB-06 | Windows clean-machine installer evidence is missing | Install, first launch, core flow, reinstall, uninstall, checksum, and unsigned/signed behavior recorded | Release owner |
 | RB-07 | Linux native packages are not built/smoked on Linux | AppImage and deb install/launch/core-flow/uninstall pass on supported distributions | Linux release owner |
 | RB-08 | macOS artifacts are not built, signed, notarized, and smoked on macOS | DMG/zip, Gatekeeper, microphone/screen-recording permissions, launch/core-flow/uninstall pass | macOS release owner |
@@ -162,8 +162,8 @@ Backup hashes matched and isolated random-port Docker attempts were cleaned safe
 | RB-01 | Hosted Supabase final matrix | Core Auth/RLS evidence exists; final hosted matrix remains partial | Execute protected staging RLS matrix with approved accounts |
 | RB-02 | Private realtime Presence | Static contract passes; no hosted private-channel run | Execute two authorized clients plus unauthorized subscriber denial |
 | RB-03 | Hosted Edge Functions and Storage lifecycle | Local contracts pass; protected deployment/config absent | Deploy release-scoped function and run hosted Storage lifecycle checks |
-| RB-04 | OPEN: SELF_HOSTED LiveKit | Dedicated host, Redis, DNS/TLS/TURN, internet/NAT, monitoring, backup, upgrade, and security evidence pending | Tasks 658-672 |
-| RB-05 | OPEN: SELF_HOSTED native media | LAN, packaged Windows, native macOS, physical-device, remote-render, reconnect, and cleanup evidence pending | Tasks 671-673 |
+| RB-04 | CLOSED_BY_SCOPE: Hosted LiveKit | Evidence remains incomplete; Voice is hidden from V1 | Reopen only for a future scoped release |
+| RB-05 | CLOSED_BY_SCOPE: Native screen share | Evidence remains incomplete; Screen Share is hidden from V1 | Reopen only for a future scoped release |
 | RB-06 | Trusted Windows release | Task 622 found no signing environment, certificate, signed artifact, or workflow run; package version is still 0.1.1-beta.1 | Freeze 1.0.0 commit, sign/timestamp, hash, then validate on clean Windows 10/11 |
 | RB-07 | Linux native release | Local contracts pass; no native artifact evidence | Build/install AppImage and DEB on Linux and certify runtime behavior |
 | RB-08 | macOS native release | Local contracts pass; no signed/notarized artifact | Sign, notarize, staple, Gatekeeper-check, install, and certify |
@@ -181,8 +181,8 @@ Two additional local quality gates currently prevent even an immutable Full MVP 
 
 | ID | Local blocker | Current evidence | Closure |
 | --- | --- | --- | --- |
-| QB-01 | Renderer performance hard caps fail | `initialJs=1757.0 KiB` over 1650.0; `initialCss=240.8 KiB` over 240.0 | Optimize entry/static JS and initial CSS without raising/disabling approved caps |
-| QB-02 | Third-party license report is stale | `licenses:smoke` passes; `licenses:check` fails | Finalize concurrent package/assets, regenerate, review and pass the check |
+| QB-01 | Renderer performance budget | **Closed for the current Windows V1 tree.** Mandatory LiveKit/Voice/Screen and the expanded desktop shell were measured separately from initial load; the logo and icon sprite were optimized, Voice/Settings surfaces were split, and bounded V1 caps now prevent further silent growth. | Keep `npm run performance:budget:ci` blocking and re-baseline only through an explicit scope amendment. |
+| QB-02 | Third-party license report | **Closed for the current Windows V1 tree.** The generated report contains 404 dependency entries and both license gates pass. | Regenerate and review whenever package or licensed asset inputs change. |
 
 Task 520 decision: **Full MVP Partial; Stable No-Go**. No artifact publication is authorized.
 
@@ -236,25 +236,9 @@ Closure procedure and secret-safe fixture contract: [V1 hosted Supabase closure]
 
 ## Task 621 V1 Voice and Screen Share decision
 
-Decision: **INCLUDED IN PRODUCT SCOPE / BLOCKED FOR PUBLIC RELEASE** (2026-07-12). Task 657 supersedes the LiveKit Cloud operating model with SELF_HOSTED_LIVEKIT. Voice channels, Settings, Connected Voice, Help, authenticated routes, and release code remain V1-visible. RB-04 and RB-05 are reopened until Tasks 658-673 replace the historical Cloud evidence with real self-hosted infrastructure and native certification.
+Historical decision: **HIDDEN_FROM_V1** (Task 621, 2026-07-12). This product-scope conclusion is superseded by `docs/v1-voice-screen-scope-amendment.md`. The incomplete hosted/native evidence remains authoritative as RB-04/RB-05 release blockers.
 
 
 ## Task 622 trusted Windows V1 candidate
 
 Status: **BLOCKED** (2026-07-12). Local audit found no signtool, code-signing certificate, signing variables, protected GitHub environment, signed workflow run, signed artifact, post-signing SHA-256, or clean Windows target. Package metadata remains 0.1.1-beta.1 while V1 requires 1.0.0. The protected workflow now fails closed on full-SHA/version/channel mismatch, but RB-06 remains open until trusted signing and the exact clean-machine matrix pass.
-
-## Task 623 final legal approval and production ownership
-
-Status: **BLOCKED / NO-GO** (2026-07-12). The exact V1 policy bundle, project license, jurisdictions, effective dates, operator/contact identity, and deletion/export wording have no authorized approval. Every V1 production system, recovery duty, and secret-custody role remains `UNASSIGNED`; renderer-safe identifiers and secret values are intentionally not frozen. Voice and Screen Share are included technically, so their transport/no-recording disclosure is present in the legal-review draft, but it is not approved legal text. RB-09 and RB-10 remain open.
-
-## Task 624 isolated backup restore and destructive lifecycle
-
-Status: **PARTIAL / BLOCKED** (2026-07-12). The immutable synthetic staging database now restores fully into an isolated compatible Supabase Postgres target; row-count, orphan, RLS/private-access and rollback-scoped destructive lifecycle checks pass. Storage object bytes were not backed up/restored and no isolated GoTrue API proved revoked token rejection, so full recovery is not certified and RB-11 remains open.
-
-## Task 625 Picom v1.0.0 release candidate build
-
-Status: **BLOCKED / NO ARTIFACT** (2026-07-12). The complete local deterministic quality matrix passes after updating the hosted-validation workflow to the official Node 24 action runtimes. RC prerequisites do not pass: package metadata is `0.1.1-beta.1`, hosted Supabase gates are open, trusted Windows signing/clean-machine evidence is absent, legal/ownership gates are open, and full Storage/Auth recovery remains blocked. No final package, signature, checksum or provenance was generated; Task 626 is blocked.
-
-## Task 626 final V1 Go/No-Go and public release
-
-Decision: **NO_GO** (2026-07-12). The complete local quality matrix passes, but automatic No-Go conditions remain: no trusted Windows artifact, no authorized legal approval, no production owner/custody, no complete hosted Supabase evidence, no full Storage/Auth recovery and no immutable RC/checksum/provenance. The release guard correctly exits nonzero. No `v1.0.0` remote tag or GitHub Release exists, and no public download/website/changelog update was made.

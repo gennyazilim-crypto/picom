@@ -14,10 +14,11 @@ for (const marker of ["Welcome to Picom", "Choose your starting theme", "Permiss
 }
 if (!setup.includes("navigator.language") || !setup.includes('setLocale("tr")') || !setup.includes('setLocale("en")')) throw new Error("TR/EN setup locale selection is not wired.");
 if (/getUserMedia|desktopCapturer|requestPermission|startScreenShare|voiceService/.test(setup)) throw new Error("First-launch setup must not request native/media permissions.");
-if (/id: "voice"|copy\.permissions\.microphone|copy\.permissions\.screen|copy\.voice\./.test(setup)) throw new Error("V1 first launch must not advertise hidden Voice or Screen Share.");
 if (!app.includes("!safeMode.active && !firstLaunchSetupCompleted") || !app.includes("<FirstLaunchSetup")) throw new Error("First-launch setup App integration missing.");
-if (app.indexOf("<FirstLaunchSetup") > app.indexOf("if (passwordRecoveryMode || !authReady || !authSession)")) throw new Error("First-launch setup must precede unauthenticated login/register rendering.");
+const firstLaunchGuardIndex = app.indexOf("if (!safeMode.active && !firstLaunchSetupCompleted)");
+const authReadyGuardIndex = app.indexOf("if (!authReady)");
+if (authReadyGuardIndex < 0 || firstLaunchGuardIndex > authReadyGuardIndex) throw new Error("First-launch setup must precede auth loading and unauthenticated login/register rendering.");
 if (!settingsModal.includes("import.meta.env.DEV") || !settingsModal.includes("Reset first-launch setup") || !settingsModal.includes("settingsService.resetFirstLaunchSetup()")) throw new Error("Development-only first-launch reset control is missing.");
 if (!settings.includes("backupInvalidSettings(raw, storage)") || !settings.includes("return cloneSettings(defaults)")) throw new Error("Corrupted settings must retain a safe-default recovery path.");
 
-console.log("First-launch V1 persistence, no-prompt, and hidden Voice/Screen Share smoke passed.");
+console.log("First-launch V1 persistence, no-prompt, and auth-ordering smoke passed.");

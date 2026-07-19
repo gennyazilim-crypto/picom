@@ -14,11 +14,11 @@ const requireAll = (source, values, label) => {
 };
 
 requireAll(auth, ["changeCurrentPassword", "reauthenticateCurrentUser", "updateUser({ password: newPassword })", 'signOut({ scope: "global" })', "requestPasswordReset"], "password security service");
-requireAll(social, ["getAccountProviderStates", "beginProviderLink", "linkIdentity", "googleOAuthEnabled", "appleOAuthEnabled"], "social provider service");
-requireAll(settings, ["Account identity", "Connected sign-in providers", "Send password reset email", "Change password and sign out all sessions", "Confirm session revocation", "Confirm logout", "Request data export", 'autoComplete="current-password"'], "Account settings UI");
+requireAll(social, ["getAccountProviderStates", "beginProviderLink", "linkIdentity", "googleOAuthEnabled", "appleOAuthEnabled", "steamOAuthEnabled", "epicOAuthEnabled", "SOCIAL_AUTH_PROVIDER_ORDER"], "social provider service");
+requireAll(settings, ["Account identity", "Connected sign-in providers", "Send password reset email", "Change password and sign out all sessions", "Confirm session revocation", "Confirm logout", "Request data export", 'autoComplete="current-password"', "Refresh identity", "Manage sessions", "Check verification status", "subscribeToDeviceSessionChanges"], "Account settings UI");
 requireAll(settings, ["accountActivityService.recordActivity", 'type: "password_changed"', 'type: "session_revoked"', 'type: "account_deletion_requested"'], "destructive action audit");
 requireAll(app, ["onLogout={handleLogout}", "currentEmail={authSession?.user?.email}"], "App account identity and logout wiring");
-requireAll(sessions, ['signOut({scope:"others"})', "revoke_other_device_sessions"], "session revocation");
+requireAll(sessions, ['signOut({scope:"others"})', "revoke_other_device_sessions", "subscribeToDeviceSessionChanges"], "session revocation");
 requireAll(deletion, ["requestDeletion", "confirmationText", "ownedCommunityCount"], "account deletion confirmation");
 if (settings.includes("void requestDataExport}")) throw new Error("Data export button still references the handler without invoking it.");
 if (settings.includes("Enable 2FA (Coming soon)")) throw new Error("Out-of-scope fake 2FA action remains in Account settings.");

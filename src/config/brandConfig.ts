@@ -3,12 +3,16 @@ export const brandConfig = Object.freeze({
   tagline: "Desktop community chat, shaped for focused groups.",
   logoAlt: "Picom logo",
   assets: Object.freeze({
-    sourceLogo: "/assets/brand/picom-logo-concept.png",
+    sourceLogo: "/assets/brand/picom-logo-mic-chrome-v1.avif",
     appIconPng: "/assets/brand/app-icon.png",
     appIconSvg: "/assets/brand/app-icon.svg",
     appIconIco: "/assets/brand/app-icon.ico"
   }),
   palette: Object.freeze({
+    charcoal: "#12161C",
+    graphite: "#242A34",
+    steel: "#485260",
+    crimson: "#C41C30",
     deepTeal: "#007571",
     brightTeal: "#10C2BB",
     burntOrange: "#C24D0F",

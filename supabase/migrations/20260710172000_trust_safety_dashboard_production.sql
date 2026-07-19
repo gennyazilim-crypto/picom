@@ -12,7 +12,6 @@ create index if not exists idx_abuse_events_created_type on public.abuse_events(
 alter table public.abuse_events enable row level security;
 revoke all on public.abuse_events from anon, authenticated;
 comment on table public.abuse_events is 'Backend-only content-free abuse signals. Never store message content, raw IPs, credentials, headers, signed URLs, or private metadata.';
-
 create or replace function public.get_trust_safety_summary()
 returns jsonb
 language plpgsql
@@ -39,7 +38,6 @@ begin
   return result;
 end;
 $$;
-
 revoke all on function public.get_trust_safety_summary() from public, anon;
 grant execute on function public.get_trust_safety_summary() to authenticated;
 comment on function public.get_trust_safety_summary() is 'App-admin-only aggregate safety counts. Returns no IDs, content, paths, reasons, credentials, IP data, or private message context.';

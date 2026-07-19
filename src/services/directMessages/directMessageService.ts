@@ -3,7 +3,7 @@ import type { DirectMessage, DirectMessageAttachment, DirectMessageCursor, Direc
 import { dataSourceService } from "../dataSourceService";
 import { directMessageService as supabaseDirectMessageService, type DirectMessagePageOptions, type DirectMessageServiceResult, type SendDirectMessageInput } from "../supabase/directMessageService";
 import { getSupabaseClient } from "../supabase/supabaseClient";
-import { createOrOpenDirectConversation, directMessageMockStore, getDirectConversations, markDirectConversationRead, setDirectConversationArchived, setDirectConversationMuted } from "./directConversationService";
+import { createOrOpenDirectConversation, deleteDirectConversation, directMessageMockStore, getDirectConversations, markDirectConversationRead, setDirectConversationArchived, setDirectConversationMuted } from "./directConversationService";
 import { directRealtimeService, type DirectReactionRow } from "./directRealtimeService";
 
 export type DirectMessageSendInput = SendDirectMessageInput;
@@ -138,4 +138,4 @@ export async function getDirectSharedMedia(conversationId: string, options: Dire
 
 export const addDirectReaction = (messageId: string, emoji: string) => setDirectReaction(messageId, emoji, true);
 export const removeDirectReaction = (messageId: string, emoji: string) => setDirectReaction(messageId, emoji, false);
-export const directMessageService = { getDirectConversations, loadDirectConversations: getDirectConversations, getDirectMessages, getDirectMessagesPage, createOrOpenDirectConversation, createDirectConversation: createOrOpenDirectConversation, sendDirectMessage, editDirectMessage, deleteDirectMessage, addDirectMessageAttachments, addDirectReaction, removeDirectReaction, markDirectConversationRead, setDirectConversationMuted, setDirectConversationArchived, getDirectSharedMedia };
+export const directMessageService = { getDirectConversations, loadDirectConversations: getDirectConversations, getDirectMessages, getDirectMessagesPage, createOrOpenDirectConversation, createDirectConversation: createOrOpenDirectConversation, sendDirectMessage, editDirectMessage, deleteDirectMessage, addDirectMessageAttachments, addDirectReaction, removeDirectReaction, markDirectConversationRead, setDirectConversationMuted, setDirectConversationArchived, deleteDirectConversation, getDirectSharedMedia };

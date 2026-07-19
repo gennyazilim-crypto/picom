@@ -63,5 +63,4 @@ create or replace function public.record_livekit_voice_moderation(target_communi
 revoke all on function public.community_voice_rooms_enabled(uuid),public.authorize_livekit_room(uuid,uuid,text),public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text),public.record_livekit_voice_moderation(uuid,uuid,uuid,text) from public,anon;
 grant execute on function public.authorize_livekit_room(uuid,uuid,text),public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text),public.record_livekit_voice_moderation(uuid,uuid,uuid,text) to authenticated;
 comment on function public.authorize_livekit_room(uuid,uuid,text) is 'Least-privilege normal voice grants for active members; Radio broadcast grants are intentionally unrelated.';
-comment on function public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text) is 'Mute/remove authorization limited to lower-ranked active members.';
-commit;
+comment on function public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text) is 'Mute/remove authorization limited to lower-ranked active members.';;

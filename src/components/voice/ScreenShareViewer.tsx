@@ -14,10 +14,9 @@ type ScreenShareVideoProps = {
 
 function ScreenShareVideo({ share, onStop }: ScreenShareVideoProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const hasRenderableVideo = share.stream.getVideoTracks().length > 0;
 
   useEffect(() => {
-    if (!videoRef.current || !hasRenderableVideo) return;
+    if (!videoRef.current) return;
 
     videoRef.current.srcObject = share.stream;
 
@@ -26,12 +25,12 @@ function ScreenShareVideo({ share, onStop }: ScreenShareVideoProps) {
         videoRef.current.srcObject = null;
       }
     };
-  }, [hasRenderableVideo, share.stream]);
+  }, [share.stream]);
 
   return (
     <article className="screen-share-viewer-card">
       <div className="screen-share-video-frame">
-        {hasRenderableVideo ? <video ref={videoRef} autoPlay playsInline muted={share.isLocal} /> : <div className="screen-share-video-pending" role="status"><AppIcon name="image" size="lg" /><span>Loading {share.participantName}'s shared screen...</span></div>}
+        <video ref={videoRef} autoPlay playsInline muted={share.isLocal} />
       </div>
       <footer>
         <span>

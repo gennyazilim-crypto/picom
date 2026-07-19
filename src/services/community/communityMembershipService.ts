@@ -1,4 +1,5 @@
 ﻿import type { Community, Member } from "../../types/community";
+import { hasResolvedCommunityMembership } from "../permissions/communityPermissions";
 import { dataSourceService } from "../dataSourceService";
 import type { CommunityRulesAcceptanceInput } from "../../types/communityRules";
 import { getSupabaseClient, getSupabaseClientStatus } from "../supabase/supabaseClient";
@@ -104,8 +105,11 @@ export const communityMembershipService = {
     if (input.bannedUserIds?.includes(input.currentUser.userId)) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "You cannot join this community." } };
     if (input.community.ownerId && userBlockingService.isBlocked(input.community.ownerId)) return { ok: false, error: { code: "JOIN_NOT_ALLOWED", message: "This community cannot be joined while a blocking relationship is active." } };
 
+    const dataSource = dataSourceService.getStatus();
     const existingMember = input.community.members.find((member) => member.userId === input.currentUser.userId);
-    if (existingMember) return { ok: true, data: { member: existingMember, status: "already_member" } };
+    if (existingMember && (dataSource.isMock || hasResolvedCommunityMembership(existingMember, input.community))) {
+      return { ok: true, data: { member: existingMember, status: "already_member" } };
+    }
 
     if (input.community.rulesEnabled !== false) {
       const acceptance = input.rulesAcceptance;
@@ -115,7 +119,6 @@ export const communityMembershipService = {
       }
     }
 
-    const dataSource = dataSourceService.getStatus();
     if (dataSource.isMock) {
       return { ok: true, data: { member: createMockMember(input.community, input.currentUser), status: "joined" } };
     }
@@ -139,7 +142,8 @@ export const communityMembershipService = {
         avatarUrl: input.currentUser.avatarUrl,
         status: input.currentUser.status,
         statusText: membership.join_status === "already_member" ? "Already a community member" : "Joined this community",
-        roleId: membership.role_id ?? "member",
+        roleId: membership.role_id ?? input.currentUser.roleId,
+        roleIds: membership.role_id ? [membership.role_id] : undefined,
         bio: input.currentUser.bio,
       } },
     };
@@ -169,6 +173,15 @@ export const communityMembershipService = {
 
     if (userError || !userId) {
       return { ok: false, error: { code: "AUTH_REQUIRED", message: "Sign in before leaving a community." } };
+    }
+
+    // The owner-leave guard above ran against the caller-supplied currentUserId, but the delete
+    // targets the authoritative session id. If they diverge (e.g. a stale closure), re-check the
+    // guard against the id we are actually about to delete so an owner cannot skip the transfer step.
+    const authoritativeMember = input.community.members.find((member) => member.userId === userId);
+    const authoritativeRole = input.community.roles.find((role) => role.id === authoritativeMember?.roleId);
+    if (input.community.ownerId === userId || authoritativeRole?.name === "Owner") {
+      return { ok: false, error: { code: "LEAVE_NOT_ALLOWED", message: "Transfer ownership before leaving this community." } };
     }
 
     const { error } = await configured.data

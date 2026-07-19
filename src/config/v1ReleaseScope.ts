@@ -83,15 +83,15 @@ export const v1ReleaseScope = Object.freeze({
     helpSupport: inV1("Offline core help and safe support entry points."),
     safeDiagnostics: inV1("Redacted diagnostics and local recovery controls."),
     globalSearch: inV1("Search limited to V1-visible entities."),
-    voiceRooms: inV1("Task 668 includes member Voice Rooms after protected hosted, packaged-Windows, and security certification."),
-    screenShare: inV1("Task 668 includes explicit-action Screen Share after remote-render, reconnect, and cleanup certification."),
+    voiceRooms: inV1("Voice Rooms are mandatory V1 product scope; public release remains blocked until self-hosted provider evidence passes."),
+    screenShare: inV1("Screen Share is mandatory V1 product scope; public release remains blocked until native and remote-render evidence passes."),
     radio: hidden("Radio data and code are retained but excluded from Picom V1 Core."),
     podcasts: hidden("Podcast data and code are retained but excluded from Picom V1 Core."),
     events: hidden("The event workspace is not a V1 Core surface."),
     bookmarks: hidden("The standalone bookmarks workspace is not a V1 Core surface."),
     meetingWorkspace: hidden("Meeting workspace, stage, and camera surfaces are not in V1 Core."),
     enhancedNoiseShield: hidden("Enhanced noise-shield controls are not release-certified for V1 Core."),
-    discoveryMarketplace: hidden("Public discovery marketplace is excluded from V1 Core."),
+    discoveryMarketplace: inV1("Public discovery marketplace is enabled on stable."),
     platformAdminOperations: hidden("Internal platform operations are not a public V1 user surface."),
     customCommunityEmoji: postV1("Custom community emoji administration remains after V1 Core."),
     customCommunityStickers: postV1("Custom community sticker administration remains after V1 Core."),
@@ -122,6 +122,7 @@ const globalNavigationFeature: Readonly<Record<GlobalSidebarItemKey, V1FeatureKe
   feed: "feed",
   dm: "directMessages",
   communities: "textCommunities",
+  discover: "discoveryMarketplace",
   radio: "radio",
   podcasts: "podcasts",
   events: "events",
@@ -158,7 +159,7 @@ export function isV1ActiveViewEnabled(activeView: string): boolean {
 }
 
 export function isV1DeepLinkTypeEnabled(type: DeepLinkAction["type"]): boolean {
-  if (["passwordRecovery", "emailVerification", "invite", "friends"].includes(type)) return true;
+  if (["authCallback", "passwordRecovery", "emailVerification", "invite", "friends", "directMessage"].includes(type)) return true;
   if (type === "community") return isV1FeatureEnabled("textCommunities");
   if (type === "radio") return isV1FeatureEnabled("radio");
   if (type === "podcast") return isV1FeatureEnabled("podcasts");

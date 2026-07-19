@@ -2,7 +2,6 @@
 import type { Attachment, Channel, Community, Member, Message, Role, UserStatus } from "../types/community";
 import type { ProfileActivityItem, ProfileLookupOptions, ProfileMediaItem, ProfileStatus, UserProfile } from "../types/profile";
 import { canViewChannel, getCommunityAccess } from "../services/permissions/communityPermissions";
-import { selectMockFixture } from "../config/dataSourcePolicy";
 
 const profilePalette = ["#007571", "#10C2BB", "#C24D0F", "#FF772E", "#752C05"];
 const locations = ["Istanbul", "Berlin", "Amsterdam", "Izmir", "Lisbon", "Remote"];
@@ -252,4 +251,4 @@ export function getMockProfileForMember(member: Member, communities: Community[]
   return makeProfile(member, communities, options);
 }
 
-export const mockProfiles = selectMockFixture<UserProfile[]>(createMockProfiles(), []);
+export const mockProfiles: UserProfile[] = import.meta.env.PROD ? [] : createMockProfiles();

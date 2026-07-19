@@ -1,5 +1,4 @@
 begin;
-
 -- Public identity assets are deliberately limited to non-confidential profile
 -- and community branding. Message, DM, Radio, and Podcast content stays private.
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values
@@ -10,11 +9,9 @@ insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) v
   ('profile-media','profile-media',true,8388608,array['image/png','image/jpeg','image/webp']),
   ('community-branding','community-branding',true,6291456,array['image/png','image/jpeg','image/webp'])
 on conflict(id) do update set public=excluded.public,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
-
 -- Public object delivery uses known URLs. Do not grant bucket-wide listing.
 drop policy if exists "profile_media_read_authenticated" on storage.objects;
 drop policy if exists "public reads community branding" on storage.objects;
-
 drop policy if exists "profile_media_insert_own" on storage.objects;
 create policy "profile_media_insert_own" on storage.objects for insert to authenticated with check(
   bucket_id='profile-media' and (storage.foldername(name))[1]=auth.uid()::text
@@ -27,7 +24,6 @@ with check(bucket_id='profile-media' and (storage.foldername(name))[1]=auth.uid(
 drop policy if exists "profile_media_delete_own" on storage.objects;
 create policy "profile_media_delete_own" on storage.objects for delete to authenticated
 using(bucket_id='profile-media' and (storage.foldername(name))[1]=auth.uid()::text);
-
 drop policy if exists "managers upload community branding" on storage.objects;
 create policy "managers upload community branding" on storage.objects for insert to authenticated with check(
   bucket_id='community-branding'
@@ -41,7 +37,6 @@ with check(bucket_id='community-branding' and name ~ '^[0-9a-f-]{36}/(icon|banne
 drop policy if exists "managers delete community branding" on storage.objects;
 create policy "managers delete community branding" on storage.objects for delete to authenticated
 using(bucket_id='community-branding' and public.effective_community_permission(((storage.foldername(name))[1])::uuid,'manageCommunity'));
-
 create or replace function public.list_storage_orphan_candidates(older_than timestamptz default now()-interval '24 hours',result_limit integer default 500)
 returns table(bucket_id text,object_name text,created_at timestamptz,reason text)
 language sql stable security definer set search_path=public,storage,pg_temp as $$
@@ -69,9 +64,7 @@ language sql stable security definer set search_path=public,storage,pg_temp as $
   order by storage_object.created_at,storage_object.id
   limit greatest(1,least(coalesce(result_limit,500),1000));
 $$;
-
 revoke all on function public.list_storage_orphan_candidates(timestamptz,integer) from public,anon,authenticated;
 grant execute on function public.list_storage_orphan_candidates(timestamptz,integer) to service_role;
 comment on function public.list_storage_orphan_candidates(timestamptz,integer) is 'Server-only, read-only orphan inventory. Deletion requires the separately confirmed operator script.';
-
 commit;

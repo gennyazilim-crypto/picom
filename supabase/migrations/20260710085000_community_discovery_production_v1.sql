@@ -1,7 +1,6 @@
 alter table public.communities
   add column if not exists discovery_join_policy text not null default 'open'
   check (discovery_join_policy in ('open', 'request'));
-
 create table if not exists public.community_discovery_reviews (
   community_id uuid primary key references public.communities(id) on delete cascade,
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
@@ -11,7 +10,6 @@ create table if not exists public.community_discovery_reviews (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.community_join_requests (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -22,17 +20,14 @@ create table if not exists public.community_join_requests (
   reviewed_by uuid references public.profiles(id) on delete restrict,
   unique (community_id, user_id)
 );
-
 create index if not exists idx_discovery_reviews_status_updated
   on public.community_discovery_reviews(status, updated_at desc);
 create index if not exists idx_join_requests_community_status
   on public.community_join_requests(community_id, status, created_at desc);
-
 alter table public.community_discovery_reviews enable row level security;
 alter table public.community_join_requests enable row level security;
 revoke all on table public.community_discovery_reviews from anon, authenticated;
 revoke all on table public.community_join_requests from anon, authenticated;
-
 create or replace function public.list_public_discovery_communities(
   search_text text default null,
   category_filter text default null,
@@ -80,10 +75,8 @@ as $$
   order by count(membership.id) desc, community.created_at desc
   limit least(greatest(result_limit, 1), 60);
 $$;
-
 revoke all on function public.list_public_discovery_communities(text,text,integer) from public;
 grant execute on function public.list_public_discovery_communities(text,text,integer) to anon, authenticated;
-
 create or replace function public.join_or_request_discovery_community(target_community_id uuid)
 returns text
 language plpgsql
@@ -135,9 +128,7 @@ begin
   return 'joined';
 end;
 $$;
-
 revoke all on function public.join_or_request_discovery_community(uuid) from public, anon;
 grant execute on function public.join_or_request_discovery_community(uuid) to authenticated;
-
 comment on table public.community_discovery_reviews is
   'Backend/app-admin review gate. No community is returned by production discovery without an approved row.';

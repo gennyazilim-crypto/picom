@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.authorize_livekit_meeting_moderation(
   target_room_id uuid,
   target_session_id uuid,
@@ -20,7 +19,6 @@ begin
   return query select target_session.provider_room_name,target_participant.provider_identity,target_action;
 end;
 $$;
-
 create or replace function public.record_livekit_meeting_moderation(
   target_room_id uuid,
   target_session_id uuid,
@@ -39,9 +37,7 @@ begin
   return audit_id;
 end;
 $$;
-
 revoke all on function public.authorize_livekit_meeting_moderation(uuid,uuid,uuid,text),public.record_livekit_meeting_moderation(uuid,uuid,uuid,text) from public,anon;
 grant execute on function public.authorize_livekit_meeting_moderation(uuid,uuid,uuid,text),public.record_livekit_meeting_moderation(uuid,uuid,uuid,text) to authenticated;
 comment on function public.authorize_livekit_meeting_moderation(uuid,uuid,uuid,text) is 'Resolves provider room and identity only after JWT, active session, hierarchy, and meeting participant authorization.';
-
 commit;

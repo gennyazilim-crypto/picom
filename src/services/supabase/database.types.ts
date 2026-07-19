@@ -13,6 +13,17 @@ export type Database = {
           username: string;
           display_name: string;
           avatar_url: string | null;
+          avatar_path: string | null;
+          avatar_thumbnail_path: string | null;
+          avatar_version: number;
+          avatar_content_hash: string | null;
+          avatar_updated_at: string | null;
+          cover_path: string | null;
+          cover_thumbnail_path: string | null;
+          cover_version: number;
+          cover_content_hash: string | null;
+          cover_updated_at: string | null;
+          profile_media_updated_at: string | null;
           status: string;
           status_text: string;
           bio: string | null;
@@ -39,7 +50,6 @@ export type Database = {
           id: string;
           kind: Database["public"]["Enums"]["community_kind"];
           owner_id: string;
-          founder_id: string;
           name: string;
           description: string | null;
           icon_url: string | null;
@@ -340,40 +350,6 @@ export type Database = {
         };
         Insert: never;
         Update: never;
-        Relationships: [];
-      };
-      feed_items: {
-        Row: {
-          id: string; source_type: "text_message" | "radio_session" | "radio_comment" | "podcast_episode" | "podcast_comment";
-          source_id: string; parent_source_id: string | null; community_id: string | null; channel_id: string | null; author_id: string;
-          content_kind: "text_only" | "image_only" | "text_image" | "video_only" | "text_video" | "image_video" | "text_image_video" | null;
-          base_score: number; moderation_state: "visible" | "hidden" | "removed"; deleted_at: string | null;
-          source_created_at: string; source_updated_at: string; last_engagement_at: string | null; score_version: number; created_at: string; updated_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["feed_items"]["Row"]> & Pick<Database["public"]["Tables"]["feed_items"]["Row"], "source_type" | "source_id" | "author_id" | "base_score" | "source_created_at" | "source_updated_at">;
-        Update: Partial<Database["public"]["Tables"]["feed_items"]["Row"]>;
-        Relationships: [];
-      };
-      feed_engagement_rollups: {
-        Row: {
-          feed_item_id: string; unique_external_reactors: number; unique_external_commenters: number; additional_reply_count: number;
-          unique_external_savers: number; unique_external_viewers: number; external_supporter_count: number;
-          reaction_score: number; comment_score: number; save_score: number; view_score: number; raw_score: number; score_version: number; updated_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["feed_engagement_rollups"]["Row"]> & Pick<Database["public"]["Tables"]["feed_engagement_rollups"]["Row"], "feed_item_id">;
-        Update: Partial<Database["public"]["Tables"]["feed_engagement_rollups"]["Row"]>;
-        Relationships: [];
-      };
-      feed_user_states: {
-        Row: { id: string; user_id: string; feed_item_id: string; read_at: string | null; saved_at: string | null; hidden_at: string | null; first_seen_at: string | null; last_seen_at: string | null; opened_at: string | null; created_at: string; updated_at: string };
-        Insert: Partial<Database["public"]["Tables"]["feed_user_states"]["Row"]> & Pick<Database["public"]["Tables"]["feed_user_states"]["Row"], "user_id" | "feed_item_id">;
-        Update: Partial<Database["public"]["Tables"]["feed_user_states"]["Row"]>;
-        Relationships: [];
-      };
-      feed_impressions: {
-        Row: { id: string; user_id: string; feed_item_id: string; session_id: string; position: number; surface: "mention_feed"; feed_mode: "feed" | "friends"; score_version: number; as_of: string; shown_at: string; opened_at: string | null };
-        Insert: Partial<Database["public"]["Tables"]["feed_impressions"]["Row"]> & Pick<Database["public"]["Tables"]["feed_impressions"]["Row"], "user_id" | "feed_item_id" | "session_id" | "position" | "feed_mode" | "as_of">;
-        Update: Partial<Database["public"]["Tables"]["feed_impressions"]["Row"]>;
         Relationships: [];
       };
       voice_story_events: {
@@ -867,6 +843,10 @@ export type Database = {
         Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request" }>;
       };
       join_or_request_discovery_community: { Args: { target_community_id: string }; Returns: "joined" | "requested" | "already_member" };
+      set_community_discovery_listing: {
+        Args: { target_community_id: string; next_listed: boolean; next_category?: string | null; next_join_policy?: string | null };
+        Returns: Database["public"]["Tables"]["communities"]["Row"][];
+      };
       list_discovery_review_queue: {
         Args: { status_filter?: string | null; result_limit?: number };
         Returns: Array<{ community_id: string; community_name: string; description: string | null; icon_url: string | null; category: string | null; content_flags: string[]; review_status: "pending" | "approved" | "rejected" | "hidden" | "suspended"; report_count: number; submitted_at: string; reviewed_at: string | null }>;
@@ -884,6 +864,8 @@ export type Database = {
       list_friend_suggestions: { Args: { result_limit?: number }; Returns: Array<{ user_id: string; display_name: string; username: string; avatar_url: string | null; mutual_community_count: number; followed_by_current_user: boolean }> };
       set_my_friend_presence: { Args: { target_status: string; share_presence: boolean }; Returns: undefined };
       list_friend_presence: { Args: { target_user_ids: string[] }; Returns: Array<{ user_id: string; status: string; status_text: string; last_seen_at: string | null }> };
+      list_direct_conversation_presence: { Args: { target_user_ids: string[] }; Returns: Array<{ user_id: string; status: string; status_text: string; last_seen_at: string | null }> };
+      shares_active_direct_conversation: { Args: { viewer_id: string; other_user_id: string }; Returns: boolean };
       block_user: { Args: { target_user_id: string }; Returns: boolean };
       unblock_user: { Args: { target_user_id: string }; Returns: boolean };
       list_blocked_users: { Args: Record<string, never>; Returns: Array<{ user_id: string; display_name: string; username: string; blocked_at: string }> };
@@ -924,8 +906,6 @@ export type Database = {
         Returns: Array<Database["public"]["Tables"]["communities"]["Row"]>;
       };
       community_voice_rooms_enabled: { Args: { target_community_id: string }; Returns: boolean };
-      is_active_community_media_member: { Args: { target_community_id: string; target_user_id?: string | null }; Returns: boolean };
-      list_visible_voice_rooms: { Args: { target_community_id?: string | null }; Returns: Array<{ community_id: string; channel_id: string; channel_name: string; channel_topic: string | null; channel_private: boolean; can_join: boolean; can_publish_audio: boolean; can_share_screen: boolean }> };
       authorize_livekit_room: { Args: { target_community_id: string; target_channel_id: string; target_intent: "voice" | "screen" }; Returns: Array<{ community_id: string; channel_id: string; community_kind: Database["public"]["Enums"]["community_kind"]; channel_private: boolean; can_publish_audio: boolean; can_publish_screen: boolean }> };
       authorize_livekit_voice_moderation: { Args: { target_community_id: string; target_channel_id: string; target_user_id: string; target_action: "mute" | "remove" }; Returns: Array<{ community_id: string; channel_id: string; moderated_user_id: string; action: "mute" | "remove" }> };
       record_livekit_voice_moderation: { Args: { target_community_id: string; target_channel_id: string; target_user_id: string; target_action: "mute" | "remove" }; Returns: string };
@@ -1015,6 +995,9 @@ export type Database = {
       update_profile_privacy_v3:{Args:{next_visibility:string;next_show_online_status:boolean;next_show_location:boolean;next_show_timezone:boolean;next_show_activity:boolean;next_show_media:boolean;next_show_communities:boolean;next_show_friends:boolean;next_show_follows:boolean;next_show_audio:boolean};Returns:boolean};
       get_profile_privacy_projection_v3:{Args:{target_user_id:string};Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";can_view_profile:boolean;show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;show_communities:boolean;show_friends:boolean;show_follows:boolean;show_audio:boolean;location:string|null;timezone:string|null}>};
       get_profile_domain_v1:{Args:{target_user_id:string;result_limit?:number};Returns:Json};
+      get_profile_media_v1:{Args:{target_user_id:string};Returns:Json};
+      commit_profile_media_v1:{Args:{target_kind:string;target_path:string;target_thumbnail_path:string;target_content_hash:string;expected_version:number};Returns:Json};
+      remove_profile_media_v1:{Args:{target_kind:string;expected_version:number};Returns:Json};
       update_own_profile_domain:{Args:{profile_patch:Json};Returns:Json};
       meeting_role_for_user:{Args:{target_room_id:string;target_user_id:string};Returns:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest"};
       can_view_meeting_room:{Args:{target_room_id:string};Returns:boolean};
@@ -1089,36 +1072,6 @@ export type Database = {
         Args: { cursor_created_at?: string | null; cursor_mention_id?: string | null; source_types?: string[] | null; community_filter?: string | null; result_limit?: number };
         Returns: Array<Pick<Database["public"]["Tables"]["content_mentions"]["Row"], "id" | "source_type" | "source_id" | "parent_source_id" | "community_id" | "channel_id" | "author_id" | "mentioned_user_id" | "preview" | "source_created_at" | "source_updated_at" | "visibility_context">>;
       };
-      get_feed_page: {
-        Args: {
-          feed_tab?: "feed" | "friends"; cursor_group_priority?: number | null; cursor_final_score?: number | null;
-          cursor_created_at?: string | null; cursor_feed_item_id?: string | null; as_of_input?: string | null;
-          source_filters?: Array<"text_message" | "radio_session" | "radio_comment" | "podcast_episode" | "podcast_comment"> | null;
-          unread_only?: boolean; saved_only?: boolean; result_limit?: number; community_scope?: string | null;
-        };
-        Returns: Array<{
-          feed_item_id:string;source_type:"text_message"|"radio_session"|"radio_comment"|"podcast_episode"|"podcast_comment";
-          source_id:string;parent_source_id:string|null;community_id:string|null;channel_id:string|null;author_id:string;
-          content_kind:"text_only"|"image_only"|"text_image"|"video_only"|"text_video"|"image_video"|"text_image_video"|null;
-          base_score:number;source_created_at:string;source_updated_at:string;unique_external_reactors:number;unique_external_commenters:number;
-          additional_reply_count:number;unique_external_savers:number;unique_external_viewers:number;external_supporter_count:number;
-          reaction_score:number;comment_score:number;save_score:number;view_score:number;raw_score:number;score_version:number;
-          is_direct_mention:boolean;is_friend_author:boolean;is_friend_engaged:boolean;is_unread:boolean;is_saved:boolean;
-          relevance_score:number;freshness_decay:number;final_score:number;group_priority:number;ranking_as_of:string;
-          author_display_name:string;author_username:string;author_avatar_url:string|null;community_name:string|null;community_icon_url:string|null;
-        }>;
-      };
-      get_feed_item_metadata: {
-        Args: { target_feed_item_ids: string[] };
-        Returns: Array<{ feed_item_id:string;source_payload:Json;reaction_summary:Json;commenter_ids:string[];comment_count:number }>;
-      };
-      get_feed_item_metadata_v2: {
-        Args:{target_feed_item_ids:string[]};
-        Returns:Array<{feed_item_id:string;source_payload:Json;reaction_summary:Json;commenter_ids:string[];comment_count:number;comment_previews:Json}>;
-      };
-      get_feed_author_verifications:{Args:{target_user_ids:string[]};Returns:Array<{user_id:string;verification_type:"verified_user"|"picom_staff"|"verified_bot"}>};
-      set_feed_user_state_v1: { Args: { target_feed_item_id:string;target_action:"read"|"save"|"unsave"|"hide"|"seen"|"opened" }; Returns:Json };
-      record_feed_impressions_v1: { Args: { target_session_id:string;target_feed_item_ids:string[];target_positions:number[];target_feed_mode:"feed"|"friends";target_as_of:string }; Returns:number };
       list_ranked_unified_feed: {
         Args: { feed_mode?: "popular" | "following"; ranking_epoch_input?: string; cursor_rank?: number | null; cursor_created_at?: string | null; cursor_feed_item_id?: string | null; source_types?: string[] | null; created_after?: string | null; unread_only?: boolean; saved_only?: boolean; result_limit?: number };
         Returns: Array<Database["public"]["Views"]["unified_content_feed_view"]["Row"] & { reaction_count: number; comment_count: number; listener_count: number; is_unread: boolean; is_saved: boolean; is_follow_related: boolean; ranking_score: number; ranking_epoch: string }>;

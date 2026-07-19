@@ -1,9 +1,11 @@
-import { Track, type Room } from "livekit-client";
+import type { Room } from "livekit-client";
+
+const SCREEN_SHARE_SOURCE = "screen_share";
 
 export function applySingleScreenShareSubscription(activeRoom: Room, requestedId: string | null): string | null {
   const publications: Array<{ id: string; setSubscribed: (subscribed: boolean) => void }> = [];
   activeRoom.remoteParticipants.forEach((participant) => participant.videoTrackPublications.forEach((publication) => {
-    if (publication.source === Track.Source.ScreenShare) publications.push({ id: `remote:${participant.identity}:${publication.trackSid}`, setSubscribed: (subscribed) => publication.setSubscribed(subscribed) });
+    if (publication.source === SCREEN_SHARE_SOURCE) publications.push({ id: `remote:${participant.identity}:${publication.trackSid}`, setSubscribed: (subscribed) => publication.setSubscribed(subscribed) });
   }));
   const requestedIsLocal = Boolean(requestedId?.startsWith("local:"));
   const selectedId = requestedIsLocal ? null : requestedId && publications.some((item) => item.id === requestedId) ? requestedId : publications[0]?.id ?? null;

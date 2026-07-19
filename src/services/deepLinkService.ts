@@ -5,9 +5,11 @@ export type DeepLinkAction =
   | { type: "podcast"; communityId: string; episodeId: string }
   | { type: "meeting"; communityId: string; channelId?: string; roomId: string; sessionId?: string; messageId?: string; inviteToken?: string }
   | { type: "meetingChat"; communityId: string; channelId: string; roomId: string; sessionId?: string; messageId?: string }
+  | { type: "authCallback"; code?: string; error?: string }
   | { type: "passwordRecovery"; code?: string; error?: string }
   | { type: "emailVerification"; code?: string; error?: string }
-  | { type: "friends" };
+  | { type: "friends" }
+  | { type: "directMessage"; conversationId: string };
 
 export type DeepLinkParseResult =
   | { ok: true; url: string; action: DeepLinkAction }
@@ -76,6 +78,16 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   const route = parsed.hostname;
   const segments = parsed.pathname.split("/").filter(Boolean);
+
+  if (route === "auth" && segments.length === 1 && segments[0] === "callback" && !parsed.hash) {
+    const allowedKeys = new Set(["code", "error", "error_description"]);
+    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+    const code = parsed.searchParams.get("code") ?? undefined;
+    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+    if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: raw, action: { type: "authCallback", code } };
+    if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: "authCallback", error } };
+    return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+  }
 
   if (route === "auth" && segments.length === 1 && segments[0] === "reset-password" && !parsed.hash) {
     const allowedKeys = new Set(["code", "type", "error", "error_description"]);
@@ -148,6 +160,10 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   if (route === "friends" && segments.length === 0) {
     return { ok: true, url: "picom://friends", action: { type: "friends" } };
+  }
+
+  if (route === "dm" && segments.length === 1 && isSafeSegment(segments[0]) && !parsed.search && !parsed.hash) {
+    return { ok: true, url: `picom://dm/${segments[0]}`, action: { type: "directMessage", conversationId: segments[0] } };
   }
 
   return { ok: false, reason: "UNSUPPORTED_DEEP_LINK_ROUTE" };

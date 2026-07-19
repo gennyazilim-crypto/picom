@@ -32,7 +32,6 @@ using (
     else false
   end
 );
-
 drop policy if exists "picom members send private realtime topics" on realtime.messages;
 create policy "picom members send private realtime topics"
 on realtime.messages

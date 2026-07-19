@@ -1,22 +1,22 @@
 # Picom Installer License Notice
 
-**Placeholder - legal review required before public distribution.**
+Installer acceptance is wired to the public documents on **picom.gg**:
 
-Picom's final project license and installer terms have not been approved in this repository. This file exists to define the installer integration point without claiming a license.
-
-- Do not distribute this placeholder as final legal terms.
-- Preserve `THIRD_PARTY_NOTICES.md`, including Coolicons attribution.
-- Do not add proprietary or third-party assets without documented rights.
-- A reviewed final license may be shown by the Windows installer only after product/legal approval.
+- Terms of Service: https://picom.gg/terms
+- Security & Privacy: https://picom.gg/security
+- Privacy Policy: https://picom.gg/privacy
 
 ## Installer integration status
 
-The current NSIS, DMG, AppImage, and DEB configurations do not present this
-placeholder as accepted terms. Do not add a package `license` field or installer
-acceptance checkbox until the operator identity, governing terms, effective
-date, consent evidence, and applicable regional requirements are approved.
+Windows NSIS (`electron-builder.yml` → `nsis.license`) presents
+`assets/installer/windows/license.html` (plus `license_en.html` /
+`license_tr.html`) with the standard MUI **I Agree** checkbox before install
+continues.
 
-The current legal review set is indexed in
-`docs/legal/installer-legal-documents.md`. Third-party license notices remain a
-separate attribution obligation and must ship according to the final packaging
-review even when Picom's own license remains undecided.
+- Preserve `THIRD_PARTY_NOTICES.md`, including Coolicons attribution.
+- Do not add proprietary or third-party assets without documented rights.
+- Product/legal owners should keep picom.gg terms/security pages current; the
+  installer links to those URLs rather than embedding full legal text.
+
+The legal draft set remains indexed in
+`docs/legal/installer-legal-documents.md` for engineering reference.

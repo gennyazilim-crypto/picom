@@ -38,6 +38,4 @@ $$;
 
 revoke all on function public.consume_current_user_action_rate_limit(text) from public,anon;
 grant execute on function public.consume_current_user_action_rate_limit(text) to authenticated;
-comment on function public.consume_current_user_action_rate_limit(text) is 'Canonical content-free per-user action limiter using an unambiguous timestamptz observation point.';
-
-commit;
+comment on function public.consume_current_user_action_rate_limit(text) is 'Canonical content-free per-user action limiter using an unambiguous timestamptz observation point.';;

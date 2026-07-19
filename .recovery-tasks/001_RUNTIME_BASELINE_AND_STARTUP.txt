@@ -1,0 +1,19 @@
+TASK 001 - RUNTIME BASELINE AND STARTUP BLOCKERS
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Audit package scripts, Electron main/preload, App startup, auth hydration, data source selection, diagnostics, migrations, functions, and git state.
+Run npm ci, typecheck, mock smoke, Supabase API regression, build, QA smoke, and Electron dev.
+Capture the first real renderer failure. Check refresh, session restore, hook order, duplicate subscriptions, stale mock IDs, and white screen.
+Fix only startup blockers, broken imports, auth races, invalid early queries, duplicate subscriptions, and preload/runtime failures.
+Create docs/live-system-audit.md with status for auth, profile, friendship, community, chat, DM, Feed, Storage, Realtime, and LiveKit.
+Acceptance: Electron starts; refresh has no crash/login flash; hosted queries never use fallback IDs.

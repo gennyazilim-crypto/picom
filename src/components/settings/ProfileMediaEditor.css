@@ -1,1 +1,57 @@
-.profile-media-editor{display:grid;gap:10px}.profile-media-editor-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:12px}.profile-media-slot{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:9px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-soft)}.profile-media-preview{grid-column:1/-1;height:112px;display:grid;place-items:center;overflow:hidden;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text-muted)}.profile-media-slot.avatar .profile-media-preview{width:112px;border-radius:50%}.profile-media-preview img{width:100%;height:100%;display:block;object-fit:cover}.profile-media-copy{grid-column:1/-1;min-width:0;display:grid;gap:3px}.profile-media-copy strong{color:var(--text-primary)}.profile-media-copy small{color:var(--text-muted);line-height:1.4}.profile-media-choose,.profile-media-slot>button{min-height:32px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-secondary);font:inherit;cursor:pointer}.profile-media-choose input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.profile-media-slot>button:disabled,.profile-media-choose:has(input:disabled){opacity:.5;cursor:not-allowed}.profile-media-slot .profile-media-remove{color:var(--danger)}.profile-media-progress{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;color:var(--text-muted);font-size:11px;text-transform:capitalize}.profile-media-progress progress{width:100%;height:6px;accent-color:var(--accent)}.profile-media-slot>p{grid-column:1/-1;margin:0;color:var(--danger);font-size:12px}@media(max-width:1280px){.profile-media-editor-grid{grid-template-columns:1fr}.profile-media-slot.avatar .profile-media-preview{width:96px;height:96px}}
+.profile-media-editor { display: grid; gap: 16px; min-width: 0; }
+.profile-media-editor > header h3 { margin: 4px 0; color: var(--text-strong); }
+.profile-media-editor > header p { margin: 0; color: var(--text-muted); max-width: 680px; }
+.profile-media-card-grid { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(420px, 1.2fr); gap: 14px; min-width: 0; }
+.profile-media-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  box-shadow: var(--shadow-card);
+}
+.profile-media-card:focus-within { border-color: var(--focus); }
+.profile-media-card-copy { display: grid; gap: 3px; }
+.profile-media-card-copy strong { color: var(--text-strong); }
+.profile-media-card-copy span, .profile-media-drop-hint { color: var(--text-muted); font-size: 12px; }
+.profile-media-avatar-preview { min-height: 132px; display: grid; place-items: center; border-radius: 14px; background: var(--surface); border: 1px dashed var(--border); }
+.profile-media-cover-preview { width: 100%; height: 150px; border-radius: 14px; border: 1px solid var(--border); }
+.profile-media-actions { display: flex; gap: 8px; flex-wrap: nowrap; }
+.profile-media-drop-hint { margin: 0; display: flex; align-items: center; gap: 7px; }
+.profile-media-notice { padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; }
+.profile-media-notice.success { color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
+.profile-media-notice.error { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.profile-media-notice.info { color: var(--text-muted); }
+.profile-media-progress { display: grid; gap: 6px; }
+.profile-media-progress > div { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 12px; text-transform: capitalize; }
+.profile-media-progress progress { width: 100%; accent-color: var(--accent); }
+.profile-media-dialog-backdrop { position: fixed; inset: 0; z-index: 180; display: grid; place-items: center; padding: 48px; background: color-mix(in srgb, var(--window-backdrop) 72%, transparent); backdrop-filter: blur(10px); }
+.profile-media-crop-dialog, .profile-media-confirm-dialog {
+  width: min(760px, calc(100vw - 96px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-app);
+}
+.profile-media-crop-dialog > header { display: flex; align-items: center; justify-content: space-between; }
+.profile-media-crop-dialog h3, .profile-media-confirm-dialog h3 { margin: 3px 0 0; }
+.profile-media-crop-stage { position: relative; width: 100%; height: 340px; overflow: hidden; display: grid; place-items: center; border-radius: 16px; background: var(--window-backdrop); border: 1px solid var(--border); }
+.profile-media-crop-stage.avatar { width: 340px; justify-self: center; border-radius: 50%; }
+.profile-media-crop-stage img { width: 100%; height: 100%; object-fit: cover; transform-origin: center; will-change: transform; }
+.profile-media-crop-stage > span { position: absolute; inset: 0; border: 2px solid color-mix(in srgb, var(--accent) 70%, white); border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--window-backdrop) 55%, transparent); }
+.profile-media-crop-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.profile-media-crop-controls label { display: grid; gap: 6px; color: var(--text-muted); font-size: 12px; }
+.profile-media-crop-controls input { width: 100%; accent-color: var(--accent); }
+.profile-media-crop-dialog footer { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 8px; align-items: center; }
+.profile-media-confirm-dialog { width: 420px; text-align: center; justify-items: center; }
+.profile-media-confirm-dialog > svg { color: var(--danger); }
+.profile-media-confirm-dialog p { margin: 0; color: var(--text-muted); }
+.profile-media-confirm-dialog footer { display: flex; gap: 8px; margin-top: 4px; }

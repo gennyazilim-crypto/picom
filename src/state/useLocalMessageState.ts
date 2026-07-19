@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import type { Attachment, Channel, ChannelCategory, ChannelId, ChannelType, Community, Member, Message, UserId } from "../types/community";
+import type { Attachment, Channel, ChannelCategory, ChannelId, ChannelType, Community, Member, Message, Role, UserId } from "../types/community";
 import type { PollData } from "../types/polls";
+import { isCommunityIconImage } from "../utils/generatedIdentity";
 
 type AppendLocalMessageInput = {
   id?: string;
@@ -333,8 +334,11 @@ export function useLocalMessageState(initialCommunities: Community[]) {
         community.id === communityId
           ? {
               ...community,
+              // Match by id only: message ids are unique across the community, and realtime
+              // DELETE payloads carry just the id (no channel), so a channel condition would
+              // silently drop hard-deletes for any channel other than the active one.
               messages: community.messages.map((message) =>
-                message.id === id && message.channelId === channelId
+                message.id === id
                   ? {
                       ...message,
                       body: "",
@@ -429,8 +433,30 @@ export function useLocalMessageState(initialCommunities: Community[]) {
   }, []);
 
   const replaceCommunities = useCallback((nextCommunities: Community[]) => {
-    setCommunities(nextCommunities);
+    setCommunities((current) => {
+      const previousById = new Map(current.map((community) => [community.id, community]));
+      return nextCommunities.map((next) => {
+        const previous = previousById.get(next.id);
+        if (!previous) return next;
+        // Supabase list payloads ship without sidebar categories; keep any already-hydrated channel tree.
+        const categories = next.categories.length > 0 ? next.categories : previous.categories;
+        const messages = next.messages.length > 0 ? next.messages : previous.messages;
+        const members = next.members.length > 1 || !previous.members.length ? next.members : previous.members;
+        // Keep a previously resolved logo URL if the list payload briefly omits icon_url.
+        const icon =
+          isCommunityIconImage(next.icon) || !isCommunityIconImage(previous.icon)
+            ? next.icon
+            : previous.icon;
+        return { ...next, icon, categories, messages, members };
+      });
+    });
     return nextCommunities;
+  }, []);
+
+  const patchCommunity = useCallback((communityId: string, patch: Partial<Community>) => {
+    setCommunities((current) =>
+      current.map((community) => (community.id === communityId ? { ...community, ...patch } : community)),
+    );
   }, []);
 
   const replaceCommunityCategories = useCallback((communityId: string, categories: ChannelCategory[]) => {
@@ -458,6 +484,12 @@ export function useLocalMessageState(initialCommunities: Community[]) {
   const replaceCommunityMembers = useCallback((communityId: string, members: Member[]) => {
     setCommunities((current) =>
       current.map((community) => community.id === communityId ? { ...community, members } : community),
+    );
+  }, []);
+
+  const replaceCommunityRoles = useCallback((communityId: string, roles: Role[]) => {
+    setCommunities((current) =>
+      current.map((community) => community.id === communityId ? { ...community, roles } : community),
     );
   }, []);
 
@@ -619,8 +651,10 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     moveChannel,
     addChannel,
     replaceCommunities,
+    patchCommunity,
     replaceCommunityCategories,
     replaceChannelMessages,
     replaceCommunityMembers,
+    replaceCommunityRoles,
   };
 }

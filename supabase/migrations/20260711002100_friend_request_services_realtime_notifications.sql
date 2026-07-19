@@ -54,6 +54,4 @@ end;
 $$;
 
 comment on table public.friend_request_notifications is
-  'Recipient-private friend lifecycle notifications. Desktop/inbox routing additionally respects local user notification preferences.';
-
-commit;
+  'Recipient-private friend lifecycle notifications. Desktop/inbox routing additionally respects local user notification preferences.';;

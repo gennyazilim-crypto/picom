@@ -11,7 +11,6 @@ create table if not exists public.community_voice_usage_daily (
 alter table public.community_voice_usage_daily enable row level security;
 revoke all on public.community_voice_usage_daily from public, anon, authenticated;
 comment on table public.community_voice_usage_daily is 'Trusted-backend aggregate voice counters only. This table intentionally has no user identifiers.';
-
 create or replace function public.can_view_community_insights(target_community_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select auth.uid() is not null and (
@@ -19,7 +18,6 @@ returns boolean language sql stable security definer set search_path = public as
     or exists (select 1 from public.community_members membership join public.roles role on role.id = membership.role_id and role.community_id = membership.community_id where membership.community_id = target_community_id and membership.user_id = auth.uid() and (role.level >= 80 or coalesce((role.permissions ->> 'viewInsights')::boolean, false) or coalesce((role.permissions ->> 'manageCommunity')::boolean, false)))
   );
 $$;
-
 create or replace function public.get_community_insights_v2(target_community_id uuid, window_days integer default 30)
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 declare safe_window integer := least(greatest(coalesce(window_days, 30), 1), 90); window_start timestamptz; result jsonb;

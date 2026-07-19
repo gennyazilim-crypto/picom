@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Channel, Community, Member, Role } from "../types/community";
 import { supportsTextChannels } from "../types/community";
 import { communityNavigationService } from "../services/community/communityNavigationService";
@@ -83,6 +83,18 @@ export function useMvpAppState(communities: Community[]) {
       : getShellChannel(activeCommunity),
     [activeChannelId, activeCommunity, channels],
   );
+
+  useEffect(() => {
+    const selectedCommunity = safeCommunities.find((community) => community.id === activeCommunityId);
+    const nextCommunity = selectedCommunity ?? safeCommunities[0];
+    if (!nextCommunity) return;
+
+    const nextChannelId = communityNavigationService.resolveTextChannelId(nextCommunity, activeChannelId)
+      ?? (nextCommunity.kind === "text" ? FALLBACK_CHANNEL.id : communityNavigationService.getShellChannelId(nextCommunity));
+
+    if (nextCommunity.id !== activeCommunityId) setActiveCommunityId(nextCommunity.id);
+    if (nextChannelId !== activeChannelId) setActiveChannelId(nextChannelId);
+  }, [activeChannelId, activeCommunityId, safeCommunities]);
 
   const selectChannel = useCallback(
     (id: string) => {

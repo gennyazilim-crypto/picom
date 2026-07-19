@@ -1,5 +1,3 @@
-begin;
-
 create or replace function public.assign_radio_session_host(
   target_session_id uuid,
   target_user_id uuid,
@@ -124,5 +122,4 @@ grant execute on function public.transition_radio_session(uuid, text, text) to a
 grant execute on function public.moderate_radio_listener(uuid, uuid, text) to authenticated;
 
 comment on function public.transition_radio_session(uuid, text, text) is 'Permission-checked Radio lifecycle transition. End and cancel require the exact session title.';
-comment on function public.moderate_radio_listener(uuid, uuid, text) is 'Host/producer-only active listener moderation with audit evidence.';
-commit;
+comment on function public.moderate_radio_listener(uuid, uuid, text) is 'Host/producer-only active listener moderation with audit evidence.';;

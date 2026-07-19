@@ -116,4 +116,4 @@ end
 $$;
 revoke all on function public.create_podcast_community_with_defaults(uuid,text,text,text,text,text,boolean) from public,anon;
 grant execute on function public.create_podcast_community_with_defaults(uuid,text,text,text,text,text,boolean) to authenticated;
-comment on function public.create_podcast_community_with_defaults(uuid,text,text,text,text,text,boolean) is 'Atomically creates an idempotent Podcast community, publishing roles, private-library settings, and no primary text channels.';
+comment on function public.create_podcast_community_with_defaults(uuid,text,text,text,text,text,boolean) is 'Atomically creates an idempotent Podcast community, publishing roles, private-library settings, and no primary text channels.';;

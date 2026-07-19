@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.control_meeting_session(
   target_room_id uuid,
   target_session_id uuid,
@@ -51,9 +50,7 @@ begin
   return jsonb_build_object('roomId',target_room_id,'sessionId',target_session_id,'action',control_action,'status',next_status,'locked',next_status='locked','ended',next_status='ended');
 end;
 $$;
-
 revoke all on function public.control_meeting_session(uuid,uuid,text) from public,anon;
 grant execute on function public.control_meeting_session(uuid,uuid,text) to authenticated;
 comment on function public.control_meeting_session(uuid,uuid,text) is 'Host-authorized lock/unlock/end controls with ordered event and audit evidence.';
-
 commit;

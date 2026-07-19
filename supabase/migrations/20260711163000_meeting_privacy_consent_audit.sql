@@ -1,13 +1,11 @@
 -- Task 569: meeting privacy, consent evidence, append-only audit, and retention boundaries.
 begin;
-
 alter table public.audit_log alter column actor_id drop not null;
 alter table public.audit_log add column if not exists actor_kind text not null default 'user';
 alter table public.audit_log add column if not exists event_source text not null default 'backend';
 alter table public.audit_log add column if not exists meeting_event_id uuid references public.meeting_events(id) on delete set null;
 alter table public.audit_log add column if not exists metadata jsonb not null default '{}'::jsonb;
 alter table public.audit_log add column if not exists retention_until timestamptz not null default (now()+interval '730 days');
-
 alter table public.audit_log drop constraint if exists audit_log_action_type_check;
 alter table public.audit_log add constraint audit_log_action_type_check check(action_type in(
   'community_update','channel_create','channel_update','channel_delete','role_change','member_change','moderation_action',
@@ -22,7 +20,6 @@ do $$ begin
   if not exists(select 1 from pg_constraint where conname='audit_log_retention_window_check') then alter table public.audit_log add constraint audit_log_retention_window_check check(retention_until>=created_at); end if;
 end $$;
 create unique index if not exists audit_log_meeting_event_unique on public.audit_log(meeting_event_id) where meeting_event_id is not null;
-
 alter table public.meeting_attendance add column if not exists retention_until timestamptz not null default (now()+interval '365 days');
 alter table public.meeting_events add column if not exists retention_until timestamptz not null default (now()+interval '730 days');
 alter table public.meeting_waiting_entries add column if not exists retention_until timestamptz not null default (now()+interval '90 days');
@@ -34,7 +31,6 @@ do $$ begin
   if not exists(select 1 from pg_constraint where conname='meeting_events_retention_check') then alter table public.meeting_events add constraint meeting_events_retention_check check(retention_until>=occurred_at); end if;
   if not exists(select 1 from pg_constraint where conname='meeting_waiting_retention_check') then alter table public.meeting_waiting_entries add constraint meeting_waiting_retention_check check(retention_until>=requested_at); end if;
 end $$;
-
 create or replace function public.prevent_meeting_event_mutation()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin raise exception 'MEETING_EVENT_APPEND_ONLY' using errcode='P0001'; end;
@@ -42,7 +38,6 @@ $$;
 drop trigger if exists meeting_events_append_only on public.meeting_events;
 create trigger meeting_events_append_only before update or delete on public.meeting_events for each row execute function public.prevent_meeting_event_mutation();
 revoke update,delete,truncate on table public.meeting_events from public,anon,authenticated;
-
 create or replace function public.audit_meeting_event()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_community_id uuid; mapped_action text; safe_reason text;
@@ -68,7 +63,6 @@ end;
 $$;
 drop trigger if exists meeting_event_to_restricted_audit on public.meeting_events;
 create trigger meeting_event_to_restricted_audit after insert on public.meeting_events for each row execute function public.audit_meeting_event();
-
 create or replace function public.audit_meeting_caption_lifecycle()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare event_name text; next_sequence bigint;
@@ -86,7 +80,6 @@ end;
 $$;
 drop trigger if exists meeting_caption_lifecycle_audit on public.meeting_caption_sessions;
 create trigger meeting_caption_lifecycle_audit after insert or update of status on public.meeting_caption_sessions for each row execute function public.audit_meeting_caption_lifecycle();
-
 create or replace function public.record_livekit_meeting_moderation(target_room_id uuid,target_session_id uuid,target_participant_id uuid,target_action text)
 returns uuid language plpgsql security definer set search_path=public,pg_temp as $$
 declare audit_id uuid;target_community_id uuid;
@@ -98,9 +91,7 @@ begin
   return audit_id;
 end;
 $$;
-
 revoke all on function public.prevent_meeting_event_mutation(),public.audit_meeting_event(),public.audit_meeting_caption_lifecycle() from public,anon,authenticated;
-
 comment on table public.meeting_events is 'Append-only safe meeting events. Raw media, transcript text, provider identity, credentials, and message content are forbidden.';
 comment on column public.meeting_attendance.retention_until is 'Technical 365-day floor pending authorized legal retention and legal-hold approval; no automatic purge is enabled.';
 comment on column public.meeting_waiting_entries.retention_until is 'Technical 90-day floor pending authorized legal retention and legal-hold approval; no automatic purge is enabled.';

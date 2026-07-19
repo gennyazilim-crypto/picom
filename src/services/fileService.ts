@@ -98,9 +98,34 @@ export const fileService = {
 
     const files = await Promise.all(
       result.files.map(async (pickedFile) => {
-        const response = await fetch(pickedFile.dataUrl);
-        const blob = await response.blob();
-        return new File([blob], pickedFile.name, { type: pickedFile.type });
+      const separatorIndex = pickedFile.dataUrl.indexOf(",");
+      if (separatorIndex < 0) {
+        throw new Error("The selected image could not be read.");
+      }
+
+      const metadata = pickedFile.dataUrl.slice(0, separatorIndex);
+      const encoded = pickedFile.dataUrl.slice(separatorIndex + 1);
+      const mimeMatch = /^data:([^;,]+)(?:;[^,]*)?;base64$/i.exec(metadata);
+      const mimeType = mimeMatch?.[1] ?? pickedFile.type;
+
+      if (!encoded || !mimeType) {
+        throw new Error("The selected image is empty or has an unsupported format.");
+      }
+
+      const binary = atob(encoded);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+
+      if (bytes.byteLength === 0) {
+        throw new Error("The selected image is empty.");
+      }
+
+      return new File([bytes], pickedFile.name, {
+        type: mimeType,
+        lastModified: Date.now(),
+      });
       })
     );
 

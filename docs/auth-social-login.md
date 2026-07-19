@@ -1,32 +1,72 @@
 # Picom Social Login
 
-## Production decision
+## Production finalization decision
 
-Google and Apple have disabled foundations. Epic and Steam remain unexposed. No provider is production-approved until hosted configuration, recovery, and packaged Windows/Linux/macOS callback evidence pass.
+- **Google:** implementation prepared, production enablement **blocked** until a hosted staging and packaged Windows/Linux/macOS callback test passes. No provider configuration was verified by repository tests.
+- **Apple:** implementation prepared, production enablement **blocked** until Apple Services ID/key/domain configuration, hosted staging and packaged macOS plus Windows/Linux browser-return tests pass.
+- **Steam/Epic:** remain post-MVP/MVP+ decisions and are not approved or exposed.
 
-## Secure shared flow
+Provider flags are availability hints, not proof of configuration. Keep them false until provider console, Supabase dashboard, redirect allowlist, PKCE callback, account linking/recovery, rate/abuse behavior and support ownership are verified. After provider login, `ensureProfile` creates only an allowlisted Picom profile. The normal versioned Terms/Privacy acceptance gate still applies; provider consent never substitutes for Picom legal acceptance.
 
-1. Electron main creates a random expiring attempt with ID, state, nonce, provider, and purpose.
-2. Renderer passes the generated callback URL to Supabase signInWithOAuth or linkIdentity.
-3. Authorization opens only in the system browser.
-4. Supabase owns provider state, PKCE, code exchange, and Picom session authority.
-5. Electron validates attempt ID, state, nonce, provider, purpose, expiry, and code/error.
-6. Main persists one validated result through OS-protected storage where available.
-7. Renderer pulls or receives the typed result, exchanges the code, then acknowledges it.
-8. Duplicate, mismatched, expired, canceled, and replayed callbacks fail closed.
+Picom uses Supabase Auth OAuth for Google and Apple. The Electron renderer receives only the public Supabase URL and anon key. Provider client secrets stay in the Supabase dashboard.
 
-No token, assertion, subject, or secret is accepted in the custom protocol.
+## Shared configuration
 
-## Protected sessions
+1. Set `VITE_DATA_SOURCE=supabase`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` in `.env.local`.
+2. Add `picom://auth/callback` to the Supabase Authentication redirect URL allowlist.
+3. Keep `VITE_SUPABASE_OAUTH_REDIRECT_URL=picom://auth/callback`.
+4. Ensure the packaged app registers the `picom` protocol. Picom already forwards validated protocol URLs through the preload deep-link bridge.
 
-Supabase uses an asynchronous Electron storage adapter instead of ordinary renderer localStorage. Main encrypts at rest with Electron safeStorage when the OS backend is suitable. If protection is unavailable, Picom uses memory-only process storage and does not write plaintext credentials. Linux basic_text is not protected persistence.
+The flow uses PKCE: Picom asks Supabase for an authorization URL, opens it in the system browser, accepts only a bounded `picom://auth/callback?code=...` link, and calls `exchangeCodeForSession`. Supabase continues to own session persistence and refresh.
 
-## Providers and linking
+## Google provider
 
-Google and Apple use built-in Supabase providers and stay disabled until their own tasks pass. Epic requires an approved compatible custom OAuth/OIDC contract. Steam requires official direct OAuth evidence or a trusted server OpenID 2.0/Steamworks bridge.
+1. Create an OAuth web application in Google Cloud.
+2. Add the Supabase callback URL shown on Authentication > Providers > Google as an authorized redirect URI.
+3. Enter the Google client ID and client secret in Supabase. Never put the secret in a `VITE_` variable.
+4. Enable Google in Supabase and set `VITE_SUPABASE_GOOGLE_OAUTH_ENABLED=true`.
 
-Supabase identities remain authoritative. Linking still requires Task 636 recent-auth, safe unlink, last-method, collision, recovery, and audit controls. Provider consent never replaces Picom legal acceptance or onboarding. Provider metadata cannot grant verification, roles, permissions, or ownership.
+## Apple provider
 
-## Operations
+1. Create an Apple Services ID and Sign in with Apple key in the Apple Developer portal.
+2. Configure the Supabase Apple callback domain and return URL shown in the provider panel.
+3. Add the Services ID, team ID, key ID, and generated secret in Supabase only.
+4. Enable Apple in Supabase and set `VITE_SUPABASE_APPLE_OAUTH_ENABLED=true`.
 
-Secrets never use VITE_ variables. Provider access tokens are not persisted. Logs redact callback and session material. Task 641 alone may enable a provider.
+When Apple is not configured, Picom keeps the Apple button visible but disabled with a setup explanation.
+
+## Account linking
+
+- Supabase Auth identities remain the source of truth for linked Google/Apple identities.
+- Picom must not silently merge two existing accounts only because provider metadata contains the same display name.
+- Email-based automatic linking is allowed only when Supabase has verified the provider email and the project linking policy explicitly permits it.
+- A future account-settings linking action must require an active session and recent authentication before adding or removing an identity.
+- Test account recovery before enabling a provider for external beta users; users must retain at least one working sign-in method.
+
+## Steam and Epic scope
+
+- Steam login is MVP+ work requiring a custom OpenID flow and a trusted backend or Supabase Edge Function. It is not implemented in the Full MVP social login.
+- Epic login is MVP+ work requiring custom OAuth/Epic Online Services integration and server-side credential handling. It is not implemented in the Full MVP social login.
+- Picom does not expose disabled Steam/Epic buttons or claim these providers are available in this beta.
+
+## Local development
+
+- Use a development Supabase project and the same `picom://auth/callback` allowlist entry.
+- On Windows/Linux, install/register the development Electron protocol handler before testing a browser return.
+- On macOS, launch the app once from the built bundle so Launch Services knows the protocol registration.
+- Mock mode keeps email/password development auth available and disables social providers safely.
+
+## Production
+
+- Use separate provider applications for production.
+- Restrict OAuth domains and Supabase redirect URLs to known Picom environments.
+- Package metadata must retain the `picom` protocol registration.
+- Rotate provider secrets in Google/Apple and Supabase; never ship them in Electron assets.
+- Verify a newly authenticated provider user receives a profile, cannot bypass current Terms/Privacy acceptance, and can recover the account before enabling the provider flag.
+
+## Troubleshooting
+
+- Disabled button: verify Supabase mode, public URL/anon key, and the matching provider availability flag.
+- Browser opens but Picom does not return: verify OS protocol registration and the Supabase redirect allowlist.
+- Invalid callback: ensure no proxy rewrites the query and that only `code`, `error`, or `error_description` is returned.
+- Signed in without a profile: apply the auth profile trigger migration; Picom also performs a safe own-profile fallback insert after callback.

@@ -6,7 +6,7 @@ const styles = readFileSync("src/components/DirectMessagesView.css", "utf8");
 for (const marker of ["DirectMessageGroup", "groupDirectMessages", "direct-message-stack", "details-open", "ImagePreviewModal", "aria-pressed={detailsOpen}"]) {
   if (!component.includes(marker)) throw new Error(`DM layout component marker missing: ${marker}`);
 }
-for (const marker of ["grid-template-columns: minmax(260px, 280px) minmax(0, 1fr) 312px", "max-width: 880px", "justify-content: flex-end", "@media (max-width: 1320px)", ".direct-messages-view.details-open .dm-details-panel", "overflow: hidden", "min-height: 100%"] ) {
+for (const marker of ["grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);", "grid-template-columns: minmax(260px, 280px) minmax(0, 1fr) 300px;", "max-width: 880px", "justify-content: flex-end", "@media (max-width: 1320px)", ".direct-messages-view.details-open .dm-details-panel", "overflow: hidden", "min-height: 100%"] ) {
   if (!styles.includes(marker)) throw new Error(`DM layout style marker missing: ${marker}`);
 }
 if (/supabase\.from|dangerouslySetInnerHTML/.test(component)) throw new Error("DM view must not bypass services or render unsafe HTML.");

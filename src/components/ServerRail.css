@@ -1,0 +1,80 @@
+/* Pin the utility actions to the bottom of the server rail so they
+   stay visible no matter how many communities scroll in the list above. */
+.server-rail-footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding-top: 12px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
+.server-button__avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.server-button--avatar {
+  overflow: hidden;
+  padding: 0;
+  color: transparent;
+  background: var(--surface-soft);
+}
+
+.server-button--avatar:hover,
+.server-button--avatar.active {
+  color: transparent;
+}
+
+.server-button__monogram {
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Add community — prominent teal CTA */
+.server-button--add {
+  color: #fff;
+  background: linear-gradient(145deg, var(--picom-aqua), var(--picom-teal));
+  border: 1px solid color-mix(in srgb, var(--picom-teal) 55%, #fff);
+  box-shadow:
+    0 8px 18px color-mix(in srgb, var(--picom-teal) 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 28%, transparent);
+}
+
+.server-button--add:hover {
+  color: #fff;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--picom-aqua) 78%, #fff), var(--picom-teal));
+  border-color: color-mix(in srgb, var(--picom-aqua) 40%, var(--picom-teal));
+  box-shadow:
+    0 12px 24px color-mix(in srgb, var(--picom-teal) 34%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 34%, transparent);
+  transform: translateY(-1px);
+}
+
+.server-button--add:active {
+  transform: translateY(0);
+  filter: brightness(0.96);
+}
+
+:root[data-theme="dark"] .server-button--add {
+  color: var(--text-on-accent);
+  background: linear-gradient(145deg, var(--picom-aqua), var(--picom-teal));
+  border-color: color-mix(in srgb, var(--picom-aqua) 45%, transparent);
+}
+
+/* Make the Discover action read as the anchored entry point, not just another server icon. */
+.server-button--discover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.server-button--discover:hover {
+  color: var(--text-on-accent);
+  background: var(--accent);
+}

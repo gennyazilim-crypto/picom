@@ -1,5 +1,3 @@
-begin;
-
 create or replace function public.send_direct_message_v3(
   target_conversation_id uuid,
   message_body text,
@@ -123,42 +121,22 @@ returns jsonb language sql security definer set search_path=public as $$
   select public.send_direct_message_v3(target_conversation_id,message_body,target_client_message_id,target_reply_to_message_id,'[]'::jsonb);
 $$;
 
-drop policy if exists "dm attachments participant read" on storage.objects;
-drop policy if exists "dm attachments author upload" on storage.objects;
-drop policy if exists "dm attachments author update" on storage.objects;
-drop policy if exists "dm attachments author delete" on storage.objects;
 
-create policy "dm attachments participant read" on storage.objects for select to authenticated using(
-  bucket_id='direct-message-attachments' and (
-    (public.dm_storage_path_uuid(name,3)=auth.uid() and public.can_send_direct_message(public.dm_storage_path_uuid(name,1)))
-    or exists(
-      select 1 from public.direct_message_attachments attachment
-      join public.direct_messages message on message.id=attachment.message_id
-      where attachment.storage_path=name
-        and attachment.id=public.dm_storage_path_uuid(name,2)
-        and message.conversation_id=public.dm_storage_path_uuid(name,1)
-        and message.deleted_at is null
-        and public.is_direct_conversation_participant(message.conversation_id)
-    )
-  )
-);
-create policy "dm attachments author upload" on storage.objects for insert to authenticated with check(
-  bucket_id='direct-message-attachments'
-  and public.dm_storage_path_uuid(name,2) is not null
-  and public.dm_storage_path_uuid(name,3)=auth.uid()
-  and public.can_send_direct_message(public.dm_storage_path_uuid(name,1))
-);
-create policy "dm attachments author update" on storage.objects for update to authenticated
-using(bucket_id='direct-message-attachments' and public.dm_storage_path_uuid(name,3)=auth.uid() and public.is_direct_conversation_participant(public.dm_storage_path_uuid(name,1)))
-with check(bucket_id='direct-message-attachments' and public.dm_storage_path_uuid(name,3)=auth.uid() and public.is_direct_conversation_participant(public.dm_storage_path_uuid(name,1)));
-create policy "dm attachments author delete" on storage.objects for delete to authenticated using(
-  bucket_id='direct-message-attachments' and public.dm_storage_path_uuid(name,3)=auth.uid() and public.is_direct_conversation_participant(public.dm_storage_path_uuid(name,1))
-);
+
+
+
+
+
+
+
+
+
+
+
+
 
 revoke all on function public.send_direct_message_v3(uuid,text,text,uuid,jsonb) from public,anon;
 grant execute on function public.send_direct_message_v3(uuid,text,text,uuid,jsonb) to authenticated;
 
 comment on function public.send_direct_message_v3(uuid,text,text,uuid,jsonb) is
-  'Participant-only idempotent DM send boundary. Rejects payload conflicts and commits validated private attachment metadata with the message.';
-
-commit;
+  'Participant-only idempotent DM send boundary. Rejects payload conflicts and commits validated private attachment metadata with the message.';;

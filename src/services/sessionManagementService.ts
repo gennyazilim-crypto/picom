@@ -30,5 +30,14 @@ export const sessionManagementService={
   },
   subscribeToCurrentSessionRevocation(userId:string,onRevoked:()=>void):()=>void{
     if(dataSourceService.getStatus().isMock)return()=>undefined;const client=getSupabaseClient();if(!client)return()=>undefined;const currentDevice=deviceId();const channel=client.channel(`device-session:${userId}:${currentDevice}`).on("postgres_changes",{event:"UPDATE",schema:"public",table:"user_device_sessions",filter:`user_id=eq.${userId}`},(payload)=>{const row=payload.new as{device_id?:string;revoked_at?:string|null};if(row.device_id===currentDevice&&row.revoked_at)onRevoked()}).subscribe();return()=>{void client.removeChannel(channel)};
-  }
+  },
+  subscribeToDeviceSessionChanges(userId:string,onChange:()=>void):()=>void{
+    if(dataSourceService.getStatus().isMock)return()=>undefined;
+    const client=getSupabaseClient();
+    if(!client||!userId)return()=>undefined;
+    const channel=client.channel(`device-sessions-list:${userId}`)
+      .on("postgres_changes",{event:"*",schema:"public",table:"user_device_sessions",filter:`user_id=eq.${userId}`},()=>{onChange()})
+      .subscribe();
+    return()=>{void client.removeChannel(channel)};
+  },
 };

@@ -19,8 +19,6 @@ export function EditChannelModal({ channel, categories, onClose, onSubmit }: Edi
   const [type, setType] = useState<ChannelType>(channel.type);
   const [topic, setTopic] = useState(channel.topic ?? "");
   const [categoryId, setCategoryId] = useState<string | null>(channel.categoryId ?? categories[0]?.id ?? null);
-  const [isPrivate, setIsPrivate] = useState(Boolean(channel.isPrivate));
-  const [publicReadEnabled, setPublicReadEnabled] = useState(channel.publicReadEnabled ?? !channel.isPrivate);
   const [saving, setSaving] = useState(false);
   const normalizedName = useMemo(() => name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "").replace(/-+/g, "-").slice(0, 80), [name]);
   const dialogRef = useDialogFocusTrap<HTMLFormElement>(onClose);
@@ -30,7 +28,7 @@ export function EditChannelModal({ channel, categories, onClose, onSubmit }: Edi
       event.preventDefault();
       if (!normalizedName || saving) return;
       setSaving(true);
-      try { await onSubmit({ name: normalizedName, type, topic: topic.trim(), categoryId, isPrivate, publicReadEnabled: isPrivate ? false : publicReadEnabled }); } finally { setSaving(false); }
+      try { await onSubmit({ name: normalizedName, type, topic: topic.trim(), categoryId, isPrivate: false, publicReadEnabled: true }); } finally { setSaving(false); }
     }}>
       <header><div><span className="eyebrow">Channel management</span><h2 id="edit-channel-title">Edit #{channel.name}</h2></div><button type="button" className="icon-button" aria-label="Close edit channel" onClick={onClose}><AppIcon name="close" size="md" /></button></header>
       <label>Channel name<input value={name} maxLength={80} autoFocus onChange={(event) => setName(event.target.value)} /><small>Saved as #{normalizedName || "channel-name"}</small></label>
@@ -39,8 +37,6 @@ export function EditChannelModal({ channel, categories, onClose, onSubmit }: Edi
         <label>Category<select value={categoryId ?? ""} onChange={(event) => setCategoryId(event.target.value || null)}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
       </div>
       <label>Topic<textarea value={topic} maxLength={300} rows={3} onChange={(event) => setTopic(event.target.value)} /></label>
-      <label className="channel-management-toggle"><input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} /><span><strong>Private channel</strong><small>Only permitted community members can discover it.</small></span></label>
-      <label className="channel-management-toggle"><input type="checkbox" checked={!isPrivate && publicReadEnabled} disabled={isPrivate} onChange={(event) => setPublicReadEnabled(event.target.checked)} /><span><strong>Allow public reading</strong><small>Visitors may read when community public access is enabled.</small></span></label>
       <footer><button type="button" className="secondary-action" onClick={onClose}>Cancel</button><button type="submit" className="send-button" disabled={!normalizedName || saving}>{saving ? "Saving..." : "Save changes"}</button></footer>
     </form>
   </div>;

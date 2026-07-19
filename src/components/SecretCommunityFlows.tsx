@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Community, Member } from "../types/community";
 import type { CommunityInvitePreview, InviteAcceptanceStatus } from "../services/community/communityInviteService";
 import { communityInviteService } from "../services/community/communityInviteService";
+import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 import { secretCommunityService, type SecretCommunityEligibility, type SecretCommunityInvite, type SecretCommunityInvitePreview, type SecretInviteCampaign } from "../services/community/secretCommunityService";
 import { clipboardService } from "../services/clipboardService";
 import { AppIcon } from "./AppIcon";
@@ -15,26 +16,26 @@ export function SecretCommunityEligibilityPanel({purpose="create",onEligibilityC
     const result=await secretCommunityService.getEligibility();
     if(!result.ok){setMessage(result.error.message);onEligibilityChange(false);return;}
     setEligibility(result.data);
-    onEligibilityChange(result.data.phoneVerified&&result.data.smsVerified&&!result.data.accountSuspended&&(purpose==="join"||!result.data.creationRestricted));
+    onEligibilityChange(result.data.phoneVerified&&result.data.voiceCallVerified&&!result.data.accountSuspended&&(purpose==="join"||!result.data.creationRestricted));
   },[onEligibilityChange,purpose]);
   useEffect(()=>{void load();},[load]);
-  const start=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.startSmsVerification(phone);
-    setMessage(result.ok?"Picom sent a six-digit verification code by SMS.":result.error.message);setBusy(false);};
-  const verify=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.checkSmsVerification(phone,code);
-    if(result.ok){setMessage("Phone and SMS verification completed.");await load();}else setMessage(result.error.message);setBusy(false);};
+  const start=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.startVoiceVerification(phone);
+    setMessage(result.ok?"Picom started the verification call. Enter the spoken code below.":result.error.message);setBusy(false);};
+  const verify=async()=>{setBusy(true);setMessage(null);const result=await secretCommunityService.checkVoiceVerification(phone,code);
+    if(result.ok){setMessage("Phone and voice-call verification completed.");await load();}else setMessage(result.error.message);setBusy(false);};
   return <section className="secret-eligibility" aria-label="Secret community account verification">
-    <header><AppIcon name="lock" size="md"/><div><strong>Verified private access</strong><small>A unique phone number and a completed SMS verification are required.</small></div></header>
+    <header><AppIcon name="lock" size="md"/><div><strong>Verified private access</strong><small>A unique phone number and a completed voice call are required.</small></div></header>
     <ul className="secret-status-list">
       <li className={eligibility?.phoneVerified?"is-ready":""}><span/>Phone ownership {eligibility?.phoneLast4?"ending "+eligibility.phoneLast4:"not verified"}</li>
-      <li className={eligibility?.smsVerified?"is-ready":""}><span/>SMS verification {eligibility?.smsVerified?"complete":"required"}</li>
+      <li className={eligibility?.voiceCallVerified?"is-ready":""}><span/>Voice-call verification {eligibility?.voiceCallVerified?"complete":"required"}</li>
       <li className={!eligibility?.accountSuspended?"is-ready":"is-blocked"}><span/>Account {eligibility?.accountSuspended?"suspended":"active"}</li>
       {purpose==="create"?<li className={!eligibility?.creationRestricted?"is-ready":"is-blocked"}><span/>Community creation {eligibility?.creationRestricted?"restricted":"allowed"}</li>:null}
     </ul>
-    {!eligibility?.phoneVerified||!eligibility?.smsVerified?<div className="secret-verification-form">
+    {!eligibility?.phoneVerified||!eligibility?.voiceCallVerified?<div className="secret-verification-form">
       <label>Phone number in international format<input value={phone} onChange={(event)=>setPhone(event.target.value)} placeholder="+491234567890" autoComplete="tel"/></label>
-      <button type="button" className="secondary-action" disabled={busy||!/^\+[1-9][0-9]{7,14}$/.test(phone.replace(/[\s()-]/g,""))} onClick={()=>void start()}><AppIcon name="send" size="sm"/>Send SMS code</button>
-      <label>Code from the SMS<input value={code} onChange={(event)=>setCode(event.target.value.replace(/\D/g,""))} inputMode="numeric" autoComplete="one-time-code" maxLength={6}/></label>
-      <button type="button" className="secondary-action" disabled={busy||!/^[0-9]{6}$/.test(code)} onClick={()=>void verify()}>Verify code</button>
+      <button type="button" className="secondary-action" disabled={busy||!/^\+[1-9][0-9]{7,14}$/.test(phone.replace(/[\s()-]/g,""))} onClick={()=>void start()}><AppIcon name="voice" size="sm"/>Call me with a code</button>
+      <label>Code from the call<input value={code} onChange={(event)=>setCode(event.target.value.replace(/\D/g,""))} inputMode="numeric" maxLength={10}/></label>
+      <button type="button" className="secondary-action" disabled={busy||!/^[0-9]{4,10}$/.test(code)} onClick={()=>void verify()}>Verify code</button>
     </div>:null}
     {message?<p className="secret-flow-message" role="status">{message}</p>:null}
   </section>;
@@ -82,7 +83,7 @@ export function SecretAwareJoinWithInviteModal({initialCode="",isAuthenticated,c
       if(!active)return;
       if(standard.ok){setPreview({kind:"standard",data:standard.data});setLoading(false);return;}
       const secret=await secretCommunityService.previewInvite(code);if(!active)return;
-      if(secret.ok){setPreview({kind:"secret",data:secret.data});setVerificationReady(secret.data.verification.phoneVerified&&secret.data.verification.smsVerified&&!secret.data.verification.accountSuspended&&!secret.data.verification.accountRestricted);}
+      if(secret.ok){setPreview({kind:"secret",data:secret.data});setVerificationReady(secret.data.verification.phoneVerified&&secret.data.verification.voiceCallVerified&&!secret.data.verification.accountSuspended&&!secret.data.verification.accountRestricted);}
       else setError(secret.error.message);setLoading(false);
     },250);
     return()=>{active=false;window.clearTimeout(timer);};
@@ -94,13 +95,14 @@ export function SecretAwareJoinWithInviteModal({initialCode="",isAuthenticated,c
     if(!result.ok){setError(result.error.message);setBusy(false);return;}
     await onAccepted(result.data.communityId,result.data.member,result.data.status,preview.data);onClose();};
   const secret=preview?.kind==="secret"?preview.data:null;
+  const kindSummary=preview?getCommunityKindInviteSummary(preview.data.communityKind):null;
   return <div className="modal-backdrop" onMouseDown={onClose}><section className="community-modal secret-join-modal" role="dialog" aria-modal="true" aria-labelledby="invite-join-title" onMouseDown={(event)=>event.stopPropagation()}>
     <button type="button" className="icon-button modal-close" aria-label="Close invitation" onClick={onClose}><AppIcon name="close" size="lg"/></button>
     <header><span className="eyebrow">Private access</span><h2 id="invite-join-title">Join with invitation</h2><p>Picom validates the invitation and your account before revealing protected community details.</p></header>
     <label className="invite-code-field"><span>Invitation code or link</span><input autoFocus value={code} onChange={(event)=>setCode(event.target.value)} placeholder="picom://invite/..."/></label>
     {!isAuthenticated?<p className="auth-error">Sign in before opening a private invitation.</p>:null}
     {loading?<p className="community-rules-status">Checking invitation...</p>:null}
-    {preview?<section className="community-confirm-panel"><p className="eyebrow">{preview.data.communityKind} community</p><h3>{preview.data.communityName}</h3><p>{preview.data.description??"No description has been published."}</p><dl><div><dt>Members</dt><dd>{preview.data.memberCount}</dd></div><div><dt>Access</dt><dd>{preview.kind==="secret"?"Recipient only":preview.data.visibility}</dd></div><div><dt>Expires</dt><dd>{preview.data.expiresAt?new Date(preview.data.expiresAt).toLocaleString():"No expiry"}</dd></div></dl></section>:null}
+    {preview?<section className="community-confirm-panel"><p className="eyebrow">{preview.data.communityKind} community</p><h3>{preview.data.communityName}</h3><p>{preview.data.description??"No description has been published."}</p><dl><div><dt>Members</dt><dd>{preview.data.memberCount}</dd></div><div><dt>Access</dt><dd>{preview.kind==="secret"?"Recipient only":preview.data.visibility}</dd></div><div><dt>Expires</dt><dd>{preview.data.expiresAt?new Date(preview.data.expiresAt).toLocaleString():"No expiry"}</dd></div>{kindSummary?<div><dt>Opens at</dt><dd>{kindSummary.landingLabel}</dd></div>:null}</dl>{kindSummary?<ul className="secret-status-list" aria-label="Community capabilities">{kindSummary.capabilitySummary.map((capability)=><li className="is-ready" key={capability}><span/>{capability}</li>)}</ul>:null}</section>:null}
     {secret?<>
       <section className="secret-warning-panel"><h3>Security warnings</h3>{secret.warnings.map((warning)=><p key={warning}><AppIcon name="lock" size="xs"/>{warning}</p>)}<label><input type="checkbox" checked={warningsAccepted} onChange={(event)=>setWarningsAccepted(event.target.checked)}/>I understand and accept every security warning.</label></section>
       <section className="secret-rules-panel"><h3>Community rules</h3>{secret.rules.map((rule)=><article key={rule.id}><strong>{rule.title}</strong><p>{rule.body}</p></article>)}<label><input type="checkbox" checked={rulesAccepted} onChange={(event)=>setRulesAccepted(event.target.checked)}/>I accept the current community rules.</label></section>

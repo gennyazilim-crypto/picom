@@ -13,7 +13,6 @@ import {
   clipboard,
   screen,
   powerMonitor,
-  safeStorage,
   type OpenDialogOptions,
   type SaveDialogOptions
 } from "electron";
@@ -22,28 +21,50 @@ import { promises as fs } from "node:fs";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
 import { IPC_CHANNELS } from "./ipcChannels.cjs";
 import {
+  checkForUpdates as updaterCheckForUpdates,
+  downloadUpdate as updaterDownloadUpdate,
+  getUpdaterState,
+  initUpdater,
+  quitAndInstall as updaterQuitAndInstall,
+  type UpdaterState,
+} from "./updater.cjs";
+import { getActivitySnapshot } from "./activityPresence.cjs";
+import {
   MAX_CLIPBOARD_TEXT_LENGTH,
   isSafeDeepLink,
   isTrayStatus,
   isWindowAction,
   normalizeExternalUrl,
   parseClipboardWritePayload,
+  parseIncomingCallToastAction,
+  parseIncomingCallToastPayload,
   parseNotificationPayload,
   parseSaveTextPayload,
   parseScreenCaptureCancelPayload,
   parseScreenCaptureListPayload,
   parseScreenCaptureSelectionPayload,
   isSafeScreenCaptureSourceId,
-  isAuthStorageKey,
-  isOAuthIdentifier,
-  parseAuthStorageSetPayload,
-  parseOAuthAttemptStartPayload,
-  parseOAuthCallbackUrl,
   type TrayStatus,
 } from "./ipcPayloadValidation.cjs";
-import { OAuthAttemptManager, ProtectedAuthStore, type OAuthDelivery } from "./oauthFoundation.cjs";
+import {
+  dismissIncomingCallToast,
+  handleIncomingCallToastResponse,
+  isIncomingCallToastSender,
+  resolveIncomingCallPreloadPath,
+  setIncomingCallToastActionHandler,
+  showIncomingCallToast,
+} from "./incomingCallToast.cjs";
+import { prepareNotificationAvatar } from "./notificationAvatarCache.cjs";
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
+const APP_ICON_PATH = path.join(
+  __dirname,
+  "..",
+  "assets",
+  "brand",
+  process.platform === "win32" ? "app-icon.ico" : "app-icon.png"
+);
+let incomingCallPresentationGeneration = 0;
 
 type SafeScreenCaptureSource = Readonly<{
   id: string;
@@ -76,11 +97,9 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let trayStatus: TrayStatus = "online";
 let trayMuted = false;
-let closeToTrayEnabled = false;
+let closeToTrayEnabled = true;
 let isQuitting = false;
 const pendingDeepLinks: string[] = [];
-let protectedAuthStore: ProtectedAuthStore | null = null;
-let oauthAttemptManager: OAuthAttemptManager | null = null;
 let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null;
 const screenCaptureSessions = new WeakMap<object, ScreenCaptureSession>();
 const SCREEN_CAPTURE_SESSION_TTL_MS = 60_000;
@@ -138,61 +157,44 @@ function extractDeepLinkFromArgs(args: string[]): string | null {
   return args.find((arg) => isSafeDeepLink(arg)) ?? null;
 }
 
-async function initializeAuthFoundation(): Promise<void> {
-  const backend = process.platform === "linux" && typeof safeStorage.getSelectedStorageBackend === "function"
-    ? safeStorage.getSelectedStorageBackend()
-    : process.platform === "win32" ? "dpapi" : process.platform === "darwin" ? "keychain" : "unknown";
-  const available = safeStorage.isEncryptionAvailable() && backend !== "basic_text";
-  protectedAuthStore = new ProtectedAuthStore(path.join(app.getPath("userData"), "protected-auth-state.bin"), {
-    available,
-    backend: available ? backend : "unavailable",
-    encryptString: (value) => safeStorage.encryptString(value),
-    decryptString: (value) => safeStorage.decryptString(value),
-  });
-  oauthAttemptManager = new OAuthAttemptManager(protectedAuthStore);
-}
-
-function sendOAuthDeliveryToRenderer(delivery: OAuthDelivery): void {
-  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoadingMainFrame()) return;
-  mainWindow.webContents.send(IPC_CHANNELS.authOAuthResult, delivery);
-}
-async function sendPendingOAuthResult(): Promise<void> {
-  const result = await oauthAttemptManager?.getPendingResult();
-  if (result) sendOAuthDeliveryToRenderer(result);
-}
 function sendDeepLinkToRenderer(deepLink: string): void {
-  if (!isSafeDeepLink(deepLink)) return;
+  if (!isSafeDeepLink(deepLink)) {
+    return;
+  }
+
   if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoadingMainFrame()) {
     pendingDeepLinks.push(deepLink);
     return;
   }
+
   mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
 }
-async function routeNativeDeepLink(deepLink: string): Promise<void> {
-  const callback = parseOAuthCallbackUrl(deepLink);
-  if (callback) {
-    if (!oauthAttemptManager) {
-      sendOAuthDeliveryToRenderer({ status: "rejected", error: "OAUTH_FOUNDATION_UNAVAILABLE" });
-      return;
-    }
-    const completion = await oauthAttemptManager.completeCallback(callback);
-    sendOAuthDeliveryToRenderer(completion.ok ? completion.result : { status: "rejected", error: completion.error });
+
+function handleNativeDeepLink(deepLink: unknown): void {
+  if (!isSafeDeepLink(deepLink)) {
     return;
   }
-  sendDeepLinkToRenderer(deepLink);
-}
-function handleNativeDeepLink(deepLink: unknown): void {
-  if (!isSafeDeepLink(deepLink)) return;
+
   if (!app.isReady()) {
     pendingDeepLinks.push(deepLink);
     return;
   }
+
   focusMainWindow();
-  void routeNativeDeepLink(deepLink);
+  sendDeepLinkToRenderer(deepLink);
 }
-async function flushPendingDeepLinks(): Promise<void> {
-  if (!mainWindow || mainWindow.isDestroyed()) return;
-  for (const deepLink of pendingDeepLinks.splice(0)) await routeNativeDeepLink(deepLink);
+
+function flushPendingDeepLinks(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  while (pendingDeepLinks.length > 0) {
+    const deepLink = pendingDeepLinks.shift();
+    if (deepLink) {
+      mainWindow.webContents.send(IPC_CHANNELS.deepLinkOpen, deepLink);
+    }
+  }
 }
 
 function registerProtocolHandler(): void {
@@ -229,7 +231,7 @@ function sendTrayAction(action: TrayAction): void {
 function createTrayMenu(): Electron.Menu {
   return Menu.buildFromTemplate([
     {
-      label: "Open Picom",
+      label: "Open Picom Desktop",
       click: () => {
         focusMainWindow();
         sendTrayAction("open");
@@ -275,7 +277,7 @@ function refreshTray(): void {
     return;
   }
 
-  tray.setToolTip(`Picom - ${trayStatus}${trayMuted ? " - muted" : ""}`);
+  tray.setToolTip(`Picom Desktop - ${trayStatus}${trayMuted ? " - muted" : ""}`);
   tray.setContextMenu(createTrayMenu());
 }
 
@@ -296,8 +298,7 @@ function createTray(): void {
     return;
   }
 
-  const iconPath = path.join(__dirname, "..", "assets", "brand", "app-icon.png");
-  const icon = nativeImage.createFromPath(iconPath);
+  const icon = nativeImage.createFromPath(APP_ICON_PATH);
 
   try {
     tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
@@ -452,10 +453,14 @@ function registerWindowStateForwarding(window: BrowserWindow): void {
     void persistWindowState(window);
   });
   window.webContents.on("did-finish-load", forwardState);
-  window.webContents.on("did-finish-load", () => {
-    void flushPendingDeepLinks();
-    void sendPendingOAuthResult();
-  });
+  window.webContents.on("did-finish-load", flushPendingDeepLinks);
+}
+
+function broadcastUpdaterState(updaterState: UpdaterState): void {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isDestroyed()) {
+    return;
+  }
+  mainWindow.webContents.send(IPC_CHANNELS.updateStateChanged, updaterState);
 }
 
 function registerIpcHandlers(): void {
@@ -610,6 +615,48 @@ function registerIpcHandlers(): void {
     } catch {
       return { ok: false, native: true, error: "NOTIFICATION_SHOW_FAILED" } as const;
     }
+  });
+
+  setIncomingCallToastActionHandler((action, inviteId) => {
+    incomingCallPresentationGeneration += 1;
+    focusMainWindow();
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send(IPC_CHANNELS.incomingCallAction, { action, inviteId });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.incomingCallShow, async (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
+    const safePayload = parseIncomingCallToastPayload(payload);
+    if (!safePayload) return { ok: false, native: true, error: "INVALID_INCOMING_CALL_PAYLOAD" } as const;
+    const generation = ++incomingCallPresentationGeneration;
+    try {
+      const avatar = await prepareNotificationAvatar(safePayload, APP_ICON_PATH);
+      if (generation !== incomingCallPresentationGeneration) {
+        return { ok: false, native: true, error: "INCOMING_CALL_SUPERSEDED" } as const;
+      }
+      showIncomingCallToast(
+        { ...safePayload, avatarDataUrl: avatar.dataUrl },
+        resolveIncomingCallPreloadPath(),
+      );
+      return { ok: true, native: true } as const;
+    } catch {
+      return { ok: false, native: true, error: "INCOMING_CALL_SHOW_FAILED" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.incomingCallDismiss, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
+    incomingCallPresentationGeneration += 1;
+    dismissIncomingCallToast();
+    return { ok: true, native: true } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.incomingCallRespond, (event, action: unknown) => {
+    if (!isIncomingCallToastSender(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
+    const safeAction = parseIncomingCallToastAction(action);
+    if (!safeAction) return { ok: false, native: true, error: "INVALID_INCOMING_CALL_ACTION" } as const;
+    handleIncomingCallToastResponse(safeAction);
+    return { ok: true, native: true } as const;
   });
 
   ipcMain.handle(IPC_CHANNELS.traySetStatus, (event, status: unknown) => {
@@ -770,53 +817,6 @@ function registerIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.authOAuthStart, async (event, payload: unknown) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    const request = parseOAuthAttemptStartPayload(payload);
-    if (!request || !oauthAttemptManager) return { ok: false, native: true, error: "INVALID_OAUTH_START_REQUEST" } as const;
-    try { return { ok: true, native: true, attempt: await oauthAttemptManager.start(request.provider, request.purpose) } as const; }
-    catch { return { ok: false, native: true, error: "OAUTH_FOUNDATION_UNAVAILABLE" } as const; }
-  });
-  ipcMain.handle(IPC_CHANNELS.authOAuthCancel, async (event, attemptId: unknown) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    if (!isOAuthIdentifier(attemptId) || !oauthAttemptManager) return { ok: false, native: true, error: "INVALID_OAUTH_ATTEMPT_ID" } as const;
-    return { ok: await oauthAttemptManager.cancel(attemptId), native: true } as const;
-  });
-  ipcMain.handle(IPC_CHANNELS.authOAuthGetPendingResult, async (event) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    return { ok: true, native: true, result: await oauthAttemptManager?.getPendingResult() ?? null } as const;
-  });
-  ipcMain.handle(IPC_CHANNELS.authOAuthAcknowledge, async (event, resultId: unknown) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    if (!isOAuthIdentifier(resultId) || !oauthAttemptManager) return { ok: false, native: true, error: "INVALID_OAUTH_RESULT_ID" } as const;
-    return { ok: await oauthAttemptManager.acknowledge(resultId), native: true } as const;
-  });
-  ipcMain.handle(IPC_CHANNELS.authSecureStorageGet, async (event, key: unknown) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    if (!isAuthStorageKey(key) || !protectedAuthStore) return { ok: false, native: true, error: "INVALID_AUTH_STORAGE_KEY" } as const;
-    try { return { ok: true, native: true, value: await protectedAuthStore.getItem(key) } as const; }
-    catch { return { ok: false, native: true, error: "AUTH_STORAGE_READ_FAILED" } as const; }
-  });
-  ipcMain.handle(IPC_CHANNELS.authSecureStorageSet, async (event, payload: unknown) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    const request = parseAuthStorageSetPayload(payload);
-    if (!request || !protectedAuthStore) return { ok: false, native: true, error: "INVALID_AUTH_STORAGE_PAYLOAD" } as const;
-    try { await protectedAuthStore.setItem(request.key, request.value); return { ok: true, native: true } as const; }
-    catch { return { ok: false, native: true, error: "AUTH_STORAGE_WRITE_FAILED" } as const; }
-  });
-  ipcMain.handle(IPC_CHANNELS.authSecureStorageRemove, async (event, key: unknown) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    if (!isAuthStorageKey(key) || !protectedAuthStore) return { ok: false, native: true, error: "INVALID_AUTH_STORAGE_KEY" } as const;
-    try { await protectedAuthStore.removeItem(key); return { ok: true, native: true } as const; }
-    catch { return { ok: false, native: true, error: "AUTH_STORAGE_REMOVE_FAILED" } as const; }
-  });
-  ipcMain.handle(IPC_CHANNELS.authSecureStorageStatus, (event) => {
-    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
-    return protectedAuthStore
-      ? { ok: true, native: true, status: protectedAuthStore.getStatus() } as const
-      : { ok: false, native: true, error: "OAUTH_FOUNDATION_UNAVAILABLE" } as const;
-  });
-
   ipcMain.handle(IPC_CHANNELS.externalOpenUrl, async (event, payload: unknown) => {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const safeUrl = normalizeExternalUrl(payload);
@@ -830,6 +830,32 @@ function registerIpcHandlers(): void {
     } catch {
       return { ok: false, native: true, error: "EXTERNAL_URL_OPEN_FAILED" } as const;
     }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.updateGetState, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: getUpdaterState() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.updateCheck, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: await updaterCheckForUpdates() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.updateDownload, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: await updaterDownloadUpdate() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.updateInstall, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, state: updaterQuitAndInstall() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.activityGetSnapshot, async (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    const snapshot = await getActivitySnapshot(process.platform);
+    return { ok: true, native: true, snapshot } as const;
   });
 }
 
@@ -848,6 +874,7 @@ async function createMainWindow(): Promise<void> {
     transparent: false,
     autoHideMenuBar: true,
     title: ELECTRON_APP_CONFIG.name,
+    icon: APP_ICON_PATH,
     backgroundColor: ELECTRON_APP_CONFIG.window.backgroundColor,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -895,22 +922,17 @@ async function createMainWindow(): Promise<void> {
   }
 }
 
-const packagedMemberMediaCertification = app.isPackaged
-  && process.platform === "win32"
-  && process.env.PICOM_WINDOWS_MEMBER_MEDIA_CERTIFICATION === "CONTROLLED_WINDOWS_ONLY"
-  && process.env.PICOM_HOSTED_E2E_CONFIG_FD === "3"
-  && /^[a-f0-9]{64}$/.test(process.env.PICOM_WINDOWS_MEMBER_MEDIA_CERT_PACKAGE_SHA ?? "");
+// Keep user data in the original "Picom" directory: the display rename to "Picom Desktop"
+// (productName) would otherwise move userData to a new folder and existing installs would
+// lose sessions/preferences after updating.
+app.setPath("userData", path.join(app.getPath("appData"), "Picom"));
+app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
 
-if (packagedMemberMediaCertification) {
-  require(path.join(__dirname, "certification", "main.cjs"));
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!hasSingleInstanceLock) {
+  app.quit();
 } else {
-  app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
-
-  const hasSingleInstanceLock = app.requestSingleInstanceLock();
-
-  if (!hasSingleInstanceLock) {
-    app.quit();
-  } else {
   app.on("second-instance", (_event, argv) => {
     const deepLink = extractDeepLinkFromArgs(argv);
     if (deepLink) {
@@ -920,10 +942,9 @@ if (packagedMemberMediaCertification) {
     }
   });
 
-  app.whenReady().then(async () => {
+  app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
     registerProtocolHandler();
-    await initializeAuthFoundation();
     registerIpcHandlers();
     powerMonitor.on("resume", sendPowerResumeToRenderer);
 
@@ -934,20 +955,20 @@ if (packagedMemberMediaCertification) {
 
     void createMainWindow();
     createTray();
+    initUpdater(broadcastUpdaterState);
 
     app.on("activate", focusMainWindow);
   });
-  }
-
-  app.on("before-quit", () => {
-    isQuitting = true;
-  });
-
-  app.on("open-url", (event, url) => {
-    event.preventDefault();
-    handleNativeDeepLink(url);
-  });
 }
+
+app.on("before-quit", () => {
+  isQuitting = true;
+});
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  handleNativeDeepLink(url);
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

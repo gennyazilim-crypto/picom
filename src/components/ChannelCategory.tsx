@@ -1,5 +1,6 @@
 import type { MouseEvent } from "react";
 import type { Channel, ChannelCategory as ChannelCategoryType } from "../types/community";
+import type { VoiceRoomOccupancy } from "../types/voiceDiscovery";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { ChannelItem } from "./ChannelItem";
@@ -19,6 +20,7 @@ type ChannelCategoryProps = {
   canCreateChannel?: boolean;
   showReorderControls?: boolean;
   onMoveChannel?: (categoryId: string, channelId: string, direction: "up" | "down") => void;
+  voiceOccupancyByChannelId?: Readonly<Record<string, VoiceRoomOccupancy>>;
 };
 
 export function ChannelCategory({
@@ -33,6 +35,7 @@ export function ChannelCategory({
   canCreateChannel = true,
   showReorderControls = false,
   onMoveChannel,
+  voiceOccupancyByChannelId = {},
 }: ChannelCategoryProps) {
   return (
     <section className="channel-category">
@@ -49,27 +52,35 @@ export function ChannelCategory({
         ) : null}
       </div>
       {!collapsed
-        ? category.channels.map((channel, index) => (
-            <div className="channel-reorder-row" key={channel.id}>
-              <ChannelItem
-                channel={channel}
-                active={channel.id === activeChannelId}
-                onSelect={onSelectChannel}
-                onContextMenu={onChannelContextMenu}
-                hasDraft={messageDraftService.hasDraft({ communityId, channelId: channel.id })}
-              />
-              {showReorderControls ? (
-                <span className="channel-reorder-controls" aria-label={`Reorder ${channel.name}`}>
-                  <button className="channel-reorder-up" type="button" disabled={index === 0} onClick={() => onMoveChannel?.(category.id, channel.id, "up")} aria-label={`Move ${channel.name} up`}>
-                    <AppIcon name="chevronDown" size="xs" />
-                  </button>
-                  <button className="channel-reorder-down" type="button" disabled={index === category.channels.length - 1} onClick={() => onMoveChannel?.(category.id, channel.id, "down")} aria-label={`Move ${channel.name} down`}>
-                    <AppIcon name="chevronDown" size="xs" />
-                  </button>
-                </span>
-              ) : null}
-            </div>
-          ))
+        ? (
+          <div className="channel-category__channels">
+            {category.channels.map((channel, index) => (
+              <div className="channel-reorder-row" key={channel.id}>
+                <ChannelItem
+                  channel={channel}
+                  active={channel.id === activeChannelId}
+                  onSelect={onSelectChannel}
+                  onContextMenu={onChannelContextMenu}
+                  hasDraft={messageDraftService.hasDraft({ communityId, channelId: channel.id })}
+                  voiceParticipants={voiceOccupancyByChannelId[channel.id]?.participants ?? voiceOccupancyByChannelId[channel.id]?.participantNames?.map((name, index) => ({
+                    identity: `${channel.id}:${index}:${name}`,
+                    name,
+                  }))}
+                />
+                {showReorderControls ? (
+                  <span className="channel-reorder-controls" aria-label={`Reorder ${channel.name}`}>
+                    <button className="channel-reorder-up" type="button" disabled={index === 0} onClick={() => onMoveChannel?.(category.id, channel.id, "up")} aria-label={`Move ${channel.name} up`}>
+                      <AppIcon name="chevronDown" size="xs" />
+                    </button>
+                    <button className="channel-reorder-down" type="button" disabled={index === category.channels.length - 1} onClick={() => onMoveChannel?.(category.id, channel.id, "down")} aria-label={`Move ${channel.name} down`}>
+                      <AppIcon name="chevronDown" size="xs" />
+                    </button>
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )
         : null}
     </section>
   );

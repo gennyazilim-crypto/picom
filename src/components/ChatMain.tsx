@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member, Message } from "../types/community";
 import type { CommunityAccess } from "../types/communityAccess";
-import type { RealtimeConnectionStatus } from "../hooks/useSupabaseMessageRealtime";
 import type { CreatePollDraft } from "../types/polls";
 import { getComposerDisabledReason } from "../services/permissions/communityPermissions";
+import { savedMessageService } from "../services/savedMessageService";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { MessageComposer } from "./MessageComposer";
@@ -18,7 +18,6 @@ type ChatMainProps = {
   access: CommunityAccess;
   channel: Channel;
   messages: Message[];
-  realtimeStatus: RealtimeConnectionStatus;
   typingNames: string[];
   onTypingStart: () => void;
   onTypingStop: () => void;
@@ -48,15 +47,35 @@ type ChatMainProps = {
   onOpenInvite: () => void;
   onOpenTopic: () => void;
   onOpenPoll: () => void;
+  onOpenSavedMessages?: () => void;
+  onOpenMentionFeed?: () => void;
   onMessageListNearBottomChange?: (nearBottom: boolean) => void;
 };
+
+const channelMuteStorageKey = (channelId: string) => `picom.channelMute.${channelId}`;
+
+function readChannelMuted(channelId: string) {
+  try {
+    return window.localStorage.getItem(channelMuteStorageKey(channelId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeChannelMuted(channelId: string, muted: boolean) {
+  try {
+    if (muted) window.localStorage.setItem(channelMuteStorageKey(channelId), "1");
+    else window.localStorage.removeItem(channelMuteStorageKey(channelId));
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 export function ChatMain({
   community,
   access,
   channel,
   messages,
-  realtimeStatus,
   typingNames,
   onTypingStart,
   onTypingStop,
@@ -86,6 +105,8 @@ export function ChatMain({
   onOpenInvite,
   onOpenTopic,
   onOpenPoll,
+  onOpenSavedMessages,
+  onOpenMentionFeed,
   onMessageListNearBottomChange,
 }: ChatMainProps) {
   const channelMessages = useMemo(() => messages.filter((message) => message.channelId === channel.id), [messages, channel.id]);
@@ -93,6 +114,30 @@ export function ChatMain({
   const currentMember = useMemo(() => community.members.find((member) => member.userId === currentUserId), [community.members, currentUserId]);
   const composerDisabledReason = useMemo(() => getComposerDisabledReason(access, channel), [access, channel]);
   const [announcementFollowing, setAnnouncementFollowing] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notificationsMuted, setNotificationsMuted] = useState(() => readChannelMuted(channel.id));
+  const [savedInChannelCount, setSavedInChannelCount] = useState(0);
+
+  useEffect(() => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setNotificationsMuted(readChannelMuted(channel.id));
+  }, [channel.id]);
+
+  useEffect(() => {
+    let active = true;
+    const refreshSavedCount = () => {
+      const count = savedMessageService.listSavedMessages().filter((item) => item.channelId === channel.id).length;
+      if (active) setSavedInChannelCount(count);
+    };
+    refreshSavedCount();
+    const unsubscribe = savedMessageService.subscribe(refreshSavedCount);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [channel.id]);
 
   useEffect(() => {
     let active = true;
@@ -103,7 +148,38 @@ export function ChatMain({
 
   return (
     <main className="chat-main">
-      <ChatHeader channel={channel} realtimeStatus={realtimeStatus} membersVisible={membersVisible} onToggleMembers={onToggleMembers} announcementFollowing={announcementFollowing} announcementReadOnly={access.isVisitor} onToggleAnnouncementFollowing={channel.type === "announcement" && !access.isVisitor ? () => { void announcementChannelService.setFollowing({ channelId: channel.id, userId: currentUserId, following: !announcementFollowing, canFollow: !access.isVisitor }).then((result) => { if (result.ok) { setAnnouncementFollowing(result.data); pushToast(result.data ? "Following announcements." : "Announcement follow disabled.", "success"); } else pushToast(result.message, "error"); }); } : undefined} />
+      <ChatHeader
+        channel={channel}
+        membersVisible={membersVisible}
+        memberCount={community.members.length}
+        savedInChannelCount={savedInChannelCount}
+        searchOpen={searchOpen}
+        searchQuery={searchQuery}
+        canEditTopic={access.permissions.includes("manageChannels")}
+        canInvite={access.permissions.includes("createInvites")}
+        notificationsMuted={notificationsMuted}
+        onToggleMembers={onToggleMembers}
+        onSearchOpen={() => {
+          setSearchOpen((open) => {
+            if (open) setSearchQuery("");
+            return !open;
+          });
+        }}
+        onSearchChange={setSearchQuery}
+        onEditTopic={onOpenTopic}
+        onOpenInvite={onOpenInvite}
+        onOpenSavedMessages={onOpenSavedMessages}
+        onOpenMentionFeed={onOpenMentionFeed}
+        onToggleNotifications={() => {
+          const next = !notificationsMuted;
+          writeChannelMuted(channel.id, next);
+          setNotificationsMuted(next);
+          pushToast(next ? "Channel notifications muted locally." : "Channel notifications restored.", "success");
+        }}
+        announcementFollowing={announcementFollowing}
+        announcementReadOnly={access.isVisitor}
+        onToggleAnnouncementFollowing={channel.type === "announcement" && !access.isVisitor ? () => { void announcementChannelService.setFollowing({ channelId: channel.id, userId: currentUserId, following: !announcementFollowing, canFollow: !access.isVisitor }).then((result) => { if (result.ok) { setAnnouncementFollowing(result.data); pushToast(result.data ? "Following announcements." : "Announcement follow disabled.", "success"); } else pushToast(result.message, "error"); }); } : undefined}
+      />
 
       {channel.type === "forum" ? (
         <ForumChannelView community={community} channel={channel} currentMember={currentMember} canCreate={canSendMessage(access, { ...channel, type: "text" })} onNotice={pushToast} />
@@ -113,6 +189,7 @@ export function ChatMain({
             key={channel.id}
             community={community}
             messages={channelMessages}
+            searchQuery={searchQuery}
             currentUserId={currentUserId}
             readReceiptsEnabled={readReceiptsEnabled}
             highlightedMessageId={highlightedMessageId}

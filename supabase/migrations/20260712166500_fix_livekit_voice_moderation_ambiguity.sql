@@ -61,6 +61,4 @@ $$;
 
 revoke all on function public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text) from public,anon;
 grant execute on function public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text) to authenticated;
-comment on function public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text) is 'Hierarchy-safe Voice moderation with qualified table references; ordinary member media access remains independent.';
-
-commit;
+comment on function public.authorize_livekit_voice_moderation(uuid,uuid,uuid,text) is 'Hierarchy-safe Voice moderation with qualified table references; ordinary member media access remains independent.';;

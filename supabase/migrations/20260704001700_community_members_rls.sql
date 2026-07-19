@@ -15,20 +15,15 @@ as $$
       and community.owner_id = auth.uid()
   );
 $$;
-
 grant execute on function public.is_community_owner(uuid) to authenticated;
-
 grant select, insert, update, delete on public.community_members to authenticated;
-
 alter table public.community_members enable row level security;
-
 drop policy if exists "community_members_select_same_community" on public.community_members;
 create policy "community_members_select_same_community"
 on public.community_members
 for select
 to authenticated
 using (public.is_community_member(community_id));
-
 drop policy if exists "community_members_insert_owner_or_self_owner" on public.community_members;
 create policy "community_members_insert_owner_or_self_owner"
 on public.community_members
@@ -38,7 +33,6 @@ with check (
   public.is_community_owner(community_id)
   or (user_id = auth.uid() and public.is_community_owner(community_id))
 );
-
 drop policy if exists "community_members_update_owner" on public.community_members;
 create policy "community_members_update_owner"
 on public.community_members
@@ -46,7 +40,6 @@ for update
 to authenticated
 using (public.is_community_owner(community_id))
 with check (public.is_community_owner(community_id));
-
 drop policy if exists "community_members_delete_owner" on public.community_members;
 create policy "community_members_delete_owner"
 on public.community_members

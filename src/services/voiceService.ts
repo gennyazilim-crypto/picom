@@ -1,4 +1,10 @@
-import { ConnectionState, DisconnectReason, LocalAudioTrack, Room, RoomEvent, Track, type RemoteParticipant } from "livekit-client";
+import type {
+  ConnectionState as LiveKitConnectionState,
+  DisconnectReason as LiveKitDisconnectReason,
+  LocalAudioTrack as LiveKitLocalAudioTrack,
+  RemoteParticipant,
+  Room,
+} from "livekit-client";
 import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
@@ -9,8 +15,35 @@ import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, 
 import type { MeetingCameraQualityPreset, MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
 import { voiceDiagnosticsRegistry, type VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 import { noiseShieldService } from "./noiseShieldService";
+import { voicePresenceChime } from "./voice/voicePresenceChime";
 import { microphoneTrackLifecycleService, type MicrophoneLifecycleEventCode } from "./voice/microphoneTrackLifecycleService";
 import { DEFAULT_MEETING_CAMERA_QUALITY, cameraCaptureOptions, cameraPublishOptions, localPublishingQuality, remoteVideoQuality } from "./meeting/meetingMediaQualityPolicy";
+
+type LiveKitRuntime = (typeof import("./livekit/livekitRuntime"))["liveKitRuntime"];
+
+let liveKitRuntimePromise: Promise<LiveKitRuntime> | null = null;
+let AudioPresets: LiveKitRuntime["AudioPresets"];
+let ConnectionState: LiveKitRuntime["ConnectionState"];
+let DefaultReconnectPolicy: LiveKitRuntime["DefaultReconnectPolicy"];
+let DisconnectReason: LiveKitRuntime["DisconnectReason"];
+let LocalAudioTrack: LiveKitRuntime["LocalAudioTrack"];
+let RoomConstructor: LiveKitRuntime["Room"];
+let RoomEvent: LiveKitRuntime["RoomEvent"];
+let Track: LiveKitRuntime["Track"];
+
+async function ensureLiveKitRuntime(): Promise<void> {
+  if (RoomConstructor) return;
+  liveKitRuntimePromise ??= import("./livekit/livekitRuntime").then((module) => module.liveKitRuntime);
+  const runtime = await liveKitRuntimePromise;
+  AudioPresets = runtime.AudioPresets;
+  ConnectionState = runtime.ConnectionState;
+  DefaultReconnectPolicy = runtime.DefaultReconnectPolicy;
+  DisconnectReason = runtime.DisconnectReason;
+  LocalAudioTrack = runtime.LocalAudioTrack;
+  RoomConstructor = runtime.Room;
+  RoomEvent = runtime.RoomEvent;
+  Track = runtime.Track;
+}
 
 export type { VoiceSessionDiagnosticsSummary } from "./voiceDiagnosticsRegistry";
 
@@ -58,7 +91,6 @@ export type VoiceServiceSnapshot = Readonly<{
   canSpeak?: boolean;
   canShareScreen?: boolean;
   screenSharing: boolean;
-  focusedScreenShareId?: string | null;
   cameraEnabled?: boolean;
   canUseCamera?: boolean;
   cameraTracks?: VoiceCameraTrack[];
@@ -74,8 +106,6 @@ export type VoiceServiceErrorCode =
   | "VOICE_CONNECTION_FAILED"
   | "VOICE_ROOM_UNAVAILABLE"
   | "VOICE_PERMISSION_DENIED"
-  | "VOICE_RATE_LIMITED"
-  | "VOICE_PROVIDER_UNAVAILABLE"
   | "VOICE_SCREEN_SHARE_CONFLICT"
   | "VOICE_SCREEN_SHARE_FAILED"
   | "VOICE_DATA_UNAVAILABLE"
@@ -124,7 +154,12 @@ let reconnectGeneration = 0;
 let roomLifecycleGeneration = 0;
 let reconnectDelayTimer: number | null = null;
 let reconnectDelayResolve: (() => void) | null = null;
-const reconnectBackoffMs = [0, 750, 2_000] as const;
+let tokenRefreshTimer: number | null = null;
+let tokenRefreshInFlight = false;
+const TOKEN_REFRESH_LEAD_MS = 5 * 60_000;
+const TOKEN_REFRESH_RETRY_MS = 60_000;
+const reconnectBackoffMs = [0, 750, 2_000, 5_000, 10_000] as const;
+const liveKitReconnectDelaysMs = [0, 300, 750, 1_500, 3_000, 5_000, 8_000, 12_000, 20_000, 30_000];
 let appliedInputPreferenceKey = "";
 let appliedOutputDeviceId = "";
 let snapshot: VoiceServiceSnapshot = {
@@ -136,7 +171,6 @@ let snapshot: VoiceServiceSnapshot = {
   canSpeak: false,
   canShareScreen: false,
   screenSharing: false,
-  focusedScreenShareId: null,
   cameraTracks: [],
   screenShares: [],
   participants: [],
@@ -182,7 +216,7 @@ function emit(next: Partial<VoiceServiceSnapshot>): void {
 
 type VoiceDisconnectDetails = Readonly<{ code: VoiceServiceErrorCode; message: string }>;
 
-function disconnectDetails(reason: DisconnectReason | undefined): VoiceDisconnectDetails | null {
+function disconnectDetails(reason: LiveKitDisconnectReason | undefined): VoiceDisconnectDetails | null {
   switch (reason) {
     case DisconnectReason.CLIENT_INITIATED:
       return null;
@@ -202,7 +236,7 @@ function disconnectDetails(reason: DisconnectReason | undefined): VoiceDisconnec
 
 function voiceError(code: VoiceServiceErrorCode, message: string): VoiceServiceResult<never> {
   const status: VoiceConnectionStatus =
-    code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : code === "VOICE_TOKEN_FAILED" || code === "VOICE_RATE_LIMITED" ? "token_error" : "error";
+    code === "VOICE_PERMISSION_DENIED" ? "permission_denied" : code === "VOICE_TOKEN_FAILED" ? "token_error" : "error";
 
   emit({
     error: message,
@@ -306,34 +340,79 @@ function applyRemoteParticipantVolume(activeRoom: Room, participantIdentity: str
   });
 }
 
+type RemoteAudioOutputTrack = Readonly<{
+  attach: () => HTMLMediaElement;
+  detach: () => HTMLMediaElement[];
+}>;
+
+const remoteAudioElements = new Map<RemoteAudioOutputTrack, HTMLMediaElement>();
+
+function playRemoteAudioElement(element: HTMLMediaElement): void {
+  void element.play().catch((error) => {
+    loggingService.logWarn(
+      "LiveKit remote audio playback needs a user interaction",
+      { errorName: error instanceof Error ? error.name : "UnknownError" },
+      "voice",
+    );
+  });
+}
+
+function attachRemoteAudioOutput(track: RemoteAudioOutputTrack, participantIdentity: string): void {
+  const existing = remoteAudioElements.get(track);
+  if (existing) {
+    if (!existing.isConnected) document.body.appendChild(existing);
+    playRemoteAudioElement(existing);
+    return;
+  }
+
+  const element = track.attach();
+  element.autoplay = true;
+  element.preload = "auto";
+  element.setAttribute("playsinline", "true");
+  element.setAttribute("aria-hidden", "true");
+  element.setAttribute("data-picom-remote-audio", participantIdentity);
+  element.style.display = "none";
+  if (!element.isConnected) document.body.appendChild(element);
+  remoteAudioElements.set(track, element);
+  playRemoteAudioElement(element);
+}
+
+function detachRemoteAudioOutput(track: RemoteAudioOutputTrack): void {
+  const attached = remoteAudioElements.get(track);
+  remoteAudioElements.delete(track);
+  if (attached) {
+    attached.pause();
+    attached.srcObject = null;
+    attached.remove();
+  }
+  track.detach().forEach((element) => {
+    element.pause();
+    element.srcObject = null;
+    element.remove();
+  });
+}
+
+function clearRemoteAudioOutputs(): void {
+  remoteAudioElements.forEach((element) => {
+    element.pause();
+    element.srcObject = null;
+    element.remove();
+  });
+  remoteAudioElements.clear();
+  document.querySelectorAll<HTMLMediaElement>("[data-picom-remote-audio]").forEach((element) => {
+    element.pause();
+    element.srcObject = null;
+    element.remove();
+  });
+}
+
 function setScreenShares(nextShares: VoiceScreenShare[]): void {
   screenShares = nextShares;
-  emit({ screenShares, focusedScreenShareId });
+  emit({ screenShares });
 }
 
 function upsertScreenShare(share: VoiceScreenShare): void {
-  const index = screenShares.findIndex((current) => current.id === share.id);
-  if (index < 0) {
-    setScreenShares([...screenShares, share]);
-    return;
-  }
-  const next = [...screenShares];
-  next[index] = share;
-  setScreenShares(next);
-}
-
-function upsertRemoteScreenShareDescriptor(participant: Pick<RemoteParticipant, "identity" | "name">, trackSid: string, mediaTrack: MediaStreamTrack | null): string {
-  const id = remoteScreenShareId(participant.identity, trackSid);
-  const prior = screenShares.find((share) => share.id === id);
-  upsertScreenShare({
-    id,
-    participantIdentity: participant.identity,
-    participantName: participant.name || participant.identity,
-    isLocal: false,
-    stream: mediaTrack ? new MediaStream([mediaTrack]) : new MediaStream(),
-    sourceLabel: prior?.sourceLabel ?? "Shared screen",
-  });
-  return id;
+  setScreenShares([...screenShares.filter((current) => current.id !== share.id), share]);
 }
 
 function removeScreenShare(id: string): void {
@@ -360,20 +439,11 @@ function remoteScreenShareId(participantIdentity: string, trackSid: string): str
 
 function applyFocusedScreenShareSubscription(activeRoom: Room, requestedId: string | null = focusedScreenShareId): void {
   void import("./livekit/screenShareSubscriptionPolicy").then(({ applySingleScreenShareSubscription }) => {
-    if (room !== activeRoom) return;
-    focusedScreenShareId = applySingleScreenShareSubscription(activeRoom, requestedId);
-    emit({ focusedScreenShareId });
+    if (room === activeRoom) focusedScreenShareId = applySingleScreenShareSubscription(activeRoom, requestedId);
   });
 }
 
-function releaseLocalScreenShareFocus(activeRoom: Room): void {
-  if (!focusedScreenShareId?.startsWith("local:")) return;
-  focusedScreenShareId = null;
-  emit({ focusedScreenShareId });
-  applyFocusedScreenShareSubscription(activeRoom);
-}
-
-function clearScreenShareState(activeRoom?: Room): void {
+function clearScreenShareState(): void {
   const localTrack = screenShareMediaTrack;
   screenShareMediaTrack = null;
   if (localTrack) {
@@ -381,9 +451,8 @@ function clearScreenShareState(activeRoom?: Room): void {
     if (localTrack.readyState === "live") localTrack.stop();
   }
   setScreenShares(screenShares.filter((share) => !share.isLocal));
-  if (activeRoom) releaseLocalScreenShareFocus(activeRoom);
-  else if (focusedScreenShareId?.startsWith("local:")) focusedScreenShareId = null;
-  emit({ screenSharing: false, focusedScreenShareId });
+  if (focusedScreenShareId?.startsWith("local:")) focusedScreenShareId = null;
+  emit({ screenSharing: false });
 }
 
 async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track_ended" = "user"): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
@@ -401,10 +470,8 @@ async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track
       await activeRoom.localParticipant.unpublishTrack(track, true);
       if (track.readyState === "live") track.stop();
       setScreenShares(screenShares.filter((share) => !share.isLocal));
-      releaseLocalScreenShareFocus(activeRoom);
       emit({
         screenSharing: false,
-        focusedScreenShareId,
         error: reason === "track_ended" ? "Screen sharing stopped because the selected source or system permission became unavailable." : null,
         errorCode: reason === "track_ended" ? "VOICE_SCREEN_SHARE_FAILED" : null,
         participants: getParticipants(activeRoom),
@@ -413,10 +480,8 @@ async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track
     } catch {
       if (track.readyState === "live") track.stop();
       setScreenShares(screenShares.filter((share) => !share.isLocal));
-      releaseLocalScreenShareFocus(activeRoom);
       emit({
         screenSharing: false,
-        focusedScreenShareId,
         participants: getParticipants(activeRoom),
       error: "Screen sharing stopped locally, but LiveKit unpublish failed.",
       errorCode: "VOICE_SCREEN_SHARE_FAILED",
@@ -447,11 +512,12 @@ function bindRoomEvents(activeRoom: Room): void {
     }catch{ /* Caption payloads are optional and must never destabilize meeting media. */ }
   });
   activeRoom
-    .on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
+    .on(RoomEvent.ConnectionStateChanged, (state: LiveKitConnectionState) => {
       if (state === ConnectionState.Connected) {
         const restoredFromReconnect = reconnectingActive;
         sessionStartedAtMs ??= Date.now();
         reconnectingActive = false;
+        if (!restoredFromReconnect) voicePresenceChime.playJoin();
         if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
         applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
         if (restoredFromReconnect) {
@@ -477,15 +543,18 @@ function bindRoomEvents(activeRoom: Room): void {
         reconnectingActive = false;
         connectionQuality = "unknown";
         speakingIdentities = new Set<string>();
+        clearRemoteAudioOutputs();
       }
     })
     .on(RoomEvent.ParticipantConnected, () => {
+      voicePresenceChime.playJoin();
       if (snapshot.deafened) applyRemoteAudioSubscription(activeRoom, false);
       applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
       applyFocusedScreenShareSubscription(activeRoom);
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.ParticipantDisconnected, (participant) => {
+      voicePresenceChime.playLeave();
       speakingIdentities.delete(participant.identity);
       participantConnectionQualities.delete(participant.identity);
       removeParticipantScreenShares(participant.identity);
@@ -511,22 +580,19 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ParticipantNameChanged, () => emitParticipants(activeRoom))
     .on(RoomEvent.TrackMuted, (publication, participant) => {
       if (publication.source === Track.Source.ScreenShare) {
-        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, null);
+        removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
         applyFocusedScreenShareSubscription(activeRoom);
       }
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.TrackUnmuted, (publication, participant) => {
       if (publication.source === Track.Source.ScreenShare && publication.track?.kind === Track.Kind.Video) {
-        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, publication.track.mediaStreamTrack);
+        const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
+        upsertScreenShare({ id: shareId, participantIdentity: participant.identity, participantName: participant.name || participant.identity, isLocal: false, stream: new MediaStream([publication.track.mediaStreamTrack]), sourceLabel: "Shared screen" });
       }
       emitParticipants(activeRoom);
     })
-    .on(RoomEvent.TrackPublished, (publication, participant) => {
-      if (publication.source === Track.Source.ScreenShare) {
-        const mediaTrack = publication.track?.kind === Track.Kind.Video ? publication.track.mediaStreamTrack : null;
-        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, mediaTrack);
-      }
+    .on(RoomEvent.TrackPublished, () => {
       applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
       applyFocusedScreenShareSubscription(activeRoom);
       emitParticipants(activeRoom);
@@ -540,12 +606,15 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.LocalTrackPublished, () => emitParticipants(activeRoom))
     .on(RoomEvent.LocalTrackUnpublished, (publication) => {
       if (publication.source === Track.Source.ScreenShare) {
-        clearScreenShareState(activeRoom);
+        clearScreenShareState();
       }
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-      if (track.kind === Track.Kind.Audio) applyRemoteParticipantVolume(activeRoom, participant.identity);
+      if (track.kind === Track.Kind.Audio) {
+        attachRemoteAudioOutput(track, participant.identity);
+        applyRemoteParticipantVolume(activeRoom, participant.identity);
+      }
       if (publication.source === Track.Source.ScreenShare && track.kind === Track.Kind.Video) {
         const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
         if (focusedScreenShareId && focusedScreenShareId !== shareId) {
@@ -557,20 +626,24 @@ function bindRoomEvents(activeRoom: Room): void {
         if (previousTrack) previousTrack.onended = null;
         remoteScreenShareTracks.set(shareId, mediaTrack);
         mediaTrack.onended = () => removeScreenShare(shareId);
-        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, mediaTrack);
+        upsertScreenShare({
+          id: shareId,
+          participantIdentity: participant.identity,
+          participantName: participant.name || participant.identity,
+          isLocal: false,
+          stream: new MediaStream([mediaTrack]),
+          sourceLabel: "Shared screen",
+        });
       }
       if (publication.source === Track.Source.Camera && track.kind === Track.Kind.Video) {
         upsertCameraTrack({ id: remoteCameraId(participant.identity, publication.trackSid), participantIdentity: participant.identity, participantName: participant.name || participant.identity, isLocal: false, stream: new MediaStream([track.mediaStreamTrack]) });
       }
       emitParticipants(activeRoom);
     })
-    .on(RoomEvent.TrackUnsubscribed, (_track, publication, participant) => {
+    .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+      if (track.kind === Track.Kind.Audio) detachRemoteAudioOutput(track);
       if (publication.source === Track.Source.ScreenShare) {
-        const shareId = remoteScreenShareId(participant.identity, publication.trackSid);
-        const remoteTrack = remoteScreenShareTracks.get(shareId);
-        if (remoteTrack) remoteTrack.onended = null;
-        remoteScreenShareTracks.delete(shareId);
-        upsertRemoteScreenShareDescriptor(participant, publication.trackSid, null);
+        removeScreenShare(remoteScreenShareId(participant.identity, publication.trackSid));
         applyFocusedScreenShareSubscription(activeRoom);
       }
       if (publication.source === Track.Source.Camera) removeCameraTrack(remoteCameraId(participant.identity, publication.trackSid));
@@ -583,6 +656,7 @@ function bindRoomEvents(activeRoom: Room): void {
       emit({ error: "The shared screen could not be loaded. Picom will keep participant context available.", errorCode: "VOICE_SCREEN_SHARE_FAILED" });
     })
     .on(RoomEvent.Disconnected, (reason) => {
+      voicePresenceChime.playLeave();
       if (sessionStartedAtMs) lastSessionDurationMs = Date.now() - sessionStartedAtMs;
       sessionStartedAtMs = null;
       reconnectingActive = false;
@@ -590,6 +664,7 @@ function bindRoomEvents(activeRoom: Room): void {
       speakingIdentities = new Set<string>();
       participantConnectionQualities.clear();
       cameraTracks = [];
+      clearRemoteAudioOutputs();
       roomLifecycleGeneration += 1;
       const details = disconnectDetails(reason);
       void microphoneTrackLifecycleService.cleanup("room_disconnected", () => noiseShieldService.disposeProcessor(), true, localMicrophoneTrack(activeRoom)?.id);
@@ -604,7 +679,6 @@ function bindRoomEvents(activeRoom: Room): void {
         roomName: null,
         roomContext: null,
         screenSharing: false,
-        focusedScreenShareId: null,
         screenShares: [],
         cameraTracks: [],
         error: details?.message ?? null,
@@ -653,34 +727,86 @@ function createElectronScreenShareConstraints(sourceId: string): MediaStreamCons
   };
 }
 
-async function requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
-  emit({ status: "requesting_token", error: null, errorCode: null });
+async function requestToken(request: VoiceTokenRequest, options: Readonly<{ silent?: boolean }> = {}): Promise<VoiceServiceResult<VoiceTokenResponse>> {
+  if (!options.silent) emit({ status: "requesting_token", error: null, errorCode: null });
 
   const token = await liveKitService.fetchToken(request);
   if (!token.ok) {
-    switch (token.error.code) {
-      case "LIVEKIT_NOT_CONFIGURED":
-        return voiceError("VOICE_NOT_CONFIGURED", token.error.message);
-      case "LIVEKIT_AUTH_REQUIRED":
-      case "LIVEKIT_ACCESS_DENIED":
-        return voiceError("VOICE_ACCESS_REVOKED", token.error.message);
-      case "LIVEKIT_RATE_LIMITED":
-        return voiceError("VOICE_RATE_LIMITED", token.error.message);
-      case "LIVEKIT_PROVIDER_UNAVAILABLE":
-        return voiceError("VOICE_PROVIDER_UNAVAILABLE", token.error.message);
-      default:
-        return voiceError("VOICE_TOKEN_FAILED", token.error.message);
-    }
+    const code = token.error.code === "LIVEKIT_NOT_CONFIGURED" ? "VOICE_NOT_CONFIGURED" : "VOICE_TOKEN_FAILED";
+    return voiceError(code, token.error.message);
   }
 
   return { ok: true, data: token.data };
+}
+
+function clearTokenRefreshTimer(): void {
+  if (tokenRefreshTimer !== null) {
+    window.clearTimeout(tokenRefreshTimer);
+    tokenRefreshTimer = null;
+  }
+}
+
+function scheduleTokenRefresh(expiresAt: string): void {
+  clearTokenRefreshTimer();
+  const expiresAtMs = Date.parse(expiresAt);
+  if (!Number.isFinite(expiresAtMs)) return;
+  const delayMs = Math.max(15_000, expiresAtMs - Date.now() - TOKEN_REFRESH_LEAD_MS);
+  tokenRefreshTimer = window.setTimeout(() => {
+    void refreshActiveSessionToken();
+  }, delayMs);
+}
+
+async function refreshActiveSessionToken(): Promise<void> {
+  if (tokenRefreshInFlight || !lastJoinRequest) return;
+  if (snapshot.status !== "connected" && snapshot.status !== "reconnecting") return;
+  if (!snapshot.roomContext) return;
+
+  tokenRefreshInFlight = true;
+  const request = lastJoinRequest;
+  const { communityName: _communityName, channelName: _channelName, ...tokenRequest } = request;
+  try {
+    const token = await requestToken(tokenRequest, { silent: true });
+    if (!token.ok) {
+      scheduleTokenRefresh(new Date(Date.now() + TOKEN_REFRESH_RETRY_MS).toISOString());
+      loggingService.logWarn("Silent LiveKit token refresh failed", { code: token.error.code }, "voice");
+      return;
+    }
+    if (lastJoinRequest !== request) return;
+    if (snapshot.status !== "connected" && snapshot.status !== "reconnecting") return;
+
+    const desiredMuted = snapshot.muted;
+    const desiredDeafened = snapshot.deafened;
+    const roomContext = snapshot.roomContext;
+    const cameraEnabled = snapshot.cameraEnabled;
+    const cameraDeviceId = desiredCameraDeviceId;
+    const lifecycleGeneration = ++roomLifecycleGeneration;
+    const activeRoom = room;
+    if (activeRoom) await disposeRoom(activeRoom);
+    activeTokenIntent = null;
+    const result = await connectWithToken(token.data, desiredMuted, desiredDeafened, roomContext, cameraEnabled, cameraDeviceId, lifecycleGeneration, { silent: true });
+    if (!result.ok) {
+      scheduleTokenRefresh(new Date(Date.now() + TOKEN_REFRESH_RETRY_MS).toISOString());
+      loggingService.logWarn("Silent LiveKit reconnect after token refresh failed", { code: result.error.code }, "voice");
+    }
+  } finally {
+    tokenRefreshInFlight = false;
+  }
 }
 
 function inputPreferenceKey(preferences: VoiceDeviceSnapshot): string {
   return [preferences.selectedInputId, preferences.permission, preferences.deviceRevision, preferences.echoCancellation, preferences.noiseSuppression, preferences.autoGainControl, noiseShieldService.getSnapshot().revision].join(":");
 }
 
-function localMicrophoneTrack(activeRoom: Room): LocalAudioTrack | null {
+function preferredMicrophoneCaptureOptions() {
+  return {
+    ...voiceDeviceService.getAudioCaptureConstraints(),
+    channelCount: { ideal: 1 },
+    sampleRate: { ideal: 48_000 },
+    latency: { ideal: 0.02 },
+  };
+}
+
+function localMicrophoneTrack(activeRoom: Room): LiveKitLocalAudioTrack | null {
   const track = activeRoom.localParticipant.getTrackPublication(Track.Source.Microphone)?.track;
   return track instanceof LocalAudioTrack ? track : null;
 }
@@ -700,7 +826,7 @@ async function setMicrophoneWithProcessing(
     }
 
     await microphoneTrackLifecycleService.prepareProcessorReplacement(() => noiseShieldService.detachProcessor("Microphone processing is being reapplied."));
-    const base = voiceDeviceService.getAudioCaptureConstraints();
+    const base = preferredMicrophoneCaptureOptions();
     const plan = noiseShieldService.createMicrophoneCapturePlan(base);
     try {
       await activeRoom.localParticipant.setMicrophoneEnabled(true, plan.constraints);
@@ -770,16 +896,42 @@ async function connectWithToken(
   desiredCamera = false,
   cameraDeviceId = "default",
   lifecycleGeneration = roomLifecycleGeneration,
+  options: Readonly<{ silent?: boolean }> = {},
 ): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
-  emit({ status: "connecting", roomName: token.roomName, roomContext, error: null, errorCode: null });
+  emit({
+    status: options.silent ? "reconnecting" : "connecting",
+    roomName: token.roomName,
+    roomContext,
+    error: null,
+    errorCode: null,
+  });
   desiredMicrophoneMuted = desiredMuted;
   desiredCameraEnabled = desiredCamera;
   desiredCameraDeviceId = cameraDeviceId;
 
-  const activeRoom = new Room({
+  try {
+    await ensureLiveKitRuntime();
+  } catch (error) {
+    loggingService.logError("LiveKit client runtime could not be loaded", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    }, "voice");
+    return voiceError("VOICE_CONNECTION_FAILED", "Picom could not load the voice runtime. Restart the app and try again.");
+  }
+
+  const activeRoom = new RoomConstructor({
     adaptiveStream: { pixelDensity: 1, pauseVideoInBackground: true },
+    audioCaptureDefaults: preferredMicrophoneCaptureOptions(),
     dynacast: true,
-    publishDefaults: cameraPublishOptions(cameraQualityPreset),
+    publishDefaults: {
+      ...cameraPublishOptions(cameraQualityPreset),
+      audioPreset: AudioPresets.speech,
+      dtx: true,
+      red: true,
+      forceStereo: false,
+      stopMicTrackOnMute: false,
+    },
+    reconnectPolicy: new DefaultReconnectPolicy(liveKitReconnectDelaysMs),
+    webAudioMix: true,
   });
 
   try {
@@ -787,7 +939,21 @@ async function connectWithToken(
     appliedOutputDeviceId = "";
     room = activeRoom;
     bindRoomEvents(activeRoom);
-    await activeRoom.connect(token.url, token.token);
+    await activeRoom.connect(token.url, token.token, {
+      autoSubscribe: true,
+      maxRetries: 4,
+      peerConnectionTimeout: 20_000,
+      websocketTimeout: 15_000,
+    });
+    try {
+      await activeRoom.startAudio();
+    } catch (error) {
+      loggingService.logWarn(
+        "LiveKit audio playback could not start immediately",
+        { errorName: error instanceof Error ? error.name : "UnknownError" },
+        "voice",
+      );
+    }
     if (lifecycleGeneration !== roomLifecycleGeneration || room !== activeRoom) {
       await disposeRoom(activeRoom);
       return canceledReconnectResult();
@@ -843,6 +1009,7 @@ async function connectWithToken(
       error: token.canPublishAudio && !microphoneEnabled ? "Microphone permission was denied or no input device is available." : null,
       errorCode: token.canPublishAudio && !microphoneEnabled ? "VOICE_PERMISSION_DENIED" : null,
     });
+    scheduleTokenRefresh(token.expiresAt);
 
     return { ok: true, data: snapshot };
   } catch (error) {
@@ -876,6 +1043,7 @@ export const voiceService = {
 
   async publishDataPacket(topic:string,payload:Uint8Array,reliable=false):Promise<VoiceServiceResult<void>>{
     if(!room||room.state===ConnectionState.Disconnected)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Join the meeting before sending a signal."}};
+    if(room.localParticipant.permissions?.canPublishData===false)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Live hand and reaction signals need a refreshed voice session. Leave and rejoin the room."}};
     if(!/^[a-z0-9._-]{1,80}$/i.test(topic)||payload.byteLength<1||payload.byteLength>16_384)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"The meeting signal payload is invalid."}};
     try{await room.localParticipant.publishData(payload,{reliable,topic});return{ok:true,data:undefined}}catch{return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Picom could not send the meeting signal."}}}
   },
@@ -955,10 +1123,8 @@ export const voiceService = {
   },
 
   setFocusedScreenShare(shareId: string | null): boolean {
-    if (shareId && !screenShares.some((share) => share.id === shareId)) return false;
     focusedScreenShareId = shareId;
     if (!room || room.state === ConnectionState.Disconnected) return false;
-    emit({ focusedScreenShareId });
     applyFocusedScreenShareSubscription(room, shareId);
     return true;
   },
@@ -1013,7 +1179,7 @@ export const voiceService = {
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
     focusedScreenShareId = null;
-    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, focusedScreenShareId: null, screenShares: [], cameraTracks: [] });
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
 
     try {
       const token = await requestToken(tokenRequest);
@@ -1053,7 +1219,7 @@ export const voiceService = {
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
     focusedScreenShareId = null;
-    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, focusedScreenShareId: null, screenShares: [], cameraTracks: [] });
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
     try {
       const result = await connectWithToken(token, desiredMuted, desiredDeafened, roomContext, Boolean(options.cameraEnabled), options.cameraDeviceId, lifecycleGeneration);
       if (!result.ok) joinFailureCount += 1;
@@ -1099,7 +1265,6 @@ export const voiceService = {
       || snapshot.status === "reconnecting"
       || snapshot.errorCode === "VOICE_CONNECTION_FAILED"
       || snapshot.errorCode === "VOICE_ROOM_UNAVAILABLE"
-      || snapshot.errorCode === "VOICE_PROVIDER_UNAVAILABLE"
     );
   },
 
@@ -1107,9 +1272,9 @@ export const voiceService = {
     roomLifecycleGeneration += 1;
     reconnectGeneration += 1;
     cancelReconnectDelay();
+    clearTokenRefreshTimer();
     const activeRoom = room;
     room = null;
-    if (activeRoom) await disposeRoom(activeRoom);
     joinInFlight = false;
     lastJoinRequest = null;
     reconnectInFlight = null;
@@ -1129,8 +1294,10 @@ export const voiceService = {
     cameraTracks = [];
     focusedScreenShareId = null;
 
+    // Clear UI state immediately so sidebar/dock connection chrome hides before
+    // LiveKit teardown finishes (dispose can take noticeable time).
     emit({
-      status: "disconnected",
+      status: "idle",
       roomName: null,
       roomContext: null,
       participants: [],
@@ -1139,7 +1306,6 @@ export const voiceService = {
       canSpeak: false,
       canShareScreen: false,
       screenSharing: false,
-      focusedScreenShareId: null,
       cameraEnabled: false,
       canUseCamera: false,
       screenShares: [],
@@ -1147,6 +1313,14 @@ export const voiceService = {
       error: null,
       errorCode: null,
     });
+
+    if (activeRoom) {
+      try {
+        await disposeRoom(activeRoom);
+      } catch {
+        // Provider teardown failures must not leave the local UI stuck "connected".
+      }
+    }
   },
 
   async reapplyMicrophoneProcessing():Promise<boolean>{if(!room)return false;if(snapshot.muted)return true;try{await setMicrophoneWithProcessing(room,false,"mode_switch",true);await setMicrophoneWithProcessing(room,true,"mode_switch");appliedInputPreferenceKey=inputPreferenceKey(voiceDeviceService.getSnapshot());emit({participants:getParticipants(room),error:null,errorCode:null});return true}catch{noiseShieldService.markFailed("Noise Shield and the fallback microphone track could not be restored.");return false}},
@@ -1155,7 +1329,7 @@ export const voiceService = {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before changing microphone state.");
     }
-    if (!muted && !snapshot.canSpeak) return voiceError("VOICE_PERMISSION_DENIED", "Microphone publishing is unavailable for this voice session.");
+    if (!muted && !snapshot.canSpeak) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot publish microphone audio in this room.");
 
     desiredMicrophoneMuted = muted;
     try {
@@ -1208,11 +1382,15 @@ export const voiceService = {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");
     }
-    if (!snapshot.canShareScreen) return voiceError("VOICE_PERMISSION_DENIED", "Screen sharing is unavailable for this voice session.");
+    if (!snapshot.canShareScreen) return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot share a screen in this room.");
 
     if (screenShareMediaTrack) {
       return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Stop the current screen share before choosing another source." } };
     }
+    if (screenShares.some((share) => !share.isLocal)) {
+      return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Another participant is already sharing in this meeting." } };
+    }
+
     if (!/^(screen|window):[a-zA-Z0-9:_-]{1,240}$/.test(sourceId)) {
       return voiceError("VOICE_SCREEN_SHARE_FAILED", "The selected screen source is invalid or expired.");
     }
@@ -1254,17 +1432,14 @@ export const voiceService = {
       }
 
       screenShareMediaTrack = track;
-      const localShareId = `local:${track.id}`;
-      focusedScreenShareId = localShareId;
       upsertScreenShare({
-        id: localShareId,
+        id: `local:${track.id}`,
         participantIdentity: activeRoom.localParticipant.identity,
         participantName: activeRoom.localParticipant.name || activeRoom.localParticipant.identity,
         isLocal: true,
         stream: new MediaStream([track]),
         sourceLabel: sourceLabel?.trim().slice(0, 80) || "Your shared screen",
       });
-      applyFocusedScreenShareSubscription(activeRoom, localShareId);
 
       track.onended = () => {
         if (screenShareMediaTrack === track && room === activeRoom) {
@@ -1272,7 +1447,7 @@ export const voiceService = {
         }
       };
 
-      emit({ screenSharing: true, focusedScreenShareId: localShareId, error: null, errorCode: null, participants: getParticipants(activeRoom) });
+      emit({ screenSharing: true, error: null, errorCode: null, participants: getParticipants(activeRoom) });
       return { ok: true, data: snapshot };
     } catch (error) {
       const denied = error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "SecurityError");

@@ -3,12 +3,12 @@ import { podcastCommunityService } from "../../services/audio/podcastCommunitySe
 import { audioDataSource } from "../../services/audio/audioDataSource";
 import { podcastService } from "../../services/audio/podcastService";
 import { communityNavigationService, type PodcastCommunitySection } from "../../services/community/communityNavigationService";
+import { dateTimeService } from "../../services/dateTimeService";
 import type { PodcastCommunityShellSnapshot, PodcastEpisode } from "../../types/audio";
 import type { Community, Member } from "../../types/community";
 import { AppIcon, type IconName } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
 import { PodcastEpisodeDetail } from "./PodcastEpisodeDetail";
-import { PodcastEpisodeList } from "./CommunityAudioView";
 import { PodcastPublisherPanel } from "./PodcastPublisherPanel";
 import { PodcastModerationPanel } from "./PodcastModerationPanel";
 import type { ReportModalTarget } from "../ReportModal";
@@ -24,6 +24,159 @@ const sections: readonly { id: Exclude<PodcastCommunitySection, "drafts" | "list
 
 function PodcastEmptyState({ icon, title, body }: { icon: IconName; title: string; body: string }) {
   return <div className="podcast-shell-empty"><span aria-hidden="true"><AppIcon name={icon} size="xl" /></span><strong>{title}</strong><p>{body}</p></div>;
+}
+
+function formatEpisodeDuration(seconds: number): string {
+  const minutes = Math.max(1, Math.floor(seconds / 60));
+  return `${minutes} min`;
+}
+
+function formatCatalogDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes} min`;
+}
+
+function PodcastShellEpisodesPanel({
+  episodes,
+  savedIds,
+  getUserLabel,
+  onPlay,
+  onToggleSaved,
+  canManage,
+  onManage,
+}: {
+  episodes: PodcastEpisode[];
+  savedIds: Set<string>;
+  getUserLabel: (userId: string) => string;
+  onPlay: (episode: PodcastEpisode) => void;
+  onToggleSaved: (episodeId: string) => void;
+  canManage: boolean;
+  onManage: (episode: PodcastEpisode) => void;
+}) {
+  const stats = useMemo(
+    () => ({
+      count: episodes.length,
+      plays: episodes.reduce((total, episode) => total + episode.listenerCount, 0),
+      runtime: episodes.reduce((total, episode) => total + episode.durationSeconds, 0),
+    }),
+    [episodes],
+  );
+
+  if (!episodes.length) {
+    return (
+      <section className="podcast-episodes-section">
+        <header className="podcast-episodes-header">
+          <div className="podcast-episodes-header-copy">
+            <p className="podcast-episodes-eyebrow">On demand</p>
+            <h2>Episodes</h2>
+            <p>Published audio available to this community.</p>
+          </div>
+          <span className="podcast-episodes-header-icon" aria-hidden="true">
+            <AppIcon name="headphones" size="md" />
+          </span>
+        </header>
+        <PodcastEmptyState
+          icon="play"
+          title="No episodes published"
+          body="Nothing appears here until a permitted Publisher completes the real publishing flow."
+        />
+      </section>
+    );
+  }
+
+  return (
+    <section className="podcast-episodes-section">
+      <header className="podcast-episodes-header">
+        <div className="podcast-episodes-header-copy">
+          <p className="podcast-episodes-eyebrow">On demand</p>
+          <h2>Episodes</h2>
+          <p>Published audio available to this community.</p>
+        </div>
+        <span className="podcast-episodes-header-icon" aria-hidden="true">
+          <AppIcon name="headphones" size="md" />
+        </span>
+      </header>
+
+      <div className="podcast-episodes-metrics" aria-label="Episode library summary">
+        <article>
+          <strong>{stats.count}</strong>
+          <span>Published</span>
+        </article>
+        <article>
+          <strong>{stats.plays.toLocaleString()}</strong>
+          <span>Total plays</span>
+        </article>
+        <article>
+          <strong>{formatCatalogDuration(stats.runtime)}</strong>
+          <span>Runtime</span>
+        </article>
+      </div>
+
+      <div className="podcast-episodes-grid">
+        {episodes.map((episode, index) => {
+          const saved = savedIds.has(episode.id);
+          return (
+            <article key={episode.id} className="podcast-episode-card" data-tone={(index % 5) + 1}>
+              <button type="button" className="podcast-episode-cover" aria-label={`Open ${episode.title}`} onClick={() => onPlay(episode)}>
+                {episode.coverUrl ? <img src={episode.coverUrl} alt="" /> : <AppIcon name="headphones" size="xl" />}
+                <span className="podcast-episode-badge">Podcast</span>
+              </button>
+
+              <div className="podcast-episode-copy">
+                <span className="podcast-episode-creator">{getUserLabel(episode.authorUserId)}</span>
+                <h3>{episode.title}</h3>
+                <p>{episode.description}</p>
+                <div className="podcast-episode-meta">
+                  <span>{formatEpisodeDuration(episode.durationSeconds)}</span>
+                  <span>{episode.listenerCount.toLocaleString()} plays</span>
+                  <span>{dateTimeService.formatCompactDateTime(episode.publishedAt)}</span>
+                </div>
+              </div>
+
+              <div className="podcast-episode-actions">
+                <button
+                  type="button"
+                  className={`podcast-episode-save${saved ? " is-active" : ""}`}
+                  aria-label={saved ? `Remove ${episode.title} from saved audio` : `Save ${episode.title}`}
+                  title={saved ? "Saved" : "Save"}
+                  onClick={() => onToggleSaved(episode.id)}
+                >
+                  <AppIcon name="pin" size="sm" />
+                </button>
+                <button type="button" className="podcast-episode-play" onClick={() => onPlay(episode)}>
+                  <AppIcon name="play" size="sm" />
+                  Play
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {canManage ? (
+        <div className="podcast-published-management">
+          <div className="podcast-published-management-header">
+            <strong>Publisher tools</strong>
+            <span>Quick access to edit published episodes.</span>
+          </div>
+          <div className="podcast-published-management-grid">
+            {episodes.map((episode) => (
+              <button type="button" key={episode.id} onClick={() => onManage(episode)}>
+                <AppIcon name="edit" size="sm" />
+                <span>
+                  <strong>{episode.title}</strong>
+                  <small>Manage published episode</small>
+                </span>
+                <AppIcon name="chevronRight" size="xs" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 export function PodcastCommunityShell({ community, canPublish, canEdit, canModerateComments, canModerateEpisodes, onOpenProfile, onReport }: PodcastCommunityShellProps) {
@@ -99,7 +252,7 @@ export function PodcastCommunityShell({ community, canPublish, canEdit, canModer
       <section className="podcast-shell-content" aria-live="polite">
         {error ? <div className="podcast-shell-error" role="alert"><strong>Library unavailable</strong><span>{error}</span></div> : null}
         {!snapshot&&!error ? <div className="podcast-shell-loading" role="status"><AppIcon name="headphones" size="lg" />Loading podcast library...</div> : null}
-        {snapshot&&activeSection==="episodes" ? <section><div className="podcast-shell-section-heading"><div><span>ON DEMAND</span><h2>Episodes</h2></div><p>Published audio available to this community.</p></div>{published.length ? <><PodcastEpisodeList episodes={published} savedIds={savedIds} getUserLabel={getUserLabel} onPlay={openEpisode} onToggleSaved={toggleSaved} />{canManage ? <div className="podcast-published-management">{published.map((episode) => <button type="button" key={episode.id} onClick={() => openPublisher(episode)}><AppIcon name="edit" size="sm" /><span><strong>{episode.title}</strong><small>Manage published episode</small></span><AppIcon name="chevronRight" size="xs" /></button>)}</div> : null}</> : <PodcastEmptyState icon="play" title="No episodes published" body="Nothing appears here until a permitted Publisher completes the real publishing flow." />}</section> : null}
+        {snapshot&&activeSection==="episodes" ? <PodcastShellEpisodesPanel episodes={published} savedIds={savedIds} getUserLabel={getUserLabel} onPlay={openEpisode} onToggleSaved={toggleSaved} canManage={canManage} onManage={openPublisher} /> : null}
         {snapshot&&activeSection==="series" ? <section><div className="podcast-shell-section-heading"><div><span>COLLECTIONS</span><h2>Series</h2></div><p>Organized shows across the Podcast community.</p></div>{snapshot.series.length ? <div className="podcast-series-grid">{snapshot.series.map((series) => <article key={series.id}><span><AppIcon name="headphones" size="lg" /></span><div><h3>{series.title}</h3><p>{series.description}</p><small>{snapshot.episodes.filter((episode)=>episode.seriesId===series.id&&episode.status==="published").length} published episodes</small></div></article>)}</div> : <PodcastEmptyState icon="headphones" title="No series created" body="Publishers can organize episodes into original series." />}</section> : null}
         {snapshot&&activeSection==="drafts"&&canManage ? <section><div className="podcast-shell-section-heading"><div><span>PRIVATE WORKSPACE</span><h2>Drafts & archive</h2></div><p>Only permitted Publishers and Editors can see unpublished work.</p></div>{privateEpisodes.length ? <div className="podcast-draft-list">{privateEpisodes.map((episode) => <article key={episode.id}><span><AppIcon name="edit" size="md" /></span><div><strong>{episode.title}</strong><p>{episode.description}</p><small>{getUserLabel(episode.authorUserId)} · {episode.status === "archived" ? "Archived" : "Not published"}</small></div><button type="button" onClick={() => openPublisher(episode)}>Edit<AppIcon name="chevronRight" size="xs" /></button></article>)}</div> : <PodcastEmptyState icon="edit" title="No private drafts" body="Create a real draft to begin the validated publishing workflow." />}</section> : null}
         {snapshot&&activeSection==="hosts" ? <section><div className="podcast-shell-section-heading"><div><span>CREATOR ACCESS</span><h2>Hosts</h2></div><p>Owner, Publisher, and Editor assignments shape the production team.</p></div>{publishers.length ? <div className="podcast-host-grid">{publishers.map((publisher) => <button key={publisher.id} type="button" onClick={() => onOpenProfile?.(publisher)}><MemberAvatar member={publisher} size={44} /><span><strong>{publisher.displayName}</strong><small>{community.roles.find((role)=>role.id===publisher.roleId)?.name??"Podcast creator"}</small></span><AppIcon name="chevronRight" size="sm" /></button>)}</div> : <PodcastEmptyState icon="users" title="No creators assigned" body="The owner can assign Publisher and Editor roles from community administration." />}</section> : null}

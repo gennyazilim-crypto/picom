@@ -21,11 +21,23 @@ function mergeRoles(roles: readonly Role[], changed: readonly Role[]): Role[] { 
 function firstRow(value: unknown): Record<string, unknown> | null { const row = Array.isArray(value) ? value[0] : value; return row && typeof row === "object" ? row as Record<string, unknown> : null; }
 function rows(value: unknown): Record<string, unknown>[] { return Array.isArray(value) ? value.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object") : []; }
 function safeName(base: string, roles: readonly Role[]): string { let name = `${base} copy`.slice(0, 40); let index = 2; const names = new Set(roles.map((role) => role.name.toLowerCase())); while (names.has(name.toLowerCase())) name = `${base} copy ${index++}`.slice(0, 40); return name; }
-function validateDraft(access: CommunityAccess, draft: CommunityRoleDraft): RoleMutationResult | null {
+// Display names that hierarchy helpers (isOwnerRole / getStatus in communityPermissions) treat as
+// privileged when matched by name. A custom role must not be allowed to impersonate one of these,
+// which would grant moderation immunity or surface admin UI without carrying the real capabilities.
+const RESERVED_ROLE_NAMES = new Set(["owner", "admin", "moderator"]);
+function validateDraft(access: CommunityAccess, draft: CommunityRoleDraft, existingSystemKey?: Role["systemKey"]): RoleMutationResult | null {
   if (!hasCommunityPermission(access, "manageRoles")) return failure("PERMISSION_DENIED", "You do not have permission to manage roles.");
-  if (!draft.name.trim() || draft.name.trim().length > 40 || !/^#[0-9a-f]{6}$/i.test(draft.color)) return failure("ROLE_INVALID", "Enter a role name and valid color.");
+  const trimmedName = draft.name.trim();
+  if (!trimmedName || trimmedName.length > 40 || !/^#[0-9a-f]{6}$/i.test(draft.color)) return failure("ROLE_INVALID", "Enter a role name and valid color.");
+  // Only block the reserved name for a fresh/custom role; editing a genuine system role (already
+  // carrying its systemKey) may legitimately keep its built-in name.
+  if (!existingSystemKey && RESERVED_ROLE_NAMES.has(trimmedName.toLowerCase())) return failure("ROLE_NAME_RESERVED", "That role name is reserved for built-in roles.");
   const actorPosition = access.isOwner ? 101 : getRolePosition(access.role);
   if (draft.level < 0 || draft.level >= actorPosition || draft.level >= 100) return failure("ROLE_HIERARCHY_DENIED", "Role position must remain below your own role.");
+  // Mirror the delegation guard already enforced in communityRoleAssignmentService.setRoles: a
+  // non-owner cannot define/edit a role to carry a capability they do not personally hold. (The
+  // server also returns PERMISSION_DELEGATION_DENIED — see errorResult — so this only fails faster.)
+  if (!access.isOwner && draft.capabilities.some((permission) => !hasCommunityPermission(access, permission))) return failure("PERMISSION_DELEGATION_DENIED", "You cannot grant a permission you do not have.");
   return null;
 }
 function errorResult(message?: string): RoleMutationResult {
@@ -37,6 +49,19 @@ function errorResult(message?: string): RoleMutationResult {
 }
 
 export const communityRoleManagementService = {
+  async listCommunityRoles(communityId: string): Promise<{ ok: true; data: Role[] } | { ok: false; error: { message: string } }> {
+    if (!communityId.trim()) return { ok: false, error: { message: "Community ID is required." } };
+    if (dataSourceService.getStatus().isMock) return { ok: false, error: { message: "Community roles are not loaded from Supabase in mock mode." } };
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, error: { message: "Supabase is not configured." } };
+    const { data, error } = await client
+      .from("roles")
+      .select("id, community_id, name, color, level, permissions, system_key, is_default, permissions_version, icon, display_order")
+      .eq("community_id", communityId)
+      .order("display_order", { ascending: true });
+    if (error || !data) return { ok: false, error: { message: error?.message ?? "Could not load community roles." } };
+    return { ok: true, data: data.map((row) => normalizeRow(row as Record<string, unknown>)) };
+  },
   async createRole(input: { community: Community; access: CommunityAccess; draft: CommunityRoleDraft; reason: string }): Promise<RoleMutationResult> {
     const invalid = validateDraft(input.access, input.draft); if (invalid) return invalid;
     if (dataSourceService.getStatus().isMock) { const role: Role = { id: crypto.randomUUID(), ...input.draft, name: input.draft.name.trim(), permissionValues: permissionsObject(input.draft.capabilities), displayOrder: Math.max(0, ...input.community.roles.map((item) => item.displayOrder ?? item.level * 100)) + 100 }; return { ok: true, data: { roles: [...input.community.roles, role], selectedRoleId: role.id } }; }
@@ -45,7 +70,7 @@ export const communityRoleManagementService = {
     const row = firstRow(data); if (error || !row) return errorResult(error?.message); const role = normalizeRow(row); return { ok: true, data: { roles: [...input.community.roles, role], selectedRoleId: role.id } };
   },
   async updateRole(input: { community: Community; access: CommunityAccess; role: Role; draft: CommunityRoleDraft; reason: string }): Promise<RoleMutationResult> {
-    if (!canManageCommunityRole(input.access, input.role)) return failure("ROLE_HIERARCHY_DENIED", "You cannot edit this role."); const invalid = validateDraft(input.access, input.draft); if (invalid) return invalid;
+    if (!canManageCommunityRole(input.access, input.role)) return failure("ROLE_HIERARCHY_DENIED", "You cannot edit this role."); const invalid = validateDraft(input.access, input.draft, input.role.systemKey); if (invalid) return invalid;
     if (dataSourceService.getStatus().isMock) { const updated: Role = { ...input.role, ...input.draft, name: input.draft.name.trim(), permissionValues: permissionsObject(input.draft.capabilities) }; return { ok: true, data: { roles: mergeRoles(input.community.roles, [updated]), selectedRoleId: updated.id } }; }
     const client = getSupabaseClient(); if (!client) return failure("DATA_SOURCE_NOT_CONFIGURED", "Supabase is not configured.");
     const { data, error } = await client.rpc("update_community_role", { target_community_id: input.community.id, target_role_id: input.role.id, target_name: input.draft.name.trim(), target_color: input.draft.color, target_icon: input.draft.icon || null, target_level: input.draft.level, target_permissions: permissionsObject(input.draft.capabilities), change_reason: input.reason });

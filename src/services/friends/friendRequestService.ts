@@ -80,7 +80,7 @@ function mapRemoteState(value: unknown, suggestionValue: unknown): FriendState {
     userId: String(row.userId ?? ""),
     displayName: String(row.displayName ?? "Picom user"),
     username: String(row.username ?? "user"),
-    avatarUrl: typeof row.avatarUrl === "string" ? row.avatarUrl : undefined,
+    avatarUrl: typeof row.avatarUrl === "string" && row.avatarUrl.trim() ? row.avatarUrl : undefined,
     status: row.status === "online" || row.status === "idle"
       ? row.status
       : row.status === "busy" || row.status === "dnd" ? "dnd" : "offline",
@@ -238,6 +238,10 @@ async function authenticatedClient() {
   return { client, userId: data.user.id };
 }
 
+function createRealtimeSubscriptionId(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 const supabaseFriendDataSource: FriendRequestDataSource = {
   async getState() {
     const auth = await authenticatedClient();
@@ -263,25 +267,25 @@ const supabaseFriendDataSource: FriendRequestDataSource = {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to respond.");
     const { data, error } = await auth.client.rpc("respond_friend_request", { target_request_id: requestId, accept_request: true });
-    return error ? classifyRemoteError(error, "Could not accept the friend request.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "This friend request is no longer pending.") : { ok: true, data };
   },
   async declineRequest(requestId) {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to respond.");
     const { data, error } = await auth.client.rpc("respond_friend_request", { target_request_id: requestId, accept_request: false });
-    return error ? classifyRemoteError(error, "Could not decline the friend request.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "This friend request is no longer pending.") : { ok: true, data };
   },
   async cancelRequest(requestId) {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to cancel the request.");
     const { data, error } = await auth.client.rpc("cancel_friend_request", { target_request_id: requestId });
-    return error ? classifyRemoteError(error, "Could not cancel the friend request.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "This friend request is no longer pending.") : { ok: true, data };
   },
   async removeFriend(userId) {
     const auth = await authenticatedClient();
     if (!auth) return failure("AUTH_REQUIRED", "Sign in to remove a friend.");
     const { data, error } = await auth.client.rpc("remove_friend", { other_user_id: userId });
-    return error ? classifyRemoteError(error, "Could not remove the friend.") : { ok: true, data };
+    return error || !data ? classifyRemoteError(error, "You are no longer connected with this user.") : { ok: true, data };
   },
   async blockFriend(friend) {
     return await userBlockingService.setBlockedUser(friend, true)
@@ -291,6 +295,7 @@ const supabaseFriendDataSource: FriendRequestDataSource = {
   async subscribeToState(listener) {
     const auth = await authenticatedClient();
     if (!auth) return () => undefined;
+    const subscriptionId = createRealtimeSubscriptionId();
     let timer: ReturnType<typeof setTimeout> | undefined;
     let active = true;
     const scheduleRefresh = () => {
@@ -302,10 +307,10 @@ const supabaseFriendDataSource: FriendRequestDataSource = {
       }, 40);
     };
     const channels = [
-      auth.client.channel(`friend-requests-sent:${auth.userId}`).on("postgres_changes", { event: "*", schema: "public", table: "friend_requests", filter: `sender_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
-      auth.client.channel(`friend-requests-received:${auth.userId}`).on("postgres_changes", { event: "*", schema: "public", table: "friend_requests", filter: `recipient_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
-      auth.client.channel(`friendships-low:${auth.userId}`).on("postgres_changes", { event: "*", schema: "public", table: "friendships", filter: `user_low_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
-      auth.client.channel(`friendships-high:${auth.userId}`).on("postgres_changes", { event: "*", schema: "public", table: "friendships", filter: `user_high_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
+      auth.client.channel(`friend-requests-sent:${auth.userId}:${subscriptionId}`).on("postgres_changes", { event: "*", schema: "public", table: "friend_requests", filter: `sender_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
+      auth.client.channel(`friend-requests-received:${auth.userId}:${subscriptionId}`).on("postgres_changes", { event: "*", schema: "public", table: "friend_requests", filter: `recipient_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
+      auth.client.channel(`friendships-low:${auth.userId}:${subscriptionId}`).on("postgres_changes", { event: "*", schema: "public", table: "friendships", filter: `user_low_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
+      auth.client.channel(`friendships-high:${auth.userId}:${subscriptionId}`).on("postgres_changes", { event: "*", schema: "public", table: "friendships", filter: `user_high_id=eq.${auth.userId}` }, scheduleRefresh).subscribe(),
     ];
     return () => {
       active = false;
@@ -316,8 +321,9 @@ const supabaseFriendDataSource: FriendRequestDataSource = {
   async subscribeToNotifications(listener) {
     const auth = await authenticatedClient();
     if (!auth) return () => undefined;
+    const subscriptionId = createRealtimeSubscriptionId();
     const channel = auth.client
-      .channel(`friend-notifications:${auth.userId}`)
+      .channel(`friend-notifications:${auth.userId}:${subscriptionId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "friend_request_notifications", filter: `recipient_id=eq.${auth.userId}` }, (payload) => {
         const row = payload.new as Record<string, unknown>;
         listener({

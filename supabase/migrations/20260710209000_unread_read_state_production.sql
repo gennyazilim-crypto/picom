@@ -2,23 +2,19 @@
 
 grant select, insert, update on public.read_states to authenticated;
 alter table public.read_states enable row level security;
-
 drop policy if exists "read_states_select_own_visible_channel" on public.read_states;
 create policy "read_states_select_own_visible_channel" on public.read_states
 for select to authenticated
 using (user_id = auth.uid() and public.can_view_channel(channel_id));
-
 drop policy if exists "read_states_insert_own_visible_channel" on public.read_states;
 create policy "read_states_insert_own_visible_channel" on public.read_states
 for insert to authenticated
 with check (user_id = auth.uid() and public.can_view_channel(channel_id));
-
 drop policy if exists "read_states_update_own_visible_channel" on public.read_states;
 create policy "read_states_update_own_visible_channel" on public.read_states
 for update to authenticated
 using (user_id = auth.uid() and public.can_view_channel(channel_id))
 with check (user_id = auth.uid() and public.can_view_channel(channel_id));
-
 create or replace function public.mark_channel_read(target_channel_id uuid, target_last_read_message_id uuid default null)
 returns boolean
 language plpgsql
@@ -44,7 +40,6 @@ begin
   return true;
 end;
 $$;
-
 create or replace function public.get_my_community_unread_state(target_community_id uuid)
 returns table(channel_id uuid, unread_count bigint, mention_count bigint, last_message_id uuid, last_read_message_id uuid)
 language sql
@@ -83,7 +78,6 @@ as $$
   group by channel.id, read_state.last_read_message_id, read_message.id, read_message.created_at, latest_message.id
   order by channel.position, channel.id;
 $$;
-
 revoke all on function public.mark_channel_read(uuid, uuid) from public, anon;
 revoke all on function public.get_my_community_unread_state(uuid) from public, anon;
 grant execute on function public.mark_channel_read(uuid, uuid) to authenticated;

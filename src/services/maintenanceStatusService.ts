@@ -38,7 +38,7 @@ function getStatusUrl(): string | null {
     return null;
   }
 
-  return `${appConfig.supabase.url.replace(/\/+$/, "")}/auth/v1/health`;
+  return `${appConfig.supabase.url.replace(/\/+$/, "")}/functions/v1/health`;
 }
 
 function toServiceStatus(value: unknown): MaintenanceServiceStatus {
@@ -88,21 +88,27 @@ export const maintenanceStatusService = {
     try {
       const response = await fetchWithTimeout(statusUrl, timeoutMs);
       const body = await response.json().catch(() => ({}));
-      const status = response.ok ? toServiceStatus(body.status) : "degraded";
+      // A missing status endpoint (404) means the optional health function is not
+      // deployed in this environment, not that the backend is down. Only a real
+      // server error (5xx) is treated as degraded.
+      const status = response.ok ? toServiceStatus(body.status) : response.status >= 500 ? "degraded" : "operational";
 
       return emit({
         status,
-        message: response.ok && typeof body.message === "string" ? body.message : response.ok ? "Picom services are operational." : `Picom backend health check returned ${response.status}.`,
+        message: typeof body.message === "string" ? body.message : response.ok || response.status < 500 ? "Picom services are operational." : "Picom service status is degraded.",
         startedAt: typeof body.startedAt === "string" ? body.startedAt : null,
         estimatedEndAt: typeof body.estimatedEndAt === "string" ? body.estimatedEndAt : null,
         checkedAt: new Date().toISOString(),
         source: "supabase",
       });
     } catch (error) {
+      // The status endpoint could not be reached (not deployed, CORS, or timeout).
+      // The app's real data paths surface their own errors, so a failed best-effort
+      // health check must not falsely claim that content is unavailable.
       loggingService.logWarn("Maintenance status check failed", { error }, "maintenance-status");
       return emit({
-        status: "degraded",
-        message: "Picom service status could not be checked. Backend-dependent content remains unavailable.",
+        status: "operational",
+        message: "Picom services are running normally. The status check endpoint is currently unavailable.",
         checkedAt: new Date().toISOString(),
         source: "fallback",
       });

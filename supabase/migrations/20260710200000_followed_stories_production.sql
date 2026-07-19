@@ -11,17 +11,14 @@ create table if not exists public.voice_story_events (
   ended_at timestamptz,
   check (ended_at is null or ended_at >= created_at)
 );
-
 create index if not exists idx_voice_story_events_author_created
   on public.voice_story_events(author_id, created_at desc, id);
 create index if not exists idx_voice_story_events_channel_active
   on public.voice_story_events(channel_id, created_at desc)
   where ended_at is null;
-
 alter table public.voice_story_events enable row level security;
 revoke all on public.voice_story_events from public, anon, authenticated;
 grant select on public.voice_story_events to authenticated;
-
 drop policy if exists "voice_story_events_select_followed_visible" on public.voice_story_events;
 create policy "voice_story_events_select_followed_visible"
 on public.voice_story_events for select to authenticated
@@ -38,7 +35,6 @@ using (
   )
   and not public.users_are_blocked(auth.uid(), author_id)
 );
-
 drop view if exists public.followed_user_stories_view;
 create view public.followed_user_stories_view
 with (security_invoker = true)
@@ -188,10 +184,8 @@ select * from (
   from public.voice_story_events voice
 ) story
 where not public.users_are_blocked(auth.uid(), story.author_id);
-
 revoke all on public.followed_user_stories_view from public, anon;
 grant select on public.followed_user_stories_view to authenticated;
-
 create or replace function public.list_followed_user_stories(
   cursor_created_at timestamptz default null,
   cursor_story_id text default null,
@@ -233,10 +227,8 @@ as $$
   order by story.created_at desc, story.story_id desc
   limit least(greatest(result_limit, 1), 60);
 $$;
-
 revoke all on function public.list_followed_user_stories(timestamptz, text, integer) from public, anon;
 grant execute on function public.list_followed_user_stories(timestamptz, text, integer) to authenticated;
-
 comment on table public.voice_story_events is
   'Backend-produced, content-free voice story facts. Normal authenticated clients cannot insert or mutate rows.';
 comment on view public.followed_user_stories_view is

@@ -1,4 +1,4 @@
-export type LiveKitIntent = "voice" | "screen";
+export type LiveKitIntent = "voice" | "video" | "screen";
 
 export type LiveKitTokenRequest = Readonly<{
   communityId: string;
@@ -23,10 +23,6 @@ export type LiveKitTokenResponse = Readonly<{
 
 export type LiveKitServiceErrorCode =
   | "LIVEKIT_NOT_CONFIGURED"
-  | "LIVEKIT_AUTH_REQUIRED"
-  | "LIVEKIT_ACCESS_DENIED"
-  | "LIVEKIT_RATE_LIMITED"
-  | "LIVEKIT_PROVIDER_UNAVAILABLE"
   | "LIVEKIT_TOKEN_FAILED"
   | "LIVEKIT_INVALID_TOKEN_RESPONSE";
 

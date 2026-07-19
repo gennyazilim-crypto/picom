@@ -1,9 +1,7 @@
 create extension if not exists pg_trgm with schema extensions;
-
 alter table public.messages
   add column if not exists search_vector tsvector
   generated always as (to_tsvector('simple'::regconfig, coalesce(body, ''))) stored;
-
 create index if not exists idx_messages_search_vector_visible
   on public.messages using gin(search_vector)
   where deleted_at is null;
@@ -18,7 +16,6 @@ create index if not exists idx_profiles_display_name_trgm
   on public.profiles using gin(lower(display_name) extensions.gin_trgm_ops);
 create index if not exists idx_profiles_username_trgm
   on public.profiles using gin(lower(username) extensions.gin_trgm_ops);
-
 create or replace function public.search_accessible_entities(
   query_text text,
   category_filter text default null,
@@ -146,9 +143,7 @@ begin
   limit least(greatest(result_limit, 1), 80);
 end;
 $$;
-
 revoke all on function public.search_accessible_entities(text,text,integer) from public, anon;
 grant execute on function public.search_accessible_entities(text,text,integer) to authenticated;
-
 comment on function public.search_accessible_entities(text,text,integer) is
   'Authenticated unified search with explicit community/channel/message visibility, member-list membership, mention, and user-owned saved-message checks.';

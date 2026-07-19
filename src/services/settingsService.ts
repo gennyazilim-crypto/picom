@@ -11,7 +11,7 @@ export type DateStylePreference = "system" | "numeric" | "descriptive";
 export type TimeFormatPreference = "system" | "12h" | "24h";
 import type { NotificationDigestMode } from "./notificationDigestService";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
-const allSettingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Legal", "Advanced"] as const;
+const allSettingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Admin Operations", "Legal", "Advanced"] as const;
 export type SettingsSection = typeof allSettingsSections[number];
 export const settingsSections: readonly SettingsSection[] = allSettingsSections.filter((section) => {
   if (section === "Voice & Video") return isV1FeatureEnabled("voiceRooms") || isV1FeatureEnabled("screenShare");
@@ -84,6 +84,8 @@ type LocalSettingsMigration = {
 const key = "picom-settings";
 const backupKeyPrefix = "picom-settings.backup";
 const initialSectionKey = "picom:settings:initial-section";
+const initialFocusKey = "picom:settings:initial-focus";
+export type SettingsFocusTarget = "voice-microphone" | "voice-output";
 const currentSchemaVersion = 9;
 const listeners = new Set<(settings: PicomSettings) => void>();
 let cachedSettings: PicomSettings | null = null;
@@ -453,6 +455,7 @@ export const settingsService = {
     };
   },
   requestInitialSection(section: SettingsSection) { try { sessionStore()?.setItem(initialSectionKey, section); return true; } catch { return false; } },
+  requestInitialFocus(target: SettingsFocusTarget) { try { sessionStore()?.setItem(initialFocusKey, target); return true; } catch { return false; } },
   consumeInitialSection(): SettingsSection {
     try {
       const storage = sessionStore();
@@ -460,6 +463,14 @@ export const settingsService = {
       storage?.removeItem(initialSectionKey);
       return settingsSections.includes(requested as SettingsSection) ? requested as SettingsSection : "Appearance";
     } catch { return "Appearance"; }
+  },
+  consumeInitialFocus(): SettingsFocusTarget | null {
+    try {
+      const storage = sessionStore();
+      const requested = storage?.getItem(initialFocusKey);
+      storage?.removeItem(initialFocusKey);
+      return requested === "voice-microphone" || requested === "voice-output" ? requested : null;
+    } catch { return null; }
   },
   async syncAccountSettings(settings?: PicomSettings): Promise<{ ok: true } | { ok: false; error: string }> {
     const accountSettings = settings ?? settingsService.getSettings();

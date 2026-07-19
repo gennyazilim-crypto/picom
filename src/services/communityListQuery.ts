@@ -5,7 +5,8 @@ import type { Database } from "./supabase/database.types";
 import { isCommunityKind, type CommunityKind } from "../types/community";
 import { getDefaultCommunityTypeSettings, normalizeCommunityTypeSettings, type CommunityNotificationLevel } from "../types/communitySettings";
 
-export const COMMUNITY_LIST_SELECT = "id, kind, owner_id, name, description, icon_url, banner_url, accent_color, visibility, public_read_enabled, default_notification_level, type_settings, rules_enabled, rules_version, created_at, updated_at" as const;
+export const COMMUNITY_LIST_SELECT = "id, kind, owner_id, name, description, icon_url, banner_url, accent_color, visibility, public_read_enabled, default_notification_level, type_settings, rules_enabled, rules_version, discovery_listed, category, discovery_join_policy, created_at, updated_at" as const;
+/** Alias kept for callers that import the select string for merge/update flows. */
 export const LEGACY_COMMUNITY_LIST_SELECT = "id, owner_id, name, description, icon_url, accent_color, visibility, public_read_enabled, rules_enabled, rules_version, created_at, updated_at" as const;
 
 export type CommunityListRow = Readonly<{
@@ -23,6 +24,9 @@ export type CommunityListRow = Readonly<{
   type_settings?: unknown;
   rules_enabled: boolean;
   rules_version: string;
+  discovery_listed?: boolean;
+  category?: "development" | "design" | "gaming" | "music" | "study" | "work" | null;
+  discovery_join_policy?: "open" | "request";
   created_at: string;
   updated_at: string;
 }>;
@@ -54,6 +58,9 @@ export function mapCommunityListRow(row: CommunityListRow): CommunitySummary {
     typeSettings: normalizeCommunityTypeSettings(kind, row.type_settings),
     rulesEnabled: row.rules_enabled,
     rulesVersion: row.rules_version,
+    discoveryListed: row.discovery_listed ?? false,
+    discoveryCategory: row.category ?? null,
+    discoveryJoinPolicy: row.discovery_join_policy ?? "open",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -75,6 +82,9 @@ export function listMockCommunitySummaries(): CommunitySummary[] {
     typeSettings: community.typeSettings ?? getDefaultCommunityTypeSettings(community.kind),
     rulesEnabled: community.rulesEnabled ?? false,
     rulesVersion: community.rulesVersion ?? "1",
+    discoveryListed: community.discoveryListed ?? false,
+    discoveryCategory: community.discoveryCategory ?? null,
+    discoveryJoinPolicy: community.discoveryJoinPolicy ?? "open",
     createdAt: null,
     updatedAt: null,
   }));
@@ -93,10 +103,23 @@ export function isMissingCommunityKindColumnError(error: unknown): boolean {
 }
 
 export async function listSupabaseCommunitySummaries(client: SupabaseClient<Database>): Promise<CommunityListQueryResult> {
-  const currentResult = await client
+  const { data: authData, error: authError } = await client.auth.getUser();
+  if (authError || !authData.user) return { data: null, error: authError ?? new Error("Authenticated community scope is unavailable.") };
+
+  const membershipResult = await client
+    .from("community_members")
+    .select("community_id")
+    .eq("user_id", authData.user.id);
+  if (membershipResult.error) return { data: null, error: membershipResult.error };
+
+  const joinedCommunityIds = [...new Set((membershipResult.data ?? []).map((membership) => membership.community_id))];
+  let currentQuery = client
     .from("communities")
-    .select(COMMUNITY_LIST_SELECT)
-    .order("created_at", { ascending: true });
+    .select(COMMUNITY_LIST_SELECT);
+  currentQuery = joinedCommunityIds.length
+    ? currentQuery.or(`owner_id.eq.${authData.user.id},id.in.(${joinedCommunityIds.join(",")})`)
+    : currentQuery.eq("owner_id", authData.user.id);
+  const currentResult = await currentQuery.order("created_at", { ascending: true });
 
   if (!currentResult.error) {
     return { data: (currentResult.data ?? []).map(mapCommunityListRow), error: null };
@@ -106,10 +129,13 @@ export async function listSupabaseCommunitySummaries(client: SupabaseClient<Data
     return { data: null, error: currentResult.error };
   }
 
-  const legacyResult = await client
+  let legacyQuery = client
     .from("communities")
-    .select(LEGACY_COMMUNITY_LIST_SELECT)
-    .order("created_at", { ascending: true });
+    .select(LEGACY_COMMUNITY_LIST_SELECT);
+  legacyQuery = joinedCommunityIds.length
+    ? legacyQuery.or(`owner_id.eq.${authData.user.id},id.in.(${joinedCommunityIds.join(",")})`)
+    : legacyQuery.eq("owner_id", authData.user.id);
+  const legacyResult = await legacyQuery.order("created_at", { ascending: true });
 
   if (legacyResult.error) {
     return { data: null, error: legacyResult.error };

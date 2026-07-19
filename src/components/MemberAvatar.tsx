@@ -1,41 +1,36 @@
-import { useMemo } from "react";
 import type { Member } from "../types/community";
-import { avatarService } from "../services/avatarService";
-import { getIdentityGradient, getInitials } from "../utils/generatedIdentity";
+import { UserAvatar } from "./UserAvatar";
 
 type MemberAvatarProps = {
   member?: Member;
+  userId?: string | null;
   label?: string;
   size?: number;
   className?: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   avatarSeed?: string;
   imageAlt?: string;
 };
 
 export function MemberAvatar({
   member,
+  userId,
   label,
   size = 36,
   className = "",
-  avatarUrl: avatarUrlOverride,
-  avatarSeed,
-  imageAlt = "",
+  avatarUrl,
+  imageAlt,
 }: MemberAvatarProps) {
-  const text = label ?? member?.displayName ?? "P";
-  const initials = getInitials(text, "P");
-  const background = getIdentityGradient(avatarSeed ?? member?.avatarSeed ?? text);
-  const avatarUrl = useMemo(
-    () => avatarUrlOverride ?? avatarService.getAvatarForMember(member),
-    [avatarUrlOverride, member?.userId, member?.avatarUrl],
-  );
-
+  const displayName = label ?? member?.displayName ?? member?.username ?? "Picom member";
+  const resolvedFallback = [avatarUrl, member?.avatarUrl].find((value) => typeof value === "string" && value.trim().length > 0) ?? null;
   return (
-    <span
-      className={`generated-avatar ${avatarUrl ? "has-avatar-image" : ""} ${className}`.trim()}
-      style={{ width: size, height: size, background }}
-    >
-      {avatarUrl ? <img src={avatarUrl} alt={imageAlt} loading="lazy" /> : initials}
-    </span>
+    <UserAvatar
+      userId={userId ?? member?.userId}
+      displayName={displayName}
+      fallbackUrl={resolvedFallback}
+      size={size}
+      className={"member-avatar " + className}
+      alt={imageAlt ?? displayName + " avatar"}
+    />
   );
 }

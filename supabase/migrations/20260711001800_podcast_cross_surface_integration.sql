@@ -90,6 +90,4 @@ create trigger podcast_comment_mentions_notify after insert or update of body,de
 
 revoke all on function public.enqueue_podcast_mentions(uuid,uuid,text,text,text),public.notify_podcast_description_mentions(),public.notify_podcast_comment_mentions() from public,anon,authenticated;
 comment on column public.notifications.podcast_episode_id is 'Exact Podcast episode route. Recipient RLS and episode access are rechecked by the renderer service before navigation.';
-comment on function public.enqueue_podcast_mentions(uuid,uuid,text,text,text) is 'Internal trigger-only producer for authorized Podcast description/comment mentions; stores bounded metadata, never private audio URLs.';
-
-commit;
+comment on function public.enqueue_podcast_mentions(uuid,uuid,text,text,text) is 'Internal trigger-only producer for authorized Podcast description/comment mentions; stores bounded metadata, never private audio URLs.';;

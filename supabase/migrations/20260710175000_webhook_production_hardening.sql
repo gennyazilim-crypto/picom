@@ -2,11 +2,9 @@
 
 alter table public.webhooks drop constraint if exists webhooks_avatar_url_safe;
 alter table public.webhooks add constraint webhooks_avatar_url_safe check (avatar_url is null or (char_length(avatar_url) <= 2048 and avatar_url ~ '^https://'));
-
 revoke insert, update, delete on public.webhooks from authenticated;
 drop policy if exists "webhooks_manager_insert" on public.webhooks;
 drop policy if exists "webhooks_manager_revoke" on public.webhooks;
-
 create or replace function public.create_channel_webhook(target_community_id uuid, target_channel_id uuid, target_webhook_name text, webhook_avatar_url text default null)
 returns table(webhook_id uuid, community_id uuid, channel_id uuid, webhook_name text, avatar_url text, created_by uuid, revoked_at timestamptz, created_at timestamptz, updated_at timestamptz, token_once text)
 language plpgsql volatile security definer set search_path = public, extensions as $$
@@ -24,7 +22,6 @@ end;
 $$;
 revoke all on function public.create_channel_webhook(uuid,uuid,text,text) from public, anon;
 grant execute on function public.create_channel_webhook(uuid,uuid,text,text) to authenticated;
-
 create or replace function public.revoke_channel_webhook(target_webhook_id uuid)
 returns table(webhook_id uuid, community_id uuid, channel_id uuid, webhook_name text, avatar_url text, created_by uuid, revoked_at timestamptz, created_at timestamptz, updated_at timestamptz)
 language plpgsql volatile security definer set search_path = public as $$
@@ -38,6 +35,5 @@ end;
 $$;
 revoke all on function public.revoke_channel_webhook(uuid) from public, anon;
 grant execute on function public.revoke_channel_webhook(uuid) to authenticated;
-
 comment on function public.create_channel_webhook(uuid,uuid,text,text) is 'Manager-only trusted token generation. Raw token is returned once and only its SHA-256 hash is stored.';
 comment on function public.revoke_channel_webhook(uuid) is 'Manager-only idempotent webhook revocation with append-only audit.';

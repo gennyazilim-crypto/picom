@@ -18,6 +18,17 @@ const CommunityInviteManagement = lazy(() => import("./CommunityInviteManagement
 export type AdminSectionId = "overview" | "insights" | "community-settings" | "verification" | "channels" | "roles" | "members" | "emojis" | "stickers" | "bots" | "webhooks" | "invites" | "events" | "moderation" | "audit-log" | "danger-zone";
 export type ModeratorSectionId = "reports" | "flagged-messages" | "member-moderation" | "message-moderation" | "moderation-log";
 
+const allAdminNavGroups: ReadonlyArray<{ label: string; ids: AdminSectionId[] }> = [
+  { label: "General", ids: ["overview", "insights", "community-settings", "verification"] },
+  { label: "Structure", ids: ["channels", "roles", "members", "invites"] },
+  { label: "Integrations", ids: ["emojis", "stickers", "bots", "webhooks", "events"] },
+  { label: "Safety", ids: ["moderation", "audit-log", "danger-zone"] },
+];
+
+export const adminNavGroups: ReadonlyArray<{ label: string; ids: AdminSectionId[] }> = allAdminNavGroups
+  .map((group) => ({ ...group, ids: group.ids.filter(isV1CommunityAdminSectionEnabled) }))
+  .filter((group) => group.ids.length > 0);
+
 const allAdminSectionDefinitions: Array<{ id: AdminSectionId; label: string; permission?: CommunityAccess["permissions"][number]; ownerOnly?: boolean; icon: IconName }> = [
   { id: "overview", label: "Overview", icon: "home" },
   { id: "insights", label: "Insights", permission: "viewInsights", icon: "inbox" },
@@ -53,7 +64,32 @@ function SectionShell({ eyebrow, title, description, children }: { eyebrow: stri
 
 export function CommunityAdminOverview({ community, access }: { community: Community; access: CommunityAccess }) {
   const channels = community.categories.flatMap((category) => category.channels);
-  return <SectionShell eyebrow="Workspace health" title={`${community.name} overview`} description={`Signed in with ${access.status} access.`}><div className="community-admin-metrics"><article><strong>{community.members.length}</strong><span>Members</span></article><article><strong>{channels.length}</strong><span>Channels</span></article><article><strong>{community.roles.length}</strong><span>Roles</span></article><article><strong>{community.messages.length}</strong><span>Mock messages</span></article></div><div className="community-admin-note"><AppIcon name="lock" size="sm" /><span>Frontend section visibility improves UX. Supabase RLS remains the authorization boundary.</span></div></SectionShell>;
+  const metrics = [
+    { label: "Members", value: community.members.length, icon: "users" as const },
+    { label: "Channels", value: channels.length, icon: "hash" as const },
+    { label: "Roles", value: community.roles.length, icon: "lock" as const },
+    { label: "Messages", value: community.messages.length, icon: "inbox" as const },
+  ];
+
+  return (
+    <SectionShell eyebrow="Workspace health" title={`${community.name} overview`} description={`Signed in with ${access.status} access.`}>
+      <div className="community-admin-metrics community-admin-metrics--hero">
+        {metrics.map((metric) => (
+          <article key={metric.label}>
+            <span className="community-metric-icon" aria-hidden="true">
+              <AppIcon name={metric.icon} size="sm" />
+            </span>
+            <strong>{metric.value}</strong>
+            <span>{metric.label}</span>
+          </article>
+        ))}
+      </div>
+      <div className="community-admin-note">
+        <AppIcon name="lock" size="sm" />
+        <span>Frontend section visibility improves UX. Supabase RLS remains the authorization boundary.</span>
+      </div>
+    </SectionShell>
+  );
 }
 
 export function CommunitySettingsSection({ community, access, onUpdated }: { community: Community; access: CommunityAccess; onUpdated: (community: CommunitySummary) => void }) {
@@ -65,23 +101,98 @@ export function CommunityChannelsSection({ community, onCreateChannel }: { commu
 }
 
 export function CommunityRolesSection({ community, access, onRolesChanged }: { community: Community; access: CommunityAccess; onRolesChanged: (roles: Community["roles"]) => void }) {
-  return <SectionShell eyebrow="Access architecture" title="Roles and permissions" description="Create custom roles, control permissions, and order the visible hierarchy through audited service operations."><Suspense fallback={<div className="community-admin-empty">Loading role editor...</div>}><CommunityRoleManagement community={community} access={access} onRolesChanged={onRolesChanged} /></Suspense></SectionShell>;
+  return (
+    <section className="community-admin-section community-roles-section">
+      <header className="community-mgmt-card-header">
+        <div className="community-mgmt-card-header-copy">
+          <p className="eyebrow">Access architecture</p>
+          <h3>Roles and permissions</h3>
+          <p>Create custom roles, control permissions, and order the visible hierarchy through audited service operations.</p>
+        </div>
+        <span className="community-mgmt-card-icon" aria-hidden="true"><AppIcon name="lock" size="md" /></span>
+      </header>
+      <Suspense fallback={<div className="community-mgmt-empty"><strong>Loading role editor</strong><span>Permission groups and hierarchy rules are being prepared.</span></div>}>
+        <CommunityRoleManagement community={community} access={access} onRolesChanged={onRolesChanged} />
+      </Suspense>
+    </section>
+  );
 }
 
 export function CommunityMembersSection({ community, access, onMemberRolesChanged }: { community: Community; access: CommunityAccess; onMemberRolesChanged: (memberId: string, roleIds: string[], primaryRoleId: string) => void }) {
-  return <SectionShell eyebrow="People and access" title="Member roles" description="Assign one or more roles to a member. Self, Owner, and equal-or-higher hierarchy changes remain blocked."><Suspense fallback={<div className="community-admin-empty">Loading member access...</div>}><CommunityMemberRoleAssignment community={community} access={access} onMemberRolesChanged={onMemberRolesChanged} /></Suspense></SectionShell>;
+  return (
+    <section className="community-admin-section community-members-section">
+      <header className="community-mgmt-card-header">
+        <div className="community-mgmt-card-header-copy">
+          <p className="eyebrow">People and access</p>
+          <h3>Member roles</h3>
+          <p>Assign one or more roles to a member. Self, Owner, and equal-or-higher hierarchy changes remain blocked.</p>
+        </div>
+        <span className="community-mgmt-card-icon" aria-hidden="true"><AppIcon name="users" size="md" /></span>
+      </header>
+      <Suspense fallback={<div className="community-mgmt-empty"><strong>Loading member access</strong><span>Role assignments and hierarchy checks are being prepared.</span></div>}>
+        <CommunityMemberRoleAssignment community={community} access={access} onMemberRolesChanged={onMemberRolesChanged} />
+      </Suspense>
+    </section>
+  );
 }
 
 export function CommunityInvitesSection({ community, access, onOpenInvite }: { community: Community; access: CommunityAccess; onOpenInvite: () => void }) {
-  return <SectionShell eyebrow="Access links" title="Invites" description="Create, inspect, and revoke limited links. Validation and usage remain server-enforced."><Suspense fallback={<div className="community-admin-empty" role="status">Loading invite lifecycle...</div>}><CommunityInviteManagement community={community} canCreate={access.permissions.includes("createInvites")} onOpenInvite={onOpenInvite} /></Suspense></SectionShell>;
+  return (
+    <section className="community-admin-section community-invites-section">
+      <header className="community-mgmt-card-header">
+        <div className="community-mgmt-card-header-copy">
+          <p className="eyebrow">Access links</p>
+          <h3>Invites</h3>
+          <p>Create, inspect, and revoke limited links. Validation and usage remain server-enforced.</p>
+        </div>
+        <span className="community-mgmt-card-icon" aria-hidden="true"><AppIcon name="send" size="md" /></span>
+      </header>
+      <Suspense fallback={<div className="community-mgmt-empty" role="status"><strong>Loading invite lifecycle</strong><span>Campaign summaries and usage limits are being prepared.</span></div>}>
+        <CommunityInviteManagement community={community} canCreate={access.permissions.includes("createInvites")} onOpenInvite={onOpenInvite} />
+      </Suspense>
+    </section>
+  );
 }
 
 export function CommunityModerationSection({ children }: { children?: ReactNode }) {
-  return <SectionShell eyebrow="Safety" title="Moderation" description="Community-level controls only. No platform or enterprise administration is included.">{children ?? <div className="community-admin-empty"><AppIcon name="bell" size="lg" /><strong>No additional moderation tools</strong><span>Reports and filters appear here when available.</span></div>}</SectionShell>;
+  return (
+    <section className="community-admin-section community-moderation-section">
+      <header className="community-mgmt-card-header">
+        <div className="community-mgmt-card-header-copy">
+          <p className="eyebrow">Safety</p>
+          <h3>Moderation</h3>
+          <p>Community-level controls only. No platform or enterprise administration is included.</p>
+        </div>
+        <span className="community-mgmt-card-icon" aria-hidden="true">
+          <AppIcon name="bell" size="md" />
+        </span>
+      </header>
+      {children ?? (
+        <div className="community-mgmt-empty">
+          <strong>No additional moderation tools</strong>
+          <span>Reports and filters appear here when available.</span>
+        </div>
+      )}
+    </section>
+  );
 }
 
 export function CommunityDangerZone({ children }: { children?: ReactNode }) {
-  return <SectionShell eyebrow="Owner only" title="Danger zone" description="Destructive actions require explicit confirmation and remain auditable."><div className="community-danger-grid">{children}</div></SectionShell>;
+  return (
+    <section className="community-admin-section community-danger-section">
+      <header className="community-mgmt-card-header community-danger-section-header">
+        <div className="community-mgmt-card-header-copy">
+          <p className="eyebrow">Owner only</p>
+          <h3>Danger zone</h3>
+          <p>Destructive actions require explicit confirmation and remain auditable.</p>
+        </div>
+        <span className="community-mgmt-card-icon community-danger-section-icon" aria-hidden="true">
+          <AppIcon name="trash" size="md" />
+        </span>
+      </header>
+      <div className="community-danger-grid">{children}</div>
+    </section>
+  );
 }
 
 export function CommunityAuditLogPlaceholder({ community, canView }: { community: Community; canView: boolean }) {

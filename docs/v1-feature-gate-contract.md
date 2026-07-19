@@ -1,22 +1,49 @@
 # Picom V1 Feature Gate Contract
 
-The authoritative registry is src/config/v1ReleaseScope.ts. Renderer navigation, channel filtering, authenticated route/deep link guards, Settings, Help, diagnostics, search, and release copy consume that registry.
+## Authority
 
-## Voice and Screen Share
+`src/config/v1ReleaseScope.ts` is the single typed V1 release-scope authority. Navigation, community selection, onboarding, Settings sections, Help topics, search results, badges, deep links, build metadata, and release documentation must consume or be contract-checked against it.
 
-Task 657 preserves Voice Rooms and Screen Share as IN_V1 while replacing the provider model with SELF_HOSTED_LIVEKIT. Infrastructure readiness may show a clear unavailable/degraded state, but it must not silently hide the V1 Voice surface.
+Frontend gating is a release-surface control, not an authorization boundary. Supabase RLS, Storage policies, Edge Function JWT validation, and service permissions remain mandatory.
 
-- Voice channels are V1-visible when the user can access the text community.
-- An authenticated active community member may join, publish microphone audio, subscribe to remote audio, start an explicit Screen Share, and subscribe to remote shares.
-- Owner/Admin/Moderator/custom roles do not grant ordinary media access; moderation remains a separate hierarchy.
-- Visitors, non-members, removed, banned, suspended, ended-room, and provider-unavailable states fail closed.
-- Feature flags and emergency kill switches may temporarily disable a service for safety, but cannot grant access.
-- Media permission is requested only after explicit room/share action.
+## Enforcement
 
-## Edge boundary
+- Global navigation includes only registry entries whose feature is enabled.
+- Community ServerRail includes only enabled community kinds.
+- Voice channels are absent because Task 621 classified Voice Rooms and Screen Share `HIDDEN_FROM_V1`.
+- Hidden settings and community-admin sections are not selectable.
+- Hidden Help topics and quick filters are not rendered.
+- Global search omits hidden categories.
+- Badge derivation returns no hidden-feature badge.
+- Renderer and notification deep links reject hidden destinations with a safe V1 message.
+- Command navigation contains no hidden destination.
+- Global audio surfaces and profile/feed audio modules remain unrendered in V1.
+- Build metadata claims Windows as the only stable V1 platform.
 
-The release manifest includes authenticated livekit-token and livekit-moderation functions plus the signature-verified internal livekit-webhook. Provider credentials remain server-only.
+## Safe blocked-route behavior
 
-## Retained gated source
+A blocked deep link or stale local navigation request must:
 
-Do not delete Radio, Podcast, Events, Bookmarks, Meeting, bot, plugin, enterprise, or other post-V1 source solely because it is gated. Hidden routes and deep links must continue to fail closed without exposing data.
+1. Avoid mounting the hidden workspace.
+2. Avoid loading private hidden-feature data for presentation.
+3. Return the user to Feed when a safe fallback is needed.
+4. Explain that the destination is not included in Picom V1 Core.
+5. Never imply that access can be bypassed with a URL.
+
+## Retention rule
+
+Do not delete Radio, Podcast, Events, Bookmarks, Meeting, Voice, Screen Share, bot, webhook, or other post-V1 source code and stored data solely because the surface is gated. The V1 gate prevents navigation and rendering; it is intentionally reversible after a future scope decision and evidence review.
+
+## Task 621 final decision
+
+Voice Rooms and Screen Share are `HIDDEN_FROM_V1`. Their source and stored data remain intact, but V1 navigation, onboarding, settings, channels, feed controls, help, deep links, Edge deployment and release copy must not expose them. A future release requires a new scoped decision plus real hosted and packaged-Windows evidence.
+
+## Test contract
+
+Run:
+
+```powershell
+node scripts/v1-core-scope-smoke.mjs
+```
+
+The check verifies classifications, Windows-only metadata, gate consumers, hidden command removal, release documentation, and clean-checkout logo dependencies. It does not replace typecheck, build, hosted security evidence, or manual Windows release testing.

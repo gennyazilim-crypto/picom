@@ -6,7 +6,7 @@ const navigationService=read("src/services/community/communityNavigationService.
 for(const marker of ["getShellView",'"radioCommunity"','"podcastCommunity"',"resolveTextChannelId"])assert(navigationService.includes(marker),`Central community navigation is missing ${marker}`);
 assert(!app.includes('"communityAudio"'),"Legacy mixed communityAudio route remains active");
 const shell=read("src/components/audio/PodcastCommunityShell.tsx");
-for(const marker of ["PodcastCommunityShell","Episodes","Series","Drafts","Hosts","About","listenerDiscussionEnabled","PodcastEpisodeList","podcastCommunityService.getShellSnapshot"])assert(shell.includes(marker),`PodcastCommunityShell is missing ${marker}`);
+for(const marker of ["PodcastCommunityShell","Episodes","Series","Drafts","Hosts","About","listenerDiscussionEnabled","PodcastShellEpisodesPanel","PodcastPublisherPanel","podcastCommunityService.getShellSnapshot"])assert(shell.includes(marker),`PodcastCommunityShell is missing ${marker}`);
 assert(!shell.includes("CommunitySidebar")&&!shell.includes("RadioCommunityShell")&&!shell.includes("RadioSession"),"Podcast shell includes Text or Radio primary identity");
 const service=read("src/services/communityService.ts");
 for(const marker of ['kind === "podcast"','rpc("create_podcast_community_with_defaults"',"target_creation_request_id: creationRequestId","Could not create the Podcast library"])assert(service.includes(marker),`Podcast creation service is missing ${marker}`);

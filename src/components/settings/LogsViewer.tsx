@@ -10,13 +10,94 @@ export function LogsViewer({ onNotice }: { onNotice: (message: string, tone?: "i
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
   useEffect(() => loggingService.onLog(() => setLogs(loggingService.getLogs())), []);
-  const sources = useMemo(() => [...new Set(logs.map((entry) => entry.source).filter((value): value is string => Boolean(value)))].sort(), [logs]);
-  const filtered = useMemo(() => logs.filter((entry) => (level === "all" || entry.level === level) && (source === "all" || entry.source === source) && `${entry.message} ${entry.source ?? ""}`.toLowerCase().includes(query.trim().toLowerCase())).slice().reverse(), [level, logs, query, source]);
+
+  const sources = useMemo(
+    () => [...new Set(logs.map((entry) => entry.source).filter((value): value is string => Boolean(value)))].sort(),
+    [logs],
+  );
+
+  const filtered = useMemo(
+    () => logs
+      .filter((entry) => (level === "all" || entry.level === level)
+        && (source === "all" || entry.source === source)
+        && `${entry.message} ${entry.source ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()))
+      .slice()
+      .reverse(),
+    [level, logs, query, source],
+  );
+
   const selected = logs.find((entry) => entry.id === selectedId) ?? null;
-  const copy = async () => { if (!selected) return; const result = await clipboardService.copyText(JSON.stringify(selected, null, 2)); onNotice(result.ok ? "Selected log copied." : result.reason, result.ok ? "success" : "error"); };
-  const copyFiltered = async () => { const result = await clipboardService.copyText(JSON.stringify(loggingService.redactDiagnosticsValue(filtered), null, 2)); onNotice(result.ok ? `${filtered.length} redacted log entries copied.` : result.reason, result.ok ? "success" : "error"); };
-  const exportLogs = async () => { const result = await fileService.saveText(`picom-redacted-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.json`, loggingService.exportLogs()); onNotice(result.ok ? (result.canceled ? "Log export canceled." : "Redacted logs exported.") : result.reason, result.ok && !result.canceled ? "success" : "info"); };
-  const clear = () => { if (!window.confirm("Clear recent redacted logs from this Picom session? This cannot be undone.")) return; loggingService.clearLogs(); setLogs([]); setSelectedId(null); onNotice("Logs cleared.", "info"); };
-  return <section className="logs-viewer"><header><div><p className="eyebrow">Redacted local history</p><h3>Logs</h3></div><div className="settings-actions-row"><button type="button" disabled={!selected} onClick={() => void copy()}>Copy selected</button><button type="button" disabled={!filtered.length} onClick={() => void copyFiltered()}>Copy filtered</button><button type="button" onClick={() => void exportLogs()}>Export</button><button type="button" onClick={clear}>Clear</button></div></header><div className="logs-filters"><select value={level} onChange={(event) => setLevel(event.target.value as LogLevel | "all")}><option value="all">All levels</option><option value="debug">Debug</option><option value="info">Info</option><option value="warn">Warn</option><option value="error">Error</option></select><select value={source} onChange={(event) => setSource(event.target.value)}><option value="all">All sources</option>{sources.map((item) => <option key={item} value={item}>{item}</option>)}</select><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search logs" aria-label="Search redacted logs" /></div><div className="logs-list">{filtered.length ? filtered.map((entry) => <button type="button" key={entry.id} className={selectedId === entry.id ? "selected" : ""} onClick={() => setSelectedId(entry.id)}><time title={dateTimeService.formatFullTimestamp(entry.timestamp)}>{dateTimeService.formatMessageTime(entry.timestamp)}</time><em className={entry.level}>{entry.level}</em><strong>{entry.message}</strong><span>{entry.source ?? "app"}</span></button>) : <div className="empty-state compact">No logs match these filters.</div>}</div></section>;
+
+  const copy = async () => {
+    if (!selected) return;
+    const result = await clipboardService.copyText(JSON.stringify(selected, null, 2));
+    onNotice(result.ok ? "Selected log copied." : result.reason, result.ok ? "success" : "error");
+  };
+
+  const copyFiltered = async () => {
+    const result = await clipboardService.copyText(JSON.stringify(loggingService.redactDiagnosticsValue(filtered), null, 2));
+    onNotice(result.ok ? `${filtered.length} redacted log entries copied.` : result.reason, result.ok ? "success" : "error");
+  };
+
+  const exportLogs = async () => {
+    const result = await fileService.saveText(`picom-redacted-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.json`, loggingService.exportLogs());
+    onNotice(result.ok ? (result.canceled ? "Log export canceled." : "Redacted logs exported.") : result.reason, result.ok && !result.canceled ? "success" : "info");
+  };
+
+  const clear = () => {
+    if (!window.confirm("Clear recent redacted logs from this Picom session? This cannot be undone.")) return;
+    loggingService.clearLogs();
+    setLogs([]);
+    setSelectedId(null);
+    onNotice("Logs cleared.", "info");
+  };
+
+  return (
+    <section className="diagnostics-settings-section diagnostics-logs-section" aria-label="Redacted local logs">
+      <div className="diagnostics-section-toolbar">
+        <h3 className="diagnostics-settings-section-title">Redacted logs</h3>
+        <div className="settings-actions-row">
+          <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!selected} onClick={() => void copy()}>Copy selected</button>
+          <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!filtered.length} onClick={() => void copyFiltered()}>Copy filtered</button>
+          <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void exportLogs()}>Export</button>
+          <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={clear}>Clear</button>
+        </div>
+      </div>
+
+      <div className="diagnostics-logs-filters">
+        <select className="diagnostics-logs-filter" value={level} onChange={(event) => setLevel(event.target.value as LogLevel | "all")}>
+          <option value="all">All levels</option>
+          <option value="debug">Debug</option>
+          <option value="info">Info</option>
+          <option value="warn">Warn</option>
+          <option value="error">Error</option>
+        </select>
+        <select className="diagnostics-logs-filter" value={source} onChange={(event) => setSource(event.target.value)}>
+          <option value="all">All sources</option>
+          {sources.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select>
+        <input className="diagnostics-logs-search advanced-settings-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search logs" aria-label="Search redacted logs" />
+      </div>
+
+      <div className="diagnostics-logs-list">
+        {filtered.length ? filtered.map((entry) => (
+          <button
+            type="button"
+            key={entry.id}
+            className={`diagnostics-log-row${selectedId === entry.id ? " is-selected" : ""}`}
+            onClick={() => setSelectedId(entry.id)}
+          >
+            <time title={dateTimeService.formatFullTimestamp(entry.timestamp)}>{dateTimeService.formatMessageTime(entry.timestamp)}</time>
+            <em className={entry.level}>{entry.level}</em>
+            <strong>{entry.message}</strong>
+            <span>{entry.source ?? "app"}</span>
+          </button>
+        )) : (
+          <div className="diagnostics-logs-empty">No logs match these filters.</div>
+        )}
+      </div>
+    </section>
+  );
 }

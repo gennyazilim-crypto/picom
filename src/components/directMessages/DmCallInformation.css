@@ -1,0 +1,71 @@
+.dm-call-header-controls { position: relative; display: flex; align-items: center; gap: 4px; }
+.dm-call-header-controls.is-active { padding-left: 8px; border-left: 1px solid var(--border); }
+.dm-call-header-status { max-width: 230px; display: inline-flex; align-items: center; gap: 6px; overflow: hidden; color: var(--text-secondary); font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.dm-call-header-status i, .dm-call-live-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 14%, transparent); }
+.dm-call-header-controls .icon-button.is-off { color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--surface)); }
+.dm-call-header-controls .dm-call-end { color: var(--danger); }
+.dm-call-join { height: 30px; padding: 0 11px; border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border)); border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 800; cursor: pointer; }
+
+.dm-call-settings { position: absolute; z-index: 80; top: 42px; right: 0; width: min(360px, calc(100vw - 40px)); max-height: min(620px, calc(100vh - 110px)); overflow: auto; display: grid; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+.dm-call-settings > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dm-call-settings > header > div { display: grid; gap: 2px; }
+.dm-call-settings > header span { color: var(--accent); font-size: 9px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.dm-call-settings > header strong { color: var(--text-primary); font-size: 14px; }
+.dm-call-settings > header button { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-soft); color: var(--text-muted); cursor: pointer; }
+.dm-call-settings .voice-device-panel { margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-soft); }
+.dm-call-settings .voice-device-panel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dm-call-settings .voice-device-panel .eyebrow { color: var(--text-muted); font-size: 9px; }
+.dm-call-settings .voice-device-panel h4 { margin: 2px 0 0; color: var(--text-primary); font-size: 12px; }
+.dm-call-settings .voice-device-refresh { min-height: 28px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-secondary); font-size: 9px; }
+.dm-call-settings .voice-device-fields { display: grid; gap: 8px; margin-top: 10px; }
+.dm-call-settings .voice-device-fields label, .dm-call-camera-select { display: grid; gap: 5px; color: var(--text-secondary); font-size: 10px; }
+.dm-call-settings select { width: 100%; height: 34px; padding: 0 9px; border: 1px solid var(--border); border-radius: 9px; outline: 0; background: var(--surface); color: var(--text-primary); }
+.dm-call-settings select:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
+.dm-call-camera-select > span { display: inline-flex; align-items: center; gap: 6px; font-weight: 750; }
+.dm-call-diagnostics { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-soft); }
+.dm-call-diagnostics header { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text-primary); font-size: 11px; }
+.dm-call-diagnostics header span { color: var(--success); font-size: 9px; font-weight: 850; text-transform: uppercase; }
+.dm-call-diagnostics dl { margin: 0; display: grid; gap: 6px; }
+.dm-call-diagnostics dl div { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 8px; color: var(--text-secondary); font-size: 9px; }
+.dm-call-diagnostics dt { color: var(--text-muted); }
+.dm-call-diagnostics dd { min-width: 0; margin: 0; overflow-wrap: anywhere; text-align: right; }
+.dm-call-diagnostics p { margin: 0; color: var(--text-muted); font-size: 9px; line-height: 1.45; }
+
+.dm-call-information-card { width: min(680px, calc(100% - 48px)); align-self: center; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 10px 16px; margin: 0 auto 8px; padding: 14px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border)); border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 48%, var(--surface)), var(--surface)); box-shadow: var(--shadow-soft); }
+.dm-call-information-main { min-width: 0; display: flex; align-items: center; gap: 11px; }
+.dm-call-information-icon { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; background: var(--accent); color: var(--text-on-accent, white); }
+.dm-call-information-main > div { min-width: 0; display: grid; gap: 2px; }
+.dm-call-eyebrow { color: var(--accent); font-size: 8px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.dm-call-information-main strong { color: var(--text-primary); font-size: 13px; }
+.dm-call-information-main small { overflow: hidden; color: var(--text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.dm-call-participant-stack { display: flex; flex-direction: row-reverse; justify-content: flex-start; padding-left: 8px; }
+.dm-call-avatar { width: 28px; height: 28px; display: grid; place-items: center; overflow: hidden; margin-left: -8px; border: 2px solid var(--surface); border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 10px; font-weight: 850; }
+.dm-call-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dm-call-information-states { min-width: 0; display: flex; flex-wrap: wrap; gap: 7px; }
+.dm-call-information-states span { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 999px; background: color-mix(in srgb, var(--surface-soft) 86%, transparent); color: var(--text-secondary); font-size: 9px; }
+.dm-call-information-action { height: 30px; padding: 0 11px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 10px; font-weight: 850; cursor: pointer; }
+
+.dm-call-timeline-event { width: min(620px, calc(100% - 72px)); align-self: center; display: grid; grid-template-columns: 36px minmax(0,1fr) auto; align-items: center; gap: 10px; margin: 3px auto; padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px; background: color-mix(in srgb, var(--surface-soft) 78%, transparent); }
+.dm-call-timeline-event.is-unread { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); box-shadow: inset 3px 0 0 var(--danger); }
+.dm-call-timeline-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; background: var(--surface); color: var(--accent); }
+.dm-call-timeline-event.status-missed .dm-call-timeline-icon, .dm-call-timeline-event.status-failed .dm-call-timeline-icon { color: var(--danger); }
+.dm-call-timeline-event > div { min-width: 0; display: grid; gap: 2px; }
+.dm-call-timeline-event strong { color: var(--text-primary); font-size: 11px; }
+.dm-call-timeline-event span, .dm-call-timeline-event small { overflow: hidden; color: var(--text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.dm-call-timeline-event > button { height: 28px; display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text-secondary); font-size: 9px; font-weight: 800; cursor: pointer; }
+
+.dm-active-call-mini { position: fixed; z-index: 86; right: 22px; bottom: 22px; width: min(360px, calc(100vw - 44px)); display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 10px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); border-radius: 18px; background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: var(--shadow); backdrop-filter: blur(18px); }
+.dm-active-call-copy { min-width: 0; display: grid; grid-template-columns: 9px minmax(0,1fr); align-items: center; gap: 9px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.dm-active-call-copy > div { min-width: 0; display: grid; gap: 1px; }
+.dm-active-call-copy strong, .dm-active-call-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-active-call-copy strong { color: var(--text-primary); font-size: 11px; }
+.dm-active-call-copy small { color: var(--text-muted); font-size: 9px; }
+.dm-active-call-mini-controls { display: flex; gap: 3px; }
+.dm-active-call-mini-controls button { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 9px; background: var(--surface-soft); color: var(--text-secondary); cursor: pointer; }
+.dm-active-call-mini-controls button:hover, .dm-active-call-mini-controls button:focus-visible { outline: 0; background: var(--surface-hover); box-shadow: var(--focus-ring); }
+.dm-active-call-mini-controls button.active { background: var(--accent-soft); color: var(--accent); }
+.dm-active-call-mini-controls button.is-off, .dm-active-call-mini-controls button.danger { color: var(--danger); }
+
+@media (max-width: 1280px) { .dm-call-header-status { display: none; } .dm-call-information-card { width: calc(100% - 32px); } }
+@media (prefers-reduced-motion: reduce) { .dm-call-header-status i, .dm-call-live-dot { box-shadow: none; } }
+@media (prefers-contrast: more) { .dm-call-information-card, .dm-call-timeline-event, .dm-active-call-mini { border-width: 2px; } }

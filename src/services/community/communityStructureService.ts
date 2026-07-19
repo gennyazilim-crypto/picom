@@ -38,6 +38,13 @@ const mockOverrides = new Map<string, ManagedPermissionOverride[]>();
 function fail<T>(error: string): CommunityStructureResult<T> { return { ok: false, error }; }
 function ok<T>(data: T): CommunityStructureResult<T> { return { ok: true, data }; }
 function firstRow(data: unknown): Record<string, unknown> | null { const row = Array.isArray(data) ? data[0] : data; return row && typeof row === "object" ? row as Record<string, unknown> : null; }
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(value: string): boolean { return UUID_PATTERN.test(value.trim()); }
+function requireUuid(value: string, label: string): CommunityStructureResult<never> | null {
+  const trimmed = value.trim();
+  if (!isUuid(trimmed)) return fail(`${label} is out of sync. Refresh the community and try again.`);
+  return null;
+}
 function mapSection(row: SectionRow): CommunityStructureSection { return { id: row.id, communityId: row.community_id, communityKind: row.community_kind, sectionType: row.section_type, label: row.label, position: row.position, visibility: row.visibility, isEnabled: row.is_enabled, isRequired: row.is_required, createdAt: row.created_at, updatedAt: row.updated_at }; }
 function newId(prefix: string): string { return typeof crypto !== "undefined" && "randomUUID" in crypto ? `${prefix}-${crypto.randomUUID()}` : `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 function storageKey(communityId: string): string { return `picom.community-structure.v1.${communityId}`; }
@@ -133,21 +140,26 @@ export const communityStructureService = {
 
   async renameTextCategory(communityId: string, categoryId: string, name: string): Promise<CommunityStructureResult<boolean>> {
     if (dataSourceService.getStatus().isMock) return name.trim() ? ok(true) : fail("Category name is required.");
+    const invalid = requireUuid(categoryId, "Category"); if (invalid) return invalid;
     const result = await callRpc("rename_managed_category", { target_category_id: categoryId, category_name: name.trim(), expected_community_id: communityId }); return result.ok ? ok(true) : result;
   },
 
   async deleteTextCategory(communityId: string, categoryId: string): Promise<CommunityStructureResult<boolean>> {
     if (dataSourceService.getStatus().isMock) return ok(true);
+    const invalid = requireUuid(categoryId, "Category"); if (invalid) return invalid;
     const result = await callRpc("delete_managed_category", { target_category_id: categoryId, expected_community_id: communityId }); return result.ok ? ok(true) : result;
   },
 
   async moveTextCategory(communityId: string, categoryId: string, direction: "up" | "down"): Promise<CommunityStructureResult<boolean>> {
     if (dataSourceService.getStatus().isMock) return ok(true);
+    const invalid = requireUuid(categoryId, "Category"); if (invalid) return invalid;
     const result = await callRpc("move_managed_category", { target_category_id: categoryId, expected_community_id: communityId, move_direction: direction }); return result.ok ? ok(true) : result;
   },
 
   async moveTextChannel(communityId: string, categoryId: string, channelId: string, direction: "up" | "down"): Promise<CommunityStructureResult<boolean>> {
     if (dataSourceService.getStatus().isMock) return ok(true);
+    const invalidChannel = requireUuid(channelId, "Channel"); if (invalidChannel) return invalidChannel;
+    const invalidCategory = requireUuid(categoryId, "Category"); if (invalidCategory) return invalidCategory;
     const result = await callRpc("move_managed_channel", { target_channel_id: channelId, expected_community_id: communityId, expected_category_id: categoryId, move_direction: direction }); return result.ok ? ok(true) : result;
   },
 

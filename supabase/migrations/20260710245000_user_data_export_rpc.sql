@@ -1,6 +1,5 @@
 -- Task 328: user-scoped synchronous export job metadata; payloads are never persisted here.
 revoke insert, update, delete on public.data_export_requests from authenticated;
-
 create or replace function public.begin_own_data_export()
 returns table(id uuid, requested_at timestamptz)
 language plpgsql security definer set search_path=public as $$
@@ -11,7 +10,6 @@ begin
   insert into public.data_export_requests(user_id,status,format) values(auth.uid(),'processing','json') returning * into created;
   return query select created.id,created.requested_at;
 end; $$;
-
 create or replace function public.complete_own_data_export(target_export_id uuid, next_status text, next_failure_code text default null)
 returns table(id uuid,status text,requested_at timestamptz,completed_at timestamptz,expires_at timestamptz)
 language plpgsql security definer set search_path=public as $$
@@ -24,7 +22,6 @@ begin
   if completed.id is null then raise exception 'EXPORT_REQUEST_NOT_FOUND' using errcode='42501'; end if;
   return query select completed.id,completed.status,completed.requested_at,completed.completed_at,completed.expires_at;
 end; $$;
-
 revoke all on function public.begin_own_data_export() from public,anon;
 revoke all on function public.complete_own_data_export(uuid,text,text) from public,anon;
 grant execute on function public.begin_own_data_export() to authenticated;

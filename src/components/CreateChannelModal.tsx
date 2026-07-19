@@ -31,18 +31,10 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
   const [name, setName] = useState("");
   const [type, setType] = useState<ChannelType>("text");
   const [categoryId, setCategoryId] = useState<string | null>(defaultCategoryId ?? firstCategoryId);
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [publicReadEnabled, setPublicReadEnabled] = useState(true);
-  const permissionRoles = useMemo(() => community.roles.filter((role) => role.name === "Owner" || role.name === "Admin" || role.name === "Moderator"), [community.roles]);
-  const [allowedRoleIds, setAllowedRoleIds] = useState<string[]>(() => permissionRoles.map((role) => role.id));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const normalizedName = useMemo(() => normalizePreview(name), [name]);
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
-
-  const toggleAllowedRole = (roleId: string) => {
-    setAllowedRoleIds((current) => current.includes(roleId) ? current.filter((id) => id !== roleId) : [...current, roleId]);
-  };
 
   const submit = async () => {
     if (!normalizedName) {
@@ -54,7 +46,7 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
     setError(null);
 
     try {
-      await onSubmit({ name: normalizedName, type, categoryId, isPrivate, publicReadEnabled: isPrivate ? false : publicReadEnabled, allowedRoleIds: isPrivate ? allowedRoleIds : [] });
+      await onSubmit({ name: normalizedName, type, categoryId, isPrivate: false, publicReadEnabled: true, allowedRoleIds: [] });
     } catch {
       setError("Could not create channel. Please try again.");
     } finally {
@@ -102,37 +94,6 @@ export function CreateChannelModal({ community, defaultCategoryId, onClose, onSu
             ))}
           </select>
         </label>
-
-        <label className="channel-checkbox">
-          <input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} />
-          <span>
-            <strong>Private channel</strong>
-            <em>Hidden from visitors and members without private-channel permission.</em>
-          </span>
-        </label>
-
-        <label className="channel-checkbox">
-          <input type="checkbox" checked={!isPrivate && publicReadEnabled} disabled={isPrivate} onChange={(event) => setPublicReadEnabled(event.target.checked)} />
-          <span>
-            <strong>Allow public reading</strong>
-            <em>{isPrivate ? "Private channels are never public." : "Visitors may read when community public access is enabled."}</em>
-          </span>
-        </label>
-
-        {isPrivate ? (
-          <div className="private-channel-permissions" aria-label="Private channel role permissions placeholder">
-            <span>Allowed roles placeholder</span>
-            <p>Backend RLS will remain the source of truth later. This local setup records which roles should be allowed.</p>
-            <div>
-              {permissionRoles.map((role) => (
-                <label key={role.id}>
-                  <input type="checkbox" checked={allowedRoleIds.includes(role.id)} onChange={() => toggleAllowedRole(role.id)} />
-                  <strong>{role.name}</strong>
-                </label>
-              ))}
-            </div>
-          </div>
-        ) : null}
 
         {error ? <div className="auth-error" role="alert">{error}</div> : null}
 

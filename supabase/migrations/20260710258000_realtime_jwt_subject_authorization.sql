@@ -66,10 +66,8 @@ exception
     return false;
 end;
 $$;
-
 revoke all on function public.can_access_picom_realtime_topic_for_subject(text, text, text) from public, anon;
 grant execute on function public.can_access_picom_realtime_topic_for_subject(text, text, text) to authenticated;
-
 drop policy if exists "picom members receive private realtime topics" on realtime.messages;
 create policy "picom members receive private realtime topics"
 on realtime.messages
@@ -82,7 +80,6 @@ using (
     extension::text
   )
 );
-
 drop policy if exists "picom members send private realtime topics" on realtime.messages;
 create policy "picom members send private realtime topics"
 on realtime.messages
@@ -95,6 +92,5 @@ with check (
     extension::text
   )
 );
-
 comment on function public.can_access_picom_realtime_topic_for_subject(text, text, text) is
   'Authorizes private Realtime topics from the immutable JWT subject plus community membership and channel visibility.';

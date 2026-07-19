@@ -68,9 +68,3 @@ No destructive database lifecycle was executed because a complete isolated resto
 
 RB-11 remains open. Stable release remains No-Go.
 
-## Task 624 closure attempt
-
-The compatibility sequence was completed without weakening the dump: fresh `template0` database, `extensions` schema, `pg_trgm` installed into `extensions`, and restore through `supabase_admin`. Roles, full schema, public data, and Auth/Storage metadata all restored. Core/auth counts, orphan checks, RLS/private visibility, message-delete and invite-revoke RPCs, and 13 database lifecycle assertions passed. All changes ran against synthetic data in a no-network/no-port container and the container was removed.
-
-This closes the prior schema/extension restore defect. It does not close end-to-end recovery: two Storage metadata rows do not prove object bytes can be recovered, and database session deletion/revocation does not prove a running GoTrue service rejects already-issued credentials. Stable V1 remains No-Go under RB-11 until those external checks pass.
-

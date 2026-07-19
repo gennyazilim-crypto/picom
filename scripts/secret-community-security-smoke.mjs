@@ -7,7 +7,6 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
 const migration = read("supabase/migrations/20260717120000_secret_community_production.sql");
 const verification = read("supabase/functions/secret-community-verification/index.ts");
-const selfHostedMigration = read("supabase/migrations/20260717233000_self_hosted_secret_sms_verification.sql");
 const secretService = read("src/services/community/secretCommunityService.ts");
 const discovery = read("src/services/communityDiscoveryService.ts") + read("src/services/discoveryModerationService.ts");
 const flow = read("src/components/SecretCommunityFlows.tsx");
@@ -16,7 +15,7 @@ const rootOps = read("src/services/rootDashboard/secretCommunityOperationsServic
 const checks = [
   ["secret visibility constraint", /visibility in \('public','private','secret'\)/i.test(migration)],
   ["hashed unique phone", /phone_hash text unique check\(phone_hash is null or phone_hash~'\^\[a-f0-9\]\{64\}\$'\)/.test(migration)],
-  ["SMS verification provider", selfHostedMigration.includes("'picom_self_hosted_sms_v1'")],
+  ["voice verification provider", migration.includes("'twilio_verify'")],
   ["recipient-bound invite", migration.includes("recipient_user_id uuid not null")],
   ["exact one-hour expiry", migration.includes("check(expires_at=created_at+interval '1 hour')")],
   ["maximum five uses", migration.includes("max_uses smallint not null default 5 check(max_uses=5)")],
@@ -32,7 +31,7 @@ const checks = [
   ["global search exclusion", migration.includes("where r.community_id is null or not public.is_secret_community(r.community_id)")],
   ["mention and profile exclusion", migration.includes("is_secret_community") && migration.includes("list_visible_profile_activity_pre_secret")],
   ["root-only trust operations", migration.includes("adjust_root_secret_community_trust_score") && migration.includes("is_root_owner()")],
-  ["Picom self-hosted SMS gateway", verification.includes("PICOM_SMS_VERIFY_BASE_URL") && verification.includes("x-picom-signature")],
+  ["Twilio Verify call channel", verification.includes('form.set("Channel", "call")')],
   ["HMAC phone protection", verification.includes('name: "HMAC"') && verification.includes("PHONE_VERIFICATION_HASH_SECRET")],
   ["E.164 validation", verification.includes("^\\+[1-9][0-9]{7,14}$")],
   ["UUID and raw-code invite parsing", secretService.includes("[a-fA-F0-9]{64}|[0-9a-fA-F]{8}-[0-9a-fA-F-]{27}")],
@@ -43,6 +42,6 @@ const checks = [
 
 for (const [label, passed] of checks) {
   assert.equal(passed, true, label);
-  console.log("PASS " + label);
+  console.log("✓ " + label);
 }
-console.log("PASS Secret Community production security contract completed");
+console.log("✓ Secret Community production security contract completed");

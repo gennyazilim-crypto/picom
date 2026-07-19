@@ -320,4 +320,4 @@ grant execute on function public.archive_community(uuid, text, text) to authenti
 comment on function public.transfer_community_ownership(uuid, uuid, text) is
   'Owner-only atomic ownership and role transfer to an existing active member, with append-only audit evidence.';
 comment on function public.archive_community(uuid, text, text) is
-  'Owner-only recoverable archive. Community rows and audit/security history are retained; normal access is blocked.';
+  'Owner-only recoverable archive. Community rows and audit/security history are retained; normal access is blocked.';;

@@ -7,13 +7,11 @@ create table if not exists public.community_moderation_settings (
   updated_by uuid references public.profiles(id) on delete set null,
   updated_at timestamptz not null default now()
 );
-
 alter table public.community_moderation_settings enable row level security;
 grant select, insert, update on public.community_moderation_settings to authenticated;
 create policy "moderation_settings_manager_select" on public.community_moderation_settings for select to authenticated using (public.can_moderate_community_reports(community_id));
 create policy "moderation_settings_manager_insert" on public.community_moderation_settings for insert to authenticated with check (public.can_moderate_community_reports(community_id));
 create policy "moderation_settings_manager_update" on public.community_moderation_settings for update to authenticated using (public.can_moderate_community_reports(community_id)) with check (public.can_moderate_community_reports(community_id));
-
 create or replace function public.validate_message_moderation()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
@@ -33,6 +31,5 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists messages_moderation_guard on public.messages;
 create trigger messages_moderation_guard before insert on public.messages for each row execute function public.validate_message_moderation();

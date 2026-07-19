@@ -3,7 +3,6 @@
 
 alter table public.profile_privacy_settings
   add column if not exists show_online_status boolean not null default true;
-
 create or replace function public.get_own_profile_privacy_v2()
 returns table(
   profile_visibility text,
@@ -26,7 +25,6 @@ begin
   from public.profile_privacy_settings settings where settings.user_id = auth.uid();
 end;
 $$;
-
 create or replace function public.update_profile_privacy_v2(
   next_visibility text,
   next_show_online_status boolean,
@@ -61,7 +59,6 @@ begin
   return true;
 end;
 $$;
-
 create or replace function public.get_profile_privacy_projection_v2(target_user_id uuid)
 returns table(
   can_view_profile boolean,
@@ -123,7 +120,6 @@ begin
     case when allowed and settings.show_timezone then settings.timezone end;
 end;
 $$;
-
 create or replace function public.get_profile_activity_v3(target_user_id uuid, result_limit integer default 30)
 returns jsonb
 language plpgsql
@@ -145,7 +141,6 @@ begin
   return payload;
 end;
 $$;
-
 revoke all on function public.get_own_profile_privacy_v2(),
   public.update_profile_privacy_v2(text,boolean,boolean,boolean,boolean,boolean),
   public.get_profile_privacy_projection_v2(uuid),
@@ -156,10 +151,8 @@ grant execute on function public.get_own_profile_privacy_v2(),
   public.get_profile_privacy_projection_v2(uuid),
   public.get_profile_activity_v3(uuid,integer)
 to authenticated;
-
 -- v3 is the client-facing profile activity boundary; v2 remains callable only
 -- by trusted database functions/owners for compatibility.
 revoke execute on function public.get_profile_activity_v2(uuid,integer) from authenticated;
-
 comment on function public.get_profile_activity_v3(uuid,integer) is
   'Profile activity v2 payload with online status removed server-side when the target privacy setting hides it.';

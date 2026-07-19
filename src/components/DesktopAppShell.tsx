@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { windowService } from "../services/windowService";
+import { versionCompatibilityService } from "../services/versionCompatibilityService";
 import { AppIcon } from "./AppIcon";
 import { MeetingDeepLinkGateway } from "./meeting/MeetingDeepLinkGateway";
+import { VersionCompatibilityNotice } from "./VersionCompatibilityNotice";
 
 type DesktopAppShellProps = {
   children: ReactNode;
@@ -21,6 +23,10 @@ export function DesktopAppShell({ children }: DesktopAppShellProps) {
 
     const unsubscribe = windowService.onMaximizeStateChanged(setIsMaximized);
 
+    // Evaluate the running version against the remote-config minimum/recommended versions.
+    // Failures are non-fatal: the gate only blocks on a confirmed remote "update_required".
+    void versionCompatibilityService.refreshRemoteConfig().catch(() => undefined);
+
     return () => {
       mounted = false;
       unsubscribe();
@@ -39,6 +45,7 @@ export function DesktopAppShell({ children }: DesktopAppShellProps) {
         </div>
       </div>
       <section className="desktop-app-shell">{children}<MeetingDeepLinkGateway /></section>
+      <VersionCompatibilityNotice />
     </div>
   );
 }

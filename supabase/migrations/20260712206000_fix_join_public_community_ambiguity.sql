@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.join_public_community(
   target_community_id uuid,
   accepted_rules_version text default null
@@ -130,11 +129,8 @@ begin
       created_membership.role_id, created_membership.joined_at, 'joined'::text;
 end;
 $$;
-
 revoke all on function public.join_public_community(uuid, text) from public, anon;
 grant execute on function public.join_public_community(uuid, text) to authenticated;
-
 comment on function public.join_public_community(uuid, text) is
   'Atomic public join with explicit conflict constraint. Rules, bans, default role, idempotency, and redacted audit remain server enforced.';
-
 commit;

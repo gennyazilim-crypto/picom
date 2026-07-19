@@ -31,9 +31,12 @@ expectIncludes(sessionHook, "setNotice(result.data.message)", "Registration must
 expectIncludes(registerScreen, 'className="auth-success"', "Register screen must render a non-error verification notice.");
 
 const firstLaunchGuard = app.indexOf("!firstLaunchSetupCompleted");
-const authGuard = app.indexOf("passwordRecoveryMode || !authReady || !authSession");
+const authLoadingGuard = app.indexOf("if (!authReady)");
+const authGuard = app.indexOf("passwordRecoveryMode || !authSession");
 const onboardingView = app.indexOf("<OnboardingFlow");
-expect(firstLaunchGuard >= 0 && authGuard > firstLaunchGuard && onboardingView > authGuard, "First launch, auth, and onboarding guards must remain ordered.");
+// Auth-loading must render before the signed-out login guard so a refresh never
+// flashes the login screen while the Supabase session is still restoring.
+expect(firstLaunchGuard >= 0 && authLoadingGuard > firstLaunchGuard && authGuard > authLoadingGuard && onboardingView > authGuard, "First launch, auth-loading, signed-out, and onboarding guards must remain separated and ordered.");
 
 expectIncludes(onboarding, 'client.rpc("complete_current_user_onboarding"', "Supabase onboarding must use the transactional service boundary.");
 expect(!onboarding.includes("if (localRecord) return"), "Supabase onboarding must not use local state as authority.");

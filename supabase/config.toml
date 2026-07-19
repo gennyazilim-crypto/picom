@@ -2,26 +2,26 @@ project_id = "picom"
 
 [api]
 enabled = true
-port = 54321
+port = 55421
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-port = 54322
-shadow_port = 54320
+port = 55422
+shadow_port = 55420
 major_version = 15
 
 [studio]
 enabled = true
-port = 54323
-api_url = "http://127.0.0.1:54321"
+port = 55423
+api_url = "http://127.0.0.1:55421"
 
 [inbucket]
 enabled = true
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
+port = 55424
+smtp_port = 55425
+pop3_port = 55426
 
 [storage]
 enabled = true
@@ -45,6 +45,18 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
+# Hosted/staging/production Auth password-reset and verification mail must send as
+# info@picom.gg via custom SMTP (Dashboard Authentication > SMTP, or
+# `npm run auth:smtp:sender`). Local Inbucket keeps using the built-in catcher.
+# [auth.email.smtp]
+# enabled = true
+# host = "env(SMTP_HOST)"
+# port = 587
+# user = "env(SMTP_USER)"
+# pass = "env(SMTP_PASS)"
+# admin_email = "info@picom.gg"
+# sender_name = "Picom"
+
 [functions.health]
 verify_jwt = false
 
@@ -52,6 +64,15 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.livekit-token]
+verify_jwt = true
+
+[functions.voice-occupancy]
+verify_jwt = true
+
+[functions.voice-call-authorize]
+verify_jwt = true
+
+[functions.admin-health]
 verify_jwt = true
 
 [functions.meeting-join]
@@ -96,5 +117,19 @@ verify_jwt = true
 [functions.account-deletion-finalize]
 verify_jwt = false
 
+[functions.steam-auth]
+verify_jwt = false
+
+[functions.epic-auth]
+verify_jwt = false
+
+[functions.email-api]
+verify_jwt = false
+
 [functions.secret-community-verification]
 verify_jwt = true
+
+[analytics]
+enabled = true
+port = 55427
+backend = "postgres"

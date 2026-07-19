@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Picom Installer Live Preview — EN / TR</title>
+  <style>
+    :root {
+      --accent: #c41c30;
+      --ink: #152033;
+      --muted: #6b7a8c;
+      --line: #d5e2ec;
+      --bg: #eef3f7;
+      --surface: #ffffff;
+      --surface-soft: #f4f8fb;
+      --rail: #f7fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 24px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.35rem; letter-spacing: -0.02em; }
+    .sub { margin: 0 0 18px; color: var(--muted); font-size: 0.92rem; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .toolbar button {
+      height: 36px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .toolbar button.is-active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 640px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .wizard {
+      width: 100%;
+      max-width: 640px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: 0 16px 40px color-mix(in srgb, #102030 12%, transparent);
+    }
+    .wizard-top {
+      display: grid;
+      grid-template-columns: 164px minmax(0, 1fr) 188px;
+      min-height: 314px;
+    }
+    @media (max-width: 640px) {
+      .wizard-top { grid-template-columns: 1fr; }
+      .sidebar { width: 100%; min-height: 160px; }
+      .resources-rail { border-left: none; border-top: 1px solid var(--line); }
+    }
+    .sidebar {
+      width: 164px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 14px 18px;
+      border-right: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+      background:
+        radial-gradient(ellipse 120% 70% at 50% 38%, #ffffff 0%, transparent 68%),
+        linear-gradient(180deg, #f8fafc 0%, #e8eef4 52%, #d9e2eb 100%);
+      overflow: hidden;
+    }
+    .sidebar::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 18px;
+      bottom: 18px;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 35%, transparent), var(--accent) 45%, color-mix(in srgb, var(--accent) 35%, transparent));
+    }
+    .sidebar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      box-shadow: inset -10px 0 18px color-mix(in srgb, #102030 5%, transparent);
+    }
+    .sidebar-brand {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      flex: 1;
+      width: 100%;
+    }
+    .sidebar-logo {
+      width: 118px;
+      height: auto;
+      display: block;
+      background: transparent;
+      filter: drop-shadow(0 10px 18px color-mix(in srgb, #102030 14%, transparent));
+    }
+    .sidebar-mark {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--ink) 55%, var(--muted));
+    }
+    .body {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--surface);
+    }
+    .content {
+      flex: 1;
+      padding: 20px 18px 14px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .content h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+    .content p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+    .resources-rail {
+      background: var(--rail);
+      border-left: 1px solid var(--line);
+      padding: 14px 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .resources-rail .rail-heading {
+      margin: 0 0 2px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .resources-rail .rail-note {
+      margin: 0 0 4px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+    #sidebar-accordion {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .acc-item {
+      border: none;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+    }
+    .acc-item:last-child { border-bottom: none; }
+    .acc-item summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 11px 12px;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.3;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      user-select: none;
+    }
+    .acc-item summary::-webkit-details-marker { display: none; }
+    .acc-item summary:hover { background: color-mix(in srgb, var(--surface-soft) 80%, #fff); }
+    .acc-item summary::after {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid var(--muted);
+      border-bottom: 1.5px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+      flex-shrink: 0;
+      margin-top: -2px;
+    }
+    .acc-item[open] summary::after {
+      transform: rotate(-135deg);
+      margin-top: 2px;
+      border-color: var(--accent);
+    }
+    .acc-item[open] summary { color: var(--accent); }
+    .acc-body {
+      padding: 0 12px 12px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .acc-body a {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      color: var(--accent);
+      font-weight: 650;
+      font-size: 11px;
+      text-decoration: none;
+    }
+    .acc-body a:hover { text-decoration: underline; }
+    .acc-body a::after { content: "→"; font-weight: 700; }
+    .accept-page {
+      margin-top: 6px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      display: grid;
+      gap: 10px;
+    }
+    .accept-summary {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+    .accept-summary li {
+      position: relative;
+      padding-left: 12px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    .accept-summary li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .accept-page label {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--ink);
+      cursor: pointer;
+      padding-top: 4px;
+      border-top: 1px solid var(--line);
+    }
+    .accept-page input {
+      margin-top: 3px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+    .accept-page a { color: var(--accent); font-weight: 650; }
+    .path-box {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      font-size: 12px;
+      color: var(--ink);
+      font-family: Consolas, "Courier New", monospace;
+    }
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: var(--surface-soft);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 42%;
+      background: var(--accent);
+    }
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      background: var(--surface-soft);
+    }
+    .footer button {
+      height: 32px;
+      min-width: 84px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .footer button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .footer button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      padding: 14px;
+    }
+    .panel h3 {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+    }
+    .assets { display: grid; gap: 12px; }
+    .asset { display: grid; gap: 6px; }
+    .asset span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .asset img.sidebar {
+      width: 164px;
+      height: 314px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .hint {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+      background: color-mix(in srgb, #ffe8eb 55%, var(--surface));
+      color: var(--ink);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .steps button {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .steps button.is-active {
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <h1>Picom Windows Installer — canlı önizleme</h1>
+  <p class="sub">EN/TR installer mock — finalized for review. Links: picom.gg.</p>
+
+  <div class="toolbar" role="group" aria-label="Language">
+    <button type="button" id="lang-en" class="is-active" data-lang="en">English</button>
+    <button type="button" id="lang-tr" data-lang="tr">Türkçe</button>
+  </div>
+
+  <div class="steps" id="steps" role="tablist" aria-label="Installer steps"></div>
+
+  <div class="layout">
+    <div class="wizard" aria-label="NSIS wizard mock">
+      <div class="wizard-top">
+        <aside class="sidebar" aria-label="Installer sidebar">
+          <div class="sidebar-brand">
+            <img
+              class="sidebar-logo"
+              src="./previews/picom-logo-transparent.png?v=pro1"
+              width="118"
+              alt="Picom"
+            />
+          </div>
+          <p class="sidebar-mark">Picom</p>
+        </aside>
+        <div class="body">
+          <div class="content">
+            <h2 id="title">Welcome to Picom Desktop Setup</h2>
+            <p id="body">Picom is a desktop community workspace for chat, channels, and voice.</p>
+            <div id="extra"></div>
+          </div>
+          <div class="footer">
+            <button type="button" id="btn-back" disabled>Back</button>
+            <button type="button" id="btn-next" class="primary">Next</button>
+          </div>
+        </div>
+        <aside class="resources-rail" aria-label="Resources">
+          <p class="rail-heading" id="rail-heading">Resources</p>
+          <p class="rail-note" id="rail-note">Website, agreement, and security links.</p>
+          <div id="sidebar-accordion"></div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Kaynak bitmap’ler (gerçek boyut)</h3>
+      <div class="assets">
+        <div class="asset">
+          <span>Sidebar 164×314 (NSIS BMP — sol; linkler sağ panelde)</span>
+          <img class="sidebar" src="./previews/installer-sidebar.png?v=pro1" alt="Sidebar BMP preview" />
+        </div>
+      </div>
+      <div class="hint">
+        Sol: marka bitmap. Sağ: kaynaklar. Onay kutusu License / Lisans adımında.
+        Gerçek NSIS: lisans sayfası + I Agree. URL’ler:
+        <a href="https://picom.gg" target="_blank" rel="noopener noreferrer">picom.gg</a>
+        / <a href="https://picom.gg/terms" target="_blank" rel="noopener noreferrer">terms</a>
+        / <a href="https://picom.gg/security" target="_blank" rel="noopener noreferrer">security</a>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const links = {
+      website: { url: "https://picom.gg" },
+      terms: { url: "https://picom.gg/terms" },
+      security: { url: "https://picom.gg/security" },
+    };
+
+    const copy = {
+      en: {
+        back: "Back",
+        next: "Next",
+        finish: "Finish",
+        railHeading: "Resources",
+        railNote: "Website, agreement, and security links.",
+        acceptLabelHtml: 'I agree to the <a href="https://picom.gg/terms" target="_blank" rel="noopener noreferrer">Terms</a> and acknowledge <a href="https://picom.gg/security" target="_blank" rel="noopener noreferrer">Security &amp; privacy</a>.',
+        acceptSummary: [
+          "Picom is beta software — features may change.",
+          "Use the app lawfully and respect community rules.",
+          "Mic, capture, and sharing start only with your action.",
+          "Full terms and policies: picom.gg/terms and picom.gg/security.",
+        ],
+        policies: {
+          website: {
+            label: "Website",
+            blurb: "picom.gg — product news, downloads, and support.",
+            cta: "Visit picom.gg",
+          },
+          terms: {
+            label: "User agreement",
+            blurb: "Terms of Service on picom.gg/terms.",
+            cta: "View agreement",
+          },
+          security: {
+            label: "Security & privacy",
+            blurb: "Security & privacy overview on picom.gg/security.",
+            cta: "View policy",
+          },
+        },
+        steps: [
+          { id: "lang", label: "Language", title: "Please select a language", body: "Choose English or Turkish for this installer.", extra: "lang" },
+          { id: "welcome", label: "Welcome", title: "Welcome to Picom Desktop Setup", body: "Picom is a desktop community workspace for chat, channels, and voice.", extra: null },
+          { id: "license", label: "License", title: "License Agreement", body: "Please accept the Picom terms before continuing installation.", extra: "accept" },
+          { id: "dir", label: "Directory", title: "Choose Install Location", body: "Setup will install Picom Desktop in the following folder.", extra: "path" },
+          { id: "install", label: "Install", title: "Installing Picom Desktop", body: "Please wait while Picom Desktop is being installed.", extra: "progress" },
+          { id: "done", label: "Finish", title: "Completing Picom Desktop Setup", body: "Picom is ready. Launch Picom Desktop.", extra: "done" },
+        ],
+      },
+      tr: {
+        back: "Geri",
+        next: "İleri",
+        finish: "Bitir",
+        railHeading: "Kaynaklar",
+        railNote: "Web sitesi, sözleşme ve güvenlik bağlantıları.",
+        acceptLabelHtml: '<a href="https://picom.gg/terms" target="_blank" rel="noopener noreferrer">Kullanım şartlarını</a> kabul ediyor ve <a href="https://picom.gg/security" target="_blank" rel="noopener noreferrer">güvenlik &amp; gizlilik</a> politikasını onaylıyorum.',
+        acceptSummary: [
+          "Picom beta yazılımdır — özellikler değişebilir.",
+          "Uygulamayı yasal kullanın ve topluluk kurallarına uyun.",
+          "Mikrofon, yakalama ve paylaşım yalnızca sizin işleminizle başlar.",
+          "Tam metin: picom.gg/terms ve picom.gg/security.",
+        ],
+        policies: {
+          website: {
+            label: "Web sitesi",
+            blurb: "picom.gg — ürün haberleri, indirmeler ve destek.",
+            cta: "picom.gg’yi aç",
+          },
+          terms: {
+            label: "Kullanıcı sözleşmesi",
+            blurb: "Kullanım şartları: picom.gg/terms.",
+            cta: "Sözleşmeyi görüntüle",
+          },
+          security: {
+            label: "Güvenlik ve gizlilik",
+            blurb: "Güvenlik ve gizlilik: picom.gg/security.",
+            cta: "Politikayı görüntüle",
+          },
+        },
+        steps: [
+          { id: "lang", label: "Dil", title: "Lütfen bir dil seçin", body: "Bu kurulum için İngilizce veya Türkçe seçin.", extra: "lang" },
+          { id: "welcome", label: "Karşılama", title: "Picom Desktop Kurulumuna Hoş Geldiniz", body: "Picom; sohbet, kanallar ve ses için masaüstü topluluk çalışma alanıdır.", extra: null },
+          { id: "license", label: "Lisans", title: "Lisans Sözleşmesi", body: "Kuruluma devam etmeden önce Picom şartlarını kabul edin.", extra: "accept" },
+          { id: "dir", label: "Klasör", title: "Kurulum Konumunu Seçin", body: "Kurulum Picom Desktop’ı şu klasöre yükleyecek.", extra: "path" },
+          { id: "install", label: "Kurulum", title: "Picom Desktop kuruluyor", body: "Picom Desktop kurulurken lütfen bekleyin.", extra: "progress" },
+          { id: "done", label: "Bitiş", title: "Picom Desktop Kurulumu Tamamlanıyor", body: "Picom hazır. Picom Desktop’ı başlatın.", extra: "done" },
+        ],
+      },
+    };
+
+    let lang = "en";
+    let step = 1;
+    let accepted = false;
+
+    const titleEl = document.getElementById("title");
+    const bodyEl = document.getElementById("body");
+    const extraEl = document.getElementById("extra");
+    const stepsEl = document.getElementById("steps");
+    const sidebarAcc = document.getElementById("sidebar-accordion");
+    const railHeading = document.getElementById("rail-heading");
+    const railNote = document.getElementById("rail-note");
+    const btnBack = document.getElementById("btn-back");
+    const btnNext = document.getElementById("btn-next");
+
+    function policyItem(key, openFirst) {
+      const p = copy[lang].policies[key];
+      const href = links[key].url;
+      const target = href.startsWith("http") ? ' target="_blank" rel="noopener noreferrer"' : "";
+      const openAttr = openFirst && key === "website" ? " open" : "";
+      return (
+        `<details class="acc-item"${openAttr}>` +
+        `<summary>${p.label}</summary>` +
+        `<div class="acc-body">` +
+        `<div>${p.blurb}</div>` +
+        `<a href="${href}"${target}>${p.cta}</a>` +
+        `</div></details>`
+      );
+    }
+
+    function renderPoliciesBlock() {
+      return ["website", "terms", "security"].map((k) => policyItem(k, true)).join("");
+    }
+
+    function renderAcceptControl() {
+      const pack = copy[lang];
+      const checked = accepted ? " checked" : "";
+      const bullets = (pack.acceptSummary || [])
+        .map((line) => `<li>${line}</li>`)
+        .join("");
+      return (
+        `<div class="accept-page">` +
+        `<ul class="accept-summary">${bullets}</ul>` +
+        `<label><input type="checkbox" id="accept-check-page"${checked} /> <span>${pack.acceptLabelHtml}</span></label>` +
+        `</div>`
+      );
+    }
+
+    function bindAcceptInputs() {
+      const el = document.getElementById("accept-check-page");
+      if (!el) return;
+      el.addEventListener("change", () => {
+        accepted = el.checked;
+        render();
+      });
+    }
+
+    function renderExtra(kind) {
+      if (kind === "path") {
+        return `<div class="path-box">C:\\Users\\You\\AppData\\Local\\Programs\\Picom Desktop</div>`;
+      }
+      if (kind === "progress") {
+        return `<div class="progress" aria-hidden="true"><span></span></div>`;
+      }
+      if (kind === "done") {
+        const label = lang === "tr" ? "Picom Desktop’ı çalıştır" : "Run Picom Desktop";
+        return `<label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px;"><input type="checkbox" checked /> ${label}</label>`;
+      }
+      if (kind === "lang") {
+        return `<div style="display:flex;gap:8px;margin-top:8px;"><button type="button" class="is-active" style="height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,#fff);font-weight:700;">English</button><button type="button" style="height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:#fff;font-weight:700;">Türkçe</button></div>`;
+      }
+      if (kind === "accept") {
+        return renderAcceptControl();
+      }
+      return "";
+    }
+
+    function render() {
+      const pack = copy[lang];
+      const current = pack.steps[step];
+      titleEl.textContent = current.title;
+      bodyEl.textContent = current.body;
+      extraEl.innerHTML = renderExtra(current.extra);
+      railHeading.textContent = pack.railHeading;
+      railNote.textContent = pack.railNote;
+      sidebarAcc.innerHTML = renderPoliciesBlock();
+      btnBack.textContent = pack.back;
+      btnNext.textContent = step === pack.steps.length - 1 ? pack.finish : pack.next;
+      btnBack.disabled = step === 0;
+      btnNext.disabled = current.id === "license" && !accepted;
+      stepsEl.innerHTML = pack.steps
+        .map((s, i) => `<button type="button" class="${i === step ? "is-active" : ""}" data-step="${i}">${i + 1}. ${s.label}</button>`)
+        .join("");
+      document.getElementById("lang-en").classList.toggle("is-active", lang === "en");
+      document.getElementById("lang-tr").classList.toggle("is-active", lang === "tr");
+      document.documentElement.lang = lang === "tr" ? "tr" : "en";
+      bindAcceptInputs();
+    }
+
+    document.getElementById("lang-en").addEventListener("click", () => { lang = "en"; render(); });
+    document.getElementById("lang-tr").addEventListener("click", () => { lang = "tr"; render(); });
+    btnBack.addEventListener("click", () => { if (step > 0) { step -= 1; render(); } });
+    btnNext.addEventListener("click", () => {
+      const current = copy[lang].steps[step];
+      if (current.id === "license" && !accepted) return;
+      if (step < copy[lang].steps.length - 1) { step += 1; render(); }
+    });
+    stepsEl.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-step]");
+      if (!button) return;
+      const target = Number(button.dataset.step);
+      const licenseIdx = copy[lang].steps.findIndex((s) => s.id === "license");
+      if (target > licenseIdx && !accepted) {
+        step = licenseIdx;
+        render();
+        return;
+      }
+      step = target;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

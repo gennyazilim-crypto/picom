@@ -1,0 +1,236 @@
+{
+  "registryVersion": 1,
+  "schemaVersion": 1,
+  "namePattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+  "owners": ["growth", "platform", "trust-safety", "product"],
+  "piiClasses": ["none", "pseudonymous", "forbidden"],
+  "events": [
+    {
+      "name": "session_started",
+      "domain": "lifecycle",
+      "owner": "platform",
+      "status": "active",
+      "since": 1,
+      "description": "App/renderer session opened. Aggregate lifecycle signal.",
+      "properties": {
+        "runtime": { "type": "string", "required": false, "pii": "none", "note": "electron|web enum" },
+        "releaseTrack": { "type": "string", "required": false, "pii": "none", "note": "stable|beta|dev; renamed from releaseChannel to avoid the SENSITIVE blocklist collision on 'channel'" }
+      }
+    },
+    {
+      "name": "session_heartbeat",
+      "domain": "lifecycle",
+      "owner": "platform",
+      "status": "active",
+      "since": 1,
+      "description": "Periodic liveness ping; duration bucketed, never raw.",
+      "properties": {
+        "durationBucket": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "session_ended",
+      "domain": "lifecycle",
+      "owner": "platform",
+      "status": "active",
+      "since": 1,
+      "description": "Session closed; duration bucketed.",
+      "properties": {
+        "durationBucket": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "view_opened",
+      "domain": "navigation",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "A top-level view was opened (allowlisted view enum only).",
+      "properties": {
+        "view": { "type": "string", "required": true, "pii": "none", "note": "allowlisted view enum" }
+      }
+    },
+    {
+      "name": "download_started",
+      "domain": "acquisition",
+      "owner": "growth",
+      "status": "active",
+      "since": 1,
+      "description": "Desktop download initiated.",
+      "properties": {
+        "kind": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "download_completed",
+      "domain": "acquisition",
+      "owner": "growth",
+      "status": "active",
+      "since": 1,
+      "description": "Desktop download completed; size bucketed.",
+      "properties": {
+        "kind": { "type": "string", "required": false, "pii": "none" },
+        "sizeBucket": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "install_activated",
+      "domain": "acquisition",
+      "owner": "growth",
+      "status": "active",
+      "since": 1,
+      "description": "First activation after install; release track bucketed.",
+      "properties": {
+        "releaseTrack": { "type": "string", "required": false, "pii": "none", "note": "stable|beta|dev; renamed from 'channel' to avoid the SENSITIVE blocklist collision" }
+      }
+    },
+    {
+      "name": "feed_card_opened",
+      "domain": "engagement",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "A feed card was opened; dwell bucketed.",
+      "properties": {
+        "cardType": { "type": "string", "required": false, "pii": "none" },
+        "dwellBucket": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "community_opened",
+      "domain": "engagement",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "A community was opened.",
+      "properties": {
+        "mode": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "community_joined",
+      "domain": "engagement",
+      "owner": "growth",
+      "status": "active",
+      "since": 1,
+      "description": "A community was joined.",
+      "properties": {
+        "mode": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "community_created",
+      "domain": "engagement",
+      "owner": "growth",
+      "status": "active",
+      "since": 1,
+      "description": "A community was created.",
+      "properties": { "mode": { "type": "string", "required": false, "pii": "none" } }
+    },
+    {
+      "name": "message_activity_counted",
+      "domain": "engagement",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Message activity as a count only — never content.",
+      "properties": {
+        "count": { "type": "number", "required": false, "pii": "none" },
+        "mode": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "auth_succeeded",
+      "domain": "auth",
+      "owner": "platform",
+      "status": "active",
+      "since": 1,
+      "description": "Sign-in succeeded (mode enum only; never identifiers).",
+      "properties": { "mode": { "type": "string", "required": false, "pii": "none" } }
+    },
+    {
+      "name": "upload_completed",
+      "domain": "media",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Upload finished; size bucketed.",
+      "properties": {
+        "kind": { "type": "string", "required": false, "pii": "none" },
+        "sizeBucket": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "upload_failed",
+      "domain": "media",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Upload failed (kind only; no filenames or errors with content).",
+      "properties": { "kind": { "type": "string", "required": false, "pii": "none" } }
+    },
+    {
+      "name": "voice_joined",
+      "domain": "voice",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Voice room joined.",
+      "properties": { "mode": { "type": "string", "required": false, "pii": "none" } }
+    },
+    {
+      "name": "voice_join_failed",
+      "domain": "voice",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Voice join failed (mode only; diagnostics stay local).",
+      "properties": { "mode": { "type": "string", "required": false, "pii": "none" } }
+    },
+    {
+      "name": "screen_share_started",
+      "domain": "voice",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Screen share started.",
+      "properties": { "mode": { "type": "string", "required": false, "pii": "none" } }
+    },
+    {
+      "name": "feature_used_counted",
+      "domain": "engagement",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Allowlisted feature usage as a count.",
+      "properties": {
+        "feature": { "type": "string", "required": false, "pii": "none", "note": "allowlisted feature enum" },
+        "count": { "type": "number", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "search_performed",
+      "domain": "search",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "A search ran; only the result-count bucket is recorded. Query text is Forbidden and never collected.",
+      "properties": {
+        "resultBucket": { "type": "string", "required": false, "pii": "none" }
+      }
+    }
+  ],
+  "legacyMap": [
+    { "legacy": "app_started", "source": "analyticsService.ts", "replacedBy": "session_started", "status": "deprecated" },
+    { "legacy": "login_success", "source": "analyticsService.ts", "replacedBy": "auth_succeeded", "status": "deprecated" },
+    { "legacy": "community_created", "source": "analyticsService.ts", "replacedBy": "community_created", "status": "deprecated" },
+    { "legacy": "message_sent_count_only", "source": "analyticsService.ts", "replacedBy": "message_activity_counted", "status": "deprecated", "note": "count-only, never content" },
+    { "legacy": "upload_success", "source": "analyticsService.ts", "replacedBy": "upload_completed", "status": "deprecated" },
+    { "legacy": "upload_failure", "source": "analyticsService.ts", "replacedBy": "upload_failed", "status": "deprecated" },
+    { "legacy": "voice_joined", "source": "analyticsService.ts", "replacedBy": "voice_joined", "status": "deprecated" },
+    { "legacy": "voice_join_failure", "source": "analyticsService.ts", "replacedBy": "voice_join_failed", "status": "deprecated" },
+    { "legacy": "screen_share_started", "source": "analyticsService.ts", "replacedBy": "screen_share_started", "status": "deprecated" },
+    { "legacy": "settings_opened", "source": "analyticsService.ts", "replacedBy": "view_opened", "status": "deprecated", "note": "emit view_opened with view=settings" },
+    { "legacy": "feature_usage_count_only", "source": "analyticsService.ts", "replacedBy": "feature_used_counted", "status": "deprecated" }
+  ]
+}

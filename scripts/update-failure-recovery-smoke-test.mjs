@@ -22,7 +22,7 @@ const missingSource = [
   service.includes("rollback_available_placeholder") ? "" : "rollback_available_placeholder",
   settings.includes("Desktop updates") ? "" : "Settings update card",
   settings.includes("Simulate download failure") ? "" : "download failure action",
-  settings.includes("Rollback placeholder") ? "" : "rollback action",
+  settings.includes("Simulate rollback") ? "" : "rollback action",
 ].filter(Boolean);
 
 if (missingDoc.length > 0 || missingSource.length > 0) {

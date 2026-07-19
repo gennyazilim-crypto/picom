@@ -17,9 +17,10 @@ type MentionFeedCardProps = {
   mentionedMembers: Member[];
   commenters: Member[];
   commentPreviewMembers: Record<string, Member | undefined>;
+  resolveMember: (userId: string) => Member | undefined;
   onOpenImage: (attachment: Attachment) => void;
   onOpenInChannel: (item: MentionItem) => void;
-  onToggleReaction: (id: string) => void;
+  onToggleReaction: (id: string, emoji: string) => void;
   onToggleSaved: (id: string) => void;
   onMarkRead: (id: string) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
@@ -55,6 +56,7 @@ export function MentionFeedCard({
   mentionedMembers,
   commenters,
   commentPreviewMembers,
+  resolveMember,
   onOpenImage,
   onOpenInChannel,
   onToggleReaction,
@@ -79,32 +81,52 @@ export function MentionFeedCard({
             user={author}
             label={authorLabel}
             size="medium"
-            avatarSize={42}
+            avatarSize={48}
             verification={verification}
           />
         </button>
-        <div className="mention-author-copy">
-          <button
-            className="mention-author-name-button"
-            type="button"
-            onClick={(event) => author && onOpenProfile(event, author)}
-            disabled={!author}
-          >
-            <span>{authorLabel}</span>
-            <VerifiedBadge verification={verification} size="xs" />
-          </button>
-          <span>
-            {community?.name ?? "Visible community"} / #{channel?.name ?? "channel"} / {dateTimeService.formatCompactDateTime(item.createdAt)}
-          </span>
+
+        <div className="mention-header-main">
+          <div className="mention-header-top">
+            <div className="mention-header-identity">
+              <button
+                className="mention-author-name-button"
+                type="button"
+                onClick={(event) => author && onOpenProfile(event, author)}
+                disabled={!author}
+              >
+                <span>{authorLabel}</span>
+                <VerifiedBadge verification={verification} size="xs" />
+              </button>
+              <span className="mention-topic-badge">
+                <AppIcon name="hash" size="xs" aria-hidden="true" />
+                Mention
+              </span>
+            </div>
+
+            <div className="mention-card-meta" aria-label="Mention source">
+              <span className="mention-meta-chip" title={community?.name ?? "Visible community"}>
+                <AppIcon name="home" size="xs" aria-hidden="true" />
+                <span>{community?.name ?? "Visible community"}</span>
+              </span>
+              <span className="mention-meta-chip mention-meta-chip--time">
+                <AppIcon name="bell" size="xs" aria-hidden="true" />
+                <time dateTime={item.createdAt}>{dateTimeService.formatCompactDateTime(item.createdAt)}</time>
+              </span>
+            </div>
+          </div>
+
+          {item.title ? <h2 className="mention-header-title">{item.title}</h2> : null}
         </div>
-        {item.isUnread ? <span className="mention-unread-badge">Unread</span> : null}
-        <button className="icon-button mention-more-button" type="button" aria-label="More mention actions" onClick={(event) => onOpenMore(event, item)}>
-          <AppIcon name="more" size="sm" />
-        </button>
+
+        <div className="mention-card-header-actions">
+          <button className="icon-button mention-more-button" type="button" aria-label="More mention actions" onClick={(event) => onOpenMore(event, item)}>
+            <AppIcon name="more" size="sm" />
+          </button>
+        </div>
       </header>
 
       <div className="mention-card-body">
-        {item.title ? <h2>{item.title}</h2> : null}
         <p>{renderMentionBody(item.body, mentionedMembers)}</p>
         {item.attachments?.length ? <AttachmentGrid attachments={item.attachments} onOpenImage={onOpenImage} /> : null}
       </div>
@@ -113,6 +135,7 @@ export function MentionFeedCard({
         item={item}
         commenters={commenters}
         commentPreviewMembers={commentPreviewMembers}
+        resolveMember={resolveMember}
         onToggleReaction={onToggleReaction}
         onToggleSaved={onToggleSaved}
         onMarkRead={onMarkRead}

@@ -42,6 +42,9 @@ export function isMessageSaved(messageId: string): boolean { return read().some(
 export function subscribe(onChange: () => void): () => void {
   if (dataSourceService.getStatus().isMock) return () => undefined;
   const client = getSupabaseClient(); if (!client) return () => undefined;
+  // React StrictMode and fast channel switches may mount a replacement subscriber
+  // before Supabase finishes removing the previous channel. A unique topic keeps
+  // callback registration on a fresh, unsubscribed channel in every generation.
   const subscriptionId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const channel: RealtimeChannel = client
     .channel(`saved-messages:current-user:${subscriptionId}`)

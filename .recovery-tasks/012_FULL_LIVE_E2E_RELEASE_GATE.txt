@@ -1,0 +1,18 @@
+TASK 012 - FULL LIVE E2E AND V1 GO/NO-GO
+
+PROJECT: C:\Users\ACER\Desktop\picom
+Read 000_READ_FIRST.txt first.
+Preserve unrelated user, Claude, and Cursor changes. Never reset or clean the worktree.
+Do not redesign UI, add mobile UI, expose secrets, or commit .env files.
+Supabase mode must never silently fall back to mock data.
+Use service/repository layers; React components must not call Supabase directly.
+Do not disable RLS, tests, security gates, or error reporting.
+Use forward-only migrations and deploy required Edge Functions to the verified hosted project.
+Complete means implementation, local tests, hosted evidence, focused commit, and push.
+Report root cause, changed files, commands, deployments, results, risks, commit, and push.
+
+Use unique temporary accounts and clean up only test-created data.
+Test auth/profile/privacy; follow/friend/block/presence; community/Owner/join/chat/Realtime/private denial; DM/third-user denial; Feed/private denial; two-client voice and Screen Share.
+Run npm ci, typecheck, mock smoke, Supabase regression/QA, build, QA smoke, performance budget, Electron smoke, and Windows package smoke.
+Create docs/live-v1-e2e-evidence.md, docs/live-v1-go-no-go.md, and final checkpoint.
+Only declare GO with full hosted evidence. Missing Supabase, Realtime, LiveKit, package, signing, legal, or operations evidence is explicit NO-GO.

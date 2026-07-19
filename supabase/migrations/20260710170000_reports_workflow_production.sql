@@ -1,7 +1,6 @@
 -- Task 171: fail-closed report workflow transitions and review timestamps.
 
 alter table public.reports add column if not exists reviewed_at timestamptz;
-
 create or replace function public.enforce_report_status_transition()
 returns trigger
 language plpgsql
@@ -18,9 +17,7 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists reports_status_transition_guard on public.reports;
 create trigger reports_status_transition_guard before update of status on public.reports for each row execute function public.enforce_report_status_transition();
-
 comment on function public.enforce_report_status_transition() is 'Allows open to reviewed/dismissed/action_taken and reviewed to dismissed/action_taken; terminal report states cannot be reopened.';
 comment on column public.reports.reviewed_at is 'First trusted moderation transition timestamp. Report content and target relations remain protected by RLS.';

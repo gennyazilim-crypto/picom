@@ -1,5 +1,5 @@
 appId: com.picom.desktop
-productName: Picom
+productName: Picom Desktop
 copyright: Copyright (c) 2026 Picom
 
 directories:
@@ -44,11 +44,12 @@ win:
   # certificatePassword: ${env.WINDOWS_CERTIFICATE_PASSWORD}
 
 nsis:
+  include: assets/installer/windows/installer-custom.nsh
   installerIcon: assets/brand/app-icon.ico
   uninstallerIcon: assets/brand/app-icon.ico
-  installerHeader: assets/installer/windows/installer-header.bmp
-  installerSidebar: assets/installer/windows/installer-sidebar.bmp
-  uninstallerSidebar: assets/installer/windows/installer-sidebar.bmp
+  installerSidebar: assets/installer/windows/installer-sidebar-v2.bmp
+  uninstallerSidebar: assets/installer/windows/installer-sidebar-v2.bmp
+  license: assets/installer/windows/license.html
   oneClick: false
   perMachine: false
   allowElevation: false
@@ -57,7 +58,12 @@ nsis:
   deleteAppDataOnUninstall: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: Picom
+  shortcutName: Picom Desktop
+  installerLanguages:
+    - en_US
+    - tr_TR
+  displayLanguageSelector: true
+  multiLanguageInstaller: true
 
 linux:
   icon: assets/brand/icons
@@ -73,7 +79,7 @@ linux:
       Comment: Desktop community workspace
       Categories: Network;Chat;Utility;
       Terminal: "false"
-      StartupWMClass: Picom
+      StartupWMClass: Picom Desktop
   target:
     - target: AppImage
       arch:
@@ -111,7 +117,7 @@ mac:
   artifactName: Picom-${version}-${channel}-macOS-${arch}.${ext}
 
 dmg:
-  title: Picom ${version}
+  title: Picom Desktop ${version}
   background: assets/installer/macos/dmg-background.png
   iconSize: 104
   contents:

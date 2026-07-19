@@ -104,5 +104,4 @@ alter table public.community_member_roles replica identity full;
 do $$ begin alter publication supabase_realtime add table public.community_member_roles; exception when duplicate_object or undefined_object then null; end $$;
 revoke all on function public.set_community_member_roles(uuid,uuid,uuid[],text),public.assign_community_member_role(uuid,uuid,uuid,text) from public,anon;
 grant execute on function public.set_community_member_roles(uuid,uuid,uuid[],text),public.assign_community_member_role(uuid,uuid,uuid,text) to authenticated;
-comment on table public.community_member_role_audit is 'Append-only actor, target, previous role set, and next role set evidence. Renderer clients cannot mutate it.';
-commit;
+comment on table public.community_member_role_audit is 'Append-only actor, target, previous role set, and next role set evidence. Renderer clients cannot mutate it.';;

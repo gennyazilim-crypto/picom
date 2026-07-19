@@ -1,5 +1,3 @@
-begin;
-
 create unique index if not exists direct_message_attachments_message_url_idx
   on public.direct_message_attachments(message_id,url);
 
@@ -67,6 +65,4 @@ revoke all on function public.mark_direct_conversation_read_to(uuid,uuid),public
 grant execute on function public.mark_direct_conversation_read_to(uuid,uuid),public.set_direct_conversation_muted(uuid,timestamptz),public.set_direct_conversation_archived(uuid,boolean),public.list_direct_shared_media(uuid,timestamptz,uuid,integer) to authenticated;
 
 comment on function public.mark_direct_conversation_read_to(uuid,uuid) is 'Advances the authenticated participant read cursor monotonically to a message in the same conversation.';
-comment on function public.list_direct_shared_media(uuid,timestamptz,uuid,integer) is 'Returns a stable participant-only attachment page without exposing DM content to outsiders.';
-
-commit;
+comment on function public.list_direct_shared_media(uuid,timestamptz,uuid,integer) is 'Returns a stable participant-only attachment page without exposing DM content to outsiders.';;

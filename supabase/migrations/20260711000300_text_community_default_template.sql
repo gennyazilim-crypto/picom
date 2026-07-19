@@ -236,4 +236,4 @@ revoke all on function public.create_text_community_with_defaults(uuid, text, te
 grant execute on function public.create_text_community_with_defaults(uuid, text, text, text, text, text, boolean, text) to authenticated;
 
 comment on function public.create_text_community_with_defaults(uuid, text, text, text, text, text, boolean, text) is
-  'Creates a Text community, roles, owner membership, categories, and channels atomically. Stable request UUIDs make retries idempotent.';
+  'Creates a Text community, roles, owner membership, categories, and channels atomically. Stable request UUIDs make retries idempotent.';;

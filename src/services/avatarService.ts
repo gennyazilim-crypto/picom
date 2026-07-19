@@ -1,7 +1,8 @@
 import { avatarPack, type AvatarPackUrl } from "../data/avatarPack";
 import type { Member, UserId } from "../types/community";
 
-const assignmentKey = "picom-avatar-assignments-v1";
+/** v2 stores only explicit pack picks; auto fallbacks are deterministic from userId. */
+const assignmentKey = "picom-avatar-assignments-v2";
 
 type AvatarAssignments = Record<UserId, AvatarPackUrl>;
 
@@ -24,14 +25,15 @@ function writeAssignments(assignments: AvatarAssignments) {
   }
 }
 
-function randomIndex(max: number) {
+/** Stable pack index from user id so every client shows the same auto avatar. */
+function deterministicIndex(seed: string, max: number) {
   if (max <= 1) return 0;
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    const values = new Uint32Array(1);
-    crypto.getRandomValues(values);
-    return values[0] % max;
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
   }
-  return Math.floor(Math.random() * max);
+  return (hash >>> 0) % max;
 }
 
 function isAvatarPackUrl(value: string): value is AvatarPackUrl {
@@ -47,14 +49,15 @@ export const avatarService = {
     if (!member) return undefined;
     if (member.avatarUrl) return member.avatarUrl;
 
-    const assignments = readAssignments();
-    const existing = assignments[member.userId];
-    if (existing && isAvatarPackUrl(existing)) return existing;
+    // Explicit pack picks (settings / onboarding) stay local until a profile photo exists.
+    if (member.userId) {
+      const existing = readAssignments()[member.userId];
+      if (existing && isAvatarPackUrl(existing)) return existing;
+    }
 
-    const next = avatarPack[randomIndex(avatarPack.length)];
-    assignments[member.userId] = next;
-    writeAssignments(assignments);
-    return next;
+    const seed = member.userId || member.avatarSeed || "";
+    if (!seed) return undefined;
+    return avatarPack[deterministicIndex(seed, avatarPack.length)];
   },
 
   setAvatarForUser(userId: UserId, avatarUrl: AvatarPackUrl) {

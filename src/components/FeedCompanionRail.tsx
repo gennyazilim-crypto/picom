@@ -9,7 +9,7 @@ import type { AudioPlayableItem } from "../types/audio";
 import { AppIcon, type IconName } from "./AppIcon";
 import { MemberAvatar } from "./MemberAvatar";
 import { AudioMiniPlayer } from "./audio/AudioMiniPlayer";
-import { ConnectedVoiceCard } from "./voice/ConnectedVoiceCard";
+import { NoiseShieldCompactStatus } from "./voice/NoiseShieldControl";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
 
 type FeedCompanionRailProps = {
@@ -23,7 +23,8 @@ type FeedCompanionRailProps = {
   onLeaveVoice: () => void;
   onOpenVoiceRoom: (room: ActiveVoiceRoomSummary) => void;
   onOpenScreenShare: () => void;
-  onOpenProfile: (event: MouseEvent, member: Member) => void;
+  onOpenFriendProfile: (member: Member) => void;
+  onFriendContextMenu: (event: MouseEvent, member: Member) => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
   onToggleEventReminder: (event: UpcomingEvent) => void;
@@ -52,36 +53,112 @@ function getEventIcon(type: UpcomingEventType): IconName {
   return "bell";
 }
 
-function FriendStatusRow({
-  friend,
-  member,
-  onOpenProfile,
-}: {
-  friend: FriendConnection;
-  member?: Member;
-  onOpenProfile: (event: MouseEvent, member: Member) => void;
-}) {
-  const displayMember: Member = member ?? {
+function VoiceMiniControlCard({
+  voiceState,
+  onToggleMute,
+  onToggleDeafen,
+  onLeaveVoice,
+  onOpenScreenShare,
+}: Pick<FeedCompanionRailProps, "voiceState" | "onToggleMute" | "onToggleDeafen" | "onLeaveVoice" | "onOpenScreenShare">) {
+  if (!isV1FeatureEnabled("voiceRooms") || (voiceState.status !== "connected" && voiceState.status !== "reconnecting")) return null;
+
+  return (
+    <section className="voice-mini-card" aria-label="Current voice room controls">
+      <header>
+        <span className="voice-mini-icon">
+          <AppIcon name="voice" size="lg" />
+        </span>
+        <div>
+          <p className="eyebrow">Connected Voice</p>
+          <strong>{voiceState.roomContext?.channelName ?? voiceState.roomName ?? "Voice room"}</strong>
+          <small>{voiceState.screenSharing ? "Screen sharing active" : voiceState.status === "reconnecting" ? "Restoring connection..." : "LiveKit connected"}</small>
+        </div>
+      </header>
+      <div className="voice-mini-meta">
+        <span>
+          <i />
+          Live
+        </span>
+        <span>{voiceState.participants.length} listening</span>
+        <NoiseShieldCompactStatus interactive />
+      </div>
+      <div className="voice-mini-controls">
+        <button type="button" aria-label={voiceState.muted ? "Unmute microphone" : "Mute microphone"} aria-pressed={voiceState.muted} onClick={onToggleMute}>
+          <AppIcon name="microphone" size="sm" />
+        </button>
+        <button type="button" aria-label={voiceState.deafened ? "Undeafen audio" : "Deafen audio"} aria-pressed={voiceState.deafened} onClick={onToggleDeafen}>
+          <AppIcon name="headphones" size="sm" />
+        </button>
+        <button type="button" aria-label={voiceState.screenSharing ? "Open active screen share controls" : "Open screen share controls"} aria-pressed={voiceState.screenSharing} onClick={onOpenScreenShare}>
+          <AppIcon name="image" size="sm" />
+        </button>
+        <button type="button" className="voice-mini-leave" aria-label="Leave voice room" onClick={onLeaveVoice}>
+          <AppIcon name="close" size="sm" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function toFriendMember(friend: FriendConnection, member?: Member): Member {
+  const avatarUrl = [friend.avatarUrl, member?.avatarUrl].find((value) => typeof value === "string" && value.trim().length > 0);
+  if (member) {
+    return {
+      ...member,
+      displayName: friend.displayName || member.displayName,
+      username: friend.username || member.username,
+      avatarUrl,
+      status: friend.status,
+      statusText: friend.statusText || member.statusText,
+    };
+  }
+  return {
     id: friend.id ?? `friend-${friend.userId}`,
     userId: friend.userId,
     displayName: friend.displayName,
     username: friend.username,
     avatarSeed: friend.username,
-    avatarUrl: friend.avatarUrl,
+    avatarUrl,
     status: friend.status,
     statusText: friend.statusText,
     roleId: "member",
   };
+}
+
+function FriendStatusRow({
+  friend,
+  member,
+  onOpenFriendProfile,
+  onFriendContextMenu,
+}: {
+  friend: FriendConnection;
+  member?: Member;
+  onOpenFriendProfile: (member: Member) => void;
+  onFriendContextMenu: (event: MouseEvent, member: Member) => void;
+}) {
+  const displayMember = toFriendMember(friend, member);
 
   return (
     <button
       className="feed-friend-row"
       type="button"
-      onClick={(event) => onOpenProfile(event, displayMember)}
+      onClick={() => onOpenFriendProfile(displayMember)}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onFriendContextMenu(event, displayMember);
+      }}
       title={`Open ${friend.displayName} profile`}
+      aria-label={`Open ${friend.displayName} profile`}
     >
       <span className="feed-friend-avatar">
-        <MemberAvatar member={displayMember} size={32} />
+        <MemberAvatar
+          member={displayMember}
+          userId={friend.userId}
+          label={friend.displayName}
+          avatarUrl={displayMember.avatarUrl}
+          size={32}
+        />
         <i className={`status-dot ${friend.status}`} />
       </span>
       <span className="feed-friend-copy">
@@ -95,8 +172,9 @@ function FriendStatusRow({
 function FriendsStatusSection({
   friends,
   communities,
-  onOpenProfile,
-}: Pick<FeedCompanionRailProps, "friends" | "communities" | "onOpenProfile">) {
+  onOpenFriendProfile,
+  onFriendContextMenu,
+}: Pick<FeedCompanionRailProps, "friends" | "communities" | "onOpenFriendProfile" | "onFriendContextMenu">) {
   const onlineFriends = friends.filter((friend) => friend.status !== "offline");
   const offlineFriends = friends.filter((friend) => friend.status === "offline");
 
@@ -112,13 +190,13 @@ function FriendsStatusSection({
       <div className="feed-friend-group">
         <small>Online</small>
         {onlineFriends.slice(0, 8).map((friend) => (
-          <FriendStatusRow key={`online-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenProfile={onOpenProfile} />
+          <FriendStatusRow key={`online-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenFriendProfile={onOpenFriendProfile} onFriendContextMenu={onFriendContextMenu} />
         ))}
       </div>
       <div className="feed-friend-group">
         <small>Offline</small>
         {offlineFriends.slice(0, 6).map((friend) => (
-          <FriendStatusRow key={`offline-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenProfile={onOpenProfile} />
+          <FriendStatusRow key={`offline-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenFriendProfile={onOpenFriendProfile} onFriendContextMenu={onFriendContextMenu} />
         ))}
       </div>
     </section>
@@ -231,29 +309,34 @@ export function FeedCompanionRail({
   onLeaveVoice,
   onOpenVoiceRoom,
   onOpenScreenShare,
-  onOpenProfile,
+  onOpenFriendProfile,
+  onFriendContextMenu,
   onOpenEventCommunity,
   onEventDetails,
   onToggleEventReminder,
   audioItem,
   onCloseAudio,
 }: FeedCompanionRailProps) {
+  const voiceConnected = isV1FeatureEnabled("voiceRooms") && (voiceState.status === "connected" || voiceState.status === "reconnecting");
+  const showStickyStack = Boolean(audioItem) || voiceConnected;
+
   return (
     <aside className="feed-companion-rail" aria-label="Feed companion rail">
-      <div className="feed-rail-sticky-stack">
-        <AudioMiniPlayer item={audioItem ?? undefined} onClose={onCloseAudio} />
-        <ConnectedVoiceCard
-          voiceState={voiceState}
-          onToggleMute={onToggleMute}
-          onToggleDeafen={onToggleDeafen}
-          onLeaveVoice={onLeaveVoice}
-          onOpenVoiceRoom={onOpenScreenShare}
-          onOpenScreenShare={onOpenScreenShare}
-        />
-      </div>
-      {isV1FeatureEnabled("voiceRooms") ? <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} /> : null}
-      <FriendsStatusSection friends={friends} communities={communities} onOpenProfile={onOpenProfile} />
+      <FriendsStatusSection friends={friends} communities={communities} onOpenFriendProfile={onOpenFriendProfile} onFriendContextMenu={onFriendContextMenu} />
       <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} onToggleEventReminder={onToggleEventReminder} />
+      {isV1FeatureEnabled("voiceRooms") ? <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} /> : null}
+      {showStickyStack ? (
+        <div className="feed-rail-sticky-stack">
+          <AudioMiniPlayer item={audioItem ?? undefined} onClose={onCloseAudio} />
+          <VoiceMiniControlCard
+            voiceState={voiceState}
+            onToggleMute={onToggleMute}
+            onToggleDeafen={onToggleDeafen}
+            onLeaveVoice={onLeaveVoice}
+            onOpenScreenShare={onOpenScreenShare}
+          />
+        </div>
+      ) : null}
     </aside>
   );
 }

@@ -1,5 +1,3 @@
-begin;
-
 create table if not exists public.radio_session_reminders (
   id uuid primary key default gen_random_uuid(),
   radio_session_id uuid not null references public.radio_sessions(id) on delete cascade,
@@ -106,6 +104,4 @@ revoke all on function public.claim_radio_session_reminder_event(uuid, text, tim
 grant execute on function public.claim_radio_session_reminder_event(uuid, text, timestamptz, text) to authenticated;
 
 comment on table public.radio_session_reminders is 'Per-user Radio schedule reminders. RLS prevents reading or mutating another listener reminder.';
-comment on function public.claim_radio_session_reminder_event(uuid, text, timestamptz, text) is 'Atomically claims a schedule-change, cancellation, live, or due reminder event to prevent duplicate notifications across reconnects.';
-
-commit;
+comment on function public.claim_radio_session_reminder_event(uuid, text, timestamptz, text) is 'Atomically claims a schedule-change, cancellation, live, or due reminder event to prevent duplicate notifications across reconnects.';;

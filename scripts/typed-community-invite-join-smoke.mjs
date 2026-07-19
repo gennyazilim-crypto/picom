@@ -17,8 +17,8 @@ for (const kind of ["text", "radio", "podcast"]) assert(routing.getCommunityKind
 
 const inviteService = await read("src/services/community/communityInviteService.ts");
 for (const marker of ["CommunityInvitePreview", "getInvitePreview", "get_community_invite_preview", "INVITE_BLOCKED"]) assert(inviteService.includes(marker), `Invite service is missing ${marker}`);
-const modal = await read("src/components/CommunityInviteModals.tsx");
-for (const marker of ["Checking invite", "Invite preview", "communityKind", "Opens at", "capabilitySummary"]) assert(modal.includes(marker), `Invite modal is missing ${marker}`);
+const modal = await read("src/components/SecretCommunityFlows.tsx");
+for (const marker of ["Checking invitation", "communityKind", "Opens at", "capabilitySummary"]) assert(modal.includes(marker), `Invite modal is missing ${marker}`);
 const onboarding = await read("src/components/onboarding/OnboardingStepCommunity.tsx");
 for (const marker of ['kind: "text"', 'kind: "radio"', 'kind: "podcast"', "community kind recommendations"]) assert(onboarding.includes(marker), `Onboarding type guidance is missing ${marker}`);
 const app = await read("src/App.tsx");

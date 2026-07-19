@@ -49,7 +49,7 @@ assertCondition(packageJson.scripts?.["package:mac:zip"], "macOS zip package scr
 assertCondition(packageJson.scripts?.["package:mac"], "macOS package script is missing.");
 
 assertIncludes(builderConfig, "appId: com.picom.desktop", "electron-builder appId");
-assertIncludes(builderConfig, "productName: Picom", "electron-builder productName");
+assertIncludes(builderConfig, "productName: Picom Desktop", "electron-builder productName");
 assertIncludes(builderConfig, "copyright: Copyright (c) 2026 Picom", "ASCII-safe copyright metadata");
 assertIncludes(builderConfig, "output: release", "package output directory");
 assertIncludes(builderConfig, "buildResources: assets/brand", "package build resources directory");
@@ -78,7 +78,7 @@ assertIncludes(builderConfig, "hardenedRuntime: false", "macOS unsigned local ru
 assertIncludes(builderConfig, "gatekeeperAssess: false", "macOS local gatekeeper placeholder");
 assertIncludes(builderConfig, "NSMicrophoneUsageDescription", "macOS microphone usage description");
 assertIncludes(builderConfig, "NSScreenCaptureUsageDescription", "macOS screen capture usage description");
-assertIncludes(builderConfig, "title: Picom ${version}", "macOS dmg title");
+assertIncludes(builderConfig, "title: Picom Desktop ${version}", "macOS dmg title");
 assertIncludes(builderConfig, "publish: null", "publish config");
 assertIncludes(builderConfig, "asar: true", "asar packaging");
 assertIncludes(builderConfig, "protocols:", "custom protocol registration");
@@ -96,8 +96,12 @@ assertNotMatches(packageJsonText, /discord/i, "Package metadata must not contain
 assertNotMatches(builderConfig, /discord/i, "Electron Builder metadata must not contain Discord branding.");
 assertNotMatches(appConfig, /discord/i, "Electron app config must not contain Discord branding.");
 
-assertIncludes(appConfig, 'name: "Picom"', "Electron app name");
+assertIncludes(appConfig, 'name: "Picom Desktop"', "Electron app name");
 assertIncludes(appConfig, 'appId: "com.picom.desktop"', "Electron app id");
+// The display rename to "Picom Desktop" (productName) changes Electron's default userData
+// directory; existing installs would lose sessions/preferences. main.cts MUST pin userData
+// back to the original "Picom" directory before any packaged build.
+assertIncludes(readText("electron/main.cts"), 'app.setPath("userData"', "userData pinned to legacy Picom directory");
 assertIncludes(appConfig, "defaultWidth: 1440", "default window width");
 assertIncludes(appConfig, "defaultHeight: 900", "default window height");
 assertIncludes(appConfig, "minWidth: 1100", "minimum window width");

@@ -46,11 +46,10 @@ for (const payload of [{ requestId: captureRequestId, userInitiated: false }, { 
   if (validators.parseScreenCaptureListPayload(payload) || validators.parseScreenCaptureSelectionPayload(payload) || validators.parseScreenCaptureCancelPayload(payload)) throw new Error("Unsafe screen capture payload accepted");
 }
 
-const safeOAuthCallback = "picom://auth/callback?attempt_id=0123456789abcdef0123456789abcdef&state=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&nonce=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&provider=google&purpose=sign_in&code=abcdefgh";
-for (const link of ["picom://settings", "picom://friends", "picom://invite/ABC_123", "picom://community/community-1/channel/channel-2/message/message-3", safeOAuthCallback]) {
+for (const link of ["picom://settings", "picom://friends", "picom://invite/ABC_123", "picom://community/community-1/channel/channel-2/message/message-3", "picom://auth/callback?code=abcdefgh"]) {
   if (!validators.isSafeDeepLink(link)) throw new Error(`Safe deep link rejected: ${link}`);
 }
-for (const link of ["picom://community/../secret", "picom://invite/a?token=x", "picom://community/x#fragment", "picom://auth/callback?code=abcdefgh", safeOAuthCallback + "&token=x", "https://example.com", "picom://unknown/value"]) {
+for (const link of ["picom://community/../secret", "picom://invite/a?token=x", "picom://community/x#fragment", "picom://auth/callback?code=x", "picom://auth/callback?code=abcdefgh&token=x", "https://example.com", "picom://unknown/value"]) {
   if (validators.isSafeDeepLink(link)) throw new Error(`Unsafe deep link accepted: ${link}`);
 }
 
@@ -71,7 +70,14 @@ const preload = fs.readFileSync("electron/preload.cts", "utf8");
 const channels = fs.readFileSync("electron/ipcChannels.cts", "utf8");
 if (!main.includes('types: ["screen", "window"]') || !main.includes("screenCaptureGetSources, async (event, payload: unknown)")) throw new Error("Screen picker is not fixed-input/payload/sender-guarded");
 for (const marker of ["parseScreenCaptureListPayload", "parseScreenCaptureSelectionPayload", "parseScreenCaptureCancelPayload", "screenCaptureSessions", "SCREEN_CAPTURE_SESSION_TTL_MS"]) if (!main.includes(marker)) throw new Error(`Secure screen picker contract missing: ${marker}`);
-if (channels.includes("update") || preload.includes("update:")) throw new Error("Update IPC must remain absent until a frozen safe contract is approved");
+// Update IPC is an approved, frozen safe contract: main-owned electron-updater,
+// sender-trusted handlers, a narrow validated bridge, and a shape-checked state push.
+for (const updateChannel of ["updateGetState", "updateCheck", "updateDownload", "updateInstall", "updateStateChanged"]) {
+  if (!channels.includes(updateChannel)) throw new Error(`Approved update IPC channel missing: ${updateChannel}`);
+}
+if (!preload.includes("updates: {")) throw new Error("Update IPC bridge must be exposed under a narrow updates namespace");
+if (!preload.includes("isUpdaterState(value)")) throw new Error("Pushed update state must be shape-validated in preload");
+if (preload.includes("autoUpdater") || preload.includes("setFeedURL")) throw new Error("Preload must never expose raw updater objects or feed URLs");
 for (const forbidden of ["child_process", "exec(", "spawn(", "shell.openPath", "fs.rm", "fs.unlink", "fs.readdir"]) {
   if (main.includes(forbidden)) throw new Error(`Forbidden native capability found in IPC main path: ${forbidden}`);
 }

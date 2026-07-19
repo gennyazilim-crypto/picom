@@ -1,5 +1,3 @@
-begin;
-
 create or replace function public.is_active_community_media_member(
   target_community_id uuid,
   target_user_id uuid default auth.uid()
@@ -144,10 +142,10 @@ begin
   end if;
 
   select * into target_channel
-  from public.channels channel
-  where channel.id=target_channel_id
-    and channel.community_id=target_community_id
-    and channel.type='voice';
+  from public.channels
+  where id=target_channel_id
+    and community_id=target_community_id
+    and type='voice';
   if target_channel.id is null then
     raise exception 'VOICE_CHANNEL_FORBIDDEN' using errcode='42501';
   end if;
@@ -169,6 +167,4 @@ grant execute on function public.can_view_channel(uuid) to anon,authenticated;
 
 comment on function public.is_active_community_media_member(uuid,uuid) is 'Canonical ordinary Voice and Screen access gate: accepted membership, active profile, no active ban, and no active timeout.';
 comment on function public.list_visible_voice_rooms(uuid) is 'Returns Voice channel metadata to every active member without role, private-channel, or channel-override restrictions.';
-comment on function public.authorize_livekit_room(uuid,uuid,text) is 'Authorizes ordinary Voice and Screen publishing for every active community member; moderation remains role-hierarchy controlled.';
-
-commit;
+comment on function public.authorize_livekit_room(uuid,uuid,text) is 'Authorizes ordinary Voice and Screen publishing for every active community member; moderation remains role-hierarchy controlled.';;

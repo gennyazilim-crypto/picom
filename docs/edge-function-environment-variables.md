@@ -26,7 +26,7 @@ Purpose:
 | Function | JWT required | Required environment variables | Notes |
 | --- | --- | --- | --- |
 | `health` | No | none | Public non-sensitive health response only. |
-| `livekit-token` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `PICOM_ALLOWED_ORIGINS`, `PICOM_V1_VOICE_SCREEN_ENABLED` | LiveKit credentials stay server-side; missing allowlist/release gate fails closed. |
+| `livekit-token` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit API credentials stay server-side only. |
 | `accept-invite` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder currently uses caller-scoped Supabase auth only. |
 | `moderation-helper` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder only; future privileged actions may require documented service-role use. |
 | `notification-fanout` | Yes | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Placeholder only; future fanout must respect notification preferences. |

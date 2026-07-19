@@ -5,6 +5,9 @@
 
 begin;
 
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+
 select plan(8);
 
 insert into auth.users (
@@ -32,7 +35,13 @@ insert into public.profiles (id, username, display_name, status, status_text, ac
 values
   ('98000000-0000-4000-8000-000000000001', 'rls-storage-owner', 'RLS Storage Owner', 'online', 'Testing RLS', '#007571'),
   ('98000000-0000-4000-8000-000000000002', 'rls-storage-author', 'RLS Storage Author', 'online', 'Testing RLS', '#10C2BB'),
-  ('98000000-0000-4000-8000-000000000003', 'rls-storage-other', 'RLS Storage Other', 'online', 'Testing RLS', '#FF772E');
+  ('98000000-0000-4000-8000-000000000003', 'rls-storage-other', 'RLS Storage Other', 'online', 'Testing RLS', '#FF772E')
+on conflict (id) do update set
+  username = excluded.username,
+  display_name = excluded.display_name,
+  status = excluded.status,
+  status_text = excluded.status_text,
+  accent_color = excluded.accent_color;
 
 insert into public.communities (id, owner_id, name, description, accent_color, visibility, public_read_enabled)
 values ('99000000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000001', 'RLS Ownership Community', 'Ownership fixture.', '#007571', 'public', true);
@@ -54,6 +63,9 @@ values ('99200000-0000-4000-8000-000000000001', '99000000-0000-4000-8000-0000000
 insert into public.messages (id, community_id, channel_id, author_id, body, client_message_id)
 values ('99300000-0000-4000-8000-000000000001', '99000000-0000-4000-8000-000000000001', '99200000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000002', 'Original body.', 'rls-ownership-message');
 
+insert into public.message_reactions (message_id, user_id, emoji)
+values ('99300000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000002', ':thumbsup:');
+
 insert into public.attachments (id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, status)
 values ('99400000-0000-4000-8000-000000000001', '99300000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000002', 'communities/99000000-0000-4000-8000-000000000001/channels/99200000-0000-4000-8000-000000000001/attached/owned.png', 'owned.png', 'image/png', 18, 'image', 'attached');
 
@@ -69,16 +81,24 @@ reset role;
 
 select set_config('request.jwt.claim.sub', '98000000-0000-4000-8000-000000000003', true);
 set local role authenticated;
-select throws_like(
-  $$ update public.messages set body = 'Edited by other.' where id = '99300000-0000-4000-8000-000000000001' $$,
-  '%row-level security%',
+update public.messages
+set body = 'Edited by other.'
+where id = '99300000-0000-4000-8000-000000000001';
+select is(
+  (select body from public.messages where id = '99300000-0000-4000-8000-000000000001'),
+  'Edited by author.',
   'other member cannot edit another user message'
 );
-select throws_like(
-  $$ delete from public.message_reactions where message_id = '99300000-0000-4000-8000-000000000001' and user_id = '98000000-0000-4000-8000-000000000002' $$,
-  '%row-level security%',
+delete from public.message_reactions
+where message_id = '99300000-0000-4000-8000-000000000001'
+  and user_id = '98000000-0000-4000-8000-000000000002';
+reset role;
+select is(
+  (select count(*) from public.message_reactions where message_id = '99300000-0000-4000-8000-000000000001' and user_id = '98000000-0000-4000-8000-000000000002'),
+  1::bigint,
   'other member cannot delete another user reaction'
 );
+set local role authenticated;
 select is((select count(*) from public.attachments where id = '99400000-0000-4000-8000-000000000001'), 1::bigint, 'other visible member can read public attachment metadata');
 reset role;
 

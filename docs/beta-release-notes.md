@@ -1,5 +1,15 @@
 # Picom Beta Release Notes
 
+## 0.1.1-beta.4 (2026-07-18)
+
+Windows x64 installer: `Picom-0.1.1-beta.4-beta-Windows-x64.exe`
+
+- Profile and cover image upload fixed (Electron native picker data URL decoding).
+- Voice call invite service wired to the live `voice-call-authorize` backend.
+- General stability improvements.
+
+Download: `https://picom.gg/downloads/windows/latest/Picom-0.1.1-beta.4-beta-Windows-x64.exe`
+
 ## Release identity
 
 | Field | Value |
@@ -104,11 +114,7 @@ Picom is desktop-only. A mobile app and mobile layout are not part of this beta.
 7. Upload a valid image and open it in Image Preview.
 8. Test Mention Feed tabs, stories, social footer, companion rail, and Full Profile Page.
 9. In Supabase staging, run a two-window realtime test and verify private-channel isolation.
-10. Verify active members can open Voice channels, join, publish microphone audio, share a selected screen/window, receive remote media, reconnect, and cleanly leave; visitors/non-members/restricted users remain denied.
-
-## Task 668 V1 inclusion update
-
-Voice Rooms and Screen Share are included for authenticated active community members after protected hosted run 29197503222, packaged Windows run 29198913461, and security run 29199409039 passed. Capture remains explicit-action only, raw media is not stored, and role-based moderation is separate from ordinary member access.
+10. Verify Voice Rooms and Screen Share are absent from V1 navigation, onboarding, settings, channels, feed companion controls, help, and deep links.
 11. Export redacted diagnostics and submit feedback from the in-app support surfaces.
 12. Run the platform-specific install/uninstall smoke checklist.
 

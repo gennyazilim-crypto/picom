@@ -1,7 +1,7 @@
 import { secretCommunityService } from "./community/secretCommunityService";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import { getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow } from "./communityListQuery";
+import { COMMUNITY_LIST_SELECT, getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow } from "./communityListQuery";
 import { isCommunityTemplateId } from "../data/communityTemplates";
 import { isCommunityKind, type CommunityKind } from "../types/community";
 import type { CommunityRule } from "../types/communityRules";
@@ -23,6 +23,9 @@ export type CommunitySummary = Readonly<{
   typeSettings: CommunityTypeSettings;
   rulesEnabled: boolean;
   rulesVersion: string;
+  discoveryListed?: boolean;
+  discoveryCategory?: "development" | "design" | "gaming" | "music" | "study" | "work" | null;
+  discoveryJoinPolicy?: "open" | "request";
   templateId?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -86,7 +89,16 @@ function cleanName(name: string): string {
 }
 
 function isSafeBrandUrl(value: string): boolean {
-  return /^https:\/\//i.test(value) || /^data:image\/(?:png|jpeg|webp);base64,/i.test(value);
+  if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(value)) return true;
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:") return true;
+    // Local Supabase storage serves http://127.0.0.1 / localhost.
+    if (url.protocol === "http:" && (url.hostname === "127.0.0.1" || url.hostname === "localhost")) return true;
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -117,7 +129,7 @@ function validateCreateInput(input: CreateCommunityInput): CommunityServiceError
 
   if (input.iconUrl) {
     const iconUrl = input.iconUrl.trim();
-    if (iconUrl.length > 2048 || !/^https:\/\//i.test(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a valid HTTPS URL." };
+    if ((!iconUrl.startsWith("data:image/") && iconUrl.length > 2048) || !isSafeBrandUrl(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a controlled HTTPS image upload." };
   }
 
   if (input.bannerUrl) {
@@ -161,7 +173,12 @@ function validateUpdateInput(input: UpdateCommunityInput): CommunityServiceError
 
   if (input.iconUrl) {
     const iconUrl = input.iconUrl.trim();
-    if (iconUrl.length > 2048 || !/^https:\/\//i.test(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a valid HTTPS URL." };
+    if ((!iconUrl.startsWith("data:image/") && iconUrl.length > 2048) || !isSafeBrandUrl(iconUrl)) return { code: "VALIDATION_ERROR", message: "Community icon must be a controlled HTTPS image upload." };
+  }
+
+  if (input.bannerUrl) {
+    const bannerUrl = input.bannerUrl.trim();
+    if ((!bannerUrl.startsWith("data:image/") && bannerUrl.length > 2048) || !isSafeBrandUrl(bannerUrl)) return { code: "VALIDATION_ERROR", message: "Community banner must be a controlled HTTPS image upload." };
   }
 
   return null;
@@ -398,9 +415,9 @@ export const communityService = {
           kind,
           ownerId: "mock-current-user",
           name: nextName ?? "Mock community",
-          description: input.description?.trim() || null,
-          iconUrl: input.iconUrl?.trim() || null,
-          bannerUrl: input.bannerUrl?.trim() || null,
+          description: input.description === undefined ? null : input.description?.trim() || null,
+          iconUrl: input.iconUrl === undefined ? null : input.iconUrl?.trim() || null,
+          bannerUrl: input.bannerUrl === undefined ? null : input.bannerUrl?.trim() || null,
           accentColor: input.accentColor ?? "#007571",
           visibility: input.visibility ?? "public",
           publicReadEnabled: input.visibility !== "public" ? false : input.publicReadEnabled ?? true,
@@ -417,19 +434,51 @@ export const communityService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const { data, error } = await configured.data.rpc(input.visibility === "secret" ? "update_secret_community_settings" : "update_community_settings", {
+    // RPC requires a full settings payload. Merge partial updates (e.g. icon-only after create)
+    // with the current row so we do not wipe name/rules or fail validation.
+    const currentResult = await configured.data
+      .from("communities")
+      .select(COMMUNITY_LIST_SELECT)
+      .eq("id", input.id)
+      .maybeSingle();
+    if (currentResult.error || !currentResult.data) {
+      return { ok: false, error: { code: "COMMUNITY_UPDATE_FAILED", message: "Could not update community." } };
+    }
+    const current = mapCommunityListRow(currentResult.data);
+
+    let nextRules = input.rules;
+    if (nextRules === undefined) {
+      const loaded = await communityRulesService.loadPublishedRules(input.id);
+      if (!loaded.ok) {
+        return { ok: false, error: { code: "COMMUNITY_UPDATE_FAILED", message: "Could not update community." } };
+      }
+      nextRules = loaded.rules;
+    }
+
+    const mergedName = nextName ?? current.name;
+    const mergedDescription = input.description === undefined ? current.description : input.description?.trim() || null;
+    const mergedIconUrl = input.iconUrl === undefined ? current.iconUrl : input.iconUrl?.trim() || null;
+    const mergedBannerUrl = input.bannerUrl === undefined ? current.bannerUrl : input.bannerUrl?.trim() || null;
+    const mergedVisibility = input.visibility ?? current.visibility;
+    const mergedPublicRead = input.publicReadEnabled ?? current.publicReadEnabled;
+    const mergedNotification = input.defaultNotificationLevel ?? current.defaultNotificationLevel;
+    const mergedRulesEnabled = input.rulesEnabled ?? current.rulesEnabled;
+    const mergedRulesVersion = input.rulesVersion ?? current.rulesVersion;
+    const mergedTypeSettings = input.typeSettings ?? current.typeSettings;
+
+    const { data, error } = await configured.data.rpc(mergedVisibility === "secret" ? "update_secret_community_settings" : "update_community_settings", {
       target_community_id: input.id,
-      next_name: nextName ?? null,
-      next_description: input.description === undefined ? null : input.description?.trim() || null,
-      next_icon_url: input.iconUrl === undefined ? null : input.iconUrl?.trim() || null,
-      next_banner_url: input.bannerUrl === undefined ? null : input.bannerUrl?.trim() || null,
-      next_visibility: input.visibility ?? null,
-      next_public_read_enabled: input.publicReadEnabled ?? null,
-      next_default_notification_level: input.defaultNotificationLevel ?? null,
-      next_rules_enabled: input.rulesEnabled ?? null,
-      next_rules_version: input.rulesVersion ?? null,
-      next_type_settings: input.typeSettings ?? null,
-      next_rules: input.rules?.map((rule) => ({ title: rule.title.trim(), body: rule.body.trim(), required: rule.required })) ?? null,
+      next_name: mergedName,
+      next_description: mergedDescription,
+      next_icon_url: mergedIconUrl,
+      next_banner_url: mergedBannerUrl,
+      next_visibility: mergedVisibility,
+      next_public_read_enabled: mergedPublicRead,
+      next_default_notification_level: mergedNotification,
+      next_rules_enabled: mergedRulesEnabled,
+      next_rules_version: mergedRulesVersion,
+      next_type_settings: mergedTypeSettings,
+      next_rules: nextRules.map((rule) => ({ title: rule.title.trim(), body: rule.body.trim(), required: rule.required })),
     });
     const row = data?.[0];
     if (error || !row) {

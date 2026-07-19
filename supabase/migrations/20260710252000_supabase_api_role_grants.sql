@@ -3,11 +3,9 @@
 -- enabled; RLS remains the authoritative row-level access boundary.
 
 grant usage on schema public to anon, authenticated, service_role;
-
 grant all privileges on all tables in schema public to service_role;
 grant all privileges on all sequences in schema public to service_role;
 grant execute on all routines in schema public to service_role;
-
 do $$
 declare
   target_table record;
@@ -33,7 +31,6 @@ begin
   end loop;
 end
 $$;
-
 -- Future migrations must enable RLS before granting anon/authenticated table
 -- privileges. Service-role defaults are safe because that role is server-only.
 alter default privileges for role postgres in schema public

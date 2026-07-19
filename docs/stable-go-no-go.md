@@ -80,12 +80,6 @@ All 89 Tasks 431-519 have their exact checkpoint and expected commit subject, bu
 
 - mandatory renderer performance and generated-license checks currently fail;
 - the Task 519 staging matrix has 18 BLOCKED flows and no hosted PASS evidence;
-
-## Task 626 Windows-first V1 final decision
-
-Decision: **NO_GO** on 2026-07-12.
-
-The deterministic local matrix passes and Task 668 includes Voice and Screen Share after protected hosted, packaged-Windows, and security evidence. Production mode remains fail-closed Supabase-only. There is still no approved `1.0.0` source freeze, trusted signed Windows artifact, clean-machine smoke, authorized legal/license approval, production ownership/custody, full Storage/Auth recovery, post-signing checksum, or artifact provenance. `npm run release:go-no-go:guard` correctly blocks publication. No tag, GitHub Release, download page, changelog release entry, rollout, or monitoring result is authorized.
 - visual and E2E results are coverage contracts, not executed desktop UI evidence;
 - RB-01 through RB-11 remain open;
 - disk artifacts are unsigned Windows development/beta outputs, not an immutable stable cross-platform set;

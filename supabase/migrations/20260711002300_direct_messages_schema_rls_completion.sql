@@ -261,11 +261,15 @@ $$;
 drop policy if exists "direct_messages_delete_own" on public.direct_messages;
 revoke delete on public.direct_messages from authenticated;
 drop policy if exists "direct_reactions_insert_own" on public.direct_message_reactions;
+drop policy if exists "direct_reactions_insert_own" on public.direct_message_reactions;
 create policy "direct_reactions_insert_own" on public.direct_message_reactions for insert to authenticated with check(user_id=auth.uid() and exists(select 1 from public.direct_messages message where message.id=message_id and message.deleted_at is null and public.can_send_direct_message(message.conversation_id)));
+drop policy if exists "direct_attachments_select_participants" on public.direct_message_attachments;
 drop policy if exists "direct_attachments_select_participants" on public.direct_message_attachments;
 create policy "direct_attachments_select_participants" on public.direct_message_attachments for select to authenticated using(exists(select 1 from public.direct_messages message where message.id=message_id and message.deleted_at is null and public.is_direct_conversation_participant(message.conversation_id)));
 drop policy if exists "direct_attachments_insert_participants" on public.direct_message_attachments;
+drop policy if exists "direct_attachments_insert_participants" on public.direct_message_attachments;
 create policy "direct_attachments_insert_participants" on public.direct_message_attachments for insert to authenticated with check(uploader_id=auth.uid() and exists(select 1 from public.direct_messages message where message.id=message_id and message.author_id=auth.uid() and message.deleted_at is null and public.can_send_direct_message(message.conversation_id)));
+drop policy if exists "direct_attachments_delete_own" on public.direct_message_attachments;
 create policy "direct_attachments_delete_own" on public.direct_message_attachments for delete to authenticated using(uploader_id=auth.uid() and exists(select 1 from public.direct_messages message where message.id=message_id and message.author_id=auth.uid() and public.is_direct_conversation_participant(message.conversation_id)));
 grant delete on public.direct_message_attachments to authenticated;
 
@@ -287,19 +291,21 @@ drop policy if exists "dm attachments participant read" on storage.objects;
 drop policy if exists "dm attachments author upload" on storage.objects;
 drop policy if exists "dm attachments author update" on storage.objects;
 drop policy if exists "dm attachments author delete" on storage.objects;
+drop policy if exists "dm attachments participant read" on storage.objects;
 create policy "dm attachments participant read" on storage.objects for select to authenticated using(
   bucket_id='direct-message-attachments'
   and exists(select 1 from public.direct_messages message where message.id=public.dm_storage_path_uuid(name,2) and message.conversation_id=public.dm_storage_path_uuid(name,1) and message.deleted_at is null and public.is_direct_conversation_participant(message.conversation_id))
 );
+drop policy if exists "dm attachments author upload" on storage.objects;
 create policy "dm attachments author upload" on storage.objects for insert to authenticated with check(
   bucket_id='direct-message-attachments' and public.dm_storage_path_uuid(name,3)=auth.uid()
   and exists(select 1 from public.direct_messages message where message.id=public.dm_storage_path_uuid(name,2) and message.conversation_id=public.dm_storage_path_uuid(name,1) and message.author_id=auth.uid() and message.deleted_at is null and public.can_send_direct_message(message.conversation_id))
 );
+drop policy if exists "dm attachments author update" on storage.objects;
 create policy "dm attachments author update" on storage.objects for update to authenticated using(bucket_id='direct-message-attachments' and public.dm_storage_path_uuid(name,3)=auth.uid() and public.is_direct_conversation_participant(public.dm_storage_path_uuid(name,1))) with check(bucket_id='direct-message-attachments' and public.dm_storage_path_uuid(name,3)=auth.uid());
+drop policy if exists "dm attachments author delete" on storage.objects;
 create policy "dm attachments author delete" on storage.objects for delete to authenticated using(bucket_id='direct-message-attachments' and public.dm_storage_path_uuid(name,3)=auth.uid() and public.is_direct_conversation_participant(public.dm_storage_path_uuid(name,1)));
 
 comment on column public.direct_conversations.superseded_by is 'Legacy duplicate conversations remain readable for retention but cannot receive new activity.';
 comment on column public.direct_conversation_participants.last_read_message_id is 'Precise participant-owned read cursor; last_read_at remains the unread query cursor.';
-comment on function public.dm_storage_path_uuid(text,integer) is 'Safely parses the DM object path conversation/message/uploader UUID segments without throwing in RLS.';
-
-commit;
+comment on function public.dm_storage_path_uuid(text,integer) is 'Safely parses the DM object path conversation/message/uploader UUID segments without throwing in RLS.';;

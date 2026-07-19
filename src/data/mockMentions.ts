@@ -1,6 +1,5 @@
 import type { MentionItem } from "../types/mentions";
 import { mockAttachmentLayouts } from "./mockAttachments";
-import { selectMockFixture } from "../config/dataSourcePolicy";
 
 const base = Date.UTC(2026, 6, 4, 15, 20, 0);
 const minutesAgo = (minutes: number) => new Date(base - minutes * 60 * 1000).toISOString();
@@ -43,7 +42,7 @@ const commentPreview = {
   ],
 };
 
-const rawMockMentionItems: MentionItem[] = [
+const rawMockMentionItems: MentionItem[] = import.meta.env.PROD ? [] : [
   {
     id: "mention-popular-01",
     source: "popular_feed",
@@ -497,4 +496,4 @@ const rawMockMentionItems: MentionItem[] = [
   },
 ];
 
-export const mockMentionItems = selectMockFixture<MentionItem[]>(rawMockMentionItems, []);
+export const mockMentionItems: MentionItem[] = import.meta.env.PROD ? [] : rawMockMentionItems;

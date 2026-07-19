@@ -9,6 +9,7 @@ import { isV1FeatureEnabled } from "../../config/v1ReleaseScope";
 type BadgeDerivationInput = Readonly<{
   communities: readonly Community[];
   directConversations: readonly DirectConversation[];
+  incomingFriendRequests: number;
   activeVoiceRooms: readonly ActiveVoiceRoomSummary[];
   visibleEvents: readonly UpcomingEvent[];
   blockedUserIds: readonly string[];
@@ -28,10 +29,11 @@ function deriveBadges(input: BadgeDerivationInput): GlobalNavigationBadgeState {
   const mutedChannels = new Set(input.notificationPolicy.mutedChannelIds);
 
   const directConversations = new Map(input.directConversations.map((conversation) => [conversation.id, conversation]));
-  const dmUnread = [...directConversations.values()].reduce((total, conversation) => {
+  const directMessageUnread = [...directConversations.values()].reduce((total, conversation) => {
     if (conversation.archivedAt || blocked.has(conversation.participantUserId) || isActiveMute(conversation, now)) return total;
     return total + Math.max(0, conversation.unreadCount);
   }, 0);
+  const incomingFriendRequestCount = Math.max(0, Math.floor(input.incomingFriendRequests));
 
   const countedChannels = new Set<string>();
   let communityUnread = 0;
@@ -61,7 +63,7 @@ function deriveBadges(input: BadgeDerivationInput): GlobalNavigationBadgeState {
     .map((event) => event.id)).size;
 
   return {
-    dmUnread,
+    dmUnread: directMessageUnread + incomingFriendRequestCount,
     communityUnread,
     radioLive: isV1FeatureEnabled("radio") ? radioLive : 0,
     eventUpcoming: isV1FeatureEnabled("events") ? eventUpcoming : 0,

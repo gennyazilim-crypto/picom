@@ -1,0 +1,1540 @@
+.settings-modal {
+  width: min(1080px, calc(100vw - 48px));
+  height: min(780px, calc(100vh - 48px));
+  max-width: none;
+  grid-template-columns: 280px minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: var(--surface);
+  box-shadow:
+    0 24px 64px color-mix(in srgb, var(--ink) 16%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--text-on-accent) 5%, transparent);
+}
+
+.settings-modal .settings-nav {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 24px 18px;
+  border-right: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 40%, var(--bg-sidebar)), var(--bg-sidebar));
+}
+
+.settings-modal .settings-nav h2 {
+  margin: 6px 0 18px;
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.settings-modal .settings-tabs {
+  display: grid;
+  gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.settings-modal .settings-tabs button {
+  height: 38px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.settings-modal .settings-tabs button.active {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 78%, var(--surface));
+  color: var(--accent);
+}
+
+.settings-modal .settings-content {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 26px 32px 32px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 34%, transparent) transparent;
+}
+
+.settings-modal .settings-content > .modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 1;
+}
+
+.settings-modal .settings-content > .eyebrow {
+  letter-spacing: 0.12em;
+  font-size: 10px;
+}
+
+.settings-modal .settings-content > h2 {
+  margin: 4px 0 18px;
+  padding-right: 52px;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.settings-modal .appearance-settings-stack {
+  display: grid;
+  gap: 22px;
+}
+
+.settings-modal .settings-section-description {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.settings-modal .appearance-theme-panel {
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 42%, var(--surface));
+}
+
+.settings-modal .theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.settings-modal .theme-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-modal .theme-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--surface-soft) 55%, var(--surface));
+}
+
+.settings-modal .theme-card.selected {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 58%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.settings-modal .theme-preview {
+  position: relative;
+  display: block;
+  height: 128px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 12px;
+}
+
+.settings-modal .theme-preview.light-preview {
+  background: linear-gradient(145deg, #f6fafb 0%, #e9f3f2 52%, #dfecef 100%);
+}
+
+.settings-modal .theme-preview.dark-preview {
+  background: linear-gradient(145deg, #172024 0%, #223038 52%, #2b3c45 100%);
+}
+
+.settings-modal .theme-preview::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 42%;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  opacity: 0.35;
+}
+
+.settings-modal .theme-preview::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  height: 42px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  opacity: 0.28;
+}
+
+.settings-modal .theme-card strong {
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .theme-card small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-modal .appearance-panels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.settings-modal .accessibility-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.settings-modal .accessibility-card > strong {
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.settings-modal .accessibility-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-modal .settings-toggle-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 55%, var(--surface));
+}
+
+.settings-modal .settings-toggle-row span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settings-modal .settings-toggle-row small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-modal .settings-toggle-row select {
+  min-width: 148px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.settings-modal .placeholder-panel,
+.settings-modal .action-panel {
+  max-width: none;
+}
+
+.settings-modal .advanced-settings-stack {
+  display: grid;
+  gap: 24px;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-modal .account-settings-stack {
+  display: grid;
+  gap: 24px;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-modal .advanced-settings-section,
+.settings-modal .account-settings-section {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+}
+
+.settings-modal .advanced-settings-section-title,
+.settings-modal .account-settings-section-title {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+.settings-modal .advanced-settings-stack .settings-status-card,
+.settings-modal .advanced-settings-stack .settings-feature-card,
+.settings-modal .account-settings-stack .settings-status-card,
+.settings-modal .account-settings-stack .settings-feature-card {
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .advanced-settings-stack .settings-feature-card--highlight,
+.settings-modal .account-settings-stack .settings-feature-card--highlight {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface));
+}
+
+.settings-modal .advanced-settings-stack .settings-status-card span,
+.settings-modal .account-settings-stack .settings-status-card span {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.settings-modal .advanced-settings-stack .settings-status-card strong,
+.settings-modal .account-settings-stack .settings-status-card strong {
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.settings-modal .advanced-settings-stack .settings-status-card small,
+.settings-modal .account-settings-stack .settings-status-card small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .advanced-settings-stack .security-card-grid,
+.settings-modal .account-settings-stack .security-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-modal .advanced-settings-stack .security-card,
+.settings-modal .account-settings-stack .security-card {
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.settings-modal .advanced-settings-stack .security-card:hover,
+.settings-modal .account-settings-stack .security-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: var(--surface);
+}
+
+.settings-modal .advanced-settings-stack .security-card span,
+.settings-modal .account-settings-stack .security-card span {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.settings-modal .advanced-settings-stack .security-card strong,
+.settings-modal .account-settings-stack .security-card strong {
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .account-settings-stack .security-card small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.settings-modal .advanced-settings-stack .settings-actions-row,
+.settings-modal .account-settings-stack .settings-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.settings-modal .settings-inline-action {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--picom-teal), var(--picom-aqua));
+  color: var(--text-on-accent);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.settings-modal .settings-inline-action:hover {
+  filter: brightness(1.04);
+}
+
+.settings-modal .settings-inline-action--ghost {
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+}
+
+.settings-modal .settings-inline-action--ghost:hover {
+  filter: none;
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.settings-modal .settings-inline-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.settings-modal .settings-inline-action--danger {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--border));
+  background: color-mix(in srgb, var(--danger) 88%, #c0392b);
+  color: #fff;
+}
+
+.settings-modal .settings-inline-action--danger:hover {
+  filter: brightness(1.06);
+}
+
+.settings-modal .account-settings-form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-modal .account-settings-field {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-modal .account-settings-field small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.settings-modal .account-settings-stack .session-list {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-modal .account-settings-stack .session-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  color: var(--text-secondary);
+}
+
+.settings-modal .account-settings-stack .session-card div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.settings-modal .account-settings-stack .session-card strong {
+  min-width: 0;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-modal .account-settings-stack .session-card small {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.settings-modal .account-settings-stack .session-status {
+  align-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface));
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: capitalize;
+}
+
+.settings-modal .account-settings-stack .danger-zone-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+}
+
+.settings-modal .account-settings-stack .danger-zone-card > span {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--danger);
+}
+
+.settings-modal .account-settings-stack .danger-zone-card strong {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.settings-modal .account-settings-stack .danger-zone-card small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .advanced-settings-input,
+.settings-modal .advanced-settings-textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 11px 13px;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+}
+
+.settings-modal .advanced-settings-textarea {
+  resize: vertical;
+  min-height: 88px;
+  line-height: 1.45;
+}
+
+.settings-modal .advanced-settings-input:focus,
+.settings-modal .advanced-settings-textarea:focus {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.settings-modal .profile-settings-stack {
+  display: grid;
+  gap: 24px;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-modal .profile-settings-section {
+  display: grid;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+}
+
+.settings-modal .profile-settings-section-head {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-modal .profile-settings-section-head p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-modal .profile-settings-section-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.settings-modal .profile-settings-section--compact {
+  padding-block: 14px;
+}
+
+.settings-modal .profile-media-toolbar .settings-inline-action,
+.settings-modal .profile-media-toolbar .profile-media-upload-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-modal .profile-settings-form {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-modal .profile-settings-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-modal .profile-settings-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.settings-modal .profile-settings-field span {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-modal .profile-settings-field small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.settings-modal .profile-presence-segment {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.settings-modal .profile-presence-option {
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.settings-modal .profile-presence-option:hover {
+  background: var(--surface-soft);
+  color: var(--text-primary);
+}
+
+.settings-modal .profile-presence-option.is-active {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
+  color: var(--accent);
+}
+
+.settings-modal .profile-settings-stack .settings-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.settings-modal .profile-settings-section .verification-request-panel {
+  margin-top: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .privacy-settings-stack {
+  display: grid;
+  gap: 24px;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-modal .privacy-settings-section {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+}
+
+.settings-modal .privacy-settings-section--compact {
+  padding-block: 14px;
+}
+
+.settings-modal .privacy-settings-section-title {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+.settings-modal .privacy-settings-stack .settings-status-card,
+.settings-modal .privacy-settings-stack .settings-feature-card {
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .privacy-settings-stack .settings-feature-card--highlight {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface));
+}
+
+.settings-modal .privacy-settings-stack .settings-status-card span {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.settings-modal .privacy-settings-stack .settings-status-card strong {
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.settings-modal .privacy-settings-stack .settings-status-card small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .privacy-settings-stack .security-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-modal .privacy-settings-stack .security-card {
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.settings-modal .privacy-settings-stack .security-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: var(--surface);
+}
+
+.settings-modal .privacy-settings-stack .security-card span {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.settings-modal .privacy-settings-stack .security-card strong {
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .privacy-settings-stack .security-card small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.settings-modal .privacy-settings-stack .settings-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.settings-modal .privacy-settings-stack .retention-user-notice {
+  border-style: solid;
+}
+
+.settings-modal .privacy-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.settings-modal .privacy-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 50%, var(--surface));
+}
+
+.settings-modal .privacy-list-item > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.settings-modal .privacy-list-item strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-modal .privacy-list-item small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-modal .privacy-list-item--empty {
+  justify-content: flex-start;
+}
+
+.settings-modal .notification-settings-stack {
+  display: grid;
+  gap: 24px;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-modal .notification-settings-section {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+}
+
+.settings-modal .notification-settings-section-title {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+.settings-modal .notification-settings-stack .settings-status-card,
+.settings-modal .notification-settings-stack .settings-feature-card {
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .notification-settings-stack .settings-feature-card--highlight {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface));
+}
+
+.settings-modal .notification-settings-stack .settings-status-card span {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.settings-modal .notification-settings-stack .settings-status-card strong {
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.settings-modal .notification-settings-stack .settings-status-card small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .notification-settings-stack .settings-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.settings-modal .notification-settings-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-modal .notification-settings-time-field {
+  display: grid;
+  gap: 7px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 55%, var(--surface));
+}
+
+.settings-modal .notification-settings-time-field span {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.settings-modal .notification-settings-time-field small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.settings-modal .notification-settings-time-input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  outline: 0;
+}
+
+.settings-modal .notification-settings-time-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.settings-modal .notification-settings-time-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.settings-modal .voice-settings-stack {
+  display: grid;
+  gap: 24px;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-modal .voice-settings-section {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+}
+
+.settings-modal .voice-settings-section-title {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+.settings-modal .voice-settings-stack .security-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-modal .voice-settings-stack .security-card {
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.settings-modal .voice-settings-stack .security-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: var(--surface);
+}
+
+.settings-modal .voice-settings-stack .security-card span {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.settings-modal .voice-settings-stack .security-card strong {
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .voice-settings-stack .security-card small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.settings-modal .voice-settings-stack .settings-actions-row,
+.settings-modal .voice-device-settings .settings-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.settings-modal .voice-device-settings .settings-status-card,
+.settings-modal .voice-device-settings .settings-feature-card {
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .voice-device-settings .settings-feature-card--highlight {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface));
+}
+
+.settings-modal .voice-device-settings .settings-status-card span {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.settings-modal .voice-device-settings .settings-status-card strong {
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.settings-modal .voice-device-settings .settings-status-card small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal .diagnostics-settings-stack {
+  display: grid;
+  gap: 24px;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-modal .diagnostics-settings-section {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+}
+
+.settings-modal .diagnostics-settings-section-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+.settings-modal .diagnostics-section-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-modal .diagnostics-support-card {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icon copy"
+    "actions actions";
+  align-items: start;
+  column-gap: 16px;
+}
+
+.settings-modal .diagnostics-support-icon {
+  grid-area: icon;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-soft) 78%, var(--surface));
+  color: var(--accent);
+}
+
+.settings-modal .diagnostics-support-copy {
+  grid-area: copy;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settings-modal .diagnostics-support-copy strong {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.settings-modal .diagnostics-support-copy p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-modal .diagnostics-support-card .settings-actions-row {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.settings-modal .diagnostics-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-modal .diagnostics-metric-card {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .diagnostics-metric-card span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.settings-modal .diagnostics-metric-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.settings-modal .diagnostics-privacy-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface));
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-modal .diagnostics-settings-section .settings-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.settings-modal .diagnostics-logs-filters {
+  display: grid;
+  grid-template-columns: 132px 148px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.settings-modal .diagnostics-logs-filter {
+  height: 40px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+}
+
+.settings-modal .diagnostics-logs-filter:focus {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: var(--focus-ring);
+}
+
+.settings-modal .diagnostics-logs-search {
+  height: 40px;
+  padding-block: 0;
+}
+
+.settings-modal .diagnostics-logs-list {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.settings-modal .diagnostics-log-row {
+  display: grid;
+  grid-template-columns: 76px 56px minmax(0, 1fr) 96px;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.settings-modal .diagnostics-log-row:hover,
+.settings-modal .diagnostics-log-row.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 38%, var(--surface));
+}
+
+.settings-modal .diagnostics-log-row time,
+.settings-modal .diagnostics-log-row span {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.settings-modal .diagnostics-log-row em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.settings-modal .diagnostics-log-row em.warn {
+  color: var(--warning);
+}
+
+.settings-modal .diagnostics-log-row em.error {
+  color: var(--danger);
+}
+
+.settings-modal .diagnostics-log-row em.info {
+  color: var(--accent);
+}
+
+.settings-modal .diagnostics-log-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.settings-modal .diagnostics-logs-empty {
+  padding: 24px 16px;
+  border: 1px dashed color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.settings-modal .admin-operations-settings-stack {
+  display: grid;
+  gap: 0;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-height: 0;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-operations-panel {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-soft) 38%, var(--surface));
+}
+
+.settings-modal .admin-ops-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px 0;
+}
+
+.settings-modal .admin-ops-intro .settings-section-description {
+  margin: 0;
+  flex: 1;
+}
+
+.settings-modal .admin-ops-access-badge {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--warning) 34%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  color: var(--warning);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-layout {
+  min-height: 420px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 0;
+  margin: 0 12px 12px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-layout nav {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 10px;
+  border-right: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 55%, var(--surface));
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-layout nav button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-layout nav button:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-layout nav button.active {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
+  color: var(--accent);
+  font-weight: 850;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 18px;
+  scrollbar-width: thin;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-metrics article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 45%, var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-metrics span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-metrics strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-detail {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-soft) 38%, var(--surface));
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-detail strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.settings-modal .admin-operations-settings-stack .admin-ops-detail p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 960px) {
+  .settings-modal {
+    width: calc(100vw - 24px);
+    height: calc(100vh - 24px);
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .settings-modal .appearance-panels-grid,
+  .settings-modal .theme-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal .advanced-settings-stack .security-card-grid,
+  .settings-modal .account-settings-stack .security-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal .profile-settings-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal .profile-presence-segment {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-modal .privacy-settings-stack .security-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal .notification-settings-time-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal .voice-settings-stack .security-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal .diagnostics-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-modal .diagnostics-logs-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal .diagnostics-log-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .settings-modal .diagnostics-log-row span {
+    grid-column: 1 / -1;
+  }
+
+  .settings-modal .admin-operations-settings-stack .admin-ops-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .settings-modal .admin-operations-settings-stack .admin-ops-layout nav {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  }
+
+  .settings-modal .admin-operations-settings-stack .admin-ops-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-modal {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .settings-modal .settings-nav {
+    max-height: 180px;
+  }
+
+  .settings-modal .settings-tabs {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-modal .theme-card {
+    transition: none;
+  }
+}

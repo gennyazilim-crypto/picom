@@ -19,7 +19,6 @@ create table if not exists public.notifications (
   read_at timestamptz,
   deleted_at timestamptz
 );
-
 create index if not exists idx_notifications_recipient_created
   on public.notifications(recipient_id, created_at desc)
   where deleted_at is null;
@@ -29,20 +28,16 @@ create index if not exists idx_notifications_recipient_unread
 create unique index if not exists idx_notifications_recipient_source_event
   on public.notifications(recipient_id, source_event_id)
   where source_event_id is not null;
-
 alter table public.notifications enable row level security;
 revoke all on public.notifications from anon, authenticated;
 grant select, update(read_at, deleted_at) on public.notifications to authenticated;
-
 drop policy if exists "notifications_recipient_select" on public.notifications;
 create policy "notifications_recipient_select" on public.notifications
 for select to authenticated using (recipient_id = auth.uid());
-
 drop policy if exists "notifications_recipient_update" on public.notifications;
 create policy "notifications_recipient_update" on public.notifications
 for update to authenticated
 using (recipient_id = auth.uid())
 with check (recipient_id = auth.uid());
-
 comment on table public.notifications is
   'Private inbox metadata for one recipient. Never store credentials, tokens, authorization headers, or unrestricted private message content.';

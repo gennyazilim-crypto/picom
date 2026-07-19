@@ -5,7 +5,7 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
 
 const modal = read("src/components/CreateCommunityModal.tsx");
 for (const marker of [
-  'useState<CommunityKind | null>(null)',
+  'useState<CommunityKind | null>("text")',
   'kind: "text"',
   'kind: "radio"',
   'kind: "podcast"',
@@ -13,12 +13,12 @@ for (const marker of [
   "Radio Community",
   "Podcast Community",
   "Community name",
-  "Icon URL",
-  'visibility: "public" | "private"',
+  "iconFile?: File",
+  'visibility: "public" | "secret"',
   "publicReadEnabled",
   "templateId",
   "CreateCommunitySubmitResult",
-  "Choose Text, Radio, or Podcast",
+  "Radio and Podcast are locked for now.",
 ]) assert(modal.includes(marker), `Typed community wizard is missing ${marker}`);
 assert(!modal.includes("placeholder toast"), "Typed community wizard contains a raw placeholder path");
 
@@ -29,7 +29,7 @@ const app = read("src/App.tsx");
 for (const marker of [
   "CreateCommunityFormValue",
   "CreateCommunitySubmitResult",
-  "communityService.createCommunity(value)",
+  "communityService.createCommunity({ ...createInput, iconUrl })",
   "communityViewForKind(community.kind)",
   'completion.startChoice === "createCommunity"',
   "setCreateCommunityOpen(true)",

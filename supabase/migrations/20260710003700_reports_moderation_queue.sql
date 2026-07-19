@@ -11,11 +11,9 @@ create table if not exists public.reports (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create index if not exists idx_reports_community_status_created on public.reports(community_id, status, created_at desc);
 create index if not exists idx_reports_reporter_created on public.reports(reporter_id, created_at desc);
 alter table public.reports enable row level security;
-
 create or replace function public.can_moderate_community_reports(target_community_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select public.is_community_owner(target_community_id) or exists (
@@ -24,10 +22,8 @@ returns boolean language sql stable security definer set search_path = public as
       and (role.level >= 60 or coalesce((role.permissions ->> 'moderateMessages')::boolean, false))
   );
 $$;
-
 grant execute on function public.can_moderate_community_reports(uuid) to authenticated;
 grant select, insert, update on public.reports to authenticated;
-
 create policy "reports_submit_visible_target" on public.reports for insert to authenticated
 with check (reporter_id = auth.uid() and (community_id is null or exists (select 1 from public.communities community where community.id = community_id and (community.visibility = 'public' or exists (select 1 from public.community_members membership where membership.community_id = community.id and membership.user_id = auth.uid())))));
 create policy "reports_moderator_select" on public.reports for select to authenticated

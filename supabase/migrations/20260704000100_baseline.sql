@@ -3,7 +3,6 @@
 -- RLS is enabled by default; access policies are added in follow-up tasks.
 
 create extension if not exists pgcrypto with schema extensions;
-
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique,
@@ -16,7 +15,6 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.communities (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references public.profiles(id) on delete restrict,
@@ -27,7 +25,6 @@ create table if not exists public.communities (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.roles (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -39,7 +36,6 @@ create table if not exists public.roles (
   updated_at timestamptz not null default now(),
   unique (community_id, name)
 );
-
 create table if not exists public.community_members (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -48,7 +44,6 @@ create table if not exists public.community_members (
   joined_at timestamptz not null default now(),
   unique (community_id, user_id)
 );
-
 create table if not exists public.channel_categories (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -57,7 +52,6 @@ create table if not exists public.channel_categories (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.channels (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -71,7 +65,6 @@ create table if not exists public.channels (
   updated_at timestamptz not null default now(),
   unique (community_id, name)
 );
-
 create table if not exists public.messages (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -82,7 +75,6 @@ create table if not exists public.messages (
   edited_at timestamptz,
   deleted_at timestamptz
 );
-
 create table if not exists public.attachments (
   id uuid primary key default gen_random_uuid(),
   message_id uuid references public.messages(id) on delete cascade,
@@ -96,7 +88,6 @@ create table if not exists public.attachments (
   height integer,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.message_reactions (
   id uuid primary key default gen_random_uuid(),
   message_id uuid not null references public.messages(id) on delete cascade,
@@ -105,7 +96,6 @@ create table if not exists public.message_reactions (
   created_at timestamptz not null default now(),
   unique (message_id, user_id, emoji)
 );
-
 create table if not exists public.read_states (
   id uuid primary key default gen_random_uuid(),
   channel_id uuid not null references public.channels(id) on delete cascade,
@@ -114,7 +104,6 @@ create table if not exists public.read_states (
   updated_at timestamptz not null default now(),
   unique (channel_id, user_id)
 );
-
 create index if not exists idx_community_members_user_id on public.community_members(user_id);
 create index if not exists idx_community_members_community_id on public.community_members(community_id);
 create index if not exists idx_channels_community_position on public.channels(community_id, position);
@@ -124,7 +113,6 @@ create index if not exists idx_messages_author_created_at on public.messages(aut
 create index if not exists idx_attachments_message_id on public.attachments(message_id);
 create index if not exists idx_reactions_message_id on public.message_reactions(message_id);
 create index if not exists idx_read_states_user_channel on public.read_states(user_id, channel_id);
-
 alter table public.profiles enable row level security;
 alter table public.communities enable row level security;
 alter table public.roles enable row level security;

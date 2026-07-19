@@ -1,5 +1,3 @@
-begin;
-
 create or replace function public.enforce_radio_community_kind()
 returns trigger
 language plpgsql
@@ -37,6 +35,4 @@ for each row execute function public.enforce_radio_community_kind();
 revoke all on function public.enforce_radio_community_kind() from public, anon, authenticated;
 
 comment on function public.enforce_radio_community_kind() is
-  'Table-level invariant that prevents Radio metadata from being attached to Text or Podcast communities, including privileged migration/service writes.';
-
-commit;
+  'Table-level invariant that prevents Radio metadata from being attached to Text or Podcast communities, including privileged migration/service writes.';;

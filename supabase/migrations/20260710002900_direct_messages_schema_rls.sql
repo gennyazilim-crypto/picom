@@ -8,7 +8,6 @@ create table if not exists public.direct_conversations (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.direct_conversation_members (
   id uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.direct_conversations(id) on delete cascade,
@@ -17,7 +16,6 @@ create table if not exists public.direct_conversation_members (
   last_read_at timestamptz,
   unique (conversation_id, user_id)
 );
-
 create table if not exists public.direct_messages (
   id uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.direct_conversations(id) on delete cascade,
@@ -29,7 +27,6 @@ create table if not exists public.direct_messages (
   edited_at timestamptz,
   deleted_at timestamptz
 );
-
 create unique index if not exists uq_direct_messages_author_client_id
   on public.direct_messages(author_id, client_message_id)
   where client_message_id is not null;
@@ -37,7 +34,6 @@ create index if not exists idx_direct_members_user_updated
   on public.direct_conversation_members(user_id, conversation_id);
 create index if not exists idx_direct_messages_conversation_created
   on public.direct_messages(conversation_id, created_at desc, id desc);
-
 create table if not exists public.direct_message_reactions (
   id uuid primary key default gen_random_uuid(),
   message_id uuid not null references public.direct_messages(id) on delete cascade,
@@ -46,7 +42,6 @@ create table if not exists public.direct_message_reactions (
   created_at timestamptz not null default now(),
   unique (message_id, user_id, emoji)
 );
-
 create table if not exists public.direct_message_attachments (
   id uuid primary key default gen_random_uuid(),
   message_id uuid not null references public.direct_messages(id) on delete cascade,
@@ -57,7 +52,6 @@ create table if not exists public.direct_message_attachments (
   size_bytes bigint not null check (size_bytes > 0 and size_bytes <= 10485760),
   created_at timestamptz not null default now()
 );
-
 create or replace function public.is_direct_conversation_member(target_conversation_id uuid)
 returns boolean
 language sql
@@ -71,9 +65,7 @@ as $$
       and member.user_id = auth.uid()
   );
 $$;
-
 grant execute on function public.is_direct_conversation_member(uuid) to authenticated;
-
 create or replace function public.create_direct_conversation(other_user_id uuid)
 returns uuid
 language plpgsql
@@ -103,28 +95,22 @@ begin
   return new_conversation_id;
 end;
 $$;
-
 revoke all on function public.create_direct_conversation(uuid) from public;
 grant execute on function public.create_direct_conversation(uuid) to authenticated;
-
 grant select on public.direct_conversations, public.direct_conversation_members, public.direct_messages,
   public.direct_message_reactions, public.direct_message_attachments to authenticated;
 grant insert, update on public.direct_messages to authenticated;
 grant insert, delete on public.direct_message_reactions to authenticated;
 grant insert on public.direct_message_attachments to authenticated;
-
 alter table public.direct_conversations enable row level security;
 alter table public.direct_conversation_members enable row level security;
 alter table public.direct_messages enable row level security;
 alter table public.direct_message_reactions enable row level security;
 alter table public.direct_message_attachments enable row level security;
-
 create policy "direct_conversations_select_members" on public.direct_conversations
 for select to authenticated using (public.is_direct_conversation_member(id));
-
 create policy "direct_members_select_members" on public.direct_conversation_members
 for select to authenticated using (public.is_direct_conversation_member(conversation_id));
-
 create policy "direct_messages_select_members" on public.direct_messages
 for select to authenticated using (public.is_direct_conversation_member(conversation_id));
 create policy "direct_messages_insert_member_author" on public.direct_messages
@@ -133,7 +119,6 @@ create policy "direct_messages_update_author" on public.direct_messages
 for update to authenticated
 using (author_id = auth.uid() and public.is_direct_conversation_member(conversation_id))
 with check (author_id = auth.uid() and public.is_direct_conversation_member(conversation_id));
-
 create policy "direct_reactions_select_members" on public.direct_message_reactions
 for select to authenticated using (
   exists (select 1 from public.direct_messages message where message.id = message_id and public.is_direct_conversation_member(message.conversation_id))
@@ -146,7 +131,6 @@ for insert to authenticated with check (
 );
 create policy "direct_reactions_delete_self" on public.direct_message_reactions
 for delete to authenticated using (user_id = auth.uid());
-
 create policy "direct_attachments_select_members" on public.direct_message_attachments
 for select to authenticated using (
   exists (select 1 from public.direct_messages message where message.id = message_id and public.is_direct_conversation_member(message.conversation_id))

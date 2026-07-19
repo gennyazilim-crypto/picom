@@ -85,5 +85,4 @@ end; $$;
 revoke all on function public.validate_role_permission_payload(uuid,jsonb,boolean) from public,anon,authenticated;
 revoke all on function public.create_community_role(uuid,text,text,text,integer,jsonb,text),public.update_community_role(uuid,uuid,text,text,text,integer,jsonb,text),public.swap_community_role_order(uuid,uuid,uuid,text),public.delete_community_role(uuid,uuid,text) from public,anon;
 grant execute on function public.create_community_role(uuid,text,text,text,integer,jsonb,text),public.update_community_role(uuid,uuid,text,text,text,integer,jsonb,text),public.swap_community_role_order(uuid,uuid,uuid,text),public.delete_community_role(uuid,uuid,text) to authenticated;
-comment on function public.create_community_role(uuid,text,text,text,integer,jsonb,text) is 'Creates an audited custom role strictly below the actor and validates every permission against the canonical registry.';
-commit;
+comment on function public.create_community_role(uuid,text,text,text,integer,jsonb,text) is 'Creates an audited custom role strictly below the actor and validates every permission against the canonical registry.';;

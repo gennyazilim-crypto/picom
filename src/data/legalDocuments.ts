@@ -17,10 +17,10 @@ export const legalDocuments: Record<LegalDocumentId, LegalDocument> = {
     { heading: "Termination and limitations", body: "Restrictions may be required for safety, legal, or operational reasons. Warranty, liability, dispute, governing-law, and regional consumer language remains pending." },
   ] },
   privacy: { id: "privacy", title: "Privacy Notice - Legal Review Draft", updatedLabel: label("privacy"), sections: [
-    { heading: "Data Picom may process", body: "Account/profile data, memberships, messages, attachments, settings, reports, Voice session metadata, diagnostics choices, and security events may be processed to provide and protect the V1 service." },
-    { heading: "Voice and screen sharing", body: "After an explicit user action, microphone audio and the selected screen or window are transported through LiveKit to authorized room participants. Picom does not record or store raw microphone audio or shared-screen frames by default." },
+    { heading: "Data Picom may process", body: "Account/profile data, memberships, messages, attachments, settings, reports, live-session metadata, and security events may be processed to provide and protect the service." },
+    { heading: "Voice and screen share", body: "LiveKit may process connection metadata and media required for a session. Picom does not claim production end-to-end encryption." },
     { heading: "Diagnostics", body: "Redacted diagnostics are user-controlled. Passwords, auth tokens, authorization headers, and private message content are excluded by design." },
-    { heading: "Providers and transfers", body: "Supabase and LiveKit are the planned V1 hosted providers. Final entities, regions, subprocessors, transfer mechanisms, and contracts require review." },
+    { heading: "Providers and transfers", body: "Supabase and LiveKit are planned providers. Final entities, regions, subprocessors, transfer mechanisms, and contracts require review." },
     { heading: "User controls", body: "Authenticated export and reviewed account deletion workflows exist. Retention, legal holds, backup deletion, rights deadlines, and regional exceptions require approval." },
   ] },
   guidelines: { id: "guidelines", title: "Community Guidelines - Legal Review Draft", updatedLabel: `${label("guidelines")} - Moderation review required`, sections: [
@@ -31,8 +31,8 @@ export const legalDocuments: Record<LegalDocumentId, LegalDocument> = {
     { heading: "Owner responsibilities", body: "Owners should publish understandable rules, appoint trusted moderators, protect private channels, respond proportionately, and preserve audit integrity." },
   ] },
   acceptableUse: { id: "acceptableUse", title: "Acceptable Use Policy - Legal Review Draft", updatedLabel: label("acceptableUse"), sections: [
-    { heading: "Permitted use", body: "Use Picom for lawful community communication and collaboration while respecting access controls and consent." },
-    { heading: "Security boundaries", body: "Do not probe, bypass, overload, exploit, or gain unauthorized access to Picom, Supabase, accounts, private resources, or desktop IPC." },
+    { heading: "Permitted use", body: "Use Picom for lawful community communication, collaboration, events, and live sessions while respecting access controls and consent." },
+    { heading: "Security boundaries", body: "Do not probe, bypass, overload, exploit, or gain unauthorized access to Picom, Supabase, LiveKit, accounts, private resources, or desktop IPC." },
     { heading: "Content and automation", body: "Do not upload malware, abusive or unlawful content, unauthorized copyrighted material, deceptive links, or traffic that degrades the service." },
     { heading: "Enforcement", body: "Picom may limit access and preserve limited safety evidence. Final notices, appeal rules, research safe harbor, and regional restrictions require approval." },
   ] },

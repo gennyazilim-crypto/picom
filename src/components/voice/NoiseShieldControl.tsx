@@ -113,14 +113,65 @@ export function NoiseShieldDiagnosticsPanel() {
   );
 }
 
-export function NoiseShieldQuickControl({ connected }: { connected: boolean }) {
+export function NoiseShieldQuickControl({
+  connected,
+  variant = "compact",
+}: {
+  connected: boolean;
+  variant?: "compact" | "card";
+}) {
   const snapshot = useNoiseShield();
   const value = snapshot.availableModes.includes(snapshot.requestedMode) ? snapshot.requestedMode : snapshot.appliedMode;
+
+  if (variant === "card") {
+    return (
+      <div className="noise-shield-quick-control noise-shield-quick-control--card">
+        <div className="noise-shield-quick-control__status" role="status">
+          <strong>{noiseShieldControlService.labels[snapshot.appliedMode]}</strong>
+          <small>
+            {noiseShieldControlService.statusLabel(snapshot)} · Echo {snapshot.settings.echoCancellation ? "on" : "off"}
+          </small>
+        </div>
+        <label className="noise-shield-quick-control__field">
+          <span>Processing mode</span>
+          <select
+            aria-label="Change Noise Shield mode"
+            value={value}
+            disabled={!connected || snapshot.status === "loading"}
+            onChange={(event) => void noiseShieldControlService.setMode(event.target.value as NoiseCancellationMode)}
+          >
+            {snapshot.availableModes.map((mode) => (
+              <option key={mode} value={mode}>
+                {noiseShieldControlService.labels[mode]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    );
+  }
+
   return (
     <label className="noise-shield-quick-control">
       <AppIcon name="voice" size="sm" />
-      <span><strong>Shield: {noiseShieldControlService.labels[snapshot.appliedMode]}</strong><small>{noiseShieldControlService.statusLabel(snapshot)} · Echo {snapshot.settings.echoCancellation ? "on" : "off"}</small></span>
-      <select aria-label="Change Noise Shield mode" value={value} disabled={!connected || snapshot.status === "loading"} onChange={(event) => void noiseShieldControlService.setMode(event.target.value as NoiseCancellationMode)}>{snapshot.availableModes.map((mode) => <option key={mode} value={mode}>{noiseShieldControlService.labels[mode]}</option>)}</select>
+      <span>
+        <strong>Shield: {noiseShieldControlService.labels[snapshot.appliedMode]}</strong>
+        <small>
+          {noiseShieldControlService.statusLabel(snapshot)} · Echo {snapshot.settings.echoCancellation ? "on" : "off"}
+        </small>
+      </span>
+      <select
+        aria-label="Change Noise Shield mode"
+        value={value}
+        disabled={!connected || snapshot.status === "loading"}
+        onChange={(event) => void noiseShieldControlService.setMode(event.target.value as NoiseCancellationMode)}
+      >
+        {snapshot.availableModes.map((mode) => (
+          <option key={mode} value={mode}>
+            {noiseShieldControlService.labels[mode]}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

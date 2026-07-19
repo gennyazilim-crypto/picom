@@ -3,12 +3,9 @@ import { mockRoles } from "../data/mockMembers";
 import { getCommunityTemplate } from "../data/communityTemplates";
 import type { CommunitySummary } from "../services/communityService";
 import { supportsTextChannels, type ChannelCategory, type Community, type Role } from "../types/community";
+import { resolveCommunityIcon } from "./generatedIdentity";
 
-function getIcon(name: string): string {
-  return name.trim().slice(0, 1).toUpperCase() || "P";
-}
-
-export function createCommunityFromSummary(summary: CommunitySummary): Community {
+export function createCommunityFromSummary(summary: CommunitySummary, options: { includeTemplateChannels?: boolean } = {}): Community {
   const template = getCommunityTemplate(summary.templateId);
   const radioRoles: Role[] = [
     { id: `${summary.id}-owner-role`, name: "Owner", color: "var(--picom-teal)", level: 100, capabilities: ["manageCommunity", "viewRadioContent", "listenRadio", "hostRadio", "manageRadioCommunity", "manageRadioSchedule", "manageRadioPrograms", "publishRadioAnnouncements", "moderateRadioComments"] },
@@ -23,8 +20,7 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
   ];
   const roles = summary.kind === "radio" ? radioRoles : summary.kind === "podcast" ? podcastRoles : mockRoles;
   const ownerRole = roles.find((role) => role.name === "Owner") ?? roles[0];
-  const ownerUserId = summary.ownerId ?? currentUserId;
-  const categories: ChannelCategory[] = (supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
+  const categories: ChannelCategory[] = (options.includeTemplateChannels !== false && supportsTextChannels(summary.kind) ? template.categories : []).map((category, categoryIndex) => {
     const categoryId = `${summary.id}-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "category"}`;
 
     return {
@@ -49,7 +45,8 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
     kind: summary.kind,
     ownerId: summary.ownerId ?? undefined,
     name: summary.name,
-    icon: getIcon(summary.name),
+    icon: resolveCommunityIcon(summary.name, summary.iconUrl),
+    bannerUrl: summary.bannerUrl ?? undefined,
     accentColor: summary.accentColor || template.accentColor,
     description: summary.description,
     visibility: summary.visibility,
@@ -58,14 +55,17 @@ export function createCommunityFromSummary(summary: CommunitySummary): Community
     typeSettings: summary.typeSettings,
     rulesEnabled: summary.rulesEnabled,
     rulesVersion: summary.rulesVersion,
+    discoveryListed: summary.discoveryListed ?? false,
+    discoveryCategory: summary.discoveryCategory ?? undefined,
+    discoveryJoinPolicy: summary.discoveryJoinPolicy ?? "open",
     roles,
     members: [
       {
         id: `${summary.id}-owner-member`,
-        userId: ownerUserId,
+        userId: summary.ownerId ?? currentUserId,
         displayName: "Picom User",
         username: "picom.user",
-        avatarSeed: ownerUserId,
+        avatarSeed: `${summary.id}-owner`,
         status: "online",
         statusText: "Setting up the community",
         roleId: ownerRole.id,

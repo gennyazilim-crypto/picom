@@ -1,5 +1,3 @@
-begin;
-
 create table if not exists public.audio_feed_read_states (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -27,6 +25,4 @@ using (user_id = auth.uid());
 
 revoke all on public.audio_feed_read_states from anon;
 grant select, insert, delete on public.audio_feed_read_states to authenticated;
-comment on table public.audio_feed_read_states is 'Private per-user read state for visible Radio and Podcast feed items; source visibility remains RLS-enforced.';
-
-commit;
+comment on table public.audio_feed_read_states is 'Private per-user read state for visible Radio and Podcast feed items; source visibility remains RLS-enforced.';;

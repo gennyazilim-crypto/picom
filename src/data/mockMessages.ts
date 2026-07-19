@@ -24,7 +24,7 @@ export function createMockMessageSet(channelId: string, members: Member[], prefi
     body,
     createdAt: new Date(MOCK_BASE_TIME - (8 - index) * 1000 * 60 * 16).toISOString(),
     attachments: createMockAttachmentsForMessage(prefix, index),
-    reactions: index % 3 === 0 ? [{ emoji: "Fire", count: index + 2 }, { emoji: "Eyes", count: 3 }] : undefined,
+    reactions: index % 3 === 0 ? [{ emoji: "🔥", count: index + 2 }, { emoji: "👀", count: 3 }] : undefined,
   }));
 }
 

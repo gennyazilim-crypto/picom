@@ -3,14 +3,10 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 
 const navigationSource = await readFile("src/services/navigation/helpSupportNavigationService.ts", "utf8");
-const executableNavigationSource = navigationSource.replace(
-  /import \{ isV1FeatureEnabled \} from "\.\.\/\.\.\/config\/v1ReleaseScope";/,
-  "const isV1FeatureEnabled = (feature) => feature === 'voiceRooms' || feature === 'screenShare';",
-);
-const compiled = ts.transpileModule(executableNavigationSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const compiled = ts.transpileModule(navigationSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
 const navigation = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
-assert.equal(navigation.helpSupportNavigationService.request("global-sidebar", "voice-screen-share").sectionId, "voice-screen-share");
-assert.equal(navigation.helpSupportNavigationService.consume().sectionId, "voice-screen-share");
+assert.equal(navigation.helpSupportNavigationService.request("global-sidebar", "radio").sectionId, "radio");
+assert.equal(navigation.helpSupportNavigationService.consume().sectionId, "radio");
 assert.equal(navigation.helpSupportNavigationService.request("sanctioned-error-cta", "invalid").sectionId, "getting-started");
 
 const app = await readFile("src/App.tsx", "utf8");

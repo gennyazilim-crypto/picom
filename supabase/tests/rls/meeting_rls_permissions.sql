@@ -1,4 +1,6 @@
 begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
 select plan(36);
 
 -- Contract scenarios: visitor cannot see private room metadata.
@@ -26,17 +28,17 @@ select ok(public.meeting_role_rank('host')>public.meeting_role_rank('cohost') an
 select ok(public.meeting_role_rank('speaker')>public.meeting_role_rank('participant') and public.meeting_role_rank('participant')>public.meeting_role_rank('viewer'),'speaker/participant/viewer hierarchy is ordered');
 select ok(public.meeting_role_rank('viewer')>public.meeting_role_rank('guest'),'viewer outranks guest');
 select ok((select count(*)=11 from public.community_permission_definitions where permission_key in ('createMeeting','manageMeeting','joinMeeting','publishAudio','publishVideo','shareScreen','admitGuests','manageParticipants','manageStage','viewMeetingHistory','enableCaptions')),'all meeting permissions are registered');
-select has_policy('public','meeting_rooms','meeting_rooms_select_accessible','room SELECT policy exists');
-select has_policy('public','meeting_rooms','meeting_rooms_insert_creator','room INSERT policy exists');
-select has_policy('public','meeting_rooms','meeting_rooms_update_manager','room UPDATE policy exists');
-select has_policy('public','meeting_rooms','meeting_rooms_delete_manager','room DELETE policy exists');
-select has_policy('public','meeting_session_participants','meeting_participants_select_sensitive','participant list is private');
-select has_policy('public','meeting_session_participants','meeting_participants_insert_self','participant INSERT is self-scoped');
-select has_policy('public','meeting_session_participants','meeting_participants_update_self_or_manager','participant UPDATE is hierarchy-scoped');
-select has_policy('public','meeting_waiting_entries','meeting_waiting_select_self_or_manager','waiting room is self/manager private');
-select has_policy('public','meeting_invites','meeting_invites_select_target_or_manager','invites are target/manager private');
-select has_policy('public','meeting_events','meeting_events_select_sensitive','meeting events are participant private');
-select has_policy('public','meeting_attendance','meeting_attendance_select_self_or_history_manager','attendance is self/history-manager private');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_rooms' and policyname='meeting_rooms_select_accessible'),'room SELECT policy exists');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_rooms' and policyname='meeting_rooms_insert_creator'),'room INSERT policy exists');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_rooms' and policyname='meeting_rooms_update_manager'),'room UPDATE policy exists');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_rooms' and policyname='meeting_rooms_delete_manager'),'room DELETE policy exists');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_session_participants' and policyname='meeting_participants_select_sensitive'),'participant list is private');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_session_participants' and policyname='meeting_participants_insert_self'),'participant INSERT is self-scoped');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_session_participants' and policyname='meeting_participants_update_self_or_manager'),'participant UPDATE is hierarchy-scoped');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_waiting_entries' and policyname='meeting_waiting_select_self_or_manager'),'waiting room is self/manager private');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_invites' and policyname='meeting_invites_select_target_or_manager'),'invites are target/manager private');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_events' and policyname='meeting_events_select_sensitive'),'meeting events are participant private');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='meeting_attendance' and policyname='meeting_attendance_select_self_or_history_manager'),'attendance is self/history-manager private');
 select ok(exists(select 1 from pg_trigger where tgname='trg_meeting_participant_hierarchy' and not tgisinternal),'self-escalation trigger exists');
 select ok(pg_get_functiondef('public.set_meeting_participant_role(uuid,text,text)'::regprocedure) like '%MEETING_ROLE_HIERARCHY_DENIED%','privileged RPC rejects hierarchy bypass');
 select ok(pg_get_functiondef('public.can_view_meeting_room(uuid)'::regprocedure) like '%public_read_enabled%' and pg_get_functiondef('public.can_view_meeting_room(uuid)'::regprocedure) like '%is_private%','visitor discovery requires public non-private context');

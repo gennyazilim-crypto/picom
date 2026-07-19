@@ -11,11 +11,9 @@ create table if not exists public.user_action_rate_limits (
   updated_at timestamptz not null default now(),
   primary key (user_id, action_key)
 );
-
 alter table public.user_action_rate_limits enable row level security;
 revoke all on table public.user_action_rate_limits from anon, authenticated;
 comment on table public.user_action_rate_limits is 'Backend-enforced user/action counters. Never store secrets, raw IP addresses, authorization headers, or user content.';
-
 create or replace function public.consume_current_user_action_rate_limit(target_action text)
 returns table(is_allowed boolean, retry_after_seconds integer)
 language plpgsql volatile security definer
@@ -64,10 +62,8 @@ begin
     case when current_row.request_count <= configured_maximum_requests then 0 else greatest(1,ceil(extract(epoch from (current_row.window_started_at + make_interval(secs => configured_window_seconds) - current_time)))::integer) end;
 end;
 $$;
-
 revoke all on function public.consume_current_user_action_rate_limit(text) from public, anon;
 grant execute on function public.consume_current_user_action_rate_limit(text) to authenticated;
-
 create or replace function public.enforce_current_user_action_rate_limit()
 returns trigger language plpgsql security definer set search_path = public, pg_temp
 as $$
@@ -86,7 +82,6 @@ begin
 end;
 $$;
 revoke all on function public.enforce_current_user_action_rate_limit() from public, anon, authenticated;
-
 drop trigger if exists messages_user_rate_limit on public.messages;
 create trigger messages_user_rate_limit before insert on public.messages for each row execute function public.enforce_current_user_action_rate_limit('message_send');
 drop trigger if exists attachments_user_rate_limit on public.attachments;

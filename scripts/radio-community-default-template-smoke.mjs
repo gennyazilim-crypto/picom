@@ -7,7 +7,7 @@ for (const marker of ['"radioCommunity"', "communityViewForKind", "communityNavi
 const navigationService = read("src/services/community/communityNavigationService.ts");
 for (const marker of ["getShellView", '"radioCommunity"', '"podcastCommunity"', "resolveTextChannelId"]) assert(navigationService.includes(marker), `Central community navigation is missing ${marker}`);
 const shell = read("src/components/audio/RadioCommunityShell.tsx");
-for (const marker of ["RadioCommunityShell", "Live Now", "Schedule", "Shows & Programs", "Hosts", "Announcements", "listenerChatEnabled", "RadioSessionList", "radioCommunityService.getShellSnapshot"]) assert(shell.includes(marker), `RadioCommunityShell is missing ${marker}`);
+for (const marker of ["RadioCommunityShell", "Live Now", "Schedule", "Shows & Programs", "Hosts", "Announcements", "listenerChatEnabled", "RadioShellLivePanel", "RadioScheduleCalendarLite", "radioCommunityService.getShellSnapshot"]) assert(shell.includes(marker), `RadioCommunityShell is missing ${marker}`);
 assert(!shell.includes("CommunitySidebar") && !shell.includes("PodcastEpisode"), "Radio shell includes text navigation or Podcast identity");
 const sidebar = read("src/components/CommunitySidebar.tsx");
 assert(sidebar.includes('community.kind !== "text"'), "Text community still exposes the combined audio entry");

@@ -2,17 +2,11 @@
 
 This runbook prepares production voice/screen-share configuration. It does not create or mutate a LiveKit/Supabase project without explicit credentials and release approval.
 
-## Provider decision gate
+## Authoritative deployment model
 
-### LiveKit Cloud
+Picom production uses the open-source, self-hosted LiveKit server. LiveKit Cloud is excluded to avoid a managed-provider cost dependency. The initial topology is one monitored Linux VM generated with the official `livekit/generate` image, Caddy-managed trusted TLS, embedded TURN, and Redis. See `infra/livekit/README.md` for generation, firewall, SSH deployment, and verification.
 
-Recommended default for the first production MVP because it reduces TURN, regional routing, scaling, upgrade, and media-server operations. Before approval, compare region/data-residency options, pricing/egress, observability, support, account access controls, and incident/export capabilities.
-
-### Self-hosted LiveKit
-
-Choose only with an assigned realtime operations owner and verified capacity for TLS, load balancing, Redis where required, TURN/STUN, UDP/firewall rules, autoscaling, upgrades, monitoring, abuse controls, backups of configuration, and regional failover. A single unmonitored host is not production-ready.
-
-Record the selected option, region(s), owner, cost limit, data handling, rollback path, and test evidence in the private operations register. Do not mix staging and production LiveKit projects.
+Self-hosting does not reduce the release bar: trusted TLS, TURN/TLS, UDP media ports, two-client audio, remote Screen Share, monitoring, secret rotation, and rollback evidence remain mandatory. Staging and production must use separate credentials and configurations.
 
 ## Environment boundaries
 
@@ -33,7 +27,7 @@ The API key/secret must never enter Vite, Electron preload DTOs, local settings,
 
 - Issuer: `LIVEKIT_API_KEY`.
 - Signature: HMAC SHA-256 with `LIVEKIT_API_SECRET` inside the Edge Function only.
-- TTL: 600 seconds (ten minutes), matching the V1 token Edge Function.
+- TTL: 3600 seconds (one hour).
 - Identity: authenticated Supabase `auth.user.id`.
 - Display name: bounded user metadata/email fallback, never used as authorization identity.
 - Room: `community:{communityId}:voice:{channelId}`.

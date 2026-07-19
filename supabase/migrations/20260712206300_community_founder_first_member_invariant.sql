@@ -1,18 +1,13 @@
 begin;
-
 alter table public.communities
   add column if not exists founder_id uuid references public.profiles(id) on delete restrict;
-
 update public.communities
 set founder_id = owner_id
 where founder_id is null;
-
 alter table public.communities
   alter column founder_id set not null;
-
 create index if not exists idx_communities_founder_id
   on public.communities(founder_id, created_at);
-
 create or replace function public.enforce_community_founder_immutable()
 returns trigger
 language plpgsql
@@ -33,12 +28,10 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists community_founder_immutable on public.communities;
 create trigger community_founder_immutable
 before insert or update on public.communities
 for each row execute function public.enforce_community_founder_immutable();
-
 insert into public.community_members(community_id, user_id, role_id)
 select community.id, community.founder_id, owner_role.id
 from public.communities community
@@ -50,7 +43,6 @@ where not exists (
   where membership.community_id = community.id
 )
 on conflict on constraint community_members_community_id_user_id_key do nothing;
-
 create or replace function public.enforce_community_first_member_founder()
 returns trigger
 language plpgsql
@@ -91,12 +83,10 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists community_first_member_founder on public.community_members;
 create trigger community_first_member_founder
 before insert on public.community_members
 for each row execute function public.enforce_community_first_member_founder();
-
 create or replace function public.join_public_community(
   target_community_id uuid,
   accepted_rules_version text default null
@@ -226,15 +216,12 @@ begin
       case when restoring_founder then 'founder_restored' else 'joined' end::text;
 end;
 $$;
-
 revoke all on function public.join_public_community(uuid, text) from public, anon;
 grant execute on function public.join_public_community(uuid, text) to authenticated;
-
 comment on column public.communities.founder_id is
   'Immutable creator identity. Ownership may transfer, but the original founder never changes.';
 comment on function public.enforce_community_first_member_founder() is
   'Serializes first membership creation and requires the immutable founder with the Owner role.';
 comment on function public.join_public_community(uuid, text) is
   'Idempotent public join. Missing founder membership is restored as Owner; all later joins use the default Member role.';
-
 commit;

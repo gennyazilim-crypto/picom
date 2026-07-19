@@ -1,5 +1,3 @@
-begin;
-
 create table if not exists public.profile_details (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   cover_url text check (cover_url is null or cover_url ~* '^https://'),
@@ -11,8 +9,11 @@ insert into public.profile_details(user_id) select id from public.profiles on co
 alter table public.profile_details enable row level security;
 revoke all on public.profile_details from public,anon,authenticated;
 grant select,insert,update on public.profile_details to authenticated;
+drop policy if exists "profile_details_owner_select" on public.profile_details;
 create policy "profile_details_owner_select" on public.profile_details for select to authenticated using(user_id=auth.uid());
+drop policy if exists "profile_details_owner_insert" on public.profile_details;
 create policy "profile_details_owner_insert" on public.profile_details for insert to authenticated with check(user_id=auth.uid());
+drop policy if exists "profile_details_owner_update" on public.profile_details;
 create policy "profile_details_owner_update" on public.profile_details for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
 
 alter table public.profile_privacy_settings
@@ -118,6 +119,4 @@ revoke all on function public.get_own_profile_privacy_v3(),public.update_profile
 grant execute on function public.get_own_profile_privacy_v3(),public.update_profile_privacy_v3(text,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean),public.get_profile_privacy_projection_v3(uuid),public.get_profile_domain_v1(uuid,integer),public.update_own_profile_domain(jsonb) to authenticated;
 
 comment on table public.profile_details is 'Owner-private extended profile fields. Public projection is available only through get_profile_domain_v1.';
-comment on function public.get_profile_domain_v1(uuid,integer) is 'Canonical privacy-projected profile domain. Activity and media remain filtered by can_view_message and attachment safety state.';
-
-commit;
+comment on function public.get_profile_domain_v1(uuid,integer) is 'Canonical privacy-projected profile domain. Activity and media remain filtered by can_view_message and attachment safety state.';;

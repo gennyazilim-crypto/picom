@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import logoUrl from "../../assets/brand/picom-logo-concept.png";
+import { brandLogoUrl } from "../config/brandAssets";
 import { windowService } from "../services/windowService";
-import { dataSourceService } from "../services/dataSourceService";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { mvpUiIconMap } from "./iconRegistry";
 
+function getBrowserOnline() {
+  return typeof navigator === "undefined" ? true : navigator.onLine;
+}
 type WindowTitleBarProps = {
   theme: "light" | "dark";
   onToggleTheme: () => void;
@@ -20,10 +22,19 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
   const [isMaximized, setIsMaximized] = useState(false);
   const [pendingAction, setPendingAction] = useState<"minimize" | "maximize" | "close" | null>(null);
   const [controlStatus, setControlStatus] = useState("");
-  const connectionLabel = dataSourceService.getStatus().isSupabase ? "Live data" : "Mock mode";
+  const [isOnline, setIsOnline] = useState(getBrowserOnline);
 
   useEffect(() => {
-    let mounted = true;
+    const updateOnlineStatus = () => setIsOnline(getBrowserOnline());
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
+
+  useEffect(() => {    let mounted = true;
 
     void windowService.isMaximized().then((value) => {
       if (mounted) {
@@ -62,9 +73,8 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
   return (
     <header className={`window-titlebar ${isMaximized ? "is-maximized" : ""}`} data-window-state={isMaximized ? "maximized" : "normal"}>
       <div className="window-brand">
-        <img src={logoUrl} alt="Picom" />
+        <img className="picom-brand-logo" src={brandLogoUrl} alt="Picom" />
         <strong>Picom</strong>
-        <span>Desktop MVP</span>
       </div>
 
       <button type="button" className="titlebar-search" onClick={onOpenSearch} aria-label="Open command search">
@@ -73,10 +83,12 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
       </button>
 
       <div className="titlebar-actions">
-        <span className="connection-pill">
-          <span />{connectionLabel}
-        </span>
-        {onOpenNotifications ? <button type="button" className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}><AppIcon name="bell" size="sm" />{notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}</button> : null}
+        <span
+          className={`titlebar-network-status${isOnline ? " is-online" : " is-offline"}`}
+          role="status"
+          aria-label={isOnline ? "Internet connection available" : "No internet connection"}
+          title={isOnline ? "Online" : "Offline"}
+        />        {onOpenNotifications ? <button type="button" className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}><AppIcon name="bell" size="sm" />{notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}</button> : null}
         <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         <button type="button" className="window-control" aria-label="Minimize window" title="Minimize" disabled={pendingAction !== null} onClick={() => void runWindowAction("minimize")}>
           <AppIcon name={titleBarIcons.minimize} size="sm" />

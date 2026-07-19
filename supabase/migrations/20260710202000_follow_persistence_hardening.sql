@@ -18,7 +18,6 @@ begin
   return true;
 end;
 $$;
-
 create or replace function public.unfollow_user(target_user_id uuid)
 returns boolean
 language plpgsql
@@ -32,11 +31,9 @@ begin
   return true;
 end;
 $$;
-
 revoke insert, update, delete on public.user_follows from authenticated;
 revoke all on function public.follow_user(uuid), public.unfollow_user(uuid) from public, anon;
 grant execute on function public.follow_user(uuid), public.unfollow_user(uuid) to authenticated;
-
 alter table public.user_follows replica identity full;
 do $$
 begin
@@ -47,7 +44,6 @@ begin
     alter publication supabase_realtime add table public.user_follows;
   end if;
 end $$;
-
 comment on function public.follow_user(uuid) is
   'Idempotent follow mutation for a visible, unblocked profile. The existing relationship-write trigger rate-limits new rows.';
 comment on function public.unfollow_user(uuid) is

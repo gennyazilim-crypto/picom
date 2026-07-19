@@ -1,23 +1,50 @@
-import { readFileSync } from "node:fs";
+import fs from "node:fs";
 
-const read = (path) => readFileSync(path, "utf8");
-const assert = (condition, label) => { if (!condition) throw new Error(label); console.log(`OK ${label}`); };
-const service = read("src/services/profileMediaService.ts");
+const read = (path) => fs.readFileSync(path, "utf8");
+const migration = read("supabase/migrations/20260719010000_profile_media_centralized_rebuild.sql");
+const facade = read("src/services/profileMediaService.ts");
+const upload = read("src/services/profileMedia/profileMediaUploadService.ts");
+const resolver = read("src/services/profileMedia/profileMediaResolver.ts");
+const realtime = read("src/services/profileMedia/profileMediaRealtimeService.ts");
+const store = read("src/services/profileMedia/profileMediaStore.ts");
+const worker = read("src/services/profileMedia/profileMediaImage.worker.ts");
 const editor = read("src/components/settings/ProfileMediaEditor.tsx");
-const settings = read("src/components/SettingsModal.tsx");
+const memberAvatar = read("src/components/MemberAvatar.tsx");
+const avatar = read("src/components/UserAvatar.tsx");
+const cover = read("src/components/ProfileCover.tsx");
 const profile = read("src/components/ProfileView.tsx");
-const migration = read("supabase/migrations/20260711002700_profile_media_storage_full_mvp.sql");
-const lifecycle = read("supabase/migrations/20260711151400_storage_lifecycle_full_mvp.sql");
+const notificationCache = read("electron/notificationAvatarCache.cts");
 
-assert(service.includes('PROFILE_MEDIA_BUCKET = "profile-media"'), "dedicated profile media bucket");
-assert(service.includes("validateFile") && service.includes("fileService.validateContent"), "profile media validation");
-assert(service.includes("onProgress") && service.includes("previousUrl"), "upload progress and replacement cleanup");
-assert(service.includes("profileService.updateCurrentProfile"), "profile media persists through service layer");
-assert(editor.includes("Retry upload") && editor.includes("Remove") && editor.includes("<progress"), "recoverable media editor controls");
-assert(settings.includes("Preferred language") && settings.includes("Manage profile privacy") && settings.includes("PROFILE_UPDATE" ) === false, "complete profile fields and privacy navigation");
-assert(profile.includes("onEditProfile") && !profile.includes("Edit profile placeholder opened locally"), "current-user profile edit entrypoint");
-assert(migration.includes("profile_media_insert_own") && migration.includes("auth.uid()::text") && migration.includes("profile_media_delete_own"), "owner-scoped storage RLS");
-assert(migration.includes("alter table public.profile_details add constraint profile_details_cover_url_safe") && !migration.includes("alter table public.profiles add constraint profiles_cover_url_safe"), "cover URL constraint follows canonical profile_details storage");
-assert(lifecycle.includes("left join public.profile_details details") && lifecycle.includes("details.cover_url"), "orphan scan follows canonical profile cover storage");
-assert(!editor.includes("supabase") && !profile.includes("supabase.from"), "UI remains behind service boundary");
-console.log("OK profile edit and storage smoke completed");
+const checks = [
+  ["private profile-media bucket", /values\s*\('profile-media',\s*'profile-media',\s*false/i.test(migration)],
+  ["canonical immutable avatar paths", migration.includes("avatars/") && migration.includes("avatar_version")],
+  ["canonical immutable cover paths", migration.includes("covers/") && migration.includes("cover_version")],
+  ["privacy-aware storage read", migration.includes("can_view_profile_media_object")],
+  ["owner-only storage write", migration.includes("profile_media_canonical_insert") && migration.includes("auth.uid()")],
+  ["atomic commit RPC", migration.includes("commit_profile_media_v1") && migration.includes("for update")],
+  ["atomic remove RPC", migration.includes("remove_profile_media_v1")],
+  ["signed URL resolver", resolver.includes("createSignedUrl") && resolver.includes("signedUrlExpiresAt")],
+  ["versioned cache URL", resolver.includes('searchParams.set("v"')],
+  ["stale store rejection", store.includes("isStale") && store.includes("incoming.avatar.version < current.avatar.version")],
+  ["single realtime channel", realtime.includes('channel("profile-media:centralized:v1")')],
+  ["callbacks registered before subscribe", realtime.indexOf('.on("postgres_changes"') < realtime.indexOf(".subscribe(")],
+  ["worker processing", worker.includes("OffscreenCanvas") && worker.includes("createImageBitmap")],
+  ["magic-byte validation", worker.includes("hasExpectedSignature")],
+  ["real XHR progress", upload.includes("xhr.upload.onprogress")],
+  ["rollback cleanup", upload.includes("await removeObjects(uploadedPaths)")],
+  ["content dedupe", upload.includes("contentHash === processed.hash")],
+  ["no mock/data URL upload branch", !facade.includes("isMock") && !facade.includes("fileToDataUrl")],
+  ["central UserAvatar", memberAvatar.includes("<UserAvatar") && avatar.includes("useProfileMedia")],
+  ["central ProfileCover", profile.includes("<ProfileCover") && cover.includes("useProfileMedia")],
+  ["desktop crop workflow", editor.includes("CROP AND PREVIEW") && editor.includes("Rotate 90 degrees")],
+  ["drop and paste workflow", editor.includes("onDrop") && editor.includes("onPaste")],
+  ["notification version cache", notificationCache.includes("callerAvatarUpdatedAt") && notificationCache.includes("sourceCacheKey")],
+];
+
+const failed = checks.filter(([, ok]) => !ok);
+for (const [name, ok] of checks) console.log((ok ? "PASS" : "FAIL") + " " + name);
+if (failed.length) {
+  console.error("Profile media contract failed: " + failed.map(([name]) => name).join(", "));
+  process.exit(1);
+}
+console.log("Profile media centralized smoke passed (" + checks.length + " checks).");

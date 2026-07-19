@@ -93,6 +93,19 @@ async function openViaBrowser(url: string): Promise<ExternalLinkResult> {
   }
 }
 
+// Pre-open a blank window synchronously within a user gesture so the browser popup
+// blocker allows a later navigation (window.open after an await is otherwise blocked).
+// Kept inside this approved service so components never call raw window.open.
+export function prepareExternalWindow(): Window | null {
+  try {
+    const opened = window.open("about:blank", "_blank");
+    if (opened) opened.opener = null;
+    return opened;
+  } catch {
+    return null;
+  }
+}
+
 export async function openExternalUrl(url: string): Promise<ExternalLinkResult> {
   const safeUrl = normalizeUrl(url);
   if (!safeUrl) {
@@ -124,4 +137,5 @@ export const externalLinkService = {
   confirmExternalUrlPlaceholder,
   getUserFriendlyError,
   openExternalUrl,
+  prepareExternalWindow,
 };

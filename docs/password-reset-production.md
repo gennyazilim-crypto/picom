@@ -9,3 +9,14 @@ No password or recovery code is written to logs, local settings, diagnostics, an
 ## Hosted staging/production gate
 
 Before external use, the hosted staging project must configure and verify Supabase Auth custom SMTP/email provider, sender domain and authentication, recovery template/branding, `picom://auth/reset-password` redirect allowlist, provider and Auth request rate limits, abuse monitoring, bounce/suppression handling, support ownership and email deliverability. Test existent/nonexistent addresses for indistinguishable UI/timing, cooldown/429 behavior, expired/reused codes, changed passwords, global session revocation and Windows/Linux/macOS protocol delivery. No provider configuration or email delivery was proven by repository tests.
+
+## Auth sender (From)
+
+Password-reset and verification emails are sent by Supabase Auth, not by Picom Edge mail helpers. Production From address is `info@picom.gg` (display name `Picom`). Configure it under Authentication → SMTP as **Sender email** / `smtp_admin_email`, with SPF/DKIM for `picom.gg`. Operator helper:
+
+```powershell
+$env:SUPABASE_PROJECT_REF="your-ref"
+$env:SUPABASE_ACCESS_TOKEN="your-token"
+# If custom SMTP is not enabled yet, also set SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS
+npm run auth:smtp:sender
+```

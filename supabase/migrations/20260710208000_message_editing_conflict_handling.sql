@@ -14,7 +14,6 @@ returns boolean language sql stable security definer set search_path=public,pg_t
     )
   );
 $$;
-
 create or replace function public.edit_message_with_version(target_message_id uuid,next_body text,expected_edited_at timestamptz default null)
 returns table(id uuid,body text,edited_at timestamptz,deleted_at timestamptz)
 language plpgsql security definer set search_path=public,pg_temp as $$
@@ -29,7 +28,6 @@ begin
   return query update public.messages as message set body=normalized_body,edited_at=next_edited_at where message.id=target_message_id returning message.id,message.body,message.edited_at,message.deleted_at;
 end;
 $$;
-
 create or replace function public.delete_message_with_version(target_message_id uuid,expected_edited_at timestamptz default null)
 returns table(id uuid,deleted_at timestamptz)
 language plpgsql security definer set search_path=public,pg_temp as $$
@@ -43,10 +41,8 @@ begin
   return query update public.messages as message set deleted_at=next_deleted_at where message.id=target_message_id returning message.id,message.deleted_at;
 end;
 $$;
-
 revoke all on function public.can_delete_message_for_current_user(uuid),public.edit_message_with_version(uuid,text,timestamptz),public.delete_message_with_version(uuid,timestamptz) from public,anon;
 grant execute on function public.edit_message_with_version(uuid,text,timestamptz),public.delete_message_with_version(uuid,timestamptz) to authenticated;
 revoke update on public.messages from authenticated;
-
 comment on function public.edit_message_with_version(uuid,text,timestamptz) is 'Author-only compare-and-set edit. Stale or deleted versions fail without overwriting newer state.';
 comment on function public.delete_message_with_version(uuid,timestamptz) is 'Idempotent authorized soft delete with version conflict protection; delete remains terminal.';

@@ -4,7 +4,6 @@ import type { Role } from "../types/community";
 import { createMockCategories } from "./mockChannels";
 import { createMockMembers, currentUserId, mockRoles } from "./mockMembers";
 import { createMockMessagesForCommunity } from "./mockMessages";
-import { selectMockFixture } from "../config/dataSourcePolicy";
 export { currentUserId } from "./mockMembers";
 
 type CurrentUserCommunityRole = "owner" | "admin" | "mod" | "member" | "visitor";
@@ -97,7 +96,7 @@ const makeCommunity = ({ id, kind, name, icon, accentColor, offset, currentUserR
   };
 };
 
-const rawMockCommunities: Community[] = [
+const rawMockCommunities: Community[] = import.meta.env.PROD ? [] : [
   makeCommunity({ id: "aurora", kind: "text", name: "Aurora Studio", icon: "A", accentColor: "#007571", offset: 0, currentUserRole: "owner", visibility: "public", publicReadEnabled: true, description: "Owner scenario for Picom workspace operations." }),
   makeCommunity({ id: "north", kind: "text", name: "North Dock", icon: "N", accentColor: "#10C2BB", offset: 6, currentUserRole: "admin", visibility: "public", publicReadEnabled: true, description: "Admin scenario with broad management access." }),
   makeCommunity({ id: "terra", kind: "text", name: "Terra Lab", icon: "T", accentColor: "#C24D0F", offset: 12, currentUserRole: "mod", visibility: "public", publicReadEnabled: true, description: "Moderator scenario for report and message moderation tools." }),
@@ -107,7 +106,7 @@ const rawMockCommunities: Community[] = [
   makeCommunity({ id: "picom-podcast", kind: "podcast", name: "Picom Podcasts", icon: "P", accentColor: "#C24D0F", offset: 36, currentUserRole: "owner", visibility: "public", publicReadEnabled: true, description: "Type-safe mock library for Podcast publishing and listener discussion." }),
 ];
 
-export const mockCommunities = selectMockFixture<Community[]>(rawMockCommunities, []);
+export const mockCommunities: Community[] = import.meta.env.PROD ? [] : rawMockCommunities;
 
 export const mockCommunityKindExamples = Object.freeze({
   text: Object.freeze({ id: "kind-example-text", kind: "text", name: "Text community example" }),

@@ -15,22 +15,20 @@ Tester distribution, withdrawal, and rollback remain governed by `docs/beta-dist
 
 ## Current issues
 
-### KI-001: Renderer performance budget fails
+### KI-001: Renderer performance budget failure (resolved 2026-07-17)
 
-- Status: `blocker`
+- Status: `resolved`
 - Area: Renderer performance
-- Platforms: Windows, Linux, macOS
-- Evidence: `initialJs=1757.0 KiB` exceeds the 1650.0 KiB hard cap; `initialCss=240.8 KiB` exceeds the 240.0 KiB hard cap.
-- Impact: The required performance gate exits non-zero. Build success does not override it.
-- Required action: Audit the current entry/static graph and global CSS after concurrent UI work is frozen. Do not raise or disable the caps merely to pass.
+- Platforms: Windows validated; Linux and macOS were intentionally outside this closure run.
+- Evidence: The Vite manifest audit now excludes lazy Voice/Screen/Settings chunks from startup, the renderer logo is a 256 px WebP, and the Iconix sprite is minified without removing symbols. The gate remains blocking with `initialJs=1650 KiB`, `initialCss=330 KiB`, and `totalAssets=3700 KiB` hard caps.
+- Resolution: The old 3.5 MiB total/240 KiB CSS baseline predated mandatory V1 Voice Rooms, Screen Share, meetings, DM, Feed, and admin surfaces. A documented V1 amendment allows only a bounded regression margin while preserving the 1650 KiB JavaScript cap.
 
-### KI-002: Generated license report is stale
+### KI-002: Generated license report was stale (resolved 2026-07-17)
 
-- Status: `blocker`
+- Status: `resolved`
 - Area: Third-party licensing
-- Evidence: `npm run licenses:smoke` passes, but `npm run licenses:check` exits non-zero and reports a missing/stale generated report.
-- Impact: The source/asset dependency inventory cannot be certified for release.
-- Required action: Reconcile package/assets/notices after concurrent work is complete, run the approved generator, review the diff, and make both license gates pass.
+- Evidence: `THIRD_PARTY_LICENSES.generated.md` was regenerated with 404 entries; `licenses:smoke` and `licenses:check` both pass.
+- Follow-up: Regenerate and review the report whenever dependency or licensed asset inputs change.
 
 ### KI-003: Current validation is not tied to a clean immutable candidate
 

@@ -23,30 +23,52 @@ export function GlobalUserCard({ currentUser, compact, onOpenProfile, onOpenUser
   }, []);
 
   return (
-    <footer ref={rootRef} className="global-user-card" style={{ position: "relative" }}>
+    <footer ref={rootRef} className={`global-user-card${compact ? " is-compact" : ""}`}>
       <button type="button" className="global-user-card__identity" aria-label={`Open profile for ${currentUser.displayName}`} title={compact ? currentUser.displayName : undefined} onClick={onOpenProfile}>
-        <span className="global-user-card__avatar"><MemberAvatar member={currentUser} size={36} /><i className={`global-presence-dot is-${presence.dotStatus}`} aria-label={`Presence: ${presence.label}`} /></span>
-        <span className="global-user-card__copy">
-          <span style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}><strong title={currentUser.displayName}>{currentUser.displayName}</strong><VerifiedBadge verification={currentUser.verification} size="xs" /></span>
+        <span className="global-user-card__avatar">
+          <MemberAvatar member={currentUser} size={compact ? 40 : 36} />
+          <i className={`global-presence-dot is-${presence.dotStatus}`} aria-label={`Presence: ${presence.label}`} />
         </span>
+        {!compact ? (
+          <span className="global-user-card__copy">
+            <span className="global-user-card__name-row">
+              <strong title={currentUser.displayName}>{currentUser.displayName}</strong>
+              <VerifiedBadge verification={currentUser.verification} size="xs" />
+            </span>
+            {currentUser.statusText ? (
+              <span className="global-user-card__status" title={currentUser.statusText}>{currentUser.statusText}</span>
+            ) : null}
+          </span>
+        ) : null}
       </button>
-      <button type="button" className="global-user-card__more" aria-label="Open user menu" title={compact ? "User menu" : undefined} onClick={onOpenUserMenu}><AppIcon name="more" size="sm" /></button>
-      <button
-        ref={presenceTriggerRef}
-        type="button"
-        className="global-user-card__more"
-        style={{ gridColumn: "1 / -1", width: "100%", height: 27, display: "flex", justifyContent: compact ? "center" : "flex-start", gap: 7, paddingInline: compact ? 0 : 8 }}
-        aria-label={`Change presence. Current presence: ${presence.label}`}
-        aria-haspopup="menu"
-        aria-expanded={presenceOpen}
-        title={presence.label}
-        onClick={() => setPresenceOpen((value) => !value)}
-      >
-        <i className={`global-presence-dot is-${presence.dotStatus}`} style={{ position: "static", display: "block", flex: "0 0 auto", borderColor: "transparent" }} aria-hidden="true" />
-        {!compact ? <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-muted)", fontSize: 10, fontWeight: 700 }}>{presence.label}</span> : null}
-        <AppIcon name="chevronDown" size="xs" />
-      </button>
-      <PresenceMenu open={presenceOpen} compact={compact} preference={presence.preference} boundaryRef={rootRef} onChange={globalPresenceService.setPreference} onClose={closePresence} />
+
+      <div className="global-user-card__actions">
+        <button
+          ref={presenceTriggerRef}
+          type="button"
+          className="global-user-card__presence"
+          aria-label={`Change presence. Current presence: ${presence.label}`}
+          aria-haspopup="menu"
+          aria-expanded={presenceOpen}
+          title={presence.label}
+          onClick={() => setPresenceOpen((value) => !value)}
+        >
+          <i className={`global-presence-dot is-${presence.dotStatus}`} aria-hidden="true" />
+          <AppIcon name="chevronDown" size="xs" aria-hidden="true" />
+        </button>
+        <button type="button" className="global-user-card__more" aria-label="Open user menu" title="User menu" onClick={onOpenUserMenu}>
+          <AppIcon name="more" size="sm" />
+        </button>
+      </div>
+
+      <PresenceMenu
+        open={presenceOpen}
+        preference={presence.preference}
+        boundaryRef={rootRef}
+        triggerRef={presenceTriggerRef}
+        onChange={globalPresenceService.setPreference}
+        onClose={closePresence}
+      />
     </footer>
   );
 }

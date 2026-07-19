@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.send_text_message_idempotent(
   target_community_id uuid,
   target_channel_id uuid,
@@ -140,11 +139,8 @@ begin
   where message.id = message_record.id;
 end;
 $$;
-
 revoke all on function public.send_text_message_idempotent(uuid, uuid, text, text, uuid, uuid[]) from public, anon;
 grant execute on function public.send_text_message_idempotent(uuid, uuid, text, text, uuid, uuid[]) to authenticated;
-
 comment on function public.send_text_message_idempotent(uuid, uuid, text, text, uuid, uuid[]) is
   'Authoritative Text send boundary with race-safe unique-violation reconciliation for client-message idempotency.';
-
 commit;
