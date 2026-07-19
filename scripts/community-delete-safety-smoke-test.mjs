@@ -8,7 +8,7 @@ const test = readFileSync("supabase/tests/rls/community_lifecycle_management.sql
 const failures = [];
 for (const marker of ["Only the community owner", "confirmationName.trim() !== community.name", "reauthenticateCurrentUser", 'rpc("archive_community"', 'status: "archived"', "append-only audit history were retained"]) if (!service.includes(marker)) failures.push(`archive service missing: ${marker}`);
 for (const marker of ["archived_at timestamptz", "archive_community", "COMMUNITY_ARCHIVE_OWNER_REQUIRED", "active communities are visible", "community_archive", "discovery_listed = false"]) if (!migration.includes(marker)) failures.push(`archive migration missing: ${marker}`);
-for (const marker of ["Archive community", "Verifying and archiving...", "without hard-deleting content", "current-password"]) if (!component.includes(marker)) failures.push(`archive UI missing: ${marker}`);
+for (const marker of ["Archive community", "Verifying and archiving", "without hard-deleting content", "current-password"]) if (!component.includes(marker)) failures.push(`archive UI missing: ${marker}`);
 for (const scenario of ["previous owner cannot archive after transfer", "archive requires exact community name", "failed archive leaves lifecycle state unchanged", "current owner can archive without hard deletion", "archive retains child data for controlled recovery"]) if (!test.includes(scenario)) failures.push(`archive pgTAP missing: ${scenario}`);
 if (/delete\s+from\s+public\.communities/i.test(migration)) failures.push("Community archive migration must not hard-delete community rows.");
 for (const legacyMarker of ["soft_delete_placeholder", "requestSoftDeletePlaceholder", "Owner-only soft delete placeholder", "The community was not deleted"]) {

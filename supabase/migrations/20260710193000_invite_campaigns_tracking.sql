@@ -3,7 +3,6 @@ alter table public.community_invites drop constraint if exists community_invites
 alter table public.community_invites add constraint community_invites_campaign_label_check check(campaign_label is null or char_length(campaign_label) between 1 and 80);
 alter table public.audit_log drop constraint if exists audit_log_action_type_check;
 alter table public.audit_log add constraint audit_log_action_type_check check(action_type in('community_update','channel_create','channel_update','channel_delete','role_change','member_change','moderation_action','invite_create','invite_revoke','invite_accept','webhook_create','webhook_revoke','webhook_message','discovery_review'));
-
 create or replace function public.create_community_invite(target_community_id uuid,target_max_uses integer default null,target_expires_at timestamptz default null,target_campaign_label text default null) returns setof public.community_invites language plpgsql security definer set search_path=public as $$
 declare created public.community_invites%rowtype; begin
   if auth.uid() is null or not public.can_create_community_invite(target_community_id) then raise exception 'PERMISSION_DENIED' using errcode='42501'; end if;
@@ -13,7 +12,6 @@ declare created public.community_invites%rowtype; begin
   insert into public.audit_log(community_id,actor_id,action_type,target_type,target_id,reason) values(target_community_id,auth.uid(),'invite_create','invite',created.id,public.redact_audit_reason('Invite campaign created: '||coalesce(created.campaign_label,'unlabeled')));
   return next created;
 end $$;
-
 create or replace function public.revoke_community_invite(target_invite_id uuid) returns setof public.community_invites language plpgsql security definer set search_path=public as $$
 declare invite public.community_invites%rowtype; begin
   select * into invite from public.community_invites where id=target_invite_id for update;
@@ -22,7 +20,6 @@ declare invite public.community_invites%rowtype; begin
   insert into public.audit_log(community_id,actor_id,action_type,target_type,target_id,reason) values(invite.community_id,auth.uid(),'invite_revoke','invite',invite.id,'Invite campaign revoked');
   return next invite;
 end $$;
-
 create or replace function public.accept_community_invite(invite_code text) returns table(id uuid,community_id uuid,user_id uuid,role_id uuid,joined_at timestamptz) language plpgsql security definer set search_path=public as $$
 declare target_invite public.community_invites%rowtype;default_role_id uuid; begin
   if auth.uid() is null then raise exception 'authentication required'; end if;
@@ -40,7 +37,6 @@ declare target_invite public.community_invites%rowtype;default_role_id uuid; beg
   insert into public.audit_log(community_id,actor_id,action_type,target_type,target_id,reason) values(target_invite.community_id,auth.uid(),'invite_accept','invite',target_invite.id,'Invite accepted');
   return query select membership.id,membership.community_id,membership.user_id,membership.role_id,membership.joined_at from public.community_members membership where membership.community_id=target_invite.community_id and membership.user_id=auth.uid();
 end $$;
-
 create or replace function public.list_community_invite_campaigns(target_community_id uuid) returns table(id uuid,community_id uuid,created_by uuid,creator_name text,campaign_label text,max_uses integer,uses integer,expires_at timestamptz,revoked_at timestamptz,last_used_at timestamptz,created_at timestamptz) language plpgsql stable security definer set search_path=public as $$
 begin
   if not public.can_create_community_invite(target_community_id) then raise exception 'PERMISSION_DENIED' using errcode='42501'; end if;

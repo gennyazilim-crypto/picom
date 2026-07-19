@@ -5,7 +5,6 @@ alter table public.attachments
   add column if not exists public_url text,
   add column if not exists thumbnail_url text,
   add column if not exists status text not null default 'attached';
-
 alter table public.attachments
   add constraint attachments_file_name_length check (char_length(file_name) between 1 and 180),
   add constraint attachments_storage_path_length check (char_length(storage_path) between 1 and 1024),
@@ -17,16 +16,12 @@ alter table public.attachments
     (width is null or width > 0) and
     (height is null or height > 0)
   );
-
 create index if not exists idx_attachments_uploader_created_at
   on public.attachments(uploader_id, created_at desc);
-
 create index if not exists idx_attachments_message_created_at
   on public.attachments(message_id, created_at);
-
 create index if not exists idx_attachments_status
   on public.attachments(status);
-
 create or replace view public.message_attachments as
 select
   id,

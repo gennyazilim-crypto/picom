@@ -37,4 +37,4 @@ end
 $$;
 
 comment on column public.communities.kind is
-  'Canonical community product kind. Legacy rows were backfilled to text; explicit radio/podcast values are preserved.';
+  'Canonical community product kind. Legacy rows were backfilled to text; explicit radio/podcast values are preserved.';;

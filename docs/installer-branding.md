@@ -4,8 +4,7 @@ Picom's setup experience uses original desktop-focused artwork and the existing 
 
 ## Direction
 
-- Picom name and original P-ribbon mark.
-- Teal/mint accent with cool gray surfaces and restrained blue depth.
+- Direction: light installer only — soft gray/white panels, crimson accent, chrome mic + glowing P mark (`picom-logo-mic-chrome-v1`).
 - Clear Windows/Linux/macOS desktop language.
 - Light/dark in-app setup using existing design tokens and Coolicons/AppIcon.
 
@@ -25,9 +24,11 @@ ownership, replacement rules, and the release inventory.
 
 ## Platform hooks
 
-- Windows: electron-builder NSIS assisted installer, Picom icons, desktop/Start Menu shortcuts, optional launch after install, and branded header/sidebar bitmaps.
+- Windows: electron-builder NSIS assisted installer, Picom icons, desktop/Start Menu shortcuts, optional launch after install, branded **sidebar** bitmap only (no top header strip), English (`en_US`) + Turkish (`tr_TR`) with an installer language selector, license acceptance (`nsis.license` → picom.gg terms/security), and an informational finish-page link to https://picom.gg. Public URLs: see [`docs/installer/legal-links.md`](installer/legal-links.md).
 - macOS: DMG background, Picom app icon, Applications shortcut, and separate signing/notarization workflow.
 - Linux: Picom icon set, Network/Chat/Utility metadata, AppImage/deb targets, and native desktop-entry validation.
+
+Bilingual copy review lives in [`docs/installer/bilingual-copy.md`](installer/bilingual-copy.md). Live preview: [`docs/installer/live-preview.html`](installer/live-preview.html). Regenerate Windows BMPs with `npm run installer:windows:art` when the approved app icon changes.
 
 ## First launch
 

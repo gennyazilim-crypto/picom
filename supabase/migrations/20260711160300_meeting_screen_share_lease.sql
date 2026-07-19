@@ -1,6 +1,5 @@
 -- Task 563: one active screen-share lease per meeting room. No screen media is stored.
 begin;
-
 create table if not exists public.meeting_screen_share_leases (
   room_id uuid primary key references public.meeting_rooms(id) on delete cascade,
   session_id uuid not null references public.meeting_sessions(id) on delete cascade,
@@ -10,14 +9,11 @@ create table if not exists public.meeting_screen_share_leases (
   updated_at timestamptz not null default now(),
   check (expires_at > acquired_at)
 );
-
 create index if not exists meeting_screen_share_leases_session_idx on public.meeting_screen_share_leases(session_id);
 alter table public.meeting_screen_share_leases enable row level security;
-
 drop policy if exists meeting_screen_share_leases_select_visible on public.meeting_screen_share_leases;
 create policy meeting_screen_share_leases_select_visible on public.meeting_screen_share_leases for select to authenticated
 using (public.can_view_meeting_room(room_id));
-
 create or replace function public.claim_meeting_screen_share(target_room_id uuid,target_session_id uuid,target_lease_seconds integer default 7200)
 returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare active_lease public.meeting_screen_share_leases%rowtype; participant_record public.meeting_session_participants%rowtype;
@@ -42,7 +38,6 @@ begin
   return jsonb_build_object('roomId',target_room_id,'sessionId',target_session_id,'claimed',true,'expiresAt',now()+make_interval(secs=>target_lease_seconds));
 end;
 $$;
-
 create or replace function public.release_meeting_screen_share(target_room_id uuid,target_session_id uuid)
 returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
 declare active_lease public.meeting_screen_share_leases%rowtype;
@@ -56,7 +51,6 @@ begin
   return true;
 end;
 $$;
-
 create or replace function public.cleanup_meeting_screen_share_lease()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -73,16 +67,13 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists trg_cleanup_meeting_session_screen_share on public.meeting_sessions;
 create trigger trg_cleanup_meeting_session_screen_share after update of status or delete on public.meeting_sessions for each row execute function public.cleanup_meeting_screen_share_lease();
 drop trigger if exists trg_cleanup_meeting_participant_screen_share on public.meeting_session_participants;
 create trigger trg_cleanup_meeting_participant_screen_share after update of state or delete on public.meeting_session_participants for each row execute function public.cleanup_meeting_screen_share_lease();
-
 revoke all on table public.meeting_screen_share_leases from public,anon;
 grant select on table public.meeting_screen_share_leases to authenticated;
 revoke all on function public.claim_meeting_screen_share(uuid,uuid,integer),public.release_meeting_screen_share(uuid,uuid),public.cleanup_meeting_screen_share_lease() from public,anon;
 grant execute on function public.claim_meeting_screen_share(uuid,uuid,integer),public.release_meeting_screen_share(uuid,uuid) to authenticated;
-
 comment on table public.meeting_screen_share_leases is 'Ephemeral ownership metadata only; no captured screen media is stored.';
 commit;

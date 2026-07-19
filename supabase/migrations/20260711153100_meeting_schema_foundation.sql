@@ -256,6 +256,4 @@ revoke all on public.meeting_rooms,public.meeting_sessions,public.meeting_sessio
 comment on table public.meeting_rooms is 'Durable Picom room configuration and safe metadata only; never raw audio/video/screen media.';
 comment on table public.meeting_sessions is 'LiveKit session references without provider tokens or media payloads.';
 comment on table public.meeting_events is 'Idempotent application/provider event projections; raw webhooks and credentials are forbidden.';
-comment on table public.meeting_attendance is 'Privacy-bounded attendance metadata retained separately from ephemeral provider participants.';
-
-commit;
+comment on table public.meeting_attendance is 'Privacy-bounded attendance metadata retained separately from ephemeral provider participants.';;

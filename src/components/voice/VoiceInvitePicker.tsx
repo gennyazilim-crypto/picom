@@ -29,13 +29,17 @@ export function VoiceInvitePicker({ members, currentUserId, onSelect, onClose }:
           value={query}
           autoFocus
           maxLength={80}
-          placeholder="Search members…"
-          aria-label="Search members"
+          placeholder="Search friends or members…"
+          aria-label="Search friends or members"
           onChange={(event) => setQuery(event.target.value)}
         />
         <ul className="voice-invite-picker__list">
           {invitable.length === 0 ? (
-            <li className="voice-invite-picker__empty">No members to invite.</li>
+            <li className="voice-invite-picker__empty">
+              {query.trim()
+                ? "No matches."
+                : "No friends or community members available to invite."}
+            </li>
           ) : (
             invitable.map((member) => (
               <li key={member.userId}>
@@ -45,7 +49,7 @@ export function VoiceInvitePicker({ members, currentUserId, onSelect, onClose }:
                   </span>
                   <span className="voice-invite-picker__name">
                     {member.displayName}
-                    <small>@{member.username}</small>
+                    <small>@{member.username}{member.status !== "offline" ? ` · ${member.status}` : ""}</small>
                   </span>
                 </button>
               </li>

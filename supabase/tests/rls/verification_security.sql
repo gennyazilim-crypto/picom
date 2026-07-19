@@ -1,5 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
 select plan(9);
 
 insert into auth.users(id, email, encrypted_password, email_confirmed_at, created_at, updated_at)
@@ -19,7 +20,8 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000001', true);
 select lives_ok($$ insert into public.profile_verifications(user_id, type, reason) values ('71000000-0000-0000-0000-000000000001', 'verified_user', 'Requesting profile ownership review') $$, 'user can request own verification');
 select results_eq($$ select count(*)::bigint from public.profile_verifications where user_id = '71000000-0000-0000-0000-000000000001' and status = 'pending' $$, array[1::bigint], 'user can read own pending verification');
-select throws_ok($$ update public.profile_verifications set status = 'approved' where user_id = '71000000-0000-0000-0000-000000000001' $$, 'user cannot self-approve verification');
+update public.profile_verifications set status = 'approved' where user_id = '71000000-0000-0000-0000-000000000001';
+select results_eq($$ select status from public.profile_verifications where user_id = '71000000-0000-0000-0000-000000000001' $$, array['pending'::text], 'user cannot self-approve verification');
 
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000002', true);
 select results_eq($$ select count(*)::bigint from public.profile_verifications where user_id = '71000000-0000-0000-0000-000000000001' $$, array[0::bigint], 'other user cannot read pending verification');
@@ -29,7 +31,7 @@ update public.profile_verifications set status = 'approved', reviewed_by = '7100
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '71000000-0000-0000-0000-000000000002', true);
 select results_eq($$ select count(*)::bigint from public.profile_verifications where user_id = '71000000-0000-0000-0000-000000000001' and status = 'approved' $$, array[1::bigint], 'approved verification is readable');
-select throws_ok($$ select public.review_profile_verification((select id from public.profile_verifications where user_id = '71000000-0000-0000-0000-000000000001'), 'revoked', 'Attempted by a normal user') $$, 'non-reviewer cannot review verification');
+select throws_like($$ select public.review_profile_verification((select id from public.profile_verifications where user_id = '71000000-0000-0000-0000-000000000001'), 'revoked', 'Attempted by a normal user') $$, '%VERIFICATION_REVIEWER_REQUIRED%', 'non-reviewer cannot review verification');
 select lives_ok($$ insert into public.profile_verifications(user_id, type, reason) values ('71000000-0000-0000-0000-000000000002', 'creator_verified', 'Creator verification review request') $$, 'second user can request own creator verification');
 
 reset role;

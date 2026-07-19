@@ -3,7 +3,6 @@ import { currentUserId } from "./mockCommunities";
 import { mockMentionItems } from "./mockMentions";
 import type { ContentMentionSourceType, UnifiedContentMention } from "../types/contentMentions";
 import { textMentionToUnified } from "../types/contentMentions";
-import { selectMockFixture } from "../config/dataSourcePolicy";
 
 const visibility = {
   communityVisibility: "public" as const,
@@ -41,7 +40,7 @@ function fixture(sourceType: ContentMentionSourceType, sourceId: string, preview
 const radioId = radio?.sourceId ?? radio?.id.replace(/^feed-/, "") ?? "radio-session-mention";
 const podcastId = podcast?.sourceId ?? podcast?.id.replace(/^feed-/, "") ?? "podcast-episode-mention";
 
-const rawMockUnifiedContentMentions: readonly UnifiedContentMention[] = [
+const rawMockUnifiedContentMentions: readonly UnifiedContentMention[] = import.meta.env.PROD ? [] : [
   ...textFixtures,
   fixture("radio_session", radioId, `Live radio mention: ${radio?.title ?? "Community broadcast"}`),
   fixture("radio_chat", mockMentionItems[0]?.messageId ?? "radio-chat-message", "Listener chat mentioned you during the live show."),
@@ -49,4 +48,4 @@ const rawMockUnifiedContentMentions: readonly UnifiedContentMention[] = [
   fixture("podcast_comment", "podcast-comment-mention", "A listener mentioned you in an episode comment.", podcastId),
 ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 
-export const mockUnifiedContentMentions = selectMockFixture<readonly UnifiedContentMention[]>(rawMockUnifiedContentMentions, []);
+export const mockUnifiedContentMentions: readonly UnifiedContentMention[] = import.meta.env.PROD ? [] : rawMockUnifiedContentMentions;

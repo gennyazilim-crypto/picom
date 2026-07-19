@@ -1,23 +1,19 @@
 -- Task 541: durable, idempotent meeting notifications and reminders.
 -- Native delivery remains a renderer concern so local DND and quiet-hour policy is authoritative.
 begin;
-
 alter table public.notifications
   add column if not exists meeting_room_id uuid references public.meeting_rooms(id) on delete set null,
   add column if not exists meeting_session_id uuid references public.meeting_sessions(id) on delete set null,
   add column if not exists meeting_starts_at timestamptz,
   add column if not exists deep_link text;
-
 do $$ begin
   alter table public.notifications add constraint notifications_meeting_deep_link_safe check (
     deep_link is null or (char_length(deep_link) <= 2048 and deep_link ~ '^picom://meeting/[A-Za-z0-9_-]+/')
   );
 exception when duplicate_object then null; end $$;
-
 create index if not exists notifications_recipient_meeting_idx
   on public.notifications(recipient_id,meeting_room_id,created_at desc)
   where meeting_room_id is not null and deleted_at is null;
-
 create table if not exists public.meeting_notification_jobs (
   id uuid primary key default gen_random_uuid(),
   recipient_id uuid not null references public.profiles(id) on delete cascade,
@@ -44,14 +40,11 @@ create table if not exists public.meeting_notification_jobs (
   updated_at timestamptz not null default now(),
   unique(recipient_id,event_key)
 );
-
 create index if not exists meeting_notification_jobs_due_idx
   on public.meeting_notification_jobs(available_at,created_at)
   where processed_at is null;
-
 alter table public.meeting_notification_jobs enable row level security;
 revoke all on public.meeting_notification_jobs from anon,authenticated;
-
 create or replace function public.meeting_notification_deep_link(target_room_id uuid,target_session_id uuid default null)
 returns text language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; result text;
@@ -65,7 +58,6 @@ begin
   return result;
 end;
 $$;
-
 create or replace function public.meeting_notification_recipient_ids(target_room_id uuid)
 returns table(user_id uuid) language sql stable security definer set search_path=public,pg_temp as $$
   select distinct candidates.user_id from (
@@ -88,7 +80,6 @@ returns table(user_id uuid) language sql stable security definer set search_path
   ) candidates
   where candidates.user_id is not null and exists(select 1 from public.profiles profile where profile.id=candidates.user_id);
 $$;
-
 create or replace function public.deliver_meeting_notification_job(target_job_id uuid)
 returns boolean language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare job public.meeting_notification_jobs%rowtype; target_room public.meeting_rooms%rowtype; target_community public.communities%rowtype;
@@ -123,7 +114,6 @@ begin
   end;
 end;
 $$;
-
 create or replace function public.enqueue_meeting_notification(
   target_recipient_id uuid,target_actor_id uuid,target_room_id uuid,target_session_id uuid,
   target_event_kind text,target_event_key text,target_title text,target_preview text,
@@ -147,7 +137,6 @@ begin
   return job_id;
 end;
 $$;
-
 create or replace function public.dispatch_due_meeting_notifications(target_limit integer default 100)
 returns integer language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare item record; delivered integer:=0;
@@ -160,7 +149,6 @@ begin
   return delivered;
 end;
 $$;
-
 create or replace function public.enqueue_due_meeting_reminders(target_now timestamptz default now(),target_limit integer default 500)
 returns integer language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare room_record public.meeting_rooms%rowtype; minute_record record; recipient_record record; queued integer:=0; reminder_at timestamptz;
@@ -190,7 +178,6 @@ begin
   return queued;
 end;
 $$;
-
 create or replace function public.process_meeting_notification_jobs(target_now timestamptz default now(),target_limit integer default 500)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare reminders integer; delivered integer;
@@ -200,7 +187,6 @@ begin
   return jsonb_build_object('remindersClaimed',reminders,'retriesDelivered',delivered,'processedAt',target_now);
 end;
 $$;
-
 create or replace function public.notify_meeting_schedule_change()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare recipient record; kind text; title_text text; preview_text text; event_key text;
@@ -215,7 +201,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.notify_meeting_cohost_assignment()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare recipient_id uuid;
@@ -228,7 +213,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.notify_meeting_session_started()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare room_record public.meeting_rooms%rowtype; recipient record;
@@ -241,7 +225,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.notify_meeting_invite_received()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare room_record public.meeting_rooms%rowtype;
@@ -252,7 +235,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.notify_meeting_waiting_hosts()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; recipient_id uuid;
@@ -265,7 +247,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.notify_meeting_waiting_resolution()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; notification_title text; notification_preview text;
@@ -278,7 +259,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.notify_meeting_stage_request()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare participant_record public.meeting_session_participants%rowtype; session_record public.meeting_sessions%rowtype; room_record public.meeting_rooms%rowtype; recipient_id uuid;
@@ -292,7 +272,6 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists meeting_schedule_notification on public.meeting_rooms;
 create trigger meeting_schedule_notification after update of scheduled_for,scheduled_end_at,status on public.meeting_rooms for each row execute function public.notify_meeting_schedule_change();
 drop trigger if exists meeting_cohost_notification on public.meeting_rooms;
@@ -303,12 +282,10 @@ drop trigger if exists meeting_invite_received_notification on public.meeting_in
 create trigger meeting_invite_received_notification after insert on public.meeting_invites for each row execute function public.notify_meeting_invite_received();
 drop trigger if exists meeting_stage_request_notification on public.meeting_participant_runtime_state;
 create trigger meeting_stage_request_notification after update of stage_request_status on public.meeting_participant_runtime_state for each row execute function public.notify_meeting_stage_request();
-
 revoke all on function public.meeting_notification_deep_link(uuid,uuid),public.meeting_notification_recipient_ids(uuid),public.deliver_meeting_notification_job(uuid),public.enqueue_meeting_notification(uuid,uuid,uuid,uuid,text,text,text,text,timestamptz,timestamptz) from public,anon,authenticated;
 revoke all on function public.notify_meeting_schedule_change(),public.notify_meeting_cohost_assignment(),public.notify_meeting_session_started(),public.notify_meeting_invite_received(),public.notify_meeting_waiting_hosts(),public.notify_meeting_waiting_resolution(),public.notify_meeting_stage_request() from public,anon,authenticated;
 revoke all on function public.dispatch_due_meeting_notifications(integer),public.enqueue_due_meeting_reminders(timestamptz,integer),public.process_meeting_notification_jobs(timestamptz,integer) from public,anon,authenticated;
 grant execute on function public.dispatch_due_meeting_notifications(integer),public.enqueue_due_meeting_reminders(timestamptz,integer),public.process_meeting_notification_jobs(timestamptz,integer) to service_role;
-
 comment on table public.meeting_notification_jobs is 'Private idempotent outbox for meeting notification metadata. A protected scheduler retries due jobs; raw invite tokens and provider credentials are forbidden.';
 comment on function public.process_meeting_notification_jobs(timestamptz,integer) is 'Service-role scheduler entry point. Claims due reminders and retries notification inbox inserts without duplicate source events.';
 commit;

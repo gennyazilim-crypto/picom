@@ -319,4 +319,4 @@ comment on table public.radio_program_follows is 'User-private follows for recur
 comment on table public.radio_session_reactions is 'Member reactions to visible live or ended Radio sessions.';
 comment on column public.radio_sessions.listener_chat_channel_id is 'Optional same-community chat reference; channel RLS remains authoritative.';
 comment on column public.radio_sessions.cover_storage_path is 'Private audio-covers path. Resolve short-lived URLs only after RLS-authorized metadata access.';
-comment on table public.radio_sessions is 'Radio session metadata only. Picom does not assume music licensing, automatic recording, or a release-scoped recording asset.';
+comment on table public.radio_sessions is 'Radio session metadata only. Picom does not assume music licensing, automatic recording, or a release-scoped recording asset.';;

@@ -3,7 +3,6 @@ alter table public.community_discovery_reviews
 alter table public.community_discovery_reviews
   add constraint community_discovery_reviews_status_check
   check (status in ('pending', 'approved', 'rejected', 'hidden', 'suspended'));
-
 alter table public.audit_log drop constraint if exists audit_log_action_type_check;
 alter table public.audit_log add constraint audit_log_action_type_check check (
   action_type in (
@@ -12,7 +11,6 @@ alter table public.audit_log add constraint audit_log_action_type_check check (
     'discovery_review'
   )
 );
-
 create or replace function public.list_discovery_review_queue(
   status_filter text default null,
   result_limit integer default 100
@@ -67,10 +65,8 @@ begin
   limit least(greatest(result_limit, 1), 100);
 end;
 $$;
-
 revoke all on function public.list_discovery_review_queue(text,integer) from public, anon;
 grant execute on function public.list_discovery_review_queue(text,integer) to authenticated;
-
 create or replace function public.review_discovery_listing(
   target_community_id uuid,
   next_status text,
@@ -114,9 +110,7 @@ begin
   return true;
 end;
 $$;
-
 revoke all on function public.review_discovery_listing(uuid,text,text) from public, anon;
 grant execute on function public.review_discovery_listing(uuid,text,text) to authenticated;
-
 comment on function public.review_discovery_listing(uuid,text,text) is
   'App-admin-only atomic discovery review state and audit event. No private community content is returned.';

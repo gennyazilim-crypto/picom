@@ -1,4 +1,3 @@
-import { mockMentionItems } from "../data/mockMentions";
 import type { Attachment, AttachmentScanStatus, Reaction } from "../types/community";
 import type { MentionCommentPreview, MentionItem } from "../types/mentions";
 import { dataSourceService } from "./dataSourceService";
@@ -119,6 +118,7 @@ async function listPage(input: Readonly<{ cursor?: string | null; limit?: number
   const cursor = decodeCursor(input.cursor);
 
   if (dataSourceService.getStatus().isMock) {
+    const { mockMentionItems } = await import("../data/mockMentions");
     const ordered = [...mockMentionItems].sort((left, right) => {
       const createdDelta = Date.parse(right.createdAt) - Date.parse(left.createdAt);
       return createdDelta || right.messageId.localeCompare(left.messageId);

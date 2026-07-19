@@ -13,6 +13,7 @@ const allGlobalNavigationItems: readonly GlobalNavigationRegistryItem[] = [
   { key: "feed", label: "Feed", ariaLabel: "Open Feed", icon: "home", section: "primary", status: available, badgeSelector: noBadge },
   { key: "dm", label: "DM", ariaLabel: "Open direct messages", icon: "inbox", section: "primary", status: available, badgeSelector: (state) => state.dmUnread },
   { key: "communities", label: "Communities", ariaLabel: "Open communities", icon: "users", section: "primary", status: available, badgeSelector: (state) => state.communityUnread },
+  { key: "discover", label: "Discover", ariaLabel: "Discover communities", icon: "search", section: "primary", status: available, badgeSelector: noBadge },
   { key: "radio", label: "Radio", ariaLabel: "Open Radio", icon: "volume", section: "primary", status: (availability) => availability.hasRadioWorkspace ? "available" : "unavailable", unavailableReason: "No accessible Radio community is available.", badgeSelector: (state) => state.radioLive ? "Live" : null },
   { key: "podcasts", label: "Podcasts", ariaLabel: "Open Podcasts", icon: "headphones", section: "primary", status: (availability) => availability.hasPodcastWorkspace ? "available" : "unavailable", unavailableReason: "No accessible Podcast community is available.", badgeSelector: noBadge },
   { key: "events", label: "Events", ariaLabel: "Open upcoming events", icon: "bell", section: "primary", status: available, badgeSelector: (state) => state.eventUpcoming },
@@ -30,11 +31,12 @@ export function resolveGlobalNavigationKey(activeView: string): GlobalNavigation
   const resolved = activeView === "mentionFeed" ? "feed"
     : activeView === "directMessages" ? "dm"
       : activeView === "community" ? "communities"
-        : activeView === "radioCommunity" ? "radio"
-          : activeView === "podcastCommunity" ? "podcasts"
-            : activeView === "events" ? "events"
-              : activeView === "savedMessages" ? "bookmarks"
-                : null;
+        : activeView === "discovery" ? "discover"
+          : activeView === "radioCommunity" ? "radio"
+            : activeView === "podcastCommunity" ? "podcasts"
+              : activeView === "events" ? "events"
+                : activeView === "savedMessages" ? "bookmarks"
+                  : null;
   return resolved && isV1GlobalNavigationEnabled(resolved) ? resolved : null;
 }
 

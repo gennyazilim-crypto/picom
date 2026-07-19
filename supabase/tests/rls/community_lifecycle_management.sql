@@ -2,7 +2,9 @@
 -- Run only against local/staging Supabase: supabase test db --file supabase/tests/rls/community_lifecycle_management.sql
 
 begin;
-select plan(20);
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(22);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
 values
@@ -14,7 +16,13 @@ insert into public.profiles(id,username,display_name,status,status_text,accent_c
 values
   ('a1100000-0000-4000-8000-000000000001','lifecycle-owner','Lifecycle Owner','online','QA','#007571'),
   ('a1100000-0000-4000-8000-000000000002','lifecycle-target','Lifecycle Target','online','QA','#10C2BB'),
-  ('a1100000-0000-4000-8000-000000000003','lifecycle-outsider','Lifecycle Outsider','online','QA','#FF772E');
+  ('a1100000-0000-4000-8000-000000000003','lifecycle-outsider','Lifecycle Outsider','online','QA','#FF772E')
+on conflict (id) do update set
+  username = excluded.username,
+  display_name = excluded.display_name,
+  status = excluded.status,
+  status_text = excluded.status_text,
+  accent_color = excluded.accent_color;
 
 insert into public.communities(id,owner_id,kind,name,accent_color,visibility,public_read_enabled)
 values

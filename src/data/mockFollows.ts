@@ -1,7 +1,6 @@
 import { currentUserId } from "./mockMembers";
-import { selectMockFixture } from "../config/dataSourcePolicy";
 
-const rawMockPopularUserIds = [
+const rawMockPopularUserIds = import.meta.env.PROD ? [] : [
   "aurora-user-1",
   "aurora-user-2",
   "north-user-1",
@@ -12,7 +11,7 @@ const rawMockPopularUserIds = [
   "orbit-user-1",
 ] as const;
 
-const rawMockFollowedUserIdsByUser: Record<string, string[]> = {
+const rawMockFollowedUserIdsByUser: Record<string, string[]> = import.meta.env.PROD ? {} : {
   [currentUserId]: [
     "aurora-user-1",
     "aurora-user-2",
@@ -23,6 +22,6 @@ const rawMockFollowedUserIdsByUser: Record<string, string[]> = {
   ],
 };
 
-export const mockPopularUserIds = selectMockFixture<readonly string[]>(rawMockPopularUserIds, []);
-export const mockFollowedUserIdsByUser = selectMockFixture<Record<string, string[]>>(rawMockFollowedUserIdsByUser, {});
+export const mockPopularUserIds: readonly string[] = import.meta.env.PROD ? [] : rawMockPopularUserIds;
+export const mockFollowedUserIdsByUser: Record<string, string[]> = import.meta.env.PROD ? {} : rawMockFollowedUserIdsByUser;
 export const currentUserFollowedUserIds = mockFollowedUserIdsByUser[currentUserId] ?? [];

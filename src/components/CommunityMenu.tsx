@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { lazy, Suspense } from "react";
 import type { Community, Member } from "../types/community";
@@ -11,6 +11,7 @@ import { communityRulesService } from "../services/communityRulesService";
 import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 import { AppIcon } from "./AppIcon";
+import { getCommunityIconLabel, resolveCommunityMarkSrc } from "../utils/generatedIdentity";
 import "../communityGuidelines.css";
 import { CommunityInsightsView } from "./CommunityInsightsView";
 import { CommunityVerificationRequestCard } from "./VerificationRequestPanel";
@@ -138,6 +139,7 @@ export function CommunityVisitorMenu({ community, access, onJoin }: { community:
 
 export function CommunityMenu({ community, access, callbacks, onClose }: CommunityMenuProps) {
   const items = getCommunityMenuItems(access);
+  const markSrc = resolveCommunityMarkSrc(community);
 
   useEffect(() => {
     const close = () => onClose();
@@ -153,7 +155,9 @@ export function CommunityMenu({ community, access, callbacks, onClose }: Communi
   return (
     <section className="community-menu-popover" role="menu" aria-label={`${community.name} menu`} onPointerDown={(event) => event.stopPropagation()}>
       <header>
-        <div className="community-menu-mark" style={{ background: community.accentColor }}>{community.icon}</div>
+        <div className="community-menu-mark" style={markSrc ? undefined : { background: community.accentColor }}>
+          {markSrc ? <img src={markSrc} alt="" draggable={false} /> : getCommunityIconLabel(community.name, community.icon)}
+        </div>
         <div>
           <strong>{community.name}</strong>
           <span>{access.isVisitor ? "Visitor preview" : "Community controls"}</span>
@@ -191,13 +195,16 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
 
 function CommunityManagementShell({ community, title, eyebrow, onClose, children, className = "", headerAction }: { community: Community; title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string; headerAction?: ReactNode }) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
+  const markSrc = resolveCommunityMarkSrc(community);
 
   return (
     <div className="modal-backdrop community-mgmt-backdrop" onMouseDown={onClose}>
       <section ref={dialogRef} tabIndex={-1} className={`community-access-modal community-management-modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="community-access-modal-title" onMouseDown={(event) => event.stopPropagation()}>
         <header className="community-mgmt-header">
           <div className="community-mgmt-brand">
-            <div className="community-mgmt-mark" style={{ background: community.accentColor }} aria-hidden="true">{community.icon}</div>
+            <div className="community-mgmt-mark" style={markSrc ? undefined : { background: community.accentColor }} aria-hidden="true">
+              {markSrc ? <img src={markSrc} alt="" draggable={false} /> : getCommunityIconLabel(community.name, community.icon)}
+            </div>
             <div className="community-mgmt-titleblock">
               <p className="eyebrow">{eyebrow}</p>
               <h2 id="community-access-modal-title">{title}</h2>

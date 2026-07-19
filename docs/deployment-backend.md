@@ -42,6 +42,12 @@ Allowed values:
 
 Only `database` is marked required by default. Redis is optional for the Supabase MVP and becomes required only if a future horizontally scaled realtime backend depends on it.
 
+## Protected admin infrastructure probe
+
+The authenticated `admin-health` Edge Function is restricted by `is_app_admin()`. It runs the existing database aggregate RPC and a short-lived LiveKit RoomService `ListRooms` probe. Its response contains only redacted state, latency, deployment type, and TURN/Redis configuration flags. Provider credentials, URLs, room names, participants, tokens, and content are never returned.
+
+The public `health` function remains non-sensitive and suitable for uptime checks. Production operations should use both public liveness/readiness and the protected Admin Operations infrastructure card.
+
 ## Production hardening TODO
 
 Before production orchestration depends on readiness:

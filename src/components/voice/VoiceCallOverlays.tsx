@@ -1,5 +1,5 @@
 import "./voice-call-overlays.css";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "../../utils/motionLite";
 import type { IncomingVoiceCall, OutgoingVoiceCall } from "../../services/voice/voiceCallInviteService";
 import { AppIcon } from "../AppIcon";
 
@@ -29,28 +29,29 @@ function incomingSubtitle(call: IncomingVoiceCall): string {
 }
 
 function roomSecondary(call: OutgoingVoiceCall): string {
-  return call.room.kind === "community" ? call.room.channelName : "Direct call";
+  return call.room.kind === "community" ? `${call.room.communityName} · ${call.room.channelName}` : "Direct call";
 }
 
-function outgoingText(call: OutgoingVoiceCall): { primary: string; secondary: string } {
+function outgoingCopy(call: OutgoingVoiceCall): { status: string; name: string; secondary: string } {
   switch (call.status) {
     case "ringing":
-      return { primary: `Ringing ${call.target.name}…`, secondary: roomSecondary(call) };
+      return { status: "Ringing", name: call.target.name, secondary: roomSecondary(call) };
     case "accepted":
-      return { primary: `${call.target.name} joined`, secondary: roomSecondary(call) };
+      return { status: "Connected", name: call.target.name, secondary: roomSecondary(call) };
     case "declined":
-      return { primary: `${call.target.name} declined`, secondary: "Call ended" };
+      return { status: "Declined", name: call.target.name, secondary: "Call ended" };
     case "timeout":
-      return { primary: "No answer", secondary: `${call.target.name} didn't pick up` };
+      return { status: "No answer", name: call.target.name, secondary: "They didn't pick up" };
     case "canceled":
-      return { primary: "Call canceled", secondary: call.target.name };
+      return { status: "Canceled", name: call.target.name, secondary: roomSecondary(call) };
     case "failed":
       return {
-        primary: "Call could not be sent",
+        status: "Couldn't connect",
+        name: call.target.name,
         secondary: call.failureMessage?.trim() || "Try again in a moment",
       };
     default:
-      return { primary: call.target.name, secondary: roomSecondary(call) };
+      return { status: "Call", name: call.target.name, secondary: roomSecondary(call) };
   }
 }
 
@@ -64,7 +65,7 @@ export function VoiceCallOverlays({
   onDismissOutgoing,
 }: VoiceCallOverlaysProps) {
   const reduceMotion = useReducedMotion();
-  const outgoingCopy = outgoing ? outgoingText(outgoing) : null;
+  const outgoingDetails = outgoing ? outgoingCopy(outgoing) : null;
 
   return (
     <>
@@ -132,35 +133,65 @@ export function VoiceCallOverlays({
       </AnimatePresence>
 
       <AnimatePresence>
-        {outgoing && outgoingCopy ? (
+        {outgoing && outgoingDetails ? (
         <motion.div
           key="outgoing-voice-call"
           className={`voice-call-bar voice-call-bar--${outgoing.status}`}
           role="status"
           aria-live="polite"
+          aria-label={`${outgoingDetails.status}: ${outgoingDetails.name}`}
           initial={reduceMotion ? { x: "-50%" } : { x: "-50%", opacity: 0, y: 14, scale: 0.97 }}
           animate={{ x: "-50%", opacity: 1, y: 0, scale: 1 }}
           exit={reduceMotion ? undefined : { x: "-50%", opacity: 0, y: 10, scale: 0.98 }}
           transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 440, damping: 34, mass: 0.7 }}
         >
-          <span className="voice-call-bar__dot" aria-hidden="true" />
+          <span className="voice-call-bar__avatar" aria-hidden="true">
+            {outgoing.target.avatarUrl ? (
+              <img src={outgoing.target.avatarUrl} alt="" />
+            ) : (
+              <span className="voice-call-bar__initials">{initials(outgoing.target.name)}</span>
+            )}
+            <i className="voice-call-bar__ring" />
+          </span>
+
           <AnimatePresence mode="wait" initial={false}>
-            <motion.span
+            <motion.div
               key={outgoing.status}
-              className="voice-call-bar__text"
+              className="voice-call-bar__copy"
               initial={reduceMotion ? false : { opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
               transition={{ duration: reduceMotion ? 0 : 0.12 }}
             >
-              {outgoingCopy.primary}
-              <small>{outgoingCopy.secondary}</small>
-            </motion.span>
+              <span className="voice-call-bar__status">
+                <AppIcon name="voice" size="xs" aria-hidden="true" />
+                {outgoingDetails.status}
+              </span>
+              <strong className="voice-call-bar__name">{outgoingDetails.name}</strong>
+              <small className="voice-call-bar__meta">{outgoingDetails.secondary}</small>
+            </motion.div>
           </AnimatePresence>
+
           {outgoing.status === "ringing" ? (
-            <button type="button" className="voice-call-bar__action" onClick={onCancelOutgoing}>Cancel</button>
+            <button
+              type="button"
+              className="voice-call-bar__action voice-call-bar__action--cancel"
+              onClick={onCancelOutgoing}
+              aria-label={`Cancel call to ${outgoing.target.name}`}
+              title="Cancel"
+            >
+              <AppIcon name="close" size="sm" aria-hidden="true" />
+              <span>Cancel</span>
+            </button>
           ) : (
-            <button type="button" className="voice-call-bar__action voice-call-bar__action--ghost" onClick={onDismissOutgoing}>Dismiss</button>
+            <button
+              type="button"
+              className="voice-call-bar__action voice-call-bar__action--ghost"
+              onClick={onDismissOutgoing}
+              aria-label="Dismiss call status"
+            >
+              Dismiss
+            </button>
           )}
         </motion.div>
         ) : null}

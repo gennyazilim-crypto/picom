@@ -1,6 +1,5 @@
 -- Task 537: privileged waiting-room workflow with RLS-safe Realtime projections.
 begin;
-
 alter table public.meeting_waiting_entries
   add column if not exists request_message text not null default '',
   add column if not exists invite_id uuid references public.meeting_invites(id) on delete set null,
@@ -10,7 +9,6 @@ alter table public.meeting_waiting_entries
   add column if not exists expires_at timestamptz not null default (now()+interval '15 minutes'),
   add column if not exists cancelled_at timestamptz,
   add column if not exists host_notified_at timestamptz;
-
 alter table public.meeting_waiting_entries drop constraint if exists meeting_waiting_entry_metadata_check;
 alter table public.meeting_waiting_entries add constraint meeting_waiting_entry_metadata_check check (
   char_length(request_message)<=280
@@ -19,11 +17,9 @@ alter table public.meeting_waiting_entries add constraint meeting_waiting_entry_
   and not decision_metadata ?| array['secret','token','access_token','refresh_token','authorization','raw_payload']
   and expires_at>requested_at
 );
-
 create index if not exists idx_meeting_waiting_expiry on public.meeting_waiting_entries(status,expires_at) where status='waiting';
 create index if not exists idx_meeting_waiting_session_status on public.meeting_waiting_entries(session_id,status,requested_at) where session_id is not null;
 alter table public.meeting_waiting_entries replica identity full;
-
 create or replace function public.can_manage_meeting_waiting(target_room_id uuid)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; actor_role text;
@@ -37,7 +33,6 @@ begin
     or public.effective_community_permission(target_room.community_id,'manageMeeting',null,null);
 end;
 $$;
-
 create or replace function public.meeting_waiting_entry_projection(target_entry public.meeting_waiting_entries)
 returns jsonb language sql stable security definer set search_path=public,pg_temp as $$
   select jsonb_build_object(
@@ -50,7 +45,6 @@ returns jsonb language sql stable security definer set search_path=public,pg_tem
     'cancelledAt',target_entry.cancelled_at,'hostNotifiedAt',target_entry.host_notified_at,'updatedAt',target_entry.updated_at
   );
 $$;
-
 create or replace function public.notify_meeting_waiting_hosts()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; target_community public.communities%rowtype; recipient_id uuid;
@@ -68,7 +62,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.notify_meeting_waiting_resolution()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; target_community public.communities%rowtype; notification_title text; notification_preview text;
@@ -84,7 +77,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.record_meeting_waiting_transition()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; target_session_id uuid; next_sequence bigint:=0; actor_id uuid;
@@ -105,14 +97,12 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists meeting_waiting_notify_hosts on public.meeting_waiting_entries;
 create trigger meeting_waiting_notify_hosts after insert on public.meeting_waiting_entries for each row execute function public.notify_meeting_waiting_hosts();
 drop trigger if exists meeting_waiting_notify_resolution on public.meeting_waiting_entries;
 create trigger meeting_waiting_notify_resolution after update of status on public.meeting_waiting_entries for each row execute function public.notify_meeting_waiting_resolution();
 drop trigger if exists meeting_waiting_record_transition on public.meeting_waiting_entries;
 create trigger meeting_waiting_record_transition after insert or update of status on public.meeting_waiting_entries for each row execute function public.record_meeting_waiting_transition();
-
 create or replace function public.expire_meeting_waiting_entries(target_room_id uuid default null)
 returns integer language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare item record; next_status text; next_reason text; affected integer:=0; host_available boolean;
@@ -137,7 +127,6 @@ begin
   return affected;
 end;
 $$;
-
 create or replace function public.request_meeting_waiting_admission(target_room_id uuid,target_session_id uuid,target_request_message text default '',target_idempotency_key text default null)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; target_session public.meeting_sessions%rowtype; profile_record public.profiles%rowtype; existing_entry public.meeting_waiting_entries%rowtype; created_entry public.meeting_waiting_entries%rowtype; invite_record public.meeting_invites%rowtype; expiry timestamptz;
@@ -168,7 +157,6 @@ begin
   return jsonb_build_object('disposition','waiting','entry',public.meeting_waiting_entry_projection(created_entry));
 end;
 $$;
-
 create or replace function public.apply_meeting_waiting_decision(target_entry_id uuid,target_decision text,target_decision_note text default null)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare target_entry public.meeting_waiting_entries%rowtype; target_room public.meeting_rooms%rowtype;
@@ -184,12 +172,10 @@ begin
   return public.meeting_waiting_entry_projection(target_entry);
 end;
 $$;
-
 create or replace function public.resolve_meeting_waiting_entry(target_entry_id uuid,target_decision text,target_decision_note text default null)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 begin perform public.consume_meeting_request_limit('meeting_invite_write'); return public.apply_meeting_waiting_decision(target_entry_id,target_decision,target_decision_note); end;
 $$;
-
 create or replace function public.resolve_all_meeting_waiting(target_room_id uuid,target_decision text,target_decision_note text default null)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare item record; results jsonb:='[]'::jsonb; affected integer:=0;
@@ -202,7 +188,6 @@ begin
   return jsonb_build_object('affected',affected,'entries',results);
 end;
 $$;
-
 create or replace function public.cancel_meeting_waiting_request(target_entry_id uuid)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare target_entry public.meeting_waiting_entries%rowtype;
@@ -214,7 +199,6 @@ begin
   return public.meeting_waiting_entry_projection(target_entry);
 end;
 $$;
-
 create or replace function public.list_meeting_waiting_entries(target_room_id uuid)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 begin
@@ -223,7 +207,6 @@ begin
   return coalesce((select jsonb_agg(public.meeting_waiting_entry_projection(entry) order by case entry.status when 'waiting' then 0 else 1 end,entry.requested_at) from public.meeting_waiting_entries entry where entry.room_id=target_room_id and entry.status in ('waiting','admitted','denied','expired','cancelled') and entry.requested_at>now()-interval '24 hours'),'[]'::jsonb);
 end;
 $$;
-
 create or replace function public.get_my_meeting_waiting_entry(target_room_id uuid,target_session_id uuid default null)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare target_entry public.meeting_waiting_entries%rowtype;
@@ -234,7 +217,6 @@ begin
   return case when target_entry.id is null then null else public.meeting_waiting_entry_projection(target_entry) end;
 end;
 $$;
-
 drop policy if exists meeting_waiting_select_self_or_manager on public.meeting_waiting_entries;
 create policy meeting_waiting_select_self_or_manager on public.meeting_waiting_entries for select to authenticated using(user_id=auth.uid() or public.can_manage_meeting_waiting(room_id));
 drop policy if exists meeting_waiting_insert_self on public.meeting_waiting_entries;
@@ -242,14 +224,11 @@ drop policy if exists meeting_waiting_update_manager on public.meeting_waiting_e
 drop policy if exists meeting_waiting_delete_self_or_manager on public.meeting_waiting_entries;
 revoke insert,update,delete on public.meeting_waiting_entries from authenticated;
 grant select on public.meeting_waiting_entries to authenticated;
-
 do $$ begin
   if exists(select 1 from pg_publication where pubname='supabase_realtime') and not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='meeting_waiting_entries') then alter publication supabase_realtime add table public.meeting_waiting_entries; end if;
 end $$;
-
 revoke all on function public.can_manage_meeting_waiting(uuid),public.meeting_waiting_entry_projection(public.meeting_waiting_entries),public.notify_meeting_waiting_hosts(),public.notify_meeting_waiting_resolution(),public.record_meeting_waiting_transition(),public.apply_meeting_waiting_decision(uuid,text,text) from public,anon,authenticated;
 revoke all on function public.expire_meeting_waiting_entries(uuid),public.request_meeting_waiting_admission(uuid,uuid,text,text),public.resolve_meeting_waiting_entry(uuid,text,text),public.resolve_all_meeting_waiting(uuid,text,text),public.cancel_meeting_waiting_request(uuid),public.list_meeting_waiting_entries(uuid),public.get_my_meeting_waiting_entry(uuid,uuid) from public,anon;
 grant execute on function public.expire_meeting_waiting_entries(uuid),public.request_meeting_waiting_admission(uuid,uuid,text,text),public.resolve_meeting_waiting_entry(uuid,text,text),public.resolve_all_meeting_waiting(uuid,text,text),public.cancel_meeting_waiting_request(uuid),public.list_meeting_waiting_entries(uuid),public.get_my_meeting_waiting_entry(uuid,uuid) to authenticated;
-
 comment on table public.meeting_waiting_entries is 'Private waiting/admission state. Requesters see only self; authorized hosts/cohosts see their room through RLS and RPCs.';
 commit;

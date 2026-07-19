@@ -3,7 +3,6 @@
 
 create index if not exists idx_reactions_message_emoji_user
   on public.message_reactions(message_id, emoji, user_id);
-
 create or replace function public.list_message_reaction_summaries(target_message_ids uuid[])
 returns table(message_id uuid, emoji text, reaction_count bigint, reacted_by_current_user boolean)
 language sql
@@ -35,7 +34,6 @@ as $$
   where ranked.emoji_rank <= 8
   order by ranked.message_id, ranked.reaction_count desc, ranked.emoji;
 $$;
-
 create or replace function public.set_message_reaction(target_message_id uuid, target_emoji text, target_reacted boolean)
 returns table(message_id uuid, emoji text, reaction_count bigint, reacted_by_current_user boolean)
 language plpgsql
@@ -73,17 +71,14 @@ begin
   where reaction.message_id = target_message_id and reaction.emoji = normalized_emoji;
 end;
 $$;
-
 revoke all on function public.list_message_reaction_summaries(uuid[]), public.set_message_reaction(uuid,text,boolean) from public, anon;
 grant execute on function public.list_message_reaction_summaries(uuid[]), public.set_message_reaction(uuid,text,boolean) to authenticated;
 revoke insert, delete on public.message_reactions from authenticated;
-
 drop policy if exists "message_reactions_select_visible_message" on public.message_reactions;
 drop policy if exists "message_reactions_select_own_visible_message" on public.message_reactions;
 create policy "message_reactions_select_own_visible_message"
 on public.message_reactions for select to authenticated
 using(user_id = auth.uid() and public.can_view_message(message_id));
-
 create or replace view public.mention_feed_view
 with (security_invoker = true)
 as
@@ -108,6 +103,5 @@ left join lateral(
   from public.list_message_reaction_summaries(array[message.id]) summary
 ) reaction_data on true
 where message.deleted_at is null and public.can_view_message(message.id) and not public.users_are_blocked(auth.uid(),message.author_id);
-
 comment on function public.list_message_reaction_summaries(uuid[]) is 'Returns up to eight aggregate emoji counts per visible message plus only the caller reaction boolean; no reactor identities.';
 comment on function public.set_message_reaction(uuid,text,boolean) is 'Idempotent member-only reaction mutation returning one aggregate-safe summary row.';

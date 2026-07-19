@@ -1,20 +1,16 @@
 -- Task 568: permission-bounded meeting history and verified attendance projections.
 -- No raw media, recording, transcript text, provider identity, or token is exposed here.
 begin;
-
 alter table public.meeting_sessions add column if not exists duration_seconds integer;
 alter table public.meeting_sessions add column if not exists outcome_code text;
 alter table public.meeting_sessions add column if not exists outcome_source text;
 alter table public.meeting_sessions add column if not exists outcome_verified_at timestamptz;
-
 do $$ begin
   if not exists(select 1 from pg_constraint where conname='meeting_sessions_duration_nonnegative') then alter table public.meeting_sessions add constraint meeting_sessions_duration_nonnegative check(duration_seconds is null or duration_seconds>=0); end if;
   if not exists(select 1 from pg_constraint where conname='meeting_sessions_outcome_code_safe') then alter table public.meeting_sessions add constraint meeting_sessions_outcome_code_safe check(outcome_code is null or outcome_code in ('provider_ended','host_ended','failed','cancelled','unknown')); end if;
   if not exists(select 1 from pg_constraint where conname='meeting_sessions_outcome_source_safe') then alter table public.meeting_sessions add constraint meeting_sessions_outcome_source_safe check(outcome_source is null or outcome_source in ('verified_livekit_webhook','backend_control','provider_failure','unknown')); end if;
 end $$;
-
 create index if not exists idx_meeting_sessions_history_time on public.meeting_sessions(coalesce(ended_at,started_at,created_at) desc,id desc) where status in ('live','reconnecting','ended','failed');
-
 create or replace function public.sync_verified_meeting_history_outcome()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -27,10 +23,8 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists meeting_history_verified_outcome on public.meeting_events;
 create trigger meeting_history_verified_outcome after insert on public.meeting_events for each row execute function public.sync_verified_meeting_history_outcome();
-
 with verified as (
   select distinct on(event.session_id) event.session_id,event.occurred_at
   from public.meeting_events event
@@ -41,7 +35,6 @@ update public.meeting_sessions session
 set duration_seconds=case when session.started_at is null then 0 else greatest(0,extract(epoch from (coalesce(session.ended_at,verified.occurred_at)-session.started_at))::integer) end,
     outcome_code='provider_ended',outcome_source='verified_livekit_webhook',outcome_verified_at=verified.occurred_at,updated_at=now()
 from verified where session.id=verified.session_id;
-
 create or replace function public.get_meeting_history(target_community_id uuid,target_scope text default 'community',result_limit integer default 20)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare
@@ -101,7 +94,6 @@ begin
   return jsonb_build_object('items',history_items,'upcoming',upcoming_items,'scope',target_scope,'canViewAttendance',can_view_all_attendance,'transcriptRetention','ephemeral_none');
 end;
 $$;
-
 create or replace function public.get_meeting_attendance_history(target_session_id uuid)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare
@@ -123,10 +115,8 @@ begin
   return jsonb_build_object('sessionId',target_session_id,'canViewAll',can_view_all,'items',attendance_items);
 end;
 $$;
-
 revoke all on function public.get_meeting_history(uuid,text,integer),public.get_meeting_attendance_history(uuid) from public,anon;
 grant execute on function public.get_meeting_history(uuid,text,integer),public.get_meeting_attendance_history(uuid) to authenticated;
-
 comment on function public.get_meeting_history(uuid,text,integer) is 'Privacy-bounded meeting history projection. Recording and transcript availability are always false for Full MVP.';
 comment on function public.get_meeting_attendance_history(uuid) is 'Returns all safe attendance only to viewMeetingHistory roles; other participants receive only their own row.';
 commit;

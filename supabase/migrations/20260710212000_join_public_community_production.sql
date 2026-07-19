@@ -52,9 +52,7 @@ begin
     created_membership.role_id, created_membership.joined_at, 'joined'::text;
 end;
 $$;
-
 revoke all on function public.join_public_community(uuid) from public, anon;
 grant execute on function public.join_public_community(uuid) to authenticated;
-
 comment on function public.join_public_community(uuid) is
   'Authenticated public join only. Private communities remain invite/approval gated; active bans, default role, idempotency, and redacted audit are enforced atomically.';

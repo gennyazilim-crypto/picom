@@ -34,13 +34,23 @@ export function UserProfilePopover({
   const popoverRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const close = () => onClose();
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("pointerdown", close);
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && popoverRef.current?.contains(target)) return;
+      onClose();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    // Defer so the opening click does not immediately dismiss the popover.
+    const timer = window.setTimeout(() => {
+      window.addEventListener("pointerdown", onPointerDown);
+    }, 0);
     window.addEventListener("keydown", onKey);
     window.requestAnimationFrame(() => popoverRef.current?.querySelector<HTMLButtonElement>(".profile-popover-action:not([disabled])")?.focus());
     return () => {
-      window.removeEventListener("pointerdown", close);
+      window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keydown", onKey);
       window.requestAnimationFrame(() => previousFocus?.focus());
     };
@@ -57,6 +67,9 @@ export function UserProfilePopover({
     viewportHeight: window.innerHeight,
     margin: 20,
   });
+
+  const openMessage = () => onOpenMessage?.(member);
+  const viewProfile = () => onViewProfile?.(member);
 
   return (
     <section
@@ -95,10 +108,10 @@ export function UserProfilePopover({
         {member.bio ? <p className="profile-popover-bio">{member.bio}</p> : null}
 
         <div className="profile-popover-actions">
-          <button type="button" className="profile-popover-action primary" onClick={() => onOpenMessage?.(member)}>
+          <button type="button" className="profile-popover-action primary" onClick={openMessage}>
             Message
           </button>
-          <button type="button" className="profile-popover-action" onClick={() => onViewProfile?.(member)}>
+          <button type="button" className="profile-popover-action" onClick={viewProfile}>
             View profile
           </button>
         </div>

@@ -1,6 +1,5 @@
 import { currentUserId, mockCommunities } from "./mockCommunities";
 import type { Member } from "../types/community";
-import { selectMockFixture } from "../config/dataSourcePolicy";
 
 const uniqueMembers = new Map<string, Member>();
 
@@ -12,11 +11,11 @@ for (const community of mockCommunities) {
   }
 }
 
-const rawMockFollowSuggestions = [...uniqueMembers.values()]
+const rawMockFollowSuggestions = import.meta.env.PROD ? [] : [...uniqueMembers.values()]
   .sort((left, right) => {
     const statusScore = { online: 0, idle: 1, dnd: 2, offline: 3 } as const;
     return statusScore[left.status] - statusScore[right.status] || left.displayName.localeCompare(right.displayName);
   })
   .slice(0, 8);
 
-export const mockFollowSuggestions = selectMockFixture<Member[]>(rawMockFollowSuggestions, []);
+export const mockFollowSuggestions: Member[] = import.meta.env.PROD ? [] : rawMockFollowSuggestions;

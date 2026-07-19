@@ -12,6 +12,10 @@ assert.ok(!migration.includes("create table public.feed_comments"),"task must no
 assert.ok(service.includes("mapCommentPreview"),"service must map safe derived previews");
 assert.ok(service.includes("body.slice(0, 180)"),"client must retain compact bound");
 assert.ok(types.includes("comment_preview: Json"),"database types must include derived preview JSON");
-assert.ok(component.includes("slice(0, 2)"),"UI must remain compact");
+assert.ok(
+  component.includes("const COLLAPSED_COMMENT_LIMIT = 2")
+    && component.includes("previewSeed.slice(0, COLLAPSED_COMMENT_LIMIT)"),
+  "UI must remain compact",
+);
 for(const marker of ["public preview counts visible active replies","private parent and comments do not leak","deleted reply body is excluded"]) assert.ok(test.includes(marker),`missing pgTAP coverage: ${marker}`);
 console.log("Comment preview production model smoke: PASS");

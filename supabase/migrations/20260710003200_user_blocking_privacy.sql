@@ -13,13 +13,11 @@ alter table public.blocked_users enable row level security;
 create policy "blocked_users_select_owner" on public.blocked_users for select to authenticated using (blocker_id = auth.uid());
 create policy "blocked_users_insert_owner" on public.blocked_users for insert to authenticated with check (blocker_id = auth.uid());
 create policy "blocked_users_delete_owner" on public.blocked_users for delete to authenticated using (blocker_id = auth.uid());
-
 create or replace function public.users_are_blocked(first_user_id uuid, second_user_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.blocked_users where (blocker_id = first_user_id and blocked_user_id = second_user_id) or (blocker_id = second_user_id and blocked_user_id = first_user_id));
 $$;
 grant execute on function public.users_are_blocked(uuid,uuid) to authenticated;
-
 create or replace function public.is_direct_conversation_member(target_conversation_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.direct_conversation_members own where own.conversation_id = target_conversation_id and own.user_id = auth.uid())
@@ -29,7 +27,6 @@ returns boolean language sql stable security definer set search_path = public as
         and public.users_are_blocked(auth.uid(), other.user_id)
     );
 $$;
-
 create or replace function public.create_direct_conversation(other_user_id uuid)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare new_conversation_id uuid;

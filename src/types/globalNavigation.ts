@@ -1,6 +1,6 @@
 import type { IconName } from "../components/AppIcon";
 
-export type GlobalNavigationKey = "feed" | "dm" | "communities" | "radio" | "podcasts" | "events" | "bookmarks";
+export type GlobalNavigationKey = "feed" | "dm" | "communities" | "discover" | "radio" | "podcasts" | "events" | "bookmarks";
 export type GlobalUtilityKey = "settings" | "helpSupport";
 export type GlobalSidebarItemKey = GlobalNavigationKey | GlobalUtilityKey;
 export type GlobalNavigationStatus = "available" | "unavailable";

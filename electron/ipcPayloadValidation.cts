@@ -117,6 +117,7 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     if (segments.length===8) return (segments[5]==="chat"&&segments[6]==="message"&&safe(7))||(segments[5]==="session"&&safe(6)&&segments[7]==="chat");
     return segments.length===10&&segments[5]==="session"&&safe(6)&&segments[7]==="chat"&&segments[8]==="message"&&safe(9);
   }
+  if (route === "dm") return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
   return (route === "settings" || route === "friends") && segments.length === 0;
 }
 
@@ -139,6 +140,78 @@ export function parseNotificationPayload(value: unknown): SafeNotificationPayloa
   if (!title) return null;
   const deepLink = isSafeDeepLink(record.deepLink) ? record.deepLink : undefined;
   return { title, body: sanitizeText(record.body, 240), silent: typeof record.silent === "boolean" ? record.silent : undefined, deepLink };
+}
+
+export type SafeIncomingCallToastPayload = Readonly<{
+  inviteId: string;
+  callId: string;
+  conversationId: string;
+  callerId: string;
+  callerDisplayName: string;
+  callerUsername?: string;
+  callerAvatarPath?: string;
+  callerAvatarUrl?: string;
+  callerAvatarUpdatedAt?: string;
+  callType: "voice" | "video";
+  startedAt: string;
+  subtitle?: string;
+}>;
+export type IncomingCallToastPayload = SafeIncomingCallToastPayload;
+
+export type IncomingCallToastAction = "accept" | "decline" | "message";
+
+export function parseIncomingCallToastPayload(value: unknown): SafeIncomingCallToastPayload | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const inviteId = sanitizeText(record.inviteId, 128);
+  const callId = sanitizeText(record.callId, 128);
+  const conversationId = sanitizeText(record.conversationId, 128);
+  const callerId = sanitizeText(record.callerId, 128);
+  const callerDisplayName = sanitizeText(record.callerDisplayName, 80);
+  const callerUsername = sanitizeText(record.callerUsername, 80);
+  const callerAvatarPath = sanitizeText(record.callerAvatarPath, 512);
+  const callerAvatarUpdatedAt = sanitizeText(record.callerAvatarUpdatedAt, 64);
+  const startedAt = sanitizeText(record.startedAt, 64);
+  const subtitle = sanitizeText(record.subtitle, 120);
+  const callType = record.callType === "voice" || record.callType === "video" ? record.callType : null;
+  if (
+    !inviteId || !callId || !conversationId || !callerId || !callerDisplayName || !callType || !startedAt ||
+    !safeDeepLinkSegmentPattern.test(inviteId) || !safeDeepLinkSegmentPattern.test(callId) ||
+    !safeDeepLinkSegmentPattern.test(conversationId) || !safeDeepLinkSegmentPattern.test(callerId) ||
+    Number.isNaN(Date.parse(startedAt))
+  ) return null;
+  if (
+    callerAvatarPath &&
+    (!/^[0-9a-f-]{36}\/(?:avatar|cover)\/[A-Za-z0-9._/-]+$/i.test(callerAvatarPath) || callerAvatarPath.includes(".."))
+  ) return null;
+  if (callerAvatarUpdatedAt && Number.isNaN(Date.parse(callerAvatarUpdatedAt))) return null;
+  let callerAvatarUrl: string | undefined;
+  if (typeof record.callerAvatarUrl === "string" && record.callerAvatarUrl.length <= 2048) {
+    try {
+      const parsed = new URL(record.callerAvatarUrl);
+      if (parsed.protocol === "https:" || parsed.protocol === "http:") callerAvatarUrl = parsed.toString();
+    } catch {
+      callerAvatarUrl = undefined;
+    }
+  }
+  return {
+    inviteId,
+    callId,
+    conversationId,
+    callerId,
+    callerDisplayName,
+    callType,
+    startedAt,
+    callerUsername,
+    callerAvatarPath,
+    callerAvatarUrl,
+    callerAvatarUpdatedAt,
+    subtitle,
+  };
+}
+
+export function parseIncomingCallToastAction(value: unknown): IncomingCallToastAction | null {
+  return value === "accept" || value === "decline" || value === "message" ? value : null;
 }
 
 function sanitizeDefaultFileName(value: unknown): string {

@@ -15,7 +15,6 @@ create table if not exists public.meeting_chat_contexts (
   updated_at timestamptz not null default now(),
   check ((context_kind='linked_channel' and thread_id is null) or (context_kind in ('dedicated_thread','meeting_source') and thread_id is not null))
 );
-
 create table if not exists public.meeting_chat_message_links (
   message_id uuid primary key references public.messages(id) on delete cascade,
   room_id uuid not null references public.meeting_chat_contexts(room_id) on delete cascade,
@@ -23,16 +22,13 @@ create table if not exists public.meeting_chat_message_links (
   linked_by_user_id uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
-
 create index if not exists idx_meeting_chat_context_channel on public.meeting_chat_contexts(channel_id,room_id);
 create index if not exists idx_meeting_chat_context_thread on public.meeting_chat_contexts(thread_id) where thread_id is not null;
 create index if not exists idx_meeting_chat_links_room_session on public.meeting_chat_message_links(room_id,session_id,created_at);
-
 alter table public.meeting_chat_contexts enable row level security;
 alter table public.meeting_chat_message_links enable row level security;
 revoke all on table public.meeting_chat_contexts,public.meeting_chat_message_links from public,anon,authenticated;
 grant select on table public.meeting_chat_contexts,public.meeting_chat_message_links to authenticated;
-
 create or replace function public.can_access_meeting_chat(target_room_id uuid,target_session_id uuid default null,require_write boolean default false)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare chat_record public.meeting_chat_contexts%rowtype; room_record public.meeting_rooms%rowtype; session_record public.meeting_sessions%rowtype; participant_record public.meeting_session_participants%rowtype; thread_archived_at timestamptz;
@@ -58,15 +54,12 @@ begin
   return true;
 end;
 $$;
-
 revoke all on function public.can_access_meeting_chat(uuid,uuid,boolean) from public,anon;
 grant execute on function public.can_access_meeting_chat(uuid,uuid,boolean) to authenticated;
-
 drop policy if exists meeting_chat_context_visible_select on public.meeting_chat_contexts;
 create policy meeting_chat_context_visible_select on public.meeting_chat_contexts for select to authenticated using(public.can_access_meeting_chat(room_id,null,false) or exists(select 1 from public.meeting_sessions session where session.room_id=room_id and public.can_access_meeting_chat(room_id,session.id,false)));
 drop policy if exists meeting_chat_links_visible_select on public.meeting_chat_message_links;
 create policy meeting_chat_links_visible_select on public.meeting_chat_message_links for select to authenticated using(public.can_access_meeting_chat(room_id,session_id,false));
-
 create or replace function public.configure_meeting_chat_context(
   target_room_id uuid,
   target_context_kind text,
@@ -111,10 +104,8 @@ begin
   return jsonb_build_object('roomId',target_room_id,'communityId',room_record.community_id,'channelId',channel_record.id,'threadId',selected_thread_id,'contextKind',target_context_kind,'preserveAfterMeeting',target_preserve_after_meeting,'guestAccessExpiresAt',target_guest_access_expires_at);
 end;
 $$;
-
 revoke all on function public.configure_meeting_chat_context(uuid,text,uuid,uuid,boolean,timestamptz) from public,anon;
 grant execute on function public.configure_meeting_chat_context(uuid,text,uuid,uuid,boolean,timestamptz) to authenticated;
-
 create or replace function public.get_meeting_chat_context(target_room_id uuid,target_session_id uuid default null)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare chat_record public.meeting_chat_contexts%rowtype; room_title text;
@@ -125,10 +116,8 @@ begin
   return jsonb_build_object('roomId',chat_record.room_id,'sessionId',target_session_id,'communityId',chat_record.community_id,'channelId',chat_record.channel_id,'threadId',chat_record.thread_id,'contextKind',chat_record.context_kind,'title',room_title,'preserveAfterMeeting',chat_record.preserve_after_meeting,'guestAccessExpiresAt',chat_record.guest_access_expires_at,'canRead',true,'canWrite',public.can_access_meeting_chat(target_room_id,target_session_id,true),'isGuest',not public.is_community_member(chat_record.community_id));
 end;
 $$;
-
 revoke all on function public.get_meeting_chat_context(uuid,uuid) from public,anon;
 grant execute on function public.get_meeting_chat_context(uuid,uuid) to authenticated;
-
 create or replace function public.send_meeting_chat_message(
   target_room_id uuid,target_session_id uuid,message_body text,target_client_message_id text,
   target_reply_to_message_id uuid default null,target_attachment_ids uuid[] default '{}'::uuid[]
@@ -168,10 +157,8 @@ begin
   return query select message.id,message.community_id,message.channel_id,message.author_id,message.body,message.client_message_id,message.sequence,message.created_at,message.edited_at,message.deleted_at,message.reply_to_message_id,message.thread_id,message.webhook_id,message.webhook_name from public.messages message where message.id=message_record.id;
 end;
 $$;
-
 revoke all on function public.send_meeting_chat_message(uuid,uuid,text,text,uuid,uuid[]) from public,anon;
 grant execute on function public.send_meeting_chat_message(uuid,uuid,text,text,uuid,uuid[]) to authenticated;
-
 create or replace function public.can_view_message(target_message_id uuid)
 returns boolean language sql stable security definer set search_path=public,pg_temp as $$
   select exists(
@@ -186,22 +173,17 @@ returns boolean language sql stable security definer set search_path=public,pg_t
     )
   )
 $$;
-
 revoke all on function public.can_view_message(uuid) from public,anon;
 grant execute on function public.can_view_message(uuid) to authenticated;
-
 drop policy if exists meeting_chat_messages_visible_select on public.messages;
 create policy meeting_chat_messages_visible_select on public.messages for select to authenticated using(public.can_view_message(id));
-
 create or replace function public.can_view_thread(target_thread_id uuid)
 returns boolean language sql stable security definer set search_path=public,pg_temp as $$
   select exists(select 1 from public.threads thread join public.channels channel on channel.id=thread.channel_id join public.communities community on community.id=thread.community_id where thread.id=target_thread_id and ((community.visibility='public' and community.public_read_enabled and not channel.is_private and channel.public_read_enabled) or exists(select 1 from public.community_members member where member.community_id=community.id and member.user_id=auth.uid())))
     or exists(select 1 from public.meeting_chat_contexts context join public.meeting_sessions session on session.room_id=context.room_id where context.thread_id=target_thread_id and public.can_access_meeting_chat(context.room_id,session.id,false));
 $$;
-
 revoke all on function public.can_view_thread(uuid) from public,anon;
 grant execute on function public.can_view_thread(uuid) to authenticated;
-
 create or replace function public.mark_meeting_chat_read(target_room_id uuid,target_session_id uuid,target_last_read_message_id uuid default null)
 returns boolean language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare chat_record public.meeting_chat_contexts%rowtype;
@@ -214,6 +196,5 @@ begin
   return true;
 end;
 $$;
-
 revoke all on function public.mark_meeting_chat_read(uuid,uuid,uuid) from public,anon;
 grant execute on function public.mark_meeting_chat_read(uuid,uuid,uuid) to authenticated;

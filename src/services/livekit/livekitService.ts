@@ -101,7 +101,7 @@ export const liveKitService = {
   // Direct (1:1) DM call token: authorized by conversation participation instead of
   // community membership. Requires the livekit-token Edge Function `conversationId`
   // branch + the authorize_direct_livekit_room RPC to be deployed.
-  async fetchDirectToken(request: { conversationId: string; intent?: "voice" | "screen"; participantName?: string }): Promise<LiveKitServiceResult<LiveKitTokenResponse>> {
+  async fetchDirectToken(request: { conversationId: string; callId?: string; intent?: "voice" | "video" | "screen"; participantName?: string }): Promise<LiveKitServiceResult<LiveKitTokenResponse>> {
     const status = getSupabaseClientStatus();
     if (!status.configured) {
       return liveKitError("LIVEKIT_NOT_CONFIGURED", status.reason ?? "Supabase is not configured for LiveKit tokens.");
@@ -117,6 +117,7 @@ export const liveKitService = {
         headers: getApiCompatibilityRequestHeaders(),
         body: {
           conversationId: request.conversationId,
+          callId: request.callId,
           participantName: request.participantName,
           intent: request.intent ?? "voice",
         },

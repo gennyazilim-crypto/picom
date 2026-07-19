@@ -7,6 +7,6 @@ const card = readFileSync("src/components/audio/AudioFeedCard.tsx", "utf8");
 for (const marker of ["UnifiedFeedList", "useAudioCatalog", "selectedAudio", "savedAudioIds", "audioReminderFeedIds", "useRadioScheduleReminders"]) if (!main.includes(marker)) throw new Error(`Mention Feed audio integration missing: ${marker}`);
 for (const marker of ["audioItems", "onSelectAudio", "onToggleAudioSaved", "onReactAudio", "onMarkAudioRead", "onOpenRadio"]) if (!unifiedList.includes(marker)) throw new Error(`Unified Feed audio action missing: ${marker}`);
 if (!rail.includes("AudioMiniPlayer") || !rail.includes("audioItem")) throw new Error("Feed Companion Rail mini player integration is missing.");
-for (const marker of ["Live now", "Scheduled radio", "Radio replay", "Podcast episode", "Open in Radio", "Open community"]) if (!card.includes(marker)) throw new Error(`Audio feed card state missing: ${marker}`);
+for (const marker of ["Live now", "Scheduled radio", "Radio replay", "Podcast episode", "Open in Radio", "onOpenCommunity(item.communityId)"]) if (!card.includes(marker)) throw new Error(`Audio feed card state missing: ${marker}`);
 if (/autoPlay|supabase\.from/.test(`${main}${unifiedList}${rail}${card}`)) throw new Error("Feed audio integration must not autoplay or query Supabase directly.");
 console.log("Mention Feed radio/podcast cards and mini player integration smoke passed.");

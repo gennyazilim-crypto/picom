@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import type { MouseEvent } from "react";
 import { lazy, Suspense } from "react";
 import { useEffect } from "react";
@@ -74,14 +74,17 @@ type CommunitySidebarProps = {
   canShareVoiceScreen?: boolean;
   onOpenMicrophoneSettings: () => void;
   onOpenHeadphoneSettings: () => void;
+  onReloadChannels?: () => void;
 };
 
 type OpenCommunityPanel = "admin" | "moderator" | "member" | "visitor" | "join" | "leave" | "invite" | "joinInvite" | "report" | null;
 
-export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent, voiceOccupancyByChannelId = {}, voiceState, onToggleVoiceMute, onToggleVoiceDeafen, onToggleVoiceCamera, onOpenVoiceRoom, onOpenVoiceScreenShare, onLeaveVoice, canUseVoiceCamera = true, canShareVoiceScreen = true, onOpenMicrophoneSettings, onOpenHeadphoneSettings }: CommunitySidebarProps) {
+export function CommunitySidebar({ community, communities, access, activeChannelId, currentUser, isAuthenticated, onSelectChannel, audioActive, onOpenAudio, onCreateChannel, onEditChannel, onDeleteChannel, onChannelContextMenu, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onMoveChannel, onJoinCommunity, onLeaveCommunity, pendingInviteCode, onClearPendingInviteCode, onInviteAccepted, onMemberRolesChanged, onCommunityMembersChanged, onOpenModerationSource, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, events, onCreateEvent, onUpdateEvent, onCancelEvent, voiceOccupancyByChannelId = {}, voiceState, onToggleVoiceMute, onToggleVoiceDeafen, onToggleVoiceCamera, onOpenVoiceRoom, onOpenVoiceScreenShare, onLeaveVoice, canUseVoiceCamera = true, canShareVoiceScreen = true, onOpenMicrophoneSettings, onOpenHeadphoneSettings, onReloadChannels }: CommunitySidebarProps) {
+  const canReorderChannels = canManageChannels(access);
   const visibleCategories = community.categories
     .map((category) => ({ ...category, channels: category.channels.filter((channel) => isV1ChannelTypeEnabled(channel.type)) }))
-    .filter((category) => category.channels.length > 0);
+    // Managers still need empty category rows so "+" / create channel stays reachable.
+    .filter((category) => category.channels.length > 0 || canReorderChannels);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
@@ -89,7 +92,6 @@ export function CommunitySidebar({ community, communities, access, activeChannel
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
   const kindSummary = getCommunityKindInviteSummary(community.kind);
   useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
-  const canReorderChannels = canManageChannels(access);
   const deferredAdminSection = (section: import("./CommunityAdminDeferredSection").CommunityAdminDeferredSectionId) => (
     <Suspense fallback={<div className="empty-state compact" role="status">Opening admin tools...</div>}>
       <CommunityAdminDeferredSection section={section} community={community} currentUser={currentUser} access={access} events={events} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} onCommunityMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onCancelEvent={onCancelEvent} />
@@ -126,30 +128,115 @@ export function CommunitySidebar({ community, communities, access, activeChannel
           <span className="community-audio-entry-icon" aria-hidden="true"><AppIcon name="headphones" size="md" /></span>
           <span><strong>{community.kind === "podcast" ? "Podcast" : "Audio"}</strong><small>{community.kind === "podcast" ? "Shows and episodes" : "Community audio"}</small></span>
         </button> : null}
-        {access.isVisitor ? (
-          <div className="community-readonly-notice">
-            <strong>Viewing public {kindSummary.label.toLowerCase()}</strong>
-            <span>{kindSummary.visitorCopy}</span>
+        {access.isVisitor && visibleCategories.length ? (
+          <div className="community-readonly-notice" role="status">
+            <span className="community-readonly-notice-icon" aria-hidden="true">
+              <AppIcon name="eye" size="sm" />
+            </span>
+            <div className="community-readonly-notice-copy">
+              <strong>Public preview</strong>
+              <span>{kindSummary.visitorCopy}</span>
+            </div>
+            {access.canJoin ? (
+              <button type="button" className="channel-sidebar-action channel-sidebar-action--primary" onClick={() => setOpenPanel("join")}>
+                Join community
+              </button>
+            ) : null}
           </div>
         ) : null}
 
-        {visibleCategories.length ? visibleCategories.map((category) => (
-          <ChannelCategory
-            key={category.id}
-            category={category}
-            communityId={community.id}
-            collapsed={Boolean(collapsed[category.id])}
-            activeChannelId={activeChannelId}
-            onToggle={() => setCollapsed((current) => ({ ...current, [category.id]: !current[category.id] }))}
-            onCreateChannel={onCreateChannel}
-            onSelectChannel={onSelectChannel}
-            onChannelContextMenu={onChannelContextMenu}
-            canCreateChannel={canReorderChannels}
-            showReorderControls={canReorderChannels}
-            onMoveChannel={onMoveChannel}
-            voiceOccupancyByChannelId={voiceOccupancyByChannelId}
-          />
-        )) : <div className="empty-state compact">{community.kind === "text" ? "No public channels are visible." : `Open ${kindSummary.landingLabel} to explore this ${kindSummary.label.toLowerCase()}.`}</div>}
+        {visibleCategories.length ? (
+          <div className="channel-list">
+            {visibleCategories.map((category) => (
+              <ChannelCategory
+                key={category.id}
+                category={category}
+                communityId={community.id}
+                collapsed={Boolean(collapsed[category.id])}
+                activeChannelId={activeChannelId}
+                onToggle={() => setCollapsed((current) => ({ ...current, [category.id]: !current[category.id] }))}
+                onCreateChannel={onCreateChannel}
+                onSelectChannel={onSelectChannel}
+                onChannelContextMenu={onChannelContextMenu}
+                canCreateChannel={canReorderChannels}
+                showReorderControls={canReorderChannels}
+                onMoveChannel={onMoveChannel}
+                voiceOccupancyByChannelId={voiceOccupancyByChannelId}
+              />
+            ))}
+          </div>
+        ) : community.kind === "text" ? (
+          <div className="channel-sidebar-empty" role="status">
+            <span className="channel-sidebar-empty-icon" aria-hidden="true">
+              <AppIcon name={canReorderChannels ? "plus" : access.isVisitor ? "eye" : "hash"} size="lg" />
+            </span>
+            <strong>
+              {canReorderChannels
+                ? "No channels yet"
+                : access.isVisitor
+                  ? "No public channels yet"
+                  : "No channels visible"}
+            </strong>
+            <span>
+              {canReorderChannels
+                ? "Create a category, then add text or voice channels so members have a place to talk."
+                : access.isVisitor
+                  ? kindSummary.visitorCopy
+                  : "Channels appear here when they are created and you have permission to view them."}
+            </span>
+            <div className="channel-sidebar-empty-actions">
+              {canReorderChannels ? (
+                <>
+                  <button type="button" className="channel-sidebar-action channel-sidebar-action--primary" onClick={() => setOpenPanel("admin")}>
+                    <AppIcon name="settings" size="sm" />
+                    Manage channels
+                  </button>
+                  <button type="button" className="channel-sidebar-action" onClick={() => onCreateCategory("Text channels")}>
+                    <AppIcon name="plus" size="sm" />
+                    Create category
+                  </button>
+                </>
+              ) : null}
+              {access.isVisitor && access.canJoin ? (
+                <button type="button" className="channel-sidebar-action channel-sidebar-action--primary" onClick={() => setOpenPanel("join")}>
+                  <AppIcon name="users" size="sm" />
+                  Join community
+                </button>
+              ) : null}
+              {access.isVisitor ? (
+                <button type="button" className="channel-sidebar-action" onClick={() => setOpenPanel("joinInvite")}>
+                  <AppIcon name="lock" size="sm" />
+                  Have an invite?
+                </button>
+              ) : null}
+              {!canReorderChannels && !access.isVisitor ? (
+                <button type="button" className="channel-sidebar-action" onClick={() => setOpenPanel("member")}>
+                  <AppIcon name="users" size="sm" />
+                  Community info
+                </button>
+              ) : null}
+              {onReloadChannels ? (
+                <button type="button" className="channel-sidebar-action" onClick={onReloadChannels}>
+                  Reload channels
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="channel-sidebar-empty" role="status">
+            <span className="channel-sidebar-empty-icon" aria-hidden="true">
+              <AppIcon name="headphones" size="lg" />
+            </span>
+            <strong>Explore {kindSummary.label.toLowerCase()}</strong>
+            <span>Channels stay light here. Open {kindSummary.landingLabel} to browse this {kindSummary.label.toLowerCase()}.</span>
+            <div className="channel-sidebar-empty-actions">
+              <button type="button" className="channel-sidebar-action channel-sidebar-action--primary" onClick={onOpenAudio}>
+                <AppIcon name="headphones" size="sm" />
+                Open {kindSummary.landingLabel}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="community-sidebar-footer">

@@ -208,9 +208,7 @@ begin
   );
 end;
 $$;
-
 revoke all on function public.get_profile_activity_v2(uuid, integer) from public, anon;
 grant execute on function public.get_profile_activity_v2(uuid, integer) to authenticated;
-
 comment on function public.get_profile_activity_v2(uuid, integer) is
   'Returns privacy-projected profile fields and only viewer-visible activity/media. No private-channel content, raw paths, credentials, IP data or unrelated member timelines.';

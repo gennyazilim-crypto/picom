@@ -35,6 +35,9 @@ export function GlobalUserCard({ currentUser, compact, onOpenProfile, onOpenUser
               <strong title={currentUser.displayName}>{currentUser.displayName}</strong>
               <VerifiedBadge verification={currentUser.verification} size="xs" />
             </span>
+            {currentUser.statusText ? (
+              <span className="global-user-card__status" title={currentUser.statusText}>{currentUser.statusText}</span>
+            ) : null}
           </span>
         ) : null}
       </button>

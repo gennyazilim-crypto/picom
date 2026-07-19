@@ -47,6 +47,15 @@ for (const scannedRoot of scannedRoots) {
   }
 }
 
+const appIconSource = readFileSync(resolve(root, "src/components/AppIcon.tsx"), "utf8");
+const iconSprite = readFileSync(resolve(root, "public/icons/iconix.svg"), "utf8");
+const expectedIconSymbols = new Set([...appIconSource.matchAll(/:\s*"(iconix-[a-z0-9-]+)"/g)].map((match) => match[1]));
+const availableIconSymbols = new Set([...iconSprite.matchAll(/<symbol\b[^>]*\bid="(iconix-[a-z0-9-]+)"/g)].map((match) => match[1]));
+const missingIconSymbols = [...expectedIconSymbols].filter((symbol) => !availableIconSymbols.has(symbol));
+
+if (expectedIconSymbols.size < 30 || missingIconSymbols.length) {
+  throw new Error("Iconix sprite contract failed. Missing symbols: " + (missingIconSymbols.join(", ") || "mapping could not be read"));
+}
 if (findings.length) {
   throw new Error(`Forbidden branding reference found:\n${findings.join("\n")}`);
 }

@@ -6,10 +6,21 @@
 | --- | --- | --- | --- |
 | Shared | `assets/brand/app-icon.png` | PNG, 1024x1024 | macOS and source icon |
 | Windows | `assets/brand/app-icon.ico` | ICO | app, installer, uninstaller |
-| Windows | `assets/installer/windows/installer-header.bmp` | BMP, 150x57 | NSIS header |
-| Windows | `assets/installer/windows/installer-sidebar.bmp` | BMP, 164x314 | NSIS install/uninstall sidebar |
+| Windows | `assets/installer/windows/installer-sidebar.bmp` | BMP, 164x314 | NSIS install/uninstall sidebar (branding; no top header strip) |
+| Windows | `assets/installer/windows/installer-custom.nsh` | NSIS include | Custom install hooks (no EULA page) |
 | macOS | `assets/installer/macos/dmg-background.png` | PNG, 660x400 | DMG Finder background |
 | Linux | `assets/brand/icons` | generated PNG icon set | AppImage/DEB desktop icon |
+
+## Windows languages
+
+`electron-builder.yml` enables a multi-language assisted installer with:
+
+- `installerLanguages`: `en_US`, `tr_TR`
+- `displayLanguageSelector: true`
+- `multiLanguageInstaller: true`
+
+Copy review table: [`docs/installer/bilingual-copy.md`](installer/bilingual-copy.md).
+No binding license acceptance screen is wired (legal placeholder still open).
 
 All release-used artwork is original Picom branding. No Discord logo, copied
 asset, or unlicensed third-party artwork is included in this inventory.

@@ -51,18 +51,25 @@ create trigger podcast_comment_interaction_guard before insert or update on publ
 drop policy if exists "podcast reactions follow episode visibility" on public.podcast_episode_reactions;
 drop policy if exists "community members add own podcast reactions" on public.podcast_episode_reactions;
 drop policy if exists "users delete own podcast reactions" on public.podcast_episode_reactions;
+drop policy if exists "podcast reactions follow unblocked episode visibility" on public.podcast_episode_reactions;
 create policy "podcast reactions follow unblocked episode visibility" on public.podcast_episode_reactions for select to authenticated using (public.can_view_podcast_episode(episode_id) and (user_id=auth.uid() or not public.users_are_blocked(auth.uid(),user_id)));
+drop policy if exists "members add own reactions to interactive podcast" on public.podcast_episode_reactions;
 create policy "members add own reactions to interactive podcast" on public.podcast_episode_reactions for insert to authenticated with check (user_id=auth.uid() and public.can_interact_with_podcast_episode(episode_id));
+drop policy if exists "users remove own podcast reactions" on public.podcast_episode_reactions;
 create policy "users remove own podcast reactions" on public.podcast_episode_reactions for delete to authenticated using (user_id=auth.uid());
 
 drop policy if exists "podcast comments follow episode visibility" on public.podcast_episode_comments;
 drop policy if exists "community members add own podcast comments" on public.podcast_episode_comments;
 drop policy if exists "comment authors update their comments" on public.podcast_episode_comments;
+drop policy if exists "podcast comments follow unblocked episode visibility" on public.podcast_episode_comments;
 create policy "podcast comments follow unblocked episode visibility" on public.podcast_episode_comments for select to authenticated using (public.can_view_podcast_episode(episode_id) and (author_id is null or author_id=auth.uid() or not public.users_are_blocked(auth.uid(),author_id)));
+drop policy if exists "members add own comments to interactive podcast" on public.podcast_episode_comments;
 create policy "members add own comments to interactive podcast" on public.podcast_episode_comments for insert to authenticated with check (author_id=auth.uid() and public.can_interact_with_podcast_episode(episode_id));
+drop policy if exists "comment authors edit or soft delete own comments" on public.podcast_episode_comments;
 create policy "comment authors edit or soft delete own comments" on public.podcast_episode_comments for update to authenticated using (author_id=auth.uid()) with check (author_id=auth.uid());
 
 drop policy if exists "users save visible audio for themselves" on public.saved_audio_items;
+drop policy if exists "users save authorized audio for themselves" on public.saved_audio_items;
 create policy "users save authorized audio for themselves" on public.saved_audio_items for insert to authenticated with check (
   user_id=auth.uid() and (
     (item_type='radio_session' and public.can_view_radio_session(item_id))
@@ -73,8 +80,11 @@ create policy "users save authorized audio for themselves" on public.saved_audio
 drop policy if exists "users read own visible podcast progress" on public.podcast_playback_progress;
 drop policy if exists "users create own visible podcast progress" on public.podcast_playback_progress;
 drop policy if exists "users update own visible podcast progress" on public.podcast_playback_progress;
+drop policy if exists "users read own authorized podcast progress" on public.podcast_playback_progress;
 create policy "users read own authorized podcast progress" on public.podcast_playback_progress for select to authenticated using (user_id=auth.uid() and public.can_use_podcast_listener_state(episode_id));
+drop policy if exists "users create own authorized podcast progress" on public.podcast_playback_progress;
 create policy "users create own authorized podcast progress" on public.podcast_playback_progress for insert to authenticated with check (user_id=auth.uid() and public.can_use_podcast_listener_state(episode_id));
+drop policy if exists "users update own authorized podcast progress" on public.podcast_playback_progress;
 create policy "users update own authorized podcast progress" on public.podcast_playback_progress for update to authenticated using (user_id=auth.uid()) with check (user_id=auth.uid() and public.can_use_podcast_listener_state(episode_id));
 
 alter table public.podcast_episodes replica identity full;
@@ -97,6 +107,4 @@ $$;
 revoke all on function public.can_use_podcast_listener_state(uuid),public.can_interact_with_podcast_episode(uuid) from public,anon;
 grant execute on function public.can_use_podcast_listener_state(uuid),public.can_interact_with_podcast_episode(uuid) to authenticated;
 comment on function public.can_interact_with_podcast_episode(uuid) is 'Canonical Podcast reaction/comment permission: published, visible, unblocked, and joined member.';
-comment on function public.can_use_podcast_listener_state(uuid) is 'Canonical save/progress permission: published, visible, and unblocked; visitors may retain private listener state without gaining participation rights.';
-
-commit;
+comment on function public.can_use_podcast_listener_state(uuid) is 'Canonical save/progress permission: published, visible, and unblocked; visitors may retain private listener state without gaining participation rights.';;

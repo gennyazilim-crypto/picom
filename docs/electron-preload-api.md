@@ -89,6 +89,10 @@ The renderer never owns the updater. `electron-updater` runs only in the main pr
 
 The bridge never exposes `autoUpdater`, feed URLs, artifact paths, signing material, or raw Electron objects. Main-process handlers verify the sender; the pushed state is shape-validated in preload before reaching the renderer. Signature/checksum verification (SHA-512 feed manifest plus the platform publisher signature) is never bypassed. The committed build ships with `publish: null`, so no feed is configured until an operator sets one for a signed release.
 
+## Activity presence
+
+`activity.getSnapshot()` returns a normalized Windows activity probe for status text (`kind`, `statusText`, `source`, `title`, `detail`, `supported`). On non-Windows platforms `supported` is false and `kind` is `none`. The main process probes the foreground window plus Windows Media Session (GSMTC); the renderer never receives process lists, window handles, or shell access. Callers should poll only while the user has opted into automatic activity status.
+
 ## IPC channels
 
 The contract uses only:
@@ -100,6 +104,10 @@ The contract uses only:
 - `picom:screen-capture-select-source`
 - `picom:screen-capture-cancel-selection`
 - `picom:notification-show`
+- `picom:incoming-call-show`
+- `picom:incoming-call-dismiss`
+- `picom:incoming-call-respond`
+- `picom:incoming-call-action`
 - `picom:tray-set-status`
 - `picom:tray-set-muted`
 - `picom:tray-set-close-to-tray`
@@ -120,6 +128,7 @@ The contract uses only:
 - `picom:update-download`
 - `picom:update-install`
 - `picom:update-state-changed`
+- `picom:activity-get-snapshot`
 
 ## Change policy
 

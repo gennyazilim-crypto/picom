@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "../utils/motionLite";
 import type { FriendConnection, FriendRequest, FriendRequestCounts, FriendSuggestion, FriendViewTab } from "../types/friends";
 import type { BlockedUserRecord } from "../services/userBlockingService";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";

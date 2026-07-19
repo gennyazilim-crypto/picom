@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "../../utils/motionLite";
 import {
   getSocialAuthProviderLabel,
   isCustomOAuthProvider,

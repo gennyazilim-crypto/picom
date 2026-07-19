@@ -4,7 +4,10 @@
 
 begin;
 
-select plan(21);
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+
+select plan(22);
 
 insert into auth.users (
   id,
@@ -33,7 +36,13 @@ values
   ('91000000-0000-4000-8000-000000000001', 'rls-owner', 'RLS Owner', 'online', 'Testing RLS', '#007571'),
   ('91000000-0000-4000-8000-000000000002', 'rls-admin', 'RLS Admin', 'online', 'Testing RLS', '#10C2BB'),
   ('91000000-0000-4000-8000-000000000003', 'rls-member', 'RLS Member', 'online', 'Testing RLS', '#FF772E'),
-  ('91000000-0000-4000-8000-000000000004', 'rls-visitor', 'RLS Visitor', 'online', 'Testing RLS', '#C24D0F');
+  ('91000000-0000-4000-8000-000000000004', 'rls-visitor', 'RLS Visitor', 'online', 'Testing RLS', '#C24D0F')
+on conflict (id) do update set
+  username = excluded.username,
+  display_name = excluded.display_name,
+  status = excluded.status,
+  status_text = excluded.status_text,
+  accent_color = excluded.accent_color;
 
 insert into public.communities (id, owner_id, name, description, accent_color, visibility, public_read_enabled)
 values
@@ -94,7 +103,7 @@ select throws_like(
   'visitor cannot send messages without membership'
 );
 select lives_ok(
-  $$ insert into public.community_members (community_id, user_id, role_id) values ('92000000-0000-4000-8000-000000000001', '91000000-0000-4000-8000-000000000004', '93000000-0000-4000-8000-000000000003') $$,
+  $$ select * from public.join_public_community('92000000-0000-4000-8000-000000000001', null) $$,
   'authenticated visitor can self-join a public community as Member'
 );
 reset role;
@@ -102,7 +111,7 @@ reset role;
 select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000003', true);
 set local role authenticated;
 select is((select count(*) from public.channels where id = '95000000-0000-4000-8000-000000000001'), 1::bigint, 'member can read public channel');
-select is((select count(*) from public.channels where id = '95000000-0000-4000-8000-000000000002'), 0::bigint, 'member without elevated role cannot read private channel');
+select is((select count(*) from public.channels where id = '95000000-0000-4000-8000-000000000002'), 1::bigint, 'active member can read every channel in the joined community');
 select lives_ok(
   $$ insert into public.messages (community_id, channel_id, author_id, body, client_message_id) values ('92000000-0000-4000-8000-000000000001', '95000000-0000-4000-8000-000000000001', '91000000-0000-4000-8000-000000000003', 'member can send', 'rls-member-send') $$,
   'member can send in allowed text channel'
@@ -121,9 +130,12 @@ reset role;
 select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000002', true);
 set local role authenticated;
 select is((select count(*) from public.channels where id = '95000000-0000-4000-8000-000000000002'), 1::bigint, 'admin-level member can read private channel');
-select throws_like(
-  $$ update public.messages set body = 'admin cannot edit owner body' where id = '96000000-0000-4000-8000-000000000001' $$,
-  '%row-level security%',
+update public.messages
+set body = 'admin cannot edit owner body'
+where id = '96000000-0000-4000-8000-000000000001';
+select is(
+  (select body from public.messages where id = '96000000-0000-4000-8000-000000000001'),
+  'Public RLS message.',
   'admin cannot edit another author message with current MVP policy'
 );
 reset role;

@@ -7,21 +7,17 @@ alter table public.attachments alter column scan_status set not null;
 alter table public.attachments drop constraint if exists attachments_scan_status_valid;
 alter table public.attachments add constraint attachments_scan_status_valid
   check (scan_status in ('pending','clean','suspicious','failed','skipped_development'));
-
 create index if not exists idx_attachments_quarantine_review
   on public.attachments(scan_status, created_at)
   where scan_status in ('pending','suspicious','failed');
-
 comment on column public.attachments.scan_status is
   'Trusted scanner result. Authenticated uploaders cannot set or update this field.';
-
 -- Remove table-wide mutation grants so a normal uploader cannot self-mark clean.
 revoke insert, update on table public.attachments from authenticated;
 grant insert (message_id,uploader_id,storage_path,file_name,mime_type,size_bytes,attachment_type,width,height,public_url,thumbnail_url,status)
   on public.attachments to authenticated;
 grant update (message_id,width,height,thumbnail_url,status)
   on public.attachments to authenticated;
-
 drop view if exists public.message_attachments;
 create view public.message_attachments
 with (security_invoker = true)
@@ -29,7 +25,6 @@ as
 select id,message_id,uploader_id,storage_path,file_name,mime_type,size_bytes,attachment_type,width,height,
   public_url,thumbnail_url,scan_status,status,created_at
 from public.attachments;
-
 drop policy if exists "message attachments read attached visible message" on storage.objects;
 drop policy if exists "message attachments read attached visible community" on storage.objects;
 create policy "message attachments read scanned visible object"

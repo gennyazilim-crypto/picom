@@ -5,6 +5,7 @@ import type { CommunityStructureSection, CommunityStructureVisibility, ManagedPe
 import { communityStructureService } from "../services/community/communityStructureService";
 import { radioCommunityService } from "../services/audio/radioCommunityService";
 import { podcastCommunityService } from "../services/audio/podcastCommunityService";
+import { resolveChannelSidebarIcon } from "../utils/channelSidebarIcon";
 import { AppIcon } from "./AppIcon";
 import { CommunityMeetingRoomManagement } from "./CommunityMeetingRoomManagement";
 import "./CommunityStructureManagementPanel.css";
@@ -110,7 +111,7 @@ export function CommunityStructureManagementPanel(props: Props) {
           </header>
           <div className="structure-channel-list">
             {category.channels.map((channel, channelIndex) => <div key={channel.id} className="structure-channel-row">
-              <AppIcon name={channel.type === "voice" ? "volume" : "hash"} size="sm" />
+              <AppIcon name={resolveChannelSidebarIcon(channel)} size="sm" />
               <span><strong>{channel.name}</strong><small>{channel.type}</small></span>
               <div className="structure-row-actions">
                 <button type="button" className="community-mgmt-action community-mgmt-action--ghost community-mgmt-action--icon structure-move-up" disabled={busy || channelIndex === 0} aria-label={`Move ${channel.name} up`} onClick={() => void run(() => Promise.resolve(props.onMoveChannel(category.id, channel.id, "up")))}><AppIcon name="chevronDown" size="sm" /></button>

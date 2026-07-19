@@ -20,6 +20,17 @@ type NativeNotificationPayload = Readonly<{
   silent?: boolean;
   deepLink?: string;
 }>;
+type IncomingCallToastPayload = Readonly<{
+  inviteId: string;
+  callerName: string;
+  subtitle: string;
+  avatarUrl?: string;
+}>;
+type IncomingCallToastAction = "accept" | "decline" | "message";
+type IncomingCallActionPayload = Readonly<{
+  action: IncomingCallToastAction;
+  inviteId: string;
+}>;
 type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 type TrayAction = "open" | "settings" | "mute" | "quit" | TrayStatus;
 type TrayActionPayload = Readonly<{
@@ -272,6 +283,39 @@ const bridge = Object.freeze({
       | { ok: true; native: true }
       | { ok: false; native: true; error: string }
     >,
+  incomingCall: {
+    show: (payload: IncomingCallToastPayload) =>
+      invokeWhitelisted(IPC_CHANNELS.incomingCallShow, payload) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    dismiss: () =>
+      invokeWhitelisted(IPC_CHANNELS.incomingCallDismiss) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    respond: (action: IncomingCallToastAction) =>
+      invokeWhitelisted(IPC_CHANNELS.incomingCallRespond, action) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    onAction: (callback: (payload: IncomingCallActionPayload) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (!value || typeof value !== "object") return;
+        const record = value as Record<string, unknown>;
+        if (
+          (record.action === "accept" || record.action === "decline" || record.action === "message")
+          && typeof record.inviteId === "string"
+        ) {
+          callback({ action: record.action, inviteId: record.inviteId });
+        }
+      };
+      ipcRenderer.on(IPC_CHANNELS.incomingCallAction, listener);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.incomingCallAction, listener);
+      };
+    },
+  },
   tray: {
     setStatus: (status: TrayStatus) => {
       if (!isTrayStatus(status)) {
@@ -422,6 +466,24 @@ const bridge = Object.freeze({
         ipcRenderer.removeListener(IPC_CHANNELS.updateStateChanged, listener);
       };
     }
+  },
+  activity: {
+    getSnapshot: () =>
+      invokeWhitelisted(IPC_CHANNELS.activityGetSnapshot) as Promise<
+        | {
+            ok: true;
+            native: true;
+            snapshot: Readonly<{
+              kind: "none" | "game" | "music";
+              statusText: string | null;
+              source: string | null;
+              title: string | null;
+              detail: string | null;
+              supported: boolean;
+            }>;
+          }
+        | { ok: false; native: true; error: string }
+      >
   }
 });
 

@@ -1,6 +1,6 @@
 -- T60 — analytics data quality monitoring. Applied to live "piso" (Picom prod) 2026-07-15.
 -- Additive: new table `analytics_data_quality_runs` + `run_analytics_data_quality()`.
--- Runner is service_role-only (least privilege); admins read results via RLS (is_admin()).
+-- Runner is service_role-only (least privilege); admins read results via RLS (public.is_app_admin()).
 -- Checks: freshness, 24h volume, queue backlog, stuck queue rows, invalid consent category.
 --
 -- First run on prod surfaced a real issue: freshness ~8637 min (~6 days) and 0 events in 24h,
@@ -22,7 +22,7 @@ create index if not exists analytics_dq_runs_check_idx on public.analytics_data_
 
 alter table public.analytics_data_quality_runs enable row level security;
 create policy "dq runs admin read" on public.analytics_data_quality_runs
-  for select using (is_admin());
+  for select using (public.is_app_admin());
 
 create or replace function public.run_analytics_data_quality()
 returns setof public.analytics_data_quality_runs

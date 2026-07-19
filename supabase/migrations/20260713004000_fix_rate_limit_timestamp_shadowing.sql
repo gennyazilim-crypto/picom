@@ -1,5 +1,4 @@
 begin;
-
 alter table public.user_action_rate_limits
   drop constraint if exists user_action_rate_limits_action_key_check;
 alter table public.user_action_rate_limits
@@ -9,7 +8,6 @@ alter table public.user_action_rate_limits
     'meeting_waiting_request','meeting_chat_send','meeting_reaction','meeting_privileged_action',
     'meeting_caption_write','meeting_caption_consent'
   ));
-
 create or replace function public.consume_current_user_action_rate_limit(target_action text)
 returns table(is_allowed boolean,retry_after_seconds integer)
 language plpgsql volatile security definer set search_path=public,pg_temp as $$
@@ -68,11 +66,8 @@ begin
       )))::integer) end;
 end;
 $$;
-
 revoke all on function public.consume_current_user_action_rate_limit(text) from public,anon;
 grant execute on function public.consume_current_user_action_rate_limit(text) to authenticated;
-
 comment on function public.consume_current_user_action_rate_limit(text)
   is 'Atomic per-user action limiter using an unambiguous timestamptz clock value.';
-
 commit;

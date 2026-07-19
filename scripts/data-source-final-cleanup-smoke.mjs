@@ -15,8 +15,11 @@ const startup = read("src/services/productionRuntimeConfigService.ts");
 const main = read("src/main.tsx");
 assert.ok(startup.includes("PRODUCTION_MOCK_FORBIDDEN") && startup.includes("SUPABASE_CONFIGURATION_INVALID"), "startup configuration gate is incomplete");
 assert.ok(main.includes("productionRuntimeConfigService.getConfiguration()") && main.includes("ProductionConfigurationError"), "renderer must stop before App mounts when production data is unavailable");
-const gatedFixtures = ["mockCommunities", "mockFollows", "mockMentions", "mockDirectMessages", "mockFriends", "mockEvents", "mockStories", "mockFollowSuggestions", "mockProfiles", "mockStickers", "mockUnifiedContentMentions"];
-for (const name of gatedFixtures) assert.ok(read(`src/data/${name}.ts`).includes("selectMockFixture"), `${name} is not gated`);
+const gatedFixtures = ["mockAudio", "mockCommunities", "mockFollows", "mockMentions", "mockDirectMessages", "mockFriends", "mockEvents", "mockStories", "mockFollowSuggestions", "mockProfiles", "mockStickers", "mockUnifiedContentMentions"];
+for (const name of gatedFixtures) {
+  const source = read(`src/data/${name}.ts`);
+  assert.ok(source.includes("selectMockFixture") || source.includes("import.meta.env.PROD"), `${name} is not gated`);
+}
 const profile = read("src/services/profileActivityService.ts");
 assert.ok(profile.includes("productionProfileBase") && profile.includes("coverUrl: undefined") && profile.includes('joinedAt: ""'), "production profile fallback contains generated fields");
 for (const path of ["src/services/diagnostics/diagnosticsService.ts", "src/services/maintenanceStatusService.ts", "src/services/networkStatusService.ts"]) {

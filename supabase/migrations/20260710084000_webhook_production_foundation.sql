@@ -1,11 +1,9 @@
 alter table public.messages
   add column if not exists webhook_id uuid references public.webhooks(id) on delete set null,
   add column if not exists webhook_name text check (webhook_name is null or char_length(webhook_name) between 1 and 80);
-
 create index if not exists idx_messages_webhook_created
   on public.messages (webhook_id, created_at desc)
   where webhook_id is not null;
-
 drop policy if exists "messages_insert_author_visible_text_channel" on public.messages;
 create policy "messages_insert_author_visible_text_channel"
 on public.messages for insert to authenticated
@@ -15,7 +13,6 @@ with check (
   and webhook_name is null
   and public.can_send_message_to_channel(channel_id)
 );
-
 drop policy if exists "messages_update_own_visible_message" on public.messages;
 create policy "messages_update_own_visible_message"
 on public.messages for update to authenticated
@@ -30,17 +27,14 @@ with check (
   and webhook_name is null
   and public.can_view_channel(channel_id)
 );
-
 create table if not exists public.webhook_rate_limits (
   webhook_id uuid primary key references public.webhooks(id) on delete cascade,
   window_started_at timestamptz not null default now(),
   request_count integer not null default 0 check (request_count >= 0),
   updated_at timestamptz not null default now()
 );
-
 alter table public.webhook_rate_limits enable row level security;
 revoke all on table public.webhook_rate_limits from anon, authenticated;
-
 create or replace function public.consume_webhook_rate_limit(
   target_webhook_id uuid,
   maximum_requests integer default 30,
@@ -89,10 +83,8 @@ begin
   return query select true, 0;
 end;
 $$;
-
 revoke all on function public.consume_webhook_rate_limit(uuid,integer,integer) from public, anon, authenticated;
 grant execute on function public.consume_webhook_rate_limit(uuid,integer,integer) to service_role;
-
 alter table public.audit_log drop constraint if exists audit_log_action_type_check;
 alter table public.audit_log add constraint audit_log_action_type_check check (
   action_type in (
@@ -100,7 +92,6 @@ alter table public.audit_log add constraint audit_log_action_type_check check (
     'moderation_action','invite_create','invite_revoke','webhook_create','webhook_revoke','webhook_message'
   )
 );
-
 create or replace function public.deliver_webhook_message(
   target_webhook_id uuid,
   presented_token_hash text,
@@ -185,9 +176,7 @@ begin
   return query select new_message_id, hook.community_id, hook.channel_id, hook.name;
 end;
 $$;
-
 revoke all on function public.deliver_webhook_message(uuid,text,text,text) from public, anon, authenticated;
 grant execute on function public.deliver_webhook_message(uuid,text,text,text) to service_role;
-
 comment on function public.deliver_webhook_message(uuid,text,text,text) is
   'Backend-only atomic webhook token validation, permission check, rate limit, message insert, and audit event.';

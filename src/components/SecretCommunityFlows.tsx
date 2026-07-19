@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Community, Member } from "../types/community";
 import type { CommunityInvitePreview, InviteAcceptanceStatus } from "../services/community/communityInviteService";
 import { communityInviteService } from "../services/community/communityInviteService";
+import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
 import { secretCommunityService, type SecretCommunityEligibility, type SecretCommunityInvite, type SecretCommunityInvitePreview, type SecretInviteCampaign } from "../services/community/secretCommunityService";
 import { clipboardService } from "../services/clipboardService";
 import { AppIcon } from "./AppIcon";
@@ -94,13 +95,14 @@ export function SecretAwareJoinWithInviteModal({initialCode="",isAuthenticated,c
     if(!result.ok){setError(result.error.message);setBusy(false);return;}
     await onAccepted(result.data.communityId,result.data.member,result.data.status,preview.data);onClose();};
   const secret=preview?.kind==="secret"?preview.data:null;
+  const kindSummary=preview?getCommunityKindInviteSummary(preview.data.communityKind):null;
   return <div className="modal-backdrop" onMouseDown={onClose}><section className="community-modal secret-join-modal" role="dialog" aria-modal="true" aria-labelledby="invite-join-title" onMouseDown={(event)=>event.stopPropagation()}>
     <button type="button" className="icon-button modal-close" aria-label="Close invitation" onClick={onClose}><AppIcon name="close" size="lg"/></button>
     <header><span className="eyebrow">Private access</span><h2 id="invite-join-title">Join with invitation</h2><p>Picom validates the invitation and your account before revealing protected community details.</p></header>
     <label className="invite-code-field"><span>Invitation code or link</span><input autoFocus value={code} onChange={(event)=>setCode(event.target.value)} placeholder="picom://invite/..."/></label>
     {!isAuthenticated?<p className="auth-error">Sign in before opening a private invitation.</p>:null}
     {loading?<p className="community-rules-status">Checking invitation...</p>:null}
-    {preview?<section className="community-confirm-panel"><p className="eyebrow">{preview.data.communityKind} community</p><h3>{preview.data.communityName}</h3><p>{preview.data.description??"No description has been published."}</p><dl><div><dt>Members</dt><dd>{preview.data.memberCount}</dd></div><div><dt>Access</dt><dd>{preview.kind==="secret"?"Recipient only":preview.data.visibility}</dd></div><div><dt>Expires</dt><dd>{preview.data.expiresAt?new Date(preview.data.expiresAt).toLocaleString():"No expiry"}</dd></div></dl></section>:null}
+    {preview?<section className="community-confirm-panel"><p className="eyebrow">{preview.data.communityKind} community</p><h3>{preview.data.communityName}</h3><p>{preview.data.description??"No description has been published."}</p><dl><div><dt>Members</dt><dd>{preview.data.memberCount}</dd></div><div><dt>Access</dt><dd>{preview.kind==="secret"?"Recipient only":preview.data.visibility}</dd></div><div><dt>Expires</dt><dd>{preview.data.expiresAt?new Date(preview.data.expiresAt).toLocaleString():"No expiry"}</dd></div>{kindSummary?<div><dt>Opens at</dt><dd>{kindSummary.landingLabel}</dd></div>:null}</dl>{kindSummary?<ul className="secret-status-list" aria-label="Community capabilities">{kindSummary.capabilitySummary.map((capability)=><li className="is-ready" key={capability}><span/>{capability}</li>)}</ul>:null}</section>:null}
     {secret?<>
       <section className="secret-warning-panel"><h3>Security warnings</h3>{secret.warnings.map((warning)=><p key={warning}><AppIcon name="lock" size="xs"/>{warning}</p>)}<label><input type="checkbox" checked={warningsAccepted} onChange={(event)=>setWarningsAccepted(event.target.checked)}/>I understand and accept every security warning.</label></section>
       <section className="secret-rules-panel"><h3>Community rules</h3>{secret.rules.map((rule)=><article key={rule.id}><strong>{rule.title}</strong><p>{rule.body}</p></article>)}<label><input type="checkbox" checked={rulesAccepted} onChange={(event)=>setRulesAccepted(event.target.checked)}/>I accept the current community rules.</label></section>

@@ -1,7 +1,6 @@
 alter table public.communities add column if not exists discovery_content_flags text[] not null default '{}';
 alter table public.communities drop constraint if exists communities_discovery_content_flags_check;
 alter table public.communities add constraint communities_discovery_content_flags_check check(discovery_content_flags <@ array['user_generated_content','mature_topics','regulated_topics','voice_enabled','external_links']::text[]);
-
 create or replace function public.requeue_discovery_listing_on_profile_change() returns trigger language plpgsql security definer set search_path=public as $$
 begin
   if new.visibility='public' and new.discovery_listed=true and (
@@ -17,7 +16,6 @@ begin
 end $$;
 drop trigger if exists requeue_discovery_listing_profile_update on public.communities;
 create trigger requeue_discovery_listing_profile_update after update of name,description,icon_url,category,discovery_content_flags,visibility,discovery_listed,public_read_enabled on public.communities for each row execute function public.requeue_discovery_listing_on_profile_change();
-
 drop function if exists public.list_discovery_review_queue(text,integer);
 create function public.list_discovery_review_queue(status_filter text default null,result_limit integer default 100)
 returns table(community_id uuid,community_name text,description text,icon_url text,category text,content_flags text[],review_status text,report_count bigint,submitted_at timestamptz,reviewed_at timestamptz)
@@ -35,7 +33,6 @@ begin
 end $$;
 revoke all on function public.list_discovery_review_queue(text,integer) from public,anon;
 grant execute on function public.list_discovery_review_queue(text,integer) to authenticated;
-
 create or replace function public.review_discovery_listing(target_community_id uuid,next_status text,review_reason text default null) returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
 begin
   if not public.is_app_admin() then raise exception 'APP_ADMIN_REQUIRED'; end if;
@@ -49,7 +46,6 @@ begin
 end $$;
 revoke all on function public.review_discovery_listing(uuid,text,text) from public,anon;
 grant execute on function public.review_discovery_listing(uuid,text,text) to authenticated;
-
 create table if not exists public.report_submission_rate_limits(user_id uuid primary key references public.profiles(id) on delete cascade,window_started_at timestamptz not null default now(),submission_count integer not null default 0,updated_at timestamptz not null default now());
 alter table public.report_submission_rate_limits enable row level security;
 revoke all on public.report_submission_rate_limits from anon,authenticated;

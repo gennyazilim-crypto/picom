@@ -1,6 +1,5 @@
 -- Fix PL/pgSQL output-column ambiguity in community message reaction writes.
 begin;
-
 create or replace function public.set_message_reaction(
   target_message_id uuid,
   target_emoji text,
@@ -64,8 +63,6 @@ begin
   where stored_reaction.message_id=target_message_id
     and stored_reaction.emoji=normalized_emoji;
 end $$;
-
 revoke all on function public.set_message_reaction(uuid,text,boolean) from public,anon;
 grant execute on function public.set_message_reaction(uuid,text,boolean) to authenticated;
-
 commit;

@@ -56,4 +56,4 @@ comment on type public.community_kind is
   'Canonical Picom Full MVP product spaces. Hybrid communities are intentionally excluded.';
 
 comment on column public.communities.kind is
-  'Immutable-at-creation community product kind: text, radio, or podcast.';
+  'Immutable-at-creation community product kind: text, radio, or podcast.';;

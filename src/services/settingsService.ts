@@ -15,7 +15,6 @@ const allSettingsSections = ["Account", "Profile", "Privacy & Safety", "Appearan
 export type SettingsSection = typeof allSettingsSections[number];
 export const settingsSections: readonly SettingsSection[] = allSettingsSections.filter((section) => {
   if (section === "Voice & Video") return isV1FeatureEnabled("voiceRooms") || isV1FeatureEnabled("screenShare");
-  if (section === "Admin Operations") return isV1FeatureEnabled("platformAdminOperations");
   return true;
 });
 export type SettingsPersistenceScope = "local-device" | "user-account-synced" | "community-specific" | "server-controlled";

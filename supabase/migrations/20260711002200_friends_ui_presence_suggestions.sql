@@ -116,6 +116,4 @@ end;
 $$;
 
 comment on table public.friend_presence is 'Minimal friend-only presence heartbeat. Custom status text is never published.';
-comment on function public.list_friend_suggestions(integer) is 'Privacy-aware suggestions derived from shared communities and optional follow signal.';
-
-commit;
+comment on function public.list_friend_suggestions(integer) is 'Privacy-aware suggestions derived from shared communities and optional follow signal.';;

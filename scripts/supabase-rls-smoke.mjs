@@ -60,7 +60,7 @@ const requiredScenarioSnippets = [
   "idempotent retry returns the previous successful message",
   "idempotency key cannot be reused for different message content",
   "member cannot send Text messages to a Radio community",
-  "private channel denial is enforced by the message RPC",
+  "active community member can send to every community channel",
   "pending attachment is linked atomically to the sent message",
   "Radio and Podcast tables preserve type-specific community guards",
   "Podcast drafts and private media remain RLS-protected",
@@ -186,8 +186,27 @@ for (const domain of ["text", "radio", "podcast", "feed", "stories", "profile", 
 }
 pass("Full MVP hosted RLS actor and content matrix exists");
 
-const cli = spawnSync("supabase", ["--version"], { encoding: "utf8" });
-if (cli.status !== 0) {
+const pinnedCliVersion = "2.109.1";
+const directCli = spawnSync("supabase", ["--version"], { encoding: "utf8" });
+const npxCommand = "npx";
+const npxCli = directCli.status === 0
+  ? null
+  : spawnSync(npxCommand, ["--yes", `supabase@${pinnedCliVersion}`, "--version"], {
+      encoding: "utf8",
+      shell: process.platform === "win32",
+    });
+const cli = directCli.status === 0
+  ? { command: "supabase", prefix: [], result: directCli, shell: false }
+  : npxCli?.status === 0
+    ? {
+        command: npxCommand,
+        prefix: ["--yes", `supabase@${pinnedCliVersion}`],
+        result: npxCli,
+        shell: process.platform === "win32",
+      }
+    : null;
+
+if (!cli) {
   if (shouldRunRealTests) {
     fail([
       "Supabase CLI is unavailable, so real RLS tests were not run.",
@@ -201,19 +220,22 @@ if (cli.status !== 0) {
   process.exit(0);
 }
 
-pass(`Supabase CLI available: ${cli.stdout.trim()}`);
+pass(`Supabase CLI available: ${cli.result.stdout.trim()}`);
 
 if (!shouldRunRealTests) {
   warn("Real RLS pgTAP execution skipped by default. Run `npm run supabase:rls:test` to execute it.");
   process.exit(0);
 }
 
+const testTarget = process.env.PICOM_SUPABASE_RLS_TARGET === "linked" ? "--linked" : "--local";
+pass(`real RLS target selected: ${testTarget.slice(2)}`);
+
 for (const file of requiredFiles) {
   const relativeFile = `supabase/tests/rls/${file}`;
-  console.log(`\n> supabase test db --file ${relativeFile}`);
-  const test = spawnSync("supabase", ["test", "db", "--file", relativeFile], {
+  console.log(`\n> supabase test db ${testTarget} ${relativeFile}`);
+  const test = spawnSync(cli.command, [...cli.prefix, "test", "db", testTarget, relativeFile], {
     stdio: "inherit",
-    shell: false
+    shell: cli.shell
   });
 
   if (test.error) {

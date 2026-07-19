@@ -68,17 +68,13 @@ begin
   return new;
 end;
 $$;
-
 revoke all on function public.sync_message_mentions_from_body() from public, anon, authenticated;
-
 drop trigger if exists messages_sync_mentions on public.messages;
 create trigger messages_sync_mentions
 after insert or update of body, deleted_at, community_id on public.messages
 for each row
 execute function public.sync_message_mentions_from_body();
-
 alter table public.message_mentions replica identity full;
-
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
@@ -92,7 +88,6 @@ begin
     alter publication supabase_realtime add table public.message_mentions;
   end if;
 end $$;
-
 comment on function public.sync_message_mentions_from_body() is
   'Trigger-only canonical mention extraction. Resolves same-community @username and unambiguous @"Display Name" tokens, caps unique targets at 20, and reconciles edits/deletes.';
 comment on trigger messages_sync_mentions on public.messages is

@@ -19,13 +19,9 @@ as $$
       )
   );
 $$;
-
 grant execute on function public.can_view_channel(uuid) to authenticated;
-
 grant select, insert, update, delete on public.channels to authenticated;
-
 alter table public.channels enable row level security;
-
 drop policy if exists "channels_select_visible_to_member" on public.channels;
 create policy "channels_select_visible_to_member"
 on public.channels
@@ -38,14 +34,12 @@ using (
     or public.is_community_owner(community_id)
   )
 );
-
 drop policy if exists "channels_insert_owner" on public.channels;
 create policy "channels_insert_owner"
 on public.channels
 for insert
 to authenticated
 with check (public.is_community_owner(community_id));
-
 drop policy if exists "channels_update_owner" on public.channels;
 create policy "channels_update_owner"
 on public.channels
@@ -53,7 +47,6 @@ for update
 to authenticated
 using (public.is_community_owner(community_id))
 with check (public.is_community_owner(community_id));
-
 drop policy if exists "channels_delete_owner" on public.channels;
 create policy "channels_delete_owner"
 on public.channels

@@ -2,7 +2,6 @@
 -- replies. Picom does not create a separate social comment graph.
 
 drop function if exists public.list_mention_feed(timestamptz, uuid, integer);
-
 create or replace view public.mention_feed_view
 with (security_invoker = true)
 as
@@ -48,10 +47,8 @@ left join lateral(
   ) visible_reply
 ) reply_data on true
 where message.deleted_at is null and public.can_view_message(message.id) and not public.users_are_blocked(auth.uid(),message.author_id);
-
 revoke all on public.mention_feed_view from public, anon;
 grant select on public.mention_feed_view to authenticated;
-
 create function public.list_mention_feed(
   cursor_created_at timestamptz default null,
   cursor_message_id uuid default null,
@@ -76,9 +73,7 @@ as $$
   order by feed.created_at desc,feed.message_id desc
   limit least(greatest(result_limit,1),80);
 $$;
-
 revoke all on function public.list_mention_feed(timestamptz,uuid,integer) from public,anon;
 grant execute on function public.list_mention_feed(timestamptz,uuid,integer) to authenticated;
-
 comment on view public.mention_feed_view is 'RLS-invoker Mention Feed projection. Compact comments are derived from visible same-channel replies; no separate social comment model.';
 comment on function public.list_mention_feed(timestamptz,uuid,integer) is 'Cursor feed page with at most two safe reply-derived comment previews per item.';

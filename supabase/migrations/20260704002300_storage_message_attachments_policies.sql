@@ -1,7 +1,6 @@
 drop policy if exists "message attachments upload own pending" on storage.objects;
 drop policy if exists "message attachments read attached visible community" on storage.objects;
 drop policy if exists "message attachments delete own pending" on storage.objects;
-
 create policy "message attachments upload own pending"
 on storage.objects
 for insert
@@ -22,7 +21,6 @@ with check (
       and c.id::text = (storage.foldername(name))[4]
   )
 );
-
 create policy "message attachments read attached visible community"
 on storage.objects
 for select
@@ -47,7 +45,6 @@ using (
     )
   )
 );
-
 create policy "message attachments delete own pending"
 on storage.objects
 for delete

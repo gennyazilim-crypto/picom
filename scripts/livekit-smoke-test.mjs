@@ -54,7 +54,7 @@ const voiceViewRequired = [
   "VoiceParticipantList",
   "SpeakingIndicator",
   "Join room",
-  "Leave room",
+  "Disconnect",
   "Mute",
   "Deafen"
 ];
@@ -136,7 +136,7 @@ const screenShareRequired = [
   [screenSharePreview, "ScreenShareViewer", "ScreenSharePreview wrapper"],
   [screenShareService, "screenCaptureService.listSources", "desktop screenShareService source listing"],
   [voiceRoomView, "ScreenShareControls", "VoiceRoomView screen-share controls"],
-  [voiceRoomView, "ScreenSharePreview", "VoiceRoomView screen-share preview"],
+  [voiceRoomView, "VoiceParticipantScreenShare", "VoiceRoomView screen-share preview"],
   [voiceService, "publishTrack", "LiveKit publish screen track"],
   [voiceService, "unpublishTrack", "LiveKit unpublish screen track"]
 ];

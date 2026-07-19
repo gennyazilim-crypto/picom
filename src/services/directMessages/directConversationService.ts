@@ -55,4 +55,9 @@ export async function setDirectConversationArchived(conversationId: string, arch
   return updated ? { ok: true, data: true } : { ok: false, error: { code: "REQUEST_FAILED", message: "Conversation archive state could not be updated." } };
 }
 
-export const directConversationService = { getDirectConversations, createOrOpenDirectConversation, markDirectConversationRead, setDirectConversationMuted, setDirectConversationArchived };
+/** Removes the chat from this user's inbox (participant-scoped). The peer keeps their copy. */
+export async function deleteDirectConversation(conversationId: string): Promise<DirectMessageServiceResult<boolean>> {
+  return setDirectConversationArchived(conversationId, true);
+}
+
+export const directConversationService = { getDirectConversations, createOrOpenDirectConversation, markDirectConversationRead, setDirectConversationMuted, setDirectConversationArchived, deleteDirectConversation };

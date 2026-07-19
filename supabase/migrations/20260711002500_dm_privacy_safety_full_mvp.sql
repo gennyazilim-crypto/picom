@@ -1,5 +1,3 @@
-begin;
-
 alter table public.profiles
   add column if not exists dm_privacy text not null default 'everyone';
 alter table public.profiles drop constraint if exists profiles_dm_privacy_check;
@@ -48,6 +46,7 @@ drop trigger if exists direct_message_reactions_user_rate_limit on public.direct
 create trigger direct_message_reactions_user_rate_limit before insert or delete on public.direct_message_reactions
   for each row execute function public.enforce_current_user_action_rate_limit('reaction_write');
 
+drop policy if exists "friend_requests_insert_sender" on public.friend_requests;
 drop policy if exists "friend_requests_insert_sender" on public.friend_requests;
 create policy "friend_requests_insert_sender" on public.friend_requests for insert to authenticated
 with check (
@@ -124,10 +123,13 @@ $$;
 
 drop policy if exists "reports_submit_visible_target" on public.reports;
 drop policy if exists "reports_requester_select" on public.reports;
+drop policy if exists "reports_requester_select" on public.reports;
 create policy "reports_requester_select" on public.reports for select to authenticated using(reporter_id=auth.uid());
+drop policy if exists "reports_moderator_select" on public.reports;
 drop policy if exists "reports_moderator_select" on public.reports;
 create policy "reports_moderator_select" on public.reports for select to authenticated
 using((community_id is not null and public.can_moderate_community_reports(community_id)) or (conversation_id is not null and public.is_app_admin()));
+drop policy if exists "reports_moderator_update" on public.reports;
 drop policy if exists "reports_moderator_update" on public.reports;
 create policy "reports_moderator_update" on public.reports for update to authenticated
 using((community_id is not null and public.can_moderate_community_reports(community_id)) or (conversation_id is not null and public.is_app_admin()))
@@ -138,6 +140,4 @@ revoke all on function public.submit_safety_report(text,uuid,text,text,uuid,uuid
 grant execute on function public.submit_safety_report(text,uuid,text,text,uuid,uuid) to authenticated;
 
 comment on function public.submit_safety_report(text,uuid,text,text,uuid,uuid) is 'Rate-limited report submission. DM reports persist only the selected target ID and sanitized reporter description, never a conversation transcript or unrelated private content.';
-comment on column public.reports.conversation_id is 'Optional participant-authorized DM context. App-admin review only.';
-
-commit;
+comment on column public.reports.conversation_id is 'Optional participant-authorized DM context. App-admin review only.';;

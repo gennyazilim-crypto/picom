@@ -17,7 +17,7 @@ Set these only with Supabase secret storage. Never use `VITE_` variables, render
 
 `voice` intent grants microphone publication only. After an explicit approved source selection, the client reconnects to the same deterministic room with `screen` intent; that short-lived token grants screen publication and preserves microphone publication only when `can_publish_audio` is independently true. Screen permission never implies microphone permission.
 
-Tokens expire after ten minutes. Voice tokens publish microphone only when `speakInVoice` is allowed. Screen tokens publish screen-share sources only when `shareScreen` is allowed. Camera and data publishing are not granted.
+Tokens expire after ten minutes. Voice tokens publish microphone only when `speakInVoice` is allowed. Screen tokens publish screen-share sources only when `shareScreen` is allowed. Data publishing is granted for raise-hand and reaction signals. Camera publishing is not granted via this token.
 
 ## Deployment
 

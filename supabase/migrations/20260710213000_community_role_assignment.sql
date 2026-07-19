@@ -49,9 +49,7 @@ begin
   return query select target_membership.id, target_membership.community_id, target_membership.user_id, target_membership.role_id, target_membership.joined_at;
 end;
 $$;
-
 revoke all on function public.assign_community_member_role(uuid, uuid, uuid, text) from public, anon;
 grant execute on function public.assign_community_member_role(uuid, uuid, uuid, text) to authenticated;
-
 comment on function public.assign_community_member_role(uuid, uuid, uuid, text) is
   'Owners manage non-owner roles. Admins can manage and assign only roles below their own level. Ownership changes remain in the transfer workflow.';

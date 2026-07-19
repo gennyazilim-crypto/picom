@@ -2,7 +2,6 @@
 -- Enforces role/community consistency for MVP membership records.
 
 create index if not exists idx_community_members_role_id on public.community_members(role_id);
-
 create or replace function public.ensure_member_role_matches_community()
 returns trigger
 language plpgsql
@@ -22,7 +21,6 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists trg_community_members_role_matches_community on public.community_members;
 create trigger trg_community_members_role_matches_community
 before insert or update of community_id, role_id on public.community_members

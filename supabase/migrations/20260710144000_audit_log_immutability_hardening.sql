@@ -1,11 +1,9 @@
 -- Task 144: explicit append-only enforcement and bounded redaction.
 
 revoke insert, update, delete, truncate on table public.audit_log from public, anon, authenticated;
-
 alter table public.audit_log drop constraint if exists audit_log_target_type_length;
 alter table public.audit_log add constraint audit_log_target_type_length
   check (char_length(target_type) between 1 and 80 and target_type ~ '^[a-zA-Z0-9_:-]+$');
-
 create or replace function public.redact_audit_reason(input_text text)
 returns text
 language plpgsql
@@ -22,7 +20,6 @@ begin
 end;
 $$;
 revoke all on function public.redact_audit_reason(text) from public, anon, authenticated;
-
 create or replace function public.prevent_audit_log_mutation()
 returns trigger
 language plpgsql
@@ -34,12 +31,10 @@ begin
 end;
 $$;
 revoke all on function public.prevent_audit_log_mutation() from public, anon, authenticated;
-
 drop trigger if exists audit_log_append_only on public.audit_log;
 create trigger audit_log_append_only
 before update or delete on public.audit_log
 for each row execute function public.prevent_audit_log_mutation();
-
 create or replace function public.append_community_audit_log(
   target_community_id uuid,
   event_action_type text,
@@ -65,6 +60,5 @@ end;
 $$;
 revoke all on function public.append_community_audit_log(uuid,text,text,uuid,text) from public, anon;
 grant execute on function public.append_community_audit_log(uuid,text,text,uuid,text) to authenticated;
-
 comment on table public.audit_log is
   'Append-only community audit facts. Corrections are new entries; normal update/delete/truncate is prohibited.';

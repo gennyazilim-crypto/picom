@@ -3,7 +3,6 @@ alter table public.communities add column if not exists rules_enabled boolean no
 alter table public.communities add column if not exists rules_version text not null default '1';
 alter table public.community_members add column if not exists rules_accepted_at timestamptz;
 alter table public.community_members add column if not exists rules_version_accepted text;
-
 create table if not exists public.community_rules (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -19,7 +18,6 @@ create table if not exists public.community_rules (
 create index if not exists idx_community_rules_community_position on public.community_rules(community_id, position);
 alter table public.community_rules enable row level security;
 grant select, insert, update, delete on public.community_rules to authenticated;
-
 drop policy if exists community_rules_visible on public.community_rules;
 create policy community_rules_visible on public.community_rules for select to authenticated using (
   (published and exists(select 1 from public.communities c where c.id=community_id and (c.visibility='public' or public.is_community_member(c.id))))
@@ -34,7 +32,6 @@ create policy community_rules_owner_admin_manage on public.community_rules for a
   public.is_community_owner(community_id)
   or exists(select 1 from public.community_members cm join public.roles r on r.id=cm.role_id where cm.community_id=community_rules.community_id and cm.user_id=auth.uid() and lower(r.name)='admin')
 );
-
 drop function if exists public.join_public_community(uuid);
 create function public.join_public_community(target_community_id uuid, accepted_rules_version text default null)
 returns table(id uuid, community_id uuid, user_id uuid, role_id uuid, joined_at timestamptz, join_status text)

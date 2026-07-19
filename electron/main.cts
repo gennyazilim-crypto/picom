@@ -54,6 +54,7 @@ import {
   setIncomingCallToastActionHandler,
   showIncomingCallToast,
 } from "./incomingCallToast.cjs";
+import { prepareNotificationAvatar } from "./notificationAvatarCache.cjs";
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
 const APP_ICON_PATH = path.join(
@@ -63,6 +64,7 @@ const APP_ICON_PATH = path.join(
   "brand",
   process.platform === "win32" ? "app-icon.ico" : "app-icon.png"
 );
+let incomingCallPresentationGeneration = 0;
 
 type SafeScreenCaptureSource = Readonly<{
   id: string;
@@ -616,17 +618,26 @@ function registerIpcHandlers(): void {
   });
 
   setIncomingCallToastActionHandler((action, inviteId) => {
+    incomingCallPresentationGeneration += 1;
     focusMainWindow();
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send(IPC_CHANNELS.incomingCallAction, { action, inviteId });
   });
 
-  ipcMain.handle(IPC_CHANNELS.incomingCallShow, (event, payload: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.incomingCallShow, async (event, payload: unknown) => {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
     const safePayload = parseIncomingCallToastPayload(payload);
     if (!safePayload) return { ok: false, native: true, error: "INVALID_INCOMING_CALL_PAYLOAD" } as const;
+    const generation = ++incomingCallPresentationGeneration;
     try {
-      showIncomingCallToast(safePayload, resolveIncomingCallPreloadPath());
+      const avatar = await prepareNotificationAvatar(safePayload, APP_ICON_PATH);
+      if (generation !== incomingCallPresentationGeneration) {
+        return { ok: false, native: true, error: "INCOMING_CALL_SUPERSEDED" } as const;
+      }
+      showIncomingCallToast(
+        { ...safePayload, avatarDataUrl: avatar.dataUrl },
+        resolveIncomingCallPreloadPath(),
+      );
       return { ok: true, native: true } as const;
     } catch {
       return { ok: false, native: true, error: "INCOMING_CALL_SHOW_FAILED" } as const;
@@ -635,6 +646,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.incomingCallDismiss, (event) => {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_INCOMING_CALL_SENDER" } as const;
+    incomingCallPresentationGeneration += 1;
     dismissIncomingCallToast();
     return { ok: true, native: true } as const;
   });

@@ -168,9 +168,14 @@ export const channelService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
+    const categoryId = input.categoryId?.trim() || null;
+    const safeCategoryId = categoryId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId)
+      ? categoryId
+      : null;
+
     const { data, error } = await configured.data.rpc("create_managed_text_channel", {
       target_community_id: input.communityId,
-      target_category_id: input.categoryId ?? null,
+      target_category_id: safeCategoryId,
       channel_name: name,
       channel_type: type,
       channel_topic: input.topic?.trim() || null,

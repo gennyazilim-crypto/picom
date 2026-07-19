@@ -1,6 +1,7 @@
--- Product decision: remove the private-channel / private-community feature.
+-- Product decision: remove per-channel privacy for joined community members.
 -- Every active community member can view and join ALL channels of communities they
--- belong to. Community membership -- not per-channel privacy -- is the access boundary.
+-- belong to. Community visibility remains intact: a private community is not made
+-- public by this migration.
 --
 -- This migration relaxes channel read access to membership only. It does NOT weaken
 -- the membership gate: non-members are still denied, and existing visitor public-read
@@ -37,15 +38,10 @@ for select
 to authenticated
 using (public.is_community_member(community_id));
 
--- 3) Normalize existing data to the open model. Existing private channels become
---    member-visible; visitor public-read is left as-is (not force-enabled). Existing
---    private communities become public/discoverable.
+-- 3) Normalize existing channels to the member-open model. Visitor public-read is
+--    left as-is and private community visibility is deliberately preserved.
 update public.channels
   set is_private = false
   where is_private is distinct from false;
-
-update public.communities
-  set visibility = 'public'
-  where visibility is distinct from 'public';
 
 commit;

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
-import type { AdminOperationsListItem, AdminOperationsListSection, AdminSystemStatusV2 } from "../types/adminOperations";
+import type { AdminInfrastructureStatus, AdminOperationsListItem, AdminOperationsListSection, AdminSystemStatusV2 } from "../types/adminOperations";
 import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
 import "./AdminOperationsV2Sections.css";
@@ -83,6 +83,36 @@ export function AdminSystemStatusV2({ access }: { access: AdminOperationsAccess 
           <p>Only safe aggregate counters are requested.</p>
         </div>
       )}
+    </section>
+  );
+}
+
+function statusLabel(value: string): string {
+  return value.replace(/_/g, " ").replace(/^./, (character) => character.toUpperCase());
+}
+
+export function AdminInfrastructureHealth({ access }: { access: AdminOperationsAccess }) {
+  const [status, setStatus] = useState<AdminInfrastructureStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const load = useCallback(async (audit = false) => {
+    setLoading(true);
+    setError(null);
+    const result = await adminOperationsService.getInfrastructureStatus(access);
+    if (result.ok) setStatus(result.data); else setError(result.message);
+    setLoading(false);
+    if (audit) await adminOperationsService.recordAction(access, "admin_infrastructure_health_refreshed");
+  }, [access]);
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => { void load(); }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+  return (
+    <section className="admin-ops-v2-section" aria-label="Protected infrastructure health">
+      <div className="admin-ops-v2-header"><div className="admin-ops-v2-header-copy"><strong><AppIcon name="settings" size="sm" /> Production infrastructure</strong><p>Protected Edge probe. Credentials, host addresses, tokens, and room content are never returned.</p></div><button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={loading} onClick={() => void load(true)}>Refresh</button></div>
+      {error ? <div className="admin-ops-v2-error" role="alert">{error}</div> : null}
+      {status ? <><div className="admin-ops-metrics"><article><span>Overall</span><strong>{statusLabel(status.overall)}</strong></article><article><span>Deployment</span><strong>{statusLabel(status.deployment)}</strong></article><article><span>Database</span><strong>{statusLabel(status.database)}</strong></article><article><span>LiveKit</span><strong>{statusLabel(status.livekit)}</strong></article><article><span>TURN/TLS</span><strong>{statusLabel(status.turn)}</strong></article><article><span>Redis</span><strong>{statusLabel(status.redis)}</strong></article><article><span>LiveKit latency</span><strong>{status.livekitLatencyMs === null ? "Unavailable" : `${status.livekitLatencyMs} ms`}</strong></article></div><small className="admin-ops-v2-footnote">Checked {dateTimeService.formatFullTimestamp(status.checkedAt)} - {status.source}</small></> : <div className="admin-ops-v2-empty"><strong>Checking infrastructure</strong><p>The probe is restricted to Picom app administrators.</p></div>}
     </section>
   );
 }

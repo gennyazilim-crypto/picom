@@ -5,6 +5,7 @@ import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { isV1MentionQuickFilterEnabled } from "../config/v1ReleaseScope";
+import { PopularCommunityHeadlines } from "./PopularCommunityHeadlines";
 
 type MentionRightPanelProps = {
   items: MentionItem[];
@@ -17,6 +18,7 @@ type MentionRightPanelProps = {
   selectedProfileUserId?: string | null;
   onFilterChange: (filter: MentionQuickFilter) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
+  onOpenItem: (item: MentionItem) => void;
 };
 
 function getMember(communities: Community[], userId: string): Member | undefined {
@@ -68,6 +70,7 @@ export function MentionRightPanel({
   selectedProfileUserId = null,
   onFilterChange,
   onOpenProfile,
+  onOpenItem,
 }: MentionRightPanelProps) {
   const feedCount = items.filter((item) => item.source === "popular_feed").length;
   const followingCount = items.filter((item) => item.source === "following").length;
@@ -99,6 +102,8 @@ export function MentionRightPanel({
           <span><strong>{savedCount}</strong>Saved</span>
         </div>
       </section>
+
+      <PopularCommunityHeadlines items={items} communities={communities} onOpenItem={onOpenItem} />
 
       <section className="mention-panel-card">
         <p className="eyebrow">Popular People</p>

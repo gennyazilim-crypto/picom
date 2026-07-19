@@ -325,5 +325,4 @@ grant execute on function public.effective_community_permission(uuid,text,text,u
 comment on table public.community_permission_definitions is 'Canonical versioned Picom community permission registry.';
 comment on table public.community_role_permissions is 'Canonical normalized role grants; roles.permissions remains a compatibility projection.';
 comment on table public.community_permission_overrides is 'Role overrides for approved category, channel, Radio program, and Podcast series scopes.';
-comment on function public.effective_community_permission(uuid,text,text,uuid) is 'Deny-by-default permission evaluator. Owner invariant applies only after community and resource scope validation.';
-commit;
+comment on function public.effective_community_permission(uuid,text,text,uuid) is 'Deny-by-default permission evaluator. Owner invariant applies only after community and resource scope validation.';;

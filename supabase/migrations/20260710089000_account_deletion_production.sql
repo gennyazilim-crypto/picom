@@ -3,11 +3,9 @@ alter table public.account_deletion_requests
   add column if not exists sessions_revoked_at timestamptz,
   add column if not exists session_revocation_status text not null default 'pending'
     check (session_revocation_status in ('pending', 'completed', 'failed'));
-
 create unique index if not exists idx_account_deletion_one_active_request
   on public.account_deletion_requests(user_id)
   where status in ('requested', 'reviewing');
-
 create table if not exists public.account_security_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
@@ -20,27 +18,21 @@ create table if not exists public.account_security_events (
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
 comment on table public.account_security_events is
   'Append-only account security events. Never store passwords, tokens, raw IP addresses, or message content.';
-
 create index if not exists idx_account_security_events_user_created
   on public.account_security_events(user_id, created_at desc);
-
 alter table public.account_security_events enable row level security;
 grant select on public.account_security_events to authenticated;
 revoke insert, update, delete on public.account_security_events from authenticated;
-
 drop policy if exists "account_security_events_own_select" on public.account_security_events;
 create policy "account_security_events_own_select"
   on public.account_security_events
   for select
   to authenticated
   using (user_id = auth.uid());
-
 drop policy if exists "deletion_request_own_cancel" on public.account_deletion_requests;
 revoke update, delete on public.account_deletion_requests from authenticated;
-
 create or replace function public.request_current_user_account_deletion(confirmation_username text)
 returns table(request_id uuid, requested_at timestamptz, anonymize_after timestamptz)
 language plpgsql
@@ -112,7 +104,6 @@ begin
   return query select created_request.id, created_request.requested_at, created_request.anonymize_after;
 end;
 $$;
-
 create or replace function public.cancel_current_user_account_deletion()
 returns table(request_id uuid, canceled_at timestamptz)
 language plpgsql
@@ -154,10 +145,8 @@ begin
   return query select active_request.id, cancellation_time;
 end;
 $$;
-
 grant execute on function public.request_current_user_account_deletion(text) to authenticated;
 grant execute on function public.cancel_current_user_account_deletion() to authenticated;
-
 -- Final anonymization is intentionally not scheduled here. A trusted operator or
 -- reviewed background worker must apply the documented policy after the grace
--- period. No desktop or authenticated route can hard-delete an account.
+-- period. No desktop or authenticated route can hard-delete an account.;

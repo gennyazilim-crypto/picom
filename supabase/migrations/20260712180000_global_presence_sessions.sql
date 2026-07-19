@@ -1,6 +1,5 @@
 -- Multi-session global presence aggregation for the authenticated desktop shell.
 begin;
-
 create table if not exists public.user_presence_sessions (
   session_id uuid primary key,
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -11,17 +10,13 @@ create table if not exists public.user_presence_sessions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create index if not exists user_presence_sessions_user_expiry_idx on public.user_presence_sessions(user_id,expires_at desc);
 alter table public.user_presence_sessions enable row level security;
-
 drop policy if exists user_presence_sessions_self_read on public.user_presence_sessions;
 create policy user_presence_sessions_self_read on public.user_presence_sessions
 for select to authenticated using (user_id=auth.uid());
-
 revoke insert,update,delete on public.user_presence_sessions from authenticated;
 grant select on public.user_presence_sessions to authenticated;
-
 create or replace function public.refresh_my_aggregated_presence()
 returns void language plpgsql security definer set search_path=public as $$
 declare
@@ -43,7 +38,6 @@ begin
   on conflict(user_id) do update set status=excluded.status,share_presence=excluded.share_presence,last_seen_at=excluded.last_seen_at,updated_at=excluded.updated_at;
 end;
 $$;
-
 create or replace function public.set_my_presence_session(target_session_id uuid,target_status text,share_presence boolean)
 returns void language plpgsql security definer set search_path=public as $$
 begin
@@ -57,7 +51,6 @@ begin
   perform public.refresh_my_aggregated_presence();
 end;
 $$;
-
 create or replace function public.clear_my_presence_session(target_session_id uuid)
 returns void language plpgsql security definer set search_path=public as $$
 begin
@@ -66,12 +59,9 @@ begin
   perform public.refresh_my_aggregated_presence();
 end;
 $$;
-
 revoke all on function public.refresh_my_aggregated_presence() from public,authenticated;
 grant execute on function public.set_my_presence_session(uuid,text,boolean) to authenticated;
 grant execute on function public.clear_my_presence_session(uuid) to authenticated;
-
 comment on table public.user_presence_sessions is 'Private expiring desktop presence sessions aggregated into friend_presence.';
 comment on function public.set_my_presence_session(uuid,text,boolean) is 'Authenticated heartbeat for one desktop session; invisible sessions publish share_presence=false.';
-
 commit;

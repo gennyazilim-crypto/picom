@@ -16,6 +16,7 @@ import type { FriendState, FriendViewTab } from "./types/friends";
 import { friendPresenceService } from "./services/friends/friendPresenceService";
 import { globalPresenceService } from "./services/presence/globalPresenceService";
 import { presencePreferenceService } from "./services/presence/presencePreferenceService";
+import { activityPresenceService } from "./services/presence/activityPresenceService";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import type { ProfileActivityItem, UserProfile } from "./types/profile";
 import type { FollowedUserStory } from "./types/stories";
@@ -27,7 +28,7 @@ import { DesktopAppShell } from "./components/DesktopAppShell";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
 import { isV1ChannelTypeEnabled, isV1CommunityKindEnabled, isV1DeepLinkTypeEnabled, isV1FeatureEnabled, isV1GlobalNavigationEnabled, isV1SearchCategoryEnabled } from "./config/v1ReleaseScope";
-import { settingsNavigationPolicyService } from "./services/navigation/settingsNavigationPolicyService";
+import { settingsNavigationPolicyService, type UserSettingsSection } from "./services/navigation/settingsNavigationPolicyService";
 import { helpSupportNavigationService } from "./services/navigation/helpSupportNavigationService";
 import { globalNavigationBadgeService } from "./services/navigation/globalNavigationBadgeService";
 import { notificationNavigationPolicyService } from "./services/navigation/notificationNavigationPolicyService";
@@ -44,22 +45,17 @@ import { CommunityWorkspace } from "./components/community/CommunityWorkspace";
 import { CommunitySidebar } from "./components/CommunitySidebar";
 import { ChatMain } from "./components/ChatMain";
 import { MemberSidebar } from "./components/MemberSidebar";
-import { VoiceParticipantsRail } from "./components/voice/VoiceParticipantsRail";
-import { ImagePreviewModal } from "./components/ImagePreviewModal";
-import { UserProfilePopover } from "./components/UserProfilePopover";
-import { DesktopContextMenu } from "./components/DesktopContextMenu";
 import { TermsReacceptPrompt } from "./components/legal/TermsReacceptPrompt";
 import { ToastStack } from "./components/ToastStack";
-import { GlobalAudioMiniPlayer } from "./components/audio/GlobalAudioMiniPlayer";
-import { podcastService } from "./services/audio/podcastService";
+
+
 import { LoginScreen } from "./components/LoginScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
 import { FirstLaunchSetup } from "./components/firstLaunch/FirstLaunchSetup";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
-import { CreateCommunityModal, type CreateCommunityFormValue, type CreateCommunitySubmitResult } from "./components/CreateCommunityModal";
-import { CreateChannelModal, type CreateChannelFormValue } from "./components/CreateChannelModal";
-import { DeleteChannelModal, EditChannelModal, type EditChannelFormValue } from "./components/ChannelManagementModals";
-import { MemberModerationModal } from "./components/MemberModerationModal";
+import type { CreateCommunityFormValue, CreateCommunitySubmitResult } from "./components/CreateCommunityModal";
+import type { CreateChannelFormValue } from "./components/CreateChannelModal";
+import type { EditChannelFormValue } from "./components/ChannelManagementModals";
 import type { Channel } from "./types/community";
 import type { MemberModerationAction } from "./types/memberModeration";
 import type { ReportRecord } from "./types/reports";
@@ -67,10 +63,15 @@ import { AppLockScreen } from "./components/AppLockScreen";
 import { MentionRightPanel } from "./components/MentionRightPanel";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import { useVoiceCallInvites } from "./hooks/useVoiceCallInvites";
+import type { DmCall, DmCallRuntimeState, DmCallType } from "./types/dmCalls";
+import { dmCallService } from "./services/directMessages/dmCallService";
+import { voiceDiagnosticsRegistry } from "./services/voiceDiagnosticsRegistry";
+import type { DmCallPeer } from "./components/directMessages/DmCallInformation";
 import { VoiceCallOverlays } from "./components/voice/VoiceCallOverlays";
 import { voiceCallInviteService, type VoiceCallRoom } from "./services/voice/voiceCallInviteService";
 import type { DirectReactionRow } from "./services/directMessages/directRealtimeService";
 import { directMessageService } from "./services/directMessages/directMessageService";
+import { messageDraftService } from "./services/messageDraftService";
 import { directAttachmentUploadService } from "./services/directMessages/directAttachmentUploadService";
 import { relationshipService } from "./services/relationshipService";
 import { mentionFeedService } from "./services/mentionFeedService";
@@ -87,7 +88,7 @@ import type { VerificationBadge, VerificationSummary } from "./types/verificatio
 import { getCommunityVerificationSummary, getUserVerificationSummary } from "./utils/verificationHelpers";
 import { VerifiedBadge } from "./components/VerifiedBadge";
 import { rankFollowSuggestions } from "./utils/followSuggestionRanking";
-import { advancedSearchService, type AdvancedSearchResult } from "./services/advancedSearchService";
+import type { AdvancedSearchResult } from "./services/advancedSearchService";
 import { termsAcceptanceService } from "./services/termsAcceptanceService";
 import { savedMessageService, type SavedMessageRecord } from "./services/savedMessageService";
 import { SafeModeBanner } from "./components/SafeModeBanner";
@@ -104,6 +105,7 @@ import { loggingService } from "./services/loggingService";
 import { menuService, type MenuActionPayload } from "./services/menuService";
 import { dataSourceService } from "./services/dataSourceService";
 import { settingsService, type AppearanceSettings, type ThemeMode } from "./services/settingsService";
+import { profileService } from "./services/profileService";
 import { appearanceService } from "./services/appearanceService";
 import { shortcutService } from "./services/shortcutService";
 import { trayService, type TrayStatus } from "./services/trayService";
@@ -133,15 +135,11 @@ import { messageSendQueueService } from "./services/messageSendQueueService";
 import { messageHistoryExportService } from "./services/messageHistoryExportService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
-import { ReportModal, type ReportModalTarget } from "./components/ReportModal";
-import { InvitePeopleModal } from "./components/CommunityInviteModals";
-import { CommunityJoinModal } from "./components/CommunityMenu";
-import { CreatePollModal } from "./components/CreatePollModal";
+import type { ReportModalTarget } from "./components/ReportModal";
 import type { CreatePollDraft } from "./types/polls";
 import { pollService } from "./services/pollService";
 import { threadService } from "./services/threadService";
 import type { ThreadRecord } from "./types/threads";
-import { ThreadPanel } from "./components/ThreadPanel";
 import { analyticsService } from "./services/analyticsService";
 import { crashReporterService } from "./services/crashReporterService";
 import { userBlockingService } from "./services/userBlockingService";
@@ -150,6 +148,7 @@ import { notificationService } from "./services/notificationService";
 import type { VoiceServiceSnapshot } from "./services/voiceService";
 import type { ActiveVoiceRoomSummary } from "./types/voiceDiscovery";
 import { activeVoiceRoomDiscoveryService } from "./services/activeVoiceRoomDiscoveryService";
+import type { VoiceRoomOccupancy } from "./types/voiceDiscovery";
 import {
   notificationPermissionOnboardingService,
   type NotificationPermissionOnboardingTrigger,
@@ -164,8 +163,10 @@ import { useProtectedDesktopSession } from "./hooks/useProtectedDesktopSession";
 import { useSupabaseMessageRealtime } from "./hooks/useSupabaseMessageRealtime";
 import { useSupabasePresenceChannel } from "./hooks/useSupabasePresenceChannel";
 import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
+import { useRootDashboardAccess } from "./hooks/useRootDashboardAccess";
 import { readStateService } from "./services/supabase/readStateService";
 import { createCommunityFromSummary } from "./utils/communityFactory";
+import { resolveCommunityIcon } from "./utils/generatedIdentity";
 import { messageMentionsUser } from "./utils/mentionUtils";
 import { canManageChannels, canSendMessage, canViewChannel, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
 import { canModerateCommunityMember } from "./services/permissions/communityPermissions";
@@ -180,6 +181,7 @@ function isSupabaseEntityId(id: string): boolean {
 }
 
 const SettingsModal = lazy(() => import("./components/SettingsModal").then((module) => ({ default: module.SettingsModal })));
+const GlobalAudioMiniPlayer = lazy(() => import("./components/audio/GlobalAudioMiniPlayer").then((module) => ({ default: module.GlobalAudioMiniPlayer })));
 const GlobalEventsWorkspace = lazy(() => import("./components/navigation/GlobalEventsWorkspace").then((module) => ({ default: module.GlobalEventsWorkspace })));
 const HelpSupportWorkspace = lazy(() => import("./components/support/HelpSupportWorkspace").then((module) => ({ default: module.HelpSupportWorkspace })));
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
@@ -192,6 +194,23 @@ const SavedMessagesView = lazy(() => import("./components/SavedMessagesView").th
 const DiscoveryView = lazy(() => import("./components/DiscoveryView").then((module) => ({ default: module.DiscoveryView })));
 const FriendsView = lazy(() => import("./components/FriendsView").then((module) => ({ default: module.FriendsView })));
 const VoiceRoomView = lazy(() => import("./components/VoiceRoomView").then((module) => ({ default: module.VoiceRoomView })));
+const VoiceParticipantsRail = lazy(() => import("./components/voice/VoiceParticipantsRail").then((module) => ({ default: module.VoiceParticipantsRail })));
+const RootDashboardApp = lazy(() => import("./components/rootDashboard/RootDashboardApp").then((module) => ({ default: module.RootDashboardApp })));
+const ImagePreviewModal = lazy(() => import("./components/ImagePreviewModal").then((module) => ({ default: module.ImagePreviewModal })));
+const UserProfilePopover = lazy(() => import("./components/UserProfilePopover").then((module) => ({ default: module.UserProfilePopover })));
+const DesktopContextMenu = lazy(() => import("./components/DesktopContextMenu").then((module) => ({ default: module.DesktopContextMenu })));
+const CreateCommunityModal = lazy(() => import("./components/CreateCommunityModal").then((module) => ({ default: module.CreateCommunityModal })));
+const CreateChannelModal = lazy(() => import("./components/CreateChannelModal").then((module) => ({ default: module.CreateChannelModal })));
+const EditChannelModal = lazy(() => import("./components/ChannelManagementModals").then((module) => ({ default: module.EditChannelModal })));
+const DeleteChannelModal = lazy(() => import("./components/ChannelManagementModals").then((module) => ({ default: module.DeleteChannelModal })));
+const MemberModerationModal = lazy(() => import("./components/MemberModerationModal").then((module) => ({ default: module.MemberModerationModal })));
+const ReportModal = lazy(() => import("./components/ReportModal").then((module) => ({ default: module.ReportModal })));
+const InvitePeopleModal = lazy(() => import("./components/CommunityInviteModals").then((module) => ({ default: module.InvitePeopleModal })));
+const CommunityJoinModal = lazy(() => import("./components/CommunityMenu").then((module) => ({ default: module.CommunityJoinModal })));
+const CreatePollModal = lazy(() => import("./components/CreatePollModal").then((module) => ({ default: module.CreatePollModal })));
+const ThreadPanel = lazy(() => import("./components/ThreadPanel").then((module) => ({ default: module.ThreadPanel })));
+const DmActiveCallMiniPanel = lazy(() => import("./components/directMessages/DmCallInformation").then((module) => ({ default: module.DmActiveCallMiniPanel })));
+const ScreenSharePickerModal = lazy(() => import("./components/voice/ScreenSharePickerModal").then((module) => ({ default: module.ScreenSharePickerModal })));
 
 const overlayIcons = mvpUiIconMap.overlays;
 
@@ -231,7 +250,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "support";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "support" | "rootPanel";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
   return communityNavigationService.getShellView(kind);
@@ -375,8 +394,10 @@ function CommandPalette({
 }
 
 export function App() {
+  // Warm settings first so corrupted local JSON can force Safe Mode before startup state is read.
+  const warmedSettings = settingsService.getSettings();
   const startupSafeMode = safeModeService.getStartupState();
-  const saved = startupSafeMode.active ? settingsService.getDefaultSettings() : settingsService.getSettings();
+  const saved = startupSafeMode.active ? settingsService.getDefaultSettings() : warmedSettings;
   const [crashRecoveryRecord, setCrashRecoveryRecord] = useState<CrashRecoveryRecord | null>(() => {
     const record = crashRecoveryService.recordStartupOpened();
     return record && crashRecoveryService.shouldShowRecoveryDialog() ? record : null;
@@ -394,6 +415,7 @@ export function App() {
   };
   const toggleTheme = () => applyManualTheme(theme === "light" ? "dark" : "light");
   const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>(() => presencePreferenceService.get());
+  const [liveActivityStatusText, setLiveActivityStatusText] = useState<string | null>(() => activityPresenceService.getLiveStatusText());
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
   const [passwordRecoveryMessage, setPasswordRecoveryMessage] = useState<string | null>(null);
@@ -408,6 +430,7 @@ export function App() {
   const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
   const followMutationInFlightRef = useRef(new Set<string>());
   const friendsReturnViewRef = useRef<ActiveView>("community");
+  const openDirectMessagesRef = useRef<(userId?: string) => void>(() => undefined);
   const [activeProfileUserId, setActiveProfileUserId] = useState<string | null>(null);
   const [profileVerificationBadges, setProfileVerificationBadges] = useState<VerificationBadge[]>([]);
   const [profilePrivacyProjection,setProfilePrivacyProjection]=useState<ProfilePrivacyProjection>(defaultProfilePrivacyProjection);
@@ -427,6 +450,10 @@ export function App() {
   useEffect(() => { let active = true; const refresh = () => { void savedMessageService.getSavedMessages().then((items) => { if (active) setSavedMessages(items); }); }; refresh(); const unsubscribe = savedMessageService.subscribe(refresh); return () => { active = false; unsubscribe(); }; }, []);
   const [communityEvents, setCommunityEvents] = useState(mockUpcomingEvents);
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
+  const [activeDirectCall, setActiveDirectCall] = useState<DmCall | null>(null);
+  const [directScreenPickerOpen, setDirectScreenPickerOpen] = useState(false);
+  const directCallWasConnectedRef = useRef(false);
+  const directCallReconnectInProgressRef = useRef(false);
   const [userSafetySettings, setUserSafetySettings] = useState(() => userSafetyCenterService.getSettings());
   const [blockedUserVersion, setBlockedUserVersion] = useState(0);
   useEffect(() => userBlockingService.subscribe(() => setBlockedUserVersion((version) => version + 1)), []);
@@ -481,6 +508,7 @@ export function App() {
     moveChannel,
     addChannel,
     replaceCommunities,
+    patchCommunity,
     replaceCommunityCategories,
     replaceChannelMessages,
     replaceCommunityMembers,
@@ -520,6 +548,10 @@ export function App() {
     dismissToast,
     pushToast,
   } = useOverlayState();
+  const [activeSettingsSection, setActiveSettingsSection] = useState<UserSettingsSection | null>(null);
+  useEffect(() => {
+    if (!settingsOpen) setActiveSettingsSection(null);
+  }, [settingsOpen]);
   const externalBlockingOverlayOpen = Boolean(
     createCommunityOpen
     || createChannelCategoryId
@@ -546,18 +578,30 @@ export function App() {
     clearError: clearAuthError,
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
+  const rootDashboardAccess = useRootDashboardAccess(Boolean(authSession));
   const currentUserId = isSupabaseMode ? authSession?.user?.id ?? mockCurrentUserId : mockCurrentUserId;
   const directMessageUserId = currentUserId;
+  const [remoteVoiceOccupancyByChannelId, setRemoteVoiceOccupancyByChannelId] = useState<Record<string, VoiceRoomOccupancy>>({});
   const activeVoiceRooms = useMemo(
-    () => activeVoiceRoomDiscoveryService.getVisibleRooms({ communities, currentUserId, voiceSnapshot }),
-    [communities, currentUserId, voiceSnapshot],
+    () => activeVoiceRoomDiscoveryService.getVisibleRooms({
+      communities,
+      currentUserId,
+      voiceSnapshot,
+      occupancyByChannelId: remoteVoiceOccupancyByChannelId,
+    }),
+    [communities, currentUserId, remoteVoiceOccupancyByChannelId, voiceSnapshot],
   );
   const voiceOccupancyByChannelId = useMemo(
-    () => activeVoiceRoomDiscoveryService.getOccupancyByChannelId({ communities: [activeCommunity], currentUserId, voiceSnapshot }),
-    [activeCommunity, currentUserId, voiceSnapshot],
+    () => activeVoiceRoomDiscoveryService.getOccupancyByChannelId({
+      communities: [activeCommunity],
+      currentUserId,
+      voiceSnapshot,
+      occupancyByChannelId: remoteVoiceOccupancyByChannelId,
+    }),
+    [activeCommunity, currentUserId, remoteVoiceOccupancyByChannelId, voiceSnapshot],
   );
-  useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
-  useEffect(() => { if (!authSession || !activeDirectConversationId || !dataSourceService.getStatus().isSupabase) return; let active = true; void Promise.all([directMessageService.getDirectMessages(activeDirectConversationId), directMessageService.getDirectSharedMedia(activeDirectConversationId, { limit: 24 })]).then(([messages, media]) => { if (!active) return; if (!messages.ok) { pushToast(messages.error.message, "error"); return; } setDirectConversations((current) => current.map((conversation) => conversation.id === activeDirectConversationId ? { ...conversation, messages: messages.data, sharedMedia: media.ok ? media.data.items : conversation.sharedMedia } : conversation)); }); return () => { active = false; }; }, [activeDirectConversationId, authSession?.user?.id, pushToast]);
+
+  useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);  useEffect(() => { if (!authSession || !activeDirectConversationId || !dataSourceService.getStatus().isSupabase) return; let active = true; void Promise.all([directMessageService.getDirectMessages(activeDirectConversationId), directMessageService.getDirectSharedMedia(activeDirectConversationId, { limit: 24 })]).then(([messages, media]) => { if (!active) return; if (!messages.ok) { pushToast(messages.error.message, "error"); return; } setDirectConversations((current) => current.map((conversation) => conversation.id === activeDirectConversationId ? { ...conversation, messages: messages.data, sharedMedia: media.ok ? media.data.items : conversation.sharedMedia } : conversation)); }); return () => { active = false; }; }, [activeDirectConversationId, authSession?.user?.id, pushToast]);
   useEffect(() => {
     if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
     let active = true;
@@ -629,6 +673,7 @@ export function App() {
     }).then((cleanup) => { if (!active) cleanup(); else unsubscribeState = cleanup; });
     void relationshipService.subscribeToFriendNotifications((notification) => {
       if (!active) return;
+      void refreshFriendState();
       void relationshipService.routeFriendNotification(notification);
     }).then((cleanup) => { if (!active) cleanup(); else unsubscribeNotifications = cleanup; });
     return () => { active = false; unsubscribeNotifications?.(); unsubscribeState?.(); };
@@ -645,11 +690,40 @@ export function App() {
           const friends = current.friends.map((friend) => presence[friend.userId] ? { ...friend, ...presence[friend.userId] } : friend);
           return { ...current, friends };
         });
+        setDirectConversations((current) => current.map((conversation) => {
+          const next = presence[conversation.participantUserId];
+          if (!next || (conversation.participantStatus === next.status && conversation.participantStatusText === next.statusText)) return conversation;
+          return { ...conversation, participantStatus: next.status, participantStatusText: next.statusText };
+        }));
       },
     ).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
     return () => { active = false; unsubscribe?.(); };
   }, [authSession?.user?.id, friendPresenceIds]);
+  const dmPresenceIds = directConversations.map((conversation) => conversation.participantUserId).filter(Boolean).sort().join("|");
+  useEffect(() => {
+    if (!authSession?.user?.id || dataSourceService.getStatus().isMock) return;
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    void friendPresenceService.subscribeDirectPeers(
+      dmPresenceIds ? dmPresenceIds.split("|") : [],
+      (presence) => {
+        if (!active) return;
+        setDirectConversations((current) => current.map((conversation) => {
+          const next = presence[conversation.participantUserId];
+          if (!next || (conversation.participantStatus === next.status && conversation.participantStatusText === next.statusText)) return conversation;
+          return { ...conversation, participantStatus: next.status, participantStatusText: next.statusText };
+        }));
+      },
+    ).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
+    return () => { active = false; unsubscribe?.(); };
+  }, [authSession?.user?.id, dmPresenceIds]);
   useEffect(() => presencePreferenceService.subscribe(setTrayPresenceStatus), []);
+  useEffect(() => activityPresenceService.subscribe((snapshot) => {
+    setLiveActivityStatusText(activityPresenceService.getEnabled() ? snapshot.statusText?.trim() || null : null);
+  }), []);
+  useEffect(() => activityPresenceService.subscribeEnabled((enabled) => {
+    setLiveActivityStatusText(enabled ? activityPresenceService.getSnapshot().statusText?.trim() || null : null);
+  }), []);
   useEffect(() => { globalPresenceService.setSharingEnabled(userSafetySettings.showOnlineStatus); }, [userSafetySettings.showOnlineStatus]);
   useEffect(() => {
     const userId = authSession?.user?.id;
@@ -746,6 +820,7 @@ export function App() {
     setPaletteSearchLoading(true);
     const timeoutId = window.setTimeout(() => {
       void (async () => {
+        const { advancedSearchService } = await import("./services/advancedSearchService");
         const local = advancedSearchService.searchLocal(query, searchableCommunities, visibleMentionItems, currentUserId, searchableSavedMessages);
         const remote = dataSourceService.getStatus().isSupabase && query.length >= 2 ? await advancedSearchService.searchRemote(query, null, 50) : [];
         if (canceled) return;
@@ -766,6 +841,37 @@ export function App() {
     const connected = voiceSnapshot.status === "connected" || voiceSnapshot.status === "reconnecting";
     return connected && voiceSnapshot.roomContext?.channelId === displayedActiveChannel.id;
   }, [displayedActiveChannel.id, voiceSnapshot.roomContext?.channelId, voiceSnapshot.status]);
+
+  useEffect(() => {
+    if (!authSession || !dataSourceService.getStatus().isSupabase) return;
+    if (displayedActiveChannel.type !== "voice") return;
+
+    let cancelled = false;
+    const channelId = displayedActiveChannel.id;
+    const communityId = activeCommunity.id;
+
+    const refresh = async () => {
+      const { voiceOccupancyService } = await import("./services/voice/voiceOccupancyService");
+      const result = await voiceOccupancyService.fetchOccupancy({ communityId, channelId });
+      if (cancelled || !result.ok) return;
+      setRemoteVoiceOccupancyByChannelId((current) => ({
+        ...current,
+        [channelId]: {
+          participantCount: result.data.participantCount,
+          participantNames: result.data.participantNames,
+          participants: result.data.participants,
+        },
+      }));
+    };
+
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 10_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeCommunity.id, authSession?.user?.id, displayedActiveChannel.id, displayedActiveChannel.type, voiceSnapshot.status]);
+
   const latestActiveMessageId = useMemo(() => {
     const channelMessages = activeCommunity.messages.filter((message) => message.channelId === displayedActiveChannel.id && !message.deletedAt);
     return channelMessages[channelMessages.length - 1]?.id ?? null;
@@ -789,6 +895,7 @@ export function App() {
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
   const supabaseRolesLoadedRef = useRef(new Set<string>());
+  const [sidebarReloadNonce, setSidebarReloadNonce] = useState(0);
   const messageHighlightTimerRef = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -841,6 +948,34 @@ export function App() {
       window.removeEventListener("beforeunload", leaveVoiceOnWindowClose);
     };
   }, []);
+
+  useEffect(() => {
+    if (!authSession || safeMode.active || !dataSourceService.getStatus().isSupabase) {
+      setActiveDirectCall(null);
+      return;
+    }
+    let active = true;
+    const applyCall = (call: DmCall | null) => {
+      if (!active) return;
+      if (!call || !["ringing", "active"].includes(call.status)) {
+        setActiveDirectCall((current) => !call || current?.id === call.id ? null : current);
+        return;
+      }
+      setActiveDirectCall(call);
+    };
+    const refresh = async (callId?: string) => {
+      const result = callId ? await dmCallService.getCall(callId) : await dmCallService.getCurrentActiveCall();
+      if (result.ok) applyCall(result.data);
+    };
+    void refresh();
+    const unsubscribeLocal = dmCallService.subscribeLocal(applyCall);
+    const unsubscribeRealtime = dmCallService.subscribeRealtime(currentUserId, (callId) => { void refresh(callId); });
+    return () => {
+      active = false;
+      unsubscribeLocal();
+      unsubscribeRealtime();
+    };
+  }, [authSession?.user?.id, currentUserId, safeMode.active]);
 
   useEffect(() => {
     const stableTimer = window.setTimeout(() => {
@@ -899,7 +1034,10 @@ export function App() {
   }, [activeChannel.id, activeCommunity.id, activeView, currentUser, isActiveMessageListNearBottom, markChannelUnread, upsertLocalMessage]);
 
   const handleRealtimeMessageUpdate = useCallback((message: MessageSummary) => {
-    if (message.communityId !== activeCommunity.id || message.channelId !== activeChannel.id) return;
+    // Community-wide realtime: accept edits/soft-deletes for ANY channel of the community, not
+    // only the active one, so moderation removals and edits propagate live everywhere they are
+    // cached. updateLocalMessage/upsertLocalMessage target message.channelId, so this is safe.
+    if (message.communityId !== activeCommunity.id) return;
 
     if (message.deletedAt) {
       updateLocalMessage({
@@ -954,8 +1092,8 @@ export function App() {
     enabled: Boolean(authSession) && !safeMode.active && hasHydratedActiveCommunity,
     communityId: activeCommunity.id,
     currentUserId: currentUser.userId,
-    displayName: currentUser.displayName,
-    avatarUrl: currentUser.avatarUrl,
+    displayName: profileSettings.displayName || currentUser.displayName,
+    avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl || currentUser.avatarUrl,
     status: currentUser.status,
   });
   useEffect(() => {
@@ -1000,16 +1138,31 @@ export function App() {
           ...member,
           username: profileSettings.username || member.username,
           displayName: profileSettings.displayName || member.displayName,
-          avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? member.avatarUrl,
+          // Own profile media always wins over stale presence/member payloads.
+          // Empty string = removed photo (initials in MemberAvatar); undefined lets pack fallback run.
+          avatarUrl: profileSettings.avatarUrl === null ? "" : profileSettings.avatarUrl || member.avatarUrl,
           status: mapTrayStatusToMemberStatus(trayPresenceStatus),
-          statusText: profileSettings.statusText || trayPresenceLabels[trayPresenceStatus] || member.statusText,
+          statusText: liveActivityStatusText || profileSettings.statusText || trayPresenceLabels[trayPresenceStatus] || member.statusText,
           bio: profileSettings.bio || member.bio,
         };
       }),
     };
-    return filterCommunityForAccess(baseCommunity, communityAccess);
-  }, [activeCommunity, communityAccess, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings, trayPresenceStatus]);
-  const displayedCurrentUser = displayedActiveCommunity.members.find((member) => member.userId === currentUser.userId) ?? currentUser;
+  }, [activeCommunity, currentUserId, liveActivityStatusText, presenceChannel.onlineUserIds.length, presenceChannel.presenceByUserId, profileSettings, trayPresenceStatus]);
+  const displayedCurrentUser = useMemo<Member>(() => {
+    const base = displayedActiveCommunity.members.find((member) => member.userId === currentUserId)
+      ?? activeCommunity.members.find((member) => member.userId === currentUserId)
+      ?? { ...fallbackCurrentUser, userId: currentUserId };
+    return {
+      ...base,
+      userId: currentUserId,
+      username: profileSettings.username || base.username,
+      displayName: profileSettings.displayName || base.displayName,
+      avatarUrl: profileSettings.avatarUrl === null ? "" : profileSettings.avatarUrl || base.avatarUrl,
+      status: mapTrayStatusToMemberStatus(trayPresenceStatus),
+      statusText: liveActivityStatusText || profileSettings.statusText || trayPresenceLabels[trayPresenceStatus] || base.statusText,
+      bio: profileSettings.bio || base.bio,
+    };
+  }, [activeCommunity.members, currentUserId, displayedActiveCommunity.members, liveActivityStatusText, profileSettings, trayPresenceStatus]);
   const followSuggestionsV2 = useMemo(() => rankFollowSuggestions({
     candidates: communities.flatMap((community) => community.members),
     communities,
@@ -1026,9 +1179,38 @@ export function App() {
   const selectedProfileMember = useMemo(() => {
     if (!activeProfileUserId) return null;
     const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === activeProfileUserId) ?? null;
-    if (!member || member.userId !== directMessageUserId) return member;
-    return { ...member, username: profileSettings.username || member.username, displayName: profileSettings.displayName || member.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? member.avatarUrl, status: (profileSettings.status === "busy" ? "dnd" : profileSettings.status) as typeof member.status, statusText: profileSettings.statusText || member.statusText, bio: profileSettings.bio || member.bio };
-  }, [activeProfileUserId, communities, directMessageUserId, profileSettings]);
+    if (member) {
+      if (member.userId !== directMessageUserId) return member;
+      return { ...member, username: profileSettings.username || member.username, displayName: profileSettings.displayName || member.displayName, avatarUrl: profileSettings.avatarUrl === null ? "" : profileSettings.avatarUrl || member.avatarUrl, status: (profileSettings.status === "busy" ? "dnd" : profileSettings.status) as typeof member.status, statusText: liveActivityStatusText || profileSettings.statusText || member.statusText, bio: profileSettings.bio || member.bio };
+    }
+    const friend = friendState.friends.find((candidate) => candidate.userId === activeProfileUserId);
+    if (friend) {
+      return {
+        id: friend.id ?? `friend-${friend.userId}`,
+        userId: friend.userId,
+        displayName: friend.displayName,
+        username: friend.username,
+        avatarSeed: friend.username,
+        avatarUrl: friend.avatarUrl,
+        status: friend.status,
+        statusText: friend.statusText,
+        roleId: "member",
+      } satisfies Member;
+    }
+    const conversation = directConversations.find((candidate) => candidate.participantUserId === activeProfileUserId);
+    if (!conversation) return null;
+    return {
+      id: `dm-peer-${conversation.participantUserId}`,
+      userId: conversation.participantUserId,
+      displayName: conversation.participantName,
+      username: conversation.participantUsername,
+      avatarSeed: conversation.participantUsername,
+      avatarUrl: conversation.participantAvatarUrl,
+      status: conversation.participantStatus,
+      statusText: conversation.participantStatusText,
+      roleId: "member",
+    } satisfies Member;
+  }, [activeProfileUserId, communities, directConversations, directMessageUserId, friendState.friends, liveActivityStatusText, profileSettings]);
 
   useEffect(() => {
     if (!activeProfileUserId || !selectedProfileMember || !dataSourceService.getStatus().isSupabase) {
@@ -1063,12 +1245,12 @@ export function App() {
     const profile = profilePrivacyService.applyProjection(sourceProfile,projection);
     const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
-    const ownOverrides = profile.id === directMessageUserId ? { username: profileSettings.username || profile.username, displayName: profileSettings.displayName || profile.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? profile.avatarUrl, coverUrl: profileSettings.coverUrl === null ? undefined : profileSettings.coverUrl ?? profile.coverUrl, status: profileSettings.status, statusText: profileSettings.statusText || profile.statusText, bio: profileSettings.bio || profile.bio, location: profileSettings.location || profile.location, timezone: profileSettings.timezone || profile.timezone, preferredLanguage: profileSettings.preferredLanguage || profile.preferredLanguage, tags: profileSettings.tags.length ? profileSettings.tags : profile.tags } : {};
+    const ownOverrides = profile.id === directMessageUserId ? { username: profileSettings.username || profile.username, displayName: profileSettings.displayName || profile.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? profile.avatarUrl, coverUrl: profileSettings.coverUrl === null ? undefined : profileSettings.coverUrl ?? profile.coverUrl, status: profileSettings.status, statusText: liveActivityStatusText || profileSettings.statusText || profile.statusText, bio: profileSettings.bio || profile.bio, location: profileSettings.location || profile.location, timezone: profileSettings.timezone || profile.timezone, preferredLanguage: profileSettings.preferredLanguage || profile.preferredLanguage, tags: profileSettings.tags.length ? profileSettings.tags : profile.tags } : {};
     const isFollowing = profile.id !== directMessageUserId && followedUserIds.includes(profile.id);
     const initialMockFollowing = currentUserFollowedUserIds.includes(profile.id);
     const followerDelta = dataSourceService.getStatus().isMock ? Number(isFollowing) - Number(initialMockFollowing) : 0;
     return { ...profile, ...ownOverrides, isFollowing, stats: { ...profile.stats, followers: Math.max(0, profile.stats.followers + followerDelta) }, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
-  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, profilePrivacyProjection, profilePrivacySubjectId, profileSettings, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember]);
+  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, liveActivityStatusText, profilePrivacyProjection, profilePrivacySubjectId, profileSettings, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember]);
 
   useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
   useEffect(()=>{if(!activeProfileUserId){setProfilePrivacyProjection(defaultProfilePrivacyProjection);setProfilePrivacySubjectId(null);return;}const subjectId=activeProfileUserId;const viewerId=directMessageUserId;const hasSharedCommunity=communities.some((community)=>community.members.some((member)=>member.userId===viewerId)&&community.members.some((member)=>member.userId===subjectId));const isFriend=friendState.friends.some((friend)=>friend.userId===subjectId);let active=true;void profilePrivacyService.getProjection({targetUserId:subjectId,viewerUserId:viewerId,hasSharedCommunity,isFriend}).then((projection)=>{if(active){setProfilePrivacyProjection(projection);setProfilePrivacySubjectId(subjectId)}});return()=>{active=false};},[activeProfileUserId,communities,directMessageUserId,friendState.friends]);
@@ -1090,6 +1272,29 @@ export function App() {
     if (appearanceSettings.themeMode === "system") setTheme(systemTheme);
   }), [appearanceSettings.themeMode]);
   useEffect(() => { if (authSession?.user?.id) void settingsService.hydrateAccountSettings().then((result) => { if (result.ok) { setAppearanceSettings(result.settings.appearanceSettings); setTheme(appearanceService.resolveTheme(result.settings.appearanceSettings.themeMode)); } }); }, [authSession?.user?.id]);
+  useEffect(() => {
+    if (!authSession?.user?.id) return;
+    let cancelled = false;
+    void profileService.getCurrentProfile().then((result) => {
+      if (cancelled || !result.ok || !result.data) return;
+      const profile = result.data;
+      const next = settingsService.updateProfileSettings({
+        username: profile.username,
+        displayName: profile.displayName,
+        status: profile.status,
+        statusText: profile.statusText ?? "",
+        bio: profile.bio ?? "",
+        avatarUrl: profile.avatarUrl ?? null,
+        coverUrl: profile.coverUrl ?? null,
+        location: profile.location ?? "",
+        timezone: profile.timezone ?? "",
+        preferredLanguage: profile.preferredLanguage ?? "",
+        tags: [...profile.tags],
+      }).profileSettings;
+      setProfileSettings(next);
+    });
+    return () => { cancelled = true; };
+  }, [authSession?.user?.id]);
 
   useEffect(() => {
     setIsActiveMessageListNearBottom(true);
@@ -1255,43 +1460,100 @@ export function App() {
   useEffect(() => {
     // Skip placeholder communities (e.g. "fallback-community" shown before the real list
     // loads). Their non-UUID ids make PostgREST reject the query with a 400 error toast.
-    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity || !isSupabaseEntityId(activeCommunity.id) || supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
+    if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity || !isSupabaseEntityId(activeCommunity.id)) return;
+    if (supabaseSidebarLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
-    supabaseSidebarLoadedRef.current.add(activeCommunity.id);
+    let applied = false;
+    const communityId = activeCommunity.id;
+    supabaseSidebarLoadedRef.current.add(communityId);
 
-    Promise.all([
-      channelCategoryService.listCategories(activeCommunity.id),
-      channelService.listChannels(activeCommunity.id),
-    ]).then(([categoryResult, channelResult]) => {
+    void (async () => {
+      const [categoryResult, channelResult] = await Promise.all([
+        channelCategoryService.listCategories(communityId),
+        channelService.listChannels(communityId),
+      ]);
       if (canceled) return;
 
       if (!categoryResult.ok) {
-        supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+        supabaseSidebarLoadedRef.current.delete(communityId);
         pushToast(categoryResult.error.message, "error");
         return;
       }
 
       if (!channelResult.ok) {
-        supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+        supabaseSidebarLoadedRef.current.delete(communityId);
         pushToast(channelResult.error.message, "error");
         return;
       }
 
-      const fallbackCategoryId = `${activeCommunity.id}-channels`;
-      const nextCategories: ChannelCategory[] = (categoryResult.data.length ? categoryResult.data : [
-        { id: fallbackCategoryId, communityId: activeCommunity.id, name: "Channels", position: 0, createdAt: null, updatedAt: null },
-      ]).map((category) => ({
+      let categoryRows = categoryResult.data;
+      // Never invent mock-style ids like `${uuid}-channels` — Postgres category_id is uuid.
+      if (!categoryRows.length) {
+        const created = await communityStructureService.createTextCategory(communityId, "Channels");
+        if (canceled) return;
+        if (created.ok) {
+          categoryRows = [{
+            id: created.data.id,
+            communityId,
+            name: created.data.name,
+            position: created.data.position,
+            createdAt: null,
+            updatedAt: null,
+          }];
+        }
+      }
+
+      // Categories query empty but channels still reference real category UUIDs — recover from channel rows.
+      if (!categoryRows.length && channelResult.data.length) {
+        const recovered = new Map<string, (typeof categoryRows)[number]>();
+        for (const channel of channelResult.data) {
+          if (!channel.categoryId || !isSupabaseEntityId(channel.categoryId) || recovered.has(channel.categoryId)) continue;
+          recovered.set(channel.categoryId, {
+            id: channel.categoryId,
+            communityId,
+            name: "Channels",
+            position: recovered.size,
+            createdAt: null,
+            updatedAt: null,
+          });
+        }
+        categoryRows = [...recovered.values()];
+      }
+
+      if (!categoryRows.length && channelResult.data.length) {
+        pushToast("Channels loaded without categories. Open Manage channels to repair the layout.", "info");
+      }
+
+      const nextCategories: ChannelCategory[] = categoryRows.map((category) => ({
         id: category.id,
         name: category.name,
         position: category.position,
         channels: [],
       }));
       const categoryById = new Map(nextCategories.map((category) => [category.id, category]));
-      const defaultCategory = nextCategories[0];
+      let defaultCategory = nextCategories[0];
+
+      // Orphan channels (null / unknown category) still need a visible bucket.
+      if (channelResult.data.some((channel) => !channel.categoryId || !categoryById.has(channel.categoryId))) {
+        if (!defaultCategory) {
+          const created = await communityStructureService.createTextCategory(communityId, "Channels");
+          if (canceled) return;
+          if (created.ok) {
+            defaultCategory = {
+              id: created.data.id,
+              name: created.data.name,
+              position: created.data.position,
+              channels: [],
+            };
+            nextCategories.push(defaultCategory);
+            categoryById.set(defaultCategory.id, defaultCategory);
+          }
+        }
+      }
 
       channelResult.data.forEach((channel) => {
-        const targetCategory = categoryById.get(channel.categoryId ?? "") ?? defaultCategory;
+        const targetCategory = (channel.categoryId ? categoryById.get(channel.categoryId) : undefined) ?? defaultCategory;
         if (!targetCategory) return;
 
         targetCategory.channels.push({
@@ -1309,13 +1571,29 @@ export function App() {
         category.channels.sort((left, right) => (left.position ?? 0) - (right.position ?? 0) || left.name.localeCompare(right.name));
       });
 
-      replaceCommunityCategories(activeCommunity.id, nextCategories);
-    });
+      if (canceled) return;
+      replaceCommunityCategories(communityId, nextCategories);
+      applied = true;
+    })();
 
     return () => {
       canceled = true;
+      // If this run was aborted before applying, allow a fresh load on the next mount.
+      if (!applied) supabaseSidebarLoadedRef.current.delete(communityId);
     };
-  }, [activeCommunity.id, activeCommunity.kind, authSession, hasHydratedActiveCommunity, isSupabaseMode, pushToast, replaceCommunityCategories, safeMode.active]);
+  }, [activeCommunity.id, activeCommunity.kind, authSession, hasHydratedActiveCommunity, isSupabaseMode, pushToast, replaceCommunityCategories, safeMode.active, sidebarReloadNonce]);
+
+  // Heal communities that still hold mock-style category ids (`${uuid}-channels`) from older clients.
+  useEffect(() => {
+    if (!isSupabaseMode || !isSupabaseEntityId(activeCommunity.id)) return;
+    const hasLegacyMockCategory = activeCommunity.categories.some((category) => {
+      if (isSupabaseEntityId(category.id)) return false;
+      return category.id.startsWith(`${activeCommunity.id}-`);
+    });
+    if (!hasLegacyMockCategory) return;
+    supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+    setSidebarReloadNonce((value) => value + 1);
+  }, [activeCommunity.categories, activeCommunity.id, isSupabaseMode]);
 
   useEffect(() => {
     if (activeCommunity.kind !== "text" || safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveChannel || !isSupabaseEntityId(activeCommunity.id) || !isSupabaseEntityId(activeChannel.id)) return;
@@ -1489,6 +1767,7 @@ export function App() {
     const target = communities.find((community) => community.id === communityId);
     const access = target ? getCommunityAccess(currentUserId, target) : null;
     if (!target || target.kind !== "podcast" || !access || (!access.isMember && !access.canViewPublicContent)) { pushToast("This Podcast episode is unavailable or private.", "error"); return false; }
+    const { podcastService } = await import("./services/audio/podcastService");
     const result = await podcastService.getPodcastEpisode(episodeId);
     if (!result.ok || result.data.communityId !== communityId || result.data.status !== "published") { pushToast("This Podcast episode is unavailable, private, or no longer published.", "error"); return false; }
     communityNavigationService.rememberPodcastSection(communityId, "episodes");
@@ -1554,6 +1833,18 @@ export function App() {
         setActiveView("friends");
         closeTransientOverlays();
         pushToast("Opened friends foundation from deep link.", "info");
+        return;
+      }
+
+      if (action.type === "directMessage") {
+        const conversation = directConversations.find((candidate) => candidate.id === action.conversationId);
+        if (conversation) {
+          setActiveDirectConversationId(conversation.id);
+          setActiveView("directMessages");
+          closeTransientOverlays();
+          return;
+        }
+        openDirectMessagesRef.current();
         return;
       }
 
@@ -1748,7 +2039,7 @@ export function App() {
       {
         id: "cmd-friends",
         group: "Navigation",
-        label: "Open friends foundation",
+        label: "Open friends",
         detail: "Local beta friends placeholder",
         run: () => {
           if (activeView !== "friends") {
@@ -1782,7 +2073,7 @@ export function App() {
           : undefined;
       all.push({
         id: result.id, group: result.category, label: result.label, detail: result.detail, verification,
-        run: () => {
+        run: async () => {
           if (result.category === "People" && result.userId) {
             const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === result.userId);
             if (member && !blockedUserIds.includes(member.userId)) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
@@ -1792,6 +2083,7 @@ export function App() {
           else if (result.category === "Podcasts" && result.communityId && result.podcastEpisodeId) { void openPodcastEpisodeSource(result.communityId, result.podcastEpisodeId, "Opened the Podcast search result."); }
           else if (result.category === "Communities" && result.communityId) { const target = communities.find((community) => community.id === result.communityId); if (target) { setActiveView(communityViewForKind(target.kind)); switchCommunity(result.communityId); } }
           else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
+            const { advancedSearchService } = await import("./services/advancedSearchService");
             const target = advancedSearchService.resolveMessageJumpTarget(result, communities, currentUserId);
             if (target.ok) jumpToMessage(target.community, target.message);
             else {
@@ -2026,8 +2318,9 @@ export function App() {
     void import("./services/voiceService").then(({ voiceService }) => {
       const result = voiceService.setDeafened(!voiceSnapshot.deafened);
       if (!result.ok) pushToast(result.error.message, "error");
+      else if (activeDirectCall) void dmCallService.recordDeviceEvent(activeDirectCall.id, "speaker", voiceSnapshot.deafened ? "enabled" : "disabled");
     });
-  }, [pushToast, voiceSnapshot.deafened]);
+  }, [activeDirectCall, pushToast, voiceSnapshot.deafened]);
 
   const leaveFeedVoice = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.leave().then(() => pushToast("Left the voice room.", "info")));
@@ -2067,9 +2360,9 @@ export function App() {
     pushToast(`Opened ${channel.name}. Use Join room to connect.`, "info");
   }, [communities, pushToast, setActiveChannelId, switchCommunity]);
 
-  const connectDirectVoice = useCallback(async (conversationId: string, peerName: string): Promise<boolean> => {
+  const connectDirectVoice = useCallback(async (conversationId: string, peerName: string, callId: string, callType: DmCallType = "voice"): Promise<boolean> => {
     const { liveKitService } = await import("./services/livekit/livekitService");
-    const token = await liveKitService.fetchDirectToken({ conversationId, participantName: displayedCurrentUser.displayName, intent: "voice" });
+    const token = await liveKitService.fetchDirectToken({ conversationId, callId, participantName: displayedCurrentUser.displayName, intent: callType === "video" ? "video" : "voice" });
     if (!token.ok) {
       pushToast(token.error.code === "LIVEKIT_TOKEN_FAILED" ? "Direct voice calls aren't enabled on this server yet." : token.error.message, "error");
       return false;
@@ -2077,12 +2370,21 @@ export function App() {
     const { voiceService } = await import("./services/voiceService");
     const result = await voiceService.connectAuthorizedToken(token.data, { communityId: conversationId, communityName: peerName, channelId: conversationId, channelName: "Direct call" });
     if (!result.ok) { pushToast(result.error.message, "error"); return false; }
+    directCallWasConnectedRef.current = true;
+    await dmCallService.updateParticipant(callId, "connected", { microphoneEnabled: true, cameraEnabled: callType === "video", screenShareEnabled: false });
+    await dmCallService.recordDeviceEvent(callId, "microphone", "connected");
+    if (callType === "video") {
+      const camera = await voiceService.setCameraEnabled(true);
+      if (!camera.ok) pushToast(camera.error.message, "error");
+      else await dmCallService.recordDeviceEvent(callId, "camera", "enabled");
+    }
     return true;
   }, [displayedCurrentUser.displayName, pushToast]);
 
   const handleAcceptVoiceCall = useCallback((room: VoiceCallRoom) => {
     if (room.kind === "direct") {
-      void connectDirectVoice(room.conversationId, room.peerName);
+      void dmCallService.getCall(room.callId).then((result) => { if (result.ok) setActiveDirectCall(result.data); });
+      void connectDirectVoice(room.conversationId, room.peerName, room.callId, room.callType);
       return;
     }
     const community = communities.find((candidate) => candidate.id === room.communityId);
@@ -2098,18 +2400,169 @@ export function App() {
     );
   }, [communities, connectDirectVoice, displayedCurrentUser.displayName, pushToast, setActiveChannelId, switchCommunity]);
 
-  const startDirectCall = useCallback(async (conversationId: string, peer: { id: string; name: string; avatarUrl?: string }) => {
-    const connected = await connectDirectVoice(conversationId, peer.name);
-    if (!connected) return;
-    const call = await voiceCallInviteService.invite({ id: peer.id, name: peer.name, avatarUrl: peer.avatarUrl }, { kind: "direct", conversationId, peerName: peer.name });
-    pushToast(call && call.status !== "failed" ? `Ringing ${peer.name}…` : "Could not ring this member.", call && call.status !== "failed" ? "info" : "error");
+  const startDirectCall = useCallback(async (conversationId: string, peer: DmCallPeer, callType: DmCallType = "voice", screenShare = false) => {
+    const created = await dmCallService.startCall(conversationId, peer.id, callType);
+    if (!created.ok) { pushToast(created.error.message, "error"); return; }
+    setActiveDirectCall(created.data);
+    const connected = await connectDirectVoice(conversationId, peer.name, created.data.id, callType);
+    if (!connected) {
+      await dmCallService.finishCall(created.data.id, "failed");
+      setActiveDirectCall(null);
+      return;
+    }
+    const call = await voiceCallInviteService.invite(
+      { id: peer.id, name: peer.name, avatarUrl: peer.avatarUrl },
+      { kind: "direct", conversationId, peerName: peer.name, callId: created.data.id, callType, startedAt: created.data.startedAt, livekitRoomName: created.data.livekitRoomName },
+    );
+    if (!call || call.status === "failed") {
+      await dmCallService.finishCall(created.data.id, "failed");
+      const { voiceService } = await import("./services/voiceService");
+      await voiceService.leave();
+      setActiveDirectCall(null);
+    } else if (screenShare) {
+      setDirectScreenPickerOpen(true);
+    }
+    pushToast(
+      call && call.status !== "failed" ? `Ringing ${peer.name}…` : call?.failureMessage || "Could not ring this member.",
+      call && call.status !== "failed" ? "info" : "error",
+    );
   }, [connectDirectVoice, pushToast]);
 
   const voiceCalls = useVoiceCallInvites({
     currentUser: authSession ? { id: currentUserId, name: displayedCurrentUser.displayName, avatarUrl: displayedCurrentUser.avatarUrl } : null,
     enabled: Boolean(authSession) && dataSourceService.getStatus().isSupabase,
     onAccept: handleAcceptVoiceCall,
+    onMessageCaller: (caller) => openDirectMessagesRef.current(caller.id),
   });
+
+  const directCallRuntime = useMemo<DmCallRuntimeState>(() => {
+    const diagnostics = voiceDiagnosticsRegistry.getSummary();
+    const quality = diagnostics.connectionQuality === "lost" ? "poor" : diagnostics.connectionQuality;
+    return {
+      connected: voiceSnapshot.status === "connected" || voiceSnapshot.status === "reconnecting",
+      reconnecting: voiceSnapshot.status === "reconnecting",
+      muted: voiceSnapshot.muted,
+      deafened: voiceSnapshot.deafened,
+      cameraEnabled: Boolean(voiceSnapshot.cameraEnabled),
+      screenSharing: voiceSnapshot.screenSharing,
+      participantCount: voiceSnapshot.participants.length,
+      activeSpeakerName: voiceSnapshot.participants.find((participant) => participant.isSpeaking)?.name,
+      quality: quality === "excellent" || quality === "good" || quality === "poor" ? quality : "unknown",
+      reconnectCount: diagnostics.reconnectCount,
+    };
+  }, [voiceSnapshot]);
+
+  const directCallPeer = useCallback((call: DmCall): DmCallPeer => {
+    const conversation = directConversations.find((candidate) => candidate.id === call.conversationId);
+    const remoteParticipant = call.participants.find((participant) => participant.userId !== currentUserId);
+    return {
+      id: conversation?.participantUserId ?? remoteParticipant?.userId ?? "unknown",
+      name: conversation?.participantName ?? "Direct call",
+      avatarUrl: conversation?.participantAvatarUrl,
+    };
+  }, [currentUserId, directConversations]);
+
+  const joinDirectCall = useCallback(async (call: DmCall, peer: DmCallPeer) => {
+    let targetCall = call;
+    if (call.status === "ringing" && call.createdBy !== currentUserId) {
+      const accepted = await dmCallService.respond(call.id, "accepted");
+      if (!accepted.ok) { pushToast(accepted.error.message, "error"); return; }
+      targetCall = accepted.data;
+    }
+    setActiveDirectCall(targetCall);
+    const connected = await connectDirectVoice(targetCall.conversationId, peer.name, targetCall.id, targetCall.callType);
+    if (!connected) await dmCallService.finishCall(targetCall.id, "failed");
+  }, [connectDirectVoice, currentUserId, pushToast]);
+
+  const toggleDirectCallMute = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
+      if (!result.ok) { pushToast(result.error.message, "error"); return; }
+      if (activeDirectCall) {
+        void dmCallService.updateParticipant(activeDirectCall.id, "connected", { microphoneEnabled: voiceSnapshot.muted });
+        void dmCallService.recordDeviceEvent(activeDirectCall.id, "microphone", voiceSnapshot.muted ? "unmuted" : "muted");
+      }
+    }));
+  }, [activeDirectCall, pushToast, voiceSnapshot.muted]);
+
+  const toggleDirectCallSpeaker = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) => {
+      const result = voiceService.setDeafened(!voiceSnapshot.deafened);
+      if (!result.ok) pushToast(result.error.message, "error");
+    });
+  }, [pushToast, voiceSnapshot.deafened]);
+
+  const toggleDirectCallCamera = useCallback(() => {
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.setCameraEnabled(!voiceSnapshot.cameraEnabled).then((result) => {
+      if (!result.ok) { pushToast(result.error.message, "error"); return; }
+      if (activeDirectCall) {
+        void dmCallService.updateParticipant(activeDirectCall.id, "connected", { cameraEnabled: !voiceSnapshot.cameraEnabled });
+        void dmCallService.recordDeviceEvent(activeDirectCall.id, "camera", voiceSnapshot.cameraEnabled ? "disabled" : "enabled");
+      }
+    }));
+  }, [activeDirectCall, pushToast, voiceSnapshot.cameraEnabled]);
+
+  const toggleDirectCallScreenShare = useCallback(() => {
+    if (!activeDirectCall) return;
+    if (!voiceSnapshot.screenSharing) { setDirectScreenPickerOpen(true); return; }
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.stopScreenShare().then((result) => {
+      if (!result.ok) { pushToast(result.error.message, "error"); return; }
+      void dmCallService.updateParticipant(activeDirectCall.id, "connected", { screenShareEnabled: false });
+      void dmCallService.recordDeviceEvent(activeDirectCall.id, "screen_share", "disabled");
+    }));
+  }, [activeDirectCall, pushToast, voiceSnapshot.screenSharing]);
+
+  const endDirectCall = useCallback(async (call: DmCall) => {
+    if (call.status === "ringing" && call.createdBy === currentUserId) voiceCalls.cancelOutgoing();
+    const { voiceService } = await import("./services/voiceService");
+    await voiceService.leave();
+    await dmCallService.finishCall(call.id, call.status === "active" ? "completed" : call.createdBy === currentUserId ? "canceled" : "declined");
+    directCallWasConnectedRef.current = false;
+    directCallReconnectInProgressRef.current = false;
+    setDirectScreenPickerOpen(false);
+    setActiveDirectCall(null);
+  }, [currentUserId, voiceCalls.cancelOutgoing]);
+
+  useEffect(() => {
+    if (!activeDirectCall) return;
+    if (voiceSnapshot.status === "connected") directCallWasConnectedRef.current = true;
+    if (voiceSnapshot.status === "connecting" || voiceSnapshot.status === "connected" || voiceSnapshot.status === "reconnecting") {
+      const participantState = voiceSnapshot.status === "connecting" ? "connecting" : voiceSnapshot.status === "reconnecting" ? "reconnecting" : "connected";
+      void dmCallService.updateParticipant(activeDirectCall.id, participantState, { microphoneEnabled: !voiceSnapshot.muted, cameraEnabled: Boolean(voiceSnapshot.cameraEnabled), screenShareEnabled: voiceSnapshot.screenSharing });
+      return;
+    }
+    if (voiceSnapshot.status === "error") {
+      void dmCallService.finishCall(activeDirectCall.id, "failed");
+      directCallWasConnectedRef.current = false;
+      setActiveDirectCall(null);
+      return;
+    }
+    if (voiceSnapshot.status === "idle" && directCallWasConnectedRef.current && !directCallReconnectInProgressRef.current) {
+      void dmCallService.finishCall(activeDirectCall.id, "completed");
+      directCallWasConnectedRef.current = false;
+      setActiveDirectCall(null);
+    }
+  }, [activeDirectCall?.id, voiceSnapshot.cameraEnabled, voiceSnapshot.muted, voiceSnapshot.screenSharing, voiceSnapshot.status]);
+
+  useEffect(() => {
+    if (!activeDirectCall || !directCallRuntime.connected) return;
+    const record = () => { void dmCallService.recordQuality(activeDirectCall.id, { reconnectCount: directCallRuntime.reconnectCount, quality: directCallRuntime.quality }); };
+    record();
+    const timer = window.setInterval(record, 30_000);
+    return () => window.clearInterval(timer);
+  }, [activeDirectCall?.id, directCallRuntime.connected, directCallRuntime.quality, directCallRuntime.reconnectCount]);
+
+  useEffect(() => {
+    if (!activeDirectCall) return;
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (!event.ctrlKey || !event.shiftKey || event.altKey || event.metaKey) return;
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
+      if (event.code === "KeyM") { event.preventDefault(); toggleDirectCallMute(); }
+      if (event.code === "KeyV") { event.preventDefault(); toggleDirectCallCamera(); }
+      if (event.code === "KeyE") { event.preventDefault(); void endDirectCall(activeDirectCall); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeDirectCall, endDirectCall, toggleDirectCallCamera, toggleDirectCallMute]);
 
   const joinActiveVoiceRoom = useCallback(async () => {
     if (displayedActiveChannel.type !== "voice") {
@@ -2162,6 +2615,23 @@ export function App() {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.leave().then(() => pushToast("Sesli odadan ayrıldın.", "info")));
   }, [pushToast]);
 
+  const expireVoiceChatMessage = useCallback(async (message: Message) => {
+    if (message.deletedAt) return;
+    const ownMessage = message.authorId === currentUser.userId;
+    const role = activeCommunity.roles.find((candidate) => candidate.id === currentUser.roleId);
+    const canModerate = (role?.level ?? 0) >= 60;
+    if (!ownMessage && !canModerate) return;
+
+    const result = await messageService.deleteMessage({ messageId: message.id, expectedEditedAt: message.editedAt ?? null });
+    if (!result.ok) return;
+    deleteLocalMessage({
+      communityId: activeCommunity.id,
+      channelId: message.channelId,
+      id: message.id,
+    });
+    if (replyToMessageId === message.id) setReplyToMessageId(null);
+  }, [activeCommunity.id, activeCommunity.roles, currentUser.roleId, currentUser.userId, deleteLocalMessage, replyToMessageId]);
+
   const toggleActiveVoiceMute = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) =>
       voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
@@ -2204,9 +2674,8 @@ export function App() {
 
     setActiveView(communityViewForKind(targetCommunity.kind));
     switchCommunity(roomContext.communityId, roomContext.channelId);
-    setActiveChannelId(roomContext.channelId);
     closeTransientOverlays();
-  }, [closeTransientOverlays, communities, pushToast, setActiveChannelId, switchCommunity, voiceSnapshot.roomContext]);
+  }, [closeTransientOverlays, communities, pushToast, switchCommunity, voiceSnapshot.roomContext]);
 
   const openCommunityVoiceScreenShare = useCallback(() => {
     const room = activeVoiceRooms.find((candidate) => (
@@ -2320,6 +2789,7 @@ export function App() {
     setActiveView("directMessages");
     closeTransientOverlays();
   }, [closeTransientOverlays, communities, directConversations, pushToast]);
+  openDirectMessagesRef.current = openDirectMessages;
 
   useEffect(() => {
     const handleMeetingParticipantNavigation = (event: Event) => {
@@ -2979,6 +3449,32 @@ export function App() {
     pushToast(`Left ${activeCommunity.name}.`, "info");
   };
 
+  const handleDiscoveryMembershipReady = async (communityId: string) => {
+    const existing = communities.find((community) => community.id === communityId);
+    if (existing) {
+      const access = getCommunityAccess(currentUserId, existing);
+      if (!access.isMember) {
+        openCommunityFromRail(existing.id);
+        pushToast(`Review ${existing.name}'s rules from the community menu before joining.`, "info");
+        return;
+      }
+      const landing = openJoinedCommunity(existing);
+      pushToast(`Opened ${existing.name} in ${landing.landingLabel}.`, "success");
+      return;
+    }
+
+    const listed = await communityService.listCommunities();
+    const summary = listed.ok ? listed.data.find((community) => community.id === communityId) : undefined;
+    if (!summary) {
+      pushToast("Membership was updated, but the community workspace could not be loaded.", "error");
+      return;
+    }
+
+    const joinedCommunity = addCommunity(createCommunityFromSummary(summary, { includeTemplateChannels: false }));
+    const landing = openJoinedCommunity(joinedCommunity);
+    pushToast(`Joined ${joinedCommunity.name}. Opened ${landing.landingLabel}.`, "success");
+  };
+
   const handleInviteAccepted = async (communityId: string, member: Member, status: InviteAcceptanceStatus, preview: CommunityInvitePreview) => {
     let target = communities.find((community) => community.id === communityId);
     if (!target) {
@@ -3036,6 +3532,7 @@ export function App() {
           summary = updated.data;
         } else {
           pushToast("Community created, but the logo could not be saved.", "error");
+          summary = { ...summary, iconUrl: uploaded.data.url };
         }
       } else {
         pushToast("Community created, but the logo upload failed.", "error");
@@ -3044,6 +3541,9 @@ export function App() {
 
     const community = addCommunity(createCommunityFromSummary(summary, { includeTemplateChannels: dataSourceService.getStatus().isMock }));
     analyticsService.trackEvent("community_created", { mode: dataSourceService.getStatus().mode, kind: community.kind });
+    // Force a fresh sidebar hydrate — create payloads intentionally omit mock template channels in Supabase mode.
+    supabaseSidebarLoadedRef.current.delete(community.id);
+    setSidebarReloadNonce((value) => value + 1);
     switchCommunity(community.id);
     setActiveView(communityViewForKind(community.kind));
     setCreateCommunityOpen(false);
@@ -3094,10 +3594,11 @@ export function App() {
   };
 
   const activeGlobalRoute = resolveGlobalNavigationKey(activeView);
-  const activeGlobalUtility = activeView === "support" ? "helpSupport" : null;
+  const activeGlobalUtility = settingsOpen ? "settings" : activeView === "support" ? "helpSupport" : null;
   const globalNavigationBadges = globalNavigationBadgeService.deriveBadges({
     communities,
     directConversations,
+    incomingFriendRequests: friendState.counts.incoming,
     activeVoiceRooms,
     visibleEvents: visibleCommunityEvents,
     blockedUserIds,
@@ -3117,6 +3618,7 @@ export function App() {
     }
     if (route === "feed") { setActiveView("mentionFeed"); return; }
     if (route === "dm") { openDirectMessages(); return; }
+    if (route === "discover") { setActiveView("discovery"); return; }
     if (route === "events") { setActiveView("events"); return; }
     if (route === "bookmarks") { setActiveView("savedMessages"); return; }
     const kind = route === "radio" ? "radio" : route === "podcasts" ? "podcast" : "text";
@@ -3124,9 +3626,18 @@ export function App() {
     if (target) openCommunityFromRail(target.id);
   };
 
-  const openGlobalUserSettings = () => {
-    const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest("Account");
+  const openGlobalUserSettings = (section: UserSettingsSection = "Account") => {
+    const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest(section);
     settingsService.requestInitialSection(request.modalSection);
+    setActiveSettingsSection(section);
+    closeTransientOverlays();
+    openSettings();
+  };
+
+  const openProfileSettings = () => {
+    const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest("Profile");
+    settingsService.requestInitialSection(request.modalSection);
+    setActiveSettingsSection("Profile");
     closeTransientOverlays();
     openSettings();
   };
@@ -3135,6 +3646,7 @@ export function App() {
     const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest("Voice & Audio");
     settingsService.requestInitialSection(request.modalSection);
     settingsService.requestInitialFocus("voice-microphone");
+    setActiveSettingsSection("Voice & Audio");
     closeTransientOverlays();
     openSettings();
   };
@@ -3143,6 +3655,7 @@ export function App() {
     const request = settingsNavigationPolicyService.createGlobalUserSettingsRequest("Voice & Audio");
     settingsService.requestInitialSection(request.modalSection);
     settingsService.requestInitialFocus("voice-output");
+    setActiveSettingsSection("Voice & Audio");
     closeTransientOverlays();
     openSettings();
   };
@@ -3153,18 +3666,19 @@ export function App() {
     setActiveView("support");
   };
 
+  const openRootPanel = () => {
+    closeTransientOverlays();
+    setActiveView("rootPanel");
+  };
+
   const communityServerRail = (
     <ServerRail
       communities={communities}
       activeCommunityId={activeCommunityId}
-      onOpenDiscovery={() => {
-        if (isV1FeatureEnabled("discoveryMarketplace")) setActiveView("discovery");
-        else pushToast("Community discovery is not included in Picom V1 Core.", "info");
-        closeTransientOverlays();
-      }}
       onSelectCommunity={openCommunityFromRail}
       onUtilityAction={(message) => {
-        if (message === "create-community") { setCreateCommunityOpen(true); return; }
+        if (message === "create-community" || message === "Add Community") { setCreateCommunityOpen(true); return; }
+        if (message === "open-discovery") { if (isV1FeatureEnabled("discoveryMarketplace")) setActiveView("discovery"); return; }
         pushToast(message, "info");
       }}
       onContextMenu={(event, community) => {
@@ -3200,6 +3714,11 @@ export function App() {
             badges={globalNavigationBadges}
             availability={globalNavigationAvailability}
             currentUser={displayedCurrentUser}
+            communities={communities}
+            activeCommunityId={activeCommunityId}
+            onSelectCommunity={openCommunityFromRail}
+            settingsOpen={settingsOpen}
+            activeSettingsSection={activeSettingsSection}
             onNavigate={navigateGlobal}
             onOpenSettings={openGlobalUserSettings}
             onOpenHelpSupport={openGlobalHelpSupport}
@@ -3209,8 +3728,22 @@ export function App() {
               { label: "Copy username", onSelect: () => void clipboardService.copyText(currentUser.username).then(() => pushToast("Username copied.", "success")) },
               { label: "Log out", tone: "danger", onSelect: () => void handleLogout() },
             ])}
+            panelAccessStatus={rootDashboardAccess.status}
+            onOpenPanel={openRootPanel}
+            isPanelActive={activeView === "rootPanel"}
           >
-          {activeView === "support" ? (
+          {activeView === "rootPanel" ? (
+            <DeferredViewBoundary label="Opening Panel">
+              <RootDashboardApp
+                currentUser={{
+                  displayName: displayedCurrentUser.displayName,
+                  username: displayedCurrentUser.username,
+                  email: authSession?.user?.email ?? undefined,
+                }}
+                onExit={() => setActiveView("mentionFeed")}
+              />
+            </DeferredViewBoundary>
+          ) : activeView === "support" ? (
             <DeferredViewBoundary label="Opening Help and Support">
               <HelpSupportWorkspace onBack={() => setActiveView("mentionFeed")} pushToast={pushToast} />
             </DeferredViewBoundary>
@@ -3220,12 +3753,7 @@ export function App() {
               communities={communities}
               currentUserId={directMessageUserId}
               onView={openCommunityFromRail}
-              onJoin={async (communityId) => {
-                const community = communities.find((item) => item.id === communityId);
-                if (!community) return;
-                openCommunityFromRail(community.id);
-                pushToast(`Review ${community.name}'s rules from the community menu before joining.`, "info");
-              }}
+              onJoin={handleDiscoveryMembershipReady}
               onReport={(community) => setReportTarget({ targetType: "community", targetId: community.id, communityId: community.id, label: community.name })}
             />
             </DeferredViewBoundary>
@@ -3253,6 +3781,18 @@ export function App() {
                 onToggleSaved={toggleMentionSaved}
                 onMarkRead={markMentionRead}
                 onOpenProfile={openProfile}
+                onOpenFriendProfile={openProfilePage}
+                onFriendContextMenu={(event, member) =>
+                  openContext(event, [
+                    { label: `View ${member.displayName}`, onSelect: () => openProfilePage(member) },
+                    { label: "Message", onSelect: () => openDirectMessages(member.userId), disabled: blockedUserIds.includes(member.userId) },
+                    {
+                      label: blockedUserIds.includes(member.userId) ? "Unblock user" : "Block user",
+                      onSelect: () => { void handleToggleBlockUser(member); },
+                    },
+                    { label: "Report user", onSelect: () => handleReportUser(member) },
+                  ])
+                }
                 onMarkStorySeen={markStorySeen}
                 onOpenStoryInChannel={openStoryInChannel}
                 onToggleVoiceMute={toggleFeedVoiceMute}
@@ -3310,6 +3850,7 @@ export function App() {
                 selectedProfileUserId={profile?.member.userId ?? null}
                 onFilterChange={toggleMentionFilter}
                 onOpenProfile={openProfile}
+                onOpenItem={openMentionInChannel}
               />
             </div>
             </DeferredViewBoundary>
@@ -3321,6 +3862,8 @@ export function App() {
               communities={communities}
               currentUserId={directMessageUserId}
               onBack={closeProfileView}
+              onEditProfile={selectedUserProfile.isCurrentUser ? openProfileSettings : undefined}
+              onRequestVerification={selectedUserProfile.isCurrentUser ? openProfileSettings : undefined}
               onToggleFollow={toggleFollowUser}
               onMessage={openDirectMessages}
               onFriendAction={handleProfileFriendAction}
@@ -3375,15 +3918,58 @@ export function App() {
               onReportMessage={(message, conversation) => setReportTarget({ conversationId: conversation.id, targetType: "direct_message", targetId: message.id, label: `Message from ${conversation.participantName}`, evidenceExcerpt: message.body.slice(0, 280) })}
               onNotice={(message, kind = "info") => pushToast(message, kind)}
               onSetMuted={async (conversationId, mutedUntil) => { const muted = Boolean(mutedUntil && Date.parse(mutedUntil) > Date.now()); const result = await directMessageService.setDirectConversationMuted(conversationId, mutedUntil); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => current.map((conversation) => conversation.id === conversationId ? { ...conversation, muted, mutedUntil: mutedUntil ?? undefined } : conversation)); return true; }}
-              onArchive={async (conversationId) => { const result = await directMessageService.setDirectConversationArchived(conversationId, true); if (!result.ok) { pushToast(result.error.message, "error"); return false; } setDirectConversations((current) => { const remaining = current.filter((conversation) => conversation.id !== conversationId); setActiveDirectConversationId(remaining[0]?.id ?? ""); return remaining; }); return true; }}
+              onDeleteConversation={async (conversationId) => {
+                const result = await directMessageService.deleteDirectConversation(conversationId);
+                if (!result.ok) {
+                  pushToast(result.error.message, "error");
+                  return false;
+                }
+                messageDraftService.clearDraft({ directConversationId: conversationId });
+                setDirectConversations((current) => {
+                  const remaining = current.filter((conversation) => conversation.id !== conversationId);
+                  setActiveDirectConversationId(remaining[0]?.id ?? "");
+                  return remaining;
+                });
+                pushToast("Chat deleted from your inbox.", "success");
+                return true;
+              }}
               onBackToCommunity={() => setActiveView("community")}
               onOpenFriends={() => openFriends("all")}
               onOpenPendingFriends={() => openFriends("pending")}
               onOpenProfile={(userId) => {
-                const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+                const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId)
+                  ?? friendState.friends.filter((candidate) => candidate.userId === userId).map((friend) => ({
+                    id: friend.id ?? `friend-${friend.userId}`,
+                    userId: friend.userId,
+                    displayName: friend.displayName,
+                    username: friend.username,
+                    avatarSeed: friend.username,
+                    avatarUrl: friend.avatarUrl,
+                    status: friend.status,
+                    statusText: friend.statusText,
+                    roleId: "member" as const,
+                  }))[0]
+                  ?? directConversations.filter((candidate) => candidate.participantUserId === userId).map((conversation) => ({
+                    id: `dm-peer-${conversation.participantUserId}`,
+                    userId: conversation.participantUserId,
+                    displayName: conversation.participantName,
+                    username: conversation.participantUsername,
+                    avatarSeed: conversation.participantUsername,
+                    avatarUrl: conversation.participantAvatarUrl,
+                    status: conversation.participantStatus,
+                    statusText: conversation.participantStatusText,
+                    roleId: "member" as const,
+                  }))[0];
                 if (member) openProfilePage(member);
+                else pushToast("This profile is not available in your workspace.", "error");
               }}
-              onStartCall={(conversationId, peer) => void startDirectCall(conversationId, peer)}
+              callRuntime={directCallRuntime}
+              onStartCall={(conversationId, peer, callType, screenShare) => void startDirectCall(conversationId, peer, callType, screenShare)}
+              onJoinCall={(call, peer) => void joinDirectCall(call, peer)}
+              onToggleCallMute={toggleDirectCallMute}
+              onToggleCallCamera={toggleDirectCallCamera}
+              onToggleCallScreenShare={toggleDirectCallScreenShare}
+              onEndCall={(call) => void endDirectCall(call)}
             />
             </DeferredViewBoundary>
           ) : activeView === "friends" ? (
@@ -3399,8 +3985,20 @@ export function App() {
               onBackToCommunity={closeFriendsView}
               onOpenDirectMessage={openDirectMessages}
               onOpenProfile={(userId) => {
-                const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+                const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId)
+                  ?? friendState.friends.filter((candidate) => candidate.userId === userId).map((friend) => ({
+                    id: friend.id ?? `friend-${friend.userId}`,
+                    userId: friend.userId,
+                    displayName: friend.displayName,
+                    username: friend.username,
+                    avatarSeed: friend.username,
+                    avatarUrl: friend.avatarUrl,
+                    status: friend.status,
+                    statusText: friend.statusText,
+                    roleId: "member" as const,
+                  }))[0];
                 if (member) openProfilePage(member);
+                else pushToast("This profile is not available in your workspace.", "error");
               }}
               onToggleFavorite={toggleFriendFavorite}
               onAcceptRequest={acceptFriendRequest}
@@ -3470,7 +4068,23 @@ export function App() {
                   setActiveView(communityViewForKind(activeCommunity.kind));
                 }}
                 onCommunityRolesChanged={(roles) => replaceCommunities(communities.map((community) => community.id === activeCommunity.id ? { ...community, roles } : community))}
-                onCommunityUpdated={(summary) => replaceCommunities(communities.map((community) => community.id !== summary.id ? community : { ...community, kind: summary.kind, ownerId: summary.ownerId ?? community.ownerId, name: summary.name, description: summary.description, icon: summary.iconUrl ?? "", bannerUrl: summary.bannerUrl, accentColor: summary.accentColor, visibility: summary.visibility, publicReadEnabled: summary.publicReadEnabled, defaultNotificationLevel: summary.defaultNotificationLevel, typeSettings: summary.typeSettings, rulesEnabled: summary.rulesEnabled, rulesVersion: summary.rulesVersion }))}
+                onCommunityUpdated={(summary) => {
+                  patchCommunity(summary.id, {
+                    kind: summary.kind,
+                    ownerId: summary.ownerId ?? undefined,
+                    name: summary.name,
+                    description: summary.description,
+                    icon: resolveCommunityIcon(summary.name, summary.iconUrl),
+                    bannerUrl: summary.bannerUrl ?? undefined,
+                    accentColor: summary.accentColor,
+                    visibility: summary.visibility,
+                    publicReadEnabled: summary.publicReadEnabled,
+                    defaultNotificationLevel: summary.defaultNotificationLevel,
+                    typeSettings: summary.typeSettings,
+                    rulesEnabled: summary.rulesEnabled,
+                    rulesVersion: summary.rulesVersion,
+                  });
+                }}
                 onPlaceholderAction={(message) => pushToast(message, "info")}
                 events={communityEvents}
                 onCreateEvent={(input) => void createCommunityEvent(input)}
@@ -3484,10 +4098,14 @@ export function App() {
                 onOpenVoiceRoom={openConnectedVoiceRoom}
                 onOpenVoiceScreenShare={openCommunityVoiceScreenShare}
                 onLeaveVoice={leaveActiveVoiceRoom}
-                canUseVoiceCamera={Boolean(voiceSnapshot.canSpeak) && (communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
+                canUseVoiceCamera={Boolean(voiceSnapshot.canUseCamera) && (communityAccess.permissions.includes("speak") || communityAccess.permissions.includes("speakInVoice"))}
                 canShareVoiceScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.permissions.includes("shareScreen")}
                 onOpenMicrophoneSettings={openMicrophoneSettings}
                 onOpenHeadphoneSettings={openHeadphoneSettings}
+                onReloadChannels={() => {
+                  supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+                  setSidebarReloadNonce((value) => value + 1);
+                }}
                 onCreateCategory={async (name) => {
                   const result = await communityStructureService.createTextCategory(activeCommunity.id, name);
                   if (!result.ok) { pushToast(result.error, "error"); return; }
@@ -3507,15 +4125,38 @@ export function App() {
                   pushToast("Category deleted; channels moved safely.", "info");
                 }}
                 onMoveCategory={async (categoryId, direction) => {
+                  if (!isSupabaseEntityId(categoryId)) {
+                    supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+                    pushToast("Category list was out of sync. Refreshing — try again in a moment.", "info");
+                    return;
+                  }
                   const result = await communityStructureService.moveTextCategory(activeCommunity.id, categoryId, direction);
                   if (!result.ok) { pushToast(result.error, "error"); return; }
                   moveCategory({ communityId: activeCommunity.id, categoryId, direction });
                   pushToast("Category order updated.", "success");
                 }}
                 onMoveChannel={async (categoryId, channelId, direction) => {
-                  const result = await communityStructureService.moveTextChannel(activeCommunity.id, categoryId, channelId, direction);
+                  let resolvedCategoryId = categoryId;
+                  if (!isSupabaseEntityId(channelId)) {
+                    supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+                    pushToast("Channel list was out of sync. Refreshing — try again in a moment.", "info");
+                    return;
+                  }
+                  if (!isSupabaseEntityId(categoryId)) {
+                    const listed = await channelService.listChannels(activeCommunity.id);
+                    if (!listed.ok) { pushToast(listed.error.message, "error"); return; }
+                    const found = listed.data.find((channel) => channel.id === channelId);
+                    if (!found?.categoryId || !isSupabaseEntityId(found.categoryId)) {
+                      supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+                      pushToast("Could not resolve this channel's category. Refreshing — try again in a moment.", "info");
+                      return;
+                    }
+                    resolvedCategoryId = found.categoryId;
+                    supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+                  }
+                  const result = await communityStructureService.moveTextChannel(activeCommunity.id, resolvedCategoryId, channelId, direction);
                   if (!result.ok) { pushToast(result.error, "error"); return; }
-                  moveChannel({ communityId: activeCommunity.id, categoryId, channelId, direction });
+                  moveChannel({ communityId: activeCommunity.id, categoryId: resolvedCategoryId, channelId, direction });
                   pushToast("Channel order updated.", "success");
                 }}
                 onChannelContextMenu={(event, channel) =>
@@ -3562,6 +4203,7 @@ export function App() {
                   currentUserId={currentUser.userId}
                   snapshot={voiceSnapshot}
                   voiceOccupancy={voiceOccupancyByChannelId[displayedActiveChannel.id]}
+                  friends={friendState.friends}
                   pushToast={pushToast}
                   onJoin={joinActiveVoiceRoom}
                   onLeave={leaveActiveVoiceRoom}
@@ -3571,6 +4213,35 @@ export function App() {
                   canShareScreen={Boolean(voiceSnapshot.canShareScreen) && communityAccess.isMember}
                   onStartScreenShare={startActiveVoiceScreenShare}
                   onStopScreenShare={stopActiveVoiceScreenShare}
+                  onOpenProfile={openProfile}
+                  onParticipantContextMenu={(event, member, participant) => {
+                    const canMuteMembers = communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom");
+                    const canRemoveFromVoice = communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom");
+                    const moderationActions: { action: MemberModerationAction; label: string }[] = [
+                      { action: "timeout", label: "Timeout member" },
+                      { action: "kick", label: "Remove member" },
+                      { action: "ban", label: "Ban member" },
+                    ];
+                    openContext(event, [
+                      { label: `View ${member.displayName}`, onSelect: () => openProfilePage(member) },
+                      { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
+                      { label: "Open friends", onSelect: openFriends },
+                      { label: "Report user", disabled: member.userId === currentUser.userId, onSelect: () => handleReportUser(member) },
+                      ...(!participant.isLocal && canMuteMembers
+                        ? [{ label: `Mute ${member.displayName} in voice`, onSelect: () => moderateActiveVoiceParticipant(participant, "mute") }]
+                        : []),
+                      ...(!participant.isLocal && canRemoveFromVoice
+                        ? [{ label: `Remove ${member.displayName} from voice`, tone: "danger" as const, onSelect: () => moderateActiveVoiceParticipant(participant, "remove") }]
+                        : []),
+                      ...moderationActions
+                        .filter(({ action }) => canModerateCommunityMember(communityAccess, activeCommunity, member, action))
+                        .map(({ action, label }) => ({
+                          label,
+                          tone: action === "timeout" ? ("normal" as const) : ("danger" as const),
+                          onSelect: () => setMemberModerationTarget({ member, action }),
+                        })),
+                    ]);
+                  }}
                 />
                 </DeferredViewBoundary>
               ) : (
@@ -3649,26 +4320,58 @@ export function App() {
               />
               )}
               {displayedActiveChannel.type === "voice" && joinedActiveVoiceChannel ? (
-                <VoiceParticipantsRail
-                  community={displayedActiveCommunity}
-                  channel={displayedActiveChannel}
-                  channelId={displayedActiveChannel.id}
-                  access={communityAccess}
-                  messages={displayedActiveCommunity.messages.filter((message) => message.channelId === displayedActiveChannel.id)}
-                  currentUser={displayedCurrentUser}
-                  currentUserId={currentUser.userId}
-                  snapshot={voiceSnapshot}
-                  voiceOccupancy={voiceOccupancyByChannelId[displayedActiveChannel.id]}
-                  expanded={participantsVisible}
-                  onToggleExpanded={toggleParticipantsVisible}
-                  onSendMessage={(body) => sendMessage(body)}
-                  onTypingStart={typingBroadcast.sendTypingStart}
-                  onTypingStop={typingBroadcast.sendTypingStop}
-                  pushToast={pushToast}
-                  canMuteMembers={communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom")}
-                  canRemoveFromVoice={communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom")}
-                  onModerateParticipant={moderateActiveVoiceParticipant}
-                />
+                <Suspense fallback={null}>
+                  <VoiceParticipantsRail
+                    community={displayedActiveCommunity}
+                    channel={displayedActiveChannel}
+                    channelId={displayedActiveChannel.id}
+                    access={communityAccess}
+                    messages={displayedActiveCommunity.messages.filter((message) => message.channelId === displayedActiveChannel.id)}
+                    currentUser={displayedCurrentUser}
+                    currentUserId={currentUser.userId}
+                    snapshot={voiceSnapshot}
+                    voiceOccupancy={voiceOccupancyByChannelId[displayedActiveChannel.id]}
+                    expanded={participantsVisible}
+                    onToggleExpanded={toggleParticipantsVisible}
+                    onSendMessage={(body) => sendMessage(body)}
+                    onExpireMessage={expireVoiceChatMessage}
+                    onTypingStart={typingBroadcast.sendTypingStart}
+                    onTypingStop={typingBroadcast.sendTypingStop}
+                    pushToast={pushToast}
+                    canMuteMembers={communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom")}
+                    canRemoveFromVoice={communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom")}
+                    onModerateParticipant={moderateActiveVoiceParticipant}
+                    onOpenProfile={openProfile}
+                    onParticipantContextMenu={(event, member, participant) => {
+                      const canMuteMembers = communityAccess.permissions.includes("muteMembers") || communityAccess.permissions.includes("manageVoiceRoom");
+                      const canRemoveFromVoice = communityAccess.permissions.includes("removeFromVoice") || communityAccess.permissions.includes("manageVoiceRoom");
+                      const moderationActions: { action: MemberModerationAction; label: string }[] = [
+                        { action: "timeout", label: "Timeout member" },
+                        { action: "kick", label: "Remove member" },
+                        { action: "ban", label: "Ban member" },
+                      ];
+                      openContext(event, [
+                        { label: `View ${member.displayName}`, onSelect: () => openProfilePage(member) },
+                        { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
+                        { label: "Open friends", onSelect: openFriends },
+                        { label: "Report user", disabled: member.userId === currentUser.userId, onSelect: () => handleReportUser(member) },
+                        ...(!participant.isLocal && canMuteMembers
+                          ? [{ label: `Mute ${member.displayName} in voice`, onSelect: () => moderateActiveVoiceParticipant(participant, "mute") }]
+                          : []),
+                        ...(!participant.isLocal && canRemoveFromVoice
+                          ? [{ label: `Remove ${member.displayName} from voice`, tone: "danger" as const, onSelect: () => moderateActiveVoiceParticipant(participant, "remove") }]
+                          : []),
+                        ...moderationActions
+                          .filter(({ action }) => canModerateCommunityMember(communityAccess, activeCommunity, member, action))
+                          .map(({ action, label }) => ({
+                            label,
+                            tone: action === "timeout" ? ("normal" as const) : ("danger" as const),
+                            onSelect: () => setMemberModerationTarget({ member, action }),
+                          })),
+                      ]);
+                    }}
+                  />
+                </Suspense>
               ) : membersVisible && communityAccess.canViewMemberList ? (
                 <MemberSidebar
                   community={displayedActiveCommunity}
@@ -3679,7 +4382,7 @@ export function App() {
                     openContext(event, [
                       { label: `View ${member.displayName}`, onSelect: () => openProfilePage(member) },
                       { label: "Open direct message", onSelect: () => openDirectMessages(member.userId) },
-                      { label: "Open friends foundation", onSelect: openFriends },
+                      { label: "Open friends", onSelect: openFriends },
                       { label: "Report user", disabled: member.userId === currentUser.userId, onSelect: () => handleReportUser(member) },
                       ...moderationActions.filter(({ action }) => canModerateCommunityMember(communityAccess, activeCommunity, member, action)).map(({ action, label }) => ({ label, tone: action === "timeout" ? "normal" as const : "danger" as const, onSelect: () => setMemberModerationTarget({ member, action }) })),
                     ]);
@@ -3692,8 +4395,9 @@ export function App() {
         </div>
         )}
       </DesktopAppShell>
-      {isV1FeatureEnabled("radio") || isV1FeatureEnabled("podcasts") ? <GlobalAudioMiniPlayer hidden={activeView === "mentionFeed"} /> : null}
+      <Suspense fallback={null}>{isV1FeatureEnabled("radio") || isV1FeatureEnabled("podcasts") ? <GlobalAudioMiniPlayer hidden={activeView === "mentionFeed"} /> : null}</Suspense>
 
+      <Suspense fallback={null}>
       {communityJoinModalOpen ? (
         <CommunityJoinModal
           community={displayedActiveCommunity}
@@ -3743,7 +4447,7 @@ export function App() {
           pushToast("Channel deleted.", "success");
         }}
       /> : null}
-      {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} appearanceSettings={appearanceSettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onAppearanceSettingsChange={(next) => { setAppearanceSettings(next); setTheme(appearanceService.resolveTheme(next.themeMode)); }} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} onLogout={handleLogout} currentUsername={currentUser.username} currentEmail={authSession?.user?.email} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} /></Suspense> : null}
+      {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} appearanceSettings={appearanceSettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onAppearanceSettingsChange={(next) => { setAppearanceSettings(next); setTheme(appearanceService.resolveTheme(next.themeMode)); }} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} onLogout={handleLogout} currentUsername={currentUser.username} currentEmail={authSession?.user?.email} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} onOpenPanel={openRootPanel} /></Suspense> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {memberModerationTarget ? <MemberModerationModal
         member={memberModerationTarget.member}
@@ -3809,7 +4513,10 @@ export function App() {
             closeProfile();
             openDirectMessages(member.userId);
           }}
-          onViewProfile={openProfilePage}
+          onViewProfile={(member) => {
+            closeProfile();
+            openProfilePage(member);
+          }}
           onReportUser={handleReportUser}
           isBlocked={blockedUserIds.includes(profile.member.userId)}
           onToggleBlock={handleToggleBlockUser}
@@ -3826,11 +4533,54 @@ export function App() {
         />
       ) : null}
       {isAppLocked ? <AppLockScreen currentUser={displayedCurrentUser} onUnlock={unlockApp} onLogout={logoutFromLockScreen} /> : null}
+      {activeDirectCall && (activeView !== "directMessages" || activeDirectConversationId !== activeDirectCall.conversationId) ? (
+        <DmActiveCallMiniPanel
+          call={activeDirectCall}
+          peer={directCallPeer(activeDirectCall)}
+          runtime={directCallRuntime}
+          onReturn={() => openDirectMessagesRef.current(directCallPeer(activeDirectCall).id)}
+          onToggleMute={toggleDirectCallMute}
+          onToggleSpeaker={toggleDirectCallSpeaker}
+          onToggleCamera={toggleDirectCallCamera}
+          onScreenShare={toggleDirectCallScreenShare}
+          onEnd={() => void endDirectCall(activeDirectCall)}
+        />
+      ) : null}
+      {directScreenPickerOpen && activeDirectCall ? (
+        <ScreenSharePickerModal
+          connected={directCallRuntime.connected}
+          onClose={() => setDirectScreenPickerOpen(false)}
+          onStart={async (sourceId, preset, sourceLabel) => {
+            const { liveKitService } = await import("./services/livekit/livekitService");
+            const token = await liveKitService.fetchDirectToken({ conversationId: activeDirectCall.conversationId, callId: activeDirectCall.id, participantName: displayedCurrentUser.displayName, intent: "screen" });
+            if (!token.ok) { pushToast(token.error.message, "error"); return; }
+            const { voiceService } = await import("./services/voiceService");
+            const peer = directCallPeer(activeDirectCall);
+            directCallReconnectInProgressRef.current = true;
+            const connected = await voiceService.connectAuthorizedToken(token.data, { communityId: activeDirectCall.conversationId, communityName: peer.name, channelId: activeDirectCall.conversationId, channelName: "Direct call" });
+            directCallReconnectInProgressRef.current = false;
+            if (!connected.ok) { pushToast(connected.error.message, "error"); return; }
+            if (directCallRuntime.muted) await voiceService.setMuted(true);
+            if (activeDirectCall.callType === "video" && directCallRuntime.cameraEnabled) await voiceService.setCameraEnabled(true);
+            const result = await voiceService.startScreenShare(sourceId, preset, sourceLabel);
+            if (!result.ok) { pushToast(result.error.message, "error"); return; }
+            await dmCallService.updateParticipant(activeDirectCall.id, "connected", { screenShareEnabled: true });
+            await dmCallService.recordDeviceEvent(activeDirectCall.id, "screen_share", "enabled");
+            setDirectScreenPickerOpen(false);
+          }}
+        />
+      ) : null}
+      </Suspense>
       <VoiceCallOverlays
         incoming={voiceCalls.incoming}
         outgoing={voiceCalls.outgoing}
         onAccept={voiceCalls.accept}
         onDecline={voiceCalls.decline}
+        onMessage={() => {
+          const callerId = voiceCalls.incoming?.caller.id;
+          voiceCalls.decline();
+          if (callerId) openDirectMessages(callerId);
+        }}
         onCancelOutgoing={voiceCalls.cancelOutgoing}
         onDismissOutgoing={voiceCalls.dismissOutgoing}
       />

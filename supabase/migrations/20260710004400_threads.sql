@@ -1,6 +1,8 @@
 create table if not exists public.threads (id uuid primary key default gen_random_uuid(), community_id uuid not null references public.communities(id) on delete cascade, channel_id uuid not null references public.channels(id) on delete cascade, parent_message_id uuid not null unique references public.messages(id) on delete cascade, name text not null check(char_length(name) between 1 and 100), created_by uuid not null references public.profiles(id) on delete restrict, created_at timestamptz not null default now(), archived_at timestamptz);
 alter table public.messages add column if not exists thread_id uuid references public.threads(id) on delete cascade;
-create index if not exists idx_messages_thread_created on public.messages(thread_id,created_at) where thread_id is not null; alter table public.threads enable row level security; grant select,insert,update on public.threads to authenticated;
+create index if not exists idx_messages_thread_created on public.messages(thread_id,created_at) where thread_id is not null;
+alter table public.threads enable row level security;
+grant select,insert,update on public.threads to authenticated;
 create or replace function public.can_view_thread(target_thread_id uuid) returns boolean language sql stable security definer set search_path=public as $$ select exists(select 1 from public.threads thread join public.channels channel on channel.id=thread.channel_id join public.communities community on community.id=thread.community_id where thread.id=target_thread_id and ((community.visibility='public' and community.public_read_enabled and not channel.is_private and channel.public_read_enabled) or exists(select 1 from public.community_members member where member.community_id=community.id and member.user_id=auth.uid()))); $$;
 grant execute on function public.can_view_thread(uuid) to authenticated;
 create policy "threads_visible_select" on public.threads for select to authenticated using(public.can_view_thread(id));

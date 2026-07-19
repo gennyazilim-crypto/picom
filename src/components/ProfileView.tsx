@@ -5,11 +5,13 @@ import type { ProfileActivityItem, ProfileMediaItem, UserProfile } from "../type
 import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
 import { VerifiedProfileAvatar } from "./VerifiedProfileAvatar";
+import { ProfileCover } from "./ProfileCover";
 import { VerificationBadgeList } from "./VerificationBadgeList";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { useAudioCatalogState } from "../hooks/useAudioCatalog";
 import { ProfileAudioSections } from "./audio/ProfileAudioSections";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
+import { getCommunityIconLabel, resolveCommunityMarkSrc } from "../utils/generatedIdentity";
 
 type ProfileViewProps = {
   profile: UserProfile;
@@ -140,10 +142,6 @@ export function ProfileLeftCard({
   onOpenMore,
 }: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
   const verification = getUserVerificationSummary(member.userId, profile.verificationBadges ?? [], profile.verification ?? member.verification);
-  const coverStyle = profile.coverUrl
-    ? { backgroundImage: `linear-gradient(180deg, color-mix(in srgb, var(--bg-chat) 0%, transparent) 0%, color-mix(in srgb, var(--surface) 88%, transparent) 100%), url(${profile.coverUrl})` }
-    : undefined;
-
   return (
     <aside className="profile-rail" aria-label="Profile summary">
       <button className="profile-rail-back" type="button" onClick={onBack}>
@@ -152,7 +150,7 @@ export function ProfileLeftCard({
       </button>
 
       <article className="profile-identity-card">
-        <div className="profile-identity-cover" style={coverStyle} aria-hidden="true" />
+        <ProfileCover userId={profile.id} fallbackUrl={profile.coverUrl} label={profile.displayName + " cover photo"} className="profile-identity-cover" />
         <div className="profile-identity-body">
           <VerifiedProfileAvatar
             member={member}
@@ -468,9 +466,16 @@ function ProfileMutualCommunities({ profile, communities, currentUserId, onOpenC
           {visible.slice(0, 8).map((community) => {
             const member = community.members.find((candidate) => candidate.userId === profile.id);
             const role = community.roles.find((candidate) => candidate.id === member?.roleId);
+            const markSrc = resolveCommunityMarkSrc(community);
             return (
               <button type="button" key={community.id} className="profile-community-card" onClick={() => onOpenCommunity?.(community.id)}>
-                <span className="profile-community-mark" style={{ background: community.accentColor }}>{community.icon}</span>
+                <span className={`profile-community-mark${markSrc ? " profile-community-mark--avatar" : ""}`} style={markSrc ? undefined : { background: community.accentColor }}>
+                  {markSrc ? (
+                    <img src={markSrc} alt="" draggable={false} />
+                  ) : (
+                    getCommunityIconLabel(community.name, community.icon)
+                  )}
+                </span>
                 <span className="profile-community-copy">
                   <strong>{community.name}</strong>
                   <small>{role?.name ?? "Member"}</small>

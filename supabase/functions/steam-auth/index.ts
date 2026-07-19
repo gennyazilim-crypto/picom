@@ -8,7 +8,7 @@
 // from an external identity; a flaw here is an authentication bypass. Not deployed
 // by the author (environment cannot deploy); operator + security review must gate it.
 
-import { getServiceClient, isValidNonce, mintSessionForIdentity, createPendingHandoff, completeHandoff, consumeHandoff } from "../_shared/social-auth-session.ts";
+import { completeHandoff, consumeHandoff, consumeSocialAuthRateLimit, createPendingHandoff, getServiceClient, isPendingHandoff, isValidNonce, mintSessionForIdentity } from "../_shared/social-auth-session.ts";
 
 const STEAM_OPENID_ENDPOINT = "https://steamcommunity.com/openid/login";
 const steamIdPattern = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/;
@@ -23,10 +23,9 @@ function corsHeaders(origin: string | null): HeadersInit {
   };
 }
 
-function functionBaseUrl(request: Request): string {
-  const url = new URL(request.url);
-  // Strip any trailing path so we always target this function's root.
-  return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
+function functionBaseUrl(): string {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim().replace(/\/+$/, "");
+  return supabaseUrl ? `${supabaseUrl}/functions/v1/steam-auth` : "";
 }
 
 function returnPage(): Response {
@@ -74,8 +73,12 @@ Deno.serve(async (request: Request) => {
   // 1) Begin: register the pending handoff and redirect the user to Steam.
   if (action === "login") {
     if (!isValidNonce(nonce)) return new Response("Invalid request.", { status: 400, headers: corsHeaders(origin) });
+    const rateLimit = await consumeSocialAuthRateLimit(client, request, "steam");
+    if (!rateLimit) return new Response("Steam sign-in is temporarily unavailable.", { status: 503, headers: { ...corsHeaders(origin), "Retry-After": "30" } });
+    if (!rateLimit.allowed) return new Response("Too many sign-in attempts.", { status: 429, headers: { ...corsHeaders(origin), "Retry-After": String(rateLimit.retryAfterSeconds) } });
     if (!(await createPendingHandoff(client, nonce, "steam"))) return new Response("Could not start sign-in.", { status: 500, headers: corsHeaders(origin) });
-    const base = functionBaseUrl(request);
+    const base = functionBaseUrl();
+    if (!base) return new Response("Steam sign-in is not configured.", { status: 503, headers: corsHeaders(origin) });
     const returnTo = `${base}?action=callback&nonce=${encodeURIComponent(nonce)}`;
     const openid = new URLSearchParams({
       "openid.ns": "http://specs.openid.net/auth/2.0",
@@ -91,16 +94,31 @@ Deno.serve(async (request: Request) => {
   // 2) Callback from Steam: verify, resolve identity, mint the session, park it.
   if (action === "callback") {
     if (!isValidNonce(nonce)) return new Response("Invalid request.", { status: 400 });
+    if (!(await isPendingHandoff(client, nonce, "steam"))) return new Response("Steam sign-in request expired.", { status: 410 });
+    const expectedReturnTo = `${functionBaseUrl()}?action=callback&nonce=${encodeURIComponent(nonce)}`;
+    const signedFields = new Set((url.searchParams.get("openid.signed") ?? "").split(","));
     const claimedId = url.searchParams.get("openid.claimed_id") ?? "";
+    const identity = url.searchParams.get("openid.identity") ?? "";
+    const validEnvelope = url.searchParams.get("openid.ns") === "http://specs.openid.net/auth/2.0"
+      && url.searchParams.get("openid.mode") === "id_res"
+      && url.searchParams.get("openid.op_endpoint") === STEAM_OPENID_ENDPOINT
+      && url.searchParams.get("openid.return_to") === expectedReturnTo
+      && identity === claimedId
+      && ["claimed_id", "identity", "return_to", "response_nonce", "assoc_handle"].every((field) => signedFields.has(field));
     const match = steamIdPattern.exec(claimedId);
-    if (!match || !(await verifySteamAssertion(url.searchParams))) return new Response("Steam verification failed.", { status: 401 });
+    if (!validEnvelope || !match || !(await verifySteamAssertion(url.searchParams))) return new Response("Steam verification failed.", { status: 401 });
     const steamId = match[1];
     const profile = await fetchSteamProfile(steamId);
     const session = await mintSessionForIdentity(client, {
       email: `steam_${steamId}@steam.users.picom.local`,
       metadata: { provider: "steam", steam_id: steamId, full_name: profile.name, display_name: profile.name, avatar_url: profile.avatar },
     });
-    if (!session || !(await completeHandoff(client, nonce, "steam", session))) return new Response("Could not complete Steam sign-in.", { status: 500 });
+    if (!session) return new Response("Could not complete Steam sign-in.", { status: 500 });
+    try {
+      if (!(await completeHandoff(client, nonce, "steam", session))) return new Response("Could not complete Steam sign-in.", { status: 500 });
+    } catch {
+      return new Response("Could not complete Steam sign-in.", { status: 500 });
+    }
     return returnPage();
   }
 

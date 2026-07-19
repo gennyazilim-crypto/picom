@@ -6,6 +6,10 @@ export const IPC_CHANNELS = Object.freeze({
   screenCaptureSelectSource: "picom:screen-capture-select-source",
   screenCaptureCancelSelection: "picom:screen-capture-cancel-selection",
   notificationShow: "picom:notification-show",
+  incomingCallShow: "picom:incoming-call-show",
+  incomingCallDismiss: "picom:incoming-call-dismiss",
+  incomingCallRespond: "picom:incoming-call-respond",
+  incomingCallAction: "picom:incoming-call-action",
   traySetStatus: "picom:tray-set-status",
   traySetMuted: "picom:tray-set-muted",
   traySetCloseToTray: "picom:tray-set-close-to-tray",
@@ -25,7 +29,8 @@ export const IPC_CHANNELS = Object.freeze({
   updateCheck: "picom:update-check",
   updateDownload: "picom:update-download",
   updateInstall: "picom:update-install",
-  updateStateChanged: "picom:update-state-changed"
+  updateStateChanged: "picom:update-state-changed",
+  activityGetSnapshot: "picom:activity-get-snapshot",
 });
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

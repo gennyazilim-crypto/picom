@@ -1,7 +1,5 @@
 begin;
-
 alter table public.meeting_session_participants add column if not exists screen_share_allowed boolean not null default true;
-
 create or replace function public.get_meeting_host_control_state(target_room_id uuid,target_session_id uuid)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare room_record public.meeting_rooms%rowtype; session_record public.meeting_sessions%rowtype;
@@ -12,7 +10,6 @@ begin
   if room_record.id is null or session_record.id is null then raise exception 'MEETING_SESSION_NOT_FOUND' using errcode='22023'; end if;
   return jsonb_build_object('roomId',room_record.id,'sessionId',session_record.id,'roomStatus',room_record.status,'sessionStatus',session_record.status,'locked',room_record.status='locked','hostUserId',room_record.host_user_id,'cohostUserIds',room_record.cohost_user_ids,'updatedAt',greatest(room_record.updated_at,session_record.updated_at));
 end;$$;
-
 create or replace function public.set_meeting_participant_cohost(target_participant_id uuid,target_enabled boolean,change_reason text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare participant_record public.meeting_session_participants%rowtype; session_record public.meeting_sessions%rowtype; room_record public.meeting_rooms%rowtype; next_role text;
@@ -30,7 +27,6 @@ begin
   insert into public.audit_log(community_id,actor_id,action_type,target_type,target_id,reason,meeting_room_id,meeting_session_id) values(room_record.community_id,auth.uid(),'meeting_control','meeting_participant',target_participant_id,left(change_reason,500),room_record.id,session_record.id);
   return jsonb_build_object('participantId',target_participant_id,'role',next_role,'cohostUserIds',room_record.cohost_user_ids);
 end;$$;
-
 create or replace function public.transfer_meeting_host(target_participant_id uuid,change_reason text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare participant_record public.meeting_session_participants%rowtype; actor_participant public.meeting_session_participants%rowtype; session_record public.meeting_sessions%rowtype; room_record public.meeting_rooms%rowtype; previous_host uuid;
@@ -50,7 +46,6 @@ begin
   insert into public.audit_log(community_id,actor_id,action_type,target_type,target_id,reason,meeting_room_id,meeting_session_id) values(room_record.community_id,auth.uid(),'meeting_control','meeting_participant',target_participant_id,left(change_reason,500),room_record.id,session_record.id);
   return jsonb_build_object('participantId',target_participant_id,'hostUserId',participant_record.user_id,'previousHostUserId',previous_host);
 end;$$;
-
 create or replace function public.set_meeting_participant_screen_share_policy(target_participant_id uuid,target_allowed boolean,change_reason text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare participant_record public.meeting_session_participants%rowtype; session_record public.meeting_sessions%rowtype; room_record public.meeting_rooms%rowtype;
@@ -65,7 +60,6 @@ begin
   insert into public.audit_log(community_id,actor_id,action_type,target_type,target_id,reason,meeting_room_id,meeting_session_id) values(room_record.community_id,auth.uid(),'meeting_control','meeting_participant',target_participant_id,left(change_reason,500),room_record.id,session_record.id);
   return jsonb_build_object('participantId',target_participant_id,'screenShareAllowed',target_allowed);
 end;$$;
-
 create or replace function public.enforce_my_meeting_media_policy(target_room_id uuid,target_session_id uuid)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare participant_record public.meeting_session_participants%rowtype;
@@ -76,7 +70,6 @@ begin
   update public.meeting_session_participants set capabilities=jsonb_set(capabilities,'{canShareScreen}',to_jsonb(participant_record.screen_share_allowed),true),updated_at=now() where id=participant_record.id;
   return jsonb_build_object('screenShareAllowed',participant_record.screen_share_allowed);
 end;$$;
-
 create or replace function public.cancel_scheduled_meeting_room(target_room_id uuid,cancellation_reason text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare room_record public.meeting_rooms%rowtype;
@@ -92,7 +85,6 @@ begin
   insert into public.audit_log(community_id,actor_id,action_type,target_type,target_id,reason,meeting_room_id) values(room_record.community_id,auth.uid(),'meeting_control','meeting_room',target_room_id,left(cancellation_reason,500),target_room_id);
   return jsonb_build_object('roomId',target_room_id,'status','cancelled');
 end;$$;
-
 create or replace function public.reconcile_meeting_host_departure()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare session_record public.meeting_sessions%rowtype; room_record public.meeting_rooms%rowtype; successor public.meeting_session_participants%rowtype;
@@ -115,11 +107,8 @@ begin
   end if;
   return new;
 end;$$;
-
 drop trigger if exists meeting_host_departure_reconciliation on public.meeting_session_participants;
 create trigger meeting_host_departure_reconciliation after update of state on public.meeting_session_participants for each row execute function public.reconcile_meeting_host_departure();
-
 revoke all on function public.get_meeting_host_control_state(uuid,uuid),public.set_meeting_participant_cohost(uuid,boolean,text),public.transfer_meeting_host(uuid,text),public.set_meeting_participant_screen_share_policy(uuid,boolean,text),public.enforce_my_meeting_media_policy(uuid,uuid),public.cancel_scheduled_meeting_room(uuid,text) from public,anon;
 grant execute on function public.get_meeting_host_control_state(uuid,uuid),public.set_meeting_participant_cohost(uuid,boolean,text),public.transfer_meeting_host(uuid,text),public.set_meeting_participant_screen_share_policy(uuid,boolean,text),public.enforce_my_meeting_media_policy(uuid,uuid),public.cancel_scheduled_meeting_room(uuid,text) to authenticated;
-
 commit;

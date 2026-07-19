@@ -3,10 +3,7 @@ import { mockRoles } from "../data/mockMembers";
 import { getCommunityTemplate } from "../data/communityTemplates";
 import type { CommunitySummary } from "../services/communityService";
 import { supportsTextChannels, type ChannelCategory, type Community, type Role } from "../types/community";
-
-function getIcon(name: string): string {
-  return name.trim().slice(0, 1).toUpperCase() || "P";
-}
+import { resolveCommunityIcon } from "./generatedIdentity";
 
 export function createCommunityFromSummary(summary: CommunitySummary, options: { includeTemplateChannels?: boolean } = {}): Community {
   const template = getCommunityTemplate(summary.templateId);
@@ -48,7 +45,8 @@ export function createCommunityFromSummary(summary: CommunitySummary, options: {
     kind: summary.kind,
     ownerId: summary.ownerId ?? undefined,
     name: summary.name,
-    icon: getIcon(summary.name),
+    icon: resolveCommunityIcon(summary.name, summary.iconUrl),
+    bannerUrl: summary.bannerUrl ?? undefined,
     accentColor: summary.accentColor || template.accentColor,
     description: summary.description,
     visibility: summary.visibility,
@@ -57,6 +55,9 @@ export function createCommunityFromSummary(summary: CommunitySummary, options: {
     typeSettings: summary.typeSettings,
     rulesEnabled: summary.rulesEnabled,
     rulesVersion: summary.rulesVersion,
+    discoveryListed: summary.discoveryListed ?? false,
+    discoveryCategory: summary.discoveryCategory ?? undefined,
+    discoveryJoinPolicy: summary.discoveryJoinPolicy ?? "open",
     roles,
     members: [
       {

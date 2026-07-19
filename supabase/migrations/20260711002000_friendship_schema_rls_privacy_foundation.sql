@@ -214,6 +214,4 @@ grant execute on function public.remove_friend(uuid) to authenticated;
 comment on table public.friend_requests is
   'Directional friend requests with pending, accepted, declined, and cancelled history. Writes are RPC-only.';
 comment on table public.friendships is
-  'Symmetric accepted friendships stored as normalized low/high user pairs. Independent from one-way user_follows.';
-
-commit;
+  'Symmetric accepted friendships stored as normalized low/high user pairs. Independent from one-way user_follows.';;

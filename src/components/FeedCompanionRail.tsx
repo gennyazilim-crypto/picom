@@ -23,7 +23,8 @@ type FeedCompanionRailProps = {
   onLeaveVoice: () => void;
   onOpenVoiceRoom: (room: ActiveVoiceRoomSummary) => void;
   onOpenScreenShare: () => void;
-  onOpenProfile: (event: MouseEvent, member: Member) => void;
+  onOpenFriendProfile: (member: Member) => void;
+  onFriendContextMenu: (event: MouseEvent, member: Member) => void;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
   onToggleEventReminder: (event: UpcomingEvent) => void;
@@ -99,36 +100,65 @@ function VoiceMiniControlCard({
   );
 }
 
-function FriendStatusRow({
-  friend,
-  member,
-  onOpenProfile,
-}: {
-  friend: FriendConnection;
-  member?: Member;
-  onOpenProfile: (event: MouseEvent, member: Member) => void;
-}) {
-  const displayMember: Member = member ?? {
+function toFriendMember(friend: FriendConnection, member?: Member): Member {
+  const avatarUrl = [friend.avatarUrl, member?.avatarUrl].find((value) => typeof value === "string" && value.trim().length > 0);
+  if (member) {
+    return {
+      ...member,
+      displayName: friend.displayName || member.displayName,
+      username: friend.username || member.username,
+      avatarUrl,
+      status: friend.status,
+      statusText: friend.statusText || member.statusText,
+    };
+  }
+  return {
     id: friend.id ?? `friend-${friend.userId}`,
     userId: friend.userId,
     displayName: friend.displayName,
     username: friend.username,
     avatarSeed: friend.username,
-    avatarUrl: friend.avatarUrl,
+    avatarUrl,
     status: friend.status,
     statusText: friend.statusText,
     roleId: "member",
   };
+}
+
+function FriendStatusRow({
+  friend,
+  member,
+  onOpenFriendProfile,
+  onFriendContextMenu,
+}: {
+  friend: FriendConnection;
+  member?: Member;
+  onOpenFriendProfile: (member: Member) => void;
+  onFriendContextMenu: (event: MouseEvent, member: Member) => void;
+}) {
+  const displayMember = toFriendMember(friend, member);
 
   return (
     <button
       className="feed-friend-row"
       type="button"
-      onClick={(event) => onOpenProfile(event, displayMember)}
+      onClick={() => onOpenFriendProfile(displayMember)}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onFriendContextMenu(event, displayMember);
+      }}
       title={`Open ${friend.displayName} profile`}
+      aria-label={`Open ${friend.displayName} profile`}
     >
       <span className="feed-friend-avatar">
-        <MemberAvatar member={displayMember} size={32} />
+        <MemberAvatar
+          member={displayMember}
+          userId={friend.userId}
+          label={friend.displayName}
+          avatarUrl={displayMember.avatarUrl}
+          size={32}
+        />
         <i className={`status-dot ${friend.status}`} />
       </span>
       <span className="feed-friend-copy">
@@ -142,8 +172,9 @@ function FriendStatusRow({
 function FriendsStatusSection({
   friends,
   communities,
-  onOpenProfile,
-}: Pick<FeedCompanionRailProps, "friends" | "communities" | "onOpenProfile">) {
+  onOpenFriendProfile,
+  onFriendContextMenu,
+}: Pick<FeedCompanionRailProps, "friends" | "communities" | "onOpenFriendProfile" | "onFriendContextMenu">) {
   const onlineFriends = friends.filter((friend) => friend.status !== "offline");
   const offlineFriends = friends.filter((friend) => friend.status === "offline");
 
@@ -159,13 +190,13 @@ function FriendsStatusSection({
       <div className="feed-friend-group">
         <small>Online</small>
         {onlineFriends.slice(0, 8).map((friend) => (
-          <FriendStatusRow key={`online-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenProfile={onOpenProfile} />
+          <FriendStatusRow key={`online-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenFriendProfile={onOpenFriendProfile} onFriendContextMenu={onFriendContextMenu} />
         ))}
       </div>
       <div className="feed-friend-group">
         <small>Offline</small>
         {offlineFriends.slice(0, 6).map((friend) => (
-          <FriendStatusRow key={`offline-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenProfile={onOpenProfile} />
+          <FriendStatusRow key={`offline-${friend.userId}`} friend={friend} member={findMember(communities, friend.userId)} onOpenFriendProfile={onOpenFriendProfile} onFriendContextMenu={onFriendContextMenu} />
         ))}
       </div>
     </section>
@@ -278,7 +309,8 @@ export function FeedCompanionRail({
   onLeaveVoice,
   onOpenVoiceRoom,
   onOpenScreenShare,
-  onOpenProfile,
+  onOpenFriendProfile,
+  onFriendContextMenu,
   onOpenEventCommunity,
   onEventDetails,
   onToggleEventReminder,
@@ -290,7 +322,7 @@ export function FeedCompanionRail({
 
   return (
     <aside className="feed-companion-rail" aria-label="Feed companion rail">
-      <FriendsStatusSection friends={friends} communities={communities} onOpenProfile={onOpenProfile} />
+      <FriendsStatusSection friends={friends} communities={communities} onOpenFriendProfile={onOpenFriendProfile} onFriendContextMenu={onFriendContextMenu} />
       <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} onToggleEventReminder={onToggleEventReminder} />
       {isV1FeatureEnabled("voiceRooms") ? <ActiveVoiceRoomsSection rooms={activeVoiceRooms} onOpenVoiceRoom={onOpenVoiceRoom} /> : null}
       {showStickyStack ? (

@@ -13,7 +13,6 @@ with check (
       and public.is_direct_conversation_member(message.conversation_id)
   )
 );
-
 -- Public events must not reveal a private or cross-community linked channel.
 drop policy if exists "events_select_member_or_public" on public.community_events;
 create policy "events_select_visible_channel_member_or_public"
@@ -35,7 +34,6 @@ using (
     )
   )
 );
-
 drop policy if exists "events_insert_manager" on public.community_events;
 create policy "events_insert_manager_visible_channel"
 on public.community_events for insert to authenticated
@@ -49,10 +47,8 @@ with check (
       and public.can_view_channel(channel.id)
   ))
 );
-
 revoke update on public.community_events from authenticated;
 grant update (title, description, starts_at, ends_at, cancelled_at, updated_at) on public.community_events to authenticated;
-
 -- Report creation validates that the target belongs to the visible community context.
 drop policy if exists "reports_submit_visible_target" on public.reports;
 create policy "reports_submit_visible_target"
@@ -80,7 +76,6 @@ with check (
     ))
   )
 );
-
 revoke update on public.reports from authenticated;
 grant update (status, reviewed_by, updated_at) on public.reports to authenticated;
 drop policy if exists "reports_moderator_update" on public.reports;
@@ -92,7 +87,6 @@ with check (
   and public.can_moderate_community_reports(community_id)
   and (reviewed_by is null or reviewed_by = auth.uid())
 );
-
 -- Managers may list webhook metadata but never select the credential hash through the client role.
 revoke select on public.webhooks from authenticated;
 grant select (id, community_id, channel_id, name, avatar_url, created_by, revoked_at, created_at, updated_at)

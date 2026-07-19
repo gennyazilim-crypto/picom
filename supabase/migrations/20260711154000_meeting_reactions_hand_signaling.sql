@@ -7,14 +7,11 @@ alter table public.meeting_participant_runtime_state
   add column if not exists stage_requested_at timestamptz,
   add column if not exists stage_resolved_at timestamptz,
   add column if not exists stage_resolved_by_user_id uuid references public.profiles(id) on delete set null;
-
 do $$ begin alter table public.meeting_participant_runtime_state add constraint meeting_runtime_stage_status_safe check(stage_request_status in ('none','requested','approved','denied','cancelled')); exception when duplicate_object then null; end $$;
 do $$ begin alter table public.meeting_participant_runtime_state add constraint meeting_runtime_ack_consistent check((acknowledged_by_user_id is null and acknowledged_at is null) or (acknowledged_by_user_id is not null and acknowledged_at is not null)); exception when duplicate_object then null; end $$;
 do $$ begin alter table public.meeting_participant_runtime_state add constraint meeting_runtime_stage_time_consistent check((stage_request_status in ('none','requested') and stage_resolved_at is null) or (stage_request_status in ('approved','denied','cancelled') and stage_resolved_at is not null)); exception when duplicate_object then null; end $$;
-
 alter table public.user_action_rate_limits drop constraint if exists user_action_rate_limits_action_key_check;
 alter table public.user_action_rate_limits add constraint user_action_rate_limits_action_key_check check(action_key in('message_send','attachment_metadata','reaction_write','relationship_write','feed_interaction','livekit_token','meeting_schedule_write','meeting_invite_write','meeting_join_preview','meeting_signal_write'));
-
 create or replace function public.consume_current_user_action_rate_limit(target_action text)
 returns table(is_allowed boolean,retry_after_seconds integer)
 language plpgsql volatile security definer set search_path=public,pg_temp as $$
@@ -31,7 +28,6 @@ begin
   return query select current_row.request_count<=configured_maximum_requests,case when current_row.request_count<=configured_maximum_requests then 0 else greatest(1,ceil(extract(epoch from(current_row.window_started_at+make_interval(secs=>configured_window_seconds)-current_time)))::integer) end;
 end;
 $$;
-
 create or replace function public.update_meeting_hand_signal(target_participant_id uuid,target_action text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare actor_id uuid:=auth.uid();participant_record public.meeting_session_participants%rowtype;session_record public.meeting_sessions%rowtype;room_record public.meeting_rooms%rowtype;runtime_record public.meeting_participant_runtime_state%rowtype;manager boolean:=false;own_participant boolean:=false;next_sequence bigint:=0;event_sequence bigint;
@@ -76,11 +72,9 @@ begin
   return jsonb_build_object('participantId',participant_record.id,'sessionId',participant_record.session_id,'handRaised',runtime_record.hand_raised,'handRaisedAt',runtime_record.hand_raised_at,'handSequence',runtime_record.hand_sequence,'acknowledgedByUserId',runtime_record.acknowledged_by_user_id,'acknowledgedAt',runtime_record.acknowledged_at,'stageRequestStatus',runtime_record.stage_request_status,'stageRequestedAt',runtime_record.stage_requested_at,'stageResolvedAt',runtime_record.stage_resolved_at,'stageResolvedByUserId',runtime_record.stage_resolved_by_user_id,'serverVersion',runtime_record.server_version,'updatedAt',runtime_record.updated_at);
 end;
 $$;
-
 revoke all on function public.update_meeting_hand_signal(uuid,text) from public,anon;
 grant execute on function public.update_meeting_hand_signal(uuid,text) to authenticated;
 revoke execute on function public.set_meeting_participant_hand_state(uuid,boolean) from authenticated;
-
 create or replace function public.get_meeting_hand_queue(target_room_id uuid,target_session_id uuid)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare session_sequence bigint;queue_json jsonb;
@@ -93,10 +87,8 @@ begin
   return jsonb_build_object('schemaVersion',1,'roomId',target_room_id,'sessionId',target_session_id,'sessionSequence',session_sequence,'generatedAt',now(),'entries',queue_json);
 end;
 $$;
-
 revoke all on function public.get_meeting_hand_queue(uuid,uuid) from public,anon;
 grant execute on function public.get_meeting_hand_queue(uuid,uuid) to authenticated;
-
 create or replace function public.close_meeting_signal_on_participant_exit()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -105,7 +97,6 @@ begin
   end if;return new;
 end;
 $$;
-
 revoke all on function public.close_meeting_signal_on_participant_exit() from public,anon,authenticated;
 drop trigger if exists close_meeting_signal_on_participant_exit on public.meeting_session_participants;
 create trigger close_meeting_signal_on_participant_exit after update of state on public.meeting_session_participants for each row execute function public.close_meeting_signal_on_participant_exit();

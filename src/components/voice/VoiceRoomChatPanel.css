@@ -33,9 +33,46 @@
   cursor: pointer;
 }
 
+.voice-room-chat-panel__menu-wrap {
+  position: relative;
+}
+
 .voice-room-chat-panel__menu:hover {
   background: var(--meeting-panel-soft);
   color: var(--meeting-text);
+}
+
+.voice-room-chat-panel__menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 8;
+  min-width: 220px;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--meeting-line);
+  border-radius: 12px;
+  background: var(--meeting-panel);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--shadow-color, #000) 18%, transparent);
+}
+
+.voice-room-chat-panel__menu-dropdown button {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--meeting-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.voice-room-chat-panel__menu-dropdown button:hover {
+  background: var(--meeting-panel-soft);
 }
 
 .voice-room-chat-panel__messages {

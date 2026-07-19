@@ -8,28 +8,23 @@ create table if not exists public.message_mentions (
   created_at timestamptz not null default now(),
   unique (message_id, mentioned_user_id)
 );
-
 create index if not exists idx_message_mentions_user_created
   on public.message_mentions(mentioned_user_id, created_at desc, message_id);
 create index if not exists idx_message_mentions_message
   on public.message_mentions(message_id, mentioned_user_id);
-
 alter table public.message_mentions enable row level security;
 revoke all on public.message_mentions from public, anon, authenticated;
 grant select on public.message_mentions to authenticated;
-
 drop policy if exists "message_mentions_select_visible_message" on public.message_mentions;
 create policy "message_mentions_select_visible_message"
 on public.message_mentions for select to authenticated
 using (public.can_view_message(message_id));
-
 -- Follow rows are relationship data, not a public social graph.
 drop policy if exists "follows_select_authenticated" on public.user_follows;
 drop policy if exists "follows_select_participants" on public.user_follows;
 create policy "follows_select_participants"
 on public.user_follows for select to authenticated
 using (follower_id = auth.uid() or followed_id = auth.uid());
-
 drop view if exists public.mention_feed_view;
 create view public.mention_feed_view
 with (security_invoker = true)
@@ -113,10 +108,8 @@ left join lateral (
 where message.deleted_at is null
   and public.can_view_message(message.id)
   and not public.users_are_blocked(auth.uid(), message.author_id);
-
 revoke all on public.mention_feed_view from public, anon;
 grant select on public.mention_feed_view to authenticated;
-
 create or replace function public.list_mention_feed(
   cursor_created_at timestamptz default null,
   cursor_message_id uuid default null,
@@ -172,10 +165,8 @@ as $$
   order by feed.created_at desc, feed.message_id desc
   limit least(greatest(result_limit, 1), 80);
 $$;
-
 revoke all on function public.list_mention_feed(timestamptz, uuid, integer) from public, anon;
 grant execute on function public.list_mention_feed(timestamptz, uuid, integer) to authenticated;
-
 comment on table public.message_mentions is
   'Normalized mention references written by a trusted extraction pipeline; no message content is duplicated.';
 comment on view public.mention_feed_view is

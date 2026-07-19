@@ -1,11 +1,9 @@
 import type { MouseEvent } from "react";
 import type { Channel } from "../types/community";
 import type { VoiceChannelParticipant } from "../types/voiceDiscovery";
+import { resolveChannelSidebarIcon } from "../utils/channelSidebarIcon";
 import { formatMentionBadge, formatMentionLabel, normalizeMentionCount } from "../utils/mentionUtils";
 import { AppIcon } from "./AppIcon";
-import { mvpUiIconMap } from "./iconRegistry";
-
-const sidebarIcons = mvpUiIconMap.communitySidebar;
 
 type ChannelItemProps = {
   channel: Channel;
@@ -15,13 +13,6 @@ type ChannelItemProps = {
   hasDraft?: boolean;
   voiceParticipants?: readonly VoiceChannelParticipant[];
 };
-
-function getChannelIcon(channel: Channel) {
-  if (channel.type === "voice") return sidebarIcons.voiceChannel;
-  if (channel.type === "announcement") return "bell";
-  if (channel.type === "forum") return "inbox";
-  return sidebarIcons.textChannel;
-}
 
 function getVoiceParticipantState(participant: VoiceChannelParticipant): "speaking" | "silent" | "muted" {
   if (participant.isMicrophoneEnabled === false) {
@@ -36,23 +27,25 @@ function getVoiceParticipantState(participant: VoiceChannelParticipant): "speaki
 }
 
 export function ChannelItem({ channel, active, onSelect, onContextMenu, hasDraft = false, voiceParticipants = [] }: ChannelItemProps) {
-  const icon = getChannelIcon(channel);
+  // Voice channels always show the voice-chat logo; speaking state only affects participants below.
+  const icon = channel.type === "voice" ? "voice" : resolveChannelSidebarIcon(channel);
   const mentionCount = normalizeMentionCount(channel.mentions);
   const mentionLabel = formatMentionBadge(mentionCount);
   const mentionBadgeLabel = formatMentionLabel(mentionCount);
   const showTrailing = channel.unread || hasDraft || mentionCount > 0;
   const showVoiceParticipants = channel.type === "voice" && voiceParticipants.length > 0;
+  const someoneSpeaking = voiceParticipants.some((participant) => participant.isSpeaking === true && participant.isMicrophoneEnabled !== false);
 
   return (
-    <div className={`channel-voice-entry${showVoiceParticipants ? " has-participants" : ""}`}>
+    <div className={`channel-voice-entry${showVoiceParticipants ? " has-participants" : ""}${someoneSpeaking ? " is-speaking" : ""}`}>
       <button
-        className={`channel-item channel-type-${channel.type} ${active ? "active" : ""} ${mentionCount ? "has-mentions" : ""}`}
+        className={`channel-item channel-type-${channel.type} ${active ? "active" : ""} ${mentionCount ? "has-mentions" : ""}${someoneSpeaking ? " is-voice-speaking" : ""}`}
         aria-current={active ? "page" : undefined}
         aria-label={channel.name}
         onClick={() => onSelect(channel)}
         onContextMenu={(event) => onContextMenu(event, channel)}
       >
-        <span className="channel-item-icon" aria-hidden="true">
+        <span className="channel-item-icon" aria-hidden="true" data-channel-icon={icon}>
           <AppIcon name={icon} size="sm" />
         </span>
         <span className="channel-name">{channel.name}</span>
@@ -72,14 +65,15 @@ export function ChannelItem({ channel, active, onSelect, onContextMenu, hasDraft
           {voiceParticipants.map((participant) => {
             const voiceState = getVoiceParticipantState(participant);
             return (
-            <li
-              key={participant.identity}
-              className={`is-${voiceState}`}
-            >
-              <span className={`channel-voice-user-dot is-${voiceState}`} aria-hidden="true" />
-              <span className="channel-voice-user-name">{participant.name}</span>
-              {voiceState === "muted" ? <AppIcon name="volumeOff" size="xs" aria-label="Muted" /> : null}
-            </li>
+              <li key={participant.identity} className={`is-${voiceState}`}>
+                {voiceState === "speaking" ? (
+                  <span className="channel-voice-user-speaking" aria-hidden="true">
+                    <AppIcon name="microphone" size="xs" />
+                  </span>
+                ) : null}
+                <span className="channel-voice-user-name">{participant.name}</span>
+                {voiceState === "muted" ? <AppIcon name="volumeOff" size="xs" aria-label="Muted" /> : null}
+              </li>
             );
           })}
         </ul>

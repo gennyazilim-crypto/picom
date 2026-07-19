@@ -176,6 +176,15 @@
   background: transparent;
 }
 
+.voice-participants-rail .voice-participant-row.is-interactive {
+  cursor: pointer;
+}
+
+.voice-participants-rail .voice-participant-row.is-interactive:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
 .voice-participants-rail .voice-participant-row:hover,
 .voice-participants-rail .voice-participant-row.is-speaking {
   background: var(--surface-hover);

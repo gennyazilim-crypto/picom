@@ -133,4 +133,4 @@ revoke all on function public.create_radio_community_with_defaults(uuid, text, t
 grant execute on function public.create_radio_community_with_defaults(uuid, text, text, text, text, text, boolean) to authenticated;
 
 comment on function public.create_radio_community_with_defaults(uuid, text, text, text, text, text, boolean) is
-  'Atomically creates an idempotent Radio community, station roles, owner membership, and safe empty UTC schedule settings without text channels.';
+  'Atomically creates an idempotent Radio community, station roles, owner membership, and safe empty UTC schedule settings without text channels.';;

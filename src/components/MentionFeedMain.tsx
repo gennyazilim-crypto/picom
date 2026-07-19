@@ -48,6 +48,8 @@ type MentionFeedMainProps = {
   onToggleSaved: (id: string) => void;
   onMarkRead: (id: string) => void;
   onOpenProfile: (event: MouseEvent, member: Member) => void;
+  onOpenFriendProfile: (member: Member) => void;
+  onFriendContextMenu: (event: MouseEvent, member: Member) => void;
   onOpenMore: (event: MouseEvent, item: MentionItem) => void;
   onMarkStorySeen: (storyId: string) => void;
   onOpenStoryInChannel: (story: FollowedUserStory) => void;
@@ -121,6 +123,8 @@ export function MentionFeedMain({
   onToggleSaved,
   onMarkRead,
   onOpenProfile,
+  onOpenFriendProfile,
+  onFriendContextMenu,
   onOpenMore,
   onMarkStorySeen,
   onOpenStoryInChannel,
@@ -331,7 +335,8 @@ export function MentionFeedMain({
           onLeaveVoice={onLeaveVoice}
           onOpenVoiceRoom={onOpenVoiceRoom}
           onOpenScreenShare={onOpenScreenShare}
-          onOpenProfile={onOpenProfile}
+          onOpenFriendProfile={onOpenFriendProfile}
+          onFriendContextMenu={onFriendContextMenu}
           onOpenEventCommunity={onOpenEventCommunity}
           onEventDetails={onEventDetails}
           onToggleEventReminder={toggleEventReminder}

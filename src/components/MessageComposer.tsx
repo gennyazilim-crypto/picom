@@ -10,7 +10,6 @@ import { EmojiPicker } from "./EmojiPicker";
 import { mvpUiIconMap } from "./iconRegistry";
 import { slashCommandService, type SlashCommand } from "../services/slashCommandService";
 import { SlashCommandPopover } from "./SlashCommandPopover";
-import { StickerPicker } from "./StickerPicker";
 import type { CreatePollDraft } from "../types/polls";
 import { analyticsService } from "../services/analyticsService";
 
@@ -81,7 +80,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [slashDismissed, setSlashDismissed] = useState(false);
-  const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewsRef = useRef<ComposerAttachmentItem[]>([]);
   const uploadControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -132,7 +130,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     setEmojiPickerOpen(false);
     setSlashDismissed(false);
     setSlashSelectedIndex(0);
-    setStickerPickerOpen(false);
     setBody(messageDraftService.getDraft({ communityId, channelId: channel.id })?.text ?? "");
   }, [channel.id, communityId]);
 
@@ -469,10 +466,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
               <AppIcon name={composerIcons.emoji} size="md" />
             </button>
             <button className="composer-tool composer-chip" type="button" aria-label="GIF placeholder" disabled={Boolean(disabledReason)}>GIF</button>
-            <button className="composer-tool composer-chip" type="button" aria-label="Stickers" disabled={Boolean(disabledReason)} onClick={() => setStickerPickerOpen((current) => !current)}>Sticker</button>
-            {canCreatePoll ? (
-              <button className="composer-tool composer-chip" type="button" aria-label="Create poll" disabled={Boolean(disabledReason)} onClick={onOpenPoll}>Poll</button>
-            ) : null}
           </div>
           <button
             className="send-button"
@@ -501,7 +494,6 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           communityId={communityId}
         />
       ) : null}
-      {stickerPickerOpen ? <StickerPicker onClose={() => setStickerPickerOpen(false)} onSelect={(stickerId) => { setStickerPickerOpen(false); void onSendMessage(`[sticker:${stickerId}]`, [], replyToMessage?.id ?? null); }} /> : null}
       {dragging ? <div className="drop-hint"><AppIcon name={composerIcons.image} /> Drop images to attach</div> : null}
     </footer>
   );

@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.can_manage_channels_v2(target_community_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
@@ -9,7 +8,6 @@ returns boolean language sql stable security definer set search_path = public as
     where c.id = target_community_id and (c.owner_id = auth.uid() or lower(coalesce(r.name, '')) in ('owner', 'admin'))
   );
 $$;
-
 create or replace function public.update_managed_channel(target_channel_id uuid, next_name text, next_type text, next_topic text, next_category_id uuid, next_is_private boolean, next_public_read_enabled boolean)
 returns setof public.channels language plpgsql security definer set search_path = public as $$
 declare current_channel public.channels%rowtype; normalized_name text;
@@ -24,7 +22,6 @@ begin
   return next current_channel;
 end;
 $$;
-
 create or replace function public.delete_managed_channel(target_channel_id uuid, confirmation_name text)
 returns table(deleted_channel_id uuid, fallback_channel_id uuid) language plpgsql security definer set search_path = public as $$
 declare current_channel public.channels%rowtype; fallback_id uuid;
@@ -39,7 +36,6 @@ begin
   return query select target_channel_id, fallback_id;
 end;
 $$;
-
 revoke all on function public.can_manage_channels_v2(uuid) from public;
 revoke all on function public.update_managed_channel(uuid, text, text, text, uuid, boolean, boolean) from public;
 revoke all on function public.delete_managed_channel(uuid, text) from public;

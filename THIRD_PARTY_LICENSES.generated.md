@@ -5,8 +5,8 @@
 ## Summary
 
 - Project: picom 0.1.1-beta.1
-- Installed package entries: 395
-- Unique license expressions: 14
+- Installed package entries: 404
+- Unique license expressions: 15
 - Missing license metadata: 0
 - Explicit blocked/proprietary expressions: 0
 
@@ -23,7 +23,8 @@
 | BSD-2-Clause | 6 |
 | BSD-3-Clause | 18 |
 | ISC | 38 |
-| MIT | 294 |
+| MIT | 302 |
+| MIT-0 | 1 |
 | MPL-2.0 | 12 |
 | Python-2.0 | 1 |
 | WTFPL | 1 |
@@ -120,7 +121,7 @@
 | ansi-styles | 4.3.0 | development transitive | MIT |
 | ansi-styles | 6.2.3 | development transitive | MIT |
 | app-builder-lib | 26.15.3 | development transitive | MIT |
-| argparse | 2.0.1 | development transitive | Python-2.0 |
+| argparse | 2.0.1 | runtime transitive | Python-2.0 |
 | asn1js | 3.0.10 | development transitive | BSD-3-Clause |
 | async | 3.2.6 | development transitive | MIT |
 | async-exit-hook | 2.0.1 | development transitive | MIT |
@@ -145,6 +146,7 @@
 | brace-expansion | 5.0.7 | development transitive | MIT |
 | buffer-from | 1.1.2 | development transitive | MIT |
 | builder-util | 26.15.3 | development transitive | MIT |
+| builder-util-runtime | 9.3.1 | runtime transitive | MIT |
 | builder-util-runtime | 9.7.0 | development transitive | MIT |
 | bytestreamjs | 2.0.1 | development transitive | BSD-3-Clause |
 | cacheable-lookup | 5.0.4 | development transitive | MIT |
@@ -174,7 +176,7 @@
 | cross-dirname | 0.1.0 | development transitive | MIT |
 | cross-spawn | 7.0.6 | development transitive | MIT |
 | csstype | 3.2.3 | development transitive | MIT |
-| debug | 4.4.3 | development transitive | MIT |
+| debug | 4.4.3 | runtime transitive | MIT |
 | decompress-response | 6.0.0 | development transitive | MIT |
 | defer-to-connect | 2.0.1 | development transitive | MIT |
 | define-data-property | 1.1.4 | development transitive | MIT |
@@ -193,6 +195,7 @@
 | electron-builder | 26.15.3 | development direct | MIT |
 | electron-builder-squirrel-windows | 26.15.3 | development transitive | MIT |
 | electron-publish | 26.15.3 | development transitive | MIT |
+| electron-updater | 6.6.2 | runtime direct | MIT |
 | electron-winstaller | 5.4.0 | development transitive | MIT |
 | emoji-regex | 10.6.0 | development transitive | MIT |
 | emoji-regex | 8.0.0 | development transitive | MIT |
@@ -216,7 +219,8 @@
 | filelist | 1.0.6 | development transitive | Apache-2.0 |
 | follow-redirects | 1.16.0 | development transitive | MIT |
 | form-data | 4.0.6 | development transitive | MIT |
-| fs-extra | 10.1.0 | development transitive | MIT |
+| framer-motion | 12.42.2 | runtime direct | MIT |
+| fs-extra | 10.1.0 | runtime transitive | MIT |
 | fs-extra | 11.3.1 | development transitive | MIT |
 | fs-extra | 11.3.6 | development transitive | MIT |
 | fs-extra | 11.3.6 | development transitive | MIT |
@@ -238,7 +242,7 @@
 | globalthis | 1.0.4 | development transitive | MIT |
 | gopd | 1.2.0 | development transitive | MIT |
 | got | 11.8.6 | development transitive | MIT |
-| graceful-fs | 4.2.11 | development transitive | ISC |
+| graceful-fs | 4.2.11 | runtime transitive | ISC |
 | has-flag | 4.0.0 | development transitive | MIT |
 | has-property-descriptors | 1.0.2 | development transitive | MIT |
 | has-symbols | 1.1.0 | development transitive | MIT |
@@ -264,16 +268,16 @@
 | jiti | 2.7.0 | runtime transitive | MIT |
 | joi | 18.2.3 | development transitive | BSD-3-Clause |
 | jose | 6.2.3 | runtime transitive | MIT |
-| js-yaml | 4.3.0 | development transitive | MIT |
+| js-yaml | 4.3.0 | runtime transitive | MIT |
 | json-buffer | 3.0.1 | development transitive | MIT |
 | json-schema-traverse | 1.0.0 | development transitive | MIT |
 | json-stringify-safe | 5.0.1 | development transitive | ISC |
 | json5 | 2.2.3 | development transitive | MIT |
 | jsonfile | 4.0.0 | development transitive | MIT |
 | jsonfile | 4.0.0 | development transitive | MIT |
-| jsonfile | 6.2.1 | development transitive | MIT |
+| jsonfile | 6.2.1 | runtime transitive | MIT |
 | keyv | 4.5.4 | development transitive | MIT |
-| lazy-val | 1.0.5 | development transitive | MIT |
+| lazy-val | 1.0.5 | runtime transitive | MIT |
 | lightningcss | 1.32.0 | runtime transitive | MPL-2.0 |
 | lightningcss-android-arm64 | 1.32.0 | runtime transitive | MPL-2.0 |
 | lightningcss-darwin-arm64 | 1.32.0 | runtime transitive | MPL-2.0 |
@@ -288,6 +292,8 @@
 | lightningcss-win32-x64-msvc | 1.32.0 | runtime transitive | MPL-2.0 |
 | livekit-client | 2.20.0 | runtime direct | Apache-2.0 |
 | lodash | 4.18.1 | development transitive | MIT |
+| lodash.escaperegexp | 4.1.2 | runtime transitive | MIT |
+| lodash.isequal | 4.5.0 | runtime transitive | MIT |
 | loglevel | 1.9.2 | runtime transitive | MIT |
 | lowercase-keys | 2.0.0 | development transitive | MIT |
 | lru-cache | 6.0.0 | development transitive | ISC |
@@ -308,12 +314,15 @@
 | minipass | 7.1.3 | development transitive | BlueOak-1.0.0 |
 | minizlib | 3.1.0 | development transitive | MIT |
 | mkdirp | 0.5.6 | development transitive | MIT |
-| ms | 2.1.3 | development transitive | MIT |
+| motion-dom | 12.42.2 | runtime transitive | MIT |
+| motion-utils | 12.39.0 | runtime transitive | MIT |
+| ms | 2.1.3 | runtime transitive | MIT |
 | nanoid | 3.3.15 | runtime transitive | MIT |
 | node-abi | 4.33.0 | development transitive | MIT |
 | node-api-version | 0.2.1 | development transitive | MIT |
 | node-gyp | 12.4.0 | development transitive | MIT |
 | node-int64 | 0.4.0 | development transitive | MIT |
+| nodemailer | 9.0.3 | runtime direct | MIT-0 |
 | nopt | 9.0.0 | development transitive | ISC |
 | normalize-url | 6.1.0 | development transitive | MIT |
 | object-keys | 1.1.1 | development transitive | MIT |
@@ -355,14 +364,14 @@
 | rxjs | 7.8.2 | runtime transitive | Apache-2.0 |
 | safe-buffer | 5.1.2 | development transitive | MIT |
 | sanitize-filename | 1.6.4 | development transitive | WTFPL OR ISC |
-| sax | 1.6.0 | development transitive | BlueOak-1.0.0 |
+| sax | 1.6.0 | runtime transitive | BlueOak-1.0.0 |
 | scheduler | 0.27.0 | runtime transitive | MIT |
 | sdp | 3.2.2 | runtime transitive | MIT |
 | sdp-transform | 2.15.0 | runtime transitive | MIT |
 | semver | 5.7.2 | development transitive | ISC |
 | semver | 6.3.1 | development transitive | ISC |
 | semver | 7.7.4 | development transitive | ISC |
-| semver | 7.8.5 | development transitive | ISC |
+| semver | 7.8.5 | runtime transitive | ISC |
 | semver-compare | 1.0.0 | development transitive | MIT |
 | serialize-error | 7.0.1 | development transitive | MIT |
 | shebang-command | 2.0.0 | development transitive | MIT |
@@ -390,6 +399,7 @@
 | temp | 0.9.4 | development transitive | MIT |
 | temp-file | 3.4.0 | development transitive | MIT |
 | tiny-async-pool | 1.3.0 | development transitive | MIT |
+| tiny-typed-emitter | 2.1.0 | runtime transitive | MIT |
 | tinyglobby | 0.2.17 | runtime transitive | MIT |
 | tmp | 0.2.7 | development transitive | MIT |
 | tmp-promise | 3.0.3 | development transitive | MIT |
@@ -405,7 +415,7 @@
 | undici-types | 8.3.0 | runtime transitive | MIT |
 | universalify | 0.1.2 | development transitive | MIT |
 | universalify | 0.1.2 | development transitive | MIT |
-| universalify | 2.0.1 | development transitive | MIT |
+| universalify | 2.0.1 | runtime transitive | MIT |
 | unzipper | 0.12.5 | development transitive | MIT |
 | utf8-byte-length | 1.0.5 | development transitive | (WTFPL OR MIT) |
 | util-deprecate | 1.0.2 | development transitive | MIT |

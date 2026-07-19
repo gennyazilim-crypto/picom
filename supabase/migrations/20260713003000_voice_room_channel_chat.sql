@@ -20,6 +20,5 @@ as $$
       and public.effective_community_permission(channel.community_id, 'sendMessages', 'channel', channel.id)
   );
 $$;
-
 comment on function public.can_send_message_to_channel(uuid) is
   'Authorizes text and voice-channel chat sends for active text-community members with sendMessages permission.';

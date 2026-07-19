@@ -22,5 +22,4 @@ begin
 end $$;
 revoke all on function public.authorize_livekit_room(uuid,uuid,text) from public,anon;
 grant execute on function public.authorize_livekit_room(uuid,uuid,text) to authenticated;
-comment on function public.authorize_livekit_room(uuid,uuid,text) is 'Returns least-privilege LiveKit capabilities only for active Text-community members with scoped channel permissions. Visitors, bans, active timeouts, private denials, and non-Text kinds are rejected.';
-commit;
+comment on function public.authorize_livekit_room(uuid,uuid,text) is 'Returns least-privilege LiveKit capabilities only for active Text-community members with scoped channel permissions. Visitors, bans, active timeouts, private denials, and non-Text kinds are rejected.';;

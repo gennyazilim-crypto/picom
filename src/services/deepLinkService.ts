@@ -8,7 +8,8 @@ export type DeepLinkAction =
   | { type: "authCallback"; code?: string; error?: string }
   | { type: "passwordRecovery"; code?: string; error?: string }
   | { type: "emailVerification"; code?: string; error?: string }
-  | { type: "friends" };
+  | { type: "friends" }
+  | { type: "directMessage"; conversationId: string };
 
 export type DeepLinkParseResult =
   | { ok: true; url: string; action: DeepLinkAction }
@@ -159,6 +160,10 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   if (route === "friends" && segments.length === 0) {
     return { ok: true, url: "picom://friends", action: { type: "friends" } };
+  }
+
+  if (route === "dm" && segments.length === 1 && isSafeSegment(segments[0]) && !parsed.search && !parsed.hash) {
+    return { ok: true, url: `picom://dm/${segments[0]}`, action: { type: "directMessage", conversationId: segments[0] } };
   }
 
   return { ok: false, reason: "UNSUPPORTED_DEEP_LINK_ROUTE" };

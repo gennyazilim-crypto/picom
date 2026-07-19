@@ -793,6 +793,17 @@
   font-weight: 900;
 }
 
+.profile-community-mark img,
+.profile-community-mark--avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.profile-community-mark img {
+  object-fit: cover;
+  display: block;
+}
+
 .profile-community-copy {
   min-width: 0;
   display: grid;

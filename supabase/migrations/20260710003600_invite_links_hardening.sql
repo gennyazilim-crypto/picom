@@ -10,13 +10,10 @@ create table if not exists public.community_bans (
   revoked_at timestamptz,
   unique (community_id, user_id)
 );
-
 alter table public.community_bans enable row level security;
-
 create policy "community_bans_manager_select" on public.community_bans
 for select to authenticated
 using (public.can_create_community_invite(community_id));
-
 create or replace function public.accept_community_invite(invite_code text)
 returns table (id uuid, community_id uuid, user_id uuid, role_id uuid, joined_at timestamptz)
 language plpgsql security definer set search_path = public as $$
@@ -43,6 +40,5 @@ begin
   return query select membership.id, membership.community_id, membership.user_id, membership.role_id, membership.joined_at from public.community_members membership where membership.community_id = target_invite.community_id and membership.user_id = auth.uid();
 end;
 $$;
-
 revoke all on function public.accept_community_invite(text) from public;
 grant execute on function public.accept_community_invite(text) to authenticated;

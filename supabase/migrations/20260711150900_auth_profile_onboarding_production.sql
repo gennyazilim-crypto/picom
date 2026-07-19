@@ -1,5 +1,3 @@
-begin;
-
 alter table public.user_settings
   add column if not exists theme_mode text not null default 'system';
 
@@ -120,6 +118,4 @@ grant execute on function public.complete_current_user_onboarding(jsonb, uuid[],
 comment on column public.user_settings.theme_mode is
   'Account-synced Picom theme preference. Device rendering still resolves system mode locally.';
 comment on function public.complete_current_user_onboarding(jsonb, uuid[], text) is
-  'Atomically completes the authenticated user profile, privacy-aware follows, and theme preference. Follow targets are authorized by follow_user.';
-
-commit;
+  'Atomically completes the authenticated user profile, privacy-aware follows, and theme preference. Follow targets are authorized by follow_user.';;

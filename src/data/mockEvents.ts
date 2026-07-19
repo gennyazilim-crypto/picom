@@ -1,7 +1,6 @@
 import type { UpcomingEvent } from "../types/events";
-import { selectMockFixture } from "../config/dataSourcePolicy";
 
-const rawMockUpcomingEvents: UpcomingEvent[] = [
+const rawMockUpcomingEvents: UpcomingEvent[] = import.meta.env.PROD ? [] : [
   {
     id: "event-aurora-crit",
     communityId: "aurora",
@@ -44,4 +43,4 @@ const rawMockUpcomingEvents: UpcomingEvent[] = [
   },
 ];
 
-export const mockUpcomingEvents = selectMockFixture<UpcomingEvent[]>(rawMockUpcomingEvents, []);
+export const mockUpcomingEvents: UpcomingEvent[] = import.meta.env.PROD ? [] : rawMockUpcomingEvents;

@@ -35,6 +35,7 @@
 
 - [ ] `picom://auth/callback` is allowlisted without broad wildcards.
 - [ ] Email/password, verification, session, and abuse settings match launch policy.
+- [ ] Auth SMTP Sender email is `info@picom.gg` (display name Picom) with SPF/DKIM for `picom.gg`.
 - [ ] Google/Apple credentials are stored only in provider settings.
 - [ ] Email templates are reviewed for links, privacy, localization, and safe HTML.
 - [ ] Terms/Privacy text and consent behavior have product/legal approval.

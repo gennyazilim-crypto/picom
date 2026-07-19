@@ -10,8 +10,11 @@ export function DesktopContextMenu({ x, y, items, onClose, children, ariaLabel =
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const close = () => onClose();
     const enabledItems = () => Array.from(menuRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]),[data-menu-focus]:not([disabled])") ?? []);
+    const onPointerDown = (event: PointerEvent) => {
+      if (menuRef.current?.contains(event.target as Node)) return;
+      onClose();
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") { event.preventDefault(); onClose(); return; }
       if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
@@ -22,11 +25,14 @@ export function DesktopContextMenu({ x, y, items, onClose, children, ariaLabel =
       const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : event.key === "ArrowDown" ? (currentIndex + 1 + buttons.length) % buttons.length : (currentIndex - 1 + buttons.length) % buttons.length;
       buttons[nextIndex].focus();
     };
-    window.addEventListener("pointerdown", close);
+    const timer = window.setTimeout(() => {
+      window.addEventListener("pointerdown", onPointerDown);
+    }, 0);
     window.addEventListener("keydown", onKey);
     window.requestAnimationFrame(() => enabledItems()[0]?.focus());
     return () => {
-      window.removeEventListener("pointerdown", close);
+      window.clearTimeout(timer);
+      window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keydown", onKey);
       window.requestAnimationFrame(() => previousFocus?.focus());
     };

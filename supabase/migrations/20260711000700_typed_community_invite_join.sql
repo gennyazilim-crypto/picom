@@ -66,4 +66,4 @@ for each row execute function public.enforce_community_membership_join_restricti
 comment on function public.get_community_invite_preview(text) is
   'Returns only safe invite preview metadata, including canonical community kind; never returns the invite code, role internals, private channels, or member identities.';
 comment on function public.enforce_community_membership_join_restrictions() is
-  'Authoritative INSERT guard for active community bans and owner/user blocking relationships across public joins, invite joins, and administrative membership paths.';
+  'Authoritative INSERT guard for active community bans and owner/user blocking relationships across public joins, invite joins, and administrative membership paths.';;

@@ -1,5 +1,3 @@
-begin;
-
 create or replace view public.unified_content_feed_view with (security_invoker = true) as
 select md5(mention.source_type || ':' || mention.source_id::text)::uuid as feed_item_id,
   mention.source_type, mention.source_id, mention.parent_source_id, mention.community_id, mention.channel_id, mention.author_id,
@@ -95,5 +93,4 @@ $$;
 revoke all on function public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer) from public,anon;
 grant execute on function public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer) to authenticated;
 comment on view public.unified_content_feed_view is 'RLS-invoker aggregation for Text, Radio, and Podcast mentions; no viewer profile is materialized.';
-comment on function public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer) is 'Single-query visible Feed ranking with persisted follows, existing read/save state, aggregate engagement, and keyset pagination.';
-commit;
+comment on function public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer) is 'Single-query visible Feed ranking with persisted follows, existing read/save state, aggregate engagement, and keyset pagination.';;

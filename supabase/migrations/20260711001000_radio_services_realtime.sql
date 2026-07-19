@@ -57,4 +57,4 @@ end
 $$;
 
 comment on function public.join_current_user_radio_listener(uuid) is 'Idempotent self-listen transition for a visible live Radio session. Partial uniqueness prevents duplicate active listener rows.';
-comment on function public.leave_current_user_radio_listener(uuid) is 'Idempotent self-leave transition; listener history remains private under RLS.';
+comment on function public.leave_current_user_radio_listener(uuid) is 'Idempotent self-leave transition; listener history remains private under RLS.';;

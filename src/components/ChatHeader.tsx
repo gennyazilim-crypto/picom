@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { Channel } from "../types/community";
-import { AppIcon, type IconName } from "./AppIcon";
+import { resolveChannelSidebarIcon } from "../utils/channelSidebarIcon";
+import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import "./ChatHeader.css";
 
 const chatHeaderIcons = mvpUiIconMap.chatHeader;
-const channelIcons = mvpUiIconMap.communitySidebar;
 
 type ChatHeaderProps = {
   channel: Channel;
@@ -37,13 +37,6 @@ const channelTypeLabels: Record<Channel["type"], string> = {
   announcement: "Announcements",
 };
 
-function getChannelIcon(channel: Channel): IconName {
-  if (channel.type === "voice") return channelIcons.voiceChannel;
-  if (channel.type === "announcement") return "bell";
-  if (channel.type === "forum") return "inbox";
-  return channelIcons.textChannel;
-}
-
 function getChannelDisplayName(channel: Channel) {
   if (channel.type === "text") return `#${channel.name}`;
   return channel.name;
@@ -73,7 +66,7 @@ export function ChatHeader({
 }: ChatHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const channelIcon = getChannelIcon(channel);
+  const channelIcon = resolveChannelSidebarIcon(channel);
   const topic = channel.topic?.trim() || "No topic set";
 
   useEffect(() => {

@@ -55,6 +55,7 @@ $supplementalSymbols = @'
     <symbol id="iconix-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.75" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M12 2.75V5M12 19V21.25M2.75 12H5M19 12H21.25M5.46 5.46L7.05 7.05M16.95 16.95L18.54 18.54M18.54 5.46L16.95 7.05M7.05 16.95L5.46 18.54" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></symbol>
     <symbol id="iconix-volume" viewBox="0 0 24 24"><path d="M4 9H7.5L12 5.25V18.75L7.5 15H4V9ZM15.5 9C16.45 9.75 17 10.75 17 12C17 13.25 16.45 14.25 15.5 15M17.75 6.75C19.2 8.1 20 9.85 20 12C20 14.15 19.2 15.9 17.75 17.25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></symbol>
     <symbol id="iconix-volume-off" viewBox="0 0 24 24"><path d="M4 9H7.5L12 5.25V18.75L7.5 15H4V9ZM16 9L21 14M21 9L16 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+    <symbol id="iconix-logout" viewBox="0 0 24 24"><path d="M10 5H6.75A2.75 2.75 0 0 0 4 7.75V16.25A2.75 2.75 0 0 0 6.75 19H10M14 8L18 12L14 16M18 12H9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></symbol>
 '@
 
 $sprite = @"

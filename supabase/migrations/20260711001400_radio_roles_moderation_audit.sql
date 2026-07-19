@@ -1,5 +1,3 @@
-begin;
-
 insert into public.roles(community_id, name, color, level, permissions)
 select community.id, 'Radio Producer', '#E28A3B', 70,
   '{"viewRadioContent":true,"listenRadio":true,"hostRadio":true,"manageRadioSchedule":true,"manageRadioPrograms":true,"manageRadioHosts":true,"moderateRadioComments":true}'::jsonb
@@ -381,6 +379,4 @@ grant execute on function public.list_radio_session_audit(uuid, integer) to auth
 
 comment on function public.can_assign_radio_session_host(uuid, uuid, text) is 'Hierarchy guard for Radio session assignments. Producers can grant only lower session roles; ownership remains highest.';
 comment on function public.remove_radio_session_host(uuid, uuid) is 'Hierarchy-checked session host removal. Primary host transfer is intentionally a separate workflow.';
-comment on function public.list_radio_session_audit(uuid, integer) is 'Returns only audit facts for one Radio session to a current authorized session manager.';
-
-commit;
+comment on function public.list_radio_session_audit(uuid, integer) is 'Returns only audit facts for one Radio session to a current authorized session manager.';;

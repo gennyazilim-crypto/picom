@@ -1,7 +1,6 @@
 -- Voice Rooms and Screen Share are mandatory V1 scope. Ordinary media access is
 -- based on active membership; moderation remains role and hierarchy controlled.
 begin;
-
 create or replace function public.authorize_livekit_room(
   target_community_id uuid,
   target_channel_id uuid,
@@ -45,10 +44,8 @@ begin
 
   return query select target_community.id,target_channel.id,target_community.kind::text,target_channel.is_private,true,true;
 end $$;
-
 revoke all on function public.authorize_livekit_room(uuid,uuid,text) from public,anon;
 grant execute on function public.authorize_livekit_room(uuid,uuid,text) to authenticated;
 comment on function public.authorize_livekit_room(uuid,uuid,text) is
   'V1 active-member Voice/Screen authorization. Membership, bans, suspensions, channel validity, and private access are enforced; ordinary microphone and screen publishing do not require a custom role.';
-
 commit;

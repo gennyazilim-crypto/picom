@@ -1,13 +1,10 @@
-﻿# Native Desktop Notifications
+# Native Desktop Notifications
 
 Picom sends desktop notifications through a centralized `notificationService`. React components must not call Electron, `ipcRenderer`, or browser notification APIs directly.
 
-## Status
+## Incoming voice calls
 
-- Electron native bridge: enabled through preload IPC
-- Browser fallback: retained for non-Electron development contexts
-- Settings-aware routing: enabled through `decideNotificationRoute()`
-- UI changes: none in this task
+When Picom is unfocused, minimized, or closed to the tray, an incoming call also opens a Mark-style always-on-top toast window (`picomDesktop.incomingCall`) in the bottom-right of the screen. Answer / Message / Decline actions focus the main window and complete through the existing voice-call invite flow. A silent OS notification is shown in parallel so Windows Action Center still records the call.
 
 ## Runtime flow
 

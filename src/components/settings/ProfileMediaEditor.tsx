@@ -1,246 +1,262 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import type { ProfileSummary } from "../../services/profileService";
-import { profileMediaService, type ProfileMediaKind, type ProfileMediaProgress } from "../../services/profileMediaService";
+import {
+  profileMediaService,
+  type ProfileMediaCrop,
+  type ProfileMediaKind,
+  type ProfileMediaProgress,
+} from "../../services/profileMediaService";
+import { getSupabaseClient } from "../../services/supabase/supabaseClient";
 import { fileService } from "../../services/fileService";
+import { useProfileMedia } from "../../hooks/useProfileMedia";
+import { UserAvatar } from "../UserAvatar";
+import { ProfileCover } from "../ProfileCover";
 import { AppIcon } from "../AppIcon";
 import "./ProfileMediaEditor.css";
-
-type SlotState = { file: File | null; previewUrl: string | null; busy: boolean; progress: ProfileMediaProgress | null; error: string | null };
-const emptySlot: SlotState = { file: null, previewUrl: null, busy: false, progress: null, error: null };
 
 type ProfileMediaEditorProps = {
   displayName: string;
   avatarUrl?: string | null;
   coverUrl?: string | null;
   onProfileUpdated: (profile: ProfileSummary) => void;
-  onNotice: (message: string, tone?: "info" | "error" | "success") => void;
+  onNotice?: unknown;
 };
 
-function hasNativeImagePicker(): boolean {
-  return typeof window !== "undefined" && typeof window.picomDesktop?.file?.pickImages === "function";
-}
+type PendingImage = { kind: ProfileMediaKind; file: File; previewUrl: string };
+const INITIAL_CROP: ProfileMediaCrop = { zoom: 1, rotation: 0, offsetX: 0, offsetY: 0 };
 
-export function ProfileMediaEditor({ displayName, avatarUrl, coverUrl, onProfileUpdated, onNotice }: ProfileMediaEditorProps) {
-  const [avatar, setAvatar] = useState<SlotState>(emptySlot);
-  const [cover, setCover] = useState<SlotState>(emptySlot);
-  const previewUrls = useRef(new Set<string>());
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
+const kindLabel = (kind: ProfileMediaKind) => kind === "avatar" ? "Profile photo" : "Cover photo";
 
-  useEffect(() => () => { previewUrls.current.forEach((url) => URL.revokeObjectURL(url)); }, []);
+export function ProfileMediaEditor({
+  displayName,
+  avatarUrl,
+  coverUrl,
+  onProfileUpdated,
+}: ProfileMediaEditorProps) {
+  const avatarInput = useRef<HTMLInputElement>(null);
+  const coverInput = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingImage | null>(null);
+  const [crop, setCrop] = useState<ProfileMediaCrop>(INITIAL_CROP);
+  const [progress, setProgress] = useState<ProfileMediaProgress | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<ProfileMediaKind | null>(null);
+  const [dropTarget, setDropTarget] = useState<ProfileMediaKind>("avatar");
+  const [notice, setNotice] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
+  const media = useProfileMedia(ownerId);
 
-  const stateFor = (kind: ProfileMediaKind) => kind === "avatar" ? avatar : cover;
-  const setStateFor = (kind: ProfileMediaKind, value: SlotState | ((current: SlotState) => SlotState)) => {
-    if (kind === "avatar") setAvatar(value); else setCover(value);
-  };
-  const inputRefFor = (kind: ProfileMediaKind) => kind === "avatar" ? avatarInputRef : coverInputRef;
-
-  const upload = async (kind: ProfileMediaKind, slotOverride?: SlotState) => {
-    const slot = slotOverride ?? stateFor(kind);
-    if (!slot.file || slot.busy) return;
-    const previousUrl = kind === "avatar" ? avatarUrl : coverUrl;
-    setStateFor(kind, { ...slot, busy: true, error: null, progress: { percent: 1, stage: "validating" } });
-    const result = await profileMediaService.replace(kind, slot.file, {
-      previousUrl,
-      onProgress: (progress) => setStateFor(kind, (current) => ({ ...current, progress })),
+  useEffect(() => {
+    let active = true;
+    void getSupabaseClient()?.auth.getUser().then(({ data }) => {
+      if (active) setOwnerId(data.user?.id ?? null);
     });
-    if (!result.ok) {
-      setStateFor(kind, (current) => ({ ...current, busy: false, error: result.error.message }));
-      onNotice(result.error.message, "error");
-      return;
-    }
-    const committedUrl = kind === "avatar" ? result.data.avatarUrl : result.data.coverUrl;
-    // Keep the local preview until parent props catch up so the tile never flashes empty.
-    setStateFor(kind, (current) => ({
-      ...current,
-      file: null,
-      busy: false,
-      progress: null,
-      error: null,
-      previewUrl: current.previewUrl ?? committedUrl ?? null,
-    }));
-    onProfileUpdated(result.data);
-    onNotice(`${kind === "avatar" ? "Profile photo" : "Cover image"} updated.`, "success");
-    if (slot.previewUrl && committedUrl) {
-      window.setTimeout(() => {
-        URL.revokeObjectURL(slot.previewUrl!);
-        previewUrls.current.delete(slot.previewUrl!);
-        setStateFor(kind, (current) => (current.previewUrl === slot.previewUrl ? { ...current, previewUrl: null } : current));
-      }, 750);
-    }
-  };
+    return () => { active = false; };
+  }, []);
 
-  const selectFile = async (kind: ProfileMediaKind, file: File | null) => {
-    const previous = stateFor(kind);
-    if (previous.previewUrl) { URL.revokeObjectURL(previous.previewUrl); previewUrls.current.delete(previous.previewUrl); }
-    if (!file) { setStateFor(kind, emptySlot); return; }
+  useEffect(() => {
+    const previewUrl = pending?.previewUrl;
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [pending?.previewUrl]);
+
+  const resolvedAvatar = media.record?.avatar.thumbnailUrl ?? media.record?.avatar.url ?? avatarUrl ?? null;
+  const resolvedCover = media.record?.cover.url ?? coverUrl ?? null;
+  const busy = Boolean(progress && progress.stage !== "complete");
+
+  async function prepareFile(kind: ProfileMediaKind, file: File): Promise<void> {
+    if (busy) return;
+    setNotice(null);
     const validation = await profileMediaService.validateFile(kind, file);
     if (!validation.ok) {
-      setStateFor(kind, { ...emptySlot, error: validation.error.message });
-      onNotice(validation.error.message, "error");
+      setNotice({ tone: "error", text: validation.error.message });
       return;
     }
-    const previewUrl = URL.createObjectURL(file);
-    previewUrls.current.add(previewUrl);
-    const next: SlotState = { file, previewUrl, busy: false, progress: null, error: null };
-    setStateFor(kind, next);
-    await upload(kind, next);
-  };
+    setCrop(INITIAL_CROP);
+    setPending({ kind, file, previewUrl: URL.createObjectURL(file) });
+  }
 
-  const chooseWithNativePicker = async (kind: ProfileMediaKind) => {
-    if (stateFor(kind).busy) return;
+  async function choose(kind: ProfileMediaKind): Promise<void> {
+    setDropTarget(kind);
     const native = await fileService.pickImages();
-    if (!native.ok) {
-      // Keep the user-gesture chain: fall back without awaiting more work before open is impossible,
-      // so open the hidden input only when the previous dialog truly failed.
-      onNotice(native.reason || "Native image picker is unavailable. Use the Upload button again.", "error");
-      inputRefFor(kind).current?.click();
+    if (native.ok) {
+      if (!native.canceled && native.files[0]) await prepareFile(kind, native.files[0]);
       return;
     }
-    if (native.canceled) return;
-    const file = native.files[0] ?? null;
-    if (!file) {
-      onNotice("Choose a PNG, JPG, or WEBP image.", "error");
-      return;
-    }
-    await selectFile(kind, file);
-  };
+    (kind === "avatar" ? avatarInput.current : coverInput.current)?.click();
+  }
 
-  const remove = async (kind: ProfileMediaKind) => {
-    const currentUrl = kind === "avatar" ? avatarUrl : coverUrl;
-    if (!currentUrl || stateFor(kind).busy) return;
-    setStateFor(kind, (current) => ({ ...current, busy: true, error: null, progress: { percent: 70, stage: "saving" } }));
-    const result = await profileMediaService.remove(kind, currentUrl);
+  async function savePending(): Promise<void> {
+    if (!pending || busy) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setProgress({ percent: 1, stage: "validating" });
+    setNotice({ tone: "info", text: "Preparing your image securely..." });
+    const result = await profileMediaService.replace(pending.kind, pending.file, {
+      previousUrl: pending.kind === "avatar" ? resolvedAvatar : resolvedCover,
+      crop,
+      signal: controller.signal,
+      onProgress: setProgress,
+    });
+    abortRef.current = null;
     if (!result.ok) {
-      setStateFor(kind, (current) => ({ ...current, busy: false, error: result.error.message }));
-      onNotice(result.error.message, "error");
+      setProgress(null);
+      setNotice({ tone: "error", text: result.error.message });
       return;
     }
-    setStateFor(kind, emptySlot);
     onProfileUpdated(result.data);
-    onNotice(`${kind === "avatar" ? "Profile photo" : "Cover image"} removed.`, "success");
-  };
+    setProgress({ percent: 100, stage: "complete" });
+    setNotice({ tone: "success", text: kindLabel(pending.kind) + " updated on every Picom surface." });
+    setPending(null);
+    window.setTimeout(() => setProgress(null), 900);
+  }
 
-  const renderToolbar = (kind: ProfileMediaKind) => {
-    const slot = stateFor(kind);
-    const currentUrl = kind === "avatar" ? avatarUrl : coverUrl;
-    const primaryLabel = slot.error
-      ? "Retry upload"
-      : slot.busy
-        ? "Uploading..."
-        : kind === "avatar"
-          ? "Upload photo"
-          : "Upload cover";
-    const useNative = hasNativeImagePicker();
+  async function remove(kind: ProfileMediaKind): Promise<void> {
+    if (busy) return;
+    setConfirmRemove(null);
+    setNotice({ tone: "info", text: "Removing " + kindLabel(kind).toLowerCase() + "..." });
+    const result = await profileMediaService.remove(kind, kind === "avatar" ? resolvedAvatar : resolvedCover);
+    if (!result.ok) {
+      setNotice({ tone: "error", text: result.error.message });
+      return;
+    }
+    onProfileUpdated(result.data);
+    setNotice({ tone: "success", text: kindLabel(kind) + " removed." });
+  }
 
-    return (
-      <div className="profile-media-toolbar" role="group" aria-label={kind === "avatar" ? "Profile photo actions" : "Cover image actions"}>
-        <input
-          ref={inputRefFor(kind)}
-          className="profile-media-file-input"
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          disabled={slot.busy}
-          onChange={(event) => {
-            const file = event.target.files?.[0] ?? null;
-            event.target.value = "";
-            void selectFile(kind, file);
-          }}
-        />
+  function onDrop(kind: ProfileMediaKind, event: DragEvent<HTMLElement>): void {
+    event.preventDefault();
+    setDropTarget(kind);
+    const file = Array.from(event.dataTransfer.files).find((candidate) => candidate.type.startsWith("image/"));
+    if (file) void prepareFile(kind, file);
+  }
 
-        {useNative ? (
-          <button
-            type="button"
-            className="settings-inline-action profile-media-action"
-            disabled={slot.busy}
-            onClick={() => void chooseWithNativePicker(kind)}
-          >
-            <AppIcon name="image" size="sm" />
-            <span>{primaryLabel}</span>
-          </button>
-        ) : (
-          <label className={`settings-inline-action profile-media-action profile-media-upload-label${slot.busy ? " is-disabled" : ""}`}>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={slot.busy}
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                event.target.value = "";
-                void selectFile(kind, file);
-              }}
-            />
-            <AppIcon name="image" size="sm" />
-            <span>{primaryLabel}</span>
-          </label>
-        )}
+  function onPaste(event: ClipboardEvent<HTMLElement>): void {
+    const file = Array.from(event.clipboardData.files).find((candidate) => candidate.type.startsWith("image/"));
+    if (!file) return;
+    event.preventDefault();
+    void prepareFile(dropTarget, file);
+  }
 
-        {slot.file && slot.error ? (
-          <button type="button" className="settings-inline-action settings-inline-action--ghost profile-media-action" disabled={slot.busy} onClick={() => void upload(kind)}>
-            Retry failed upload
-          </button>
-        ) : null}
-
-        <button type="button" className="settings-inline-action settings-inline-action--ghost profile-media-action profile-media-remove" disabled={!currentUrl || slot.busy} onClick={() => void remove(kind)}>
-          <AppIcon name="trash" size="sm" />
-          <span>Remove</span>
-        </button>
-      </div>
-    );
-  };
-
-  const renderProgress = (kind: ProfileMediaKind) => {
-    const slot = stateFor(kind);
-    if (!slot.progress && !slot.error) return null;
-    return (
-      <div className="profile-media-feedback">
-        {slot.progress ? (
-          <div className="profile-media-progress" aria-live="polite">
-            <progress max={100} value={slot.progress.percent} />
-            <span>{slot.progress.stage} {slot.progress.percent}%</span>
-          </div>
-        ) : null}
-        {slot.error ? <p role="alert">{slot.error}</p> : null}
-      </div>
-    );
-  };
-
-  const coverPreview = cover.previewUrl ?? coverUrl;
-  const avatarPreview = avatar.previewUrl ?? avatarUrl;
+  const renderActions = (kind: ProfileMediaKind, hasImage: boolean) => (
+    <div className="profile-media-actions">
+      <button type="button" className="secondary-button compact" disabled={busy} onClick={() => void choose(kind)}>
+        <AppIcon name="image" size="sm" />Choose image
+      </button>
+      <button type="button" className="secondary-button compact danger" disabled={busy || !hasImage} onClick={() => setConfirmRemove(kind)}>
+        <AppIcon name="trash" size="sm" />Remove
+      </button>
+    </div>
+  );
 
   return (
-    <section className="profile-media-editor" aria-label="Profile images">
-      <article className="profile-media-card">
-        <div className="profile-media-preview cover" aria-label="Cover image preview">
-          {coverPreview ? <img src={coverPreview} alt={`${displayName} cover`} /> : <AppIcon name="image" size="xl" />}
+    <section className="profile-media-editor" aria-label="Profile images" onPaste={onPaste}>
+      <header>
+        <div>
+          <span className="settings-kicker">PROFILE MEDIA</span>
+          <h3>Photo and cover</h3>
+          <p>Images are cropped locally, converted to WebP, and synchronized securely across Picom.</p>
         </div>
-        <div className="profile-media-card-body">
-          <div className="profile-media-card-head">
-            <div className="profile-media-card-copy">
-              <strong>Cover image</strong>
-              <small>Wide PNG, JPG, or WEBP; 640 × 200 minimum; 8 MB maximum.</small>
-            </div>
-            {renderToolbar("cover")}
-          </div>
-          {renderProgress("cover")}
-        </div>
-      </article>
+      </header>
 
-      <article className="profile-media-card profile-media-card--avatar">
-        <div className="profile-media-card-layout">
-          <div className="profile-media-preview avatar" aria-label="Profile photo preview">
-            {avatarPreview ? <img src={avatarPreview} alt={`${displayName} profile photo`} /> : <AppIcon name="user" size="xl" />}
+      <div className="profile-media-card-grid">
+        <article
+          className="profile-media-card"
+          onDragEnter={() => setDropTarget("avatar")}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => onDrop("avatar", event)}
+        >
+          <div className="profile-media-card-copy">
+            <strong>Profile photo</strong>
+            <span>Square image, at least 128 x 128. PNG, JPG, or WebP.</span>
           </div>
-          <div className="profile-media-card-body">
-            <div className="profile-media-card-copy">
-              <strong>Profile photo</strong>
-              <small>Square PNG, JPG, or WEBP; 128 px minimum; 5 MB maximum.</small>
-            </div>
-            {renderToolbar("avatar")}
-            {renderProgress("avatar")}
+          <div className="profile-media-avatar-preview">
+            <UserAvatar userId={ownerId} displayName={displayName} fallbackUrl={resolvedAvatar} size={96} priority="eager" />
           </div>
+          {renderActions("avatar", Boolean(resolvedAvatar || media.record?.avatar.path))}
+        </article>
+
+        <article
+          className="profile-media-card profile-media-card--cover"
+          onDragEnter={() => setDropTarget("cover")}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => onDrop("cover", event)}
+        >
+          <div className="profile-media-card-copy">
+            <strong>Cover photo</strong>
+            <span>Wide image, at least 640 x 200. Keep important content centered.</span>
+          </div>
+          <ProfileCover userId={ownerId} fallbackUrl={resolvedCover} label={displayName + " cover preview"} className="profile-media-cover-preview" />
+          {renderActions("cover", Boolean(resolvedCover || media.record?.cover.path))}
+        </article>
+      </div>
+
+      <p className="profile-media-drop-hint"><AppIcon name="image" size="sm" />Drop an image on either card, or paste into this panel after selecting a card.</p>
+      {notice ? <div className={"profile-media-notice " + notice.tone} role={notice.tone === "error" ? "alert" : "status"}>{notice.text}</div> : null}
+      {progress ? (
+        <div className="profile-media-progress" role="status" aria-live="polite">
+          <div><span>{progress.stage}</span><strong>{progress.percent}%</strong></div>
+          <progress max={100} value={progress.percent} />
         </div>
-      </article>
+      ) : null}
+
+      <input ref={avatarInput} hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => {
+        const file = event.target.files?.[0];
+        event.currentTarget.value = "";
+        if (file) void prepareFile("avatar", file);
+      }} />
+      <input ref={coverInput} hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => {
+        const file = event.target.files?.[0];
+        event.currentTarget.value = "";
+        if (file) void prepareFile("cover", file);
+      }} />
+
+      {pending ? (
+        <div className="profile-media-dialog-backdrop" role="presentation">
+          <section className="profile-media-crop-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-media-crop-title">
+            <header>
+              <div><span className="settings-kicker">CROP AND PREVIEW</span><h3 id="profile-media-crop-title">{kindLabel(pending.kind)}</h3></div>
+              <button type="button" className="icon-button" aria-label="Close image editor" disabled={busy} onClick={() => setPending(null)}>
+                <AppIcon name="close" size="md" />
+              </button>
+            </header>
+            <div className={"profile-media-crop-stage " + pending.kind}>
+              <img
+                src={pending.previewUrl}
+                alt="Crop preview"
+                style={{ transform: "translate(" + crop.offsetX + "%, " + crop.offsetY + "%) scale(" + crop.zoom + ") rotate(" + crop.rotation + "deg)" }}
+              />
+              <span aria-hidden="true" />
+            </div>
+            <div className="profile-media-crop-controls">
+              <label>Zoom<input type="range" min="1" max="3" step=".05" value={crop.zoom} onChange={(event) => setCrop({ ...crop, zoom: Number(event.target.value) })} /></label>
+              <label>Horizontal<input type="range" min="-100" max="100" value={crop.offsetX} onChange={(event) => setCrop({ ...crop, offsetX: Number(event.target.value) })} /></label>
+              <label>Vertical<input type="range" min="-100" max="100" value={crop.offsetY} onChange={(event) => setCrop({ ...crop, offsetY: Number(event.target.value) })} /></label>
+            </div>
+            <footer>
+              <button type="button" className="secondary-button" disabled={busy} onClick={() => setCrop(INITIAL_CROP)}>Reset</button>
+              <button type="button" className="secondary-button" disabled={busy} onClick={() => setCrop({ ...crop, rotation: (crop.rotation + 90) % 360 })}>Rotate 90 degrees</button>
+              <span />
+              {busy ? <button type="button" className="secondary-button danger" onClick={() => abortRef.current?.abort()}>Cancel upload</button> : null}
+              <button type="button" className="primary-button" disabled={busy} onClick={() => void savePending()}>Save image</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+
+      {confirmRemove ? (
+        <div className="profile-media-dialog-backdrop" role="presentation">
+          <section className="profile-media-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="profile-media-remove-title">
+            <AppIcon name="trash" size="lg" />
+            <h3 id="profile-media-remove-title">Remove {kindLabel(confirmRemove).toLowerCase()}?</h3>
+            <p>Picom will replace it with your initials or the default cover across every active session.</p>
+            <footer>
+              <button type="button" className="secondary-button" onClick={() => setConfirmRemove(null)}>Cancel</button>
+              <button type="button" className="primary-button danger" onClick={() => void remove(confirmRemove)}>Remove</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }

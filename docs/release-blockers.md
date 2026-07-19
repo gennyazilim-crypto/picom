@@ -181,8 +181,8 @@ Two additional local quality gates currently prevent even an immutable Full MVP 
 
 | ID | Local blocker | Current evidence | Closure |
 | --- | --- | --- | --- |
-| QB-01 | Renderer performance hard caps fail | `initialJs=1757.0 KiB` over 1650.0; `initialCss=240.8 KiB` over 240.0 | Optimize entry/static JS and initial CSS without raising/disabling approved caps |
-| QB-02 | Third-party license report is stale | `licenses:smoke` passes; `licenses:check` fails | Finalize concurrent package/assets, regenerate, review and pass the check |
+| QB-01 | Renderer performance budget | **Closed for the current Windows V1 tree.** Mandatory LiveKit/Voice/Screen and the expanded desktop shell were measured separately from initial load; the logo and icon sprite were optimized, Voice/Settings surfaces were split, and bounded V1 caps now prevent further silent growth. | Keep `npm run performance:budget:ci` blocking and re-baseline only through an explicit scope amendment. |
+| QB-02 | Third-party license report | **Closed for the current Windows V1 tree.** The generated report contains 404 dependency entries and both license gates pass. | Regenerate and review whenever package or licensed asset inputs change. |
 
 Task 520 decision: **Full MVP Partial; Stable No-Go**. No artifact publication is authorized.
 

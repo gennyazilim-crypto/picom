@@ -3,11 +3,9 @@
 
 alter table public.messages
   add column if not exists reply_to_message_id uuid references public.messages(id) on delete set null;
-
 create index if not exists idx_messages_reply_to_message
   on public.messages(reply_to_message_id)
   where reply_to_message_id is not null;
-
 create or replace function public.validate_message_reply_target()
 returns trigger
 language plpgsql
@@ -53,15 +51,12 @@ begin
   return new;
 end;
 $$;
-
 revoke all on function public.validate_message_reply_target() from public, anon, authenticated;
-
 drop trigger if exists messages_validate_reply_target on public.messages;
 create trigger messages_validate_reply_target
 before insert or update of reply_to_message_id, channel_id, community_id on public.messages
 for each row
 execute function public.validate_message_reply_target();
-
 comment on column public.messages.reply_to_message_id is
   'Optional immutable same-channel reply target. RLS on the reply message and target channel remains authoritative.';
 comment on function public.validate_message_reply_target() is

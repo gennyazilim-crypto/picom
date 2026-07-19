@@ -95,4 +95,4 @@ end;
 $$;
 
 comment on view public.mention_feed_view is 'RLS-invoker Feed projection with current-user save, reaction, reply preview, and channel read-state reconciliation.';
-comment on function public.list_mention_feed(timestamptz,uuid,integer) is 'Stable cursor Feed page including authoritative current-user unread state.';
+comment on function public.list_mention_feed(timestamptz,uuid,integer) is 'Stable cursor Feed page including authoritative current-user unread state.';;

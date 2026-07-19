@@ -39,7 +39,10 @@ export type VoiceCallRoom = VoiceCallCommunityRoom | VoiceCallDirectRoom;
 export type VoiceCallParty = Readonly<{
   id: string;
   name: string;
+  username?: string;
   avatarUrl?: string;
+  avatarPath?: string;
+  avatarUpdatedAt?: string;
 }>;
 
 export type IncomingVoiceCall = Readonly<{

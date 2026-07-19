@@ -1,5 +1,3 @@
-begin;
-
 drop function if exists public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],integer);
 create or replace function public.list_ranked_unified_feed(
   feed_mode text default 'popular',ranking_epoch_input timestamptz default now(),cursor_rank numeric default null,
@@ -69,5 +67,4 @@ returns setof public.followed_content_stories_view language sql stable security 
   order by story.created_at desc,story.story_id desc limit least(greatest(result_limit,1),60);
 $$;
 revoke all on function public.list_followed_content_stories(timestamptz,text,integer) from public,anon;
-grant execute on function public.list_followed_content_stories(timestamptz,text,integer) to authenticated;
-commit;
+grant execute on function public.list_followed_content_stories(timestamptz,text,integer) to authenticated;;

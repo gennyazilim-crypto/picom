@@ -47,6 +47,7 @@ $$;
 
 drop policy if exists "reports_submit_visible_target" on public.reports;
 drop policy if exists "reports_submit_authorized_target" on public.reports;
+drop policy if exists "reports_submit_authorized_target" on public.reports;
 create policy "reports_submit_authorized_target" on public.reports for insert to authenticated with check(
   reporter_id=auth.uid() and community_id is not null
   and exists(select 1 from public.communities community where community.id=reports.community_id and (community.visibility='public' or public.is_community_member(community.id)))
@@ -54,11 +55,14 @@ create policy "reports_submit_authorized_target" on public.reports for insert to
 );
 drop policy if exists "reports_moderator_select" on public.reports;
 drop policy if exists "reports_authorized_reviewer_select" on public.reports;
+drop policy if exists "reports_authorized_reviewer_select" on public.reports;
 create policy "reports_authorized_reviewer_select" on public.reports for select to authenticated using(community_id is not null and public.can_review_community_report(community_id,target_type));
 drop policy if exists "reports_moderator_update" on public.reports;
 drop policy if exists "reports_authorized_reviewer_update" on public.reports;
+drop policy if exists "reports_authorized_reviewer_update" on public.reports;
 create policy "reports_authorized_reviewer_update" on public.reports for update to authenticated using(community_id is not null and public.can_review_community_report(community_id,target_type)) with check(community_id is not null and public.can_review_community_report(community_id,target_type));
 
+drop policy if exists "podcast comments follow unblocked episode visibility" on public.podcast_episode_comments;
 drop policy if exists "podcast comments follow unblocked episode visibility" on public.podcast_episode_comments;
 create policy "podcast comments follow unblocked episode visibility" on public.podcast_episode_comments for select to authenticated using(deleted_at is null and public.can_view_podcast_episode(episode_id) and (author_id is null or author_id=auth.uid() or not public.users_are_blocked(auth.uid(),author_id)));
 
@@ -147,6 +151,4 @@ create trigger podcast_report_review_audit after update of status on public.repo
 revoke all on function public.can_report_podcast_target(uuid,text,uuid),public.can_review_community_report(uuid,text),public.moderate_podcast_comment(uuid,text),public.moderate_podcast_episode(uuid,text,text),public.audit_podcast_episode_lifecycle(),public.prepare_podcast_report_review(),public.audit_podcast_report_review() from public,anon;
 grant execute on function public.can_report_podcast_target(uuid,text,uuid),public.can_review_community_report(uuid,text),public.moderate_podcast_comment(uuid,text),public.moderate_podcast_episode(uuid,text,text) to authenticated;
 comment on function public.moderate_podcast_comment(uuid,text) is 'Permission-checked soft deletion with append-only Podcast moderation audit evidence.';
-comment on function public.moderate_podcast_episode(uuid,text,text) is 'Owner/admin Podcast policy action; supports unpublish/archive and records bounded audit evidence.';
-
-commit;
+comment on function public.moderate_podcast_episode(uuid,text,text) is 'Owner/admin Podcast policy action; supports unpublish/archive and records bounded audit evidence.';;

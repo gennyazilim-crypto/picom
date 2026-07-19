@@ -65,8 +65,6 @@ begin
   return new;
 end;
 $$;
-
 revoke all on function public.sync_message_mentions_from_body() from public, anon, authenticated;
-
 comment on function public.sync_message_mentions_from_body() is
   'Trigger-only canonical mention extraction using UUID-safe unambiguous display-name resolution.';

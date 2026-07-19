@@ -1,3 +1,4 @@
+import { useMemo, type MouseEvent } from "react";
 import type { Channel, Community, Member, Message } from "../../types/community";
 import type { CommunityAccess } from "../../types/communityAccess";
 import type { VoiceParticipant, VoiceServiceSnapshot } from "../../services/voiceService";
@@ -26,12 +27,15 @@ type VoiceParticipantsRailProps = {
   expanded: boolean;
   onToggleExpanded: () => void;
   onSendMessage: (body: string) => void | Promise<void>;
+  onExpireMessage?: (message: Message) => void | Promise<void>;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
   canMuteMembers?: boolean;
   canRemoveFromVoice?: boolean;
   onModerateParticipant?: (participant: VoiceParticipant, action: "mute" | "remove") => void;
+  onOpenProfile?: (event: MouseEvent, member: Member) => void;
+  onParticipantContextMenu?: (event: MouseEvent, member: Member, participant: VoiceParticipant) => void;
 };
 
 export function VoiceParticipantsRail({
@@ -47,14 +51,24 @@ export function VoiceParticipantsRail({
   expanded,
   onToggleExpanded,
   onSendMessage,
+  onExpireMessage,
   onTypingStart,
   onTypingStop,
   pushToast,
   canMuteMembers = false,
   canRemoveFromVoice = false,
   onModerateParticipant,
+  onOpenProfile,
+  onParticipantContextMenu,
 }: VoiceParticipantsRailProps) {
   const participants = resolveVoiceParticipants(snapshot, channelId, voiceOccupancy, currentUserId);
+  const participantNamesByIdentity = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const participant of participants) {
+      if (participant.identity && participant.name) map.set(participant.identity, participant.name);
+    }
+    return map;
+  }, [participants]);
 
   if (!expanded) {
     return (
@@ -103,6 +117,8 @@ export function VoiceParticipantsRail({
             canMuteMembers={canMuteMembers}
             canRemoveFromVoice={canRemoveFromVoice}
             onModerateParticipant={onModerateParticipant}
+            onOpenProfile={onOpenProfile}
+            onParticipantContextMenu={onParticipantContextMenu}
           />
         </section>
         <section className="voice-participants-rail__chat" aria-label="Voice room chat">
@@ -112,7 +128,9 @@ export function VoiceParticipantsRail({
             access={access}
             messages={messages}
             currentUser={currentUser}
+            participantNamesByIdentity={participantNamesByIdentity}
             onSendMessage={onSendMessage}
+            onExpireMessage={onExpireMessage}
             onTypingStart={onTypingStart}
             onTypingStop={onTypingStop}
             pushToast={pushToast}

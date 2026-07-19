@@ -50,7 +50,6 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists on_auth_user_created_profile on auth.users;
 create trigger on_auth_user_created_profile
 after insert on auth.users

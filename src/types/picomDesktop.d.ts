@@ -9,6 +9,25 @@ declare global {
     silent?: boolean;
     deepLink?: string;
   };
+  type PicomIncomingCallToastAction = "accept" | "decline" | "message";
+  type PicomIncomingCallToastPayload = {
+    inviteId: string;
+    callId: string;
+    conversationId: string;
+    callerId: string;
+    callerDisplayName: string;
+    callerUsername?: string;
+    callerAvatarPath?: string;
+    callerAvatarUrl?: string;
+    callerAvatarUpdatedAt?: string;
+    callType: "voice" | "video";
+    startedAt: string;
+    subtitle?: string;
+  };
+  type PicomIncomingCallActionPayload = {
+    action: PicomIncomingCallToastAction;
+    inviteId: string;
+  };
   type PicomTrayStatus = "online" | "idle" | "dnd" | "invisible";
   type PicomTrayAction = "open" | "settings" | "mute" | "quit" | PicomTrayStatus;
   type PicomTrayActionPayload = {
@@ -76,6 +95,25 @@ declare global {
         | { ok: true; native: true }
         | { ok: false; native: true; error: string }
       >;
+      incomingCall?: {
+        show: (
+          payload: PicomIncomingCallToastPayload
+        ) => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        dismiss: () => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        respond: (
+          action: PicomIncomingCallToastAction
+        ) => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+        onAction: (callback: (payload: PicomIncomingCallActionPayload) => void) => () => void;
+      };
       screenCapture?: {
         getSources: (request: { requestId: string; userInitiated: true }) => Promise<
           | { ok: true; native: true; requestId: string; sources: PicomScreenCaptureSource[] }
@@ -185,6 +223,23 @@ declare global {
           | { ok: false; native: true; error: string }
         >;
         onStateChange: (callback: (state: PicomUpdaterState) => void) => () => void;
+      };
+      activity?: {
+        getSnapshot: () => Promise<
+          | {
+              ok: true;
+              native: true;
+              snapshot: Readonly<{
+                kind: "none" | "game" | "music";
+                statusText: string | null;
+                source: string | null;
+                title: string | null;
+                detail: string | null;
+                supported: boolean;
+              }>;
+            }
+          | { ok: false; native: true; error: string }
+        >;
       };
     };
   }

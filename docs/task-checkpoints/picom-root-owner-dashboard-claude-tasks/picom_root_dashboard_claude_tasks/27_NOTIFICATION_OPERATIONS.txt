@@ -1,0 +1,54 @@
+PICOM ROOT OWNER DASHBOARD — TASK 27
+
+Build notification operations.
+
+Capabilities:
+- delivery metrics
+- channel breakdown
+- failure reasons
+- template management
+- test send to authorized accounts
+- scheduled campaigns
+- transactional vs optional notifications
+- user preference compliance
+- quiet hours
+- throttling
+- emergency notices
+- realtime delivery health
+
+Create TASK_27_NOTIFICATION_OPERATIONS_REPORT.md.
+
+STRICT GLOBAL RULES
+
+Project context:
+- Product: Picom
+- Stack is expected to include Electron + React + TypeScript + Supabase, but inspect the existing repository and use the real architecture as the source of truth.
+- This dashboard must operate on real production data and real realtime subscriptions.
+- Mock data, placeholder metrics, hardcoded dashboard counts, smoke-only completion and fake success states are forbidden.
+- Do not redesign unrelated Picom areas.
+- Do not remove existing working features to make tests pass.
+- All sensitive authorization must be enforced server-side and in database policies, never only in the UI.
+- The owner account is: f.tayboga@gmail.com
+- The owner account must see a protected “Panel” button in the left sidebar after authenticated identity and root authorization are confirmed.
+- Do not authorize root access merely because the client reports that email address.
+- Bootstrap the owner through a secure server-side root allowlist or migration, then persist root role in the database.
+- Require MFA/step-up authentication for destructive or highly sensitive actions.
+- Every privileged mutation must create an immutable audit log.
+- All Supabase RLS policies must be tested with real authenticated sessions.
+- Every module must include loading, empty, error, permission-denied and realtime-reconnect states.
+- Use pagination, filtering, search and server-side aggregation for large datasets.
+- Add rate limiting and anti-abuse controls where appropriate.
+- Preserve privacy, GDPR/KVKK principles, data minimization and least privilege.
+
+END-OF-TASK REQUIREMENTS
+
+At the end of each task:
+1. Stop and do not continue automatically.
+2. List files changed.
+3. List database migrations and RLS policies changed.
+4. List APIs, edge functions, workers and realtime channels changed.
+5. Run and report typecheck, lint, tests and production build where applicable.
+6. Report security and privacy validation.
+7. Report remaining blockers.
+8. State the exact next task.
+9. Create the requested Markdown report file.

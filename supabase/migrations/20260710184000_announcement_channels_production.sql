@@ -10,7 +10,6 @@ create policy "announcement_followers_self_select" on public.announcement_channe
 create policy "announcement_followers_self_insert" on public.announcement_channel_followers for insert to authenticated
 with check(user_id=auth.uid() and exists(select 1 from public.channels channel where channel.id=channel_id and channel.type='announcement' and public.is_community_member(channel.community_id) and public.can_view_channel(channel.id)));
 create policy "announcement_followers_self_delete" on public.announcement_channel_followers for delete to authenticated using(user_id=auth.uid());
-
 create or replace function public.can_send_message_to_channel(target_channel_id uuid)
 returns boolean language sql stable security definer set search_path=public as $$
   select exists(
@@ -29,5 +28,4 @@ returns boolean language sql stable security definer set search_path=public as $
   );
 $$;
 grant execute on function public.can_send_message_to_channel(uuid) to authenticated;
-
 comment on table public.announcement_channel_followers is 'User-owned delivery preference only. Cross-posting and external syndication are not supported.';

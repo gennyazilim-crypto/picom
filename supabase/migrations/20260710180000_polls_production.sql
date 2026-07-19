@@ -1,10 +1,8 @@
 alter table public.polls
   add column if not exists closed_at timestamptz,
   add column if not exists closed_by uuid references public.profiles(id) on delete set null;
-
 create unique index if not exists idx_poll_votes_poll_user_single_choice_guard
   on public.poll_votes(poll_id, user_id, option_id);
-
 create or replace function public.can_vote_poll(target_poll_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
@@ -16,7 +14,6 @@ returns boolean language sql stable security definer set search_path = public as
       and public.can_send_message_to_channel(message.channel_id)
   );
 $$;
-
 create or replace function public.get_poll_state(target_poll_id uuid)
 returns jsonb language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
@@ -41,7 +38,6 @@ returns jsonb language sql stable security definer set search_path = public as $
   from public.polls poll
   where poll.id = target_poll_id and public.can_view_poll(poll.id);
 $$;
-
 create or replace function public.create_poll_atomic(
   target_message_id uuid,
   poll_question text,
@@ -64,7 +60,6 @@ begin
   return public.get_poll_state(target_poll_id);
 end;
 $$;
-
 create or replace function public.toggle_poll_vote(target_poll_id uuid, target_option_id uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare multiple_allowed boolean; already_selected boolean;
@@ -83,7 +78,6 @@ begin
   return public.get_poll_state(target_poll_id);
 end;
 $$;
-
 create or replace function public.close_poll(target_poll_id uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare target_community_id uuid; author_id uuid;
@@ -94,8 +88,6 @@ begin
   return public.get_poll_state(target_poll_id);
 end;
 $$;
-
 revoke insert, update, delete on public.polls, public.poll_options, public.poll_votes from authenticated;
 grant execute on function public.can_vote_poll(uuid), public.get_poll_state(uuid), public.create_poll_atomic(uuid,text,text[],boolean,timestamptz), public.toggle_poll_vote(uuid,uuid), public.close_poll(uuid) to authenticated;
-
 alter publication supabase_realtime add table public.polls;

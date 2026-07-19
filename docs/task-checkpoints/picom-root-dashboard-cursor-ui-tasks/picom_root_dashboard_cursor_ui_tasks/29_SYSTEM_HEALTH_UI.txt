@@ -1,0 +1,69 @@
+PICOM ROOT DASHBOARD UI — CURSOR TASK 29
+
+Design the System Health module.
+
+Monitor:
+- web
+- API
+- Supabase
+- database
+- realtime
+- storage
+- Edge Functions
+- LiveKit
+- workers
+- email
+- analytics
+- backups
+- CPU/RAM/disk
+- bandwidth
+- latency
+- errors
+- deployment version
+
+Use compact health cards, timeline and service table.
+
+Create TASK_29_SYSTEM_HEALTH_UI_REPORT.md.
+
+GLOBAL RULES
+
+Project:
+Picom desktop application and its owner-only management dashboard.
+
+Root owner:
+f.tayboga@gmail.com
+
+Purpose:
+Design and implement the dashboard user interface in Cursor, using the existing Picom codebase and design language.
+
+Strict rules:
+- Work only inside the existing repository.
+- Inspect the current component library, theme tokens, layouts and navigation before changing anything.
+- Do not replace the application with a new template.
+- Do not introduce an unrelated visual identity.
+- Preserve Picom's soft charcoal/cool-gray foundation with teal, mint, cyan, blue and restrained orange accents where those tokens already exist.
+- Use the existing icon system where available.
+- Do not use fake metrics, mock-only tables or placeholder success states as final implementation.
+- UI must be wired to real data contracts or honest unavailable/loading states.
+- Root access is not secured by UI visibility alone.
+- The Panel button and dashboard routes must remain permission-aware.
+- Support desktop widths first, but maintain responsive behavior for smaller laptop windows.
+- Add loading, empty, error, no-permission and reconnect states.
+- Use accessible keyboard navigation, visible focus states and semantic controls.
+- Avoid oversized cards, excessive empty space, duplicated statistics and decorative clutter.
+- Use dense but readable admin information architecture.
+- Use reusable components instead of one-off duplicated markup.
+- Do not continue automatically to the next task.
+
+END OF TASK RESPONSE
+
+Show:
+1. Files changed
+2. Components created or modified
+3. Routes affected
+4. Screens designed
+5. Responsive states checked
+6. Accessibility checks
+7. Build/typecheck result
+8. Remaining blockers
+9. Exact next task

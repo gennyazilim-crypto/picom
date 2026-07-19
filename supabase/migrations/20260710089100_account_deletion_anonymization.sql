@@ -1,18 +1,15 @@
 alter table public.profiles
   add column if not exists is_deleted boolean not null default false,
   add column if not exists deleted_at timestamptz;
-
 alter table public.account_deletion_requests
   add column if not exists finalization_status text not null default 'pending'
     check (finalization_status in ('pending', 'profile_anonymized', 'auth_soft_delete_failed', 'completed'));
-
 alter table public.account_security_events drop constraint if exists account_security_events_event_type_check;
 alter table public.account_security_events add constraint account_security_events_event_type_check
   check (event_type in (
     'account_deletion_requested', 'account_deletion_canceled', 'account_sessions_revoked',
     'account_profile_anonymized', 'account_auth_soft_deleted'
   ));
-
 create or replace function public.prepare_account_deletion_anonymization(target_request_id uuid)
 returns table(target_user_id uuid, anonymized_at timestamptz)
 language plpgsql
@@ -62,9 +59,7 @@ begin
   return query select target_request.user_id, completed_time;
 end;
 $$;
-
 revoke all on function public.prepare_account_deletion_anonymization(uuid) from public, anon, authenticated;
 grant execute on function public.prepare_account_deletion_anonymization(uuid) to service_role;
-
 comment on function public.prepare_account_deletion_anonymization(uuid) is
   'Internal idempotent anonymization stage. Requires due grace period, completed session revocation, and no owned communities. Never hard-deletes messages or audit/security events.';

@@ -122,6 +122,7 @@ const globalNavigationFeature: Readonly<Record<GlobalSidebarItemKey, V1FeatureKe
   feed: "feed",
   dm: "directMessages",
   communities: "textCommunities",
+  discover: "discoveryMarketplace",
   radio: "radio",
   podcasts: "podcasts",
   events: "events",

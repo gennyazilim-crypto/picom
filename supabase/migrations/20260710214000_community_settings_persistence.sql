@@ -42,9 +42,7 @@ begin
   return next updated;
 end;
 $$;
-
 revoke all on function public.update_community_settings(uuid, text, text, text, text, boolean) from public, anon;
 grant execute on function public.update_community_settings(uuid, text, text, text, text, boolean) to authenticated;
-
 comment on function public.update_community_settings(uuid, text, text, text, text, boolean) is
   'Owner/admin-only validated settings update. Frontend visibility is UX; this function is the authorization boundary and emits redacted audit metadata.';

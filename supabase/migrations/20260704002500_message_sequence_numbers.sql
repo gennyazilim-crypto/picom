@@ -3,7 +3,6 @@
 
 alter table public.messages
   add column if not exists sequence bigint;
-
 do $$
 begin
   if not exists (
@@ -17,7 +16,6 @@ begin
   end if;
 end;
 $$;
-
 with ranked_messages as (
   select
     id,
@@ -29,15 +27,12 @@ update public.messages message_record
 set sequence = ranked_messages.next_sequence
 from ranked_messages
 where message_record.id = ranked_messages.id;
-
 create unique index if not exists messages_channel_sequence_unique
   on public.messages(channel_id, sequence)
   where sequence is not null;
-
 create index if not exists idx_messages_channel_sequence_created_at
   on public.messages(channel_id, sequence desc, created_at desc, id desc)
   where sequence is not null;
-
 create or replace function public.assign_message_sequence()
 returns trigger
 language plpgsql
@@ -58,11 +53,9 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists trg_messages_assign_sequence on public.messages;
 create trigger trg_messages_assign_sequence
 before insert on public.messages
 for each row
 execute function public.assign_message_sequence();
-
 comment on column public.messages.sequence is 'Per-channel monotonic message ordering number assigned on insert.';

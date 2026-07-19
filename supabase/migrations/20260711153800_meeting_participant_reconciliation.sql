@@ -9,31 +9,25 @@ alter table public.meeting_session_participants
   add column if not exists last_provider_event_id text,
   add column if not exists last_provider_event_type text,
   add column if not exists connection_generation integer not null default 0;
-
 alter table public.meeting_participant_tracks
   add column if not exists last_provider_event_at timestamptz,
   add column if not exists last_provider_event_id text;
-
 do $$ begin
   alter table public.meeting_session_participants add constraint meeting_participant_provider_event_id_safe
     check (last_provider_event_id is null or last_provider_event_id ~ '^[0-9a-fA-F-]{36}$');
 exception when duplicate_object then null; end $$;
-
 do $$ begin
   alter table public.meeting_session_participants add constraint meeting_participant_provider_event_type_safe
     check (last_provider_event_type is null or last_provider_event_type in ('participant_joined','participant_left','participant_connection_aborted','room_finished','cleanup'));
 exception when duplicate_object then null; end $$;
-
 do $$ begin
   alter table public.meeting_session_participants add constraint meeting_participant_connection_generation_safe
     check (connection_generation between 0 and 1000000);
 exception when duplicate_object then null; end $$;
-
 do $$ begin
   alter table public.meeting_participant_tracks add constraint meeting_track_provider_event_id_safe
     check (last_provider_event_id is null or last_provider_event_id ~ '^[0-9a-fA-F-]{36}$');
 exception when duplicate_object then null; end $$;
-
 create table if not exists public.meeting_participant_runtime_state (
   participant_id uuid primary key references public.meeting_session_participants(id) on delete cascade,
   session_id uuid not null references public.meeting_sessions(id) on delete cascade,
@@ -45,23 +39,19 @@ create table if not exists public.meeting_participant_runtime_state (
   updated_at timestamptz not null default now(),
   check ((hand_raised and hand_raised_at is not null) or (not hand_raised and hand_raised_at is null))
 );
-
 create index if not exists idx_meeting_participants_session_state_provider_time
   on public.meeting_session_participants(session_id,state,last_provider_event_at desc);
 create index if not exists idx_meeting_participant_runtime_session_hand
   on public.meeting_participant_runtime_state(session_id,hand_raised,hand_sequence);
-
 alter table public.meeting_participant_runtime_state enable row level security;
 alter table public.meeting_session_participants replica identity full;
 alter table public.meeting_participant_tracks replica identity full;
 alter table public.meeting_participant_runtime_state replica identity full;
-
 revoke all on table public.meeting_participant_runtime_state from public,anon,authenticated;
 grant select on table public.meeting_participant_runtime_state to authenticated;
 -- Participant lifecycle is provider/server authoritative after this migration.
 revoke insert,update,delete on table public.meeting_session_participants from authenticated;
 grant select on table public.meeting_session_participants to authenticated;
-
 drop policy if exists meeting_participant_runtime_visible_select on public.meeting_participant_runtime_state;
 create policy meeting_participant_runtime_visible_select on public.meeting_participant_runtime_state
 for select to authenticated using (
@@ -71,7 +61,6 @@ for select to authenticated using (
       and public.can_view_meeting_sensitive(session.room_id)
   )
 );
-
 create or replace function public.livekit_participant_event_rank(target_event_type text)
 returns integer language sql immutable parallel safe as $$
   select case target_event_type
@@ -81,9 +70,7 @@ returns integer language sql immutable parallel safe as $$
     else 10
   end
 $$;
-
 revoke all on function public.livekit_participant_event_rank(text) from public,anon,authenticated;
-
 create or replace function public.process_livekit_webhook_event(
   target_event_id text,
   target_event_type text,
@@ -212,10 +199,8 @@ begin
   end;
 end;
 $$;
-
 revoke all on function public.process_livekit_webhook_event(text,text,timestamptz,uuid,uuid,text,text,text,text,text,text,text) from public,anon,authenticated;
 grant execute on function public.process_livekit_webhook_event(text,text,timestamptz,uuid,uuid,text,text,text,text,text,text,text) to service_role;
-
 create or replace function public.set_meeting_participant_hand_state(target_participant_id uuid,target_raised boolean)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare participant_record public.meeting_session_participants%rowtype; next_hand_sequence bigint; result_record public.meeting_participant_runtime_state%rowtype;
@@ -232,10 +217,8 @@ begin
   return jsonb_build_object('participantId',result_record.participant_id,'sessionId',result_record.session_id,'handRaised',result_record.hand_raised,'handRaisedAt',result_record.hand_raised_at,'handSequence',result_record.hand_sequence,'serverVersion',result_record.server_version,'updatedAt',result_record.updated_at);
 end;
 $$;
-
 revoke all on function public.set_meeting_participant_hand_state(uuid,boolean) from public,anon;
 grant execute on function public.set_meeting_participant_hand_state(uuid,boolean) to authenticated;
-
 create or replace function public.get_meeting_participant_snapshot(target_room_id uuid,target_session_id uuid)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare session_record public.meeting_sessions%rowtype; room_record public.meeting_rooms%rowtype; participants_json jsonb;
@@ -285,10 +268,8 @@ begin
   return jsonb_build_object('schemaVersion',1,'roomId',target_room_id,'sessionId',target_session_id,'sessionSequence',session_record.last_event_sequence,'generatedAt',now(),'participants',participants_json);
 end;
 $$;
-
 revoke all on function public.get_meeting_participant_snapshot(uuid,uuid) from public,anon;
 grant execute on function public.get_meeting_participant_snapshot(uuid,uuid) to authenticated;
-
 create or replace function public.cleanup_stale_meeting_participants(target_session_id uuid,target_stale_before timestamptz default now()-interval '90 seconds')
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare session_record public.meeting_sessions%rowtype; stale_ids uuid[]:='{}'::uuid[]; affected_count integer:=0; next_sequence bigint;
@@ -315,10 +296,8 @@ begin
   return jsonb_build_object('sessionId',target_session_id,'affected',affected_count,'participantIds',to_jsonb(stale_ids),'staleBefore',target_stale_before);
 end;
 $$;
-
 revoke all on function public.cleanup_stale_meeting_participants(uuid,timestamptz) from public,anon;
 grant execute on function public.cleanup_stale_meeting_participants(uuid,timestamptz) to authenticated,service_role;
-
 do $$
 declare table_name text;
 begin

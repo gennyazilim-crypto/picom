@@ -1,4 +1,3 @@
-import { mockUnifiedContentMentions } from "../../data/mockUnifiedContentMentions";
 import type { UnifiedContentMention } from "../../types/contentMentions";
 import type { UnifiedFeedCursor, UnifiedFeedItem, UnifiedFeedPage, UnifiedFeedQuery } from "../../types/feed";
 import { rankUnifiedFeedItems, type UnifiedFeedRankingInput } from "../../utils/unifiedFeedRanking";
@@ -64,7 +63,8 @@ function isAfterCursor(score: number, item: UnifiedFeedRankingInput, cursor: Uni
   return item.feedItemId < cursor.feedItemId;
 }
 
-function mockPage(query: UnifiedFeedQuery): UnifiedFeedPage {
+async function mockPage(query: UnifiedFeedQuery): Promise<UnifiedFeedPage> {
+  const { mockUnifiedContentMentions } = await import("../../data/mockUnifiedContentMentions");
   const rankingEpoch = query.cursor?.rankingEpoch ?? new Date().toISOString();
   const followed = new Set(query.followedAuthorIds ?? []);
   const inputs: UnifiedFeedRankingInput[] = mockUnifiedContentMentions
@@ -90,7 +90,7 @@ function mockPage(query: UnifiedFeedQuery): UnifiedFeedPage {
 
 export const feedQueryService = {
   async listPage(query: UnifiedFeedQuery): Promise<FeedQueryResult> {
-    if (dataSourceService.getStatus().isMock) return { ok: true, data: mockPage(query) };
+    if (dataSourceService.getStatus().isMock) return { ok: true, data: await mockPage(query) };
     const key = pageCacheKey(query);
     const cached = pageCache.get(key);
     const bypassFresh = bypassFreshCache.delete(key);

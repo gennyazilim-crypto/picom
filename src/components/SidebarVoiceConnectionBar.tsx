@@ -26,16 +26,16 @@ export function SidebarVoiceConnectionBar({
   canUseCamera = true,
   canShareScreen = true,
 }: SidebarVoiceConnectionBarProps) {
-  if (
-    !isV1FeatureEnabled("voiceRooms")
-    || (voiceState.status !== "connected" && voiceState.status !== "reconnecting")
-    || !voiceState.roomContext
-  ) {
+  const isLiveConnection =
+    (voiceState.status === "connected" || voiceState.status === "reconnecting")
+    && Boolean(voiceState.roomContext?.channelId);
+
+  if (!isV1FeatureEnabled("voiceRooms") || !isLiveConnection) {
     return null;
   }
 
-  const communityName = voiceState.roomContext.communityName ?? "Picom community";
-  const channelName = voiceState.roomContext.channelName ?? voiceState.roomName ?? "Voice room";
+  const communityName = voiceState.roomContext?.communityName ?? "Picom community";
+  const channelName = voiceState.roomContext?.channelName ?? voiceState.roomName ?? "Voice room";
   const statusCopy = voiceState.status === "reconnecting"
     ? "Bağlantı yenileniyor…"
     : voiceState.screenSharing
@@ -97,7 +97,7 @@ export function SidebarVoiceConnectionBar({
             aria-pressed={voiceState.screenSharing}
             onClick={onOpenScreenShare}
           >
-            <AppIcon name="image" size="sm" />
+            <AppIcon name="maximize" size="sm" />
           </button>
         ) : null}
         <button

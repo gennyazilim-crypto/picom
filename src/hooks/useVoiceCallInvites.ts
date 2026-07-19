@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { profileAvatarService } from "../services/profileAvatarService";
 import { ringtoneService } from "../services/voice/ringtoneService";
 import { notificationService } from "../services/notificationService";
 import {
@@ -53,6 +54,19 @@ export function useVoiceCallInvites({ currentUser, enabled, onAccept, onMessageC
     };
   }, [enabled, currentUserId, currentUserName, currentUserAvatar]);
 
+  useEffect(() => {
+    if (!incoming) return;
+    let active = true;
+    const inviteId = incoming.inviteId;
+    void profileAvatarService.resolveIncomingCaller(incoming).then((caller) => {
+      if (!active) return;
+      setIncoming((current) => current?.inviteId === inviteId ? { ...current, caller } : current);
+    });
+    return () => {
+      active = false;
+    };
+  }, [incoming?.inviteId]);
+
   // Ring while Picom is open; when unfocused/tray-hidden also raise a Mark-style
   // desktop toast + OS notification so the call is visible outside the main window.
   useEffect(() => {
@@ -64,21 +78,18 @@ export function useVoiceCallInvites({ currentUser, enabled, onAccept, onMessageC
 
     ringtoneService.start();
 
-    const syncDesktopSurface = () => {
+    const syncDesktopSurface = async () => {
       if (!shouldSurfaceDesktopIncomingCall()) {
         void incomingCallDesktopToastService.dismiss();
         return;
       }
-      void incomingCallDesktopToastService.show(incoming);
-    };
-
-    syncDesktopSurface();
-    if (shouldSurfaceDesktopIncomingCall()) {
+      const shown = await incomingCallDesktopToastService.show(incoming);
+      if (shown) return;
       const body = incoming.room.kind === "community" ? `Voice call in ${incoming.room.channelName}` : "Direct voice call";
       const deepLink = incoming.room.kind === "community"
         ? `picom://community/${incoming.room.communityId}/channel/${incoming.room.channelId}`
         : `picom://dm/${incoming.room.conversationId}`;
-      void notificationService.showNotification({
+      await notificationService.showNotification({
         title: `${incoming.caller.name} is calling`,
         body,
         category: "incoming_call",
@@ -87,7 +98,9 @@ export function useVoiceCallInvites({ currentUser, enabled, onAccept, onMessageC
         deepLink,
         routing: { appFocused: false },
       });
-    }
+    };
+
+    void syncDesktopSurface();
 
     window.addEventListener("focus", syncDesktopSurface);
     window.addEventListener("blur", syncDesktopSurface);

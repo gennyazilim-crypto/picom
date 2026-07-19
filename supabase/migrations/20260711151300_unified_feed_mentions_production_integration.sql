@@ -1,5 +1,3 @@
-begin;
-
 -- The renderer requests one look-ahead row so a full terminal page does not
 -- advertise a cursor that only leads to an empty page. Public pages remain
 -- capped at 50 visible items; row 51 is never rendered.
@@ -60,6 +58,4 @@ begin
 end $$;
 
 comment on function public.list_ranked_unified_feed(text,timestamptz,numeric,timestamptz,uuid,text[],timestamptz,boolean,boolean,integer)
-  is 'RLS-invoker unified Text, Radio, and Podcast Feed query with stable keyset pagination and one-row look-ahead support.';
-
-commit;
+  is 'RLS-invoker unified Text, Radio, and Podcast Feed query with stable keyset pagination and one-row look-ahead support.';;

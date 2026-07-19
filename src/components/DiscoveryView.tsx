@@ -3,6 +3,10 @@ import "./DiscoveryView.css";
 import type { Community } from "../types/community";
 import { communityDiscoveryService, type DiscoveryCategory, type DiscoveryCommunity } from "../services/communityDiscoveryService";
 import { AppIcon } from "./AppIcon";
+import { discoveryLogoUrl } from "../config/brandAssets";
+import { brandConfig } from "../config/brandConfig";
+import { getCommunityIconLabel, resolveCommunityMarkSrc } from "../utils/generatedIdentity";
+import discoveryHeroUrl from "../../assets/brand/discovery-hero.avif";
 
 const filters: ReadonlyArray<Readonly<{ id: DiscoveryCategory; label: string }>> = [
   { id: "development", label: "Development" },
@@ -17,12 +21,16 @@ type DiscoveryViewProps = Readonly<{
   communities: Community[];
   currentUserId: string;
   onView: (communityId: string) => void;
-  onJoin: (communityId: string) => void;
+  onJoin: (communityId: string) => void | Promise<void>;
   onReport: (community: DiscoveryCommunity) => void;
 }>;
 
 function formatCategory(category: DiscoveryCategory) {
   return category.charAt(0).toUpperCase() + category.slice(1);
+}
+
+function formatMemberCount(count: number) {
+  return count === 1 ? "1 member" : `${count} members`;
 }
 
 function DiscoveryCommunityCard({
@@ -40,8 +48,18 @@ function DiscoveryCommunityCard({
   onJoin: () => void;
   onReport: () => void;
 }) {
+  const markSrc = resolveCommunityMarkSrc(item);
+  const [iconFailed, setIconFailed] = useState(false);
+
+  useEffect(() => {
+    setIconFailed(false);
+  }, [markSrc, item.id]);
+
+  const showIconImage = Boolean(markSrc) && !iconFailed;
+  const monogramLabel = getCommunityIconLabel(item.name, item.icon);
+
   const primaryLabel = joined
-    ? "View community"
+    ? "Open"
     : requested
       ? "Request pending"
       : item.joinPolicy === "request"
@@ -49,15 +67,28 @@ function DiscoveryCommunityCard({
         : "Join community";
 
   return (
-    <article className="discovery-card">
+    <article className={`discovery-card${joined ? " discovery-card--joined" : ""}`}>
       <div className="discovery-card-banner" style={{ background: `linear-gradient(135deg, ${item.accentColor}, color-mix(in srgb, ${item.accentColor} 42%, var(--picom-teal)))` }} />
       <div className="discovery-card-body">
         <div className="discovery-card-head">
-          <span className="discovery-card-icon" style={{ background: item.accentColor }}>
-            {item.icon}
+          <span
+            className={`discovery-card-icon${showIconImage ? " discovery-card-icon--avatar" : ""}`}
+            style={showIconImage ? undefined : { background: item.accentColor }}
+          >
+            {showIconImage ? (
+              <img
+                key={markSrc}
+                src={markSrc!}
+                alt=""
+                draggable={false}
+                referrerPolicy="no-referrer"
+                onError={() => setIconFailed(true)}
+              />
+            ) : (
+              monogramLabel
+            )}
           </span>
           <div className="discovery-card-badges">
-            <span className="discovery-badge discovery-badge--public">Public</span>
             <span className="discovery-badge">{formatCategory(item.category)}</span>
             <span className={`discovery-badge${item.joinPolicy === "request" ? " discovery-badge--request" : ""}`}>
               {item.joinPolicy === "request" ? "Request access" : "Open join"}
@@ -69,7 +100,7 @@ function DiscoveryCommunityCard({
         <div className="discovery-card-meta">
           <span>
             <AppIcon name="users" size="xs" />
-            {item.memberCount} members
+            {formatMemberCount(item.memberCount)}
           </span>
         </div>
         <div className="discovery-card-actions">
@@ -77,7 +108,6 @@ function DiscoveryCommunityCard({
             {primaryLabel}
           </button>
           <button type="button" className="discovery-card-secondary" onClick={onReport}>
-            <AppIcon name="bell" size="sm" />
             Report
           </button>
         </div>
@@ -91,6 +121,8 @@ export function DiscoveryView({ communities, currentUserId, onView, onJoin, onRe
   const [active, setActive] = useState<DiscoveryCategory | null>(null);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadVersion, setReloadVersion] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [requestedIds, setRequestedIds] = useState<Set<string>>(() => new Set());
   const [joinedIds, setJoinedIds] = useState<Set<string>>(() => new Set());
@@ -98,15 +130,20 @@ export function DiscoveryView({ communities, currentUserId, onView, onJoin, onRe
   useEffect(() => {
     let current = true;
     setLoading(true);
-    void communityDiscoveryService.listPublicCommunities(communities).then((next) => {
+    setLoadError(null);
+    void communityDiscoveryService.listPublicCommunities(communities).then((result) => {
       if (!current) return;
-      setItems(next);
+      if (result.ok) setItems(result.data);
+      else {
+        setItems([]);
+        setLoadError(result.message);
+      }
       setLoading(false);
     });
     return () => {
       current = false;
     };
-  }, [communities]);
+  }, [communities, reloadVersion]);
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<DiscoveryCategory, number>();
@@ -127,7 +164,7 @@ export function DiscoveryView({ communities, currentUserId, onView, onJoin, onRe
   const join = async (item: DiscoveryCommunity) => {
     const local = communities.find((community) => community.id === item.id);
     if (local) {
-      onJoin(item.id);
+      await onJoin(item.id);
       return;
     }
     const result = await communityDiscoveryService.joinOrRequestAccess(item.id);
@@ -138,7 +175,8 @@ export function DiscoveryView({ communities, currentUserId, onView, onJoin, onRe
       return;
     }
     setJoinedIds((current) => new Set(current).add(item.id));
-    setNotice(result.action === "already_member" ? `You are already a member of ${item.name}.` : `Joined ${item.name}. Refresh community data to open it.`);
+    setNotice(result.action === "already_member" ? `Opening ${item.name}.` : `Joined ${item.name}. Opening the community.`);
+    await onJoin(item.id);
   };
 
   const hasFilters = Boolean(active || query.trim());
@@ -147,31 +185,43 @@ export function DiscoveryView({ communities, currentUserId, onView, onJoin, onRe
     <main className="discovery-view">
       <header className="discovery-hero">
         <div className="discovery-hero-scene" aria-hidden="true">
+          <img className="discovery-hero-photo" src={discoveryHeroUrl} alt="" decoding="async" />
+          <span className="discovery-hero-photo-shade" />
           <span className="discovery-hero-orb discovery-hero-orb--one" />
           <span className="discovery-hero-orb discovery-hero-orb--two" />
           <span className="discovery-hero-orb discovery-hero-orb--three" />
           <span className="discovery-hero-mesh" />
-          <span className="discovery-hero-grid" />
+          <span className="discovery-hero-wave" />
+          <span className="discovery-hero-spark discovery-hero-spark--a" />
+          <span className="discovery-hero-spark discovery-hero-spark--b" />
+          <span className="discovery-hero-spark discovery-hero-spark--c" />
         </div>
         <div className="discovery-hero-inner">
           <div className="discovery-hero-main">
             <span className="discovery-mark" aria-hidden="true">
-              <AppIcon name="search" size="lg" />
+              <img className="discovery-mark__logo" src={discoveryLogoUrl} alt="" width={52} height={52} decoding="async" />
             </span>
             <div className="discovery-hero-copy">
-              <span className="discovery-eyebrow">Approved public spaces</span>
-              <h1>Discover communities</h1>
-              <p>Only reviewed public profiles are listed. Private communities never appear.</p>
+              <span className="discovery-eyebrow">
+                <span className="discovery-eyebrow__brand">{brandConfig.name}</span>
+                <span className="discovery-eyebrow__sep" aria-hidden="true" />
+                Approved public spaces
+              </span>
+              <h1>
+                Discover communities
+                <span className="discovery-hero-accent">worth joining</span>
+              </h1>
+              <p>Browse reviewed public spaces — private communities stay private, always.</p>
             </div>
           </div>
           <div className="discovery-hero-stats" aria-label="Discovery summary">
-            <span className="discovery-stat">
+            <span className="discovery-stat discovery-stat--listed">
               <strong>{items.length}</strong>
-              listed
+              <span>listed</span>
             </span>
-            <span className="discovery-stat">
+            <span className="discovery-stat discovery-stat--categories">
               <strong>{filters.length}</strong>
-              categories
+              <span>categories</span>
             </span>
           </div>
         </div>
@@ -230,6 +280,14 @@ export function DiscoveryView({ communities, currentUserId, onView, onJoin, onRe
           <div className="discovery-empty">
             <strong>Loading approved listings</strong>
             <p>Private and unreviewed communities remain hidden.</p>
+          </div>
+        ) : loadError ? (
+          <div className="discovery-empty" role="alert">
+            <strong>Discovery could not be loaded</strong>
+            <p>{loadError}</p>
+            <button type="button" className="discovery-empty-reset" onClick={() => setReloadVersion((value) => value + 1)}>
+              Try again
+            </button>
           </div>
         ) : cards.length ? (
           cards.map((item) => {

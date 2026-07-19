@@ -1,7 +1,6 @@
 -- Task 567: consent-gated, provider-neutral meeting captions control plane.
 -- Caption text is ephemeral in Full MVP and is never persisted by this schema.
 begin;
-
 create table if not exists public.meeting_caption_sessions (
   id uuid primary key default gen_random_uuid(),
   room_id uuid not null references public.meeting_rooms(id) on delete cascade,
@@ -21,7 +20,6 @@ create table if not exists public.meeting_caption_sessions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.meeting_caption_consents (
   id uuid primary key default gen_random_uuid(),
   caption_session_id uuid not null references public.meeting_caption_sessions(id) on delete cascade,
@@ -34,7 +32,6 @@ create table if not exists public.meeting_caption_consents (
   updated_at timestamptz not null default now(),
   unique(caption_session_id,participant_user_id,consent_round)
 );
-
 create table if not exists public.meeting_caption_dispatches (
   caption_session_id uuid primary key references public.meeting_caption_sessions(id) on delete cascade,
   dispatch_id text not null unique check (char_length(dispatch_id) between 1 and 180),
@@ -43,16 +40,13 @@ create table if not exists public.meeting_caption_dispatches (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create index if not exists idx_meeting_caption_sessions_room_status on public.meeting_caption_sessions(room_id,status,updated_at desc);
 create index if not exists idx_meeting_caption_consents_session_round on public.meeting_caption_consents(caption_session_id,consent_round,decision);
-
 alter table public.meeting_caption_sessions enable row level security;
 alter table public.meeting_caption_consents enable row level security;
 alter table public.meeting_caption_dispatches enable row level security;
 revoke all on table public.meeting_caption_sessions,public.meeting_caption_consents,public.meeting_caption_dispatches from public,anon,authenticated;
 grant select on table public.meeting_caption_sessions,public.meeting_caption_consents to authenticated;
-
 create or replace function public.can_access_meeting_captions(target_room_id uuid,target_session_id uuid)
 returns boolean language sql stable security definer set search_path=public,pg_temp as $$
   select auth.uid() is not null and exists(
@@ -64,14 +58,11 @@ returns boolean language sql stable security definer set search_path=public,pg_t
       )
   );
 $$;
-
 revoke all on function public.can_access_meeting_captions(uuid,uuid) from public,anon;
 grant execute on function public.can_access_meeting_captions(uuid,uuid) to authenticated;
-
 drop policy if exists meeting_caption_sessions_visible on public.meeting_caption_sessions;
 create policy meeting_caption_sessions_visible on public.meeting_caption_sessions for select to authenticated
 using(public.can_access_meeting_captions(room_id,session_id));
-
 drop policy if exists meeting_caption_consents_visible on public.meeting_caption_consents;
 create policy meeting_caption_consents_visible on public.meeting_caption_consents for select to authenticated using(
   participant_user_id=auth.uid() or exists(
@@ -79,7 +70,6 @@ create policy meeting_caption_consents_visible on public.meeting_caption_consent
     where caption.id=caption_session_id and public.can_view_meeting_sensitive(caption.room_id)
   )
 );
-
 create or replace function public.get_meeting_caption_state(target_room_id uuid,target_session_id uuid)
 returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare caption public.meeting_caption_sessions%rowtype; decision text; pending_count integer:=0; can_start boolean:=false;
@@ -101,7 +91,6 @@ begin
   return jsonb_build_object('id',caption.id,'roomId',caption.room_id,'sessionId',caption.session_id,'status',caption.status,'provider',caption.provider,'model',caption.model,'language',caption.language,'retentionMode',caption.retention_mode,'canStart',can_start,'consentDecision',decision,'pendingConsentCount',pending_count,'consentRequired',caption.status in ('awaiting_consent','starting','active') and decision is null,'startedAt',caption.started_at,'stoppedAt',caption.stopped_at,'errorCode',caption.error_code,'policyVersion',caption.consent_policy_version);
 end;
 $$;
-
 create or replace function public.request_meeting_captions(target_room_id uuid,target_session_id uuid,target_language text,target_policy_version text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare session_record public.meeting_sessions%rowtype; caption public.meeting_caption_sessions%rowtype;
@@ -124,7 +113,6 @@ begin
   return public.get_meeting_caption_state(target_room_id,target_session_id);
 end;
 $$;
-
 create or replace function public.record_meeting_caption_consent(target_room_id uuid,target_session_id uuid,target_decision text,target_policy_version text)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare caption public.meeting_caption_sessions%rowtype; must_stop boolean:=false; state jsonb;
@@ -143,7 +131,6 @@ begin
   return state||jsonb_build_object('mustStop',must_stop);
 end;
 $$;
-
 create or replace function public.prepare_meeting_caption_dispatch(target_room_id uuid,target_session_id uuid)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare caption public.meeting_caption_sessions%rowtype; provider_room text; pending integer;
@@ -161,7 +148,6 @@ begin
   return jsonb_build_object('shouldDispatch',true,'captionSessionId',caption.id,'roomName',provider_room,'language',caption.language,'policyVersion',caption.consent_policy_version,'retentionMode','ephemeral');
 end;
 $$;
-
 create or replace function public.request_stop_meeting_captions(target_room_id uuid,target_session_id uuid)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare caption public.meeting_caption_sessions%rowtype;
@@ -174,7 +160,6 @@ begin
   return jsonb_build_object('captionSessionId',caption.id,'status',caption.status);
 end;
 $$;
-
 create or replace function public.meeting_caption_audio_allowed(target_session_id uuid)
 returns boolean language plpgsql stable security definer set search_path=public,pg_temp as $$
 declare caption public.meeting_caption_sessions%rowtype;
@@ -185,7 +170,6 @@ begin
   return exists(select 1 from public.meeting_caption_consents consent where consent.caption_session_id=caption.id and consent.participant_user_id=auth.uid() and consent.consent_round=caption.consent_round and consent.decision='accepted');
 end;
 $$;
-
 create or replace function public.stop_captions_when_meeting_ends()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
@@ -195,18 +179,14 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists meeting_caption_stop_on_session_end on public.meeting_sessions;
 create trigger meeting_caption_stop_on_session_end after update of status on public.meeting_sessions for each row execute function public.stop_captions_when_meeting_ends();
-
 revoke all on function public.get_meeting_caption_state(uuid,uuid),public.request_meeting_captions(uuid,uuid,text,text),public.record_meeting_caption_consent(uuid,uuid,text,text),public.prepare_meeting_caption_dispatch(uuid,uuid),public.request_stop_meeting_captions(uuid,uuid),public.meeting_caption_audio_allowed(uuid) from public,anon,authenticated;
 grant execute on function public.get_meeting_caption_state(uuid,uuid),public.request_meeting_captions(uuid,uuid,text,text),public.record_meeting_caption_consent(uuid,uuid,text,text),public.request_stop_meeting_captions(uuid,uuid),public.meeting_caption_audio_allowed(uuid) to authenticated;
 grant execute on function public.prepare_meeting_caption_dispatch(uuid,uuid) to service_role;
-
 do $$ begin
   if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='meeting_caption_sessions') then alter publication supabase_realtime add table public.meeting_caption_sessions; end if;
 end $$;
-
 comment on table public.meeting_caption_sessions is 'Consent and provider lifecycle only. Full MVP captions are ephemeral; transcript text and raw audio must not be stored here.';
 comment on table public.meeting_caption_dispatches is 'Service-role-only LiveKit agent dispatch metadata. Never exposed to renderer clients.';
 commit;

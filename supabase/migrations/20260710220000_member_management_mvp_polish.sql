@@ -1,5 +1,4 @@
 begin;
-
 create table if not exists public.community_member_timeouts (
   community_id uuid not null references public.communities(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -11,7 +10,6 @@ create table if not exists public.community_member_timeouts (
 );
 alter table public.community_member_timeouts enable row level security;
 revoke all on public.community_member_timeouts from authenticated;
-
 create or replace function public.moderate_community_member(target_community_id uuid, target_user_id uuid, moderation_action text, moderation_reason text, timeout_minutes integer default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare community_owner uuid; actor_level integer; target_level integer; timeout_until timestamptz;
@@ -51,7 +49,6 @@ begin
   return jsonb_build_object('action', moderation_action, 'targetUserId', target_user_id, 'timeoutUntil', timeout_until);
 end;
 $$;
-
 revoke all on function public.moderate_community_member(uuid, uuid, text, text, integer) from public;
 grant execute on function public.moderate_community_member(uuid, uuid, text, text, integer) to authenticated;
 commit;

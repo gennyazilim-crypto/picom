@@ -584,7 +584,7 @@
 }
 
 .settings-modal .profile-media-toolbar .settings-inline-action,
-.settings-modal .profile-media-toolbar .profile-media-choose {
+.settings-modal .profile-media-toolbar .profile-media-upload-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;

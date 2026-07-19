@@ -67,6 +67,7 @@ export function VerifiedAvatarFrame({
       {verifiedType && size === "profile" && <VerifiedAvatarRing variant={verifiedType} profile />}
       <MemberAvatar
         member={user}
+        userId={userId ?? user?.userId}
         label={resolvedLabel}
         size={pixelSize}
         avatarUrl={avatarUrl}

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useRef, type MouseEvent } from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "../utils/motionLite";
 import type { Community, Member } from "../types/community";
 import type { FollowedUserStory } from "../types/stories";
 import { avatarService } from "../services/avatarService";

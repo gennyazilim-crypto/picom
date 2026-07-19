@@ -1,4 +1,4 @@
-export type LiveKitIntent = "voice" | "screen";
+export type LiveKitIntent = "voice" | "video" | "screen";
 
 export type LiveKitTokenRequest = Readonly<{
   communityId: string;

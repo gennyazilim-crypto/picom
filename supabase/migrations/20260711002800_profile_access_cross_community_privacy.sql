@@ -1,5 +1,3 @@
-begin;
-
 -- Keep the client-facing v3 signature while making every access decision in
 -- one explicit boundary. Security-definer reads must never inherit an older
 -- helper's broader assumptions.
@@ -142,6 +140,4 @@ grant execute on function public.get_profile_privacy_projection_v3(uuid), public
 comment on function public.get_profile_privacy_projection_v3(uuid) is
   'Canonical profile visibility decision for owner, blocked, shared-community, friend and visitor viewers. Activity/media require a trusted relationship and still recheck each source resource.';
 comment on function public.list_active_verification_badges(text,uuid) is
-  'Returns active public markers only when the current viewer may see the user/community/role subject. Verification request metadata is never exposed here.';
-
-commit;
+  'Returns active public markers only when the current viewer may see the user/community/role subject. Verification request metadata is never exposed here.';;

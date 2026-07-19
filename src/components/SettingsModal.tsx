@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "./SettingsModal.css";
 import { notificationService } from "../services/notificationService";
 import { notificationPolicyStateService, type NotificationPolicyState } from "../services/notificationPolicyStateService";
 import type { Community } from "../types/community";
@@ -31,9 +32,11 @@ import { profilePrivacyService } from "../services/profilePrivacyService";
 import { directSafetyService } from "../services/directMessages/directSafetyService";
 import type { DirectMessagePrivacy } from "../types/directMessageSafety";
 import { profileService } from "../services/profileService";
+import type { ProfileSummary } from "../services/profileService";
+import { globalPresenceService } from "../services/presence/globalPresenceService";
+import { activityPresenceService, type ActivitySnapshot } from "../services/presence/activityPresenceService";
 import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";
 import { ProfileMediaEditor } from "./settings/ProfileMediaEditor";
-import type { ProfileSummary } from "../services/profileService";
 import { EmailPreferencesPanel } from "./settings/EmailPreferencesPanel";
 import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";
 import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";
@@ -42,7 +45,8 @@ import { notificationDigestService } from "../services/notificationDigestService
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
 import { appConfig } from "../config/appConfig";
 import { legalConfig } from "../config/legalConfig";
-import { AdminOperationsView, canAccessAdminOperationsView } from "./AdminOperationsView";
+import { AdminOperationsPanelRedirect } from "./AdminOperationsPanelRedirect";
+import { canAccessAdminOperationsView } from "./AdminOperationsView";
 import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
 import { analyticsService } from "../services/analyticsService";
 import { crashReporterService } from "../services/crashReporterService";
@@ -116,21 +120,31 @@ type SettingsModalProps = {
     canManageBots: boolean;
     canManageWebhooks: boolean;
   };
+  onOpenPanel?: () => void;
 };
 
-export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext, onOpenPanel }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState<SettingsSection>(settingsService.consumeInitialSection);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(() => ({ ...profileSettings, username: profileSettings.username || currentUsername }));
+  const [profileHydrated, setProfileHydrated] = useState(false);
+  const [profileHydrating, setProfileHydrating] = useState(false);
+  const profileMediaGenerationRef = useRef(0);
   const [feedbackIssueType, setFeedbackIssueType] = useState<FeedbackIssueType>("bug");
   const [feedbackTitle, setFeedbackTitle] = useState("Picom beta feedback");
   const [feedbackDescription, setFeedbackDescription] = useState("");
   const [includeDiagnostics, setIncludeDiagnostics] = useState(true);
   const [includeLogs, setIncludeLogs] = useState(false);
   const [emailVerificationMessage, setEmailVerificationMessage] = useState<string | null>(null);
+  const [liveEmail, setLiveEmail] = useState<string | undefined>(currentEmail ?? undefined);
+  const [liveEmailVerifiedAt, setLiveEmailVerifiedAt] = useState<string | null | undefined>(currentEmailVerifiedAt);
+  const [identityRefreshing, setIdentityRefreshing] = useState(false);
   const [activeSessions, setActiveSessions] = useState<SessionDeviceSummary[]>([]);
+  const [sessionsRefreshing, setSessionsRefreshing] = useState(false);
   const [sessionManagementMessage, setSessionManagementMessage] = useState<string | null>(null);
+  const passwordSectionRef = useRef<HTMLElement | null>(null);
+  const sessionsSectionRef = useRef<HTMLElement | null>(null);
   const [socialProviders, setSocialProviders] = useState<SocialProviderAccountState[]>(() => SOCIAL_AUTH_PROVIDER_ORDER.map((provider) => { const availability = socialAuthService.getProviderAvailability(provider); return { provider, label: getSocialAuthProviderLabel(provider), available: availability.enabled, linked: false, reason: availability.reason }; }));
   const [socialProviderBusy, setSocialProviderBusy] = useState<SocialAuthProvider | null>(null);
   const [passwordResetMessage, setPasswordResetMessage] = useState<string | null>(null);
@@ -149,6 +163,9 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
   const [closeToTrayEnabled, setCloseToTrayEnabled] = useState(() => trayService.getCloseToTrayEnabled());
   const [updateState, setUpdateState] = useState(() => updateService.getState());
+  const [autoActivityEnabled, setAutoActivityEnabled] = useState(() => activityPresenceService.getEnabled());
+  const [activitySnapshot, setActivitySnapshot] = useState<ActivitySnapshot>(() => activityPresenceService.getSnapshot());
+  const activityBridgeAvailable = activityPresenceService.isAvailable();
   const [cacheSummary, setCacheSummary] = useState<CacheSummary | null>(null);
   const [safetySettings, setSafetySettings] = useState<UserSafetySettings>(() => userSafetyCenterService.getSettings());
   const [profilePrivacy,setProfilePrivacy]=useState<ProfilePrivacySettings>(()=>profilePrivacyService.getLocalSettings());
@@ -171,8 +188,15 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   );
 
   useEffect(() => {
-    setProfileDraft({ ...profileSettings, username: profileSettings.username || currentUsername });
-  }, [currentUsername, profileSettings]);
+    if (!profileHydrated) {
+      setProfileDraft({ ...profileSettings, username: profileSettings.username || currentUsername });
+    }
+  }, [currentUsername, profileHydrated, profileSettings]);
+
+  useEffect(() => {
+    setLiveEmail(currentEmail ?? undefined);
+    setLiveEmailVerifiedAt(currentEmailVerifiedAt);
+  }, [currentEmail, currentEmailVerifiedAt]);
 
   useEffect(() => updateService.onStateChange(setUpdateState), []);
   useEffect(() => settingsService.subscribe((settings) => setNotificationSettings(settings.notificationSettings)), []);
@@ -181,12 +205,31 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   useEffect(() => { void startupService.refreshNativeState().then(setStartupSettings); }, []);
   useEffect(() => { let active = true; void adminOperationsService.getAccess().then((access) => { if (active) setAdminOperationsAccess(access); }); return () => { active = false; }; }, []);
 
-  const refreshActiveSessions = useCallback(async () => {
+  const refreshAccountIdentity = useCallback(async (options: Readonly<{ silent?: boolean }> = {}) => {
+    if (!options.silent) setIdentityRefreshing(true);
+    const result = await authService.getCurrentUser();
+    if (!options.silent) setIdentityRefreshing(false);
+    if (!result.ok) {
+      if (!options.silent) pushToast(result.error.message, "error");
+      return;
+    }
+    if (!result.data) {
+      setLiveEmail(undefined);
+      setLiveEmailVerifiedAt(null);
+      return;
+    }
+    setLiveEmail(result.data.email ?? undefined);
+    setLiveEmailVerifiedAt(result.data.emailVerifiedAt ?? null);
+  }, [pushToast]);
+
+  const refreshActiveSessions = useCallback(async (options: Readonly<{ silent?: boolean }> = {}) => {
+    if (!options.silent) setSessionsRefreshing(true);
     const result = await sessionManagementService.getActiveSessions();
+    if (!options.silent) setSessionsRefreshing(false);
     if (!result.ok) {
       setSessionManagementMessage(result.message);
       setActiveSessions([]);
-      pushToast(result.message, result.requiresSignIn ? "error" : "info");
+      if (!options.silent) pushToast(result.message, result.requiresSignIn ? "error" : "info");
       return;
     }
 
@@ -201,15 +244,69 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   }, [pushToast]);
 
   useEffect(() => {
-    if (active === "Account") {
-      void refreshActiveSessions();
-      void dataExportService.refreshStatus().then(setDataExportStatus);
-      void accountDeletionService.refreshStatus().then(setAccountDeletionStatus);
-      void refreshSocialProviders();
-      setAccountActivities(accountActivityService.listRecent());
-    }
-  }, [active, refreshActiveSessions, refreshSocialProviders]);
+    if (active !== "Account") return;
 
+    let cancelled = false;
+    const boot = async () => {
+      await Promise.all([
+        refreshAccountIdentity({ silent: true }),
+        refreshActiveSessions({ silent: true }),
+        dataExportService.refreshStatus().then(setDataExportStatus),
+        accountDeletionService.refreshStatus().then(setAccountDeletionStatus),
+        refreshSocialProviders(),
+      ]);
+      if (!cancelled) setAccountActivities(accountActivityService.listRecent());
+    };
+    void boot();
+
+    const identityTimer = window.setInterval(() => {
+      void refreshAccountIdentity({ silent: true });
+    }, 30_000);
+    const sessionsTimer = window.setInterval(() => {
+      void refreshActiveSessions({ silent: true });
+    }, 15_000);
+
+    const unsubscribeAuth = authService.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") return;
+      void refreshAccountIdentity({ silent: true });
+      void refreshActiveSessions({ silent: true });
+      void refreshSocialProviders();
+    });
+
+    let unsubscribeSessions: () => void = () => {};
+    void authService.getCurrentUser().then((result) => {
+      if (cancelled || !result.ok || !result.data?.id) return;
+      unsubscribeSessions = sessionManagementService.subscribeToDeviceSessionChanges(result.data.id, () => {
+        void refreshActiveSessions({ silent: true });
+      });
+      if (cancelled) {
+        unsubscribeSessions();
+        unsubscribeSessions = () => {};
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(identityTimer);
+      window.clearInterval(sessionsTimer);
+      unsubscribeAuth();
+      unsubscribeSessions();
+    };
+  }, [active, refreshAccountIdentity, refreshActiveSessions, refreshSocialProviders]);
+
+  const scrollToAccountSection = (target: "password" | "sessions") => {
+    const node = target === "password" ? passwordSectionRef.current : sessionsSectionRef.current;
+    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const currentDesktopSession = useMemo(
+    () => activeSessions.find((session) => session.current) ?? activeSessions[0] ?? null,
+    [activeSessions],
+  );
+  const otherActiveSessionCount = useMemo(
+    () => activeSessions.filter((session) => !session.current && session.status === "active").length,
+    [activeSessions],
+  );
   const refreshCacheSummary = useCallback(async () => {
     setCacheSummary(await cacheManagementService.getCacheSummary());
   }, []);
@@ -230,6 +327,20 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
       void dataExportService.refreshStatus().then(setDataExportStatus);
     }
   }, [active]);
+
+  useEffect(() => activityPresenceService.subscribe(setActivitySnapshot), []);
+  useEffect(() => activityPresenceService.subscribeEnabled(setAutoActivityEnabled), []);
+
+  const updateAutoActivity = (next: boolean) => {
+    const enabled = activityPresenceService.setEnabled(next);
+    setAutoActivityEnabled(enabled);
+    pushToast(
+      enabled
+        ? "Automatic activity status enabled. Detected games and media will appear in your status text."
+        : "Automatic activity status disabled.",
+      "info",
+    );
+  };
 
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
@@ -271,23 +382,112 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     setBlockedUsers(userBlockingService.listBlockedUsers());
     pushToast(ok ? `${displayName} unblocked.` : `Could not unblock ${displayName}.`, ok ? "success" : "error");
   };
+  const applyProfileSummary = useCallback((profile: ProfileSummary, options?: { mediaOnly?: boolean }) => {
+    if (options?.mediaOnly) profileMediaGenerationRef.current += 1;
+    setProfileDraft((current) => {
+      const next = settingsService.updateProfileSettings(options?.mediaOnly ? {
+        // Keep unsaved text fields; media URLs always come from the media op response.
+        ...current,
+        avatarUrl: profile.avatarUrl ?? null,
+        coverUrl: profile.coverUrl ?? null,
+      } : {
+        username: profile.username,
+        displayName: profile.displayName,
+        status: profile.status,
+        statusText: profile.statusText ?? "",
+        bio: profile.bio ?? "",
+        avatarUrl: profile.avatarUrl ?? null,
+        coverUrl: profile.coverUrl ?? null,
+        location: profile.location ?? "",
+        timezone: profile.timezone ?? "",
+        preferredLanguage: profile.preferredLanguage ?? "",
+        tags: [...profile.tags],
+      }).profileSettings;
+      onProfileSettingsChange(next);
+      return next;
+    });
+  }, [onProfileSettingsChange]);
+
   const saveProfileSettings = async () => {
-    if (profileSaving) return;
+    if (profileSaving || profileHydrating) return;
     const previous = profileSettings;
     const optimistic = settingsService.updateProfileSettings(profileDraft).profileSettings;
     onProfileSettingsChange(optimistic);
     setProfileSaving(true);
-    const result = await profileService.updateCurrentProfile({ username: profileDraft.username, displayName: profileDraft.displayName, status: profileDraft.status, statusText: profileDraft.statusText, bio: profileDraft.bio, location: profileDraft.location, timezone: profileDraft.timezone, preferredLanguage: profileDraft.preferredLanguage, tags: profileDraft.tags });
+    const result = await profileService.updateCurrentProfile({
+      username: profileDraft.username,
+      displayName: profileDraft.displayName,
+      status: profileDraft.status,
+      statusText: profileDraft.statusText,
+      bio: profileDraft.bio,
+      location: profileDraft.location,
+      timezone: profileDraft.timezone,
+      preferredLanguage: profileDraft.preferredLanguage,
+      tags: profileDraft.tags,
+    });
     setProfileSaving(false);
-    if (!result.ok) { const rollback = settingsService.updateProfileSettings(previous).profileSettings; setProfileDraft(rollback); onProfileSettingsChange(rollback); pushToast(result.error.message, "error"); return; }
+    if (!result.ok) {
+      const rollback = settingsService.updateProfileSettings(previous).profileSettings;
+      setProfileDraft(rollback);
+      onProfileSettingsChange(rollback);
+      pushToast(result.error.message, "error");
+      return;
+    }
     applyProfileSummary(result.data);
+    // Keep left-rail presence in sync with Profile Presence (busy→dnd, offline→invisible).
+    const presencePreference = profileDraft.status === "busy" ? "dnd" as const
+      : profileDraft.status === "offline" ? "invisible" as const
+      : profileDraft.status === "idle" ? "idle" as const
+      : "online" as const;
+    globalPresenceService.setPreference(presencePreference);
     pushToast("Profile changes saved.", "success");
   };
-  const applyProfileSummary = (profile: ProfileSummary) => {
-    const next = settingsService.updateProfileSettings({ username: profile.username, displayName: profile.displayName, status: profile.status, statusText: profile.statusText ?? "", bio: profile.bio ?? "", avatarUrl: profile.avatarUrl ?? null, coverUrl: profile.coverUrl ?? null, location: profile.location ?? "", timezone: profile.timezone ?? "", preferredLanguage: profile.preferredLanguage ?? "", tags: [...profile.tags] }).profileSettings;
-    setProfileDraft(next);
-    onProfileSettingsChange(next);
-  };
+
+  useEffect(() => {
+    if (active !== "Profile") {
+      setProfileHydrated(false);
+      setProfileHydrating(false);
+      return;
+    }
+    let cancelled = false;
+    const mediaGenerationAtStart = profileMediaGenerationRef.current;
+    setProfileHydrating(true);
+    void profileService.getCurrentProfile().then((result) => {
+      if (cancelled) return;
+      setProfileHydrating(false);
+      if (!result.ok) {
+        pushToast(result.error.message, "error");
+        setProfileHydrated(true);
+        return;
+      }
+      // Prefer server fields, but keep local media if upload/remove raced this hydrate.
+      if (result.data) {
+        const mediaChangedWhileHydrating = mediaGenerationAtStart !== profileMediaGenerationRef.current;
+        setProfileDraft((current) => {
+          const incoming = result.data!;
+          const next = settingsService.updateProfileSettings({
+            username: incoming.username,
+            displayName: incoming.displayName,
+            status: incoming.status,
+            statusText: incoming.statusText ?? "",
+            bio: incoming.bio ?? "",
+            avatarUrl: mediaChangedWhileHydrating ? current.avatarUrl ?? null : incoming.avatarUrl ?? null,
+            coverUrl: mediaChangedWhileHydrating ? current.coverUrl ?? null : incoming.coverUrl ?? null,
+            location: incoming.location ?? current.location ?? "",
+            timezone: incoming.timezone ?? current.timezone ?? "",
+            preferredLanguage: incoming.preferredLanguage ?? "",
+            tags: [...incoming.tags],
+          }).profileSettings;
+          onProfileSettingsChange(next);
+          return next;
+        });
+      }
+      setProfileHydrated(true);
+    });
+    return () => { cancelled = true; };
+    // Hydrate once per Profile tab open — not on every applyProfileSummary identity change.
+  }, [active, onProfileSettingsChange, pushToast]);
+
   const resetProfileSettings = () => {
     setProfileDraft(profileSettings);
     pushToast("Unsaved profile changes discarded.", "info");
@@ -400,6 +600,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
 
     setEmailVerificationMessage(result.data.message);
     pushToast(result.data.message, "success");
+    void refreshAccountIdentity({ silent: true });
   };
   const revokeOtherSessions = async () => {
     const result = await sessionManagementService.revokeOtherSessions();
@@ -416,8 +617,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     pushToast(result.data.message, "success");
   };
   const requestPasswordReset = async () => {
-    if (!currentEmail) { pushToast("No email address is available for this account.", "error"); return; }
-    const result = await authService.requestPasswordReset(currentEmail);
+    if (!liveEmail) { pushToast("No email address is available for this account.", "error"); return; }
+    const result = await authService.requestPasswordReset(liveEmail);
     const message = result.ok ? result.data.message : result.error.message;
     setPasswordResetMessage(message);
     pushToast(message, result.ok ? "success" : "error");
@@ -610,27 +811,44 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 <h3 className="account-settings-section-title">Identity & verification</h3>
                 <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Account identity">
                   <span>Account identity</span>
-                  <strong>{currentEmail ?? currentUsername}</strong>
-                  <small>{currentEmail ? `${currentEmailVerifiedAt ? "Verified email" : "Unverified email"}. Authentication provider details never expose tokens.` : "Mock/local identity. Connect Supabase Auth to manage a production email account."}</small>
+                  <strong>{liveEmail ?? currentUsername}</strong>
+                  <small>{liveEmail ? `${liveEmailVerifiedAt ? "Verified email" : "Unverified email"}. Authentication provider details never expose tokens.` : "Mock/local identity. Connect Supabase Auth to manage a production email account."}</small>
+                  <div className="settings-actions-row">
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={identityRefreshing} onClick={() => void refreshAccountIdentity()}>{identityRefreshing ? "Refreshing identity..." : "Refresh identity"}</button>
+                  </div>
                 </div>
                 <div className="settings-status-card settings-feature-card" aria-label="Email verification controls">
                   <span>Email verification</span>
-                  <strong>{currentEmailVerifiedAt ? "Email verified" : requireEmailVerification ? "Verification required" : "Verification recommended"}</strong>
-                  <small>{emailVerificationMessage ?? (currentEmailVerifiedAt ? `Verified ${dateTimeService.formatFullTimestamp(currentEmailVerifiedAt)}.` : requireEmailVerification ? "Verify your email before the production policy is enforced. Resend uses a cooldown and a neutral response." : "Verification is available but not required by this build.")}</small>
+                  <strong>{liveEmailVerifiedAt ? "Email verified" : requireEmailVerification ? "Verification required" : "Verification recommended"}</strong>
+                  <small>{emailVerificationMessage ?? (liveEmailVerifiedAt ? `Verified ${dateTimeService.formatFullTimestamp(liveEmailVerifiedAt)}.` : requireEmailVerification ? "Verify your email before the production policy is enforced. Resend uses a cooldown and a neutral response." : "Verification is available but not required by this build.")}</small>
                   <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action" disabled={Boolean(currentEmailVerifiedAt) || !currentEmail} onClick={requestEmailVerification}>{currentEmailVerifiedAt ? "Email verified" : "Resend verification email"}</button>
+                    <button type="button" className="settings-inline-action" disabled={Boolean(liveEmailVerifiedAt) || !liveEmail} onClick={() => void requestEmailVerification()}>{liveEmailVerifiedAt ? "Email verified" : "Resend verification email"}</button>
+                    {!liveEmailVerifiedAt ? <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={identityRefreshing || !liveEmail} onClick={() => void refreshAccountIdentity()}>Check verification status</button> : null}
                   </div>
                 </div>
                 <div className="security-card-grid" aria-label="Account security summary">
                   <article className="security-card">
                     <span>Session</span>
-                    <strong>Current desktop session</strong>
-                    <small>Session restore is handled by the auth data source. Raw tokens are never shown here.</small>
+                    <strong>{currentDesktopSession ? currentDesktopSession.deviceLabel : "Current desktop session"}</strong>
+                    <small>
+                      {currentDesktopSession
+                        ? `${currentDesktopSession.current ? "This device" : "Registered device"} · Provider ${currentDesktopSession.provider}${currentDesktopSession.expiresAt ? ` · Expires ${dateTimeService.formatFullTimestamp(currentDesktopSession.expiresAt)}` : ""}${otherActiveSessionCount ? ` · ${otherActiveSessionCount} other active` : ""}`
+                        : (sessionManagementMessage ?? "Session metadata loads from the auth data source. Raw tokens are never shown here.")}
+                    </small>
+                    <div className="settings-actions-row">
+                      <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={sessionsRefreshing} onClick={() => void refreshActiveSessions()}>{sessionsRefreshing ? "Refreshing..." : "Refresh sessions"}</button>
+                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToAccountSection("sessions")}>Manage sessions</button>
+                      <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => { scrollToAccountSection("sessions"); setLogoutConfirmationOpen(true); }}>Log out</button>
+                    </div>
                   </article>
                   <article className="security-card">
                     <span>Password</span>
                     <strong>Reset or change securely</strong>
-                    <small>Reset responses are non-enumerating. Password changes require the current password and revoke every session.</small>
+                    <small>{passwordResetMessage ?? "Reset responses are non-enumerating. Password changes require the current password and revoke every session."}</small>
+                    <div className="settings-actions-row">
+                      <button type="button" className="settings-inline-action" disabled={!liveEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
+                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToAccountSection("password")}>Change password</button>
+                    </div>
                   </article>
                   <article className="security-card">
                     <span>Logs</span>
@@ -660,14 +878,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </div>
               </section>
 
-              <section className="account-settings-section">
+              <section className="account-settings-section" ref={passwordSectionRef} id="account-password">
                 <h3 className="account-settings-section-title">Password</h3>
                 <div className="settings-status-card settings-feature-card" aria-label="Password reset and change">
                   <span>Password security</span>
                   <strong>Reset by email or change now</strong>
                   <small>{passwordResetMessage ?? "Password reset uses a neutral email response. Changing your password requires recent re-authentication and signs out every device."}</small>
                   <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action" disabled={!currentEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
+                    <button type="button" className="settings-inline-action" disabled={!liveEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
                   </div>
                   <div className="account-settings-form-grid">
                     <label className="account-settings-field">
@@ -689,14 +907,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </div>
               </section>
 
-              <section className="account-settings-section">
+              <section className="account-settings-section" ref={sessionsSectionRef} id="account-sessions">
                 <h3 className="account-settings-section-title">Sessions</h3>
                 <div className="settings-status-card settings-feature-card" aria-label="Active desktop sessions">
                   <span>Active sessions</span>
                   <strong>{activeSessions.length ? `${activeSessions.length} current session${activeSessions.length === 1 ? "" : "s"}` : "Session metadata unavailable"}</strong>
                   <small>{sessionManagementMessage ?? "Refresh active sessions to inspect safe desktop session metadata."}</small>
                   <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={refreshActiveSessions}>Refresh sessions</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={sessionsRefreshing} onClick={() => void refreshActiveSessions()}>{sessionsRefreshing ? "Refreshing..." : "Refresh sessions"}</button>
                     <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSessionRevokeConfirmationOpen(true)}>Revoke other sessions</button>
                     <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => setLogoutConfirmationOpen(true)}>Log out</button>
                   </div>
@@ -942,14 +1160,15 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Profile" ? (
             <div className="profile-settings-stack">
-              <p className="settings-section-description">Changes apply immediately and synchronize through the profile service in Supabase mode.</p>
+              <p className="settings-section-description">Photos save immediately. Username, bio, and other fields save when you click Save profile.</p>
+              {profileHydrating ? <p className="settings-section-description" aria-live="polite">Loading your live profile from Supabase…</p> : null}
 
               <section className="profile-settings-section">
                 <header className="profile-settings-section-head">
                   <h3 className="profile-settings-section-title">Photos</h3>
                   <p>Upload a wide cover image and a square profile photo for your public profile.</p>
                 </header>
-                <ProfileMediaEditor displayName={profileDraft.displayName || currentUsername} avatarUrl={profileDraft.avatarUrl} coverUrl={profileDraft.coverUrl} onProfileUpdated={applyProfileSummary} onNotice={pushToast} />
+                <ProfileMediaEditor displayName={profileDraft.displayName || currentUsername} avatarUrl={profileDraft.avatarUrl} coverUrl={profileDraft.coverUrl} onProfileUpdated={(profile) => applyProfileSummary(profile, { mediaOnly: true })} onNotice={pushToast} />
               </section>
 
               <section className="profile-settings-section">
@@ -989,7 +1208,15 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   <div className="profile-settings-form-grid">
                     <label className="profile-settings-field">
                       <span>Status text</span>
-                      <input className="advanced-settings-input" value={profileDraft.statusText} maxLength={120} onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })} placeholder="What are you working on?" />
+                      <input
+                        className="advanced-settings-input"
+                        value={autoActivityEnabled && activitySnapshot.statusText ? activitySnapshot.statusText : profileDraft.statusText}
+                        maxLength={120}
+                        onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })}
+                        placeholder="What are you working on?"
+                        disabled={autoActivityEnabled && Boolean(activitySnapshot.statusText)}
+                        readOnly={autoActivityEnabled && Boolean(activitySnapshot.statusText)}
+                      />
                     </label>
                     <label className="profile-settings-field">
                       <span>Location</span>
@@ -1004,6 +1231,28 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                       <input className="advanced-settings-input" value={profileDraft.preferredLanguage} maxLength={48} onChange={(event) => setProfileDraft({ ...profileDraft, preferredLanguage: event.target.value })} placeholder="English" />
                     </label>
                   </div>
+
+                  <label className="settings-toggle-row">
+                    <span>
+                      <strong>Automatic activity status</strong>
+                      <small>
+                        {activityBridgeAvailable
+                          ? "Show the game or song currently playing on this Windows PC (Media Session + active window)."
+                          : "Available in the Picom desktop app on Windows. Browser sessions cannot detect games or media."}
+                      </small>
+                      {autoActivityEnabled && activitySnapshot.statusText ? (
+                        <small aria-live="polite">Live: {activitySnapshot.statusText}</small>
+                      ) : autoActivityEnabled && activityBridgeAvailable ? (
+                        <small aria-live="polite">Waiting for a game or media session…</small>
+                      ) : null}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={autoActivityEnabled}
+                      onChange={(event) => updateAutoActivity(event.target.checked)}
+                      disabled={!activityBridgeAvailable}
+                    />
+                  </label>
 
                   <label className="profile-settings-field">
                     <span>Tags</span>
@@ -1020,8 +1269,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
 
               <section className="profile-settings-section profile-settings-section--compact">
                 <div className="settings-actions-row">
-                  <button type="button" className="settings-inline-action" disabled={profileSaving || !profileDraft.displayName.trim() || !/^[a-z0-9._-]{3,32}$/.test(profileDraft.username)} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : "Save profile"}</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving} onClick={resetProfileSettings}>Discard changes</button>
+                  <button type="button" className="settings-inline-action" disabled={profileSaving || profileHydrating || !profileDraft.displayName.trim() || !/^[a-z0-9._-]{3,32}$/.test(profileDraft.username)} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : profileHydrating ? "Loading profile..." : "Save profile"}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving || profileHydrating} onClick={resetProfileSettings}>Discard changes</button>
                   <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving} onClick={() => setActive("Privacy & Safety")}>Manage profile privacy</button>
                 </div>
               </section>
@@ -1197,7 +1446,11 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <LogsViewer onNotice={pushToast} />
             </div>
           ) : active === "Admin Operations" ? (
-            <AdminOperationsView access={adminOperationsAccess} />
+            onOpenPanel ? (
+              <AdminOperationsPanelRedirect onOpenPanel={() => { onClose(); onOpenPanel(); }} />
+            ) : (
+              <AdminOperationsPanelRedirect onOpenPanel={onClose} />
+            )
           ) : active === "Legal" ? (
             <div className="legal-settings-panel">
               <div className="settings-status-card"><span>Legal version {legalConfig.currentVersion}</span><strong>Professional review required</strong><small>Terms and privacy links below match the version recorded during registration or re-acceptance. These drafts are not final legal advice.</small></div>
@@ -1443,4 +1696,3 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     </>
   );
 }
-

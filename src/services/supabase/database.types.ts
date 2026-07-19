@@ -13,6 +13,17 @@ export type Database = {
           username: string;
           display_name: string;
           avatar_url: string | null;
+          avatar_path: string | null;
+          avatar_thumbnail_path: string | null;
+          avatar_version: number;
+          avatar_content_hash: string | null;
+          avatar_updated_at: string | null;
+          cover_path: string | null;
+          cover_thumbnail_path: string | null;
+          cover_version: number;
+          cover_content_hash: string | null;
+          cover_updated_at: string | null;
+          profile_media_updated_at: string | null;
           status: string;
           status_text: string;
           bio: string | null;
@@ -832,6 +843,10 @@ export type Database = {
         Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request" }>;
       };
       join_or_request_discovery_community: { Args: { target_community_id: string }; Returns: "joined" | "requested" | "already_member" };
+      set_community_discovery_listing: {
+        Args: { target_community_id: string; next_listed: boolean; next_category?: string | null; next_join_policy?: string | null };
+        Returns: Database["public"]["Tables"]["communities"]["Row"][];
+      };
       list_discovery_review_queue: {
         Args: { status_filter?: string | null; result_limit?: number };
         Returns: Array<{ community_id: string; community_name: string; description: string | null; icon_url: string | null; category: string | null; content_flags: string[]; review_status: "pending" | "approved" | "rejected" | "hidden" | "suspended"; report_count: number; submitted_at: string; reviewed_at: string | null }>;
@@ -849,6 +864,8 @@ export type Database = {
       list_friend_suggestions: { Args: { result_limit?: number }; Returns: Array<{ user_id: string; display_name: string; username: string; avatar_url: string | null; mutual_community_count: number; followed_by_current_user: boolean }> };
       set_my_friend_presence: { Args: { target_status: string; share_presence: boolean }; Returns: undefined };
       list_friend_presence: { Args: { target_user_ids: string[] }; Returns: Array<{ user_id: string; status: string; status_text: string; last_seen_at: string | null }> };
+      list_direct_conversation_presence: { Args: { target_user_ids: string[] }; Returns: Array<{ user_id: string; status: string; status_text: string; last_seen_at: string | null }> };
+      shares_active_direct_conversation: { Args: { viewer_id: string; other_user_id: string }; Returns: boolean };
       block_user: { Args: { target_user_id: string }; Returns: boolean };
       unblock_user: { Args: { target_user_id: string }; Returns: boolean };
       list_blocked_users: { Args: Record<string, never>; Returns: Array<{ user_id: string; display_name: string; username: string; blocked_at: string }> };
@@ -978,6 +995,9 @@ export type Database = {
       update_profile_privacy_v3:{Args:{next_visibility:string;next_show_online_status:boolean;next_show_location:boolean;next_show_timezone:boolean;next_show_activity:boolean;next_show_media:boolean;next_show_communities:boolean;next_show_friends:boolean;next_show_follows:boolean;next_show_audio:boolean};Returns:boolean};
       get_profile_privacy_projection_v3:{Args:{target_user_id:string};Returns:Array<{profile_visibility:"everyone"|"shared_communities"|"friends";can_view_profile:boolean;show_online_status:boolean;show_location:boolean;show_timezone:boolean;show_activity:boolean;show_media:boolean;show_communities:boolean;show_friends:boolean;show_follows:boolean;show_audio:boolean;location:string|null;timezone:string|null}>};
       get_profile_domain_v1:{Args:{target_user_id:string;result_limit?:number};Returns:Json};
+      get_profile_media_v1:{Args:{target_user_id:string};Returns:Json};
+      commit_profile_media_v1:{Args:{target_kind:string;target_path:string;target_thumbnail_path:string;target_content_hash:string;expected_version:number};Returns:Json};
+      remove_profile_media_v1:{Args:{target_kind:string;expected_version:number};Returns:Json};
       update_own_profile_domain:{Args:{profile_patch:Json};Returns:Json};
       meeting_role_for_user:{Args:{target_room_id:string;target_user_id:string};Returns:"host"|"cohost"|"speaker"|"participant"|"viewer"|"guest"};
       can_view_meeting_room:{Args:{target_room_id:string};Returns:boolean};

@@ -1,5 +1,4 @@
 begin;
-
 create or replace function public.regenerate_meeting_invite(
   target_invite_id uuid,target_token_hash text,target_token_hint text,target_role text default 'participant',
   target_invited_user_id uuid default null,target_session_id uuid default null,target_expires_at timestamptz default null,target_max_uses integer default 1
@@ -15,7 +14,6 @@ begin
   return replacement;
 end;
 $$;
-
 create or replace function public.get_meeting_join_preview(target_room_id uuid,target_token_hash text default null)
 returns jsonb language plpgsql volatile security definer set search_path=public,pg_temp as $$
 declare target_room public.meeting_rooms%rowtype; target_community public.communities%rowtype; invite_result jsonb:=jsonb_build_object('valid',false); invite_valid boolean:=false; base_join boolean:=false; can_join boolean:=false; disposition text:='denied'; reason text:='policy'; member_access boolean:=false; restricted boolean:=false; host_name text; active_session_id uuid;
@@ -45,10 +43,8 @@ begin
   return jsonb_build_object('roomId',target_room.id,'sessionId',active_session_id,'communityId',target_community.id,'communityName',target_community.name,'roomTitle',target_room.title,'hostName',coalesce(host_name,'Meeting host'),'mode',target_room.mode,'status',target_room.status,'joinPolicy',target_room.join_policy,'waitingRoomEnabled',target_room.waiting_room_enabled,'capabilities',target_room.capabilities,'scheduledFor',target_room.scheduled_for,'scheduledEndAt',target_room.scheduled_end_at,'canJoin',can_join,'disposition',disposition,'reason',reason,'invite',invite_result-'inviteId');
 end;
 $$;
-
 revoke all on function public.regenerate_meeting_invite(uuid,text,text,text,uuid,uuid,timestamptz,integer) from public,anon;
 grant execute on function public.regenerate_meeting_invite(uuid,text,text,text,uuid,uuid,timestamptz,integer) to authenticated;
 comment on function public.regenerate_meeting_invite(uuid,text,text,text,uuid,uuid,timestamptz,integer) is 'Atomically revokes an existing invite and returns replacement metadata. Raw invite secrets are never accepted or stored.';
 comment on function public.get_meeting_join_preview(uuid,text) is 'Returns privacy-safe meeting, host, schedule, capability and admission data without invite hashes or raw secrets.';
-
 commit;

@@ -1,7 +1,6 @@
 -- Task 536: verified LiveKit webhooks are authoritative for meeting lifecycle and attendance.
 -- Raw webhook bodies, media payloads, provider secrets, and authorization headers are never stored.
 begin;
-
 create table if not exists public.livekit_webhook_receipts (
   event_id text primary key check (event_id ~ '^[0-9a-fA-F-]{36}$'),
   event_type text not null check (event_type in ('room_started','room_finished','participant_joined','participant_left','participant_connection_aborted','track_published','track_unpublished')),
@@ -14,7 +13,6 @@ create table if not exists public.livekit_webhook_receipts (
   last_received_at timestamptz not null default now(),
   processed_at timestamptz
 );
-
 create table if not exists public.meeting_participant_tracks (
   id uuid primary key default gen_random_uuid(),
   session_id uuid not null references public.meeting_sessions(id) on delete cascade,
@@ -29,22 +27,18 @@ create table if not exists public.meeting_participant_tracks (
   unique(session_id,provider_track_sid),
   check (unpublished_at is null or unpublished_at>=published_at)
 );
-
 create unique index if not exists meeting_attendance_session_identity_unique on public.meeting_attendance(session_id,participant_identity_hash);
 create index if not exists idx_livekit_webhook_receipts_status_time on public.livekit_webhook_receipts(status,last_received_at);
 create index if not exists idx_meeting_participant_tracks_participant_state on public.meeting_participant_tracks(participant_id,state,updated_at desc);
-
 alter table public.livekit_webhook_receipts enable row level security;
 alter table public.meeting_participant_tracks enable row level security;
 revoke all on table public.livekit_webhook_receipts from public,anon,authenticated;
 revoke all on table public.meeting_participant_tracks from public,anon,authenticated;
 grant select on table public.meeting_participant_tracks to authenticated;
-
 drop policy if exists meeting_participant_tracks_visible_select on public.meeting_participant_tracks;
 create policy meeting_participant_tracks_visible_select on public.meeting_participant_tracks for select to authenticated using (
   exists(select 1 from public.meeting_sessions session where session.id=meeting_participant_tracks.session_id and public.can_view_meeting_sensitive(session.room_id))
 );
-
 create or replace function public.process_livekit_webhook_event(
   target_event_id text,
   target_event_type text,
@@ -146,10 +140,8 @@ begin
   end;
 end;
 $$;
-
 revoke all on function public.process_livekit_webhook_event(text,text,timestamptz,uuid,uuid,text,text,text,text,text,text,text) from public,anon,authenticated;
 grant execute on function public.process_livekit_webhook_event(text,text,timestamptz,uuid,uuid,text,text,text,text,text,text,text) to service_role;
 comment on table public.livekit_webhook_receipts is 'Idempotency and retry state only. Raw webhook bodies, authorization headers, media, and secrets are prohibited.';
 comment on function public.process_livekit_webhook_event(text,text,timestamptz,uuid,uuid,text,text,text,text,text,text,text) is 'Service-role-only reconciliation of verified LiveKit lifecycle events. Client events are not attendance authority.';
-
 commit;

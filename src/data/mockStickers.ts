@@ -1,4 +1,3 @@
 import type { CommunitySticker } from "../types/stickers";
-import { selectMockFixture } from "../config/dataSourcePolicy";
-const rawMockStickers: CommunitySticker[] = [{ id: "celebrate", name: "celebrate", title: "Celebrate", tone: "orange" }, { id: "focus", name: "focus", title: "Deep Focus", tone: "teal" }, { id: "ship-it", name: "ship_it", title: "Ship It", tone: "aqua" }, { id: "great-work", name: "great_work", title: "Great Work", tone: "neutral" }, { id: "hello", name: "hello", title: "Hello", tone: "aqua" }, { id: "break-time", name: "break_time", title: "Break Time", tone: "teal" }];
-export const mockStickers = selectMockFixture<CommunitySticker[]>(rawMockStickers, []);
+const rawMockStickers: CommunitySticker[] = import.meta.env.PROD ? [] : [{ id: "celebrate", name: "celebrate", title: "Celebrate", tone: "orange" }, { id: "focus", name: "focus", title: "Deep Focus", tone: "teal" }, { id: "ship-it", name: "ship_it", title: "Ship It", tone: "aqua" }, { id: "great-work", name: "great_work", title: "Great Work", tone: "neutral" }, { id: "hello", name: "hello", title: "Hello", tone: "aqua" }, { id: "break-time", name: "break_time", title: "Break Time", tone: "teal" }];
+export const mockStickers: CommunitySticker[] = import.meta.env.PROD ? [] : rawMockStickers;

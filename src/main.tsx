@@ -7,9 +7,10 @@ import { safeModeService } from "./services/safeModeService";
 import { crashReporterService } from "./services/crashReporterService";
 import { localDataMigrationService } from "./services/localDataMigrationService";
 import { productionRuntimeConfigService } from "./services/productionRuntimeConfigService";
+import { settingsService } from "./services/settingsService";
+import { profileMediaRealtimeService } from "./services/profileMedia/profileMediaRealtimeService";
 import { ProductionConfigurationError } from "./components/ProductionConfigurationError";
 import "./styles.css";
-import "./components/SettingsModal.css";
 import "./screenShareQuality.css";
 
 function markRuntime(): void {
@@ -42,6 +43,7 @@ function scheduleOptionalRendererServices(safeModeActive: boolean): void {
   const start = () => {
     if (safeModeActive) return;
     crashReporterService.initialize();
+    void profileMediaRealtimeService.start();
     void import("./services/sleepWakeResumeService").then((sleepWakeModule) => {
       sleepWakeModule.sleepWakeResumeService.start();
     }).catch(() => {
@@ -73,6 +75,8 @@ function bootstrapRenderer(): void {
   }
   const migration = localDataMigrationService.migrateOnStartup();
   if (!migration.ok) safeModeService.enableSafeMode("local_data_migration_failed");
+  // Warm settings so corrupted local JSON can flip Safe Mode before optional services start.
+  settingsService.getSettings();
   const safeMode = safeModeService.getStartupState();
 
   if (!safeMode.active) {

@@ -110,7 +110,6 @@ export function AppIcon({
   name,
   size = "md",
   title,
-  focusable = false,
   ...svgProps
 }: AppIconProps) {
   const pixelSize = typeof size === "number" ? size : ICON_SIZES[size];
@@ -119,12 +118,12 @@ export function AppIcon({
   return (
     <svg
       {...svgProps}
-      aria-hidden={ariaLabel ? undefined : (svgProps["aria-hidden"] ?? true)}
+      aria-hidden={ariaLabel ? undefined : true}
       aria-label={ariaLabel}
       data-icon={name}
       data-icon-set="iconix"
       fill="none"
-      focusable={focusable}
+      focusable="false"
       height={pixelSize}
       role={ariaLabel ? (svgProps.role ?? "img") : svgProps.role}
       viewBox="0 0 24 24"

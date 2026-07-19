@@ -4,10 +4,8 @@
 alter table public.communities
   add column if not exists visibility text not null default 'private',
   add column if not exists public_read_enabled boolean not null default false;
-
 alter table public.channels
   add column if not exists public_read_enabled boolean not null default true;
-
 do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'communities_visibility_check') then
@@ -15,13 +13,10 @@ begin
       add constraint communities_visibility_check check (visibility in ('public', 'private'));
   end if;
 end $$;
-
 create index if not exists idx_communities_visibility_public_read
   on public.communities(visibility, public_read_enabled);
-
 create index if not exists idx_channels_public_read
   on public.channels(community_id, is_private, public_read_enabled);
-
 create or replace function public.has_community_role_level(target_community_id uuid, minimum_level integer)
 returns boolean
 language sql
@@ -38,7 +33,6 @@ as $$
       and role.level >= minimum_level
   );
 $$;
-
 create or replace function public.can_read_public_community(target_community_id uuid)
 returns boolean
 language sql
@@ -53,7 +47,6 @@ as $$
       and community.visibility = 'public'
   );
 $$;
-
 create or replace function public.can_read_public_channel(target_channel_id uuid)
 returns boolean
 language sql
@@ -72,7 +65,6 @@ as $$
       and channel.public_read_enabled = true
   );
 $$;
-
 grant execute on function public.has_community_role_level(uuid, integer) to anon, authenticated;
 grant execute on function public.can_read_public_community(uuid) to anon, authenticated;
 grant execute on function public.can_read_public_channel(uuid) to anon, authenticated;
@@ -80,7 +72,6 @@ grant select on public.communities to anon, authenticated;
 grant select on public.channels to anon, authenticated;
 grant select on public.messages to anon, authenticated;
 grant select on public.attachments to anon, authenticated;
-
 drop policy if exists "communities_select_owned_or_member" on public.communities;
 create policy "communities_select_member_or_public"
 on public.communities
@@ -91,7 +82,6 @@ using (
   or owner_id = auth.uid()
   or public.is_community_member(id)
 );
-
 drop policy if exists "channels_select_visible_to_member" on public.channels;
 create policy "channels_select_visible_to_member_or_public"
 on public.channels
@@ -108,7 +98,6 @@ using (
     )
   )
 );
-
 create or replace function public.can_view_channel(target_channel_id uuid)
 returns boolean
 language sql
@@ -133,9 +122,7 @@ as $$
       )
   );
 $$;
-
 grant execute on function public.can_view_channel(uuid) to anon, authenticated;
-
 create or replace function public.can_send_message_to_channel(target_channel_id uuid)
 returns boolean
 language sql
@@ -152,16 +139,13 @@ as $$
       and public.can_view_channel(channel.id)
   );
 $$;
-
 grant execute on function public.can_send_message_to_channel(uuid) to authenticated;
-
 drop policy if exists "messages_select_visible_channel" on public.messages;
 create policy "messages_select_visible_channel_or_public"
 on public.messages
 for select
 to anon, authenticated
 using (public.can_view_channel(channel_id));
-
 drop policy if exists "community_members_insert_owner_or_self_owner" on public.community_members;
 create policy "community_members_insert_owner_or_public_self_join"
 on public.community_members
@@ -190,7 +174,6 @@ with check (
     )
   )
 );
-
 drop policy if exists "community_members_delete_owner" on public.community_members;
 create policy "community_members_delete_owner_or_self_leave"
 on public.community_members
@@ -203,7 +186,6 @@ using (
     and not public.is_community_owner(community_id)
   )
 );
-
 -- Attachments already follow public.can_view_message(), which calls public.can_view_channel().
 -- Private channel attachments remain hidden from visitors because public.can_read_public_channel()
--- requires is_private = false and channel public_read_enabled = true.
+-- requires is_private = false and channel public_read_enabled = true.;

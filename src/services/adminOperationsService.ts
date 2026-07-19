@@ -1,4 +1,5 @@
 import { mockCommunities } from "../data/mockCommunities";
+import { getApiCompatibilityRequestHeaders } from "../config/apiCompatibility";
 import { appConfig } from "../config/appConfig";
 import { attachmentQuarantineService } from "./attachmentQuarantineService";
 import { abuseEventService } from "./abuseEventService";
@@ -10,9 +11,12 @@ import { networkStatusService } from "./networkStatusService";
 import { reportService } from "./reportService";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 import { voiceDiagnosticsRegistry } from "./voiceDiagnosticsRegistry";
-import type { AdminOperationsListItem, AdminOperationsListSection, AdminOperationsPage, AdminOperationsResult, AdminSystemStatusV2 } from "../types/adminOperations";
+import type { AdminInfrastructureStatus, AdminOperationsListItem, AdminOperationsListSection, AdminOperationsPage, AdminOperationsResult, AdminSystemStatusV2 } from "../types/adminOperations";
 
-export type AdminOperationsAccess = Readonly<{ allowed: boolean; source: "development" | "app_admin" | "none" }>;
+export type AdminOperationsAccess = Readonly<{
+  allowed: boolean;
+  source: "development" | "app_admin" | "root_owner" | "platform_role" | "none";
+}>;
 export type TrustSafetySummary = Readonly<{
   openReports: number;
   suspiciousUploads: number;
@@ -68,24 +72,56 @@ function getLocalTrustSafetySummary(): TrustSafetySummary {
   };
 }
 
+function parseInfrastructureStatus(value: unknown): AdminInfrastructureStatus | null {
+  const row = asRecord(value);
+  if (!row || typeof row.checkedAt !== "string") return null;
+  const deployment = row.deployment;
+  const overall = row.overall;
+  const database = row.database;
+  const livekit = row.livekit;
+  const turn = row.turn;
+  const redis = row.redis;
+  if (!( ["self_hosted", "cloud", "not_configured"] as unknown[]).includes(deployment)) return null;
+  if (!( ["operational", "degraded", "not_configured"] as unknown[]).includes(overall)) return null;
+  if (!( ["operational", "unavailable"] as unknown[]).includes(database)) return null;
+  if (!( ["operational", "unavailable", "not_configured"] as unknown[]).includes(livekit)) return null;
+  if (!( ["configured", "not_configured"] as unknown[]).includes(turn) || !( ["configured", "not_configured"] as unknown[]).includes(redis)) return null;
+  return { overall, deployment, database, livekit, turn, redis, livekitLatencyMs: typeof row.livekitLatencyMs === "number" && Number.isFinite(row.livekitLatencyMs) ? Math.max(0, Math.round(row.livekitLatencyMs)) : null, checkedAt: row.checkedAt, source: "admin_health_edge" } as AdminInfrastructureStatus;
+}
+
 export const adminOperationsService = {
-  async getAccess(): Promise<AdminOperationsAccess> { if (import.meta.env.DEV) return { allowed: true, source: "development" }; const client = getSupabaseClient(); if (!client) return { allowed: false, source: "none" }; const { data, error } = await client.rpc("is_app_admin"); return !error && data ? { allowed: true, source: "app_admin" } : { allowed: false, source: "none" }; },
+  async getAccess(): Promise<AdminOperationsAccess> { if (import.meta.env.DEV && dataSourceService.getStatus().isMock) return { allowed: true, source: "development" }; const client = getSupabaseClient(); if (!client) return { allowed: false, source: "none" }; const { data, error } = await client.rpc("is_app_admin"); return !error && data ? { allowed: true, source: "app_admin" } : { allowed: false, source: "none" }; },
   getLocalTrustSafetySummary,
   async getSystemStatusV2(access: AdminOperationsAccess): Promise<AdminOperationsResult<AdminSystemStatusV2>> {
     if (!access.allowed || access.source === "none") return { ok: false, message: "App admin access is required." };
-    if (access.source === "development" || dataSourceService.getStatus().isMock) return { ok: true, data: { database: "operational", users: new Set(mockCommunities.flatMap((community) => community.members.map((member) => member.userId))).size, communities: mockCommunities.length, openReports: reportService.getSummary().open, abuseEvents24h: abuseEventService.getAdminSummary().total, adminAuditEvents24h: 0, checkedAt: new Date().toISOString(), source: "local" } };
+    if (dataSourceService.getStatus().isMock) return { ok: true, data: { database: "operational", users: new Set(mockCommunities.flatMap((community) => community.members.map((member) => member.userId))).size, communities: mockCommunities.length, openReports: reportService.getSummary().open, abuseEvents24h: abuseEventService.getAdminSummary().total, adminAuditEvents24h: 0, checkedAt: new Date().toISOString(), source: "local" } };
     const client = getSupabaseClient(); if (!client) return { ok: false, message: "Admin system status is unavailable." }; const { data, error } = await client.rpc("get_admin_system_status_v2"); const row = asRecord(data); if (error || !row) return { ok: false, message: "Picom could not load the restricted system status." };
     return { ok: true, data: { database: "operational", users: asCount(row.users), communities: asCount(row.communities), openReports: asCount(row.open_reports), abuseEvents24h: asCount(row.abuse_events_24h), adminAuditEvents24h: asCount(row.admin_audit_events_24h), checkedAt: typeof row.checked_at === "string" ? row.checked_at : new Date().toISOString(), source: "app_admin_rpc" } };
   },
+  async getInfrastructureStatus(access: AdminOperationsAccess): Promise<AdminOperationsResult<AdminInfrastructureStatus>> {
+    if (!access.allowed || access.source === "none") return { ok: false, message: "App admin access is required." };
+    if (dataSourceService.getStatus().isMock) {
+      const configured = appConfig.liveKit.enabled && Boolean(appConfig.liveKit.url);
+      let cloud = false;
+      try { cloud = configured && /(^|\.)livekit\.cloud$/i.test(new URL(appConfig.liveKit.url).hostname); } catch { cloud = false; }
+      return { ok: true, data: { overall: configured ? "degraded" : "not_configured", deployment: configured ? cloud ? "cloud" : "self_hosted" : "not_configured", database: "development", livekit: configured ? "configured_unverified" : "not_configured", turn: "not_configured", redis: "not_configured", livekitLatencyMs: null, checkedAt: new Date().toISOString(), source: "local" } };
+    }
+    const client = getSupabaseClient();
+    if (!client) return { ok: false, message: "Infrastructure health is unavailable." };
+    const { data, error } = await client.functions.invoke("admin-health", { headers: getApiCompatibilityRequestHeaders(), body: {} });
+    if (error) return { ok: false, message: "Picom could not load the protected infrastructure health check." };
+    const parsed = parseInfrastructureStatus(data);
+    return parsed ? { ok: true, data: parsed } : { ok: false, message: "Infrastructure health returned an invalid response." };
+  },
   async listSection(section: AdminOperationsListSection, access: AdminOperationsAccess, cursor: string | null = null, limit = 25): Promise<AdminOperationsResult<AdminOperationsPage>> {
     if (!access.allowed || access.source === "none") return { ok: false, message: "App admin access is required." }; const safeLimit = Math.min(Math.max(Math.round(limit), 1), 50);
-    if (access.source === "development" || dataSourceService.getStatus().isMock) { const offset = Math.max(0, Number.parseInt(cursor ?? "0", 10) || 0); const source = localAdminItems(section); const items = source.slice(offset, offset + safeLimit); const nextOffset = offset + items.length; return { ok: true, data: { items, nextCursor: nextOffset < source.length ? String(nextOffset) : null, hasMore: nextOffset < source.length, limit: safeLimit } }; }
+    if (dataSourceService.getStatus().isMock) { const offset = Math.max(0, Number.parseInt(cursor ?? "0", 10) || 0); const source = localAdminItems(section); const items = source.slice(offset, offset + safeLimit); const nextOffset = offset + items.length; return { ok: true, data: { items, nextCursor: nextOffset < source.length ? String(nextOffset) : null, hasMore: nextOffset < source.length, limit: safeLimit } }; }
     const client = getSupabaseClient(); if (!client) return { ok: false, message: "Admin list is unavailable." }; const decoded = decodeRemoteCursor(cursor); const { data, error } = await client.rpc("list_admin_operations_v2", { section_name: section, page_cursor_created_at: decoded.createdAt, page_cursor_id: decoded.id, page_limit: safeLimit }); if (error) return { ok: false, message: "Picom could not load this restricted admin list." }; const page = parseAdminPage(section, data, safeLimit); return page ? { ok: true, data: page } : { ok: false, message: "Admin list returned an invalid response." };
   },
   async recordAction(access: AdminOperationsAccess, actionType: string, targetType = "system", targetId?: string): Promise<boolean> { if (!access.allowed || access.source === "none") return false; if (access.source === "development" || dataSourceService.getStatus().isMock) { loggingService.logInfo("Admin operations action", { actionType: actionType.slice(0, 80), targetType: targetType.slice(0, 40) }, "admin-audit"); return true; } const client = getSupabaseClient(); if (!client) return false; const { error } = await client.rpc("append_admin_operations_audit", { admin_action_type: actionType.slice(0, 80), admin_target_type: targetType.slice(0, 40), admin_target_id: targetId?.slice(0, 160) ?? null }); return !error; },
   async getTrustSafetySummary(access: AdminOperationsAccess): Promise<{ ok: true; data: TrustSafetySummary } | { ok: false; message: string }> {
     if (!access.allowed || (access.source !== "development" && access.source !== "app_admin")) return { ok: false, message: "App admin or development access is required." };
-    if (access.source === "development" || dataSourceService.getStatus().isMock) return { ok: true, data: getLocalTrustSafetySummary() };
+    if (dataSourceService.getStatus().isMock) return { ok: true, data: getLocalTrustSafetySummary() };
     const client = getSupabaseClient(); if (!client) return { ok: false, message: "Trust & Safety summary is unavailable." };
     const { data, error } = await client.rpc("get_trust_safety_summary");
     if (error || !data || typeof data !== "object" || Array.isArray(data)) return { ok: false, message: "Picom could not load the restricted safety summary." };

@@ -18,6 +18,16 @@ export function matchesPicomDirectLiveKitRoomName(roomName: string, conversation
   return roomName === createPicomDirectLiveKitRoomName(conversationId);
 }
 
+export const liveKitDirectCallRoomPrefix = "direct-call";
+
+export function createPicomDirectCallLiveKitRoomName(callId: string): string {
+  return `${liveKitDirectCallRoomPrefix}:${callId}`;
+}
+
+export function matchesPicomDirectCallLiveKitRoomName(roomName: string, callId: string): boolean {
+  return roomName === createPicomDirectCallLiveKitRoomName(callId);
+}
+
 export function createPicomMeetingLiveKitRoomName(roomId: string, sessionId: string): string {
   return `meeting:${roomId}:session:${sessionId}`;
 }

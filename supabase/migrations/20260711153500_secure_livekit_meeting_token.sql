@@ -1,17 +1,14 @@
 -- Task 535: server-authoritative, least-privilege LiveKit meeting token authorization.
 begin;
-
 create or replace function public.meeting_livekit_room_name(target_room_id uuid,target_session_id uuid)
 returns text language sql immutable strict set search_path=public,pg_temp as $$
   select 'meeting:'||target_room_id::text||':session:'||target_session_id::text;
 $$;
-
 create or replace function public.meeting_capability_enabled(target_capabilities jsonb,target_key text,default_value boolean)
 returns boolean language sql immutable set search_path=public,pg_temp as $$
   select case when jsonb_typeof(coalesce(target_capabilities,'{}'::jsonb)->target_key)='boolean'
     then (target_capabilities->>target_key)::boolean else default_value end;
 $$;
-
 create or replace function public.authorize_livekit_meeting_token(
   target_room_id uuid,
   target_session_id uuid,
@@ -126,10 +123,8 @@ begin
   return query select room_record.id,session_record.id,room_record.community_id,canonical_room_name,auth.uid()::text,coalesce(nullif(profile_record.display_name,''),profile_record.username,'Picom user'),resolved_role,'authorized',null::uuid,true,request_audio and allowed_audio,request_video and allowed_video,request_screen and allowed_screen,request_data and allowed_data;
 end;
 $$;
-
 revoke all on function public.meeting_livekit_room_name(uuid,uuid),public.meeting_capability_enabled(jsonb,text,boolean) from public,anon,authenticated;
 revoke all on function public.authorize_livekit_meeting_token(uuid,uuid,boolean,boolean,boolean,boolean) from public,anon;
 grant execute on function public.authorize_livekit_meeting_token(uuid,uuid,boolean,boolean,boolean,boolean) to authenticated;
 comment on function public.authorize_livekit_meeting_token(uuid,uuid,boolean,boolean,boolean,boolean) is 'Server-authoritative meeting token projection. Waiting users receive no publish grant; bans, blocks, capacity, role, room capabilities, and requested sources fail closed.';
-
 commit;

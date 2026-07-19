@@ -352,7 +352,7 @@
 }
 
 .radio-live-card[data-tone="2"] .radio-live-cover {
-  background: linear-gradient(145deg, #5b6cff, #8b5cf6);
+  background: linear-gradient(145deg, var(--picom-teal), var(--picom-aqua));
 }
 
 .radio-live-card[data-tone="3"] .radio-live-cover {

@@ -1,7 +1,6 @@
 -- Task 174: safe bot credential lifecycle and backend-only rate-limit foundation.
 
 create extension if not exists pgcrypto with schema extensions;
-
 create or replace function public.can_manage_community_bots(target_community_id uuid)
 returns boolean
 language sql
@@ -18,7 +17,6 @@ as $$
 $$;
 revoke all on function public.can_manage_community_bots(uuid) from public, anon;
 grant execute on function public.can_manage_community_bots(uuid) to authenticated;
-
 create table if not exists public.bot_action_rate_limits (
   credential_id uuid not null references public.bot_credentials(id) on delete cascade,
   action_key text not null check (action_key in ('api_request','message_send','reaction_write','event_delivery','command_invoke')),
@@ -31,7 +29,6 @@ create table if not exists public.bot_action_rate_limits (
 alter table public.bot_action_rate_limits enable row level security;
 revoke all on public.bot_action_rate_limits from anon, authenticated;
 comment on table public.bot_action_rate_limits is 'Backend-only bot counters; never store tokens, authorization headers, commands, message content, IP addresses, or private metadata.';
-
 create or replace function public.issue_community_bot_credential(target_community_id uuid, target_bot_id uuid)
 returns table(raw_token text, token_prefix text, created_at timestamptz)
 language plpgsql
@@ -67,7 +64,6 @@ end;
 $$;
 revoke all on function public.issue_community_bot_credential(uuid,uuid) from public, anon;
 grant execute on function public.issue_community_bot_credential(uuid,uuid) to authenticated;
-
 create or replace function public.revoke_community_bot_credential(target_community_id uuid, target_bot_id uuid)
 returns boolean
 language plpgsql
@@ -87,7 +83,6 @@ end;
 $$;
 revoke all on function public.revoke_community_bot_credential(uuid,uuid) from public, anon;
 grant execute on function public.revoke_community_bot_credential(uuid,uuid) to authenticated;
-
 create or replace function public.get_community_bot_credential_status(target_community_id uuid, target_bot_id uuid)
 returns table(bot_id uuid, token_prefix text, created_at timestamptz, revoked_at timestamptz, rate_limit_per_minute integer)
 language plpgsql
@@ -102,7 +97,6 @@ end;
 $$;
 revoke all on function public.get_community_bot_credential_status(uuid,uuid) from public, anon;
 grant execute on function public.get_community_bot_credential_status(uuid,uuid) to authenticated;
-
 create or replace function public.consume_bot_action_rate_limit(target_credential_id uuid, target_action text, target_limit integer default 60, target_window_seconds integer default 60)
 returns table(is_allowed boolean, retry_after_seconds integer)
 language plpgsql
@@ -124,6 +118,5 @@ end;
 $$;
 revoke all on function public.consume_bot_action_rate_limit(uuid,text,integer,integer) from public, anon, authenticated;
 grant execute on function public.consume_bot_action_rate_limit(uuid,text,integer,integer) to service_role;
-
 comment on function public.issue_community_bot_credential(uuid,uuid) is 'Returns a high-entropy raw token once to the authorized bot owner/app admin; only SHA-256 hash and non-secret prefix are stored.';
 comment on function public.consume_bot_action_rate_limit(uuid,text,integer,integer) is 'Backend-only atomic bot rate limit. Public bot API remains disabled.';

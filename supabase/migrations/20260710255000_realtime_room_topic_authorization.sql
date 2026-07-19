@@ -62,9 +62,7 @@ exception
     return false;
 end;
 $$;
-
 revoke all on function public.can_access_picom_realtime_topic(text, text) from public, anon;
 grant execute on function public.can_access_picom_realtime_topic(text, text) to authenticated;
-
 comment on function public.can_access_picom_realtime_topic(text, text) is
   'Authorizes private Picom typing, room, and presence topics through community membership and channel visibility.';

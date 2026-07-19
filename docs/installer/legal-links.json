@@ -1,0 +1,17 @@
+{
+  "website": {
+    "url": "https://picom.gg",
+    "status": "live",
+    "note": "Official Picom marketing site."
+  },
+  "terms": {
+    "url": "https://picom.gg/terms",
+    "status": "live",
+    "note": "Terms of Service (user agreement)."
+  },
+  "security": {
+    "url": "https://picom.gg/security",
+    "status": "live",
+    "note": "Security & privacy overview. Privacy Policy: https://picom.gg/privacy"
+  }
+}

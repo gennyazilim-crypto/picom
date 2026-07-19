@@ -1,6 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
 
 select plan(21);
 
@@ -65,9 +66,9 @@ select results_eq($$ select count(*)::bigint from public.direct_conversation_par
 select results_eq($$ select count(*)::bigint from public.direct_messages $$, array[0::bigint], 'non-member cannot read direct messages');
 select results_eq($$ select count(*)::bigint from public.direct_message_attachments $$, array[0::bigint], 'non-member cannot read direct attachments');
 select results_eq($$ select count(*)::bigint from public.direct_message_reactions $$, array[0::bigint], 'non-member cannot read direct reactions');
-select throws_ok($$ insert into public.direct_messages (conversation_id, author_id, body) values ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'blocked by RLS') $$, 'non-member cannot insert direct messages');
-select throws_ok($$ insert into public.direct_message_reactions (message_id, user_id, emoji) values ('40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'blocked') $$, 'non-member cannot insert direct reactions');
-select throws_ok($$ insert into public.direct_message_attachments (message_id, url) values ('40000000-0000-0000-0000-000000000001', 'dm-fixtures/blocked.png') $$, 'non-member cannot insert direct attachments');
+select throws_like($$ insert into public.direct_messages (conversation_id, author_id, body) values ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'blocked by RLS') $$, '%row-level security%', 'non-member cannot insert direct messages');
+select throws_like($$ insert into public.direct_message_reactions (message_id, user_id, emoji) values ('40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'blocked') $$, '%row-level security%', 'non-member cannot insert direct reactions');
+select throws_like($$ insert into public.direct_message_attachments (message_id, url) values ('40000000-0000-0000-0000-000000000001', 'dm-fixtures/blocked.png') $$, '%row-level security%', 'non-member cannot insert direct attachments');
 
 reset role;
 update public.direct_conversation_participants
@@ -76,7 +77,7 @@ where conversation_id = '20000000-0000-0000-0000-000000000001'
   and user_id = '10000000-0000-0000-0000-000000000002';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
-select throws_ok($$ insert into public.direct_messages (conversation_id, author_id, body) values ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', 'blocked participant') $$, 'blocked participant cannot send direct messages');
+select throws_like($$ insert into public.direct_messages (conversation_id, author_id, body) values ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', 'blocked participant') $$, '%row-level security%', 'blocked participant cannot send direct messages');
 
 select * from finish();
 rollback;

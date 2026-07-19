@@ -1,5 +1,3 @@
-begin;
-
 create or replace function public.can_send_message_to_channel(target_channel_id uuid)
 returns boolean
 language sql
@@ -203,6 +201,4 @@ grant execute on function public.send_text_message_idempotent(uuid, uuid, text, 
 comment on function public.create_managed_text_channel(uuid, uuid, text, text, text, boolean, boolean) is
   'Creates a Text-community channel through the effective manageChannels permission boundary.';
 comment on function public.send_text_message_idempotent(uuid, uuid, text, text, uuid, uuid[]) is
-  'Authoritative Text-channel send boundary. Returns the prior success for an identical client message ID and atomically links validated pending attachments.';
-
-commit;
+  'Authoritative Text-channel send boundary. Returns the prior success for an identical client message ID and atomically links validated pending attachments.';;

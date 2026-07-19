@@ -1,5 +1,4 @@
 begin;
-
 create table if not exists public.app_trust_roles (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   role text not null default 'verification_reviewer' check (role in ('verification_reviewer', 'trust', 'safety')),
@@ -7,7 +6,6 @@ create table if not exists public.app_trust_roles (
   created_at timestamptz not null default now(),
   revoked_at timestamptz
 );
-
 create table if not exists public.profile_verifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -20,7 +18,6 @@ create table if not exists public.profile_verifications (
   revoked_at timestamptz,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.community_verifications (
   id uuid primary key default gen_random_uuid(),
   community_id uuid not null references public.communities(id) on delete cascade,
@@ -33,7 +30,6 @@ create table if not exists public.community_verifications (
   revoked_at timestamptz,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.verification_audit_logs (
   id uuid primary key default gen_random_uuid(),
   actor_id uuid references public.profiles(id) on delete set null,
@@ -43,7 +39,6 @@ create table if not exists public.verification_audit_logs (
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
-
 create unique index if not exists idx_profile_verifications_active
   on public.profile_verifications(user_id, type) where status in ('pending', 'approved');
 create index if not exists idx_profile_verifications_review_queue
@@ -54,11 +49,9 @@ create index if not exists idx_community_verifications_review_queue
   on public.community_verifications(status, requested_at desc);
 create index if not exists idx_verification_audit_target
   on public.verification_audit_logs(target_type, target_id, created_at desc);
-
 alter table public.verification_badges drop constraint if exists verification_badges_badge_kind_check;
 alter table public.verification_badges add constraint verification_badges_badge_kind_check
   check (badge_kind in ('profile_reviewed', 'community_official', 'role_managed', 'verified_user', 'official_community', 'picom_staff', 'verified_bot', 'creator_verified'));
-
 create or replace function public.can_review_verifications()
 returns boolean
 language sql
@@ -74,7 +67,6 @@ as $$
     )
   );
 $$;
-
 create or replace function public.can_request_community_verification(target_community_id uuid)
 returns boolean
 language sql
@@ -94,14 +86,11 @@ as $$
     )
   );
 $$;
-
 alter table public.app_trust_roles enable row level security;
 alter table public.profile_verifications enable row level security;
 alter table public.community_verifications enable row level security;
 alter table public.verification_audit_logs enable row level security;
-
 revoke all on public.app_trust_roles, public.profile_verifications, public.community_verifications, public.verification_audit_logs from public, anon, authenticated;
-
 grant select (id, user_id, type, status, requested_at, reviewed_at, revoked_at, created_at)
   on public.profile_verifications to authenticated;
 grant insert (user_id, type, reason) on public.profile_verifications to authenticated;
@@ -109,7 +98,6 @@ grant select (id, community_id, type, status, requested_at, reviewed_at, revoked
   on public.community_verifications to authenticated;
 grant insert (community_id, type, reason) on public.community_verifications to authenticated;
 grant select on public.verification_audit_logs to authenticated;
-
 create policy "profile_verifications_safe_select" on public.profile_verifications
 for select to authenticated
 using (
@@ -117,7 +105,6 @@ using (
   or user_id = auth.uid()
   or public.can_review_verifications()
 );
-
 create policy "profile_verifications_self_request" on public.profile_verifications
 for insert to authenticated
 with check (
@@ -126,7 +113,6 @@ with check (
   and status = 'pending'
   and reviewed_by is null and reviewed_at is null and revoked_at is null
 );
-
 create policy "community_verifications_safe_select" on public.community_verifications
 for select to authenticated
 using (
@@ -134,7 +120,6 @@ using (
   or public.can_request_community_verification(community_id)
   or public.can_review_verifications()
 );
-
 create policy "community_verifications_owner_admin_request" on public.community_verifications
 for insert to authenticated
 with check (
@@ -143,10 +128,8 @@ with check (
   and status = 'pending'
   and reviewed_by is null and reviewed_at is null and revoked_at is null
 );
-
 create policy "verification_audit_reviewer_select" on public.verification_audit_logs
 for select to authenticated using (public.can_review_verifications());
-
 create or replace function public.record_verification_request_audit()
 returns trigger
 language plpgsql
@@ -165,14 +148,12 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists profile_verification_request_audit on public.profile_verifications;
 create trigger profile_verification_request_audit after insert on public.profile_verifications
 for each row execute function public.record_verification_request_audit();
 drop trigger if exists community_verification_request_audit on public.community_verifications;
 create trigger community_verification_request_audit after insert on public.community_verifications
 for each row execute function public.record_verification_request_audit();
-
 create or replace function public.verification_badge_label(verification_type text)
 returns text language sql immutable set search_path = public
 as $$
@@ -185,7 +166,6 @@ as $$
     else 'Picom verification'
   end;
 $$;
-
 create or replace function public.review_profile_verification(target_request_id uuid, next_status text, review_reason text)
 returns setof public.profile_verifications
 language plpgsql
@@ -214,7 +194,6 @@ begin
   return next request_record;
 end;
 $$;
-
 create or replace function public.review_community_verification(target_request_id uuid, next_status text, review_reason text)
 returns setof public.community_verifications
 language plpgsql
@@ -243,13 +222,10 @@ begin
   return next request_record;
 end;
 $$;
-
 revoke all on function public.can_review_verifications(), public.can_request_community_verification(uuid), public.record_verification_request_audit(), public.verification_badge_label(text), public.review_profile_verification(uuid, text, text), public.review_community_verification(uuid, text, text) from public, anon;
 grant execute on function public.can_review_verifications(), public.can_request_community_verification(uuid), public.review_profile_verification(uuid, text, text), public.review_community_verification(uuid, text, text) to authenticated;
-
 comment on table public.profile_verifications is 'Verification workflow metadata only. Never store identity documents, secrets, or payment data in this table.';
 comment on table public.community_verifications is 'Community verification workflow. Approval is controlled by Picom app-admin or trust reviewers.';
 comment on table public.verification_audit_logs is 'Append-only verification decision trail; renderer clients have no insert, update, or delete grants.';
 comment on table public.app_trust_roles is 'Operator-managed trust role assignments. Renderer clients cannot grant or revoke reviewer access.';
-
 commit;

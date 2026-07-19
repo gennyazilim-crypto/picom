@@ -1,5 +1,7 @@
 -- Hosted-ready profile access matrix. Transaction-local fixtures only.
 begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
 
 select plan(26);
 
@@ -15,7 +17,14 @@ insert into public.profiles(id,username,display_name,status,status_text,bio,acce
 ('a1000000-0000-4000-8000-000000000002','profile-shared','Profile Shared','online','Shared member',null,'#10C2BB'),
 ('a1000000-0000-4000-8000-000000000003','profile-friend','Profile Friend','online','Friend viewer',null,'#FF772E'),
 ('a1000000-0000-4000-8000-000000000004','profile-visitor','Profile Visitor','online','Visitor viewer',null,'#C24D0F'),
-('a1000000-0000-4000-8000-000000000005','profile-blocked','Profile Blocked','online','Blocked viewer',null,'#752C05');
+('a1000000-0000-4000-8000-000000000005','profile-blocked','Profile Blocked','online','Blocked viewer',null,'#752C05')
+on conflict (id) do update set
+  username = excluded.username,
+  display_name = excluded.display_name,
+  status = excluded.status,
+  status_text = excluded.status_text,
+  bio = excluded.bio,
+  accent_color = excluded.accent_color;
 
 insert into public.profile_details(user_id,preferred_language,tags) values ('a1000000-0000-4000-8000-000000000001','English',array['Community','Audio']);
 insert into public.profile_privacy_settings(user_id,profile_visibility,show_online_status,show_location,show_timezone,show_activity,show_media,show_communities,show_friends,show_follows,show_audio,location,timezone)
