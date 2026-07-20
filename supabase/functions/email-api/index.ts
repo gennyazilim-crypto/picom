@@ -179,7 +179,7 @@ async function createSupportSubmission(request: Request, body: Json, user: AuthU
       priority: 65,
     }),
     emailQueue.enqueue({
-      to: "info@picom.gg",
+      to: "support@picom.gg",
       templateId: "support_internal_contact",
       category: "support_updates",
       locale: "en",
