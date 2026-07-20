@@ -1,0 +1,28 @@
+# Windows SIGNED release configuration — Azure Trusted Signing.
+#
+# This extends the base (unsigned) electron-builder.yml and is used ONLY by the protected
+# Windows signing workflow (.github/workflows/windows-signed-release.yml). Local/dev builds keep
+# using electron-builder.yml directly and stay intentionally unsigned.
+#
+# Nothing secret is committed here. All values are injected from the protected CI environment:
+#   - Non-secret identifiers (below) come from the Trusted Signing account you create in Azure:
+#       WINDOWS_PUBLISHER_SUBJECT   -> the validated publisher/subject name on your certificate profile
+#       AZURE_CODE_SIGNING_ENDPOINT -> region endpoint, e.g. https://weu.codesigning.azure.net/
+#       AZURE_CODE_SIGNING_ACCOUNT  -> your Trusted Signing account name
+#       AZURE_CODE_SIGNING_PROFILE  -> your certificate profile name
+#   - Auth to Azure is via Microsoft Entra ID EnvironmentCredential, read automatically by the
+#     signing tool from these CI SECRETS (never referenced here):
+#       AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET
+#
+# electron-builder 26 signs with Azure Trusted Signing natively when `azureSignOptions` is present.
+# If any required value is missing the signing tool errors, and the workflow additionally verifies
+# the produced installer is actually signed with the expected publisher — so a failed sign never
+# silently ships an unsigned artifact.
+extends: ./electron-builder.yml
+
+win:
+  azureSignOptions:
+    publisherName: ${env.WINDOWS_PUBLISHER_SUBJECT}
+    endpoint: ${env.AZURE_CODE_SIGNING_ENDPOINT}
+    codeSigningAccountName: ${env.AZURE_CODE_SIGNING_ACCOUNT}
+    certificateProfileName: ${env.AZURE_CODE_SIGNING_PROFILE}
