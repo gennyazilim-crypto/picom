@@ -25,6 +25,7 @@ import type { OnboardingCompletion } from "./types/onboarding";
 import { AppIcon } from "./components/AppIcon";
 import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
+import { SoftEmailVerificationBanner } from "./components/SoftEmailVerificationBanner";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
 import { isV1ChannelTypeEnabled, isV1CommunityKindEnabled, isV1DeepLinkTypeEnabled, isV1FeatureEnabled, isV1GlobalNavigationEnabled, isV1SearchCategoryEnabled } from "./config/v1ReleaseScope";
@@ -3708,6 +3709,12 @@ export function App() {
             onRestartNormally={restartNormallyFromSafeMode}
           />
           <MaintenanceStatusBanner status={maintenanceStatus} onRetry={refreshMaintenanceStatus} />
+          {authSession ? (
+            <SoftEmailVerificationBanner
+              userId={authSession.user?.id}
+              pushToast={pushToast}
+            />
+          ) : null}
           <AuthenticatedAppShell
             activeRoute={activeGlobalRoute}
             activeUtility={activeGlobalUtility}
