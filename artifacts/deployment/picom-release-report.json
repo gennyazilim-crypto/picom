@@ -1,0 +1,47 @@
+{
+  "version": "0.1.1-beta.9",
+  "commit": "f655ae868aa1db103df5234a5e1e0e0558d214e8",
+  "builtAt": null,
+  "deployedAt": "2026-07-26T20:39:25Z",
+  "notes": "Reused pre-built Windows installer; live HTML patched (marketing Astro source not in monorepo).",
+  "website": {
+    "build": "NOT_APPLICABLE",
+    "deployment": "PASS",
+    "url": "https://picom.gg",
+    "htmlFilesPatched": 661,
+    "method": "in-place_href_and_version_string_replace"
+  },
+  "desktop": {
+    "build": "PARTIAL",
+    "installer": "Picom-0.1.1-beta.9-beta-Windows-x64.exe",
+    "sizeBytes": 123315761,
+    "signed": false,
+    "sha256": "6c7cfcc1fc38f8f208a666bb4dac4a78d8bf8ef13a50120f7cca9c90d07362ff"
+  },
+  "download": {
+    "url": "https://picom.gg/downloads/windows/latest/Picom-0.1.1-beta.9-beta-Windows-x64.exe",
+    "directUrl": "https://picom.gg/downloads/windows/Picom-0.1.1-beta.9-beta-Windows-x64.exe",
+    "versionedUrl": "https://picom.gg/downloads/windows/0.1.1-beta.9/Picom-0.1.1-beta.9-beta-Windows-x64.exe",
+    "manifestUrl": "https://picom.gg/downloads/releases.json",
+    "httpStatus": 200,
+    "checksumMatch": true
+  },
+  "nginx": {
+    "configTest": "PASS",
+    "reload": "PASS"
+  },
+  "domains": {
+    "picom.gg": "PASS",
+    "app.picom.gg": "PASS",
+    "account.picom.gg": "PASS",
+    "support.picom.gg": "PASS_REDIRECT_301_TO_ACCOUNT_SUPPORT"
+  },
+  "rollbackBackup": "/var/backups/picom/web/picom.gg-download-publish-20260726-203925.tar.gz",
+  "serverPaths": {
+    "webRoot": "/var/www/picom.gg",
+    "downloads": "/var/www/picom.gg/downloads/windows",
+    "immutableRelease": "/var/www/picom.gg/downloads/windows/0.1.1-beta.9",
+    "latestSymlink": "/var/www/picom.gg/downloads/windows/latest"
+  },
+  "finalVerdict": "PRODUCTION READY WITH NON-BLOCKING WARNINGS"
+}
