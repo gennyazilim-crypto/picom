@@ -1,0 +1,96 @@
+/* Soft email verification — slim non-blocking strip (never a hero block) */
+.soft-email-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  min-height: 0;
+  margin: 0 12px 6px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--picom-teal) 22%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--picom-teal) 8%);
+  color: var(--text-secondary);
+}
+
+.soft-email-banner__copy {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.soft-email-banner__copy strong {
+  flex: 0 0 auto;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.soft-email-banner__copy p {
+  margin: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.soft-email-banner__copy small {
+  display: none;
+}
+
+.soft-email-banner__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.soft-email-banner__btn {
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.soft-email-banner__btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.soft-email-banner__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.soft-email-banner__btn--primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--picom-teal), var(--picom-aqua));
+  color: #fff;
+}
+
+.soft-email-banner__btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  padding: 0 6px;
+}
+
+@media (max-width: 900px) {
+  .soft-email-banner__copy p {
+    display: none;
+  }
+}
