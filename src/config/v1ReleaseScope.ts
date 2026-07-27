@@ -87,8 +87,8 @@ export const v1ReleaseScope = Object.freeze({
     screenShare: inV1("Screen Share is mandatory V1 product scope; public release remains blocked until native and remote-render evidence passes."),
     radio: hidden("Radio data and code are retained but excluded from Picom V1 Core."),
     podcasts: hidden("Podcast data and code are retained but excluded from Picom V1 Core."),
-    events: hidden("The event workspace is not a V1 Core surface."),
-    bookmarks: hidden("The standalone bookmarks workspace is not a V1 Core surface."),
+    events: inV1("Community events, RSVP, reminders, and event discovery use the production Supabase data path."),
+    bookmarks: inV1("Private, user-owned bookmarks use the production Supabase data path."),
     meetingWorkspace: hidden("Meeting workspace, stage, and camera surfaces are not in V1 Core."),
     enhancedNoiseShield: hidden("Enhanced noise-shield controls are not release-certified for V1 Core."),
     discoveryMarketplace: inV1("Public discovery marketplace is enabled on stable."),
@@ -159,7 +159,7 @@ export function isV1ActiveViewEnabled(activeView: string): boolean {
 }
 
 export function isV1DeepLinkTypeEnabled(type: DeepLinkAction["type"]): boolean {
-  if (["authCallback", "passwordRecovery", "emailVerification", "invite", "friends", "directMessage"].includes(type)) return true;
+  if (["authCallback", "sessionContinue", "passwordRecovery", "emailVerification", "invite", "friends", "directMessage"].includes(type)) return true;
   if (type === "community") return isV1FeatureEnabled("textCommunities");
   if (type === "radio") return isV1FeatureEnabled("radio");
   if (type === "podcast") return isV1FeatureEnabled("podcasts");

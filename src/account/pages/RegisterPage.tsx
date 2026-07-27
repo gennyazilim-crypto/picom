@@ -154,6 +154,14 @@ export function RegisterPage() {
       sendSoftEmailVerification("send"),
     );
 
+    const { continueToProduct, captureContinueContextFromLocation } = await import("../lib/continueToProduct");
+    captureContinueContextFromLocation();
+    const continued = await continueToProduct(session, { preferProduct: true });
+    if (continued.redirected) {
+      setLoading(false);
+      return;
+    }
+
     const { resolvePostLoginDestination } = await import("../lib/postLogin");
     const destination = await resolvePostLoginDestination(session, null);
     setLoading(false);

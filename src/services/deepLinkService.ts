@@ -6,8 +6,9 @@ export type DeepLinkAction =
   | { type: "meeting"; communityId: string; channelId?: string; roomId: string; sessionId?: string; messageId?: string; inviteToken?: string }
   | { type: "meetingChat"; communityId: string; channelId: string; roomId: string; sessionId?: string; messageId?: string }
   | { type: "authCallback"; code?: string; error?: string }
-  | { type: "passwordRecovery"; code?: string; error?: string }
-  | { type: "emailVerification"; code?: string; error?: string }
+  | { type: "sessionContinue"; nonce?: string; error?: string }
+  | { type: "passwordRecovery"; code?: string; tokenHash?: string; authType?: string; error?: string }
+  | { type: "emailVerification"; code?: string; tokenHash?: string; authType?: string; error?: string }
   | { type: "friends" }
   | { type: "directMessage"; conversationId: string };
 
@@ -19,11 +20,61 @@ type DeepLinkListener = (action: DeepLinkAction) => void;
 
 const listeners = new Set<DeepLinkListener>();
 let nativeCleanup: (() => void) | null = null;
+let pendingBrowserAuthAction: DeepLinkAction | null = null;
 const maxDeepLinkLength = 2048;
 const safeSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function isSafeSegment(value: string | undefined): value is string {
   return Boolean(value && safeSegmentPattern.test(value));
+}
+
+function parseAuthQueryAction(
+  raw: string,
+  kind: "authCallback" | "passwordRecovery" | "emailVerification",
+  allowedKeys: ReadonlySet<string>,
+  allowedType?: ReadonlySet<string>,
+): DeepLinkParseResult {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { ok: false, reason: "INVALID_DEEP_LINK" };
+  }
+  if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) {
+    return { ok: false, reason: kind === "authCallback" ? "INVALID_AUTH_CALLBACK" : kind === "passwordRecovery" ? "INVALID_PASSWORD_RECOVERY_LINK" : "INVALID_EMAIL_VERIFICATION_LINK" };
+  }
+  if (allowedType) {
+    const type = parsed.searchParams.get("type");
+    if (type && !allowedType.has(type)) {
+      return { ok: false, reason: kind === "passwordRecovery" ? "INVALID_PASSWORD_RECOVERY_LINK" : "INVALID_EMAIL_VERIFICATION_LINK" };
+    }
+  }
+  const code = parsed.searchParams.get("code") ?? undefined;
+  const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+  const tokenHash = parsed.searchParams.get("token_hash") ?? undefined;
+  const authType = parsed.searchParams.get("type") ?? undefined;
+  // token_hash (verifyOtp) is prefetch-safe and preferred; fall back to the PKCE code.
+  if (tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash) && kind !== "authCallback") {
+    return { ok: true, url: raw, action: { type: kind, tokenHash, authType } };
+  }
+  if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: raw, action: { type: kind, code } };
+  if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: kind, error } };
+  return { ok: false, reason: kind === "authCallback" ? "INVALID_AUTH_CALLBACK" : kind === "passwordRecovery" ? "INVALID_PASSWORD_RECOVERY_LINK" : "INVALID_EMAIL_VERIFICATION_LINK" };
+}
+
+/** Browser SPA auth redirects: /auth/callback|reset-password|verify-email?code=… */
+function parseBrowserAuthLink(parsed: URL, raw: string): DeepLinkParseResult {
+  const path = parsed.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/auth/callback") {
+    return parseAuthQueryAction(raw, "authCallback", new Set(["code", "error", "error_description"]));
+  }
+  if (path === "/auth/reset-password") {
+    return parseAuthQueryAction(raw, "passwordRecovery", new Set(["code", "token_hash", "type", "error", "error_description"]), new Set(["recovery"]));
+  }
+  if (path === "/auth/verify-email") {
+    return parseAuthQueryAction(raw, "emailVerification", new Set(["code", "token_hash", "type", "error", "error_description"]), new Set(["signup", "email_change"]));
+  }
+  return { ok: false, reason: "UNSUPPORTED_DEEP_LINK_PROTOCOL" };
 }
 
 function parseCommunityLink(segments: string[]): DeepLinkParseResult {
@@ -73,6 +124,9 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
   }
 
   if (parsed.protocol !== "picom:") {
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parseBrowserAuthLink(parsed, raw);
+    }
     return { ok: false, reason: "UNSUPPORTED_DEEP_LINK_PROTOCOL" };
   }
 
@@ -89,25 +143,41 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
     return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
   }
 
+  if (route === "auth" && segments.length === 1 && segments[0] === "session" && !parsed.hash) {
+    const allowedKeys = new Set(["nonce", "error", "error_description"]);
+    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+    const nonce = parsed.searchParams.get("nonce") ?? undefined;
+    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+    if (nonce && /^[A-Za-z0-9_-]{32,128}$/.test(nonce)) return { ok: true, url: raw, action: { type: "sessionContinue", nonce } };
+    if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: "sessionContinue", error } };
+    return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+  }
+
   if (route === "auth" && segments.length === 1 && segments[0] === "reset-password" && !parsed.hash) {
-    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    const allowedKeys = new Set(["code", "token_hash", "type", "error", "error_description"]);
     if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_PASSWORD_RECOVERY_LINK" };
-    const type = parsed.searchParams.get("type");
+    const type = parsed.searchParams.get("type") ?? undefined;
     if (type && type !== "recovery") return { ok: false, reason: "INVALID_PASSWORD_RECOVERY_LINK" };
     const code = parsed.searchParams.get("code") ?? undefined;
+    const tokenHash = parsed.searchParams.get("token_hash") ?? undefined;
     const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+    // Prefetch-safe verifyOtp path: token_hash is not consumed by email-scanner link prefetch.
+    if (tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash)) return { ok: true, url: "picom://auth/reset-password", action: { type: "passwordRecovery", tokenHash, authType: type ?? "recovery" } };
     if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: "picom://auth/reset-password", action: { type: "passwordRecovery", code } };
     if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: "picom://auth/reset-password", action: { type: "passwordRecovery", error } };
     return { ok: false, reason: "INVALID_PASSWORD_RECOVERY_LINK" };
   }
 
   if (route === "auth" && segments.length === 1 && segments[0] === "verify-email" && !parsed.hash) {
-    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    const allowedKeys = new Set(["code", "token_hash", "type", "error", "error_description"]);
     if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_EMAIL_VERIFICATION_LINK" };
-    const type = parsed.searchParams.get("type");
+    const type = parsed.searchParams.get("type") ?? undefined;
     if (type && type !== "signup" && type !== "email_change") return { ok: false, reason: "INVALID_EMAIL_VERIFICATION_LINK" };
     const code = parsed.searchParams.get("code") ?? undefined;
+    const tokenHash = parsed.searchParams.get("token_hash") ?? undefined;
     const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+    // Prefetch-safe verifyOtp path: token_hash is not consumed by email-scanner link prefetch.
+    if (tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash)) return { ok: true, url: "picom://auth/verify-email", action: { type: "emailVerification", tokenHash, authType: type ?? "signup" } };
     if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: "picom://auth/verify-email", action: { type: "emailVerification", code } };
     if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: "picom://auth/verify-email", action: { type: "emailVerification", error } };
     return { ok: false, reason: "INVALID_EMAIL_VERIFICATION_LINK" };
@@ -190,6 +260,15 @@ export const deepLinkService = {
 
     const bridge = window.picomDesktop?.deepLinks;
     if (!bridge) {
+      // Browser fallback: hold OAuth / recovery query params until App registers a listener.
+      const browserAuth = parseDeepLink(window.location.href);
+      if (browserAuth.ok) {
+        pendingBrowserAuthAction = browserAuth.action;
+        const cleaned = new URL(window.location.href);
+        cleaned.search = "";
+        cleaned.hash = "";
+        window.history.replaceState({}, document.title, cleaned.pathname);
+      }
       nativeCleanup = () => undefined;
       return nativeCleanup;
     }
@@ -201,6 +280,11 @@ export const deepLinkService = {
 
   onDeepLink(listener: DeepLinkListener): () => void {
     listeners.add(listener);
+    if (pendingBrowserAuthAction) {
+      const action = pendingBrowserAuthAction;
+      pendingBrowserAuthAction = null;
+      queueMicrotask(() => listener(action));
+    }
 
     return () => {
       listeners.delete(listener);
