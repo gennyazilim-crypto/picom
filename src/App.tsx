@@ -1816,6 +1816,22 @@ export function App() {
         return;
       }
 
+      if (action.type === "sessionContinue") {
+        if (!action.nonce) {
+          pushToast(action.error || "Account sign-in handoff was canceled.", "error");
+          return;
+        }
+        void import("./services/auth/sessionContinueService").then(({ consumeSessionContinue }) =>
+          consumeSessionContinue(action.nonce!).then((result) => {
+            pushToast(
+              result.ok ? "Signed in from Account Center." : result.error.message,
+              result.ok ? "success" : "error",
+            );
+          }),
+        );
+        return;
+      }
+
       const navigationDecision = notificationNavigationPolicyService.validate(action, {
         isAuthenticated: Boolean(authSession?.user),
         currentUserId,

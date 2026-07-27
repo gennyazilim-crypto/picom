@@ -365,6 +365,25 @@ export const authService = {
     return { ok: true, data: { message: "Email address verified.", verifiedAt: data.user.email_confirmed_at } };
   },
 
+  async establishSession(accessToken: string, refreshToken: string): Promise<AuthServiceResult<{ message: string }>> {
+    if (!accessToken || !refreshToken || accessToken.length < 20 || refreshToken.length < 20) {
+      return authError("AUTH_INVALID_INPUT", "Invalid session handoff.");
+    }
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+    if (!configured.data) {
+      return { ok: true, data: { message: "Mock session established." } };
+    }
+    const { data, error } = await configured.data.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (error || !data.session?.user) {
+      return authError("AUTH_SESSION_EXPIRED", "Could not restore your Picom session. Sign in again.");
+    }
+    return { ok: true, data: { message: "Signed in." } };
+  },
+
   async getCurrentSession(): Promise<AuthServiceResult<AuthServiceSession | null>> {
     const configured = getConfiguredClient();
     if (!configured.ok) return configured;

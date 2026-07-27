@@ -1,27 +1,30 @@
-import { useState, type FormEvent } from "react";
-import { isMockMode } from "../config/appConfig";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { setAuthRememberMe } from "../services/supabase/supabaseClient";
 import { brandLogoUrl } from "../config/brandAssets";
+import { accountCenterUrls, isAllowedAccountCenterUrl } from "../config/accountCenterUrls";
+import { externalLinkService } from "../services/desktop/externalLinkService";
+import {
+  generateSessionContinueNonce,
+  pollSessionContinue,
+} from "../services/auth/sessionContinueService";
 import { AppIcon } from "./AppIcon";
-import { SocialLoginButtons } from "./auth/SocialLoginButtons";
 import { LoginBackgroundAnimation } from "./auth/LoginBackgroundAnimation";
+import { AuthHeroPanel } from "./auth/AuthHeroPanel";
+import { SocialLoginButtons } from "./auth/SocialLoginButtons";
 
 type LoginScreenProps = {
   theme: "light" | "dark";
   loading: boolean;
   error: string | null;
+  notice?: string | null;
+  initialEmail?: string;
   onSubmit: (email: string, password: string) => Promise<void>;
-  onPasswordResetRequest: (email: string) => Promise<string>;
-  recoveryMode?: boolean;
-  recoveryMessage?: string | null;
-  onConfirmPasswordReset?: (password: string) => Promise<{ ok: boolean; message: string }>;
-  onCancelPasswordRecovery?: () => void;
-  onSwitchToRegister: () => void;
-};
-
-const localSeed = {
-  email: "owner@picom.local",
-  password: "PicomDev123!",
+  /** Optional MFA challenge step — shown after password when AAL2 is required. */
+  mfaRequired?: boolean;
+  mfaLoading?: boolean;
+  mfaError?: string | null;
+  onVerifyMfa?: (code: string) => Promise<void>;
+  onCancelMfa?: () => void;
 };
 
 const REMEMBER_EMAIL_KEY = "picom.auth.rememberedEmail";
@@ -31,29 +34,88 @@ function readRememberedEmail(): string {
   return localStorage.getItem(REMEMBER_EMAIL_KEY) ?? "";
 }
 
-export function LoginScreen({ theme, loading, error, onSubmit, onPasswordResetRequest, recoveryMode = false, recoveryMessage, onConfirmPasswordReset, onCancelPasswordRecovery, onSwitchToRegister }: LoginScreenProps) {
-  // Read persisted email once at mount, not on every render.
+function PasswordField({
+  label,
+  value,
+  onChange,
+  autoComplete,
+  placeholder,
+  required = false,
+}: Readonly<{
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: string;
+  placeholder?: string;
+  required?: boolean;
+}>) {
+  const [revealed, setRevealed] = useState(false);
+
+  return (
+    <label className="auth-field auth-field--password">
+      <span>{label}</span>
+      <span className="auth-password-shell">
+        <input
+          type={revealed ? "text" : "password"}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          required={required}
+        />
+        <button
+          type="button"
+          className={`auth-password-toggle${revealed ? " is-revealed" : ""}`}
+          aria-label={revealed ? "Hide password" : "Show password"}
+          aria-pressed={revealed}
+          onClick={() => setRevealed((current) => !current)}
+        >
+          <AppIcon name="eye" size="sm" />
+          {revealed ? <span className="auth-password-toggle-slash" aria-hidden="true" /> : null}
+        </button>
+      </span>
+    </label>
+  );
+}
+
+async function openAccountUrl(url: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (!isAllowedAccountCenterUrl(url)) {
+    return { ok: false, reason: "UNSAFE_EXTERNAL_URL" };
+  }
+  return externalLinkService.openExternalUrl(url);
+}
+
+export function LoginScreen({
+  theme,
+  loading,
+  error,
+  notice = null,
+  initialEmail,
+  onSubmit,
+  mfaRequired = false,
+  mfaLoading = false,
+  mfaError = null,
+  onVerifyMfa,
+  onCancelMfa,
+}: LoginScreenProps) {
   const [rememberedEmail] = useState(readRememberedEmail);
-  const [email, setEmail] = useState(rememberedEmail || (isMockMode ? localSeed.email : ""));
-  const [password, setPassword] = useState(isMockMode ? localSeed.password : "");
-  const [rememberMe, setRememberMe] = useState(rememberedEmail !== "" || !isMockMode);
-  const [resetOpen, setResetOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState(rememberedEmail || (isMockMode ? localSeed.email : ""));
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetMessage, setResetMessage] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [recoveryResult, setRecoveryResult] = useState<string | null>(null);
-  const [recoverySucceeded, setRecoverySucceeded] = useState(false);
-  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [email, setEmail] = useState(initialEmail?.trim() || rememberedEmail);
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(rememberedEmail !== "");
+  const [mfaCode, setMfaCode] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [registerNotice, setRegisterNotice] = useState<string | null>(null);
+  const registerPollAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      registerPollAbortRef.current?.abort();
+    };
+  }, []);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Guard against a double submit when the Enter key fires while a sign-in is in flight
-    // (the button is disabled, but the form's submit handler still runs on Enter).
     if (loading) return;
-    // Keep me signed in until an explicit sign-out when checked; drop the session
-    // on app close when unchecked. The raw password is never stored.
     setAuthRememberMe(rememberMe);
     if (typeof localStorage !== "undefined") {
       if (rememberMe) localStorage.setItem(REMEMBER_EMAIL_KEY, email.trim());
@@ -62,146 +124,174 @@ export function LoginScreen({ theme, loading, error, onSubmit, onPasswordResetRe
     await onSubmit(email, password);
   };
 
-  const requestPasswordReset = async () => {
-    setResetMessage(null);
-    setResetLoading(true);
-    const message = await onPasswordResetRequest(resetEmail || email);
-    setResetMessage(message);
-    setResetLoading(false);
+  const openLink = async (url: string) => {
+    setLinkError(null);
+    const result = await openAccountUrl(url);
+    if (!result.ok) {
+      setLinkError(externalLinkService.getUserFriendlyError(String(result.reason)));
+    }
   };
 
-  if (recoveryMode) return (
-    <main className="auth-desktop-frame" aria-label="Picom password recovery">
-      <LoginBackgroundAnimation theme={theme} />
-      <section className="auth-hero" aria-hidden="true"><div className="auth-logo-orb auth-logo-orb--brand"><img className="picom-brand-logo" src={brandLogoUrl} alt="" /></div><p className="eyebrow">Secure account recovery</p><h1>Choose a new password.</h1><p>Use a unique password you do not use elsewhere. Picom never displays, stores, or logs recovery codes.</p></section>
-      <form className="auth-card" onSubmit={(event) => { event.preventDefault(); void (async () => { if (recoveryLoading) return; if (newPassword !== confirmNewPassword) { setRecoverySucceeded(false); setRecoveryResult("Passwords do not match."); return; } if (!onConfirmPasswordReset) return; setRecoveryLoading(true); const result = await onConfirmPasswordReset(newPassword); setRecoveryLoading(false); setRecoverySucceeded(result.ok); setRecoveryResult(result.message); if (result.ok) { setNewPassword(""); setConfirmNewPassword(""); } })(); }}>
-        <div className="auth-card-header"><div><p className="eyebrow">Password recovery</p><h2>Set new password</h2></div></div>
-        <p className="auth-note">{recoveryMessage ?? "Recovery link accepted. Enter a new password."}</p>
-        <label className="auth-field"><span>New password</span><input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
-        <label className="auth-field"><span>Confirm new password</span><input type="password" autoComplete="new-password" minLength={12} value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} required /></label>
-        <small className="auth-note">Use at least 12 characters. All existing sessions are signed out after a successful reset.</small>
-        {recoveryResult || error ? <div className={recoverySucceeded ? "auth-success" : "auth-error"} role="status">{recoveryResult ?? error}</div> : null}
-        <button className="auth-submit" type="submit" disabled={recoveryLoading || newPassword.length < 12 || newPassword !== confirmNewPassword}>{recoveryLoading ? "Updating password..." : "Update password"}<AppIcon name="lock" size="sm" /></button>
-        <button className="auth-seed-button" type="button" disabled={recoveryLoading} onClick={onCancelPasswordRecovery}>Back to sign in</button>
-      </form>
-    </main>
-  );
+  const openRegister = async () => {
+    setLinkError(null);
+    setRegisterNotice(null);
+    registerPollAbortRef.current?.abort();
+    const nonce = generateSessionContinueNonce();
+    const controller = new AbortController();
+    registerPollAbortRef.current = controller;
+    const url = accountCenterUrls.registerWithNonce(nonce, "desktop");
+    const result = await openAccountUrl(url);
+    if (!result.ok) {
+      setLinkError(externalLinkService.getUserFriendlyError(String(result.reason)));
+      return;
+    }
+    setRegisterNotice("Finish creating your account in the browser. Picom will sign you in automatically.");
+    void pollSessionContinue(nonce, { signal: controller.signal }).then((pollResult) => {
+      if (controller.signal.aborted) return;
+      if (pollResult.ok) {
+        setRegisterNotice("Account created — signing you in…");
+        return;
+      }
+      setRegisterNotice(pollResult.error.message);
+    });
+  };
+
+  if (mfaRequired && onVerifyMfa) {
+    return (
+      <main className="auth-desktop-frame" aria-label="Picom multi-factor authentication">
+        <LoginBackgroundAnimation theme={theme} />
+        <AuthHeroPanel variant="login" />
+        <form
+          className="auth-card auth-card--elevated"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (mfaLoading) return;
+            void onVerifyMfa(mfaCode.trim());
+          }}
+        >
+          <div className="auth-card-brand">
+            <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
+            <div>
+              <p className="eyebrow">Two-step verification</p>
+              <h2>Enter authenticator code</h2>
+            </div>
+          </div>
+          <p className="auth-note">Open your authenticator app and enter the 6-digit code for Picom.</p>
+          <label className="auth-field">
+            <span>Authentication code</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              required
+            />
+          </label>
+          {mfaError ? (
+            <div className="auth-error" role="alert">
+              {mfaError}
+            </div>
+          ) : null}
+          <button className="auth-submit" type="submit" disabled={mfaLoading || mfaCode.length !== 6}>
+            {mfaLoading ? "Verifying…" : "Verify"}
+            <AppIcon name="lock" size="sm" />
+          </button>
+          {onCancelMfa ? (
+            <button className="auth-seed-button" type="button" disabled={mfaLoading} onClick={onCancelMfa}>
+              Back to sign in
+            </button>
+          ) : null}
+        </form>
+      </main>
+    );
+  }
 
   return (
     <main className="auth-desktop-frame" aria-label="Picom sign in">
       <LoginBackgroundAnimation theme={theme} />
-      <section className="auth-hero" aria-hidden="true">
-        <div className="auth-logo-orb auth-logo-orb--brand">
-          <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
-        </div>
-        <p className="eyebrow">Desktop community chat <span className="picom-beta-badge">Beta · Frontend preview</span></p>
-        <h1>Welcome back to Picom.</h1>
-        <p>
-          Sign in to continue into your Windows, Linux, or macOS desktop workspace. The MVP keeps the chat shell fast,
-          focused, and backend-ready.
-        </p>
-        <div className="auth-feature-list">
-          <span><AppIcon name="users" size="sm" /> Communities</span>
-          <span><AppIcon name="hash" size="sm" /> Channels</span>
-          <span><AppIcon name="image" size="sm" /> Attachments</span>
-        </div>
-      </section>
+      <AuthHeroPanel variant="login" />
 
-      <form className="auth-card" onSubmit={submit}>
-        <div className="auth-card-header">
+      <form className="auth-card auth-card--elevated" onSubmit={submit}>
+        <div className="auth-card-brand">
+          <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
           <div>
-            <p className="eyebrow">Secure sign in</p>
-            <h2>Email and password</h2>
+            <p className="eyebrow">Sign in</p>
+            <h2>Continue to Picom</h2>
           </div>
         </div>
 
         <label className="auth-field">
           <span>Email</span>
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@company.com"
-            required
-          />
+          <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" required />
         </label>
 
-        <label className="auth-field">
-          <span>Password</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Enter your password"
-            required
-          />
-        </label>
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          placeholder="Enter your password"
+          required
+        />
 
-        {error ? <div className="auth-error" role="alert">{error}</div> : null}
+        {error ? (
+          <div className="auth-error" role="alert">
+            {error}
+          </div>
+        ) : null}
+        {!error && notice ? (
+          <div className="auth-success" role="status">
+            {notice}
+          </div>
+        ) : null}
+        {linkError ? (
+          <div className="auth-error" role="alert">
+            {linkError}
+          </div>
+        ) : null}
+        {!error && !notice && registerNotice ? (
+          <div className="auth-success" role="status">
+            {registerNotice}
+          </div>
+        ) : null}
 
         <div className="auth-options-row">
           <label className="auth-remember">
             <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
             <span>Remember me</span>
           </label>
-          <button className="auth-secondary-link" type="button" onClick={() => setResetOpen((current) => !current)}>
+          <button className="auth-secondary-link" type="button" onClick={() => void openLink(accountCenterUrls.forgotPassword)}>
             Forgot password?
           </button>
         </div>
 
-        {resetOpen ? (
-          <div className="password-reset-panel">
-            <strong>Reset your password</strong>
-            <p>Enter your email. Picom will show the same safe response whether an account exists or not.</p>
-            <label className="auth-field">
-              <span>Reset email</span>
-              <input
-                type="email"
-                autoComplete="email"
-                value={resetEmail}
-                onChange={(event) => setResetEmail(event.target.value)}
-                placeholder="you@company.com"
-              />
-            </label>
-            {resetMessage ? <div className="auth-success" role="status">{resetMessage}</div> : null}
-            <button className="auth-seed-button" type="button" disabled={resetLoading} onClick={requestPasswordReset}>
-              {resetLoading ? "Sending..." : "Send reset email"}
-            </button>
-          </div>
-        ) : null}
-
-        <div className="auth-divider"><span>or continue with</span></div>
-        <SocialLoginButtons disabled={loading} />
-
         <button className="auth-submit" type="submit" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Signing in…" : "Sign in"}
           <AppIcon name="send" size="sm" />
         </button>
 
-        <button className="auth-secondary-link" type="button" onClick={onSwitchToRegister}>
-          New to Picom? Create an account
-        </button>
+        <SocialLoginButtons disabled={loading} layout="stacked" />
 
-        {isMockMode ? (
-          <>
-            <button
-              className="auth-seed-button"
-              type="button"
-              onClick={() => {
-                setEmail(localSeed.email);
-                setPassword(localSeed.password);
-              }}
-            >
-              Use local seed account
+        <div className="auth-card-footer">
+          <button className="auth-text-link auth-text-link--strong" type="button" onClick={() => void openRegister()}>
+            Create an account
+          </button>
+          <div className="auth-legal-links">
+            <button className="auth-text-link" type="button" onClick={() => void openLink(accountCenterUrls.privacy)}>
+              Privacy
             </button>
-
-            <p className="auth-note">
-              Local seed credentials are for development only. Password values are never logged by the auth wrapper.
-            </p>
-          </>
-        ) : null}
+            <button className="auth-text-link" type="button" onClick={() => void openLink(accountCenterUrls.terms)}>
+              Terms
+            </button>
+            <button className="auth-text-link" type="button" onClick={() => void openLink(accountCenterUrls.support)}>
+              Support Center
+            </button>
+          </div>
+        </div>
       </form>
     </main>
   );

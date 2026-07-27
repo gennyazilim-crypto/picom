@@ -123,6 +123,9 @@ verify_jwt = false
 [functions.epic-auth]
 verify_jwt = false
 
+[functions.session-continue]
+verify_jwt = false
+
 [functions.email-api]
 verify_jwt = false
 
