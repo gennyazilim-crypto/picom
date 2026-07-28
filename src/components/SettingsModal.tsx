@@ -1,3 +1,5 @@
+import { profileMediaStore } from "../services/profileMedia/profileMediaStore";
+import { ProfileDisplayName, ProfileUsername } from "./ProfileDisplayName";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./SettingsModal.css";
 import { notificationService } from "../services/notificationService";
@@ -16,10 +18,14 @@ import { sessionManagementService, type SessionDeviceSummary } from "../services
 import { socialAuthService, SOCIAL_AUTH_PROVIDER_ORDER, getSocialAuthProviderLabel, type SocialAuthProvider, type SocialProviderAccountState } from "../services/auth/socialAuthService";
 import { accountDeletionService } from "../services/accountDeletionService";
 import { dataExportService } from "../services/dataExportService";
+import { accountCenterUrls, isAllowedAccountCenterUrl } from "../config/accountCenterUrls";
+import { externalLinkService } from "../services/desktop/externalLinkService";
 import { appLockService } from "../services/appLockService";
 import { startupService } from "../services/startupService";
 import { trayService } from "../services/trayService";
 import { updateService } from "../services/updateService";
+import { DEFAULT_COMPANION_PREFERENCES, getCompanionPreferences, updateCompanionPreferences } from "../features/companion/companionPreferences";
+import type { CompanionDockEdge, CompanionPreferences } from "../features/companion/companionTypes";
 import { dateTimeService } from "../services/dateTimeService";
 import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";
 import { safeModeService } from "../services/safeModeService";
@@ -44,7 +50,6 @@ import type { ProfilePrivacySettings } from "../types/profilePrivacy";
 import { notificationDigestService } from "../services/notificationDigestService";
 import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";
 import { appConfig } from "../config/appConfig";
-import { legalConfig } from "../config/legalConfig";
 import { AdminOperationsPanelRedirect } from "./AdminOperationsPanelRedirect";
 import { canAccessAdminOperationsView } from "./AdminOperationsView";
 import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";
@@ -52,9 +57,11 @@ import { analyticsService } from "../services/analyticsService";
 import { crashReporterService } from "../services/crashReporterService";
 import { AppIcon } from "./AppIcon";
 import { KeyboardShortcutsSection } from "./KeyboardShortcutsSection";
+import { UpdateSettingsSection } from "./settings/UpdateSettingsSection";
+import { LegalSettingsSection } from "./settings/LegalSettingsSection";
 import { mvpUiIconMap } from "./iconRegistry";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
-import { legalDocumentOrder, legalDocuments, type LegalDocumentId } from "../data/legalDocuments";
+import type { LegalDocumentId } from "../data/legalDocuments";
 import { FeedbackSection } from "./settings/FeedbackSection";
 import { DiagnosticsSection } from "./settings/DiagnosticsSection";
 import { LogsViewer } from "./settings/LogsViewer";
@@ -123,6 +130,14 @@ type SettingsModalProps = {
   onOpenPanel?: () => void;
 };
 
+function getLiveBlockedDisplayName(userId: string, fallback: string): string {
+  return profileMediaStore.getSnapshot(userId).record?.displayName?.trim() || fallback;
+}
+
+function getLiveBlockedUsername(userId: string, fallback: string): string {
+  return (profileMediaStore.getSnapshot(userId).record?.username?.trim() || fallback).replace(/^@+/, "");
+}
+
 export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext, onOpenPanel }: SettingsModalProps) {
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState<SettingsSection>(settingsService.consumeInitialSection);
@@ -163,6 +178,9 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
   const [closeToTrayEnabled, setCloseToTrayEnabled] = useState(() => trayService.getCloseToTrayEnabled());
   const [updateState, setUpdateState] = useState(() => updateService.getState());
+  const [companionPreferences, setCompanionPreferences] = useState<CompanionPreferences | null>(null);
+  const [companionSaveError, setCompanionSaveError] = useState("");
+  const [companionBusy, setCompanionBusy] = useState(false);
   const [autoActivityEnabled, setAutoActivityEnabled] = useState(() => activityPresenceService.getEnabled());
   const [activitySnapshot, setActivitySnapshot] = useState<ActivitySnapshot>(() => activityPresenceService.getSnapshot());
   const activityBridgeAvailable = activityPresenceService.isAvailable();
@@ -186,6 +204,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     () => settingsSections.filter((section) => section !== "Admin Operations" || adminOperationsVisible),
     [adminOperationsVisible],
   );
+  const profileCanSave = Boolean(profileDraft.displayName.trim()) && /^[a-z0-9._-]{3,32}$/.test(profileDraft.username);
+  const profileSaveDisabled = profileSaving || profileHydrating || !profileCanSave;
 
   useEffect(() => {
     if (!profileHydrated) {
@@ -318,15 +338,79 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   }, [active, refreshCacheSummary]);
 
   useEffect(() => {
+    if (active !== "Companion") return;
+    let cancelled = false;
+    void getCompanionPreferences().then((prefs) => {
+      if (!cancelled) {
+        setCompanionPreferences(prefs);
+        setCompanionSaveError("");
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setCompanionPreferences({ ...DEFAULT_COMPANION_PREFERENCES });
+        setCompanionSaveError("Desktop Companion bridge unavailable — showing local defaults.");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
+  const patchCompanion = async (patch: Partial<Omit<CompanionPreferences, "version">>) => {
+    if (!companionPreferences) return;
+    const previous = companionPreferences;
+    setCompanionSaveError("");
+    setCompanionBusy(true);
+    setCompanionPreferences({ ...previous, ...patch, version: 1 });
+    try {
+      const next = await updateCompanionPreferences(patch);
+      setCompanionPreferences(next);
+      if (typeof patch.compactDensity === "boolean") {
+        document.documentElement.dataset.companionDensity = next.compactDensity ? "compact" : "comfortable";
+      }
+      if (typeof patch.closeToTray === "boolean") {
+        await trayService.setCloseToTrayEnabled(next.closeToTray);
+      }
+      if (typeof patch.alwaysOnTop === "boolean") {
+        void window.picomDesktop?.companion?.setAlwaysOnTop?.(next.alwaysOnTop);
+      }
+      pushToast("Companion settings saved.", "success");
+    } catch (reason) {
+      setCompanionPreferences(previous);
+      setCompanionSaveError(reason instanceof Error ? reason.message : "Companion settings could not be saved.");
+    } finally {
+      setCompanionBusy(false);
+    }
+  };
+
+  useEffect(() => {
     if (active === "Privacy & Safety") {
       void userBlockingService.refreshRemoteBlocks().then(setBlockedUsers);
       setNotificationPolicyState(notificationPolicyStateService.getSnapshot());
-      void userSafetyCenterService.refreshRemotePrivacy().then(setSafetySettings);
-      void profilePrivacyService.getOwnSettings().then(setProfilePrivacy);
-      void directSafetyService.getPrivacy().then(setDirectMessagePrivacy);
       void dataExportService.refreshStatus().then(setDataExportStatus);
+      void Promise.all([
+        userSafetyCenterService.refreshRemotePrivacy(),
+        profilePrivacyService.getOwnSettings(),
+        directSafetyService.getPrivacy(),
+      ]).then(([safety, privacy, dmPrivacy]) => {
+        setDirectMessagePrivacy(dmPrivacy);
+        setProfilePrivacy(privacy);
+        // Keep overview + toggle in sync: profile privacy is the source of truth for online status.
+        setSafetySettings({
+          ...safety,
+          showOnlineStatus: privacy.showOnlineStatus,
+        });
+      });
     }
   }, [active]);
+
+  const scrollToSettingsSection = (sectionId: string) => {
+    const content = dialogRef.current?.querySelector<HTMLElement>(".settings-content");
+    const target = dialogRef.current?.querySelector<HTMLElement>(`#${sectionId}`);
+    if (!content || !target) return;
+    const top = target.getBoundingClientRect().top - content.getBoundingClientRect().top + content.scrollTop - 12;
+    content.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  };
 
   useEffect(() => activityPresenceService.subscribe(setActivitySnapshot), []);
   useEffect(() => activityPresenceService.subscribeEnabled(setAutoActivityEnabled), []);
@@ -552,20 +636,6 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     setAppLockSettings(next);
     pushToast(enabled ? "Inactivity lock preference enabled locally." : "Inactivity lock preference disabled.", "info");
   };
-  const checkForUpdatesPlaceholder = async () => {
-    const next = await updateService.checkForUpdatesPlaceholder();
-    setUpdateState(next);
-    pushToast(next.message, next.status === "download_failed" || next.status === "install_failed" ? "error" : "info");
-  };
-  const simulateUpdateFailure = (kind: "download" | "install" | "error") => {
-    const next = kind === "download"
-      ? updateService.setDownloadFailedPlaceholder()
-      : kind === "install"
-        ? updateService.setInstallFailedPlaceholder()
-        : updateService.setErrorPlaceholder();
-    setUpdateState(next);
-    pushToast(next.message, next.status === "download_failed" || next.status === "install_failed" ? "error" : "info");
-  };
   const runCacheAction = async (action: () => Promise<{ message: string; summary: CacheSummary }>, confirmation: string) => {
     if (!window.confirm(confirmation)) return;
     const result = await action();
@@ -601,6 +671,16 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     setEmailVerificationMessage(result.data.message);
     pushToast(result.data.message, "success");
     void refreshAccountIdentity({ silent: true });
+  };
+  const openAccountCenter = async (url: string) => {
+    if (!isAllowedAccountCenterUrl(url)) {
+      pushToast("Picom blocked an unsafe account link.", "error");
+      return;
+    }
+    const result = await externalLinkService.openExternalUrl(url);
+    if (!result.ok) {
+      pushToast(externalLinkService.getUserFriendlyError(String(result.reason)), "error");
+    }
   };
   const revokeOtherSessions = async () => {
     const result = await sessionManagementService.revokeOtherSessions();
@@ -728,14 +808,23 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
           <h2 id="settings-modal-title">Picom Desktop</h2>
           <div className="settings-tabs">
             {visibleSections.map((section) => (
-              <button key={section} className={active === section ? "active" : ""} onClick={() => setActive(section)}>
+              <button
+                key={section}
+                type="button"
+                className={active === section ? "active" : ""}
+                aria-current={active === section ? "page" : undefined}
+                onClick={(event) => {
+                  setActive(section);
+                  event.currentTarget.closest(".settings-modal")?.querySelector<HTMLElement>(".settings-content")?.scrollTo({ top: 0 });
+                }}
+              >
                 <span className="tab-dot" />{sectionLabel(section)}
               </button>
             ))}
           </div>
         </aside>
         <main className="settings-content">
-          <button className="icon-button modal-close" aria-label={t("settings.close")} onClick={onClose}>
+          <button type="button" className="icon-button modal-close" aria-label={t("settings.close")} onClick={onClose}>
             <AppIcon name={overlayIcons.close} size="lg" />
           </button>
           <span className="eyebrow">{sectionLabel(active)}</span>
@@ -805,67 +894,78 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Account" ? (
             <div className="account-settings-stack">
-              <p className="settings-section-description">Review session, verification, export, and deletion controls. Supabase Auth remains the source of truth for account actions.</p>
+              <p className="settings-section-description">
+                Change your password, review this device, and manage sign-in providers here. MFA, data export, and account deletion remain in Account Center when you need the full web flow.
+              </p>
 
               <section className="account-settings-section">
-                <h3 className="account-settings-section-title">Identity & verification</h3>
-                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Account identity">
-                  <span>Account identity</span>
+                <h3 className="account-settings-section-title">Identity</h3>
+                <div className="settings-status-card settings-feature-card" aria-label="Account identity">
+                  <span>Signed in as</span>
                   <strong>{liveEmail ?? currentUsername}</strong>
-                  <small>{liveEmail ? `${liveEmailVerifiedAt ? "Verified email" : "Unverified email"}. Authentication provider details never expose tokens.` : "Mock/local identity. Connect Supabase Auth to manage a production email account."}</small>
+                  <small>{liveEmailVerifiedAt ? `Verified ${dateTimeService.formatFullTimestamp(liveEmailVerifiedAt)}.` : "Email verification can be completed in Account Center."}</small>
                   <div className="settings-actions-row">
                     <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={identityRefreshing} onClick={() => void refreshAccountIdentity()}>{identityRefreshing ? "Refreshing identity..." : "Refresh identity"}</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => setLogoutConfirmationOpen(true)}>Log out</button>
                   </div>
                 </div>
-                <div className="settings-status-card settings-feature-card" aria-label="Email verification controls">
-                  <span>Email verification</span>
-                  <strong>{liveEmailVerifiedAt ? "Email verified" : requireEmailVerification ? "Verification required" : "Verification recommended"}</strong>
-                  <small>{emailVerificationMessage ?? (liveEmailVerifiedAt ? `Verified ${dateTimeService.formatFullTimestamp(liveEmailVerifiedAt)}.` : requireEmailVerification ? "Verify your email before the production policy is enforced. Resend uses a cooldown and a neutral response." : "Verification is available but not required by this build.")}</small>
+              </section>
+
+              <section className="account-settings-section" ref={passwordSectionRef} id="account-password">
+                <h3 className="account-settings-section-title">Password</h3>
+                <div className="settings-status-card settings-feature-card" aria-label="Password reset and change">
+                  <span>Password security</span>
+                  <strong>Reset by email or change now</strong>
+                  <small>{passwordResetMessage ?? "Password reset uses a neutral email response. Changing your password requires your current password and signs out every device."}</small>
                   <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action" disabled={Boolean(liveEmailVerifiedAt) || !liveEmail} onClick={() => void requestEmailVerification()}>{liveEmailVerifiedAt ? "Email verified" : "Resend verification email"}</button>
-                    {!liveEmailVerifiedAt ? <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={identityRefreshing || !liveEmail} onClick={() => void refreshAccountIdentity()}>Check verification status</button> : null}
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!liveEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(accountCenterUrls.forgotPassword)}>Forgot password (web)</button>
+                  </div>
+                  <label className="profile-settings-field">
+                    <span>Current password</span>
+                    <input className="advanced-settings-input" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>New password (12+ characters)</span>
+                    <input className="advanced-settings-input" type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>Confirm new password</span>
+                    <input className="advanced-settings-input" type="password" autoComplete="new-password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} />
+                  </label>
+                  <div className="settings-actions-row">
+                    <button
+                      type="button"
+                      className="settings-inline-action"
+                      disabled={passwordChangeBusy || currentPassword.length < 8 || newPassword.length < 12 || confirmNewPassword.length < 12}
+                      onClick={() => void submitPasswordChange()}
+                    >
+                      {passwordChangeBusy ? "Changing password..." : "Change password and sign out all sessions"}
+                    </button>
                   </div>
                 </div>
-                <div className="security-card-grid" aria-label="Account security summary">
-                  <article className="security-card">
-                    <span>Session</span>
-                    <strong>{currentDesktopSession ? currentDesktopSession.deviceLabel : "Current desktop session"}</strong>
-                    <small>
-                      {currentDesktopSession
-                        ? `${currentDesktopSession.current ? "This device" : "Registered device"} · Provider ${currentDesktopSession.provider}${currentDesktopSession.expiresAt ? ` · Expires ${dateTimeService.formatFullTimestamp(currentDesktopSession.expiresAt)}` : ""}${otherActiveSessionCount ? ` · ${otherActiveSessionCount} other active` : ""}`
-                        : (sessionManagementMessage ?? "Session metadata loads from the auth data source. Raw tokens are never shown here.")}
-                    </small>
-                    <div className="settings-actions-row">
-                      <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={sessionsRefreshing} onClick={() => void refreshActiveSessions()}>{sessionsRefreshing ? "Refreshing..." : "Refresh sessions"}</button>
-                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToAccountSection("sessions")}>Manage sessions</button>
-                      <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => { scrollToAccountSection("sessions"); setLogoutConfirmationOpen(true); }}>Log out</button>
-                    </div>
-                  </article>
-                  <article className="security-card">
-                    <span>Password</span>
-                    <strong>Reset or change securely</strong>
-                    <small>{passwordResetMessage ?? "Reset responses are non-enumerating. Password changes require the current password and revoke every session."}</small>
-                    <div className="settings-actions-row">
-                      <button type="button" className="settings-inline-action" disabled={!liveEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
-                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToAccountSection("password")}>Change password</button>
-                    </div>
-                  </article>
-                  <article className="security-card">
-                    <span>Logs</span>
-                    <strong>Redacted diagnostics</strong>
-                    <small>Support payloads are routed through loggingService redaction before export.</small>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Diagnostics")}>Open diagnostics</button>
-                  </article>
+              </section>
+
+              <section className="account-settings-section" ref={sessionsSectionRef} id="account-sessions">
+                <h3 className="account-settings-section-title">This device</h3>
+                <div className="settings-status-card settings-feature-card" aria-label="Current desktop session">
+                  <span>Current desktop session</span>
+                  <strong>{currentDesktopSession ? currentDesktopSession.deviceLabel : "Current desktop session"}</strong>
+                  <small>
+                    {currentDesktopSession
+                      ? `${currentDesktopSession.current ? "This device" : "Registered device"} · Provider ${currentDesktopSession.provider}${otherActiveSessionCount ? ` · ${otherActiveSessionCount} other active` : ""}`
+                      : (sessionManagementMessage ?? "Session metadata loads from Auth. Raw tokens are never shown.")}
+                  </small>
+                  <div className="settings-actions-row">
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={sessionsRefreshing} onClick={() => void refreshActiveSessions()}>{sessionsRefreshing ? "Refreshing..." : "Refresh"}</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSessionRevokeConfirmationOpen(true)}>Sign out other devices</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/sessions`)}>Manage all sessions</button>
+                  </div>
                 </div>
               </section>
 
               <section className="account-settings-section">
                 <h3 className="account-settings-section-title">Sign-in providers</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Connected sign-in providers">
-                  <span>Connected sign-in providers</span>
-                  <strong>{socialProviders.filter((provider) => provider.linked).length ? `${socialProviders.filter((provider) => provider.linked).length} connected` : "Email and password"}</strong>
-                  <small>Google, Apple, Steam, and Epic are enabled only after their Supabase provider and Picom callback configuration are explicitly available.</small>
-                </div>
                 <div className="security-card-grid" aria-label="Social provider connections">
                   {socialProviders.map((provider) => (
                     <article className="security-card" key={provider.provider}>
@@ -878,139 +978,17 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </div>
               </section>
 
-              <section className="account-settings-section" ref={passwordSectionRef} id="account-password">
-                <h3 className="account-settings-section-title">Password</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Password reset and change">
-                  <span>Password security</span>
-                  <strong>Reset by email or change now</strong>
-                  <small>{passwordResetMessage ?? "Password reset uses a neutral email response. Changing your password requires recent re-authentication and signs out every device."}</small>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action" disabled={!liveEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
-                  </div>
-                  <div className="account-settings-form-grid">
-                    <label className="account-settings-field">
-                      <small>Current password</small>
-                      <input className="advanced-settings-input" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
-                    </label>
-                    <label className="account-settings-field">
-                      <small>New password (12+ characters)</small>
-                      <input className="advanced-settings-input" type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
-                    </label>
-                    <label className="account-settings-field">
-                      <small>Confirm new password</small>
-                      <input className="advanced-settings-input" type="password" autoComplete="new-password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} />
-                    </label>
-                  </div>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action" disabled={passwordChangeBusy || currentPassword.length < 8 || newPassword.length < 12 || confirmNewPassword.length < 12} onClick={() => void submitPasswordChange()}>{passwordChangeBusy ? "Changing password..." : "Change password and sign out all sessions"}</button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="account-settings-section" ref={sessionsSectionRef} id="account-sessions">
-                <h3 className="account-settings-section-title">Sessions</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Active desktop sessions">
-                  <span>Active sessions</span>
-                  <strong>{activeSessions.length ? `${activeSessions.length} current session${activeSessions.length === 1 ? "" : "s"}` : "Session metadata unavailable"}</strong>
-                  <small>{sessionManagementMessage ?? "Refresh active sessions to inspect safe desktop session metadata."}</small>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={sessionsRefreshing} onClick={() => void refreshActiveSessions()}>{sessionsRefreshing ? "Refreshing..." : "Refresh sessions"}</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSessionRevokeConfirmationOpen(true)}>Revoke other sessions</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => setLogoutConfirmationOpen(true)}>Log out</button>
-                  </div>
-                </div>
-                <div className="session-list" aria-label="Active sessions list">
-                  {activeSessions.map((session) => (
-                    <article key={session.id} className="session-card">
-                      <div>
-                        <strong>{session.deviceLabel}</strong>
-                        <small>{session.email ?? session.displayName ?? "Current Picom account"}</small>
-                      </div>
-                      <span className={`session-status ${session.status}`}>{session.current ? "Current" : session.status}</span>
-                      <small>Provider: {session.provider}. Last checked: {dateTimeService.formatFullTimestamp(session.lastUsedAt)}.</small>
-                      {session.expiresAt ? <small>Expires: {dateTimeService.formatFullTimestamp(session.expiresAt)}.</small> : <small>Mock/local sessions do not expose an expiry.</small>}
-                    </article>
-                  ))}
-                </div>
-                {sessionRevokeConfirmationOpen ? (
-                  <div className="danger-zone-card">
-                    <span>Confirm session revocation</span>
-                    <strong>Sign out every other device?</strong>
-                    <small>The current desktop session remains active. This security action is recorded without storing raw tokens.</small>
-                    <div className="settings-actions-row">
-                      <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => void revokeOtherSessions()}>Revoke other sessions now</button>
-                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSessionRevokeConfirmationOpen(false)}>Cancel</button>
-                    </div>
-                  </div>
-                ) : null}
-                {logoutConfirmationOpen ? (
-                  <div className="danger-zone-card">
-                    <span>Confirm logout</span>
-                    <strong>Log out of this desktop session?</strong>
-                    <small>Unsaved composer text may be lost. Other sessions are not affected.</small>
-                    <div className="settings-actions-row">
-                      <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => void logoutCurrentSession()}>Log out now</button>
-                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setLogoutConfirmationOpen(false)}>Cancel</button>
-                    </div>
-                  </div>
-                ) : null}
-              </section>
-
               <section className="account-settings-section">
-                <h3 className="account-settings-section-title">Account activity</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Account Activity section">
-                  <span>Account Activity</span>
-                  <strong>{accountActivities.length ? `${accountActivities.length} recent events` : "No recent activity"}</strong>
-                  <small>Security history is local-only in this beta. Raw IP addresses, passwords, tokens, cookies, and auth headers are not stored.</small>
-                </div>
-                <div className="session-list" aria-label="Account activity history">
-                  {accountActivities.length ? accountActivities.map((activity) => (
-                    <article key={activity.id} className="session-card">
-                      <div>
-                        <strong>{accountActivityService.getActivityTitle(activity.type)}</strong>
-                        <small>{activity.device} · {activity.locationPlaceholder}</small>
-                      </div>
-                      <span className="session-status active">{activity.platform}</span>
-                      <small>{dateTimeService.formatFullTimestamp(activity.timestamp)}</small>
-                    </article>
-                  )) : (
-                    <article className="session-card">
-                      <div>
-                        <strong>No account activity yet</strong>
-                        <small>Sign in, log out, or update security settings to create local activity records.</small>
-                      </div>
-                    </article>
-                  )}
-                </div>
-              </section>
-
-              <section className="account-settings-section">
-                <h3 className="account-settings-section-title">Data & account</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="User data export">
-                  <span>Data export</span>
-                  <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Generating export" : dataExportStatus.status === "failed" ? "Export failed" : "Not requested"}</strong>
-                  <small>{dataExportStatus.message}</small>
-                  {dataExportStatus.requestedAt ? <small>Requested {dateTimeService.formatFullTimestamp(dataExportStatus.requestedAt)}. Export content is held only in this app session and is not stored in the request table.</small> : null}
+                <h3 className="account-settings-section-title">Account Center</h3>
+                <div className="settings-status-card settings-feature-card" aria-label="Open Account Center">
+                  <span>Optional web tools</span>
+                  <strong>MFA, export, and deletion</strong>
+                  <small>Opens https://account.picom.gg in your system browser for flows that need full Account Center re-authentication.</small>
                   <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action" disabled={dataExportStatus.status === "processing"} onClick={() => void requestDataExport()}>{dataExportStatus.status === "processing" ? "Generating export..." : "Request data export"}</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!dataExportStatus.canDownload} onClick={downloadDataExport}>Download JSON export</button>
-                  </div>
-                </div>
-                <div className="danger-zone-card" aria-label="Account deletion danger zone">
-                  <span>Danger Zone</span>
-                  <strong>Request account deletion</strong>
-                  <small>{accountDeletionStatus.message} {ownedCommunityCount ? `You own ${ownedCommunityCount} communit${ownedCommunityCount === 1 ? "y" : "ies"}; transfer ownership first.` : "The request revokes sessions and starts a 14-day review period. It never hard-deletes immediately."}</small>
-                  <label className="account-settings-field">
-                    <small>Type username <b>{accountDeletionConfirmationText}</b> to confirm the request.</small>
-                    <input className="advanced-settings-input" value={accountDeletionConfirmText} onChange={(event) => setAccountDeletionConfirmText(event.target.value)} placeholder={accountDeletionConfirmationText} />
-                  </label>
-                  <label className="account-settings-field">
-                    <small>Re-enter your current password. Picom sends it only to Supabase Auth for re-authentication and never stores or logs it.</small>
-                    <input className="advanced-settings-input" type="password" autoComplete="current-password" value={accountDeletionPassword} onChange={(event) => setAccountDeletionPassword(event.target.value)} placeholder="Current password" />
-                  </label>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action settings-inline-action--danger" disabled={accountDeletionConfirmText.trim().toLowerCase() !== accountDeletionConfirmationText.toLowerCase() || accountDeletionPassword.length < 8 || ownedCommunityCount > 0 || accountDeletionStatus.requested || accountDeletionBusy} onClick={() => void requestAccountDeletion()}>{accountDeletionBusy ? "Verifying account..." : "Request deletion and sign out"}</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!accountDeletionStatus.requested} onClick={() => void cancelAccountDeletion()}>Cancel request</button>
+                    <button type="button" className="settings-inline-action" onClick={() => void openAccountCenter(accountCenterUrls.manageAccount)}>Open Account Center</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/security`)}>Security / MFA</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/data`)}>Data export</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/delete`)}>Delete account</button>
                   </div>
                 </div>
               </section>
@@ -1019,27 +997,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             <div className="privacy-settings-stack">
               <p className="settings-section-description">Central desktop controls for blocking, privacy, data requests, and safety guidance. Supabase/RLS remains the source of truth for production enforcement.</p>
 
-              <section className="privacy-settings-section">
-                <h3 className="privacy-settings-section-title">Overview</h3>
-                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Safety summary">
-                  <span>Safety summary</span>
-                  <strong>{userSafetyCenterService.getPrivacySummary(blockedUsers.length)}</strong>
-                  <small>Privacy choices are enforced locally and synchronized to Supabase when connected; passwords, tokens, and message content are never stored here.</small>
-                </div>
-                <div className="settings-status-card settings-feature-card" aria-label="Public and visitor profile behavior">
-                  <span>Public and visitor visibility</span>
-                  <strong>{profilePrivacy.visibility === "everyone" ? "Safe profile basics are public" : profilePrivacy.visibility === "shared_communities" ? "Shared communities only" : "Friends only"}</strong>
-                  <small>Visitors never receive private-channel activity or media. Each section below can be hidden independently, and server-side profile projection remains authoritative.</small>
-                </div>
-                <div className="security-card-grid" aria-label="Privacy metrics">
-                  <article className="security-card"><span>Blocked users</span><strong>{blockedUsers.length}</strong><small>Community messages are collapsed and direct messages are disabled for blocked users.</small></article>
-                  <article className="security-card"><span>Online status</span><strong>{safetySettings.showOnlineStatus ? "Visible" : "Hidden"}</strong><small>Profile visibility is synchronized when Supabase profile privacy is available.</small></article>
-                  <article className="security-card"><span>Read receipts</span><strong>{safetySettings.enableReadReceipts ? "Enabled" : "Disabled"}</strong><small>Read receipts remain opt-in and should not expose detailed reads in large communities.</small></article>
-                  <article className="security-card"><span>Account data</span><strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Export processing" : "Export not requested"}</strong><small>{accountDeletionStatus.requested ? "Deletion request recorded; sign in again to cancel during the review period." : "No deletion request active."}</small></article>
-                </div>
-              </section>
+              <nav className="privacy-settings-jump" aria-label="Privacy sections">
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-reach")}>Who can reach you</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-visibility")}>Profile visibility</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-blocking")}>Blocking & mutes</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-data")}>Data & guidance</button>
+              </nav>
 
-              <section className="privacy-settings-section">
+              <section className="privacy-settings-section" id="privacy-reach">
                 <h3 className="privacy-settings-section-title">Who can reach you</h3>
                 <label className="settings-toggle-row">
                   <span><strong>Who can send friend requests</strong><small>Controls incoming friend requests while preserving existing community access.</small></span>
@@ -1061,7 +1026,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </label>
               </section>
 
-              <section className="privacy-settings-section">
+              <section className="privacy-settings-section" id="privacy-visibility">
                 <h3 className="privacy-settings-section-title">Profile visibility</h3>
                 <label className="settings-toggle-row"><span><strong>Profile audience</strong><small>Private-channel activity is always filtered by channel access, regardless of this choice.</small></span><select value={profilePrivacy.visibility} onChange={(event) => updateProfilePrivacy({ visibility: event.target.value as ProfilePrivacySettings["visibility"] })}><option value="everyone">Everyone</option><option value="shared_communities">Shared communities</option><option value="friends">Friends only</option></select></label>
                 <label className="settings-toggle-row"><span><strong>Show location</strong><small>Hide your location from profile viewers.</small></span><input type="checkbox" checked={profilePrivacy.showLocation} onChange={(event) => updateProfilePrivacy({ showLocation: event.target.checked })} /></label>
@@ -1074,7 +1039,43 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 <label className="settings-toggle-row"><span><strong>Show Radio and Podcast sections</strong><small>Hide audio activity from your profile without removing public community audio.</small></span><input type="checkbox" checked={profilePrivacy.showAudio} onChange={(event) => updateProfilePrivacy({ showAudio: event.target.checked })} /></label>
               </section>
 
-              <section className="privacy-settings-section">
+              <section className="privacy-settings-section" id="privacy-overview">
+                <h3 className="privacy-settings-section-title">Overview</h3>
+                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Safety summary">
+                  <span>Safety summary</span>
+                  <strong>{userSafetyCenterService.getPrivacySummary(blockedUsers.length)}</strong>
+                  <small>Privacy choices are enforced locally and synchronized to Supabase when connected; passwords, tokens, and message content are never stored here.</small>
+                </div>
+                <div className="settings-status-card settings-feature-card" aria-label="Public and visitor profile behavior">
+                  <span>Public and visitor visibility</span>
+                  <strong>{profilePrivacy.visibility === "everyone" ? "Safe profile basics are public" : profilePrivacy.visibility === "shared_communities" ? "Shared communities only" : "Friends only"}</strong>
+                  <small>Visitors never receive private-channel activity or media. Each section above can be hidden independently, and server-side profile projection remains authoritative.</small>
+                </div>
+                <div className="security-card-grid" aria-label="Privacy metrics">
+                  <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-blocking")}>
+                    <span>Blocked users</span>
+                    <strong>{blockedUsers.length}</strong>
+                    <small>Community messages are collapsed and direct messages are disabled for blocked users.</small>
+                  </button>
+                  <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-reach")}>
+                    <span>Online status</span>
+                    <strong>{profilePrivacy.showOnlineStatus ? "Visible" : "Hidden"}</strong>
+                    <small>Profile visibility is synchronized when Supabase profile privacy is available.</small>
+                  </button>
+                  <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-reach")}>
+                    <span>Read receipts</span>
+                    <strong>{safetySettings.enableReadReceipts ? "Enabled" : "Disabled"}</strong>
+                    <small>Read receipts remain opt-in and should not expose detailed reads in large communities.</small>
+                  </button>
+                  <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-data")}>
+                    <span>Account data</span>
+                    <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Export processing" : "Export not requested"}</strong>
+                    <small>{accountDeletionStatus.requested ? "Deletion request recorded; sign in again to cancel during the review period." : "No deletion request active."}</small>
+                  </button>
+                </div>
+              </section>
+
+              <section className="privacy-settings-section" id="privacy-blocking">
                 <h3 className="privacy-settings-section-title">Blocking & mutes</h3>
                 <div className="settings-status-card settings-feature-card" aria-label="Blocked users list">
                   <span>Blocked users</span>
@@ -1084,10 +1085,10 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                     {blockedUsers.length ? blockedUsers.map((blockedUser) => (
                       <article key={blockedUser.userId} className="privacy-list-item">
                         <div>
-                          <strong>{blockedUser.displayName}</strong>
-                          <small>@{blockedUser.username} · blocked {dateTimeService.formatMessageTime(blockedUser.blockedAt)}</small>
+                          <strong><ProfileDisplayName userId={blockedUser.userId} fallback={blockedUser.displayName} /></strong>
+                          <small>@<ProfileUsername userId={blockedUser.userId} fallback={blockedUser.username} /> · blocked {dateTimeService.formatMessageTime(blockedUser.blockedAt)}</small>
                         </div>
-                        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void unblockUser(blockedUser.userId, blockedUser.displayName, blockedUser.username)}>Unblock</button>
+                        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void unblockUser(blockedUser.userId, getLiveBlockedDisplayName(blockedUser.userId, blockedUser.displayName), getLiveBlockedUsername(blockedUser.userId, blockedUser.username))}>Unblock</button>
                       </article>
                     )) : (
                       <article className="privacy-list-item privacy-list-item--empty">
@@ -1133,7 +1134,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </div>
               </section>
 
-              <section className="privacy-settings-section">
+              <section className="privacy-settings-section" id="privacy-data">
                 <h3 className="privacy-settings-section-title">Data & guidance</h3>
                 <label className="settings-toggle-row"><span><strong>Share anonymous usage diagnostics</strong><small>Off by default. Records feature counts and app health locally; never message content, passwords, tokens, channel names, or attachment contents.</small></span><input type="checkbox" checked={analyticsEnabled} onChange={(event) => { const enabled = analyticsService.setEnabled(event.target.checked); setAnalyticsEnabled(enabled); pushToast(enabled ? "Anonymous diagnostics enabled locally." : "Anonymous diagnostics disabled and local queue cleared.", "success"); }} /></label>
                 <div className="settings-status-card settings-feature-card retention-user-notice" aria-label="Content deletion and retention information">
@@ -1149,10 +1150,10 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </div>
               </section>
 
-              <section className="privacy-settings-section privacy-settings-section--compact">
+              <section className="privacy-settings-section privacy-settings-section--compact privacy-settings-actions--dock" aria-label="Privacy data actions">
                 <div className="settings-actions-row">
-                  <button type="button" className="settings-inline-action" disabled={dataExportStatus.status === "processing"} onClick={() => void requestDataExport()}>{dataExportStatus.status === "processing" ? "Generating export..." : "Request data export"}</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { setActive("Account"); pushToast(accountDeletionStatus.message, accountDeletionStatus.requested ? "info" : "success"); }}>Review account deletion</button>
+                  <button type="button" className="settings-inline-action" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/data`)}>{dataExportStatus.status === "processing" ? "Export runs in Account Center…" : "Request data export"}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/delete`)}>Account deletion</button>
                   <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { setActive("Advanced"); pushToast("Open Beta support to report a problem.", "info"); }}>Report a problem</button>
                   <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => updateSafetySettings(userSafetyCenterService.resetSettings())}>Reset safety settings</button>
                 </div>
@@ -1160,34 +1161,126 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Profile" ? (
             <div className="profile-settings-stack">
-              <p className="settings-section-description">Photos save immediately. Username, bio, and other fields save when you click Save profile.</p>
+              <p className="settings-section-description">
+                Edit avatar, cover, username, bio, and presence here. Changes save through Supabase when you are signed in.
+              </p>
               {profileHydrating ? <p className="settings-section-description" aria-live="polite">Loading your live profile from Supabase…</p> : null}
 
               <section className="profile-settings-section">
                 <header className="profile-settings-section-head">
                   <h3 className="profile-settings-section-title">Photos</h3>
-                  <p>Upload a wide cover image and a square profile photo for your public profile.</p>
+                  <p>Upload or remove your profile and cover photos.</p>
                 </header>
-                <ProfileMediaEditor displayName={profileDraft.displayName || currentUsername} avatarUrl={profileDraft.avatarUrl} coverUrl={profileDraft.coverUrl} onProfileUpdated={(profile) => applyProfileSummary(profile, { mediaOnly: true })} onNotice={pushToast} />
+                <ProfileMediaEditor
+                  displayName={profileDraft.displayName || currentUsername}
+                  avatarUrl={profileDraft.avatarUrl}
+                  coverUrl={profileDraft.coverUrl}
+                  onProfileUpdated={(profile) => applyProfileSummary(profile, { mediaOnly: true })}
+                  onNotice={pushToast}
+                />
               </section>
 
               <section className="profile-settings-section">
                 <header className="profile-settings-section-head">
-                  <h3 className="profile-settings-section-title">Public profile</h3>
-                  <p>These details appear on your profile and in communities you join.</p>
+                  <h3 className="profile-settings-section-title">Identity</h3>
+                  <p>Public profile fields shown across Picom.</p>
                 </header>
                 <div className="profile-settings-form">
-                  <div className="profile-settings-form-grid">
-                    <label className="profile-settings-field">
-                      <span>Username</span>
-                      <input className="advanced-settings-input" value={profileDraft.username} minLength={3} maxLength={32} pattern="[a-z0-9._-]+" onChange={(event) => setProfileDraft({ ...profileDraft, username: event.target.value.toLowerCase() })} placeholder="username" autoCapitalize="none" spellCheck={false} />
-                    </label>
-                    <label className="profile-settings-field">
-                      <span>Display name</span>
-                      <input className="advanced-settings-input" value={profileDraft.displayName} maxLength={80} onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })} placeholder="Display name" />
-                    </label>
-                  </div>
+                  <label className="profile-settings-field">
+                    <span>Username</span>
+                    <input
+                      className="advanced-settings-input"
+                      value={profileDraft.username}
+                      minLength={3}
+                      maxLength={32}
+                      pattern="[a-z0-9._-]+"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      disabled={profileHydrating}
+                      onChange={(event) => setProfileDraft({ ...profileDraft, username: event.target.value.toLowerCase() })}
+                      placeholder="username"
+                    />
+                    <small>3–32 characters: lowercase letters, numbers, dots, underscores, or hyphens.</small>
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>Display name</span>
+                    <input
+                      className="advanced-settings-input"
+                      value={profileDraft.displayName}
+                      maxLength={80}
+                      disabled={profileHydrating}
+                      onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })}
+                      placeholder="Display name"
+                    />
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>Bio</span>
+                    <textarea
+                      className="advanced-settings-input"
+                      value={profileDraft.bio}
+                      maxLength={500}
+                      rows={4}
+                      disabled={profileHydrating}
+                      onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })}
+                      placeholder="Write a short profile bio"
+                    />
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>Location</span>
+                    <input
+                      className="advanced-settings-input"
+                      value={profileDraft.location}
+                      maxLength={120}
+                      disabled={profileHydrating}
+                      onChange={(event) => setProfileDraft({ ...profileDraft, location: event.target.value })}
+                      placeholder="City or region"
+                    />
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>Timezone</span>
+                    <input
+                      className="advanced-settings-input"
+                      value={profileDraft.timezone}
+                      maxLength={80}
+                      disabled={profileHydrating}
+                      onChange={(event) => setProfileDraft({ ...profileDraft, timezone: event.target.value })}
+                      placeholder="Europe/Berlin"
+                    />
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>Preferred language</span>
+                    <input
+                      className="advanced-settings-input"
+                      value={profileDraft.preferredLanguage}
+                      maxLength={48}
+                      disabled={profileHydrating}
+                      onChange={(event) => setProfileDraft({ ...profileDraft, preferredLanguage: event.target.value })}
+                      placeholder="English"
+                    />
+                  </label>
+                  <label className="profile-settings-field">
+                    <span>Tags</span>
+                    <input
+                      className="advanced-settings-input"
+                      value={profileDraft.tags.join(", ")}
+                      disabled={profileHydrating}
+                      onChange={(event) => setProfileDraft({
+                        ...profileDraft,
+                        tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 12),
+                      })}
+                      placeholder="Design, Community, Music"
+                    />
+                    <small>Up to 12 comma-separated tags.</small>
+                  </label>
+                </div>
+              </section>
 
+              <section className="profile-settings-section">
+                <header className="profile-settings-section-head">
+                  <h3 className="profile-settings-section-title">Presence</h3>
+                  <p>Status shown while you use Picom on desktop.</p>
+                </header>
+                <div className="profile-settings-form">
                   <div className="profile-settings-field">
                     <span>Presence</span>
                     <div className="profile-presence-segment" role="group" aria-label="Presence">
@@ -1205,86 +1298,44 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                     </div>
                   </div>
 
-                  <div className="profile-settings-form-grid">
-                    <label className="profile-settings-field">
-                      <span>Status text</span>
-                      <input
-                        className="advanced-settings-input"
-                        value={autoActivityEnabled && activitySnapshot.statusText ? activitySnapshot.statusText : profileDraft.statusText}
-                        maxLength={120}
-                        onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })}
-                        placeholder="What are you working on?"
-                        disabled={autoActivityEnabled && Boolean(activitySnapshot.statusText)}
-                        readOnly={autoActivityEnabled && Boolean(activitySnapshot.statusText)}
-                      />
-                    </label>
-                    <label className="profile-settings-field">
-                      <span>Location</span>
-                      <input className="advanced-settings-input" value={profileDraft.location} maxLength={120} onChange={(event) => setProfileDraft({ ...profileDraft, location: event.target.value })} placeholder="City or region" />
-                    </label>
-                    <label className="profile-settings-field">
-                      <span>Timezone</span>
-                      <input className="advanced-settings-input" value={profileDraft.timezone} maxLength={80} onChange={(event) => setProfileDraft({ ...profileDraft, timezone: event.target.value })} placeholder="Europe/Berlin" />
-                    </label>
-                    <label className="profile-settings-field">
-                      <span>Preferred language</span>
-                      <input className="advanced-settings-input" value={profileDraft.preferredLanguage} maxLength={48} onChange={(event) => setProfileDraft({ ...profileDraft, preferredLanguage: event.target.value })} placeholder="English" />
-                    </label>
-                  </div>
-
-                  <label className="settings-toggle-row">
-                    <span>
-                      <strong>Automatic activity status</strong>
-                      <small>
-                        {activityBridgeAvailable
-                          ? "Show the game or song currently playing on this Windows PC (Media Session + active window)."
-                          : "Available in the Picom desktop app on Windows. Browser sessions cannot detect games or media."}
-                      </small>
-                      {autoActivityEnabled && activitySnapshot.statusText ? (
-                        <small aria-live="polite">Live: {activitySnapshot.statusText}</small>
-                      ) : autoActivityEnabled && activityBridgeAvailable ? (
-                        <small aria-live="polite">Waiting for a game or media session…</small>
-                      ) : null}
-                    </span>
+                  <label className="profile-settings-field">
+                    <span>Status message</span>
                     <input
-                      type="checkbox"
-                      checked={autoActivityEnabled}
-                      onChange={(event) => updateAutoActivity(event.target.checked)}
-                      disabled={!activityBridgeAvailable}
+                      className="advanced-settings-input"
+                      value={profileDraft.statusText}
+                      maxLength={120}
+                      disabled={autoActivityEnabled || profileHydrating}
+                      onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })}
+                      placeholder="Optional status shown with your presence"
                     />
-                  </label>
-
-                  <label className="profile-settings-field">
-                    <span>Tags</span>
-                    <input className="advanced-settings-input" value={profileDraft.tags.join(", ")} onChange={(event) => setProfileDraft({ ...profileDraft, tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 12) })} placeholder="Design, Community, Music" />
-                    <small>Up to 12 comma-separated tags.</small>
-                  </label>
-
-                  <label className="profile-settings-field">
-                    <span>Bio</span>
-                    <textarea className="advanced-settings-textarea" value={profileDraft.bio} maxLength={500} onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })} placeholder="Write a short profile bio" rows={4} />
+                    <small>{autoActivityEnabled ? "Automatic activity status is writing this field while enabled." : "Optional. Saved with Save profile."}</small>
                   </label>
                 </div>
               </section>
 
-              <section className="profile-settings-section profile-settings-section--compact">
+              <section className="profile-settings-section profile-settings-section--compact profile-settings-actions" aria-label="Profile save actions">
                 <div className="settings-actions-row">
-                  <button type="button" className="settings-inline-action" disabled={profileSaving || profileHydrating || !profileDraft.displayName.trim() || !/^[a-z0-9._-]{3,32}$/.test(profileDraft.username)} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : profileHydrating ? "Loading profile..." : "Save profile"}</button>
+                  <button type="button" className="settings-inline-action" disabled={profileSaveDisabled} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : profileHydrating ? "Loading profile..." : "Save profile"}</button>
                   <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving || profileHydrating} onClick={resetProfileSettings}>Discard changes</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving} onClick={() => setActive("Privacy & Safety")}>Manage profile privacy</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving} onClick={() => setActive("Privacy & Safety")}>Privacy &amp; safety</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/profile`)}>Open on web</button>
                 </div>
               </section>
 
-              <section className="profile-settings-section">
-                <ProfileVerificationRequestCard />
-              </section>
+              <ProfileVerificationRequestCard />
             </div>
           ) : active === "Notifications" ? (
             <div className="notification-settings-stack">
               <p className="settings-section-description">Choose which Picom activity can reach your inbox and desktop. Native delivery remains behind the safe preload bridge.</p>
 
-              <EmailPreferencesPanel />
-              <section className="notification-settings-section">
+              <nav className="notification-settings-jump" aria-label="Notification sections">
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-runtime")}>Desktop delivery</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-activity")}>Activity</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-quiet")}>Quiet Hours</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-email")}>Email</button>
+              </nav>
+
+              <section className="notification-settings-section" id="notifications-runtime">
                 <h3 className="notification-settings-section-title">Runtime & delivery</h3>
                 <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Notification runtime status">
                   <span>Runtime support</span>
@@ -1313,7 +1364,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </label>
               </section>
 
-              <section className="notification-settings-section">
+              <section className="notification-settings-section" id="notifications-activity">
                 <h3 className="notification-settings-section-title">Activity</h3>
                 <div className="settings-status-card settings-feature-card" aria-label="Notification categories">
                   <span>Categories</span>
@@ -1340,7 +1391,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </label>
               </section>
 
-              <section className="notification-settings-section">
+              <section className="notification-settings-section" id="notifications-quiet">
                 <h3 className="notification-settings-section-title">Quiet Hours</h3>
                 <div className="settings-status-card settings-feature-card" aria-label="Quiet Hours notification setting">
                   <span>Schedule</span>
@@ -1381,7 +1432,9 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </label>
               </section>
 
-              <section className="notification-settings-section">
+              <EmailPreferencesPanel />
+
+              <section className="notification-settings-section" id="notifications-muted">
                 <h3 className="notification-settings-section-title">Muted scopes</h3>
                 <div className="settings-status-card settings-feature-card" aria-label="Muted communities and channels">
                   <span>Muted scopes</span>
@@ -1420,7 +1473,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             <div className="voice-settings-stack">
               <p className="settings-section-description">Manage permission-gated voice devices, LiveKit capture processing, screen-share guidance, and Radio/Podcast playback defaults.</p>
 
-              <section className="voice-settings-section">
+              <nav className="voice-settings-jump" aria-label="Voice settings sections">
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-live")}>Live session</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-microphone")}>Microphone</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-output")}>Output</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-noise")}>Noise Shield</button>
+              </nav>
+
+              <section className="voice-settings-section" id="voice-settings-live">
                 <h3 className="voice-settings-section-title">Live session</h3>
                 <div className="security-card-grid" aria-label="Voice session status">
                   <article className="security-card"><span>Connection</span><strong>{voiceSettingsSnapshot.status.replace(/_/g, " ")}</strong><small>{voiceSettingsSnapshot.roomName ? `Room: ${voiceSettingsSnapshot.roomName}` : "Join a voice channel to activate controls."}</small></article>
@@ -1432,15 +1492,100 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   <button type="button" className="settings-inline-action" disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => void voiceService.setMuted(!voiceSettingsSnapshot.muted)}>{voiceSettingsSnapshot.muted ? "Unmute microphone" : "Mute microphone"}</button>
                   <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => { const result = voiceService.setDeafened(!voiceSettingsSnapshot.deafened); if (!result.ok) pushToast(result.error.message, "error"); }}>{voiceSettingsSnapshot.deafened ? "Undeafen" : "Deafen"}</button>
                 </div>
+                {voiceSettingsSnapshot.status !== "connected" ? (
+                  <small className="voice-settings-live-hint" role="status">Mute and deafen unlock when you join a voice channel.</small>
+                ) : null}
               </section>
 
               <VoiceDeviceSelection />
             </div>
+          ) : active === "Companion" ? (
+            <div className="advanced-settings-stack">
+              <p className="settings-section-description">Control Companion Mode startup, bubble/dock behavior, and always-on-top overlays without leaving the main app.</p>
+              {!companionPreferences ? (
+                <div className="settings-status-card settings-feature-card" aria-label="Companion preferences loading">
+                  <span>Companion</span>
+                  <strong>{companionSaveError || "Loading preferences…"}</strong>
+                  <small>Companion preferences sync through the desktop shell when available.</small>
+                </div>
+              ) : (
+                <>
+                  <section className="advanced-settings-section">
+                    <h3 className="advanced-settings-section-title">Startup</h3>
+                    <div className="settings-status-card settings-feature-card" aria-label="Companion startup mode">
+                      <span>Open Picom as</span>
+                      <strong>{companionPreferences.startupMode === "companion" ? "Companion Mode" : "Main window"}</strong>
+                      <small>Companion startup keeps the main window hidden and opens the always-available shell.</small>
+                      <div className="settings-actions-row">
+                        <button type="button" className={`settings-inline-action${companionPreferences.startupMode === "main" ? "" : " settings-inline-action--ghost"}`} disabled={companionBusy} onClick={() => void patchCompanion({ startupMode: "main" })}>Main mode</button>
+                        <button type="button" className={`settings-inline-action${companionPreferences.startupMode === "companion" ? "" : " settings-inline-action--ghost"}`} disabled={companionBusy} onClick={() => void patchCompanion({ startupMode: "companion" })}>Companion</button>
+                      </div>
+                    </div>
+                  </section>
+                  <section className="advanced-settings-section">
+                    <h3 className="advanced-settings-section-title">Behavior</h3>
+                    <label className="settings-toggle-row"><span><strong>Always on top</strong><small>Keep Companion windows above other apps.</small></span><input type="checkbox" checked={Boolean(companionPreferences.alwaysOnTop)} disabled={companionBusy} onChange={(event) => void patchCompanion({ alwaysOnTop: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>Smart collapse</strong><small>Collapse to the logo bubble when unread is clear.</small></span><input type="checkbox" checked={Boolean(companionPreferences.smartCollapse)} disabled={companionBusy} onChange={(event) => void patchCompanion({ smartCollapse: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>Dock auto-hide</strong><small>Hide the edge dock until you move near it.</small></span><input type="checkbox" checked={Boolean(companionPreferences.dockAutoHide)} disabled={companionBusy} onChange={(event) => void patchCompanion({ dockAutoHide: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>Gaming auto-detect</strong><small>Show the gaming overlay when fullscreen play is detected.</small></span><input type="checkbox" checked={Boolean(companionPreferences.gamingAutoDetect)} disabled={companionBusy} onChange={(event) => void patchCompanion({ gamingAutoDetect: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>Companion notifications</strong><small>Show toast replies and unread previews in Companion surfaces.</small></span><input type="checkbox" checked={Boolean(companionPreferences.showNotifications)} disabled={companionBusy} onChange={(event) => void patchCompanion({ showNotifications: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>Close to tray</strong><small>Minimize Companion to the tray instead of exiting.</small></span><input type="checkbox" checked={Boolean(companionPreferences.closeToTray)} disabled={companionBusy} onChange={(event) => void patchCompanion({ closeToTray: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>Compact density</strong><small>Tighter rows in Companion lists and chat.</small></span><input type="checkbox" checked={Boolean(companionPreferences.compactDensity)} disabled={companionBusy} onChange={(event) => void patchCompanion({ compactDensity: event.target.checked })} /></label>
+                  </section>
+                  <section className="advanced-settings-section">
+                    <h3 className="advanced-settings-section-title">Appearance</h3>
+                    <div className="settings-status-card settings-feature-card" aria-label="Companion window opacity">
+                      <span>Window opacity</span>
+                      <strong>{Math.round((companionPreferences.windowOpacity ?? 1) * 100)}%</strong>
+                      <input type="range" min={85} max={100} step={1} value={Math.round((companionPreferences.windowOpacity ?? 1) * 100)} aria-label="Companion window opacity" disabled={companionBusy} onChange={(event) => void patchCompanion({ windowOpacity: Number(event.target.value) / 100 })} />
+                    </div>
+                    <div className="settings-status-card settings-feature-card" aria-label="Companion dock edge">
+                      <span>Dock edge</span>
+                      <strong>{companionPreferences.dockEdge}</strong>
+                      <div className="settings-actions-row">
+                        {(["left", "right", "top", "bottom"] as CompanionDockEdge[]).map((edge) => (
+                          <button key={edge} type="button" className={`settings-inline-action${companionPreferences.dockEdge === edge ? "" : " settings-inline-action--ghost"}`} disabled={companionBusy} onClick={() => void patchCompanion({ dockEdge: edge })}>{edge}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="settings-status-card settings-feature-card" aria-label="Companion theme">
+                      <span>Companion theme</span>
+                      <strong>{companionPreferences.theme}</strong>
+                      <div className="settings-actions-row">
+                        {(["system", "light", "dark"] as const).map((theme) => (
+                          <button key={theme} type="button" className={`settings-inline-action${companionPreferences.theme === theme ? "" : " settings-inline-action--ghost"}`} disabled={companionBusy} onClick={() => void patchCompanion({ theme })}>{theme}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                  <section className="advanced-settings-section">
+                    <h3 className="advanced-settings-section-title">Shortcuts</h3>
+                    <div className="security-card-grid" aria-label="Companion shortcuts">
+                      <article className="security-card"><span>Open Companion</span><strong>Ctrl + Shift + C</strong><small>Switch to Companion Mode from the desktop shell.</small></article>
+                      <article className="security-card"><span>Quick reply</span><strong>Ctrl + Shift + Y</strong><small>Answer from a Companion notification toast.</small></article>
+                      <article className="security-card"><span>Mute microphone</span><strong>Ctrl + Shift + M</strong><small>Toggle mute while a Companion voice call is connected.</small></article>
+                    </div>
+                    <div className="settings-actions-row">
+                      <button type="button" className="settings-inline-action" onClick={() => { void window.picomDesktop?.companion?.openWindow?.({ type: "home" }); pushToast("Companion home requested.", "info"); }}>Open Companion</button>
+                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { void window.picomDesktop?.companion?.openWindow?.({ type: "gaming" }); pushToast("Gaming overlay requested.", "info"); }}>Open gaming mode</button>
+                    </div>
+                  </section>
+                  {companionSaveError ? <p className="settings-section-description" role="alert">{companionSaveError}</p> : null}
+                </>
+              )}
+            </div>
           ) : active === "Keyboard Shortcuts" ? (
             <KeyboardShortcutsSection />
+          ) : active === "Update" ? (
+            <UpdateSettingsSection onOpenAdvanced={() => setActive("Advanced")} onNotice={pushToast} />
           ) : active === "Diagnostics" ? (
             <div className="diagnostics-settings-stack">
               <p className="settings-section-description">Review redacted runtime health, export support payloads, and inspect local logs without exposing secrets.</p>
+              <nav className="diagnostics-settings-jump" aria-label="Diagnostics sections">
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-support")}>Support</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-snapshot")}>Snapshot</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-logs")}>Logs</button>
+              </nav>
               <FeedbackSection onNotice={pushToast} />
               <DiagnosticsSection onNotice={pushToast} />
               <LogsViewer onNotice={pushToast} />
@@ -1452,22 +1597,57 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <AdminOperationsPanelRedirect onOpenPanel={onClose} />
             )
           ) : active === "Legal" ? (
-            <div className="legal-settings-panel">
-              <div className="settings-status-card"><span>Legal version {legalConfig.currentVersion}</span><strong>Professional review required</strong><small>Terms and privacy links below match the version recorded during registration or re-acceptance. These drafts are not final legal advice.</small></div>
-              {legalDocumentOrder.map((documentId) => <button type="button" key={documentId} onClick={() => setOpenLegalDocument(documentId)}><span><strong>{legalDocuments[documentId].title}</strong><small>{legalDocuments[documentId].updatedLabel}</small></span><AppIcon name="chevronRight" size="sm" /></button>)}
-              <small>Picom {appConfig.version} · {appConfig.releaseChannel} channel</small>
-            </div>
+            <LegalSettingsSection onOpenDocument={setOpenLegalDocument} />
           ) : active === "Advanced" ? (
             <div className="advanced-settings-stack">
               <p className="settings-section-description">Tray, window controls, file handling and clipboard are routed through safe services.</p>
+              <nav className="advanced-settings-jump" aria-label="Advanced sections">
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-runtime")}>Runtime</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-recovery")}>Recovery</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-updates")}>Updates</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-startup")}>Startup</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-cache")}>Cache</button>
+              </nav>
 
-              <section className="advanced-settings-section">
+              <section className="advanced-settings-section" id="advanced-runtime">
                 <h3 className="advanced-settings-section-title">Runtime & build</h3>
                 {developerPortalAvailable ? <div className="settings-status-card settings-feature-card" aria-label="Developer Portal restricted beta"><span>Developer Portal</span><strong>Restricted beta</strong><small>Review safe bot/webhook metadata and developer guidance. No raw keys, application registration, or public publishing.</small><button type="button" className="settings-inline-action" onClick={() => setDeveloperPortalOpen(true)}>Open Developer Portal</button></div> : null}
-                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="About Picom build metadata">
-                  <span>About Picom <span className="picom-beta-badge">Beta · Frontend preview</span></span>
+                <div className="settings-status-card settings-feature-card settings-feature-card--highlight about-picom-card" aria-label="About Picom build metadata">
+                  <span>
+                    About Picom
+                    <span className="picom-beta-badge">
+                      {appConfig.build.commitShort === "local" ? "Beta · Local development" : "Beta · Frontend preview"}
+                    </span>
+                  </span>
                   <strong>{appConfig.name} {appConfig.version} ({appConfig.releaseChannel})</strong>
-                  <small>Frontend-only beta: the desktop app is feature-complete, but some backend services may not be fully enabled yet. Build: {appConfig.build.date}. Commit: {appConfig.build.commitShort}. Runtime: {appConfig.build.desktopRuntime}. API compatibility: {appConfig.build.backendApiCompatibilityVersion}.</small>
+                  <small>
+                    {appConfig.environment === "development" || appConfig.build.commitShort === "local"
+                      ? "Local desktop preview build. Packaged release metadata is injected at CI/build time."
+                      : "Desktop build metadata for this Picom package."}
+                    {" "}Channel {appConfig.releaseChannel} · scope {appConfig.releaseScope} · {appConfig.identifier}.
+                  </small>
+                  <dl className="about-picom-meta">
+                    <div>
+                      <dt>Build</dt>
+                      <dd title={appConfig.build.date}>{appConfig.build.date === "development" ? "Local / unstamped" : appConfig.build.date}</dd>
+                    </div>
+                    <div>
+                      <dt>Commit</dt>
+                      <dd title={appConfig.build.commit}>{appConfig.build.commitShort === "local" ? "Local workspace" : appConfig.build.commitShort}</dd>
+                    </div>
+                    <div>
+                      <dt>Runtime</dt>
+                      <dd>{typeof window !== "undefined" && window.picomDesktop ? "Electron desktop" : "Browser preview"}</dd>
+                    </div>
+                    <div>
+                      <dt>API compatibility</dt>
+                      <dd title={appConfig.build.backendApiCompatibilityVersion}>
+                        {appConfig.build.backendApiCompatibilityVersion === "mvp-placeholder"
+                          ? "Desktop MVP (placeholder)"
+                          : appConfig.build.backendApiCompatibilityVersion}
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
                 <div className="security-card-grid" aria-label="Advanced runtime summary">
                   <article className="security-card"><span>Release</span><strong>{appConfig.releaseChannel}</strong><small>{appConfig.version} / {appConfig.build.commitShort} / {appConfig.build.date}</small></article>
@@ -1477,7 +1657,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </div>
               </section>
 
-              <section className="advanced-settings-section">
+              <section className="advanced-settings-section" id="advanced-recovery">
                 <h3 className="advanced-settings-section-title">Recovery & desktop shell</h3>
                 <div className="settings-status-card settings-feature-card" aria-label="Safe Mode recovery">
                   <span>Safe Mode</span><strong>{safeModeState.active ? `Active: ${safeModeState.reason ?? "manual"}` : "Available for troubleshooting"}</strong><small>Safe Mode pauses optional services without clearing your authentication session or server data.</small>
@@ -1504,7 +1684,15 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                     Reset first-launch setup
                   </button>
                 </div> : null}
-                <button type="button" className="settings-inline-action" onClick={openSystemStatus}>Open system status</button>
+                <div className="settings-status-card settings-feature-card" aria-label="System status controls">
+                  <span>System status</span>
+                  <strong>{systemStatusOpen ? (maintenanceSnapshot.status === "operational" ? "Panel open · operational" : maintenanceSnapshot.status === "degraded" ? "Panel open · degraded" : "Panel open · maintenance") : "In-app health check"}</strong>
+                  <small>Shows live backend, voice, realtime, and network status without leaving Settings.</small>
+                  <div className="settings-actions-row">
+                    <button type="button" className="settings-inline-action" onClick={() => void openSystemStatus()}>{systemStatusOpen ? "Refresh system status" : "Open system status"}</button>
+                    {systemStatusOpen ? <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSystemStatusOpen(false)}>Hide</button> : null}
+                  </div>
+                </div>
                 {systemStatusOpen ? (
                   <div className="settings-status-card settings-feature-card system-status-panel" aria-label="Live system status" aria-live="polite">
                     <span>System status</span>
@@ -1528,14 +1716,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 ) : null}
               </section>
 
-              <section className="advanced-settings-section">
+              <section className="advanced-settings-section" id="advanced-updates">
                 <h3 className="advanced-settings-section-title">Updates & diagnostics</h3>
               <div className="settings-status-card settings-feature-card" aria-label="Desktop update recovery status">
                 <span>Desktop updates</span>
-                <strong>{updateState.status.split("_").join(" ")}</strong>
+                <strong>{(updateState.status ?? "idle").split("_").join(" ")}</strong>
                 <small>{updateState.message}</small>
-                <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Production auto-update remains disabled until a signed endpoint is configured.</small>
-                {updateState.progress !== null ? <small>Simulation progress: {updateState.progress}%</small> : null}
+                <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Full update controls live in the Update settings section.</small>
+                <button type="button" className="settings-inline-action" onClick={() => setActive("Update")}>Open Update settings</button>
               </div>
               <div className="settings-status-card settings-feature-card" aria-label="Support diagnostics export">
                 <span>Support diagnostics</span>
@@ -1545,20 +1733,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </div>
               <label className="settings-toggle-row"><span><strong>Enable diagnostic reports</strong><small>Off by default. Stores a bounded redacted local crash envelope; no provider or DSN is configured.</small></span><input type="checkbox" checked={crashReportingEnabled} onChange={(event) => { const enabled = crashReporterService.setEnabled(event.target.checked); setCrashReportingEnabled(enabled); pushToast(enabled ? "Diagnostic reports enabled locally." : "Diagnostic reports disabled and local queue cleared.", "success"); }} /></label>
               {import.meta.env.DEV ? <div className="settings-actions-row"><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { const record = crashReporterService.captureException(new Error("Picom development crash report test"), { source: "settings-test", authorization: "Bearer redaction-test" }); pushToast(record ? "Redacted test error captured locally." : "Enable diagnostic reports before capturing a test error.", record ? "success" : "info"); }}>Capture test error safely</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { const status = crashReporterService.getStatus(); pushToast(`${status.queuedLocalRecords} redacted crash records queued locally.`, "info"); }}>Show crash report status</button></div> : null}
-              <div className="settings-actions-row">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled aria-disabled="true" onClick={() => void checkForUpdatesPlaceholder()}>Automatic updates require a signed release endpoint</button>
-                {import.meta.env.DEV ? <><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setUpdateState(updateService.setAvailablePlaceholder())}>Simulate available</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setUpdateState(updateService.startDownloadPlaceholder())}>Simulate download</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setUpdateState(updateService.setReadyToInstallPlaceholder())}>Simulate ready</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => simulateUpdateFailure("download")}>Simulate download failure</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => simulateUpdateFailure("install")}>Simulate install failure</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => simulateUpdateFailure("error")}>Simulate error</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setUpdateState(updateService.setRollbackAvailablePlaceholder())}>Simulate rollback</button></> : null}
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setUpdateState(updateService.retry())}>Retry</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setUpdateState(updateService.clearError())}>Clear error</button>
-              </div>
               <div className="settings-status-card settings-feature-card" aria-label="System status page">
-                <span>System status</span>
+                <span>System status page</span>
                 <strong>{statusPageService.isConfigured() ? statusPageService.getDisplayDomain() : "Not configured"}</strong>
-                <small>`VITE_STATUS_PAGE_URL` can point to a public non-sensitive status page when one is configured.</small>
+                <small>Optional VITE_STATUS_PAGE_URL can point to a public non-sensitive status page when one is configured.</small>
               </div>
               </section>
 
-              <section className="advanced-settings-section">
+              <section className="advanced-settings-section" id="advanced-startup">
                 <h3 className="advanced-settings-section-title">Startup & behavior</h3>
               <div className="settings-status-card settings-feature-card" aria-label="Launch on startup">
                 <span>Launch on startup</span>
@@ -1590,6 +1772,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 <span>App lock</span>
                 <strong>Ctrl + Shift + L</strong>
                 <small>Quick lock hides chat content without storing a password locally. Account authentication remains managed by Supabase.</small>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Keyboard Shortcuts")}>Open Keyboard Shortcuts</button>
               </div>
               <label className="settings-toggle-row">
                 <span>
@@ -1600,7 +1783,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </label>
               </section>
 
-              <section className="advanced-settings-section">
+              <section className="advanced-settings-section" id="advanced-cache">
                 <h3 className="advanced-settings-section-title">Cache & support</h3>
               <div className="settings-status-card settings-feature-card" aria-label="Cache management">
                 <span>Cache management</span>
@@ -1634,7 +1817,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </article>
               </div>
               <div className="settings-actions-row">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={refreshCacheSummary}>Refresh cache summary</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void refreshCacheSummary()}>Refresh cache summary</button>
                 <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache(), "Clear Picom's in-memory image metadata cache? Images will load again when needed.")}>Clear image cache</button>
                 <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void runCacheAction(() => cacheManagementService.clearLogs(), "Clear recent redacted logs from this Picom session?")}>Clear logs</button>
                 <button type="button" className="settings-inline-action" onClick={() => void runCacheAction(() => cacheManagementService.clearAllNonEssentialCache(), "Clear all non-essential image metadata and redacted logs? Auth sessions, drafts, queued messages, and server data are preserved.")}>Clear all non-essential cache</button>
@@ -1649,7 +1832,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   <strong>Issue type</strong>
                   <small>Used only in the local export payload.</small>
                 </span>
-                <select value={feedbackIssueType} onChange={(event) => setFeedbackIssueType(event.target.value as FeedbackIssueType)}>
+                <select value={feedbackIssueType} onChange={(event) => setFeedbackIssueType(event.target.value as FeedbackIssueType)} aria-label="Feedback issue type">
                   <option value="bug">Bug</option>
                   <option value="crash">Crash</option>
                   <option value="login">Login</option>
@@ -1678,14 +1861,23 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </label>
               <div className="settings-actions-row">
                 <button type="button" className="settings-inline-action" onClick={() => void copyFeedbackReport()}>Copy feedback report</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={exportDiagnostics}>Export diagnostics JSON</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void exportDiagnostics()}>Export diagnostics JSON</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Diagnostics")}>Open Diagnostics feedback</button>
               </div>
               </section>
             </div>
           ) : (
             <div className="placeholder-panel">
               <strong>Settings section unavailable</strong>
-              <p>Close and reopen Settings. If the problem persists, open Diagnostics and export a redacted report.</p>
+              <p>
+                {settingsSections.includes(active)
+                  ? `The “${active}” panel failed to render. Close and reopen Settings, or open Diagnostics and export a redacted report.`
+                  : "Close and reopen Settings. If the problem persists, open Diagnostics and export a redacted report."}
+              </p>
+              <div className="settings-actions-row">
+                <button type="button" className="settings-inline-action" onClick={() => setActive("Account")}>Open Account</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Diagnostics")}>Open Diagnostics</button>
+              </div>
             </div>
           )}
         </main>
