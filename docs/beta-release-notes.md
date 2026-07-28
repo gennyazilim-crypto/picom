@@ -1,5 +1,35 @@
 # Picom Beta Release Notes
 
+## 0.1.1-beta.10 (2026-07-28)
+
+Windows x64 installer: `Picom-0.1.1-beta.10-beta-Windows-x64.exe`
+
+- Desktop Settings Profile: avatar, cover, username, bio, and identity fields editable in-app again.
+- Desktop Settings Account: password change and reset email available without leaving the app.
+- Account Center links remain for MFA, export, and deletion.
+
+Download: `https://picom.gg/downloads/windows/Picom-0.1.1-beta.10-beta-Windows-x64.exe`
+
+## 0.1.1-beta.9 (2026-07-26)
+
+Windows x64 installer: `Picom-0.1.1-beta.9-beta-Windows-x64.exe`
+
+- Password-reset emails now use the public `https://picom.gg/auth/reset-password` bridge instead of a local development address.
+- Hosted Supabase auth redirects retain MFA, 8-digit OTP, and one-minute email rate-limit protections.
+- Auto-update metadata and the website download link now point to beta 9.
+
+Download: `https://picom.gg/downloads/windows/Picom-0.1.1-beta.9-beta-Windows-x64.exe`
+
+## 0.1.1-beta.8 (2026-07-25)
+
+Windows x64 installer: `Picom-0.1.1-beta.8-beta-Windows-x64.exe`
+
+- Screen share: local preview no longer loops into fullscreen corruption; system audio published when available.
+- Member sidebar: full community roster loads reliably after role hydration.
+- Auto-update feed restored at `https://picom.gg/downloads/windows`.
+
+Download: `https://picom.gg/downloads/windows/latest/Picom-0.1.1-beta.8-beta-Windows-x64.exe`
+
 ## 0.1.1-beta.4 (2026-07-18)
 
 Windows x64 installer: `Picom-0.1.1-beta.4-beta-Windows-x64.exe`
