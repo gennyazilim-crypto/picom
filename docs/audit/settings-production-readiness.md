@@ -1,10 +1,12 @@
 # PICOM Settings — Production Readiness Report
 
 **Date:** 2026-08-01  
-**Test end:** `2026-08-01T21:00:00+02:00`  
+**Test end:** `2026-08-01T21:51:09+02:00` (fresh package evidence UTC: `2026-08-01T21:51:09.639Z`)  
 **Surface:** Desktop Settings modal + main-process device settings IPC  
-**Working tree:** dirty (Settings ownership/i18n/IPC/branding fixes not committed)  
-**HEAD commit:** `4ae18de3037d1490b956ecca7e38ad72cd92244f`  
+**Working tree:** **dirty** (~801 paths — stash applied on top of Settings commits; does **not** satisfy clean committed-tree gate)  
+**Settings feature commit:** `1cda33bb4b0254eff982023dbf7efca25d7ceafb` — `feat(settings): complete production settings shell and persistence` (48 files)  
+**Settings follow-up:** `63c3a793ec59ae3099a5aa6f52885abd3f256263` — `fix(settings): use extensionless settingsI18n imports for Node/tsc`  
+**Repo HEAD (broader branch):** `4ae18de3037d1490b956ecca7e38ad72cd92244f` (parent of Settings stack; **clean checkout of parent alone fails typecheck** — required modules were untracked WIP)
 
 ## Final verdict
 
@@ -12,7 +14,7 @@
 PICOM SETTINGS PRODUCTION GATE: NO-GO
 ```
 
-Packaged interactive Settings E2E (sections 7–16) remains **NOT_RUN**. Intermediate package exists for future E2E; static gates and i18n/branding fixes do not substitute for packaged verification.
+Packaged interactive Settings E2E (sections 7–16) remains **NOT_RUN**. Fresh static suite and branding/i18n fixes do **not** substitute for packaged verification. A win-unpacked build exists from a **dirty worktree**; it does **not** satisfy the clean committed-tree ship gate.
 
 ---
 
@@ -20,12 +22,13 @@ Packaged interactive Settings E2E (sections 7–16) remains **NOT_RUN**. Interme
 
 | Field | Value |
 | --- | --- |
-| Settings release commit | **pending clean commit** — do not treat HEAD as Settings ship point |
-| HEAD (current) | `4ae18de3037d1490b956ecca7e38ad72cd92244f` |
-| Working tree | **dirty** — package and static evidence built from uncommitted tree |
+| Settings release commits | `1cda33bb4b0254eff982023dbf7efca25d7ceafb` (feature) + `63c3a793ec59ae3099a5aa6f52885abd3f256263` (i18n import fix) |
+| Clean-tree gate | **FAIL** — evidence below built with stash applied (~801 dirty paths), not a pure `git checkout` of Settings commits alone |
+| Pure `git checkout 1cda33bb` | **FAIL** typecheck / package — companion, `ProfileDisplayName`, `loginMethodGuards`, account auth components, and other required modules lived as **untracked WIP**, not in that commit’s tree |
+| Pure `git checkout 4ae18de` (parent) | **FAIL** typecheck on clean tree (same missing-module class) |
 | App version | `0.1.1-beta.10` |
 
-Commit Settings ownership, i18n, IPC, branding comment, and `SettingsModal.css` desktop-smoke fixes before claiming source/package alignment.
+Settings source commits exist; **production GO** still requires a **clean** tree that typechecks, packages, and matches the shipped artifact — not met this turn.
 
 ---
 
@@ -58,7 +61,7 @@ Rules enforced in code:
 - OS permission `denied` → native/sound toggles show disabled (not fake enabled)  
 - security alerts locked on; UI copy explains  
 
-Unit: `node --experimental-strip-types scripts/settings-notification-ownership-unit.mjs` → exit **0** (**PASS**)
+Unit: `node --experimental-strip-types scripts/settings-notification-ownership-unit.mjs` → exit **0** (**PASS**, schema v10)
 
 Account Center `notification_preferences` remains a **separate** AC web table (not dual-written from Desktop Settings JSON). Desktop Settings does not treat it as SoT for desktop categories.
 
@@ -68,7 +71,7 @@ Account Center `notification_preferences` remains a **separate** AC web table (n
 
 | Item | Result |
 | --- | --- |
-| Canonical catalog | `settingsI18n` + `settingsModalEn` + `settingsI18nTr` (~**883** keys) |
+| Canonical catalog | `settingsI18n` + `settingsModalEn` + `settingsI18nTr` (~**883** EN/TR keys) |
 | Wiring | Full `SettingsModal` + `src/components/settings/*` via `translateSettings` |
 | `node scripts/settings-i18n-scan.mjs` | exit **0** — TR/EN parity, no TR=EN mirror for UX strings, no hardcoded aria/placeholder in `SettingsModal` |
 | Interpolation / raw-key guards | Covered by settings production unit + i18n scan (static **PASS**) |
@@ -78,32 +81,40 @@ Account Center `notification_preferences` remains a **separate** AC web table (n
 
 ## 5. Build results (static suite)
 
+Evidence from **dirty / WIP-applied tree** unless noted.
+
 | Command | Exit | Notes |
 | --- | --- | --- |
 | `node scripts/settings-i18n-scan.mjs` | **0** | PASS |
 | `node --experimental-strip-types scripts/settings-production-unit.mjs` | **0** | PASS |
 | `node --experimental-strip-types scripts/settings-notification-ownership-unit.mjs` | **0** | PASS |
 | `npm run branding:smoke` | **0** | PASS (see section 17 — root cause fixed) |
-| `npm run qa:smoke` | **0** | PASS (diagnostics smoke updated for i18n keys) |
-| `npm run typecheck` | **0** | PASS |
-| `npm run build:web` | **0** | Recorded on intermediate package meta; warnings: `INEFFECTIVE_DYNAMIC_IMPORT`, chunk >500kB → **harmless build warning** |
-| `npm run electron:build` | **0** | Recorded on intermediate package meta |
-| `npm run package:win:dir` | **0** | Recorded on intermediate package meta — **intermediate only**, not final ship artifact |
+| `npm run qa:smoke` | **0** | PASS |
+| `npm run typecheck` | **0** | PASS on dirty/WIP-applied tree (**not** reproduced on pure clean checkout of `1cda33bb` or `4ae18de`) |
+| `npm run build:web` | **0** | PASS — warnings: `INEFFECTIVE_DYNAMIC_IMPORT`, chunk >500kB → **harmless build warning** |
+| `npm run electron:build` | **0** | PASS |
+| `npm run package:win:dir` | **0** | PASS in dedicated **worktree** (`picom-settings-package-wt`) on dirty tree |
 
-Build and static smoke ≠ Settings **GO** without packaged E2E (sections 7–16).
+Build and static smoke ≠ Settings **GO** without packaged E2E (sections 7–16) and without clean-tree alignment.
 
-### Intermediate package (not final)
+### Fresh package attempt (dirty tree — not ship gate)
 
 | Field | Value |
 | --- | --- |
-| Label | **Intermediate / dirty-tree historical only** — not final release package |
-| Executable | `release/win-unpacked/Picom.exe` |
-| Package timestamp (UTC) | `2026-08-01T18:28:21.556Z` |
+| Label | **Evidence only** — base commit `1cda33bb` with **dirty** tree (stash applied, ~801 paths); does **not** satisfy clean committed-tree gate |
+| Executable | `C:\Users\ACER\Desktop\picom-settings-package-wt\release\win-unpacked\Picom.exe` |
+| Package timestamp (UTC) | `2026-08-01T21:51:09.639Z` |
+| SHA-256 | `90A7E07B68EC99D42FFC2743528F231B9125BFCE787E2588D85765F9000E77C1` |
+| Evidence dir | `docs/audit/evidence/settings-packaged-2026-08-01T21-51-09-639Z` |
+| Electron / arch | As recorded in evidence meta (win unpacked x64) |
+
+### Historical intermediate package (superseded for SHA — retain for audit trail only)
+
+| Field | Value |
+| --- | --- |
+| Label | **Historical intermediate only** — earlier dirty-tree run |
 | SHA-256 | `06219C28A3A5E74D130FBB43A6C5765827A688909132DC0649523754E7260949` |
-| Electron | `43.0.0` |
-| Architecture | `x64` / `win32` |
 | Evidence | `docs/audit/evidence/settings-packaged-2026-08-01T18-28-40-010Z` |
-| Node / npm | `v24.15.0` / `11.17.0` |
 
 Do **not** reuse prior Steam package SHA (`14FE279B…`) as Settings evidence.
 
@@ -179,7 +190,7 @@ Existing scripts available: `electron:ipc-fuzz:test`, `electron:security:smoke` 
 
 | Item | Result |
 | --- | --- |
-| Intermediate package + SHA on dirty tree | Recorded under evidence dir (**meta only**) |
+| Fresh win-unpacked + SHA on dirty worktree | Recorded — `90A7E07B…` / evidence dir above (**meta only**) |
 | Settings nav/search/restart/audio/startup/tray/storage/AC/IPC/notification/i18n packaged runs | **NOT_RUN** |
 | Screenshots (TR/EN/narrow) | **NOT_RUN** |
 
@@ -201,9 +212,9 @@ Packaged Settings run console capture: **NOT_RUN**
 | Expected | No Discord branding references under scanned `src` / `electron` / assets rules |
 | Actual | Comment text contained “Discord clone” |
 | Fix | Comment rewritten; smoke rules **not** loosened |
-| Desktop smoke | `@media (max-width: 640px)` in `SettingsModal.css` forbidden by desktop-only smoke — merged into **720px** breakpoint (allowed) |
+| Desktop smoke (secondary) | `@media (max-width: 640px)` in `SettingsModal.css` forbidden by desktop-only smoke — merged into **720px** breakpoint (allowed) |
 | `npm run branding:smoke` | exit **0** — **PASS** |
-| `npm run qa:smoke` | exit **0** — **PASS** (after `settings-diagnostics-smoke-test` expectations updated for i18n keys) |
+| `npm run qa:smoke` | exit **0** — **PASS** |
 
 ### Static regression matrix
 
@@ -214,8 +225,8 @@ Packaged Settings run console capture: **NOT_RUN**
 | settings-notification-ownership-unit | **0** | **PASS** |
 | branding:smoke | **0** | **PASS** |
 | qa:smoke | **0** | **PASS** |
-| typecheck | **0** | **PASS** |
-| build:web / electron:build / package:win:dir | **0** (package meta) | **PASS** with harmless web warnings |
+| typecheck | **0** | **PASS** (dirty/WIP-applied tree only) |
+| build:web / electron:build / package:win:dir | **0** | **PASS** with harmless web warnings (package via worktree) |
 | Packaged Settings E2E (§7–16) | — | **NOT_RUN** |
 | auth smoke | — | **NOT_RUN** this turn |
 
@@ -235,18 +246,19 @@ Packaged Settings run console capture: **NOT_RUN**
 - Notification packaged E2E (permission/focused/quiet/DND/badges)  
 - i18n packaged switch + screenshots (§15)  
 - Console classification for Settings packaged run (§16)  
-- Clean commit aligning source with package (§1)  
-- Final (non-intermediate) package after commit  
+- **Clean committed tree** that typechecks, packages, and matches release artifact without stash/WIP (~801 paths)  
+- Packaged E2E against artifact built from that clean tree  
 
 ---
 
 ## 19. Remaining blockers
 
-1. Run packaged Settings E2E (§6–16) against committed source + fresh package; record screenshots and console classification  
-2. **pending clean commit** — Settings changes still only on dirty tree; intermediate SHA is historical evidence only  
-3. Optional: IPC fuzz + electron security smoke as supplemental Settings security evidence  
+1. **Packaged Settings E2E (§6–16)** — navigation, persistence, restart, audio, startup, tray, storage, AC links, IPC negatives, notification behavior, i18n switch, console classification; screenshots — all **NOT_RUN**; do **not** mark PASS without execution  
+2. **Clean-tree gate** — Settings commits `1cda33bb` / `63c3a793` exist, but ship evidence requires a **clean** checkout where typecheck and `package:win:dir` succeed **without** untracked companion/auth/WIP modules; pure checkout of `1cda33bb` or parent `4ae18de` **fails** today  
+3. **Artifact alignment** — fresh SHA `90A7E07B…` is valid **dirty-worktree** evidence only; not a production ship binary until (2) is resolved and E2E (1) passes  
+4. Optional: IPC fuzz + electron security smoke as supplemental Settings security evidence  
 
-Removed as blockers (fixed / complete on static evidence): `branding:smoke` failure, partial SettingsModal i18n migration.
+Removed as blockers (fixed / complete on static evidence): `branding:smoke` failure (comment + CSS breakpoint), partial SettingsModal i18n migration, static suite exits on WIP-applied tree.
 
 ---
 
@@ -256,4 +268,4 @@ Removed as blockers (fixed / complete on static evidence): `branding:smoke` fail
 PICOM SETTINGS PRODUCTION GATE: NO-GO
 ```
 
-**Reason:** Mandatory packaged E2E (sections 7–16) and packaged i18n/console evidence remain **NOT_RUN**. Static suite (i18n scan, notification ownership, typecheck, branding/qa smoke, intermediate build/package meta) is **PASS** but insufficient for GO. Ship commit is **pending clean commit**.
+**Reason:** Mandatory packaged E2E (sections 7–16) and packaged i18n/console evidence remain **NOT_RUN**. Static suite (i18n scan ~883 keys, notification ownership schema v10, typecheck/build/package on **dirty** tree, branding/qa smoke) is **PASS** but insufficient for GO. Clean committed-tree gate is **not** met (stash/WIP dependency; pure Settings-commit checkout does not typecheck/package). Fresh package SHA `90A7E07B68EC99D42FFC2743528F231B9125BFCE787E2588D85765F9000E77C1` is evidence for future E2E only.
