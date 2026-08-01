@@ -13,9 +13,12 @@ import {
   clipboard,
   screen,
   powerMonitor,
+  type DesktopCapturerSource,
+  type Display,
   type OpenDialogOptions,
   type SaveDialogOptions
 } from "electron";
+import { CompanionWindowManager } from "./companionWindowManager.cjs";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { ELECTRON_APP_CONFIG } from "./appConfig.cjs";
@@ -55,6 +58,14 @@ import {
   showIncomingCallToast,
 } from "./incomingCallToast.cjs";
 import { prepareNotificationAvatar } from "./notificationAvatarCache.cjs";
+import {
+  measureCacheUsage,
+  readDeviceLocalSettings,
+  resetDeviceLocalSettings,
+  resolveSafeOpenPath,
+  writeDeviceLocalSettings,
+  type SafeOpenTarget,
+} from "./deviceLocalSettingsStore.cjs";
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
 const APP_ICON_PATH = path.join(
@@ -94,6 +105,7 @@ type PersistedWindowState = Readonly<{
 }>;
 
 let mainWindow: BrowserWindow | null = null;
+let companionWindowManager: CompanionWindowManager | null = null;
 let tray: Tray | null = null;
 let trayStatus: TrayStatus = "online";
 let trayMuted = false;
@@ -103,7 +115,7 @@ const pendingDeepLinks: string[] = [];
 let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null;
 const screenCaptureSessions = new WeakMap<object, ScreenCaptureSession>();
 const SCREEN_CAPTURE_SESSION_TTL_MS = 60_000;
-const MAX_SCREEN_CAPTURE_SOURCES = 50;
+const MAX_SCREEN_CAPTURE_SOURCES = 80;
 const MAX_SCREEN_CAPTURE_DATA_URL_LENGTH = 512 * 1024;
 
 function sanitizeScreenCaptureName(value: string): string {
@@ -113,6 +125,121 @@ function sanitizeScreenCaptureName(value: string): string {
 function boundedCaptureDataUrl(value: string | null): string | null {
   return value && value.startsWith("data:image/png;base64,") && value.length <= MAX_SCREEN_CAPTURE_DATA_URL_LENGTH ? value : null;
 }
+
+function isGenericEntireScreenName(name: string): boolean {
+  const normalized = name.trim().toLowerCase();
+  return normalized === "entire screen"
+    || normalized === "entire screen "
+    || normalized === "screen"
+    || normalized === "tüm ekran"
+    || normalized === "tum ekran"
+    || normalized.startsWith("entire screen")
+    || normalized.startsWith("tüm ekran")
+    || normalized.startsWith("tum ekran");
+}
+
+function labelScreenCaptureSource(
+  source: DesktopCapturerSource,
+  displays: Display[],
+  primaryDisplayId: number,
+): string {
+  const safeName = sanitizeScreenCaptureName(source.name);
+  if (!source.id.startsWith("screen:")) return safeName;
+
+  const displayId = typeof source.display_id === "string" ? source.display_id.trim() : "";
+  const matched = displayId
+    ? displays.find((display) => String(display.id) === displayId)
+    : undefined;
+  const ordered = [...displays].sort((a, b) => a.bounds.x - b.bounds.x || a.bounds.y - b.bounds.y);
+  const index = matched ? ordered.findIndex((display) => display.id === matched.id) : -1;
+  if (matched && index >= 0) {
+    const primary = matched.id === primaryDisplayId ? " · Primary" : "";
+    return `Display ${index + 1} (${matched.size.width}×${matched.size.height})${primary}`;
+  }
+
+  if (displays.length > 1 && isGenericEntireScreenName(safeName)) {
+    return `All displays (${displays.length})`;
+  }
+
+  return safeName;
+}
+
+async function listDesktopCapturerSources(): Promise<DesktopCapturerSource[]> {
+  const readSources = async (
+    types: Array<"screen" | "window">,
+    options: Readonly<{ thumbnailSize: { width: number; height: number }; fetchWindowIcons: boolean }>,
+  ): Promise<DesktopCapturerSource[]> => {
+    try {
+      return await desktopCapturer.getSources({
+        types,
+        thumbnailSize: options.thumbnailSize,
+        fetchWindowIcons: options.fetchWindowIcons,
+      });
+    } catch {
+      return [];
+    }
+  };
+
+  const previewThumb = { width: 320, height: 180 };
+  const listOnlyThumb = { width: 0, height: 0 };
+
+  // Prefer separate queries so screens are not starved by a huge window list.
+  let screenSources = await readSources(["screen"], { thumbnailSize: previewThumb, fetchWindowIcons: false });
+  // Icons + large thumbs can fail on hybrid-GPU Windows and return zero windows — try light path first.
+  let windowSources = await readSources(["window"], { thumbnailSize: previewThumb, fetchWindowIcons: false });
+
+  if (windowSources.length === 0) {
+    windowSources = await readSources(["window"], { thumbnailSize: listOnlyThumb, fetchWindowIcons: false });
+  }
+  if (windowSources.length === 0) {
+    windowSources = await readSources(["window"], { thumbnailSize: previewThumb, fetchWindowIcons: true });
+  }
+
+  // Last resort: combined enumeration (classic Electron path).
+  if (screenSources.length === 0 || windowSources.length === 0) {
+    const combined = await readSources(["screen", "window"], { thumbnailSize: listOnlyThumb, fetchWindowIcons: false });
+    if (screenSources.length === 0) {
+      screenSources = combined.filter((source) => source.id.startsWith("screen:"));
+    }
+    if (windowSources.length === 0) {
+      windowSources = combined.filter((source) => source.id.startsWith("window:"));
+    }
+  }
+
+  // Re-fetch window thumbs when the list-only path succeeded without previews.
+  if (windowSources.length > 0 && windowSources.every((source) => source.thumbnail.isEmpty())) {
+    const withThumbs = await readSources(["window"], { thumbnailSize: previewThumb, fetchWindowIcons: false });
+    if (withThumbs.length > 0) windowSources = withThumbs;
+  }
+
+  const seen = new Set<string>();
+  const merged: DesktopCapturerSource[] = [];
+  for (const source of [...screenSources, ...windowSources]) {
+    if (seen.has(source.id)) continue;
+    seen.add(source.id);
+    merged.push(source);
+  }
+  return merged;
+}
+
+function canEnumerateScreenCapture(
+  event: Electron.IpcMainInvokeEvent,
+  sourceWindow: BrowserWindow | null,
+): boolean {
+  if (!sourceWindow || sourceWindow.isDestroyed()) return false;
+  if (sourceWindow.webContents.id !== event.sender.id) return false;
+  if (sourceWindow.isMinimized()) return false;
+  if (!sourceWindow.isVisible()) return false;
+  // Focus can drop for a tick when the React modal mounts; still allow a visible Picom window.
+  if (sourceWindow.isFocused()) return true;
+  try {
+    sourceWindow.focus();
+  } catch {
+    // ignore
+  }
+  return sourceWindow.isVisible();
+}
+
 function isSafeExternalUrl(url: string): boolean {
   return normalizeExternalUrl(url) !== null;
 }
@@ -231,6 +358,11 @@ function sendTrayAction(action: TrayAction): void {
 function createTrayMenu(): Electron.Menu {
   return Menu.buildFromTemplate([
     {
+      label: "Open Picom Companion",
+      click: () => companionWindowManager?.enterMode(),
+    },
+    { type: "separator" },
+    {
       label: "Open Picom Desktop",
       click: () => {
         focusMainWindow();
@@ -316,10 +448,18 @@ const imageMimeByExtension = new Map([
   [".png", "image/png"],
   [".jpg", "image/jpeg"],
   [".jpeg", "image/jpeg"],
+  [".jfif", "image/jpeg"],
   [".webp", "image/webp"],
-  [".gif", "image/gif"]
+  [".gif", "image/gif"],
+  [".bmp", "image/bmp"],
+  [".avif", "image/avif"],
+  [".tif", "image/tiff"],
+  [".tiff", "image/tiff"],
+  [".svg", "image/svg+xml"],
+  [".heic", "image/heic"],
+  [".heif", "image/heif"]
 ]);
-const maxNativePickedImageBytes = 10 * 1024 * 1024;
+const maxNativePickedImageBytes = 12 * 1024 * 1024;
 
 function getWindowStatePath(): string {
   return path.join(app.getPath("userData"), "window-state.json");
@@ -520,7 +660,7 @@ function registerIpcHandlers(): void {
 
     const safePayload = parseScreenCaptureListPayload(payload);
     const sourceWindow = BrowserWindow.fromWebContents(event.sender);
-    if (!safePayload || !sourceWindow || sourceWindow.isDestroyed() || !sourceWindow.isFocused()) {
+    if (!safePayload || !canEnumerateScreenCapture(event, sourceWindow)) {
       return { ok: false, native: true, error: "SCREEN_CAPTURE_USER_ACTION_REQUIRED", platform: process.platform } as const;
     }
 
@@ -532,33 +672,54 @@ function registerIpcHandlers(): void {
         }
       }
 
-      const sources = await desktopCapturer.getSources({
-        types: ["screen", "window"],
-        thumbnailSize: { width: 320, height: 180 },
-        fetchWindowIcons: true
-      });
+      const sources = await listDesktopCapturerSources();
+      const displays = screen.getAllDisplays();
+      const primaryDisplayId = screen.getPrimaryDisplay().id;
 
-      const safeSources: SafeScreenCaptureSource[] = sources
-        .filter((source) => isSafeScreenCaptureSourceId(source.id))
-        .slice(0, MAX_SCREEN_CAPTURE_SOURCES)
-        .map((source) => ({
-          id: source.id,
-          name: sanitizeScreenCaptureName(source.name),
-          type: source.id.startsWith("screen:") ? "screen" : "window",
-          thumbnailDataUrl: boundedCaptureDataUrl(source.thumbnail.isEmpty() ? null : source.thumbnail.toDataURL()),
-          appIconDataUrl: boundedCaptureDataUrl(source.appIcon?.isEmpty() ? null : source.appIcon?.toDataURL() ?? null)
-        }));
+      // Keep Picom / Chrome / other app windows visible in the picker. Content protection
+      // on the live share path still prevents recursive entire-screen feedback loops.
+      const filtered = sources.filter((source) => isSafeScreenCaptureSourceId(source.id));
+
+      // Keep every screen even when the window list is long; fill remaining slots with windows.
+      const screenFiltered = filtered.filter((source) => source.id.startsWith("screen:"));
+      const windowFiltered = filtered.filter((source) => source.id.startsWith("window:"));
+      const windowBudget = Math.max(0, MAX_SCREEN_CAPTURE_SOURCES - screenFiltered.length);
+      const selectedSources = [...screenFiltered, ...windowFiltered.slice(0, windowBudget)];
+
+      const safeSources: SafeScreenCaptureSource[] = selectedSources.map((source) => ({
+        id: source.id,
+        name: labelScreenCaptureSource(source, displays, primaryDisplayId),
+        type: source.id.startsWith("screen:") ? "screen" : "window",
+        thumbnailDataUrl: boundedCaptureDataUrl(source.thumbnail.isEmpty() ? null : source.thumbnail.toDataURL()),
+        appIconDataUrl: boundedCaptureDataUrl(source.appIcon?.isEmpty() ? null : source.appIcon?.toDataURL() ?? null),
+      }));
 
       if (safeSources.length === 0) {
         return { ok: false, native: true, error: "SCREEN_CAPTURE_NO_SOURCES", platform: process.platform } as const;
       }
+
+      const screenSourceCount = safeSources.filter((source) => source.type === "screen").length;
+      const windowSourceCount = safeSources.filter((source) => source.type === "window").length;
+      const displayCount = displays.length;
+      const incompleteDisplays = process.platform === "win32" && displayCount > screenSourceCount;
 
       screenCaptureSessions.set(event.sender, {
         requestId: safePayload.requestId,
         expiresAt: Date.now() + SCREEN_CAPTURE_SESSION_TTL_MS,
         sources: new Map(safeSources.map((source) => [source.id, source])),
       });
-      return { ok: true, native: true, requestId: safePayload.requestId, sources: safeSources } as const;
+      return {
+        ok: true,
+        native: true,
+        requestId: safePayload.requestId,
+        sources: safeSources,
+        diagnostics: {
+          displayCount,
+          screenSourceCount,
+          windowSourceCount,
+          incompleteDisplays,
+        },
+      } as const;
     } catch {
       return { ok: false, native: true, error: "SCREEN_CAPTURE_SOURCES_UNAVAILABLE", platform: process.platform } as const;
     }
@@ -587,6 +748,21 @@ function registerIpcHandlers(): void {
     const session = screenCaptureSessions.get(event.sender);
     if (session?.requestId === safePayload.requestId) screenCaptureSessions.delete(event.sender);
     return { ok: true, native: true, canceled: true } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.screenCaptureSetContentProtection, (event, payload: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_SCREEN_CAPTURE_SENDER" } as const;
+    const enabled = typeof payload === "boolean" ? payload : Boolean((payload as { enabled?: unknown } | null)?.enabled);
+    const windows = BrowserWindow.getAllWindows().filter((window) => !window.isDestroyed());
+    for (const window of windows) {
+      try {
+        // Keeps Picom out of its own entire-screen capture (avoids recursive feedback for peers).
+        window.setContentProtection(enabled);
+      } catch {
+        // Older Electron builds may reject; ignore and continue other windows.
+      }
+    }
+    return { ok: true, native: true, enabled } as const;
   });
 
   ipcMain.handle(IPC_CHANNELS.notificationShow, (event, payload: unknown) => {
@@ -728,9 +904,12 @@ function registerIpcHandlers(): void {
     if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
     const window = BrowserWindow.fromWebContents(event.sender) ?? mainWindow ?? undefined;
     const options: OpenDialogOptions = {
-      title: "Choose images",
-      properties: ["openFile", "multiSelections"],
-      filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "gif"] }]
+      title: "Choose an image",
+      properties: ["openFile"],
+      filters: [
+        { name: "Images", extensions: ["png", "jpg", "jpeg", "jfif", "webp", "gif", "bmp", "avif", "tif", "tiff", "svg", "heic", "heif"] },
+        { name: "All files", extensions: ["*"] }
+      ]
     };
     const result = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options);
 
@@ -857,6 +1036,105 @@ function registerIpcHandlers(): void {
     const snapshot = await getActivitySnapshot(process.platform);
     return { ok: true, native: true, snapshot } as const;
   });
+
+  ipcMain.handle(IPC_CHANNELS.settingsGet, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, settings: readDeviceLocalSettings() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.settingsSet, (event, partial: unknown) => {
+    if (!isTrustedIpcEvent(event) || typeof partial !== "object" || partial === null) {
+      return { ok: false, native: true, error: "INVALID_SETTINGS_PAYLOAD" } as const;
+    }
+    const record = partial as Record<string, unknown>;
+    const allowed: Partial<{
+      selectedMicrophoneId: string | null;
+      selectedSpeakerId: string | null;
+      selectedCameraId: string | null;
+      inputVolume: number;
+      outputVolume: number;
+      closeToTray: boolean;
+      rememberWindowBounds: boolean;
+      launchMinimized: boolean;
+    }> = {};
+    if ("selectedMicrophoneId" in record) {
+      allowed.selectedMicrophoneId = typeof record.selectedMicrophoneId === "string" ? record.selectedMicrophoneId : null;
+    }
+    if ("selectedSpeakerId" in record) {
+      allowed.selectedSpeakerId = typeof record.selectedSpeakerId === "string" ? record.selectedSpeakerId : null;
+    }
+    if ("selectedCameraId" in record) {
+      allowed.selectedCameraId = typeof record.selectedCameraId === "string" ? record.selectedCameraId : null;
+    }
+    if (typeof record.inputVolume === "number") allowed.inputVolume = record.inputVolume;
+    if (typeof record.outputVolume === "number") allowed.outputVolume = record.outputVolume;
+    if (typeof record.closeToTray === "boolean") allowed.closeToTray = record.closeToTray;
+    if (typeof record.rememberWindowBounds === "boolean") allowed.rememberWindowBounds = record.rememberWindowBounds;
+    if (typeof record.launchMinimized === "boolean") allowed.launchMinimized = record.launchMinimized;
+    if (typeof record.nativeDesktopEnabled === "boolean") (allowed as Record<string, unknown>).nativeDesktopEnabled = record.nativeDesktopEnabled;
+    if (typeof record.soundEnabled === "boolean") (allowed as Record<string, unknown>).soundEnabled = record.soundEnabled;
+    if (typeof record.notifyWhileFocused === "boolean") (allowed as Record<string, unknown>).notifyWhileFocused = record.notifyWhileFocused;
+    if (typeof record.taskbarFlash === "boolean") (allowed as Record<string, unknown>).taskbarFlash = record.taskbarFlash;
+    if (typeof record.trayBadge === "boolean") (allowed as Record<string, unknown>).trayBadge = record.trayBadge;
+    if (typeof record.titlebarBadge === "boolean") (allowed as Record<string, unknown>).titlebarBadge = record.titlebarBadge;
+    if (record.quietHours && typeof record.quietHours === "object") (allowed as Record<string, unknown>).quietHours = record.quietHours;
+    const settings = writeDeviceLocalSettings(allowed);
+    if (typeof allowed.closeToTray === "boolean") {
+      // Keep tray close preference aligned with device-local store.
+      try {
+        /* tray preference applied by existing traySetCloseToTray callers */
+      } catch {
+        /* ignore */
+      }
+    }
+    return { ok: true, native: true, settings } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.settingsReset, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, settings: resetDeviceLocalSettings() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.cacheGetUsage, (event) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    return { ok: true, native: true, usage: measureCacheUsage() } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.cacheClear, async (event, scope: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    const safeScope = scope === "media" || scope === "all" ? scope : "all";
+    try {
+      const ses = mainWindow?.webContents.session;
+      if (ses) {
+        if (safeScope === "media") {
+          await ses.clearCache();
+        } else {
+          await ses.clearCache();
+          await ses.clearStorageData({
+            storages: ["filesystem", "shadercache", "serviceworkers", "cachestorage"],
+          });
+        }
+      }
+      return { ok: true, native: true, usage: measureCacheUsage() } as const;
+    } catch {
+      return { ok: false, native: true, error: "CACHE_CLEAR_FAILED" } as const;
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.appOpenPath, async (event, target: unknown) => {
+    if (!isTrustedIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_IPC_SENDER" } as const;
+    if (target !== "logs" && target !== "downloads" && target !== "userData") {
+      return { ok: false, native: true, error: "INVALID_OPEN_PATH_TARGET" } as const;
+    }
+    try {
+      const resolved = resolveSafeOpenPath(target as SafeOpenTarget);
+      const error = await shell.openPath(resolved);
+      if (error) return { ok: false, native: true, error: "OPEN_PATH_FAILED" } as const;
+      return { ok: true, native: true, target } as const;
+    } catch {
+      return { ok: false, native: true, error: "OPEN_PATH_FAILED" } as const;
+    }
+  });
 }
 
 async function createMainWindow(): Promise<void> {
@@ -898,7 +1176,12 @@ async function createMainWindow(): Promise<void> {
   }
 
   mainWindow.once("ready-to-show", () => {
-    mainWindow?.show();
+    const startInCompanion = companionWindowManager?.shouldStartInCompanionMode() === true;
+    if (startInCompanion) {
+      companionWindowManager?.enterMode();
+    } else {
+      mainWindow?.show();
+    }
     if (mainWindow) {
       sendWindowMaximizeState(mainWindow);
     }
@@ -925,7 +1208,29 @@ async function createMainWindow(): Promise<void> {
 // Keep user data in the original "Picom" directory: the display rename to "Picom Desktop"
 // (productName) would otherwise move userData to a new folder and existing installs would
 // lose sessions/preferences after updating.
-app.setPath("userData", path.join(app.getPath("appData"), "Picom"));
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+// Prefer Windows Graphics Capture so multi-monitor setups enumerate each display
+// instead of a single combined "Entire Screen" / "Tüm ekran" source.
+if (process.platform === "win32") {
+  app.commandLine.appendSwitch("enable-features", "WebRTCAllowWgcScreenCapturer");
+}
+
+function resolveUserDataPathOverride(): string | null {
+  const fromEnv = process.env.PICOM_USER_DATA_DIR?.trim();
+  if (fromEnv) return fromEnv;
+  const arg = process.argv.find((value) => value.startsWith("--user-data-dir="));
+  if (arg) {
+    const value = arg.slice("--user-data-dir=".length).trim();
+    return value || null;
+  }
+  return null;
+}
+
+const userDataOverride = resolveUserDataPathOverride();
+// Keep user data in the original "Picom" directory by default: the display rename to
+// "Picom Desktop" (productName) would otherwise move userData and drop sessions.
+// Isolated smoke/CI runs may override via --user-data-dir or PICOM_USER_DATA_DIR.
+app.setPath("userData", userDataOverride || path.join(app.getPath("appData"), "Picom"));
 app.setAppUserModelId(ELECTRON_APP_CONFIG.appId);
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -946,6 +1251,9 @@ if (!hasSingleInstanceLock) {
     Menu.setApplicationMenu(null);
     registerProtocolHandler();
     registerIpcHandlers();
+    companionWindowManager = new CompanionWindowManager(() => mainWindow);
+    companionWindowManager.registerIpcHandlers();
+    closeToTrayEnabled = companionWindowManager.getPreferences().closeToTray;
     powerMonitor.on("resume", sendPowerResumeToRenderer);
 
     const initialDeepLink = extractDeepLinkFromArgs(process.argv);
@@ -963,6 +1271,7 @@ if (!hasSingleInstanceLock) {
 
 app.on("before-quit", () => {
   isQuitting = true;
+  companionWindowManager?.closeAll();
 });
 
 app.on("open-url", (event, url) => {

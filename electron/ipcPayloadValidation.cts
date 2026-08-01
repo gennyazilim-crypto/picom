@@ -7,7 +7,8 @@ export type ScreenCaptureSelectionPayload = Readonly<{ requestId: string; source
 
 const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 const safeScreenCaptureRequestIdPattern = /^[a-f0-9-]{16,64}$/i;
-const safeScreenCaptureSourceIdPattern = /^(screen|window):[a-zA-Z0-9:_-]{1,240}$/;
+// Windows may emit display-backed ids that include `.` / `\` (e.g. \\.\DISPLAY2).
+const safeScreenCaptureSourceIdPattern = /^(screen|window):[a-zA-Z0-9:_\\.\-]{1,240}$/;
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -118,6 +119,7 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     return segments.length===10&&segments[5]==="session"&&safe(6)&&segments[7]==="chat"&&segments[8]==="message"&&safe(9);
   }
   if (route === "dm") return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
+  if (route === "profile" || route === "live-now") return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
   return (route === "settings" || route === "friends") && segments.length === 0;
 }
 

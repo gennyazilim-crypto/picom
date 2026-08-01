@@ -3,6 +3,8 @@ import { diagnosticsService } from "../../services/diagnosticsService";
 import { feedbackService, type FeedbackDraft } from "../../services/feedbackService";
 import { clipboardService } from "../../services/clipboardService";
 import { AppIcon } from "../AppIcon";
+import { translateSettings, type SettingsI18nKey } from "../../services/settings/settingsI18n";
+import { settingsService } from "../../services/settingsService";
 
 const diagnosticsDraft: FeedbackDraft = {
   issueType: "other",
@@ -12,65 +14,76 @@ const diagnosticsDraft: FeedbackDraft = {
   includeLogs: true,
 };
 
-export function DiagnosticsSection({ onNotice }: { onNotice: (message: string, tone?: "info" | "success" | "error") => void }) {
+export function DiagnosticsSection({
+  language,
+  onNotice,
+}: {
+  language?: "en" | "tr";
+  onNotice: (message: string, tone?: "info" | "success" | "error") => void;
+}) {
+  const lang = language ?? settingsService.getSettings().appearanceSettings.language;
+  const t = (key: SettingsI18nKey, params?: Record<string, string | number>) => translateSettings(key, lang, params);
   const [snapshot, setSnapshot] = useState(() => diagnosticsService.getSnapshot());
 
   const copy = async () => {
     const result = await clipboardService.copyText(diagnosticsService.exportDiagnostics("json", { recentLogLimit: 75 }));
-    onNotice(result.ok ? "Redacted diagnostics copied." : result.reason, result.ok ? "success" : "error");
+    onNotice(result.ok ? t("diagnostics.copied") : result.reason, result.ok ? "success" : "error");
   };
 
   const exportFile = async () => {
     const result = await feedbackService.exportSupportDiagnostics(diagnosticsDraft);
     onNotice(
-      result.ok ? (result.canceled ? "Diagnostics export canceled." : `Diagnostics exported via ${result.method}.`) : result.reason,
+      result.ok ? (result.canceled ? t("diagnostics.exportCanceled") : t("diagnostics.exportedVia", { method: result.method })) : result.reason,
       result.ok && !result.canceled ? "success" : "info",
     );
   };
 
-  const metrics = [
-    { label: "Version", value: `${snapshot.app.version} / ${snapshot.app.releaseChannel}` },
-    { label: "Build", value: `${snapshot.app.commitShort} / ${snapshot.app.buildDate}` },
-    { label: "Environment", value: snapshot.app.environment },
-    { label: "Platform", value: snapshot.runtime.platform },
-    { label: "Electron", value: snapshot.runtime.electronVersion ?? "Browser fallback" },
-    { label: "Window", value: `${snapshot.runtime.window.width ?? "?"}×${snapshot.runtime.window.height ?? "?"} / ${snapshot.runtime.window.focused ? "focused" : "background"}` },
-    { label: "Data source", value: snapshot.app.dataSource },
-    { label: "Auth", value: snapshot.serviceStatus.authState },
-    { label: "Supabase host", value: snapshot.serviceStatus.supabaseHost ?? "Not configured" },
-    { label: "Supabase", value: snapshot.serviceStatus.supabaseStatus },
-    { label: "Realtime", value: snapshot.serviceStatus.realtimeStatus },
-    { label: "LiveKit", value: snapshot.serviceStatus.liveKitStatus },
-    { label: "Voice", value: snapshot.serviceStatus.voiceStatus },
-    { label: "Current view", value: snapshot.serviceStatus.activeView },
-    { label: "Recent errors", value: String(snapshot.recentErrors.length) },
-    { label: "Last API error", value: snapshot.serviceStatus.lastApiError?.message ?? "None", title: snapshot.serviceStatus.lastApiError?.message },
-  ] as const;
+  const metrics: ReadonlyArray<{ labelKey: SettingsI18nKey; value: string }> = [
+    { labelKey: "diagnostics.metric.version", value: `${snapshot.app.version} / ${snapshot.app.releaseChannel}` },
+    { labelKey: "diagnostics.metric.build", value: `${snapshot.app.commitShort} / ${snapshot.app.buildDate}` },
+    { labelKey: "diagnostics.metric.environment", value: snapshot.app.environment },
+    { labelKey: "diagnostics.metric.platform", value: snapshot.runtime.platform },
+    { labelKey: "diagnostics.metric.electron", value: snapshot.runtime.electronVersion ?? t("diagnostics.browserFallback") },
+    {
+      labelKey: "diagnostics.metric.window",
+      value: `${snapshot.runtime.window.width ?? "?"}×${snapshot.runtime.window.height ?? "?"} / ${snapshot.runtime.window.focused ? t("diagnostics.focused") : t("diagnostics.background")}`,
+    },
+    { labelKey: "diagnostics.metric.dataSource", value: snapshot.app.dataSource },
+    { labelKey: "diagnostics.metric.auth", value: snapshot.serviceStatus.authState },
+    { labelKey: "diagnostics.metric.supabaseHost", value: snapshot.serviceStatus.supabaseHost ?? t("diagnostics.notConfigured") },
+    { labelKey: "diagnostics.metric.supabase", value: snapshot.serviceStatus.supabaseStatus },
+    { labelKey: "diagnostics.metric.realtime", value: snapshot.serviceStatus.realtimeStatus },
+    { labelKey: "diagnostics.metric.livekit", value: snapshot.serviceStatus.liveKitStatus },
+    { labelKey: "diagnostics.metric.voice", value: snapshot.serviceStatus.voiceStatus },
+    { labelKey: "diagnostics.metric.currentView", value: snapshot.serviceStatus.activeView },
+    { labelKey: "diagnostics.metric.recentErrors", value: String(snapshot.recentErrors.length) },
+    { labelKey: "diagnostics.metric.lastApiError", value: snapshot.serviceStatus.lastApiError?.message ?? t("diagnostics.none") },
+  ];
 
   return (
-    <section className="diagnostics-settings-section" aria-label="Diagnostics snapshot">
+    <section id="diagnostics-snapshot" className="diagnostics-settings-section" aria-label={t("diagnostics.snapshotAria")}>
       <div className="diagnostics-section-toolbar">
-        <h3 className="diagnostics-settings-section-title">Diagnostics snapshot</h3>
-        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSnapshot(diagnosticsService.getSnapshot())}>Refresh</button>
+        <h3 className="diagnostics-settings-section-title">{t("diagnostics.snapshotTitle")}</h3>
+        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSnapshot(diagnosticsService.getSnapshot())}>{t("common.refresh")}</button>
       </div>
 
       <div className="diagnostics-metric-grid">
         {metrics.map((metric) => (
-          <article key={metric.label} className="diagnostics-metric-card">
-            <span>{metric.label}</span>
-            <strong title={"title" in metric ? metric.title : undefined}>{metric.value}</strong>
+          <article key={metric.labelKey} className="diagnostics-metric-card">
+            <span>{t(metric.labelKey)}</span>
+            <strong title={metric.value}>{metric.value}</strong>
           </article>
         ))}
       </div>
 
       <p className="diagnostics-privacy-note">
         <AppIcon name="lock" size="sm" />
-        Secrets, passwords, tokens, cookies, private keys, and authorization headers are excluded.
+        {t("diagnostics.privacyNote")}
       </p>
 
       <div className="settings-actions-row">
-        <button type="button" className="settings-inline-action" onClick={() => void copy()}>Copy diagnostics</button>
-        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void exportFile()}>Export diagnostics</button>
+        <button type="button" className="settings-inline-action" onClick={() => void copy()}>{t("diagnostics.copy")}</button>
+        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void exportFile()}>{t("diagnostics.export")}</button>
       </div>
     </section>
   );

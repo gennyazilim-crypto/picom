@@ -8,9 +8,18 @@ import type { Community } from "../types/community";
 import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";
 import { authService } from "../services/authService";
 import { menuService } from "../services/menuService";
-import { settingsSections, settingsService, type AccessibilitySettings, type AppearanceSettings, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";
+import { settingsNavGroups, settingsSections, settingsService, type AccessibilitySettings, type AppearanceSettings, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";
+import {
+  searchSettingsCatalog,
+  settingsSearchResultDescription,
+  settingsSearchResultLabel,
+  type SettingsSearchHit,
+} from "../services/settings/settingsSearchIndex";
+import { AccountSummarySection } from "./settings/AccountSummarySection";
+import { WindowsStartupSection } from "./settings/WindowsStartupSection";
+import { StorageCacheSection } from "./settings/StorageCacheSection";
+import { translateSettings, translateSettingsNavGroup, translateSettingsSection, type SettingsI18nKey } from "../services/settings/settingsI18n";
 import { appearanceService } from "../services/appearanceService";
-import { localizationService, type LocalizationKey } from "../services/localizationService";
 import { statusPageService } from "../services/statusPageService";
 import { dataSourceService } from "../services/dataSourceService";
 import { maintenanceStatusService, type MaintenanceStatusSnapshot } from "../services/maintenanceStatusService";
@@ -72,18 +81,18 @@ import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
 type NotificationPreferenceKey = "mentions" | "replies" | "reactions" | "directMessages" | "communityAnnouncements" | "friendRequests" | "friendAcceptances" | "radioLive" | "radioReminders" | "podcastReleases" | "eventReminders";
-const notificationPreferenceRows: ReadonlyArray<Readonly<{ key: NotificationPreferenceKey; label: string; description: string }>> = [
-  { key: "mentions", label: "Mentions", description: "Notify when someone mentions you in a visible community channel." },
-  { key: "replies", label: "Replies", description: "Notify when someone replies to one of your messages." },
-  { key: "reactions", label: "Reactions", description: "Notify when people react to your messages." },
-  { key: "directMessages", label: "Direct messages", description: "Notify for private messages when that conversation is not already visible." },
-  { key: "communityAnnouncements", label: "Community announcements", description: "Notify for official announcements in communities you can access." },
-  { key: "friendRequests", label: "Friend requests", description: "Notify when someone sends you a friend request." },
-  { key: "friendAcceptances", label: "Friend request acceptances", description: "Notify when someone accepts a friend request you sent." },
-  { key: "radioLive", label: "Radio live alerts", description: "Notify when a followed or reminded Radio show goes live." },
-  { key: "radioReminders", label: "Radio reminders", description: "Notify for saved Radio schedule reminders and changes." },
-  { key: "podcastReleases", label: "Podcast releases", description: "Notify for new releases from followed Podcast communities." },
-  { key: "eventReminders", label: "Event reminders", description: "Notify before events you marked Going or Interested." },
+const notificationPreferenceRows: ReadonlyArray<Readonly<{ key: NotificationPreferenceKey; labelKey: SettingsI18nKey; descriptionKey: SettingsI18nKey }>> = [
+  { key: "mentions", labelKey: "notifications.pref.mentions.label", descriptionKey: "notifications.pref.mentions.description" },
+  { key: "replies", labelKey: "notifications.pref.replies.label", descriptionKey: "notifications.pref.replies.description" },
+  { key: "reactions", labelKey: "notifications.pref.reactions.label", descriptionKey: "notifications.pref.reactions.description" },
+  { key: "directMessages", labelKey: "notifications.pref.directMessages.label", descriptionKey: "notifications.pref.directMessages.description" },
+  { key: "communityAnnouncements", labelKey: "notifications.pref.communityAnnouncements.label", descriptionKey: "notifications.pref.communityAnnouncements.description" },
+  { key: "friendRequests", labelKey: "notifications.pref.friendRequests.label", descriptionKey: "notifications.pref.friendRequests.description" },
+  { key: "friendAcceptances", labelKey: "notifications.pref.friendAcceptances.label", descriptionKey: "notifications.pref.friendAcceptances.description" },
+  { key: "radioLive", labelKey: "notifications.pref.radioLive.label", descriptionKey: "notifications.pref.radioLive.description" },
+  { key: "radioReminders", labelKey: "notifications.pref.radioReminders.label", descriptionKey: "notifications.pref.radioReminders.description" },
+  { key: "podcastReleases", labelKey: "notifications.pref.podcastReleases.label", descriptionKey: "notifications.pref.podcastReleases.description" },
+  { key: "eventReminders", labelKey: "notifications.pref.eventReminders.label", descriptionKey: "notifications.pref.eventReminders.description" },
 ];
 
 function formatCacheSize(bytes: number | null): string {
@@ -139,8 +148,15 @@ function getLiveBlockedUsername(userId: string, fallback: string): string {
 }
 
 export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext, onOpenPanel }: SettingsModalProps) {
+  const settingsLang = appearanceSettings.language;
+  const ts = (key: SettingsI18nKey, params?: Record<string, string | number>) => translateSettings(key, settingsLang, params);
+  const sectionLabel = (section: SettingsSection) => translateSettingsSection(section, settingsLang);
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const [active, setActive] = useState<SettingsSection>(settingsService.consumeInitialSection);
+  const [settingsQuery, setSettingsQuery] = useState("");
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [highlightSelector, setHighlightSelector] = useState<string | null>(null);
+  const [memberSinceIso, setMemberSinceIso] = useState<string | null>(null);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => settingsService.getSettings().notificationSettings);
   const [profileDraft, setProfileDraft] = useState<ProfileSettings>(() => ({ ...profileSettings, username: profileSettings.username || currentUsername }));
   const [profileHydrated, setProfileHydrated] = useState(false);
@@ -204,6 +220,19 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     () => settingsSections.filter((section) => section !== "Admin Operations" || adminOperationsVisible),
     [adminOperationsVisible],
   );
+  const visibleNavGroups = useMemo(
+    () => settingsNavGroups
+      .map((group) => ({
+        ...group,
+        sections: group.sections.filter((section) => visibleSections.includes(section)),
+      }))
+      .filter((group) => group.sections.length > 0),
+    [visibleSections],
+  );
+  const searchHits = useMemo(
+    () => searchSettingsCatalog(settingsQuery, appearanceSettings.language).filter((hit) => visibleSections.includes(hit.section)),
+    [appearanceSettings.language, settingsQuery, visibleSections],
+  );
   const profileCanSave = Boolean(profileDraft.displayName.trim()) && /^[a-z0-9._-]{3,32}$/.test(profileDraft.username);
   const profileSaveDisabled = profileSaving || profileHydrating || !profileCanSave;
 
@@ -225,6 +254,23 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   useEffect(() => { void startupService.refreshNativeState().then(setStartupSettings); }, []);
   useEffect(() => { let active = true; void adminOperationsService.getAccess().then((access) => { if (active) setAdminOperationsAccess(access); }); return () => { active = false; }; }, []);
 
+  const applySearchHit = useCallback((hit: SettingsSearchHit) => {
+    setActive(hit.section);
+    setSettingsQuery("");
+    window.setTimeout(() => {
+      const root = dialogRef.current;
+      if (!root) return;
+      const target = hit.focusSelector
+        ? root.querySelector<HTMLElement>(hit.focusSelector)
+        : root.querySelector<HTMLElement>(".settings-content");
+      target?.scrollIntoView({ behavior: accessibilitySettings.reducedMotion ? "auto" : "smooth", block: "center" });
+      if (hit.focusSelector) {
+        setHighlightSelector(hit.focusSelector);
+        window.setTimeout(() => setHighlightSelector(null), 1600);
+      }
+    }, 40);
+  }, [accessibilitySettings.reducedMotion]);
+
   const refreshAccountIdentity = useCallback(async (options: Readonly<{ silent?: boolean }> = {}) => {
     if (!options.silent) setIdentityRefreshing(true);
     const result = await authService.getCurrentUser();
@@ -236,6 +282,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     if (!result.data) {
       setLiveEmail(undefined);
       setLiveEmailVerifiedAt(null);
+      setMemberSinceIso(null);
       return;
     }
     setLiveEmail(result.data.email ?? undefined);
@@ -374,10 +421,10 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
       if (typeof patch.alwaysOnTop === "boolean") {
         void window.picomDesktop?.companion?.setAlwaysOnTop?.(next.alwaysOnTop);
       }
-      pushToast("Companion settings saved.", "success");
+      pushToast(ts("toast.companionSaved"), "success");
     } catch (reason) {
       setCompanionPreferences(previous);
-      setCompanionSaveError(reason instanceof Error ? reason.message : "Companion settings could not be saved.");
+      setCompanionSaveError(reason instanceof Error ? reason.message : ts("toast.companionSaveFailed"));
     } finally {
       setCompanionBusy(false);
     }
@@ -419,52 +466,50 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     const enabled = activityPresenceService.setEnabled(next);
     setAutoActivityEnabled(enabled);
     pushToast(
-      enabled
-        ? "Automatic activity status enabled. Detected games and media will appear in your status text."
-        : "Automatic activity status disabled.",
+      enabled ? ts("toast.autoActivityEnabled") : ts("toast.autoActivityDisabled"),
       "info",
     );
   };
 
   const testNotification = async () => {
     const result = await notificationService.showTestNotification();
-    pushToast(result.ok ? "Test notification sent." : result.reason ?? "Notification unavailable.", result.ok ? "success" : "error");
+    pushToast(result.ok ? ts("toast.testNotificationSent") : result.reason ?? ts("toast.notificationUnavailable"), result.ok ? "success" : "error");
   };
   const requestNotificationPermission = async () => {
     const result = await notificationService.requestPermission();
-    pushToast(result.ok ? "Desktop notification permission enabled." : result.reason ?? "Notification permission is unavailable.", result.ok ? "success" : "error");
+    pushToast(result.ok ? ts("toast.notificationPermissionEnabled") : result.reason ?? ts("toast.notificationPermissionUnavailable"), result.ok ? "success" : "error");
   };
   const notificationStatus = notificationService.getStatus();
   const updateNotifications = (partial: Partial<NotificationSettings>) => {
     const next = settingsService.updateNotificationSettings(partial).notificationSettings;
     setNotificationSettings(next);
-    pushToast("Notification preference saved.", "success");
+    pushToast(ts("toast.notificationPrefSaved"), "success");
   };
   const updateAccessibility = (partial: Partial<AccessibilitySettings>) => {
     const next = settingsService.updateAccessibilitySettings(partial).accessibilitySettings;
     onAccessibilitySettingsChange(next);
-    pushToast("Accessibility setting saved locally.", "success");
+    pushToast(ts("toast.accessibilitySaved"), "success");
   };
   const updateAppearance = (partial: Partial<AppearanceSettings>) => {
     const next = settingsService.updateAppearanceSettings(partial).appearanceSettings;
     onAppearanceSettingsChange(next);
     if (partial.themeMode) onThemeChange(appearanceService.resolveTheme(next.themeMode));
-    pushToast(next.language === "tr" ? "Görünüm tercihi kaydedildi." : "Appearance preference saved.", "success");
+    pushToast(ts("toast.appearanceSaved"), "success");
   };
   const updateSafetySettings = (partial: Partial<UserSafetySettings>) => {
     const next = userSafetyCenterService.updateSettings(partial);
     setSafetySettings(next);
-    pushToast("Privacy & Safety setting saved locally.", "success");
+    pushToast(ts("toast.privacySaved"), "success");
   };
   const updateFriendRequestPrivacy = async (policy: UserSafetySettings["whoCanSendFriendRequests"]) => {
     const result = await userSafetyCenterService.updateFriendRequestPrivacy(policy);
     setSafetySettings(result.settings);
-    pushToast(result.ok ? "Friend-request privacy updated." : "Friend-request privacy could not be saved; the previous setting was restored.", result.ok ? "success" : "error");
+    pushToast(result.ok ? ts("toast.friendRequestPrivacyUpdated") : ts("toast.friendRequestPrivacyFailed"), result.ok ? "success" : "error");
   };
   const unblockUser = async (userId: string, displayName: string, username: string) => {
     const ok = await userBlockingService.setBlockedUser({ userId, displayName, username }, false);
     setBlockedUsers(userBlockingService.listBlockedUsers());
-    pushToast(ok ? `${displayName} unblocked.` : `Could not unblock ${displayName}.`, ok ? "success" : "error");
+    pushToast(ok ? ts("toast.userUnblocked", { name: displayName }) : ts("toast.userUnblockFailed", { name: displayName }), ok ? "success" : "error");
   };
   const applyProfileSummary = useCallback((profile: ProfileSummary, options?: { mediaOnly?: boolean }) => {
     if (options?.mediaOnly) profileMediaGenerationRef.current += 1;
@@ -524,7 +569,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
       : profileDraft.status === "idle" ? "idle" as const
       : "online" as const;
     globalPresenceService.setPreference(presencePreference);
-    pushToast("Profile changes saved.", "success");
+    pushToast(ts("toast.profileSaved"), "success");
   };
 
   useEffect(() => {
@@ -574,7 +619,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
 
   const resetProfileSettings = () => {
     setProfileDraft(profileSettings);
-    pushToast("Unsaved profile changes discarded.", "info");
+    pushToast(ts("toast.profileDiscarded"), "info");
   };
   const createFeedbackDraft = () => ({
     issueType: feedbackIssueType,
@@ -585,12 +630,12 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   });
   const copyFeedbackReport = async () => {
     const result = await feedbackService.copyReport(createFeedbackDraft());
-    pushToast(result.ok ? "Redacted feedback report copied. No report was sent." : result.reason, result.ok ? "success" : "error");
+    pushToast(result.ok ? ts("toast.feedbackCopied") : result.reason, result.ok ? "success" : "error");
   };
   const exportDiagnostics = async () => {
     const result = await feedbackService.exportSupportDiagnostics(createFeedbackDraft());
     if (result.ok) {
-      pushToast(result.canceled ? "Diagnostics export canceled." : `Diagnostics exported via ${result.method}.`, result.canceled ? "info" : "success");
+      pushToast(result.canceled ? ts("toast.diagnosticsExportCanceled") : ts("toast.diagnosticsExported", { method: result.method }), result.canceled ? "info" : "success");
       return;
     }
 
@@ -616,25 +661,25 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     void refreshSystemStatus();
     if (statusPageService.isConfigured()) {
       const result = await statusPageService.openStatusPage();
-      pushToast(result.ok ? `Opened system status: ${statusPageService.getDisplayDomain()}.` : "The external status page could not be opened; showing in-app status.", result.ok ? "success" : "info");
+      pushToast(result.ok ? ts("toast.systemStatusOpened", { domain: statusPageService.getDisplayDomain() }) : ts("toast.systemStatusFallback"), result.ok ? "success" : "info");
     }
   };
   const updateLaunchOnStartup = async (enabled: boolean) => {
     const next = await startupService.setLaunchOnStartupEnabled(enabled);
     setStartupSettings(next);
-    pushToast(next.error ? "Launch on startup is unavailable in this build or platform." : next.launchOnStartup ? "Picom will launch when you sign in." : "Launch on startup disabled.", next.error ? "error" : "success");
+    pushToast(next.error ? ts("toast.launchOnStartupUnavailable") : next.launchOnStartup ? ts("toast.launchOnStartupEnabled") : ts("toast.launchOnStartupDisabled"), next.error ? "error" : "success");
   };
-  const updateProfilePrivacy=(partial:Partial<ProfilePrivacySettings>)=>{void profilePrivacyService.updateOwn(partial).then((result)=>{setProfilePrivacy(result.settings);pushToast(result.ok?"Profile privacy updated.":"Profile privacy could not be saved; the previous setting was restored.",result.ok?"success":"error")});};
-  const updateDirectMessagePrivacy = (value: DirectMessagePrivacy) => { void directSafetyService.updatePrivacy(value).then((result) => { setDirectMessagePrivacy(result.value); if (result.ok) setSafetySettings(userSafetyCenterService.updateSettings({ whoCanDmMe: result.value === "friends" ? "friends_only" : result.value === "no_one" ? "nobody" : "everyone" })); pushToast(result.ok ? "Direct-message privacy updated." : "Direct-message privacy could not be synchronized.", result.ok ? "success" : "error"); }); };
+  const updateProfilePrivacy=(partial:Partial<ProfilePrivacySettings>)=>{void profilePrivacyService.updateOwn(partial).then((result)=>{setProfilePrivacy(result.settings);pushToast(result.ok?ts("toast.profilePrivacyUpdated"):ts("toast.profilePrivacyFailed"),result.ok?"success":"error")});};
+  const updateDirectMessagePrivacy = (value: DirectMessagePrivacy) => { void directSafetyService.updatePrivacy(value).then((result) => { setDirectMessagePrivacy(result.value); if (result.ok) setSafetySettings(userSafetyCenterService.updateSettings({ whoCanDmMe: result.value === "friends" ? "friends_only" : result.value === "no_one" ? "nobody" : "everyone" })); pushToast(result.ok ? ts("toast.dmPrivacyUpdated") : ts("toast.dmPrivacyFailed"), result.ok ? "success" : "error"); }); };
   const updateStartMinimizedToTray = async (enabled: boolean) => {
     const next = await startupService.setStartMinimizedToTray(enabled);
     setStartupSettings(next);
-    pushToast(next.startMinimizedToTray === enabled ? "Start-minimized preference saved." : "Start minimized requires supported launch-at-startup.", next.startMinimizedToTray === enabled ? "info" : "error");
+    pushToast(next.startMinimizedToTray === enabled ? ts("toast.startMinimizedSaved") : ts("toast.startMinimizedRequiresStartup"), next.startMinimizedToTray === enabled ? "info" : "error");
   };
   const updateLockAfterInactivity = (enabled: boolean) => {
     const next = appLockService.updateSettings({ lockAfterInactivityEnabled: enabled });
     setAppLockSettings(next);
-    pushToast(enabled ? "Inactivity lock preference enabled locally." : "Inactivity lock preference disabled.", "info");
+    pushToast(enabled ? ts("toast.inactivityLockEnabled") : ts("toast.inactivityLockDisabled"), "info");
   };
   const runCacheAction = async (action: () => Promise<{ message: string; summary: CacheSummary }>, confirmation: string) => {
     if (!window.confirm(confirmation)) return;
@@ -643,18 +688,18 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     pushToast(result.message, "success");
   };
   const resetLayoutState = () => {
-    if (!window.confirm("Reset Picom feed and community navigation layout on this device? Messages, drafts, accounts, and server data are preserved.")) return;
+    if (!window.confirm(ts("confirm.resetLayout"))) return;
     feedUiStateService.resetLayoutState();
     communityNavigationService.resetRouteMemory();
-    pushToast("Local layout state reset. Reopen the affected view to apply defaults.", "success");
+    pushToast(ts("toast.layoutReset"), "success");
   };
   const resetLocalSettings = () => {
-    if (!window.confirm("Reset local Picom settings to safe defaults? Your auth session, messages, drafts, and server data will not be deleted.")) return;
+    if (!window.confirm(ts("confirm.resetLocalSettings"))) return;
     settingsService.resetSettings();
-    pushToast("Local settings reset. Restart Picom to apply every default.", "success");
+    pushToast(ts("toast.localSettingsReset"), "success");
   };
   const restartInSafeMode = () => {
-    if (!window.confirm("Restart Picom in Safe Mode? Realtime, voice, notifications, tray, updates, and other optional services will be paused.")) return;
+    if (!window.confirm(ts("confirm.safeModeRestart"))) return;
     safeModeService.enableSafeMode("manual_flag");
     window.location.reload();
   };
@@ -674,7 +719,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   };
   const openAccountCenter = async (url: string) => {
     if (!isAllowedAccountCenterUrl(url)) {
-      pushToast("Picom blocked an unsafe account link.", "error");
+      pushToast(ts("toast.unsafeAccountLink"), "error");
       return;
     }
     const result = await externalLinkService.openExternalUrl(url);
@@ -697,7 +742,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     pushToast(result.data.message, "success");
   };
   const requestPasswordReset = async () => {
-    if (!liveEmail) { pushToast("No email address is available for this account.", "error"); return; }
+    if (!liveEmail) { pushToast(ts("toast.noEmail"), "error"); return; }
     const result = await authService.requestPasswordReset(liveEmail);
     const message = result.ok ? result.data.message : result.error.message;
     setPasswordResetMessage(message);
@@ -705,7 +750,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   };
   const submitPasswordChange = async () => {
     if (passwordChangeBusy) return;
-    if (newPassword !== confirmNewPassword) { pushToast("New passwords do not match.", "error"); return; }
+    if (newPassword !== confirmNewPassword) { pushToast(ts("toast.passwordMismatch"), "error"); return; }
     setPasswordChangeBusy(true);
     const result = await authService.changeCurrentPassword(currentPassword, newPassword);
     setPasswordChangeBusy(false);
@@ -722,6 +767,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     setSocialProviderBusy(null);
     if (!result.ok) { pushToast(result.error, "error"); return; }
     pushToast(result.data.message, "info");
+    await refreshSocialProviders();
+  };
+  const disconnectSocialProvider = async (provider: SocialAuthProvider) => {
+    setSocialProviderBusy(provider);
+    const result = await socialAuthService.unlinkProvider(provider);
+    setSocialProviderBusy(null);
+    if (!result.ok) { pushToast(result.error, "error"); return; }
+    pushToast(result.data.message, "success");
     await refreshSocialProviders();
   };
   const logoutCurrentSession = async () => {
@@ -757,11 +810,11 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   const updateCloseToTray = async (enabled: boolean) => {
     const result = await trayService.setCloseToTrayEnabled(enabled);
     if (!result.ok) {
-      pushToast("Close to tray could not be updated.", "error");
+      pushToast(ts("toast.closeToTrayFailed"), "error");
       return;
     }
     setCloseToTrayEnabled(enabled);
-    pushToast(enabled ? "Close to tray enabled." : "Close to tray disabled.", "success");
+    pushToast(enabled ? ts("toast.closeToTrayEnabled") : ts("toast.closeToTrayDisabled"), "success");
   };
   const cancelAccountDeletion = async () => {
     const result = await accountDeletionService.cancelDeletion();
@@ -772,7 +825,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
 
     setAccountDeletionStatus(result.data);
     setAccountDeletionConfirmText("");
-    pushToast("Account deletion request canceled.", "info");
+    pushToast(ts("toast.deletionCanceled"), "info");
   };
   const requestDataExport = async () => {
     const pending = dataExportService.requestExport(profileDraft);
@@ -793,325 +846,334 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
       return;
     }
 
-    pushToast(`Data export downloaded: ${result.data.fileName}.`, "success");
+    pushToast(ts("toast.dataExportDownloaded", { fileName: result.data.fileName }), "success");
   };
 
-  const t = (key: LocalizationKey) => localizationService.translate(key, appearanceSettings.language);
-  const sectionLabel = (section: SettingsSection) => localizationService.translateSettingsSection(section, appearanceSettings.language);
+  useEffect(() => {
+    if (!highlightSelector || !dialogRef.current) return;
+    const el = dialogRef.current.querySelector<HTMLElement>(highlightSelector);
+    if (!el) return;
+    el.classList.add("settings-search-highlight");
+    const timer = window.setTimeout(() => el.classList.remove("settings-search-highlight"), 1600);
+    return () => {
+      window.clearTimeout(timer);
+      el.classList.remove("settings-search-highlight");
+    };
+  }, [highlightSelector, active]);
+
+  const profileVisibilitySummary = () => {
+    if (profilePrivacy.visibility === "everyone") return ts("privacy.visibilityStrong.public");
+    if (profilePrivacy.visibility === "shared_communities") return ts("privacy.visibilityStrong.sharedCommunities");
+    return ts("privacy.visibilityStrong.friendsOnly");
+  };
+  const dataExportSummary = () => {
+    if (dataExportStatus.status === "ready") return ts("privacy.exportReady");
+    if (dataExportStatus.status === "processing") return ts("privacy.exportProcessing");
+    return ts("privacy.exportNotRequested");
+  };
+  const notificationDigestModeLabel = () => {
+    if (notificationSettings.digestMode === "hourly_placeholder") return ts("notifications.digest.hourly");
+    if (notificationSettings.digestMode === "daily_placeholder") return ts("notifications.digest.daily");
+    return ts("notifications.digest.off");
+  };
 
   return (
     <>
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <section ref={dialogRef} className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" tabIndex={-1} onMouseDown={(event) => event.stopPropagation()}>
-        <aside className="settings-nav">
-          <span className="eyebrow">{t("settings.title")}</span>
-          <h2 id="settings-modal-title">Picom Desktop</h2>
-          <div className="settings-tabs">
-            {visibleSections.map((section) => (
-              <button
-                key={section}
-                type="button"
-                className={active === section ? "active" : ""}
-                aria-current={active === section ? "page" : undefined}
-                onClick={(event) => {
-                  setActive(section);
-                  event.currentTarget.closest(".settings-modal")?.querySelector<HTMLElement>(".settings-content")?.scrollTo({ top: 0 });
-                }}
-              >
-                <span className="tab-dot" />{sectionLabel(section)}
-              </button>
-            ))}
+      <section
+        ref={dialogRef}
+        className={`settings-modal${navCollapsed ? " settings-modal--nav-collapsed" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-modal-title"
+        tabIndex={-1}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <aside className="settings-nav" aria-label={ts("settings.title")}>
+          <div className="settings-nav-header">
+            <span className="eyebrow">{ts("settings.title")}</span>
+            <h2 id="settings-modal-title">{ts("shell.desktopTitle")}</h2>
+            <button
+              type="button"
+              className="settings-nav-collapse"
+              aria-expanded={!navCollapsed}
+              aria-controls="settings-nav-body"
+              onClick={() => setNavCollapsed((value) => !value)}
+            >
+              {navCollapsed
+                ? translateSettings("nav.showMenu", appearanceSettings.language)
+                : translateSettings("nav.hideMenu", appearanceSettings.language)}
+            </button>
+          </div>
+          <div id="settings-nav-body" className="settings-nav-body" hidden={navCollapsed}>
+            <label className="settings-search">
+              <span className="sr-only">{translateSettings("nav.searchPlaceholder", appearanceSettings.language)}</span>
+              <input
+                type="search"
+                value={settingsQuery}
+                onChange={(event) => setSettingsQuery(event.target.value)}
+                placeholder={translateSettings("nav.searchPlaceholder", appearanceSettings.language)}
+                autoComplete="off"
+              />
+            </label>
+            {settingsQuery.trim() ? (
+              <div className="settings-search-results" role="listbox" aria-label={translateSettings("nav.searchPlaceholder", appearanceSettings.language)}>
+                {searchHits.length === 0 ? (
+                  <p className="settings-search-empty">
+                    {translateSettings("nav.searchEmpty", appearanceSettings.language, { query: settingsQuery.trim() })}
+                  </p>
+                ) : (
+                  searchHits.map((hit) => (
+                    <button
+                      key={hit.id}
+                      type="button"
+                      role="option"
+                      className="settings-search-hit"
+                      onClick={() => applySearchHit(hit)}
+                    >
+                      <strong>{settingsSearchResultLabel(hit, appearanceSettings.language)}</strong>
+                      <small>{sectionLabel(hit.section)} · {settingsSearchResultDescription(hit, appearanceSettings.language)}</small>
+                    </button>
+                  ))
+                )}
+              </div>
+            ) : (
+              <div className="settings-tabs">
+                {visibleNavGroups.map((group) => (
+                  <div key={group.id} className="settings-nav-group">
+                    <p className="settings-nav-group-label">
+                      {translateSettingsNavGroup(group.id, settingsLang)}
+                    </p>
+                    {group.sections.map((section) => (
+                      <button
+                        key={section}
+                        type="button"
+                        className={active === section ? "active" : ""}
+                        aria-current={active === section ? "page" : undefined}
+                        onClick={(event) => {
+                          setActive(section);
+                          event.currentTarget.closest(".settings-modal")?.querySelector<HTMLElement>(".settings-content")?.scrollTo({ top: 0 });
+                        }}
+                      >
+                        <span className="tab-dot" />{sectionLabel(section)}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
         <main className="settings-content">
-          <button type="button" className="icon-button modal-close" aria-label={t("settings.close")} onClick={onClose}>
-            <AppIcon name={overlayIcons.close} size="lg" />
-          </button>
+          <div className="settings-content-toolbar">
+            <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={onClose}>
+              {translateSettings("nav.back", appearanceSettings.language)}
+            </button>
+            <button type="button" className="icon-button modal-close" aria-label={ts("settings.close")} onClick={onClose}>
+              <AppIcon name={overlayIcons.close} size="lg" />
+            </button>
+          </div>
           <span className="eyebrow">{sectionLabel(active)}</span>
           <h2>{sectionLabel(active)}</h2>
           {active === "Appearance" ? (
             <div className="appearance-settings-stack">
-              <p className="settings-section-description">{t("appearance.description")}</p>
-              <section className="appearance-theme-panel" aria-label="Theme selection">
+              <p className="settings-section-description">{ts("appearance.description")}</p>
+              <section className="appearance-theme-panel" aria-label={ts("appearance.themePanelAria")}>
                 <div className="theme-grid">
                 <button className={`theme-card ${appearanceSettings.themeMode === "light" ? "selected" : ""}`} onClick={() => updateAppearance({ themeMode: "light" })}>
                   <span className="theme-preview light-preview" />
-                  <strong>{t("theme.light")}</strong>
-                  <small>{t("theme.lightHint")}</small>
+                  <strong>{ts("theme.light")}</strong>
+                  <small>{ts("theme.lightHint")}</small>
                 </button>
                 <button className={`theme-card ${appearanceSettings.themeMode === "dark" ? "selected" : ""}`} onClick={() => updateAppearance({ themeMode: "dark" })}>
                   <span className="theme-preview dark-preview" />
-                  <strong>{t("theme.dark")}</strong>
-                  <small>{t("theme.darkHint")}</small>
+                  <strong>{ts("theme.dark")}</strong>
+                  <small>{ts("theme.darkHint")}</small>
                 </button>
                 <button className={`theme-card ${appearanceSettings.themeMode === "system" ? "selected" : ""}`} onClick={() => updateAppearance({ themeMode: "system" })}>
                   <span className={`theme-preview ${theme === "dark" ? "dark-preview" : "light-preview"}`} />
-                  <strong>{t("theme.system")}</strong>
-                  <small>{t("theme.systemHint")}</small>
+                  <strong>{ts("theme.system")}</strong>
+                  <small>{ts("theme.systemHint")}</small>
                 </button>
                 </div>
               </section>
               <div className="appearance-panels-grid">
-              <div className="accessibility-card" aria-label="Accessibility display options">
-                <strong>{t("accessibility.title")}</strong>
-                <p>{t("accessibility.description")}</p>
+              <div className="accessibility-card" aria-label={ts("appearance.accessibilityPanelAria")}>
+                <strong>{ts("accessibility.title")}</strong>
+                <p>{ts("accessibility.description")}</p>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>{t("accessibility.highContrast")}</strong>
-                    <small>{t("accessibility.highContrastHint")}</small>
+                    <strong>{ts("accessibility.highContrast")}</strong>
+                    <small>{ts("accessibility.highContrastHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.highContrast} onChange={(event) => updateAccessibility({ highContrast: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>{t("accessibility.reducedMotion")}</strong>
-                    <small>{t("accessibility.reducedMotionHint")}</small>
+                    <strong>{ts("accessibility.reducedMotion")}</strong>
+                    <small>{ts("accessibility.reducedMotionHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.reducedMotion} onChange={(event) => updateAccessibility({ reducedMotion: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>{t("accessibility.largerText")}</strong>
-                    <small>{t("accessibility.largerTextHint")}</small>
+                    <strong>{ts("accessibility.largerText")}</strong>
+                    <small>{ts("accessibility.largerTextHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.largerText} onChange={(event) => updateAccessibility({ largerText: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
                   <span>
-                    <strong>{t("accessibility.focusRing")}</strong>
-                    <small>{t("accessibility.focusRingHint")}</small>
+                    <strong>{ts("accessibility.focusRing")}</strong>
+                    <small>{ts("accessibility.focusRingHint")}</small>
                   </span>
                   <input type="checkbox" checked={accessibilitySettings.focusRingStrong} onChange={(event) => updateAccessibility({ focusRingStrong: event.target.checked })} />
                 </label>
               </div>
-              <div className="accessibility-card" aria-label="Language date and desktop density">
-                <label className="settings-toggle-row"><span><strong>{t("appearance.language")}</strong><small>{t("appearance.languageHint")}</small></span><select value={appearanceSettings.language} onChange={(event) => updateAppearance({ language: event.target.value as AppearanceSettings["language"] })}><option value="en">English</option><option value="tr">Türkçe</option></select></label>
-                <label className="settings-toggle-row"><span><strong>{t("appearance.density")}</strong><small>{t("appearance.densityHint")}</small></span><select value={appearanceSettings.density} onChange={(event) => updateAppearance({ density: event.target.value as AppearanceSettings["density"] })}><option value="comfortable">{appearanceSettings.language === "tr" ? "Rahat" : "Comfortable"}</option><option value="compact">{appearanceSettings.language === "tr" ? "Kompakt" : "Compact"}</option></select></label>
-                <label className="settings-toggle-row"><span><strong>{t("appearance.dateStyle")}</strong><small>{t("appearance.dateStyleHint")}</small></span><select value={appearanceSettings.dateStyle} onChange={(event) => updateAppearance({ dateStyle: event.target.value as AppearanceSettings["dateStyle"] })}><option value="system">{appearanceSettings.language === "tr" ? "Sistem" : "System"}</option><option value="numeric">{appearanceSettings.language === "tr" ? "Sayısal" : "Numeric"}</option><option value="descriptive">{appearanceSettings.language === "tr" ? "Açıklamalı" : "Descriptive"}</option></select></label>
-                <label className="settings-toggle-row"><span><strong>{t("appearance.timeFormat")}</strong><small>{t("appearance.timeFormatHint")}</small></span><select value={appearanceSettings.timeFormat} onChange={(event) => updateAppearance({ timeFormat: event.target.value as AppearanceSettings["timeFormat"] })}><option value="system">{appearanceSettings.language === "tr" ? "Sistem" : "System"}</option><option value="12h">12 {appearanceSettings.language === "tr" ? "saat" : "hour"}</option><option value="24h">24 {appearanceSettings.language === "tr" ? "saat" : "hour"}</option></select></label>
+              <div className="accessibility-card" aria-label={ts("appearance.languageDatePanelAria")}>
+                <label className="settings-toggle-row"><span><strong>{ts("appearance.language")}</strong><small>{ts("appearance.languageHint")}</small></span><select value={appearanceSettings.language} onChange={(event) => updateAppearance({ language: event.target.value as AppearanceSettings["language"] })}><option value="en">{ts("appearance.option.langEn")}</option><option value="tr">{ts("appearance.option.langTr")}</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{ts("appearance.density")}</strong><small>{ts("appearance.densityHint")}</small></span><select value={appearanceSettings.density} onChange={(event) => updateAppearance({ density: event.target.value as AppearanceSettings["density"] })}><option value="comfortable">{ts("appearance.option.comfortable")}</option><option value="compact">{ts("appearance.option.compact")}</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{ts("appearance.dateStyle")}</strong><small>{ts("appearance.dateStyleHint")}</small></span><select value={appearanceSettings.dateStyle} onChange={(event) => updateAppearance({ dateStyle: event.target.value as AppearanceSettings["dateStyle"] })}><option value="system">{ts("appearance.option.system")}</option><option value="numeric">{ts("appearance.option.numeric")}</option><option value="descriptive">{ts("appearance.option.descriptive")}</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{ts("appearance.timeFormat")}</strong><small>{ts("appearance.timeFormatHint")}</small></span><select value={appearanceSettings.timeFormat} onChange={(event) => updateAppearance({ timeFormat: event.target.value as AppearanceSettings["timeFormat"] })}><option value="system">{ts("appearance.option.system")}</option><option value="12h">12 {ts("appearance.option.hour")}</option><option value="24h">24 {ts("appearance.option.hour")}</option></select></label>
               </div>
               </div>
             </div>
           ) : active === "Account" ? (
-            <div className="account-settings-stack">
-              <p className="settings-section-description">
-                Change your password, review this device, and manage sign-in providers here. MFA, data export, and account deletion remain in Account Center when you need the full web flow.
-              </p>
-
-              <section className="account-settings-section">
-                <h3 className="account-settings-section-title">Identity</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Account identity">
-                  <span>Signed in as</span>
-                  <strong>{liveEmail ?? currentUsername}</strong>
-                  <small>{liveEmailVerifiedAt ? `Verified ${dateTimeService.formatFullTimestamp(liveEmailVerifiedAt)}.` : "Email verification can be completed in Account Center."}</small>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={identityRefreshing} onClick={() => void refreshAccountIdentity()}>{identityRefreshing ? "Refreshing identity..." : "Refresh identity"}</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => setLogoutConfirmationOpen(true)}>Log out</button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="account-settings-section" ref={passwordSectionRef} id="account-password">
-                <h3 className="account-settings-section-title">Password</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Password reset and change">
-                  <span>Password security</span>
-                  <strong>Reset by email or change now</strong>
-                  <small>{passwordResetMessage ?? "Password reset uses a neutral email response. Changing your password requires your current password and signs out every device."}</small>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!liveEmail} onClick={() => void requestPasswordReset()}>Send password reset email</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(accountCenterUrls.forgotPassword)}>Forgot password (web)</button>
-                  </div>
-                  <label className="profile-settings-field">
-                    <span>Current password</span>
-                    <input className="advanced-settings-input" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
-                  </label>
-                  <label className="profile-settings-field">
-                    <span>New password (12+ characters)</span>
-                    <input className="advanced-settings-input" type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
-                  </label>
-                  <label className="profile-settings-field">
-                    <span>Confirm new password</span>
-                    <input className="advanced-settings-input" type="password" autoComplete="new-password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} />
-                  </label>
-                  <div className="settings-actions-row">
-                    <button
-                      type="button"
-                      className="settings-inline-action"
-                      disabled={passwordChangeBusy || currentPassword.length < 8 || newPassword.length < 12 || confirmNewPassword.length < 12}
-                      onClick={() => void submitPasswordChange()}
-                    >
-                      {passwordChangeBusy ? "Changing password..." : "Change password and sign out all sessions"}
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="account-settings-section" ref={sessionsSectionRef} id="account-sessions">
-                <h3 className="account-settings-section-title">This device</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Current desktop session">
-                  <span>Current desktop session</span>
-                  <strong>{currentDesktopSession ? currentDesktopSession.deviceLabel : "Current desktop session"}</strong>
-                  <small>
-                    {currentDesktopSession
-                      ? `${currentDesktopSession.current ? "This device" : "Registered device"} · Provider ${currentDesktopSession.provider}${otherActiveSessionCount ? ` · ${otherActiveSessionCount} other active` : ""}`
-                      : (sessionManagementMessage ?? "Session metadata loads from Auth. Raw tokens are never shown.")}
-                  </small>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={sessionsRefreshing} onClick={() => void refreshActiveSessions()}>{sessionsRefreshing ? "Refreshing..." : "Refresh"}</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSessionRevokeConfirmationOpen(true)}>Sign out other devices</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/sessions`)}>Manage all sessions</button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="account-settings-section">
-                <h3 className="account-settings-section-title">Sign-in providers</h3>
-                <div className="security-card-grid" aria-label="Social provider connections">
-                  {socialProviders.map((provider) => (
-                    <article className="security-card" key={provider.provider}>
-                      <span>{provider.label}</span>
-                      <strong>{provider.linked ? "Connected" : provider.available ? "Available" : "Unavailable"}</strong>
-                      <small>{provider.linked ? `${provider.label} is connected to this account.` : provider.reason ?? `Connect ${provider.label} through Supabase Auth.`}</small>
-                      <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={provider.linked || !provider.available || socialProviderBusy !== null} onClick={() => void connectSocialProvider(provider.provider)}>{socialProviderBusy === provider.provider ? "Opening browser..." : provider.linked ? "Connected" : `Connect ${provider.label}`}</button>
-                    </article>
-                  ))}
-                </div>
-              </section>
-
-              <section className="account-settings-section">
-                <h3 className="account-settings-section-title">Account Center</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Open Account Center">
-                  <span>Optional web tools</span>
-                  <strong>MFA, export, and deletion</strong>
-                  <small>Opens https://account.picom.gg in your system browser for flows that need full Account Center re-authentication.</small>
-                  <div className="settings-actions-row">
-                    <button type="button" className="settings-inline-action" onClick={() => void openAccountCenter(accountCenterUrls.manageAccount)}>Open Account Center</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/security`)}>Security / MFA</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/data`)}>Data export</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--danger" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/delete`)}>Delete account</button>
-                  </div>
-                </div>
-              </section>
-            </div>
+            <AccountSummarySection
+              language={appearanceSettings.language}
+              displayName={profileSettings.displayName || profileDraft.displayName}
+              username={profileSettings.username || currentUsername}
+              email={liveEmail ?? currentEmail ?? null}
+              emailVerifiedAt={liveEmailVerifiedAt ? dateTimeService.formatFullTimestamp(liveEmailVerifiedAt) : null}
+              avatarUrl={profileSettings.avatarUrl}
+              memberSinceLabel={memberSinceIso ? dateTimeService.formatFullTimestamp(memberSinceIso) : "—"}
+              planLabel={translateSettings("account.planFree", appearanceSettings.language)}
+              accountStatusLabel={profileSettings.status || "online"}
+              socialProviders={socialProviders}
+              onOpenAccountCenter={(url) => void openAccountCenter(url)}
+              onLogout={() => setLogoutConfirmationOpen(true)}
+              onRefreshIdentity={() => void refreshAccountIdentity()}
+              identityRefreshing={identityRefreshing}
+            />
           ) : active === "Privacy & Safety" ? (
             <div className="privacy-settings-stack">
-              <p className="settings-section-description">Central desktop controls for blocking, privacy, data requests, and safety guidance. Supabase/RLS remains the source of truth for production enforcement.</p>
+              <p className="settings-section-description">{ts("privacy.description")}</p>
 
-              <nav className="privacy-settings-jump" aria-label="Privacy sections">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-reach")}>Who can reach you</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-visibility")}>Profile visibility</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-blocking")}>Blocking & mutes</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-data")}>Data & guidance</button>
+              <nav className="privacy-settings-jump" aria-label={ts("privacy.jumpAria")}>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-reach")}>{ts("privacy.jump.reach")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-visibility")}>{ts("privacy.jump.visibility")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-blocking")}>{ts("privacy.jump.blocking")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("privacy-data")}>{ts("privacy.jump.data")}</button>
               </nav>
 
               <section className="privacy-settings-section" id="privacy-reach">
-                <h3 className="privacy-settings-section-title">Who can reach you</h3>
+                <h3 className="privacy-settings-section-title">{ts("privacy.reach.title")}</h3>
                 <label className="settings-toggle-row">
-                  <span><strong>Who can send friend requests</strong><small>Controls incoming friend requests while preserving existing community access.</small></span>
+                  <span><strong>{ts("privacy.friendRequests.label")}</strong><small>{ts("privacy.friendRequests.hint")}</small></span>
                   <select value={safetySettings.whoCanSendFriendRequests} onChange={(event) => void updateFriendRequestPrivacy(event.target.value as UserSafetySettings["whoCanSendFriendRequests"])}>
-                    <option value="everyone">Everyone</option>
-                    <option value="community_members">Community members</option>
-                    <option value="friends_of_friends">Friends of friends</option>
-                    <option value="nobody">Nobody</option>
+                    <option value="everyone">{ts("privacy.option.everyone")}</option>
+                    <option value="community_members">{ts("privacy.option.communityMembers")}</option>
+                    <option value="friends_of_friends">{ts("privacy.option.friendsOfFriends")}</option>
+                    <option value="nobody">{ts("privacy.option.nobody")}</option>
                   </select>
                 </label>
-                <label className="settings-toggle-row"><span><strong>Who can start a direct message</strong><small>Existing blocked relationships remain inaccessible regardless of this preference.</small></span><select value={directMessagePrivacy} onChange={(event) => updateDirectMessagePrivacy(event.target.value as DirectMessagePrivacy)}><option value="everyone">Everyone</option><option value="friends">Friends only</option><option value="no_one">No one</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.dm.label")}</strong><small>{ts("privacy.dm.hint")}</small></span><select value={directMessagePrivacy} onChange={(event) => updateDirectMessagePrivacy(event.target.value as DirectMessagePrivacy)}><option value="everyone">{ts("privacy.option.everyone")}</option><option value="friends">{ts("privacy.option.friendsOnly")}</option><option value="no_one">{ts("privacy.option.noOne")}</option></select></label>
                 <label className="settings-toggle-row">
-                  <span><strong>Show online status</strong><small>Hide your online status and status text from other profile viewers.</small></span>
+                  <span><strong>{ts("privacy.onlineStatus.label")}</strong><small>{ts("privacy.onlineStatus.hint")}</small></span>
                   <input type="checkbox" checked={profilePrivacy.showOnlineStatus} onChange={(event) => { const enabled = event.target.checked; updateSafetySettings({ showOnlineStatus: enabled }); updateProfilePrivacy({ showOnlineStatus: enabled }); }} />
                 </label>
                 <label className="settings-toggle-row">
-                  <span><strong>Read receipts</strong><small>Controls whether eligible conversations may publish read receipts; detailed reader lists remain disabled.</small></span>
+                  <span><strong>{ts("privacy.readReceipts.label")}</strong><small>{ts("privacy.readReceipts.hint")}</small></span>
                   <input type="checkbox" checked={safetySettings.enableReadReceipts} onChange={(event) => updateSafetySettings({ enableReadReceipts: event.target.checked })} />
                 </label>
               </section>
 
               <section className="privacy-settings-section" id="privacy-visibility">
-                <h3 className="privacy-settings-section-title">Profile visibility</h3>
-                <label className="settings-toggle-row"><span><strong>Profile audience</strong><small>Private-channel activity is always filtered by channel access, regardless of this choice.</small></span><select value={profilePrivacy.visibility} onChange={(event) => updateProfilePrivacy({ visibility: event.target.value as ProfilePrivacySettings["visibility"] })}><option value="everyone">Everyone</option><option value="shared_communities">Shared communities</option><option value="friends">Friends only</option></select></label>
-                <label className="settings-toggle-row"><span><strong>Show location</strong><small>Hide your location from profile viewers.</small></span><input type="checkbox" checked={profilePrivacy.showLocation} onChange={(event) => updateProfilePrivacy({ showLocation: event.target.checked })} /></label>
-                <label className="settings-toggle-row"><span><strong>Show timezone</strong><small>Hide your timezone from profile viewers.</small></span><input type="checkbox" checked={profilePrivacy.showTimezone} onChange={(event) => updateProfilePrivacy({ showTimezone: event.target.checked })} /></label>
-                <label className="settings-toggle-row"><span><strong>Show recent activity</strong><small>Only friends or shared-community members can see activity, and only from channels they may access.</small></span><input type="checkbox" checked={profilePrivacy.showActivity} onChange={(event) => updateProfilePrivacy({ showActivity: event.target.checked })} /></label>
-                <label className="settings-toggle-row"><span><strong>Show shared media</strong><small>Only friends or shared-community members can see eligible media.</small></span><input type="checkbox" checked={profilePrivacy.showMedia} onChange={(event) => updateProfilePrivacy({ showMedia: event.target.checked })} /></label>
-                <label className="settings-toggle-row"><span><strong>Show communities and roles</strong><small>Hide community and role summaries from your public profile.</small></span><input type="checkbox" checked={profilePrivacy.showCommunities} onChange={(event) => updateProfilePrivacy({ showCommunities: event.target.checked })} /></label>
-                <label className="settings-toggle-row"><span><strong>Show friends</strong><small>Allow trusted profile viewers to see friendship context when supported.</small></span><input type="checkbox" checked={profilePrivacy.showFriends} onChange={(event) => updateProfilePrivacy({ showFriends: event.target.checked })} /></label>
-                <label className="settings-toggle-row"><span><strong>Show follower counts</strong><small>Control follower and following statistics on your profile.</small></span><input type="checkbox" checked={profilePrivacy.showFollows} onChange={(event) => updateProfilePrivacy({ showFollows: event.target.checked })} /></label>
-                <label className="settings-toggle-row"><span><strong>Show Radio and Podcast sections</strong><small>Hide audio activity from your profile without removing public community audio.</small></span><input type="checkbox" checked={profilePrivacy.showAudio} onChange={(event) => updateProfilePrivacy({ showAudio: event.target.checked })} /></label>
+                <h3 className="privacy-settings-section-title">{ts("privacy.visibility.title")}</h3>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.profileAudience.label")}</strong><small>{ts("privacy.profileAudience.hint")}</small></span><select value={profilePrivacy.visibility} onChange={(event) => updateProfilePrivacy({ visibility: event.target.value as ProfilePrivacySettings["visibility"] })}><option value="everyone">{ts("privacy.option.everyone")}</option><option value="shared_communities">{ts("privacy.option.sharedCommunities")}</option><option value="friends">{ts("privacy.option.friendsOnly")}</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showLocation.label")}</strong><small>{ts("privacy.showLocation.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showLocation} onChange={(event) => updateProfilePrivacy({ showLocation: event.target.checked })} /></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showTimezone.label")}</strong><small>{ts("privacy.showTimezone.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showTimezone} onChange={(event) => updateProfilePrivacy({ showTimezone: event.target.checked })} /></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showActivity.label")}</strong><small>{ts("privacy.showActivity.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showActivity} onChange={(event) => updateProfilePrivacy({ showActivity: event.target.checked })} /></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showMedia.label")}</strong><small>{ts("privacy.showMedia.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showMedia} onChange={(event) => updateProfilePrivacy({ showMedia: event.target.checked })} /></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showCommunities.label")}</strong><small>{ts("privacy.showCommunities.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showCommunities} onChange={(event) => updateProfilePrivacy({ showCommunities: event.target.checked })} /></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showFriends.label")}</strong><small>{ts("privacy.showFriends.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showFriends} onChange={(event) => updateProfilePrivacy({ showFriends: event.target.checked })} /></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showFollows.label")}</strong><small>{ts("privacy.showFollows.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showFollows} onChange={(event) => updateProfilePrivacy({ showFollows: event.target.checked })} /></label>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.showAudio.label")}</strong><small>{ts("privacy.showAudio.hint")}</small></span><input type="checkbox" checked={profilePrivacy.showAudio} onChange={(event) => updateProfilePrivacy({ showAudio: event.target.checked })} /></label>
               </section>
 
               <section className="privacy-settings-section" id="privacy-overview">
-                <h3 className="privacy-settings-section-title">Overview</h3>
-                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Safety summary">
-                  <span>Safety summary</span>
+                <h3 className="privacy-settings-section-title">{ts("privacy.overview.title")}</h3>
+                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label={ts("privacy.safetySummary.aria")}>
+                  <span>{ts("privacy.safetySummary.title")}</span>
                   <strong>{userSafetyCenterService.getPrivacySummary(blockedUsers.length)}</strong>
-                  <small>Privacy choices are enforced locally and synchronized to Supabase when connected; passwords, tokens, and message content are never stored here.</small>
+                  <small>{ts("privacy.safetySummary.hint")}</small>
                 </div>
-                <div className="settings-status-card settings-feature-card" aria-label="Public and visitor profile behavior">
-                  <span>Public and visitor visibility</span>
-                  <strong>{profilePrivacy.visibility === "everyone" ? "Safe profile basics are public" : profilePrivacy.visibility === "shared_communities" ? "Shared communities only" : "Friends only"}</strong>
-                  <small>Visitors never receive private-channel activity or media. Each section above can be hidden independently, and server-side profile projection remains authoritative.</small>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("privacy.publicVisibility.aria")}>
+                  <span>{ts("privacy.publicVisibility.title")}</span>
+                  <strong>{profileVisibilitySummary()}</strong>
+                  <small>{ts("privacy.publicVisibility.hint")}</small>
                 </div>
-                <div className="security-card-grid" aria-label="Privacy metrics">
+                <div className="security-card-grid" aria-label={ts("privacy.metrics.aria")}>
                   <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-blocking")}>
-                    <span>Blocked users</span>
+                    <span>{ts("privacy.metrics.blockedUsers")}</span>
                     <strong>{blockedUsers.length}</strong>
-                    <small>Community messages are collapsed and direct messages are disabled for blocked users.</small>
+                    <small>{ts("privacy.metrics.blockedHint")}</small>
                   </button>
                   <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-reach")}>
-                    <span>Online status</span>
-                    <strong>{profilePrivacy.showOnlineStatus ? "Visible" : "Hidden"}</strong>
-                    <small>Profile visibility is synchronized when Supabase profile privacy is available.</small>
+                    <span>{ts("privacy.metrics.onlineStatus")}</span>
+                    <strong>{profilePrivacy.showOnlineStatus ? ts("common.visible") : ts("common.hidden")}</strong>
+                    <small>{ts("privacy.metrics.onlineHint")}</small>
                   </button>
                   <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-reach")}>
-                    <span>Read receipts</span>
-                    <strong>{safetySettings.enableReadReceipts ? "Enabled" : "Disabled"}</strong>
-                    <small>Read receipts remain opt-in and should not expose detailed reads in large communities.</small>
+                    <span>{ts("privacy.metrics.readReceipts")}</span>
+                    <strong>{safetySettings.enableReadReceipts ? ts("common.enabled") : ts("common.disabled")}</strong>
+                    <small>{ts("privacy.metrics.readReceiptsHint")}</small>
                   </button>
                   <button type="button" className="security-card security-card--action" onClick={() => scrollToSettingsSection("privacy-data")}>
-                    <span>Account data</span>
-                    <strong>{dataExportStatus.status === "ready" ? "Export ready" : dataExportStatus.status === "processing" ? "Export processing" : "Export not requested"}</strong>
-                    <small>{accountDeletionStatus.requested ? "Deletion request recorded; sign in again to cancel during the review period." : "No deletion request active."}</small>
+                    <span>{ts("privacy.metrics.accountData")}</span>
+                    <strong>{dataExportSummary()}</strong>
+                    <small>{accountDeletionStatus.requested ? ts("privacy.deletionPending") : ts("privacy.noDeletionRequest")}</small>
                   </button>
                 </div>
               </section>
 
               <section className="privacy-settings-section" id="privacy-blocking">
-                <h3 className="privacy-settings-section-title">Blocking & mutes</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Blocked users list">
-                  <span>Blocked users</span>
-                  <strong>{blockedUsers.length ? "Manage locally" : "No blocked users"}</strong>
-                  <small>Blocked users are enforced locally and synchronized through Supabase RLS when connected.</small>
+                <h3 className="privacy-settings-section-title">{ts("privacy.blocking.title")}</h3>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("privacy.blockedList.aria")}>
+                  <span>{ts("privacy.blockedUsers.title")}</span>
+                  <strong>{blockedUsers.length ? ts("privacy.blockedManageLocally") : ts("privacy.noBlockedUsers")}</strong>
+                  <small>{ts("privacy.blockedListHint")}</small>
                   <div className="privacy-list">
                     {blockedUsers.length ? blockedUsers.map((blockedUser) => (
                       <article key={blockedUser.userId} className="privacy-list-item">
                         <div>
                           <strong><ProfileDisplayName userId={blockedUser.userId} fallback={blockedUser.displayName} /></strong>
-                          <small>@<ProfileUsername userId={blockedUser.userId} fallback={blockedUser.username} /> · blocked {dateTimeService.formatMessageTime(blockedUser.blockedAt)}</small>
+                          <small>@<ProfileUsername userId={blockedUser.userId} fallback={blockedUser.username} /> · {ts("privacy.blockedSuffix", { when: dateTimeService.formatMessageTime(blockedUser.blockedAt) })}</small>
                         </div>
-                        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void unblockUser(blockedUser.userId, getLiveBlockedDisplayName(blockedUser.userId, blockedUser.displayName), getLiveBlockedUsername(blockedUser.userId, blockedUser.username))}>Unblock</button>
+                        <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void unblockUser(blockedUser.userId, getLiveBlockedDisplayName(blockedUser.userId, blockedUser.displayName), getLiveBlockedUsername(blockedUser.userId, blockedUser.username))}>{ts("common.unblock")}</button>
                       </article>
                     )) : (
                       <article className="privacy-list-item privacy-list-item--empty">
                         <div>
-                          <strong>Your block list is clear</strong>
-                          <small>Use member/profile actions to block someone locally.</small>
+                          <strong>{ts("privacy.blockListClear.title")}</strong>
+                          <small>{ts("privacy.blockListClear.hint")}</small>
                         </div>
                       </article>
                     )}
                   </div>
                 </div>
-                <label className="settings-toggle-row"><span><strong>Mute all notifications</strong><small>Suppress desktop alerts while keeping the inbox available. This does not hide moderation-required content.</small></span><input type="checkbox" checked={notificationSettings.muted} onChange={(event) => updateNotifications({ muted: event.target.checked })} /></label>
-                <div className="settings-status-card settings-feature-card" aria-label="Muted communities and channels">
-                  <span>Muted scopes</span>
-                  <strong>{notificationPolicyState.mutedCommunityIds.length + notificationPolicyState.mutedChannelIds.length ? "Manage notification and feed mutes" : "No muted communities or channels"}</strong>
-                  <small>Muted scopes suppress native notifications and normal Mention Feed items. Community chat and moderator queues stay accessible.</small>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.muteAll.label")}</strong><small>{ts("privacy.muteAll.hint")}</small></span><input type="checkbox" checked={notificationSettings.muted} onChange={(event) => updateNotifications({ muted: event.target.checked })} /></label>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("privacy.mutedScopes.aria")}>
+                  <span>{ts("privacy.mutedScopes.title")}</span>
+                  <strong>{notificationPolicyState.mutedCommunityIds.length + notificationPolicyState.mutedChannelIds.length ? ts("privacy.mutedScopesManage") : ts("privacy.noMutedScopesSummary")}</strong>
+                  <small>{ts("privacy.mutedScopesHint")}</small>
                   <div className="privacy-list">
                     {notificationPolicyState.mutedCommunityIds.map((communityId) => {
                       const community = communities.find((candidate) => candidate.id === communityId);
                       return (
                         <article key={`community-${communityId}`} className="privacy-list-item">
-                          <div><strong>{community?.name ?? "Unavailable community"}</strong><small>Community mute</small></div>
-                          <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setCommunityMuted(communityId, false))}>Unmute</button>
+                          <div><strong>{community?.name ?? ts("privacy.unavailableCommunity")}</strong><small>{ts("privacy.communityMute")}</small></div>
+                          <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setCommunityMuted(communityId, false))}>{ts("common.unmute")}</button>
                         </article>
                       );
                     })}
@@ -1120,14 +1182,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                       const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === channelId);
                       return (
                         <article key={`channel-${channelId}`} className="privacy-list-item">
-                          <div><strong>#{channel?.name ?? "unavailable-channel"}</strong><small>{community?.name ?? "Unavailable community"} · channel mute</small></div>
-                          <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setChannelMuted(channelId, false))}>Unmute</button>
+                          <div><strong>#{channel?.name ?? ts("privacy.unavailableChannel")}</strong><small>{ts("privacy.channelMuteSuffix", { community: community?.name ?? ts("privacy.unavailableCommunity") })}</small></div>
+                          <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setChannelMuted(channelId, false))}>{ts("common.unmute")}</button>
                         </article>
                       );
                     })}
                     {!notificationPolicyState.mutedCommunityIds.length && !notificationPolicyState.mutedChannelIds.length ? (
                       <article className="privacy-list-item privacy-list-item--empty">
-                        <div><strong>No muted scopes</strong><small>Mute communities or channels from their context menus.</small></div>
+                        <div><strong>{ts("privacy.noMutedScopes.title")}</strong><small>{ts("privacy.noMutedScopes.hint")}</small></div>
                       </article>
                     ) : null}
                   </div>
@@ -1135,41 +1197,39 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </section>
 
               <section className="privacy-settings-section" id="privacy-data">
-                <h3 className="privacy-settings-section-title">Data & guidance</h3>
-                <label className="settings-toggle-row"><span><strong>Share anonymous usage diagnostics</strong><small>Off by default. Records feature counts and app health locally; never message content, passwords, tokens, channel names, or attachment contents.</small></span><input type="checkbox" checked={analyticsEnabled} onChange={(event) => { const enabled = analyticsService.setEnabled(event.target.checked); setAnalyticsEnabled(enabled); pushToast(enabled ? "Anonymous diagnostics enabled locally." : "Anonymous diagnostics disabled and local queue cleared.", "success"); }} /></label>
-                <div className="settings-status-card settings-feature-card retention-user-notice" aria-label="Content deletion and retention information">
-                  <span>Content deletion and retention</span>
-                  <strong>Deletion hides content; retention periods are not yet enforced</strong>
-                  <small>Deleted messages appear as placeholders and their content, reactions, and attachments are hidden. Picom does not currently run an automatic production purge. Limited tombstones, moderation records, immutable audit events, and backups follow separate review and retention paths. Deleted accounts use a “Deleted User” fallback where historical context must remain.</small>
-                  <small>Final retention periods and legal copy are pending privacy/legal approval. Clearing desktop cache does not delete server data; use Account data controls for export or deletion requests.</small>
+                <h3 className="privacy-settings-section-title">{ts("privacy.data.title")}</h3>
+                <label className="settings-toggle-row"><span><strong>{ts("privacy.analytics.label")}</strong><small>{ts("privacy.analytics.hint")}</small></span><input type="checkbox" checked={analyticsEnabled} onChange={(event) => { const enabled = analyticsService.setEnabled(event.target.checked); setAnalyticsEnabled(enabled); pushToast(enabled ? ts("toast.analyticsEnabled") : ts("toast.analyticsDisabled"), "success"); }} /></label>
+                <div className="settings-status-card settings-feature-card retention-user-notice" aria-label={ts("privacy.retention.aria")}>
+                  <span>{ts("privacy.retention.title")}</span>
+                  <strong>{ts("privacy.retention.strong")}</strong>
+                  <small>{ts("privacy.retention.body1")}</small>
+                  <small>{ts("privacy.retention.body2")}</small>
                 </div>
-                <div className="settings-status-card settings-feature-card" aria-label="Safety tips">
-                  <span>Safety tips</span>
-                  <strong>Stay in control</strong>
-                  <small>Do not share passwords, tokens, recovery codes, or private invite links. Report suspicious behavior from message/member context actions.</small>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("privacy.safetyTips.aria")}>
+                  <span>{ts("privacy.safetyTips.title")}</span>
+                  <strong>{ts("privacy.safetyTips.strong")}</strong>
+                  <small>{ts("privacy.safetyTips.hint")}</small>
                 </div>
               </section>
 
-              <section className="privacy-settings-section privacy-settings-section--compact privacy-settings-actions--dock" aria-label="Privacy data actions">
+              <section className="privacy-settings-section privacy-settings-section--compact privacy-settings-actions--dock" aria-label={ts("privacy.actions.aria")}>
                 <div className="settings-actions-row">
-                  <button type="button" className="settings-inline-action" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/data`)}>{dataExportStatus.status === "processing" ? "Export runs in Account Center…" : "Request data export"}</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/delete`)}>Account deletion</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { setActive("Advanced"); pushToast("Open Beta support to report a problem.", "info"); }}>Report a problem</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => updateSafetySettings(userSafetyCenterService.resetSettings())}>Reset safety settings</button>
+                  <button type="button" className="settings-inline-action" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/data`)}>{dataExportStatus.status === "processing" ? ts("privacy.exportInAccountCenter") : ts("privacy.requestExport")}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/delete`)}>{ts("privacy.accountDeletion")}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { setActive("Advanced"); pushToast(ts("toast.reportProblemHint"), "info"); }}>{ts("privacy.reportProblem")}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => updateSafetySettings(userSafetyCenterService.resetSettings())}>{ts("privacy.resetSafety")}</button>
                 </div>
               </section>
             </div>
           ) : active === "Profile" ? (
             <div className="profile-settings-stack">
-              <p className="settings-section-description">
-                Edit avatar, cover, username, bio, and presence here. Changes save through Supabase when you are signed in.
-              </p>
-              {profileHydrating ? <p className="settings-section-description" aria-live="polite">Loading your live profile from Supabase…</p> : null}
+              <p className="settings-section-description">{ts("profile.description")}</p>
+              {profileHydrating ? <p className="settings-section-description" aria-live="polite">{ts("profile.loading")}</p> : null}
 
               <section className="profile-settings-section">
                 <header className="profile-settings-section-head">
-                  <h3 className="profile-settings-section-title">Photos</h3>
-                  <p>Upload or remove your profile and cover photos.</p>
+                  <h3 className="profile-settings-section-title">{ts("profile.photos.title")}</h3>
+                  <p>{ts("profile.photos.intro")}</p>
                 </header>
                 <ProfileMediaEditor
                   displayName={profileDraft.displayName || currentUsername}
@@ -1177,17 +1237,18 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   coverUrl={profileDraft.coverUrl}
                   onProfileUpdated={(profile) => applyProfileSummary(profile, { mediaOnly: true })}
                   onNotice={pushToast}
+                  language={settingsLang}
                 />
               </section>
 
               <section className="profile-settings-section">
                 <header className="profile-settings-section-head">
-                  <h3 className="profile-settings-section-title">Identity</h3>
-                  <p>Public profile fields shown across Picom.</p>
+                  <h3 className="profile-settings-section-title">{ts("profile.identity.title")}</h3>
+                  <p>{ts("profile.public.intro")}</p>
                 </header>
                 <div className="profile-settings-form">
                   <label className="profile-settings-field">
-                    <span>Username</span>
+                    <span>{ts("profile.username")}</span>
                     <input
                       className="advanced-settings-input"
                       value={profileDraft.username}
@@ -1198,23 +1259,23 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                       spellCheck={false}
                       disabled={profileHydrating}
                       onChange={(event) => setProfileDraft({ ...profileDraft, username: event.target.value.toLowerCase() })}
-                      placeholder="username"
+                      placeholder={ts("profile.placeholder.username")}
                     />
-                    <small>3–32 characters: lowercase letters, numbers, dots, underscores, or hyphens.</small>
+                    <small>{ts("profile.usernameHint")}</small>
                   </label>
                   <label className="profile-settings-field">
-                    <span>Display name</span>
+                    <span>{ts("profile.displayName")}</span>
                     <input
                       className="advanced-settings-input"
                       value={profileDraft.displayName}
                       maxLength={80}
                       disabled={profileHydrating}
                       onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })}
-                      placeholder="Display name"
+                      placeholder={ts("profile.placeholder.displayName")}
                     />
                   </label>
                   <label className="profile-settings-field">
-                    <span>Bio</span>
+                    <span>{ts("profile.bio")}</span>
                     <textarea
                       className="advanced-settings-input"
                       value={profileDraft.bio}
@@ -1222,44 +1283,44 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                       rows={4}
                       disabled={profileHydrating}
                       onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })}
-                      placeholder="Write a short profile bio"
+                      placeholder={ts("profile.placeholder.bio")}
                     />
                   </label>
                   <label className="profile-settings-field">
-                    <span>Location</span>
+                    <span>{ts("profile.location")}</span>
                     <input
                       className="advanced-settings-input"
                       value={profileDraft.location}
                       maxLength={120}
                       disabled={profileHydrating}
                       onChange={(event) => setProfileDraft({ ...profileDraft, location: event.target.value })}
-                      placeholder="City or region"
+                      placeholder={ts("profile.placeholder.location")}
                     />
                   </label>
                   <label className="profile-settings-field">
-                    <span>Timezone</span>
+                    <span>{ts("profile.timezone")}</span>
                     <input
                       className="advanced-settings-input"
                       value={profileDraft.timezone}
                       maxLength={80}
                       disabled={profileHydrating}
                       onChange={(event) => setProfileDraft({ ...profileDraft, timezone: event.target.value })}
-                      placeholder="Europe/Berlin"
+                      placeholder={ts("profile.placeholder.timezone")}
                     />
                   </label>
                   <label className="profile-settings-field">
-                    <span>Preferred language</span>
+                    <span>{ts("profile.preferredLanguage")}</span>
                     <input
                       className="advanced-settings-input"
                       value={profileDraft.preferredLanguage}
                       maxLength={48}
                       disabled={profileHydrating}
                       onChange={(event) => setProfileDraft({ ...profileDraft, preferredLanguage: event.target.value })}
-                      placeholder="English"
+                      placeholder={ts("profile.placeholder.preferredLanguage")}
                     />
                   </label>
                   <label className="profile-settings-field">
-                    <span>Tags</span>
+                    <span>{ts("profile.tags")}</span>
                     <input
                       className="advanced-settings-input"
                       value={profileDraft.tags.join(", ")}
@@ -1268,22 +1329,22 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                         ...profileDraft,
                         tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 12),
                       })}
-                      placeholder="Design, Community, Music"
+                      placeholder={ts("profile.placeholder.tags")}
                     />
-                    <small>Up to 12 comma-separated tags.</small>
+                    <small>{ts("profile.tagsHint")}</small>
                   </label>
                 </div>
               </section>
 
               <section className="profile-settings-section">
                 <header className="profile-settings-section-head">
-                  <h3 className="profile-settings-section-title">Presence</h3>
-                  <p>Status shown while you use Picom on desktop.</p>
+                  <h3 className="profile-settings-section-title">{ts("profile.presence.title")}</h3>
+                  <p>{ts("profile.presence.intro")}</p>
                 </header>
                 <div className="profile-settings-form">
                   <div className="profile-settings-field">
-                    <span>Presence</span>
-                    <div className="profile-presence-segment" role="group" aria-label="Presence">
+                    <span>{ts("profile.presenceField")}</span>
+                    <div className="profile-presence-segment" role="group" aria-label={ts("presence.aria")}>
                       {(["online", "idle", "busy", "offline"] as const).map((status) => (
                         <button
                           key={status}
@@ -1292,33 +1353,41 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                           aria-pressed={profileDraft.status === status}
                           onClick={() => setProfileDraft({ ...profileDraft, status })}
                         >
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                          {ts(
+                            status === "online"
+                              ? "presence.online"
+                              : status === "idle"
+                                ? "presence.idle"
+                                : status === "busy"
+                                  ? "presence.busy"
+                                  : "presence.offline",
+                          )}
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <label className="profile-settings-field">
-                    <span>Status message</span>
+                    <span>{ts("profile.statusMessage")}</span>
                     <input
                       className="advanced-settings-input"
                       value={profileDraft.statusText}
                       maxLength={120}
                       disabled={autoActivityEnabled || profileHydrating}
                       onChange={(event) => setProfileDraft({ ...profileDraft, statusText: event.target.value })}
-                      placeholder="Optional status shown with your presence"
+                      placeholder={ts("profile.placeholder.statusMessage")}
                     />
-                    <small>{autoActivityEnabled ? "Automatic activity status is writing this field while enabled." : "Optional. Saved with Save profile."}</small>
+                    <small>{autoActivityEnabled ? ts("profile.autoActivityHint") : ts("profile.saveStatusHint")}</small>
                   </label>
                 </div>
               </section>
 
-              <section className="profile-settings-section profile-settings-section--compact profile-settings-actions" aria-label="Profile save actions">
+              <section className="profile-settings-section profile-settings-section--compact profile-settings-actions" aria-label={ts("profile.saveProfile")}>
                 <div className="settings-actions-row">
-                  <button type="button" className="settings-inline-action" disabled={profileSaveDisabled} onClick={() => void saveProfileSettings()}>{profileSaving ? "Saving..." : profileHydrating ? "Loading profile..." : "Save profile"}</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving || profileHydrating} onClick={resetProfileSettings}>Discard changes</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving} onClick={() => setActive("Privacy & Safety")}>Privacy &amp; safety</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/profile`)}>Open on web</button>
+                  <button type="button" className="settings-inline-action" disabled={profileSaveDisabled} onClick={() => void saveProfileSettings()}>{profileSaving ? ts("profile.saving") : profileHydrating ? ts("profile.loadingProfile") : ts("profile.saveProfile")}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving || profileHydrating} onClick={resetProfileSettings}>{ts("profile.discardChanges")}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={profileSaving} onClick={() => setActive("Privacy & Safety")}>{ts("profile.openPrivacy")}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void openAccountCenter(`${accountCenterUrls.origin}/account/profile`)}>{ts("profile.openOnWeb")}</button>
                 </div>
               </section>
 
@@ -1326,126 +1395,131 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Notifications" ? (
             <div className="notification-settings-stack">
-              <p className="settings-section-description">Choose which Picom activity can reach your inbox and desktop. Native delivery remains behind the safe preload bridge.</p>
+              <p className="settings-section-description">{ts("notifications.description")}</p>
 
-              <nav className="notification-settings-jump" aria-label="Notification sections">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-runtime")}>Desktop delivery</button>
+              <nav className="notification-settings-jump" aria-label={ts("notifications.categories.aria")}>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-runtime")}>{ts("notifications.jump.runtime")}</button>
                 <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-activity")}>Activity</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-quiet")}>Quiet Hours</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-quiet")}>{ts("notifications.quiet.title")}</button>
                 <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("notifications-email")}>Email</button>
               </nav>
 
               <section className="notification-settings-section" id="notifications-runtime">
-                <h3 className="notification-settings-section-title">Runtime & delivery</h3>
-                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label="Notification runtime status">
-                  <span>Runtime support</span>
+                <h3 className="notification-settings-section-title">{ts("notifications.runtime.title")}</h3>
+                <div className="settings-status-card settings-feature-card settings-feature-card--highlight" aria-label={ts("notifications.runtime.aria")}>
+                  <span>{ts("notifications.runtimeSupport")}</span>
                   <strong>{notificationStatus.supported ? "Available" : "Fallback only"}</strong>
                   <small>Permission: {notificationStatus.permission}. Account preferences synchronize when Supabase mode is available.</small>
+                  {notificationStatus.permission === "denied" ? (
+                    <small role="status">{translateSettings("notifications.permissionDenied", appearanceSettings.language)}</small>
+                  ) : null}
+                  <small role="note">{translateSettings("notifications.securityLocked", appearanceSettings.language)}</small>
                   <div className="settings-actions-row">
                     <button type="button" className="settings-inline-action" disabled={!notificationStatus.supported || notificationStatus.permission === "granted"} onClick={() => void requestNotificationPermission()}>{notificationStatus.permission === "granted" ? "Permission granted" : "Allow desktop notifications"}</button>
-                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!notificationSettings.enabled || !notificationSettings.nativeDesktopEnabled} onClick={() => void testNotification()}>Send test notification</button>
+                    <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={!notificationSettings.enabled || !notificationSettings.nativeDesktopEnabled || notificationStatus.permission === "denied"} onClick={() => void testNotification()}>{ts("notifications.sendTest")}</button>
                   </div>
                 </div>
+                <p className="settings-nav-group-label">{translateSettings("notifications.deviceGroup", appearanceSettings.language)}</p>
                 <label className="settings-toggle-row">
-                  <span><strong>Enable notifications</strong><small>Master preference for notification inbox, unread routing, and desktop alerts.</small></span>
+                  <span><strong>{translateSettings("notifications.enableAll", appearanceSettings.language)}</strong><small>{ts("notifications.masterHint")}</small></span>
                   <input type="checkbox" checked={notificationSettings.enabled} onChange={(event) => updateNotifications({ enabled: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
-                  <span><strong>Native desktop notifications</strong><small>Show approved alerts outside Picom when the desktop runtime and permission allow it.</small></span>
-                  <input type="checkbox" disabled={!notificationSettings.enabled} checked={notificationSettings.nativeDesktopEnabled} onChange={(event) => updateNotifications({ nativeDesktopEnabled: event.target.checked })} />
+                  <span><strong>{translateSettings("notifications.nativeDesktop", appearanceSettings.language)}</strong><small>{ts("notifications.nativeHint")}</small></span>
+                  <input type="checkbox" disabled={!notificationSettings.enabled || notificationStatus.permission === "denied"} checked={notificationStatus.permission === "denied" ? false : notificationSettings.nativeDesktopEnabled} onChange={(event) => updateNotifications({ nativeDesktopEnabled: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
-                  <span><strong>Notification sounds</strong><small>Play the operating-system notification sound when an alert is not silenced by Quiet Hours.</small></span>
-                  <input type="checkbox" disabled={!notificationSettings.enabled || !notificationSettings.nativeDesktopEnabled} checked={notificationSettings.soundEnabled} onChange={(event) => updateNotifications({ soundEnabled: event.target.checked })} />
+                  <span><strong>{translateSettings("notifications.sound", appearanceSettings.language)}</strong><small>{ts("notifications.soundHint")}</small></span>
+                  <input type="checkbox" disabled={!notificationSettings.enabled || !notificationSettings.nativeDesktopEnabled || notificationStatus.permission === "denied"} checked={notificationStatus.permission === "denied" ? false : notificationSettings.soundEnabled} onChange={(event) => updateNotifications({ soundEnabled: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
-                  <span><strong>Do not disturb</strong><small>Pause desktop interruptions while preserving the notification inbox and unread state.</small></span>
+                  <span><strong>{translateSettings("notifications.dnd", appearanceSettings.language)}</strong><small>{ts("notifications.dndHint")}</small></span>
                   <input type="checkbox" checked={notificationPolicyState.doNotDisturb} onChange={(event) => setNotificationPolicyState(notificationPolicyStateService.setDoNotDisturb(event.target.checked))} />
                 </label>
               </section>
 
               <section className="notification-settings-section" id="notifications-activity">
-                <h3 className="notification-settings-section-title">Activity</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Notification categories">
-                  <span>Categories</span>
-                  <strong>Choose what notifies you</strong>
-                  <small>Disabled categories do not create native alerts or inbox entries.</small>
+                <h3 className="notification-settings-section-title">{translateSettings("notifications.accountGroup", appearanceSettings.language)}</h3>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("notifications.categories.aria")}>
+                  <span>{ts("notifications.categories.title")}</span>
+                  <strong>{ts("notifications.categories.strong")}</strong>
+                  <small>{ts("notifications.categories.hint")}</small>
                 </div>
                 {notificationPreferenceRows.map((preference) => (
                   <label className="settings-toggle-row" key={preference.key}>
-                    <span><strong>{preference.label}</strong><small>{preference.description}</small></span>
+                    <span><strong>{ts(preference.labelKey)}</strong><small>{ts(preference.descriptionKey)}</small></span>
                     <input type="checkbox" disabled={!notificationSettings.enabled} checked={notificationSettings[preference.key]} onChange={(event) => updateNotifications({ [preference.key]: event.target.checked })} />
                   </label>
                 ))}
                 <label className="settings-toggle-row">
-                  <span><strong>Mentions only</strong><small>Suppress normal-message desktop alerts while preserving mentions and system notices.</small></span>
+                  <span><strong>{ts("notifications.mentionsOnly.label")}</strong><small>{ts("notifications.mentionsOnly.hint")}</small></span>
                   <input type="checkbox" checked={notificationSettings.mentionsOnly} onChange={(event) => updateNotifications({ mentionsOnly: event.target.checked })} />
                 </label>
                 <label className="settings-toggle-row">
-                  <span><strong>Message digest preview</strong><small>{notificationDigestService.getDigestModeLabel(notificationSettings.digestMode)} groups lower-priority messages in the inbox instead of interrupting you.</small></span>
+                  <span><strong>{ts("notifications.digest.label")}</strong><small>{ts("notifications.digest.hint", { mode: notificationDigestModeLabel() })}</small></span>
                   <select value={notificationSettings.digestMode} onChange={(event) => updateNotifications({ digestMode: event.target.value as typeof notificationSettings.digestMode })}>
-                    <option value="off">Off</option>
-                    <option value="hourly_placeholder">Hourly grouping</option>
-                    <option value="daily_placeholder">Daily grouping</option>
+                    <option value="off">{ts("notifications.digest.off")}</option>
+                    <option value="hourly_placeholder">{ts("notifications.digest.hourly")}</option>
+                    <option value="daily_placeholder">{ts("notifications.digest.daily")}</option>
                   </select>
                 </label>
               </section>
 
               <section className="notification-settings-section" id="notifications-quiet">
-                <h3 className="notification-settings-section-title">Quiet Hours</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Quiet Hours notification setting">
-                  <span>Schedule</span>
+                <h3 className="notification-settings-section-title">{ts("notifications.quiet.title")}</h3>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("notifications.quiet.aria")}>
+                  <span>{ts("notifications.schedule")}</span>
                   <strong>{notificationSettings.quietHours.enabled ? `${notificationSettings.quietHours.startTime} – ${notificationSettings.quietHours.endTime}` : "Disabled"}</strong>
-                  <small>Uses your system timezone. Notification inbox can still record suppressed notifications later.</small>
+                  <small>{ts("notifications.quietTimezoneHint")}</small>
                 </div>
                 <label className="settings-toggle-row">
-                  <span><strong>Enable Quiet Hours</strong><small>Silence notification interruptions during scheduled hours.</small></span>
+                  <span><strong>{ts("notifications.enableQuiet.label")}</strong><small>{ts("notifications.enableQuiet.hint")}</small></span>
                   <input type="checkbox" checked={notificationSettings.quietHours.enabled} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, enabled: event.target.checked } })} />
                 </label>
                 <div className="notification-settings-time-grid">
                   <label className="notification-settings-time-field">
-                    <span>Start time</span>
+                    <span>{ts("notifications.startTime")}</span>
                     <input className="notification-settings-time-input" type="time" value={notificationSettings.quietHours.startTime} disabled={!notificationSettings.quietHours.enabled} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, startTime: event.target.value } })} />
-                    <small>Local desktop time when Quiet Hours begin.</small>
+                    <small>{ts("notifications.startTimeHint")}</small>
                   </label>
                   <label className="notification-settings-time-field">
-                    <span>End time</span>
+                    <span>{ts("notifications.endTime")}</span>
                     <input className="notification-settings-time-input" type="time" value={notificationSettings.quietHours.endTime} disabled={!notificationSettings.quietHours.enabled} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, endTime: event.target.value } })} />
-                    <small>Local desktop time when Quiet Hours end.</small>
+                    <small>{ts("notifications.endTimeHint")}</small>
                   </label>
                 </div>
                 <label className="settings-toggle-row">
-                  <span><strong>Apply to</strong><small>Choose whether Quiet Hours suppress all notifications, normal messages, or sounds only.</small></span>
+                  <span><strong>{ts("notifications.applyTo.label")}</strong><small>{ts("notifications.applyTo.hint")}</small></span>
                   <select value={notificationSettings.quietHours.applyTo} disabled={!notificationSettings.quietHours.enabled} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, applyTo: event.target.value as typeof notificationSettings.quietHours.applyTo } })}>
-                    <option value="all_notifications">All notifications</option>
-                    <option value="normal_messages_only">Normal messages only</option>
-                    <option value="sounds_only">Sounds only</option>
+                    <option value="all_notifications">{ts("notifications.applyTo.all")}</option>
+                    <option value="normal_messages_only">{ts("notifications.applyTo.normalOnly")}</option>
+                    <option value="sounds_only">{ts("notifications.applyTo.soundsOnly")}</option>
                   </select>
                 </label>
                 <label className="settings-toggle-row">
-                  <span><strong>Allow mentions during Quiet Hours</strong><small>Mentions can still notify when this preference is enabled.</small></span>
+                  <span><strong>{ts("notifications.allowMentionsQuiet.label")}</strong><small>{ts("notifications.allowMentionsQuiet.hint")}</small></span>
                   <input type="checkbox" disabled={!notificationSettings.quietHours.enabled} checked={notificationSettings.quietHours.allowMentions} onChange={(event) => updateNotifications({ quietHours: { ...notificationSettings.quietHours, allowMentions: event.target.checked } })} />
                 </label>
                 <label className="settings-toggle-row">
-                  <span><strong>Allow mentions from muted communities and channels</strong><small>When disabled, muted scopes suppress mentions as well as normal activity.</small></span>
+                  <span><strong>{ts("notifications.allowMentionsMuted.label")}</strong><small>{ts("notifications.allowMentionsMuted.hint")}</small></span>
                   <input type="checkbox" checked={notificationSettings.allowMentionsFromMutedScopes} onChange={(event) => updateNotifications({ allowMentionsFromMutedScopes: event.target.checked })} />
                 </label>
               </section>
 
-              <EmailPreferencesPanel />
+              <EmailPreferencesPanel language={settingsLang} />
 
               <section className="notification-settings-section" id="notifications-muted">
-                <h3 className="notification-settings-section-title">Muted scopes</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Muted communities and channels">
-                  <span>Muted scopes</span>
+                <h3 className="notification-settings-section-title">{ts("notifications.muted.title")}</h3>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("notifications.muted.aria")}>
+                  <span>{ts("notifications.muted.title")}</span>
                   <strong>{notificationPolicyState.mutedCommunityIds.length + notificationPolicyState.mutedChannelIds.length ? "Muted communities and channels" : "No muted communities or channels"}</strong>
-                  <small>Muted scopes suppress normal activity. Mentions follow your muted-scope override above.</small>
+                  <small>{ts("notifications.mutedHint")}</small>
                   <div className="privacy-list">
                     {notificationPolicyState.mutedCommunityIds.map((communityId) => {
                       const community = communities.find((candidate) => candidate.id === communityId);
                       return (
                         <article key={`notifications-community-${communityId}`} className="privacy-list-item">
-                          <div><strong>{community?.name ?? "Unavailable community"}</strong><small>Community mute</small></div>
+                          <div><strong>{community?.name ?? "Unavailable community"}</strong><small>{ts("privacy.communityMute")}</small></div>
                           <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setNotificationPolicyState(notificationPolicyStateService.setCommunityMuted(communityId, false))}>Unmute</button>
                         </article>
                       );
@@ -1462,7 +1536,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                     })}
                     {!notificationPolicyState.mutedCommunityIds.length && !notificationPolicyState.mutedChannelIds.length ? (
                       <article className="privacy-list-item privacy-list-item--empty">
-                        <div><strong>No muted scopes</strong><small>Mute communities or channels from their context menus.</small></div>
+                        <div><strong>{ts("privacy.noMutedScopes.title")}</strong><small>{ts("privacy.noMutedScopes.hint")}</small></div>
                       </article>
                     ) : null}
                   </div>
@@ -1471,76 +1545,76 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Voice & Video" ? (
             <div className="voice-settings-stack">
-              <p className="settings-section-description">Manage permission-gated voice devices, LiveKit capture processing, screen-share guidance, and Radio/Podcast playback defaults.</p>
+              <p className="settings-section-description">{ts("voice.section.description")}</p>
 
-              <nav className="voice-settings-jump" aria-label="Voice settings sections">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-live")}>Live session</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-microphone")}>Microphone</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-output")}>Output</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-noise")}>Noise Shield</button>
+              <nav className="voice-settings-jump" aria-label={ts("voice.jump.aria")}>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-live")}>{ts("voice.live.title")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-microphone")}>{ts("voice.live.microphone")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-output")}>{ts("voice.jump.output")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("voice-settings-noise")}>{ts("voice.jump.noise")}</button>
               </nav>
 
               <section className="voice-settings-section" id="voice-settings-live">
-                <h3 className="voice-settings-section-title">Live session</h3>
-                <div className="security-card-grid" aria-label="Voice session status">
-                  <article className="security-card"><span>Connection</span><strong>{voiceSettingsSnapshot.status.replace(/_/g, " ")}</strong><small>{voiceSettingsSnapshot.roomName ? `Room: ${voiceSettingsSnapshot.roomName}` : "Join a voice channel to activate controls."}</small></article>
-                  <article className="security-card"><span>Microphone</span><strong>{voiceSettingsSnapshot.muted ? "Muted" : "Unmuted"}</strong><small>Shortcut: Ctrl + Shift + M while connected.</small></article>
-                  <article className="security-card"><span>Incoming audio</span><strong>{voiceSettingsSnapshot.deafened ? "Deafened" : "Listening"}</strong><small>Shortcut: Ctrl + Shift + D while connected.</small></article>
-                  <article className="security-card"><span>Screen share</span><strong>{voiceSettingsSnapshot.screenSharing ? "Sharing" : "Not sharing"}</strong><small>Source selection is available from an active voice room.</small></article>
+                <h3 className="voice-settings-section-title">{ts("voice.live.title")}</h3>
+                <div className="security-card-grid" aria-label={ts("voice.live.aria")}>
+                  <article className="security-card"><span>{ts("voice.live.connection")}</span><strong>{voiceSettingsSnapshot.status.replace(/_/g, " ")}</strong><small>{voiceSettingsSnapshot.roomName ? ts("voice.live.roomPrefix", { room: voiceSettingsSnapshot.roomName }) : ts("voice.live.joinHint")}</small></article>
+                  <article className="security-card"><span>{ts("voice.live.microphone")}</span><strong>{voiceSettingsSnapshot.muted ? ts("voice.live.muted") : ts("voice.live.unmuted")}</strong><small>{ts("voice.live.shortcutMic")}</small></article>
+                  <article className="security-card"><span>{ts("voice.live.incoming")}</span><strong>{voiceSettingsSnapshot.deafened ? ts("voice.live.deafened") : ts("voice.live.listening")}</strong><small>{ts("voice.live.shortcutDeafen")}</small></article>
+                  <article className="security-card"><span>{ts("voice.live.screenShare")}</span><strong>{voiceSettingsSnapshot.screenSharing ? ts("voice.live.sharing") : ts("voice.live.notSharing")}</strong><small>{ts("voice.live.sourceHint")}</small></article>
                 </div>
                 <div className="settings-actions-row">
-                  <button type="button" className="settings-inline-action" disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => void voiceService.setMuted(!voiceSettingsSnapshot.muted)}>{voiceSettingsSnapshot.muted ? "Unmute microphone" : "Mute microphone"}</button>
-                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => { const result = voiceService.setDeafened(!voiceSettingsSnapshot.deafened); if (!result.ok) pushToast(result.error.message, "error"); }}>{voiceSettingsSnapshot.deafened ? "Undeafen" : "Deafen"}</button>
+                  <button type="button" className="settings-inline-action" disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => void voiceService.setMuted(!voiceSettingsSnapshot.muted)}>{voiceSettingsSnapshot.muted ? ts("voice.live.unmuteMic") : ts("voice.live.muteMic")}</button>
+                  <button type="button" className="settings-inline-action settings-inline-action--ghost" disabled={voiceSettingsSnapshot.status !== "connected"} onClick={() => { const result = voiceService.setDeafened(!voiceSettingsSnapshot.deafened); if (!result.ok) pushToast(result.error.message, "error"); }}>{voiceSettingsSnapshot.deafened ? ts("voice.live.undeafen") : ts("voice.live.deafen")}</button>
                 </div>
                 {voiceSettingsSnapshot.status !== "connected" ? (
-                  <small className="voice-settings-live-hint" role="status">Mute and deafen unlock when you join a voice channel.</small>
+                  <small className="voice-settings-live-hint" role="status">{ts("voice.live.hintDisconnected")}</small>
                 ) : null}
               </section>
 
-              <VoiceDeviceSelection />
+              <VoiceDeviceSelection language={settingsLang} />
             </div>
           ) : active === "Companion" ? (
             <div className="advanced-settings-stack">
-              <p className="settings-section-description">Control Companion Mode startup, bubble/dock behavior, and always-on-top overlays without leaving the main app.</p>
+              <p className="settings-section-description">{ts("companion.description")}</p>
               {!companionPreferences ? (
-                <div className="settings-status-card settings-feature-card" aria-label="Companion preferences loading">
+                <div className="settings-status-card settings-feature-card" aria-label={ts("companion.loading.aria")}>
                   <span>Companion</span>
                   <strong>{companionSaveError || "Loading preferences…"}</strong>
-                  <small>Companion preferences sync through the desktop shell when available.</small>
+                  <small>{ts("companion.loading.hint")}</small>
                 </div>
               ) : (
                 <>
                   <section className="advanced-settings-section">
-                    <h3 className="advanced-settings-section-title">Startup</h3>
-                    <div className="settings-status-card settings-feature-card" aria-label="Companion startup mode">
-                      <span>Open Picom as</span>
+                    <h3 className="advanced-settings-section-title">{ts("advanced.jump.startup")}</h3>
+                    <div className="settings-status-card settings-feature-card" aria-label={ts("companion.startup.aria")}>
+                      <span>{ts("companion.openAs")}</span>
                       <strong>{companionPreferences.startupMode === "companion" ? "Companion Mode" : "Main window"}</strong>
-                      <small>Companion startup keeps the main window hidden and opens the always-available shell.</small>
+                      <small>{ts("companion.startupHint")}</small>
                       <div className="settings-actions-row">
-                        <button type="button" className={`settings-inline-action${companionPreferences.startupMode === "main" ? "" : " settings-inline-action--ghost"}`} disabled={companionBusy} onClick={() => void patchCompanion({ startupMode: "main" })}>Main mode</button>
+                        <button type="button" className={`settings-inline-action${companionPreferences.startupMode === "main" ? "" : " settings-inline-action--ghost"}`} disabled={companionBusy} onClick={() => void patchCompanion({ startupMode: "main" })}>{ts("companion.mainMode")}</button>
                         <button type="button" className={`settings-inline-action${companionPreferences.startupMode === "companion" ? "" : " settings-inline-action--ghost"}`} disabled={companionBusy} onClick={() => void patchCompanion({ startupMode: "companion" })}>Companion</button>
                       </div>
                     </div>
                   </section>
                   <section className="advanced-settings-section">
                     <h3 className="advanced-settings-section-title">Behavior</h3>
-                    <label className="settings-toggle-row"><span><strong>Always on top</strong><small>Keep Companion windows above other apps.</small></span><input type="checkbox" checked={Boolean(companionPreferences.alwaysOnTop)} disabled={companionBusy} onChange={(event) => void patchCompanion({ alwaysOnTop: event.target.checked })} /></label>
-                    <label className="settings-toggle-row"><span><strong>Smart collapse</strong><small>Collapse to the logo bubble when unread is clear.</small></span><input type="checkbox" checked={Boolean(companionPreferences.smartCollapse)} disabled={companionBusy} onChange={(event) => void patchCompanion({ smartCollapse: event.target.checked })} /></label>
-                    <label className="settings-toggle-row"><span><strong>Dock auto-hide</strong><small>Hide the edge dock until you move near it.</small></span><input type="checkbox" checked={Boolean(companionPreferences.dockAutoHide)} disabled={companionBusy} onChange={(event) => void patchCompanion({ dockAutoHide: event.target.checked })} /></label>
-                    <label className="settings-toggle-row"><span><strong>Gaming auto-detect</strong><small>Show the gaming overlay when fullscreen play is detected.</small></span><input type="checkbox" checked={Boolean(companionPreferences.gamingAutoDetect)} disabled={companionBusy} onChange={(event) => void patchCompanion({ gamingAutoDetect: event.target.checked })} /></label>
-                    <label className="settings-toggle-row"><span><strong>Companion notifications</strong><small>Show toast replies and unread previews in Companion surfaces.</small></span><input type="checkbox" checked={Boolean(companionPreferences.showNotifications)} disabled={companionBusy} onChange={(event) => void patchCompanion({ showNotifications: event.target.checked })} /></label>
-                    <label className="settings-toggle-row"><span><strong>Close to tray</strong><small>Minimize Companion to the tray instead of exiting.</small></span><input type="checkbox" checked={Boolean(companionPreferences.closeToTray)} disabled={companionBusy} onChange={(event) => void patchCompanion({ closeToTray: event.target.checked })} /></label>
-                    <label className="settings-toggle-row"><span><strong>Compact density</strong><small>Tighter rows in Companion lists and chat.</small></span><input type="checkbox" checked={Boolean(companionPreferences.compactDensity)} disabled={companionBusy} onChange={(event) => void patchCompanion({ compactDensity: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>{ts("companion.alwaysOnTop.label")}</strong><small>{ts("companion.alwaysOnTop.hint")}</small></span><input type="checkbox" checked={Boolean(companionPreferences.alwaysOnTop)} disabled={companionBusy} onChange={(event) => void patchCompanion({ alwaysOnTop: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>{ts("companion.smartCollapse.label")}</strong><small>{ts("companion.smartCollapse.hint")}</small></span><input type="checkbox" checked={Boolean(companionPreferences.smartCollapse)} disabled={companionBusy} onChange={(event) => void patchCompanion({ smartCollapse: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>{ts("companion.dockAutoHide.label")}</strong><small>{ts("companion.dockAutoHide.hint")}</small></span><input type="checkbox" checked={Boolean(companionPreferences.dockAutoHide)} disabled={companionBusy} onChange={(event) => void patchCompanion({ dockAutoHide: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>{ts("companion.gamingAutoDetect.label")}</strong><small>{ts("companion.gamingAutoDetect.hint")}</small></span><input type="checkbox" checked={Boolean(companionPreferences.gamingAutoDetect)} disabled={companionBusy} onChange={(event) => void patchCompanion({ gamingAutoDetect: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>{ts("companion.notifications.label")}</strong><small>{ts("companion.notifications.hint")}</small></span><input type="checkbox" checked={Boolean(companionPreferences.showNotifications)} disabled={companionBusy} onChange={(event) => void patchCompanion({ showNotifications: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>{ts("companion.closeToTray.label")}</strong><small>{ts("companion.closeToTray.hint")}</small></span><input type="checkbox" checked={Boolean(companionPreferences.closeToTray)} disabled={companionBusy} onChange={(event) => void patchCompanion({ closeToTray: event.target.checked })} /></label>
+                    <label className="settings-toggle-row"><span><strong>{ts("companion.compactDensity.label")}</strong><small>{ts("companion.compactDensity.hint")}</small></span><input type="checkbox" checked={Boolean(companionPreferences.compactDensity)} disabled={companionBusy} onChange={(event) => void patchCompanion({ compactDensity: event.target.checked })} /></label>
                   </section>
                   <section className="advanced-settings-section">
                     <h3 className="advanced-settings-section-title">Appearance</h3>
-                    <div className="settings-status-card settings-feature-card" aria-label="Companion window opacity">
-                      <span>Window opacity</span>
+                    <div className="settings-status-card settings-feature-card" aria-label={ts("companion.windowOpacity.aria")}>
+                      <span>{ts("companion.windowOpacity")}</span>
                       <strong>{Math.round((companionPreferences.windowOpacity ?? 1) * 100)}%</strong>
-                      <input type="range" min={85} max={100} step={1} value={Math.round((companionPreferences.windowOpacity ?? 1) * 100)} aria-label="Companion window opacity" disabled={companionBusy} onChange={(event) => void patchCompanion({ windowOpacity: Number(event.target.value) / 100 })} />
+                      <input type="range" min={85} max={100} step={1} value={Math.round((companionPreferences.windowOpacity ?? 1) * 100)} aria-label={ts("companion.windowOpacity.aria")} disabled={companionBusy} onChange={(event) => void patchCompanion({ windowOpacity: Number(event.target.value) / 100 })} />
                     </div>
-                    <div className="settings-status-card settings-feature-card" aria-label="Companion dock edge">
-                      <span>Dock edge</span>
+                    <div className="settings-status-card settings-feature-card" aria-label={ts("companion.dockEdge.aria")}>
+                      <span>{ts("companion.dockEdge")}</span>
                       <strong>{companionPreferences.dockEdge}</strong>
                       <div className="settings-actions-row">
                         {(["left", "right", "top", "bottom"] as CompanionDockEdge[]).map((edge) => (
@@ -1548,8 +1622,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                         ))}
                       </div>
                     </div>
-                    <div className="settings-status-card settings-feature-card" aria-label="Companion theme">
-                      <span>Companion theme</span>
+                    <div className="settings-status-card settings-feature-card" aria-label={ts("companion.theme.aria")}>
+                      <span>{ts("companion.theme")}</span>
                       <strong>{companionPreferences.theme}</strong>
                       <div className="settings-actions-row">
                         {(["system", "light", "dark"] as const).map((theme) => (
@@ -1560,14 +1634,14 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   </section>
                   <section className="advanced-settings-section">
                     <h3 className="advanced-settings-section-title">Shortcuts</h3>
-                    <div className="security-card-grid" aria-label="Companion shortcuts">
-                      <article className="security-card"><span>Open Companion</span><strong>Ctrl + Shift + C</strong><small>Switch to Companion Mode from the desktop shell.</small></article>
-                      <article className="security-card"><span>Quick reply</span><strong>Ctrl + Shift + Y</strong><small>Answer from a Companion notification toast.</small></article>
-                      <article className="security-card"><span>Mute microphone</span><strong>Ctrl + Shift + M</strong><small>Toggle mute while a Companion voice call is connected.</small></article>
+                    <div className="security-card-grid" aria-label={ts("companion.shortcuts.aria")}>
+                      <article className="security-card"><span>{ts("companion.shortcut.open")}</span><strong>Ctrl + Shift + C</strong><small>{ts("companion.shortcut.openHint")}</small></article>
+                      <article className="security-card"><span>{ts("companion.shortcut.quickReply")}</span><strong>Ctrl + Shift + Y</strong><small>{ts("companion.shortcut.quickReplyHint")}</small></article>
+                      <article className="security-card"><span>{ts("voice.live.muteMic")}</span><strong>Ctrl + Shift + M</strong><small>{ts("companion.shortcut.muteMicHint")}</small></article>
                     </div>
                     <div className="settings-actions-row">
-                      <button type="button" className="settings-inline-action" onClick={() => { void window.picomDesktop?.companion?.openWindow?.({ type: "home" }); pushToast("Companion home requested.", "info"); }}>Open Companion</button>
-                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { void window.picomDesktop?.companion?.openWindow?.({ type: "gaming" }); pushToast("Gaming overlay requested.", "info"); }}>Open gaming mode</button>
+                      <button type="button" className="settings-inline-action" onClick={() => { void window.picomDesktop?.companion?.openWindow?.({ type: "home" }); pushToast(ts("toast.companionHomeRequested"), "info"); }}>{ts("companion.openCompanion")}</button>
+                      <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { void window.picomDesktop?.companion?.openWindow?.({ type: "gaming" }); pushToast(ts("toast.gamingOverlayRequested"), "info"); }}>{ts("companion.openGaming")}</button>
                     </div>
                   </section>
                   {companionSaveError ? <p className="settings-section-description" role="alert">{companionSaveError}</p> : null}
@@ -1576,19 +1650,23 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
             </div>
           ) : active === "Keyboard Shortcuts" ? (
             <KeyboardShortcutsSection />
+          ) : active === "Windows & Startup" ? (
+            <WindowsStartupSection language={appearanceSettings.language} pushToast={pushToast} />
+          ) : active === "Storage" ? (
+            <StorageCacheSection language={appearanceSettings.language} pushToast={pushToast} />
           ) : active === "Update" ? (
-            <UpdateSettingsSection onOpenAdvanced={() => setActive("Advanced")} onNotice={pushToast} />
+            <UpdateSettingsSection language={settingsLang} onOpenAdvanced={() => setActive("Advanced")} onNotice={pushToast} />
           ) : active === "Diagnostics" ? (
             <div className="diagnostics-settings-stack">
-              <p className="settings-section-description">Review redacted runtime health, export support payloads, and inspect local logs without exposing secrets.</p>
-              <nav className="diagnostics-settings-jump" aria-label="Diagnostics sections">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-support")}>Support</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-snapshot")}>Snapshot</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-logs")}>Logs</button>
+              <p className="settings-section-description">{ts("diagnostics.shell.description")}</p>
+              <nav className="diagnostics-settings-jump" aria-label={ts("diagnostics.shell.jump.aria")}>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-support")}>{ts("diagnostics.shell.jump.support")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-snapshot")}>{ts("diagnostics.shell.jump.snapshot")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("diagnostics-logs")}>{ts("diagnostics.shell.jump.logs")}</button>
               </nav>
-              <FeedbackSection onNotice={pushToast} />
-              <DiagnosticsSection onNotice={pushToast} />
-              <LogsViewer onNotice={pushToast} />
+              <FeedbackSection language={settingsLang} onNotice={pushToast} />
+              <DiagnosticsSection language={settingsLang} onNotice={pushToast} />
+              <LogsViewer language={settingsLang} onNotice={pushToast} />
             </div>
           ) : active === "Admin Operations" ? (
             onOpenPanel ? (
@@ -1597,24 +1675,24 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               <AdminOperationsPanelRedirect onOpenPanel={onClose} />
             )
           ) : active === "Legal" ? (
-            <LegalSettingsSection onOpenDocument={setOpenLegalDocument} />
+            <LegalSettingsSection language={settingsLang} onOpenDocument={setOpenLegalDocument} />
           ) : active === "Advanced" ? (
             <div className="advanced-settings-stack">
-              <p className="settings-section-description">Tray, window controls, file handling and clipboard are routed through safe services.</p>
-              <nav className="advanced-settings-jump" aria-label="Advanced sections">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-runtime")}>Runtime</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-recovery")}>Recovery</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-updates")}>Updates</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-startup")}>Startup</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-cache")}>Cache</button>
+              <p className="settings-section-description">{ts("advanced.description")}</p>
+              <nav className="advanced-settings-jump" aria-label={ts("advanced.jump.aria")}>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-runtime")}>{ts("advanced.jump.runtime")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-recovery")}>{ts("advanced.jump.recovery")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-updates")}>{ts("advanced.jump.updates")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-startup")}>{ts("advanced.jump.startup")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => scrollToSettingsSection("advanced-cache")}>{ts("advanced.jump.cache")}</button>
               </nav>
 
               <section className="advanced-settings-section" id="advanced-runtime">
-                <h3 className="advanced-settings-section-title">Runtime & build</h3>
-                {developerPortalAvailable ? <div className="settings-status-card settings-feature-card" aria-label="Developer Portal restricted beta"><span>Developer Portal</span><strong>Restricted beta</strong><small>Review safe bot/webhook metadata and developer guidance. No raw keys, application registration, or public publishing.</small><button type="button" className="settings-inline-action" onClick={() => setDeveloperPortalOpen(true)}>Open Developer Portal</button></div> : null}
-                <div className="settings-status-card settings-feature-card settings-feature-card--highlight about-picom-card" aria-label="About Picom build metadata">
+                <h3 className="advanced-settings-section-title">{ts("advanced.runtime.title")}</h3>
+                {developerPortalAvailable ? <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.devPortal.aria")}><span>{ts("advanced.devPortal.title")}</span><strong>{ts("advanced.devPortal.strong")}</strong><small>{ts("advanced.devPortal.hint")}</small><button type="button" className="settings-inline-action" onClick={() => setDeveloperPortalOpen(true)}>{ts("advanced.devPortal.open")}</button></div> : null}
+                <div className="settings-status-card settings-feature-card settings-feature-card--highlight about-picom-card" aria-label={ts("advanced.about.aria")}>
                   <span>
-                    About Picom
+                    {ts("advanced.about.title")}
                     <span className="picom-beta-badge">
                       {appConfig.build.commitShort === "local" ? "Beta · Local development" : "Beta · Frontend preview"}
                     </span>
@@ -1636,11 +1714,11 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                       <dd title={appConfig.build.commit}>{appConfig.build.commitShort === "local" ? "Local workspace" : appConfig.build.commitShort}</dd>
                     </div>
                     <div>
-                      <dt>Runtime</dt>
+                      <dt>{ts("advanced.jump.runtime")}</dt>
                       <dd>{typeof window !== "undefined" && window.picomDesktop ? "Electron desktop" : "Browser preview"}</dd>
                     </div>
                     <div>
-                      <dt>API compatibility</dt>
+                      <dt>{ts("advanced.about.apiCompat")}</dt>
                       <dd title={appConfig.build.backendApiCompatibilityVersion}>
                         {appConfig.build.backendApiCompatibilityVersion === "mvp-placeholder"
                           ? "Desktop MVP (placeholder)"
@@ -1649,53 +1727,53 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                     </div>
                   </dl>
                 </div>
-                <div className="security-card-grid" aria-label="Advanced runtime summary">
+                <div className="security-card-grid" aria-label={ts("advanced.runtimeGrid.aria")}>
                   <article className="security-card"><span>Release</span><strong>{appConfig.releaseChannel}</strong><small>{appConfig.version} / {appConfig.build.commitShort} / {appConfig.build.date}</small></article>
-                  <article className="security-card"><span>Data source</span><strong>{appConfig.dataSource}</strong><small>{appConfig.runtimeTarget} on {navigator.platform || "unknown platform"}</small></article>
-                  <article className="security-card"><span>Local data</span><strong>Manifest v{localDataMigrationStatus.manifestSchemaVersion} / settings v{localDataMigrationStatus.settingsSchemaVersion}</strong><small>{localDataMigrationStatus.lastMigrationOk === false ? "Last migration needs Safe Mode review" : localDataMigrationStatus.lastMigratedAt ? `Migrated ${dateTimeService.formatFullTimestamp(localDataMigrationStatus.lastMigratedAt)}` : "Migration manifest will be created at startup"}</small></article>
-                  <article className="security-card"><span>Recovery backups</span><strong>{localDataMigrationStatus.retainedBackupCount}</strong><small>Bounded non-sensitive local migration backups; auth storage is excluded.</small></article>
+                  <article className="security-card"><span>{ts("advanced.card.dataSource")}</span><strong>{appConfig.dataSource}</strong><small>{appConfig.runtimeTarget} on {navigator.platform || "unknown platform"}</small></article>
+                  <article className="security-card"><span>{ts("advanced.card.localData")}</span><strong>Manifest v{localDataMigrationStatus.manifestSchemaVersion} / settings v{localDataMigrationStatus.settingsSchemaVersion}</strong><small>{localDataMigrationStatus.lastMigrationOk === false ? "Last migration needs Safe Mode review" : localDataMigrationStatus.lastMigratedAt ? `Migrated ${dateTimeService.formatFullTimestamp(localDataMigrationStatus.lastMigratedAt)}` : "Migration manifest will be created at startup"}</small></article>
+                  <article className="security-card"><span>{ts("advanced.card.recoveryBackups")}</span><strong>{localDataMigrationStatus.retainedBackupCount}</strong><small>{ts("advanced.card.localDataHint")}</small></article>
                 </div>
               </section>
 
               <section className="advanced-settings-section" id="advanced-recovery">
-                <h3 className="advanced-settings-section-title">Recovery & desktop shell</h3>
-                <div className="settings-status-card settings-feature-card" aria-label="Safe Mode recovery">
-                  <span>Safe Mode</span><strong>{safeModeState.active ? `Active: ${safeModeState.reason ?? "manual"}` : "Available for troubleshooting"}</strong><small>Safe Mode pauses optional services without clearing your authentication session or server data.</small>
-                  <div className="settings-actions-row"><button type="button" className="settings-inline-action" onClick={restartInSafeMode}>Restart in Safe Mode</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={resetLayoutState}>Reset layout</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={resetLocalSettings}>Reset local settings</button></div>
+                <h3 className="advanced-settings-section-title">{ts("advanced.recovery.title")}</h3>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.safeMode.aria")}>
+                  <span>{ts("advanced.safeMode.title")}</span><strong>{safeModeState.active ? `Active: ${safeModeState.reason ?? "manual"}` : "Available for troubleshooting"}</strong><small>{ts("advanced.safeMode.hint")}</small>
+                  <div className="settings-actions-row"><button type="button" className="settings-inline-action" onClick={restartInSafeMode}>{ts("advanced.restartSafeMode")}</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={resetLayoutState}>{ts("advanced.resetLayout")}</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={resetLocalSettings}>{ts("advanced.resetLocalSettings")}</button></div>
                 </div>
-                {import.meta.env.DEV ? <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { trayService.simulate("settings"); pushToast("Tray settings action simulated.", "info"); }}>Simulate tray settings</button> : null}
-                <div className="settings-status-card settings-feature-card" aria-label="Native app menu foundation">
-                  <span>Native app menu</span>
-                  <strong>Hidden chrome, safe actions</strong>
-                  <small>The operating-system menu remains hidden for the custom Picom titlebar. Desktop menu actions route through menuService instead of direct Electron calls.</small>
+                {import.meta.env.DEV ? <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { trayService.simulate("settings"); pushToast(ts("toast.traySimulated"), "info"); }}>Simulate tray settings</button> : null}
+                <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.nativeMenu.aria")}>
+                  <span>{ts("advanced.nativeMenu.title")}</span>
+                  <strong>{ts("advanced.nativeMenu.strong")}</strong>
+                  <small>{ts("advanced.nativeMenu.hint")}</small>
                 </div>
                 {import.meta.env.DEV ? <div className="settings-actions-row">
                   <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => menuService.triggerPlaceholderAction("open-command-palette")}>Simulate menu palette</button>
                   <button
                     type="button"
                     className="settings-inline-action settings-inline-action--ghost"
-                    aria-label="Reset first launch setup for development testing"
+                    aria-label={ts("advanced.resetFirstLaunch.aria")}
                     onClick={() => {
-                      if (!window.confirm("Reset first-launch setup for development/support testing? Account and local content are preserved.")) return;
+                      if (!window.confirm(ts("confirm.resetFirstLaunch"))) return;
                       settingsService.resetFirstLaunchSetup();
-                      pushToast("First-launch setup reset. Restart Picom to test it again; account and local data were preserved.", "success");
+                      pushToast(ts("toast.firstLaunchReset"), "success");
                     }}
                   >
                     Reset first-launch setup
                   </button>
                 </div> : null}
-                <div className="settings-status-card settings-feature-card" aria-label="System status controls">
-                  <span>System status</span>
+                <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.systemStatus.aria")}>
+                  <span>{ts("advanced.systemStatus.title")}</span>
                   <strong>{systemStatusOpen ? (maintenanceSnapshot.status === "operational" ? "Panel open · operational" : maintenanceSnapshot.status === "degraded" ? "Panel open · degraded" : "Panel open · maintenance") : "In-app health check"}</strong>
-                  <small>Shows live backend, voice, realtime, and network status without leaving Settings.</small>
+                  <small>{ts("advanced.systemStatus.hint")}</small>
                   <div className="settings-actions-row">
                     <button type="button" className="settings-inline-action" onClick={() => void openSystemStatus()}>{systemStatusOpen ? "Refresh system status" : "Open system status"}</button>
                     {systemStatusOpen ? <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setSystemStatusOpen(false)}>Hide</button> : null}
                   </div>
                 </div>
                 {systemStatusOpen ? (
-                  <div className="settings-status-card settings-feature-card system-status-panel" aria-label="Live system status" aria-live="polite">
-                    <span>System status</span>
+                  <div className="settings-status-card settings-feature-card system-status-panel" aria-label={ts("advanced.liveStatus.aria")} aria-live="polite">
+                    <span>{ts("advanced.systemStatus.title")}</span>
                     <strong className={`system-status-pill system-status-pill--${maintenanceSnapshot.status}`}>
                       {maintenanceSnapshot.status === "operational" ? "All systems operational" : maintenanceSnapshot.status === "degraded" ? "Some services degraded" : "Under maintenance"}
                     </strong>
@@ -1706,7 +1784,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                       <div><dt>Voice (LiveKit)</dt><dd>{appConfig.liveKit.enabled && appConfig.liveKit.url ? "Configured" : "Not configured"}</dd></div>
                       <div><dt>Realtime</dt><dd>{appConfig.realtimeScalingMode}</dd></div>
                       <div><dt>Network</dt><dd>{typeof navigator !== "undefined" && navigator.onLine ? "Online" : "Offline"}</dd></div>
-                      <div><dt>Last checked</dt><dd>{maintenanceSnapshot.checkedAt ? new Date(maintenanceSnapshot.checkedAt).toLocaleString() : "—"}</dd></div>
+                      <div><dt>{ts("advanced.status.row.lastChecked")}</dt><dd>{maintenanceSnapshot.checkedAt ? new Date(maintenanceSnapshot.checkedAt).toLocaleString() : "—"}</dd></div>
                     </dl>
                     <div className="settings-actions-row">
                       <button type="button" className="settings-inline-action" disabled={systemStatusChecking} onClick={() => void refreshSystemStatus()}>{systemStatusChecking ? "Checking…" : "Refresh"}</button>
@@ -1717,76 +1795,76 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               </section>
 
               <section className="advanced-settings-section" id="advanced-updates">
-                <h3 className="advanced-settings-section-title">Updates & diagnostics</h3>
-              <div className="settings-status-card settings-feature-card" aria-label="Desktop update recovery status">
-                <span>Desktop updates</span>
+                <h3 className="advanced-settings-section-title">{ts("advanced.updates.title")}</h3>
+              <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.desktopUpdates.aria")}>
+                <span>{ts("advanced.desktopUpdates.title")}</span>
                 <strong>{(updateState.status ?? "idle").split("_").join(" ")}</strong>
                 <small>{updateState.message}</small>
                 <small>Version {updateState.appVersion} on {updateState.releaseChannel}. Full update controls live in the Update settings section.</small>
-                <button type="button" className="settings-inline-action" onClick={() => setActive("Update")}>Open Update settings</button>
+                <button type="button" className="settings-inline-action" onClick={() => setActive("Update")}>{ts("advanced.openUpdateSettings")}</button>
               </div>
-              <div className="settings-status-card settings-feature-card" aria-label="Support diagnostics export">
-                <span>Support diagnostics</span>
-                <strong>Redacted snapshot ready</strong>
-                <small>Review app/platform, data source, realtime, voice, recent errors, and redacted logs before sharing.</small>
-                <button type="button" className="settings-inline-action" onClick={() => setActive("Diagnostics")}>Open diagnostics</button>
+              <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.supportDiagnostics.aria")}>
+                <span>{ts("advanced.supportDiagnostics.title")}</span>
+                <strong>{ts("advanced.supportDiagnostics.strong")}</strong>
+                <small>{ts("advanced.supportDiagnostics.hint")}</small>
+                <button type="button" className="settings-inline-action" onClick={() => setActive("Diagnostics")}>{ts("advanced.openDiagnostics")}</button>
               </div>
-              <label className="settings-toggle-row"><span><strong>Enable diagnostic reports</strong><small>Off by default. Stores a bounded redacted local crash envelope; no provider or DSN is configured.</small></span><input type="checkbox" checked={crashReportingEnabled} onChange={(event) => { const enabled = crashReporterService.setEnabled(event.target.checked); setCrashReportingEnabled(enabled); pushToast(enabled ? "Diagnostic reports enabled locally." : "Diagnostic reports disabled and local queue cleared.", "success"); }} /></label>
-              {import.meta.env.DEV ? <div className="settings-actions-row"><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { const record = crashReporterService.captureException(new Error("Picom development crash report test"), { source: "settings-test", authorization: "Bearer redaction-test" }); pushToast(record ? "Redacted test error captured locally." : "Enable diagnostic reports before capturing a test error.", record ? "success" : "info"); }}>Capture test error safely</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { const status = crashReporterService.getStatus(); pushToast(`${status.queuedLocalRecords} redacted crash records queued locally.`, "info"); }}>Show crash report status</button></div> : null}
-              <div className="settings-status-card settings-feature-card" aria-label="System status page">
-                <span>System status page</span>
+              <label className="settings-toggle-row"><span><strong>{ts("advanced.crashReports.label")}</strong><small>{ts("advanced.crashReports.hint")}</small></span><input type="checkbox" checked={crashReportingEnabled} onChange={(event) => { const enabled = crashReporterService.setEnabled(event.target.checked); setCrashReportingEnabled(enabled); pushToast(enabled ? ts("toast.crashReportingEnabled") : ts("toast.crashReportingDisabled"), "success"); }} /></label>
+              {import.meta.env.DEV ? <div className="settings-actions-row"><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { const record = crashReporterService.captureException(new Error("Picom development crash report test"), { source: "settings-test", authorization: "Bearer redaction-test" }); pushToast(record ? ts("toast.crashTestCaptured") : ts("toast.crashTestEnableFirst"), record ? "success" : "info"); }}>Capture test error safely</button><button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => { const status = crashReporterService.getStatus(); pushToast(ts("toast.crashQueueStatus", { count: status.queuedLocalRecords }), "info"); }}>Show crash report status</button></div> : null}
+              <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.statusPage.aria")}>
+                <span>{ts("advanced.statusPage.title")}</span>
                 <strong>{statusPageService.isConfigured() ? statusPageService.getDisplayDomain() : "Not configured"}</strong>
                 <small>Optional VITE_STATUS_PAGE_URL can point to a public non-sensitive status page when one is configured.</small>
               </div>
               </section>
 
               <section className="advanced-settings-section" id="advanced-startup">
-                <h3 className="advanced-settings-section-title">Startup & behavior</h3>
-              <div className="settings-status-card settings-feature-card" aria-label="Launch on startup">
-                <span>Launch on startup</span>
-                <strong>{startupSettings.launchOnStartup ? "Enabled" : "Disabled"}</strong>
-                <small>Mode: {startupSettings.mode}. Windows/macOS registration is available only in packaged builds; Linux remains unsupported safely.</small>
+                <h3 className="advanced-settings-section-title">{ts("advanced.startup.title")}</h3>
+              <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.launchStartup.aria")}>
+                <span>{ts("advanced.launchStartup.title")}</span>
+                <strong>{startupSettings.launchOnStartup ? ts("common.enabled") : ts("common.disabled")}</strong>
+                <small>{ts("advanced.launchStartup.hint", { mode: startupSettings.mode })}</small>
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Launch Picom on startup</strong>
-                  <small>Registers Picom only after you enable it. Disabled by default.</small>
+                  <strong>{ts("advanced.launchPicom.label")}</strong>
+                  <small>{ts("advanced.launchPicom.hint")}</small>
                 </span>
                 <input type="checkbox" checked={startupSettings.launchOnStartup} onChange={(event) => void updateLaunchOnStartup(event.target.checked)} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Start minimized to tray</strong>
-                  <small>Applied when launch-on-startup and native tray support are available; stored per device.</small>
+                  <strong>{ts("advanced.startMinimized.label")}</strong>
+                  <small>{ts("advanced.startMinimized.hint")}</small>
                 </span>
                 <input type="checkbox" checked={startupSettings.startMinimizedToTray} onChange={(event) => void updateStartMinimizedToTray(event.target.checked)} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Close to tray</strong>
-                  <small>When supported, the close button hides Picom. Use Quit from the tray menu to exit completely.</small>
+                  <strong>{ts("advanced.closeToTray.label")}</strong>
+                  <small>{ts("advanced.closeToTray.hint")}</small>
                 </span>
                 <input type="checkbox" checked={closeToTrayEnabled} onChange={(event) => void updateCloseToTray(event.target.checked)} />
               </label>
-              <div className="settings-status-card settings-feature-card" aria-label="App lock status">
-                <span>App lock</span>
+              <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.appLock.aria")}>
+                <span>{ts("advanced.appLock.title")}</span>
                 <strong>Ctrl + Shift + L</strong>
-                <small>Quick lock hides chat content without storing a password locally. Account authentication remains managed by Supabase.</small>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Keyboard Shortcuts")}>Open Keyboard Shortcuts</button>
+                <small>{ts("advanced.appLock.hint")}</small>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Keyboard Shortcuts")}>{ts("advanced.openKeyboardShortcuts")}</button>
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Automatic inactivity lock</strong>
-                  <small>Not available in Full MVP. Use Ctrl + Shift + L to lock Picom immediately.</small>
+                  <strong>{ts("advanced.inactivityLock.label")}</strong>
+                  <small>{ts("advanced.inactivityLock.hint")}</small>
                 </span>
                 <input type="checkbox" checked={appLockSettings.lockAfterInactivityEnabled} onChange={(event) => updateLockAfterInactivity(event.target.checked)} disabled aria-disabled="true" />
               </label>
               </section>
 
               <section className="advanced-settings-section" id="advanced-cache">
-                <h3 className="advanced-settings-section-title">Cache & support</h3>
-              <div className="settings-status-card settings-feature-card" aria-label="Cache management">
-                <span>Cache management</span>
+                <h3 className="advanced-settings-section-title">{ts("advanced.cache.title")}</h3>
+              <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.cache.aria")}>
+                <span>{ts("advanced.cache.titleCard")}</span>
                 <strong>{cacheSummary ? `${cacheSummary.imageCacheEntries}/${cacheSummary.imageCacheMaxEntries} image cache entries` : "Loading cache summary"}</strong>
                 <small>
                   Storage estimate: {formatCacheSize(cacheSummary?.estimatedUsageBytes ?? null)}
@@ -1794,16 +1872,16 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   Auth sessions and drafts are preserved.
                 </small>
               </div>
-              <div className="security-card-grid" aria-label="Cache summary cards">
+              <div className="security-card-grid" aria-label={ts("advanced.cache.grid.aria")}>
                 <article className="security-card">
                   <span>Images</span>
                   <strong>{cacheSummary?.imageCacheEntries ?? 0}</strong>
-                  <small>Metadata-only cache entries. Browser image bytes remain Chromium-managed.</small>
+                  <small>{ts("advanced.cache.imagesHint")}</small>
                 </article>
                 <article className="security-card">
-                  <span>Logs</span>
+                  <span>{ts("diagnostics.shell.jump.logs")}</span>
                   <strong>{cacheSummary?.recentLogEntries ?? 0}</strong>
-                  <small>Recent redacted in-memory log entries.</small>
+                  <small>{ts("advanced.cache.logsHint")}</small>
                 </article>
                 <article className="security-card">
                   <span>Messages</span>
@@ -1811,28 +1889,28 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   <small>Picom does not persist a separate message cache; server messages and local drafts are untouched.</small>
                 </article>
                 <article className="security-card">
-                  <span>Offline data</span>
+                  <span>{ts("advanced.cache.offline")}</span>
                   <strong>{cacheSummary ? `${cacheSummary.pendingQueuedMessages} queued` : "memory only"}</strong>
-                  <small>Pending messages stay in memory and are preserved by cache clearing.</small>
+                  <small>{ts("advanced.cache.offlineHint")}</small>
                 </article>
               </div>
               <div className="settings-actions-row">
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void refreshCacheSummary()}>Refresh cache summary</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache(), "Clear Picom's in-memory image metadata cache? Images will load again when needed.")}>Clear image cache</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void runCacheAction(() => cacheManagementService.clearLogs(), "Clear recent redacted logs from this Picom session?")}>Clear logs</button>
-                <button type="button" className="settings-inline-action" onClick={() => void runCacheAction(() => cacheManagementService.clearAllNonEssentialCache(), "Clear all non-essential image metadata and redacted logs? Auth sessions, drafts, queued messages, and server data are preserved.")}>Clear all non-essential cache</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void refreshCacheSummary()}>{ts("advanced.refreshCacheSummary")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void runCacheAction(() => cacheManagementService.clearImageCache(), "Clear Picom's in-memory image metadata cache? Images will load again when needed.")}>{ts("advanced.clearImageCache")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void runCacheAction(() => cacheManagementService.clearLogs(), "Clear recent redacted logs from this Picom session?")}>{ts("advanced.clearLogs")}</button>
+                <button type="button" className="settings-inline-action" onClick={() => void runCacheAction(() => cacheManagementService.clearAllNonEssentialCache(), "Clear all non-essential image metadata and redacted logs? Auth sessions, drafts, queued messages, and server data are preserved.")}>{ts("advanced.clearAllCache")}</button>
               </div>
-              <div className="settings-status-card settings-feature-card" aria-label="Beta feedback and redacted logs">
-                <span>Beta support</span>
-                <strong>Feedback and redacted exports</strong>
-                <small>User-facing feedback stays separate from redacted developer diagnostics. Prepared reports remain local until you explicitly copy/export them or open the support portal.</small>
+              <div className="settings-status-card settings-feature-card" aria-label={ts("advanced.betaSupport.aria")}>
+                <span>{ts("advanced.betaSupport.title")}</span>
+                <strong>{ts("advanced.betaSupport.strong")}</strong>
+                <small>{ts("advanced.betaSupport.hint")}</small>
               </div>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Issue type</strong>
-                  <small>Used only in the local export payload.</small>
+                  <strong>{ts("advanced.feedback.issueType")}</strong>
+                  <small>{ts("advanced.feedback.issueTypeHint")}</small>
                 </span>
-                <select value={feedbackIssueType} onChange={(event) => setFeedbackIssueType(event.target.value as FeedbackIssueType)} aria-label="Feedback issue type">
+                <select value={feedbackIssueType} onChange={(event) => setFeedbackIssueType(event.target.value as FeedbackIssueType)} aria-label={ts("advanced.feedback.issueTypeAria")}>
                   <option value="bug">Bug</option>
                   <option value="crash">Crash</option>
                   <option value="login">Login</option>
@@ -1843,40 +1921,40 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                   <option value="other">Other</option>
                 </select>
               </label>
-              <input className="advanced-settings-input" value={feedbackTitle} onChange={(event) => setFeedbackTitle(event.target.value)} placeholder="Short feedback title" aria-label="Feedback title" />
-              <textarea className="advanced-settings-textarea" value={feedbackDescription} onChange={(event) => setFeedbackDescription(event.target.value)} placeholder="Describe what happened. Do not include passwords, tokens, or secrets." aria-label="Feedback description" rows={3} />
+              <input className="advanced-settings-input" value={feedbackTitle} onChange={(event) => setFeedbackTitle(event.target.value)} placeholder={ts("advanced.feedback.titlePlaceholder")} aria-label={ts("advanced.feedback.titleAria")} />
+              <textarea className="advanced-settings-textarea" value={feedbackDescription} onChange={(event) => setFeedbackDescription(event.target.value)} placeholder={ts("advanced.feedback.descPlaceholder")} aria-label={ts("advanced.feedback.descAria")} rows={3} />
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Include diagnostics</strong>
-                  <small>Includes app mode, release channel, runtime, and non-sensitive state.</small>
+                  <strong>{ts("advanced.feedback.includeDiagnostics")}</strong>
+                  <small>{ts("advanced.feedback.includeDiagnosticsHint")}</small>
                 </span>
                 <input type="checkbox" checked={includeDiagnostics} onChange={(event) => setIncludeDiagnostics(event.target.checked)} />
               </label>
               <label className="settings-toggle-row">
                 <span>
-                  <strong>Include recent redacted logs</strong>
-                  <small>Logs are redacted by loggingService before export.</small>
+                  <strong>{ts("advanced.feedback.includeLogs")}</strong>
+                  <small>{ts("advanced.feedback.includeLogsHint")}</small>
                 </span>
                 <input type="checkbox" checked={includeLogs} onChange={(event) => setIncludeLogs(event.target.checked)} />
               </label>
               <div className="settings-actions-row">
-                <button type="button" className="settings-inline-action" onClick={() => void copyFeedbackReport()}>Copy feedback report</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void exportDiagnostics()}>Export diagnostics JSON</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Diagnostics")}>Open Diagnostics feedback</button>
+                <button type="button" className="settings-inline-action" onClick={() => void copyFeedbackReport()}>{ts("advanced.copyFeedbackReport")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => void exportDiagnostics()}>{ts("advanced.exportDiagnosticsJson")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Diagnostics")}>{ts("advanced.openDiagnosticsFeedback")}</button>
               </div>
               </section>
             </div>
           ) : (
             <div className="placeholder-panel">
-              <strong>Settings section unavailable</strong>
+              <strong>{ts("settings.sectionUnavailable")}</strong>
               <p>
                 {settingsSections.includes(active)
-                  ? `The “${active}” panel failed to render. Close and reopen Settings, or open Diagnostics and export a redacted report.`
-                  : "Close and reopen Settings. If the problem persists, open Diagnostics and export a redacted report."}
+                  ? ts("settings.sectionUnavailableDetail", { section: sectionLabel(active) })
+                  : ts("settings.sectionUnavailableGeneric")}
               </p>
               <div className="settings-actions-row">
-                <button type="button" className="settings-inline-action" onClick={() => setActive("Account")}>Open Account</button>
-                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Diagnostics")}>Open Diagnostics</button>
+                <button type="button" className="settings-inline-action" onClick={() => setActive("Account")}>{ts("common.openAccount")}</button>
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={() => setActive("Diagnostics")}>{ts("common.openDiagnostics")}</button>
               </div>
             </div>
           )}

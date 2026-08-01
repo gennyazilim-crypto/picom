@@ -11,6 +11,12 @@ type SafeScreenCaptureSource = Readonly<{
   thumbnailDataUrl: string | null;
   appIconDataUrl: string | null;
 }>;
+type ScreenCaptureDiagnostics = Readonly<{
+  displayCount: number;
+  screenSourceCount: number;
+  windowSourceCount?: number;
+  incompleteDisplays: boolean;
+}>;
 type ScreenCaptureListRequest = Readonly<{ requestId: string; userInitiated: true }>;
 type ScreenCaptureSelectionRequest = Readonly<{ requestId: string; sourceId: string }>;
 type NativeNotificationPayload = Readonly<{
@@ -186,6 +192,10 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     return segments[1] === expectedKind && isSafeDeepLinkSegment(segments[0]) && isSafeDeepLinkSegment(segments[2]);
   }
 
+  if (route === "profile" || route === "live-now") {
+    return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
+  }
+
   return (route === "settings" || route === "friends") && segments.length === 0;
 }
 
@@ -220,6 +230,25 @@ const runtimeInfo: PicomRuntimeInfo = Object.freeze({
 });
 
 const bridge = Object.freeze({
+  companion: Object.freeze({
+    getContext: () => invokeWhitelisted(IPC_CHANNELS.companionGetContext),
+    enterMode: () => invokeWhitelisted(IPC_CHANNELS.companionEnterMode),
+    openWindow: (request: unknown) => invokeWhitelisted(IPC_CHANNELS.companionOpenWindow, request),
+    closeCurrent: () => invokeWhitelisted(IPC_CHANNELS.companionCloseWindow),
+    returnToMain: () => invokeWhitelisted(IPC_CHANNELS.companionReturnToMain),
+    getPreferences: () => invokeWhitelisted(IPC_CHANNELS.companionGetPreferences),
+    setPreferences: (preferences: unknown) => invokeWhitelisted(IPC_CHANNELS.companionSetPreferences, preferences),
+    setAlwaysOnTop: (enabled: boolean) => invokeWhitelisted(IPC_CHANNELS.companionSetAlwaysOnTop, enabled),
+    setDockLayout: (layout: unknown) => invokeWhitelisted(IPC_CHANNELS.companionSetDockLayout, layout),
+    setWindowBounds: (bounds: unknown) => invokeWhitelisted(IPC_CHANNELS.companionSetWindowBounds, bounds),
+    setClickThrough: (enabled: boolean) => invokeWhitelisted(IPC_CHANNELS.companionSetClickThrough, enabled),
+    broadcast: (event: unknown) => invokeWhitelisted(IPC_CHANNELS.companionBroadcast, event),
+    onSync: (listener: (event: Readonly<{ topic: string; revision: number }>) => void) => {
+      const wrapped = (_event: Electron.IpcRendererEvent, payload: Readonly<{ topic: string; revision: number }>) => listener(payload);
+      ipcRenderer.on(IPC_CHANNELS.companionEvent, wrapped);
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.companionEvent, wrapped);
+    },
+  }),
   contractVersion: 1 as const,
   getRuntimeInfo: (): PicomRuntimeInfo => runtimeInfo,
   windowControl: (action: WindowAction) => {
@@ -257,7 +286,13 @@ const bridge = Object.freeze({
       const safeRequest = parseScreenCaptureListPayload(request);
       if (!safeRequest) return Promise.resolve({ ok: false, native: true, error: "INVALID_SCREEN_CAPTURE_REQUEST" } as const);
       return invokeWhitelisted(IPC_CHANNELS.screenCaptureGetSources, safeRequest) as Promise<
-        | { ok: true; native: true; requestId: string; sources: SafeScreenCaptureSource[] }
+        | {
+            ok: true;
+            native: true;
+            requestId: string;
+            sources: SafeScreenCaptureSource[];
+            diagnostics?: ScreenCaptureDiagnostics;
+          }
         | { ok: false; native: true; error: string; platform?: string }
       >;
     },
@@ -277,6 +312,11 @@ const bridge = Object.freeze({
         | { ok: false; native: true; error: string }
       >;
     },
+    setContentProtection: (enabled: boolean) =>
+      invokeWhitelisted(IPC_CHANNELS.screenCaptureSetContentProtection, { enabled: Boolean(enabled) }) as Promise<
+        | { ok: true; native: true; enabled: boolean }
+        | { ok: false; native: true; error: string }
+      >,
   },
   showNotification: (payload: NativeNotificationPayload) =>
     invokeWhitelisted(IPC_CHANNELS.notificationShow, payload) as Promise<
@@ -484,7 +524,61 @@ const bridge = Object.freeze({
           }
         | { ok: false; native: true; error: string }
       >
-  }
+  },
+  settings: {
+    get: () =>
+      invokeWhitelisted(IPC_CHANNELS.settingsGet) as Promise<
+        | { ok: true; native: true; settings: Record<string, unknown> }
+        | { ok: false; native: true; error: string }
+      >,
+    set: (partial: Record<string, unknown>) =>
+      invokeWhitelisted(IPC_CHANNELS.settingsSet, partial) as Promise<
+        | { ok: true; native: true; settings: Record<string, unknown> }
+        | { ok: false; native: true; error: string }
+      >,
+    reset: () =>
+      invokeWhitelisted(IPC_CHANNELS.settingsReset) as Promise<
+        | { ok: true; native: true; settings: Record<string, unknown> }
+        | { ok: false; native: true; error: string }
+      >,
+  },
+  cache: {
+    getUsage: () =>
+      invokeWhitelisted(IPC_CHANNELS.cacheGetUsage) as Promise<
+        | {
+            ok: true;
+            native: true;
+            usage: Readonly<{
+              userDataBytes: number;
+              cacheBytes: number;
+              logsBytes: number;
+              tempBytes: number;
+            }>;
+          }
+        | { ok: false; native: true; error: string }
+      >,
+    clear: (scope: "all" | "media" = "all") =>
+      invokeWhitelisted(IPC_CHANNELS.cacheClear, scope) as Promise<
+        | {
+            ok: true;
+            native: true;
+            usage: Readonly<{
+              userDataBytes: number;
+              cacheBytes: number;
+              logsBytes: number;
+              tempBytes: number;
+            }>;
+          }
+        | { ok: false; native: true; error: string }
+      >,
+  },
+  appPaths: {
+    open: (target: "logs" | "downloads" | "userData") =>
+      invokeWhitelisted(IPC_CHANNELS.appOpenPath, target) as Promise<
+        | { ok: true; native: true; target: "logs" | "downloads" | "userData" }
+        | { ok: false; native: true; error: string }
+      >,
+  },
 });
 
 contextBridge.exposeInMainWorld("picomDesktop", Object.freeze(bridge));

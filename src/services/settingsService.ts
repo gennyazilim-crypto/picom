@@ -1,5 +1,4 @@
 import type { ProfileStatus } from "../types/profile";
-import { dataSourceService } from "./dataSourceService";
 import type { Json } from "./supabase/database.types";
 import { getSupabaseClient } from "./supabase/supabaseClient";
 
@@ -11,24 +10,93 @@ export type DateStylePreference = "system" | "numeric" | "descriptive";
 export type TimeFormatPreference = "system" | "12h" | "24h";
 import type { NotificationDigestMode } from "./notificationDigestService";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
-const allSettingsSections = ["Account", "Profile", "Privacy & Safety", "Appearance", "Notifications", "Voice & Video", "Keyboard Shortcuts", "Diagnostics", "Admin Operations", "Legal", "Advanced"] as const;
+import {
+  composeNotificationSettings,
+  mergeRemoteNotificationSettings,
+  splitNotificationOwnership,
+  toSyncedNotificationPayload,
+} from "./settings/notificationOwnership";
+const allSettingsSections = [
+  "Account",
+  "Profile",
+  "Privacy & Safety",
+  "Appearance",
+  "Notifications",
+  "Voice & Video",
+  "Companion",
+  "Keyboard Shortcuts",
+  "Windows & Startup",
+  "Storage",
+  "Update",
+  "Diagnostics",
+  "Admin Operations",
+  "Legal",
+  "Advanced",
+] as const;
 export type SettingsSection = typeof allSettingsSections[number];
 export const settingsSections: readonly SettingsSection[] = allSettingsSections.filter((section) => {
   if (section === "Voice & Video") return isV1FeatureEnabled("voiceRooms") || isV1FeatureEnabled("screenShare");
   return true;
 });
-export type SettingsPersistenceScope = "local-device" | "user-account-synced" | "community-specific" | "server-controlled";
+export type SettingsPersistenceScope =
+  | "local-device"
+  | "main-process-device"
+  | "user-account-synced"
+  | "account-center"
+  | "community-specific"
+  | "server-controlled";
+/**
+ * Source-of-truth registry for Settings surfaces.
+ * - local-device / main-process-device: never store secrets; device UX only
+ * - user-account-synced: Supabase `user_settings` (theme_mode + notification_settings)
+ * - account-center: password / MFA / sessions / providers / delete — never duplicated in Desktop forms
+ */
 export const settingsPersistenceRegistry = {
   theme: "local-device",
   firstLaunchSetupCompleted: "local-device",
   accessibilitySettings: "local-device",
-  appearanceSettings: "local-device",
-  notificationSettings: "user-account-synced",
+  appearanceSettings: "user-account-synced",
+  /** Category prefs only — see notificationOwnership.ts for device vs synced split. */
+  notificationSettingsSynced: "user-account-synced",
+  notificationSettingsDevice: "main-process-device",
   profileSettings: "user-account-synced",
+  selectedDevices: "main-process-device",
+  windowStartup: "main-process-device",
+  shortcuts: "local-device",
+  passwordMfaSessionsProviders: "account-center",
   communityNotificationPolicy: "community-specific",
   featureFlags: "server-controlled",
   updatePolicy: "server-controlled",
 } as const satisfies Record<string, SettingsPersistenceScope>;
+
+/** Nav groups for the production Settings shell (grouped nav, not a dense column clone). */
+export const settingsNavGroups: readonly Readonly<{
+  id: string;
+  labelEn: string;
+  labelTr: string;
+  sections: readonly SettingsSection[];
+}>[] = [
+  { id: "account", labelEn: "Account", labelTr: "Hesap", sections: ["Account", "Profile"] },
+  {
+    id: "preferences",
+    labelEn: "Preferences",
+    labelTr: "Tercihler",
+    sections: ["Appearance", "Notifications", "Privacy & Safety"],
+  },
+  {
+    id: "media",
+    labelEn: "Media",
+    labelTr: "Medya",
+    sections: ["Voice & Video", "Companion"],
+  },
+  {
+    id: "system",
+    labelEn: "System",
+    labelTr: "Sistem",
+    sections: ["Keyboard Shortcuts", "Windows & Startup", "Storage", "Update", "Diagnostics"],
+  },
+  { id: "more", labelEn: "More", labelTr: "Diğer", sections: ["Legal", "Advanced", "Admin Operations"] },
+];
 export type QuietHoursApplyMode = "all_notifications" | "normal_messages_only" | "sounds_only";
 export interface QuietHoursSettings {
   enabled: boolean;
@@ -39,7 +107,9 @@ export interface QuietHoursSettings {
 }
 export interface NotificationSettings {
   enabled: boolean;
+  /** Device-local delivery (main-process / local SoT). */
   nativeDesktopEnabled: boolean;
+  /** Device-local delivery (main-process / local SoT). */
   soundEnabled: boolean;
   muted: boolean;
   mentionsOnly: boolean;
@@ -54,9 +124,19 @@ export interface NotificationSettings {
   radioReminders: boolean;
   podcastReleases: boolean;
   eventReminders: boolean;
+  incomingCalls: boolean;
+  missedCalls: boolean;
+  /** Policy-locked: always true; UI must not offer a working off toggle. */
+  securityAlerts: boolean;
+  productAnnouncements: boolean;
   allowMentionsFromMutedScopes: boolean;
   digestMode: NotificationDigestMode;
+  /** Device-local quiet hours behavior. */
   quietHours: QuietHoursSettings;
+  notifyWhileFocused: boolean;
+  taskbarFlash: boolean;
+  trayBadge: boolean;
+  titlebarBadge: boolean;
 }
 export interface ProfileSettings {
   displayName: string;
@@ -86,40 +166,18 @@ const backupKeyPrefix = "picom-settings.backup";
 const initialSectionKey = "picom:settings:initial-section";
 const initialFocusKey = "picom:settings:initial-focus";
 export type SettingsFocusTarget = "voice-microphone" | "voice-output";
-const currentSchemaVersion = 9;
+const currentSchemaVersion = 10;
 const listeners = new Set<(settings: PicomSettings) => void>();
 let cachedSettings: PicomSettings | null = null;
+const defaultNotificationSettings = (): NotificationSettings => {
+  const split = splitNotificationOwnership({});
+  return composeNotificationSettings(split.device, split.synced);
+};
 const defaults: PicomSettings = {
   schemaVersion: currentSchemaVersion,
   theme: "light",
   firstLaunchSetupCompleted: false,
-  notificationSettings: {
-    enabled: true,
-    nativeDesktopEnabled: true,
-    soundEnabled: true,
-    muted: false,
-    mentionsOnly: false,
-    mentions: true,
-    replies: true,
-    reactions: true,
-    directMessages: true,
-    communityAnnouncements: true,
-    friendRequests: true,
-    friendAcceptances: true,
-    radioLive: true,
-    radioReminders: true,
-    podcastReleases: true,
-    eventReminders: true,
-    allowMentionsFromMutedScopes: true,
-    digestMode: "off",
-    quietHours: {
-      enabled: false,
-      startTime: "22:00",
-      endTime: "07:00",
-      applyTo: "normal_messages_only",
-      allowMentions: true,
-    },
-  },
+  notificationSettings: defaultNotificationSettings(),
   profileSettings: {
     displayName: "",
     username: "",
@@ -252,6 +310,21 @@ export const localSettingsMigrations: LocalSettingsMigration[] = [
       };
     },
   },
+  {
+    fromVersion: 9,
+    toVersion: 10,
+    migrate: (settings) => {
+      const previous = typeof settings.notificationSettings === "object" && settings.notificationSettings
+        ? settings.notificationSettings as Partial<NotificationSettings>
+        : {};
+      const split = splitNotificationOwnership(previous);
+      return {
+        ...settings,
+        schemaVersion: 10,
+        notificationSettings: composeNotificationSettings(split.device, split.synced),
+      };
+    },
+  },
 ];
 
 function getStoredSchemaVersion(settings: StoredPicomSettings): number {
@@ -259,25 +332,18 @@ function getStoredSchemaVersion(settings: StoredPicomSettings): number {
 }
 
 function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
-  const quietHours = (settings.notificationSettings as Partial<NotificationSettings> | undefined)?.quietHours;
-  const applyTo: string | undefined = (quietHours as { applyTo?: string } | undefined)?.applyTo;
+  const split = splitNotificationOwnership(
+    (settings.notificationSettings && typeof settings.notificationSettings === "object")
+      ? settings.notificationSettings as Partial<NotificationSettings>
+      : {},
+  );
   return {
     ...defaults,
     ...settings,
     schemaVersion: currentSchemaVersion,
     theme: settings.theme === "dark" ? "dark" : "light",
     firstLaunchSetupCompleted: settings.firstLaunchSetupCompleted === true,
-    notificationSettings: {
-      ...defaults.notificationSettings,
-      ...(settings.notificationSettings ?? {}),
-      quietHours: {
-        ...defaults.notificationSettings.quietHours,
-        ...(quietHours ?? {}),
-        applyTo: applyTo === "all_notifications" || applyTo === "normal_messages_only" || applyTo === "sounds_only" || applyTo === "sounds_only_placeholder"
-          ? applyTo === "sounds_only_placeholder" ? "sounds_only" : applyTo
-          : defaults.notificationSettings.quietHours.applyTo,
-      },
-    },
+    notificationSettings: composeNotificationSettings(split.device, split.synced),
     profileSettings: {
       ...defaults.profileSettings,
       ...(settings.profileSettings ?? {}),
@@ -402,18 +468,50 @@ export const settingsService = {
   updateSettings(partial: Partial<PicomSettings>) {
     const next = normalizeSettings({ ...this.getSettings(), ...partial, schemaVersion: currentSchemaVersion });
     writeSettings(next);
-    if (dataSourceService.getStatus().isSupabase) queueMicrotask(() => { void settingsService.syncAccountSettings(next); });
+    queueMicrotask(() => { void settingsService.syncAccountSettings(next); });
     return next;
   },
   updateNotificationSettings(partial: Partial<NotificationSettings>) {
     const current = this.getSettings();
-    const next = this.updateSettings({
+    // securityAlerts cannot be disabled by product policy.
+    const safePartial = { ...partial, securityAlerts: true as const };
+    const merged = normalizeSettings({
+      ...current,
       notificationSettings: {
         ...current.notificationSettings,
-        ...partial,
+        ...safePartial,
+        quietHours: safePartial.quietHours
+          ? { ...current.notificationSettings.quietHours, ...safePartial.quietHours }
+          : current.notificationSettings.quietHours,
       },
+      schemaVersion: currentSchemaVersion,
     });
-    return next;
+    const previous = current;
+    writeSettings(merged);
+    // Persist device delivery keys to main-process store when available (best-effort).
+    const device = splitNotificationOwnership(merged.notificationSettings).device;
+    try {
+      const bridge = typeof window !== "undefined" ? window.picomDesktop?.settings : undefined;
+      void bridge?.set?.({
+        nativeDesktopEnabled: device.nativeDesktopEnabled,
+        soundEnabled: device.soundEnabled,
+        notifyWhileFocused: device.notifyWhileFocused,
+        taskbarFlash: device.taskbarFlash,
+        trayBadge: device.trayBadge,
+        titlebarBadge: device.titlebarBadge,
+        quietHours: device.quietHours,
+      });
+    } catch {
+      /* renderer without bridge keeps localStorage SoT for device keys */
+    }
+    queueMicrotask(async () => {
+      const synced = await settingsService.syncAccountSettings(merged);
+      if (!synced.ok && (synced.error === "SETTINGS_SYNC_FAILED" || synced.error === "SETTINGS_BACKEND_UNAVAILABLE")) {
+        // Optimistic rollback for synced failure — restore previous composed settings.
+        writeSettings(previous);
+      }
+    });
+    return merged;
   },
   updateProfileSettings(partial: Partial<ProfileSettings>) {
     const current = this.getSettings();
@@ -474,18 +572,17 @@ export const settingsService = {
   },
   async syncAccountSettings(settings?: PicomSettings): Promise<{ ok: true } | { ok: false; error: string }> {
     const accountSettings = settings ?? settingsService.getSettings();
-    if (dataSourceService.getStatus().isMock) return { ok: true };
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: "SETTINGS_BACKEND_UNAVAILABLE" };
     const { data, error } = await client.auth.getUser();
     if (error || !data.user) return { ok: false, error: "SETTINGS_AUTH_REQUIRED" };
-    const notificationSettings = JSON.parse(JSON.stringify(accountSettings.notificationSettings)) as Json;
+    // Sync only account-owned notification keys — never device delivery UX.
+    const notificationSettings = JSON.parse(JSON.stringify(toSyncedNotificationPayload(accountSettings.notificationSettings))) as Json;
     const result = await client.from("user_settings").upsert({ user_id: data.user.id, schema_version: currentSchemaVersion, theme_mode: accountSettings.appearanceSettings.themeMode, notification_settings: notificationSettings, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
     return result.error ? { ok: false, error: "SETTINGS_SYNC_FAILED" } : { ok: true };
   },
   async hydrateAccountSettings(): Promise<{ ok: true; settings: PicomSettings } | { ok: false; error: string; settings: PicomSettings }> {
     const current = this.getSettings();
-    if (dataSourceService.getStatus().isMock) return { ok: true, settings: current };
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: "SETTINGS_BACKEND_UNAVAILABLE", settings: current };
     const { data: auth, error: authError } = await client.auth.getUser();
@@ -494,7 +591,16 @@ export const settingsService = {
     if (result.error) return { ok: false, error: "SETTINGS_LOAD_FAILED", settings: current };
     if (!result.data) { const synced = await this.syncAccountSettings(current); return synced.ok ? { ok: true, settings: current } : { ok: false, error: synced.error, settings: current }; }
     const themeMode = result.data.theme_mode as ThemePreference;
-    const remote = normalizeSettings({ ...current, theme: themeMode === "system" ? current.theme : themeMode, appearanceSettings: { ...current.appearanceSettings, themeMode }, notificationSettings: result.data.notification_settings as unknown as NotificationSettings });
+    const mergedNotifications = mergeRemoteNotificationSettings(
+      current.notificationSettings,
+      result.data.notification_settings as unknown as Partial<NotificationSettings>,
+    );
+    const remote = normalizeSettings({
+      ...current,
+      theme: themeMode === "system" ? current.theme : themeMode,
+      appearanceSettings: { ...current.appearanceSettings, themeMode },
+      notificationSettings: mergedNotifications,
+    });
     writeSettings(remote);
     return { ok: true, settings: remote };
   },
