@@ -495,7 +495,7 @@
     "supabase:qa": "node scripts/supabase-qa-gate.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.0",
+    "@supabase/supabase-js": "^2.110.9",
     "@vitejs/plugin-react": "latest",
     "livekit-client": "^2.20.0",
     "react": "latest",
