@@ -1,6 +1,6 @@
 import type { SettingsSection, UiLanguage } from "../settingsService";
-import { settingsModalEn } from "./settingsModalEn.ts";
-import { settingsI18nTr as tr } from "./settingsI18nTr.ts";
+import { settingsModalEn } from "./settingsModalEn";
+import { settingsI18nTr as tr } from "./settingsI18nTr";
 
 const en = {
   "nav.searchPlaceholder": "Search settings…",
