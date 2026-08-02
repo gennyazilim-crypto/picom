@@ -14,6 +14,8 @@ export type FeedAttachment = Readonly<{
   width: number | null;
   height: number | null;
   durationMs: number | null;
+  /** Private bucket object key; used to mint short-lived signed URLs (never persist signed URLs). */
+  storagePath: string | null;
   originalUrl: string | null;
   previewUrl: string | null;
   thumbnailUrl: string | null;
@@ -61,8 +63,10 @@ export function mapRpcAttachmentToFeed(row: unknown, messageId: string | null = 
   const object = asObject(row);
   if (!object) return null;
   const id = asString(object.id);
+  const storagePath = asString(object.storage_path) ?? asString(object.storagePath);
   const originalUrl = asString(object.public_url) ?? asString(object.url);
-  if (!id || !originalUrl) return null;
+  // Private bucket rows expose storage_path with null public_url; signed URL hydration fills originalUrl.
+  if (!id || (!originalUrl && !storagePath)) return null;
   const scan = asString(object.scan_status);
   const moderationState = moderationFromScan(scan);
   if (moderationState !== "clean") return null;
@@ -77,6 +81,7 @@ export function mapRpcAttachmentToFeed(row: unknown, messageId: string | null = 
     width: asNumber(object.width),
     height: asNumber(object.height),
     durationMs: asNumber(object.duration_ms) ?? asNumber(object.durationMs),
+    storagePath,
     originalUrl,
     previewUrl: originalUrl,
     thumbnailUrl,
@@ -84,8 +89,26 @@ export function mapRpcAttachmentToFeed(row: unknown, messageId: string | null = 
     fileSize: asNumber(object.size_bytes) ?? asNumber(object.fileSize),
     altText: asString(object.alt) ?? asString(object.file_name) ?? "Shared media",
     moderationState,
-    availabilityState: "available",
+    availabilityState: originalUrl ? "available" : "unavailable",
   };
+}
+
+/** Apply batch-signed Storage URLs for private Feed attachments. */
+export function applySignedUrlsToFeedAttachments(
+  items: readonly FeedAttachment[],
+  signedByPath: ReadonlyMap<string, string>,
+): FeedAttachment[] {
+  return items.map((item) => {
+    if (item.originalUrl) return item;
+    const signed = item.storagePath ? signedByPath.get(item.storagePath) : undefined;
+    if (!signed) return item;
+    return {
+      ...item,
+      originalUrl: signed,
+      previewUrl: signed,
+      availabilityState: "available" as const,
+    };
+  });
 }
 
 export function mapRpcAttachments(value: Json | unknown, messageId: string | null = null): FeedAttachment[] {
@@ -133,6 +156,7 @@ export function uiAttachmentsToFeed(items: readonly Attachment[] | undefined, me
       width: item.width ?? null,
       height: item.height ?? null,
       durationMs: null,
+      storagePath: null,
       originalUrl,
       previewUrl: originalUrl,
       thumbnailUrl: item.thumbnailUrl ?? null,
