@@ -1,8 +1,11 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
+  readonly VITE_COMPANION_MODE_ENABLED?: string;
   readonly VITE_APP_ENV?: "development" | "staging" | "production" | string;
   readonly VITE_APP_NAME?: string;
+  readonly VITE_APP_URL?: string;
   readonly VITE_APP_IDENTIFIER?: string;
   readonly VITE_DATA_SOURCE?: "mock" | "supabase" | string;
   readonly VITE_SUPABASE_URL?: string;
@@ -11,10 +14,15 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_PASSWORD_RESET_REDIRECT_URL?: string;
   readonly VITE_SUPABASE_EMAIL_VERIFICATION_REDIRECT_URL?: string;
   readonly VITE_REQUIRE_EMAIL_VERIFICATION?: string;
+  readonly VITE_ACCOUNT_ORIGIN?: string;
+  readonly VITE_SUPPORT_ORIGIN?: string;
+  readonly VITE_SUPPORT_URL?: string;
+  readonly VITE_APP_WEB_URL?: string;
   readonly VITE_SUPABASE_GOOGLE_OAUTH_ENABLED?: string;
   readonly VITE_SUPABASE_APPLE_OAUTH_ENABLED?: string;
   readonly VITE_SUPABASE_STEAM_OAUTH_ENABLED?: string;
   readonly VITE_SUPABASE_EPIC_OAUTH_ENABLED?: string;
+  readonly VITE_AUTH_GATEWAY_URL?: string;
   readonly VITE_LIVEKIT_URL?: string;
   readonly VITE_LIVEKIT_ENABLED?: string;
   readonly VITE_RELEASE_CHANNEL?: "dev" | "beta" | "stable" | string;

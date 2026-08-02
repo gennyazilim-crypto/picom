@@ -17,7 +17,19 @@ function validate(action: DeepLinkAction, context: NavigationContext): Notificat
   if (action.type === "authCallback" || action.type === "sessionContinue" || action.type === "passwordRecovery" || action.type === "emailVerification" || action.type === "invite") return { allowed: true };
   if (!context.isAuthenticated) return { allowed: false, reason: "Sign in before opening this notification." };
   if (action.type === "friends") return { allowed: true };
-  if (action.type === "directMessage") return { allowed: true };
+  if (action.type === "directMessage") {
+    // Foreign / unknown DM deep links must not invent a conversation; App opens the DM hub only.
+    if (!action.conversationId) return { allowed: false, reason: "This direct message link is invalid." };
+    return { allowed: true };
+  }
+  if (action.type === "liveNow") {
+    if (!action.liveSessionId) return { allowed: false, reason: "This live stream link is invalid." };
+    return { allowed: true };
+  }
+  if (action.type === "profile") {
+    if (!action.username) return { allowed: false, reason: "This profile link is invalid." };
+    return { allowed: true };
+  }
 
   const community = context.communities.find((candidate) => candidate.id === action.communityId);
   if (!community) return { allowed: false, reason: "This destination is no longer available." };
@@ -32,7 +44,22 @@ function validate(action: DeepLinkAction, context: NavigationContext): Notificat
 
   if ("channelId" in action && action.channelId) {
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === action.channelId);
-    if (!channel || !isV1ChannelTypeEnabled(channel.type) || !canViewChannel(access, channel)) return { allowed: false, reason: "This channel is private, outside V1 Core, or no longer accessible." };
+    if (!channel || !isV1ChannelTypeEnabled(channel.type) || !canViewChannel(access, channel)) {
+      if (!access.isMember && channel?.isPrivate) {
+        return { allowed: false, reason: "This channel is private or no longer accessible." };
+      }
+      return { allowed: false, reason: "This channel is private, outside V1 Core, or no longer accessible." };
+    }
+  }
+
+  if ("messageId" in action && action.messageId && "channelId" in action && action.channelId) {
+    const localMessage = community.messages.find((message) => message.id === action.messageId && message.channelId === action.channelId);
+    if (localMessage?.deletedAt) {
+      return { allowed: false, reason: "This message is no longer available." };
+    }
+    if (localMessage && context.blockedUserIds.includes(localMessage.authorId)) {
+      return { allowed: false, reason: "This message is unavailable because the author is blocked." };
+    }
   }
 
   return { allowed: true };
