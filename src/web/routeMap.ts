@@ -10,6 +10,7 @@ export type WebActiveView =
   | "profile"
   | "friends"
   | "events"
+  | "live"
   | "savedMessages"
   | "discovery"
   | "support"
@@ -23,6 +24,8 @@ export type WebPathParams = Readonly<{
   channelId?: string;
   username?: string;
   roomId?: string;
+  eventId?: string;
+  createEvent?: boolean;
   /** Settings is a modal over the shell; path sets openSettings intent. */
   openSettings?: boolean;
   /** Search is an overlay; path maps to mentionFeed with openSearch intent. */
@@ -31,6 +34,17 @@ export type WebPathParams = Readonly<{
   openNotifications?: boolean;
   /** Voice room deep link. */
   voice?: boolean;
+  /** Live Watch deep link — session UUID only. */
+  liveSessionId?: string;
+  /** Go Live wizard. */
+  goLive?: boolean;
+  /** Optional scheduled livestream event to link on confirm. */
+  scheduleEventId?: string;
+  /** Creator Studio handoff after Go Live. */
+  studioSessionId?: string;
+  /** Optional Go Live community/channel query context (not a security boundary). */
+  goLiveCommunityId?: string;
+  goLiveChannelId?: string;
 }>;
 
 export type ParsedWebPath = Readonly<{
@@ -87,7 +101,13 @@ export const WEB_ROUTES: readonly WebRouteDefinition[] = [
     note: "Voice room — community view with voice intent",
   },
   { path: "/friends", activeView: "friends" },
+  { path: "/live", activeView: "live" },
+  { path: "/live-now/:liveSessionId", activeView: "live", note: "Watch workspace — Live Now session id" },
+  { path: "/go-live", activeView: "live", note: "Go Live broadcast preparation wizard" },
+  { path: "/live/studio/:studioSessionId", activeView: "live", note: "Creator Studio handoff after Go Live" },
   { path: "/events", activeView: "events" },
+  { path: "/events/create", activeView: "events", note: "Create event wizard intent" },
+  { path: "/events/:eventId", activeView: "events", note: "Event detail deep link" },
   { path: "/bookmarks", activeView: "savedMessages" },
   { path: "/saved", activeView: "savedMessages" },
   { path: "/*", activeView: "mentionFeed", note: "Default feed fallback" },
@@ -137,7 +157,22 @@ export function pathFromActiveView(
     case "friends":
       return "/friends";
     case "events":
+      if (params.createEvent) return "/events/create";
+      if (params.eventId) return `/events/${encodeSegment(params.eventId)}`;
       return "/events";
+    case "live":
+      if (params.studioSessionId) return `/live/studio/${encodeSegment(params.studioSessionId)}`;
+      if (params.goLive) {
+        const query = new URLSearchParams();
+        if (params.goLiveCommunityId) query.set("community", params.goLiveCommunityId);
+        if (params.goLiveChannelId) query.set("channel", params.goLiveChannelId);
+        if (params.scheduleEventId) query.set("schedule", params.scheduleEventId);
+        const suffix = query.toString();
+        return suffix ? `/go-live?${suffix}` : "/go-live";
+      }
+      return params.liveSessionId
+        ? `/live-now/${encodeSegment(params.liveSessionId)}`
+        : "/live";
     case "savedMessages":
       return "/bookmarks";
     case "mentionFeed":
@@ -239,7 +274,45 @@ export function parseWebPath(pathname: string): ParsedWebPath {
     return { activeView: "friends", params: {}, isAuthRoute: false };
   }
 
+  if (segments[0] === "live-now" && segments[1]) {
+    return {
+      activeView: "live",
+      params: { liveSessionId: decodeURIComponent(segments[1]) },
+      isAuthRoute: false,
+    };
+  }
+
+  if (segments[0] === "go-live") {
+    return {
+      activeView: "live",
+      params: { goLive: true },
+      isAuthRoute: false,
+    };
+  }
+
+  if (segments[0] === "live" && segments[1] === "studio" && segments[2]) {
+    return {
+      activeView: "live",
+      params: { studioSessionId: decodeURIComponent(segments[2]) },
+      isAuthRoute: false,
+    };
+  }
+
+  if (segments[0] === "live") {
+    return { activeView: "live", params: {}, isAuthRoute: false };
+  }
+
   if (segments[0] === "events") {
+    if (segments[1] === "create") {
+      return { activeView: "events", params: { createEvent: true }, isAuthRoute: false };
+    }
+    if (segments[1]) {
+      return {
+        activeView: "events",
+        params: { eventId: decodeURIComponent(segments[1]) },
+        isAuthRoute: false,
+      };
+    }
     return { activeView: "events", params: {}, isAuthRoute: false };
   }
 

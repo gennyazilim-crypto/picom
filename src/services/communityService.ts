@@ -1,7 +1,6 @@
 import { secretCommunityService } from "./community/secretCommunityService";
-import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import { COMMUNITY_LIST_SELECT, getMockCommunityKind, listMockCommunitySummaries, listSupabaseCommunitySummaries, mapCommunityListRow } from "./communityListQuery";
+import { COMMUNITY_LIST_SELECT, listSupabaseCommunitySummaries, mapCommunityListRow } from "./communityListQuery";
 import { isCommunityTemplateId } from "../data/communityTemplates";
 import { isCommunityKind, type CommunityKind } from "../types/community";
 import type { CommunityRule } from "../types/communityRules";
@@ -12,6 +11,7 @@ export type CommunitySummary = Readonly<{
   id: string;
   kind: CommunityKind;
   ownerId: string | null;
+  currentUserMembershipUserId?: string;
   name: string;
   description: string | null;
   iconUrl: string | null;
@@ -102,8 +102,6 @@ function isSafeBrandUrl(value: string): boolean {
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const mockCommunityCreations = new Map<string, CommunitySummary>();
-
 function validateCreateInput(input: CreateCommunityInput): CommunityServiceError | null {
   const name = cleanName(input.name);
 
@@ -214,12 +212,6 @@ function getConfiguredSupabaseClient() {
 
 export const communityService = {
   async getCommunityKind(communityId: string): Promise<CommunityServiceResult<CommunityKind>> {
-    const dataSource = dataSourceService.getStatus();
-    if (dataSource.isMock) {
-      const created = [...mockCommunityCreations.values()].find((community) => community.id === communityId);
-      return { ok: true, data: created?.kind ?? getMockCommunityKind(communityId) };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
     const result = await configured.data.from("communities").select("kind").eq("id", communityId).maybeSingle();
@@ -230,12 +222,6 @@ export const communityService = {
   },
 
   async listCommunities(): Promise<CommunityServiceResult<CommunitySummary[]>> {
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      return { ok: true, data: listMockCommunitySummaries() };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
@@ -274,40 +260,6 @@ export const communityService = {
         return { ok: false, error: { code: "COMMUNITY_CREATE_FAILED", message: result.error.message } };
       }
       return result;
-    }
-
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      const existing = mockCommunityCreations.get(creationRequestId);
-      if (existing) {
-        if (existing.kind !== kind || existing.name !== name || existing.templateId !== templateId) {
-          return { ok: false, error: { code: "VALIDATION_ERROR", message: "This creation request was already used for different community details." } };
-        }
-        return { ok: true, data: existing };
-      }
-      const now = new Date().toISOString();
-      const community: CommunitySummary = {
-        id: `mock-community-${creationRequestId}`,
-        kind,
-        ownerId: "mock-current-user",
-        name,
-        description: input.description?.trim() || null,
-        iconUrl,
-        bannerUrl: null,
-        accentColor: input.accentColor ?? "#007571",
-        visibility,
-        publicReadEnabled,
-        defaultNotificationLevel: "mentions",
-        typeSettings: getDefaultCommunityTypeSettings(kind),
-        rulesEnabled: true,
-        rulesVersion: "1",
-        templateId,
-        createdAt: now,
-        updatedAt: now,
-      };
-      mockCommunityCreations.set(creationRequestId, community);
-      return { ok: true, data: community };
     }
 
     const configured = getConfiguredSupabaseClient();
@@ -402,35 +354,6 @@ export const communityService = {
     if (validationError) return { ok: false, error: validationError };
 
     const nextName = input.name === undefined ? undefined : cleanName(input.name);
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      const now = new Date().toISOString();
-      const kind = input.typeSettings?.kind ?? getMockCommunityKind(input.id);
-      if (input.rules) communityRulesService.saveMockRules(input.id, input.rules);
-      return {
-        ok: true,
-        data: {
-          id: input.id,
-          kind,
-          ownerId: "mock-current-user",
-          name: nextName ?? "Mock community",
-          description: input.description === undefined ? null : input.description?.trim() || null,
-          iconUrl: input.iconUrl === undefined ? null : input.iconUrl?.trim() || null,
-          bannerUrl: input.bannerUrl === undefined ? null : input.bannerUrl?.trim() || null,
-          accentColor: input.accentColor ?? "#007571",
-          visibility: input.visibility ?? "public",
-          publicReadEnabled: input.visibility !== "public" ? false : input.publicReadEnabled ?? true,
-          defaultNotificationLevel: input.defaultNotificationLevel ?? "mentions",
-          typeSettings: input.typeSettings ?? getDefaultCommunityTypeSettings(kind),
-          rulesEnabled: input.rulesEnabled ?? false,
-          rulesVersion: input.rulesVersion ?? "1",
-          createdAt: now,
-          updatedAt: now,
-        },
-      };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 

@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { mockCommunities } from "../data/mockCommunities";
 import type { CommunitySummary } from "./communityService";
 import type { Database } from "./supabase/database.types";
 import { isCommunityKind, type CommunityKind } from "../types/community";
@@ -66,34 +65,6 @@ export function mapCommunityListRow(row: CommunityListRow): CommunitySummary {
   };
 }
 
-export function listMockCommunitySummaries(): CommunitySummary[] {
-  return mockCommunities.map((community) => ({
-    id: community.id,
-    kind: community.kind,
-    ownerId: "mock-current-user",
-    name: community.name,
-    description: null,
-    iconUrl: null,
-    bannerUrl: community.bannerUrl ?? null,
-    accentColor: community.accentColor,
-    visibility: community.visibility ?? "private",
-    publicReadEnabled: community.publicReadEnabled ?? false,
-    defaultNotificationLevel: community.defaultNotificationLevel ?? "mentions",
-    typeSettings: community.typeSettings ?? getDefaultCommunityTypeSettings(community.kind),
-    rulesEnabled: community.rulesEnabled ?? false,
-    rulesVersion: community.rulesVersion ?? "1",
-    discoveryListed: community.discoveryListed ?? false,
-    discoveryCategory: community.discoveryCategory ?? null,
-    discoveryJoinPolicy: community.discoveryJoinPolicy ?? "open",
-    createdAt: null,
-    updatedAt: null,
-  }));
-}
-
-export function getMockCommunityKind(communityId: string): CommunityKind {
-  return mockCommunities.find((community) => community.id === communityId)?.kind ?? "text";
-}
-
 export function isMissingCommunityKindColumnError(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const record = error as Record<string, unknown>;
@@ -108,11 +79,15 @@ export async function listSupabaseCommunitySummaries(client: SupabaseClient<Data
 
   const membershipResult = await client
     .from("community_members")
-    .select("community_id")
+    .select("community_id, role_id")
     .eq("user_id", authData.user.id);
   if (membershipResult.error) return { data: null, error: membershipResult.error };
 
   const joinedCommunityIds = [...new Set((membershipResult.data ?? []).map((membership) => membership.community_id))];
+  const withCurrentUserMembership = (summary: CommunitySummary): CommunitySummary => ({
+    ...summary,
+    currentUserMembershipUserId: authData.user.id,
+  });
   let currentQuery = client
     .from("communities")
     .select(COMMUNITY_LIST_SELECT);
@@ -122,7 +97,7 @@ export async function listSupabaseCommunitySummaries(client: SupabaseClient<Data
   const currentResult = await currentQuery.order("created_at", { ascending: true });
 
   if (!currentResult.error) {
-    return { data: (currentResult.data ?? []).map(mapCommunityListRow), error: null };
+    return { data: (currentResult.data ?? []).map(mapCommunityListRow).map(withCurrentUserMembership), error: null };
   }
 
   if (!isMissingCommunityKindColumnError(currentResult.error)) {
@@ -142,7 +117,7 @@ export async function listSupabaseCommunitySummaries(client: SupabaseClient<Data
   }
 
   return {
-    data: (legacyResult.data ?? []).map((row) => mapCommunityListRow({ ...row, kind: "text" })),
+    data: (legacyResult.data ?? []).map((row) => mapCommunityListRow({ ...row, kind: "text" })).map(withCurrentUserMembership),
     error: null,
   };
 }

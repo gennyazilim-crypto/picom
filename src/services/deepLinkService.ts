@@ -10,7 +10,9 @@ export type DeepLinkAction =
   | { type: "passwordRecovery"; code?: string; tokenHash?: string; authType?: string; error?: string }
   | { type: "emailVerification"; code?: string; tokenHash?: string; authType?: string; error?: string }
   | { type: "friends" }
-  | { type: "directMessage"; conversationId: string };
+  | { type: "directMessage"; conversationId: string }
+  | { type: "liveNow"; liveSessionId: string }
+  | { type: "profile"; username: string };
 
 export type DeepLinkParseResult =
   | { ok: true; url: string; action: DeepLinkAction }
@@ -192,6 +194,22 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   if (route === "community") {
     return parseCommunityLink(segments);
+  }
+
+  if (route === "live-now" && segments.length === 1 && isSafeSegment(segments[0]) && !parsed.search && !parsed.hash) {
+    return {
+      ok: true,
+      url: `picom://live-now/${segments[0]}`,
+      action: { type: "liveNow", liveSessionId: segments[0] },
+    };
+  }
+
+  if (route === "profile" && segments.length === 1 && isSafeSegment(segments[0]) && !parsed.search && !parsed.hash) {
+    return {
+      ok: true,
+      url: `picom://profile/${segments[0]}`,
+      action: { type: "profile", username: segments[0].toLowerCase() },
+    };
   }
 
   if (route === "radio" && segments.length === 3 && segments[1] === "session" && isSafeSegment(segments[0]) && isSafeSegment(segments[2]) && !parsed.search && !parsed.hash) {
