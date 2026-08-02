@@ -2,42 +2,23 @@ import { readFileSync } from "node:fs";
 
 const main = readFileSync("src/components/MentionFeedMain.tsx", "utf8");
 const header = readFileSync("src/components/MentionFeedHeader.tsx", "utf8");
-const storiesComponent = readFileSync("src/components/FollowedPeopleStoriesHeader.tsx", "utf8");
-const storyViewer = readFileSync("src/components/StoryViewerModal.tsx", "utf8");
-const storiesData = readFileSync("src/data/mockStories.ts", "utf8");
+const band = readFileSync("src/components/FeedLiveNowPreviewBand.tsx", "utf8");
 const styles = readFileSync("src/components/MentionFeedMain.css", "utf8");
 const app = readFileSync("src/App.tsx", "utf8");
 
-const storyCount = (storiesData.match(/id: "story-/g) ?? []).length;
 const checks = [
-  [main.indexOf("<FollowedPeopleStoriesHeader") < main.indexOf("<MentionFeedHeader"), "stories render before tabs"],
-  [main.includes("onMarkStorySeen"), "story seen callback wired"],
-  [main.includes("onOpenStoryInChannel"), "story open in channel wired"],
-  [header.includes("mention-feed-tabs-header"), "old text-heavy header replaced by tabs header"],
+  [main.includes("FeedLiveNowPreviewBand"), "Live Now Preview band mounted on Feed"],
+  [!main.includes("FollowedPeopleStoriesHeader"), "Stories header removed from Feed"],
+  [!main.includes("StoryViewerModal"), "Story viewer not used on Feed"],
+  [!main.includes("onMarkStorySeen"), "story seen callback removed"],
+  [!main.includes("onOpenStoryInChannel"), "story open callback removed"],
+  [header.includes("mention-feed-tabs-header"), "tabs header remains"],
   [!header.includes("Mention tracking"), "old Mention Tracking copy removed"],
-  [!header.includes("Refresh"), "old refresh action removed"],
-  [storiesComponent.includes("StoryCardGrid"), "story card grid component"],
-  [storiesComponent.includes("StoryViewerModal"), "story viewer modal component"],
-  [storyViewer.includes("StoryProgressBar"), "story progress bar component"],
-  [storyViewer.includes("StoryViewerControls"), "story viewer controls component"],
-  [storyViewer.includes("window.addEventListener(\"keydown\""), "story modal keyboard support"],
-  [storyCount >= 12, "at least twelve followed stories"],
-  [(storiesData.match(/type: "status"/g) ?? []).length >= 3, "three status stories"],
-  [(storiesData.match(/type: "mention_highlight"/g) ?? []).length >= 3, "three mention highlight stories"],
-  [(storiesData.match(/type: "media"/g) ?? []).length >= 2, "two media stories"],
-  [(storiesData.match(/type: "voice"/g) ?? []).length >= 2, "two voice stories"],
-  [(storiesData.match(/type: "event"/g) ?? []).length >= 1, "one event story"],
-  [(storiesData.match(/type: "community_update"/g) ?? []).length >= 1, "one community update story"],
-  [styles.includes(".story-card-grid") && /overflow-x:\s*auto/.test(styles), "horizontal story grid overflow safety"],
-  [main.indexOf("<MentionFeedHeader") < main.indexOf('className="mention-feed-body-grid"'), "feed layout order stories tabs body"],
-  [app.includes("mockFollowedUserStories"), "mock stories loaded in app"],
-  [app.includes("storyItems"), "local story state in app"],
+  [band.includes("listVisibleLiveShares"), "Live Now uses canonical service"],
+  [!styles.includes(".followed-stories-header"), "Feed CSS no longer owns stories strip"],
+  [!app.includes("storyItems"), "App no longer keeps Feed story state"],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);
-
-if (failed.length) {
-  throw new Error(`Followed people stories header smoke test failed: ${failed.join(", ")}`);
-}
-
-console.log("Followed people stories header smoke test passed.");
+if (failed.length) throw new Error(`Feed Live Now / stories cleanup smoke failed: ${failed.join(", ")}`);
+console.log("Feed Live Now / stories cleanup smoke: PASS");
