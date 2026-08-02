@@ -2,6 +2,7 @@ import "./voice-call-overlays.css";
 import { AnimatePresence, motion, useReducedMotion } from "../../utils/motionLite";
 import type { IncomingVoiceCall, OutgoingVoiceCall } from "../../services/voice/voiceCallInviteService";
 import { AppIcon } from "../AppIcon";
+import { UserAvatar } from "../UserAvatar";
 
 type VoiceCallOverlaysProps = Readonly<{
   incoming: IncomingVoiceCall | null;
@@ -9,17 +10,8 @@ type VoiceCallOverlaysProps = Readonly<{
   onAccept: () => void;
   onDecline: () => void;
   onMessage?: () => void;
-  onCancelOutgoing: () => void;
   onDismissOutgoing: () => void;
 }>;
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  const first = parts[0][0] ?? "";
-  const second = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
-  return `${first}${second}`.toUpperCase();
-}
 
 function incomingSubtitle(call: IncomingVoiceCall): string {
   if (call.room.kind === "community") {
@@ -61,7 +53,6 @@ export function VoiceCallOverlays({
   onAccept,
   onDecline,
   onMessage,
-  onCancelOutgoing,
   onDismissOutgoing,
 }: VoiceCallOverlaysProps) {
   const reduceMotion = useReducedMotion();
@@ -90,11 +81,14 @@ export function VoiceCallOverlays({
             transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.75 }}
           >
             <div className="voice-call-card__media" aria-hidden="true">
-              {incoming.caller.avatarUrl ? (
-                <img src={incoming.caller.avatarUrl} alt="" />
-              ) : (
-                <span className="voice-call-card__initials">{initials(incoming.caller.name)}</span>
-              )}
+              <UserAvatar
+                userId={incoming.caller.id}
+                displayName={incoming.caller.name}
+                fallbackUrl={incoming.caller.avatarUrl}
+                size={240}
+                className="voice-call-card__avatar"
+                priority="eager"
+              />
               <span className="voice-call-card__pulse" />
             </div>
 
@@ -133,7 +127,7 @@ export function VoiceCallOverlays({
       </AnimatePresence>
 
       <AnimatePresence>
-        {outgoing && outgoingDetails ? (
+        {outgoing && outgoingDetails && outgoing.status !== "ringing" ? (
         <motion.div
           key="outgoing-voice-call"
           className={`voice-call-bar voice-call-bar--${outgoing.status}`}
@@ -146,11 +140,14 @@ export function VoiceCallOverlays({
           transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 440, damping: 34, mass: 0.7 }}
         >
           <span className="voice-call-bar__avatar" aria-hidden="true">
-            {outgoing.target.avatarUrl ? (
-              <img src={outgoing.target.avatarUrl} alt="" />
-            ) : (
-              <span className="voice-call-bar__initials">{initials(outgoing.target.name)}</span>
-            )}
+            <UserAvatar
+              userId={outgoing.target.id}
+              displayName={outgoing.target.name}
+              fallbackUrl={outgoing.target.avatarUrl}
+              size={42}
+              className="voice-call-bar__avatar-image"
+              priority="eager"
+            />
             <i className="voice-call-bar__ring" />
           </span>
 
@@ -172,27 +169,14 @@ export function VoiceCallOverlays({
             </motion.div>
           </AnimatePresence>
 
-          {outgoing.status === "ringing" ? (
-            <button
-              type="button"
-              className="voice-call-bar__action voice-call-bar__action--cancel"
-              onClick={onCancelOutgoing}
-              aria-label={`Cancel call to ${outgoing.target.name}`}
-              title="Cancel"
-            >
-              <AppIcon name="close" size="sm" aria-hidden="true" />
-              <span>Cancel</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="voice-call-bar__action voice-call-bar__action--ghost"
-              onClick={onDismissOutgoing}
-              aria-label="Dismiss call status"
-            >
-              Dismiss
-            </button>
-          )}
+          <button
+            type="button"
+            className="voice-call-bar__action voice-call-bar__action--ghost"
+            onClick={onDismissOutgoing}
+            aria-label="Dismiss call status"
+          >
+            Dismiss
+          </button>
         </motion.div>
         ) : null}
       </AnimatePresence>

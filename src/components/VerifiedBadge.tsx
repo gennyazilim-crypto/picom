@@ -2,23 +2,28 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { VerificationSummary } from "../types/verification";
 import { getVerificationLabel, getVerificationType } from "../utils/verificationHelpers";
 import { VerificationBadgeTooltip } from "./VerificationBadgeTooltip";
+import { useProfileMedia } from "../hooks/useProfileMedia";
 
 export type VerifiedBadgeSize = "xs" | "sm" | "md" | "lg";
 type TooltipPosition = { left: number; top: number; placement: "above" | "below" };
 
 export function VerifiedBadge({
   verification,
+  userId,
   size = "sm",
   className = "",
 }: {
   verification?: VerificationSummary | null;
+  userId?: string | null;
   size?: VerifiedBadgeSize;
   className?: string;
 }) {
   const tooltipId = useId();
   const badgeRef = useRef<HTMLSpanElement>(null);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
-  const type = getVerificationType(verification);
+  const media = useProfileMedia(userId);
+  const resolvedVerification = media.record?.verification ?? verification;
+  const type = getVerificationType(resolvedVerification);
   const showTooltip = () => {
     const badge = badgeRef.current;
     if (!badge || typeof window === "undefined") return;

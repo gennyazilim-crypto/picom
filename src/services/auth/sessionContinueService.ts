@@ -1,4 +1,4 @@
-import { appConfig } from "../config/appConfig";
+import { appConfig } from "../../config/appConfig";
 import { getSupabaseClient } from "../supabase/supabaseClient";
 import { authService, type AuthServiceResult } from "../authService";
 

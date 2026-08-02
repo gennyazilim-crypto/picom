@@ -73,26 +73,35 @@ export function FeedLiveNowPreviewBand({ onOpenLiveSession }: FeedLiveNowPreview
   };
 
   return (
-    <section className="feed-live-now" aria-label={localizationService.translate("feed.live.bandLabel")}>
-      <div className="feed-live-now__heading">
-        <div>
-          <p className="eyebrow">{localizationService.translate("feed.live.eyebrow")}</p>
-          <h1>{localizationService.translate("feed.live.title")}</h1>
-          <span>{localizationService.translate("feed.live.subtitle")}</span>
+    <section className="feed-live-now" data-state={state} aria-label={localizationService.translate("feed.live.bandLabel")}>
+      <header className="feed-live-now__heading">
+        <div className="feed-live-now__title-block">
+          <div className="feed-live-now__badge" aria-hidden="true">
+            <span className="feed-live-now__pulse" />
+            <span>{localizationService.translate("feed.live.eyebrow")}</span>
+          </div>
+          <h2 className="feed-live-now__title">{localizationService.translate("feed.live.title")}</h2>
+          <p className="feed-live-now__subtitle">{localizationService.translate("feed.live.subtitle")}</p>
         </div>
-        {state === "ready" ? <strong>{localizationService.translate("feed.live.count", { count: String(items.length) })}</strong> : null}
-      </div>
+        {state === "ready" ? (
+          <p className="feed-live-now__count">{localizationService.translate("feed.live.count", { count: String(items.length) })}</p>
+        ) : null}
+      </header>
 
       {state === "loading" ? (
-        <div className="feed-live-now__status" role="status" aria-live="polite">
-          {localizationService.translate("feed.loading")}
+        <div className="feed-live-now__status feed-live-now__status--loading" role="status" aria-live="polite">
+          <span className="feed-live-now__skeleton" aria-hidden="true" />
+          <span className="feed-live-now__skeleton feed-live-now__skeleton--short" aria-hidden="true" />
+          <span className="visually-hidden">{localizationService.translate("feed.loading")}</span>
         </div>
       ) : null}
 
       {state === "error" ? (
         <div className="feed-live-now__status feed-live-now__status--error" role="alert">
-          <strong>{localizationService.translate("feed.error.title")}</strong>
-          <span>{localizationService.translate("feed.error.body")}</span>
+          <div className="feed-live-now__status-copy">
+            <strong>{localizationService.translate("feed.error.title")}</strong>
+            <span>{localizationService.translate("feed.error.body")}</span>
+          </div>
           <button type="button" className="feed-live-now__retry" onClick={() => { void load(); }}>
             {localizationService.translate("feed.retry")}
           </button>
@@ -100,11 +109,13 @@ export function FeedLiveNowPreviewBand({ onOpenLiveSession }: FeedLiveNowPreview
       ) : null}
 
       {state === "empty" ? (
-        <div className="feed-live-now__status" role="status">
-          <AppIcon name="voice" size="md" />
-          <div>
+        <div className="feed-live-now__status feed-live-now__status--empty" role="status">
+          <div className="feed-live-now__empty-icon" aria-hidden="true">
+            <AppIcon name="voice" size="md" />
+          </div>
+          <div className="feed-live-now__status-copy">
             <strong>{localizationService.translate("feed.live.emptyTitle")}</strong>
-            <small>{localizationService.translate("feed.live.emptyBody")}</small>
+            <span>{localizationService.translate("feed.live.emptyBody")}</span>
           </div>
         </div>
       ) : null}
@@ -125,22 +136,29 @@ export function FeedLiveNowPreviewBand({ onOpenLiveSession }: FeedLiveNowPreview
                   aria-label={localizationService.translate("feed.live.openAria", { name: label, title: share.title })}
                   onClick={() => onOpenLiveSession(share.id)}
                 >
+                  <span className="feed-live-now__media" aria-hidden="true">
+                    <span className="feed-live-now__media-fallback" />
+                    <span className="feed-live-now__media-scrim" />
+                    <span className="feed-live-now__media-live">
+                      <LiveStatusBadge status={share.status} />
+                    </span>
+                  </span>
                   <span className="feed-live-now__topline">
-                    <LiveStatusBadge status={share.status} />
                     <span className="feed-live-now__viewers">
                       <AppIcon name="users" size="xs" /> {formatViewerCount(share.viewerCount || share.participantCount)}
                     </span>
+                    <small>{formatLiveDuration(share.startedAt)}</small>
                   </span>
                   <span className="feed-live-now__identity">
                     <UserAvatar userId={share.broadcasterUserId} displayName={label} size={34} />
-                    <span>
+                    <span className="feed-live-now__identity-text">
                       <strong>{label}</strong>
                       <small>{share.title || categoryLabel(share.category)}</small>
                     </span>
                   </span>
                   <span className="feed-live-now__meta">
                     <strong>{share.communityName || localizationService.translate("feed.live.communityFallback")}</strong>
-                    <small>{categoryLabel(share.category)} · {formatLiveDuration(share.startedAt)}</small>
+                    <small>{categoryLabel(share.category)}</small>
                   </span>
                 </button>
               );

@@ -9,7 +9,10 @@ import { loggingService } from "./loggingService";
 import { liveKitService } from "./livekit/livekitService";
 import type { LiveKitIntent, LiveKitTokenRequest, LiveKitTokenResponse } from "./livekit/livekitTypes";
 import { getVoiceDurationBucket, normalizeVoiceConnectionQuality, type VoiceConnectionQuality } from "../utils/voiceQualityMetrics";
-import { getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
+import { acquireElectronDesktopCaptureStream } from "../utils/electronDesktopCapture";
+
+export type { VoiceConnectionQuality };
+import { getScreenShareQualityPreset, getScreenShareTrackConstraints, type ScreenShareQualityPresetId } from "../utils/screenShareQuality";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "./voiceDeviceService";
 import type { MeetingConnectionQuality, MeetingParticipant, MeetingRoomContext, MeetingTransportConnectionState } from "../types/meeting";
 import type { MeetingCameraQualityPreset, MeetingVideoSubscriptionPlan } from "../types/meetingVideoGrid";
@@ -18,6 +21,7 @@ import { noiseShieldService } from "./noiseShieldService";
 import { voicePresenceChime } from "./voice/voicePresenceChime";
 import { microphoneTrackLifecycleService, type MicrophoneLifecycleEventCode } from "./voice/microphoneTrackLifecycleService";
 import { DEFAULT_MEETING_CAMERA_QUALITY, cameraCaptureOptions, cameraPublishOptions, localPublishingQuality, remoteVideoQuality } from "./meeting/meetingMediaQualityPolicy";
+import { notifyLocalScreenShareHeartbeat, notifyLocalScreenShareStarted, notifyLocalScreenShareStopped } from "./live/liveScreenShareRegistry";
 
 type LiveKitRuntime = (typeof import("./livekit/livekitRuntime"))["liveKitRuntime"];
 
@@ -56,6 +60,17 @@ export type VoiceTokenResponse = LiveKitTokenResponse;
 export type VoiceJoinRequest = VoiceTokenRequest & Readonly<{
   communityName?: string;
   channelName?: string;
+  /** When set, overrides the previous snapshot mute preference for this join. */
+  muted?: boolean;
+  /** Viewers must keep this false; never auto-enable camera on join. */
+  cameraEnabled?: boolean;
+  /** Required for intent "watch" or "broadcast" — backend revalidates the live session. */
+  liveSessionId?: string;
+}>;
+
+export type StartScreenShareOptions = Readonly<{
+  /** When true, skip Picom Live auto-registration (Go Live owns start/confirm). */
+  skipLiveRegistry?: boolean;
 }>;
 
 export type VoiceRoomContext = Pick<MeetingRoomContext, "communityId" | "communityName" | "channelId" | "channelName">;
@@ -96,6 +111,7 @@ export type VoiceServiceSnapshot = Readonly<{
   cameraTracks?: VoiceCameraTrack[];
   screenShares: VoiceScreenShare[];
   participants: VoiceParticipant[];
+  connectionQuality?: VoiceConnectionQuality;
   error: string | null;
   errorCode: VoiceServiceErrorCode | null;
 }>;
@@ -126,6 +142,7 @@ export type VoiceTranscriptionListener = (segment:VoiceTranscriptionSegment)=>vo
 let room: Room | null = null;
 let speakingIdentities = new Set<string>();
 let screenShareMediaTrack: MediaStreamTrack | null = null;
+let screenShareAudioMediaTrack: MediaStreamTrack | null = null;
 let screenShares: VoiceScreenShare[] = [];
 const remoteScreenShareTracks = new Map<string, MediaStreamTrack>();
 let cameraTracks: VoiceCameraTrack[] = [];
@@ -137,6 +154,28 @@ let desiredCameraDeviceId = "default";
 let mediaRecoveryPromise: Promise<boolean> | null = null;
 const participantConnectionQualities = new Map<string, MeetingConnectionQuality>();
 const remoteParticipantVolumes = new Map<string, number>();
+const COMPANION_OUTPUT_VOLUME_KEY = "picom.voice.master-output-volume.v1";
+
+function loadMasterOutputVolume(): number {
+  try {
+    const raw = globalThis.localStorage?.getItem(COMPANION_OUTPUT_VOLUME_KEY);
+    const value = raw == null ? 1 : Number(raw);
+    if (!Number.isFinite(value)) return 1;
+    return Math.min(1, Math.max(0, value));
+  } catch {
+    return 1;
+  }
+}
+
+function persistMasterOutputVolume(volume: number): void {
+  try {
+    globalThis.localStorage?.setItem(COMPANION_OUTPUT_VOLUME_KEY, String(volume));
+  } catch {
+    /* restricted storage */
+  }
+}
+
+let masterOutputVolume = loadMasterOutputVolume();
 let focusedScreenShareId: string | null = null;
 let activeTokenIntent: VoiceIntent | null = null;
 let connectionQuality: VoiceConnectionQuality = "unknown";
@@ -174,6 +213,7 @@ let snapshot: VoiceServiceSnapshot = {
   cameraTracks: [],
   screenShares: [],
   participants: [],
+  connectionQuality: "unknown",
   error: null,
   errorCode: null,
 };
@@ -183,7 +223,8 @@ const dataPacketListeners = new Set<VoiceDataPacketListener>();
 const transcriptionListeners = new Set<VoiceTranscriptionListener>();
 
 function hasScreenPublishToken(): boolean {
-  return activeTokenIntent === "screen";
+  // Broadcast tokens already grant screen publish (Go Live); do not require a second "screen" upgrade.
+  return activeTokenIntent === "screen" || activeTokenIntent === "broadcast";
 }
 
 function cancelReconnectDelay(): void {
@@ -307,12 +348,15 @@ function removeParticipantCameraTracks(participantIdentity: string): void {
 
 function applyRemoteVideoSubscriptionPlan(activeRoom: Room, plan: MeetingVideoSubscriptionPlan): void {
   const visible = new Set(plan.visibleParticipantIdentities);
+  const directVideoCall = activeRoom.name.startsWith("direct-call:");
   activeRoom.remoteParticipants.forEach((participant) => {
     participant.videoTrackPublications.forEach((publication) => {
       if (publication.source !== Track.Source.Camera) return;
-      const subscribed = visible.has(participant.identity);
+      // Direct calls have at most one remote peer and do not mount the meeting
+      // video-grid planner. Keep their camera track subscribed explicitly.
+      const subscribed = directVideoCall || visible.has(participant.identity);
       publication.setSubscribed(subscribed);
-      if (subscribed) publication.setVideoQuality(remoteVideoQuality(participant.identity, plan, connectionQuality as MeetingConnectionQuality));
+      if (subscribed && !directVideoCall) publication.setVideoQuality(remoteVideoQuality(participant.identity, plan, connectionQuality as MeetingConnectionQuality));
     });
   });
 }
@@ -333,11 +377,15 @@ function applyRemoteAudioSubscription(activeRoom: Room, subscribed: boolean): vo
 function applyRemoteParticipantVolume(activeRoom: Room, participantIdentity: string): void {
   const participant = activeRoom.remoteParticipants.get(participantIdentity);
   if (!participant) return;
-  const volume = remoteParticipantVolumes.get(participantIdentity) ?? 1;
+  const volume = Math.min(1, Math.max(0, (remoteParticipantVolumes.get(participantIdentity) ?? 1) * masterOutputVolume));
   participant.audioTrackPublications.forEach((publication) => {
     const track = publication.track;
     if (track?.kind === Track.Kind.Audio && "setVolume" in track && typeof track.setVolume === "function") track.setVolume(volume);
   });
+}
+
+function applyAllRemoteParticipantVolumes(activeRoom: Room): void {
+  activeRoom.remoteParticipants.forEach((_, identity) => applyRemoteParticipantVolume(activeRoom, identity));
 }
 
 type RemoteAudioOutputTrack = Readonly<{
@@ -443,6 +491,24 @@ function applyFocusedScreenShareSubscription(activeRoom: Room, requestedId: stri
   });
 }
 
+async function setScreenShareContentProtection(enabled: boolean): Promise<void> {
+  const bridge = typeof window !== "undefined" ? window.picomDesktop?.screenCapture?.setContentProtection : undefined;
+  if (!bridge) return;
+  try {
+    await bridge(enabled);
+  } catch {
+    // Native bridge optional; local placeholder still prevents recursive preview.
+  }
+}
+
+function stopLocalScreenShareAudioTrack(): void {
+  const audioTrack = screenShareAudioMediaTrack;
+  screenShareAudioMediaTrack = null;
+  if (!audioTrack) return;
+  audioTrack.onended = null;
+  if (audioTrack.readyState === "live") audioTrack.stop();
+}
+
 function clearScreenShareState(): void {
   const localTrack = screenShareMediaTrack;
   screenShareMediaTrack = null;
@@ -450,39 +516,67 @@ function clearScreenShareState(): void {
     localTrack.onended = null;
     if (localTrack.readyState === "live") localTrack.stop();
   }
+  const audioTrack = screenShareAudioMediaTrack;
+  screenShareAudioMediaTrack = null;
+  if (audioTrack) {
+    audioTrack.onended = null;
+    if (room) {
+      void room.localParticipant.unpublishTrack(audioTrack, true).catch(() => undefined);
+    }
+    if (audioTrack.readyState === "live") audioTrack.stop();
+  }
+  void setScreenShareContentProtection(false);
   setScreenShares(screenShares.filter((share) => !share.isLocal));
   if (focusedScreenShareId?.startsWith("local:")) focusedScreenShareId = null;
   emit({ screenSharing: false });
 }
 
+async function unpublishLocalScreenShareAudio(activeRoom: Room): Promise<void> {
+  const audioTrack = screenShareAudioMediaTrack;
+  screenShareAudioMediaTrack = null;
+  if (!audioTrack) return;
+  audioTrack.onended = null;
+  try {
+    await activeRoom.localParticipant.unpublishTrack(audioTrack, true);
+  } catch {
+    // Video stop still proceeds even if screen-audio unpublish fails.
+  }
+  if (audioTrack.readyState === "live") audioTrack.stop();
+}
+
 async function stopScreenShareInternal(activeRoom: Room, reason: "user" | "track_ended" = "user"): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
   const track = screenShareMediaTrack;
+  notifyLocalScreenShareStopped(null);
 
   if (!track) {
+    await unpublishLocalScreenShareAudio(activeRoom);
+    void setScreenShareContentProtection(false);
     emit({ screenSharing: false, participants: getParticipants(activeRoom) });
     return { ok: true, data: snapshot };
   }
 
   screenShareMediaTrack = null;
   track.onended = null;
+  void setScreenShareContentProtection(false);
+  await unpublishLocalScreenShareAudio(activeRoom);
 
-    try {
-      await activeRoom.localParticipant.unpublishTrack(track, true);
-      if (track.readyState === "live") track.stop();
-      setScreenShares(screenShares.filter((share) => !share.isLocal));
-      emit({
-        screenSharing: false,
-        error: reason === "track_ended" ? "Screen sharing stopped because the selected source or system permission became unavailable." : null,
-        errorCode: reason === "track_ended" ? "VOICE_SCREEN_SHARE_FAILED" : null,
-        participants: getParticipants(activeRoom),
-      });
-      return { ok: true, data: snapshot };
-    } catch {
-      if (track.readyState === "live") track.stop();
-      setScreenShares(screenShares.filter((share) => !share.isLocal));
-      emit({
-        screenSharing: false,
-        participants: getParticipants(activeRoom),
+  try {
+    await activeRoom.localParticipant.unpublishTrack(track, true);
+    if (track.readyState === "live") track.stop();
+    setScreenShares(screenShares.filter((share) => !share.isLocal));
+    emit({
+      screenSharing: false,
+      error: reason === "track_ended" ? "Screen sharing stopped because the selected source or system permission became unavailable." : null,
+      errorCode: reason === "track_ended" ? "VOICE_SCREEN_SHARE_FAILED" : null,
+      participants: getParticipants(activeRoom),
+    });
+    return { ok: true, data: snapshot };
+  } catch {
+    if (track.readyState === "live") track.stop();
+    setScreenShares(screenShares.filter((share) => !share.isLocal));
+    emit({
+      screenSharing: false,
+      participants: getParticipants(activeRoom),
       error: "Screen sharing stopped locally, but LiveKit unpublish failed.",
       errorCode: "VOICE_SCREEN_SHARE_FAILED",
     });
@@ -569,7 +663,12 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
       const normalized = normalizeVoiceConnectionQuality(quality) as MeetingConnectionQuality;
       participantConnectionQualities.set(participant.identity, normalized);
-      if (participant.isLocal) { connectionQuality = normalized; applyLocalCameraPublishingQuality(activeRoom); applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan); }
+      if (participant.isLocal) {
+        connectionQuality = normalized;
+        applyLocalCameraPublishingQuality(activeRoom);
+        applyRemoteVideoSubscriptionPlan(activeRoom, videoSubscriptionPlan);
+        emit({ connectionQuality: normalized });
+      }
       emitParticipants(activeRoom);
     })
     .on(RoomEvent.DataReceived,(payload,participant,_kind,topic)=>{
@@ -607,6 +706,8 @@ function bindRoomEvents(activeRoom: Room): void {
     .on(RoomEvent.LocalTrackUnpublished, (publication) => {
       if (publication.source === Track.Source.ScreenShare) {
         clearScreenShareState();
+      } else if (publication.source === Track.Source.ScreenShareAudio) {
+        stopLocalScreenShareAudioTrack();
       }
       emitParticipants(activeRoom);
     })
@@ -689,10 +790,12 @@ function bindRoomEvents(activeRoom: Room): void {
 
 function stopLocalTracks(activeRoom: Room): void {
   if (screenShareMediaTrack) screenShareMediaTrack.onended = null;
+  if (screenShareAudioMediaTrack) screenShareAudioMediaTrack.onended = null;
   activeRoom.localParticipant.trackPublications.forEach((publication) => {
     publication.track?.stop();
   });
   screenShareMediaTrack = null;
+  screenShareAudioMediaTrack = null;
   screenShares = [];
   clearRemoteScreenShareTracks();
   cameraTracks = [];
@@ -712,19 +815,80 @@ async function disposeRoom(activeRoom: Room): Promise<void> {
   }
 }
 
-function createElectronScreenShareConstraints(sourceId: string): MediaStreamConstraints {
+async function acquireElectronScreenShareStream(sourceId: string): Promise<MediaStream> {
+  try {
+    return await acquireElectronDesktopCaptureStream(sourceId, { includeAudio: true });
+  } catch (error) {
+    loggingService.logWarn(
+      "Screen share system audio unavailable; continuing with video only",
+      { errorName: error instanceof Error ? error.name : "UnknownError", sourceKind: sourceId.startsWith("screen:") ? "screen" : "window" },
+      "voice",
+    );
+    return acquireElectronDesktopCaptureStream(sourceId, { includeAudio: false });
+  }
+}
+
+function browserScreenShareDisplayConstraints(): DisplayMediaStreamOptions {
   return {
-    audio: false,
-    video: {
-      mandatory: {
-        chromeMediaSource: "desktop",
-        chromeMediaSourceId: sourceId,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        maxFrameRate: 30,
-      },
-    } as unknown as MediaTrackConstraints,
-  };
+    video: { frameRate: 30, width: { max: 1920 }, height: { max: 1080 } },
+    audio: {
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+    },
+    // Chromium: include OS loopback when the user shares a display/tab with audio.
+    systemAudio: "include",
+  } as DisplayMediaStreamOptions;
+}
+
+async function acquireBrowserScreenShareStream(): Promise<MediaStream> {
+  try {
+    return await navigator.mediaDevices.getDisplayMedia(browserScreenShareDisplayConstraints());
+  } catch (error) {
+    // Older browsers reject unknown constraint keys (systemAudio); retry with plain audio:true.
+    const name = error instanceof DOMException ? error.name : "";
+    if (name === "TypeError" || name === "NotSupportedError") {
+      try {
+        return await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 30, width: { max: 1920 }, height: { max: 1080 } },
+          audio: true,
+        });
+      } catch {
+        return navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 30, width: { max: 1920 }, height: { max: 1080 } },
+          audio: false,
+        });
+      }
+    }
+    throw error;
+  }
+}
+
+async function publishScreenShareAudioTrack(activeRoom: Room, audioTrack: MediaStreamTrack): Promise<boolean> {
+  try {
+    audioTrack.contentHint = "music";
+    await activeRoom.localParticipant.publishTrack(audioTrack, {
+      name: "screen-share-audio",
+      source: Track.Source.ScreenShareAudio,
+      dtx: false,
+      red: false,
+    });
+    screenShareAudioMediaTrack = audioTrack;
+    audioTrack.onended = () => {
+      if (screenShareAudioMediaTrack === audioTrack) {
+        screenShareAudioMediaTrack = null;
+      }
+    };
+    return true;
+  } catch (error) {
+    loggingService.logWarn(
+      "LiveKit screen-share audio publish failed; video share continues",
+      { errorName: error instanceof Error ? error.name : "UnknownError" },
+      "voice",
+    );
+    if (audioTrack.readyState === "live") audioTrack.stop();
+    return false;
+  }
 }
 
 async function requestToken(request: VoiceTokenRequest, options: Readonly<{ silent?: boolean }> = {}): Promise<VoiceServiceResult<VoiceTokenResponse>> {
@@ -1136,6 +1300,18 @@ export const voiceService = {
     return true;
   },
 
+  getMasterOutputVolume(): number {
+    return masterOutputVolume;
+  },
+
+  setMasterOutputVolume(volume: number): number {
+    if (!Number.isFinite(volume)) return masterOutputVolume;
+    masterOutputVolume = Math.min(1, Math.max(0, volume));
+    persistMasterOutputVolume(masterOutputVolume);
+    if (room && room.state !== ConnectionState.Disconnected) applyAllRemoteParticipantVolumes(room);
+    return masterOutputVolume;
+  },
+
   async requestToken(request: VoiceTokenRequest): Promise<VoiceServiceResult<VoiceTokenResponse>> {
     return requestToken(request);
   },
@@ -1158,28 +1334,34 @@ export const voiceService = {
     joinAttemptCount += 1;
     lastJoinRequest = request;
     const lifecycleGeneration = ++roomLifecycleGeneration;
-    const { communityName, channelName, ...tokenRequest } = request;
+    const { communityName, channelName, muted: mutedOption, cameraEnabled: cameraOption, liveSessionId, ...tokenRequestBase } = request;
+    const tokenRequest = {
+      ...tokenRequestBase,
+      ...(liveSessionId ? { liveSessionId } : {}),
+    };
     const roomContext: VoiceRoomContext = {
       communityId: request.communityId,
       communityName,
       channelId: request.channelId,
       channelName,
     };
-    const desiredMuted = snapshot.muted;
+    const desiredMuted = request.intent === "watch" ? true : (mutedOption ?? snapshot.muted);
     const desiredDeafened = snapshot.deafened;
+    const desiredCamera = cameraOption === true && request.intent !== "watch";
     if (room) {
       await disposeRoom(room);
       activeTokenIntent = null;
     }
     speakingIdentities = new Set<string>();
     screenShareMediaTrack = null;
+    screenShareAudioMediaTrack = null;
     screenShares = [];
     clearRemoteScreenShareTracks();
     cameraTracks = [];
     participantConnectionQualities.clear();
     videoSubscriptionPlan = { visibleParticipantIdentities: [], activeSpeakerIdentities: [], focusedParticipantIdentity: null, visibleTileCount: 0 };
     focusedScreenShareId = null;
-    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [] });
+    emit({ roomContext, error: null, errorCode: null, participants: [], screenSharing: false, screenShares: [], cameraTracks: [], muted: desiredMuted, cameraEnabled: false });
 
     try {
       const token = await requestToken(tokenRequest);
@@ -1188,7 +1370,7 @@ export const voiceService = {
         return token;
       }
 
-      const result = await connectWithToken(token.data, desiredMuted, desiredDeafened, roomContext, false, "default", lifecycleGeneration);
+      const result = await connectWithToken(token.data, desiredMuted, desiredDeafened, roomContext, desiredCamera, "default", lifecycleGeneration);
       if (!result.ok) joinFailureCount += 1;
       return result;
     } finally {
@@ -1213,6 +1395,7 @@ export const voiceService = {
     }
     speakingIdentities = new Set<string>();
     screenShareMediaTrack = null;
+    screenShareAudioMediaTrack = null;
     screenShares = [];
     clearRemoteScreenShareTracks();
     cameraTracks = [];
@@ -1310,6 +1493,7 @@ export const voiceService = {
       canUseCamera: false,
       screenShares: [],
       cameraTracks: [],
+      connectionQuality: "unknown",
       error: null,
       errorCode: null,
     });
@@ -1378,7 +1562,12 @@ export const voiceService = {
     }
   },
 
-  async startScreenShare(sourceId: string, preset: ScreenShareQualityPresetId = "balanced", sourceLabel?: string): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+  async startScreenShare(
+    sourceId: string,
+    preset: ScreenShareQualityPresetId = "balanced",
+    sourceLabel?: string,
+    options: StartScreenShareOptions = {},
+  ): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
     if (!room) {
       return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before starting screen share.");
     }
@@ -1391,13 +1580,15 @@ export const voiceService = {
       return { ok: false, error: { code: "VOICE_SCREEN_SHARE_CONFLICT", message: "Another participant is already sharing in this meeting." } };
     }
 
-    if (!/^(screen|window):[a-zA-Z0-9:_-]{1,240}$/.test(sourceId)) {
+    const isBrowserDisplay = sourceId === "browser:display";
+    if (!isBrowserDisplay && !/^(screen|window):[a-zA-Z0-9:_\\.\-]{1,240}$/.test(sourceId)) {
       return voiceError("VOICE_SCREEN_SHARE_FAILED", "The selected screen source is invalid or expired.");
     }
 
     if (!hasScreenPublishToken()) {
       if (!lastJoinRequest) return voiceError("VOICE_ROOM_UNAVAILABLE", "Rejoin the voice room before starting screen share.");
-      const upgraded = await voiceService.join({ ...lastJoinRequest, intent: "screen" });
+      const upgradeIntent = lastJoinRequest.intent === "broadcast" ? "broadcast" : "screen";
+      const upgraded = await voiceService.join({ ...lastJoinRequest, intent: upgradeIntent });
       if (!upgraded.ok) return upgraded;
       if (!room || !hasScreenPublishToken()) return voiceError("VOICE_SCREEN_SHARE_FAILED", "Screen-share permission could not be activated for this room.");
     }
@@ -1405,12 +1596,14 @@ export const voiceService = {
     const activeRoom = room;
     if (!activeRoom) return voiceError("VOICE_ROOM_UNAVAILABLE", "The voice room disconnected before screen sharing started.");
 
-    if (!navigator.mediaDevices?.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia && !navigator.mediaDevices?.getDisplayMedia) {
       return voiceError("VOICE_SCREEN_SHARE_FAILED", "Screen capture is not available in this runtime.");
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(createElectronScreenShareConstraints(sourceId));
+      const stream = isBrowserDisplay
+        ? await acquireBrowserScreenShareStream()
+        : await acquireElectronScreenShareStream(sourceId);
       const captureTrack = stream.getVideoTracks()[0];
       if (captureTrack) {
         await captureTrack.applyConstraints(getScreenShareTrackConstraints(preset)).catch(() => undefined);
@@ -1421,24 +1614,38 @@ export const voiceService = {
         return voiceError("VOICE_SCREEN_SHARE_FAILED", "No screen video track was returned.");
       }
 
+      const quality = getScreenShareQualityPreset(preset);
+      track.contentHint = preset === "performance" ? "motion" : "detail";
+      const audioTrack = stream.getAudioTracks()[0] ?? null;
+
       try {
         await activeRoom.localParticipant.publishTrack(track, {
           name: "screen-share",
           source: Track.Source.ScreenShare,
+          simulcast: false,
+          videoEncoding: {
+            maxBitrate: quality.maxBitrate,
+            maxFramerate: quality.frameRate,
+          },
         });
       } catch (error) {
-        track.stop();
+        stream.getTracks().forEach((mediaTrack) => mediaTrack.stop());
         throw error;
       }
 
+      if (audioTrack) {
+        await publishScreenShareAudioTrack(activeRoom, audioTrack);
+      }
+
       screenShareMediaTrack = track;
+      void setScreenShareContentProtection(true);
       upsertScreenShare({
         id: `local:${track.id}`,
         participantIdentity: activeRoom.localParticipant.identity,
         participantName: activeRoom.localParticipant.name || activeRoom.localParticipant.identity,
         isLocal: true,
         stream: new MediaStream([track]),
-        sourceLabel: sourceLabel?.trim().slice(0, 80) || "Your shared screen",
+        sourceLabel: sourceLabel?.trim().slice(0, 80) || (isBrowserDisplay ? "Your shared screen" : "Your shared screen"),
       });
 
       track.onended = () => {
@@ -1447,9 +1654,27 @@ export const voiceService = {
         }
       };
 
+      const roomContext = snapshot.roomContext;
+      if (!options.skipLiveRegistry && roomContext?.communityId && roomContext.channelId && snapshot.roomName) {
+        void notifyLocalScreenShareStarted({
+          communityId: roomContext.communityId,
+          channelId: roomContext.channelId,
+          livekitRoomName: snapshot.roomName,
+          title: sourceLabel?.trim().slice(0, 160) || "Screen share",
+          applicationName: sourceLabel?.trim().slice(0, 120) || "",
+          category: "other",
+          participantCount: getParticipants(activeRoom).length,
+        }).then((sessionId) => {
+          if (sessionId) {
+            notifyLocalScreenShareHeartbeat(sessionId, getParticipants(activeRoom).length);
+          }
+        });
+      }
+
       emit({ screenSharing: true, error: null, errorCode: null, participants: getParticipants(activeRoom) });
       return { ok: true, data: snapshot };
     } catch (error) {
+      stopLocalScreenShareAudioTrack();
       const denied = error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "SecurityError");
       loggingService.logWarn("LiveKit screen share start failed", {
         errorName: error instanceof Error ? error.name : "UnknownError",
@@ -1468,6 +1693,176 @@ export const voiceService = {
     }
 
     return stopScreenShareInternal(room);
+  },
+
+  /**
+   * Replace the published screen track in-place. On failure the existing publication stays live.
+   */
+  async replaceScreenShareSource(
+    sourceId: string,
+    preset: ScreenShareQualityPresetId = "balanced",
+    sourceLabel?: string,
+  ): Promise<VoiceServiceResult<VoiceServiceSnapshot>> {
+    if (!room) {
+      return voiceError("VOICE_ROOM_UNAVAILABLE", "Join a voice room before changing the screen source.");
+    }
+    if (!snapshot.canShareScreen) {
+      return voiceError("VOICE_PERMISSION_DENIED", "Your role cannot share a screen in this room.");
+    }
+    if (!screenShareMediaTrack) {
+      return voiceService.startScreenShare(sourceId, preset, sourceLabel, { skipLiveRegistry: true });
+    }
+
+    const isBrowserDisplay = sourceId === "browser:display";
+    if (!isBrowserDisplay && !/^(screen|window):[a-zA-Z0-9:_\\.\-]{1,240}$/.test(sourceId)) {
+      return voiceError("VOICE_SCREEN_SHARE_FAILED", "The selected screen source is invalid or expired.");
+    }
+
+    const activeRoom = room;
+    const previousTrack = screenShareMediaTrack;
+    let replacementStream: MediaStream | null = null;
+
+    try {
+      replacementStream = isBrowserDisplay
+        ? await acquireBrowserScreenShareStream()
+        : await acquireElectronScreenShareStream(sourceId);
+      const nextTrack = replacementStream.getVideoTracks()[0];
+      if (!nextTrack) {
+        replacementStream.getTracks().forEach((track) => track.stop());
+        return voiceError("VOICE_SCREEN_SHARE_FAILED", "No screen video track was returned.");
+      }
+
+      await nextTrack.applyConstraints(getScreenShareTrackConstraints(preset)).catch(() => undefined);
+      nextTrack.contentHint = preset === "performance" ? "motion" : "detail";
+
+      const publication = [...activeRoom.localParticipant.trackPublications.values()].find(
+        (item) => item.source === Track.Source.ScreenShare && item.track,
+      );
+      const livekitTrack = publication?.track as { replaceTrack?: (track: MediaStreamTrack) => Promise<void> } | undefined;
+      if (!livekitTrack?.replaceTrack) {
+        nextTrack.stop();
+        replacementStream.getTracks().forEach((track) => {
+          if (track !== nextTrack) track.stop();
+        });
+        return voiceError("VOICE_SCREEN_SHARE_FAILED", "LiveKit track replace is unavailable in this runtime.");
+      }
+
+      await livekitTrack.replaceTrack(nextTrack);
+
+      previousTrack.onended = null;
+      if (previousTrack.readyState === "live") previousTrack.stop();
+
+      // Video was swapped in-place; stop unused capture tracks (typically system audio)
+      // so they do not linger after replace. Existing published screen-audio stays as-is.
+      replacementStream.getTracks().forEach((track) => {
+        if (track !== nextTrack && track.readyState === "live") track.stop();
+      });
+
+      screenShareMediaTrack = nextTrack;
+      nextTrack.onended = () => {
+        void stopScreenShareInternal(activeRoom, "track_ended");
+      };
+
+      setScreenShares(screenShares.filter((share) => !share.isLocal));
+      upsertScreenShare({
+        id: `local:${nextTrack.id}`,
+        participantIdentity: activeRoom.localParticipant.identity,
+        participantName: activeRoom.localParticipant.name || activeRoom.localParticipant.identity,
+        isLocal: true,
+        stream: new MediaStream([nextTrack]),
+        sourceLabel: sourceLabel?.trim().slice(0, 80) || "Your shared screen",
+      });
+
+      emit({
+        screenSharing: true,
+        participants: getParticipants(activeRoom),
+        error: null,
+        errorCode: null,
+      });
+      return { ok: true, data: snapshot };
+    } catch (error) {
+      replacementStream?.getTracks().forEach((track) => track.stop());
+      loggingService.logWarn("LiveKit screen share replace failed; existing share continues", {
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      }, "voice");
+      return voiceError("VOICE_SCREEN_SHARE_FAILED", "Could not switch screen source. Your current share is still live.");
+    }
+  },
+
+  async collectLocalPublishStats(): Promise<Readonly<{
+    rttMs: number | null;
+    packetLossPct: number | null;
+    bitrateKbps: number | null;
+    fps: number | null;
+    width: number | null;
+    height: number | null;
+    droppedFramesPct: number | null;
+  }>> {
+    const empty = {
+      rttMs: null,
+      packetLossPct: null,
+      bitrateKbps: null,
+      fps: null,
+      width: null,
+      height: null,
+      droppedFramesPct: null,
+    };
+    if (!room || !screenShareMediaTrack) return empty;
+
+    const settings = screenShareMediaTrack.getSettings?.() ?? {};
+    const width = typeof settings.width === "number" ? settings.width : null;
+    const height = typeof settings.height === "number" ? settings.height : null;
+    const fps = typeof settings.frameRate === "number" ? settings.frameRate : null;
+
+    try {
+      const publication = [...room.localParticipant.trackPublications.values()].find(
+        (item) => item.source === Track.Source.ScreenShare,
+      );
+      const sender = (publication as { track?: { sender?: RTCRtpSender } } | undefined)?.track?.sender
+        ?? (publication as { rtcSender?: RTCRtpSender } | undefined)?.rtcSender;
+      if (!sender?.getStats) {
+        return { ...empty, width, height, fps };
+      }
+      const report = await sender.getStats();
+      let bitrateKbps: number | null = null;
+      let rttMs: number | null = null;
+      let packetLossPct: number | null = null;
+      let droppedFramesPct: number | null = null;
+      report.forEach((entry) => {
+        if (entry.type === "outbound-rtp" && "bytesSent" in entry) {
+          const bytesSent = Number(entry.bytesSent ?? 0);
+          const timestamp = Number(entry.timestamp ?? 0);
+          if (bytesSent > 0 && timestamp > 0) {
+            // Instant absolute estimate is not reliable without a previous sample; leave bitrate null unless framesPerSecond exists.
+          }
+          if (typeof entry.framesPerSecond === "number") {
+            // prefer track settings fps when available
+          }
+          const packetsSent = Number(entry.packetsSent ?? 0);
+          const nackCount = Number(entry.nackCount ?? 0);
+          if (packetsSent > 0 && nackCount >= 0) {
+            packetLossPct = Math.min(100, (nackCount / packetsSent) * 100);
+          }
+          const dropped = Number(entry.framesDropped ?? 0);
+          const sent = Number(entry.framesSent ?? 0);
+          if (sent + dropped > 0) {
+            droppedFramesPct = (dropped / (sent + dropped)) * 100;
+          }
+        }
+        if (entry.type === "candidate-pair" && entry.nominated && typeof entry.currentRoundTripTime === "number") {
+          rttMs = entry.currentRoundTripTime * 1000;
+        }
+        if (entry.type === "remote-inbound-rtp" && typeof entry.roundTripTime === "number") {
+          rttMs = entry.roundTripTime * 1000;
+        }
+        if (entry.type === "outbound-rtp" && typeof entry.targetBitrate === "number") {
+          bitrateKbps = entry.targetBitrate / 1000;
+        }
+      });
+      return { rttMs, packetLossPct, bitrateKbps, fps, width, height, droppedFramesPct };
+    } catch {
+      return { ...empty, width, height, fps };
+    }
   },
 };
 
