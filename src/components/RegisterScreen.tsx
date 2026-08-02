@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { isMockMode } from "../config/appConfig";
 import { brandLogoUrl } from "../config/brandAssets";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
+import { LoginBackgroundAnimation } from "./auth/LoginBackgroundAnimation";
+import { AuthHeroPanel } from "./auth/AuthHeroPanel";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import type { LegalDocumentId } from "../data/legalDocuments";
 import { legalConfig } from "../config/legalConfig";
@@ -19,10 +20,10 @@ type RegisterScreenProps = {
 };
 
 export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, onSubmit, onSwitchToLogin }: RegisterScreenProps) {
-  const [displayName, setDisplayName] = useState(isMockMode ? "Picom User" : "");
-  const [email, setEmail] = useState(isMockMode ? "new@picom.local" : "");
-  const [password, setPassword] = useState(isMockMode ? "PicomDev123!" : "");
-  const [confirmPassword, setConfirmPassword] = useState(isMockMode ? "PicomDev123!" : "");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
@@ -51,22 +52,8 @@ export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, o
 
   return (
     <main className="auth-desktop-frame" aria-label="Create Picom account">
-      <section className="auth-hero" aria-hidden="true">
-        <div className="auth-logo-orb auth-logo-orb--brand">
-          <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
-        </div>
-        <p className="eyebrow">Create workspace access</p>
-        <h1>Start your Picom desktop account.</h1>
-        <p>
-          Register with email and password for the Supabase-backed MVP. The desktop shell stays compact, polished,
-          and ready for communities, channels, and realtime chat.
-        </p>
-        <div className="auth-feature-list">
-          <span><AppIcon name="user" size="sm" /> Profile</span>
-          <span><AppIcon name="lock" size="sm" /> RLS-ready</span>
-          <span><AppIcon name="bell" size="sm" /> Notifications later</span>
-        </div>
-      </section>
+      <LoginBackgroundAnimation theme={theme} />
+      <AuthHeroPanel variant="register" />
 
       <form className="auth-card" onSubmit={submit}>
         <div className="auth-card-header">
@@ -134,8 +121,7 @@ export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, o
         {localError || error ? <div className="auth-error" role="alert">{localError ?? error}</div> : null}
         {!localError && !error && notice ? <div className="auth-success" role="status">{notice}</div> : null}
 
-        <div className="auth-divider"><span>or continue with</span></div>
-        <SocialLoginButtons disabled={loading || !acceptedLegal} />
+        <SocialLoginButtons disabled={loading || !acceptedLegal} layout="stacked" />
 
         <button className="auth-submit" type="submit" disabled={loading || !acceptedLegal}>
           {loading ? "Creating account..." : "Create account"}

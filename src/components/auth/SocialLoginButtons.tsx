@@ -3,15 +3,22 @@ import { motion, useReducedMotion, type Variants } from "../../utils/motionLite"
 import {
   getSocialAuthProviderLabel,
   isCustomOAuthProvider,
-  SOCIAL_AUTH_PROVIDER_ORDER,
   socialAuthService,
   type SocialAuthProvider,
 } from "../../services/auth/socialAuthService";
 import { SocialProviderLogo } from "./SocialProviderLogo";
 import { externalLinkService } from "../../services/desktop/externalLinkService";
+import { dataSourceService } from "../../services/dataSourceService";
 
-type Props = { disabled?: boolean };
+type Props = Readonly<{
+  disabled?: boolean;
+  /** stacked = labeled rows; icons = compact circle grid */
+  layout?: "stacked" | "icons";
+}>;
 
+/** Google appears when its OAuth flag is enabled; Steam/Epic remain always listed. */
+const ALWAYS_VISIBLE_PROVIDERS: readonly SocialAuthProvider[] = ["steam", "epic"];
+const OPTIONAL_PROVIDERS: readonly SocialAuthProvider[] = ["google"];
 const LOGO_SIZE = 20;
 
 const gridVariants: Variants = {
@@ -29,25 +36,49 @@ const buttonVariants: Variants = {
   },
 };
 
-export function SocialLoginButtons({ disabled = false }: Props) {
+export function SocialLoginButtons({ disabled = false, layout = "icons" }: Props) {
   const reduceMotion = useReducedMotion();
   const [activeProvider, setActiveProvider] = useState<SocialAuthProvider | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const providers = useMemo(
-    () => SOCIAL_AUTH_PROVIDER_ORDER.map((provider) => ({
-      provider,
-      label: getSocialAuthProviderLabel(provider),
-      availability: socialAuthService.getProviderAvailability(provider),
-    })),
-    [],
-  );
-  const configMessage = providers.find((entry) => !entry.availability.enabled)?.availability.reason;
+  const supabaseReady = dataSourceService.getStatus().isSupabase && dataSourceService.getStatus().configured;
 
-  const begin = async (provider: SocialAuthProvider) => {
+  const providers = useMemo(() => {
+    const visible = [
+      ...OPTIONAL_PROVIDERS.filter((provider) => socialAuthService.getProviderAvailability(provider).enabled),
+      ...ALWAYS_VISIBLE_PROVIDERS,
+    ];
+
+    if (!supabaseReady) {
+      return socialAuthService
+        .getAvailableProviders()
+        .filter((provider) => visible.includes(provider))
+        .map((provider) => {
+          const availability = socialAuthService.getProviderAvailability(provider);
+          return {
+            provider,
+            label: getSocialAuthProviderLabel(provider),
+            enabled: availability.enabled,
+          };
+        });
+    }
+
+    return visible.map((provider) => {
+      const availability = socialAuthService.getProviderAvailability(provider);
+      return {
+        provider,
+        label: getSocialAuthProviderLabel(provider),
+        enabled: availability.enabled,
+      };
+    });
+  }, [supabaseReady]);
+
+  const begin = async (provider: SocialAuthProvider, enabled: boolean) => {
+    if (!enabled) {
+      setMessage(`${getSocialAuthProviderLabel(provider)} sign-in is coming soon.`);
+      return;
+    }
     setActiveProvider(provider);
     setMessage(null);
-    // Pre-open the popup synchronously within the click gesture so the browser popup
-    // blocker allows it; the desktop app ignores this and uses its native opener.
     const hasNativeOpener = Boolean(window.picomDesktop?.externalLinks?.openUrl);
     const preparedWindow = hasNativeOpener ? null : externalLinkService.prepareExternalWindow();
     const result = isCustomOAuthProvider(provider)
@@ -57,41 +88,59 @@ export function SocialLoginButtons({ disabled = false }: Props) {
     setActiveProvider(null);
   };
 
-  return (
-    <section className="social-login" aria-label="Social sign in options">
-      <motion.div
-        className="social-login-grid"
-        variants={reduceMotion ? undefined : gridVariants}
-        initial={false}
-        animate={reduceMotion ? undefined : "visible"}
-      >
-        {providers.map(({ provider, label, availability }) => {
-          const isActive = activeProvider === provider;
-          const isDisabled = disabled || !availability.enabled || activeProvider !== null;
+  if (providers.length === 0) return null;
 
-          return (
-            <motion.button
-              key={provider}
-              type="button"
-              className={`social-login-provider social-login-provider--${provider}${isActive ? " is-active" : ""}`}
-              disabled={isDisabled}
-              onClick={() => void begin(provider)}
-              title={availability.reason ?? label}
-              aria-label={isActive ? `Opening ${label}` : `Continue with ${label}`}
-              variants={reduceMotion ? undefined : buttonVariants}
-              whileHover={reduceMotion || isDisabled ? undefined : { y: -1, scale: 1.04 }}
-              whileTap={reduceMotion || isDisabled ? undefined : { scale: 0.96 }}
-              layout={!reduceMotion}
-            >
-              <span className="social-login-provider-mark" aria-hidden="true">
-                <SocialProviderLogo provider={provider} size={LOGO_SIZE} />
-              </span>
-            </motion.button>
-          );
-        })}
-      </motion.div>
-      {message ? <p className="social-login-note" role="status">{message}</p> : null}
-      {configMessage ? <p className="social-login-config">{configMessage}</p> : null}
-    </section>
+  const stacked = layout === "stacked";
+
+  return (
+    <>
+      <div className="auth-divider">
+        <span>or continue with</span>
+      </div>
+      <section className={`social-login${stacked ? " social-login--stacked" : ""}`} aria-label="Social sign in options">
+        <motion.div
+          className={stacked ? "social-login-pair" : "social-login-grid"}
+          variants={reduceMotion ? undefined : gridVariants}
+          initial={false}
+          animate={reduceMotion ? undefined : "visible"}
+        >
+          {providers.map(({ provider, label, enabled }) => {
+            const isActive = activeProvider === provider;
+            const isDisabled = disabled || activeProvider !== null;
+
+            return (
+              <motion.button
+                key={provider}
+                type="button"
+                className={`social-login-provider social-login-provider--${provider}${stacked ? " social-login-provider--chip" : ""}${isActive ? " is-active" : ""}${enabled ? "" : " is-pending"}`}
+                disabled={isDisabled}
+                onClick={() => void begin(provider, enabled)}
+                title={enabled ? `Continue with ${label}` : `${label} coming soon`}
+                aria-label={isActive ? `Opening ${label}` : enabled ? `Continue with ${label}` : `${label} coming soon`}
+                variants={reduceMotion ? undefined : buttonVariants}
+                whileHover={reduceMotion || isDisabled ? undefined : { y: -1, scale: 1.02 }}
+                whileTap={reduceMotion || isDisabled ? undefined : { scale: 0.98 }}
+                layout={!reduceMotion}
+              >
+                <span className="social-login-provider-mark" aria-hidden="true">
+                  <SocialProviderLogo provider={provider} size={LOGO_SIZE} />
+                </span>
+                {stacked ? (
+                  <span className="social-login-provider-copy">
+                    <strong>{label}</strong>
+                    <small>{enabled ? "Continue" : "Coming soon"}</small>
+                  </span>
+                ) : null}
+              </motion.button>
+            );
+          })}
+        </motion.div>
+        {message ? (
+          <p className="social-login-note" role="status">
+            {message}
+          </p>
+        ) : null}
+      </section>
+    </>
   );
 }
