@@ -110,14 +110,14 @@ CHECKOV: NOT_RUN  (local checkov.exe missing; no infra/config change this turn �
 
 ## 9. Final commits (this closure)
 
-See git log after commit step. Intended logical set:
+1. `178cbd3c` — `feat(feed): project private attachment storage paths`
+2. `b6135953` — `fix(feed): batch sign private attachment URLs`
+3. `b38dc4db` — `perf(feed): prevent ranked refresh on item merges`
+4. `588d1de6` — `test(feed): cover private attachment hosted access`
+5. `ed1141de` — `chore(feed): normalize storage security smoke command`
+6. `77603349` — `docs(feed): record private attachment staging closure`
 
-1. `feat(feed): project private attachment storage paths`
-2. `fix(feed): batch sign private attachment URLs`
-3. `perf(feed): prevent ranked refresh on item merges`
-4. `test(feed): cover private attachment hosted access`
-5. `chore(feed): normalize storage security smoke command`
-6. `docs(feed): record private attachment staging closure`
+Note: repository worktree still has unrelated dirty files outside Feed scope; Feed closure commits themselves are clean.
 
 ## 10. Fresh package / hash
 
