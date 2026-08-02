@@ -19,8 +19,8 @@ const dangerousPatterns = [
   /SIGNING_KEY/i,
   /PRIVATE_KEY/i,
   /AUTH_TOKEN\s*=/i,
-  /PASSWORD\s*=/i,
-  /COOKIE\s*=/i,
+  /\bPASSWORD\s*=/i,
+  /\bCOOKIE\s*=/i,
   /AUTHORIZATION\s*=/i
 ];
 
