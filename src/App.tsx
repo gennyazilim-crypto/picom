@@ -1,15 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { currentUserId as mockCurrentUserId, mockCommunities } from "./data/mockCommunities";
-import { currentUserFollowedUserIds, mockPopularUserIds } from "./data/mockFollows";
-import { mockMentionItems } from "./data/mockMentions";
 import { getMockProfileForMember } from "./data/mockProfiles";
 import { mockDirectConversations } from "./data/mockDirectMessages";
-import { mockFriendState } from "./data/mockFriends";
-import { mockUpcomingEvents } from "./data/mockEvents";
 import { communityEventService, type CreateCommunityEventInput, type UpdateCommunityEventInput } from "./services/communityEventService";
-import { mockFollowedUserStories } from "./data/mockStories";
+import { eventService } from "./services/eventService";
+import type { UpcomingEvent } from "./types/events";
 import { mockFollowSuggestions } from "./data/mockFollowSuggestions";
+import { normalizeFollowUserIds } from "./services/onboarding/onboardingService";
 import type { Attachment, ChannelCategory, Community, Member, Message } from "./types/community";
 import type { DirectConversation, DirectMessage, DirectMessageAttachment, DirectSharedMediaItem } from "./types/directMessages";
 import type { FriendState, FriendViewTab } from "./types/friends";
@@ -19,7 +17,6 @@ import { presencePreferenceService } from "./services/presence/presencePreferenc
 import { activityPresenceService } from "./services/presence/activityPresenceService";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "./types/mentions";
 import type { ProfileActivityItem, UserProfile } from "./types/profile";
-import type { FollowedUserStory } from "./types/stories";
 import type { CommunityAccess } from "./types/communityAccess";
 import type { OnboardingCompletion } from "./types/onboarding";
 import { AppIcon } from "./components/AppIcon";
@@ -27,6 +24,7 @@ import { mvpUiIconMap } from "./components/iconRegistry";
 import { DesktopAppShell } from "./components/DesktopAppShell";
 import { SoftEmailVerificationBanner } from "./components/SoftEmailVerificationBanner";
 import { AuthenticatedAppShell } from "./components/navigation/AuthenticatedAppShell";
+import { useWebNavigationOptional } from "./web/WebNavigationContext";
 import { resolveGlobalNavigationKey } from "./services/navigation/globalNavigationRegistry";
 import { isV1ChannelTypeEnabled, isV1CommunityKindEnabled, isV1DeepLinkTypeEnabled, isV1FeatureEnabled, isV1GlobalNavigationEnabled, isV1SearchCategoryEnabled } from "./config/v1ReleaseScope";
 import { settingsNavigationPolicyService, type UserSettingsSection } from "./services/navigation/settingsNavigationPolicyService";
@@ -51,7 +49,8 @@ import { ToastStack } from "./components/ToastStack";
 
 
 import { LoginScreen } from "./components/LoginScreen";
-import { RegisterScreen } from "./components/RegisterScreen";
+import { accountCenterUrls } from "./config/accountCenterUrls";
+import { externalLinkService } from "./services/desktop/externalLinkService";
 import { FirstLaunchSetup } from "./components/firstLaunch/FirstLaunchSetup";
 import { MaintenanceStatusBanner, MaintenanceStatusView } from "./components/MaintenanceStatusView";
 import type { CreateCommunityFormValue, CreateCommunitySubmitResult } from "./components/CreateCommunityModal";
@@ -61,7 +60,6 @@ import type { Channel } from "./types/community";
 import type { MemberModerationAction } from "./types/memberModeration";
 import type { ReportRecord } from "./types/reports";
 import { AppLockScreen } from "./components/AppLockScreen";
-import { MentionRightPanel } from "./components/MentionRightPanel";
 import { useDirectMessageRealtime } from "./hooks/useDirectMessageRealtime";
 import { useVoiceCallInvites } from "./hooks/useVoiceCallInvites";
 import type { DmCall, DmCallRuntimeState, DmCallType } from "./types/dmCalls";
@@ -76,7 +74,6 @@ import { messageDraftService } from "./services/messageDraftService";
 import { directAttachmentUploadService } from "./services/directMessages/directAttachmentUploadService";
 import { relationshipService } from "./services/relationshipService";
 import { mentionFeedService } from "./services/mentionFeedService";
-import { storyService } from "./services/storyService";
 import { feedUiStateService } from "./services/feed/feedUiStateService";
 import { feedMentionCacheService } from "./services/feed/feedMentionCacheService";
 import { feedRealtimeService } from "./services/feed/feedRealtimeService";
@@ -100,6 +97,7 @@ import { notificationCenterService, type NotificationCenterItem } from "./servic
 import { notificationPolicyStateService } from "./services/notificationPolicyStateService";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
+import { feedMessageDeepLinkService } from "./services/feed/feedMessageDeepLinkService";
 import { diagnosticsService } from "./services/diagnosticsService";
 import { feedbackService } from "./services/feedbackService";
 import { loggingService } from "./services/loggingService";
@@ -133,6 +131,7 @@ import { communityRoleManagementService } from "./services/community/communityRo
 import { messageService, type MessageSummary } from "./services/messageService";
 import { reactionService } from "./services/reactionService";
 import { messageSendQueueService } from "./services/messageSendQueueService";
+import { isMessageSendError } from "./services/messageSendObservability";
 import { messageHistoryExportService } from "./services/messageHistoryExportService";
 import { messageModerationFilterService } from "./services/messageModerationFilterService";
 import { offlineSyncConflictService } from "./services/offlineSyncConflictService";
@@ -149,6 +148,8 @@ import { notificationService } from "./services/notificationService";
 import type { VoiceServiceSnapshot } from "./services/voiceService";
 import type { ActiveVoiceRoomSummary } from "./types/voiceDiscovery";
 import { activeVoiceRoomDiscoveryService } from "./services/activeVoiceRoomDiscoveryService";
+import { liveScreenShareService } from "./services/live/liveScreenShareService";
+import type { LiveScreenShareSummary } from "./types/liveScreenShare";
 import type { VoiceRoomOccupancy } from "./types/voiceDiscovery";
 import {
   notificationPermissionOnboardingService,
@@ -167,6 +168,7 @@ import { useSupabaseTypingBroadcast } from "./hooks/useSupabaseTypingBroadcast";
 import { useRootDashboardAccess } from "./hooks/useRootDashboardAccess";
 import { readStateService } from "./services/supabase/readStateService";
 import { createCommunityFromSummary } from "./utils/communityFactory";
+import { communityDiscoveryService } from "./services/communityDiscoveryService";
 import { resolveCommunityIcon } from "./utils/generatedIdentity";
 import { messageMentionsUser } from "./utils/mentionUtils";
 import { canManageChannels, canSendMessage, canViewChannel, filterCommunityForAccess, getCommunityAccess, getVisibleChannelsForCurrentUser } from "./services/permissions/communityPermissions";
@@ -184,10 +186,16 @@ function isSupabaseEntityId(id: string): boolean {
 const SettingsModal = lazy(() => import("./components/SettingsModal").then((module) => ({ default: module.SettingsModal })));
 const GlobalAudioMiniPlayer = lazy(() => import("./components/audio/GlobalAudioMiniPlayer").then((module) => ({ default: module.GlobalAudioMiniPlayer })));
 const GlobalEventsWorkspace = lazy(() => import("./components/navigation/GlobalEventsWorkspace").then((module) => ({ default: module.GlobalEventsWorkspace })));
+const LiveWorkspace = lazy(() => import("./components/live/LiveWorkspace").then((m) => ({ default: m.LiveWorkspace })));
+const LiveWatchWorkspace = lazy(() => import("./components/live/LiveWatchWorkspace").then((m) => ({ default: m.LiveWatchWorkspace })));
+const GoLiveWorkspace = lazy(() => import("./components/live/GoLiveWorkspace").then((m) => ({ default: m.GoLiveWorkspace })));
+const CreatorStudioWorkspace = lazy(() => import("./components/live/CreatorStudioWorkspace").then((m) => ({ default: m.CreatorStudioWorkspace })));
 const HelpSupportWorkspace = lazy(() => import("./components/support/HelpSupportWorkspace").then((module) => ({ default: module.HelpSupportWorkspace })));
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
-const ProfileView = lazy(() => import("./components/ProfileView").then((module) => ({ default: module.ProfileView })));
+const BroadcasterChannelView = lazy(() =>
+  import("./components/live/BroadcasterChannelView").then((module) => ({ default: module.BroadcasterChannelView })),
+);
 const DirectMessagesView = lazy(() => import("./components/DirectMessagesView").then((module) => ({ default: module.DirectMessagesView })));
 const RadioCommunityShell = lazy(() => import("./components/audio/RadioCommunityShell").then((module) => ({ default: module.RadioCommunityShell })));
 const PodcastCommunityShell = lazy(() => import("./components/audio/PodcastCommunityShell").then((module) => ({ default: module.PodcastCommunityShell })));
@@ -242,6 +250,11 @@ function mapTrayStatusToMemberStatus(status: TrayStatus): Member["status"] {
   return status === "invisible" ? "offline" : status;
 }
 
+function mapTrayStatusToProfileStatus(status: TrayStatus): UserProfile["status"] {
+  if (status === "dnd") return "busy";
+  return status === "invisible" ? "offline" : status;
+}
+
 type PaletteResult = {
   id: string;
   group: string;
@@ -251,7 +264,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "support" | "rootPanel";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "live" | "support" | "rootPanel";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
   return communityNavigationService.getShellView(kind);
@@ -395,6 +408,7 @@ function CommandPalette({
 }
 
 export function App() {
+  const webNavigation = useWebNavigationOptional();
   // Warm settings first so corrupted local JSON can force Safe Mode before startup state is read.
   const warmedSettings = settingsService.getSettings();
   const startupSafeMode = safeModeService.getStartupState();
@@ -417,18 +431,27 @@ export function App() {
   const toggleTheme = () => applyManualTheme(theme === "light" ? "dark" : "light");
   const [trayPresenceStatus, setTrayPresenceStatus] = useState<TrayStatus>(() => presencePreferenceService.get());
   const [liveActivityStatusText, setLiveActivityStatusText] = useState<string | null>(() => activityPresenceService.getLiveStatusText());
-  const [authView, setAuthView] = useState<"login" | "register">("login");
-  const [passwordRecoveryMode, setPasswordRecoveryMode] = useState(false);
-  const [passwordRecoveryMessage, setPasswordRecoveryMessage] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<ActiveView>(() =>
-    toLegacyActiveView(AUTHENTICATED_DEFAULT_VIEW),
-  );
+  // Desktop auth is login-only; registration lives on account.picom.gg.
+  const [activeView, setActiveView] = useState<ActiveView>(() => {
+    if (typeof window !== "undefined" && webNavigation?.parsed.activeView) {
+      return webNavigation.parsed.activeView as ActiveView;
+    }
+    return toLegacyActiveView(AUTHENTICATED_DEFAULT_VIEW);
+  });
+  const [liveWatchSessionId, setLiveWatchSessionId] = useState<string | null>(null);
+  const [goLiveOpen, setGoLiveOpen] = useState(false);
+  const [creatorStudioSessionId, setCreatorStudioSessionId] = useState<string | null>(null);
   const [isActiveMessageListNearBottom, setIsActiveMessageListNearBottom] = useState(true);
-  const [mentionItems, setMentionItems] = useState<MentionItem[]>(mockMentionItems);
-  const [storyItems, setStoryItems] = useState<FollowedUserStory[]>(() => feedUiStateService.applySeenState(mockFollowedUserStories));
+  const [mentionItems, setMentionItems] = useState<MentionItem[]>([]);
+  const [mentionFeedCursor, setMentionFeedCursor] = useState<string | null>(null);
+  const [mentionFeedHasMore, setMentionFeedHasMore] = useState(false);
+  const [mentionFeedLoadingMore, setMentionFeedLoadingMore] = useState(false);
+  const [mentionFeedStatus, setMentionFeedStatus] = useState<"loading" | "ready" | "empty" | "error" | "offline">("loading");
+  const [pendingNewMentionCount, setPendingNewMentionCount] = useState(0);
+  const mentionFeedLoadSeq = useRef(0);
   const [mentionTab, setMentionTab] = useState<MentionFeedTab>(() => feedUiStateService.getSelection().tab);
   const [mentionQuickFilter, setMentionQuickFilter] = useState<MentionQuickFilter | null>(() => feedUiStateService.getSelection().filter);
-  const [followedUserIds, setFollowedUserIds] = useState<string[]>(currentUserFollowedUserIds);
+  const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
   const followMutationInFlightRef = useRef(new Set<string>());
   const friendsReturnViewRef = useRef<ActiveView>("community");
   const openDirectMessagesRef = useRef<(userId?: string) => void>(() => undefined);
@@ -443,13 +466,25 @@ export function App() {
   const [profileReloadVersion,setProfileReloadVersion]=useState(0);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
-  const [activeDirectConversationId, setActiveDirectConversationId] = useState(mockDirectConversations[0]?.id ?? "");
-  const [friendState, setFriendState] = useState<FriendState>(mockFriendState);
+  // Supabase DM history requires real UUIDs — never seed the active id from mock "dm-*" keys.
+  const [activeDirectConversationId, setActiveDirectConversationId] = useState(() => (dataSourceService.getStatus().isSupabase ? "" : mockDirectConversations[0]?.id ?? ""));
+  const [friendState, setFriendState] = useState<FriendState>({ counts: { friends: 0, incoming: 0, outgoing: 0, pending: 0 }, friends: [], requests: [], suggestions: [] });
   const [profileRelationshipBusyUserId, setProfileRelationshipBusyUserId] = useState<string | null>(null);
   const [friendsViewTab, setFriendsViewTab] = useState<FriendViewTab>("all");
   const [savedMessages, setSavedMessages] = useState<SavedMessageRecord[]>(() => savedMessageService.listSavedMessages());
   useEffect(() => { let active = true; const refresh = () => { void savedMessageService.getSavedMessages().then((items) => { if (active) setSavedMessages(items); }); }; refresh(); const unsubscribe = savedMessageService.subscribe(refresh); return () => { active = false; unsubscribe(); }; }, []);
-  const [communityEvents, setCommunityEvents] = useState(mockUpcomingEvents);
+  const [communityEvents, setCommunityEvents] = useState<UpcomingEvent[]>([]);
+  useEffect(() => {
+    let active = true;
+    const refresh = () => {
+      void eventService.listEvents({ filter: "upcoming", limit: 100 }).then((events) => {
+        if (active) setCommunityEvents(events);
+      }).catch(() => undefined);
+    };
+    refresh();
+    const unsubscribe = eventService.subscribe(refresh);
+    return () => { active = false; unsubscribe(); };
+  }, []);
   const [voiceSnapshot, setVoiceSnapshot] = useState<VoiceServiceSnapshot>(initialVoiceSnapshot);
   const [activeDirectCall, setActiveDirectCall] = useState<DmCall | null>(null);
   const [directScreenPickerOpen, setDirectScreenPickerOpen] = useState(false);
@@ -461,6 +496,8 @@ export function App() {
   const [notificationPolicyState, setNotificationPolicyState] = useState(() => notificationPolicyStateService.getSnapshot());
   const [paletteEntityResults, setPaletteEntityResults] = useState<AdvancedSearchResult[]>([]);
   const [paletteSearchLoading, setPaletteSearchLoading] = useState(false);
+  const [profileOpenFallback, setProfileOpenFallback] = useState<Member | null>(null);
+  const discoveryMembershipReadyRef = useRef<(communityId: string) => Promise<void>>(async () => undefined);
   useEffect(() => notificationPolicyStateService.subscribe(setNotificationPolicyState), []);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
@@ -575,7 +612,10 @@ export function App() {
     notice: authNotice,
     session: authSession,
     signIn: handleLogin,
-    register: handleRegister,
+    verifyMfa: handleVerifyMfa,
+    cancelMfa: handleCancelMfa,
+    mfaRequired,
+    mfaError,
     clearError: clearAuthError,
     signOut: handleLogout,
   } = useProtectedDesktopSession(pushToast);
@@ -583,6 +623,27 @@ export function App() {
   const currentUserId = isSupabaseMode ? authSession?.user?.id ?? mockCurrentUserId : mockCurrentUserId;
   const directMessageUserId = currentUserId;
   const [remoteVoiceOccupancyByChannelId, setRemoteVoiceOccupancyByChannelId] = useState<Record<string, VoiceRoomOccupancy>>({});
+  const [liveActiveCount, setLiveActiveCount] = useState(0);
+  useEffect(() => {
+    if (!authSession) {
+      setLiveActiveCount(0);
+      return;
+    }
+    let cancelled = false;
+    const refresh = () => {
+      void liveScreenShareService.countVisibleLiveShares().then((result) => {
+        if (!cancelled && result.ok) setLiveActiveCount(result.data);
+      });
+    };
+    refresh();
+    const unsub = liveScreenShareService.subscribeToVisibleLiveShares(() => refresh());
+    const timer = window.setInterval(refresh, 30000);
+    return () => {
+      cancelled = true;
+      unsub();
+      window.clearInterval(timer);
+    };
+  }, [authSession?.user?.id]);
   const activeVoiceRooms = useMemo(
     () => activeVoiceRoomDiscoveryService.getVisibleRooms({
       communities,
@@ -602,17 +663,45 @@ export function App() {
     [activeCommunity, currentUserId, remoteVoiceOccupancyByChannelId, voiceSnapshot],
   );
 
-  useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);  useEffect(() => { if (!authSession || !activeDirectConversationId || !dataSourceService.getStatus().isSupabase) return; let active = true; void Promise.all([directMessageService.getDirectMessages(activeDirectConversationId), directMessageService.getDirectSharedMedia(activeDirectConversationId, { limit: 24 })]).then(([messages, media]) => { if (!active) return; if (!messages.ok) { pushToast(messages.error.message, "error"); return; } setDirectConversations((current) => current.map((conversation) => conversation.id === activeDirectConversationId ? { ...conversation, messages: messages.data, sharedMedia: media.ok ? media.data.items : conversation.sharedMedia } : conversation)); }); return () => { active = false; }; }, [activeDirectConversationId, authSession?.user?.id, pushToast]);
+  useEffect(() => { if (!authSession || !dataSourceService.getStatus().isSupabase) return; let active = true; void directMessageService.loadDirectConversations().then((result) => { if (!active) return; if (result.ok) { setDirectConversations((current) => result.data.map((summary) => { const existing = current.find((item) => item.id === summary.id); return { ...summary, messages: existing?.messages ?? [], sharedMedia: existing?.sharedMedia }; })); setActiveDirectConversationId((current) => result.data.some((item) => item.id === current) ? current : result.data[0]?.id ?? ""); } else pushToast(result.error.message, "error"); }); return () => { active = false; }; }, [authSession?.user?.id, pushToast]);
+  useEffect(() => {
+    if (!authSession || !activeDirectConversationId || !dataSourceService.getStatus().isSupabase) return;
+    // Ignore mock / non-UUID ids so we never toast "Could not load direct messages" during bootstrap.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeDirectConversationId)) return;
+    let active = true;
+    void Promise.all([
+      directMessageService.getDirectMessages(activeDirectConversationId),
+      directMessageService.getDirectSharedMedia(activeDirectConversationId, { limit: 24 }),
+    ]).then(([messages, media]) => {
+      if (!active) return;
+      if (!messages.ok) {
+        if (messages.error.code !== "VALIDATION_ERROR") pushToast(messages.error.message, "error");
+        return;
+      }
+      setDirectConversations((current) => current.map((conversation) => conversation.id === activeDirectConversationId
+        ? { ...conversation, messages: messages.data, sharedMedia: media.ok ? media.data.items : conversation.sharedMedia }
+        : conversation));
+    });
+    return () => { active = false; };
+  }, [activeDirectConversationId, authSession?.user?.id, pushToast]);
   useEffect(() => {
     if (safeMode.active || !authSession || !dataSourceService.getStatus().isSupabase) return;
     let active = true;
-    void Promise.all([mentionFeedService.listPage({ limit: 60 }), relationshipService.getFollowing(), storyService.listPage({ limit: 40 })]).then(([feed, following, stories]) => {
-      if (!active) return;
-      if (feed.ok) setMentionItems(feedMentionCacheService.replace(feed.data.items));
-      else pushToast(feed.error.message, "error");
+    const seq = ++mentionFeedLoadSeq.current;
+    setMentionFeedStatus("loading");
+    void Promise.all([mentionFeedService.listPage({ limit: 40 }), relationshipService.getFollowing()]).then(([feed, following]) => {
+      if (!active || seq !== mentionFeedLoadSeq.current) return;
+      if (feed.ok) {
+        setMentionItems(feedMentionCacheService.replace(feed.data.items));
+        setMentionFeedCursor(feed.data.nextCursor);
+        setMentionFeedHasMore(feed.data.hasMore);
+        setMentionFeedStatus(feed.data.items.length ? "ready" : "empty");
+        setPendingNewMentionCount(0);
+      } else {
+        setMentionFeedStatus("error");
+        pushToast("Could not load activity.", "error");
+      }
       if (following.ok) setFollowedUserIds(following.data);
-      if (stories.ok) setStoryItems(stories.data.items);
-      else pushToast(stories.error.message, "error");
     });
     return () => { active = false; };
   }, [authSession?.user?.id, pushToast]);
@@ -625,10 +714,26 @@ export function App() {
     feedMentionCacheService.reset(userId);
     const refresh = (reason: "change" | "reconnect") => {
       if (refreshInFlight) return refreshInFlight;
-      refreshInFlight = mentionFeedService.listPage({ limit: 60 }).then((result) => {
+      refreshInFlight = mentionFeedService.listPage({ limit: 40 }).then((result) => {
         if (!active) return;
-        if (result.ok) setMentionItems((current) => feedMentionCacheService.replace(result.data.items, current));
-        loggingService.logInfo("Feed realtime refresh completed", { reason, ok: result.ok, cacheSize: feedMentionCacheService.diagnostics().size }, "mention-feed");
+        if (!result.ok) {
+          loggingService.logInfo("Feed realtime refresh failed", { reason, ok: false }, "mention-feed");
+          return;
+        }
+        if (reason === "reconnect") {
+          setMentionItems(feedMentionCacheService.replace(result.data.items));
+          setMentionFeedCursor(result.data.nextCursor);
+          setMentionFeedHasMore(result.data.hasMore);
+          setMentionFeedStatus(result.data.items.length ? "ready" : "empty");
+          setPendingNewMentionCount(0);
+        } else {
+          setMentionItems((current) => {
+            const merged = feedMentionCacheService.mergeRealtimeHead(result.data.items, current);
+            if (merged.added > 0) setPendingNewMentionCount((count) => count + merged.added);
+            return merged.items;
+          });
+        }
+        loggingService.logInfo("Feed realtime refresh completed", { reason, ok: true, cacheSize: feedMentionCacheService.diagnostics().size }, "mention-feed");
       }).finally(() => { refreshInFlight = null; });
       return refreshInFlight;
     };
@@ -740,9 +845,14 @@ export function App() {
     let canceled = false;
     setLegalAcceptancePhase("checking");
     setLegalAcceptanceError(null);
-    void termsAcceptanceService.getStatus(legalAcceptanceUserId).then((status) => {
-      if (!canceled) setLegalAcceptancePhase(status.accepted ? "accepted" : "required");
-    });
+    void termsAcceptanceService.getStatus(legalAcceptanceUserId)
+      .then((status) => {
+        if (!canceled) setLegalAcceptancePhase(status.accepted ? "accepted" : "required");
+      })
+      .catch(() => {
+        // Never leave the shell stuck on "Checking policy version...".
+        if (!canceled) setLegalAcceptancePhase("required");
+      });
     return () => { canceled = true; };
   }, [legalAcceptanceUserId]);
   const acceptUpdatedLegalTerms = useCallback(async () => {
@@ -764,17 +874,55 @@ export function App() {
 
     let canceled = false;
     setOnboardingPhase("checking");
-    void onboardingService.getState(onboardingUserId).then((result) => {
-      if (canceled) return;
-      setOnboardingPhase(result.ok && result.data.completed ? "complete" : "required");
-    });
-    return () => { canceled = true; };
+    void onboardingService.getState(onboardingUserId)
+      .then((result) => {
+        if (canceled) return;
+        setOnboardingPhase(result.ok && result.data.completed ? "complete" : "required");
+      })
+      .catch(() => {
+        if (!canceled) setOnboardingPhase("required");
+      });
+    return () => {
+      canceled = true;
+    };
   }, [onboardingUserId]);
 
   useEffect(() => {
     const intent = authenticatedEntryRouter.onSessionChanged(authSession?.user?.id ?? null);
     if (intent) setActiveView(toLegacyActiveView(intent.route));
   }, [authSession?.user?.id]);
+
+  useEffect(() => {
+    if (!webNavigation) return;
+    const fromPath = webNavigation.parsed.activeView;
+    if (fromPath && fromPath !== activeView && !webNavigation.parsed.isAuthRoute) {
+      // Honor direct URL entry (/live, /events, …) without fighting in-app navigation mid-transition.
+      if (fromPath === "live" || fromPath === "events" || fromPath === "friends" || fromPath === "savedMessages" || fromPath === "discovery" || fromPath === "profile") {
+        setActiveView(fromPath);
+      }
+    }
+    const watchId = webNavigation.parsed.params.liveSessionId?.trim() || liveWatchSessionId;
+    const studioId = webNavigation.parsed.params.studioSessionId?.trim() || creatorStudioSessionId;
+    const openGoLive = Boolean(webNavigation.parsed.params.goLive || goLiveOpen);
+    if (webNavigation.parsed.params.goLive) setGoLiveOpen(true);
+    if (webNavigation.parsed.params.studioSessionId) setCreatorStudioSessionId(webNavigation.parsed.params.studioSessionId);
+    const profileUsername =
+      activeView === "profile"
+        ? (webNavigation.parsed.params.username || profileSettings.username || undefined)
+        : undefined;
+    webNavigation.syncFromApp(
+      activeView,
+      activeView === "live"
+        ? {
+            ...(studioId ? { studioSessionId: studioId } : {}),
+            ...(openGoLive && !studioId && !watchId ? { goLive: true } : {}),
+            ...(watchId && !studioId && !openGoLive ? { liveSessionId: watchId } : {}),
+          }
+        : activeView === "profile" && profileUsername
+          ? { username: profileUsername }
+          : {},
+    );
+  }, [activeView, liveWatchSessionId, goLiveOpen, creatorStudioSessionId, profileSettings.username, webNavigation?.currentPath, webNavigation?.parsed.params.liveSessionId, webNavigation?.parsed.params.goLive, webNavigation?.parsed.params.studioSessionId, webNavigation?.parsed.params.username]);
   const { membersVisible, toggleMembersVisible } = useMemberSidebarState(true);
   const { participantsVisible, toggleParticipantsVisible } = useVoiceParticipantsRailState(false);
   const currentUser = activeCommunity.members.find((member) => member.userId === currentUserId) ?? { ...fallbackCurrentUser, userId: currentUserId };
@@ -789,18 +937,6 @@ export function App() {
     const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
     return Boolean(channel && canViewChannel(access, channel));
   }), [blockedUserIds, communities, mentionItems, notificationPolicyState]);
-  const visibleStoryItems = useMemo(() => storyItems.filter((item) => {
-    if (blockedUserIds.includes(item.authorId)) return false;
-    if (item.communityId && notificationPolicyState.mutedCommunityIds.includes(item.communityId)) return false;
-    if (item.channelId && notificationPolicyState.mutedChannelIds.includes(item.channelId)) return false;
-    if (!item.communityId) return true;
-    const community = communities.find((candidate) => candidate.id === item.communityId);
-    if (!community) return false;
-    const access = getCommunityAccess(currentUserId, community);
-    if (!item.channelId) return access.isMember || access.canViewPublicContent;
-    const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
-    return Boolean(channel && canViewChannel(access, channel));
-  }), [blockedUserIds, communities, notificationPolicyState, storyItems]);
   const visibleCommunityEvents = useMemo(() => communityEvents.filter((item) => {
     if (notificationPolicyState.mutedCommunityIds.includes(item.communityId)) return false;
     if (item.channelId && notificationPolicyState.mutedChannelIds.includes(item.channelId)) return false;
@@ -896,6 +1032,7 @@ export function App() {
   const supabaseMessagesLoadedRef = useRef(new Set<string>());
   const supabaseMembersLoadedRef = useRef(new Set<string>());
   const supabaseRolesLoadedRef = useRef(new Set<string>());
+  const membersFetchRequestIdRef = useRef(0);
   const [sidebarReloadNonce, setSidebarReloadNonce] = useState(0);
   const messageHighlightTimerRef = useRef<number | null>(null);
 
@@ -1032,7 +1169,22 @@ export function App() {
         mentionCount: getLocalMentionCount(message.body, currentUser),
       });
     }
-  }, [activeChannel.id, activeCommunity.id, activeView, currentUser, isActiveMessageListNearBottom, markChannelUnread, upsertLocalMessage]);
+
+    // Refresh roster only after a successful hydrate that still missed this author.
+    // While `members` is empty, listMembers is already in flight (or about to run).
+    // Deleting the loaded gate + bumping membershipSyncVersion here cancels that fetch
+    // on every chat message and can starve the sidebar so only the owner placeholder remains.
+    if (
+      message.communityId === activeCommunity.id
+      && message.authorId !== currentUser.userId
+      && activeCommunity.members.length > 0
+      && supabaseMembersLoadedRef.current.has(activeCommunity.id)
+      && !activeCommunity.members.some((member) => member.userId === message.authorId)
+    ) {
+      supabaseMembersLoadedRef.current.delete(activeCommunity.id);
+      setMembershipSyncVersion((version) => version + 1);
+    }
+  }, [activeChannel.id, activeCommunity.id, activeCommunity.members, activeView, currentUser, isActiveMessageListNearBottom, markChannelUnread, upsertLocalMessage]);
 
   const handleRealtimeMessageUpdate = useCallback((message: MessageSummary) => {
     // Community-wide realtime: accept edits/soft-deletes for ANY channel of the community, not
@@ -1182,7 +1334,7 @@ export function App() {
     const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === activeProfileUserId) ?? null;
     if (member) {
       if (member.userId !== directMessageUserId) return member;
-      return { ...member, username: profileSettings.username || member.username, displayName: profileSettings.displayName || member.displayName, avatarUrl: profileSettings.avatarUrl === null ? "" : profileSettings.avatarUrl || member.avatarUrl, status: (profileSettings.status === "busy" ? "dnd" : profileSettings.status) as typeof member.status, statusText: liveActivityStatusText || profileSettings.statusText || member.statusText, bio: profileSettings.bio || member.bio };
+      return { ...member, username: profileSettings.username || member.username, displayName: profileSettings.displayName || member.displayName, avatarUrl: profileSettings.avatarUrl === null ? "" : profileSettings.avatarUrl || member.avatarUrl, status: mapTrayStatusToMemberStatus(trayPresenceStatus), statusText: liveActivityStatusText || profileSettings.statusText || trayPresenceLabels[trayPresenceStatus] || member.statusText, bio: profileSettings.bio || member.bio };
     }
     const friend = friendState.friends.find((candidate) => candidate.userId === activeProfileUserId);
     if (friend) {
@@ -1199,19 +1351,22 @@ export function App() {
       } satisfies Member;
     }
     const conversation = directConversations.find((candidate) => candidate.participantUserId === activeProfileUserId);
-    if (!conversation) return null;
-    return {
-      id: `dm-peer-${conversation.participantUserId}`,
-      userId: conversation.participantUserId,
-      displayName: conversation.participantName,
-      username: conversation.participantUsername,
-      avatarSeed: conversation.participantUsername,
-      avatarUrl: conversation.participantAvatarUrl,
-      status: conversation.participantStatus,
-      statusText: conversation.participantStatusText,
-      roleId: "member",
-    } satisfies Member;
-  }, [activeProfileUserId, communities, directConversations, directMessageUserId, friendState.friends, liveActivityStatusText, profileSettings]);
+    if (conversation) {
+      return {
+        id: `dm-peer-${conversation.participantUserId}`,
+        userId: conversation.participantUserId,
+        displayName: conversation.participantName,
+        username: conversation.participantUsername,
+        avatarSeed: conversation.participantUsername,
+        avatarUrl: conversation.participantAvatarUrl,
+        status: conversation.participantStatus,
+        statusText: conversation.participantStatusText,
+        roleId: "member",
+      } satisfies Member;
+    }
+    if (profileOpenFallback?.userId === activeProfileUserId) return profileOpenFallback;
+    return null;
+  }, [activeProfileUserId, communities, directConversations, directMessageUserId, friendState.friends, liveActivityStatusText, profileOpenFallback, profileSettings, trayPresenceStatus]);
 
   useEffect(() => {
     if (!activeProfileUserId || !selectedProfileMember || !dataSourceService.getStatus().isSupabase) {
@@ -1246,13 +1401,17 @@ export function App() {
     const profile = profilePrivacyService.applyProjection(sourceProfile,projection);
     const friend = friendState.friends.some((candidate) => candidate.userId === profile.id);
     const request = friendState.requests.find((candidate) => candidate.userId === profile.id);
-    const ownOverrides = profile.id === directMessageUserId ? { username: profileSettings.username || profile.username, displayName: profileSettings.displayName || profile.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? profile.avatarUrl, coverUrl: profileSettings.coverUrl === null ? undefined : profileSettings.coverUrl ?? profile.coverUrl, status: profileSettings.status, statusText: liveActivityStatusText || profileSettings.statusText || profile.statusText, bio: profileSettings.bio || profile.bio, location: profileSettings.location || profile.location, timezone: profileSettings.timezone || profile.timezone, preferredLanguage: profileSettings.preferredLanguage || profile.preferredLanguage, tags: profileSettings.tags.length ? profileSettings.tags : profile.tags } : {};
+    const ownOverrides = profile.id === directMessageUserId ? { username: profileSettings.username || profile.username, displayName: profileSettings.displayName || profile.displayName, avatarUrl: profileSettings.avatarUrl === null ? undefined : profileSettings.avatarUrl ?? profile.avatarUrl, coverUrl: profileSettings.coverUrl === null ? undefined : profileSettings.coverUrl ?? profile.coverUrl, status: mapTrayStatusToProfileStatus(trayPresenceStatus), statusText: liveActivityStatusText || profileSettings.statusText || trayPresenceLabels[trayPresenceStatus] || profile.statusText, bio: profileSettings.bio || profile.bio, location: profileSettings.location || profile.location, timezone: profileSettings.timezone || profile.timezone, preferredLanguage: profileSettings.preferredLanguage || profile.preferredLanguage, tags: profileSettings.tags.length ? profileSettings.tags : profile.tags } : {};
     const isFollowing = profile.id !== directMessageUserId && followedUserIds.includes(profile.id);
-    const initialMockFollowing = currentUserFollowedUserIds.includes(profile.id);
+    const initialMockFollowing = false;
     const followerDelta = dataSourceService.getStatus().isMock ? Number(isFollowing) - Number(initialMockFollowing) : 0;
     return { ...profile, ...ownOverrides, isFollowing, stats: { ...profile.stats, followers: Math.max(0, profile.stats.followers + followerDelta) }, verificationBadges: profileVerificationBadges, friendshipStatus: friend ? "friends" as const : request?.direction === "incoming" ? "incoming" as const : request?.direction === "outgoing" ? "outgoing" as const : "none" as const };
-  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, liveActivityStatusText, profilePrivacyProjection, profilePrivacySubjectId, profileSettings, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember]);
+  }, [activeProfileUserId, communities, directMessageUserId, followedUserIds, friendState.friends, friendState.requests, liveActivityStatusText, profilePrivacyProjection, profilePrivacySubjectId, profileSettings, profileVerificationBadges, remoteProfileSubjectId, remoteUserProfile, selectedProfileMember, trayPresenceStatus]);
 
+  useEffect(() => {
+    if (!activeProfileUserId) setProfileOpenFallback(null);
+    else if (profileOpenFallback && profileOpenFallback.userId !== activeProfileUserId) setProfileOpenFallback(null);
+  }, [activeProfileUserId, profileOpenFallback]);
   useEffect(()=>{if(!activeProfileUserId){setProfileVerificationBadges([]);return;}let active=true;void profileVerificationService.listForSubject("user",activeProfileUserId).then((result)=>{if(active)setProfileVerificationBadges(result.ok?result.data:[])});return()=>{active=false};},[activeProfileUserId]);
   useEffect(()=>{if(!activeProfileUserId){setProfilePrivacyProjection(defaultProfilePrivacyProjection);setProfilePrivacySubjectId(null);return;}const subjectId=activeProfileUserId;const viewerId=directMessageUserId;const hasSharedCommunity=communities.some((community)=>community.members.some((member)=>member.userId===viewerId)&&community.members.some((member)=>member.userId===subjectId));const isFriend=friendState.friends.some((friend)=>friend.userId===subjectId);let active=true;void profilePrivacyService.getProjection({targetUserId:subjectId,viewerUserId:viewerId,hasSharedCommunity,isFriend}).then((projection)=>{if(active){setProfilePrivacyProjection(projection);setProfilePrivacySubjectId(subjectId)}});return()=>{active=false};},[activeProfileUserId,communities,directMessageUserId,friendState.friends]);
   useEffect(() => profilePrivacyService.subscribe((settings) => {
@@ -1386,24 +1545,6 @@ export function App() {
       setCrashRecoveryRecord(null);
       pushToast(result.message, "success");
     });
-  }, [pushToast]);
-  const handlePasswordResetRequest = useCallback(async (email: string) => {
-    const result = await authService.requestPasswordReset(email);
-    if (!result.ok) {
-      pushToast(result.error.message, "error");
-      return result.error.message;
-    }
-
-    pushToast(result.data.message, "success");
-    return result.data.message;
-  }, [pushToast]);
-  const handlePasswordResetConfirm = useCallback(async (password: string) => {
-    const result = await authService.confirmPasswordReset(password);
-    if (!result.ok) return { ok: false, message: result.error.message };
-    setPasswordRecoveryMode(false);
-    setPasswordRecoveryMessage(null);
-    pushToast(result.data.message, "success");
-    return { ok: true, message: result.data.message };
   }, [pushToast]);
   const lockApp = useCallback(() => {
     closeTransientOverlays();
@@ -1631,42 +1772,67 @@ export function App() {
     if (safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity || !communityAccess.canViewMemberList || !isSupabaseEntityId(activeCommunity.id) || supabaseRolesLoadedRef.current.has(activeCommunity.id)) return;
 
     let canceled = false;
-    supabaseRolesLoadedRef.current.add(activeCommunity.id);
+    let settledOk = false;
+    const communityId = activeCommunity.id;
+    supabaseRolesLoadedRef.current.add(communityId);
 
-    communityRoleManagementService.listCommunityRoles(activeCommunity.id).then((result) => {
+    communityRoleManagementService.listCommunityRoles(communityId).then((result) => {
       if (canceled) return;
 
       if (!result.ok) {
-        supabaseRolesLoadedRef.current.delete(activeCommunity.id);
+        supabaseRolesLoadedRef.current.delete(communityId);
         return;
       }
 
+      settledOk = true;
       if (result.data.length > 0) {
-        replaceCommunityRoles(activeCommunity.id, result.data);
+        replaceCommunityRoles(communityId, result.data);
       }
     });
 
     return () => {
       canceled = true;
+      // Only reopen the gate when this run was aborted before a successful settle.
+      if (!settledOk) supabaseRolesLoadedRef.current.delete(communityId);
     };
   }, [activeCommunity.id, authSession, communityAccess.canViewMemberList, hasHydratedActiveCommunity, isSupabaseMode, membershipSyncVersion, replaceCommunityRoles, safeMode.active]);
 
   useEffect(() => {
-    if (safeMode.active || !authSession || !isSupabaseMode || !hasHydratedActiveCommunity || !isSupabaseEntityId(activeCommunity.id) || supabaseMembersLoadedRef.current.has(activeCommunity.id)) return;
+    if (
+      safeMode.active
+      || !authSession
+      || !isSupabaseMode
+      || !hasHydratedActiveCommunity
+      || !communityAccess.canViewMemberList
+      || !isSupabaseEntityId(activeCommunity.id)
+      || supabaseMembersLoadedRef.current.has(activeCommunity.id)
+    ) {
+      return;
+    }
 
-    let canceled = false;
-    supabaseMembersLoadedRef.current.add(activeCommunity.id);
+    let settledOk = false;
+    const communityId = activeCommunity.id;
+    // Capture roles once — do not depend on `activeCommunity.roles` or role hydration
+    // will cancel this request and the loaded-ref gate will skip the retry.
+    const rolesForFallback = activeCommunity.roles;
+    const requestId = ++membersFetchRequestIdRef.current;
+    supabaseMembersLoadedRef.current.add(communityId);
 
-    membersService.listMembers(activeCommunity.id).then((result) => {
-      if (canceled) return;
+    membersService.listMembers(communityId).then((result) => {
+      // Ignore stale responses from superseded refreshes, but do not drop a successful
+      // payload just because React Strict Mode / dep churn flipped a local canceled flag
+      // after the network call already completed.
+      if (requestId !== membersFetchRequestIdRef.current) return;
 
       if (!result.ok) {
-        supabaseMembersLoadedRef.current.delete(activeCommunity.id);
+        supabaseMembersLoadedRef.current.delete(communityId);
         if (!communityAccess.isVisitor) pushToast(result.error.message, "error");
         return;
       }
 
-      const fallbackRole = activeCommunity.roles.find((role) => role.name === "Member") ?? activeCommunity.roles[0];
+      const fallbackRole =
+        rolesForFallback.find((role) => role.systemKey === "member" || role.name === "Member")
+        ?? rolesForFallback[0];
       const members: Member[] = result.data.map((member) => ({
         id: member.id,
         userId: member.userId,
@@ -1676,20 +1842,35 @@ export function App() {
         avatarUrl: member.avatarUrl ?? undefined,
         status: member.status ?? "offline",
         statusText: member.statusText ?? "Member",
-        roleId: member.roleId ?? fallbackRole.id,
-        roleIds: member.roleIds?.length ? [...member.roleIds] : member.roleId ? [member.roleId] : [fallbackRole.id],
+        roleId: member.roleId ?? fallbackRole?.id ?? "member",
+        roleIds: member.roleIds?.length ? [...member.roleIds] : member.roleId ? [member.roleId] : fallbackRole?.id ? [fallbackRole.id] : ["member"],
         bio: "Supabase community member.",
       }));
 
-      if (members.length > 0) {
-        replaceCommunityMembers(activeCommunity.id, members);
-      }
+      settledOk = true;
+      replaceCommunityMembers(communityId, members);
     });
 
     return () => {
-      canceled = true;
+      // Role hydration / message-driven refresh used to abort this effect while leaving
+      // the community marked "loaded", so the roster never retried and only the owner
+      // placeholder remained. Re-open the gate when this specific request did not settle.
+      if (!settledOk && requestId === membersFetchRequestIdRef.current) {
+        supabaseMembersLoadedRef.current.delete(communityId);
+      }
     };
-  }, [activeCommunity.id, activeCommunity.roles, authSession, communityAccess.isVisitor, hasHydratedActiveCommunity, isSupabaseMode, membershipSyncVersion, pushToast, replaceCommunityMembers, safeMode.active]);
+  }, [
+    activeCommunity.id,
+    authSession,
+    communityAccess.canViewMemberList,
+    communityAccess.isVisitor,
+    hasHydratedActiveCommunity,
+    isSupabaseMode,
+    membershipSyncVersion,
+    pushToast,
+    replaceCommunityMembers,
+    safeMode.active,
+  ]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -1780,6 +1961,51 @@ export function App() {
     return true;
   }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
 
+  const highlightMessageTemporarily = useCallback((messageId: string) => {
+    setHighlightedMessageId(messageId);
+    if (messageHighlightTimerRef.current !== null) window.clearTimeout(messageHighlightTimerRef.current);
+    messageHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedMessageId((current) => (current === messageId ? null : current));
+      messageHighlightTimerRef.current = null;
+    }, 2200);
+  }, []);
+
+  const openAuthorizedCommunityMessage = useCallback(async (input: {
+    communityId: string;
+    channelId?: string;
+    messageId?: string;
+    successToast?: string;
+  }) => {
+    const resolved = await feedMessageDeepLinkService.resolve({
+      communityId: input.communityId,
+      channelId: input.channelId,
+      messageId: input.messageId,
+      communities,
+      currentUserId,
+      blockedUserIds,
+    });
+    if (!resolved.ok) {
+      pushToast(resolved.reason, "error");
+      return false;
+    }
+    setActiveView(communityViewForKind(resolved.community.kind));
+    switchCommunity(resolved.community.id, resolved.channel.id);
+    setActiveChannelId(resolved.channel.id);
+    clearChannelUnread({ communityId: resolved.community.id, channelId: resolved.channel.id });
+    closeTransientOverlays();
+    highlightMessageTemporarily(resolved.messageId);
+    if (input.successToast) pushToast(input.successToast, "info");
+    return true;
+  }, [blockedUserIds, clearChannelUnread, closeTransientOverlays, communities, currentUserId, highlightMessageTemporarily, pushToast, setActiveChannelId, switchCommunity]);
+
+  const jumpToMessage = useCallback((community: Community, message: Message) => {
+    void openAuthorizedCommunityMessage({
+      communityId: community.id,
+      channelId: message.channelId,
+      messageId: message.id,
+    });
+  }, [openAuthorizedCommunityMessage]);
+
   useEffect(() => {
     const handleDeepLinkAction = (action: DeepLinkAction) => {
       if (!isV1DeepLinkTypeEnabled(action.type)) {
@@ -1789,19 +2015,37 @@ export function App() {
         return;
       }
       if (action.type === "passwordRecovery") {
-        if (!action.code) { setPasswordRecoveryMode(false); pushToast(action.error || "This password reset link is invalid or expired.", "error"); return; }
-        void authService.preparePasswordRecovery(action.code).then((result) => {
-          if (!result.ok) { setPasswordRecoveryMode(false); pushToast(result.error.message, "error"); return; }
-          clearAuthError();
-          setAuthView("login");
-          setPasswordRecoveryMessage(result.data.message);
-          setPasswordRecoveryMode(true);
+        const handoffUrl = action.error
+          ? accountCenterUrls.resetPasswordWithAuth({ error: action.error })
+          : accountCenterUrls.resetPasswordWithAuth({
+              code: action.code,
+              tokenHash: action.tokenHash,
+              authType: action.authType,
+            });
+        void externalLinkService.openExternalUrl(handoffUrl).then((result) => {
+          if (!result.ok) {
+            pushToast(externalLinkService.getUserFriendlyError(String(result.reason)), "error");
+            return;
+          }
+          pushToast("Complete password reset in your browser (Account Center).", "info");
         });
         return;
       }
       if (action.type === "emailVerification") {
-        if (!action.code) { pushToast(action.error || "This email verification link is invalid or expired.", "error"); return; }
-        void authService.confirmEmailVerification(action.code).then((result) => pushToast(result.ok ? result.data.message : result.error.message, result.ok ? "success" : "error"));
+        const handoffUrl = action.error
+          ? accountCenterUrls.confirmEmailWithAuth({ error: action.error })
+          : accountCenterUrls.confirmEmailWithAuth({
+              code: action.code,
+              tokenHash: action.tokenHash,
+              authType: action.authType,
+            });
+        void externalLinkService.openExternalUrl(handoffUrl).then((result) => {
+          if (!result.ok) {
+            pushToast(externalLinkService.getUserFriendlyError(String(result.reason)), "error");
+            return;
+          }
+          pushToast("Complete email verification in your browser (Account Center).", "info");
+        });
         return;
       }
       if (action.type === "authCallback") {
@@ -1853,6 +2097,34 @@ export function App() {
         return;
       }
 
+      if (action.type === "liveNow") {
+        setLiveWatchSessionId(action.liveSessionId);
+        setGoLiveOpen(false);
+        setCreatorStudioSessionId(null);
+        setActiveView("live");
+        closeTransientOverlays();
+        webNavigation?.syncFromApp("live", { liveSessionId: action.liveSessionId });
+        pushToast("Opening live stream…", "info");
+        return;
+      }
+
+      if (action.type === "profile") {
+        closeTransientOverlays();
+        void import("./services/live/broadcasterChannelService").then(({ broadcasterChannelService }) =>
+          broadcasterChannelService.resolveProfileUsername(action.username).then((resolved) => {
+            if (!resolved.ok) {
+              pushToast(resolved.error, "error");
+              return;
+            }
+            setPreviousViewBeforeProfile((previous) => (activeView === "profile" ? previous : activeView));
+            setActiveProfileUserId(resolved.data);
+            setActiveView("profile");
+            webNavigation?.syncFromApp("profile", { username: action.username });
+          }),
+        );
+        return;
+      }
+
       if (action.type === "directMessage") {
         const conversation = directConversations.find((candidate) => candidate.id === action.conversationId);
         if (conversation) {
@@ -1892,6 +2164,16 @@ export function App() {
         return;
       }
 
+      if (action.type === "community" && action.messageId) {
+        void openAuthorizedCommunityMessage({
+          communityId: action.communityId,
+          channelId: action.channelId,
+          messageId: action.messageId,
+          successToast: "Opened the linked message.",
+        });
+        return;
+      }
+
       const targetCommunity = communities.find((community) => community.id === action.communityId);
       if (!targetCommunity) {
         pushToast("Deep link community is unavailable in this local workspace.", "error");
@@ -1904,16 +2186,11 @@ export function App() {
         clearChannelUnread({ communityId: action.communityId, channelId: action.channelId });
       }
       closeTransientOverlays();
-
-      if (action.messageId) {
-        pushToast("Deep link opened the channel. Message highlight is a placeholder.", "info");
-      } else {
-        pushToast("Deep link opened the community.", "info");
-      }
+      pushToast("Deep link opened the community.", "info");
     };
 
     return deepLinkService.onDeepLink(handleDeepLinkAction);
-  }, [activeView, authSession?.user, blockedUserIds, clearAuthError, clearChannelUnread, closeTransientOverlays, communities, currentUserId, openPodcastEpisodeSource, pushToast, switchCommunity]);
+  }, [activeView, authSession?.user, blockedUserIds, clearAuthError, clearChannelUnread, closeTransientOverlays, communities, currentUserId, openAuthorizedCommunityMessage, openPodcastEpisodeSource, pushToast, switchCommunity]);
 
   useEffect(() => {
     const handleMenuAction = (payload: MenuActionPayload) => {
@@ -1987,25 +2264,6 @@ export function App() {
 
     return trayService.onAction(handleTrayAction);
   }, [pushToast, safeMode.active]);
-
-  const jumpToMessage = useCallback((community: Community, message: Message) => {
-    const access = getCommunityAccess(currentUserId, community);
-    const channel = community.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === message.channelId);
-    if (!channel || !canViewChannel(access, channel) || message.deletedAt) {
-      pushToast("This message is no longer available or you do not have access.", "error");
-      return;
-    }
-    setActiveView("community");
-    switchCommunity(community.id, message.channelId);
-    setActiveChannelId(message.channelId);
-    clearChannelUnread({ communityId: community.id, channelId: message.channelId });
-    setHighlightedMessageId(message.id);
-    if (messageHighlightTimerRef.current !== null) window.clearTimeout(messageHighlightTimerRef.current);
-    messageHighlightTimerRef.current = window.setTimeout(() => {
-      setHighlightedMessageId((current) => (current === message.id ? null : current));
-      messageHighlightTimerRef.current = null;
-    }, 2200);
-  }, [clearChannelUnread, pushToast, setActiveChannelId, switchCommunity]);
 
   const paletteResults = useMemo<PaletteResult[]>(() => {
     const q = paletteQuery.toLowerCase();
@@ -2092,13 +2350,52 @@ export function App() {
         id: result.id, group: result.category, label: result.label, detail: result.detail, verification,
         run: async () => {
           if (result.category === "People" && result.userId) {
-            const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === result.userId);
-            if (member && !blockedUserIds.includes(member.userId)) { setPreviousViewBeforeProfile(activeView); setActiveProfileUserId(result.userId); setActiveView("profile"); }
-            else pushToast("This profile is unavailable or outside your accessible communities.", "error");
+            if (blockedUserIds.includes(result.userId)) {
+              pushToast("This profile is unavailable.", "error");
+            } else {
+              const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === result.userId);
+              const username = (result.detail?.replace(/^@/, "") || result.label || "user").replace(/^@+/, "");
+              setProfileOpenFallback(member ?? {
+                id: `search-${result.userId}`,
+                userId: result.userId,
+                displayName: result.label || username,
+                username,
+                avatarSeed: username,
+                avatarUrl: "",
+                status: "offline",
+                statusText: "",
+                roleId: "member",
+              });
+              setPreviousViewBeforeProfile(activeView);
+              setActiveProfileUserId(result.userId);
+              setActiveView("profile");
+            }
           }
           else if (result.category === "Radio" && result.communityId && result.radioSessionId) { const target = communities.find((community) => community.id === result.communityId); const access = target ? getCommunityAccess(currentUserId, target) : null; if (target?.kind === "radio" && access && (access.isMember || access.canViewPublicContent)) { communityNavigationService.rememberRadioSession(result.communityId, result.radioSessionId); setActiveView("radioCommunity"); switchCommunity(result.communityId); } else pushToast("This Radio session is unavailable or private.", "error"); }
           else if (result.category === "Podcasts" && result.communityId && result.podcastEpisodeId) { void openPodcastEpisodeSource(result.communityId, result.podcastEpisodeId, "Opened the Podcast search result."); }
-          else if (result.category === "Communities" && result.communityId) { const target = communities.find((community) => community.id === result.communityId); if (target) { setActiveView(communityViewForKind(target.kind)); switchCommunity(result.communityId); } }
+          else if (result.category === "Communities" && result.communityId) {
+            const target = communities.find((community) => community.id === result.communityId);
+            if (target) {
+              setActiveView(communityViewForKind(target.kind));
+              switchCommunity(result.communityId);
+            } else {
+              const joinResult = await communityDiscoveryService.joinFromSearch(result.communityId);
+              if ("needsRules" in joinResult && joinResult.needsRules) {
+                setActiveView("discovery");
+                pushToast(joinResult.message, "info");
+              } else if ("openDiscovery" in joinResult && joinResult.openDiscovery) {
+                setActiveView("discovery");
+                pushToast(joinResult.message, "info");
+              } else if (!joinResult.ok) {
+                setActiveView("discovery");
+                pushToast(joinResult.message, "error");
+              } else if (joinResult.action === "requested") {
+                pushToast(`Access request sent for ${result.label}.`, "info");
+              } else {
+                await discoveryMembershipReadyRef.current(result.communityId);
+              }
+            }
+          }
           else if (result.communityId && result.channelId && (result.category === "Messages" || result.category === "Mentions" || result.category === "Saved" || result.category === "Media")) {
             const { advancedSearchService } = await import("./services/advancedSearchService");
             const target = advancedSearchService.resolveMessageJumpTarget(result, communities, currentUserId);
@@ -2252,78 +2549,56 @@ export function App() {
     setMentionQuickFilter((current) => { const next = current === filter ? null : filter; feedUiStateService.setSelection(mentionTab, next); return next; });
   }, [mentionTab]);
 
+  const loadMoreMentionFeed = useCallback(async () => {
+    if (mentionFeedLoadingMore || !mentionFeedHasMore || !mentionFeedCursor) return;
+    const seq = ++mentionFeedLoadSeq.current;
+    setMentionFeedLoadingMore(true);
+    const result = await mentionFeedService.listPage({ cursor: mentionFeedCursor, limit: 40 });
+    if (seq !== mentionFeedLoadSeq.current) { setMentionFeedLoadingMore(false); return; }
+    if (result.ok) {
+      setMentionItems((current) => feedMentionCacheService.mergePage(result.data.items, current));
+      setMentionFeedCursor(result.data.nextCursor);
+      setMentionFeedHasMore(result.data.hasMore);
+      if (mentionFeedStatus === "empty" && result.data.items.length) setMentionFeedStatus("ready");
+    } else {
+      pushToast("Could not load more activity.", "error");
+    }
+    setMentionFeedLoadingMore(false);
+  }, [mentionFeedCursor, mentionFeedHasMore, mentionFeedLoadingMore, mentionFeedStatus, pushToast]);
+
+  const retryMentionFeed = useCallback(async () => {
+    const seq = ++mentionFeedLoadSeq.current;
+    setMentionFeedStatus("loading");
+    setMentionFeedLoadingMore(false);
+    const result = await mentionFeedService.listPage({ limit: 40 });
+    if (seq !== mentionFeedLoadSeq.current) return;
+    if (result.ok) {
+      setMentionItems(feedMentionCacheService.replace(result.data.items));
+      setMentionFeedCursor(result.data.nextCursor);
+      setMentionFeedHasMore(result.data.hasMore);
+      setMentionFeedStatus(result.data.items.length ? "ready" : "empty");
+      setPendingNewMentionCount(0);
+    } else {
+      setMentionFeedStatus(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "error");
+    }
+  }, [pushToast]);
   const changeMentionTab = useCallback((tab: MentionFeedTab) => {
     feedUiStateService.setSelection(tab, mentionQuickFilter);
     setMentionTab(tab);
   }, [mentionQuickFilter]);
 
   const openMentionInChannel = useCallback((item: MentionItem) => {
-    const community = communities.find((candidate) => candidate.id === item.communityId);
-    const channel = community?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === item.channelId);
-    const access = community ? getCommunityAccess(currentUserId, community) : null;
-    if (!community || !channel || !access || !canViewChannel(access, channel)) {
-      pushToast("This Feed item is no longer accessible.", "error");
-      return;
-    }
-    setActiveView("community");
-    switchCommunity(item.communityId, item.channelId);
-    clearChannelUnread({ communityId: item.communityId, channelId: item.channelId });
     setMentionItems((current) => current.map((candidate) => (candidate.id === item.id ? { ...candidate, isUnread: false } : candidate)));
-    closeTransientOverlays();
-    setHighlightedMessageId(item.messageId);
-    if (messageHighlightTimerRef.current) window.clearTimeout(messageHighlightTimerRef.current);
-    messageHighlightTimerRef.current = window.setTimeout(() => {
-      setHighlightedMessageId((current) => current === item.messageId ? null : current);
-      messageHighlightTimerRef.current = null;
-    }, 2200);
-  }, [clearChannelUnread, closeTransientOverlays, communities, currentUserId, pushToast, switchCommunity]);
-
-  const markStorySeen = useCallback((storyId: string) => {
-    feedUiStateService.markStorySeen(storyId);
-    setStoryItems((current) => current.map((story) => (story.id === storyId ? { ...story, status: "seen" } : story)));
-  }, []);
-
-  const openStoryInChannel = useCallback((story: FollowedUserStory) => {
-    if (story.sourceType === "radio_session" && story.communityId && story.sourceId) {
-      const target = communities.find((community) => community.id === story.communityId);
-      if (!target || target.kind !== "radio") { pushToast("This Radio story is no longer accessible.", "error"); return; }
-      communityNavigationService.rememberRadioSession(story.communityId, story.sourceId);
-      setActiveView("radioCommunity"); switchCommunity(story.communityId); markStorySeen(story.id); closeTransientOverlays(); return;
-    }
-    if ((story.sourceType === "podcast_episode" || story.sourceType === "podcast_comment") && story.communityId && story.sourceId) {
-      const target = communities.find((community) => community.id === story.communityId);
-      const episodeId = story.parentSourceId ?? story.sourceId;
-      if (!target || target.kind !== "podcast") { pushToast("This Podcast story is no longer accessible.", "error"); return; }
-      communityNavigationService.rememberPodcastEpisode(story.communityId, episodeId);
-      setActiveView("podcastCommunity"); switchCommunity(story.communityId); markStorySeen(story.id); closeTransientOverlays(); return;
-    }
-    if (!story.communityId || !story.channelId) {
-      pushToast("This story is not linked to an open channel yet.", "info");
-      return;
-    }
-
-    const targetCommunity = communities.find((community) => community.id === story.communityId);
-    const targetChannel = targetCommunity?.categories.flatMap((category) => category.channels).find((channel) => channel.id === story.channelId);
-    const targetAccess = targetCommunity ? getCommunityAccess(currentUserId, targetCommunity) : null;
-    if (!targetCommunity || !targetChannel || !targetAccess || !canViewChannel(targetAccess, targetChannel)) {
-      pushToast("This Story source is no longer accessible.", "error");
-      return;
-    }
-
-    setActiveView("community");
-    switchCommunity(story.communityId, story.channelId);
-    clearChannelUnread({ communityId: story.communityId, channelId: story.channelId });
-    markStorySeen(story.id);
-    closeTransientOverlays();
-    if (story.messageId) {
-      setHighlightedMessageId(story.messageId);
-      if (messageHighlightTimerRef.current) window.clearTimeout(messageHighlightTimerRef.current);
-      messageHighlightTimerRef.current = window.setTimeout(() => {
-        setHighlightedMessageId((current) => current === story.messageId ? null : current);
-        messageHighlightTimerRef.current = null;
-      }, 2200);
-    }
-  }, [clearChannelUnread, closeTransientOverlays, communities, currentUserId, markStorySeen, pushToast, switchCommunity]);
+    void openAuthorizedCommunityMessage({
+      communityId: item.communityId,
+      channelId: item.channelId,
+      messageId: item.messageId,
+    }).then((opened) => {
+      if (!opened) {
+        setMentionItems((current) => current.map((candidate) => (candidate.id === item.id ? { ...candidate, isUnread: true } : candidate)));
+      }
+    });
+  }, [openAuthorizedCommunityMessage]);
 
   const toggleFeedVoiceMute = useCallback(() => {
     void import("./services/voiceService").then(({ voiceService }) => voiceService.setMuted(!voiceSnapshot.muted).then((result) => {
@@ -2755,7 +3030,7 @@ export function App() {
     closeTransientOverlays();
   }, [closeTransientOverlays, communities, pushToast, switchCommunity]);
 
-  const openFeedEventDetails = useCallback((event: typeof mockUpcomingEvents[number]) => {
+  const openFeedEventDetails = useCallback((event: UpcomingEvent) => {
     const targetCommunity = communities.find((community) => community.id === event.communityId);
     if (!targetCommunity) { pushToast("This event is no longer available.", "error"); return; }
     if (event.source === "radio" && event.radioSessionId) {
@@ -2772,9 +3047,35 @@ export function App() {
   const openProfilePage = useCallback((member: Member) => {
     setPreviousViewBeforeProfile((previous) => (activeView === "profile" ? previous : activeView));
     setActiveProfileUserId(member.userId);
+    setProfileOpenFallback(member);
     setActiveView("profile");
     closeTransientOverlays();
-  }, [activeView, closeTransientOverlays]);
+    if (webNavigation && member.username) {
+      webNavigation.syncFromApp("profile", { username: member.username });
+    }
+  }, [activeView, closeTransientOverlays, webNavigation]);
+
+  useEffect(() => {
+    if (!webNavigation || webNavigation.parsed.activeView !== "profile") return;
+    const username = webNavigation.parsed.params.username?.trim();
+    if (!username) return;
+    let active = true;
+    void import("./services/live/broadcasterChannelService").then(({ broadcasterChannelService }) =>
+      broadcasterChannelService.resolveProfileUsername(username).then((resolved) => {
+        if (!active || !resolved.ok) {
+          if (active && resolved.ok === false) pushToast(resolved.error, "error");
+          return;
+        }
+        if (activeProfileUserId === resolved.data) return;
+        setPreviousViewBeforeProfile((previous) => (activeView === "profile" ? previous : activeView));
+        setActiveProfileUserId(resolved.data);
+        setActiveView("profile");
+      }),
+    );
+    return () => {
+      active = false;
+    };
+  }, [webNavigation?.parsed.activeView, webNavigation?.parsed.params.username]);
 
   const openDirectConversation = useCallback((conversation: DirectConversation) => {
     setActiveDirectConversationId(conversation.id);
@@ -2829,10 +3130,12 @@ export function App() {
     if (conversation && !userBlockingService.canMessageUser(conversation.participantUserId)) { pushToast("Direct messages with this blocked user are disabled.", "error"); return false; }
     const createdAt = new Date().toISOString();
     const clientMessageId = retryClientMessageId ?? crypto.randomUUID();
-    setDirectConversations((current) => current.map((item) => { if (item.id !== conversationId) return item; const reply = replyToMessageId ? item.messages.find((message) => message.id === replyToMessageId) : undefined; const optimistic: DirectMessage = { id: `dm-optimistic-${clientMessageId}`, clientMessageId, conversationId, authorId: directMessageUserId, body, createdAt, attachments, replyToMessageId, replyPreview: replyToMessageId ? { messageId: replyToMessageId, authorName: reply?.authorId === directMessageUserId ? "You" : item.participantName, body: !reply ? "Message unavailable" : reply.deletedAt ? "Message deleted" : reply.body } : undefined, sendStatus: "sending" }; const existingIndex = item.messages.findIndex((message) => message.clientMessageId === clientMessageId); const messages = [...item.messages]; if (existingIndex >= 0) messages[existingIndex] = { ...messages[existingIndex], ...optimistic }; else messages.push(optimistic); return { ...item, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0, messages }; }));
+    const attemptCount = (conversation?.messages.find((message) => message.clientMessageId === clientMessageId)?.sendAttempt?.attemptCount ?? 0) + 1;
+    setDirectConversations((current) => current.map((item) => { if (item.id !== conversationId) return item; const reply = replyToMessageId ? item.messages.find((message) => message.id === replyToMessageId) : undefined; const optimistic: DirectMessage = { id: `dm-optimistic-${clientMessageId}`, clientMessageId, conversationId, authorId: directMessageUserId, body, createdAt, attachments, replyToMessageId, replyPreview: replyToMessageId ? { messageId: replyToMessageId, authorName: reply?.authorId === directMessageUserId ? "You" : item.participantName, body: !reply ? "Message unavailable" : reply.deletedAt ? "Message deleted" : reply.body } : undefined, sendStatus: "sending", sendAttempt: { correlationId: clientMessageId, attemptCount, retryable: true } }; const existingIndex = item.messages.findIndex((message) => message.clientMessageId === clientMessageId); const messages = [...item.messages]; if (existingIndex >= 0) messages[existingIndex] = { ...messages[existingIndex], ...optimistic }; else messages.push(optimistic); return { ...item, lastMessagePreview: body, updatedAt: createdAt, unreadCount: 0, messages }; }));
     const result = await directMessageService.sendDirectMessage({ conversationId, body, attachments, replyToMessageId, clientMessageId });
-    if (result.ok) { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? { ...result.data, sendStatus: "sent" } : message), lastMessagePreview: result.data.body, updatedAt: result.data.createdAt } : item)); return true; }
-    setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? { ...message, sendStatus: "failed" } : message) } : item));
+    if (result.ok) { setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? { ...result.data, sendStatus: "sent", sendAttempt: { correlationId: clientMessageId, attemptCount, retryable: false, serverMessageId: result.data.id } } : message), lastMessagePreview: result.data.body, updatedAt: result.data.createdAt } : item)); return true; }
+    const observedError = isMessageSendError(result.error) ? result.error : undefined;
+    setDirectConversations((current) => current.map((item) => item.id === conversationId ? { ...item, messages: item.messages.map((message) => message.clientMessageId === clientMessageId ? { ...message, sendStatus: observedError?.retryable ? "retryable_failed" : "failed", sendAttempt: { correlationId: observedError?.correlationId ?? clientMessageId, attemptCount, retryable: observedError?.retryable ?? false, lastErrorCode: observedError?.code } } : message) } : item));
     pushToast(result.error.message, "error");
     return false;
   }, [directConversations, directMessageUserId, pushToast]);
@@ -2873,7 +3176,7 @@ export function App() {
   const editDirectMessageLocal = useCallback(async (messageId: string, body: string): Promise<boolean> => { const result = await directMessageService.editDirectMessage(messageId, body); if (!result.ok) { pushToast(result.error.message, "error"); return false; } handleDirectRealtimeUpdate(result.data); return true; }, [handleDirectRealtimeUpdate, pushToast]);
   const deleteDirectMessageLocal = useCallback(async (messageId: string): Promise<boolean> => { const result = await directMessageService.deleteDirectMessage(messageId); if (!result.ok) { pushToast(result.error.message, "error"); return false; } handleDirectRealtimeUpdate(result.data); return true; }, [handleDirectRealtimeUpdate, pushToast]);
   const toggleDirectReactionLocal = useCallback(async (message: DirectMessage, emoji: string): Promise<boolean> => { const active = message.reactions?.find((reaction) => reaction.emoji === emoji)?.reactedByCurrentUser === true; const result = active ? await directMessageService.removeDirectReaction(message.id, emoji) : await directMessageService.addDirectReaction(message.id, emoji); if (!result.ok) { pushToast(result.error.message, "error"); return false; } handleDirectRealtimeReaction(active ? "remove" : "add", { id: `local-${message.id}-${emoji}-${directMessageUserId}`, message_id: message.id, user_id: directMessageUserId, emoji, created_at: new Date().toISOString() }); return true; }, [directMessageUserId, handleDirectRealtimeReaction, pushToast]);
-  const removeFailedDirectMessage = useCallback((messageId: string) => { setDirectConversations((current) => current.map((conversation) => ({ ...conversation, messages: conversation.messages.filter((message) => message.id !== messageId || message.sendStatus !== "failed") }))); }, []);
+  const removeFailedDirectMessage = useCallback((messageId: string) => { setDirectConversations((current) => current.map((conversation) => ({ ...conversation, messages: conversation.messages.filter((message) => message.id !== messageId || (message.sendStatus !== "failed" && message.sendStatus !== "retryable_failed")) }))); }, []);
 
   const handleDirectRealtimeAttachment = useCallback((type: "add" | "remove", attachment: DirectSharedMediaItem) => {
     const apply = (resolved: DirectSharedMediaItem) => setDirectConversations((current) => current.map((conversation) => { if (!conversation.messages.some((message) => message.id === resolved.messageId)) return conversation; return { ...conversation, sharedMedia: type === "add" ? [...(conversation.sharedMedia ?? []).filter((item) => item.id !== resolved.id), resolved] : (conversation.sharedMedia ?? []).filter((item) => item.id !== resolved.id), messages: conversation.messages.map((message) => message.id !== resolved.messageId ? message : { ...message, attachments: type === "add" ? [...(message.attachments ?? []).filter((item) => item.id !== resolved.id), resolved] : (message.attachments ?? []).filter((item) => item.id !== resolved.id) }) }; }));
@@ -2943,17 +3246,25 @@ export function App() {
     if (item.context.kind === "community" && item.context.communityId) {
       const decision = notificationNavigationPolicyService.validate({ type: "community", communityId: item.context.communityId, channelId: item.context.channelId, messageId: item.context.messageId }, { isAuthenticated: true, currentUserId, communities, blockedUserIds });
       if (!decision.allowed) { pushToast(decision.reason, "error"); return; }
+      notificationCenterService.markRead(item.id);
+      if (item.context.messageId) {
+        void openAuthorizedCommunityMessage({
+          communityId: item.context.communityId,
+          channelId: item.context.channelId,
+          messageId: item.context.messageId,
+        });
+        return;
+      }
       const target = communities.find((community) => community.id === item.context.communityId);
       if (!target) { pushToast("This notification destination is no longer available.", "error"); return; }
-      notificationCenterService.markRead(item.id);
-      setActiveView(target ? communityViewForKind(target.kind) : "community"); switchCommunity(item.context.communityId, target?.kind === "text" ? item.context.channelId : undefined);
-      if (target?.kind === "text" && item.context.channelId) setActiveChannelId(item.context.channelId);
-      if (item.context.messageId) setHighlightedMessageId(item.context.messageId);
+      setActiveView(communityViewForKind(target.kind));
+      switchCommunity(item.context.communityId, target.kind === "text" ? item.context.channelId : undefined);
+      if (target.kind === "text" && item.context.channelId) setActiveChannelId(item.context.channelId);
       return;
     }
     notificationCenterService.markRead(item.id);
     pushToast(item.title, "info");
-  }, [authSession?.user, blockedUserIds, communities, currentUserId, openDirectMessages, openPodcastEpisodeSource, pushToast, setActiveChannelId, switchCommunity]);
+  }, [authSession?.user, blockedUserIds, communities, currentUserId, openAuthorizedCommunityMessage, openDirectMessages, openPodcastEpisodeSource, pushToast, setActiveChannelId, switchCommunity]);
 
   const createCommunityEvent = useCallback(async (input: CreateCommunityEventInput) => { const event=await communityEventService.createEvent(input);if(event){setCommunityEvents((current)=>[event,...current]);pushToast("Event created.","success");}else pushToast("Event could not be created.","error"); },[pushToast]);
   const updateCommunityEvent = useCallback(async (eventId: string, input: UpdateCommunityEventInput) => { const event = await communityEventService.updateEvent(eventId, input); if (event) { setCommunityEvents((current) => current.map((item) => item.id === eventId ? event : item)); pushToast("Event updated.", "success"); } else pushToast("Event could not be updated.", "error"); }, [pushToast]);
@@ -3081,41 +3392,25 @@ export function App() {
     );
   }
 
-  if (passwordRecoveryMode || !authSession) {
+  if (!authSession) {
     return (
       <>
         <DesktopAppShell>
           <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
           {maintenanceStatus.status === "maintenance" ? (
             <MaintenanceStatusView status={maintenanceStatus} onRetry={refreshMaintenanceStatus} onOpenStatusPage={openSystemStatusPage} />
-          ) : authView === "login" ? (
+          ) : (
             <LoginScreen
               theme={theme}
               loading={!authReady || authLoading}
               error={authError}
-              onSubmit={handleLogin}
-              onPasswordResetRequest={handlePasswordResetRequest}
-              recoveryMode={passwordRecoveryMode}
-              recoveryMessage={passwordRecoveryMessage}
-              onConfirmPasswordReset={handlePasswordResetConfirm}
-              onCancelPasswordRecovery={() => { setPasswordRecoveryMode(false); setPasswordRecoveryMessage(null); void authService.signOut(); }}
-              onSwitchToRegister={() => {
-                clearAuthError();
-                setAuthView("register");
-              }}
-            />
-          ) : (
-            <RegisterScreen
-              theme={theme}
-              loading={!authReady || authLoading}
-              error={authError}
               notice={authNotice}
-              onToggleTheme={toggleTheme}
-              onSubmit={handleRegister}
-              onSwitchToLogin={() => {
-                clearAuthError();
-                setAuthView("login");
-              }}
+              onSubmit={handleLogin}
+              mfaRequired={mfaRequired}
+              mfaLoading={authLoading}
+              mfaError={mfaError}
+              onVerifyMfa={handleVerifyMfa}
+              onCancelMfa={handleCancelMfa}
             />
           )}
         </DesktopAppShell>
@@ -3163,13 +3458,19 @@ export function App() {
           <OnboardingFlow
             userId={authSession.user.id}
             initialDisplayName={authSession.user.displayName || profileSettings.displayName || currentUser.displayName}
-            initialUsername={currentUser.username}
+            initialUsername={isSupabaseMode ? (profileSettings.username || "") : currentUser.username}
             initialStatusText={profileSettings.statusText || currentUser.statusText}
-            initialFollowedUserIds={followedUserIds}
-            suggestions={followSuggestionsV2.length ? followSuggestionsV2.map((suggestion) => suggestion.member) : mockFollowSuggestions.filter((member) => !blockedUserIds.includes(member.userId) && !followedUserIds.includes(member.userId))}
+            initialFollowedUserIds={isSupabaseMode ? normalizeFollowUserIds(followedUserIds) : followedUserIds}
+            suggestions={followSuggestionsV2.length
+              ? followSuggestionsV2.map((suggestion) => suggestion.member)
+              : (isSupabaseMode ? [] : mockFollowSuggestions.filter((member) => !blockedUserIds.includes(member.userId) && !followedUserIds.includes(member.userId)))}
             theme={theme}
             onThemeChange={applyManualTheme}
             onComplete={finishFirstRunOnboarding}
+            onSessionExpired={() => {
+              pushToast("Your session expired. Sign in again to finish setup.", "info");
+              void handleLogout();
+            }}
           />
           </DeferredViewBoundary>
         </DesktopAppShell>
@@ -3208,6 +3509,7 @@ export function App() {
       replyToMessageId,
       attachments,
       localStatus: typeof navigator !== "undefined" && !navigator.onLine ? "queued_offline" : "sending",
+      sendAttempt: { correlationId: clientMessageId, attemptCount: 1, retryable: true },
     });
     const result = await messageSendQueueService.enqueue({
       communityId: activeCommunity.id,
@@ -3222,13 +3524,14 @@ export function App() {
 
     if (!result.ok) {
       if (result.error.code === "QUEUE_CANCELED") return;
-      setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id, id: optimisticId, clientMessageId, localStatus: "failed" });
+      const observedError = isMessageSendError(result.error) ? result.error : undefined;
+      setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: displayedActiveChannel.id, id: optimisticId, clientMessageId, localStatus: observedError?.retryable ? "retryable_failed" : "failed", sendAttempt: { correlationId: observedError?.correlationId ?? clientMessageId, attemptCount: 1, retryable: observedError?.retryable ?? false, lastErrorCode: observedError?.code } });
       const conflict = offlineSyncConflictService.classify({
         actionType: "sendMessage",
         errorCode: result.error.code,
         errorMessage: result.error.message,
       });
-      pushToast(conflict.userMessage, "error");
+      pushToast(conflict.code === "unknown" ? result.error.message : conflict.userMessage, "error");
       return;
     }
 
@@ -3249,6 +3552,7 @@ export function App() {
       attachments,
       poll: pollResult?.ok ? pollResult.data : undefined,
       localStatus: "sent",
+      sendAttempt: { correlationId: clientMessageId, attemptCount: 1, retryable: false, serverMessageId: result.data.id },
     });
 
     maybeShowNotificationPermissionPrompt("first_message_sent");
@@ -3256,23 +3560,25 @@ export function App() {
   };
 
   const retryFailedMessage = async (message: Message) => {
-    if (!message.clientMessageId || (message.localStatus !== "failed" && message.localStatus !== "queued_offline")) return;
+    if (!message.clientMessageId || (message.localStatus !== "retryable_failed" && message.localStatus !== "queued_offline")) return;
     const localStatus = typeof navigator !== "undefined" && !navigator.onLine ? "queued_offline" : "sending";
-    setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus });
+    const attemptCount = (message.sendAttempt?.attemptCount ?? 1) + 1;
+    setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus, sendAttempt: { correlationId: message.sendAttempt?.correlationId ?? message.clientMessageId, attemptCount, retryable: true } });
     const result = await messageSendQueueService.enqueue({ communityId: activeCommunity.id, channelId: message.channelId, authorId: message.authorId, body: message.body, attachmentIds: message.attachments?.map((attachment) => attachment.id), clientMessageId: message.clientMessageId, replyToMessageId: message.replyToMessageId, localOrder: message.localOrder ?? messageSendQueueService.nextLocalOrder(activeCommunity.id, message.channelId) });
     if (!result.ok) {
       if (result.error.code === "QUEUE_CANCELED") return;
-      setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus: "failed" });
+      const observedError = isMessageSendError(result.error) ? result.error : undefined;
+      setLocalMessageDeliveryStatus({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id, clientMessageId: message.clientMessageId, localStatus: observedError?.retryable ? "retryable_failed" : "failed", sendAttempt: { correlationId: observedError?.correlationId ?? message.sendAttempt?.correlationId ?? message.clientMessageId, attemptCount, retryable: observedError?.retryable ?? false, lastErrorCode: observedError?.code } });
       const conflict = offlineSyncConflictService.classify({ actionType: "sendMessage", errorCode: result.error.code, errorMessage: result.error.message });
-      pushToast(conflict.userMessage, "error");
+      pushToast(conflict.code === "unknown" ? result.error.message : conflict.userMessage, "error");
       return;
     }
-    appendLocalMessage({ id: result.data.id, clientMessageId: message.clientMessageId, communityId: activeCommunity.id, channelId: message.channelId, authorId: result.data.authorId, body: result.data.body, localOrder: message.localOrder, createdAt: result.data.createdAt, replyToMessageId: result.data.replyToMessageId, attachments: message.attachments, localStatus: "sent" });
+    appendLocalMessage({ id: result.data.id, clientMessageId: message.clientMessageId, communityId: activeCommunity.id, channelId: message.channelId, authorId: result.data.authorId, body: result.data.body, localOrder: message.localOrder, createdAt: result.data.createdAt, replyToMessageId: result.data.replyToMessageId, attachments: message.attachments, localStatus: "sent", sendAttempt: { correlationId: message.sendAttempt?.correlationId ?? message.clientMessageId, attemptCount, retryable: false, serverMessageId: result.data.id } });
     pushToast("Message sent after retry.", "success");
   };
 
   const removeFailedMessage = (message: Message) => {
-    if (message.localStatus !== "failed" && message.localStatus !== "queued_offline") return;
+    if (message.localStatus !== "failed" && message.localStatus !== "retryable_failed" && message.localStatus !== "queued_offline") return;
     if (message.clientMessageId) messageSendQueueService.cancelPending(message.clientMessageId);
     removeLocalMessage({ communityId: activeCommunity.id, channelId: message.channelId, id: message.id });
     pushToast("Local failed message removed.", "info");
@@ -3431,6 +3737,11 @@ export function App() {
 
     supabaseMembersLoadedRef.current.delete(activeCommunity.id);
     supabaseRolesLoadedRef.current.delete(activeCommunity.id);
+    supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
+    for (const key of [...supabaseMessagesLoadedRef.current]) {
+      if (key.startsWith(`${activeCommunity.id}:`)) supabaseMessagesLoadedRef.current.delete(key);
+    }
+    setSidebarReloadNonce((value) => value + 1);
 
     const joinedMember = {
       ...result.data.member,
@@ -3445,7 +3756,15 @@ export function App() {
       ...activeCommunity.members.filter((member) => member.userId !== joinedMember.userId),
       joinedMember,
     ]);
+    patchCommunity(activeCommunity.id, { currentUserMembershipUserId: currentUserId });
     setMembershipSyncVersion((version) => version + 1);
+    void mentionFeedService.listPage({ limit: 40 }).then((feed) => {
+      if (!feed.ok) return;
+      setMentionItems(feedMentionCacheService.replace(feed.data.items));
+      setMentionFeedCursor(feed.data.nextCursor);
+      setMentionFeedHasMore(feed.data.hasMore);
+      setMentionFeedStatus(feed.data.items.length ? "ready" : "empty");
+    });
     const landing = openJoinedCommunity(activeCommunity);
     pushToast(result.data.status === "already_member" ? `You are already a member of ${activeCommunity.name}. Opened ${landing.landingLabel}.` : `Joined ${activeCommunity.name}. Opened ${landing.landingLabel}.`, "success");
     return true;
@@ -3463,36 +3782,106 @@ export function App() {
     }
 
     replaceCommunityMembers(activeCommunity.id, activeCommunity.members.filter((member) => member.userId !== currentUserId));
+    patchCommunity(activeCommunity.id, { currentUserMembershipUserId: undefined });
     pushToast(`Left ${activeCommunity.name}.`, "info");
   };
 
-  const handleDiscoveryMembershipReady = async (communityId: string) => {
-    const existing = communities.find((community) => community.id === communityId);
-    if (existing) {
-      const access = getCommunityAccess(currentUserId, existing);
-      if (!access.isMember) {
-        openCommunityFromRail(existing.id);
-        pushToast(`Review ${existing.name}'s rules from the community menu before joining.`, "info");
-        return;
-      }
-      const landing = openJoinedCommunity(existing);
-      pushToast(`Opened ${existing.name} in ${landing.landingLabel}.`, "success");
-      return;
+  const invalidateCommunityHydration = (communityId: string) => {
+    supabaseSidebarLoadedRef.current.delete(communityId);
+    supabaseMembersLoadedRef.current.delete(communityId);
+    supabaseRolesLoadedRef.current.delete(communityId);
+    for (const key of [...supabaseMessagesLoadedRef.current]) {
+      if (key.startsWith(`${communityId}:`)) supabaseMessagesLoadedRef.current.delete(key);
     }
+    setSidebarReloadNonce((value) => value + 1);
+    setMembershipSyncVersion((version) => version + 1);
+  };
+
+  const handleDiscoveryMembershipReady = async (communityId: string) => {
+    invalidateCommunityHydration(communityId);
 
     const listed = await communityService.listCommunities();
     const summary = listed.ok ? listed.data.find((community) => community.id === communityId) : undefined;
-    if (!summary) {
+    const existing = communities.find((community) => community.id === communityId);
+
+    if (!summary && !existing) {
       pushToast("Membership was updated, but the community workspace could not be loaded.", "error");
       return;
     }
 
-    const joinedCommunity = addCommunity(createCommunityFromSummary(summary, { includeTemplateChannels: false }));
-    const landing = openJoinedCommunity(joinedCommunity);
-    pushToast(`Joined ${joinedCommunity.name}. Opened ${landing.landingLabel}.`, "success");
+    let target = existing;
+    if (summary) {
+      const refreshed = createCommunityFromSummary(summary, { includeTemplateChannels: false });
+      if (target) {
+        patchCommunity(communityId, {
+          currentUserMembershipUserId: summary.currentUserMembershipUserId ?? currentUserId,
+          name: refreshed.name,
+          description: refreshed.description,
+          icon: refreshed.icon,
+          accentColor: refreshed.accentColor,
+          visibility: refreshed.visibility,
+          kind: refreshed.kind,
+        });
+        const defaultRole = target.roles.find((role) => role.name === "Member") ?? target.roles[0];
+        const selfMember: Member = {
+          id: `member-${currentUserId}`,
+          userId: currentUserId,
+          displayName: displayedCurrentUser.displayName,
+          username: displayedCurrentUser.username,
+          avatarSeed: displayedCurrentUser.username,
+          avatarUrl: displayedCurrentUser.avatarUrl,
+          status: displayedCurrentUser.status,
+          statusText: displayedCurrentUser.statusText,
+          roleId: defaultRole?.id ?? "member",
+          roleIds: defaultRole ? [defaultRole.id] : undefined,
+        };
+        replaceCommunityMembers(communityId, [
+          ...target.members.filter((member) => member.userId !== currentUserId),
+          selfMember,
+        ]);
+      } else {
+        target = addCommunity(refreshed);
+      }
+    } else if (target) {
+      // Server join already succeeded (DiscoveryView); sync local visitor → member even if list reload failed.
+      const defaultRole = target.roles.find((role) => role.name === "Member") ?? target.roles[0];
+      patchCommunity(communityId, { currentUserMembershipUserId: currentUserId });
+      replaceCommunityMembers(communityId, [
+        ...target.members.filter((member) => member.userId !== currentUserId),
+        {
+          id: `member-${currentUserId}`,
+          userId: currentUserId,
+          displayName: displayedCurrentUser.displayName,
+          username: displayedCurrentUser.username,
+          avatarSeed: displayedCurrentUser.username,
+          avatarUrl: displayedCurrentUser.avatarUrl,
+          status: displayedCurrentUser.status,
+          statusText: displayedCurrentUser.statusText,
+          roleId: defaultRole?.id ?? "member",
+          roleIds: defaultRole ? [defaultRole.id] : undefined,
+        },
+      ]);
+    }
+
+    if (!target) {
+      pushToast("Membership was updated, but the community workspace could not be loaded.", "error");
+      return;
+    }
+
+    void mentionFeedService.listPage({ limit: 40 }).then((feed) => {
+      if (!feed.ok) return;
+      setMentionItems(feedMentionCacheService.replace(feed.data.items));
+      setMentionFeedCursor(feed.data.nextCursor);
+      setMentionFeedHasMore(feed.data.hasMore);
+      setMentionFeedStatus(feed.data.items.length ? "ready" : "empty");
+    });
+    const landing = openJoinedCommunity(target);
+    pushToast(`Joined ${target.name}. Opened ${landing.landingLabel}.`, "success");
   };
+  discoveryMembershipReadyRef.current = handleDiscoveryMembershipReady;
 
   const handleInviteAccepted = async (communityId: string, member: Member, status: InviteAcceptanceStatus, preview: CommunityInvitePreview) => {
+    invalidateCommunityHydration(communityId);
     let target = communities.find((community) => community.id === communityId);
     if (!target) {
       const listed = await communityService.listCommunities();
@@ -3508,6 +3897,14 @@ export function App() {
     const defaultRole = target.roles.find((role) => role.id === member.roleId) ?? target.roles.find((role) => role.name === "Member");
     const normalizedMember = { ...member, roleId: defaultRole?.id ?? member.roleId };
     replaceCommunityMembers(communityId, [...target.members.filter((candidate) => candidate.userId !== member.userId), normalizedMember]);
+    patchCommunity(communityId, { currentUserMembershipUserId: currentUserId });
+    void mentionFeedService.listPage({ limit: 40 }).then((feed) => {
+      if (!feed.ok) return;
+      setMentionItems(feedMentionCacheService.replace(feed.data.items));
+      setMentionFeedCursor(feed.data.nextCursor);
+      setMentionFeedHasMore(feed.data.hasMore);
+      setMentionFeedStatus(feed.data.items.length ? "ready" : "empty");
+    });
     const landing = openJoinedCommunity(target);
     setPendingInviteCode(null);
     const displayName = target.name || preview.communityName;
@@ -3621,6 +4018,7 @@ export function App() {
     blockedUserIds,
     notificationPolicy: notificationPolicyState,
     canViewChannel: (community, channel) => canViewChannel(getCommunityAccess(currentUserId, community), channel),
+    liveActive: liveActiveCount,
   });
   const globalNavigationAvailability = {
     hasRadioWorkspace: communities.some((community) => community.kind === "radio"),
@@ -3637,6 +4035,12 @@ export function App() {
     if (route === "dm") { openDirectMessages(); return; }
     if (route === "discover") { setActiveView("discovery"); return; }
     if (route === "events") { setActiveView("events"); return; }
+    if (route === "live") {
+      setLiveWatchSessionId(null);
+      setActiveView("live");
+      webNavigation?.navigate("/live");
+      return;
+    }
     if (route === "bookmarks") { setActiveView("savedMessages"); return; }
     const kind = route === "radio" ? "radio" : route === "podcasts" ? "podcast" : "text";
     const target = communities.find((community) => community.kind === kind);
@@ -3759,6 +4163,7 @@ export function App() {
             <DeferredViewBoundary label="Opening Panel">
               <RootDashboardApp
                 currentUser={{
+                  userId: currentUser.userId,
                   displayName: displayedCurrentUser.displayName,
                   username: displayedCurrentUser.username,
                   email: authSession?.user?.email ?? undefined,
@@ -3787,8 +4192,8 @@ export function App() {
                 items={visibleMentionItems}
                 communities={communities}
                 friends={friendState.friends}
+                pendingFriendRequestCount={friendState.counts.pending}
                 events={isV1FeatureEnabled("events") ? visibleCommunityEvents : []}
-                stories={visibleStoryItems}
                 voiceState={voiceSnapshot}
                 activeVoiceRooms={activeVoiceRooms}
                 followedUserIds={followedUserIds}
@@ -3796,8 +4201,21 @@ export function App() {
                 directConversations={directConversations}
                 activeTab={mentionTab}
                 activeFilter={mentionQuickFilter}
+                feedStatus={mentionFeedStatus}
+                feedHasMore={mentionFeedHasMore}
+                feedLoadingMore={mentionFeedLoadingMore}
+                feedEndReached={!mentionFeedHasMore && mentionFeedStatus === "ready"}
+                pendingNewCount={pendingNewMentionCount}
+                onLoadMore={() => { void loadMoreMentionFeed(); }}
+                onRetryFeed={() => { void retryMentionFeed(); }}
+                onRevealNewActivities={() => { void retryMentionFeed(); setPendingNewMentionCount(0); }}
+                onOpenLiveSession={(sessionId) => {
+                  setActiveView("live");
+                  webNavigation?.navigate?.(`/live-now/${encodeURIComponent(sessionId)}`);
+                }}
                 onTabChange={changeMentionTab}
                 onOpenDirectConversation={openDirectConversation}
+                onOpenFriends={() => openFriends("all")}
                 onOpenImage={openPreview}
                 onOpenInChannel={openMentionInChannel}
                 onToggleReaction={toggleMentionReaction}
@@ -3816,8 +4234,6 @@ export function App() {
                     { label: "Report user", onSelect: () => handleReportUser(member) },
                   ])
                 }
-                onMarkStorySeen={markStorySeen}
-                onOpenStoryInChannel={openStoryInChannel}
                 onToggleVoiceMute={toggleFeedVoiceMute}
                 onToggleVoiceDeafen={toggleFeedVoiceDeafen}
                 onLeaveVoice={leaveFeedVoice}
@@ -3862,28 +4278,23 @@ export function App() {
                   ])
                 }
               />
-              <MentionRightPanel
-                items={visibleMentionItems}
-                communities={communities}
-                popularUserIds={[...mockPopularUserIds]}
-                followedUserIds={followedUserIds}
-                suggestedUserIds={followSuggestionsV2.map((suggestion) => suggestion.member.userId)}
-                blockedUserIds={blockedUserIds}
-                activeFilter={mentionQuickFilter}
-                selectedProfileUserId={profile?.member.userId ?? null}
-                onFilterChange={toggleMentionFilter}
-                onOpenProfile={openProfile}
-                onOpenItem={openMentionInChannel}
-              />
             </div>
             </DeferredViewBoundary>
           ) : activeView === "profile" && selectedProfileMember && selectedUserProfile ? (
             <DeferredViewBoundary label="Opening profile">
-            <ProfileView
+            <BroadcasterChannelView
               member={selectedProfileMember}
               profile={selectedUserProfile}
               communities={communities}
               currentUserId={directMessageUserId}
+              initialTab={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null}
+              onTabChange={(tab) => {
+                if (!webNavigation || !selectedUserProfile.username) return;
+                const path = tab === "home"
+                  ? `/profile/${encodeURIComponent(selectedUserProfile.username)}`
+                  : `/profile/${encodeURIComponent(selectedUserProfile.username)}?tab=${encodeURIComponent(tab)}`;
+                webNavigation.navigate(path);
+              }}
               onBack={closeProfileView}
               onEditProfile={selectedUserProfile.isCurrentUser ? openProfileSettings : undefined}
               onRequestVerification={selectedUserProfile.isCurrentUser ? openProfileSettings : undefined}
@@ -3893,6 +4304,23 @@ export function App() {
               onOpenActivity={openProfileActivity}
               onOpenImage={openPreview}
               onOpenCommunity={openFeedEventCommunity}
+              onWatchLive={(sessionId) => {
+                setLiveWatchSessionId(sessionId);
+                setActiveView("live");
+                webNavigation?.syncFromApp("live", { liveSessionId: sessionId });
+              }}
+              onGoLive={selectedUserProfile.isCurrentUser ? (scheduleEventId) => {
+                setGoLiveOpen(true);
+                setActiveView("live");
+                webNavigation?.syncFromApp("live", {
+                  goLive: true,
+                  ...(scheduleEventId ? { scheduleEventId } : {}),
+                });
+              } : undefined}
+              onOpenStudio={selectedUserProfile.isCurrentUser ? () => {
+                setCreatorStudioSessionId(null);
+                setActiveView("live");
+              } : undefined}
               dataState={dataSourceService.getStatus().isSupabase ? remoteProfileLoadState : "ready"}
               dataError={remoteProfileLoadError}
               onRetryData={() => setProfileReloadVersion((version) => version + 1)}
@@ -3915,11 +4343,134 @@ export function App() {
               }}
             />
             </DeferredViewBoundary>
+          ) : activeView === "live" ? (
+            <DeferredViewBoundary label={(webNavigation?.parsed.params.studioSessionId || creatorStudioSessionId) ? "Opening Creator Studio" : (webNavigation?.parsed.params.goLive || goLiveOpen) ? "Opening Go Live" : (webNavigation?.parsed.params.liveSessionId || liveWatchSessionId) ? "Opening Watch" : "Opening Live"}>
+              {(webNavigation?.parsed.params.studioSessionId || creatorStudioSessionId) ? (
+                <CreatorStudioWorkspace
+                  liveSessionId={(webNavigation?.parsed.params.studioSessionId || creatorStudioSessionId)!}
+                  currentUserId={currentUserId}
+                  onNotice={(message, kind = "info") => pushToast(message, kind)}
+                  onOpenLiveNow={() => {
+                    setCreatorStudioSessionId(null);
+                    setGoLiveOpen(false);
+                    setLiveWatchSessionId(null);
+                    setActiveView("live");
+                    webNavigation?.navigate("/live");
+                  }}
+                  onEnded={() => {
+                    setCreatorStudioSessionId(null);
+                    setGoLiveOpen(false);
+                    setLiveWatchSessionId(null);
+                    setActiveView("live");
+                    webNavigation?.navigate("/live");
+                  }}
+                />
+              ) : (webNavigation?.parsed.params.goLive || goLiveOpen) ? (
+                <GoLiveWorkspace
+                  currentUserId={currentUserId}
+                  initialSearch={typeof window !== "undefined" ? window.location.search : ""}
+                  initialCommunityId={activeCommunityId}
+                  initialChannelId={activeChannel?.id ?? null}
+                  onNotice={(message, kind = "info") => pushToast(message, kind)}
+                  onCancel={() => {
+                    setGoLiveOpen(false);
+                    setActiveView("live");
+                    webNavigation?.navigate("/live");
+                  }}
+                  onLiveStarted={({ liveSessionId }) => {
+                    setGoLiveOpen(false);
+                    setCreatorStudioSessionId(liveSessionId);
+                    setActiveView("live");
+                    if (webNavigation) {
+                      webNavigation.navigate(`/live/studio/${encodeURIComponent(liveSessionId)}`);
+                    }
+                  }}
+                />
+              ) : (webNavigation?.parsed.params.liveSessionId || liveWatchSessionId) ? (
+                <LiveWatchWorkspace
+                  liveSessionId={(webNavigation?.parsed.params.liveSessionId || liveWatchSessionId)!}
+                  currentUserId={currentUserId}
+                  participantName={displayedCurrentUser.displayName}
+                  followedUserIds={followedUserIds}
+                  canModerateCommunity={(communityId) => {
+                    const community = communities.find((item) => item.id === communityId);
+                    if (!community) return false;
+                    const access = getCommunityAccess(currentUserId, community);
+                    return access.isOwner || access.isAdmin || access.isModerator || access.canOpenModeratorPanel;
+                  }}
+                  onToggleFollow={(userId) => void toggleFollowUser(userId)}
+                  onBackToLiveNow={() => {
+                    setLiveWatchSessionId(null);
+                    setActiveView("live");
+                    webNavigation?.navigate("/live");
+                  }}
+                  onOpenCommunity={(communityId, channelId) => {
+                    openCommunityFromRail(communityId);
+                    if (channelId) setActiveChannelId(channelId);
+                  }}
+                  onOpenProfile={(userId) => {
+                    const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+                    if (member) showProfile(member, window.innerWidth / 2, window.innerHeight / 2);
+                  }}
+                  onNotice={(message, kind = "info") => pushToast(message, kind)}
+                />
+              ) : (
+              <LiveWorkspace
+                currentUserId={currentUserId}
+                followedUserIds={followedUserIds}
+                onToggleFollow={(userId) => void toggleFollowUser(userId)}
+                onBrowseCommunities={() => setActiveView("discovery")}
+                onFindFriends={() => setActiveView("friends")}
+                onOpenGoLive={() => {
+                  setGoLiveOpen(true);
+                  setActiveView("live");
+                  webNavigation?.navigate("/go-live");
+                }}
+                onOpenCommunity={(communityId, channelId) => {
+                  openCommunityFromRail(communityId);
+                  if (channelId) setActiveChannelId(channelId);
+                }}
+                onOpenProfile={(userId) => {
+                  const member = communities.flatMap((community) => community.members).find((candidate) => candidate.userId === userId);
+                  if (member) showProfile(member, window.innerWidth / 2, window.innerHeight / 2);
+                }}
+                onNotice={(message, kind = "info") => pushToast(message, kind)}
+                onJoinLive={(share: LiveScreenShareSummary) => {
+                  setActiveView("live");
+                  if (webNavigation) {
+                    webNavigation.navigate(`/live-now/${encodeURIComponent(share.id)}`);
+                  } else {
+                    setLiveWatchSessionId(share.id);
+                  }
+                }}
+              />
+              )}
+            </DeferredViewBoundary>
           ) : activeView === "events" ? (
-            <GlobalEventsWorkspace events={visibleCommunityEvents} communities={communities} onOpenCommunity={(communityId) => openCommunityFromRail(communityId)} />
+            <GlobalEventsWorkspace
+              events={visibleCommunityEvents}
+              communities={communities}
+              currentUserId={currentUserId}
+              initialEventId={webNavigation?.parsed.params.eventId ?? null}
+              initialCreateOpen={Boolean(webNavigation?.parsed.params.createEvent)}
+              onOpenCommunity={(communityId) => openCommunityFromRail(communityId)}
+              onOpenEventSource={openFeedEventDetails}
+              onEventChange={(event) => setCommunityEvents((current) => {
+                const index = current.findIndex((item) => item.id === event.id);
+                if (index < 0) return [event, ...current];
+                const next = [...current];
+                next[index] = event;
+                return next;
+              })}
+              onRefresh={() => {
+                void eventService.listEvents({ filter: "upcoming", limit: 100 }).then((events) => {
+                  if (events) setCommunityEvents(events);
+                }).catch(() => undefined);
+              }}
+            />
           ) : activeView === "savedMessages" ? (
             <DeferredViewBoundary label="Opening saved messages">
-            <SavedMessagesView items={savedMessages} communities={communities} onBack={() => setActiveView("community")} onOpen={(item) => { const community=communities.find((candidate)=>candidate.id===item.communityId);const message=community?.messages.find((candidate)=>candidate.id===item.messageId);if(community&&message)jumpToMessage(community,message);else pushToast("This saved message is unavailable or inaccessible.","error"); }} onUnsave={(item) => { void savedMessageService.unsaveMessage(item.messageId).then(async (ok) => { if (ok) setSavedMessages(await savedMessageService.getSavedMessages()); else pushToast("Saved Messages could not be updated.", "error"); }); }} />
+            <SavedMessagesView items={savedMessages} communities={communities} onOpen={(item) => { const community=communities.find((candidate)=>candidate.id===item.communityId);const message=community?.messages.find((candidate)=>candidate.id===item.messageId);if(community&&message)jumpToMessage(community,message);else pushToast("This saved message is unavailable or inaccessible.","error"); }} onUnsave={(item) => { void savedMessageService.unsaveMessage(item.messageId).then(async (ok) => { if (ok) setSavedMessages(await savedMessageService.getSavedMessages()); else pushToast("Saved Messages could not be updated.", "error"); }); }} />
             </DeferredViewBoundary>
           ) : activeView === "directMessages" ? (
             <DeferredViewBoundary label="Opening direct messages">
@@ -4399,6 +4950,7 @@ export function App() {
                 <MemberSidebar
                   community={displayedActiveCommunity}
                   channel={displayedActiveChannel}
+                  currentUserId={currentUser.userId}
                   onOpenProfile={openProfile}
                   onMemberContextMenu={(event, member) => {
                     const moderationActions: { action: MemberModerationAction; label: string }[] = [{ action: "timeout", label: "Timeout member" }, { action: "kick", label: "Remove member" }, { action: "ban", label: "Ban member" }];
@@ -4559,6 +5111,7 @@ export function App() {
       {activeDirectCall && (activeView !== "directMessages" || activeDirectConversationId !== activeDirectCall.conversationId) ? (
         <DmActiveCallMiniPanel
           call={activeDirectCall}
+          currentUserId={currentUserId}
           peer={directCallPeer(activeDirectCall)}
           runtime={directCallRuntime}
           onReturn={() => openDirectMessagesRef.current(directCallPeer(activeDirectCall).id)}
@@ -4575,21 +5128,46 @@ export function App() {
           onClose={() => setDirectScreenPickerOpen(false)}
           onStart={async (sourceId, preset, sourceLabel) => {
             const { liveKitService } = await import("./services/livekit/livekitService");
-            const token = await liveKitService.fetchDirectToken({ conversationId: activeDirectCall.conversationId, callId: activeDirectCall.id, participantName: displayedCurrentUser.displayName, intent: "screen" });
-            if (!token.ok) { pushToast(token.error.message, "error"); return; }
             const { voiceService } = await import("./services/voiceService");
             const peer = directCallPeer(activeDirectCall);
+            // Screen publish requires a token minted with intent=screen (voice JWT has microphone only).
+            const token = await liveKitService.fetchDirectToken({
+              conversationId: activeDirectCall.conversationId,
+              callId: activeDirectCall.id,
+              participantName: displayedCurrentUser.displayName,
+              intent: "screen",
+            });
+            if (!token.ok) {
+              pushToast(token.error.message, "error");
+              return;
+            }
             directCallReconnectInProgressRef.current = true;
-            const connected = await voiceService.connectAuthorizedToken(token.data, { communityId: activeDirectCall.conversationId, communityName: peer.name, channelId: activeDirectCall.conversationId, channelName: "Direct call" });
-            directCallReconnectInProgressRef.current = false;
-            if (!connected.ok) { pushToast(connected.error.message, "error"); return; }
-            if (directCallRuntime.muted) await voiceService.setMuted(true);
-            if (activeDirectCall.callType === "video" && directCallRuntime.cameraEnabled) await voiceService.setCameraEnabled(true);
-            const result = await voiceService.startScreenShare(sourceId, preset, sourceLabel);
-            if (!result.ok) { pushToast(result.error.message, "error"); return; }
-            await dmCallService.updateParticipant(activeDirectCall.id, "connected", { screenShareEnabled: true });
-            await dmCallService.recordDeviceEvent(activeDirectCall.id, "screen_share", "enabled");
-            setDirectScreenPickerOpen(false);
+            try {
+              const connected = await voiceService.connectAuthorizedToken(token.data, {
+                communityId: activeDirectCall.conversationId,
+                communityName: peer.name,
+                channelId: activeDirectCall.conversationId,
+                channelName: "Direct call",
+              });
+              if (!connected.ok) {
+                pushToast(connected.error.message, "error");
+                return;
+              }
+              if (directCallRuntime.muted) await voiceService.setMuted(true);
+              if (activeDirectCall.callType === "video" && directCallRuntime.cameraEnabled) {
+                await voiceService.setCameraEnabled(true);
+              }
+              const result = await voiceService.startScreenShare(sourceId, preset, sourceLabel);
+              if (!result.ok) {
+                pushToast(result.error.message, "error");
+                return;
+              }
+              await dmCallService.updateParticipant(activeDirectCall.id, "connected", { screenShareEnabled: true });
+              await dmCallService.recordDeviceEvent(activeDirectCall.id, "screen_share", "enabled");
+              setDirectScreenPickerOpen(false);
+            } finally {
+              directCallReconnectInProgressRef.current = false;
+            }
           }}
         />
       ) : null}
@@ -4604,7 +5182,6 @@ export function App() {
           voiceCalls.decline();
           if (callerId) openDirectMessages(callerId);
         }}
-        onCancelOutgoing={voiceCalls.cancelOutgoing}
         onDismissOutgoing={voiceCalls.dismissOutgoing}
       />
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
