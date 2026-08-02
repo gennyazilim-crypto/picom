@@ -1,6 +1,4 @@
-import { mockCommunities } from "../data/mockCommunities";
 import type { UserStatus } from "../types/community";
-import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 
 export const MEMBER_SELECT = "id, community_id, user_id, role_id, joined_at" as const;
@@ -111,28 +109,6 @@ export const membersService = {
   async listMembers(communityId: string): Promise<MembersServiceResult<MemberSummary[]>> {
     if (!communityId.trim()) {
       return membersError("VALIDATION_ERROR", "Community ID is required.");
-    }
-
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      const community = mockCommunities.find((item) => item.id === communityId);
-      return {
-        ok: true,
-        data: (community?.members ?? []).map((member): MemberSummary => ({
-          id: member.id,
-          communityId,
-          userId: member.userId,
-          roleId: member.roleId,
-          roleIds: member.roleIds?.length ? [...member.roleIds] : [member.roleId],
-          joinedAt: new Date(0).toISOString(),
-          displayName: member.displayName,
-          username: member.username,
-          avatarUrl: member.avatarUrl ?? null,
-          status: member.status,
-          statusText: member.statusText,
-        })),
-      };
     }
 
     const configured = getConfiguredSupabaseClient();

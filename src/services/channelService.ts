@@ -1,7 +1,6 @@
 import type { ChannelType } from "../types/community";
-import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import { CHANNEL_LIST_SELECT, listMockChannelSummaries, listSupabaseChannelSummaries, mapChannelListRow } from "./channelListQuery";
+import { listSupabaseChannelSummaries, mapChannelListRow } from "./channelListQuery";
 import { auditLogService } from "./auditLogService";
 
 export type ChannelSummary = Readonly<{
@@ -127,12 +126,6 @@ export const channelService = {
       return { ok: false, error: { code: "VALIDATION_ERROR", message: "Community ID is required." } };
     }
 
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      return { ok: true, data: listMockChannelSummaries(communityId) };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
@@ -151,20 +144,6 @@ export const channelService = {
 
     const name = normalizeChannelName(input.name);
     const type = input.type ?? "text";
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      const now = new Date().toISOString();
-      const channel: ChannelSummary = {
-          id: `mock-channel-${Date.now()}`, communityId: input.communityId, categoryId: input.categoryId ?? null, name, type, topic: input.topic?.trim() || null, isPrivate: Boolean(input.isPrivate), publicReadEnabled: input.isPrivate ? false : (input.publicReadEnabled ?? true), position: 0, createdAt: now, updatedAt: now,
-      };
-      await auditLogService.append({ communityId: input.communityId, actionType: "channel_create", targetType: "channel", targetId: channel.id, reason: `Created #${name}` });
-      return {
-        ok: true,
-        data: channel,
-      };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
@@ -200,12 +179,6 @@ export const channelService = {
     if (!name) return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel name is required." } };
     if (input.topic && input.topic.length > 300) return { ok: false, error: { code: "VALIDATION_ERROR", message: "Channel topic must be 300 characters or fewer." } };
 
-    const dataSource = dataSourceService.getStatus();
-    if (dataSource.isMock) {
-      const now = new Date().toISOString();
-      return { ok: true, data: { id: input.channelId, communityId: input.communityId, categoryId: input.categoryId, name, type: input.type, topic: input.topic?.trim() || null, isPrivate: input.isPrivate, publicReadEnabled: input.isPrivate ? false : input.publicReadEnabled, position: 0, createdAt: now, updatedAt: now } };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
     const rpcClient = configured.data as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
@@ -236,9 +209,6 @@ export const channelService = {
     if (!input.fallbackChannelId) {
       return { ok: false, error: { code: "LAST_CHANNEL_REQUIRED", message: "Create another channel before deleting the final channel." } };
     }
-
-    const dataSource = dataSourceService.getStatus();
-    if (dataSource.isMock) return { ok: true, data: { deletedChannelId: input.channelId, fallbackChannelId: input.fallbackChannelId } };
 
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
