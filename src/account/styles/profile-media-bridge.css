@@ -1,0 +1,115 @@
+/* Bridge main-app profile media styles into Account Center theme tokens. */
+
+:root,
+html[data-theme="dark"],
+html[data-theme="light"] {
+  --surface-soft: var(--surface-muted);
+  --accent: var(--brand-primary);
+  --text-strong: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text: var(--text-secondary);
+  --window-backdrop: color-mix(in srgb, var(--background) 88%, black);
+  --shadow-app: var(--shadow-lg);
+  --text-on-accent: var(--text-inverse);
+}
+
+.ac-shell .profile-media-editor .settings-kicker {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.ac-shell .profile-media-editor .primary-button,
+.ac-shell .profile-media-editor .secondary-button,
+.ac-shell .profile-media-editor .icon-button {
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0 0.9rem;
+  border-radius: var(--ac-radius-sm);
+  border: 1px solid var(--border);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ac-shell .profile-media-editor .primary-button {
+  background: var(--brand-primary);
+  border-color: transparent;
+  color: var(--text-inverse);
+}
+
+.ac-shell .profile-media-editor .primary-button.danger,
+.ac-shell .profile-media-editor .secondary-button.danger {
+  background: var(--danger);
+  border-color: transparent;
+  color: #fff;
+}
+
+.ac-shell .profile-media-editor .secondary-button {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.ac-shell .profile-media-editor .icon-button {
+  width: 2.25rem;
+  padding: 0;
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.ac-shell .profile-media-editor .primary-button:disabled,
+.ac-shell .profile-media-editor .secondary-button:disabled,
+.ac-shell .profile-media-editor .icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ac-shell__avatar {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.ac-shell__avatar .user-avatar {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+}
+
+.ac-overview-hero__banner {
+  position: relative;
+  overflow: hidden;
+}
+
+.ac-overview-hero__banner .profile-cover,
+.ac-overview-hero__banner .ac-overview-hero__cover {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.ac-overview-hero__banner .profile-cover__overlay {
+  background: linear-gradient(
+    180deg,
+    transparent 20%,
+    color-mix(in srgb, var(--surface-raised) 55%, transparent) 100%
+  );
+}
+
+.ac-overview-hero__avatar {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.ac-overview-hero__avatar .user-avatar {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 11px;
+  border: 0;
+}

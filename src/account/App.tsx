@@ -10,10 +10,12 @@ import { AccountThemeProvider } from "./lib/theme";
 import { AccountOverviewPage } from "./pages/AccountOverviewPage";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
 import { AuthErrorPage } from "./pages/AuthErrorPage";
+import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { DataExportPage } from "./pages/DataExportPage";
 import { DeactivatePage } from "./pages/DeactivatePage";
 import { DeletePage } from "./pages/DeletePage";
 import { EmailChangePage } from "./pages/EmailChangePage";
+import { ConfirmEmailChangePage } from "./pages/ConfirmEmailChangePage";
 import { EmailVerificationPendingPage } from "./pages/EmailVerificationPendingPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { HomePage } from "./pages/HomePage";
@@ -24,6 +26,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { MfaChallengePage } from "./pages/MfaChallengePage";
 import { MfaPage } from "./pages/MfaPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { OpenAppPage } from "./pages/OpenAppPage";
 import { PasswordChangePage } from "./pages/PasswordChangePage";
 import { PreferencesPage } from "./pages/PreferencesPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
@@ -70,8 +73,25 @@ export function App() {
           <Route path={ROUTES.register} element={<GuestSplit><RegisterPage /></GuestSplit>} />
           <Route path={ROUTES.forgotPassword} element={<GuestSplit><ForgotPasswordPage /></GuestSplit>} />
           <Route path={ROUTES.emailVerificationPending} element={<PublicAuthLayout><EmailVerificationPendingPage /></PublicAuthLayout>} />
+
+          <Route path={ROUTES.verifyEmailSuccess} element={<PublicAuthLayout><VerifyEmailPage forcedStatus="success" /></PublicAuthLayout>} />
+          <Route path={ROUTES.verifyEmailExpired} element={<PublicAuthLayout><VerifyEmailPage forcedStatus="expired" /></PublicAuthLayout>} />
+          <Route path={ROUTES.verifyEmailFailed} element={<PublicAuthLayout><VerifyEmailPage forcedStatus="invalid" /></PublicAuthLayout>} />
+          <Route path={ROUTES.verifyEmailCode} element={<PublicAuthLayout><VerifyEmailPage /></PublicAuthLayout>} />
           <Route path={ROUTES.verifyEmail} element={<PublicAuthLayout><VerifyEmailPage /></PublicAuthLayout>} />
+          <Route path={ROUTES.verifyEmailLegacyConfirm} element={<PublicAuthLayout><VerifyEmailPage /></PublicAuthLayout>} />
+
+          <Route path={ROUTES.resetPasswordSuccess} element={<ResetPasswordPage forcedStatus="success" />} />
+          <Route path={ROUTES.resetPasswordExpired} element={<ResetPasswordPage forcedStatus="expired" />} />
+          <Route path={ROUTES.resetPasswordCode} element={<ResetPasswordPage />} />
           <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+          <Route path={ROUTES.resetPasswordLegacy} element={<ResetPasswordPage />} />
+
+          <Route path={ROUTES.confirmEmailChangeCode} element={<PublicAuthLayout><ConfirmEmailChangePage /></PublicAuthLayout>} />
+          <Route path={ROUTES.confirmEmailChange} element={<PublicAuthLayout><ConfirmEmailChangePage /></PublicAuthLayout>} />
+          <Route path={ROUTES.confirmEmailChangeLegacy} element={<PublicAuthLayout><ConfirmEmailChangePage /></PublicAuthLayout>} />
+          <Route path={ROUTES.openAppCode} element={<PublicAuthLayout><OpenAppPage /></PublicAuthLayout>} />
+
           <Route path={ROUTES.mfaChallenge} element={<ProtectedRoute><PublicAuthLayout><MfaChallengePage /></PublicAuthLayout></ProtectedRoute>} />
           <Route path={ROUTES.authCallback} element={<PublicAuthLayout><AuthCallbackPage /></PublicAuthLayout>} />
           <Route path={ROUTES.authError} element={<PublicAuthLayout><AuthErrorPage /></PublicAuthLayout>} />
@@ -87,8 +107,13 @@ export function App() {
             <Route path={ROUTES.profileVerification} element={<ProfileVerificationPage />} />
             <Route path={ROUTES.emailVerification} element={<EmailVerificationPendingPage />} />
             <Route path={ROUTES.security} element={<SecurityPage />} />
+            <Route path={ROUTES.accountSecurity} element={<Navigate to={ROUTES.security} replace />} />
+            <Route path={ROUTES.connections} element={<ConnectionsPage />} />
+            <Route path={ROUTES.connectionsLegacy} element={<Navigate to={ROUTES.connections} replace />} />
             <Route path={ROUTES.passwordChange} element={<PasswordChangePage />} />
+            <Route path={ROUTES.accountPassword} element={<Navigate to={ROUTES.passwordChange} replace />} />
             <Route path={ROUTES.emailChange} element={<EmailChangePage />} />
+            <Route path={ROUTES.accountEmail} element={<Navigate to={ROUTES.emailChange} replace />} />
             <Route path={ROUTES.mfa} element={<MfaPage />} />
             <Route path={ROUTES.sessions} element={<SessionsPage />} />
             <Route path={ROUTES.preferences} element={<PreferencesPage />} />
