@@ -1,8 +1,8 @@
-import type { Attachment, AttachmentScanStatus, Reaction } from "../types/community";
+import type { Attachment, Reaction } from "../types/community";
 import type { MentionCommentPreview, MentionItem } from "../types/mentions";
-import { dataSourceService } from "./dataSourceService";
 import type { Database, Json } from "./supabase/database.types";
 import { getSupabaseClient } from "./supabase/supabaseClient";
+import { feedAttachmentToUiAttachment, mapRpcAttachments } from "./feed/feedAttachmentModel";
 
 type MentionFeedRow = Database["public"]["Views"]["mention_feed_view"]["Row"];
 
@@ -47,25 +47,9 @@ function numberValue(value: Json | undefined): number | undefined {
 }
 
 function mapAttachments(value: Json): Attachment[] {
-  return objectArray(value).flatMap((row) => {
-    const id = stringValue(row.id);
-    const publicUrl = stringValue(row.public_url);
-    if (!id || !publicUrl) return [];
-    const scanStatus = stringValue(row.scan_status);
-    if (scanStatus !== "clean" && scanStatus !== "skipped_development") return [];
-    const thumbnailUrl = stringValue(row.thumbnail_url);
-    return [{
-      id,
-      type: "image" as const,
-      url: publicUrl,
-      publicUrl,
-      thumbnailUrl: thumbnailUrl ?? publicUrl,
-      mimeType: stringValue(row.mime_type),
-      alt: stringValue(row.file_name) ?? "Shared image",
-      width: numberValue(row.width),
-      height: numberValue(row.height),
-      scanStatus: scanStatus as AttachmentScanStatus,
-    }];
+  return mapRpcAttachments(value).flatMap((item) => {
+    const ui = feedAttachmentToUiAttachment(item);
+    return ui ? [ui] : [];
   });
 }
 
@@ -116,21 +100,6 @@ function mapRow(row: MentionFeedRow): MentionItem {
 async function listPage(input: Readonly<{ cursor?: string | null; limit?: number }> = {}): Promise<MentionFeedResult> {
   const limit = Math.min(Math.max(input.limit ?? 40, 1), 60);
   const cursor = decodeCursor(input.cursor);
-
-  if (dataSourceService.getStatus().isMock) {
-    const { mockMentionItems } = await import("../data/mockMentions");
-    const ordered = [...mockMentionItems].sort((left, right) => {
-      const createdDelta = Date.parse(right.createdAt) - Date.parse(left.createdAt);
-      return createdDelta || right.messageId.localeCompare(left.messageId);
-    });
-    const start = cursor
-      ? Math.max(0, ordered.findIndex((item) => item.createdAt === cursor.createdAt && item.messageId === cursor.messageId) + 1)
-      : 0;
-    const pageItems = ordered.slice(start, start + limit);
-    const hasMore = start + limit < ordered.length;
-    const last = pageItems[pageItems.length - 1];
-    return { ok: true, data: { items: pageItems, hasMore, nextCursor: hasMore && last ? encodeCursor({ createdAt: last.createdAt, messageId: last.messageId }) : null } };
-  }
 
   const client = getSupabaseClient();
   if (!client) return { ok: false, error: { code: "DATA_SOURCE_NOT_CONFIGURED", message: "Mention Feed is unavailable until Picom reconnects." } };
