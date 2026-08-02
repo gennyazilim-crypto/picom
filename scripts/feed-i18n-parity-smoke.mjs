@@ -15,6 +15,7 @@ const keys = [
   "feed.newActivities", "feed.replies", "feed.reactions", "feed.saved", "feed.read", "feed.inaccessible",
   "feed.live.bandLabel", "feed.live.title", "feed.live.emptyTitle", "feed.companion.friends",
   "feed.companion.events", "feed.companion.voice",
+  "feed.media.count", "feed.media.open", "feed.media.broken", "feed.media.viewerLabel", "feed.media.close",
 ];
 
 for (const key of keys) {

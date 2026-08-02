@@ -528,7 +528,10 @@
     "feed:pagination:smoke": "node scripts/feed-pagination-smoke.mjs",
     "feed:live-now:smoke": "node scripts/feed-live-now-preview-smoke.mjs",
     "feed:mock:bundle:scan": "node scripts/feed-mock-production-bundle-scan.mjs",
-    "feed:i18n:parity": "node scripts/feed-i18n-parity-smoke.mjs"
+    "feed:i18n:parity": "node scripts/feed-i18n-parity-smoke.mjs",
+    "feed:media:smoke": "node scripts/feed-media-performance-smoke.mjs",
+    "feed:perf:synthetic": "node scripts/feed-synthetic-performance-smoke.mjs",
+    "feed:storage:security:static": "node scripts/feed-storage-security-static-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
