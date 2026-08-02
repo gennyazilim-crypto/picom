@@ -6,7 +6,7 @@ import { MentionFeedCard } from "./MentionFeedCard";
 export type MentionFeedListProps = {
   items: MentionItem[];
   communities: Community[];
-  onOpenImage: (attachment: Attachment) => void;
+  onOpenImage: (attachment: Attachment, gallery?: readonly Attachment[]) => void;
   onOpenInChannel: (item: MentionItem) => void;
   onToggleReaction: (id: string, emoji: string) => void;
   onToggleSaved: (id: string) => void;
