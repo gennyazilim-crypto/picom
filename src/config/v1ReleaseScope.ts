@@ -29,6 +29,7 @@ export type V1FeatureKey =
   | "podcasts"
   | "events"
   | "bookmarks"
+  | "liveWorkspace"
   | "meetingWorkspace"
   | "enhancedNoiseShield"
   | "discoveryMarketplace"
@@ -89,6 +90,7 @@ export const v1ReleaseScope = Object.freeze({
     podcasts: hidden("Podcast data and code are retained but excluded from Picom V1 Core."),
     events: inV1("Community events, RSVP, reminders, and event discovery use the production Supabase data path."),
     bookmarks: inV1("Private, user-owned bookmarks use the production Supabase data path."),
+    liveWorkspace: inV1("Live workspace lists accessible community screen shares from LiveKit and Supabase."),
     meetingWorkspace: hidden("Meeting workspace, stage, and camera surfaces are not in V1 Core."),
     enhancedNoiseShield: hidden("Enhanced noise-shield controls are not release-certified for V1 Core."),
     discoveryMarketplace: inV1("Public discovery marketplace is enabled on stable."),
@@ -122,6 +124,7 @@ const globalNavigationFeature: Readonly<Record<GlobalSidebarItemKey, V1FeatureKe
   feed: "feed",
   dm: "directMessages",
   communities: "textCommunities",
+  live: "liveWorkspace",
   discover: "discoveryMarketplace",
   radio: "radio",
   podcasts: "podcasts",
@@ -153,13 +156,14 @@ export function isV1ActiveViewEnabled(activeView: string): boolean {
   if (activeView === "radioCommunity") return isV1FeatureEnabled("radio");
   if (activeView === "podcastCommunity") return isV1FeatureEnabled("podcasts");
   if (activeView === "events") return isV1FeatureEnabled("events");
+  if (activeView === "live") return isV1FeatureEnabled("liveWorkspace");
   if (activeView === "savedMessages") return isV1FeatureEnabled("bookmarks");
   if (activeView === "discovery") return isV1FeatureEnabled("discoveryMarketplace");
   return false;
 }
 
 export function isV1DeepLinkTypeEnabled(type: DeepLinkAction["type"]): boolean {
-  if (["authCallback", "sessionContinue", "passwordRecovery", "emailVerification", "invite", "friends", "directMessage"].includes(type)) return true;
+  if (["authCallback", "sessionContinue", "passwordRecovery", "emailVerification", "invite", "friends", "directMessage", "liveNow", "profile"].includes(type)) return true;
   if (type === "community") return isV1FeatureEnabled("textCommunities");
   if (type === "radio") return isV1FeatureEnabled("radio");
   if (type === "podcast") return isV1FeatureEnabled("podcasts");

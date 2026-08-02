@@ -1,6 +1,6 @@
 import type { IconName } from "../components/AppIcon";
 
-export type GlobalNavigationKey = "feed" | "dm" | "communities" | "discover" | "radio" | "podcasts" | "events" | "bookmarks";
+export type GlobalNavigationKey = "feed" | "dm" | "communities" | "live" | "discover" | "radio" | "podcasts" | "events" | "bookmarks";
 export type GlobalUtilityKey = "settings" | "helpSupport";
 export type GlobalSidebarItemKey = GlobalNavigationKey | GlobalUtilityKey;
 export type GlobalNavigationStatus = "available" | "unavailable";
@@ -8,6 +8,8 @@ export type GlobalNavigationStatus = "available" | "unavailable";
 export type GlobalNavigationBadgeState = Readonly<{
   dmUnread: number;
   communityUnread: number;
+  communityUnreadById?: Readonly<Record<string, number>>;
+  liveActive: number;
   radioLive: number;
   eventUpcoming: number;
   bookmarkCount: number;
@@ -26,5 +28,6 @@ export type GlobalNavigationRegistryItem = Readonly<{
   section: "primary" | "utility";
   status: (availability: GlobalNavigationAvailability) => GlobalNavigationStatus;
   unavailableReason?: string;
+  tooltip?: string;
   badgeSelector: (state: GlobalNavigationBadgeState) => number | string | null;
 }>;
