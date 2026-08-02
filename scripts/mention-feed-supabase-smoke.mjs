@@ -15,10 +15,13 @@ for (const marker of [
   "follows_select_participants",
   "security invoker",
   "public.list_mention_feed",
-]) assert.ok(migration.includes(marker), `missing migration marker: ${marker}`);
+]) {
+  assert.ok(migration.includes(marker), `missing migration marker: ${marker}`);
+}
 
 assert.ok(service.includes('client.rpc("list_mention_feed"'), "service must use the permission-filtered RPC");
-assert.ok(service.includes("dataSourceService.getStatus().isMock"), "service must retain mock mode");
+assert.ok(!service.includes("isMock"), "service must not depend on mock-mode production fallback");
+assert.ok(service.includes("DATA_SOURCE_NOT_CONFIGURED") || service.includes("MENTION_FEED_LOAD_FAILED"), "service must fail closed without demo data");
 assert.ok(app.includes("mentionFeedService.listPage"), "App must load Supabase Mention Feed through the service");
 assert.ok(databaseTypes.includes("message_mentions"), "database types must include mention rows");
 assert.ok(databaseTypes.includes("mention_feed_view"), "database types must include feed view");
