@@ -7,12 +7,13 @@ export type ScreenShareQualityPreset = Readonly<{
   width: number;
   height: number;
   frameRate: number;
+  maxBitrate: number;
 }>;
 
 export const screenShareQualityPresets: readonly ScreenShareQualityPreset[] = [
-  { id: "presentation", label: "Presentation", description: "Sharper text and slides", width: 1920, height: 1080, frameRate: 15 },
-  { id: "balanced", label: "Balanced", description: "Clear motion and detail", width: 1280, height: 720, frameRate: 24 },
-  { id: "performance", label: "Performance", description: "Lower CPU and bandwidth", width: 960, height: 540, frameRate: 15 },
+  { id: "presentation", label: "Presentation HD", description: "Sharp 1080p text and slides", width: 1920, height: 1080, frameRate: 30, maxBitrate: 6_000_000 },
+  { id: "balanced", label: "Balanced HD", description: "1080p motion and detail", width: 1920, height: 1080, frameRate: 30, maxBitrate: 4_500_000 },
+  { id: "performance", label: "Performance", description: "720p for limited connections", width: 1280, height: 720, frameRate: 24, maxBitrate: 2_500_000 },
 ] as const;
 
 export function getScreenShareQualityPreset(id: ScreenShareQualityPresetId): ScreenShareQualityPreset {
@@ -22,8 +23,8 @@ export function getScreenShareQualityPreset(id: ScreenShareQualityPresetId): Scr
 export function getScreenShareTrackConstraints(id: ScreenShareQualityPresetId): MediaTrackConstraints {
   const preset = getScreenShareQualityPreset(id);
   return {
-    width: { max: preset.width },
-    height: { max: preset.height },
-    frameRate: { max: preset.frameRate },
+    width: { ideal: preset.width, max: preset.width },
+    height: { ideal: preset.height, max: preset.height },
+    frameRate: { ideal: preset.frameRate, max: preset.frameRate },
   };
 }
