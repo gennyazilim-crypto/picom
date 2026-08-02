@@ -1,70 +1,39 @@
-﻿# Image Thumbnail Generation Placeholder
+﻿# Image thumbnails — Approach B (native preview)
 
-Picom's current MVP upload flow stores original image attachments in Supabase Storage and renders them through `AttachmentGrid`. This task prepares the thumbnail metadata path without adding a heavy renderer-side image processing dependency.
+Picom Feed and message cards do **not** run a production thumbnail processor in the Electron renderer.
 
-## Current behavior
+## Production policy (this package)
 
-- `AttachmentGrid` prefers `thumbnailUrl` when present.
-- If no thumbnail exists, it falls back to `publicUrl` and then local preview `url`.
-- `ImagePreviewModal` continues to use the full image URL, not the thumbnail URL.
-- Upload metadata can carry optional `thumbnailUrl`, `width`, `height`, and `blurhashPlaceholder` fields.
+- Upload still stores originals in Supabase Storage bucket `message-attachments`.
+- `attachmentThumbnailService.createNativePreviewMetadata()` returns `thumbnailUrl: null` and `processor: "NATIVE_ORIGINAL_PREVIEW"`.
+- No fake/placeholder thumbnail URL is written into metadata or the Feed UI.
+- `AttachmentGrid` / Feed cards call `resolveNativeImagePreviewUrl()`:
+  1. use real `thumbnail_url` when Storage/metadata eventually provides one
+  2. otherwise use the scanned original `public_url` / `url`
+- Images load with `loading="lazy"` and `decoding="async"`.
+- Broken images show a dedicated fallback state (no crash).
+- `ImagePreviewModal` opens the full original after quarantine checks, with gallery next/previous.
 
-## Placeholder service
+## Why not Approach A yet
 
-`src/services/attachmentThumbnailService.ts` exposes:
+No `sharp`, ImageMagick, Canvas, or native image processing dependency is introduced in the renderer. A future Edge Function / storage worker may write real `thumbnail_url` values; the client path already prefers them when present.
 
-- `createThumbnailPlaceholder()`
-- `generateThumbnailPlaceholder()`
+## Image validation (existing)
 
-Both currently return a safe placeholder result:
+- MIME allowlist: PNG, JPEG, WEBP, GIF (`fileService.allowedImageMimeTypes`)
+- Extension allowlist aligned with MIME
+- Max size: 10 MB
+- Magic-byte validation on upload (`fileService.validateContent`)
+- SVG is not in the allowlist
+- Quarantine / scan gate via `attachmentQuarantineService`
 
-```ts
-{
-  thumbnailUrl: null,
-  thumbnailStoragePath: "...thumbnail-placeholder",
-  width: null,
-  height: null,
-  blurhashPlaceholder: null,
-  generated: false,
-  reason: "IMAGE_PROCESSOR_NOT_CONFIGURED"
-}
-```
+## Video
 
-## Why no processor yet
+Feed cards currently project **image** attachments only from `list_mention_feed`. Video transcoding is **not** implemented; unsupported video kinds stay outside the image grid.
 
-No `sharp`, ImageMagick, Canvas, or native image processing dependency is introduced in this task because thumbnail generation should run in a controlled backend/Edge Function/storage worker path, not inside the Electron renderer.
-
-## Future production flow
-
-1. User uploads original image through `uploadService`.
-2. Storage worker or Edge Function validates MIME/size again.
-3. Worker generates a small thumbnail object near the original object path.
-4. Worker stores:
-   - `thumbnail_url`
-   - `width`
-   - `height`
-   - optional blurhash/preview placeholder field if the database schema adds it
-5. Renderer receives safe DTO metadata and `AttachmentGrid` uses the thumbnail first.
-6. `ImagePreviewModal` opens the full image URL after access checks.
-
-## Safety notes
+## Safety
 
 - Do not generate thumbnails by executing uploaded files.
-- Do not expose raw local file paths.
-- Private-channel thumbnails must follow the same access rules as full attachments.
-- Suspicious or quarantined files should not receive public thumbnail URLs.
-- CDN caching rules for thumbnails are documented separately in `docs/attachment-delivery.md`.
-
-## Manual test steps
-
-1. Run mock mode.
-2. Attach and send an image.
-3. Confirm the image still renders in `AttachmentGrid`.
-4. Click the image and confirm `ImagePreviewModal` opens the full image.
-5. In API mode, confirm attachment metadata can carry null thumbnail/dimension fields without crashing.
-
-## Remaining work
-
-- Add a backend/Edge Function thumbnail worker after storage access policy is final.
-- Add database field for `blurhashPlaceholder` only if the product chooses blurhash previews.
-- Backfill dimensions for existing attachments if needed before beta.
+- Do not invent thumbnail URLs when the processor is unavailable.
+- Private-channel media follows message RLS / storage policies.
+- Suspicious or quarantined files do not render.
