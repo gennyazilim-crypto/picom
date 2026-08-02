@@ -46,6 +46,40 @@ export const feedMentionCacheService = {
     updatedAt = Date.now();
     return items.map(clone);
   },
+  /** Append a cursor page without wiping earlier items or corrupting order. */
+  mergePage(page: readonly MentionItem[], localState: readonly MentionItem[] = items) {
+    const byMessageId = new Map(localState.map((item) => [item.messageId, clone(item)]));
+    for (const item of page) {
+      const existing = byMessageId.get(item.messageId);
+      byMessageId.set(item.messageId, existing && !existing.isUnread ? { ...clone(item), isUnread: false } : clone(item));
+    }
+    items = bounded([...byMessageId.values()]);
+    updatedAt = Date.now();
+    return items.map(clone);
+  },
+  /**
+   * Realtime head sync: patch existing cards in place; count brand-new activity ids
+   * without prepending (caller shows "new activities" and refreshes on reveal).
+   */
+  mergeRealtimeHead(incoming: readonly MentionItem[], localState: readonly MentionItem[] = items) {
+    const byMessageId = new Map(localState.map((item) => [item.messageId, clone(item)]));
+    let added = 0;
+    for (const item of incoming) {
+      const existing = byMessageId.get(item.messageId);
+      if (existing) {
+        byMessageId.set(item.messageId, {
+          ...clone(item),
+          isUnread: existing.isUnread === false ? false : item.isUnread,
+          isSaved: existing.isSaved,
+        });
+      } else {
+        added += 1;
+      }
+    }
+    items = bounded([...byMessageId.values()]);
+    updatedAt = Date.now();
+    return { items: items.map(clone), added } as const;
+  },
   removeSource(sourceId: string, localState: readonly MentionItem[] = items) {
     items = bounded(localState.filter((item) => item.messageId !== sourceId && item.id !== sourceId));
     updatedAt = Date.now();

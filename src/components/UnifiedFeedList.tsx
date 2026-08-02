@@ -12,6 +12,8 @@ type UnifiedFeedListProps = {
   savedAudioIds: ReadonlySet<string>;
   readAudioIds: ReadonlySet<string>;
   reminderAudioIds: ReadonlySet<string>;
+  emptyTitle?: string;
+  emptyBody?: string;
   onOpenImage: (attachment: Attachment) => void;
   onOpenTextInChannel: (item: MentionItem) => void;
   onToggleTextReaction: (id: string, emoji: string) => void;
@@ -41,7 +43,12 @@ export function UnifiedFeedList(props: UnifiedFeedListProps) {
   ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt) || right.id.localeCompare(left.id));
 
   if (!entries.length) {
-    return <div className="mention-empty-state"><strong>No mentions match this view.</strong><span>Try another tab or clear the active quick filter.</span></div>;
+    return (
+      <div className="mention-empty-state">
+        <strong>{props.emptyTitle ?? "No mentions match this view."}</strong>
+        <span>{props.emptyBody ?? "Try another tab or clear the active quick filter."}</span>
+      </div>
+    );
   }
 
   return (
