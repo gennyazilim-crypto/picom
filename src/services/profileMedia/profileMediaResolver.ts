@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../supabase/supabaseClient";
 import { profileMediaStore } from "./profileMediaStore";
 import { PROFILE_MEDIA_BUCKET, type ProfileMediaAsset, type ProfileMediaRecord } from "./profileMediaTypes";
+import type { VerificationSummary, VerificationType } from "../../types/verification";
 
 type RpcAsset = {
   path?: unknown;
@@ -12,7 +13,11 @@ type RpcAsset = {
 };
 type RpcPayload = {
   can_view?: unknown;
+  can_view_avatar?: unknown;
+  can_view_cover?: unknown;
   display_name?: unknown;
+  username?: unknown;
+  verification?: unknown;
   avatar?: RpcAsset;
   cover?: RpcAsset;
   updated_at?: unknown;
@@ -24,6 +29,20 @@ const inFlight = new Map<string, Promise<ProfileMediaRecord | null>>();
 
 const asString = (value: unknown): string | null => typeof value === "string" && value.length ? value : null;
 const asVersion = (value: unknown): number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+const verificationTypes = new Set<VerificationType>(["verified_user", "official_community", "picom_staff", "verified_bot"]);
+
+function asVerification(value: unknown): VerificationSummary {
+  if (!value || typeof value !== "object") return { status: "none" };
+  const record = value as Record<string, unknown>;
+  if (record.status !== "approved" || typeof record.type !== "string" || !verificationTypes.has(record.type as VerificationType)) {
+    return { status: "none" };
+  }
+  return {
+    status: "approved",
+    type: record.type as VerificationType,
+    approvedAt: asString(record.approved_at) ?? undefined,
+  };
+}
 
 function appendVersion(url: string, version: number): string {
   try {
@@ -71,14 +90,21 @@ async function fetchRecord(userId: string): Promise<ProfileMediaRecord | null> {
   const { data, error } = await client.rpc("get_profile_media_v1", { target_user_id: userId });
   if (error) throw new Error(error.message || "Picom could not load profile media.");
   const payload = (data ?? {}) as RpcPayload;
-  const canView = payload.can_view === true;
-  const [avatar, cover] = canView
-    ? await Promise.all([mapAsset(payload.avatar), mapAsset(payload.cover)])
-    : await Promise.all([mapAsset(undefined), mapAsset(undefined)]);
+  const legacyCanView = payload.can_view === true;
+  const canViewAvatar = payload.can_view_avatar === true
+    || (typeof payload.can_view_avatar === "undefined" && legacyCanView);
+  const canViewCover = payload.can_view_cover === true
+    || (typeof payload.can_view_cover === "undefined" && legacyCanView);
+  const [avatar, cover] = await Promise.all([
+    canViewAvatar ? mapAsset(payload.avatar) : mapAsset(undefined),
+    canViewCover ? mapAsset(payload.cover) : mapAsset(undefined),
+  ]);
   return {
     userId,
-    canView,
+    canView: canViewAvatar || canViewCover,
     displayName: asString(payload.display_name),
+    username: asString(payload.username),
+    verification: asVerification(payload.verification),
     avatar,
     cover,
     updatedAt: asString(payload.updated_at),
