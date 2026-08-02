@@ -1,12 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dataSourceService } from "./dataSourceService";
-import { createMockDeletedMessage, deleteSupabaseMessage, type DeletedMessageSummary } from "./messageDeleteMutation";
-import { createMockEditedMessage, editSupabaseMessage, type EditedMessageSummary } from "./messageEditMutation";
-import { listMockMessageSummaries, listSupabaseMessageSummaries, type ListMessagesInput, type MessagePage } from "./messageListQuery";
-import { createMockSentMessage, sendSupabaseMessage } from "./messageSendMutation";
+import { deleteSupabaseMessage, type DeletedMessageSummary } from "./messageDeleteMutation";
+import { editSupabaseMessage, type EditedMessageSummary } from "./messageEditMutation";
+import { listSupabaseMessageSummaries, type ListMessagesInput, type MessagePage } from "./messageListQuery";
+import { sendSupabaseMessage } from "./messageSendMutation";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import type { Database } from "./supabase/database.types";
-import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
+import { loggingService } from "./loggingService";
+import {
+  classifyMessageSendError,
+  executeMessageSendWithRetry,
+  toMessageSendLogMetadata,
+  type MessageSendContext,
+  type MessageSendError,
+} from "./messageSendObservability";
 import { reactionService } from "./reactionService";
 import type { Reaction } from "../types/community";
 
@@ -79,7 +85,9 @@ export type MessageServiceErrorCode =
   | "QUEUE_FULL"
   | "QUEUE_CANCELED"
   | "MESSAGE_SEND_FAILED"
+  | "MESSAGE_SEND_FORBIDDEN"
   | "MESSAGE_SEND_CONFLICT"
+  | "MESSAGE_SEND_EMPTY_RESPONSE"
   | "MESSAGE_LIST_FAILED"
   | "MESSAGE_EDIT_FAILED"
   | "MESSAGE_EDIT_CONFLICT"
@@ -87,10 +95,12 @@ export type MessageServiceErrorCode =
   | "MESSAGE_DELETE_FAILED"
   | "MESSAGE_DELETE_CONFLICT";
 
-export type MessageServiceError = Readonly<{
+type LegacyMessageServiceError = Readonly<{
   code: MessageServiceErrorCode;
   message: string;
 }>;
+
+export type MessageServiceError = LegacyMessageServiceError | MessageSendError;
 
 export type MessageServiceResult<T> =
   | Readonly<{ ok: true; data: T }>
@@ -196,9 +206,22 @@ function validateDeleteMessageInput(input: DeleteMessageInput): MessageServiceEr
   return null;
 }
 
-async function getSupabaseAuthorId(client: SupabaseClient<Database>): Promise<MessageServiceResult<string>> {
-  const { data, error } = await client.auth.getUser();
+async function ensureSendAuthSession(client: SupabaseClient<Database>): Promise<MessageServiceResult<string>> {
+  const { data: sessionData, error: sessionError } = await client.auth.getSession();
+  if (sessionError || !sessionData.session?.access_token) {
+    return messageError("AUTH_REQUIRED", "Sign in before sending messages.");
+  }
 
+  const expiresAtMs = (sessionData.session.expires_at ?? 0) * 1000;
+  if (expiresAtMs && expiresAtMs - Date.now() < 120_000) {
+    const { data: refreshed, error: refreshError } = await client.auth.refreshSession();
+    if (refreshError || !refreshed.session?.access_token || !refreshed.session.user) {
+      return messageError("AUTH_REQUIRED", "Your session expired. Sign in again before sending messages.");
+    }
+    return { ok: true, data: refreshed.session.user.id };
+  }
+
+  const { data, error } = await client.auth.getUser();
   if (error || !data.user) {
     return messageError("AUTH_REQUIRED", "Sign in before sending messages.");
   }
@@ -213,20 +236,27 @@ function ensureClientMessageId(value?: string | null): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function hasErrorMessage(error: unknown, marker: string): boolean {
-  return typeof error === "object" && error !== null && "message" in error && String((error as { message?: unknown }).message).includes(marker);
+async function reconcileCommunityMessage(
+  client: SupabaseClient<Database>,
+  input: SendMessageInput,
+  actorId: string,
+): Promise<MessageSummary | null> {
+  if (!input.clientMessageId) return null;
+  const result = await client
+    .from("messages")
+    .select(MESSAGE_SELECT)
+    .eq("community_id", input.communityId)
+    .eq("channel_id", input.channelId)
+    .eq("author_id", actorId)
+    .eq("client_message_id", input.clientMessageId)
+    .maybeSingle();
+  return result.error || !result.data ? null : mapMessageRow(result.data);
 }
 
 export const messageService = {
   async listMessages(input: ListMessagesInput): Promise<MessageServiceResult<MessagePage>> {
     const validationError = validateListMessagesInput(input);
     if (validationError) return { ok: false, error: validationError };
-
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      return { ok: true, data: listMockMessageSummaries(input) };
-    }
 
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
@@ -257,24 +287,66 @@ export const messageService = {
 
     const body = input.body.trim();
     const normalizedInput: SendMessageInput = { ...input, clientMessageId: ensureClientMessageId(input.clientMessageId) };
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      return { ok: true, data: createMockSentMessage(normalizedInput, body) };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    const author = await getSupabaseAuthorId(configured.data);
+    const author = await ensureSendAuthSession(configured.data);
     if (!author.ok) return author;
 
-    const { data, error } = await sendSupabaseMessage(configured.data, normalizedInput, body);
+    const context: MessageSendContext = {
+      operation: "community_message",
+      correlationId: normalizedInput.clientMessageId ?? crypto.randomUUID(),
+      actorId: author.data,
+      communityId: normalizedInput.communityId,
+      channelId: normalizedInput.channelId,
+      clientMessageId: normalizedInput.clientMessageId ?? undefined,
+    };
+    const execution = await executeMessageSendWithRetry({
+      client: configured.data,
+      context,
+      operation: () => sendSupabaseMessage(configured.data, normalizedInput, body),
+      onAttempt: (event) => {
+        const metadata = toMessageSendLogMetadata(context, event);
+        if (event.outcome === "failure") loggingService.logWarn("Community message send attempt failed", metadata, "message-send");
+        else loggingService.logInfo("Community message send attempt completed", metadata, "message-send");
+      },
+    });
+    const { data, error } = execution.result;
 
-    if (error || !data) {
-      if (isRateLimitError(error)) return messageError("RATE_LIMITED", rateLimitUserMessage);
-      if (hasErrorMessage(error, "MESSAGE_IDEMPOTENCY_CONFLICT")) return messageError("MESSAGE_SEND_CONFLICT", "This retry key was already used for different message content.");
-      return messageError("MESSAGE_SEND_FAILED", "Could not send message.");
+    if (error) {
+      const classified = execution.error ?? classifyMessageSendError(error, context);
+      if (classified.category === "conflict") {
+        const canonical = await reconcileCommunityMessage(configured.data, normalizedInput, author.data);
+        if (canonical) {
+          loggingService.logInfo("Community message send reconciled after conflict", {
+            ...toMessageSendLogMetadata(context, {
+              attemptNumber: execution.attemptCount,
+              outcome: "success",
+              durationMs: 0,
+              sessionRefreshAttempted: execution.sessionRefreshAttempted,
+            }),
+            server_message_id: canonical.id,
+          }, "message-send");
+          return { ok: true, data: canonical };
+        }
+      }
+      return { ok: false, error: classified };
+    }
+    if (!data) {
+      const emptyResponse = classifyMessageSendError(
+        { code: "MESSAGE_SEND_EMPTY_RESPONSE", message: "The send RPC returned no canonical message." },
+        context,
+      );
+      loggingService.logWarn("Community message send returned empty response", {
+        ...toMessageSendLogMetadata(context, {
+          attemptNumber: execution.attemptCount,
+          outcome: "failure",
+          durationMs: 0,
+          sessionRefreshAttempted: execution.sessionRefreshAttempted,
+          error: emptyResponse,
+        }),
+      }, "message-send");
+      return { ok: false, error: { ...emptyResponse, category: "server", retryable: true, userMessage: "The message could not be confirmed. Retry once.", message: "The message could not be confirmed. Retry once." } };
     }
 
     return { ok: true, data };
@@ -285,12 +357,6 @@ export const messageService = {
     if (validationError) return { ok: false, error: validationError };
 
     const body = input.body.trim();
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      return { ok: true, data: createMockEditedMessage(input.messageId, body) };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
@@ -308,12 +374,6 @@ export const messageService = {
   async deleteMessage(input: DeleteMessageInput): Promise<MessageServiceResult<DeletedMessageSummary>> {
     const validationError = validateDeleteMessageInput(input);
     if (validationError) return { ok: false, error: validationError };
-
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      return { ok: true, data: createMockDeletedMessage(input.messageId) };
-    }
 
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;

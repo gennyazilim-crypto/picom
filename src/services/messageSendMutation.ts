@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { currentUserId } from "../data/mockCommunities";
 import type { MessageSummary, SendMessageInput } from "./messageService";
 import type { Database } from "./supabase/database.types";
 
@@ -43,26 +42,6 @@ export function mapMessageSendRow(row: MessageSendRow): MessageSummary {
     threadId: row.thread_id ?? null,
     webhookId: row.webhook_id ?? undefined,
     webhookName: row.webhook_name ?? undefined,
-  };
-}
-
-export function createMockSentMessage(input: SendMessageInput, body: string): MessageSummary {
-  const now = new Date().toISOString();
-  const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-  return {
-    id: `mock-message-${idSuffix}`,
-    communityId: input.communityId,
-    channelId: input.channelId,
-    authorId: input.authorId ?? currentUserId,
-    body,
-    clientMessageId: input.clientMessageId ?? null,
-    sequence: null,
-    createdAt: now,
-    editedAt: null,
-    deletedAt: null,
-    replyToMessageId: input.replyToMessageId ?? null,
-    threadId: input.threadId ?? null,
   };
 }
 
