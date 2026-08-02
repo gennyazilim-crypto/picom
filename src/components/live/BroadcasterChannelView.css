@@ -1,0 +1,570 @@
+/* Broadcaster channel — theme-aware (light/dark via Picom tokens) */
+
+.bc-channel-view {
+  --bc-live: var(--live-red, #e5252a);
+  --bc-text: var(--text-primary, #102033);
+  --bc-muted: var(--text-secondary, #334155);
+  --bc-faint: color-mix(in srgb, var(--text-secondary, #334155) 82%, var(--text-primary, #102033));
+  --bc-surface: var(--surface, #fff);
+  --bc-panel: var(--surface, #fff);
+  --bc-panel-soft: var(--surface-soft, #eef2f7);
+  --bc-border: var(--border, #d5dde8);
+  --bc-accent: var(--picom-teal, #007571);
+  --bc-accent-soft: color-mix(in srgb, var(--picom-aqua, #10c2bb) 16%, transparent);
+  --bc-accent-text: var(--picom-teal, #007571);
+  color: var(--bc-text);
+}
+
+.bc-channel-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  align-content: flex-start;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+
+/* Flex items must not shrink — otherwise tabs collapse to a 10px strip */
+.bc-channel-main > * {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.bc-channel-main .bc-tab-panel {
+  flex: 0 0 auto;
+}
+
+.bc-channel-main .bc-profile-sections .profile-content {
+  overflow: visible;
+  height: auto;
+  min-height: 0;
+}
+
+/* —— Channel chrome (actions + tabs) —— */
+.bc-channel-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--bc-border);
+  background: var(--bc-panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.bc-channel-chrome__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bc-channel-chrome__title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bc-channel-chrome__title strong {
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--bc-text);
+}
+
+.bc-channel-chrome__title span {
+  font-size: 12px;
+  color: var(--bc-muted);
+}
+
+.bc-owner-actions,
+.bc-viewer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.bc-owner-actions .profile-btn,
+.bc-viewer-actions .profile-btn,
+.bc-live-hero__watch {
+  min-height: 40px;
+}
+
+/* —— Live hero —— */
+.bc-live-hero {
+  border-radius: 20px;
+  padding: 20px 22px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bc-live) 14%, transparent), transparent 58%),
+    var(--bc-panel);
+  border: 1px solid color-mix(in srgb, var(--bc-live) 28%, var(--bc-border));
+  box-shadow: var(--shadow-soft);
+  color: var(--bc-text);
+}
+
+.bc-live-hero__badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bc-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--bc-live);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.bc-live-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bc-live-badge__dot {
+    animation: bc-live-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes bc-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.bc-live-hero__title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.25;
+  color: var(--bc-text);
+  font-weight: 750;
+}
+
+.bc-live-hero__meta,
+.bc-live-hero__duration,
+.bc-live-hero__viewers {
+  color: var(--bc-muted);
+  font-size: 13px;
+}
+
+.bc-muted {
+  color: var(--bc-muted);
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.bc-live-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.bc-live-hero__watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--picom-teal), color-mix(in srgb, var(--picom-aqua) 70%, var(--picom-teal)));
+  color: #fff;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--picom-teal) 22%, transparent);
+}
+
+.bc-live-hero__watch:hover {
+  filter: brightness(1.03);
+}
+
+.bc-live-hero__watch:focus-visible,
+.bc-tab:focus-visible,
+.bc-notif-label select:focus-visible,
+.bc-schedule-header-actions .profile-btn:focus-visible,
+.bc-channel-chrome .profile-btn:focus-visible {
+  outline: 2px solid var(--picom-aqua, #10c2bb);
+  outline-offset: 2px;
+}
+
+.bc-offline-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--bc-border);
+  background: color-mix(in srgb, var(--surface) 72%, var(--bc-panel-soft));
+  color: var(--bc-text);
+}
+
+.bc-offline-banner__icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--picom-teal) 14%, var(--surface));
+  color: var(--bc-accent-text);
+}
+
+.bc-offline-banner strong {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bc-text);
+}
+
+.bc-offline-banner p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--bc-muted);
+}
+
+.bc-notif-label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bc-muted);
+}
+
+.bc-notif-label select {
+  min-height: 36px;
+  min-width: 200px;
+  border-radius: 10px;
+  border: 1px solid var(--bc-border);
+  background: var(--bc-surface);
+  color: var(--bc-text);
+  padding: 0 10px;
+}
+
+/* —— Tabs (must keep full height; never clip labels) —— */
+.bc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 48px;
+  overflow: visible;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--bc-border);
+  background: var(--bc-panel-soft);
+}
+
+.bc-tab {
+  appearance: none;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  height: auto;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  color: var(--bc-muted);
+  padding: 0 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.bc-tab:hover {
+  color: var(--bc-text);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.bc-tab.is-active,
+.bc-tab[aria-selected="true"] {
+  background: var(--bc-surface);
+  color: var(--bc-accent-text);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+.bc-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bc-home-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* —— Ghost / secondary actions in channel context —— */
+.bc-channel-view .profile-btn--ghost {
+  border: 1px solid var(--bc-border);
+  background: var(--bc-surface);
+  color: var(--bc-text);
+  min-height: 40px;
+}
+
+.bc-channel-view .profile-btn--ghost:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--bc-accent) 35%, var(--bc-border));
+  background: color-mix(in srgb, var(--bc-accent) 8%, var(--surface));
+  color: var(--bc-accent-text);
+}
+
+/* —— Schedule —— */
+.bc-schedule-panel .profile-panel-subtitle,
+.bc-channel-view .profile-panel-subtitle {
+  color: var(--bc-muted);
+}
+
+.bc-channel-view .profile-empty-state strong {
+  color: var(--bc-text);
+}
+
+.bc-channel-view .profile-empty-state span {
+  color: var(--bc-muted);
+}
+
+.bc-schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bc-schedule-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--bc-border);
+  background: color-mix(in srgb, var(--surface-soft) 55%, var(--surface));
+  color: var(--bc-text);
+}
+
+.bc-schedule-card strong {
+  color: var(--bc-text);
+}
+
+.bc-schedule-card p,
+.bc-schedule-card small {
+  color: var(--bc-muted);
+}
+
+.bc-schedule-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--bc-faint);
+}
+
+.bc-schedule-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.bc-schedule-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bc-schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--picom-aqua) 28%, var(--bc-border));
+  background: color-mix(in srgb, var(--picom-aqua) 6%, var(--surface));
+  color: var(--bc-text);
+}
+
+.bc-schedule-form h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--bc-text);
+}
+
+.bc-schedule-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--bc-muted);
+}
+
+.bc-schedule-form input,
+.bc-schedule-form textarea,
+.bc-schedule-form select {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--bc-border);
+  background: var(--bc-surface);
+  color: var(--bc-text);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.bc-schedule-form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.bc-schedule-form__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.bc-schedule-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.bc-schedule-error {
+  color: var(--danger, #c62828);
+  margin: 0;
+  font-size: 13px;
+}
+
+.bc-schedule-group h3 {
+  margin: 12px 0 8px;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bc-faint);
+}
+
+.bc-schedule-status {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bc-accent-text);
+  background: var(--bc-accent-soft);
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.bc-schedule-preview-link {
+  margin-top: 4px;
+}
+
+.bc-about-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0 0;
+}
+
+.bc-about-facts dt {
+  font-size: 12px;
+  color: var(--bc-faint);
+}
+
+.bc-about-facts dd {
+  margin: 2px 0 0;
+  color: var(--bc-text);
+  font-weight: 600;
+}
+
+.bc-rules {
+  white-space: pre-wrap;
+  color: var(--bc-text);
+}
+
+.bc-social-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bc-social-list a {
+  color: var(--bc-accent-text);
+  font-weight: 600;
+}
+
+.bc-about-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .bc-channel-view .profile-page-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .bc-live-hero__title {
+    font-size: 18px;
+  }
+
+  .bc-about-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .bc-owner-actions,
+  .bc-viewer-actions {
+    width: 100%;
+  }
+
+  .bc-owner-actions .profile-btn,
+  .bc-viewer-actions .profile-btn {
+    flex: 1 1 auto;
+  }
+
+  .bc-tabs {
+    width: 100%;
+  }
+}

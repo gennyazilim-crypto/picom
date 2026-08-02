@@ -3,8 +3,18 @@ import { dataSourceService } from "../dataSourceService";
 import type { Database } from "./database.types";
 
 let client: SupabaseClient<Database> | null = null;
+/** Account Center (and other SPAs) bind their own auth client so profile media shares that session. */
+let boundClient: SupabaseClient<Database> | null = null;
 
 const AUTH_REMEMBER_FLAG_KEY = "picom.auth.rememberMe";
+
+/**
+ * Prefer this SPA's Supabase client for profile media / shared services.
+ * Pass null to clear (desktop/main app uses the default singleton again).
+ */
+export function bindSupabaseClient(next: SupabaseClient<Database> | SupabaseClient | null): void {
+  boundClient = next as SupabaseClient<Database> | null;
+}
 
 /**
  * Records the user's "remember me" preference. Supabase persists the session in
@@ -27,6 +37,10 @@ export type SupabaseClientStatus = {
 };
 
 export function getSupabaseClientStatus(): SupabaseClientStatus {
+  if (boundClient) {
+    return { enabled: true, configured: true };
+  }
+
   const status = dataSourceService.getStatus();
 
   if (!status.isSupabase) {
@@ -41,6 +55,8 @@ export function getSupabaseClientStatus(): SupabaseClientStatus {
 }
 
 export function getSupabaseClient(): SupabaseClient<Database> | null {
+  if (boundClient) return boundClient;
+
   const status = getSupabaseClientStatus();
   if (!status.configured) return null;
   if (client) return client;
@@ -51,6 +67,7 @@ export function getSupabaseClient(): SupabaseClient<Database> | null {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      // PKCE codes are exchanged via deepLinkService (picom:// and /auth/* browser paths).
       detectSessionInUrl: false,
       flowType: "pkce",
     },
