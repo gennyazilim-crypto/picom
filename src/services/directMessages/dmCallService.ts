@@ -25,6 +25,10 @@ const callStatuses = new Set<DmCallStatus>(["ringing", "active", "declined", "ca
 const invitationStatuses = new Set<DmCallInvitationStatus>(["ringing", "accepted", "declined", "canceled", "missed", "busy"]);
 const participantStatuses = new Set<DmCallParticipantStatus>(["invited", "connecting", "connected", "reconnecting", "disconnected", "left"]);
 const localListeners = new Set<CallListener>();
+type PeerSyncNotifier = (userId: string, callId: string) => void;
+let peerSyncNotifier: PeerSyncNotifier | null = null;
+let peerSyncActorId: string | null = null;
+const lastPeerSyncStatus = new Map<string, DmCallStatus>();
 
 function failure(code: string, message: string): DmCallServiceResult<never> {
   return { ok: false, error: { code, message } };
@@ -94,9 +98,46 @@ function mapInvitation(value: unknown): DmCallInvitation | undefined {
   return { id, inviterId, inviteeId, status, expiresAt, respondedAt: optionalString(row.responded_at), readAt: optionalString(row.read_at) };
 }
 
-export function mapDmCall(value: unknown): DmCall | null {
+function unwrapCallPayload(value: unknown): Record<string, unknown> {
   const wrapper = asRecord(value);
-  const row = "call" in wrapper ? asRecord(wrapper.call) : wrapper;
+  let payload: unknown = "call" in wrapper ? wrapper.call : value;
+  if (typeof payload === "string") {
+    try {
+      payload = JSON.parse(payload) as unknown;
+    } catch {
+      return {};
+    }
+  }
+  return asRecord(payload);
+}
+
+function peerUserIds(call: DmCall): string[] {
+  const ids = new Set<string>();
+  for (const participant of call.participants) ids.add(participant.userId);
+  if (call.invitation) {
+    ids.add(call.invitation.inviterId);
+    ids.add(call.invitation.inviteeId);
+  }
+  ids.add(call.createdBy);
+  if (peerSyncActorId) return [...ids].filter((userId) => userId !== peerSyncActorId);
+  // Invitee snapshots include invitation; caller snapshots usually do not.
+  if (call.invitation) return [call.invitation.inviterId];
+  return [...ids].filter((userId) => userId !== call.createdBy);
+}
+
+function notifyPeers(call: DmCall): void {
+  if (!peerSyncNotifier) return;
+  for (const userId of peerUserIds(call)) {
+    try {
+      peerSyncNotifier(userId, call.id);
+    } catch {
+      /* peer sync is best-effort */
+    }
+  }
+}
+
+export function mapDmCall(value: unknown): DmCall | null {
+  const row = unwrapCallPayload(value);
   const id = optionalString(row.id);
   const conversationId = optionalString(row.conversation_id);
   const livekitRoomName = optionalString(row.livekit_room_name);
@@ -153,6 +194,10 @@ function friendlyError(error: RpcError | null, fallback: string): ServiceError {
 
 function emit(call: DmCall): void {
   localListeners.forEach((listener) => listener(call));
+  // Peer timeline sync on status transitions only (avoids mute/camera update spam).
+  if (lastPeerSyncStatus.get(call.id) === call.status) return;
+  lastPeerSyncStatus.set(call.id, call.status);
+  notifyPeers(call);
 }
 
 async function callRpc(name: string, args?: Readonly<Record<string, unknown>>): Promise<DmCallServiceResult<unknown>> {
@@ -177,6 +222,22 @@ async function snapshotMutation(name: string, args: Readonly<Record<string, unkn
 }
 
 export const dmCallService = {
+  configurePeerSync(actorUserId: string | null, notifier: PeerSyncNotifier | null): void {
+    peerSyncActorId = actorUserId;
+    peerSyncNotifier = notifier;
+  },
+
+  async applyRemoteSync(callId: string): Promise<DmCall | null> {
+    const result = await this.getCall(callId);
+    if (!result.ok || !result.data) return null;
+    this.publishLocal(result.data);
+    return result.data;
+  },
+
+  publishLocal(call: DmCall): void {
+    localListeners.forEach((listener) => listener(call));
+  },
+
   async listCalls(conversationId?: string, limit = 100): Promise<DmCallServiceResult<DmCall[]>> {
     const result = await callRpc("list_direct_calls", { target_conversation_id: conversationId ?? null, result_limit: Math.max(1, Math.min(limit, 250)) });
     if (!result.ok) return result;
@@ -201,8 +262,7 @@ export const dmCallService = {
     const result = await this.listCalls(undefined, 30);
     if (!result.ok) return result;
     const call = result.data.find((item) => item.status === "ringing" && item.createdBy !== currentUserId
-      && item.invitation?.inviteeId === currentUserId && item.invitation.status === "ringing"
-      && Date.parse(item.invitation.expiresAt) > Date.now()) ?? null;
+      && item.invitation?.inviteeId === currentUserId && item.invitation.status === "ringing") ?? null;
     return { ok: true, data: call };
   },
 
@@ -230,6 +290,11 @@ export const dmCallService = {
 
   async markRead(callId: string): Promise<DmCallServiceResult<boolean>> {
     const result = await callRpc("mark_direct_call_read", { target_call_id: callId });
+    return result.ok ? { ok: true, data: result.data === true } : result;
+  },
+
+  async hideCall(callId: string): Promise<DmCallServiceResult<boolean>> {
+    const result = await callRpc("hide_direct_call", { target_call_id: callId });
     return result.ok ? { ok: true, data: result.data === true } : result;
   },
 
