@@ -198,14 +198,12 @@ Browser FPS / detached DOM / Live media element counts: **NOT_RUN**.
 
 ## 16. Commits
 
-Planned logical commits for this package:
-
-1. `refactor(feed): canonicalize attachment media contract`
-2. `fix(feed): replace placeholder thumbnail handling`
-3. `fix(feed): harden feed media grid and viewer lifecycle`
-4. `perf(feed): remove card query and rendering bottlenecks`
-5. `perf(feed): bound long feed rendering and realtime refreshes`
-6. `test(feed): add media and performance production coverage`
+1. `99c6c7eb` — `refactor(feed): canonicalize attachment media contract`
+2. `28f77e9b` — `fix(feed): replace placeholder thumbnail handling`
+3. `3b35a7c4` — `fix(feed): harden feed media grid and viewer lifecycle`
+4. `3ffb09b1` — `perf(feed): remove card query and rendering bottlenecks`
+5. `0a5b99e6` — `perf(feed): bound long feed rendering and realtime refreshes`
+6. `c800092c` — `test(feed): add media and performance production coverage`
 
 ---
 
