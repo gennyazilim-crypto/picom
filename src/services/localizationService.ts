@@ -17,7 +17,10 @@ export type LocalizationKey =
   | "feed.live.openAria" | "feed.live.communityFallback"
   | "feed.live.category.game" | "feed.live.category.chat" | "feed.live.category.education"
   | "feed.live.category.watchTogether" | "feed.live.category.other"
-  | "feed.companion.friends" | "feed.companion.events" | "feed.companion.voice";
+  | "feed.companion.friends" | "feed.companion.events" | "feed.companion.voice"
+  | "feed.media.count" | "feed.media.open" | "feed.media.openOverflow" | "feed.media.broken" | "feed.media.brokenBody"
+  | "feed.media.viewerLabel" | "feed.media.close" | "feed.media.next" | "feed.media.previous"
+  | "feed.media.download" | "feed.media.downloading" | "feed.media.unsupported";
 
 type Vars = Readonly<Record<string, string>>;
 
@@ -72,6 +75,18 @@ const en: Record<LocalizationKey, string> = {
   "feed.companion.friends": "Friends",
   "feed.companion.events": "Upcoming events",
   "feed.companion.voice": "Connected Voice",
+  "feed.media.count": "{{count}} media",
+  "feed.media.open": "Open {{name}}",
+  "feed.media.openOverflow": "Open {{name}}, {{extra}} more",
+  "feed.media.broken": "Media unavailable",
+  "feed.media.brokenBody": "This attachment could not be loaded.",
+  "feed.media.viewerLabel": "Image preview",
+  "feed.media.close": "Close image preview",
+  "feed.media.next": "Next image",
+  "feed.media.previous": "Previous image",
+  "feed.media.download": "Download",
+  "feed.media.downloading": "Downloading…",
+  "feed.media.unsupported": "This media type is not supported in Feed.",
 };
 
 const tr: Record<LocalizationKey, string> = {
@@ -125,6 +140,18 @@ const tr: Record<LocalizationKey, string> = {
   "feed.companion.friends": "Arkadaşlar",
   "feed.companion.events": "Yaklaşan etkinlikler",
   "feed.companion.voice": "Bağlı ses",
+  "feed.media.count": "{{count}} medya",
+  "feed.media.open": "{{name}} dosyasını aç",
+  "feed.media.openOverflow": "{{name}} dosyasını aç, {{extra}} daha",
+  "feed.media.broken": "Medya kullanılamıyor",
+  "feed.media.brokenBody": "Bu ek yüklenemedi.",
+  "feed.media.viewerLabel": "Görsel önizleme",
+  "feed.media.close": "Görsel önizlemeyi kapat",
+  "feed.media.next": "Sonraki görsel",
+  "feed.media.previous": "Önceki görsel",
+  "feed.media.download": "İndir",
+  "feed.media.downloading": "İndiriliyor…",
+  "feed.media.unsupported": "Bu medya türü Feed’de desteklenmiyor.",
 };
 
 const sectionTr: Record<SettingsSection, string> = {

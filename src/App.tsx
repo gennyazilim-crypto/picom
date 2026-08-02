@@ -711,7 +711,7 @@ export function App() {
     let active = true;
     let unsubscribe: (() => void) | undefined;
     let refreshInFlight: Promise<void> | null = null;
-    feedMentionCacheService.reset(userId);
+    let changeDebounce: number | null = null;
     const refresh = (reason: "change" | "reconnect") => {
       if (refreshInFlight) return refreshInFlight;
       refreshInFlight = mentionFeedService.listPage({ limit: 40 }).then((result) => {
@@ -737,18 +737,23 @@ export function App() {
       }).finally(() => { refreshInFlight = null; });
       return refreshInFlight;
     };
+    const scheduleChangeRefresh = () => {
+      if (changeDebounce) window.clearTimeout(changeDebounce);
+      changeDebounce = window.setTimeout(() => { changeDebounce = null; void refresh("change"); }, 180);
+    };
     void feedRealtimeService.subscribe({
       onInvalidate: (event) => {
         feedQueryService.invalidateCache();
         if (event.eventType === "DELETE" && event.sourceId && (event.table === "messages" || event.table === "content_mentions")) {
           setMentionItems((current) => feedMentionCacheService.removeSource(event.sourceId!, current));
         }
-        void refresh(event.reason);
+        if (event.reason === "reconnect") void refresh("reconnect");
+        else scheduleChangeRefresh();
       },
       onStatus: (status) => loggingService.logInfo("Feed realtime status", { status }, "mention-feed"),
       onError: (message) => loggingService.logInfo("Feed realtime unavailable", { reason: message }, "mention-feed"),
     }).then((cleanup) => { if (!active) cleanup(); else unsubscribe = cleanup; });
-    return () => { active = false; unsubscribe?.(); };
+    return () => { active = false; if (changeDebounce) window.clearTimeout(changeDebounce); unsubscribe?.(); };
   }, [authSession?.user?.id, safeMode.active]);
   useEffect(() => {
     if (!authSession || !dataSourceService.getStatus().isSupabase) return;
@@ -5097,7 +5102,7 @@ export function App() {
           onToggleBlock={handleToggleBlockUser}
         />
       ) : null}
-      {preview ? <ImagePreviewModal image={preview} onClose={closePreview} /> : null}
+      {preview ? <ImagePreviewModal image={preview.image} gallery={preview.gallery} onClose={closePreview} onNavigate={(image) => openPreview(image, preview.gallery)} /> : null}
       {crashRecoveryRecord ? (
         <CrashRecoveryDialog
           record={crashRecoveryRecord}
