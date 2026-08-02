@@ -91,6 +91,14 @@ export type DmCallQualitySample = Readonly<{
   quality: DmCallQualityLabel;
 }>;
 
+export type DmCallVideoTrack = Readonly<{
+  id: string;
+  participantIdentity: string;
+  participantName: string;
+  isLocal: boolean;
+  stream: MediaStream;
+}>;
+
 export type DmCallRuntimeState = Readonly<{
   connected: boolean;
   reconnecting: boolean;
@@ -102,4 +110,5 @@ export type DmCallRuntimeState = Readonly<{
   activeSpeakerName?: string;
   quality: DmCallQualityLabel;
   reconnectCount: number;
+  cameraTracks?: readonly DmCallVideoTrack[];
 }>;
