@@ -47,6 +47,22 @@ assert.ok(ok);
 assert.equal(ok.thumbnailUrl, null);
 assert.equal(mapper.resolveFeedPreviewUrl(ok), "https://example.test/a1.jpg");
 
+const privateRow = mapper.mapRpcAttachmentToFeed({
+  id: "a2",
+  storage_path: "message-attachments/user/a2.jpg",
+  public_url: null,
+  scan_status: "clean",
+  mime_type: "image/jpeg",
+});
+assert.ok(privateRow);
+assert.equal(privateRow.availabilityState, "unavailable");
+assert.equal(privateRow.storagePath, "message-attachments/user/a2.jpg");
+const hydrated = mapper.applySignedUrlsToFeedAttachments([privateRow], new Map([
+  ["message-attachments/user/a2.jpg", "https://signed.example/a2.jpg"],
+]));
+assert.equal(hydrated[0].availabilityState, "available");
+assert.equal(hydrated[0].originalUrl, "https://signed.example/a2.jpg");
+
 const compiledWindow = ts.transpileModule(windowSource, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
 }).outputText;

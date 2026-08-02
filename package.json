@@ -531,7 +531,10 @@
     "feed:i18n:parity": "node scripts/feed-i18n-parity-smoke.mjs",
     "feed:media:smoke": "node scripts/feed-media-performance-smoke.mjs",
     "feed:perf:synthetic": "node scripts/feed-synthetic-performance-smoke.mjs",
-    "feed:storage:security:static": "node scripts/feed-storage-security-static-smoke.mjs"
+    "feed:storage:security:static": "node scripts/feed-storage-security-static-smoke.mjs",
+    "feed:attachment:signing:smoke": "node scripts/feed-attachment-signing-smoke.mjs",
+    "feed:private-attachment:hosted:preflight": "node scripts/feed-private-attachment-hosted-matrix.mjs",
+    "feed:private-attachment:hosted:test": "node scripts/feed-private-attachment-hosted-matrix.mjs --run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
