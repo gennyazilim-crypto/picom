@@ -17,6 +17,7 @@ type AppendLocalMessageInput = {
   attachments?: Attachment[];
   poll?: PollData;
   localStatus?: Message["localStatus"];
+  sendAttempt?: Message["sendAttempt"];
 };
 
 type UpsertLocalMessageInput = AppendLocalMessageInput & {
@@ -42,6 +43,7 @@ type RemoveLocalMessageInput = {
 type SetLocalMessageDeliveryStatusInput = RemoveLocalMessageInput & {
   clientMessageId?: string | null;
   localStatus: NonNullable<Message["localStatus"]>;
+  sendAttempt?: Message["sendAttempt"];
 };
 
 type EditLocalMessageInput = {
@@ -187,7 +189,7 @@ type AddLocalChannelInput = {
 export function useLocalMessageState(initialCommunities: Community[]) {
   const [communities, setCommunities] = useState(initialCommunities);
 
-  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, replyToMessageId, attachments, poll, localStatus }: AppendLocalMessageInput) => {
+  const appendLocalMessage = useCallback(({ id, clientMessageId, communityId, channelId, authorId, body, sequence, localOrder, createdAt, replyToMessageId, attachments, poll, localStatus, sendAttempt }: AppendLocalMessageInput) => {
     const idSuffix = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const message: Message = {
       id: id ?? `local-${idSuffix}`,
@@ -203,6 +205,7 @@ export function useLocalMessageState(initialCommunities: Community[]) {
       poll,
       reactions: [],
       localStatus: localStatus ?? "sent",
+      sendAttempt,
     };
 
     setCommunities((current) =>
@@ -304,10 +307,10 @@ export function useLocalMessageState(initialCommunities: Community[]) {
     );
   }, []);
 
-  const setLocalMessageDeliveryStatus = useCallback(({ communityId, channelId, id, clientMessageId, localStatus }: SetLocalMessageDeliveryStatusInput) => {
+  const setLocalMessageDeliveryStatus = useCallback(({ communityId, channelId, id, clientMessageId, localStatus, sendAttempt }: SetLocalMessageDeliveryStatusInput) => {
     setCommunities((current) => current.map((community) => community.id !== communityId ? community : {
       ...community,
-      messages: community.messages.map((message) => message.channelId === channelId && isSameMessage(message, id, clientMessageId) ? { ...message, localStatus } : message),
+      messages: community.messages.map((message) => message.channelId === channelId && isSameMessage(message, id, clientMessageId) ? { ...message, localStatus, sendAttempt: sendAttempt ?? message.sendAttempt } : message),
     }));
   }, []);
 
