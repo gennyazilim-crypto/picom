@@ -1,0 +1,7 @@
+{
+  "staging": true,
+  "beta": true,
+  "supabase": true,
+  "projectRef": true,
+  "filesScanned": 2300
+}

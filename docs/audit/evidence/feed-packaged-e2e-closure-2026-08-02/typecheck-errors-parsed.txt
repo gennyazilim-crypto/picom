@@ -1,0 +1,50 @@
+﻿src/App.tsx:3517 TS2353 Object literal may only specify known properties, and 'sendAttempt' does not exist in type 'AppendLocalMessageInput'.
+src/App.tsx:3533 TS2353 Object literal may only specify known properties, and 'sendAttempt' does not exist in type 'SetLocalMessageDeliveryStatusInput'.
+src/App.tsx:3560 TS2353 Object literal may only specify known properties, and 'sendAttempt' does not exist in type 'AppendLocalMessageInput'.
+src/App.tsx:3571 TS2353 Object literal may only specify known properties, and 'sendAttempt' does not exist in type 'SetLocalMessageDeliveryStatusInput'.
+src/App.tsx:3576 TS2353 Object literal may only specify known properties, and 'sendAttempt' does not exist in type 'SetLocalMessageDeliveryStatusInput'.
+src/App.tsx:3581 TS2353 Object literal may only specify known properties, and 'sendAttempt' does not exist in type 'AppendLocalMessageInput'.
+src/App.tsx:4026 TS2353 Object literal may only specify known properties, and 'liveActive' does not exist in type 'Readonly<{ communities: readonly Community[]; dir
+src/App.tsx:4043 TS2367 This comparison appears to be unintentional because the types '"radio" | "communities" | "podcasts" | "bookmarks"' and '"live"' have no over
+src/App.tsx:4171 TS2353 Object literal may only specify known properties, and 'userId' does not exist in type 'Readonly<{ displayName: string; username: string; ema
+src/App.tsx:4458 TS2322 Type '{ events: Readonly<{ id: string; communityId: string; title: string; shortDescription?: string | undefined; description?: string | und
+src/App.tsx:4463 TS7006 Parameter 'event' implicitly has an 'any' type.
+src/App.tsx:5119 TS2322 Type '{ call: Readonly<{ id: string; conversationId: string; livekitRoomName: string; createdBy: string; callType: DmCallType; status: DmCal
+src/components/live/BroadcasterChannelView.tsx:834 TS2322 Type '{ profile: { bio: string; activities: ProfileActivityItem[]; media: ProfileMediaItem[]; id: string; displayName: string; username: str
+src/components/live/creatorStudioModel.ts:3 TS5097 An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+src/components/live/GoLiveWorkspace.tsx:340 TS2339 Property 'acquireBrowserDisplayMedia' does not exist on type '{ listSources(): Promise<ScreenCaptureServiceResult>; selectSource(requestId: 
+src/components/live/GoLiveWorkspace.tsx:398 TS2339 Property 'acquireElectronDesktopMedia' does not exist on type '{ listSources(): Promise<ScreenCaptureServiceResult>; selectSource(requestId:
+src/components/live/GoLiveWorkspace.tsx:563 TS2322 Type '"broadcast"' is not assignable to type 'LiveKitIntent | undefined'.
+src/components/live/liveDiscoveryModel.ts:2 TS5097 An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+src/components/live/LiveWatchChat.tsx:118 TS2367 This comparison appears to be unintentional because the types '"MESSAGE_SEND_CONFLICT" | "VALIDATION_ERROR" | "RATE_LIMITED" | "MESSAGE_DELE
+src/components/live/LiveWatchWorkspace.tsx:215 TS2322 Type '"watch"' is not assignable to type 'LiveKitIntent | undefined'.
+src/components/LoginScreen.tsx:277 TS2322 Type '{ disabled: boolean; layout: string; }' is not assignable to type 'IntrinsicAttributes & Props'.
+src/components/MemberSidebar.tsx:7 TS2307 Cannot find module '../utils/ensureCommunityMemberRoster' or its corresponding type declarations.
+src/components/MemberSidebar.tsx:59 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:63 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:65 TS7006 Parameter 'userId' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:66 TS7006 Parameter 'cleanup' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:68 TS7006 Parameter 'userId' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:70 TS2339 Property 'username' does not exist on type 'Readonly<{ userId: string; canView: boolean; displayName: string | null; avatar: Readonly<{ path
+src/components/MemberSidebar.tsx:81 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:86 TS2339 Property 'username' does not exist on type 'Readonly<{ userId: string; canView: boolean; displayName: string | null; avatar: Readonly<{ path
+src/components/MemberSidebar.tsx:96 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:97 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:98 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:99 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MemberSidebar.tsx:100 TS7006 Parameter 'member' implicitly has an 'any' type.
+src/components/MentionFeedCard.tsx:20 TS2339 Property 'username' does not exist on type 'Readonly<{ userId: string; canView: boolean; displayName: string | null; avatar: Readonly<{ path
+src/components/MentionFeedFooter.tsx:52 TS2339 Property 'username' does not exist on type 'Readonly<{ userId: string; canView: boolean; displayName: string | null; avatar: Readonly<{ path
+src/components/ProfileDisplayName.tsx:15 TS2339 Property 'username' does not exist on type 'Readonly<{ userId: string; canView: boolean; displayName: string | null; avatar: Readonly<{ path
+src/components/RegisterScreen.tsx:2 TS2305 Module '"../config/appConfig"' has no exported member 'isMockMode'.
+src/components/settings/UpdateSettingsSection.tsx:90 TS2339 Property 'availableVersion' does not exist on type 'Readonly<{ status: UpdateStatus; appVersion: string; releaseChannel: "dev" | "beta" | "s
+src/components/settings/UpdateSettingsSection.tsx:91 TS2339 Property 'availableVersion' does not exist on type 'Readonly<{ status: UpdateStatus; appVersion: string; releaseChannel: "dev" | "beta" | "s
+src/components/SettingsModal.tsx:147 TS2339 Property 'username' does not exist on type 'Readonly<{ userId: string; canView: boolean; displayName: string | null; avatar: Readonly<{ path
+src/components/VerifiedBadge.tsx:25 TS2339 Property 'verification' does not exist on type 'Readonly<{ userId: string; canView: boolean; displayName: string | null; avatar: Readonly<{ 
+src/features/companion/companionDataService.ts:566 TS2339 Property 'getPeerDirectReadState' does not exist on type '{ getDirectConversations: () => Promise<DirectMessageServiceResult<Readonly<{ id: 
+src/services/voiceService.ts:227 TS2367 This comparison appears to be unintentional because the types '"voice" | "video" | null' and '"broadcast"' have no overlap.
+src/services/voiceService.ts:1348 TS2367 This comparison appears to be unintentional because the types 'LiveKitIntent | undefined' and '"watch"' have no overlap.
+src/services/voiceService.ts:1350 TS2367 This comparison appears to be unintentional because the types 'LiveKitIntent | undefined' and '"watch"' have no overlap.
+src/services/voiceService.ts:1590 TS2367 This comparison appears to be unintentional because the types 'LiveKitIntent | undefined' and '"broadcast"' have no overlap.
+src/services/voiceService.ts:1591 TS2322 Type '"screen" | "broadcast"' is not assignable to type 'LiveKitIntent | undefined'.
+src/services/voiceService.ts:1627 TS2339 Property 'maxBitrate' does not exist on type 'Readonly<{ id: ScreenShareQualityPresetId; label: string; description: string; width: number; 

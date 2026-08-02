@@ -1,0 +1,24 @@
+﻿PICOM FEED PACKAGED E2E EVIDENCE
+timestamp=2026-08-02T12-46-15
+branch=feat/community-rebuild
+package_commit=6b0de2b22cfc1a4a5937bb255eee543b4263f644
+package_commit_short=6b0de2b2
+docs_tip_pending=report_commit
+git_status_clean=yes
+executable_path=C:\Users\ACER\Desktop\picom-feed-production-wt\release\win-unpacked\Picom.exe
+app_version=0.1.1-beta.10
+sha256=F0C44A4EE4A8EB98ABC9CA9976CCE5E98E095D7BFDBC40FE530B496B200F5D26
+build_timestamp=2026-08-02T12:46:15.6743622+02:00
+package_timestamp=2026-08-02T12:46:15.6743622+02:00
+electron_version=43.0.0
+chromium_version=NOT_MEASURED_FROM_RUNTIME
+node_version=v24.15.0
+windows_version=Microsoft Windows NT 10.0.26200.0
+architecture=AMD64
+environment=staging
+channel=beta
+data_source=supabase
+project_ref=ufmtvqtsklqsmqxefbbs
+auth_gateway=https://auth.picom.gg
+account_center=https://account.picom.gg
+package_exit=0
