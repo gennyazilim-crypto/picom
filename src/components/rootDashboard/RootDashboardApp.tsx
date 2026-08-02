@@ -112,7 +112,7 @@ export function RootDashboardApp({ currentUser, onExit }: RootDashboardAppProps)
       case "platform":
         return <PlatformPage />;
       case "users":
-        return <UsersPage access={access} isRootOwner={accessState.isRootOwner} />;
+        return <UsersPage access={access} />;
       case "communities":
         return <CommunitiesPage access={access} />;
       case "secretCommunities": return <SecretCommunitiesPage />;
