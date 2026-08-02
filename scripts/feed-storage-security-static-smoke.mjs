@@ -11,6 +11,10 @@ const joined = migrations.map((item) => item.body).join("\n");
 assert.ok(joined.includes("message-attachments") || joined.includes("message_attachments"), "message attachments storage/table contract missing");
 assert.ok(/create policy[\s\S]*storage\.objects/i.test(joined) || joined.includes("message_attachments_"), "storage object policies must exist");
 assert.ok(joined.includes("can_view_message") || joined.includes("can_view_attachment") || joined.includes("message_attachments"), "attachment access must be message-scoped");
+assert.ok(joined.includes("storage_path") && joined.includes("mention_feed_view"), "Feed projection must include storage_path lineage");
+assert.ok(/20260802110000_feed_attachment_storage_path_projection\.sql/.test(
+  readdirSync(migrationsDir).join("\n"),
+), "private attachment storage_path projection migration must exist");
 
 const upload = readFileSync("src/services/uploadService.ts", "utf8");
 assert.ok(upload.includes("create-message-attachment-upload"), "uploads must go through signed Edge Function path");
@@ -22,5 +26,9 @@ assert.ok(fileService.includes("allowedImageMimeTypes"), "MIME allowlist require
 assert.ok(fileService.includes("maxImageFileSizeBytes"), "max size required");
 assert.ok(!fileService.includes("image/svg"), "SVG must stay out of image allowlist");
 
+const mentionFeed = readFileSync("src/services/mentionFeedService.ts", "utf8");
+assert.ok(mentionFeed.includes("signFeedAttachmentPaths") || mentionFeed.includes("createSignedUrls"), "Feed must batch-sign private attachments");
+assert.ok(!mentionFeed.includes("console.log") || !/console\.log\([^\)]*storage_path/i.test(mentionFeed), "must not log storage paths");
+
 console.log("Feed/storage attachment security static smoke: PASS");
-console.log("Hosted Storage deny/allow matrix: NOT_RUN (no Storage/RLS migration changed this turn)");
+console.log("Hosted Storage deny/allow matrix: see npm run feed:private-attachment:hosted:test after staging migration apply");
