@@ -196,7 +196,8 @@ export function MentionFeedMain({
       else { setFeedQueryNotice(localizationService.translate("feed.error.body")); setQueriedFeedItems(null); }
     });
     return () => { active = false; };
-  }, [activeFilter, activeTab, audioCatalog.feedItems, followedUserIds, items]);
+  // Ranked query must not re-run on every mention-item merge (App pagination/realtime owns item churn).
+  }, [activeFilter, activeTab, followedUserIds]);
   const queriedSourceOrder = useMemo(() => queriedFeedItems === null ? null : new Map(queriedFeedItems.map((item, index) => [item.mention.sourceId, index])), [queriedFeedItems]);
   const visibleItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleItems : locallyVisibleItems.filter((item) => queriedSourceOrder.has(item.messageId)).sort((left, right) => (queriedSourceOrder.get(left.messageId) ?? 999) - (queriedSourceOrder.get(right.messageId) ?? 999)), [locallyVisibleItems, queriedSourceOrder]);
   const visibleAudioItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleAudioItems.slice(0, 12) : locallyVisibleAudioItems.filter((item) => queriedSourceOrder.has(item.sourceId ?? item.id.replace(/^feed-/, ""))).sort((left, right) => (queriedSourceOrder.get(left.sourceId ?? left.id.replace(/^feed-/, "")) ?? 999) - (queriedSourceOrder.get(right.sourceId ?? right.id.replace(/^feed-/, "")) ?? 999)).slice(0, 12), [locallyVisibleAudioItems, queriedSourceOrder]);
