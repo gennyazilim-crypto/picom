@@ -1,0 +1,10 @@
+﻿original_canonical_branch=release/picom-canonical-production
+original_canonical_head=d49877b30c68bf0b530a80ef420fbbceb508351b
+original_canonical_tag=picom-canonical-production-base-2026-08-03T202616Z
+sanitized_worktree=C:\Users\ACER\Desktop\picom-canonical-publish-clean
+sanitized_branch=release/picom-canonical-production
+sanitized_head_at_filter=ff09e474d8d4835bb0f719954cb93906bde5c29b
+current_head=dd9c7afaa374bfc17a5a7857910daff76b3ea60b
+remote=https://github.com/gennyazilim-crypto/picom.git
+production_ref=cqnsetsmcduraryemhbi
+staging_ref=ufmtvqtsklqsmqxefbbs

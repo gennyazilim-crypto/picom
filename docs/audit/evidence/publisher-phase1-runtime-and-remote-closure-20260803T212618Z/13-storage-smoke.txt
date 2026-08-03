@@ -1,0 +1,4 @@
+﻿STORAGE=GO (bucket inventory + publisher buckets present)
+buckets include publisher-application-documents, profile-media, audio-covers
+path-level deny matrix=PARTIAL (full MIME/oversize/hijack matrix not re-run as dedicated harness; RLS deny on private tables verified)
+fixture cleanup=N/A for list-only

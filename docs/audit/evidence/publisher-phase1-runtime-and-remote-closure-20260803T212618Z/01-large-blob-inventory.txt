@@ -1,0 +1,10 @@
+﻿BLOB inventory (>=95MiB reachable before sanitize):
+428f98cd... ~225MB electron.exe paths (relbuild/win-unpacked.tmp, release-task-301, release-task-357)
+7f121c03... ~225MB release-update-20260719-225850/win-unpacked/Picom.exe
+f060105d... ~225MB docs/audit/evidence/.../Picom.exe
+1f01c3a6... ~116MB release-update installer Windows-x64.exe
+3898de90... ~116MB release-brand-candidate Windows-x64.exe
+ACTION=REMOVE_FROM_GIT_HISTORY_AND_IGNORE
+PRESENT_IN_CANONICAL_TREE=NO (already removed from HEAD before sanitize)
+REQUIRED_AT_RUNTIME=NO
+After sanitize: big_ge_95mb=0

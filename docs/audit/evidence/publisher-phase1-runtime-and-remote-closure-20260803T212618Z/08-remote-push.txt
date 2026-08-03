@@ -1,0 +1,5 @@
+﻿REMOTE_PUSH=PASS
+branch=release/picom-canonical-production
+remote_head_at_first_push=dd9c7afaa374bfc17a5a7857910daff76b3ea60b
+force=false
+GH001=CLEARED

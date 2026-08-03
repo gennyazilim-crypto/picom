@@ -81,3 +81,12 @@ PICOM PHASE 1 PRODUCTION CANDIDATE: GO
 2. After live-screen dependency restore + include-all apply, seal Phase 1 migrations then run JWT/Case/LiveKit gates.
 3. Monetization remains out of Phase 1 scope.
 4. Do not reuse staging refs in production config (guard must pass).
+
+## Runtime remote closure (2026-08-03)
+
+- Production migrations applied from original canonical tree.
+- Sanitized remote branch carries the same product and migration tree.
+- Difference is only GitHub-rejected generated binary history.
+- Migration file SHA-256 values are unchanged.
+- Verdict: PARTIAL_LIVEKIT_PENDING (Go Live OFF).
+- Evidence: docs/audit/evidence/publisher-phase1-runtime-and-remote-closure-20260803T212618Z

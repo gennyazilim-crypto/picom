@@ -1,0 +1,5 @@
+﻿AUTH=GO
+register/login/refresh/session/logout=PASS
+password_reset_request=WARN (invalid example.invalid / rate limit)
+email_delivery=BLOCKED_SMTP_UNVERIFIED (no SMTP credential exercised)
+profile create=PASS

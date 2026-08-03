@@ -1,0 +1,2 @@
+﻿REMINDERS=BLOCKED_WORKER_PROCESS (RPC present, process not verified; flag OFF)
+NOTIFICATION_PREFERENCES=GO (live_broadcaster_notification_prefs upsert/read PASS; modes all_live/scheduled_only/important_only/off schema)

@@ -1,0 +1,3 @@
+﻿REALTIME_REVOCATION=PASS_SQL_SEMANTIC
+Case18 SQL case 19_badge_suspend_list_count_0 PASS
+Dual authenticated websocket client harness=NOT_RUN (SQL + discovery RPC semantics verified)

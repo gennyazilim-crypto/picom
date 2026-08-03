@@ -1,0 +1,4 @@
+﻿REALTIME=GO
+realtime.messages platform-owned partitioned + RLS on
+PICOM private topic policies present
+publisher_badges + community_live_screen_sessions reachable

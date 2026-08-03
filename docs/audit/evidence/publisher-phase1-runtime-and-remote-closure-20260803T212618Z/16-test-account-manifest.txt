@@ -1,0 +1,3 @@
+﻿Internal smoke users created with picom_internal_test metadata and deleted in cleanup
+passwords not recorded
+emails @example.invalid

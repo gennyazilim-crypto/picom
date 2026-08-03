@@ -1,0 +1,5 @@
+﻿PICOM_GIT_LARGE_FILES=PASS
+limit_bytes=99614720
+script=scripts/check-git-large-files.mjs
+package_script=git:large-files:check
+wired_into=production:config:guard

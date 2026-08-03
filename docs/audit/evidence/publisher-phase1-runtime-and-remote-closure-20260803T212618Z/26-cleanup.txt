@@ -1,0 +1,3 @@
+﻿Smoke users deleted via admin API cleanup
+Case04/18 SQL used BEGIN/ROLLBACK fixtures (no leftover)
+tmp scripts remain local untracked unless committed as ops helpers

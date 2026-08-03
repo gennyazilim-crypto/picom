@@ -1,0 +1,5 @@
+﻿WORKERS=PARTIAL
+claim_publisher_stream_schedule_reminders RPC=PRESENT/callable
+dedicated worker process deploy=NOT_VERIFIED
+email/notification outbox claim RPCs=NOT_PRESENT
+REMINDERS flag kept OFF

@@ -1,0 +1,7 @@
+﻿production_ref=cqnsetsmcduraryemhbi
+migration_final=20260803173000 PASS
+phase1 tables PASS
+realtime.messages partitioned RLS=true PASS
+PICOM realtime policies present PASS
+feature flags before rollout=OFF / client-config missing then deployed
+staging ref not in production config PASS

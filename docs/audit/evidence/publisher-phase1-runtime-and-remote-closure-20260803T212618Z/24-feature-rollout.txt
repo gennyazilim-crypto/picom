@@ -1,0 +1,10 @@
+﻿ROLLOUT:
+enablePublisherReview=ON
+enablePublisherApplication=ON
+enablePublisherBadgeDisplay=ON
+enablePublisherNotificationPreferences=ON
+enableLiveNowDiscovery=ON
+enablePublisherReminders=OFF
+enableGoLive=OFF
+client-config + health deployed to cqnsetsmcduraryemhbi
+verified HTTP 200 featureFlags

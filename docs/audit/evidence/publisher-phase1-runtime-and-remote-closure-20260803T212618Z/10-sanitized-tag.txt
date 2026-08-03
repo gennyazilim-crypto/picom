@@ -1,0 +1,5 @@
+﻿TAG=picom-canonical-production-sanitized-2026-08-03
+TARGET=dd9c7afaa374bfc17a5a7857910daff76b3ea60b
+PUSHED=PASS
+annotated=yes
+old tags not moved

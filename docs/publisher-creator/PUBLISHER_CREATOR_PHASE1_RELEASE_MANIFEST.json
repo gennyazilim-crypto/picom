@@ -363,21 +363,25 @@
   ],
   "pendingVersions": [],
   "featureFlags": {
-    "publisher": "OFF",
-    "creator": "OFF",
-    "liveNowBroadcast": "OFF",
-    "note": "fail_closed_off_in_production"
+    "publisherReview": "ON",
+    "publisherApplications": "ON",
+    "publisherBadges": "ON",
+    "notificationPreferences": "ON",
+    "liveNowDiscovery": "ON",
+    "reminders": "OFF",
+    "goLive": "OFF",
+    "note": "controlled_rollout_partial_livekit_pending"
   },
   "productionProject": {
     "name": "picom-production",
     "ref": "cqnsetsmcduraryemhbi",
     "region": "eu-central-1"
   },
-  "canonicalCommit": "ff09e474d8d4835bb0f719954cb93906bde5c29b",
+  "canonicalCommit": "dd9c7afaa374bfc17a5a7857910daff76b3ea60b",
   "originalCanonicalBranch": "release/picom-canonical-production",
   "originalCanonicalHead": "d49877b30c68bf0b530a80ef420fbbceb508351b",
   "sanitizedCanonicalBranch": "release/picom-canonical-production",
-  "sanitizedCanonicalHead": "ff09e474d8d4835bb0f719954cb93906bde5c29b",
+  "sanitizedCanonicalHead": "dd9c7afaa374bfc17a5a7857910daff76b3ea60b",
   "historySanitizationReason": "GH001: remove generated oversized Windows/Electron binaries from reachable Git history for GitHub push",
   "removedGeneratedPaths": [
     "docs/audit/evidence/settings-packaged-2026-08-01T21-51-09-639Z/Picom.exe",
@@ -411,5 +415,9 @@
     "Sanitized remote branch carries the same product and migration tree.",
     "Difference is only GitHub-rejected generated binary history.",
     "Migration file SHA-256 values are unchanged."
-  ]
+  ],
+  "runtimeEvidence": "docs/audit/evidence/publisher-phase1-runtime-and-remote-closure-20260803T212618Z",
+  "productionVerdict": "PARTIAL_LIVEKIT_PENDING",
+  "remoteBranch": "release/picom-canonical-production",
+  "sanitizedTag": "picom-canonical-production-sanitized-2026-08-03"
 }

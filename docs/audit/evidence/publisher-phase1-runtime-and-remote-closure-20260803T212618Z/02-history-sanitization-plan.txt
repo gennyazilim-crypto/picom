@@ -1,0 +1,4 @@
+﻿Isolated clone: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Tool: git-filter-repo --invert-paths (exact generated binary paths only)
+No rewrite in picom-canonical-production worktree
+No force push

@@ -1,0 +1,7 @@
+﻿COMMITS (sanitized branch):
+7f643854 ops(repo): seal sanitized history guards after oversized binary removal
+dd9c7afa test(release): resolve realtime legacy blob via sanitized ancestry SHA
+(evidence/docs commits follow)
+TAGS:
+picom-canonical-production-sanitized-2026-08-03
+picom-publisher-phase1-production-partial-2026-08-03 (if created)

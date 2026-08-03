@@ -1,0 +1,4 @@
+﻿CANONICAL_TREE_SEMANTIC_PARITY=PASS
+ONLY_IN_ORIGINAL=0
+ONLY_IN_SANITIZED=0
+Allowed diffs after follow-up commits: gitignore/guards/manifest/tests/evidence

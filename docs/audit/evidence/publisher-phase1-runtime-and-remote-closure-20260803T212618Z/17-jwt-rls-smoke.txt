@@ -1,0 +1,5 @@
+﻿JWT/RLS=GO
+anon applications/badges DENIED
+user own apps read PASS
+user approve DENIED (PUBLISHER_REVIEWER_REQUIRED)
+user badge create DENIED

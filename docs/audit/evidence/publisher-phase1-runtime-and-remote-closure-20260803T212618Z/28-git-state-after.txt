@@ -1,0 +1,20 @@
+﻿?? .tmp-filter-paths.txt
+?? .tmp-filter-repo-log.txt
+?? .tmp-original-canonical-head.txt
+?? .tmp-prod-runtime-smoke.txt
+?? .tmp-prod-sql-gates.txt
+?? docs/audit/evidence/publisher-phase1-runtime-and-remote-closure-2026-08-03T21-14-07-328Z/
+?? docs/audit/evidence/publisher-phase1-runtime-and-remote-closure-2026-08-03T21-16-52-217Z/
+?? docs/audit/evidence/publisher-phase1-runtime-and-remote-closure-20260803T212618Z/
+?? scripts/tmp-livekit-env-presence.mjs
+?? scripts/tmp-publisher-phase1-production-runtime.mjs
+?? scripts/tmp-publisher-phase1-production-sql-gates.mjs
+?? scripts/tmp-verify-client-config-flags.mjs
+?? supabase/.temp/
+dd9c7afaa374bfc17a5a7857910daff76b3ea60b
+release/picom-canonical-production
+dd9c7afa test(release): resolve realtime legacy blob via sanitized ancestry SHA
+7f643854 ops(repo): seal sanitized history guards after oversized binary removal
+ff09e474 docs(release): point Phase1 manifest at sealed consolidation HEAD
+28faabb4 docs(release): seal canonical consolidation evidence
+326d4157 fix(db): add profiles.deactivated_at predecessor before 140000

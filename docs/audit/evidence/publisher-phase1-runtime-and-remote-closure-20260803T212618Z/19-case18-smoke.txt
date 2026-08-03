@@ -1,0 +1,174 @@
+﻿CASE18=PASS (list/count/search/category/suspend/reactivate)
+[PASS] migration_tail HTTP=201
+[
+  {
+    "version": "20260803173000"
+  },
+  {
+    "version": "20260803172000"
+  },
+  {
+    "version": "20260803171000"
+  },
+  {
+    "version": "20260803170000"
+  },
+  {
+    "version": "20260803160000"
+  },
+  {
+    "version": "20260803150000"
+  },
+  {
+    "version": "20260803141000"
+  },
+  {
+    "version": "20260803140000"
+  }
+]
+[PASS] final_migration_20260803173000
+[PASS] phase1_relations HTTP=201
+[
+  {
+    "publisher_applications": "publisher_applications",
+    "publisher_badges": "publisher_badges",
+    "live_sessions": "community_live_screen_sessions",
+    "platform_account_restrictions": "platform_account_restrictions",
+    "realtime_messages": "realtime.messages"
+  }
+]
+[PASS] realtime_messages_rls HTTP=201
+[
+  {
+    "relname": "messages",
+    "relrowsecurity": true,
+    "relkind": "p"
+  }
+]
+[PASS] realtime_policies HTTP=201
+[
+  {
+    "polname": "picom members receive private realtime topics"
+  },
+  {
+    "polname": "picom members send private realtime topics"
+  }
+]
+[PASS] claim_reminder_signature HTTP=201
+[
+  {
+    "args": "p_worker_id text, p_batch_size integer"
+  }
+]
+[PASS] live_now_list_signature HTTP=201
+[
+  {
+    "args": "p_limit integer, p_cursor_started_at timestamp with time zone, p_cursor_id uuid, p_search text, p_category text, p_language text, p_following_only boolean, p_sort text"
+  }
+]
+Running Case 04 via Management API...
+[PASS] case04_sql HTTP=201
+[
+  {
+    "case_id": "03_community_2999_founder_denied",
+    "status": "PASS",
+    "detail": "rows=2999 active=2999 {\"eligible\": false, \"evaluatedAt\": \"2026-08-03T21:16:43.90223+00:00\", \"ruleVersion\": \"v1-5k-followers-or-3k-founder\", \"accountActive\": true, \"eligibilityPaths\":"
+  },
+  {
+    "case_id": "04_community_3000_founder_allowed",
+    "status": "PASS",
+    "detail": "eligible=true active=3000 rows=3000 {\"eligible\": true, \"evaluatedAt\": \"2026-08-03T21:16:43.90223+00:00\", \"ruleVersion\": \"v1-5k-followers-or-3k-founder\", \"accountActive\": true, \"eligibilityPaths\": [\"community_founder_"
+  },
+  {
+    "case_id": "04d_community_3001_founder_allowed",
+    "status": "PASS",
+    "detail": "rows=3001 active=3001 {\"eligible\": true, \"evaluatedAt\": \"2026-08-03T21:16:43.90223+00:00\", \"ruleVersion\": \"v1-5k-followers-or-3k-founder\", \"accountActive\": true, \"eligibilityPaths\": "
+  },
+  {
+    "case_id": "05_community_3000_moderator_denied",
+    "status": "PASS",
+    "detail": "owned_active=1 {\"eligible\": false, \"evaluatedAt\": \"2026-08-03T21:16:43.90223+00:00\", \"ruleVersion\": \"v1-5k-followers-or-3k-founder\", \"accountActive\": true, \"eligibilityPaths\":"
+  },
+  {
+    "case_id": "05b_admin_not_founder_denied",
+    "status": "PASS",
+    "detail": "owned_active=1 {\"eligible\": false, \"evaluatedAt\": \"2026-08-03T21:16:43.90223+00:00\", \"ruleVersion\": \"v1-5k-followers-or-3k-founder\", \"accountActive\": true, \"eligibilityPaths\":"
+  },
+  {
+    "case_id": "06_split_1700_1500_not_aggregated",
+    "status": "PASS",
+    "detail": "largest=1700 {\"eligible\": false, \"evaluatedAt\": \"2026-08-03T21:16:43.90223+00:00\", \"ruleVersion\": \"v1-5k-followers-or-3k-founder\", \"accountActive\": true, \"eligibilityPaths\":"
+  },
+  {
+    "case_id": "fixture_exactly_3000_membership_rows",
+    "status": "PASS",
+    "detail": "community_members.count=3000"
+  },
+  {
+    "case_id": "owner_without_membership_no_auto_plus_one",
+    "status": "PASS",
+    "detail": "rows=0 active=0 elig={\"eligible\": false, \"evaluatedAt\": \"2026-08-03T21:16:43.90223+00:00\", \"ruleVersion\": \"v1-5k-followers-or-3k-founder\", \"accountActive\": true, \"eligibilityPaths\":"
+  },
+  {
+    "case_id": "schema_no_community_members_status",
+    "status": "PASS",
+    "detail": "CREATE OR REPLACE FUNCTION public.largest_owned_active_community_stats(target_user_id uuid)\n RETURNS TABLE(community_id uuid, community_name text, active_member_count integer)\n LANGUAG
+[PASS] case04_verdict
+Running Case 18 via Management API...
+[PASS] case18_sql HTTP=201
+[
+  {
+    "case18_report": {
+      "debug": {
+        "predicate_debug": "{\"badge_id\": \"b4e88a23-87f8-45ac-9342-f3ada5fb79c1\", \"stream_id\": \"fd513bdc-03c0-4a0c-8074-19cbbdaa6515\", \"can_broadcast\": true, \"stream_status\": \"live\", \"application_id\": \"a1b47c8f-fc98-4b01-ad1c-52c1321cb0d1\", \"eligible_badge\": true, \"visibility_mode\": \"public_discovery\", \"discovery_helper\": true, \"eligible_account\": true, \"eligible_profile\": true, \"eligible_schedule\": true, \"moderation_status\": \"approved\", \"broadcaster_user_id\": \"f77cbb5f-6bf8-4c11-825d-15347fce9bc6\", \"eligible_moderation\": true, \"eligible_not_hidden\": true, \"eligible_visibility\": true, \"eligible_application\": true, \"eligible_not_blocked\": true, \"eligible_not_deleted\": true, \"eligible_owner_match\": true, \"eligible_for_live_now\": true, \"eligible_stream_status\": true}"
+      },
+      "results": [
+        {
+          "detail": "list=1 count=1",
+          "status": "PASS",
+          "case_id": "08_list_count_one_eligible"
+        },
+        {
+          "detail": "cat_rows=1",
+          "status": "PASS",
+          "case_id": "08b_category_count_sees_eligible"
+        },
+        {
+          "detail": "list=1 count=1 note=one_active_uidx",
+          "status": "PASS",
+          "case_id": "08c_multi_badge_no_duplicate"
+        },
+        {
+          "detail": "{\"badge_id\": \"b4e88a23-87f8-45ac-9342-f3ada5fb79c1\", \"stream_id\": \"fd513bdc-03c0-4a0c-8074-19cbbdaa6515\", \"can_broadcast\": true, \"stream_status\": \"live\", \"application_id\": \"a1b47c8f-fc98-4b01-ad1c-52c1321cb0d1\", \"eligible_badge\": true, \"visibility_mode\": \"public_discovery\", \"discovery_helper\": true, \"eligible_account\": true, \"eligible_profile\": true, \"eligible_schedule\": true, \"moderation_status\":",
+          "status": "PASS",
+          "case_id": "18_fixture_predicates_ready"
+        },
+        {
+          "detail": "listed=1 search=1",
+          "status": "PASS",
+          "case_id": "18_live_now_includes_approved_stream"
+        },
+        {
+          "detail": "bad_hits=0",
+          "status": "PASS",
+          "case_id": "18b_ineligible_not_listed"
+        },
+        {
+          "detail": "list=0 count=0",
+          "status": "PASS",
+          "case_id": "19_badge_suspend_list_count_0"
+        },
+        {
+          "detail": "list=1 count=1",
+          "status": "PASS",
+          "case_id": "19b_badge_reactivate_list_count_1"
+        },
+        {
+          "detail": "li
+[PASS] case18_verdict
+{
+  "migrationFinal": "PASS",
+  "case04": "PASS",
+  "case18": "PASS"
+}
+

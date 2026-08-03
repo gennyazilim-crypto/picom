@@ -1,0 +1,5 @@
+﻿10_LOCALE=GO_STATIC
+publisher-program-i18n-parity PASS (10 locales identical keys)
+live-now-i18n-parity PASS
+Arabic RTL covered by locale catalog + publisher translator wiring
+Full Electron UI per-locale visual smoke=NOT_RUN

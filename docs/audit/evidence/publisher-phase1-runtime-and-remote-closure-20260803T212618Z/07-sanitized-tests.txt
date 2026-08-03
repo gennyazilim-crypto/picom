@@ -1,0 +1,17 @@
+﻿npm ci=0
+typecheck=0
+build=0
+vite build=0
+desktop:smoke=0
+secrets:smoke=0
+git:large-files:check=0
+release:canonical:guard=0
+publisher eligibility thresholds=PASS
+live-now eligibility/cta/i18n=PASS
+publisher-program-i18n 10 locales=PASS
+phase1 dep graph=PASS
+realtime portability=PASS (sanitized SHA)
+canonical consolidation=PASS
+supabase migrations check=PASS
+feed-i18n-parity-smoke=FAIL (Node ESM data: URL relative import quirk; publisher/live-now i18n PASS)
+LINT=NOT_CONFIGURED
