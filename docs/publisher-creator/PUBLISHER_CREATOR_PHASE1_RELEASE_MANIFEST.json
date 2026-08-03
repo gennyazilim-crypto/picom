@@ -236,9 +236,9 @@
     "note": "No service-role/JWT/DB password/LiveKit secret values in committed source or this manifest"
   },
   "canonicalConsolidation": {
-    "consolidatedAt": "2026-08-03T19:08:02.770Z",
+    "consolidatedAt": "2026-08-03T19:18:55.545Z",
     "canonicalBranch": "release/picom-canonical-production",
-    "canonicalCommit": "c28679dadd18d398977913c6d3c0417bfaeed0ab",
+    "canonicalCommit": "90ee442c84ee5a23bb6d1a65b0345ff35fe5fe81",
     "previousAuthoritativeCandidateSha": "448736697acf44e36887740b613c1dab16df2c27",
     "mergedBranches": [
       "feat/community-rebuild",
@@ -287,6 +287,6 @@
     "featureFlagStates": "fail_closed_off_in_production",
     "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production"
   },
-  "authoritativeReleaseSha": "c28679dadd18d398977913c6d3c0417bfaeed0ab",
+  "authoritativeReleaseSha": "90ee442c84ee5a23bb6d1a65b0345ff35fe5fe81",
   "canonicalBranch": "release/picom-canonical-production"
 }
