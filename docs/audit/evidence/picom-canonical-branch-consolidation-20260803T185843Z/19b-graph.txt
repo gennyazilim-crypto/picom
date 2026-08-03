@@ -1,0 +1,46 @@
+﻿* ebd5b7dd (HEAD -> release/picom-canonical-production) ops(release): enforce canonical PICOM deployment branch
+*   c28679da merge(release): record homepage platform stats integration history
+|\  
+| * 15096270 (tag: backup/pre-canonical-release-homepage-platform-stats-integration-20260803T185843Z, release/homepage-platform-stats-integration) feat(stats): integrate secure public platform aggregates
+* |   cc3f6dce merge(release): record homepage platform stats branch history
+|\ \  
+| * | eedfa1db (tag: backup/pre-canonical-release-homepage-platform-stats-20260803T185843Z, release/homepage-platform-stats) feat(stats): add secure public platform aggregates
+| |/  
+* |   34f64f62 merge(release): integrate homepage platform stats prerequisites history
+|\ \  
+| * | a4901e11 (tag: backup/pre-canonical-release-homepage-platform-stats-prerequisites-20260803T185843Z, release/homepage-platform-stats-prerequisites) fix(db): align realtime hardening with hosted Supabase defaults
+| * | 0bd39ade test(stats): add migration RLS and lifecycle coverage
+| * | 498a80c7 fix(stats): align aggregate schema with canonical user and broadcast lifecycle
+| * | 442d999d feat(live): add go-live session lifecycle
+| * | 3d54872d feat(live): add canonical live session persistence
+| |/  
+* | 4533587d (tag: backup/pre-canonical-feat-community-rebuild-20260803T185843Z, feat/community-rebuild) fix(ui): restore companion, help, and profile regressions
+* | 93a2612a (tag: picom-publisher-phase1-production-candidate-2026-08-03-dependency-fix-20260803T160933Z, tag: picom-publisher-phase1-production-candidate-2026-08-03-dependency-fix) docs(prod): seal restored migration dependency evidence
+* | ada43cb5 fix(db): restore live screen session migration dependency
+* | 23af140f docs(prod): seal realtime portability resume partial at live sessions gap
+* | 0c90fa5f (tag: picom-publisher-phase1-production-candidate-2026-08-03-realtime-fix) fix(db): make realtime authorization migration platform-safe
+* | ff15f21d docs(prod): attach provisioning poll log and git state
+* | 21b9e089 docs(prod): seal realtime provision resume and alter-owner blocker
+* | c50f51a8 ops(publisher): create production project and seal partial deploy
+* | 44873669 (tag: picom-publisher-phase1-production-candidate-2026-08-03-final) docs(publisher): attach phase1 hardening evidence logs
+* | 76d0439b (tag: picom-publisher-phase1-production-candidate-2026-08-03) fix(publisher): complete phase 1 release hardening
+* | 9ff56fbe docs(publisher): record live now phase1 freeze SHA
+* | 2f198ef6 (tag: picom-live-now-phase1-staging-go-2026-08-03) feat(publisher): complete live now phase 1 staging release
+|/  
+* 6c922c09 docs(feed): record clean dependency closure and staging package SHA
+* 6b0de2b2 fix(data-source): remove mock branches from channel members reactions
+* a42211be test(data-source): assert production services have no mock branches
+* 01c3c656 fix(desktop): remove mobile max-width media from email banner CSS
+* 29038afe fix(root): restore UsersPage as valid UTF-8 text
+* 375dc602 fix(ui): add calendar/live Iconix sprite symbols
+* 4f446939 fix(web): add index.web.html entry for web Vite build
+* e283fadb test(security): tighten secrets smoke PASSWORD false-positive filter
+* 459a5c3b test(feed): align auth and deep-link smoke assertions with App
+* 93ec86de fix(feed): harden realtime teardown and remove mock query fallback
+* d7d25631 fix(web): commit vite.config.web for build:web
+* f85b2b17 fix(electron): add CompanionWindowManager module
+* 964b4183 fix(root): avoid UsersPage WIP for Feed shell typecheck
+* 016b4abd fix(root): accept isRootOwner on UsersPage
+* 89467e63 fix(dm): add message chime and call dismiss APIs
+* 46d1f21d fix(root): accept isRootOwner on RootDashboardShell
+* 3c74c45e fix(messages): include MESSAGE_SEND_FORBIDDEN in service error codes

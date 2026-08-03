@@ -1,0 +1,9 @@
+﻿canonicalBranch=release/picom-canonical-production
+canonicalHead=ebd5b7dd2fa10cedec88282f2eececcc026cf539
+guard=PASS
+consolidationTests=PASS
+realtimePortabilityTests=PASS
+productionConfigGuard=FAIL PRODUCTION_ENV_FILE_MISSING (no .env.production in clean worktree; not created)
+npmCi=PENDING
+typecheck=PENDING
+build=PENDING
