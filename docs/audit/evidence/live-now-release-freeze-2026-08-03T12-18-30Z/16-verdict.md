@@ -3,7 +3,7 @@
 ## Verdict
 
 PICOM LIVE NOW RELEASE CANDIDATE: GO
-PICOM LIVE NOW RELEASE SHA: d8306dee946ff6ea0c75827a7ddbad51c0075dab
+PICOM LIVE NOW RELEASE SHA: 2f198ef61ffd0ac423c9713482c57da24c4967b7
 PICOM LIVE NOW WORKTREE: CLEAN
 PICOM LIVE NOW PRODUCTION FOUNDATION: PENDING
 
@@ -21,3 +21,9 @@ No production connect, migration apply, or deploy in this freeze.
 ## Tag
 
 picom-live-now-phase1-staging-go-2026-08-03
+
+## Note
+
+Authoritative SHA is HEAD and annotated tag target. Embedding the commit SHA inside
+the same commit tree requires an amend; after the freeze tag was cut, this file
+records the tagged commit `2f198ef61ffd0ac423c9713482c57da24c4967b7`.
