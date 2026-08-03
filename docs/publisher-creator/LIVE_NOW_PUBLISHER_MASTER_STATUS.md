@@ -11,7 +11,7 @@ Sanitized remote: GO
 | 00 Master control | GO | status table sealed | - |
 | 01 GH001 + remote | GO | push+tag+large-file | - |
 | 02 Auth + SMTP | PARTIAL | redirects PASS; auth smoke PASS | SMTP_CREDENTIAL |
-| 03 Storage | GO | path matrix PASS (own+deny) | - |
+| 03 Storage | PARTIAL | own upload + foreign deny PASS | closed-application upload deny FAIL (policy/race finding) |
 | 04 Realtime app | GO | RLS+policies+tables | Dual WS optional |
 | 05 Workers | PARTIAL | claim RPC PASS | VPS worker process |
 | 06 Test accounts | GO | internal create/cleanup | - |

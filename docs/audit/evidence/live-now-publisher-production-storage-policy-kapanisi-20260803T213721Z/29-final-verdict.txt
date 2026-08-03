@@ -1,1 +1,1 @@
-﻿PICOM PRODUCTION STORAGE: GO
+PICOM PRODUCTION STORAGE: PARTIAL (closed-application deny finding)
