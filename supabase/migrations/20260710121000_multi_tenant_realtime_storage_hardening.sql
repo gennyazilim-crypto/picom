@@ -72,7 +72,6 @@ end;
 $$;
 revoke all on function public.can_access_picom_realtime_topic(text,text) from public, anon;
 grant execute on function public.can_access_picom_realtime_topic(text,text) to authenticated;
-alter table realtime.messages enable row level security;
 drop policy if exists "picom members receive private realtime topics" on realtime.messages;
 create policy "picom members receive private realtime topics"
 on realtime.messages
