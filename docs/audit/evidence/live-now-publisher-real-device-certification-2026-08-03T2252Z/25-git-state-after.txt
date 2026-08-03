@@ -1,5 +1,6 @@
-TASK26 — Git state after seal
+﻿TASK26 — Git state after seal
 Branch: release/picom-canonical-production
-HEAD: (see tag commit after follow-up)
-Unrelated dirty: supabase/.temp/ (ignored; not committed)
-Working tree otherwise clean of task-scope files after push.
+HEAD: d8d881c013991b958b149fb47b8c368cfe08e05d
+Prior partial tag unchanged: picom-publisher-phase1-production-partial-20260803T223117Z
+New partial tag: picom-publisher-phase1-production-partial-20260803T230959Z
+Unrelated dirty left: supabase/.temp/ (not committed)
