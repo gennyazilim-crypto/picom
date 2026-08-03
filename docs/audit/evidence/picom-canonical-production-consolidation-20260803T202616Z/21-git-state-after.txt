@@ -1,7 +1,4 @@
 branch=release/picom-canonical-production
-head=c05961fec5ba2a0b33b84c83a56498b314be0ab0
-status:
-?? .tmp-canonical-branch.txt ?? .tmp-canonical-head.txt ?? .tmp-evidence-path.txt ?? .tmp-existing-tags.txt ?? .tmp-mgmt-query.mjs ?? .tmp-phase1-seal-out.txt ?? .tmp-phase1-seal.sql ?? .tmp-probe-deact.sql ?? .tmp-probe-hist.sql ?? .tmp-probe-need.sql ?? .tmp-probe-profiles-cols.sql ?? .tmp-probe-profiles-related.sql ?? .tmp-prod-apply-2.txt ?? .tmp-prod-apply.txt ?? .tmp-prod-dry-run-2.txt ?? .tmp-prod-dry-run.txt ?? .tmp-q1.sql ?? .tmp-q2.sql ?? .tmp-q3.sql ?? .tmp-q4.sql ?? .tmp-q5.sql ?? .tmp-q6.sql ?? .tmp-q7.sql ?? docs/audit/evidence/picom-canonical-production-consolidation-20260803T202616Z/
-tags_local:
-picom-canonical-production-base-2026-08-03 picom-canonical-production-base-2026-08-03T192400Z
-remote_push: BLOCKED historically by GH001 large electron.exe; not forced
+head=6556fca3d235d4f54ce28b6d1747ec0718439ee7
+worktree=C:\Users\ACER\Desktop\picom-canonical-production
+tag_pending=picom-canonical-production-base-2026-08-03T202616Z

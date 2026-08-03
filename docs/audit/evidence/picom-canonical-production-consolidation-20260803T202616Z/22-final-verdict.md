@@ -1,7 +1,7 @@
 # Final verdict — PICOM canonical production consolidation
 
 canonical_branch: release/picom-canonical-production
-canonical_head: (see 21; evidence commit will update)
+canonical_head: 6556fca3d235d4f54ce28b6d1747ec0718439ee7
 canonical_worktree: C:\Users\ACER\Desktop\picom-canonical-production
 
 PICOM BRANCH CONSOLIDATION: GO
@@ -22,3 +22,4 @@ Final reached migration on production: 20260803173000
 Phase1 seal through: 20260803172000
 Runtime blockers: LIVEKIT credentials; full Auth/Realtime/Case04/18 smoke pending; Publisher flags remain OFF
 Evidence: docs/audit/evidence/picom-canonical-production-consolidation-20260803T202616Z
+

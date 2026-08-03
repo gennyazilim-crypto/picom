@@ -292,7 +292,7 @@
     "featureFlagStates": "fail_closed_off_in_production",
     "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production"
   },
-  "authoritativeReleaseSha": "90ee442c84ee5a23bb6d1a65b0345ff35fe5fe81",
+  "authoritativeReleaseSha": "6556fca3d235d4f54ce28b6d1747ec0718439ee7",
   "canonicalBranch": "release/picom-canonical-production",
   "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production",
   "platformAccountRestrictionsSource": {
@@ -372,5 +372,6 @@
     "name": "picom-production",
     "ref": "cqnsetsmcduraryemhbi",
     "region": "eu-central-1"
-  }
+  },
+  "canonicalCommit": "6556fca3d235d4f54ce28b6d1747ec0718439ee7"
 }
