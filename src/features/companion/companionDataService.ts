@@ -493,7 +493,7 @@ export const companionDataService = Object.freeze({
         console.warn("Companion DM list realtime could not start.", reason);
       }
     }
-    let friendCleanup = () => undefined;
+    let friendCleanup: () => void = () => undefined;
     try {
       friendCleanup = await friendRequestService.subscribeToFriendState(() => void refresh());
     } catch (reason) {

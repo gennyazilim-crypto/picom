@@ -1,9 +1,18 @@
-﻿canonicalBranch=release/picom-canonical-production
-canonicalHead=ebd5b7dd2fa10cedec88282f2eececcc026cf539
-guard=PASS
-consolidationTests=PASS
-realtimePortabilityTests=PASS
-productionConfigGuard=FAIL PRODUCTION_ENV_FILE_MISSING (no .env.production in clean worktree; not created)
-npmCi=PENDING
-typecheck=PENDING
-build=PENDING
+﻿npm_ci=PASS exit=0
+typecheck=PASS exit=0 (fixed companionDataService friendCleanup typing)
+build=PASS exit=0
+vite_build=PASS exit=0
+desktop_smoke=PASS exit=0
+secrets_smoke=PASS exit=0
+canonical_guard=PASS exit=0
+consolidation_tests=PASS exit=0 (10/10)
+realtime_portability=PASS exit=0 (10/10)
+publisher_eligibility_thresholds=PASS
+live_now_eligibility=PASS
+live_now_i18n_parity=PASS
+publisher_program_i18n_parity=PASS
+feed_live_now_preview_smoke=PASS
+publisher_notification_pref_integration=BLOCKED_UNTIL_RUN (hosted)
+publisher_schedule_reminder_integration=BLOCKED_UNTIL_RUN (hosted)
+production_config_guard=FAIL PRODUCTION_ENV_FILE_MISSING
+LINT=NOT_CONFIGURED
