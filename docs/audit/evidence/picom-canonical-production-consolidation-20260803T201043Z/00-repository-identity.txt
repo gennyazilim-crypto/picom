@@ -1,0 +1,7 @@
+﻿toplevel=C:/Users/ACER/Desktop/picom-canonical-production
+branch=release/picom-canonical-production
+head=6a5ab5da4da09d14976f374bdfb62d982ca54e22
+remote=https://github.com/gennyazilim-crypto/picom.git
+production=cqnsetsmcduraryemhbi
+staging=ufmtvqtsklqsmqxefbbs
+utc=20260803T201043Z

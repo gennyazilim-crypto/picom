@@ -288,5 +288,61 @@
     "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production"
   },
   "authoritativeReleaseSha": "90ee442c84ee5a23bb6d1a65b0345ff35fe5fe81",
-  "canonicalBranch": "release/picom-canonical-production"
+  "canonicalBranch": "release/picom-canonical-production",
+  "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production",
+  "platformAccountRestrictionsSource": {
+    "sourceMigration": "NOT_FOUND_IN_GIT_HISTORY",
+    "canonicalSource": "STAGING_SCHEMA_INTROSPECTION",
+    "stagingProjectRef": "ufmtvqtsklqsmqxefbbs",
+    "compatibilityVersion": "20260803135000",
+    "filename": "20260803135000_platform_account_restrictions_canonical.sql",
+    "lfSha256": "37f3a93cfbe43d421221cb7186fe9abc8d47717c67b3220a0bcc04e6ec2ab7d0",
+    "additionalCompatibilityPredecessors": [
+      {
+        "version": "20260803135100",
+        "filename": "20260803135100_notification_preferences_canonical.sql",
+        "reason": "required by 20260803172000"
+      },
+      {
+        "version": "20260803135200",
+        "filename": "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
+        "reason": "required by 20260803172000 ALTER"
+      }
+    ]
+  },
+  "migrationDependencyGraph": {
+    "pendingStart": "20260803140000",
+    "noMissingPredecessors": "PASS",
+    "scannedThrough": "20260803172000",
+    "note": "Verification foundation 20260803173000 excluded from Phase1 seal scope"
+  },
+  "productionAppliedVersions": [
+    "20260803100000",
+    "20260803110000",
+    "20260803130000",
+    "20260710121000"
+  ],
+  "pendingVersions": [
+    "20260803135000",
+    "20260803135100",
+    "20260803135200",
+    "20260803140000",
+    "20260803141000",
+    "20260803150000",
+    "20260803160000",
+    "20260803170000",
+    "20260803171000",
+    "20260803172000"
+  ],
+  "featureFlags": {
+    "publisher": "OFF",
+    "creator": "OFF",
+    "liveNowBroadcast": "OFF",
+    "note": "fail_closed_off_in_production"
+  },
+  "productionProject": {
+    "name": "picom-production",
+    "ref": "cqnsetsmcduraryemhbi",
+    "region": "eu-central-1"
+  }
 }

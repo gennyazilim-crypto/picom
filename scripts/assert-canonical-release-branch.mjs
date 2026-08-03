@@ -32,7 +32,11 @@ const REQUIRED_ANCESTRY = Object.freeze([
 
 const PHASE1_MIGRATIONS = Object.freeze([
   "20260803100000_community_live_screen_sessions.sql",
+  "20260803110000_go_live_broadcast_start.sql",
   "20260803130000_public_platform_stats.sql",
+  "20260803135000_platform_account_restrictions_canonical.sql",
+  "20260803135100_notification_preferences_canonical.sql",
+  "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
   "20260803140000_publisher_creator_program_core.sql",
   "20260803141000_publisher_livekit_broadcast_gate.sql",
   "20260803150000_live_now_publisher_discovery.sql",
@@ -122,6 +126,16 @@ function assertMigrations() {
   }
   const live = join(root, "supabase/migrations/20260803100000_community_live_screen_sessions.sql");
   if (!existsSync(live)) block("BLOCKED_MISSING_MIGRATION", "Missing 20260803100000");
+  const goLive = join(root, "supabase/migrations/20260803110000_go_live_broadcast_start.sql");
+  if (!existsSync(goLive)) block("BLOCKED_MISSING_MIGRATION", "Missing 20260803110000");
+  const par = join(root, "supabase/migrations/20260803135000_platform_account_restrictions_canonical.sql");
+  if (!existsSync(par)) {
+    block("BLOCKED_MISSING_PREDECESSOR", "Missing platform_account_restrictions predecessor 20260803135000");
+  }
+  const parSql = readFileSync(par, "utf8");
+  if (!/create\s+table\s+if\s+not\s+exists\s+public\.platform_account_restrictions/i.test(parSql)) {
+    block("BLOCKED_MISSING_PREDECESSOR", "20260803135000 does not create public.platform_account_restrictions");
+  }
 
   const rtPath = join(root, REALTIME_REL);
   if (!existsSync(rtPath)) block("BLOCKED_MISSING_MIGRATION", `Missing ${REALTIME_REL}`);
