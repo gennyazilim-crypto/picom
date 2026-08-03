@@ -1,0 +1,7 @@
+﻿VERSION	REQUIRES	CREATES/ALTERS	EXPECTED_PREDECESSOR	CURRENT_BRANCH_FILE	SOURCE	PRODUCTION_STATUS
+20260803100000	communities,channels,profiles	community_live_screen_sessions(+viewers/hidden/reports)+RLS	none for phase1 chain	YES	3d54872d	HISTORY_MISSING OBJECTS_MISSING SAFE_TO_APPLY
+20260803110000	20260803100000	go-live columns visibility_mode/client_request_id/description/language_code + starting	20260803100000	YES	442d999d	HISTORY_MISSING OBJECTS_MISSING SAFE_TO_APPLY
+20260803130000	(function body refs live sessions; applied without table)	public platform stats	optional live table	YES	current	APPLIED
+20260803140000	20260803100000+20260803110000	ALTER live sessions + publisher core	20260803110000	YES	current	PENDING (failed 42P01 previously)
+20260803141000..20260803172000	prior phase1	phase1 chain	prior	YES	current	PENDING
+NO_OTHER_REQUIRED_BRANCH_OMISSIONS=YES (excluding unrelated 20260803173000 held out of push)

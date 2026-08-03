@@ -1,0 +1,12 @@
+﻿SECURITY_SCAN_20260803100000+20260803110000
+DROP_TABLE=none
+TRUNCATE=none
+DROP_COLUMN=none
+DISABLE_RLS=none
+OWNER_TO=none
+fixture_seed_top_level_INSERT=none (function body inserts only)
+hardcoded_user_uuid=none
+project_ref_literal=none
+publication_recreation=none
+SECURITY_DEFINER_search_path=fixed where present
+RESULT=PASS_GREENFIELD_SAFE

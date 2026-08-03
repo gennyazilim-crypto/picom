@@ -1,0 +1,5 @@
+﻿creates: community_live_screen_sessions, community_live_screen_viewers, community_live_hidden_communities, community_live_share_reports
+RLS=enabled
+policies=8 create policy statements
+functions/triggers/publication=present in source SQL
+FK cascade=referential only (not destructive DROP CASCADE)

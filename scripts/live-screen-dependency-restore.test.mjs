@@ -107,7 +107,12 @@ test("release manifest records restored dependency hashes", () => {
   assert.ok(d110);
   assert.equal(d100.sha256, SHA100);
   assert.equal(d110.sha256, SHA110);
-  assert.equal(d100.productionStatus, "PENDING_OUT_OF_ORDER_CANONICAL_APPLY");
+  assert.ok(
+    ["PENDING_OUT_OF_ORDER_CANONICAL_APPLY", "APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED"].includes(
+      d100.productionStatus,
+    ),
+  );
+  assert.equal(d100.productionStatus, d110.productionStatus);
 });
 
 test("inventory notes staging history gap for base live migrations", () => {

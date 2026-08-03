@@ -1,0 +1,4 @@
+﻿Auth/Storage/Realtime preflight: DEFERRED (migration seal not reached)
+LiveKit: BLOCKED_CREDENTIAL (unchanged)
+Workers: not verified this run
+Feature flags table: not present on production yet (comes with pending 140000+)

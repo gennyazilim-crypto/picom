@@ -28,14 +28,16 @@
     "rollbackDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_ROLLBACK.md",
     "stagingV2PausedToFreeSlot": "kbdotviopwlcqviggtrc",
     "migrationDeploy": {
-      "status": "PENDING_RESUME_AFTER_LIVE_SCREEN_DEPENDENCY_RESTORE",
-      "appliedThrough": "20260803130000",
+      "status": "PARTIAL_AFTER_LIVE_SCREEN_RESTORE",
+      "appliedThrough": "20260803110000",
+      "alsoApplied": ["20260803100000", "20260803110000", "20260803130000"],
       "failedAt": "20260803140000_publisher_creator_program_core.sql",
-      "failure": "blocked on missing public.community_live_screen_sessions; restoring 20260803100000 + required 20260803110000 predecessors",
+      "failure": "blocked on missing public.platform_account_restrictions after live-screen predecessors applied via include-all",
       "realtimeProvisioning": "PROVISIONED",
       "realtimePortabilityFix": "APPLIED_CANONICAL_MATCHED",
-      "phase1PublisherMigrations": "PARTIAL_STOPPED_AT_20260803140000",
-      "resumeEvidence": "docs/audit/evidence/publisher-production-realtime-migration-fix-2026-08-03T15-21-23Z/"
+      "liveScreenDependencies": "APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED",
+      "phase1PublisherMigrations": "PARTIAL_STOPPED_AT_20260803140000_PLATFORM_ACCOUNT_RESTRICTIONS",
+      "resumeEvidence": "docs/audit/evidence/publisher-production-missing-migration-restore-2026-08-03T15-49-24Z/"
     },
     "backupPitr": "NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED",
     "featureFlagsDefault": "fail_closed_off_in_production"
@@ -50,7 +52,7 @@
       "dependencyRole": "LIVE_SCREEN_BASE_SCHEMA",
       "schemaObject": "public.community_live_screen_sessions",
       "canonicalStagingStatus": "SCHEMA_MATCHED_HISTORY_GAP",
-      "productionStatus": "PENDING_OUT_OF_ORDER_CANONICAL_APPLY",
+      "productionStatus": "APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED",
       "requiredBy": [
         "20260803130000",
         "20260803140000",
@@ -71,7 +73,7 @@
       "dependencyRole": "LIVE_SCREEN_GO_LIVE_LAYER",
       "schemaObject": "public.community_live_screen_sessions columns visibility_mode/client_request_id/description/language_code + starting status",
       "canonicalStagingStatus": "SCHEMA_MATCHED_HISTORY_GAP",
-      "productionStatus": "PENDING_OUT_OF_ORDER_CANONICAL_APPLY",
+      "productionStatus": "APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED",
       "requiredBy": [
         "20260803140000",
         "20260803141000",

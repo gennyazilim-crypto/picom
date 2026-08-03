@@ -1,0 +1,7 @@
+﻿history_present: 20260803100000,20260803110000,20260803130000
+history_absent: 20260803140000+
+community_live_screen_sessions: EXISTS relkind=r rls=true owner=postgres
+columns: base + go-live (client_request_id,description,language_code,visibility_mode)
+policies: community_live_screen_sessions_select, community_live_screen_sessions_broadcaster_update
+20260803100000: APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED
+20260803110000: APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED

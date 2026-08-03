@@ -1,0 +1,7 @@
+﻿PICOM 20260803100000 PRODUCTION APPLY: GO
+PICOM 20260803110000 PRODUCTION APPLY: GO
+PICOM 20260803140000 PRODUCTION APPLY: FAIL
+SQLSTATE: 42P01
+MISSING: public.platform_account_restrictions
+NOTE: No CREATE TABLE for platform_account_restrictions exists in current branch supabase/migrations (only references in 20260803140000 and 20260803160000). Staging has the table; production does not. 140000 transaction rolled back (history absent, publisher_programs null).
+HELD_OUT: 20260803173000 (restored to worktree after push)

@@ -1,0 +1,10 @@
+﻿23af140f docs(prod): seal realtime portability resume partial at live sessions gap
+0c90fa5f fix(db): make realtime authorization migration platform-safe
+ff15f21d docs(prod): attach provisioning poll log and git state
+21b9e089 docs(prod): seal realtime provision resume and alter-owner blocker
+c50f51a8 ops(publisher): create production project and seal partial deploy
+44873669 docs(publisher): attach phase1 hardening evidence logs
+76d0439b fix(publisher): complete phase 1 release hardening
+9ff56fbe docs(publisher): record live now phase1 freeze SHA
+2f198ef6 feat(publisher): complete live now phase 1 staging release
+6c922c09 docs(feed): record clean dependency closure and staging package SHA
