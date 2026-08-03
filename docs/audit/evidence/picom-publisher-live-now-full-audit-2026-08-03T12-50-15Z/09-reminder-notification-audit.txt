@@ -1,0 +1,7 @@
+﻿REMINDERS=PASS
+unique_user_schedule=yes
+SKIP_LOCKED=yes
+service_role_claim=yes
+toast_stub_absent_in_LiveWorkspace=yes
+NOTIFICATION_PREFERENCES=PASS
+modes=all_live|scheduled_only|important_only|off

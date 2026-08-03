@@ -1,0 +1,12 @@
+﻿PROJECT_ROOT=C:/Users/ACER/Desktop/picom
+PRODUCT_NAME=picom / Picom Desktop (appId com.picom.desktop)
+GIT_REMOTE=https://github.com/gennyazilim-crypto/picom.git
+CURRENT_BRANCH=feat/community-rebuild
+CURRENT_SHA=9ff56fbe3f3cb46048e5a38858df41972d9b0e2e
+TAG_RELEASE_SHA=2f198ef61ffd0ac423c9713482c57da24c4967b7
+TAG=picom-live-now-phase1-staging-go-2026-08-03
+PISO_QCHAT_TOUCHED=NO
+README_TITLE=Picom
+PACKAGE_JSON_NAME=picom
+SUPABASE_CONFIG_PROJECT_ID=picom (logical; not Supabase project ref)
+BACKEND_MAP_DOC=docs/ops/backend-projects.md maps ufmtvqtsklqsmqxefbbs as THIS repo's Picom app backend

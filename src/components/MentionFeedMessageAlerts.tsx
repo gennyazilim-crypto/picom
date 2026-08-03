@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import type { DirectConversation } from "../types/directMessages";
 import { dateTimeService } from "../services/dateTimeService";
+import { AppIcon } from "./AppIcon";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
+import { ProfileDisplayName } from "./ProfileDisplayName";
 
 type MentionFeedMessageAlertsProps = {
   conversations: readonly DirectConversation[];
@@ -14,24 +16,19 @@ type MentionFeedMessageAlertsProps = {
 function truncatePreview(value: string, maxLength = 34) {
   const trimmed = value.trim();
   if (trimmed.length <= maxLength) return trimmed;
-  return `${trimmed.slice(0, maxLength - 1).trimEnd()}…`;
+  return `${trimmed.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function isIncomingConversation(conversation: DirectConversation, currentUserId: string) {
-  if (conversation.unreadCount > 0) return true;
-  const lastMessage = conversation.messages[conversation.messages.length - 1];
-  return Boolean(lastMessage && lastMessage.authorId !== currentUserId && !lastMessage.deletedAt);
-}
-
+/** Feed header alerts only surface unread DMs; read conversations must disappear. */
 export function getMentionFeedMessageAlerts(
   conversations: readonly DirectConversation[],
-  currentUserId: string,
+  _currentUserId: string,
   maxVisible = 3,
 ) {
   return [...conversations]
-    .filter((conversation) => !conversation.archivedAt && isIncomingConversation(conversation, currentUserId))
+    .filter((conversation) => !conversation.archivedAt && conversation.unreadCount > 0)
     .sort((left, right) => {
-      const unreadDelta = Number(right.unreadCount > 0) - Number(left.unreadCount > 0);
+      const unreadDelta = right.unreadCount - left.unreadCount;
       if (unreadDelta !== 0) return unreadDelta;
       return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
     })
@@ -57,31 +54,31 @@ export function MentionFeedMessageAlerts({
 
   return (
     <div
-      className={`mention-feed-message-alerts${unreadTotal ? " has-unread-queue" : ""}`}
-      aria-label="Incoming direct messages"
+      className="mention-feed-message-alerts has-unread-queue"
+      aria-label="Unread direct messages"
       aria-live="polite"
     >
-      {unreadTotal ? (
-        <span className="mention-feed-message-alerts-summary" aria-label={`${unreadTotal} unread direct messages`}>
-          <i className="mention-feed-message-alerts-pulse" aria-hidden="true" />
-          {unreadTotal > 9 ? "9+" : unreadTotal} okunmamış
-        </span>
-      ) : null}
+      <span className="mention-feed-message-alerts-summary" aria-label={`${unreadTotal} unread direct messages`}>
+        <i className="mention-feed-message-alerts-pulse" aria-hidden="true" />
+        {unreadTotal > 9 ? "9+" : unreadTotal} unread
+      </span>
       {alerts.map((conversation) => {
         const verification = getUserVerificationSummary(conversation.participantUserId);
         const preview = truncatePreview(conversation.lastMessagePreview || "New message");
         const timeLabel = dateTimeService.formatMessageTime(conversation.updatedAt);
-        const hasUnread = conversation.unreadCount > 0;
 
         return (
           <button
             key={conversation.id}
             type="button"
-            className={`mention-feed-message-alert${hasUnread ? " has-unread" : ""}`}
-            title={`${conversation.participantName}: ${conversation.lastMessagePreview}${hasUnread ? ` (${conversation.unreadCount} okunmamış)` : ""}`}
-            aria-label={`Open message from ${conversation.participantName}. ${preview}${hasUnread ? `. ${conversation.unreadCount} unread.` : ""}`}
+            className="mention-feed-message-alert has-unread"
+            title={conversation.lastMessagePreview || "New direct message"}
+            aria-label={`Open unread direct message. ${preview}. ${conversation.unreadCount} unread.`}
             onClick={() => onOpenConversation(conversation)}
           >
+            <span className="mention-feed-message-alert-kind" aria-hidden="true">
+              <AppIcon name="inbox" size="xs" />
+            </span>
             <span className="mention-feed-message-alert-avatar">
               <VerifiedAvatarFrame
                 userId={conversation.participantUserId}
@@ -91,21 +88,19 @@ export function MentionFeedMessageAlerts({
                 avatarSize={28}
                 verification={verification}
               />
-              {hasUnread ? <i className="mention-feed-message-alert-dot" aria-hidden="true" /> : null}
+              <i className="mention-feed-message-alert-dot" aria-hidden="true" />
             </span>
             <span className="mention-feed-message-alert-copy">
               <span className="mention-feed-message-alert-top">
-                <strong>{conversation.participantName}</strong>
-                {hasUnread ? <em className="mention-feed-message-alert-label">Yeni</em> : null}
+                <strong><ProfileDisplayName userId={conversation.participantUserId} fallback={conversation.participantName} /></strong>
+                <em className="mention-feed-message-alert-label">New</em>
                 <time dateTime={conversation.updatedAt}>{timeLabel}</time>
               </span>
               <span className="mention-feed-message-alert-preview">{preview}</span>
             </span>
-            {hasUnread ? (
-              <span className="mention-feed-message-alert-badge" aria-hidden="true">
-                {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
-              </span>
-            ) : null}
+            <span className="mention-feed-message-alert-badge" aria-hidden="true">
+              {conversation.unreadCount > 9 ? "9+" : conversation.unreadCount}
+            </span>
           </button>
         );
       })}

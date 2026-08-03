@@ -1,0 +1,4 @@
+﻿LIVE_NOW_I18N=PARTIAL
+catalog_10_locales_parity=PASS
+settings_UiLanguage=en|tr only
+runtime_cannot_select_other_8=yes

@@ -39,6 +39,7 @@ import {
   SupportTeamPage,
   SystemHealthPage,
   TrustSafetyPage,
+  PublisherCreatorReviewPage,
   UsersPage,
   VoiceOpsPage,
 } from "./modules";
@@ -47,7 +48,7 @@ import { RootDashboardShell } from "./RootDashboardShell";
 import "./rootDashboard.css";
 
 type RootDashboardAppProps = Readonly<{
-  currentUser: Readonly<{ displayName: string; username: string; email?: string }>;
+  currentUser: Readonly<{ userId: string; displayName: string; username: string; email?: string }>;
   onExit: () => void;
 }>;
 
@@ -112,7 +113,7 @@ export function RootDashboardApp({ currentUser, onExit }: RootDashboardAppProps)
       case "platform":
         return <PlatformPage />;
       case "users":
-        return <UsersPage access={access} />;
+        return <UsersPage access={access} isRootOwner={accessState.isRootOwner} />;
       case "communities":
         return <CommunitiesPage access={access} />;
       case "secretCommunities": return <SecretCommunitiesPage />;
@@ -128,6 +129,8 @@ export function RootDashboardApp({ currentUser, onExit }: RootDashboardAppProps)
         return <SupportTeamPage access={access} />;
       case "trustSafety":
         return <TrustSafetyPage access={access} />;
+      case "publisherCreatorReview":
+        return <PublisherCreatorReviewPage access={access} />;
       case "moderationTeam":
         return <ModerationTeamPage access={access} />;
       case "security":

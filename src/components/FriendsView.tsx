@@ -1,9 +1,11 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { ProfileDisplayName, ProfileUsername } from "./ProfileDisplayName";
+import { useCallback, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "../utils/motionLite";
 import type { FriendConnection, FriendRequest, FriendRequestCounts, FriendSuggestion, FriendViewTab } from "../types/friends";
 import type { BlockedUserRecord } from "../services/userBlockingService";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { dateTimeService } from "../services/dateTimeService";
+import { profileMediaStore } from "../services/profileMedia/profileMediaStore";
 import { AppIcon } from "./AppIcon";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { VerifiedBadge } from "./VerifiedBadge";
@@ -60,6 +62,14 @@ function safeStatusText(friend: FriendConnection): string {
   return value || (friend.status === "dnd" ? "Busy" : friend.status === "idle" ? "Idle" : "Online");
 }
 
+function resolveProfileIdentity(userId: string, fallbackDisplayName: string, fallbackUsername: string) {
+  const record = profileMediaStore.getSnapshot(userId).record;
+  return {
+    displayName: record?.displayName?.trim() || fallbackDisplayName,
+    username: (record?.username?.trim() || fallbackUsername).replace(/^@+/, ""),
+  };
+}
+
 function FriendAvatar({ userId, name, status = "offline", avatarUrl }: { userId: string; name: string; status?: FriendConnection["status"]; avatarUrl?: string }) {
   return (
     <span className="friend-avatar-shell">
@@ -89,6 +99,7 @@ function FriendCard({ friend, onOpenProfile, onOpenDirectMessage, onToggleFavori
   reduceMotion: boolean | null;
 }) {
   const verification = getUserVerificationSummary(friend.userId);
+  const identity = resolveProfileIdentity(friend.userId, friend.displayName, friend.username);
 
   return (
     <motion.article
@@ -97,14 +108,14 @@ function FriendCard({ friend, onOpenProfile, onOpenDirectMessage, onToggleFavori
       whileHover={reduceMotion ? undefined : { y: -1 }}
       layout
     >
-      <button type="button" className="friend-identity" onClick={() => onOpenProfile(friend.userId)} aria-label={`Open ${friend.displayName}'s profile`}>
-        <FriendAvatar userId={friend.userId} name={friend.displayName} status={friend.status} avatarUrl={friend.avatarUrl} />
+      <button type="button" className="friend-identity" onClick={() => onOpenProfile(friend.userId)} aria-label={`Open ${identity.displayName}'s profile`}>
+        <FriendAvatar userId={friend.userId} name={identity.displayName} status={friend.status} avatarUrl={friend.avatarUrl} />
         <span className="friend-copy">
           <strong>
-            <span>{friend.displayName}</span>
-            <VerifiedBadge verification={verification} size="xs" />
+            <ProfileDisplayName userId={friend.userId} fallback={friend.displayName} />
+            <VerifiedBadge userId={friend.userId} verification={verification} size="xs" />
           </strong>
-          <small>@{friend.username} · {safeStatusText(friend)}</small>
+          <small>@<ProfileUsername userId={friend.userId} fallback={friend.username} /> - {safeStatusText(friend)}</small>
           <span>{friend.mutualCommunityCount} shared communit{friend.mutualCommunityCount === 1 ? "y" : "ies"}</span>
         </span>
       </button>
@@ -140,6 +151,7 @@ function IncomingFriendRequestCard({ request, reduceMotion, onOpenProfile, onAcc
   onDecline: () => void;
 }) {
   const verification = getUserVerificationSummary(request.userId);
+  const identity = resolveProfileIdentity(request.userId, request.displayName, request.username);
   return (
     <motion.article
       className="friend-request-card incoming"
@@ -147,14 +159,14 @@ function IncomingFriendRequestCard({ request, reduceMotion, onOpenProfile, onAcc
       whileHover={reduceMotion ? undefined : { y: -1 }}
       layout
     >
-      <button type="button" className="friend-request-identity" onClick={() => onOpenProfile(request.userId)} aria-label={`Open ${request.displayName}'s profile`}>
-        <FriendAvatar userId={request.userId} name={request.displayName} />
+      <button type="button" className="friend-request-identity" onClick={() => onOpenProfile(request.userId)} aria-label={`Open ${identity.displayName}'s profile`}>
+        <FriendAvatar userId={request.userId} name={identity.displayName} />
         <span className="friend-copy">
           <strong>
-            <span>{request.displayName}</span>
-            <VerifiedBadge verification={verification} size="xs" />
+            <ProfileDisplayName userId={request.userId} fallback={request.displayName} />
+            <VerifiedBadge userId={request.userId} verification={verification} size="xs" />
           </strong>
-          <small>@{request.username}</small>
+          <small>@<ProfileUsername userId={request.userId} fallback={request.username} /></small>
           <span className="friend-request-time">{dateTimeService.formatRelativeTime(request.createdAt)}</span>
         </span>
       </button>
@@ -177,6 +189,7 @@ function OutgoingFriendRequestCard({ request, reduceMotion, onOpenProfile, onCan
   onCancel: () => void;
 }) {
   const verification = getUserVerificationSummary(request.userId);
+  const identity = resolveProfileIdentity(request.userId, request.displayName, request.username);
   return (
     <motion.article
       className="friend-request-card outgoing"
@@ -184,14 +197,14 @@ function OutgoingFriendRequestCard({ request, reduceMotion, onOpenProfile, onCan
       whileHover={reduceMotion ? undefined : { y: -1 }}
       layout
     >
-      <button type="button" className="friend-request-identity" onClick={() => onOpenProfile(request.userId)} aria-label={`Open ${request.displayName}'s profile`}>
-        <FriendAvatar userId={request.userId} name={request.displayName} />
+      <button type="button" className="friend-request-identity" onClick={() => onOpenProfile(request.userId)} aria-label={`Open ${identity.displayName}'s profile`}>
+        <FriendAvatar userId={request.userId} name={identity.displayName} />
         <span className="friend-copy">
           <strong>
-            <span>{request.displayName}</span>
-            <VerifiedBadge verification={verification} size="xs" />
+            <ProfileDisplayName userId={request.userId} fallback={request.displayName} />
+            <VerifiedBadge userId={request.userId} verification={verification} size="xs" />
           </strong>
-          <small>@{request.username}</small>
+          <small>@<ProfileUsername userId={request.userId} fallback={request.username} /></small>
           <span className="friend-request-time">Sent {dateTimeService.formatRelativeTime(request.createdAt)}</span>
         </span>
       </button>
@@ -222,21 +235,49 @@ export function FriendsView(props: FriendsViewProps) {
   const reduceMotion = useReducedMotion();
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase();
+  const identityUserIds = useMemo(
+    () => Array.from(new Set([
+      ...props.friends.map((friend) => friend.userId),
+      ...props.requests.map((request) => request.userId),
+      ...props.suggestions.map((suggestion) => suggestion.userId),
+      ...props.blockedUsers.map((user) => user.userId),
+    ])).sort(),
+    [props.blockedUsers, props.friends, props.requests, props.suggestions],
+  );
+  const subscribeToIdentity = useCallback((listener: () => void) => {
+    const cleanups = identityUserIds.map((userId) => profileMediaStore.subscribe(userId, listener));
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [identityUserIds]);
+  const getIdentityRevision = useCallback(() => identityUserIds.map((userId) => {
+    const record = profileMediaStore.getSnapshot(userId).record;
+    return [userId, record?.updatedAt ?? "", record?.displayName ?? "", record?.username ?? ""].join(":");
+  }).join("|"), [identityUserIds]);
+  const identityRevision = useSyncExternalStore(subscribeToIdentity, getIdentityRevision, getIdentityRevision);
+  const liveIdentityByUserId = useMemo(
+    () => new Map(identityUserIds.map((userId) => [userId, profileMediaStore.getSnapshot(userId).record] as const)),
+    [identityRevision, identityUserIds],
+  );
   const incomingRequests = props.requests.filter((request) => request.direction === "incoming" && request.status === "pending");
   const outgoingRequests = props.requests.filter((request) => request.direction === "outgoing" && request.status === "pending");
   const onlineFriends = props.friends.filter((friend) => friend.status !== "offline");
-  const matches = (name: string, username: string) => !normalizedQuery || `${name} ${username}`.toLocaleLowerCase().includes(normalizedQuery);
-  const visibleFriends = (props.activeTab === "online" ? onlineFriends : props.friends).filter((friend) => matches(friend.displayName, friend.username));
-  const visibleSuggestions = props.suggestions.filter((suggestion) => matches(suggestion.displayName, suggestion.username));
+  const matches = (userId: string, name: string, username: string) => {
+    if (!normalizedQuery) return true;
+    const liveIdentity = liveIdentityByUserId.get(userId);
+    const displayName = liveIdentity?.displayName?.trim() || name;
+    const liveUsername = liveIdentity?.username?.trim() || username;
+    return `${displayName} ${liveUsername}`.toLocaleLowerCase().includes(normalizedQuery);
+  };
+  const visibleFriends = (props.activeTab === "online" ? onlineFriends : props.friends).filter((friend) => matches(friend.userId, friend.displayName, friend.username));
+  const visibleSuggestions = props.suggestions.filter((suggestion) => matches(suggestion.userId, suggestion.displayName, suggestion.username));
   const visibleIncoming = useMemo(
-    () => incomingRequests.filter((request) => matches(request.displayName, request.username)),
-    [incomingRequests, normalizedQuery],
+    () => incomingRequests.filter((request) => matches(request.userId, request.displayName, request.username)),
+    [incomingRequests, liveIdentityByUserId, normalizedQuery],
   );
   const visibleOutgoing = useMemo(
-    () => outgoingRequests.filter((request) => matches(request.displayName, request.username)),
-    [outgoingRequests, normalizedQuery],
+    () => outgoingRequests.filter((request) => matches(request.userId, request.displayName, request.username)),
+    [outgoingRequests, liveIdentityByUserId, normalizedQuery],
   );
-  const visibleBlocked = props.blockedUsers.filter((user) => matches(user.displayName, user.username));
+  const visibleBlocked = props.blockedUsers.filter((user) => matches(user.userId, user.displayName, user.username));
   const tabCounts = useMemo<Record<FriendViewTab, number>>(() => ({
     all: props.counts.friends,
     online: onlineFriends.length,
@@ -372,28 +413,29 @@ export function FriendsView(props: FriendsViewProps) {
             <motion.div key="suggestions" variants={panelVariants} initial={reduceMotion ? false : "hidden"} animate="visible" exit="exit">
               {visibleSuggestions.length ? (
                 <motion.div className="friend-list" variants={listContainerVariants} initial={reduceMotion ? false : "hidden"} animate="visible">
-                  {visibleSuggestions.map((suggestion) => (
-                  <motion.article key={suggestion.userId} className="friend-card suggestion" variants={listItemVariants} whileHover={reduceMotion ? undefined : { y: -1 }}>
-                    <div className="friend-identity static">
-                      <FriendAvatar userId={suggestion.userId} name={suggestion.displayName} avatarUrl={suggestion.avatarUrl} />
+                  {visibleSuggestions.map((suggestion) => {
+                  const identity = resolveProfileIdentity(suggestion.userId, suggestion.displayName, suggestion.username);
+                  return <motion.article key={suggestion.userId} className="friend-card suggestion" variants={listItemVariants} whileHover={reduceMotion ? undefined : { y: -1 }}>
+                    <button type="button" className="friend-identity" onClick={() => props.onOpenProfile(suggestion.userId)} aria-label={`Open ${identity.displayName} profile`}>
+                      <FriendAvatar userId={suggestion.userId} name={identity.displayName} avatarUrl={suggestion.avatarUrl} />
                       <span className="friend-copy">
-                        <strong>{suggestion.displayName}</strong>
-                        <small>@{suggestion.username}</small>
+                        <strong><ProfileDisplayName userId={suggestion.userId} fallback={suggestion.displayName} /><VerifiedBadge userId={suggestion.userId} verification={getUserVerificationSummary(suggestion.userId)} size="xs" /></strong>
+                        <small>@<ProfileUsername userId={suggestion.userId} fallback={suggestion.username} /></small>
                         <span>{suggestion.reason}</span>
                         <span className="friend-suggestion-signals">
                           <em>{suggestion.mutualCommunityCount} mutual</em>
                           {suggestion.followedByCurrentUser ? <em>Following</em> : null}
                         </span>
                       </span>
-                    </div>
+                    </button>
                     <div className="friend-actions">
                       <button type="button" className="friend-action-primary" onClick={() => props.onSendRequest(suggestion.userId)}>
                         <AppIcon name="plus" size="xs" />
                         Add friend
                       </button>
                     </div>
-                  </motion.article>
-                  ))}
+                  </motion.article>;
+                  })}
                 </motion.div>
               ) : (
                 <EmptyState icon="plus" title="No suggestions available" copy="Blocked, existing, and pending users are excluded." />
@@ -405,21 +447,22 @@ export function FriendsView(props: FriendsViewProps) {
             <motion.div key="blocked" variants={panelVariants} initial={reduceMotion ? false : "hidden"} animate="visible" exit="exit">
               {visibleBlocked.length ? (
                 <motion.div className="friend-list" variants={listContainerVariants} initial={reduceMotion ? false : "hidden"} animate="visible">
-                  {visibleBlocked.map((user) => (
-                  <motion.article key={user.userId} className="friend-card blocked" variants={listItemVariants} whileHover={reduceMotion ? undefined : { y: -1 }}>
+                  {visibleBlocked.map((user) => {
+                  const identity = resolveProfileIdentity(user.userId, user.displayName, user.username);
+                  return <motion.article key={user.userId} className="friend-card blocked" variants={listItemVariants} whileHover={reduceMotion ? undefined : { y: -1 }}>
                     <div className="friend-identity static">
-                      <FriendAvatar userId={user.userId} name={user.displayName} />
+                      <FriendAvatar userId={user.userId} name={identity.displayName} />
                       <span className="friend-copy">
-                        <strong>{user.displayName}</strong>
-                        <small>@{user.username}</small>
+                        <strong><ProfileDisplayName userId={user.userId} fallback={user.displayName} /><VerifiedBadge userId={user.userId} verification={getUserVerificationSummary(user.userId)} size="xs" /></strong>
+                        <small>@<ProfileUsername userId={user.userId} fallback={user.username} /></small>
                         <span>Blocked {new Date(user.blockedAt).toLocaleDateString()}</span>
                       </span>
                     </div>
                     <div className="friend-actions">
                       <button type="button" className="friend-action-secondary" onClick={() => props.onUnblockFriend(user.userId)}>Unblock</button>
                     </div>
-                  </motion.article>
-                  ))}
+                  </motion.article>;
+                  })}
                 </motion.div>
               ) : (
                 <EmptyState icon="lock" title="No blocked users" copy="Users you block are managed here." />

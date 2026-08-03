@@ -6,6 +6,7 @@ import { helpSupportNavigationService } from "../../services/navigation/helpSupp
 import { AppIcon } from "../AppIcon";
 import { HelpCenterView } from "../HelpCenterView";
 import { LegalDocumentModal } from "../legal/LegalDocumentModal";
+import "./HelpSupportWorkspace.css";
 
 type Toast = (message: string, tone?: "info" | "success" | "error") => void;
 

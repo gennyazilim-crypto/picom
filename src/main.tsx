@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import { DesktopStartupErrorBoundary } from "./components/DesktopStartupErrorBoundary";
+import { CompanionApp } from "./features/companion/CompanionApp";
+import { isCompanionWindowSearch } from "./features/companion/companionTypes";
 import { deepLinkService } from "./services/deepLinkService";
 import { safeModeService } from "./services/safeModeService";
 import { crashReporterService } from "./services/crashReporterService";
@@ -18,11 +20,14 @@ function markRuntime(): void {
 
   if (!runtimeInfo) {
     document.documentElement.dataset.runtime = "browser";
-    return;
+  } else {
+    document.documentElement.dataset.runtime = runtimeInfo.runtime;
+    document.documentElement.dataset.platform = runtimeInfo.platform;
   }
 
-  document.documentElement.dataset.runtime = runtimeInfo.runtime;
-  document.documentElement.dataset.platform = runtimeInfo.platform;
+  if (isCompanionWindowSearch()) {
+    document.documentElement.dataset.companionWindow = "true";
+  }
 }
 
 function getRootElement(): HTMLElement {
@@ -60,6 +65,24 @@ function scheduleOptionalRendererServices(safeModeActive: boolean): void {
   window.setTimeout(start, 0);
 }
 
+/** Switches between main desktop App and Electron Companion windows (`?picomWindow=companion`). */
+function DesktopRendererRoot() {
+  const [companionWindow, setCompanionWindow] = useState(() => isCompanionWindowSearch());
+
+  useEffect(() => {
+    const sync = () => {
+      const next = isCompanionWindowSearch();
+      setCompanionWindow(next);
+      if (next) document.documentElement.dataset.companionWindow = "true";
+      else delete document.documentElement.dataset.companionWindow;
+    };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+
+  return companionWindow ? <CompanionApp /> : <App />;
+}
+
 function bootstrapRenderer(): void {
   markRuntime();
   const productionConfiguration = productionRuntimeConfigService.getConfiguration();
@@ -78,15 +101,17 @@ function bootstrapRenderer(): void {
   // Warm settings so corrupted local JSON can flip Safe Mode before optional services start.
   settingsService.getSettings();
   const safeMode = safeModeService.getStartupState();
+  const companionWindow = isCompanionWindowSearch();
 
-  if (!safeMode.active) {
+  // Companion windows are dedicated shells; deep links belong on the main window.
+  if (!safeMode.active && !companionWindow) {
     deepLinkService.startNativeListener();
   }
 
   ReactDOM.createRoot(getRootElement()).render(
     <React.StrictMode>
       <DesktopStartupErrorBoundary>
-        <App />
+        <DesktopRendererRoot />
       </DesktopStartupErrorBoundary>
     </React.StrictMode>
   );

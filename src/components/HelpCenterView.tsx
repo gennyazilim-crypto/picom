@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { HELP_SUPPORT_SECTION_IDS, type HelpSupportSectionId } from "../services/navigation/helpSupportNavigationService";
 import { AppIcon } from "./AppIcon";
+import "./support/HelpSupportWorkspace.css";
 
 type HelpTopic = Readonly<{
   id: HelpSupportSectionId;
@@ -31,19 +32,64 @@ export function HelpCenterView({ initialTopicId = "getting-started" }: Readonly<
     if (!normalized) return helpTopics;
     return helpTopics.filter((topic) => [topic.title, topic.summary, topic.category, ...topic.steps].join(" ").toLowerCase().includes(normalized));
   }, [query]);
+  const groupedTopics = useMemo(() => {
+    const groups: Array<{ category: string; topics: HelpTopic[] }> = [];
+    for (const topic of filteredTopics) {
+      const existing = groups.find((group) => group.category === topic.category);
+      if (existing) existing.topics.push(topic);
+      else groups.push({ category: topic.category, topics: [topic] });
+    }
+    return groups;
+  }, [filteredTopics]);
   const selectedTopic = helpTopics.find((topic) => topic.id === selectedTopicId) ?? filteredTopics[0] ?? null;
 
   return (
     <div className="help-center-view">
-      <header className="help-center-header"><span className="eyebrow">Local support</span><h3>Picom Help & Support</h3><p>Desktop guidance stored with the app. No internet connection is required.</p></header>
-      <label className="help-center-search"><AppIcon name="search" size="sm" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search help topics" aria-label="Search help topics" /></label>
+      <header className="help-center-header">
+        <div className="help-center-header__copy">
+          <p className="help-center-header__eyebrow">Local support</p>
+          <h3>Picom Help & Support</h3>
+          <p>Desktop guidance stored with the app. No internet connection is required.</p>
+        </div>
+      </header>
+      <label className="help-center-search">
+        <AppIcon name="search" size="sm" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search help topics" aria-label="Search help topics" />
+      </label>
       <div className="help-center-layout">
         <nav className="help-topic-list" aria-label="Help topics">
-          {filteredTopics.map((topic) => <button key={topic.id} type="button" className={selectedTopic?.id === topic.id ? "active" : ""} onClick={() => setSelectedTopicId(topic.id)}><span><small>{topic.category}</small><strong>{topic.title}</strong></span><AppIcon name="chevronRight" size="xs" /></button>)}
+          {groupedTopics.map((group) => (
+            <div key={group.category} className="help-topic-group">
+              <p className="help-topic-group__label">{group.category}</p>
+              {group.topics.map((topic) => (
+                <button
+                  key={topic.id}
+                  type="button"
+                  className={selectedTopic?.id === topic.id ? "active" : ""}
+                  onClick={() => setSelectedTopicId(topic.id)}
+                >
+                  <span>
+                    <small>{topic.category}</small>
+                    <strong>{topic.title}</strong>
+                  </span>
+                  <AppIcon name="chevronRight" size="xs" />
+                </button>
+              ))}
+            </div>
+          ))}
           {!filteredTopics.length ? <div className="help-empty">No local help topic matches this search.</div> : null}
         </nav>
         <article className="help-topic-detail" aria-live="polite">
-          {selectedTopic ? <><span>{selectedTopic.category}</span><h4>{selectedTopic.title}</h4><p>{selectedTopic.summary}</p><ol>{selectedTopic.steps.map((step) => <li key={step}>{step}</li>)}</ol></> : <p>Clear the search to browse all local help topics.</p>}
+          {selectedTopic ? (
+            <>
+              <span className="help-topic-detail__eyebrow">{selectedTopic.category}</span>
+              <h4>{selectedTopic.title}</h4>
+              <p>{selectedTopic.summary}</p>
+              <ol>{selectedTopic.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+            </>
+          ) : (
+            <p>Clear the search to browse all local help topics.</p>
+          )}
         </article>
       </div>
     </div>

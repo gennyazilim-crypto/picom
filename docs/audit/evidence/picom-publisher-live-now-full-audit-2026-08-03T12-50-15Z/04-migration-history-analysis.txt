@@ -1,0 +1,4 @@
+﻿MIGRATION_HISTORY=PARTIAL
+reason=read-only audit; did not re-query schema_migrations live
+ufmt_141000_prior=list=YES schema_migrations=YES PASS (live-now-publisher-staging-closure)
+kbd_history=NOT_VERIFIED

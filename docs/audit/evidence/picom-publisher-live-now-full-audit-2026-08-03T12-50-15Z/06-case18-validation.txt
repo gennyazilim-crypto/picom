@@ -1,0 +1,5 @@
+﻿CASE_18=PASS
+migration=20260803170000_live_now_discovery_badge_join_dedupe.sql
+list=lateral one active badge + live_session_is_publisher_discovery_eligible
+count=eligibility helper (150000; no badge join fan-out)
+prior_hosted=23/23 x2 on ufmt

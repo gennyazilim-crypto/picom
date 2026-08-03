@@ -1,0 +1,4 @@
+﻿prior_packs=case18,jwt-rls,staging-final,production-preflight,release-freeze EXIST
+evidence_secret_scan=PASS
+preflight_SHA_stale=6c922c09 dirty vs current tag 2f198ef6
+EVIDENCE_INTEGRITY=PARTIAL
