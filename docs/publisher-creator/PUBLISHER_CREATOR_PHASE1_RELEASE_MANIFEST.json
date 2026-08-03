@@ -417,7 +417,7 @@
     "Migration file SHA-256 values are unchanged."
   ],
   "runtimeEvidence": "docs/audit/evidence/live-now-publisher-external-runtime-20260803T222116Z",
-  "productionVerdict": "PARTIAL_MEDIA_TRACKS_PENDING",
+  "productionVerdict": "PARTIAL_EMAIL_AND_MEDIA_CERTIFICATION",
   "remoteBranch": "release/picom-canonical-production",
   "sanitizedTag": "picom-canonical-production-sanitized-2026-08-03",
   "task25ExternalRuntime": {
@@ -456,5 +456,22 @@
     },
     "migrationFix": "20260803260000_live_screen_session_metadata.sql",
     "evidence": "docs/audit/evidence/live-now-publisher-external-runtime-20260803T222116Z/"
+  },
+  "task26RealDeviceCertification": {
+    "sealedAt": "2026-08-03T23:03:00.000Z",
+    "canonicalHead": "3947db643c39cbd3bd4d0d24e9d4e407582dd974",
+    "storageClosedApplicationDenial": "GO",
+    "authVerificationInbox": "BLOCKED_RATE_LIMIT",
+    "authPasswordResetInbox": "BLOCKED_RATE_LIMIT",
+    "smtpDeliverabilityDns": "GO",
+    "realTwoDesktopMedia": "NOT_CERTIFIED",
+    "audioTrack": "NOT_CERTIFIED",
+    "cameraTrack": "NOT_CERTIFIED",
+    "screenShareTrack": "NOT_CERTIFIED",
+    "evidence": "docs/audit/evidence/live-now-publisher-real-device-certification-2026-08-03T2252Z/",
+    "remainingBlockers": [
+      "Auth email provider rate limit prevents inbox receipt assertion",
+      "Second packaged Desktop client / human-observed media reception not available"
+    ]
   }
 }

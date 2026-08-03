@@ -1,0 +1,11 @@
+TASK26 — Release manifest update
+File: docs/publisher-creator/PUBLISHER_CREATOR_PHASE1_RELEASE_MANIFEST.json
+productionVerdict: PARTIAL_EMAIL_AND_MEDIA_CERTIFICATION
+task26RealDeviceCertification block added with:
+  storageClosedApplicationDenial: GO
+  authVerificationInbox: BLOCKED_RATE_LIMIT
+  authPasswordResetInbox: BLOCKED_RATE_LIMIT
+  smtpDeliverabilityDns: GO
+  realTwoDesktopMedia / audio / camera / screenShare: NOT_CERTIFIED
+  evidence path under docs/audit/evidence/live-now-publisher-real-device-certification-2026-08-03T2252Z/
+Status: docs/publisher-creator/LIVE_NOW_PUBLISHER_MASTER_STATUS.md updated

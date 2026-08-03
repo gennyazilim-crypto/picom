@@ -1,0 +1,15 @@
+TASK26 — Authoritative identity
+UTC: 2026-08-03T22:52:00Z (evidence dir) / seal 2026-08-03T23:03:00Z
+
+Worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+NOTE: User brief cited picom-canonical-production; sealed HEAD/tag live in publish-clean.
+
+Branch: release/picom-canonical-production
+HEAD at seal start: 3947db643c39cbd3bd4d0d24e9d4e407582dd974
+Prior partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T223117Z
+Remote: https://github.com/gennyazilim-crypto/picom
+
+Production Supabase: picom-production / cqnsetsmcduraryemhbi / eu-central-1
+Production LiveKit: wss://voice.picom.gg
+VPS: 23.254.166.240
+Auth SMTP: mail.spacemail.com:465 / verify@picom.gg

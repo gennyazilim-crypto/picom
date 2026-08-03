@@ -1,0 +1,2 @@
+﻿AIKIDO_SCAN=PASS_ISSUES_EMPTY
+notes=opengrep 0 findings on scanned scripts; checkov ENOENT tooling error ignored

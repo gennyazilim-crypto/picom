@@ -1,0 +1,15 @@
+TASK26 — Regression tests
+Scope: seal after honest PARTIAL gates; full npm ci + desktop:smoke deferred when
+media certification cannot complete without second Desktop client.
+
+Guards re-run at seal (see 01 / 21):
+- production:config:guard
+- release:canonical:guard
+- git:large-files:check
+- secrets:smoke
+
+LINT: NOT_CONFIGURED (no lint script required for this seal)
+
+Packaged Desktop media certification: NOT_RUN (blocker: second client)
+Storage denial script: PASS (exit 0) — see 18
+Auth inbox script: BLOCKED_RATE_LIMIT — see 15/16

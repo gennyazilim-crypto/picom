@@ -1,0 +1,6 @@
+windows_microphone_permission=ASSUMED_OK_DEVICE_ENUM_OK
+windows_camera_permission=ASSUMED_OK_DEVICE_ENUM_OK
+desktop_apps_access=NOT_PROBED_IN_PACKAGED_APP
+enumerateDevices=NOT_RUN_IN_PACKAGED_APP
+getUserMedia=NOT_RUN_IN_PACKAGED_APP
+getDisplayMedia=NOT_RUN_IN_PACKAGED_APP

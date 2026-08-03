@@ -1,0 +1,6 @@
+STATUS=BLOCKED_RATE_LIMIT
+verify_resend=email rate limit exceeded
+reset_request=email rate limit exceeded
+imap_info_login=PASS
+inbox_receipt_verify=FAIL (no message because send blocked)
+inbox_receipt_reset=FAIL (no message because send blocked)

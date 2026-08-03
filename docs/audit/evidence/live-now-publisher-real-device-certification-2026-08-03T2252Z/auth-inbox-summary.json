@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "caseId": "recipient_strategy",
+      "status": "INFO",
+      "detail": "info+alias@picom.gg via IMAP info@"
+    },
+    {
+      "caseId": "verify_create_user",
+      "status": "PASS",
+      "detail": "unconfirmed user created"
+    },
+    {
+      "caseId": "verify_resend_request",
+      "status": "BLOCKED_RATE_LIMIT",
+      "detail": "email rate limit exceeded"
+    },
+    {
+      "caseId": "verify_inbox_receipt",
+      "status": "FAIL",
+      "detail": "IMAP_FOUND=FAIL | "
+    },
+    {
+      "caseId": "verify_from_header",
+      "status": "FAIL",
+      "detail": "verify@ expected"
+    },
+    {
+      "caseId": "verify_admin_confirm_followup",
+      "status": "PASS",
+      "detail": "confirmed for reset path"
+    },
+    {
+      "caseId": "reset_request",
+      "status": "BLOCKED_RATE_LIMIT",
+      "detail": "email rate limit exceeded"
+    },
+    {
+      "caseId": "reset_inbox_receipt",
+      "status": "FAIL",
+      "detail": "IMAP_FOUND=FAIL | "
+    },
+    {
+      "caseId": "cleanup_user",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

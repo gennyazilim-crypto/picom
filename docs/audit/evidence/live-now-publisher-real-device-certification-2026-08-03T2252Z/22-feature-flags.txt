@@ -1,0 +1,14 @@
+TASK26 — Feature flags (production)
+enablePublisherApplication: ON
+enablePublisherReview: ON
+enablePublisherBadgeDisplay: ON
+enableLiveNowDiscovery: ON
+enableGoLive: ON
+enablePublisherReminders: ON
+enablePublisherNotificationPreferences: ON
+
+Decision: No flag flip for TASK26.
+- Media not certified → remain PARTIAL (Go Live stays ON per prior TASK25 ops decision;
+  human real-device GO still blocked)
+- Storage closed-deny GO → no upload fail-closed flag needed
+- Auth inbox BLOCKED_RATE_LIMIT → Auth stays up; delivery assertion PARTIAL

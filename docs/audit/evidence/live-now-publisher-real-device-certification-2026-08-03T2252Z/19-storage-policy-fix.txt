@@ -1,0 +1,18 @@
+TASK26 — Storage policy fix
+RESULT: NOT_REQUIRED
+
+Closed-application upload denial already enforced by existing production policy
+(migration lineage includes 20260803140000 publisher program / storage policies):
+insert allowed only when application status IN
+  draft | submitted | under_review | additional_information_required
+
+Matrix (scripts/tmp-t26-storage-closed-denial.mjs):
+rejected DENY PASS
+withdrawn DENY PASS
+approved DENY PASS
+suspended DENY PASS
+foreign / traversal / encoding / overwrite / signed URL DENY PASS
+open draft upload PASS
+23 PASS / 0 FAIL
+
+No forward migration applied for TASK26.

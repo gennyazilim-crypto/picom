@@ -1,0 +1,123 @@
+{
+  "productionRef": "cqnsetsmcduraryemhbi",
+  "pass": 23,
+  "fail": 0,
+  "warn": 0,
+  "results": [
+    {
+      "caseId": "actors",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "caseId": "open_draft_upload",
+      "status": "PASS",
+      "detail": "uploaded"
+    },
+    {
+      "caseId": "seed_rejected",
+      "status": "PASS",
+      "detail": "rejected"
+    },
+    {
+      "caseId": "closed_rejected_upload_denied",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "closed_rejected_no_doc_row",
+      "status": "PASS",
+      "detail": "rows=0"
+    },
+    {
+      "caseId": "seed_withdrawn",
+      "status": "PASS",
+      "detail": "withdrawn"
+    },
+    {
+      "caseId": "closed_withdrawn_upload_denied",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "closed_withdrawn_no_doc_row",
+      "status": "PASS",
+      "detail": "rows=0"
+    },
+    {
+      "caseId": "seed_approved",
+      "status": "PASS",
+      "detail": "approved"
+    },
+    {
+      "caseId": "closed_approved_upload_denied",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "closed_approved_no_doc_row",
+      "status": "PASS",
+      "detail": "rows=0"
+    },
+    {
+      "caseId": "seed_suspended",
+      "status": "PASS",
+      "detail": "suspended"
+    },
+    {
+      "caseId": "closed_suspended_upload_denied",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "closed_suspended_no_doc_row",
+      "status": "PASS",
+      "detail": "rows=0"
+    },
+    {
+      "caseId": "foreign_path_upload_denied",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "bypass_traversal",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "bypass_encoding",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "bypass_dot",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "bypass_backslash",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "seed_overwrite_object",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "caseId": "closed_overwrite_denied",
+      "status": "PASS",
+      "detail": "mime type application/octet-stream is not supported"
+    },
+    {
+      "caseId": "closed_signed_upload_url_denied",
+      "status": "PASS",
+      "detail": "new row violates row-level security policy"
+    },
+    {
+      "caseId": "cleanup",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

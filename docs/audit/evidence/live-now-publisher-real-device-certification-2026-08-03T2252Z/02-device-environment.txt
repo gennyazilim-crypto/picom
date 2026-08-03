@@ -1,0 +1,9 @@
+topology=SINGLE_PHYSICAL_WINDOWS_HOST
+second_physical_pc=MISSING
+separate_os_sessions=NOT_PROVISIONED
+packaged_candidates=C:\Users\ACER\Desktop\picom\release\Picom-0.1.1-beta.10-beta-Windows-x64.exe (pre-canonical; not sealed as TASK26 production package)
+camera=ACER_HD_User_Facing status=OK
+microphone=CORS_AIR_VOID_WIRELESS_headset status=OK
+screen_capture=AVAILABLE_ON_HOST
+real_two_desktop_certification=NOT_RUN
+reason=Second authenticated Desktop client on separate process/PC with human-observed media reception was not available in this agent session; synthetic/fake tracks forbidden by TASK26.

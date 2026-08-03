@@ -1,0 +1,3 @@
+STATUS=NOT_CERTIFIED
+reason=Real two-desktop packaged media certification not executed (no second client / no human media observation). Prior TASK25 signaling-only results are not accepted as media GO.
+

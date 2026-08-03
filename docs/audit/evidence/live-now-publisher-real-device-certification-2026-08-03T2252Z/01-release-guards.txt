@@ -1,0 +1,10 @@
+TASK26 — Release / config guards (re-verified at seal)
+Branch: release/picom-canonical-production
+HEAD: 3947db643c39cbd3bd4d0d24e9d4e407582dd974
+
+PICOM_CANONICAL_RELEASE_GUARD=PASS
+PICOM_GIT_LARGE_FILES=PASS (scanned_head_blobs=5333)
+PICOM_PRODUCTION_CONFIG_GUARD=PASS
+SECRET_SCAN=PASS (runtime secret exposure smoke)
+
+Production target: cqnsetsmcduraryemhbi

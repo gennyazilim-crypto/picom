@@ -1,0 +1,5 @@
+SPF=PASS include:spf.spacemail.com
+DKIM=PRESENT selector=spacemail
+DMARC=PASS p=none
+MX=spacemail
+AuthFrom=verify@picom.gg
