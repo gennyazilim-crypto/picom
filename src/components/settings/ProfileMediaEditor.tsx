@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import type { ProfileSummary } from "../../services/profileService";
 import {
@@ -36,7 +37,7 @@ export function ProfileMediaEditor({
   coverUrl,
   onProfileUpdated,
   language,
-}: ProfileMediaEditorProps & { language?: "en" | "tr" }) {
+}: ProfileMediaEditorProps & { language?: UiLanguage }) {
   const lang = language ?? settingsService.getSettings().appearanceSettings.language;
   const t = (key: SettingsI18nKey, params?: Record<string, string | number>) => translateSettings(key, lang, params);
   const kindLabel = (kind: ProfileMediaKind) => t(kindKey(kind));

@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useState } from "react";
 import { AppIcon } from "../AppIcon";
 import { FeedbackModal } from "../feedback/FeedbackModal";
@@ -11,7 +12,7 @@ export function FeedbackSection({
   language,
   onNotice,
 }: {
-  language?: "en" | "tr";
+  language?: UiLanguage;
   onNotice: (message: string, tone?: "info" | "success" | "error") => void;
 }) {
   const lang = language ?? settingsService.getSettings().appearanceSettings.language;

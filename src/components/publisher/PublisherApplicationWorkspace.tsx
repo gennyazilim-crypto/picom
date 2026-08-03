@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 import { AppIcon } from "../AppIcon";
+import { localizationService } from "../../services/localizationService";
+import { getUiLanguageBcp47 } from "../../services/localization/uiLanguages";
+import {
+  formatPublisherCount,
+  translatePublisherProgram,
+  type PublisherProgramI18nKey,
+} from "../../services/localization/publisherProgramCatalog";
 import { publisherProgramService } from "../../services/publisher/publisherProgramService";
 import type {
   PublisherApplicationEligibility,
@@ -13,35 +20,29 @@ type Props = Readonly<{
   onOpenDashboard?: () => void;
 }>;
 
-function eligibilityMessage(eligibility: PublisherApplicationEligibility): string {
-  const paths = eligibility.eligibilityPaths ?? [];
-  if (!eligibility.eligible) {
-    return "Henüz başvuru koşullarını karşılamıyorsunuz. Aşağıdaki yollardan birini tamamladığınızda form açılır.";
-  }
-  if (paths.includes("follower_threshold") && paths.includes("community_founder_threshold")) {
-    return "Her iki başvuru kriterini de karşılıyorsunuz. Başvurunuzu gönderebilirsiniz.";
-  }
-  if (paths.includes("follower_threshold")) {
-    return "Takipçi kriterini karşıladınız. Creator / Publisher başvurusu yapabilirsiniz.";
-  }
-  if (paths.includes("community_founder_threshold")) {
-    return "Topluluk kurucusu kriterini karşıladınız. Creator / Publisher başvurusu yapabilirsiniz.";
-  }
-  return "Başvuru koşulları karşılandı.";
+function t(key: PublisherProgramI18nKey, params?: Record<string, string | number>): string {
+  return translatePublisherProgram(key, localizationService.getLanguage(), params);
 }
 
 function formatCount(value: number): string {
-  return value.toLocaleString("tr-TR");
+  return formatPublisherCount(value, localizationService.getLanguage());
+}
+
+function eligibilityMessage(eligibility: PublisherApplicationEligibility): string {
+  const paths = eligibility.eligibilityPaths ?? [];
+  if (!eligibility.eligible) return t("apply.elig.notEligible");
+  if (paths.includes("follower_threshold") && paths.includes("community_founder_threshold")) {
+    return t("apply.elig.both");
+  }
+  if (paths.includes("follower_threshold")) return t("apply.elig.followers");
+  if (paths.includes("community_founder_threshold")) return t("apply.elig.community");
+  return t("apply.elig.ok");
 }
 
 function closerPathLabel(followerRemaining: number, communityRemaining: number): string {
-  if (followerRemaining === communityRemaining) {
-    return "İki yol da benzer uzaklıkta; hangisi size uygunsa onu büyütün.";
-  }
-  if (followerRemaining < communityRemaining) {
-    return "Şu an takipçi yolu sayısal olarak daha yakın.";
-  }
-  return "Şu an sahip olduğunuz en büyük topluluk yolu daha yakın.";
+  if (followerRemaining === communityRemaining) return t("apply.closer.tie");
+  if (followerRemaining < communityRemaining) return t("apply.closer.followers");
+  return t("apply.closer.community");
 }
 
 function CriterionTrack({
@@ -69,7 +70,7 @@ function CriterionTrack({
           <p className="publisher-track__detail">{detail}</p>
         </div>
         <span className={`publisher-track__badge${met ? " is-met" : ""}`}>
-          {met ? "Karşılandı" : `${percent}%`}
+          {met ? t("apply.track.met") : `${percent}%`}
         </span>
       </div>
       <div
@@ -78,7 +79,7 @@ function CriterionTrack({
         aria-valuemin={0}
         aria-valuemax={required}
         aria-valuenow={Math.min(current, required)}
-        aria-label={`${label} ilerlemesi`}
+        aria-label={t("apply.track.progressAria", { label })}
       >
         <span style={{ width: `${percent}%` }} />
       </div>
@@ -86,7 +87,7 @@ function CriterionTrack({
         <strong>
           {formatCount(current)} / {formatCount(required)}
         </strong>
-        <span>{met ? "Bu yol açık" : `Kalan ${formatCount(remaining)}`}</span>
+        <span>{met ? t("apply.track.open") : t("apply.track.remaining", { count: formatCount(remaining) })}</span>
       </div>
     </article>
   );
@@ -102,21 +103,23 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
   const [shortBio, setShortBio] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [canBroadcast, setCanBroadcast] = useState(false);
+  const language = localizationService.getLanguage();
 
   async function refresh() {
     setError(null);
-    const [elig, apps, state] = await Promise.all([
+    const [elig, apps, program] = await Promise.all([
       publisherProgramService.getEligibility(),
       publisherProgramService.listOwnApplications(),
       publisherProgramService.getProgramState(),
     ]);
     if (!elig.ok) {
       setError(elig.error);
+      setEligibility(null);
       return;
     }
     setEligibility(elig.data);
     if (apps.ok) setApplications(apps.data);
-    if (state.ok) setCanBroadcast(state.data.canBroadcast);
+    if (program.ok) setCanBroadcast(program.data.canBroadcast);
   }
 
   useEffect(() => {
@@ -142,46 +145,43 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
     await refresh();
   }
 
-  const followerCount = eligibility?.activeFollowerCount ?? 0;
-  const memberCount = eligibility?.largestOwnedCommunityActiveMemberCount ?? 0;
-  const followerRequired = eligibility?.requiredFollowerCount ?? 5000;
-  const communityRequired = eligibility?.requiredCommunityMemberCount ?? 3000;
   const paths = eligibility?.eligibilityPaths ?? [];
+  const followerCount = eligibility?.activeFollowerCount ?? 0;
+  const followerRequired = eligibility?.requiredFollowerCount ?? 0;
+  const memberCount = eligibility?.largestOwnedCommunityActiveMemberCount ?? 0;
+  const communityRequired = eligibility?.requiredCommunityMemberCount ?? 0;
   const followerMet = paths.includes("follower_threshold") || followerCount >= followerRequired;
   const communityMet = paths.includes("community_founder_threshold") || memberCount >= communityRequired;
   const followerRemaining = Math.max(0, followerRequired - followerCount);
   const communityRemaining = Math.max(0, communityRequired - memberCount);
 
   return (
-    <section className="publisher-program-shell publisher-program-shell--application" aria-label="Creator Publisher application">
+    <section className="publisher-program-shell publisher-program-shell--application" aria-label={t("apply.aria")}>
       <header className="publisher-program-header">
         <div className="publisher-program-header__copy">
           <div className="publisher-eyebrow-row">
-            <p className="publisher-eyebrow">Publisher Program</p>
+            <p className="publisher-eyebrow">{t("apply.eyebrow")}</p>
             {eligibility ? (
               <span className={`publisher-status-chip${eligibility.eligible ? " is-ready" : ""}`}>
-                {eligibility.eligible ? "Başvuruya hazır" : "Eşik altı"}
+                {eligibility.eligible ? t("apply.ready") : t("apply.belowThreshold")}
               </span>
             ) : null}
           </div>
-          <h1>Creator / Publisher başvurusu</h1>
-          <p className="publisher-program-header__lede">
-            Picom Live Now’da kamuya açık yayın yapmak için Creator veya Publisher onayı gerekir. Uygunluk sunucu
-            tarafında hesaplanır; bu ekrandaki sayaçlar bilgilendirme içindir, yetki kaynağı değildir.
-          </p>
+          <h1>{t("apply.title")}</h1>
+          <p className="publisher-program-header__lede">{t("apply.lede")}</p>
         </div>
         <div className="publisher-header-actions">
-          <button type="button" className="publisher-ghost" onClick={() => void refresh()} aria-label="Uygunluğu yenile">
+          <button type="button" className="publisher-ghost" onClick={() => void refresh()} aria-label={t("apply.refreshAria")}>
             <AppIcon name="refresh" size="sm" />
-            Yenile
+            {t("apply.refresh")}
           </button>
           {canBroadcast && onOpenDashboard ? (
             <button type="button" className="publisher-primary" onClick={onOpenDashboard}>
-              Dashboard
+              {t("apply.dashboard")}
             </button>
           ) : null}
           <button type="button" className="publisher-ghost" onClick={onClose}>
-            Kapat
+            {t("apply.close")}
           </button>
         </div>
       </header>
@@ -195,7 +195,7 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
       {!eligibility ? (
         <div className="publisher-panel publisher-panel--loading" aria-live="polite">
           <span className="publisher-loading-dot" aria-hidden="true" />
-          Uygunluk kontrol ediliyor…
+          {t("apply.loading")}
         </div>
       ) : (
         <div className="publisher-program-layout">
@@ -203,42 +203,44 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
             <section className="publisher-panel publisher-snapshot" aria-labelledby="publisher-snapshot-title">
               <div className="publisher-snapshot__head">
                 <div>
-                  <h2 id="publisher-snapshot-title">Canlı uygunluk özeti</h2>
+                  <h2 id="publisher-snapshot-title">{t("apply.snapshotTitle")}</h2>
                   <p>{eligibilityMessage(eligibility)}</p>
                 </div>
                 <time dateTime={eligibility.evaluatedAt} className="publisher-eligibility__time">
-                  Son kontrol · {new Date(eligibility.evaluatedAt).toLocaleString("tr-TR")}
+                  {t("apply.lastCheck", {
+                    time: new Date(eligibility.evaluatedAt).toLocaleString(getUiLanguageBcp47(language)),
+                  })}
                 </time>
               </div>
               <dl className="publisher-snapshot__grid">
                 <div>
-                  <dt>Aktif takipçi</dt>
+                  <dt>{t("apply.followers")}</dt>
                   <dd>
                     {formatCount(followerCount)}
                     <span> / {formatCount(followerRequired)}</span>
                   </dd>
                 </div>
                 <div>
-                  <dt>En büyük sahip olunan topluluk</dt>
+                  <dt>{t("apply.largestCommunity")}</dt>
                   <dd>
                     {formatCount(memberCount)}
                     <span> / {formatCount(communityRequired)}</span>
                   </dd>
                 </div>
                 <div>
-                  <dt>Sayılan topluluk</dt>
+                  <dt>{t("apply.countedCommunity")}</dt>
                   <dd className="publisher-snapshot__text">
-                    {eligibility.largestOwnedCommunityName?.trim() || "Henüz sayılacak bir topluluk yok"}
+                    {eligibility.largestOwnedCommunityName?.trim() || t("apply.noCommunity")}
                   </dd>
                 </div>
                 <div>
-                  <dt>Hesap / yayın engeli</dt>
+                  <dt>{t("apply.accountGate")}</dt>
                   <dd className="publisher-snapshot__text">
                     {eligibility.hasActiveLiveBan
-                      ? "Aktif live ban — başvuru veya yayın engellenir"
+                      ? t("apply.liveBan")
                       : eligibility.accountActive === false
-                        ? "Hesap aktif değil"
-                        : "Hesap uygun görünüyor"}
+                        ? t("apply.accountInactive")
+                        : t("apply.accountOk")}
                   </dd>
                 </div>
               </dl>
@@ -247,33 +249,30 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
             <section className="publisher-panel publisher-eligibility" aria-labelledby="publisher-eligibility-title">
               <div className="publisher-eligibility__intro">
                 <div>
-                  <h2 id="publisher-eligibility-title">Başvuru yolları</h2>
-                  <p>
-                    Tek yol yeterli. Üye sayıları farklı topluluklar arasında birleştirilmez; yalnızca{" "}
-                    <strong>owner</strong> olduğunuz en büyük aktif topluluk sayılır.
-                  </p>
+                  <h2 id="publisher-eligibility-title">{t("apply.pathsTitle")}</h2>
+                  <p>{t("apply.pathsBody")}</p>
                 </div>
               </div>
 
               <div className="publisher-tracks" role="list">
                 <CriterionTrack
-                  label="Takipçi yolu"
+                  label={t("apply.followerPath")}
                   current={followerCount}
                   required={followerRequired}
-                  detail="Aktif Picom takipçi eşiği · sunucu sayımı"
+                  detail={t("apply.followerDetail")}
                   met={followerMet}
                 />
                 <div className="publisher-tracks__or" aria-hidden="true">
-                  <span>VEYA</span>
+                  <span>{t("apply.or")}</span>
                 </div>
                 <CriterionTrack
-                  label="Topluluk kurucusu yolu"
+                  label={t("apply.communityPath")}
                   current={memberCount}
                   required={communityRequired}
                   detail={
                     eligibility.largestOwnedCommunityName
-                      ? `${eligibility.largestOwnedCommunityName} · aktif üye (owner)`
-                      : "En büyük sahip olunan topluluk · aktif üye (owner)"
+                      ? t("apply.communityDetailNamed", { name: eligibility.largestOwnedCommunityName })
+                      : t("apply.communityDetailDefault")
                   }
                   met={communityMet}
                 />
@@ -282,7 +281,7 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
 
             {applications.length > 0 ? (
               <section className="publisher-panel" aria-labelledby="publisher-apps-title">
-                <h2 id="publisher-apps-title">Başvurularınız</h2>
+                <h2 id="publisher-apps-title">{t("apply.applicationsTitle")}</h2>
                 <ul className="publisher-app-list">
                   {applications.map((app) => (
                     <li key={app.id}>
@@ -291,7 +290,7 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
                         <span>
                           {app.applicationType} · {app.status}
                           {app.submittedAt
-                            ? ` · ${new Date(app.submittedAt).toLocaleDateString("tr-TR")}`
+                            ? ` · ${new Date(app.submittedAt).toLocaleDateString()}`
                             : ""}
                         </span>
                       </div>
@@ -311,32 +310,32 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
                 }}
               >
                 <div className="publisher-form__intro">
-                  <h2>Başvuru formu</h2>
-                  <p>Onay sonrası Live Now yayın kimliğiniz bu bilgilerle eşlenir. İnceleme ekibi gönderdiğiniz metni görür.</p>
+                  <h2>{t("apply.formTitle")}</h2>
+                  <p>{t("apply.formLede")}</p>
                 </div>
                 <label>
-                  Başvuru türü
+                  {t("apply.typeLabel")}
                   <select
                     value={applicationType}
                     onChange={(event) => setApplicationType(event.target.value as PublisherApplicationType)}
                   >
-                    <option value="creator">Creator (bireysel)</option>
-                    <option value="publisher">Publisher (kurumsal)</option>
+                    <option value="creator">{t("apply.typeCreator")}</option>
+                    <option value="publisher">{t("apply.typePublisher")}</option>
                   </select>
                 </label>
                 <label>
-                  Yayıncı adı
+                  {t("apply.displayName")}
                   <input
                     value={displayName}
                     onChange={(event) => setDisplayName(event.target.value)}
                     required
                     minLength={2}
                     maxLength={80}
-                    placeholder="Görünen yayın adı"
+                    placeholder={t("apply.displayPlaceholder")}
                   />
                 </label>
                 <label>
-                  Kısa tanıtım
+                  {t("apply.bio")}
                   <textarea
                     value={shortBio}
                     onChange={(event) => setShortBio(event.target.value)}
@@ -344,12 +343,12 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
                     minLength={20}
                     maxLength={2000}
                     rows={5}
-                    placeholder="İzleyicilere kim olduğunuzu ve ne yayınladığınızı kısaca anlatın"
+                    placeholder={t("apply.bioPlaceholder")}
                   />
                 </label>
                 {applicationType === "publisher" ? (
                   <label>
-                    Şirket / kurum adı
+                    {t("apply.company")}
                     <input
                       value={companyName}
                       onChange={(event) => setCompanyName(event.target.value)}
@@ -360,29 +359,27 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
                   </label>
                 ) : null}
                 <button type="submit" className="publisher-primary publisher-form__submit" disabled={busy}>
-                  {busy ? "Gönderiliyor…" : "Başvuruyu gönder"}
+                  {busy ? t("apply.submitting") : t("apply.submit")}
                 </button>
               </form>
             ) : (
               <section className="publisher-panel publisher-next" aria-labelledby="publisher-next-title">
-                <h2 id="publisher-next-title">Nasıl ilerlersiniz</h2>
+                <h2 id="publisher-next-title">{t("apply.nextTitle")}</h2>
                 <p>{closerPathLabel(followerRemaining, communityRemaining)}</p>
                 <div className="publisher-next__grid">
                   <article>
-                    <h3>Takipçi yolunu büyütmek</h3>
-                    <p>
-                      Aktif takipçi eşiğine {formatCount(followerRemaining)} kişi kaldı. Pasif veya silinmiş hesaplar
-                      sayılmaz; sunucu aktif profil kurallarını uygular.
-                    </p>
+                    <h3>{t("apply.growFollowersTitle")}</h3>
+                    <p>{t("apply.growFollowersBody", { count: formatCount(followerRemaining) })}</p>
                   </article>
                   <article>
-                    <h3>Topluluk yolunu büyütmek</h3>
+                    <h3>{t("apply.growCommunityTitle")}</h3>
                     <p>
                       {eligibility.largestOwnedCommunityName
-                        ? `“${eligibility.largestOwnedCommunityName}” için `
-                        : "Sahip olduğunuz en büyük topluluk için "}
-                      {formatCount(communityRemaining)} aktif üye daha gerekir. Kurucu olsanız bile üyelik satırı ve
-                      aktif profil şarttır; topluluklar arası birleştirme yoktur.
+                        ? t("apply.growCommunityBodyNamed", {
+                            name: eligibility.largestOwnedCommunityName,
+                            count: formatCount(communityRemaining),
+                          })
+                        : t("apply.growCommunityBodyDefault", { count: formatCount(communityRemaining) })}
                     </p>
                   </article>
                 </div>
@@ -390,43 +387,37 @@ export function PublisherApplicationWorkspace({ onClose, onOpenDashboard }: Prop
             )}
           </div>
 
-          <aside className="publisher-program-aside" aria-label="Program özeti">
+          <aside className="publisher-program-aside" aria-label={t("apply.asideLabel")}>
             <section className="publisher-aside-card">
-              <p className="publisher-aside-kicker">Onay sonrası</p>
-              <h2>Ne açılır?</h2>
+              <p className="publisher-aside-kicker">{t("apply.afterKicker")}</p>
+              <h2>{t("apply.afterTitle")}</h2>
               <ul className="publisher-aside-list">
-                <li>Creator / Publisher rozeti ve yayıncı profili</li>
-                <li>Picom Live Now’da kamuya açık keşif görünürlüğü</li>
-                <li>Yayın başlatma kapısı (aktif rozet + onaylı başvuru)</li>
-                <li>İnceleme ve güvenlik kurallarına bağlı yayın sürdürme</li>
+                <li>{t("apply.afterBadge")}</li>
+                <li>{t("apply.afterDiscovery")}</li>
+                <li>{t("apply.afterGate")}</li>
+                <li>{t("apply.afterSafety")}</li>
               </ul>
             </section>
 
             <section className="publisher-aside-card">
-              <p className="publisher-aside-kicker">Süreç</p>
-              <h2>Başvuru akışı</h2>
+              <p className="publisher-aside-kicker">{t("apply.processKicker")}</p>
+              <h2>{t("apply.processTitle")}</h2>
               <ol className="publisher-aside-steps">
-                <li>
-                  Eşiklerden <strong>birini</strong> tamamlayın
-                </li>
-                <li>Başvuru formunu gönderin</li>
-                <li>İnceleme: uygunluk riski ve içerik politikası kontrolü</li>
-                <li>Onay → rozet; red / ek bilgi istenirse burada görünür</li>
+                <li>{t("apply.processStep1")}</li>
+                <li>{t("apply.processStep2")}</li>
+                <li>{t("apply.processStep3")}</li>
+                <li>{t("apply.processStep4")}</li>
               </ol>
             </section>
 
             <section className="publisher-aside-card publisher-aside-card--muted">
-              <p className="publisher-aside-kicker">Sayım kuralları</p>
-              <h2>Ne sayılır?</h2>
+              <p className="publisher-aside-kicker">{t("apply.rulesKicker")}</p>
+              <h2>{t("apply.rulesTitle")}</h2>
               <ul className="publisher-aside-list">
-                <li>
-                  Takipçi: <strong>{formatCount(followerRequired)}</strong> aktif takipçi
-                </li>
-                <li>
-                  Topluluk: sahip olduğunuz bir toplulukta <strong>{formatCount(communityRequired)}</strong> aktif üye
-                </li>
-                <li>Owner kaynağı: communities.owner_id</li>
-                <li>Üye birleştirme yok · progress bar yetki değildir</li>
+                <li>{t("apply.rulesFollowers", { count: formatCount(followerRequired) })}</li>
+                <li>{t("apply.rulesCommunity", { count: formatCount(communityRequired) })}</li>
+                <li>{t("apply.rulesOwner")}</li>
+                <li>{t("apply.rulesNoMerge")}</li>
               </ul>
             </section>
           </aside>

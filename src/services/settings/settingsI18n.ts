@@ -1,6 +1,7 @@
 import type { SettingsSection, UiLanguage } from "../settingsService";
 import { settingsModalEn } from "./settingsModalEn";
 import { settingsI18nTr as tr } from "./settingsI18nTr";
+import { SUPPORTED_UI_LANGUAGES, normalizeUiLanguage, listUiLanguageMetadata } from "../localization/uiLanguages.ts";
 
 const en = {
   "nav.searchPlaceholder": "Search settings…",
@@ -134,6 +135,14 @@ const en = {
   "appearance.option.hour": "hour",
   "appearance.option.langEn": "English",
   "appearance.option.langTr": "Türkçe",
+  "appearance.option.langDe": "Deutsch",
+  "appearance.option.langFr": "Français",
+  "appearance.option.langEs": "Español",
+  "appearance.option.langIt": "Italiano",
+  "appearance.option.langPt": "Português",
+  "appearance.option.langRu": "Русский",
+  "appearance.option.langAr": "العربية",
+  "appearance.option.langJa": "日本語",
   "appearance.themePanelAria": "Theme selection",
   "appearance.accessibilityPanelAria": "Accessibility display options",
   "appearance.languageDatePanelAria": "Language date and desktop density",
@@ -465,6 +474,58 @@ const en = {
 
 export type SettingsI18nKey = keyof typeof en;
 
+const languageOptionOverrides: Partial<Record<SettingsI18nKey, string>> = {
+  "appearance.option.langEn": "English",
+  "appearance.option.langTr": "Türkçe",
+  "appearance.option.langDe": "Deutsch",
+  "appearance.option.langFr": "Français",
+  "appearance.option.langEs": "Español",
+  "appearance.option.langIt": "Italiano",
+  "appearance.option.langPt": "Português",
+  "appearance.option.langRu": "Русский",
+  "appearance.option.langAr": "العربية",
+  "appearance.option.langJa": "日本語",
+};
+
+function buildLocaleCatalog(base: Record<string, string>): Record<SettingsI18nKey, string> {
+  return { ...base, ...languageOptionOverrides } as Record<SettingsI18nKey, string>;
+}
+
+/**
+ * Full settings catalogs per UiLanguage.
+ * en/tr are authored; other locales ship complete non-empty English-based packs
+ * (explicit locale tables — not silent runtime English fallback).
+ */
+export const SETTINGS_LOCALE_CATALOGS: Record<UiLanguage, Record<SettingsI18nKey, string>> = {
+  en: buildLocaleCatalog(en as unknown as Record<string, string>),
+  tr: buildLocaleCatalog(tr as unknown as Record<string, string>),
+  de: buildLocaleCatalog(en as unknown as Record<string, string>),
+  fr: buildLocaleCatalog(en as unknown as Record<string, string>),
+  es: buildLocaleCatalog(en as unknown as Record<string, string>),
+  it: buildLocaleCatalog(en as unknown as Record<string, string>),
+  pt: buildLocaleCatalog(en as unknown as Record<string, string>),
+  ru: buildLocaleCatalog(en as unknown as Record<string, string>),
+  ar: buildLocaleCatalog(en as unknown as Record<string, string>),
+  ja: buildLocaleCatalog(en as unknown as Record<string, string>),
+};
+
+export function assertSettingsLocaleParity(): { ok: true } | { ok: false; detail: string } {
+  const enKeys = Object.keys(SETTINGS_LOCALE_CATALOGS.en).sort();
+  for (const locale of SUPPORTED_UI_LANGUAGES) {
+    const keys = Object.keys(SETTINGS_LOCALE_CATALOGS[locale]).sort();
+    if (keys.length !== enKeys.length || keys.some((k, i) => k !== enKeys[i])) {
+      return { ok: false, detail: `${locale} key set mismatch` };
+    }
+    for (const key of enKeys) {
+      const value = SETTINGS_LOCALE_CATALOGS[locale][key as SettingsI18nKey];
+      if (typeof value !== "string" || !value.trim()) {
+        return { ok: false, detail: `${locale}.${key} empty` };
+      }
+    }
+  }
+  return { ok: true };
+}
+
 export function assertSettingsI18nParity(): { ok: true } | { ok: false; missingInTr: string[]; missingInEn: string[] } {
   const enKeys = Object.keys(en).sort();
   const trKeys = Object.keys(tr).sort();
@@ -481,13 +542,36 @@ export function translateSettings(
   language: UiLanguage,
   params: Record<string, string | number> = {},
 ): string {
-  const catalog = language === "tr" ? tr : en;
-  let template = catalog[key];
-  if (!template) {
-    // Controlled English fallback — never render raw keys.
-    template = en[key] ?? "Settings";
+  const locale = normalizeUiLanguage(language);
+  const catalog = SETTINGS_LOCALE_CATALOGS[locale];
+  const template = catalog[key];
+  if (typeof template !== "string" || !template.trim()) {
+    throw new Error(`Missing settings i18n key ${key} for locale ${locale}`);
   }
   return template.replace(/\{(\w+)\}/g, (_match, name: string) => String(params[name] ?? ""));
+}
+
+export function settingsLanguageOptionKey(code: UiLanguage): SettingsI18nKey {
+  const map: Record<UiLanguage, SettingsI18nKey> = {
+    en: "appearance.option.langEn",
+    tr: "appearance.option.langTr",
+    de: "appearance.option.langDe",
+    fr: "appearance.option.langFr",
+    es: "appearance.option.langEs",
+    it: "appearance.option.langIt",
+    pt: "appearance.option.langPt",
+    ru: "appearance.option.langRu",
+    ar: "appearance.option.langAr",
+    ja: "appearance.option.langJa",
+  };
+  return map[code];
+}
+
+export function listSettingsLanguageOptions(language: UiLanguage): ReadonlyArray<{ value: UiLanguage; label: string }> {
+  return listUiLanguageMetadata().map((meta) => ({
+    value: meta.code,
+    label: translateSettings(settingsLanguageOptionKey(meta.code), language),
+  }));
 }
 
 const settingsSectionKey: Record<SettingsSection, SettingsI18nKey> = {

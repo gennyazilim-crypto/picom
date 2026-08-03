@@ -1,10 +1,11 @@
 import type { ProfileStatus } from "../types/profile";
 import type { Json } from "./supabase/database.types";
 import { getSupabaseClient } from "./supabase/supabaseClient";
+import { normalizeUiLanguage, type UiLanguage } from "./localization/uiLanguages";
 
 export type ThemeMode = "light" | "dark";
 export type ThemePreference = ThemeMode | "system";
-export type UiLanguage = "en" | "tr";
+export type { UiLanguage };
 export type DesktopDensity = "comfortable" | "compact";
 export type DateStylePreference = "system" | "numeric" | "descriptive";
 export type TimeFormatPreference = "system" | "12h" | "24h";
@@ -359,7 +360,7 @@ function normalizeSettings(settings: StoredPicomSettings): PicomSettings {
       ...defaults.appearanceSettings,
       ...(settings.appearanceSettings ?? {}),
       themeMode: settings.appearanceSettings?.themeMode === "light" || settings.appearanceSettings?.themeMode === "dark" || settings.appearanceSettings?.themeMode === "system" ? settings.appearanceSettings.themeMode : defaults.appearanceSettings.themeMode,
-      language: settings.appearanceSettings?.language === "tr" ? "tr" : "en",
+      language: normalizeUiLanguage(settings.appearanceSettings?.language),
       density: settings.appearanceSettings?.density === "compact" ? "compact" : "comfortable",
       dateStyle: settings.appearanceSettings?.dateStyle === "numeric" || settings.appearanceSettings?.dateStyle === "descriptive" ? settings.appearanceSettings.dateStyle : "system",
       timeFormat: settings.appearanceSettings?.timeFormat === "12h" || settings.appearanceSettings?.timeFormat === "24h" ? settings.appearanceSettings.timeFormat : "system",

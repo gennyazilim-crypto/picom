@@ -1,6 +1,7 @@
 import type { SocialProviderAccountState } from "../../services/auth/socialAuthService";
 import { accountCenterUrls } from "../../config/accountCenterUrls";
 import { translateSettings } from "../../services/settings/settingsI18n";
+import type { UiLanguage } from "../../services/settingsService";
 
 function maskEmail(email: string | null | undefined): string {
   const value = String(email || "").trim();
@@ -11,7 +12,7 @@ function maskEmail(email: string | null | undefined): string {
   return `${head}***@${domain}`;
 }
 
-function providerStatusLabel(provider: SocialProviderAccountState, language: "en" | "tr"): string {
+function providerStatusLabel(provider: SocialProviderAccountState, language: UiLanguage): string {
   if (provider.provider === "google") return translateSettings("provider.googlePaused", language);
   if (provider.provider === "epic" && !provider.linked) return translateSettings("provider.epicPending", language);
   if (provider.linked) return translateSettings("provider.connected", language);
@@ -20,7 +21,7 @@ function providerStatusLabel(provider: SocialProviderAccountState, language: "en
 }
 
 export type AccountSummarySectionProps = Readonly<{
-  language: "en" | "tr";
+  language: UiLanguage;
   displayName: string;
   username: string;
   email: string | null;
@@ -38,7 +39,7 @@ export type AccountSummarySectionProps = Readonly<{
   identityRefreshing: boolean;
 }>;
 
-function formatAccountStatus(status: string, language: "en" | "tr"): string {
+function formatAccountStatus(status: string, language: UiLanguage): string {
   const map: Record<string, Parameters<typeof translateSettings>[0]> = {
     online: "presence.online",
     idle: "presence.idle",

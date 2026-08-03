@@ -1,33 +1,15 @@
 /**
- * Live Now UI catalog — canonical 10 locales.
+ * Live Now UI catalog — canonical 10 locales (aligned with UiLanguage).
  * Every locale must define all keys; validated by live-now-i18n-parity.test.mjs.
  * No runtime machine translation / hardcoded fallback copy in components.
  */
 
-export type LiveNowLocale =
-  | "en"
-  | "tr"
-  | "de"
-  | "fr"
-  | "es"
-  | "it"
-  | "pt"
-  | "ru"
-  | "ar"
-  | "ja";
+import type { UiLanguage } from "./uiLanguages.ts";
+import { SUPPORTED_UI_LANGUAGES, normalizeUiLanguage } from "./uiLanguages.ts";
 
-export const LIVE_NOW_LOCALE_CODES = [
-  "en",
-  "tr",
-  "de",
-  "fr",
-  "es",
-  "it",
-  "pt",
-  "ru",
-  "ar",
-  "ja",
-] as const satisfies readonly LiveNowLocale[];
+export type LiveNowLocale = UiLanguage;
+
+export const LIVE_NOW_LOCALE_CODES = SUPPORTED_UI_LANGUAGES;
 
 export type LiveNowI18nKey =
   | "live.now.title"
@@ -793,21 +775,15 @@ export const LIVE_NOW_LOCALES: Readonly<Record<LiveNowLocale, Catalog>> = {
 
 export const LIVE_NOW_I18N_KEYS = Object.keys(en) as LiveNowI18nKey[];
 
-function assertLiveNowLocale(language: string): asserts language is LiveNowLocale {
-  if (!(language in LIVE_NOW_LOCALES)) {
-    throw new Error(`Unknown Live Now locale: ${language}`);
-  }
-}
-
 export function translateLiveNow(
   key: LiveNowI18nKey,
   language: LiveNowLocale | string,
   vars?: Readonly<Record<string, string>>,
 ): string {
-  assertLiveNowLocale(language);
-  const template = LIVE_NOW_LOCALES[language][key];
+  const locale = normalizeUiLanguage(language);
+  const template = LIVE_NOW_LOCALES[locale][key];
   if (template === undefined || template.trim().length === 0) {
-    throw new Error(`Missing Live Now i18n key "${key}" for locale "${language}"`);
+    throw new Error(`Missing Live Now i18n key "${key}" for locale "${locale}"`);
   }
   if (!vars) return template;
   return template.replace(/\{\{(\w+)\}\}/g, (_, name: string) => vars[name] ?? "");

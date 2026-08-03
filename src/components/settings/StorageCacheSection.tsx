@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useCallback, useEffect, useState } from "react";
 import { settingsService } from "../../services/settingsService";
 import { translateSettings } from "../../services/settings/settingsI18n";
@@ -18,7 +19,7 @@ export function StorageCacheSection({
   language,
   pushToast,
 }: Readonly<{
-  language: "en" | "tr";
+  language: UiLanguage;
   pushToast: (message: string, tone?: "info" | "success" | "error") => void;
 }>) {
   const t = (key: Parameters<typeof translateSettings>[0], params?: Record<string, string | number>) =>

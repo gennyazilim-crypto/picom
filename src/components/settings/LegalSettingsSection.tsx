@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useEffect, useState } from "react";
 import { appConfig } from "../../config/appConfig";
 import { legalConfig } from "../../config/legalConfig";
@@ -10,7 +11,7 @@ import { settingsService } from "../../services/settingsService";
 import { AppIcon } from "../AppIcon";
 
 type LegalSettingsSectionProps = {
-  language?: "en" | "tr";
+  language?: UiLanguage;
   onOpenDocument: (documentId: LegalDocumentId) => void;
 };
 

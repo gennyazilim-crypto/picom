@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useEffect, useMemo, useState } from "react";
 import { loggingService, type LogEntry, type LogLevel } from "../../services/loggingService";
 import { clipboardService } from "../../services/clipboardService";
@@ -10,7 +11,7 @@ export function LogsViewer({
   language,
   onNotice,
 }: {
-  language?: "en" | "tr";
+  language?: UiLanguage;
   onNotice: (message: string, tone?: "info" | "success" | "error") => void;
 }) {
   const lang = language ?? settingsService.getSettings().appearanceSettings.language;

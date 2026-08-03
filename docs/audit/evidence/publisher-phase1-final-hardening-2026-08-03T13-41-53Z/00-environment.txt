@@ -1,0 +1,8 @@
+﻿UTC=08/03/2026 15:59:28.ToUniversalTime().ToString('o')
+node=v24.15.0
+npm=11.17.0
+branch=feat/community-rebuild
+head=9ff56fbe3f3cb46048e5a38858df41972d9b0e2e
+canonical_staging=ufmtvqtsklqsmqxefbbs
+prior_tag=picom-live-now-phase1-staging-go-2026-08-03
+prior_sha=2f198ef61ffd0ac423c9713482c57da24c4967b7

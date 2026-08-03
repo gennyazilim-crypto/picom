@@ -18,7 +18,7 @@ import {
 import { AccountSummarySection } from "./settings/AccountSummarySection";
 import { WindowsStartupSection } from "./settings/WindowsStartupSection";
 import { StorageCacheSection } from "./settings/StorageCacheSection";
-import { translateSettings, translateSettingsNavGroup, translateSettingsSection, type SettingsI18nKey } from "../services/settings/settingsI18n";
+import { translateSettings, translateSettingsNavGroup, translateSettingsSection, listSettingsLanguageOptions, type SettingsI18nKey } from "../services/settings/settingsI18n";
 import { appearanceService } from "../services/appearanceService";
 import { statusPageService } from "../services/statusPageService";
 import { dataSourceService } from "../services/dataSourceService";
@@ -1033,7 +1033,7 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                 </label>
               </div>
               <div className="accessibility-card" aria-label={ts("appearance.languageDatePanelAria")}>
-                <label className="settings-toggle-row"><span><strong>{ts("appearance.language")}</strong><small>{ts("appearance.languageHint")}</small></span><select value={appearanceSettings.language} onChange={(event) => updateAppearance({ language: event.target.value as AppearanceSettings["language"] })}><option value="en">{ts("appearance.option.langEn")}</option><option value="tr">{ts("appearance.option.langTr")}</option></select></label>
+                <label className="settings-toggle-row"><span><strong>{ts("appearance.language")}</strong><small>{ts("appearance.languageHint")}</small></span><select value={appearanceSettings.language} onChange={(event) => updateAppearance({ language: event.target.value as AppearanceSettings["language"] })}>{listSettingsLanguageOptions(appearanceSettings.language).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
                 <label className="settings-toggle-row"><span><strong>{ts("appearance.density")}</strong><small>{ts("appearance.densityHint")}</small></span><select value={appearanceSettings.density} onChange={(event) => updateAppearance({ density: event.target.value as AppearanceSettings["density"] })}><option value="comfortable">{ts("appearance.option.comfortable")}</option><option value="compact">{ts("appearance.option.compact")}</option></select></label>
                 <label className="settings-toggle-row"><span><strong>{ts("appearance.dateStyle")}</strong><small>{ts("appearance.dateStyleHint")}</small></span><select value={appearanceSettings.dateStyle} onChange={(event) => updateAppearance({ dateStyle: event.target.value as AppearanceSettings["dateStyle"] })}><option value="system">{ts("appearance.option.system")}</option><option value="numeric">{ts("appearance.option.numeric")}</option><option value="descriptive">{ts("appearance.option.descriptive")}</option></select></label>
                 <label className="settings-toggle-row"><span><strong>{ts("appearance.timeFormat")}</strong><small>{ts("appearance.timeFormatHint")}</small></span><select value={appearanceSettings.timeFormat} onChange={(event) => updateAppearance({ timeFormat: event.target.value as AppearanceSettings["timeFormat"] })}><option value="system">{ts("appearance.option.system")}</option><option value="12h">12 {ts("appearance.option.hour")}</option><option value="24h">24 {ts("appearance.option.hour")}</option></select></label>

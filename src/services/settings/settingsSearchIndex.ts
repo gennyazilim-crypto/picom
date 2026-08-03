@@ -1,4 +1,5 @@
-import type { SettingsSection } from "../settingsService";
+import type { SettingsSection, UiLanguage } from "../settingsService";
+import { normalizeUiLanguage } from "../localization/uiLanguages";
 
 export type SettingsSearchHit = Readonly<{
   id: string;
@@ -191,7 +192,7 @@ function normalizeQuery(query: string): string {
   return query.trim().toLocaleLowerCase("tr-TR");
 }
 
-export function searchSettingsCatalog(query: string, language: "en" | "tr" = "en"): SettingsSearchHit[] {
+export function searchSettingsCatalog(query: string, language: UiLanguage = "en"): SettingsSearchHit[] {
   const q = normalizeQuery(query);
   if (!q) return [];
   const tokens = q.split(/\s+/).filter(Boolean);
@@ -210,10 +211,11 @@ export function searchSettingsCatalog(query: string, language: "en" | "tr" = "en
   }).map((hit) => hit);
 }
 
-export function settingsSearchResultLabel(hit: SettingsSearchHit, language: "en" | "tr"): string {
-  return language === "tr" ? hit.titleTr : hit.titleEn;
+/** Search index authors en + tr; other UiLanguage codes use the English pack. */
+export function settingsSearchResultLabel(hit: SettingsSearchHit, language: UiLanguage): string {
+  return normalizeUiLanguage(language) === "tr" ? hit.titleTr : hit.titleEn;
 }
 
-export function settingsSearchResultDescription(hit: SettingsSearchHit, language: "en" | "tr"): string {
-  return language === "tr" ? hit.descriptionTr : hit.descriptionEn;
+export function settingsSearchResultDescription(hit: SettingsSearchHit, language: UiLanguage): string {
+  return normalizeUiLanguage(language) === "tr" ? hit.descriptionTr : hit.descriptionEn;
 }

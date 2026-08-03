@@ -35,11 +35,9 @@ test("Live Now i18n all locale key parity", () => {
   }
 });
 
-test("translateLiveNow throws for unknown locale", () => {
-  assert.throws(
-    () => translateLiveNow("live.now.title", "xx"),
-    (err) => err instanceof Error && /Unknown Live Now locale/.test(err.message),
-  );
+test("translateLiveNow normalizes unknown locale to en", () => {
+  assert.equal(translateLiveNow("live.now.title", "xx"), LIVE_NOW_LOCALES.en["live.now.title"]);
+  assert.equal(translateLiveNow("live.now.title", "EN"), LIVE_NOW_LOCALES.en["live.now.title"]);
 });
 
 test("Live Now Turkish empty-state and CTA copy match product wording", () => {

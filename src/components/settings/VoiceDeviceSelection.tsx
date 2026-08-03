@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useEffect, useState } from "react";
 import { AppIcon } from "../AppIcon";
 import { voiceDeviceService, type VoiceDeviceSnapshot } from "../../services/voiceDeviceService";
@@ -7,7 +8,7 @@ import { translateSettings } from "../../services/settings/settingsI18n";
 import { NoiseShieldSettingsPanel } from "../voice/NoiseShieldControl";
 import "./VoiceDeviceSelection.css";
 
-export function VoiceDeviceSelection({ language }: { language?: "en" | "tr" }) {
+export function VoiceDeviceSelection({ language }: { language?: UiLanguage }) {
   const lang = language ?? settingsService.getSettings().appearanceSettings.language;
   const t = (key: Parameters<typeof translateSettings>[0], params?: Record<string, string | number>) =>
     translateSettings(key, lang, params);

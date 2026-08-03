@@ -1,4 +1,5 @@
 import type { SettingsSection, UiLanguage } from "./settingsService";
+import { normalizeUiLanguage } from "./localization/uiLanguages";
 
 export type LocalizationKey =
   | "settings.title" | "settings.close" | "appearance.title" | "appearance.description"
@@ -179,14 +180,26 @@ function applyVars(template: string, vars?: Vars): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? "");
 }
 
+function shellCatalog(language: UiLanguage): Record<LocalizationKey, string> {
+  const locale = normalizeUiLanguage(language);
+  // tr is authored; all other UiLanguage codes use the English shell table as an explicit pack.
+  return (locale === "tr" ? tr : en) as Record<LocalizationKey, string>;
+}
+
 export const localizationService = {
-  setLanguage(language: UiLanguage): void { activeLanguage = language; },
+  setLanguage(language: UiLanguage): void { activeLanguage = normalizeUiLanguage(language); },
   getLanguage(): UiLanguage { return activeLanguage; },
   translate(key: LocalizationKey, varsOrLanguage?: Vars | UiLanguage, maybeLanguage?: UiLanguage): string {
     const vars = typeof varsOrLanguage === "object" ? varsOrLanguage : undefined;
     const language = typeof varsOrLanguage === "string" ? varsOrLanguage : (maybeLanguage ?? activeLanguage);
-    return applyVars((language === "tr" ? tr : en)[key], vars);
+    const template = shellCatalog(language)[key];
+    if (typeof template !== "string" || !template.trim()) {
+      throw new Error(`Missing localization key ${key} for locale ${normalizeUiLanguage(language)}`);
+    }
+    return applyVars(template, vars);
   },
-  translateSettingsSection(section: SettingsSection, language = activeLanguage): string { return language === "tr" ? sectionTr[section] : section; },
+  translateSettingsSection(section: SettingsSection, language = activeLanguage): string {
+    return normalizeUiLanguage(language) === "tr" ? sectionTr[section] : section;
+  },
   keys(): readonly LocalizationKey[] { return Object.keys(en) as LocalizationKey[]; },
 };

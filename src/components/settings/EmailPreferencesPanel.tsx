@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useEffect, useState } from "react";
 import { emailOperationsService, type EmailPreferences } from "../../services/emailOperationsService";
 import { translateSettings, type SettingsI18nKey } from "../../services/settings/settingsI18n";
@@ -26,7 +27,7 @@ const preferenceRowKeys: readonly Readonly<{
   { key: "marketing_advertising", titleKey: "email.row.marketing_advertising.title", detailKey: "email.row.marketing_advertising.detail" },
 ];
 
-export function EmailPreferencesPanel({ language }: { language?: "en" | "tr" }) {
+export function EmailPreferencesPanel({ language }: { language?: UiLanguage }) {
   const lang = language ?? settingsService.getSettings().appearanceSettings.language;
   const t = (key: SettingsI18nKey, params?: Record<string, string | number>) => translateSettings(key, lang, params);
   const [preferences, setPreferences] = useState<EmailPreferences | null>(null);

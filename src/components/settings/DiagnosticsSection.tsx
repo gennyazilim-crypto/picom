@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useState } from "react";
 import { diagnosticsService } from "../../services/diagnosticsService";
 import { feedbackService, type FeedbackDraft } from "../../services/feedbackService";
@@ -18,7 +19,7 @@ export function DiagnosticsSection({
   language,
   onNotice,
 }: {
-  language?: "en" | "tr";
+  language?: UiLanguage;
   onNotice: (message: string, tone?: "info" | "success" | "error") => void;
 }) {
   const lang = language ?? settingsService.getSettings().appearanceSettings.language;

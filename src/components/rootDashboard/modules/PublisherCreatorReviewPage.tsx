@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
+import { localizationService } from "../../../services/localizationService";
+import {
+  translatePublisherProgram,
+  type PublisherProgramI18nKey,
+} from "../../../services/localization/publisherProgramCatalog";
 import { publisherProgramService } from "../../../services/publisher/publisherProgramService";
 import type { PublisherReviewQueueItem } from "../../../services/publisher/publisherProgramTypes";
 import "../../publisher/publisherProgram.css";
 
 type Access = Readonly<{ allowed: boolean }>;
+
+function t(key: PublisherProgramI18nKey, params?: Record<string, string | number>): string {
+  return translatePublisherProgram(key, localizationService.getLanguage(), params);
+}
 
 export function PublisherCreatorReviewPage({ access }: { access: Access }) {
   const [items, setItems] = useState<PublisherReviewQueueItem[]>([]);
@@ -11,7 +20,7 @@ export function PublisherCreatorReviewPage({ access }: { access: Access }) {
   const [eligibilityFilter, setEligibilityFilter] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [reason, setReason] = useState("Reviewed by Root Panel");
+  const [reason, setReason] = useState(() => t("review.defaultReason"));
 
   async function refresh() {
     if (!access.allowed) return;
@@ -52,7 +61,7 @@ export function PublisherCreatorReviewPage({ access }: { access: Access }) {
   async function ban(item: PublisherReviewQueueItem) {
     if (!access.allowed) return;
     setBusyId(item.id);
-    const result = await publisherProgramService.setLiveBan(item.userId, reason || "Live ban from review panel");
+    const result = await publisherProgramService.setLiveBan(item.userId, reason || t("review.banReason"));
     setBusyId(null);
     if (!result.ok) {
       setError(result.error);
@@ -65,16 +74,16 @@ export function PublisherCreatorReviewPage({ access }: { access: Access }) {
     <div className="root-module publisher-program-shell" style={{ padding: 0, background: "transparent" }}>
       <header className="publisher-program-header">
         <div>
-          <p className="publisher-eyebrow">Care &amp; Safety</p>
-          <h1>Publisher &amp; Creator Review</h1>
-          <p>Eşik karşılamak otomatik onay değildir. Snapshot ve güncel sayılar birlikte incelenir.</p>
+          <p className="publisher-eyebrow">{t("review.eyebrow")}</p>
+          <h1>{t("review.title")}</h1>
+          <p>{t("review.lede")}</p>
         </div>
       </header>
 
       <div className="publisher-card">
         <div className="publisher-header-actions">
           <label>
-            Status
+            {t("review.status")}
             <select value={status} onChange={(event) => setStatus(event.target.value)}>
               <option value="submitted">submitted</option>
               <option value="under_review">under_review</option>
@@ -82,25 +91,25 @@ export function PublisherCreatorReviewPage({ access }: { access: Access }) {
               <option value="approved">approved</option>
               <option value="rejected">rejected</option>
               <option value="suspended">suspended</option>
-              <option value="">all</option>
+              <option value="">{t("review.filter.all")}</option>
             </select>
           </label>
           <label>
-            Eligibility filter
+            {t("review.eligibility")}
             <select value={eligibilityFilter} onChange={(event) => setEligibilityFilter(event.target.value)}>
-              <option value="">all</option>
-              <option value="follower">Takipçi kriteriyle</option>
-              <option value="community">Topluluk kriteriyle</option>
-              <option value="both">Her iki kriter</option>
-              <option value="below_threshold">Artık eşiğin altında</option>
-              <option value="fraud_review">Fraud incelemesi</option>
+              <option value="">{t("review.filter.all")}</option>
+              <option value="follower">{t("review.filter.follower")}</option>
+              <option value="community">{t("review.filter.community")}</option>
+              <option value="both">{t("review.filter.both")}</option>
+              <option value="below_threshold">{t("review.filter.below")}</option>
+              <option value="fraud_review">{t("review.filter.fraud")}</option>
             </select>
           </label>
           <label>
-            Decision reason
+            {t("review.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} />
           </label>
-          <button type="button" className="publisher-ghost" onClick={() => void refresh()}>Refresh</button>
+          <button type="button" className="publisher-ghost" onClick={() => void refresh()}>{t("review.refresh")}</button>
         </div>
       </div>
 
@@ -119,43 +128,43 @@ export function PublisherCreatorReviewPage({ access }: { access: Access }) {
               <p>{item.shortBio}</p>
               <dl className="publisher-stats">
                 <div>
-                  <dt>Eligibility paths</dt>
+                  <dt>{t("review.paths")}</dt>
                   <dd>{item.eligibilityPaths.join(", ") || "—"}</dd>
                 </div>
                 <div>
-                  <dt>Followers (app → now)</dt>
+                  <dt>{t("review.followers")}</dt>
                   <dd>{item.followerCountAtApplication} → {item.currentFollowerCount} ({followerDrop >= 0 ? "-" : "+"}{Math.abs(followerDrop)})</dd>
                 </div>
                 <div>
-                  <dt>Community members (app → now)</dt>
+                  <dt>{t("review.members")}</dt>
                   <dd>{item.communityMemberCountAtApplication} → {item.currentCommunityMemberCount} ({memberDrop >= 0 ? "-" : "+"}{Math.abs(memberDrop)})</dd>
                 </div>
                 <div>
-                  <dt>Qualified community</dt>
+                  <dt>{t("review.community")}</dt>
                   <dd>
                     {item.qualifiedCommunityName || "—"}
-                    {item.isStillCommunityOwner ? " (owner)" : " (not owner now)"}
+                    {item.isStillCommunityOwner ? t("review.owner") : t("review.notOwner")}
                   </dd>
                 </div>
                 <div>
-                  <dt>Risk</dt>
+                  <dt>{t("review.risk")}</dt>
                   <dd>{item.eligibilityRiskStatus}</dd>
                 </div>
               </dl>
               {(followerDrop > 500 || memberDrop > 300) ? (
-                <p className="publisher-error">Risk uyarısı: başvuru sonrası olağan dışı sayı düşüşü.</p>
+                <p className="publisher-error">{t("review.riskDrop")}</p>
               ) : null}
               <div className="publisher-review-actions">
-                <button type="button" className="publisher-primary" disabled={busyId === item.id} onClick={() => void decide(item, "approved")}>Approve</button>
-                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void decide(item, "under_review")}>Under review</button>
-                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void decide(item, "rejected")}>Reject</button>
-                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void decide(item, "suspended")}>Suspend</button>
-                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void ban(item)}>Live ban</button>
+                <button type="button" className="publisher-primary" disabled={busyId === item.id} onClick={() => void decide(item, "approved")}>{t("review.approve")}</button>
+                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void decide(item, "under_review")}>{t("review.underReview")}</button>
+                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void decide(item, "rejected")}>{t("review.reject")}</button>
+                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void decide(item, "suspended")}>{t("review.suspend")}</button>
+                <button type="button" className="publisher-ghost" disabled={busyId === item.id} onClick={() => void ban(item)}>{t("review.liveBan")}</button>
               </div>
             </article>
           );
         })}
-        {items.length === 0 ? <p>Kuyruk boş.</p> : null}
+        {items.length === 0 ? <p>{t("review.empty")}</p> : null}
       </div>
     </div>
   );

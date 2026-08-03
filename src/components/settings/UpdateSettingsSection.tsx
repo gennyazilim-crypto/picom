@@ -1,3 +1,4 @@
+import type { UiLanguage } from "../../services/settingsService";
 import { useEffect, useState } from "react";
 import { appConfig } from "../../config/appConfig";
 import { dateTimeService } from "../../services/dateTimeService";
@@ -7,7 +8,7 @@ import { translateSettings } from "../../services/settings/settingsI18n";
 import { settingsService } from "../../services/settingsService";
 
 type UpdateSettingsSectionProps = {
-  language?: "en" | "tr";
+  language?: UiLanguage;
   onOpenAdvanced: () => void;
   onNotice?: (message: string, tone?: "info" | "success" | "error") => void;
 };

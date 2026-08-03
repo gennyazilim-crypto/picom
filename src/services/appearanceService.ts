@@ -1,6 +1,7 @@
 import type { AccessibilitySettings, AppearanceSettings, ThemeMode, ThemePreference } from "./settingsService";
 import { dateTimeService } from "./dateTimeService";
 import { localizationService } from "./localizationService";
+import { getUiLanguageMetadata, normalizeUiLanguage } from "./localization/uiLanguages";
 
 function systemPrefersDark(): boolean {
   return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -13,9 +14,11 @@ export const appearanceService = {
 
   applyDocumentPreferences(theme: ThemeMode, appearance: AppearanceSettings, accessibility: AccessibilitySettings): void {
     const root = document.documentElement;
+    const language = normalizeUiLanguage(appearance.language);
+    const meta = getUiLanguageMetadata(language);
     root.dataset.theme = theme;
     root.dataset.themePreference = appearance.themeMode;
-    root.dataset.language = appearance.language;
+    root.dataset.language = language;
     root.dataset.density = appearance.density;
     root.dataset.dateStyle = appearance.dateStyle;
     root.dataset.timeFormat = appearance.timeFormat;
@@ -23,9 +26,10 @@ export const appearanceService = {
     root.dataset.reducedMotion = accessibility.reducedMotion ? "true" : "false";
     root.dataset.largerText = accessibility.largerText ? "true" : "false";
     root.dataset.focusRingStrong = accessibility.focusRingStrong ? "true" : "false";
-    root.lang = appearance.language;
-    localizationService.setLanguage(appearance.language);
-    dateTimeService.configure({ language: appearance.language, dateStyle: appearance.dateStyle, timeFormat: appearance.timeFormat });
+    root.lang = meta.bcp47;
+    root.dir = meta.direction;
+    localizationService.setLanguage(language);
+    dateTimeService.configure({ language, dateStyle: appearance.dateStyle, timeFormat: appearance.timeFormat });
   },
 
   subscribeToSystemTheme(listener: (theme: ThemeMode) => void): () => void {
