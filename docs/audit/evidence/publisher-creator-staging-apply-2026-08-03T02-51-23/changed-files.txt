@@ -1,0 +1,9 @@
+Changed/added for this gate:
+- scripts/publisher-eligibility-sql-smoke.sql
+- scripts/publisher-creator-jwt-smoke.mjs (prepared; not executed this session)
+- scripts/publisher-creator-staging-smoke.mjs (heavy draft)
+- scripts/publisher-evidence-secret-scan.mjs
+- docs/publisher-creator/PUBLISHER_CREATOR_READINESS.md
+- docs/audit/evidence/publisher-creator-staging-apply-2026-08-03T02-51-23/*
+
+Forward-fix migrations: none

@@ -1,0 +1,33 @@
+PRODUCTION TARGET VERIFICATION — FAIL / BLOCKED
+
+Method (read-only):
+1. Repository docs + scripts: staging hard-coded as ufmtvqtsklqsmqxefbbs (picom-staging).
+2. .env.production.example: VITE_SUPABASE_URL=https://YOUR_PRODUCTION_PROJECT.supabase.co ; SUPABASE_PROJECT_REF= (empty).
+3. .env.production (local checkout): VITE_SUPABASE_URL host ref resolves to ufmtvqtsklqsmqxefbbs — SAME as staging (misconfiguration risk; value not printed).
+4. supabase projects list (Management API via CLI token): only two projects in org:
+   - ref=ufmtvqtsklqsmqxefbbs name=picom-staging region=eu-west-1 linked=true status=ACTIVE_HEALTHY host=db.ufmtvqtsklqsmqxefbbs.supabase.co
+   - ref=kbdotviopwlcqviggtrc name=picom-staging-v2 region=eu-west-1 linked=false status=ACTIVE_HEALTHY host=db.kbdotviopwlcqviggtrc.supabase.co
+5. No project named production / picom-production / prod found.
+6. No deployment doc or CI config binding Live Now to a production Supabase ref distinct from staging.
+7. .supabase/ project-ref file absent in this checkout.
+
+Report fields:
+- environment name: UNVERIFIED (no production env binding)
+- Supabase project ref: UNVERIFIED
+- database host safe suffix: N/A (no production host)
+- region: N/A
+- linked project ref: staging only (ufmtvqtsklqsmqxefbbs / picom-staging historically)
+- web production target: app.picom.gg / account.picom.gg documented as product URLs, but backend data plane not mapped to a distinct production Supabase project
+- worker production target: UNVERIFIED
+
+Staging vs production distinct?: CANNOT PROVE — no production project exists in org list; local .env.production points at staging ref.
+
+STOP CONDITIONS HIT:
+- project ref belirsiz: YES
+- staging ile production aynı görünüyor (.env.production → staging ref): YES
+- bağlantı hedefi doğrulanamıyor: YES
+- production credential/config incomplete: YES (example placeholders)
+- operator yanlış environment'a bağlı riski: YES (linked staging; production file aliases staging)
+
+Action taken: NO production DB connection attempted. NO migration / DML / DDL / deploy.
+Raw project list (no secrets): 02a-projects-list.raw.json

@@ -31,6 +31,8 @@ export type AccountSummarySectionProps = Readonly<{
   accountStatusLabel: string;
   socialProviders: readonly SocialProviderAccountState[];
   onOpenAccountCenter: (url: string) => void;
+  onOpenPublisherApply?: () => void;
+  onOpenPublisherDashboard?: () => void;
   onLogout: () => void;
   onRefreshIdentity: () => void;
   identityRefreshing: boolean;
@@ -59,6 +61,8 @@ export function AccountSummarySection({
   accountStatusLabel,
   socialProviders,
   onOpenAccountCenter,
+  onOpenPublisherApply,
+  onOpenPublisherDashboard,
   onLogout,
   onRefreshIdentity,
   identityRefreshing,
@@ -124,6 +128,27 @@ export function AccountSummarySection({
             ))}
         </div>
       </section>
+
+      {onOpenPublisherApply || onOpenPublisherDashboard ? (
+        <section className="account-settings-section" id="settings-account-publisher" aria-label={t("account.publisherTitle")}>
+          <h3 className="account-settings-section-title">{t("account.publisherTitle")}</h3>
+          <div className="settings-status-card settings-feature-card">
+            <small>{t("account.publisherHelp")}</small>
+            <div className="settings-actions-row settings-actions-row--wrap">
+              {onOpenPublisherApply ? (
+                <button type="button" className="settings-inline-action" onClick={onOpenPublisherApply}>
+                  {t("account.publisherApply")}
+                </button>
+              ) : null}
+              {onOpenPublisherDashboard ? (
+                <button type="button" className="settings-inline-action settings-inline-action--ghost" onClick={onOpenPublisherDashboard}>
+                  {t("account.publisherDashboard")}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="account-settings-section">
         <h3 className="account-settings-section-title">{t("account.centerTitle")}</h3>

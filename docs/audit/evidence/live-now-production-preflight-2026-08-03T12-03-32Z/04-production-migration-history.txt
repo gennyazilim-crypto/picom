@@ -1,0 +1,14 @@
+PRODUCTION MIGRATION HISTORY — NOT EXECUTED
+
+Reason: production project ref UNVERIFIED / NOT_FOUND in org.
+Per preflight stop rules, no production SQL was run (including schema_migrations reads).
+
+staging_history_reference:
+- Applied on ufmtvqtsklqsmqxefbbs during staging closure (see live-now-staging-final-closure-2026-08-03T11-43-48Z/01-migration-push.log for 20260803172000)
+- Prior chain evidenced in case18 / jwt-rls / publisher-creator staging apply packs
+
+production_history: N/A
+comparison_status: BLOCKED
+
+Per-migration production status (all):
+APPLIED / MISSING / HISTORY_ONLY / OBJECTS_ONLY / DRIFTED = NOT_EVALUATED (no production target)

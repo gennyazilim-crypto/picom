@@ -8,6 +8,7 @@ export { VoiceOpsPage } from "./VoiceOpsPage";
 export { SupportCenterPage } from "./SupportCenterPage";
 export { SupportTeamPage } from "./SupportTeamPage";
 export { TrustSafetyPage } from "./TrustSafetyPage";
+export { PublisherCreatorReviewPage } from "./PublisherCreatorReviewPage";
 export { ModerationTeamPage } from "./ModerationTeamPage";
 export { SecurityOpsPage } from "./SecurityOpsPage";
 export { SecurityTeamPage } from "./SecurityTeamPage";

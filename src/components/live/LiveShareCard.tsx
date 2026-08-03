@@ -217,12 +217,38 @@ export function useLiveShareMoreMenu(share: LiveScreenShareSummary, actions: Liv
   return { trigger, menu };
 }
 
-export type LiveShareCardProps = LiveShareMenuActions & {
-  share: LiveScreenShareSummary;
-  onJoin: (share: LiveScreenShareSummary) => void;
+type PublisherCardFields = {
+  languageCode?: string;
+  tags?: readonly string[];
+  publisherBadgeType?: string | null;
+  contentWarning?: string | null;
+  ageRestricted?: boolean;
 };
 
-export function LiveShareCard({ share, onJoin, onOpenCommunity, onOpenProfile, onReport, onHideCommunity }: LiveShareCardProps) {
+export type LiveShareCardProps = LiveShareMenuActions & {
+  share: LiveScreenShareSummary & PublisherCardFields;
+  onJoin: (share: LiveScreenShareSummary) => void;
+  following?: boolean;
+  onToggleFollow?: (userId: string) => void | Promise<void>;
+};
+
+function publisherBadgeLabel(badgeType: string | null | undefined): string | null {
+  if (!badgeType) return null;
+  if (badgeType.includes("creator")) return "Creator";
+  if (badgeType.includes("publisher")) return "Publisher";
+  return badgeType;
+}
+
+export function LiveShareCard({
+  share,
+  onJoin,
+  onOpenCommunity,
+  onOpenProfile,
+  onReport,
+  onHideCommunity,
+  following = false,
+  onToggleFollow,
+}: LiveShareCardProps) {
   const [, forceTick] = useState(0);
   const { trigger, menu } = useLiveShareMoreMenu(share, { onOpenCommunity, onOpenProfile, onReport, onHideCommunity });
 
@@ -233,10 +259,12 @@ export function LiveShareCard({ share, onJoin, onOpenCommunity, onOpenProfile, o
   }, [share.status]);
 
   const joinable = share.status === "live" || share.status === "reconnecting";
-  const title = share.title || "Untitled screen share";
+  const title = share.title || "Untitled stream";
   const broadcaster = broadcasterLabel(share);
   const category = share.category.replace(/_/g, " ");
   const duration = formatLiveDuration(share.startedAt);
+  const badge = publisherBadgeLabel(share.publisherBadgeType);
+  const tags = share.tags ?? [];
 
   return (
     <article
@@ -279,37 +307,69 @@ export function LiveShareCard({ share, onJoin, onOpenCommunity, onOpenProfile, o
             <UserAvatar userId={share.broadcasterUserId} displayName={broadcaster} size={26} />
             <span>{broadcaster}</span>
           </button>
+          {badge ? (
+            <span className="live-badge-verified" title={badge} aria-label={badge}>
+              <span aria-hidden="true">✓</span>
+              <span>{badge}</span>
+            </span>
+          ) : null}
           <span className="live-card__more">{trigger}</span>
         </div>
         <div className="live-card__meta">
           <span className="live-card__category">{category}</span>
-          <span className="live-card__meta-sep" aria-hidden="true">
-            ·
-          </span>
-          <button type="button" className="live-card__community" onClick={() => onOpenCommunity(share.communityId, share.channelId)}>
-            {share.communityName}
-          </button>
-          {share.participantCount > 0 ? (
+          {share.languageCode ? (
             <>
               <span className="live-card__meta-sep" aria-hidden="true">
                 ·
               </span>
-              <span className="live-card__participants" title={`${share.participantCount} in call`}>
-                {share.participantCount} in call
+              <span className="live-card__language">{share.languageCode}</span>
+            </>
+          ) : null}
+          {share.communityName ? (
+            <>
+              <span className="live-card__meta-sep" aria-hidden="true">
+                ·
               </span>
+              <button type="button" className="live-card__community" onClick={() => onOpenCommunity(share.communityId, share.channelId)}>
+                {share.communityName}
+              </button>
             </>
           ) : null}
         </div>
-        <button
-          type="button"
-          className="live-card__join"
-          disabled={!joinable}
-          onClick={() => onJoin(share)}
-          aria-label={joinable ? `Watch ${title}` : `${title} is ${JOIN_BUTTON_LABEL[share.status].toLowerCase()}`}
-        >
-          <AppIcon name="play" size="xs" aria-hidden="true" />
-          {joinable ? "Watch" : JOIN_BUTTON_LABEL[share.status]}
-        </button>
+        {tags.length > 0 ? (
+          <ul className="live-card__tags" aria-label="Tags">
+            {tags.slice(0, 4).map((tag) => (
+              <li key={tag}>{tag}</li>
+            ))}
+          </ul>
+        ) : null}
+        {share.ageRestricted || share.contentWarning ? (
+          <p className="live-card__warning" role="note">
+            {share.contentWarning || "Age-restricted content"}
+          </p>
+        ) : null}
+        <div className="live-card__actions">
+          {onToggleFollow ? (
+            <button
+              type="button"
+              className="live-card__follow"
+              aria-pressed={following}
+              onClick={() => void onToggleFollow(share.broadcasterUserId)}
+            >
+              {following ? "Following" : "Follow"}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="live-card__join"
+            disabled={!joinable}
+            onClick={() => onJoin(share)}
+            aria-label={joinable ? `Watch ${title}` : `${title} is ${JOIN_BUTTON_LABEL[share.status].toLowerCase()}`}
+          >
+            <AppIcon name="play" size="xs" aria-hidden="true" />
+            {joinable ? "Watch" : JOIN_BUTTON_LABEL[share.status]}
+          </button>
+        </div>
       </div>
       {menu}
     </article>

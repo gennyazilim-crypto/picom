@@ -11,6 +11,8 @@ export type WebActiveView =
   | "friends"
   | "events"
   | "live"
+  | "publisherApply"
+  | "publisherDashboard"
   | "savedMessages"
   | "discovery"
   | "support"
@@ -105,6 +107,8 @@ export const WEB_ROUTES: readonly WebRouteDefinition[] = [
   { path: "/live-now/:liveSessionId", activeView: "live", note: "Watch workspace — Live Now session id" },
   { path: "/go-live", activeView: "live", note: "Go Live broadcast preparation wizard" },
   { path: "/live/studio/:studioSessionId", activeView: "live", note: "Creator Studio handoff after Go Live" },
+  { path: "/publisher/apply", activeView: "publisherApply", note: "Creator/Publisher application + eligibility" },
+  { path: "/publisher/dashboard", activeView: "publisherDashboard", note: "Approved Creator/Publisher dashboard" },
   { path: "/events", activeView: "events" },
   { path: "/events/create", activeView: "events", note: "Create event wizard intent" },
   { path: "/events/:eventId", activeView: "events", note: "Event detail deep link" },
@@ -173,6 +177,10 @@ export function pathFromActiveView(
       return params.liveSessionId
         ? `/live-now/${encodeSegment(params.liveSessionId)}`
         : "/live";
+    case "publisherApply":
+      return "/publisher/apply";
+    case "publisherDashboard":
+      return "/publisher/dashboard";
     case "savedMessages":
       return "/bookmarks";
     case "mentionFeed":
@@ -300,6 +308,14 @@ export function parseWebPath(pathname: string): ParsedWebPath {
 
   if (segments[0] === "live") {
     return { activeView: "live", params: {}, isAuthRoute: false };
+  }
+
+  if (segments[0] === "publisher" && segments[1] === "apply") {
+    return { activeView: "publisherApply", params: {}, isAuthRoute: false };
+  }
+
+  if (segments[0] === "publisher" && segments[1] === "dashboard") {
+    return { activeView: "publisherDashboard", params: {}, isAuthRoute: false };
   }
 
   if (segments[0] === "events") {

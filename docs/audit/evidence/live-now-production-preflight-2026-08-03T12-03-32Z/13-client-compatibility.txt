@@ -1,0 +1,16 @@
+CLIENT COMPATIBILITY — BLOCKED / INCOMPLETE
+
+Production Desktop/Web versions: NOT DETERMINED (no production release inventory linked to this preflight).
+
+Worktree vs HEAD:
+- Release candidate commit 6c922c09 does not contain untracked Live Now Publisher migrations/UI.
+- Shipping HEAD alone would NOT include staging-tested Live Now product code.
+- Shipping dirty tree without commit is not an approved release candidate.
+
+Compatibility concerns once a real production exists:
+- New RPCs (list_publisher_live_now, schedule reminders, notif modes) require coordinated client or graceful degradation.
+- CTA ctaState optional on older clients if they ignore unknown fields; Go Live publisher gate will deny non-approved broadcasters.
+- Minimum supported client version: NOT DEFINED.
+- Feature flag / staged rollout: NOT CONFIGURED for production Live Now.
+
+status=BLOCKED (dirty tree + no prod target + client version unknown)

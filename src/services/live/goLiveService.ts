@@ -52,6 +52,9 @@ function blob(error: unknown): string {
 function mapError(error: unknown, fallback: GoLiveServiceErrorCode, message: string): GoLiveResult<never> {
   const text = blob(error);
   if (/AUTH_REQUIRED|JWT|not authenticated/i.test(text)) return fail("AUTH_REQUIRED", "Sign in to go live.");
+  if (/PUBLISHER_BROADCAST_NOT_ALLOWED/i.test(text)) {
+    return fail("LIVE_FORBIDDEN", "An approved Creator/Publisher account with an active badge is required to go live.");
+  }
   if (/LIVE_FORBIDDEN|42501/i.test(text)) return fail("LIVE_FORBIDDEN", "You do not have permission to broadcast here.");
   if (/LIVE_SHARE_CONFLICT|23505/i.test(text)) return fail("LIVE_SHARE_CONFLICT", "Another active broadcast is already running.");
   if (/LIVE_CHANNEL_INVALID|22023|VALIDATION/i.test(text)) return fail("LIVE_CHANNEL_INVALID", "Community or channel is invalid for broadcasting.");

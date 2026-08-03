@@ -1,0 +1,12 @@
+
+publisher-thresholds|start=2026-08-03T09:06:11.2864843Z|end=2026-08-03T09:06:11.5641682Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/unit-tests.log
+sql-schema-smoke-run1|start=2026-08-03T09:06:11.5681698Z|end=2026-08-03T09:06:30.7685846Z|exit=1|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/04-fixture-idempotency-run-1.log
+sql-schema-smoke-run2|start=2026-08-03T09:06:35.7770186Z|end=2026-08-03T09:07:12.4283076Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/05-fixture-idempotency-run-2.log
+behavioral-sql|start=2026-08-03T09:10:00.7517344Z|end=2026-08-03T09:10:25.8319000Z|exit=1|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/06-case-04-founder-threshold.log
+jwt-rls|start=2026-08-03T09:10:43.6319253Z|end=2026-08-03T09:11:23.0573905Z|exit=-1073740791|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/09-jwt-rls-runtime.log
+typecheck|start=2026-08-03T09:16:43.6059599Z|end=2026-08-03T09:16:47.6591120Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/11-typecheck.log
+i18n-parity|start=2026-08-03T09:16:47.6821101Z|end=2026-08-03T09:16:48.4869817Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/12-i18n-10-locale-parity.log
+secrets|start=2026-08-03T09:16:48.4889840Z|end=2026-08-03T09:16:48.9926203Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/14-secret-scan.log
+vite-build|start=2026-08-03T09:17:17.0619009Z|end=2026-08-03T09:17:30.9781489Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/13-build-and-desktop-smoke.log
+desktop-smoke|start=2026-08-03T09:17:31.0191745Z|end=2026-08-03T09:17:32.4289901Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/13-build-and-desktop-smoke.log
+npm-build|start=2026-08-03T09:17:32.4309874Z|end=2026-08-03T09:17:44.5068307Z|exit=0|log=docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/13-build-and-desktop-smoke.log

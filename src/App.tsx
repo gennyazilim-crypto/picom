@@ -190,6 +190,8 @@ const LiveWorkspace = lazy(() => import("./components/live/LiveWorkspace").then(
 const LiveWatchWorkspace = lazy(() => import("./components/live/LiveWatchWorkspace").then((m) => ({ default: m.LiveWatchWorkspace })));
 const GoLiveWorkspace = lazy(() => import("./components/live/GoLiveWorkspace").then((m) => ({ default: m.GoLiveWorkspace })));
 const CreatorStudioWorkspace = lazy(() => import("./components/live/CreatorStudioWorkspace").then((m) => ({ default: m.CreatorStudioWorkspace })));
+const PublisherApplicationWorkspace = lazy(() => import("./components/publisher/PublisherApplicationWorkspace").then((m) => ({ default: m.PublisherApplicationWorkspace })));
+const PublisherDashboardWorkspace = lazy(() => import("./components/publisher/PublisherDashboardWorkspace").then((m) => ({ default: m.PublisherDashboardWorkspace })));
 const HelpSupportWorkspace = lazy(() => import("./components/support/HelpSupportWorkspace").then((module) => ({ default: module.HelpSupportWorkspace })));
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
@@ -264,7 +266,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "live" | "support" | "rootPanel";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "live" | "support" | "rootPanel" | "publisherApply" | "publisherDashboard";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
   return communityNavigationService.getShellView(kind);
@@ -4348,6 +4350,25 @@ export function App() {
               }}
             />
             </DeferredViewBoundary>
+          ) : activeView === "publisherApply" ? (
+            <DeferredViewBoundary label="Opening Creator Publisher application">
+              <PublisherApplicationWorkspace
+                onClose={() => setActiveView("mentionFeed")}
+                onOpenDashboard={() => setActiveView("publisherDashboard")}
+              />
+            </DeferredViewBoundary>
+          ) : activeView === "publisherDashboard" ? (
+            <DeferredViewBoundary label="Opening Publisher Dashboard">
+              <PublisherDashboardWorkspace
+                onClose={() => setActiveView("mentionFeed")}
+                onOpenApplication={() => setActiveView("publisherApply")}
+                onGoLive={() => {
+                  setGoLiveOpen(true);
+                  setActiveView("live");
+                  webNavigation?.navigate("/go-live");
+                }}
+              />
+            </DeferredViewBoundary>
           ) : activeView === "live" ? (
             <DeferredViewBoundary label={(webNavigation?.parsed.params.studioSessionId || creatorStudioSessionId) ? "Opening Creator Studio" : (webNavigation?.parsed.params.goLive || goLiveOpen) ? "Opening Go Live" : (webNavigation?.parsed.params.liveSessionId || liveWatchSessionId) ? "Opening Watch" : "Opening Live"}>
               {(webNavigation?.parsed.params.studioSessionId || creatorStudioSessionId) ? (
@@ -4426,10 +4447,19 @@ export function App() {
                 onToggleFollow={(userId) => void toggleFollowUser(userId)}
                 onBrowseCommunities={() => setActiveView("discovery")}
                 onFindFriends={() => setActiveView("friends")}
+                onDiscoverPublishers={() => setActiveView("friends")}
                 onOpenGoLive={() => {
                   setGoLiveOpen(true);
                   setActiveView("live");
                   webNavigation?.navigate("/go-live");
+                }}
+                onOpenPublisherApply={() => {
+                  setActiveView("publisherApply");
+                  webNavigation?.navigate("/publisher/apply");
+                }}
+                onOpenPublisherDashboard={() => {
+                  setActiveView("publisherDashboard");
+                  webNavigation?.navigate("/publisher/dashboard");
                 }}
                 onOpenCommunity={(communityId, channelId) => {
                   openCommunityFromRail(communityId);
@@ -5027,7 +5057,7 @@ export function App() {
           pushToast("Channel deleted.", "success");
         }}
       /> : null}
-      {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} appearanceSettings={appearanceSettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onAppearanceSettingsChange={(next) => { setAppearanceSettings(next); setTheme(appearanceService.resolveTheme(next.themeMode)); }} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} onLogout={handleLogout} currentUsername={currentUser.username} currentEmail={authSession?.user?.email} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} onOpenPanel={openRootPanel} /></Suspense> : null}
+      {settingsOpen ? <Suspense fallback={null}><SettingsModal theme={theme} accessibilitySettings={accessibilitySettings} appearanceSettings={appearanceSettings} profileSettings={profileSettings} communities={communities} onThemeChange={setTheme} onAccessibilitySettingsChange={setAccessibilitySettings} onAppearanceSettingsChange={(next) => { setAppearanceSettings(next); setTheme(appearanceService.resolveTheme(next.themeMode)); }} onProfileSettingsChange={setProfileSettings} onClose={closeSettings} pushToast={pushToast} onAccountDeletionRequested={() => { closeSettings(); void handleLogout(); }} onLogout={handleLogout} currentUsername={currentUser.username} currentEmail={authSession?.user?.email} ownedCommunityCount={communities.filter((community) => community.ownerId === currentUser.userId).length} currentEmailVerifiedAt={authSession?.user?.emailVerifiedAt} requireEmailVerification={appConfig.supabase.requireEmailVerification} developerPortalContext={{ communityId: displayedActiveCommunity.id, communityName: displayedActiveCommunity.name, ownerId: displayedActiveCommunity.ownerId ?? currentUser.userId, canManageBots: communityAccess.permissions.includes("manageCommunity"), canManageWebhooks: communityAccess.permissions.includes("manageChannels") }} onOpenPanel={openRootPanel} onOpenPublisherApply={() => { closeSettings(); setActiveView("publisherApply"); webNavigation?.navigate("/publisher/apply"); }} onOpenPublisherDashboard={() => { closeSettings(); setActiveView("publisherDashboard"); webNavigation?.navigate("/publisher/dashboard"); }} /></Suspense> : null}
       {reportTarget ? <ReportModal target={reportTarget} reporterId={currentUser.userId} onClose={() => setReportTarget(null)} onResult={(message, ok) => pushToast(message, ok ? "success" : "error")} /> : null}
       {memberModerationTarget ? <MemberModerationModal
         member={memberModerationTarget.member}

@@ -1,0 +1,6 @@
+﻿utc=2026-08-03T12-18-30Z
+branch=feat/community-rebuild
+base_head_before_commit=6c922c093022d5738d94ce864339764901cdbf62
+scope=Live Now Publisher/Creator Phase 1 staging-tested release freeze
+excluded=FeedRightActivityRail and other unrelated WIP retained in stash@{0}
+migrations=20260803130000..20260803172000 (8 files)

@@ -1,0 +1,21 @@
+DATA / PERFORMANCE IMPACT — NOT MEASURED on production
+
+No production COUNT(*) / metadata queries run (no production target).
+
+Staging-only scale is irrelevant for production approval.
+
+Static risk notes for future apply of Live Now chain (not authorization to run):
+- 20260803172000: ALTER prefs check constraint + UPDATE remaps modes; CREATE TABLE reminders; CREATE OR REPLACE fanout function — prefer maintenance window; watch lock on live_broadcaster_notification_prefs
+- Index creates are non-CONCURRENTLY in migration text — evaluate CONCURRENTLY for large tables if needed later
+- Full-table backfill: limited mode remap UPDATE (size unknown on prod)
+- Worker must not start publisher claim until migration applied (else RPC missing errors)
+- Suggested future order (DO NOT EXECUTE in this task):
+  1) worker pause
+  2) migration
+  3) schema verification
+  4) backend/web deploy
+  5) worker deploy/restart
+  6) worker resume
+  7) production smoke
+
+status=BLOCKED_PRECONDITION

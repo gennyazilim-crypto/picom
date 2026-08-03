@@ -4,6 +4,7 @@ import { screenCaptureService, type ScreenCaptureSource } from "../../services/s
 import { goLiveService, type GoLiveTarget } from "../../services/live/goLiveService";
 import { broadcasterChannelService } from "../../services/live/broadcasterChannelService";
 import { attachLiveScreenShareSession } from "../../services/live/liveScreenShareRegistry";
+import { publisherProgramService } from "../../services/publisher/publisherProgramService";
 import { voiceService } from "../../services/voiceService";
 import { loggingService } from "../../services/loggingService";
 import {
@@ -416,6 +417,7 @@ export function GoLiveWorkspace({
     const checks = evaluateGoLivePreflight({
       authenticated: Boolean(currentUserId),
       canPublishScreen: draft.canPublishScreen,
+      publisherBroadcastAllowed: null,
       hasCommunityChannel: Boolean(draft.communityId && draft.channelId),
       hasActiveSource: Boolean(draft.sourceId),
       sourceEnded,
@@ -427,7 +429,27 @@ export function GoLiveWorkspace({
     });
     setPreflight(checks);
 
-    if (!draft.communityId || !draft.channelId) return;
+    const publisherGate = await publisherProgramService.canStartLiveStream();
+    const publisherBroadcastAllowed = publisherGate.ok ? Boolean(publisherGate.data.allowed) : false;
+
+    if (!draft.communityId || !draft.channelId) {
+      setPreflight(
+        evaluateGoLivePreflight({
+          authenticated: Boolean(currentUserId),
+          canPublishScreen: draft.canPublishScreen,
+          publisherBroadcastAllowed,
+          hasCommunityChannel: false,
+          hasActiveSource: Boolean(draft.sourceId),
+          sourceEnded,
+          microphoneDesired: draft.microphoneEnabled,
+          microphoneReady: draft.microphoneEnabled ? null : true,
+          networkOnline: typeof navigator === "undefined" ? true : navigator.onLine,
+          livekitReachable: null,
+          conflict: false,
+        }),
+      );
+      return;
+    }
     const probe = await voiceService.requestToken({
       communityId: draft.communityId,
       channelId: draft.channelId,
@@ -437,6 +459,7 @@ export function GoLiveWorkspace({
       evaluateGoLivePreflight({
         authenticated: Boolean(currentUserId),
         canPublishScreen: draft.canPublishScreen && (probe.ok ? probe.data.canPublishScreen : false),
+        publisherBroadcastAllowed,
         hasCommunityChannel: Boolean(draft.communityId && draft.channelId),
         hasActiveSource: Boolean(draft.sourceId),
         sourceEnded,

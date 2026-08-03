@@ -1,0 +1,10 @@
+﻿utc=08/03/2026 13:16:48.ToUniversalTime().ToString('o')
+project_ref=ufmtvqtsklqsmqxefbbs
+script=scripts/publisher-live-now-jwt-rls-revocation-smoke.mjs
+migration_fix=20260803171000_live_now_badge_realtime_revocation.sql
+prior_run_fail_realtime=docs/audit/evidence/live-now-jwt-rls-revocation-2026-08-03T11-05-42-669Z
+final_pass=27
+final_fail=0
+final_exit=0
+case04_untouched=true
+case18_untouched=true

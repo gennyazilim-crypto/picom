@@ -1,0 +1,31 @@
+---
+description: PICOM canonical database is Supabase Postgres — do not use Neon as app DB
+alwaysApply: true
+---
+
+# PICOM database source of truth
+
+PICOM’s canonical data platform is **Supabase**, not Neon.
+
+Even if the Neon Postgres MCP plugin is installed and authenticated:
+
+- Do **not** create production or staging schemas on Neon for PICOM.
+- Do **not** apply Supabase migrations to Neon.
+- Do **not** change `DATABASE_URL` or app Supabase connection settings to Neon.
+- Do **not** migrate Auth, community, DM, events, Live Now, storage, or audit data to Neon.
+- Do **not** set up dual-write between Neon and Supabase.
+- Do **not** create a Neon project, branch, or database without **explicit user approval**.
+- Do **not** run destructive Neon operations for PICOM.
+
+Neon may be used **only** when the user explicitly requests a separate test, benchmark, or migration-sandbox task.
+
+## Prefer for PICOM work
+
+- Supabase Postgres
+- Supabase Auth
+- Supabase RLS
+- Supabase Realtime
+- Supabase Storage
+- Supabase Edge Functions
+
+For schema inspection, SQL, migrations, and security work, use the existing Supabase project first.

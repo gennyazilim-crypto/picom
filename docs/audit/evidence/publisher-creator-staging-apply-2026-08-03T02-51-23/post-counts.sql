@@ -1,0 +1,1 @@
+﻿select (select count(*) from public.publisher_applications) as apps, (select count(*) from public.publisher_badges) as badges, (select count(*) from public.publisher_profiles) as profiles, (select count(*) from public.community_live_screen_sessions) as live_sessions;

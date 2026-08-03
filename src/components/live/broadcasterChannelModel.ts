@@ -10,17 +10,29 @@ export const BROADCASTER_CHANNEL_TABS: readonly BroadcasterChannelTabId[] = [
 ];
 
 export type LiveBroadcastNotificationMode =
-  | "all"
+  | "all_live"
   | "scheduled_only"
-  | "community_member_only"
+  | "important_only"
   | "off";
 
 export const LIVE_BROADCAST_NOTIFICATION_MODES: readonly LiveBroadcastNotificationMode[] = [
-  "all",
+  "all_live",
   "scheduled_only",
-  "community_member_only",
+  "important_only",
   "off",
 ];
+
+export function normalizeLiveBroadcastNotificationMode(
+  raw: string | null | undefined,
+): LiveBroadcastNotificationMode {
+  const mode = String(raw ?? "").trim().toLowerCase();
+  if (mode === "all") return "all_live";
+  if (mode === "community_member_only") return "important_only";
+  if ((LIVE_BROADCAST_NOTIFICATION_MODES as readonly string[]).includes(mode)) {
+    return mode as LiveBroadcastNotificationMode;
+  }
+  return "all_live";
+}
 
 export type BroadcasterLiveHero = Readonly<{
   sessionId: string;
@@ -131,13 +143,13 @@ export function buildProfileChannelPath(username: string, tab?: BroadcasterChann
 export function liveNotificationModeLabel(mode: LiveBroadcastNotificationMode): string {
   switch (mode) {
     case "scheduled_only":
-      return "Scheduled streams only";
-    case "community_member_only":
-      return "Communities I belong to";
+      return "Scheduled only";
+    case "important_only":
+      return "Important only";
     case "off":
-      return "Notifications off";
+      return "Off";
     default:
-      return "All streams";
+      return "All live streams";
   }
 }
 

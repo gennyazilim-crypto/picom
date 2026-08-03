@@ -1,0 +1,9 @@
+﻿# Migration history verification — staging ufmtvqtsklqsmqxefbbs
+Sources: migration list, schema_migrations, pg_catalog
+
+20260803130000 | list=YES | schema_migrations=YES | PASS
+20260803140000 | list=YES | schema_migrations=YES | PASS (publisher tables RLS=true)
+20260803141000 | list=YES | schema_migrations=YES | PASS (no history gap; do not re-run)
+20260803150000 | list=YES | schema_migrations=YES | PASS (list/count_publisher_live_now present)
+
+Drift: none. No repair migration required.

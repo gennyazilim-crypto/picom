@@ -2,7 +2,7 @@
  * Pure preference evaluation for live-start fan-out (mirrors SQL rules).
  * Server remains source of truth; this is for unit coverage of documented policy.
  */
-export type LiveStartPrefMode = "all" | "scheduled_only" | "community_member_only" | "off";
+export type LiveStartPrefMode = "all_live" | "scheduled_only" | "important_only" | "off";
 
 export type LiveStartFanoutCandidate = Readonly<{
   preferenceMode: LiveStartPrefMode | null;
@@ -16,10 +16,20 @@ export type LiveStartFanoutCandidate = Readonly<{
 }>;
 
 /** Documented default when no preference row exists. */
-export const LIVE_START_PREF_DEFAULT: LiveStartPrefMode = "all";
+export const LIVE_START_PREF_DEFAULT: LiveStartPrefMode = "all_live";
+
+export function normalizeLiveStartPreferenceMode(raw: string | null | undefined): LiveStartPrefMode {
+  const mode = String(raw ?? "").trim().toLowerCase();
+  if (mode === "all") return "all_live";
+  if (mode === "community_member_only") return "important_only";
+  if (mode === "all_live" || mode === "scheduled_only" || mode === "important_only" || mode === "off") {
+    return mode;
+  }
+  return LIVE_START_PREF_DEFAULT;
+}
 
 export function resolveLiveStartPreferenceMode(mode: LiveStartPrefMode | null | undefined): LiveStartPrefMode {
-  if (mode === "all" || mode === "scheduled_only" || mode === "community_member_only" || mode === "off") {
+  if (mode === "all_live" || mode === "scheduled_only" || mode === "important_only" || mode === "off") {
     return mode;
   }
   return LIVE_START_PREF_DEFAULT;
@@ -35,7 +45,7 @@ export function shouldDeliverLiveStartNotification(candidate: LiveStartFanoutCan
   const mode = resolveLiveStartPreferenceMode(candidate.preferenceMode);
   if (mode === "off") return false;
   if (mode === "scheduled_only" && !candidate.hasLinkedOrMatchingSchedule) return false;
-  if (mode === "community_member_only" && !candidate.isCommunityMember) return false;
+  if (mode === "important_only" && !candidate.isCommunityMember) return false;
   return true;
 }
 

@@ -1209,7 +1209,10 @@ export const voiceService = {
     if(!room||room.state===ConnectionState.Disconnected)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Join the meeting before sending a signal."}};
     if(room.localParticipant.permissions?.canPublishData===false)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Live hand and reaction signals need a refreshed voice session. Leave and rejoin the room."}};
     if(!/^[a-z0-9._-]{1,80}$/i.test(topic)||payload.byteLength<1||payload.byteLength>16_384)return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"The meeting signal payload is invalid."}};
-    try{await room.localParticipant.publishData(payload,{reliable,topic});return{ok:true,data:undefined}}catch{return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Picom could not send the meeting signal."}}}
+    // LiveKit publishData expects Uint8Array<ArrayBuffer>; copy avoids ArrayBufferLike / SharedArrayBuffer mismatch.
+    const publishable = new Uint8Array(payload.byteLength);
+    publishable.set(payload);
+    try{await room.localParticipant.publishData(publishable,{reliable,topic});return{ok:true,data:undefined}}catch{return{ok:false,error:{code:"VOICE_DATA_UNAVAILABLE",message:"Picom could not send the meeting signal."}}}
   },
 
   getDiagnosticsSummary(): VoiceSessionDiagnosticsSummary {

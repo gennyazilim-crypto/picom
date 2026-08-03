@@ -1,0 +1,23 @@
+RPC / FUNCTION COMPATIBILITY — NOT EXECUTED against production
+
+Skipped because production target unverified.
+
+Repository-expected Live Now / Publisher RPCs (for future prod compare):
+- get_publisher_application_eligibility
+- submit_publisher_creator_application
+- review / approve paths (list_publisher_application_reviews + review RPC)
+- can_start_picom_live_stream / user_can_broadcast_on_picom_live
+- LiveKit broadcast gate (20260803141000)
+- start community live broadcast (go-live chain)
+- list_publisher_live_now / count_publisher_live_now / count_publisher_live_now_by_category
+- list_upcoming_publisher_schedules
+- set_publisher_stream_schedule_reminder / list_my_publisher_stream_schedule_reminders / claim_publisher_stream_schedule_reminders
+- upsert_live_broadcaster_notification_pref
+- get_own_publisher_program_state (ctaState)
+- fanout_live_broadcast_started / normalize_live_broadcaster_notif_mode
+
+Client/worktree notes (not production proof):
+- Dirty uncommitted clients depend on new modes all_live/important_only and reminder RPCs.
+- Old packaged Desktop without these RPCs would fail reminder/pref UI paths once deployed without coordinated client release.
+
+status=BLOCKED_PRECONDITION

@@ -12,6 +12,8 @@ import "./BroadcasterChannelView.css";
 import { dateTimeService } from "../../services/dateTimeService";
 import { broadcasterChannelService } from "../../services/live/broadcasterChannelService";
 import { downloadIcsFile } from "../../features/events/utils/eventIcs";
+import { localizationService } from "../../services/localizationService";
+import { translateLiveNow, type LiveNowI18nKey } from "../../services/localization/liveNowCatalog";
 import {
   BROADCASTER_CHANNEL_TABS,
   LIVE_SCHEDULE_CATEGORIES,
@@ -25,13 +27,29 @@ import {
   type LiveScheduleFormInput,
   broadcasterChannelTabLabel,
   formatLiveDuration,
-  liveNotificationModeLabel,
   parseBroadcasterChannelTab,
   scheduleBucket,
   scheduleItemToUpcomingEvent,
   shouldShowLiveHero,
   validateLiveScheduleForm,
 } from "./broadcasterChannelModel";
+
+function t(key: LiveNowI18nKey): string {
+  return translateLiveNow(key, localizationService.getLanguage());
+}
+
+function notificationModeLabel(mode: LiveBroadcastNotificationMode): string {
+  switch (mode) {
+    case "scheduled_only":
+      return t("live.now.card.notifyScheduledOnly");
+    case "important_only":
+      return t("live.now.card.notifyImportantOnly");
+    case "off":
+      return t("live.now.card.notifyOff");
+    default:
+      return t("live.now.card.notifyAllLive");
+  }
+}
 
 export type BroadcasterChannelViewProps = {
   profile: UserProfile;
@@ -529,11 +547,13 @@ function AboutPanel({
   channelRules,
   categories,
   socialLinks,
+  privacyLocked = false,
 }: {
   profile: UserProfile;
   channelRules: string;
   categories: string[];
   socialLinks: ReadonlyArray<{ label: string; url: string }>;
+  privacyLocked?: boolean;
 }) {
   return (
     <div className="bc-about-stack">
@@ -541,18 +561,23 @@ function AboutPanel({
         <header className="profile-panel-header profile-panel-header--compact">
           <h2>About</h2>
         </header>
+        {privacyLocked ? (
+          <p className="bc-muted" role="status">
+            This person shares a limited profile. Home, live, and schedule sections are only available to their selected audience.
+          </p>
+        ) : null}
         {profile.bio.trim() ? <p className="profile-bio-copy">{profile.bio}</p> : <p className="bc-muted">No bio yet.</p>}
         <dl className="bc-about-facts">
           <div>
             <dt>Language</dt>
-            <dd>{profile.preferredLanguage ?? "Not shared"}</dd>
+            <dd>{privacyLocked ? "Not shared" : (profile.preferredLanguage ?? "Not shared")}</dd>
           </div>
           <div>
             <dt>Joined</dt>
-            <dd>{dateTimeService.formatCompactDateTime(profile.joinedAt)}</dd>
+            <dd>{privacyLocked || !profile.joinedAt ? "Not shared" : dateTimeService.formatCompactDateTime(profile.joinedAt)}</dd>
           </div>
         </dl>
-        {categories.length ? (
+        {!privacyLocked && categories.length ? (
           <div className="profile-tag-cloud" aria-label="Primary categories">
             {categories.map((tag) => (
               <span key={tag} className="profile-tag">{tag}</span>
@@ -560,7 +585,7 @@ function AboutPanel({
           </div>
         ) : null}
       </section>
-      {channelRules ? (
+      {!privacyLocked && channelRules ? (
         <section className="profile-panel">
           <header className="profile-panel-header profile-panel-header--compact">
             <h2>Channel rules</h2>
@@ -568,7 +593,7 @@ function AboutPanel({
           <p className="profile-bio-copy bc-rules">{channelRules}</p>
         </section>
       ) : null}
-      {socialLinks.length ? (
+      {!privacyLocked && socialLinks.length ? (
         <section className="profile-panel">
           <header className="profile-panel-header profile-panel-header--compact">
             <h2>Links</h2>
@@ -604,22 +629,46 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
   } = props;
 
   const isCurrentUser = profile.isCurrentUser ?? profile.id === currentUserId;
+  const privacyLocked = Boolean(profile.privacyRestricted) && !isCurrentUser;
+  const visibleTabs = privacyLocked
+    ? (["about"] as const satisfies readonly BroadcasterChannelTabId[])
+    : BROADCASTER_CHANNEL_TABS;
   const tabsId = useId();
-  const [tab, setTab] = useState<BroadcasterChannelTabId>(() => parseBroadcasterChannelTab(initialTab));
+  const [tab, setTab] = useState<BroadcasterChannelTabId>(() => {
+    const initial = parseBroadcasterChannelTab(initialTab);
+    return privacyLocked ? "about" : initial;
+  });
   const [live, setLive] = useState<BroadcasterLiveHero | null>(null);
   const [schedule, setSchedule] = useState<BroadcasterScheduleItem[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [notifMode, setNotifMode] = useState<LiveBroadcastNotificationMode>("all");
+  const [notifMode, setNotifMode] = useState<LiveBroadcastNotificationMode>("all_live");
   const [channelRules, setChannelRules] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [socialLinks, setSocialLinks] = useState<ReadonlyArray<{ label: string; url: string }>>([]);
 
   useEffect(() => {
-    setTab(parseBroadcasterChannelTab(initialTab));
-  }, [initialTab, profile.id]);
+    const initial = parseBroadcasterChannelTab(initialTab);
+    setTab(privacyLocked ? "about" : initial);
+  }, [initialTab, profile.id, privacyLocked]);
 
   useEffect(() => {
+    if (!privacyLocked || tab === "about") return;
+    setTab("about");
+    onTabChange?.("about");
+  }, [privacyLocked, tab, onTabChange]);
+
+  useEffect(() => {
+    if (privacyLocked) {
+      setLive(null);
+      setSchedule([]);
+      setScheduleLoading(false);
+      setScheduleError(null);
+      setChannelRules("");
+      setCategories([]);
+      setSocialLinks([]);
+      return;
+    }
     let active = true;
     const load = async () => {
       setScheduleLoading(true);
@@ -668,9 +717,10 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
       unsubscribeLive();
       unsubscribeSchedule();
     };
-  }, [profile.id, isCurrentUser, isBlocked]);
+  }, [profile.id, isCurrentUser, isBlocked, privacyLocked]);
 
   const selectTab = (next: BroadcasterChannelTabId) => {
+    if (privacyLocked && next !== "about") return;
     setTab(next);
     onTabChange?.(next);
   };
@@ -706,7 +756,7 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
     />
   );
 
-  const showLive = shouldShowLiveHero(live);
+  const showLive = !privacyLocked && shouldShowLiveHero(live);
 
   return (
     <main className="profile-view bc-channel-view" aria-label={`${profile.displayName} channel`}>
@@ -731,10 +781,16 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
           <div className="bc-channel-chrome">
             <div className="bc-channel-chrome__row">
               <div className="bc-channel-chrome__title">
-                <strong>{showLive ? "Live now" : "Channel"}</strong>
-                <span>{showLive ? "Viewers can join from this page" : "Broadcast tools and channel sections"}</span>
+                <strong>{privacyLocked ? "About" : showLive ? "Live now" : "Channel"}</strong>
+                <span>
+                  {privacyLocked
+                    ? "This profile is limited. Only About is available."
+                    : showLive
+                      ? "Viewers can join from this page"
+                      : "Broadcast tools and channel sections"}
+                </span>
               </div>
-              {isCurrentUser ? (
+              {privacyLocked ? null : isCurrentUser ? (
                 <div className="bc-owner-actions" role="group" aria-label="Channel owner actions">
                   {onGoLive ? (
                     <button type="button" className="profile-btn profile-btn--primary" onClick={() => onGoLive()}>
@@ -757,9 +813,9 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
                         value={notifMode}
                         onChange={(event) => onNotificationChange(event.target.value as LiveBroadcastNotificationMode)}
                       >
-                        {(["all", "scheduled_only", "community_member_only", "off"] as const).map((mode) => (
+                        {(["all_live", "scheduled_only", "important_only", "off"] as const).map((mode) => (
                           <option key={mode} value={mode}>
-                            {liveNotificationModeLabel(mode)}
+                            {notificationModeLabel(mode)}
                           </option>
                         ))}
                       </select>
@@ -770,7 +826,7 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
             </div>
 
             <div className="bc-tabs" role="tablist" aria-label="Channel sections">
-              {BROADCASTER_CHANNEL_TABS.map((candidate) => {
+              {visibleTabs.map((candidate) => {
                 const selected = tab === candidate;
                 return (
                   <button
@@ -796,7 +852,7 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
             aria-labelledby={`${tabsId}-${tab}`}
             className="bc-tab-panel"
           >
-            {tab === "home" ? (
+            {!privacyLocked && tab === "home" ? (
               <div className="bc-home-stack">
                 {showLive ? null : (
                   <section className="bc-offline-banner" aria-label="Channel offline">
@@ -822,7 +878,7 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
                 />
                 <div className="bc-profile-sections">
                   <ProfileMainPanel
-                    profile={{ ...profile, bio: "", activities: profile.activities, media: profile.media }}
+                    profile={profile}
                     communities={communities}
                     currentUserId={currentUserId}
                     dataState={rest.dataState}
@@ -837,7 +893,7 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
               </div>
             ) : null}
 
-            {tab === "live" ? (
+            {!privacyLocked && tab === "live" ? (
               showLive ? (
                 <section className="profile-panel" aria-label="Live stream details">
                   <header className="profile-panel-header profile-panel-header--compact">
@@ -864,14 +920,15 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
               )
             ) : null}
 
-            {tab === "schedule" ? schedulePanel : null}
+            {!privacyLocked && tab === "schedule" ? schedulePanel : null}
 
-            {tab === "about" ? (
+            {tab === "about" || privacyLocked ? (
               <AboutPanel
                 profile={profile}
-                channelRules={channelRules}
-                categories={categories}
-                socialLinks={socialLinks}
+                channelRules={privacyLocked ? "" : channelRules}
+                categories={privacyLocked ? [] : categories}
+                socialLinks={privacyLocked ? [] : socialLinks}
+                privacyLocked={privacyLocked}
               />
             ) : null}
           </div>

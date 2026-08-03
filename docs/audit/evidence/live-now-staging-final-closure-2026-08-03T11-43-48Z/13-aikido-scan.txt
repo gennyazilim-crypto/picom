@@ -1,0 +1,6 @@
+AIKIDO_FULL_SCAN=PARTIAL_TOOLING
+opengrep_findings=0
+checkov=ENOENT (local aikido-mcp checkov missing)
+scanned=liveBroadcastFanoutPolicy.ts,event-reminder-worker/index.mjs (representative first-party closure files)
+runtime_secrets_smoke=PASS
+evidence_secret_scan=PASS

@@ -1,0 +1,10 @@
+UTC=2026-08-03T10:35:27.6951713Z
+project_ref=ufmtvqtsklqsmqxefbbs
+environment=staging (picom-staging)
+task=Case 18 Approved Stream Discovery Closure
+case04_untouched=true
+migration_forward_fix=20260803170000_live_now_discovery_badge_join_dedupe.sql
+smoke_script=scripts/publisher-live-now-case18-discovery-sql-smoke.sql
+run1=23 PASS / 0 FAIL
+run2=23 PASS / 0 FAIL
+pass_definition=list_publisher_live_now returns fixture stream id

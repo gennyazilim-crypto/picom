@@ -6,7 +6,7 @@ import {
   type BroadcasterLiveHero,
   type BroadcasterScheduleItem,
   type LiveBroadcastNotificationMode,
-  LIVE_BROADCAST_NOTIFICATION_MODES,
+  normalizeLiveBroadcastNotificationMode,
   sanitizeChannelRules,
   sanitizeSocialLinks,
 } from "../../components/live/broadcasterChannelModel";
@@ -208,11 +208,7 @@ export async function getLiveBroadcasterNotificationMode(
     .eq("broadcaster_user_id", broadcasterUserId)
     .maybeSingle();
   if (error) return { ok: false, error: error.message || "Could not load notification preference." };
-  const mode = String((data as { mode?: string } | null)?.mode ?? "all");
-  if ((LIVE_BROADCAST_NOTIFICATION_MODES as readonly string[]).includes(mode)) {
-    return { ok: true, data: mode as LiveBroadcastNotificationMode };
-  }
-  return { ok: true, data: "all" };
+  return { ok: true, data: normalizeLiveBroadcastNotificationMode((data as { mode?: string } | null)?.mode) };
 }
 
 export async function setLiveBroadcasterNotificationMode(
@@ -229,13 +225,8 @@ export async function setLiveBroadcasterNotificationMode(
     if (error?.code === "42501") return { ok: false, error: "Notification preference denied." };
     return { ok: false, error: error?.message || "Could not save notification preference." };
   }
-  const next = String((data as { mode?: string }).mode ?? mode);
-  return {
-    ok: true,
-    data: ((LIVE_BROADCAST_NOTIFICATION_MODES as readonly string[]).includes(next)
-      ? next
-      : mode) as LiveBroadcastNotificationMode,
-  };
+  const next = normalizeLiveBroadcastNotificationMode((data as { mode?: string }).mode ?? mode);
+  return { ok: true, data: next };
 }
 
 export async function loadChannelExtras(userId: string): Promise<ServiceResult<{

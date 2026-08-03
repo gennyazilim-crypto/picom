@@ -1,0 +1,18 @@
+WORKER / OUTBOX PREFLIGHT — NOT VERIFIED for production
+
+Repository worker code (dirty/untracked tree):
+- services/event-reminder-worker/index.mjs claims claim_event_reminders AND claim_publisher_stream_schedule_reminders
+- Pattern matches staging-validated claim_* + SKIP LOCKED + cancel/disable handling
+
+Production runtime checks NOT performed:
+- worker process running?
+- email/notification worker health
+- deployment Git SHA
+- elevated DB credential access on production hosts
+- poll interval / retry / DLQ
+- secrets presence on production hosts
+
+Cannot approve production deploy while worker production target/version unknown.
+
+status=BLOCKED_PRECONDITION
+secrets_logged=NO

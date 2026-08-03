@@ -1,0 +1,5 @@
+﻿aikido_full_scan=INVOKED
+issues=0
+sast_note=opengrep exit 2 / git-tracked limit on untracked new files; secrets smoke PASS independently
+iac_note=checkov ENOENT on local aikido-mcp
+carry_forward=staging-final-closure aikido batch also PASS

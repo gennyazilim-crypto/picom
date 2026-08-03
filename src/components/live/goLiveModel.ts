@@ -250,6 +250,7 @@ export function reduceGoLiveStartPhase(
 export function evaluateGoLivePreflight(input: Readonly<{
   authenticated: boolean;
   canPublishScreen: boolean;
+  publisherBroadcastAllowed: boolean | null;
   hasCommunityChannel: boolean;
   hasActiveSource: boolean;
   sourceEnded: boolean;
@@ -265,6 +266,20 @@ export function evaluateGoLivePreflight(input: Readonly<{
       label: "Signed in",
       status: input.authenticated ? "passed" : "failed",
       detail: input.authenticated ? "Session is valid." : "Sign in to go live.",
+    },
+    {
+      id: "publisher",
+      label: "Creator/Publisher authorization",
+      status: input.publisherBroadcastAllowed === null
+        ? "checking"
+        : input.publisherBroadcastAllowed
+          ? "passed"
+          : "failed",
+      detail: input.publisherBroadcastAllowed === null
+        ? "Checking Creator/Publisher eligibility…"
+        : input.publisherBroadcastAllowed
+          ? "Approved Creator/Publisher with active badge."
+          : "Approved Creator/Publisher account with an active badge is required.",
     },
     {
       id: "context",

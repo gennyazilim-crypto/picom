@@ -1,0 +1,32 @@
+STATIC MIGRATION REVIEW — 2026-08-03T02:51Z
+project_ref=ufmtvqtsklqsmqxefbbs (staging)
+
+Files (exact):
+1. 20260803140000_publisher_creator_program_core.sql
+2. 20260803141000_publisher_livekit_broadcast_gate.sql
+
+Also pending ahead of publisher (required for sequential history):
+0. 20260803130000_public_platform_stats.sql
+   - Additive platform stats tables/RPC; RLS enabled; no CASCADE; no data deletes
+   - Will be applied by db push before publisher migrations
+
+Order OK: 140000 creates user_can_broadcast_on_picom_live; 141000 wraps authorize_live_broadcast_livekit around it.
+
+DROP FUNCTION signatures (exact):
+- start_community_live_screen_broadcast(uuid,uuid,uuid,text,text,text,text,text,text)
+- start_community_live_screen_broadcast(uuid,uuid,uuid,text,text,text,text,text,text,uuid)
+Pre-migration confirms ONLY the 10-param overload exists on staging — both drops are safe; recreate is gated.
+
+SECURITY DEFINER: search_path = public, pg_temp on reviewed functions.
+Grants: revoke from public/anon; grant execute to authenticated only (no PUBLIC open).
+RLS: enable on all publisher_* tables.
+Policies: drop if exists before create — re-run risk is mostly IF NOT EXISTS / create or replace.
+Destructive: no TRUNCATE/DELETE of product rows; no CASCADE on drops.
+can_list vs can_review: dashboard.read list-only; approve requires publisher.review/root/admin.
+Storage insert: requires open application status in (draft,submitted,under_review,additional_information_required).
+Eligibility: user_follows + communities.owner_id (founder) + active account helpers — canonical tables.
+Approve transition: submitted/under_review/additional_information_required only.
+Idempotency: create table if not exists; create or replace functions; policy drop+create.
+
+CRITICAL_RISKS: none blocking apply
+VERDICT: SAFE_TO_APPLY_STAGING

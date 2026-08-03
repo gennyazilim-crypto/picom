@@ -1,0 +1,18 @@
+git_status_short=DIRTY (hundreds of modified + untracked files; includes Live Now / Publisher migrations and app code)
+branch=feat/community-rebuild
+HEAD=6c922c093022d5738d94ce864339764901cdbf62
+log_1=6c922c09 docs(feed): record clean dependency closure and staging package SHA
+
+staging_closure_evidence=docs/audit/evidence/live-now-staging-final-closure-2026-08-03T11-43-48Z/
+staging_closure_recorded_git_sha=NOT_RECORDED_IN_CLOSURE_EVIDENCE
+related_publisher_staging_apply_sha=6c922c093022d5738d94ce864339764901cdbf62 (dirty tree noted in publisher-creator-staging-apply-2026-08-03T02-51-23)
+
+staging_tested_sha_match=NO
+rationale=
+- Live Now Publisher migrations 20260803130000..20260803172000 are UNTRACKED in git status (?? supabase/migrations/...).
+- Client/service changes (LiveWorkspace, publisherLiveNowService, liveNowCatalog, event-reminder-worker, etc.) are uncommitted (M/??).
+- Staging closure ran against the dirty working tree, not a clean tagged release commit.
+- Therefore release-candidate HEAD (6c922c09) does NOT equal the staging-tested tree content.
+
+production_release_candidate=NOT_READY
+dirty_worktree_policy=PARTIAL/BLOCKED per preflight rules (do not mutate/delete files; evaluate BLOCKED)

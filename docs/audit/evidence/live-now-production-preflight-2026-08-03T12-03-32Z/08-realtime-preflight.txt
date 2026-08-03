@@ -1,0 +1,14 @@
+REALTIME PREFLIGHT — NOT EXECUTED against production
+
+Skipped: production project ref unverified.
+
+Staging migration of interest:
+20260803171000_live_now_badge_realtime_revocation.sql
+- publishes publisher_badges / related profile visibility for revoke UPDATE delivery
+- staging JWT/RLS revocation evidence GO
+
+Production publication membership / replica identity / RLS SELECT widening: NOT_CHECKED
+
+Conflict assessment vs production current state: NOT_EVALUATED
+
+status=BLOCKED_PRECONDITION

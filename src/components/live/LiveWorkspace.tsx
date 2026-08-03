@@ -1,42 +1,66 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LiveScreenShareCategory, LiveScreenShareFilter, LiveScreenShareSort, LiveScreenShareSummary } from "../../types/liveScreenShare";
-import { liveScreenShareService } from "../../services/live/liveScreenShareService";
+import type { LiveScreenShareCategory, LiveScreenShareSummary } from "../../types/liveScreenShare";
+import {
+  publisherLiveNowService,
+  type PublisherLiveCategoryCount,
+  type PublisherLiveNowSort,
+  type PublisherLiveNowSummary,
+  type UpcomingPublisherSchedule,
+} from "../../services/live/publisherLiveNowService";
+import { publisherProgramService } from "../../services/publisher/publisherProgramService";
+import {
+  resolveCtaStateFromProgram,
+  resolveLiveNowCtaActions,
+  type LiveNowCtaAction,
+  type LiveNowCtaState,
+} from "../../services/publisher/liveNowCtaState";
+import { localizationService } from "../../services/localizationService";
+import { translateLiveNow, type LiveNowI18nKey } from "../../services/localization/liveNowCatalog";
 import { AppIcon } from "../AppIcon";
 import { LiveCategoryRail } from "./LiveCategoryRail";
 import { LiveDiscoverySection } from "./LiveDiscoverySection";
-import { LiveFeaturedCard, LiveFeaturedEmpty } from "./LiveFeaturedCard";
-import { LiveFeaturedSelector } from "./LiveFeaturedSelector";
+import { LiveFeaturedCard } from "./LiveFeaturedCard";
 import { LiveShareCard, broadcasterLabel } from "./LiveShareCard";
-import { partitionLiveDiscovery } from "./liveDiscoveryModel";
+import { buildCategoryBuckets, isJustStarted } from "./liveDiscoveryModel";
 import { consumeDiscoveryRestoreState, saveDiscoveryRestoreState } from "./liveWatchModel";
 import "./liveWorkspace.css";
 
-const LIST_LIMIT = 60;
+const LIST_LIMIT = 24;
 const REALTIME_RELOAD_DEBOUNCE_MS = 800;
+const STALE_AFTER_MS = 45_000;
 
-type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "error" | "disconnected";
+type ConnectionStatus = "connected" | "reconnecting" | "disconnected" | "stale";
 
-function connectionLabel(status: ConnectionStatus): string {
-  switch (status) {
-    case "connected":
-      return "Synced";
-    case "connecting":
-    case "reconnecting":
-      return "Syncing…";
-    case "error":
-      return "Sync error";
-    case "disconnected":
-    default:
-      return "Offline";
+function t(key: LiveNowI18nKey, vars?: Readonly<Record<string, string>>): string {
+  return translateLiveNow(key, localizationService.getLanguage(), vars);
+}
+
+function ctaLabel(action: LiveNowCtaAction): string {
+  switch (action.kind) {
+    case "link":
+      switch (action.key) {
+        case "requirements":
+          return t("live.now.cta.requirements");
+        case "apply":
+          return t("live.now.cta.apply");
+        case "complete_application":
+          return t("live.now.cta.completeApplication");
+        case "complete_info":
+          return t("live.now.cta.completeInfo");
+        case "dashboard":
+          return t("live.now.cta.dashboard");
+        case "view_decision":
+          return t("live.now.cta.viewDecision");
+      }
+      break;
+    case "go_live":
+      return t("live.now.cta.goLive");
+    case "status_chip":
+      return t("live.now.cta.underReview");
+    case "account_message":
+      return action.key === "suspended" ? t("live.now.cta.suspended") : t("live.now.cta.revoked");
   }
-}
-
-function isLiveFilter(value: string): value is LiveScreenShareFilter {
-  return ["all", "member", "following", "friends_watching", "game", "chat", "education", "watch_together", "other"].includes(value);
-}
-
-function isLiveCategory(value: string | null): value is LiveScreenShareCategory {
-  return value === "game" || value === "chat" || value === "education" || value === "watch_together" || value === "other";
+  return "";
 }
 
 export type LiveWorkspaceProps = Readonly<{
@@ -50,6 +74,10 @@ export type LiveWorkspaceProps = Readonly<{
   onBrowseCommunities?: () => void;
   onFindFriends?: () => void;
   onOpenGoLive?: () => void;
+  onOpenPublisherApply?: () => void;
+  onOpenPublisherDashboard?: () => void;
+  /** Discover publishers / friends surface for empty-state CTA */
+  onDiscoverPublishers?: () => void;
 }>;
 
 export function LiveWorkspace({
@@ -60,24 +88,44 @@ export function LiveWorkspace({
   onOpenCommunity,
   onOpenProfile,
   onNotice,
-  onBrowseCommunities,
   onFindFriends,
   onOpenGoLive,
+  onOpenPublisherApply,
+  onOpenPublisherDashboard,
+  onDiscoverPublishers,
 }: LiveWorkspaceProps) {
   const restored = useMemo(() => consumeDiscoveryRestoreState(), []);
   const [query, setQuery] = useState(restored?.query ?? "");
   const [debouncedQuery, setDebouncedQuery] = useState(restored?.query ?? "");
-  const [filter, setFilter] = useState<LiveScreenShareFilter>(() => (restored && isLiveFilter(restored.filter) ? restored.filter : "all"));
-  const [categoryFilter, setCategoryFilter] = useState<LiveScreenShareCategory | null>(() => (restored && isLiveCategory(restored.categoryFilter) ? restored.categoryFilter : null));
-  const [sort] = useState<LiveScreenShareSort>("recommended");
-  const [shares, setShares] = useState<readonly LiveScreenShareSummary[]>([]);
-  const [memberShares, setMemberShares] = useState<readonly LiveScreenShareSummary[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<LiveScreenShareCategory | null>(
+    restored?.categoryFilter === "game" ||
+      restored?.categoryFilter === "chat" ||
+      restored?.categoryFilter === "education" ||
+      restored?.categoryFilter === "watch_together" ||
+      restored?.categoryFilter === "other"
+      ? restored.categoryFilter
+      : null,
+  );
+  const [languageFilter, setLanguageFilter] = useState("");
+  const [followingOnly, setFollowingOnly] = useState(false);
+  const [sort, setSort] = useState<PublisherLiveNowSort>("viewers");
+  const [shares, setShares] = useState<readonly PublisherLiveNowSummary[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextCursor, setNextCursor] = useState<{ startedAt: string; id: string } | null>(null);
+  const [schedules, setSchedules] = useState<readonly UpcomingPublisherSchedule[]>([]);
+  const [reminderEnabledIds, setReminderEnabledIds] = useState<ReadonlySet<string>>(new Set());
+  const [reminderBusyId, setReminderBusyId] = useState<string | null>(null);
+  const [categoryCounts, setCategoryCounts] = useState<readonly PublisherLiveCategoryCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<{ message: string; safeCode: string; forbidden?: boolean } | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("reconnecting");
   const [reloadToken, setReloadToken] = useState(0);
-  const [featuredOverrideId, setFeaturedOverrideId] = useState<string | null>(restored?.featuredOverrideId ?? null);
+  const [ctaState, setCtaState] = useState<LiveNowCtaState>("threshold_not_met");
+  const [goLiveAllowed, setGoLiveAllowed] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const lastSuccessAtRef = useRef<number>(0);
+  const announcedCountRef = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 250);
@@ -88,81 +136,130 @@ export function LiveWorkspace({
     let active = true;
     setLoading(true);
     setLoadError(null);
+
     void Promise.all([
-      liveScreenShareService.listVisibleLiveShares({ filter, sort, limit: LIST_LIMIT }),
-      liveScreenShareService.listVisibleLiveShares({ filter: "member", sort: "recommended", limit: LIST_LIMIT }),
-    ]).then(([allResult, memberResult]) => {
+      publisherLiveNowService.listPublisherLiveNow({
+        limit: LIST_LIMIT,
+        search: debouncedQuery || null,
+        category: categoryFilter,
+        language: languageFilter || null,
+        followingOnly,
+        sort,
+      }),
+      publisherLiveNowService.listUpcomingSchedules(12),
+      publisherLiveNowService.listMyScheduleReminders(),
+      publisherLiveNowService.listCategoryCounts(),
+      publisherProgramService.getProgramState(),
+      publisherProgramService.canStartLiveStream(),
+    ]).then(([listResult, scheduleResult, reminderResult, categoryResult, programResult, preflightResult]) => {
       if (!active) return;
-      if (allResult.ok) {
-        setShares(allResult.data.items);
-        setConnectionStatus("connected");
-      } else {
+
+      if (!listResult.ok) {
         setShares([]);
-        setLoadError(allResult.error.message);
-        setConnectionStatus(allResult.error.code === "DATA_SOURCE_NOT_CONFIGURED" ? "disconnected" : "error");
+        setTotalCount(0);
+        setNextCursor(null);
+        const forbidden = listResult.error.code === "LIVE_FORBIDDEN";
+        setLoadError({
+          message: listResult.error.message,
+          safeCode: listResult.error.safeCode,
+          forbidden,
+        });
+        setConnectionStatus(listResult.error.code === "DATA_SOURCE_NOT_CONFIGURED" ? "disconnected" : "disconnected");
+      } else {
+        setShares(listResult.data.items);
+        setTotalCount(listResult.data.totalCount);
+        setNextCursor(listResult.data.nextCursor);
+        setLoadError(null);
+        lastSuccessAtRef.current = Date.now();
+        setConnectionStatus("connected");
       }
-      setMemberShares(memberResult.ok ? memberResult.data.items : []);
+
+      setSchedules(scheduleResult.ok ? scheduleResult.data : []);
+      if (reminderResult.ok) {
+        setReminderEnabledIds(
+          new Set(reminderResult.data.filter((row) => row.enabled).map((row) => row.scheduleId)),
+        );
+      }
+      setCategoryCounts(categoryResult.ok ? categoryResult.data : []);
+
+      if (programResult.ok) {
+        setCtaState(resolveCtaStateFromProgram(programResult.data));
+      }
+      setGoLiveAllowed(Boolean(preflightResult.ok && preflightResult.data.allowed));
       setLoading(false);
     });
+
     return () => {
       active = false;
     };
-  }, [filter, sort, reloadToken]);
+  }, [debouncedQuery, categoryFilter, languageFilter, followingOnly, sort, reloadToken]);
 
   useEffect(() => {
     let debounceTimer: number | null = null;
     const triggerReload = () => {
-      setConnectionStatus((current) => (current === "error" || current === "disconnected" ? current : "reconnecting"));
+      setConnectionStatus((current) => (current === "disconnected" ? current : "reconnecting"));
       if (debounceTimer !== null) window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => setReloadToken((value) => value + 1), REALTIME_RELOAD_DEBOUNCE_MS);
     };
-    const unsubscribe = liveScreenShareService.subscribeToVisibleLiveShares(triggerReload);
+    const unsubscribe = publisherLiveNowService.subscribeToPublisherLiveNow(triggerReload);
     return () => {
       if (debounceTimer !== null) window.clearTimeout(debounceTimer);
       unsubscribe();
     };
   }, []);
 
-  const sanitized = useMemo(() => {
-    const normalized = debouncedQuery.toLowerCase();
-    const withoutSelf = shares.map((share) => ({
-      ...share,
-      friendViewerIds: share.friendViewerIds.filter((id) => id !== currentUserId),
-    }));
-    const textFiltered = !normalized
-      ? withoutSelf
-      : withoutSelf.filter(
-          (share) =>
-            share.title.toLowerCase().includes(normalized) ||
-            share.communityName.toLowerCase().includes(normalized) ||
-            share.channelName.toLowerCase().includes(normalized) ||
-            broadcasterLabel(share).toLowerCase().includes(normalized),
-        );
-    return categoryFilter ? textFiltered.filter((share) => share.category === categoryFilter) : textFiltered;
-  }, [shares, debouncedQuery, currentUserId, categoryFilter]);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (!lastSuccessAtRef.current) return;
+      if (Date.now() - lastSuccessAtRef.current > STALE_AFTER_MS && connectionStatus === "connected") {
+        setConnectionStatus("stale");
+      }
+    }, 5_000);
+    return () => window.clearInterval(timer);
+  }, [connectionStatus]);
 
-  const memberSanitized = useMemo(
-    () =>
-      memberShares.map((share) => ({
-        ...share,
-        friendViewerIds: share.friendViewerIds.filter((id) => id !== currentUserId),
-      })),
-    [memberShares, currentUserId],
+  const featured = useMemo(() => {
+    const active = shares.filter((s) => s.status === "live" || s.status === "reconnecting");
+    if (active.length === 0) return null;
+    return [...active].sort((a, b) => b.viewerCount - a.viewerCount)[0] ?? null;
+  }, [shares]);
+
+  const followingLive = useMemo(
+    () => shares.filter((s) => followedUserIds.includes(s.broadcasterUserId)),
+    [shares, followedUserIds],
   );
 
-  const discovery = useMemo(
-    () => partitionLiveDiscovery(sanitized, { memberItems: memberSanitized }),
-    [sanitized, memberSanitized],
+  const justStarted = useMemo(() => shares.filter((s) => isJustStarted(s)), [shares]);
+
+  const categoryBuckets = useMemo(() => {
+    if (categoryCounts.length > 0) {
+      return categoryCounts
+        .map((row) => ({
+          id: (["game", "chat", "education", "watch_together", "other"].includes(row.category)
+            ? row.category
+            : "other") as LiveScreenShareCategory,
+          label: row.category.replace(/_/g, " "),
+          liveCount: row.liveCount,
+        }))
+        .filter((b) => b.liveCount > 0);
+    }
+    return buildCategoryBuckets(shares);
+  }, [categoryCounts, shares]);
+
+  const ctaActions = useMemo(
+    () => resolveLiveNowCtaActions(ctaState, { allowed: goLiveAllowed }),
+    [ctaState, goLiveAllowed],
   );
 
-  const featured =
-    (featuredOverrideId ? sanitized.find((share) => share.id === featuredOverrideId) : null)
-    ?? discovery.featured;
-
-  const hasFilters = Boolean(debouncedQuery || filter !== "all" || categoryFilter);
-  const liveCount = discovery.activeGrid.length;
-  const liveCountLabel = liveCount === 1 ? "1 live now" : `${liveCount} live now`;
+  const hasFilters = Boolean(debouncedQuery || categoryFilter || languageFilter || followingOnly || sort !== "viewers");
+  const countLabel = t("live.now.count", { count: String(totalCount) });
   const reload = () => setReloadToken((value) => value + 1);
+
+  useEffect(() => {
+    if (loading) return;
+    if (announcedCountRef.current === totalCount) return;
+    announcedCountRef.current = totalCount;
+  }, [totalCount, loading]);
 
   useEffect(() => {
     if (!restored?.scrollTop) return;
@@ -175,39 +272,103 @@ export function LiveWorkspace({
   }, [restored, loading]);
 
   const joinShare = async (share: LiveScreenShareSummary) => {
-    if (share.status === "terminated") {
-      onNotice("This live share was removed.", "error");
-      return;
-    }
-    if (share.status === "ended") {
-      onNotice("This live share has ended.", "info");
+    if (share.status === "terminated" || share.status === "ended") {
+      onNotice(share.status === "terminated" ? "This stream was removed." : "This stream has ended.", share.status === "terminated" ? "error" : "info");
       return;
     }
     saveDiscoveryRestoreState({
       query,
-      filter,
+      filter: followingOnly ? "following" : "all",
       categoryFilter,
-      featuredOverrideId,
+      featuredOverrideId: featured?.id ?? null,
       scrollTop: scrollRef.current?.scrollTop ?? 0,
     });
     onJoinLive(share);
   };
 
   const reportShare = async (share: LiveScreenShareSummary) => {
-    const result = await liveScreenShareService.reportLiveShare(share.id, "Reported from the Live browse view.");
-    onNotice(result.ok ? "Report sent. Thanks for helping keep Picom safe." : result.error.message, result.ok ? "success" : "error");
+    const { liveScreenShareService } = await import("../../services/live/liveScreenShareService");
+    const result = await liveScreenShareService.reportLiveShare(share.id, "Reported from Live Now.");
+    onNotice(result.ok ? "Report sent." : result.error.message, result.ok ? "success" : "error");
   };
 
   const hideCommunity = async (communityId: string) => {
-    const communityName = shares.find((share) => share.communityId === communityId)?.communityName || "This community";
+    const { liveScreenShareService } = await import("../../services/live/liveScreenShareService");
     const result = await liveScreenShareService.hideLiveCommunity(communityId);
     if (result.ok) {
       setShares((current) => current.filter((share) => share.communityId !== communityId));
-      setMemberShares((current) => current.filter((share) => share.communityId !== communityId));
-      onNotice(`Hid ${communityName} from Live.`, "success");
+      setTotalCount((c) => Math.max(0, c - 1));
+      onNotice("Hidden from Live Now.", "success");
     } else {
       onNotice(result.error.message, "error");
     }
+  };
+
+  const toggleScheduleReminder = async (scheduleId: string) => {
+    if (reminderBusyId) return;
+    const nextEnabled = !reminderEnabledIds.has(scheduleId);
+    setReminderBusyId(scheduleId);
+    const result = await publisherLiveNowService.setScheduleReminder(scheduleId, nextEnabled);
+    setReminderBusyId(null);
+    if (!result.ok) {
+      onNotice(result.error.message, "error");
+      return;
+    }
+    setReminderEnabledIds((current) => {
+      const next = new Set(current);
+      if (result.data.enabled) next.add(scheduleId);
+      else next.delete(scheduleId);
+      return next;
+    });
+    onNotice(
+      result.data.enabled ? t("live.now.schedule.remindOn") : t("live.now.schedule.remindOff"),
+      "success",
+    );
+  };
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    const result = await publisherLiveNowService.listPublisherLiveNow({
+      limit: LIST_LIMIT,
+      cursor: nextCursor,
+      search: debouncedQuery || null,
+      category: categoryFilter,
+      language: languageFilter || null,
+      followingOnly,
+      sort,
+    });
+    if (result.ok) {
+      setShares((current) => {
+        const seen = new Set(current.map((s) => s.id));
+        return [...current, ...result.data.items.filter((s) => !seen.has(s.id))];
+      });
+      setNextCursor(result.data.nextCursor);
+      setTotalCount(result.data.totalCount);
+    }
+    setLoadingMore(false);
+  };
+
+  const clearFilters = () => {
+    setQuery("");
+    setCategoryFilter(null);
+    setLanguageFilter("");
+    setFollowingOnly(false);
+    setSort("viewers");
+  };
+
+  const handleCta = (action: LiveNowCtaAction) => {
+    if (action.kind === "go_live") {
+      if (!action.enabled || !onOpenGoLive) return;
+      onOpenGoLive();
+      return;
+    }
+    if (action.kind !== "link") return;
+    if (action.key === "dashboard") {
+      onOpenPublisherDashboard?.();
+      return;
+    }
+    onOpenPublisherApply?.();
   };
 
   const cardActions = {
@@ -218,22 +379,32 @@ export function LiveWorkspace({
     onHideCommunity: hideCommunity,
   } as const;
 
-  const clearFilters = () => {
-    setQuery("");
-    setFilter("all");
-    setCategoryFilter(null);
-  };
+  const languages = useMemo(() => {
+    const set = new Set<string>();
+    for (const share of shares) {
+      if (share.languageCode) set.add(share.languageCode);
+    }
+    return [...set].sort();
+  }, [shares]);
 
-  const renderCards = (items: readonly LiveScreenShareSummary[], className = "live-section__cards") => (
+  const discover = onDiscoverPublishers ?? onFindFriends;
+
+  const renderCards = (items: readonly PublisherLiveNowSummary[], className = "live-section__cards") => (
     <div className={className}>
       {items.map((share) => (
-        <LiveShareCard key={share.id} share={share} {...cardActions} />
+        <LiveShareCard
+          key={share.id}
+          share={share}
+          following={followedUserIds.includes(share.broadcasterUserId)}
+          onToggleFollow={onToggleFollow}
+          {...cardActions}
+        />
       ))}
     </div>
   );
 
   return (
-    <main className="live-workspace" role="main" aria-label="Live Now" aria-labelledby="live-workspace-title">
+    <main className="live-workspace" role="main" aria-label={t("live.now.title")} aria-labelledby="live-workspace-title">
       <header className="live-workspace__header">
         <div className="live-workspace__intro">
           <div className="live-workspace__title-row">
@@ -242,51 +413,72 @@ export function LiveWorkspace({
               <AppIcon name="live" size="lg" />
             </span>
             <div className="live-workspace__titles">
-              <div className="live-workspace__eyebrow-row">
-                <span className="live-workspace__eyebrow">
-                  <span className="live-workspace__eyebrow-dot" aria-hidden="true" />
-                  Live Now
-                </span>
-                <span className="live-workspace__count-pill" aria-live="polite">
-                  {loading ? "Updating…" : liveCountLabel}
-                </span>
-              </div>
-              <h1 id="live-workspace-title">Live Now</h1>
+              <p className="live-workspace__eyebrow">
+                <span className="live-workspace__eyebrow-dot" aria-hidden="true" />
+                <span aria-live="off">{countLabel}</span>
+              </p>
+              <h1 id="live-workspace-title">{t("live.now.title")}</h1>
             </div>
           </div>
-          <p className="live-workspace__lede">Discover screens being shared in communities you can access.</p>
+          <p className="live-workspace__lede">{t("live.now.subtitle")}</p>
         </div>
         <div className="live-workspace__actions">
-          <p className={`live-workspace__status live-workspace__status--${connectionStatus}`} role="status">
-            <span className="live-workspace__status-dot" aria-hidden="true" />
-            {connectionLabel(connectionStatus)}
-          </p>
-          {onOpenGoLive ? (
-            <button type="button" className="live-workspace__refresh" onClick={onOpenGoLive} aria-label="Go Live — start a broadcast">
-              <AppIcon name="live" size="sm" aria-hidden="true" />
-              <span>Yayın Aç</span>
-            </button>
-          ) : null}
+          <span
+            className={`live-workspace__conn live-workspace__conn--${connectionStatus}`}
+            role="status"
+            aria-label={t(`live.now.connection.${connectionStatus}`)}
+            title={t(`live.now.connection.${connectionStatus}`)}
+          >
+            <span className="live-workspace__conn-dot" aria-hidden="true" />
+            <span className="live-workspace__conn-label">{t(`live.now.connection.${connectionStatus}`)}</span>
+          </span>
+
+          {ctaActions.map((action, index) => {
+            if (action.kind === "account_message") {
+              return (
+                <p key={`msg-${index}`} className="live-workspace__cta-message" role="status">
+                  {ctaLabel(action)}
+                </p>
+              );
+            }
+            if (action.kind === "status_chip") {
+              return (
+                <span key={`chip-${index}`} className="live-workspace__status-chip" role="status">
+                  {ctaLabel(action)}
+                </span>
+              );
+            }
+            const disabled = action.kind === "go_live" && !action.enabled;
+            return (
+              <button
+                key={`cta-${index}`}
+                type="button"
+                className={`live-workspace__refresh${action.kind === "go_live" ? " live-workspace__refresh--primary" : ""}`}
+                onClick={() => handleCta(action)}
+                disabled={disabled}
+                aria-disabled={disabled}
+                aria-label={ctaLabel(action)}
+              >
+                <AppIcon name={action.kind === "go_live" ? "live" : action.kind === "link" && action.key === "dashboard" ? "settings" : "users"} size="sm" aria-hidden="true" />
+                <span>{ctaLabel(action)}</span>
+              </button>
+            );
+          })}
+
           <button
             type="button"
             className={`live-workspace__refresh${loading ? " live-workspace__refresh--busy" : ""}`}
             onClick={reload}
             disabled={loading}
-            aria-label={loading ? "Refreshing live shares" : "Refresh live shares"}
+            aria-label={loading ? t("live.now.refreshing") : t("live.now.refresh")}
           >
             <AppIcon name="refresh" size="sm" aria-hidden="true" />
-            <span>{loading ? "Refreshing…" : "Refresh"}</span>
+            <span>{loading ? t("live.now.refreshing") : t("live.now.refresh")}</span>
           </button>
         </div>
       </header>
 
-      {connectionStatus === "reconnecting" ? (
-        <div className="live-workspace__reconnect" role="status" aria-live="polite">
-          Reconnecting to Live updates…
-        </div>
-      ) : null}
-
-      <div className="live-workspace__toolbar">
+      <div className="live-workspace__toolbar" role="search">
         <label className="live-workspace__search">
           <span className="live-workspace__search-icon" aria-hidden="true">
             <AppIcon name="search" size="sm" />
@@ -294,163 +486,211 @@ export function LiveWorkspace({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search title, community, channel or broadcaster"
-            aria-label="Search live shares"
+            placeholder={t("live.now.searchPlaceholder")}
+            aria-label={t("live.now.searchAria")}
           />
           {query ? (
-            <button type="button" className="live-workspace__search-clear" aria-label="Clear search" onClick={() => setQuery("")}>
+            <button type="button" className="live-workspace__search-clear" aria-label={t("live.now.clearSearch")} onClick={() => setQuery("")}>
               <AppIcon name="close" size="xs" />
             </button>
           ) : null}
         </label>
+        <div className="live-workspace__filters" role="group" aria-label="Live Now filters">
+          <button
+            type="button"
+            className={`live-workspace__filter-chip${followingOnly ? " is-active" : ""}`}
+            aria-pressed={followingOnly}
+            onClick={() => setFollowingOnly((v) => !v)}
+          >
+            {t("live.now.filter.following")}
+          </button>
+          <button
+            type="button"
+            className={`live-workspace__filter-chip${sort === "newest" ? " is-active" : ""}`}
+            aria-pressed={sort === "newest"}
+            onClick={() => setSort((s) => (s === "newest" ? "viewers" : "newest"))}
+          >
+            {t("live.now.filter.newest")}
+          </button>
+          <button
+            type="button"
+            className={`live-workspace__filter-chip${sort === "viewers" && !followingOnly ? " is-active" : ""}`}
+            aria-pressed={sort === "viewers"}
+            onClick={() => setSort("viewers")}
+          >
+            {t("live.now.filter.viewers")}
+          </button>
+          {languages.length > 0 ? (
+            <label className="live-workspace__filter-select">
+              <span className="sr-only">{t("live.now.filter.language")}</span>
+              <select
+                value={languageFilter}
+                onChange={(e) => setLanguageFilter(e.target.value)}
+                aria-label={t("live.now.filter.language")}
+              >
+                <option value="">{t("live.now.filter.all")}</option>
+                {languages.map((lang) => (
+                  <option key={lang} value={lang}>
+                    {lang}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </div>
       </div>
 
       <div className="live-workspace__body live-workspace__body--discovery" ref={scrollRef}>
-        {loadError ? (
+        {loadError?.forbidden ? (
           <div className="live-error" role="alert">
-            <span className="live-error__mark" aria-hidden="true">
-              <AppIcon name="live" size="xl" />
-            </span>
-            <strong>Live could not be loaded</strong>
-            <p>{loadError}</p>
+            <strong>{t("live.now.forbidden.title")}</strong>
+            <p>{t("live.now.forbidden.body")}</p>
+            <p className="live-error__code">{loadError.safeCode}</p>
+          </div>
+        ) : loadError ? (
+          <div className="live-error" role="alert">
+            <strong>{t("live.now.error.title")}</strong>
+            <p>{t("live.now.error.body")}</p>
+            <p className="live-error__code">{loadError.safeCode}</p>
             <button type="button" className="live-error__retry" onClick={reload}>
-              Retry
+              {t("live.now.error.retry")}
             </button>
           </div>
         ) : loading && shares.length === 0 ? (
-          <div className="live-loading" role="status">
-            Loading live shares…
+          <div className="live-loading live-loading--skeleton" role="status" aria-busy="true">
+            <div className="live-skeleton-card" />
+            <div className="live-skeleton-card" />
+            <div className="live-skeleton-card" />
+            <span className="sr-only">{t("live.now.loading")}</span>
           </div>
-        ) : discovery.activeGrid.length === 0 ? (
-          <div className={`live-empty${hasFilters ? " live-empty--filtered" : ""}`} role="status">
-            <div className="live-empty__glow" aria-hidden="true" />
-            <span className="live-empty__mark" aria-hidden="true">
-              <span className="live-empty__mark-ring" />
-              <AppIcon name="live" size="xl" />
-            </span>
-            <p className="live-empty__eyebrow">{hasFilters ? "No matches" : "Waiting for signal"}</p>
-            <div className="live-empty__copy">
-              <strong>{hasFilters ? "No live shares match your filters" : "Nothing is live right now"}</strong>
-              <span>
-                {hasFilters
-                  ? "Try a different search term or category to discover active screen shares."
-                  : "Follow communities or creators to personalise Live Now. When someone shares a screen you can access, it will show up here."}
-              </span>
-            </div>
+        ) : shares.length === 0 ? (
+          <div className={`live-empty live-empty--compact${hasFilters ? " live-empty--filtered" : ""}`} role="status">
+            <strong>{hasFilters ? t("live.now.empty.filteredTitle") : t("live.now.empty.title")}</strong>
+            <p>{hasFilters ? t("live.now.empty.filteredBody") : t("live.now.empty.body")}</p>
             <div className="live-empty__actions">
               {hasFilters ? (
                 <button type="button" className="live-empty__cta live-empty__cta--ghost" onClick={clearFilters}>
-                  Clear filters
+                  {t("live.now.empty.clearFilters")}
                 </button>
               ) : null}
-              {onBrowseCommunities ? (
-                <button type="button" className="live-empty__cta" onClick={onBrowseCommunities}>
-                  Explore Communities
+              {discover ? (
+                <button type="button" className="live-empty__cta" onClick={discover}>
+                  {t("live.now.empty.ctaDiscover")}
                 </button>
               ) : null}
             </div>
+            {!hasFilters ? (
+              <div className="live-empty__secondary">
+                {schedules.length > 0 ? (
+                  <section aria-labelledby="empty-upcoming">
+                    <h2 id="empty-upcoming">{t("live.now.section.secondaryUpcoming")}</h2>
+                    <ul className="live-schedule-list">
+                      {schedules.slice(0, 3).map((item) => (
+                        <li key={item.id}>
+                          <strong>{item.title}</strong>
+                          <span>{item.publisherDisplayName}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+                {categoryBuckets.length > 0 ? (
+                  <section aria-labelledby="empty-cats">
+                    <h2 id="empty-cats">{t("live.now.section.secondaryCategories")}</h2>
+                    <LiveCategoryRail buckets={categoryBuckets} activeCategory={categoryFilter} onSelect={setCategoryFilter} />
+                  </section>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : (
           <>
-            <section className="live-workspace__hero-block">
-              {featured ? (
+            {featured ? (
+              <LiveDiscoverySection id="featured" title={t("live.now.featured")} icon="live">
                 <LiveFeaturedCard
                   share={featured}
                   {...cardActions}
                   following={followedUserIds.includes(featured.broadcasterUserId)}
                   onToggleFollow={onToggleFollow}
                 />
-              ) : (
-                <LiveFeaturedEmpty />
-              )}
-              <LiveFeaturedSelector
-                items={discovery.featuredSelectors}
-                selectedId={featured?.id ?? null}
-                onSelect={(share) => setFeaturedOverrideId(share.id)}
-              />
-            </section>
-
-            {discovery.categories.length > 0 ? (
-              <LiveDiscoverySection id="categories" title="Categories" icon="hash">
-                <LiveCategoryRail
-                  buckets={discovery.categories}
-                  activeCategory={categoryFilter}
-                  onSelect={setCategoryFilter}
-                />
               </LiveDiscoverySection>
             ) : null}
 
-            <LiveDiscoverySection
-              id="active-grid"
-              title="Live Now"
-              icon="live"
-              onShowAll={clearFilters}
-              showAllLabel="Reset filters"
-            >
-              {renderCards(discovery.activeGrid, "live-grid live-grid--discovery")}
+            {followingLive.length > 0 ? (
+              <LiveDiscoverySection id="following-live" title={t("live.now.followingLive")} icon="users" hiddenWhenEmpty>
+                {renderCards(followingLive)}
+              </LiveDiscoverySection>
+            ) : null}
+
+            <LiveDiscoverySection id="all-live" title={t("live.now.allLive")} icon="live">
+              {renderCards(shares, "live-grid live-grid--discovery")}
+              {nextCursor ? (
+                <button type="button" className="live-workspace__load-more" onClick={() => void loadMore()} disabled={loadingMore}>
+                  {t("live.now.loadMore")}
+                </button>
+              ) : null}
             </LiveDiscoverySection>
 
-            <LiveDiscoverySection
-              id="member-communities"
-              title="Live in your communities"
-              icon="users"
-              onShowAll={() => setFilter("member")}
-              empty={
-                <div className="live-section__empty">
-                  <strong>None of your communities are live right now.</strong>
-                  {onBrowseCommunities ? (
-                    <button type="button" className="live-section__link" onClick={onBrowseCommunities}>
-                      Browse all communities
-                    </button>
-                  ) : null}
-                </div>
-              }
-            >
-              {discovery.memberLive.length > 0 ? renderCards(discovery.memberLive) : null}
-            </LiveDiscoverySection>
+            {justStarted.length > 0 && sort !== "newest" ? (
+              <LiveDiscoverySection id="just-started" title={t("live.now.filter.newest")} icon="calendar" variant="fresh" hiddenWhenEmpty>
+                {renderCards(justStarted, "live-section__cards live-section__cards--fresh")}
+              </LiveDiscoverySection>
+            ) : null}
 
-            <LiveDiscoverySection
-              id="friends-watching"
-              title="Friends watching"
-              icon="users"
-              hiddenWhenEmpty
-              onShowAll={() => setFilter("friends_watching")}
-            >
-              {discovery.friendsWatching.length > 0 ? renderCards(discovery.friendsWatching) : null}
-            </LiveDiscoverySection>
+            {schedules.length > 0 ? (
+              <LiveDiscoverySection id="upcoming" title={t("live.now.upcoming")} icon="calendar">
+                <ul className="live-schedule-list">
+                  {schedules.map((item) => (
+                    <li key={item.id} className="live-schedule-card">
+                      <div className="live-schedule-card__body">
+                        <strong>{item.title}</strong>
+                        <span className="live-schedule-card__publisher">
+                          {item.publisherDisplayName}
+                          {item.publisherBadgeType ? (
+                            <span className="live-badge-verified" title={item.publisherBadgeType}>
+                              {item.publisherBadgeType.includes("creator") ? t("live.now.badge.creator") : t("live.now.badge.publisher")}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span>
+                          {t("live.now.schedule.starts", {
+                            time: new Date(item.scheduledStartAt).toLocaleString(localizationService.getLanguage()),
+                          })}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`live-schedule-card__remind${reminderEnabledIds.has(item.id) ? " is-active" : ""}`}
+                        disabled={reminderBusyId === item.id}
+                        onClick={() => void toggleScheduleReminder(item.id)}
+                        aria-pressed={reminderEnabledIds.has(item.id)}
+                        aria-label={`${
+                          reminderEnabledIds.has(item.id)
+                            ? t("live.now.schedule.remindOff")
+                            : t("live.now.schedule.remindOn")
+                        }: ${item.title}`}
+                      >
+                        {reminderEnabledIds.has(item.id)
+                          ? t("live.now.schedule.remindOn")
+                          : t("live.now.schedule.remind")}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </LiveDiscoverySection>
+            ) : null}
 
-            <LiveDiscoverySection
-              id="rising-fast"
-              title="Rising fast"
-              icon="live"
-              variant="rising"
-              hiddenWhenEmpty
-              onShowAll={() => {
-                setFilter("all");
-                setCategoryFilter(null);
-              }}
-            >
-              {discovery.risingFast.length > 0 ? renderCards(discovery.risingFast) : null}
-            </LiveDiscoverySection>
-
-            <LiveDiscoverySection
-              id="just-started"
-              title="Just started"
-              icon="calendar"
-              variant="fresh"
-              hiddenWhenEmpty
-              onShowAll={() => {
-                setFilter("all");
-                setCategoryFilter(null);
-              }}
-            >
-              {discovery.justStarted.length > 0
-                ? renderCards(discovery.justStarted, "live-section__cards live-section__cards--fresh")
-                : null}
-            </LiveDiscoverySection>
+            {categoryBuckets.length > 0 ? (
+              <LiveDiscoverySection id="categories" title={t("live.now.categories")} icon="hash">
+                <LiveCategoryRail buckets={categoryBuckets} activeCategory={categoryFilter} onSelect={setCategoryFilter} />
+              </LiveDiscoverySection>
+            ) : null}
           </>
         )}
       </div>
     </main>
   );
 }
+
+// Keep helper export used by older tests / imports that referenced broadcaster search.
+export { broadcasterLabel };

@@ -1,0 +1,6 @@
+timestamp_utc=2026-08-03T10:56:58.5338330+02:00
+node=v24.15.0
+npm=11.17.0
+project_ref=ufmtvqtsklqsmqxefbbs
+branch=feat/community-rebuild
+sha=6c922c093022d5738d94ce864339764901cdbf62

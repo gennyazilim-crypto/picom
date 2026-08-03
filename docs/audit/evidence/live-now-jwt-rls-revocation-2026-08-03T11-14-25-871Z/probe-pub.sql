@@ -1,0 +1,1 @@
+select tablename, true as in_realtime from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename in ('publisher_badges','publisher_profiles','community_live_screen_sessions') order by 1;

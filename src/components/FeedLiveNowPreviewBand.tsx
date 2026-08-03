@@ -76,11 +76,13 @@ export function FeedLiveNowPreviewBand({ onOpenLiveSession }: FeedLiveNowPreview
     <section className="feed-live-now" data-state={state} aria-label={localizationService.translate("feed.live.bandLabel")}>
       <header className="feed-live-now__heading">
         <div className="feed-live-now__title-block">
-          <div className="feed-live-now__badge" aria-hidden="true">
-            <span className="feed-live-now__pulse" />
-            <span>{localizationService.translate("feed.live.eyebrow")}</span>
+          <div className="feed-live-now__title-row">
+            <div className="feed-live-now__badge" aria-hidden="true">
+              <span className="feed-live-now__pulse" />
+              <span>{localizationService.translate("feed.live.eyebrow")}</span>
+            </div>
+            <h2 className="feed-live-now__title">{localizationService.translate("feed.live.title")}</h2>
           </div>
-          <h2 className="feed-live-now__title">{localizationService.translate("feed.live.title")}</h2>
           <p className="feed-live-now__subtitle">{localizationService.translate("feed.live.subtitle")}</p>
         </div>
         {state === "ready" ? (
@@ -111,7 +113,7 @@ export function FeedLiveNowPreviewBand({ onOpenLiveSession }: FeedLiveNowPreview
       {state === "empty" ? (
         <div className="feed-live-now__status feed-live-now__status--empty" role="status">
           <div className="feed-live-now__empty-icon" aria-hidden="true">
-            <AppIcon name="voice" size="md" />
+            <AppIcon name="live" size="md" />
           </div>
           <div className="feed-live-now__status-copy">
             <strong>{localizationService.translate("feed.live.emptyTitle")}</strong>

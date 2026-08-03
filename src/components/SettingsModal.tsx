@@ -137,6 +137,8 @@ type SettingsModalProps = {
     canManageWebhooks: boolean;
   };
   onOpenPanel?: () => void;
+  onOpenPublisherApply?: () => void;
+  onOpenPublisherDashboard?: () => void;
 };
 
 function getLiveBlockedDisplayName(userId: string, fallback: string): string {
@@ -147,7 +149,7 @@ function getLiveBlockedUsername(userId: string, fallback: string): string {
   return (profileMediaStore.getSnapshot(userId).record?.username?.trim() || fallback).replace(/^@+/, "");
 }
 
-export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext, onOpenPanel }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext, onOpenPanel, onOpenPublisherApply, onOpenPublisherDashboard }: SettingsModalProps) {
   const settingsLang = appearanceSettings.language;
   const ts = (key: SettingsI18nKey, params?: Record<string, string | number>) => translateSettings(key, settingsLang, params);
   const sectionLabel = (section: SettingsSection) => translateSettingsSection(section, settingsLang);
@@ -1051,6 +1053,8 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
               accountStatusLabel={profileSettings.status || "online"}
               socialProviders={socialProviders}
               onOpenAccountCenter={(url) => void openAccountCenter(url)}
+              onOpenPublisherApply={onOpenPublisherApply}
+              onOpenPublisherDashboard={onOpenPublisherDashboard}
               onLogout={() => setLogoutConfirmationOpen(true)}
               onRefreshIdentity={() => void refreshAccountIdentity()}
               identityRefreshing={identityRefreshing}
