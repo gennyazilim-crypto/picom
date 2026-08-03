@@ -1,0 +1,8 @@
+﻿MAIN_PROMOTION=NOT_ATTEMPTED_LOCAL_MERGE
+reason=Remote push of canonical branch rejected by GitHub GH001
+blocker=release-task-301-301-unpacked.tmp/electron.exe (224.79MB) present in ancestral history of feat/community-rebuild lineage
+PUSH_BRANCH=BLOCKED_GH001_LARGE_FILE
+PUSH_TAG=BLOCKED_GH001_LARGE_FILE
+localTag=picom-canonical-production-base-2026-08-03
+localHead=4cb200f4f27e11f0d89666d262429a01a0088f38
+auth=gennyazilim-crypto (push permission present; pre-receive declined)

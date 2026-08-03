@@ -8,10 +8,13 @@ PICOM CANONICAL BRANCH CONSOLIDATION: GO
 PICOM CANONICAL FILE TREE: GO
 PICOM CANONICAL RELEASE GUARD: GO
 PICOM CANONICAL WORKTREE: GO
-PICOM MAIN PROMOTION: PENDING
-PICOM CANONICAL PRODUCTION TAG: PENDING
-PICOM PRODUCTION MIGRATION RESUME: READY_NOT_RUN
+PICOM MAIN PROMOTION: BLOCKED_PUSH
+PICOM CANONICAL PRODUCTION TAG: GO_LOCAL_ONLY
+PICOM PRODUCTION MIGRATION RESUME: READY_ON_CANONICAL_BRANCH
 
-Remaining blockers before production resume:
-- Place production .env.production in canonical worktree (not committed)
-- Do not run production db push in this task
+Remote push of release/picom-canonical-production and tag rejected by GitHub GH001:
+ancestral blob release-task-301-301/win-unpacked.tmp/electron.exe (224.79MB) from commit 397fd99c.
+No force-push / history rewrite performed.
+
+Local canonical branch, tag, worktree, and tests are ready.
+Next: explicit history-sanitize task (user-approved) then push + main promote; then production migration resume.

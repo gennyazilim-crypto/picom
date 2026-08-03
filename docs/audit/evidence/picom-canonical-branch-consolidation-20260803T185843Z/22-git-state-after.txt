@@ -1,0 +1,7 @@
+﻿afterStatus:
+## release/picom-canonical-production  M docs/audit/evidence/picom-canonical-branch-consolidation-20260803T185843Z/23-final-verdict.md ?? docs/audit/evidence/picom-canonical-branch-consolidation-20260803T185843Z/20-main-merge.txt ?? docs/audit/evidence/picom-canonical-branch-consolidation-20260803T185843Z/21-tag.txt
+HEAD=4cb200f4f27e11f0d89666d262429a01a0088f38
+branch=release/picom-canonical-production
+tag=picom-canonical-production-base-2026-08-03
+worktree=C:\Users\ACER\Desktop\picom-canonical-production
+dirtySourceWorktree=C:\Users\ACER\Desktop\picom left untouched

@@ -1,0 +1,4 @@
+﻿tag=picom-canonical-production-base-2026-08-03
+target=4cb200f4f27e11f0d89666d262429a01a0088f38
+remote=NOT_PUSHED (GH001)
+forceUpdate=NO
