@@ -2,9 +2,9 @@
 
 Updated: 20260803T230300Z
 Branch: release/picom-canonical-production
-HEAD: 3947db643c39cbd3bd4d0d24e9d4e407582dd974
-Production: cqnsetsmcduraryemhbi
-Sanitized remote: GO
+HEAD: d0349ae3d808bc1e0c6ef0086d38817755685c4d (seal) / follow-up tag commit
+Prior partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T223117Z
+New partial tag: picom-publisher-phase1-production-partial-20260803T230959Z
 
 | TASK | STATUS | TESTS | BLOCKER |
 |------|--------|-------|---------|

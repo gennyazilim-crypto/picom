@@ -459,7 +459,8 @@
   },
   "task26RealDeviceCertification": {
     "sealedAt": "2026-08-03T23:03:00.000Z",
-    "canonicalHead": "3947db643c39cbd3bd4d0d24e9d4e407582dd974",
+    "canonicalHead": "d0349ae3d808bc1e0c6ef0086d38817755685c4d",
+    "partialTag": "picom-publisher-phase1-production-partial-20260803T230959Z",
     "storageClosedApplicationDenial": "GO",
     "authVerificationInbox": "BLOCKED_RATE_LIMIT",
     "authPasswordResetInbox": "BLOCKED_RATE_LIMIT",

@@ -1,0 +1,5 @@
+TASK26 — Git state after seal
+Branch: release/picom-canonical-production
+HEAD: (see tag commit after follow-up)
+Unrelated dirty: supabase/.temp/ (ignored; not committed)
+Working tree otherwise clean of task-scope files after push.
