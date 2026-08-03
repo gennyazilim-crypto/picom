@@ -1,0 +1,5 @@
+﻿realtime.messages EXISTS
+owner=supabase_realtime_admin
+schema_owner=supabase_admin
+relkind=p
+rls_enabled=true

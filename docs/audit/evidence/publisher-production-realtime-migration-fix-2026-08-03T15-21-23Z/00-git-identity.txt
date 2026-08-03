@@ -1,0 +1,6 @@
+﻿UTC=2026-08-03T15-21-23Z
+branch=feat/community-rebuild
+HEAD=ff15f21dd79d838e96de8fa72d53b1c8d1825d0e
+ancestor_ff15f21d=yes
+production_ref=cqnsetsmcduraryemhbi
+flags=fail_closed_off_in_production

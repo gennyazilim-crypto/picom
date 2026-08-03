@@ -72,7 +72,45 @@ end;
 $$;
 revoke all on function public.can_access_picom_realtime_topic(text,text) from public, anon;
 grant execute on function public.can_access_picom_realtime_topic(text,text) to authenticated;
-alter table realtime.messages enable row level security;
+-- Platform-owned realtime.messages already has RLS enabled by Supabase.
+-- postgres cannot ALTER this relation (owner=supabase_realtime_admin), so assert
+-- fail-closed instead of running redundant ENABLE ROW LEVEL SECURITY.
+do $picom_realtime_guard$
+declare
+  v_relkind "char";
+  v_rls_enabled boolean;
+begin
+  select
+    c.relkind,
+    c.relrowsecurity
+  into
+    v_relkind,
+    v_rls_enabled
+  from pg_catalog.pg_class as c
+  inner join pg_catalog.pg_namespace as n
+    on n.oid = c.relnamespace
+  where n.nspname = 'realtime'
+    and c.relname = 'messages';
+
+  if not found then
+    raise exception using
+      errcode = '42P01',
+      message = 'realtime.messages is required before PICOM realtime policies can be installed';
+  end if;
+
+  if v_relkind not in ('r', 'p') then
+    raise exception using
+      errcode = '42809',
+      message = 'realtime.messages has an unexpected relation type';
+  end if;
+
+  if not v_rls_enabled then
+    raise exception using
+      errcode = '55000',
+      message = 'realtime.messages must have platform-managed RLS enabled';
+  end if;
+end
+$picom_realtime_guard$;
 drop policy if exists "picom members receive private realtime topics" on realtime.messages;
 create policy "picom members receive private realtime topics"
 on realtime.messages

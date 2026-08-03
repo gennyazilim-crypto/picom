@@ -28,16 +28,28 @@
     "rollbackDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_ROLLBACK.md",
     "stagingV2PausedToFreeSlot": "kbdotviopwlcqviggtrc",
     "migrationDeploy": {
-      "status": "PARTIAL_BLOCKED_PLATFORM_REALTIME_ALTER_OWNERSHIP",
+      "status": "PENDING_RESUME_AFTER_REALTIME_PORTABILITY_FIX",
       "appliedThrough": "20260710090000",
       "failedAt": "20260710121000_multi_tenant_realtime_storage_hardening.sql",
-      "failure": "realtime.messages now EXISTS (owner supabase_realtime_admin, rls_enabled=true) but ALTER TABLE ... ENABLE ROW LEVEL SECURITY fails with 42501 must be owner; CREATE POLICY probe OK; hash/repair/owner-change not used",
-      "realtimeProvisioning": "PROVISIONED_AFTER_OFFICIAL_ENABLE_AND_RESTART",
+      "failure": "superseded by platform-safe RLS assertion patch; prior 42501 must be owner of table messages on ALTER ENABLE RLS",
+      "realtimeProvisioning": "PROVISIONED",
       "phase1PublisherMigrations": "NOT_REACHED",
       "resumeEvidence": "docs/audit/evidence/publisher-phase1-production-resume-2026-08-03T14-45-57Z/"
     },
     "backupPitr": "NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED",
     "featureFlagsDefault": "fail_closed_off_in_production"
+  },
+  "realtimeAuthorizationMigration": {
+    "version": "20260710121000",
+    "filename": "20260710121000_multi_tenant_realtime_storage_hardening.sql",
+    "legacyStagingSha256": "6c7fbfc4a8aac4829f2d4a6d6ae170b6ee537652991e101eb50e03e17b2d4bd8",
+    "canonicalPortableSha256": "6cac3fc152f34cd3ae433630747a7e2b3d1bf6abfafddc32a9bea78fce5b389a",
+    "compatibilityAmendment": "Removed redundant ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY; replaced with fail-closed platform RLS assertion guard",
+    "compatibilityReason": "Managed Supabase ownership model: postgres is not owner of realtime.messages (supabase_realtime_admin); CREATE POLICY is allowed while ALTER ENABLE RLS is not",
+    "schemaSemanticsEquivalent": true,
+    "policySemanticHash": "3beb709d58c59c8a1f2eeffde4283090c3b45ae69688924739988cdc47d07413",
+    "stagingStatus": "APPLIED_LEGACY_EQUIVALENT",
+    "productionStatus": "PENDING_APPLY"
   },
   "migrations": [
     {

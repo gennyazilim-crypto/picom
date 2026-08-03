@@ -1,0 +1,7 @@
+﻿file=20260710121000_multi_tenant_realtime_storage_hardening.sql
+failing_statement=ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY
+error=42501 must be owner of table messages
+other_realtime_structural_ddl_in_file=none
+policies=receive SELECT authenticated; send INSERT authenticated
+function=public.can_access_picom_realtime_topic(text,text)
+grants=revoke public/anon; grant execute to authenticated
