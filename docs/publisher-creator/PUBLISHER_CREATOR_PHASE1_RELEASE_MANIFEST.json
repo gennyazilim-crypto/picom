@@ -16,6 +16,7 @@
     "docsFollowUpSha": "9ff56fbe3f3cb46048e5a38858df41972d9b0e2e"
   },
   "productionCandidateTag": "picom-publisher-phase1-production-candidate-2026-08-03",
+  "productionCandidateCommitSha": "76d0439bf1eda8e5a208b26452b390f8690244b2",
   "migrations": [
     {
       "version": "20260803130000",
