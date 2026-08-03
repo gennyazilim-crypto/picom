@@ -50,6 +50,16 @@
 
 Older evidence packages may cite SHAs earlier than `2f198ef6`; that is expected and not hidden. Hosted Case 04/18/JWT/realtime/reminder/notification smokes were not re-fixture'd during hardening because schema objects matched and no forward migration was applied.
 
+## Production branch-omission note (2026-08-03)
+
+Root cause of production stop at `20260803140000`:
+
+1. `20260803100000_community_live_screen_sessions.sql` and required follow-on `20260803110000_go_live_broadcast_start.sql` existed on `release/homepage-platform-stats-prerequisites` but were omitted from `feat/community-rebuild`.
+2. `20260803130000` could apply without the live-session table (function body reference only).
+3. `20260803140000` fail-closed with `42P01` because it alters `public.community_live_screen_sessions`.
+4. Canonical staging has the live-session schema (including go-live columns) but **no** history rows for `20260803100000` / `20260803110000` (schema matched, history gap).
+5. No migration repair and no manual SQL apply were used; restore is exact byte-for-byte from source commits, then normal Supabase `db push --include-all`.
+
 ## Verdict lines
 
 ```text
@@ -59,15 +69,15 @@ PICOM PUBLISHER/CREATOR 10 LOCALE RUNTIME: GO
 PICOM PUBLISHER/CREATOR MIGRATION HISTORY: GO
 PICOM PUBLISHER/CREATOR EVIDENCE INTEGRITY: GO
 PICOM PRODUCTION CONFIG SAFETY: GO
-PICOM PRODUCTION INFRASTRUCTURE: NOT_CREATED
-PICOM PRODUCTION DEPLOY: BLOCKED_EXPECTED
+PICOM PRODUCTION INFRASTRUCTURE: CREATED_PARTIAL_SCHEMA
+PICOM PRODUCTION DEPLOY: PARTIAL
 PICOM PUBLISHER MONETIZATION: BLOCKED
 PICOM PHASE 1 PRODUCTION CANDIDATE: GO
 ```
 
 ## Operator next steps
 
-1. Create a dedicated production Supabase project (do not reuse staging refs).
-2. Fill real `.env.production` with production-only URLs/refs (guard must pass).
-3. Promote migrations to production only after production project exists.
-4. Monetization remains out of Phase 1 scope.
+1. Keep production feature flags fail-closed until runtime smokes pass.
+2. After live-screen dependency restore + include-all apply, seal Phase 1 migrations then run JWT/Case/LiveKit gates.
+3. Monetization remains out of Phase 1 scope.
+4. Do not reuse staging refs in production config (guard must pass).
