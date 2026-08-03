@@ -35,6 +35,18 @@ packages/shared/dist/
 /NUL
 /relbuild/
 /release-brand-refresh/
+/release-brand-candidate/
 /release-memory-audit/
 /release-server-*/
 /release-update-*/
+
+# Generated Electron/desktop binaries must never re-enter Git history.
+**/electron.exe
+**/Picom.exe
+**/win-unpacked.tmp/
+**/win-unpacked/
+*.AppImage
+/*-Windows-x64.exe
+/docs/audit/evidence/**/Picom.exe
+/docs/audit/evidence/**/electron.exe
+/docs/audit/evidence/**/*-Windows-x64.exe

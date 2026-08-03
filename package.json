@@ -71,7 +71,7 @@
     "electron:build": "node scripts/build-electron.mjs",
     "electron:dev": "npm run electron:build && node scripts/electron-dev.mjs",
     "typecheck": "tsc --noEmit",
-    "production:config:guard": "npm run release:canonical:guard && node scripts/production-config-guard.mjs --strict-env-file=.env.production",
+    "production:config:guard": "npm run release:canonical:guard && npm run git:large-files:check && node scripts/production-config-guard.mjs --strict-env-file=.env.production",
     "build:production": "npm run release:canonical:guard && npm run production:config:guard && npm run typecheck && npm run electron:build && vite build",
     "build": "npm run typecheck && npm run electron:build && vite build",
     "build:desktop": "npm run build",
@@ -542,6 +542,7 @@
     "feed:private-attachment:hosted:test": "node scripts/feed-private-attachment-hosted-matrix.mjs --run",
     "verification-business:creator-publisher:regression": "node scripts/verification-business-creator-publisher-regression.mjs",
     "release:canonical:guard": "node scripts/assert-canonical-release-branch.mjs",
+    "git:large-files:check": "node scripts/check-git-large-files.mjs",
     "release:canonical:consolidation:test": "node --test scripts/canonical-branch-consolidation.test.mjs",
     "supabase:db:push:dry-run": "npm run release:canonical:guard && supabase db push --dry-run"
   },

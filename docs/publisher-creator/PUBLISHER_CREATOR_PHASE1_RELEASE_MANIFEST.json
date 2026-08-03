@@ -292,7 +292,7 @@
     "featureFlagStates": "fail_closed_off_in_production",
     "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production"
   },
-  "authoritativeReleaseSha": "6556fca3d235d4f54ce28b6d1747ec0718439ee7",
+  "authoritativeReleaseSha": "ff09e474d8d4835bb0f719954cb93906bde5c29b",
   "canonicalBranch": "release/picom-canonical-production",
   "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production",
   "platformAccountRestrictionsSource": {
@@ -373,5 +373,43 @@
     "ref": "cqnsetsmcduraryemhbi",
     "region": "eu-central-1"
   },
-  "canonicalCommit": "6556fca3d235d4f54ce28b6d1747ec0718439ee7"
+  "canonicalCommit": "ff09e474d8d4835bb0f719954cb93906bde5c29b",
+  "originalCanonicalBranch": "release/picom-canonical-production",
+  "originalCanonicalHead": "d49877b30c68bf0b530a80ef420fbbceb508351b",
+  "sanitizedCanonicalBranch": "release/picom-canonical-production",
+  "sanitizedCanonicalHead": "ff09e474d8d4835bb0f719954cb93906bde5c29b",
+  "historySanitizationReason": "GH001: remove generated oversized Windows/Electron binaries from reachable Git history for GitHub push",
+  "removedGeneratedPaths": [
+    "docs/audit/evidence/settings-packaged-2026-08-01T21-51-09-639Z/Picom.exe",
+    "relbuild/win-unpacked.tmp/electron.exe",
+    "release-brand-candidate/Picom-0.1.1-beta.4-beta-Windows-x64.exe",
+    "release-task-301/win-unpacked.tmp/electron.exe",
+    "release-task-357-20260710/win-unpacked.tmp/electron.exe",
+    "release-update-20260719-225850/Picom-0.1.1-beta.5-beta-Windows-x64.exe",
+    "release-update-20260719-225850/win-unpacked/Picom.exe"
+  ],
+  "commitMap": {
+    "76d0439bf1eda8e5a208b26452b390f8690244b2": "9daeaa0432f98906faae4ea5fa446f24d7ead0cf",
+    "448736697acf44e36887740b613c1dab16df2c27": "63ff025496b1fcdd34961aafd8ddd4bc2d2b0861",
+    "c50f51a88c5dd841cb8c71304e6653d0b3ef6607": "2ed457724b7073efaf25fb85b3ec823df02966f2",
+    "21b9e0896840": "d2d4af877189dc82c0920ec6526ca1d39e8173a9",
+    "ff15f21dd79d": "1224c1c9f9d5f50b8da8f0e273dc54e565aea74b",
+    "0c90fa5fb25b": "ba273783c383c6e2520a1ad12a81a8f8e53762aa",
+    "23af140f91cb": "cf1064cecdb711a063936dea89035e68e8bf3a77",
+    "3d54872dd70b4d21397d34d227d480bcd15a2e7f": "6d79b0e2ba197b1e5c8698e68bc5a4a252c57f92",
+    "ada43cb5b444": "d09d047d01876c628049abcd8025f7ec096249ab",
+    "93a2612adbb8": "4cad838c6e51b2756a9887929eee6233cc8b8a72",
+    "d49877b30c68bf0b530a80ef420fbbceb508351b": "ff09e474d8d4835bb0f719954cb93906bde5c29b"
+  },
+  "semanticTreeParity": "PASS",
+  "migrationHashParity": "PASS",
+  "productionAppliedFromOriginalHead": "d49877b30c68bf0b530a80ef420fbbceb508351b",
+  "sanitizedRemoteReleaseEquivalent": true,
+  "finalMigrationVersion": "20260803173000",
+  "readinessNotes": [
+    "Production migrations were applied from the original canonical tree.",
+    "Sanitized remote branch carries the same product and migration tree.",
+    "Difference is only GitHub-rejected generated binary history.",
+    "Migration file SHA-256 values are unchanged."
+  ]
 }

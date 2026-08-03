@@ -20,14 +20,16 @@ const CANONICAL_BRANCH = "release/picom-canonical-production";
 const ALLOWED_BRANCHES = new Set([CANONICAL_BRANCH, "main"]);
 
 const REQUIRED_ANCESTRY = Object.freeze([
-  ["76d0439b", "76d0439bf1eda8e5a208b26452b390f8690244b2"],
-  ["44873669", "448736697acf44e36887740b613c1dab16df2c27"],
-  ["c50f51a8", "c50f51a88c5dd841cb8c71304e6653d0b3ef6607"],
-  ["21b9e089", "21b9e089"],
-  ["ff15f21d", "ff15f21d"],
-  ["0c90fa5f", "0c90fa5f"],
-  ["23af140f", "23af140f"],
-  ["3d54872d", "3d54872d"],
+  // Sanitized history SHAs (git filter-repo removed oversized generated binaries).
+  // Original equivalents are recorded in the Phase1 release manifest commitMap.
+  ["76d0439b", "9daeaa0432f98906faae4ea5fa446f24d7ead0cf"],
+  ["44873669", "63ff025496b1fcdd34961aafd8ddd4bc2d2b0861"],
+  ["c50f51a8", "2ed457724b7073efaf25fb85b3ec823df02966f2"],
+  ["21b9e089", "d2d4af877189dc82c0920ec6526ca1d39e8173a9"],
+  ["ff15f21d", "1224c1c9f9d5f50b8da8f0e273dc54e565aea74b"],
+  ["0c90fa5f", "ba273783c383c6e2520a1ad12a81a8f8e53762aa"],
+  ["23af140f", "cf1064cecdb711a063936dea89035e68e8bf3a77"],
+  ["3d54872d", "6d79b0e2ba197b1e5c8698e68bc5a4a252c57f92"],
 ]);
 
 const PHASE1_MIGRATIONS = Object.freeze([
@@ -198,7 +200,7 @@ function main() {
 
   if (!detached && branch === "main") {
     try {
-      execFileSync("git", ["merge-base", "--is-ancestor", "0c90fa5f", head], {
+      execFileSync("git", ["merge-base", "--is-ancestor", "ba273783c383c6e2520a1ad12a81a8f8e53762aa", head], {
         cwd: root,
         stdio: "ignore",
       });
