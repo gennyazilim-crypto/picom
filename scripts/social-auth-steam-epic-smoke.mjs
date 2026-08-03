@@ -11,7 +11,10 @@ const steam = read("supabase/functions/steam-auth/index.ts");
 const epic = read("supabase/functions/epic-auth/index.ts");
 const migration = read("supabase/migrations/20260715010000_social_auth_handoffs.sql");
 const serviceRoleGrants = read("supabase/migrations/20260715020000_social_auth_service_role_table_grants.sql");
+const identityMigration = read("supabase/migrations/20260720220000_social_auth_external_identity_security.sql");
+const linkMigration = read("supabase/migrations/20260731120000_auth_connections_link_unlink.sql");
 const service = read("src/services/auth/socialAuthService.ts");
+const authService = read("src/services/authService.ts");
 const buttons = read("src/components/auth/SocialLoginButtons.tsx");
 const config = read("supabase/config.toml");
 const manifest = JSON.parse(read("supabase/functions/release-manifest.json"));
@@ -24,6 +27,9 @@ const checks = [
   [migration.includes("'pending'") && migration.includes("'ready'") && migration.includes("'consumed'"), "handoff has a single-use status lifecycle"],
   [migration.includes("consume_social_auth_handoff") && migration.includes("for update") && migration.includes("grant execute on function public.consume_social_auth_handoff(text) to service_role"), "handoff consumption is atomic and service-role only"],
   [migration.includes("social_auth_rate_limits") && migration.includes("consume_social_auth_rate_limit") && migration.includes("bucket_key ~ '^[a-f0-9]{64}$'"), "unauthenticated login starts use a hashed rate-limit bucket"],
+  [identityMigration.includes("social_auth_external_identities") && identityMigration.includes("primary key (provider, external_id)") && identityMigration.includes("unique (provider, user_id)"), "external provider identities have a canonical one-to-one mapping"],
+  [identityMigration.includes("enable row level security") && /revoke all on table public\.social_auth_external_identities from public, anon, authenticated/.test(identityMigration), "external identity mappings are hidden from clients"],
+  [identityMigration.includes("to service_role"), "only the service role receives external identity table privileges"],
 
   // Session minting uses the service role and confirmed users; consume is single-use.
   [shared.includes('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")') && shared.includes("return null"), "session minting requires the service-role key (disabled otherwise)"],
@@ -32,35 +38,52 @@ const checks = [
   [shared.includes("verificationClient.auth.verifyOtp") && !shared.includes("client.auth.verifyOtp"), "OTP verification cannot replace the service-role client's authorization state"],
   [shared.includes('rpc("consume_social_auth_handoff"') && !shared.includes("properties.action_link"), "consumeHandoff is database-atomic and session mint does not parse redirect fragments"],
   [shared.includes("SOCIAL_AUTH_RATE_LIMIT_SALT") && shared.includes('rpc("consume_social_auth_rate_limit"'), "provider login starts require server-side salted rate limiting"],
+  [shared.includes('from("social_auth_external_identities")') && shared.includes("auth.admin.getUserById"), "session minting resolves a service-role external identity mapping"],
+  [shared.includes("crypto.randomUUID()") && shared.includes("@external.users.picom.local"), "new external users receive opaque non-guessable transport emails"],
+  [shared.includes("picom_external_provider") && shared.includes("picom_external_id"), "trusted app metadata is checked against the external identity mapping"],
+  [!shared.includes("already|exist|registered") && !shared.includes("identity.email"), "existing-email errors cannot be treated as a verified external identity"],
 
   // Steam: verify the OpenID assertion BEFORE minting; validate the SteamID shape.
   [steam.includes('"openid.mode", "check_authentication"') && steam.includes("verifySteamAssertion"), "Steam verifies the OpenID assertion with Steam (check_authentication)"],
   [/steamIdPattern\s*=\s*\/\^https:\\\/\\\/steamcommunity\\\.com\\\/openid\\\/id\\\/\(\\d\{17\}\)/.test(steam), "Steam claimed_id is validated to a 17-digit SteamID"],
   [steam.includes("!validEnvelope || !match || !(await verifySteamAssertion(url.searchParams))"), "Steam mints only after envelope, id shape, and assertion verification"],
   [steam.includes('url.searchParams.get("openid.return_to") === expectedReturnTo') && steam.includes('url.searchParams.get("openid.op_endpoint") === STEAM_OPENID_ENDPOINT'), "Steam validates the signed return target and provider endpoint"],
-  [steam.includes("isPendingHandoff") && steam.includes("consumeSocialAuthRateLimit"), "Steam requires a live handoff and rate limit before minting"],
+  [steam.includes('CANONICAL_STEAM_REALM = "https://auth.picom.gg/"') && steam.includes('CANONICAL_STEAM_RETURN = "https://auth.picom.gg/steam/callback"'), "Steam OpenID realm/return_to are auth.picom.gg canonical"],
+  [steam.includes("STEAM_OPENID_REALM") && steam.includes("STEAM_OPENID_RETURN_URL") && steam.includes("authGatewayBaseUrl"), "Steam OpenID env + gateway base are server-controlled"],
+  [steam.includes("/steam/start?nonce="), "Steam start-link returns auth.picom.gg/steam/start"],
+  [steam.includes("getPendingHandoff") && steam.includes("consumeSocialAuthRateLimit") && steam.includes("createPendingHandoff"), "Steam requires a live handoff and rate limit before minting"],
   [steam.includes("getServiceClient()") && steam.includes("NOT_CONFIGURED"), "Steam function is disabled without the service-role key"],
+  [steam.includes('provider: "steam"') && steam.includes("externalId: steamId") && !steam.includes("@steam.users.picom.local"), "Steam passes the verified ID to the canonical mapping without a predictable email"],
 
   // Epic: exchange the code with the client secret; gate on Epic credentials.
   [epic.includes("grant_type: \"authorization_code\"") && epic.includes("Basic ${basic}") && epic.includes("btoa(`${clientId}:${clientSecret}`)"), "Epic exchanges the code with its client secret (Basic auth)"],
   [epic.includes('Deno.env.get("EPIC_CLIENT_ID")') && epic.includes('Deno.env.get("EPIC_CLIENT_SECRET")') && epic.includes('Deno.env.get("EPIC_DEPLOYMENT_ID")'), "Epic requires its client id/secret and deployment id"],
   [epic.includes("deployment_id: deploymentId"), "Epic binds authorization-code exchange to the configured deployment"],
   [epic.includes("getServiceClient()") && epic.includes("NOT_CONFIGURED"), "Epic function is disabled without the service-role key"],
-  [epic.includes("isPendingHandoff") && epic.includes("consumeSocialAuthRateLimit") && epic.includes("functionBaseUrl()"), "Epic binds callback state to a pending handoff and canonical redirect"],
+  [epic.includes("getPendingHandoff") && epic.includes("consumeSocialAuthRateLimit") && epic.includes("functionBaseUrl()"), "Epic binds callback state to a pending handoff and canonical redirect"],
+  [epic.includes('provider: "epic"') && epic.includes("externalId: exchanged.accountId") && !epic.includes("@epic.users.picom.local"), "Epic passes the verified account ID to the canonical mapping without a predictable email"],
 
   // Both use the nonce and only complete the handoff after verification.
   [steam.includes("completeHandoff(client, nonce, \"steam\", session)") && epic.includes("completeHandoff(client, nonce, \"epic\", session)"), "both functions bind the minted session to the request nonce"],
   [steam.includes('action === "poll"') && epic.includes('action === "poll"') && steam.includes("consumeHandoff") && epic.includes("consumeHandoff"), "both functions expose a single-use poll endpoint"],
+  [steam.includes('action === "start-link"') && epic.includes('action === "start-link"') && steam.includes('purpose: "link"') && epic.includes('purpose: "link"'), "both functions expose session-bound start-link for authenticated linking"],
+  [steam.includes('action === "unlink"') && epic.includes('action === "unlink"'), "both functions expose authenticated unlink"],
 
   // Frontend routes Steam/Epic through the custom flow, gated by their env flags.
   [service.includes('"google", "apple", "steam", "epic"') && service.includes("isCustomOAuthProvider"), "Steam/Epic are offered and marked as custom providers"],
   [service.includes("beginCustomOAuth") && service.includes("client.auth.setSession(") && service.includes("action=poll&nonce="), "custom flow opens login, polls, and sets the returned session"],
+  [service.includes("authGatewayUrl") && service.includes("/${provider}/start?nonce="), "Steam/Epic browser start uses auth.picom.gg branded gateway URL"],
+  [epic.includes("EPIC_REDIRECT_URI") && epic.includes("auth.picom.gg") && epic.includes("functionBaseUrl") && epic.includes("/epic/callback"), "Epic redirect_uri is server-controlled on auth.picom.gg/epic/callback"],
+  [epic.includes("epicBrowserStartUrl") && epic.includes("/epic/start"), "Epic start-link returns branded /epic/start"],
   [service.includes("steamOAuthEnabled") && service.includes("epicOAuthEnabled"), "Steam/Epic availability is gated by their env flags"],
   [buttons.includes("isCustomOAuthProvider(provider)") && buttons.includes("beginCustomOAuth(provider"), "the buttons route custom providers through the custom flow"],
+  [authService.includes("steam|epic|external") && authService.includes("reserved for Picom sign-in providers"), "normal registration rejects internal external-identity domains as defense in depth"],
+  [service.includes("beginProviderLink") && service.includes("action=start-link") && service.includes("canUnlinkProvider"), "custom providers use session-bound link/unlink with last-login guards"],
+  [linkMigration.includes("purpose") && linkMigration.includes("link_user_id") && linkMigration.includes("list_my_social_auth_external_identities") && linkMigration.includes("audit_provider_connection_change"), "link/unlink migration defines purpose, link_user_id, identity listing, and audit RPC"],
 
   // The renderer never handles provider secrets.
   [!service.includes("SERVICE_ROLE") && !service.includes("EPIC_CLIENT_SECRET") && !service.includes("STEAM_WEB_API_KEY"), "no provider secrets are referenced in the renderer"],
-  [config.includes("[functions.steam-auth]\nverify_jwt = false") && config.includes("[functions.epic-auth]\nverify_jwt = false"), "custom provider entrypoints explicitly allow pre-session browser redirects"],
+  [config.includes("[functions.steam-auth]") && config.includes("[functions.epic-auth]") && /\[functions\.steam-auth\][\s\S]*?verify_jwt\s*=\s*false/.test(config) && /\[functions\.epic-auth\][\s\S]*?verify_jwt\s*=\s*false/.test(config), "custom provider entrypoints explicitly allow pre-session browser redirects"],
   [manifest.releasePublic.some((entry) => entry.name === "steam-auth" && entry.verifyJwt === false) && manifest.releasePublic.some((entry) => entry.name === "epic-auth" && entry.verifyJwt === false), "release manifest classifies both guarded custom-auth entrypoints"],
 ];
 

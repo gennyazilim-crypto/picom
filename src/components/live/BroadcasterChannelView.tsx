@@ -765,7 +765,6 @@ export function BroadcasterChannelView(props: BroadcasterChannelViewProps) {
           profile={profile}
           member={member}
           isCurrentUser={isCurrentUser}
-          onBack={rest.onBack}
           onToggleFollow={rest.onToggleFollow}
           onMessage={rest.onMessage}
           onFriendAction={rest.onFriendAction}

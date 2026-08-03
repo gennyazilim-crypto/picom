@@ -1,0 +1,32 @@
+# Branded auth.picom.gg gateway (127.0.0.1:4180). Nginx terminates TLS.
+# Secrets: /etc/picom/auth-gateway.env (never commit).
+#
+#   docker compose -f infra/auth-gateway/docker-compose.auth-gateway.yml up -d
+#
+# Env file must include:
+#   SUPABASE_URL=https://ufmtvqtsklqsmqxefbbs.supabase.co
+#   SUPABASE_ANON_KEY=...
+#   ACCOUNT_CENTER_URL=https://account.picom.gg
+#   AUTH_GATEWAY_PORT=4180
+
+services:
+  auth-gateway:
+    build:
+      context: ../../services/auth-gateway
+      dockerfile: Dockerfile
+    container_name: picom-auth-gateway
+    restart: unless-stopped
+    env_file:
+      - /etc/picom/auth-gateway.env
+    ports:
+      - "127.0.0.1:4180:4180"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

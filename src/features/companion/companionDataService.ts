@@ -481,10 +481,24 @@ export const companionDataService = Object.freeze({
     await bindPresence(initial);
     const currentUser = await loadCurrentUser();
     const currentUserId = text(record(currentUser).id);
-    const directCleanup = currentUserId
-      ? directRealtimeService.subscribeList({ currentUserId, onEvent: () => void refresh(), onStatus: () => undefined })
-      : undefined;
-    const friendCleanup = await friendRequestService.subscribeToFriendState(() => void refresh());
+    let directCleanup: (() => void) | undefined;
+    if (currentUserId) {
+      try {
+        directCleanup = directRealtimeService.subscribeList({
+          currentUserId,
+          onEvent: () => void refresh(),
+          onStatus: () => undefined,
+        });
+      } catch (reason) {
+        console.warn("Companion DM list realtime could not start.", reason);
+      }
+    }
+    let friendCleanup = () => undefined;
+    try {
+      friendCleanup = await friendRequestService.subscribeToFriendState(() => void refresh());
+    } catch (reason) {
+      console.warn("Companion friend realtime could not start.", reason);
+    }
     const timer = window.setInterval(() => void refresh(), 30_000);
     return () => {
       stopped = true;

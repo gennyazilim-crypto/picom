@@ -145,7 +145,15 @@ export async function upsertOwnLiveSchedule(input: {
     target_channel_id: input.channelId ?? null,
   });
   if (error || !data) {
-    if (error?.code === "42501") return { ok: false, error: "You cannot edit this schedule." };
+    if (/AUTH_REQUIRED/i.test(error?.message ?? "")) {
+      return { ok: false, error: "Sign in required to publish a schedule." };
+    }
+    if (/LIVE_SCHEDULE_FORBIDDEN/i.test(error?.message ?? "") || error?.code === "42501") {
+      if (input.communityId) {
+        return { ok: false, error: "You cannot schedule for this community. Pick Personal / no community, or use a community you can manage." };
+      }
+      return { ok: false, error: "You cannot edit this schedule." };
+    }
     if (/LIVE_SCHEDULE_START_PAST/i.test(error?.message ?? "")) {
       return { ok: false, error: "Start time cannot be in the past." };
     }

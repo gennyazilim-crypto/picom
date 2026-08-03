@@ -1,5 +1,3 @@
-import { mockFriendState } from "../../data/mockFriends";
-import { currentUserId } from "../../data/mockCommunities";
 import type {
   FriendConnection,
   FriendNotification,
@@ -10,12 +8,28 @@ import type {
   FriendState,
   FriendSuggestion,
 } from "../../types/friends";
-import { dataSourceService } from "../dataSourceService";
 import { notificationCenterService } from "../notificationCenterService";
 import { notificationService } from "../notificationService";
 import { isRateLimitError, rateLimitUserMessage } from "../rateLimitError";
 import { settingsService } from "../settingsService";
 import { getSupabaseClient } from "../supabase/supabaseClient";
+
+let realtimeSubscriptionSequence = 0;
+
+async function authenticatedClient() {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  const { data, error } = await client.auth.getUser();
+  if (error || !data.user) return null;
+
+  return { client, userId: data.user.id };
+}
+
+function createRealtimeSubscriptionId(): string {
+  realtimeSubscriptionSequence += 1;
+  return `${Date.now().toString(36)}-${realtimeSubscriptionSequence.toString(36)}`;
+}
 import { userBlockingService } from "../userBlockingService";
 
 type FriendStateListener = (state: FriendState) => void;
@@ -56,7 +70,7 @@ export function calculateFriendRequestCounts(
 function buildState(
   friends: FriendConnection[],
   requests: FriendRequest[],
-  suggestions: FriendSuggestion[] = mockFriendState.suggestions,
+  suggestions: FriendSuggestion[] = [],
 ): FriendState {
   return {
     friends,
@@ -132,114 +146,6 @@ function classifyRemoteError<T>(error: { message?: string; code?: string } | nul
   if (error?.code === "PGRST301" || normalized.includes("jwt") || normalized.includes("auth")) return failure("AUTH_REQUIRED", "Sign in to manage friends.");
   if (normalized.includes("fetch") || normalized.includes("network")) return failure("NETWORK", "The friend service is temporarily unreachable.", true);
   return failure("UNKNOWN", fallback, true);
-}
-
-const mockFriends = new Map(mockFriendState.friends.map((friend) => [friend.userId, friend]));
-const mockRequests = new Map(mockFriendState.requests.map((request) => [request.id, request]));
-const mockRequestHistory = new Map(mockFriendState.requests.map((request) => [request.id, request]));
-const mockStateListeners = new Set<FriendStateListener>();
-const mockNotificationListeners = new Set<FriendNotificationListener>();
-
-function getMockState(): FriendState {
-  return buildState([...mockFriends.values()], [...mockRequests.values()]);
-}
-
-function emitMockState(): void {
-  const snapshot = getMockState();
-  for (const listener of mockStateListeners) listener(snapshot);
-}
-
-function transitionMockRequest(
-  requestId: string,
-  status: FriendRequest["status"],
-  expectedDirection: FriendRequest["direction"],
-): FriendRequest | null {
-  const request = mockRequests.get(requestId);
-  if (!request || request.status !== "pending" || request.direction !== expectedDirection) return null;
-  mockRequestHistory.set(requestId, { ...request, status });
-  mockRequests.delete(requestId);
-  return request;
-}
-
-const mockFriendDataSource: FriendRequestDataSource = {
-  async getState() { return { ok: true, data: getMockState() }; },
-  async sendRequest(userId) {
-    const normalized = userId.trim();
-    if (!normalized) return failure("INVALID_INPUT", "Choose a user before sending a friend request.");
-    if (normalized === currentUserId) return failure("SELF_REQUEST", "You cannot send a friend request to your own account.");
-    if (userBlockingService.isBlocked(normalized)) return failure("BLOCKED", "Friend requests are unavailable for this relationship.");
-    if (mockFriends.has(normalized)) return failure("ALREADY_FRIENDS", "This user is already a friend.");
-    if ([...mockRequests.values()].some((request) => request.userId === normalized && request.status === "pending")) return failure("DUPLICATE_REQUEST", "A friend request is already pending.");
-    const suggestion = mockFriendState.suggestions.find((candidate) => candidate.userId === normalized);
-    const id = `friend-request-${normalized}`;
-    const request: FriendRequest = {
-      id,
-      userId: normalized,
-      displayName: suggestion?.displayName ?? "Picom user",
-      username: suggestion?.username ?? "user",
-      direction: "outgoing",
-      status: "pending",
-      note: "Request pending.",
-      createdAt: new Date().toISOString(),
-    };
-    mockRequests.set(id, request);
-    mockRequestHistory.set(id, request);
-    emitMockState();
-    return { ok: true, data: id };
-  },
-  async acceptRequest(requestId) {
-    const request = transitionMockRequest(requestId, "accepted", "incoming");
-    if (!request) return failure("DIRECTION_DENIED", "Only incoming friend requests can be accepted.");
-    mockFriends.set(request.userId, { userId: request.userId, displayName: request.displayName, username: request.username, status: "online", statusText: "New friend", favorite: false, mutualCommunityCount: 1 });
-    emitMockState();
-    return { ok: true, data: true };
-  },
-  async declineRequest(requestId) {
-    if (!transitionMockRequest(requestId, "declined", "incoming")) return failure("DIRECTION_DENIED", "Only incoming friend requests can be declined.");
-    emitMockState();
-    return { ok: true, data: true };
-  },
-  async cancelRequest(requestId) {
-    if (!transitionMockRequest(requestId, "cancelled", "outgoing")) return failure("DIRECTION_DENIED", "Only outgoing friend requests can be cancelled.");
-    emitMockState();
-    return { ok: true, data: true };
-  },
-  async removeFriend(userId) {
-    const removed = mockFriends.delete(userId);
-    if (!removed) return failure("NOT_FOUND", "This friendship is no longer available.");
-    emitMockState();
-    return { ok: true, data: true };
-  },
-  async blockFriend(friend) {
-    if (!await userBlockingService.setBlockedUser(friend, true)) return failure("UNKNOWN", "Could not block this user.", true);
-    mockFriends.delete(friend.userId);
-    for (const [requestId, request] of mockRequests) {
-      if (request.userId === friend.userId) transitionMockRequest(requestId, "cancelled", request.direction);
-    }
-    emitMockState();
-    return { ok: true, data: true };
-  },
-  async subscribeToState(listener) {
-    mockStateListeners.add(listener);
-    queueMicrotask(() => listener(getMockState()));
-    return () => mockStateListeners.delete(listener);
-  },
-  async subscribeToNotifications(listener) {
-    mockNotificationListeners.add(listener);
-    return () => mockNotificationListeners.delete(listener);
-  },
-};
-
-async function authenticatedClient() {
-  const client = getSupabaseClient();
-  if (!client) return null;
-  const { data, error } = await client.auth.getUser();
-  if (error || !data.user) return null;
-  return { client, userId: data.user.id };
-}
-
-function createRealtimeSubscriptionId(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 const supabaseFriendDataSource: FriendRequestDataSource = {
@@ -340,7 +246,7 @@ const supabaseFriendDataSource: FriendRequestDataSource = {
 };
 
 function currentDataSource(): FriendRequestDataSource {
-  return dataSourceService.getStatus().isMock ? mockFriendDataSource : supabaseFriendDataSource;
+  return supabaseFriendDataSource;
 }
 
 export async function routeFriendNotification(notification: FriendNotification): Promise<FriendNotificationRouteResult> {

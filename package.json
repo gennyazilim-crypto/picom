@@ -196,6 +196,8 @@
     "invites:campaigns:smoke": "node scripts/invite-campaigns-tracking-smoke-test.mjs",
     "onboarding:experiments:smoke": "node scripts/onboarding-experiments-smoke-test.mjs",
     "verification:badges:smoke": "node scripts/profile-verification-badges-smoke-test.mjs",
+    "verification-business:domain:test": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verification-business-domain-contract-test.mjs",
+    "verification-business:rls:test": "supabase test db --local supabase/tests/rls/verification_business_platform.sql",
     "profile:privacy:smoke": "node scripts/profile-privacy-controls-smoke-test.mjs",
     "profile:domain:smoke": "node scripts/profile-domain-service-smoke.mjs",
     "profile:activity:supabase:smoke": "node scripts/profile-activity-supabase-smoke.mjs",
@@ -537,7 +539,8 @@
     "feed:storage:security:static": "node scripts/feed-storage-security-static-smoke.mjs",
     "feed:attachment:signing:smoke": "node scripts/feed-attachment-signing-smoke.mjs",
     "feed:private-attachment:hosted:preflight": "node scripts/feed-private-attachment-hosted-matrix.mjs",
-    "feed:private-attachment:hosted:test": "node scripts/feed-private-attachment-hosted-matrix.mjs --run"
+    "feed:private-attachment:hosted:test": "node scripts/feed-private-attachment-hosted-matrix.mjs --run",
+    "verification-business:creator-publisher:regression": "node scripts/verification-business-creator-publisher-regression.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

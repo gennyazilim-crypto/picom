@@ -162,7 +162,6 @@ export function ProfileLeftCard({
   profile,
   member,
   isCurrentUser,
-  onBack,
   onToggleFollow,
   onMessage,
   onFriendAction,
@@ -171,17 +170,13 @@ export function ProfileLeftCard({
   isBlocked,
   relationshipBusy,
   onOpenMore,
-}: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
+}: ProfileActionButtonsProps & { member: Member }) {
   const verification = getUserVerificationSummary(member.userId, profile.verificationBadges ?? [], profile.verification ?? member.verification);
   const displayName = useProfileDisplayName(profile.id, profile.displayName);
   const username = useProfileUsername(profile.id, profile.username);
   return (
     <aside className="profile-rail" aria-label="Profile summary">
       <article className="profile-identity-card">
-        <button className="profile-rail-back" type="button" onClick={onBack} aria-label="Back">
-          <AppIcon name="chevronRight" size="sm" />
-          Back
-        </button>
         <ProfileCover userId={profile.id} fallbackUrl={profile.coverUrl} label={`${displayName} cover photo`} className="profile-identity-cover" />
         <div className="profile-identity-body">
           <VerifiedProfileAvatar
@@ -682,7 +677,6 @@ export function ProfileView({
   member,
   communities,
   currentUserId,
-  onBack,
   onToggleFollow,
   onMessage,
   onFriendAction,
@@ -708,7 +702,6 @@ export function ProfileView({
           profile={profile}
           member={member}
           isCurrentUser={isCurrentUser}
-          onBack={onBack}
           onToggleFollow={onToggleFollow}
           onMessage={onMessage}
           onFriendAction={onFriendAction}

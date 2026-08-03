@@ -1,10 +1,11 @@
-.mention-badge{min-width:18px;max-width:34px;height:18px;display:grid;place-items:center;border-radius:999px;background:var(--picom-orange);color:#fff;font-size:11px;font-weight:800;line-height:18px;padding:0 6px;box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-orange) 16%,transparent);overflow:hidden}
+﻿.mention-badge{min-width:18px;max-width:34px;height:18px;display:grid;place-items:center;border-radius:999px;background:var(--picom-orange);color:#fff;font-size:11px;font-weight:800;line-height:18px;padding:0 6px;box-shadow:0 0 0 2px color-mix(in srgb,var(--picom-orange) 16%,transparent);overflow:hidden}
 .mention-feed-shell{
   flex:1 1 auto;
   min-width:0;
   min-height:0;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 320px;
+  /* Single child only — companion rail lives in .mention-feed-body-grid */
+  grid-template-columns:minmax(0,1fr);
   background:var(--bg-chat);
 }
 .mention-feed-main{
@@ -982,7 +983,7 @@
     padding-right:18px;
   }
 }
-@media(max-width:1380px){
+@media(max-width:1100px){
   .mention-feed-body-grid{
     grid-template-columns:minmax(0,1fr);
   }
@@ -1610,7 +1611,7 @@
     grid-template-columns: minmax(0, 1fr) 260px;
   }
 }
-@media (max-width: 1380px) {
+@media (max-width: 1100px) {
   .mention-feed-body-grid {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -2818,6 +2818,32 @@ export function CompanionApp() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    void window.picomDesktop?.companion?.getContext?.().then((context) => {
+      if (cancelled || !context) return;
+      const next = parseCompanionRoute(
+        `?type=${encodeURIComponent(String(context.type ?? "home"))}`
+        + (context.conversationId ? `&conversationId=${encodeURIComponent(context.conversationId)}` : "")
+        + (context.callId ? `&callId=${encodeURIComponent(context.callId)}` : "")
+        + (context.communityId ? `&communityId=${encodeURIComponent(context.communityId)}` : "")
+        + (context.channelId ? `&channelId=${encodeURIComponent(context.channelId)}` : ""),
+      );
+      setRoute((current) => (
+        next.type === current.type
+        && next.conversationId === current.conversationId
+        && next.callId === current.callId
+        && next.communityId === current.communityId
+        && next.channelId === current.channelId
+          ? current
+          : next
+      ));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     void getCompanionPreferences().then(setPreferences);
   }, []);
 

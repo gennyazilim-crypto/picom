@@ -85,6 +85,10 @@ function resolveWindowType(value: string | null): CompanionWindowType {
   return "home";
 }
 
+export function isCompanionWindowSearch(search = typeof window !== "undefined" ? window.location.search : ""): boolean {
+  return new URLSearchParams(search).get("picomWindow") === "companion";
+}
+
 export function parseCompanionRoute(search = window.location.search): CompanionRoute {
   const params = new URLSearchParams(search);
   const type = resolveWindowType(params.get("type") ?? params.get("surface"));

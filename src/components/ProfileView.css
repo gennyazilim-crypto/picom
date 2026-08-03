@@ -37,33 +37,6 @@
   scrollbar-color: color-mix(in srgb, var(--text-muted) 34%, transparent) transparent;
 }
 
-.profile-rail-back {
-  width: max-content;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  color: var(--text-secondary);
-  padding: 0 14px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 850;
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(8px);
-}
-
-.profile-rail-back svg {
-  transform: rotate(180deg);
-}
-
-.profile-rail-back:hover {
-  color: var(--text-primary);
-  background: var(--surface-hover);
-}
-
 .profile-identity-card,
 .profile-panel {
   border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
@@ -162,6 +135,45 @@
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.profile-rail-stats {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+}
+
+.profile-rail-stat {
+  flex: 1 1 0;
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding: 6px 2px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-soft) 62%, var(--surface));
+  text-align: center;
+}
+
+.profile-rail-stat strong {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.profile-rail-stat span {
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-role-row {
@@ -755,7 +767,22 @@
   font-size: 14px;
 }
 
+.profile-communities-panel {
+  padding: 14px 16px;
+}
+
+.profile-communities-panel .profile-panel-header--compact {
+  margin-bottom: 10px;
+}
+
+.profile-communities-panel .profile-panel-header--compact h2 {
+  font-size: 14px;
+}
+
 .profile-community-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
@@ -820,6 +847,21 @@
 .profile-community-copy small {
   color: var(--text-muted);
   font-size: 11px;
+}
+
+.profile-community-role {
+  flex: 0 0 auto;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.01em;
 }
 
 .profile-empty-state {

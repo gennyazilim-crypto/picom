@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react";
+﻿import type { MouseEvent } from "react";
 import type { Community, Member, UserStatus } from "../types/community";
 import type { UpcomingEvent, UpcomingEventType } from "../types/events";
 import type { FriendConnection } from "../types/friends";
@@ -308,11 +308,12 @@ export function FeedCompanionRail({
   audioItem,
   onCloseAudio,
 }: FeedCompanionRailProps) {
-  const connectedCommunityRoom = Boolean(voiceState.roomContext) && activeVoiceRooms.some((room) =>
-    room.communityId === voiceState.roomContext?.communityId && room.channelId === voiceState.roomContext?.channelId
-  );
-  const voiceConnected = isV1FeatureEnabled("voiceRooms") && connectedCommunityRoom && (voiceState.status === "connected" || voiceState.status === "reconnecting");
+  // Connected Voice sticky follows LiveKit session status. Do not gate on discovery
+  // occupancy or roomContext presence — both can lag after join/hydration.
+  const voiceConnected = isV1FeatureEnabled("voiceRooms")
+    && (voiceState.status === "connected" || voiceState.status === "reconnecting");
   const showStickyStack = Boolean(audioItem) || voiceConnected;
+  void activeVoiceRooms;
 
   return (
     <aside className="feed-companion-rail" aria-label="Feed companion rail">

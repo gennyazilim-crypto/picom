@@ -1,0 +1,5 @@
+﻿1) MEDIUM settingsService UiLanguage en|tr vs 10-locale Live Now catalog
+2) INFO liveScreenShareService legacy session RPCs coexist with publisher discovery
+3) HIGH ops .env.production aliases staging ufmt
+4) INFO 170000 rewrote list not count (count uses exists-path; low risk)
+5) MEDIUM docs/ops mentions piso/qchat — isolation required (untouched)

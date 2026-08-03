@@ -1,0 +1,19 @@
+﻿CANONICAL_STAGING_TARGET=VERIFIED
+canonical_name=picom-staging
+canonical_ref=ufmtvqtsklqsmqxefbbs
+staging_v2_name=picom-staging-v2
+staging_v2_ref=kbdotviopwlcqviggtrc
+staging_v2_declared_canonical=NO (linked=false in preflight project list; zero Live Now scripts hard-code kbd)
+code_bound_ref=ufmtvqtsklqsmqxefbbs (.env.local, .env.production, scripts/with-supabase-cli-token.ps1, all publisher-* smoke/integration scripts)
+desktop_staging_package_guard=scripts/package-windows-staging-dir.mjs EXPECTED_REF=ufmtvqtsklqsmqxefbbs
+web_staging=same VITE_SUPABASE_URL pattern → ufmt
+worker_staging=event-reminder-worker uses env SUPABASE_URL (local/staging ops); no kbd hardcode found
+migrations_applied_evidence=ufmtvqtsklqsmqxefbbs (publisher-creator-staging-apply, live-now-publisher-staging-closure, case18, jwt-rls, staging-final-closure)
+case04_tested_on=ufmtvqtsklqsmqxefbbs
+case18_tested_on=ufmtvqtsklqsmqxefbbs
+jwt_rls_tested_on=ufmtvqtsklqsmqxefbbs
+final_ui_closure_on=ufmtvqtsklqsmqxefbbs
+old_staging_read_only_intent=N/A as canonical — ufmt IS the tested/canonical staging for this product line
+conflict_rule_triggered=NO (conflict would require canonical=kbd AND tests=ufmt; here canonical=ufmt AND tests=ufmt)
+STAGING_GO_VALID_FOR=ufmtvqtsklqsmqxefbbs ONLY
+STAGING_KBD_STATUS=EXISTS but UNUSED for Publisher/Live Now Phase 1 verification

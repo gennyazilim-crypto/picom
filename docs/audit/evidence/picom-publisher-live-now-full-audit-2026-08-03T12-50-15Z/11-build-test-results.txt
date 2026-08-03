@@ -1,0 +1,10 @@
+﻿COMMAND|EXIT|RESULT|LOG
+npm run typecheck|0|PASS|typecheck.log
+npm run build|0|PASS|build.log
+npx vite build|0|PASS|vite.log
+npm run desktop:smoke|0|PASS|desktop.log
+node --test publisher/live unit suite|0|PASS|unit-publisher-live.log (30 pass)
+node --test scripts/live-now-i18n-parity.test.mjs|0|PASS|i18n.log (4 pass)
+npm run secrets:smoke|0|PASS|secrets-smoke.log
+npm run lint|N/A|NOT_CONFIGURED|no lint script in package.json
+voiceService Uint8Array fix|static|PASS|copy via new Uint8Array + set; no as any / ts-ignore at publishData site
