@@ -17,6 +17,26 @@
   },
   "productionCandidateTag": "picom-publisher-phase1-production-candidate-2026-08-03",
   "productionCandidateCommitSha": "76d0439bf1eda8e5a208b26452b390f8690244b2",
+  "finalProductionCandidateTag": "picom-publisher-phase1-production-candidate-2026-08-03-final",
+  "finalProductionCandidateCommitSha": "448736697acf44e36887740b613c1dab16df2c27",
+  "production": {
+    "projectName": "picom-production",
+    "projectRef": "cqnsetsmcduraryemhbi",
+    "region": "eu-central-1",
+    "status": "ACTIVE_HEALTHY",
+    "identityDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_IDENTITY.json",
+    "rollbackDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_ROLLBACK.md",
+    "stagingV2PausedToFreeSlot": "kbdotviopwlcqviggtrc",
+    "migrationDeploy": {
+      "status": "PARTIAL_BLOCKED_PLATFORM_REALTIME",
+      "appliedThrough": "20260710090000",
+      "failedAt": "20260710121000_multi_tenant_realtime_storage_hardening.sql",
+      "failure": "relation realtime.messages does not exist; CREATE on schema realtime denied (owner supabase_admin)",
+      "phase1PublisherMigrations": "NOT_REACHED"
+    },
+    "backupPitr": "NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED",
+    "featureFlagsDefault": "fail_closed_off_in_production"
+  },
   "migrations": [
     {
       "version": "20260803130000",
@@ -126,10 +146,14 @@
     "evidenceIntegrity": "GO",
     "localeRuntime": "GO",
     "productionConfigSafety": "GO",
-    "productionBuild": "BLOCKED_EXPECTED_MISSING_INFRASTRUCTURE",
-    "productionInfrastructure": "NOT_CREATED",
+    "productionProject": "GO",
+    "productionMigrations": "PARTIAL_BLOCKED_PLATFORM_REALTIME",
+    "productionBuild": "CONFIG_GUARD_PASS_WITH_LOCAL_ENV",
+    "productionInfrastructure": "CREATED_PARTIAL_SCHEMA",
+    "productionDeploy": "PARTIAL",
     "lint": "NOT_CONFIGURED",
-    "secretScan": "PASS"
+    "secretScan": "PASS",
+    "phase1Production": "PARTIAL"
   },
   "secretScan": {
     "result": "PASS",

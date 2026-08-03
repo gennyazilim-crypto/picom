@@ -1,0 +1,7 @@
+typecheck=0
+production_config_guard_local_env=0 PASS
+production_config_guard_staging_env=1 FAIL expected
+production_config_guard_unit=0
+LINT=NOT_CONFIGURED
+full_build_package=NOT_RE_RUN_THIS_SESSION
+note=typecheck and guard verified after production identity/feature-flag changes

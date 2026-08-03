@@ -72,6 +72,13 @@ Deno.serve((request: Request) => {
       enableForumChannels: false,
       enableAnnouncementChannels: false,
       enableSavedMessages: false,
+      enablePublisherApplication: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_APPLICATION"),
+      enablePublisherReview: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_REVIEW"),
+      enablePublisherBadgeDisplay: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_BADGE_DISPLAY"),
+      enableLiveNowDiscovery: readPublicBooleanEnv("PICOM_ENABLE_LIVE_NOW_DISCOVERY"),
+      enableGoLive: readPublicBooleanEnv("PICOM_ENABLE_GO_LIVE"),
+      enablePublisherReminders: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_REMINDERS"),
+      enablePublisherNotificationPreferences: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_NOTIFICATION_PREFERENCES"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

@@ -24,6 +24,13 @@ export const FEATURE_FLAG_KEYS = [
   "enableAnnouncementChannels",
   "enableSavedMessages",
   "enableOnboardingExperiment",
+  "enablePublisherApplication",
+  "enablePublisherReview",
+  "enablePublisherBadgeDisplay",
+  "enableLiveNowDiscovery",
+  "enableGoLive",
+  "enablePublisherReminders",
+  "enablePublisherNotificationPreferences",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -40,6 +47,13 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   adminOperations: "enableAdminOperations",
   autoUpdate: "enableAutoUpdate",
   analytics: "enableAnalyticsPlaceholder",
+  publisherApplication: "enablePublisherApplication",
+  publisherReview: "enablePublisherReview",
+  publisherBadgeDisplay: "enablePublisherBadgeDisplay",
+  liveNowDiscovery: "enableLiveNowDiscovery",
+  goLive: "enableGoLive",
+  publisherReminders: "enablePublisherReminders",
+  publisherNotificationPreferences: "enablePublisherNotificationPreferences",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -87,6 +101,14 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableAnnouncementChannels: false,
     enableSavedMessages: true,
     enableOnboardingExperiment: false,
+    // Publisher/Creator Phase 1 production defaults: fail-closed until controlled enablement.
+    enablePublisherApplication: appConfig.environment !== "production",
+    enablePublisherReview: appConfig.environment !== "production",
+    enablePublisherBadgeDisplay: appConfig.environment !== "production",
+    enableLiveNowDiscovery: appConfig.environment !== "production",
+    enableGoLive: appConfig.environment !== "production",
+    enablePublisherReminders: appConfig.environment !== "production",
+    enablePublisherNotificationPreferences: appConfig.environment !== "production",
   });
 }
 

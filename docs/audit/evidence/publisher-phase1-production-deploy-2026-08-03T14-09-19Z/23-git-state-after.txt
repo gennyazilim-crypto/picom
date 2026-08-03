@@ -1,0 +1,5 @@
+pre_commit_head=448736697acf44e36887740b613c1dab16df2c27
+final_candidate_tag=picom-publisher-phase1-production-candidate-2026-08-03-final
+production_ref=cqnsetsmcduraryemhbi
+unrelated_left_untracked=docs/audit/evidence/picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z/
+tmp_helper_scripts=not_committed

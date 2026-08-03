@@ -1,0 +1,9 @@
+﻿RESULT=CREATED
+name=picom-production
+ref=cqnsetsmcduraryemhbi
+region=eu-central-1
+status=ACTIVE_HEALTHY
+org=agmihvcqyshjgwjgknor
+staging_v2_action=PAUSED_TO_INACTIVE
+staging_v2_ref=kbdotviopwlcqviggtrc
+canonical_staging_untouched=ufmtvqtsklqsmqxefbbs

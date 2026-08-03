@@ -1,0 +1,6 @@
+MIGRATION_PLAN
+phase1_hashes=MATCH_MANIFEST
+total_migrations=245
+dry_run=PASS
+historical_truncate_files=3 (allowed on empty greenfield)
+apply_attempted=yes

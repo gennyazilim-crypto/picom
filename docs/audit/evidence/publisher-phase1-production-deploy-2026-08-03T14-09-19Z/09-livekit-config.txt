@@ -1,0 +1,2 @@
+LIVEKIT_PRODUCTION=BLOCKED_CREDENTIAL
+note=No production LiveKit URL/API key/secret configured in this session; Go Live must remain OFF

@@ -1,0 +1,3 @@
+STORAGE=NOT_REACHED
+REALTIME=BLOCKED_MISSING_PLATFORM_TABLE
+detail=Migration chain stopped before Publisher storage policies and before later realtime grants because realtime.messages is absent on new project

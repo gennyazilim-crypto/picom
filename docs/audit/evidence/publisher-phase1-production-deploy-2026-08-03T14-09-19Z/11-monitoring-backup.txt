@@ -1,0 +1,4 @@
+MONITORING=MINIMAL_LOCAL_ONLY
+BACKUP_PITR=NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED
+rollback_doc=docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_ROLLBACK.md
+note=Free-plan project created; automated PITR not verified/claimed

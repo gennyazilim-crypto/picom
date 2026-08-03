@@ -1,0 +1,2 @@
+CASE04=NOT_RUN
+reason=production migrations incomplete; no Publisher eligibility RPCs yet

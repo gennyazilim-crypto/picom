@@ -1,0 +1,4 @@
+CLEANUP=NO_PRODUCTION_USER_FIXTURES_CREATED
+staging_v2=INACTIVE_PAUSED
+canonical_staging=ufmtvqtsklqsmqxefbbs_relinked
+tmp_scripts=local_only_not_committed

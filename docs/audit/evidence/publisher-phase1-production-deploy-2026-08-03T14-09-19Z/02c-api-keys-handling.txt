@@ -1,0 +1,5 @@
+﻿API_KEYS_FILE_REMOVED=yes
+KEYS_RETRIEVED=yes
+KEYS_COMMITTED=no
+KEYS_IN_EVIDENCE=no
+NOTE=Raw key file removed from this production-deploy evidence pack; keys live only in gitignored .env.production.local
