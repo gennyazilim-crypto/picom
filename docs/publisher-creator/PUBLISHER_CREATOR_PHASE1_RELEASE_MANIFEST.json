@@ -28,13 +28,14 @@
     "rollbackDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_ROLLBACK.md",
     "stagingV2PausedToFreeSlot": "kbdotviopwlcqviggtrc",
     "migrationDeploy": {
-      "status": "PENDING_RESUME_AFTER_REALTIME_PORTABILITY_FIX",
-      "appliedThrough": "20260710090000",
-      "failedAt": "20260710121000_multi_tenant_realtime_storage_hardening.sql",
-      "failure": "superseded by platform-safe RLS assertion patch; prior 42501 must be owner of table messages on ALTER ENABLE RLS",
+      "status": "PARTIAL_BLOCKED_MISSING_LIVE_SESSION_TABLE",
+      "appliedThrough": "20260803130000",
+      "failedAt": "20260803140000_publisher_creator_program_core.sql",
+      "failure": "relation public.community_live_screen_sessions does not exist (SQLSTATE 42P01); prerequisite migration 20260803100000_community_live_screen_sessions.sql missing from feat/community-rebuild (present on release/homepage-platform-stats-prerequisites @ 3d54872d)",
       "realtimeProvisioning": "PROVISIONED",
-      "phase1PublisherMigrations": "NOT_REACHED",
-      "resumeEvidence": "docs/audit/evidence/publisher-phase1-production-resume-2026-08-03T14-45-57Z/"
+      "realtimePortabilityFix": "APPLIED_CANONICAL_MATCHED",
+      "phase1PublisherMigrations": "PARTIAL_STOPPED_AT_20260803140000",
+      "resumeEvidence": "docs/audit/evidence/publisher-production-realtime-migration-fix-2026-08-03T15-21-23Z/"
     },
     "backupPitr": "NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED",
     "featureFlagsDefault": "fail_closed_off_in_production"
@@ -49,7 +50,7 @@
     "schemaSemanticsEquivalent": true,
     "policySemanticHash": "3beb709d58c59c8a1f2eeffde4283090c3b45ae69688924739988cdc47d07413",
     "stagingStatus": "APPLIED_LEGACY_EQUIVALENT",
-    "productionStatus": "PENDING_APPLY"
+    "productionStatus": "APPLIED_CANONICAL_MATCHED"
   },
   "migrations": [
     {

@@ -1,0 +1,10 @@
+﻿last_applied=20260803130000
+20260710121000=APPLIED_CANONICAL_MATCHED
+policies_present=picom members receive/send private realtime topics
+failed_at=20260803140000_publisher_creator_program_core.sql
+error=42P01 relation public.community_live_screen_sessions does not exist
+failing_statement=alter table public.community_live_screen_sessions add column moderation_status ...
+missing_migration_on_branch=20260803100000_community_live_screen_sessions.sql
+missing_migration_present_on=release/homepage-platform-stats-prerequisites (commit 3d54872d)
+repair=NOT_USED
+ownership_change=NOT_USED

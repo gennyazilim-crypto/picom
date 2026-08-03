@@ -1,0 +1,5 @@
+﻿commit=0c90fa5fb25bfbce7d4c219361f0461b37e20a2a
+tag=picom-publisher-phase1-production-candidate-2026-08-03-realtime-fix
+tag_target=0c90fa5fb25bfbce7d4c219361f0461b37e20a2a
+legacy=6c7fbfc4a8aac4829f2d4a6d6ae170b6ee537652991e101eb50e03e17b2d4bd8
+canonical=6cac3fc152f34cd3ae433630747a7e2b3d1bf6abfafddc32a9bea78fce5b389a

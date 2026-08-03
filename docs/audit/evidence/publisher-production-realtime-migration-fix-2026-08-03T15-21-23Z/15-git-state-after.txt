@@ -1,0 +1,4 @@
+﻿HEAD=0c90fa5fb25bfbce7d4c219361f0461b37e20a2a
+tag=picom-publisher-phase1-production-candidate-2026-08-03-realtime-fix
+linked=ufmtvqtsklqsmqxefbbs
+held_unrelated_restored=yes
