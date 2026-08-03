@@ -1,0 +1,200 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+vite v8.1.3 building client environment for production...
+[2Ktransforming...✓ 1196 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/32x32-D0bpyvUI.png                                    2.15 kB
+dist/assets/profileMediaImage.worker-kBtXLY9m.js                  2.19 kB
+dist/index.html                                                   3.97 kB │ gzip:   1.09 kB
+dist/assets/discovery-hero-BqxpX1cr.avif                         14.94 kB
+dist/assets/picom-logo-speed-v1-C7n91YhD.avif                    47.25 kB
+dist/.vite/manifest.json                                         47.43 kB │ gzip:   5.59 kB
+dist/assets/DesktopContextMenu-DaM9fqkt.css                       0.46 kB │ gzip:   0.26 kB
+dist/assets/UserAvatar-DmJFQSMf.css                               0.89 kB │ gzip:   0.47 kB
+dist/assets/ConnectedMeetingMiniCard-BcyMvw3j.css                 3.44 kB │ gzip:   1.02 kB
+dist/assets/UserProfilePopover-C3OpSbi-.css                       3.66 kB │ gzip:   1.07 kB
+dist/assets/AudioMiniPlayer-jxiNh-41.css                          3.75 kB │ gzip:   0.94 kB
+dist/assets/MeetingHistoryPanel-BzcOLnnU.css                      4.37 kB │ gzip:   1.05 kB
+dist/assets/CommunityMemberRoleAssignment-DejcFFEA.css            4.49 kB │ gzip:   1.13 kB
+dist/assets/AdminOperationsV2Sections-cEfWQ1H4.css                4.56 kB │ gzip:   1.02 kB
+dist/assets/MeetingScreenShareFocus-D8Xk_uKP.css                  4.87 kB │ gzip:   1.10 kB
+dist/assets/NoiseShieldControl-A9oO7jdd.css                       6.57 kB │ gzip:   1.48 kB
+dist/assets/CreatorStudioWorkspace-DXAG9YJX.css                   6.71 kB │ gzip:   1.77 kB
+dist/assets/CommunityInviteManagement-RgKGH0AT.css                7.92 kB │ gzip:   1.47 kB
+dist/assets/CommunityRoleManagement-C2Bp_ItB.css                  8.05 kB │ gzip:   1.49 kB
+dist/assets/MeetingParticipantTile-DlDQWNIc.css                   8.54 kB │ gzip:   1.95 kB
+dist/assets/VoiceParticipantsRail-BBXR7qay.css                    8.57 kB │ gzip:   1.79 kB
+dist/assets/CommunityModerationCenter-C_hxhM2P.css                8.81 kB │ gzip:   1.42 kB
+dist/assets/useRadioScheduleReminders-Cuj5hCfU.css               11.09 kB │ gzip:   2.25 kB
+dist/assets/FriendsView-BjlivLDz.css                             11.76 kB │ gzip:   2.49 kB
+dist/assets/HelpSupportWorkspace-D4UEaZ0B.css                    12.07 kB │ gzip:   2.31 kB
+dist/assets/DmCallInformation-C3zk-MMq.css                       12.96 kB │ gzip:   2.70 kB
+dist/assets/publisherProgram-JtuB3soI.css                        13.02 kB │ gzip:   2.83 kB
+dist/assets/DiscoveryView-CbdegvGj.css                           16.08 kB │ gzip:   3.57 kB
+dist/assets/LiveWatchWorkspace-CIOyYoV1.css                      17.58 kB │ gzip:   3.84 kB
+dist/assets/GlobalEventsWorkspace-CU1YFqwd.css                   18.85 kB │ gzip:   3.26 kB
+dist/assets/CreateCommunityModal-D63S7Kkw.css                    20.48 kB │ gzip:   3.37 kB
+dist/assets/RadioCommunityShell-D60D9rDK.css                     30.35 kB │ gzip:   4.63 kB
+dist/assets/BroadcasterChannelView-BGvaz2Ug.css                  30.72 kB │ gzip:   5.53 kB
+dist/assets/GoLiveWorkspace-Cnsc_XwE.css                         31.76 kB │ gzip:   5.51 kB
+dist/assets/DirectMessagesView-Btmzf72E.css                      32.97 kB │ gzip:   5.82 kB
+dist/assets/PodcastCommunityShell-DlqhhOV-.css                   34.24 kB │ gzip:   5.21 kB
+dist/assets/VoiceRoomView-CpMXtCRG.css                           35.81 kB │ gzip:   5.72 kB
+dist/assets/RootDashboardApp-D-BpLy_h.css                        36.81 kB │ gzip:   6.54 kB
+dist/assets/CommunityAdminDeferredSection-CVkpphF5.css           38.48 kB │ gzip:   3.91 kB
+dist/assets/LiveWorkspace-DrpCmjwA.css                           41.29 kB │ gzip:   7.15 kB
+dist/assets/MentionFeedMain-A05PXN7d.css                         49.17 kB │ gzip:   7.83 kB
+dist/assets/SettingsModal-DsUFf0pO.css                           66.41 kB │ gzip:   7.92 kB
+dist/assets/MeetingWorkspace-Bakm9SSr.css                        78.64 kB │ gzip:  11.39 kB
+dist/assets/index-DoNAfXcs.css                                  436.79 kB │ gzip:  65.75 kB
+dist/assets/apiCompatibility-DO4C_z96.js                          0.14 kB │ gzip:   0.13 kB
+dist/assets/officialLiveKitNoiseProcessorRuntime-B_q3--zb.js      0.21 kB │ gzip:   0.19 kB
+dist/assets/useAudioPlayer-BJbpo3rY.js                            0.21 kB │ gzip:   0.18 kB
+dist/assets/legalConfig-XY3z1Qv8.js                               0.30 kB │ gzip:   0.18 kB
+dist/assets/voiceDiagnosticsRegistry-CJX83x0H.js                  0.34 kB │ gzip:   0.23 kB
+dist/assets/desktopDisplayBounds-C8z_b8uF.js                      0.35 kB │ gzip:   0.19 kB
+dist/assets/rateLimitError-C6hBwd1f.js                            0.36 kB │ gzip:   0.24 kB
+dist/assets/meetingReactionCatalog-CPxTN4ID.js                    0.36 kB │ gzip:   0.24 kB
+dist/assets/screenShareSubscriptionPolicy-Dg9w7WgU.js             0.39 kB │ gzip:   0.28 kB
+dist/assets/ProfileDisplayName-DLckV-hq.js                        0.40 kB │ gzip:   0.24 kB
+dist/assets/community-CYXQc2B2.js                                 0.52 kB │ gzip:   0.24 kB
+dist/assets/voiceModerationService-Cjn-N-gy.js                    0.65 kB │ gzip:   0.40 kB
+dist/assets/mockCommunities-BeEwNdOD.js                           0.66 kB │ gzip:   0.29 kB
+dist/assets/clipboardService-BbDVCBqF.js                          0.68 kB │ gzip:   0.29 kB
+dist/assets/attachmentThumbnailService-sYIvyGuv.js                0.82 kB │ gzip:   0.49 kB
+dist/assets/voiceSessionRecoveryService-gBKiO0U_.js               0.87 kB │ gzip:   0.53 kB
+dist/assets/voiceOccupancyService-B6oszE74.js                     1.04 kB │ gzip:   0.55 kB
+dist/assets/uiLanguages-B3nP7y5k.js                               1.07 kB │ gzip:   0.53 kB
+dist/assets/UserAvatar-Csan0ipA.js                                1.29 kB │ gzip:   0.74 kB
+dist/assets/sleepWakeResumeService-DjxIey29.js                    1.31 kB │ gzip:   0.70 kB
+dist/assets/communityJoinRoutingService-taz8XCSZ.js               1.32 kB │ gzip:   0.59 kB
+dist/assets/eventReminderService-CIR6GK5S.js                      1.41 kB │ gzip:   0.79 kB
+dist/assets/directSafetyService-Cp657SY_.js                       1.48 kB │ gzip:   0.67 kB
+dist/assets/podcastService-CyNUvZfL.js                            1.54 kB │ gzip:   0.58 kB
+dist/assets/attachmentQuarantineService-8upG60ih.js               1.55 kB │ gzip:   0.64 kB
+dist/assets/GlobalAudioMiniPlayer-Bo1hKG2L.js                     1.57 kB │ gzip:   0.73 kB
+dist/assets/radioService-C5mokH5I.js                              1.76 kB │ gzip:   0.77 kB
+dist/assets/emailOperationsService-D7vV6F2E.js                    1.90 kB │ gzip:   0.74 kB
+dist/assets/DesktopContextMenu-PwQ2dlCa.js                        1.99 kB │ gzip:   0.99 kB
+dist/assets/feedbackService-Bj7TZ-Z_.js                           1.99 kB │ gzip:   0.96 kB
+dist/assets/audioPlaybackCoordinatorService-BEHRxAWV.js           2.04 kB │ gzip:   0.89 kB
+dist/assets/eventIcs-CfW3lp7d.js                                  2.10 kB │ gzip:   1.00 kB
+dist/assets/screenShareQuality-BsCtfhlP.js                        2.28 kB │ gzip:   1.00 kB
+dist/assets/podcastCommunityService-B0-kBZIn.js                   2.31 kB │ gzip:   1.02 kB
+dist/assets/VoiceDevicePanel-cJ15oi6e.js                          2.36 kB │ gzip:   0.91 kB
+dist/assets/meetingInviteNavigationService-BFbH4Xby.js            2.40 kB │ gzip:   1.11 kB
+dist/assets/publisherProgramService-DZ0vamBK.js                   2.42 kB │ gzip:   0.95 kB
+dist/assets/userBlockingService-CSz3WoJu.js                       2.44 kB │ gzip:   1.00 kB
+dist/assets/fileService-CcZhYesc.js                               2.60 kB │ gzip:   1.25 kB
+dist/assets/AppIcon-OLu9W6vz.js                                   2.80 kB │ gzip:   1.29 kB
+dist/assets/CreatePollModal-B6eTqL04.js                           2.85 kB │ gzip:   1.16 kB
+dist/assets/UserProfilePopover-l9ilvAxn.js                        2.89 kB │ gzip:   1.13 kB
+dist/assets/CreateChannelModal-DZrNA3xh.js                        3.02 kB │ gzip:   1.28 kB
+dist/assets/auditLogService-jJb_-7OZ.js                           3.15 kB │ gzip:   1.37 kB
+dist/assets/MemberModerationModal-C5kgqgbj.js                     3.16 kB │ gzip:   1.31 kB
+dist/assets/react-dom-CrK8yE57.js                                 3.54 kB │ gzip:   1.34 kB
+dist/assets/liveWatchModel-BJwTd6iC.js                            3.54 kB │ gzip:   1.46 kB
+dist/assets/AdminOperationsV2Sections-DRO1lSfz.js                 3.58 kB │ gzip:   1.39 kB
+dist/assets/MeetingScreenShareFocus-Rr-CAByZ.js                   3.75 kB │ gzip:   1.39 kB
+dist/assets/radioCommunityService-CIjxLa5j.js                     3.77 kB │ gzip:   1.39 kB
+dist/assets/ImagePreviewModal-BOmo-s9S.js                         3.82 kB │ gzip:   1.71 kB
+dist/assets/useProfileMedia-WbhpqLpy.js                           3.88 kB │ gzip:   1.71 kB
+dist/assets/featureFlagService-BM2Dt5_5.js                        3.89 kB │ gzip:   1.42 kB
+dist/assets/ChannelManagementModals-D2WwTKBi.js                   4.14 kB │ gzip:   1.36 kB
+dist/assets/meetingDiagnosticsRegistry-D5MjT-k2.js                4.20 kB │ gzip:   1.73 kB
+dist/assets/SavedMessagesView-B2jPOB5k.js                         4.22 kB │ gzip:   1.25 kB
+dist/assets/useAudioCatalog-CR32QaSr.js                           4.31 kB │ gzip:   1.56 kB
+dist/assets/diagnosticsService-F1_FdFtq.js                        4.42 kB │ gzip:   1.82 kB
+dist/assets/PublisherDashboardWorkspace-DBhmsP9p.js               4.84 kB │ gzip:   1.55 kB
+dist/assets/reportService-DXa2_bHf.js                             5.10 kB │ gzip:   1.99 kB
+dist/assets/ConnectedMeetingMiniCard-XIfoy88Q.js                  5.11 kB │ gzip:   1.59 kB
+dist/assets/LiveWatchChat-D8dO3pAW.js                             5.13 kB │ gzip:   2.15 kB
+dist/assets/AudioMiniPlayer-DjY7IX6v.js                           5.29 kB │ gzip:   1.90 kB
+dist/assets/loggingService-BISnBkqY.js                            6.33 kB │ gzip:   2.52 kB
+dist/assets/CommunityInviteManagement-CpqBkv1a.js                 6.95 kB │ gzip:   2.07 kB
+dist/assets/advancedSearchService-BCJGudMo.js                     7.30 kB │ gzip:   2.40 kB
+dist/assets/LiveShareCard-BbZeN-IQ.js                             7.42 kB │ gzip:   2.42 kB
+dist/assets/goLiveModel-Bgb4PvMs.js                               7.61 kB │ gzip:   2.59 kB
+dist/assets/webhookService-BAUjs9gX.js                            7.66 kB │ gzip:   2.44 kB
+dist/assets/communityPermissions-lsvR6XBR.js                      7.83 kB │ gzip:   2.02 kB
+dist/assets/DiscoveryView-Be5dvxJc.js                             8.21 kB │ gzip:   2.51 kB
+dist/assets/VoiceParticipantsRail-C4FfQKFv.js                     8.58 kB │ gzip:   2.90 kB
+dist/assets/CommunityRoleManagement-DVL3lBgB.js                   8.64 kB │ gzip:   2.84 kB
+dist/assets/CommunityMemberRoleAssignment-DVeBJP3X.js             8.67 kB │ gzip:   3.13 kB
+dist/assets/jsx-runtime-D8nDyRPw.js                               8.72 kB │ gzip:   3.33 kB
+dist/assets/audioPlayerService-CkWYGHnU.js                        9.84 kB │ gzip:   3.44 kB
+dist/assets/dataSourceService-BrSSkxr2.js                        10.19 kB │ gzip:   3.76 kB
+dist/assets/broadcasterChannelService-B9BF-1_j.js                10.46 kB │ gzip:   3.29 kB
+dist/assets/secretCommunityService-D7ceE_bc.js                   10.77 kB │ gzip:   3.51 kB
+dist/assets/PublisherApplicationWorkspace-BLT1xgrh.js            10.93 kB │ gzip:   2.75 kB
+dist/assets/DmCallInformation-DW66puqj.js                        11.09 kB │ gzip:   3.19 kB
+dist/assets/HelpSupportWorkspace-CeyfYgz0.js                     11.27 kB │ gzip:   3.92 kB
+dist/assets/PodcastEpisodeDetail-jAgVOvct.js                     11.76 kB │ gzip:   3.52 kB
+dist/assets/liveScreenShareService-SdgD32Js.js                   11.92 kB │ gzip:   3.49 kB
+dist/assets/NoiseShieldControl-mBjJgIeg.js                       12.36 kB │ gzip:   3.67 kB
+dist/assets/meetingControlService-Dy2W95EK.js                    12.44 kB │ gzip:   4.09 kB
+dist/assets/OnboardingFlow-Bi9vraew.js                           13.57 kB │ gzip:   4.24 kB
+dist/assets/FriendsView-CwzjCyW1.js                              13.87 kB │ gzip:   3.36 kB
+dist/assets/CommunityModerationCenter-GI0zubEv.js                14.11 kB │ gzip:   3.44 kB
+dist/assets/publisherProgram-DnwtG2jq.js                         14.28 kB │ gzip:   4.60 kB
+dist/assets/communityInviteService-DKjYjfE3.js                   14.98 kB │ gzip:   3.92 kB
+dist/assets/CreateCommunityModal-awHa7Gmw.js                     16.21 kB │ gzip:   4.76 kB
+dist/assets/useRadioScheduleReminders-BK67tcdd.js                16.21 kB │ gzip:   5.09 kB
+dist/assets/messageService-Xf-l8jLZ.js                           16.42 kB │ gzip:   5.24 kB
+dist/assets/MeetingHistoryPanel-CRRT9yUT.js                      17.01 kB │ gzip:   5.50 kB
+dist/assets/MeetingParticipantTile-eKHOi_IJ.js                   18.84 kB │ gzip:   6.42 kB
+dist/assets/CreatorStudioWorkspace-CLBeqn9N.js                   22.18 kB │ gzip:   6.24 kB
+dist/assets/LiveWatchWorkspace-C6xfa0uy.js                       22.60 kB │ gzip:   6.28 kB
+dist/assets/GlobalEventsWorkspace-drXkkWfc.js                    27.29 kB │ gzip:   7.40 kB
+dist/assets/LiveWorkspace-BQgLAcVU.js                            28.41 kB │ gzip:   8.04 kB
+dist/assets/GoLiveWorkspace-B6-t7L-S.js                          31.50 kB │ gzip:   8.60 kB
+dist/assets/VoiceRoomView-tinYWgJ7.js                            34.55 kB │ gzip:   9.14 kB
+dist/assets/liveNowCatalog-C741jqca.js                           34.84 kB │ gzip:   8.57 kB
+dist/assets/RadioCommunityShell-C41T6FNP.js                      36.48 kB │ gzip:   9.21 kB
+dist/assets/PodcastCommunityShell-6O8zoxv6.js                    38.27 kB │ gzip:   9.60 kB
+dist/assets/audioDataSource-NNrvGvYI.js                          39.55 kB │ gzip:   8.89 kB
+dist/assets/BroadcasterChannelView-yOvLpQju.js                   41.80 kB │ gzip:   9.92 kB
+dist/assets/DirectMessagesView-6FHg5IkN.js                       45.42 kB │ gzip:  12.16 kB
+dist/assets/MentionFeedMain-CqwR2bJa.js                          55.20 kB │ gzip:  14.09 kB
+dist/assets/meetingPreJoinService-BzAhSpXJ.js                    72.65 kB │ gzip:  19.88 kB
+dist/assets/MeetingWorkspace-CZUNQO0-.js                         92.39 kB │ gzip:  24.17 kB
+dist/assets/CommunityAdminDeferredSection-CsBHR_z0.js            92.81 kB │ gzip:  19.17 kB
+dist/assets/RootDashboardApp-BueUIWm-.js                        116.68 kB │ gzip:  28.49 kB
+dist/assets/supabaseClient-CszPwDS8.js                          204.54 kB │ gzip:  52.57 kB
+dist/assets/SettingsModal-CyBthdZQ.js                           286.48 kB │ gzip:  66.06 kB
+dist/assets/livekitRuntime-a2SuWMUl.js                          469.38 kB │ gzip: 121.59 kB
+dist/assets/index-BQtk5gC5.js                                 1,318.80 kB │ gzip: 374.00 kB
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/services/softEmailVerificationService.ts is dynamically imported by src/services/authService.ts but also statically imported by src/components/SoftEmailVerificationBanner.tsx, dynamic import will not move module into another chunk.
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/components/CommunityMenu.tsx is dynamically imported by src/App.tsx but also statically imported by src/components/CommunitySidebar.tsx, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/components/CommunityInviteModals.tsx is dynamically imported by src/App.tsx but also statically imported by src/components/CommunitySidebar.tsx, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/components/ReportModal.tsx is dynamically imported by src/App.tsx but also statically imported by src/components/CommunitySidebar.tsx, src/components/meeting/MeetingParticipantActionsProvider.tsx, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/components/ThreadPanel.tsx is dynamically imported by src/App.tsx but also statically imported by src/components/ForumChannelView.tsx, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/services/auth/sessionContinueService.ts is dynamically imported by src/App.tsx but also statically imported by src/components/LoginScreen.tsx, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/services/mentionFeedService.ts is dynamically imported by src/hooks/useProtectedDesktopSession.ts but also statically imported by src/App.tsx, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/components/voice/ScreenSharePickerModal.tsx is dynamically imported by src/App.tsx but also statically imported by src/components/VoiceRoomView.tsx, src/features/companion/CompanionApp.tsx, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/services/livekit/livekitService.ts is dynamically imported by src/App.tsx but also statically imported by src/features/companion/companionDataService.ts, src/services/voiceService.ts, dynamic import will not move module into another chunk.
+
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/services/voiceService.ts is dynamically imported by src/App.tsx but also statically imported by src/components/SettingsModal.tsx, src/components/live/CreatorStudioWorkspace.tsx, src/components/live/GoLiveWorkspace.tsx, src/components/live/LiveWatchWorkspace.tsx, src/features/companion/companionDataService.ts, ..., dynamic import will not move module into another chunk.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - vite:css (75%)
+  - vite:css-post (19%)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+
+✓ built in 3.80s
+E X I T = 0  
+ 

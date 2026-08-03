@@ -1,0 +1,4 @@
+Authoritative branch: release/picom-canonical-production
+Authoritative HEAD: 5b69a0eb6e6783a4cb1a07a45895a3024aeee3f7
+Production: cqnsetsmcduraryemhbi
+Staging: ufmtvqtsklqsmqxefbbs (workers retargeted away)

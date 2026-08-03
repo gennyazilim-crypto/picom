@@ -1,0 +1,6 @@
+STATUS=GO
+Container picom-livekit running livekit/livekit-server:v1.13.3
+Redis picom-livekit-redis running
+Preflight network_preflight_passed (TLS443, TCP7881, TURN TLS5349)
+Edge secrets LIVEKIT_* set on cqnsetsmcduraryemhbi
+Functions deployed: livekit-token, livekit-moderation, livekit-webhook, admin-health

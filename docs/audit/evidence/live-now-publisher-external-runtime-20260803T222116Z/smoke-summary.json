@@ -1,0 +1,235 @@
+{
+  "productionRef": "cqnsetsmcduraryemhbi",
+  "livekitUrl": "wss://voice.picom.gg",
+  "pass": 32,
+  "fail": 0,
+  "warn": 4,
+  "partial": 1,
+  "results": [
+    {
+      "caseId": "api_keys",
+      "status": "PASS",
+      "detail": "service_len=219 anon_len=208"
+    },
+    {
+      "caseId": "smtp_create_unconfirmed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "caseId": "smtp_resend_signup",
+      "status": "WARN",
+      "detail": "email rate limit exceeded"
+    },
+    {
+      "caseId": "smtp_password_reset_request",
+      "status": "WARN",
+      "detail": "email rate limit exceeded"
+    },
+    {
+      "caseId": "actors_created",
+      "status": "PASS",
+      "detail": "creator/viewer/normal/pending"
+    },
+    {
+      "caseId": "community_fixture",
+      "status": "PASS",
+      "detail": "community/channel/members ready"
+    },
+    {
+      "caseId": "eligibility_followers",
+      "status": "INFO",
+      "detail": "skipped_auth_fk_needed_snapshot_ok count=20"
+    },
+    {
+      "caseId": "creator_badge_seed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "caseId": "pending_application",
+      "status": "WARN",
+      "detail": "PUBLISHER_APPLICATION_NOT_ELIGIBLE"
+    },
+    {
+      "caseId": "golive_approved_allowed",
+      "status": "PASS",
+      "detail": "{\"allowed\":true,\"accountActive\":true,\"hasActiveBadge\":true}"
+    },
+    {
+      "caseId": "golive_normal_denied",
+      "status": "PASS",
+      "detail": "allowed=false"
+    },
+    {
+      "caseId": "golive_pending_denied",
+      "status": "PASS",
+      "detail": "allowed=false"
+    },
+    {
+      "caseId": "golive_start",
+      "status": "PASS",
+      "detail": "session_present=true"
+    },
+    {
+      "caseId": "golive_confirm",
+      "status": "PASS",
+      "detail": "confirmed"
+    },
+    {
+      "caseId": "livenow_viewer_sees_session",
+      "status": "PASS",
+      "detail": "rows=2"
+    },
+    {
+      "caseId": "token_gate_creator_authorize",
+      "status": "PASS",
+      "detail": "authorized"
+    },
+    {
+      "caseId": "token_gate_foreign_denied",
+      "status": "PASS",
+      "detail": "PUBLISHER_BROADCAST_NOT_ALLOWED"
+    },
+    {
+      "caseId": "livekit_edge_creator_voice",
+      "status": "PASS",
+      "detail": "status=200 code="
+    },
+    {
+      "caseId": "livekit_token_bounded_ttl",
+      "status": "PASS",
+      "detail": "ttl=3605"
+    },
+    {
+      "caseId": "livekit_token_no_camera_default",
+      "status": "PASS",
+      "detail": "sources=microphone"
+    },
+    {
+      "caseId": "livekit_ws_creator_join",
+      "status": "PASS",
+      "detail": "ws_open room=community:64c336fd-c402-4d8a-a776-c22348a1d919:voice:15282fbf-b51f-40c1-b1c7-4df49510b34c"
+    },
+    {
+      "caseId": "livekit_edge_viewer_voice",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "caseId": "livekit_viewer_publish_denied",
+      "status": "WARN",
+      "detail": "canPublish=true"
+    },
+    {
+      "caseId": "livekit_ws_viewer_join",
+      "status": "PASS",
+      "detail": "ws_open room=community:64c336fd-c402-4d8a-a776-c22348a1d919:voice:15282fbf-b51f-40c1-b1c7-4df49510b34c"
+    },
+    {
+      "caseId": "livekit_edge_creator_screen",
+      "status": "PASS",
+      "detail": "status=200 code="
+    },
+    {
+      "caseId": "livekit_screen_sources",
+      "status": "PASS",
+      "detail": "sources=microphone,screen_share,screen_share_audio"
+    },
+    {
+      "caseId": "livekit_normal_screen_gate",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "caseId": "livekit_two_client_media",
+      "status": "PARTIAL",
+      "detail": "WS join exercised; headless mic/camera/screen media tracks not published in this environment"
+    },
+    {
+      "caseId": "token_gate_suspended_denied",
+      "status": "PASS",
+      "detail": "PUBLISHER_BROADCAST_NOT_ALLOWED"
+    },
+    {
+      "caseId": "golive_restart_suspended_denied",
+      "status": "PASS",
+      "detail": "PUBLISHER_BROADCAST_NOT_ALLOWED"
+    },
+    {
+      "caseId": "golive_end",
+      "status": "PASS",
+      "detail": "ended"
+    },
+    {
+      "caseId": "livenow_removed_after_end",
+      "status": "PASS",
+      "detail": "still_listed=false"
+    },
+    {
+      "caseId": "reminder_claim_rpc",
+      "status": "PASS",
+      "detail": "a=0 b=0"
+    },
+    {
+      "caseId": "pref_all_live",
+      "status": "PASS",
+      "detail": "all_live"
+    },
+    {
+      "caseId": "pref_scheduled_only",
+      "status": "PASS",
+      "detail": "scheduled_only"
+    },
+    {
+      "caseId": "pref_important_only",
+      "status": "PASS",
+      "detail": "important_only"
+    },
+    {
+      "caseId": "pref_off",
+      "status": "PASS",
+      "detail": "off"
+    },
+    {
+      "caseId": "flag_enablePublisherApplication",
+      "status": "ON",
+      "detail": "true"
+    },
+    {
+      "caseId": "flag_enablePublisherReview",
+      "status": "ON",
+      "detail": "true"
+    },
+    {
+      "caseId": "flag_enablePublisherBadgeDisplay",
+      "status": "ON",
+      "detail": "true"
+    },
+    {
+      "caseId": "flag_enableLiveNowDiscovery",
+      "status": "ON",
+      "detail": "true"
+    },
+    {
+      "caseId": "flag_enableGoLive",
+      "status": "ON",
+      "detail": "true"
+    },
+    {
+      "caseId": "flag_enablePublisherReminders",
+      "status": "ON",
+      "detail": "true"
+    },
+    {
+      "caseId": "flag_enablePublisherNotificationPreferences",
+      "status": "ON",
+      "detail": "true"
+    },
+    {
+      "caseId": "cleanup",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+TWO_CLIENT_SIGNALING=PASS (creator+viewer WS /rtc open)
+MEDIA_TRACKS=PARTIAL (headless Node cannot publish mic/camera/screen)
+Go Live start/confirm/end PASS
+Live Now list include/remove PASS
+Suspend token/restart DENIED PASS

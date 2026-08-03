@@ -1,0 +1,2 @@
+Auth SMTP: mail.spacemail.com:465 user/admin=verify@picom.gg external_email_enabled=true
+Worker SMTP: info@ + verify@ healthy (tls+auth ok)

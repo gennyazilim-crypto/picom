@@ -91,10 +91,12 @@ if (smtpHost) {
     console.error("When SMTP_HOST is set, SMTP_USER and SMTP_PASS are required.");
     process.exit(1);
   }
+  // Management API expects smtp_port as a string (not number).
+  const resolvedPort = Number.isFinite(smtpPort) ? smtpPort : 587;
   Object.assign(payload, {
     external_email_enabled: true,
     smtp_host: smtpHost,
-    smtp_port: Number.isFinite(smtpPort) ? smtpPort : 587,
+    smtp_port: String(resolvedPort),
     smtp_user: smtpUser,
     smtp_pass: smtpPass,
   });

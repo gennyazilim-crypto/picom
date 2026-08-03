@@ -1,0 +1,38 @@
+
+name                   exit
+----                   ----
+typecheck                 0
+build                     0
+vite-build                0
+secrets-smoke             0
+livekit-token-security    0
+publisher-i18n            0
+
+
+
+[
+    {
+        "name":  "typecheck",
+        "exit":  0
+    },
+    {
+        "name":  "build",
+        "exit":  0
+    },
+    {
+        "name":  "vite-build",
+        "exit":  0
+    },
+    {
+        "name":  "secrets-smoke",
+        "exit":  0
+    },
+    {
+        "name":  "livekit-token-security",
+        "exit":  0
+    },
+    {
+        "name":  "publisher-i18n",
+        "exit":  0
+    }
+]

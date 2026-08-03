@@ -1,0 +1,4 @@
+Auth signup/resend/reset: provider accepted earlier; later smokes hit email rate limit (WARN)
+Worker health smtpStatus=healthy for info@ and verify@
+Mailbox inbox not asserted in this run
+SMTP_DELIVERY=PARTIAL_PROVIDER_ACCEPT_RATE_LIMITED

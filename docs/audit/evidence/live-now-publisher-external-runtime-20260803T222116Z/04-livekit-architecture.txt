@@ -1,0 +1,4 @@
+Self-hosted LiveKit on VPS picom-update-server.
+DNS voice.picom.gg + turn.picom.gg -> 23.254.166.240
+Token issuer: supabase/functions/livekit-token (server-side only)
+Publisher gate: authorize_live_broadcast_livekit + user_can_broadcast_on_picom_live

@@ -1,0 +1,7 @@
+enablePublisherApplication=ON
+enablePublisherReview=ON
+enablePublisherBadgeDisplay=ON
+enableLiveNowDiscovery=ON
+enableGoLive=ON (after gates)
+enablePublisherReminders=ON (after workers+SMTP config)
+enablePublisherNotificationPreferences=ON

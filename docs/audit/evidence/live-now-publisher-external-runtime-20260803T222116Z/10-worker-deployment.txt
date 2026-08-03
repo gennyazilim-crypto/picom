@@ -1,0 +1,3 @@
+Workers retargeted from staging ref ufmtvqtsklqsmqxefbbs to production cqnsetsmcduraryemhbi
+Containers: picom-email-worker (healthy), picom-event-reminder-worker (running)
+Backups: /etc/picom/*.env.bak.t25-*

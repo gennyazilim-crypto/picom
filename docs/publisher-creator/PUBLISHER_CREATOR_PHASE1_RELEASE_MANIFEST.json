@@ -416,8 +416,45 @@
     "Difference is only GitHub-rejected generated binary history.",
     "Migration file SHA-256 values are unchanged."
   ],
-  "runtimeEvidence": "docs/audit/evidence/publisher-phase1-runtime-and-remote-closure-20260803T212618Z",
-  "productionVerdict": "PARTIAL_LIVEKIT_PENDING",
+  "runtimeEvidence": "docs/audit/evidence/live-now-publisher-external-runtime-20260803T222116Z",
+  "productionVerdict": "PARTIAL_MEDIA_TRACKS_PENDING",
   "remoteBranch": "release/picom-canonical-production",
-  "sanitizedTag": "picom-canonical-production-sanitized-2026-08-03"
+  "sanitizedTag": "picom-canonical-production-sanitized-2026-08-03",
+  "task25ExternalRuntime": {
+    "sealedAt": "2026-08-03T22:21:16.000Z",
+    "canonicalBranch": "release/picom-canonical-production",
+    "canonicalHeadAtSealStart": "5b69a0eb6e6783a4cb1a07a45895a3024aeee3f7",
+    "productionProjectRef": "cqnsetsmcduraryemhbi",
+    "livekit": {
+      "target": "wss://voice.picom.gg",
+      "deployment": "self_hosted_vps",
+      "status": "GO",
+      "tokenGates": "GO",
+      "twoClientRuntime": "PARTIAL_SIGNALING_GO_MEDIA_HEADLESS"
+    },
+    "smtp": {
+      "target": "mail.spacemail.com:465",
+      "authSender": "verify@picom.gg",
+      "status": "GO",
+      "delivery": "PARTIAL_PROVIDER_ACCEPT_RATE_LIMITED"
+    },
+    "workers": {
+      "host": "picom-update-server",
+      "supabaseRef": "cqnsetsmcduraryemhbi",
+      "emailWorker": "healthy",
+      "reminderWorker": "running",
+      "status": "GO"
+    },
+    "featureFlags": {
+      "enablePublisherApplication": true,
+      "enablePublisherReview": true,
+      "enablePublisherBadgeDisplay": true,
+      "enableLiveNowDiscovery": true,
+      "enableGoLive": true,
+      "enablePublisherReminders": true,
+      "enablePublisherNotificationPreferences": true
+    },
+    "migrationFix": "20260803260000_live_screen_session_metadata.sql",
+    "evidence": "docs/audit/evidence/live-now-publisher-external-runtime-20260803T222116Z/"
+  }
 }

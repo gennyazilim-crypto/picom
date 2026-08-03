@@ -1,0 +1,2 @@
+email-worker health endpoint: healthy smtpStatus=healthy
+reminder worker: running
