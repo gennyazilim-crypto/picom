@@ -1,0 +1,22 @@
+PHASE1 MIGRATION SEAL — production cqnsetsmcduraryemhbi
+
+VERSION | FILENAME | SHA256(LF) | HISTORY | RESULT
+20260803100000 | community_live_screen_sessions | 70a2d2a3... | APPLIED | APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED
+20260803110000 | go_live_broadcast_start | 899834c4... | APPLIED | APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED
+20260803130000 | public_platform_stats | RAW d2092cd4... / LF 21faf46d... | APPLIED | APPLIED_AND_MATCHED
+20260803135000 | platform_account_restrictions_canonical | 37f3a93c... | APPLIED | APPLIED_AND_MATCHED
+20260803135100 | notification_preferences_canonical | 679c8787... | APPLIED | APPLIED_AND_MATCHED
+20260803135200 | live_broadcaster_notification_prefs_canonical | 45ee464d... | APPLIED | APPLIED_AND_MATCHED
+20260803135300 | profiles_deactivated_at_canonical | 0024f975... | APPLIED | APPLIED_AND_MATCHED
+20260803140000 | publisher_creator_program_core | 4584cafe... | APPLIED | APPLIED_AND_MATCHED
+20260803141000 | publisher_livekit_broadcast_gate | 54114232... | APPLIED | APPLIED_AND_MATCHED
+20260803150000 | live_now_publisher_discovery | e911daf0... | APPLIED | APPLIED_AND_MATCHED
+20260803160000 | publisher_eligibility_member_count_canonical | 92db04ab... | APPLIED | APPLIED_AND_MATCHED
+20260803170000 | live_now_discovery_badge_join_dedupe | 7b79e415... | APPLIED | APPLIED_AND_MATCHED
+20260803171000 | live_now_badge_realtime_revocation | 58c07b61... | APPLIED | APPLIED_AND_MATCHED
+20260803172000 | publisher_schedule_reminders_and_notif_modes | 13a866ec... | APPLIED | APPLIED_AND_MATCHED
+
+OBJECTS: platform_account_restrictions, publisher_*, community_live_screen_sessions, notification_preferences, live_broadcaster_notification_prefs — present, RLS enabled
+COLUMN: profiles.deactivated_at timestamptz NULL + comment MATCHED
+FUNCS: publisher_profile_is_active_account, start_community_live_screen_broadcast, list_publisher_live_now, get_publisher_application_eligibility, live_session_is_publisher_discovery_eligible — present
+SEAL: GO

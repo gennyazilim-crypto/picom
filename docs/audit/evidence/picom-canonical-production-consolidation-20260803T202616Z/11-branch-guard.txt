@@ -1,0 +1,3 @@
+PICOM_CANONICAL_RELEASE_GUARD=PASS
+branch=release/picom-canonical-production
+head=c05961fec5ba2a0b33b84c83a56498b314be0ab0

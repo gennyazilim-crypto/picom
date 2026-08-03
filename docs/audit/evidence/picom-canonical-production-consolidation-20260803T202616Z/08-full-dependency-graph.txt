@@ -1,0 +1,4 @@
+FULL_PENDING_DEPENDENCY_GRAPH: PASS
+NO_MISSING_PREDECESSORS: PASS (after 135300)
+First apply stop: 140000 missing profiles.deactivated_at
+Fix: 20260803135300_profiles_deactivated_at_canonical.sql from STAGING_SCHEMA_INTROSPECTION

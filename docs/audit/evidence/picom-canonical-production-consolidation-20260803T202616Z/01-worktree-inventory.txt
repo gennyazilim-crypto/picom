@@ -1,0 +1,7 @@
+canonical_worktree=C:\Users\ACER\Desktop\picom-canonical-production
+dirty_main_worktree=C:\Users\ACER\Desktop\picom (DO_NOT_DEPLOY_FROM)
+DO_NOT_DEPLOY_FROM:
+- C:\Users\ACER\Desktop\picom (feat/community-rebuild dirty)
+- homepage prerequisites worktree
+- community rebuild worktree
+- eski production candidate worktree

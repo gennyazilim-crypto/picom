@@ -203,11 +203,6 @@
       "relationToRelease": "production_candidate_hardening",
       "canonicalStagingRef": "ufmtvqtsklqsmqxefbbs",
       "notes": "10-locale runtime, migration seal, evidence integrity, production config guard"
-    },
-    {
-      "path": "docs/audit/evidence/picom-canonical-production-consolidation-20260803T202616Z",
-      "kind": "canonical-production-consolidation",
-      "utc": "20260803T202616Z"
     }
   ],
   "commands": {
@@ -335,22 +330,23 @@
     "lfSha256": "0024f975d66c71e79e8c6311730c4103e8ec9862bdb9ce7fe500c3850b76ccbf"
   },
   "migrationDependencyGraph": {
-    "pendingStart": null,
+    "pendingStart": "20260803140000",
     "noMissingPredecessors": "PASS",
     "scannedThrough": "20260803172000",
-    "productionResume": "APPLIED_THROUGH_20260803173000",
-    "note": "Phase1 seal through 172000; 173000 verification foundation also applied"
+    "note": "Verification foundation 20260803173000 excluded from Phase1 seal scope; production apply stopped once at 140000 missing profiles.deactivated_at then predecessor 135300 added"
   },
   "productionAppliedVersions": [
-    "20260710121000",
     "20260803100000",
     "20260803110000",
     "20260803130000",
+    "20260710121000",
     "20260720220000",
     "20260731120000",
     "20260803135000",
     "20260803135100",
-    "20260803135200",
+    "20260803135200"
+  ],
+  "pendingVersions": [
     "20260803135300",
     "20260803140000",
     "20260803141000",
@@ -358,10 +354,8 @@
     "20260803160000",
     "20260803170000",
     "20260803171000",
-    "20260803172000",
-    "20260803173000"
+    "20260803172000"
   ],
-  "pendingVersions": [],
   "featureFlags": {
     "publisher": "OFF",
     "creator": "OFF",

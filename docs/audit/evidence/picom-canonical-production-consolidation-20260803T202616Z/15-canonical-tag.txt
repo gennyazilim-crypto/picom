@@ -1,0 +1,4 @@
+Existing tags:
+picom-canonical-production-base-2026-08-03
+picom-canonical-production-base-2026-08-03T192400Z
+Will create timestamped tag pointing at evidence commit.

@@ -1,0 +1,6 @@
+RUNTIME PREFLIGHT (post migration seal):
+Auth/Storage/Realtime/JWT Case04/Case18 full runtime smoke: NOT_RUN_IN_THIS_PASS (schema seal first; client production env incomplete in worktree)
+PICOM PRODUCTION LIVEKIT: BLOCKED_CREDENTIAL (NO_ENV_PRODUCTION_FILE)
+PICOM PUBLISHER GO LIVE: OFF
+Publisher feature flags: OFF (fail_closed)
+Workers deploy: NOT_RUN

@@ -1,0 +1,2 @@
+canonical_worktree=C:\Users\ACER\Desktop\picom-canonical-production
+status=CLEAN_FOR_PRODUCTION_OPS (tmp probe files untracked only)

@@ -1,0 +1,7 @@
+canonical_branch=release/picom-canonical-production
+base=feat/community-rebuild@4533587d
+merged:
+- release/homepage-platform-stats-prerequisites
+- release/homepage-platform-stats
+- release/homepage-platform-stats-integration
+classification_note=content-based PRODUCT_CORE + PUBLISHER_LIVE_NOW + REQUIRED_MIGRATION

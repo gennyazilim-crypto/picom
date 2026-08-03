@@ -1,0 +1,7 @@
+repository=https://github.com/gennyazilim-crypto/picom
+toplevel=C:/Users/ACER/Desktop/picom-canonical-production
+canonical_branch=release/picom-canonical-production
+canonical_head=c05961fec5ba2a0b33b84c83a56498b314be0ab0
+production_ref=cqnsetsmcduraryemhbi
+staging_ref=ufmtvqtsklqsmqxefbbs
+generated_utc=2026-08-03T20:26:16Z

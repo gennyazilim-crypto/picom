@@ -1,0 +1,2 @@
+node --test phase1-migration-dependency-graph + canonical-branch-consolidation: 13/13 PASS
+assert-canonical-release-branch: PASS
