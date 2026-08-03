@@ -28,11 +28,13 @@
     "rollbackDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_ROLLBACK.md",
     "stagingV2PausedToFreeSlot": "kbdotviopwlcqviggtrc",
     "migrationDeploy": {
-      "status": "PARTIAL_BLOCKED_PLATFORM_REALTIME",
+      "status": "PARTIAL_BLOCKED_PLATFORM_REALTIME_ALTER_OWNERSHIP",
       "appliedThrough": "20260710090000",
       "failedAt": "20260710121000_multi_tenant_realtime_storage_hardening.sql",
-      "failure": "relation realtime.messages does not exist; CREATE on schema realtime denied (owner supabase_admin)",
-      "phase1PublisherMigrations": "NOT_REACHED"
+      "failure": "realtime.messages now EXISTS (owner supabase_realtime_admin, rls_enabled=true) but ALTER TABLE ... ENABLE ROW LEVEL SECURITY fails with 42501 must be owner; CREATE POLICY probe OK; hash/repair/owner-change not used",
+      "realtimeProvisioning": "PROVISIONED_AFTER_OFFICIAL_ENABLE_AND_RESTART",
+      "phase1PublisherMigrations": "NOT_REACHED",
+      "resumeEvidence": "docs/audit/evidence/publisher-phase1-production-resume-2026-08-03T14-45-57Z/"
     },
     "backupPitr": "NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED",
     "featureFlagsDefault": "fail_closed_off_in_production"

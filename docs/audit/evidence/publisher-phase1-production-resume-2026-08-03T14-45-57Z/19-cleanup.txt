@@ -1,0 +1,10 @@
+cleanup:
+- no production user data deleted
+- no migration repair
+- no hash rewrite
+- no ownership change
+- no feature flags enabled
+- no production GO tag created
+- CLI relinked to staging ufmtvqtsklqsmqxefbbs after push attempt
+- tmp SQL/probe scripts left untracked (not committed)
+- MentionFeedMain.css unrelated dirty left out of commit scope

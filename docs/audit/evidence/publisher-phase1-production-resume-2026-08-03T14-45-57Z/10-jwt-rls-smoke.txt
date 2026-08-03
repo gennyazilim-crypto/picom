@@ -1,0 +1,2 @@
+RESULT=NOT_RUN
+reason=Publisher Phase 1 objects not present on production

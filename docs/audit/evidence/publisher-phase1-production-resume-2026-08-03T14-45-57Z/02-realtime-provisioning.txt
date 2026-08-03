@@ -1,0 +1,23 @@
+﻿INITIAL:
+  realtime.config.suspend=false
+  presence_enabled=false (prod) vs true (staging)
+  realtime.health initially UNHEALTHY, then ACTIVE_HEALTHY with db_connected=false
+  realtime.messages=MISSING
+  schema_owner=supabase_admin
+
+OFFICIAL_ENABLE (no SQL CREATE; no owner change):
+  PATCH /v1/projects/cqnsetsmcduraryemhbi/config/realtime {"suspend":false} -> 204
+  PATCH /v1/projects/cqnsetsmcduraryemhbi/config/realtime {"suspend":false,"presence_enabled":true} -> 204
+  POST /v1/projects/cqnsetsmcduraryemhbi/restart -> 200
+
+POLL (04-provisioning-poll.log):
+  round1 project_status=RESTARTING messages=MISSING
+  round2 project_status=ACTIVE_HEALTHY messages=EXISTS subscription=EXISTS schema_migrations=EXISTS schema_owner=supabase_admin RESULT=PROVISIONED
+
+FINAL OBJECTS:
+  realtime.messages EXISTS owner=supabase_realtime_admin relkind=p rls_enabled=true
+  realtime.subscription EXISTS owner=supabase_realtime_admin
+  realtime.schema_migrations EXISTS owner=supabase_admin
+  functions present: realtime.send(jsonb,text,text,boolean); realtime.broadcast_changes(text,text,text,text,text,record,record,text)
+
+RESULT=PROVISIONED

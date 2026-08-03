@@ -1,0 +1,3 @@
+ALL_FLAGS=OFF
+enablement=NOT_STARTED
+reason=migrations blocked; no production GO

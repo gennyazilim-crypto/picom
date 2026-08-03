@@ -1,0 +1,4 @@
+AUTH=NOT_RUN
+STORAGE=NOT_RUN
+REALTIME_APP=NOT_RUN
+reason=Publisher Phase 1 schema not applied; blocked at 20260710121000 ALTER ownership
