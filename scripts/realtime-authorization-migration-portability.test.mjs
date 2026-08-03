@@ -100,15 +100,23 @@ test("normal table + RLS true passes", () => {
 });
 
 test("policy SQL semantics unchanged vs legacy blob", () => {
-  let legacySql;
-  try {
-    legacySql = execFileSync(
-      "git",
-      ["show", "ff15f21d:supabase/migrations/20260710121000_multi_tenant_realtime_storage_hardening.sql"],
-      { cwd: root, encoding: "utf8" },
-    );
-  } catch {
-    legacySql = null;
+  // Prefer sanitized ancestry SHA (filter-repo remap of original ff15f21d).
+  const legacyCommitCandidates = [
+    "1224c1c9f9d5f50b8da8f0e273dc54e565aea74b",
+    "ff15f21d",
+  ];
+  let legacySql = null;
+  for (const rev of legacyCommitCandidates) {
+    try {
+      legacySql = execFileSync(
+        "git",
+        ["show", `${rev}:${migrationRel}`],
+        { cwd: root, encoding: "utf8" },
+      );
+      break;
+    } catch {
+      // try next candidate
+    }
   }
   assert.ok(legacySql, "legacy migration blob missing from git history");
   assert.equal(sha256(legacySql.replace(/\r\n/g, "\n")), LEGACY_SHA256);
