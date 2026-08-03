@@ -71,8 +71,8 @@
     "electron:build": "node scripts/build-electron.mjs",
     "electron:dev": "npm run electron:build && node scripts/electron-dev.mjs",
     "typecheck": "tsc --noEmit",
-    "production:config:guard": "node scripts/production-config-guard.mjs --strict-env-file=.env.production",
-    "build:production": "npm run production:config:guard && npm run typecheck && npm run electron:build && vite build",
+    "production:config:guard": "npm run release:canonical:guard && node scripts/production-config-guard.mjs --strict-env-file=.env.production",
+    "build:production": "npm run release:canonical:guard && npm run production:config:guard && npm run typecheck && npm run electron:build && vite build",
     "build": "npm run typecheck && npm run electron:build && vite build",
     "build:desktop": "npm run build",
     "package": "npm run build && electron-builder --dir",
@@ -154,7 +154,7 @@
     "qa:smoke": "node scripts/qa-smoke-gate.mjs",
     "qa:supabase": "node scripts/supabase-qa-gate.mjs",
     "supabase:status": "supabase status",
-    "supabase:db:push": "supabase db push",
+    "supabase:db:push": "npm run release:canonical:guard && supabase db push",
     "root-dashboard:hosted:deploy": "node scripts/root-dashboard-hosted-deploy.mjs",
     "supabase:functions:deploy": "supabase functions deploy livekit-token",
     "edge:staging:preflight": "node scripts/hosted-staging-edge-functions-validation.mjs",
@@ -540,7 +540,10 @@
     "feed:attachment:signing:smoke": "node scripts/feed-attachment-signing-smoke.mjs",
     "feed:private-attachment:hosted:preflight": "node scripts/feed-private-attachment-hosted-matrix.mjs",
     "feed:private-attachment:hosted:test": "node scripts/feed-private-attachment-hosted-matrix.mjs --run",
-    "verification-business:creator-publisher:regression": "node scripts/verification-business-creator-publisher-regression.mjs"
+    "verification-business:creator-publisher:regression": "node scripts/verification-business-creator-publisher-regression.mjs",
+    "release:canonical:guard": "node scripts/assert-canonical-release-branch.mjs",
+    "release:canonical:consolidation:test": "node --test scripts/canonical-branch-consolidation.test.mjs",
+    "supabase:db:push:dry-run": "npm run release:canonical:guard && supabase db push --dry-run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

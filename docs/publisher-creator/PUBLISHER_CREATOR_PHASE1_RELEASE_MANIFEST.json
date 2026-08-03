@@ -30,7 +30,11 @@
     "migrationDeploy": {
       "status": "PARTIAL_AFTER_LIVE_SCREEN_RESTORE",
       "appliedThrough": "20260803110000",
-      "alsoApplied": ["20260803100000", "20260803110000", "20260803130000"],
+      "alsoApplied": [
+        "20260803100000",
+        "20260803110000",
+        "20260803130000"
+      ],
       "failedAt": "20260803140000_publisher_creator_program_core.sql",
       "failure": "blocked on missing public.platform_account_restrictions after live-screen predecessors applied via include-all",
       "realtimeProvisioning": "PROVISIONED",
@@ -147,8 +151,21 @@
     }
   ],
   "localeRuntime": {
-    "supported": ["en", "tr", "de", "fr", "es", "it", "pt", "ru", "ar", "ja"],
-    "rtl": ["ar"],
+    "supported": [
+      "en",
+      "tr",
+      "de",
+      "fr",
+      "es",
+      "it",
+      "pt",
+      "ru",
+      "ar",
+      "ja"
+    ],
+    "rtl": [
+      "ar"
+    ],
     "result": "GO"
   },
   "evidencePackages": [
@@ -217,5 +234,59 @@
   "secretScan": {
     "result": "PASS",
     "note": "No service-role/JWT/DB password/LiveKit secret values in committed source or this manifest"
-  }
+  },
+  "canonicalConsolidation": {
+    "consolidatedAt": "2026-08-03T19:08:02.770Z",
+    "canonicalBranch": "release/picom-canonical-production",
+    "canonicalCommit": "c28679dadd18d398977913c6d3c0417bfaeed0ab",
+    "previousAuthoritativeCandidateSha": "448736697acf44e36887740b613c1dab16df2c27",
+    "mergedBranches": [
+      "feat/community-rebuild",
+      "release/homepage-platform-stats-prerequisites",
+      "release/homepage-platform-stats",
+      "release/homepage-platform-stats-integration"
+    ],
+    "mergedBranchTips": {
+      "feat/community-rebuild": "4533587d207e79c0486783ad0eb5f4f48a0e67ca",
+      "release/homepage-platform-stats-prerequisites": "a4901e110407ea7c2eb8c621759399b90f7ff398",
+      "release/homepage-platform-stats": "eedfa1db4d348532871c6cc4495cef7e7f25cb2e",
+      "release/homepage-platform-stats-integration": "1509627070a0844cf65662c647f6ca04a882480f"
+    },
+    "requiredCommitAncestry": [
+      "76d0439bf1eda8e5a208b26452b390f8690244b2",
+      "448736697acf44e36887740b613c1dab16df2c27",
+      "c50f51a88c5dd841cb8c71304e6653d0b3ef6607",
+      "21b9e089",
+      "ff15f21d",
+      "0c90fa5f",
+      "23af140f",
+      "3d54872d"
+    ],
+    "conflictResolutions": [
+      {
+        "file": "supabase/migrations/20260710121000_multi_tenant_realtime_storage_hardening.sql",
+        "resolution": "KEEP_CANONICAL_PORTABLE",
+        "why": "Preserve 0c90fa5f portable guard; prerequisites tip carried older hosted-align snapshot"
+      },
+      {
+        "file": "supabase/migrations/20260803130000_public_platform_stats.sql",
+        "resolution": "KEEP_STAGING_APPLIED_PHASE1",
+        "why": "Staging APPLIED_AND_MATCHED sha d2092cd4...; prerequisites/stats branches had divergent schema"
+      },
+      {
+        "file": "supabase/tests/rls/public_platform_stats.sql",
+        "resolution": "KEEP_STAGING_APPLIED_PHASE1",
+        "why": "Matches entity_type profile semantics of applied Phase 1 stats migration"
+      }
+    ],
+    "migrationInventoryNote": "Phase 1 chain 20260803100000..20260803172000 present; 20260803173000 verification foundation retained from community-rebuild",
+    "realtimePortableLfSha256": "6cac3fc152f34cd3ae433630747a7e2b3d1bf6abfafddc32a9bea78fce5b389a",
+    "realtimeLegacyLfSha256": "6c7fbfc4a8aac4829f2d4a6d6ae170b6ee537652991e101eb50e03e17b2d4bd8",
+    "liveScreen100000LfSha256": "70a2d2a347bb4c19049b61b17ba58a38a6b768373de897499d73dd1f9dec69ee",
+    "productionMigrationResume": "READY_NOT_RUN",
+    "featureFlagStates": "fail_closed_off_in_production",
+    "canonicalWorktree": "C:\\\\Users\\\\ACER\\\\Desktop\\\\picom-canonical-production"
+  },
+  "authoritativeReleaseSha": "c28679dadd18d398977913c6d3c0417bfaeed0ab",
+  "canonicalBranch": "release/picom-canonical-production"
 }

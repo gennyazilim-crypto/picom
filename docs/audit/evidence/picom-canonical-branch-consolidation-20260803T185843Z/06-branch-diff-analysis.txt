@@ -1,0 +1,80 @@
+﻿> c28679da merge(release): record homepage platform stats integration history
+> cc3f6dce merge(release): record homepage platform stats branch history
+> 34f64f62 merge(release): integrate homepage platform stats prerequisites history
+> 4533587d fix(ui): restore companion, help, and profile regressions
+> 93a2612a docs(prod): seal restored migration dependency evidence
+> ada43cb5 fix(db): restore live screen session migration dependency
+> 23af140f docs(prod): seal realtime portability resume partial at live sessions gap
+> 0c90fa5f fix(db): make realtime authorization migration platform-safe
+> ff15f21d docs(prod): attach provisioning poll log and git state
+> 21b9e089 docs(prod): seal realtime provision resume and alter-owner blocker
+> c50f51a8 ops(publisher): create production project and seal partial deploy
+> 44873669 docs(publisher): attach phase1 hardening evidence logs
+> 76d0439b fix(publisher): complete phase 1 release hardening
+> 9ff56fbe docs(publisher): record live now phase1 freeze SHA
+> 2f198ef6 feat(publisher): complete live now phase 1 staging release
+> a4901e11 fix(db): align realtime hardening with hosted Supabase defaults
+> 0bd39ade test(stats): add migration RLS and lifecycle coverage
+> 498a80c7 fix(stats): align aggregate schema with canonical user and broadcast lifecycle
+> 442d999d feat(live): add go-live session lifecycle
+> 3d54872d feat(live): add canonical live session persistence
+> 15096270 feat(stats): integrate secure public platform aggregates
+> eedfa1db feat(stats): add secure public platform aggregates
+> 6c922c09 docs(feed): record clean dependency closure and staging package SHA
+> 6b0de2b2 fix(data-source): remove mock branches from channel members reactions
+> a42211be test(data-source): assert production services have no mock branches
+> 01c3c656 fix(desktop): remove mobile max-width media from email banner CSS
+> 29038afe fix(root): restore UsersPage as valid UTF-8 text
+> 375dc602 fix(ui): add calendar/live Iconix sprite symbols
+> 4f446939 fix(web): add index.web.html entry for web Vite build
+> e283fadb test(security): tighten secrets smoke PASSWORD false-positive filter
+> 459a5c3b test(feed): align auth and deep-link smoke assertions with App
+> 93ec86de fix(feed): harden realtime teardown and remove mock query fallback
+> d7d25631 fix(web): commit vite.config.web for build:web
+> f85b2b17 fix(electron): add CompanionWindowManager module
+> 964b4183 fix(root): avoid UsersPage WIP for Feed shell typecheck
+> 016b4abd fix(root): accept isRootOwner on UsersPage
+> 89467e63 fix(dm): add message chime and call dismiss APIs
+> 46d1f21d fix(root): accept isRootOwner on RootDashboardShell
+> 3c74c45e fix(messages): include MESSAGE_SEND_FORBIDDEN in service error codes
+> ef2dab4c fix(dm): wire call dismiss and end handlers in DirectMessagesView
+> d6684478 fix(profile): resolve username and verification in profile media records
+> a201023d fix(dm): publish direct attachment URL signing helpers
+> 6d3f620c fix(root): require userId on RootDashboardApp currentUser
+> e2093e4e fix(dm): expose peer direct read-state for companion rail
+> e36fe3c3 fix(dm): align active call mini-panel contracts
+> 0a223e8f fix(profile): publish ProfileView bookmarks and activity props
+> cb3736d7 fix(events): align GlobalEventsWorkspace props with App shell
+> 358fb912 fix(navigation): enable live workspace global nav contracts
+> be5a12b9 fix(desktop): expose availableVersion on update service state
+> d4e44876 fix(livekit): extend intents and screen-capture contracts
+> 22632f57 fix(auth): align login button layout and register screen contracts
+> 2b47a662 fix(members): add ensureCommunityMemberRoster helper
+> dee578c6 fix(profile): project username and verification on profile media
+> e51446b5 fix(messages): stabilize local message sendAttempt contracts
+> 3781d449 chore(build): allow TypeScript extension imports for Vite modules
+> fa35e7b8 docs(feed): record packaged E2E gate blocker and commit closure
+> b0f9a3a8 chore(desktop): restore Feed shell and App contract modules
+> ffcb7bf6 chore(desktop): restore events feature modules required by App
+> 87c0bad5 chore(desktop): sync event and DB types for clean typecheck
+> 13a26ec8 chore(desktop): sync App-required routing and delivery types
+> 460ebd7b chore(desktop): restore live and event modules required by App
+> b3c94335 chore(account): restore account-center modules for clean tree builds
+> 2c3a9b0f fix(feed): commit missing deep-link and staging package deps
+> 35bab8cc docs(feed): pin private attachment closure commit SHAs
+> 77603349 docs(feed): record private attachment staging closure
+> ed1141de chore(feed): normalize storage security smoke command
+> 588d1de6 test(feed): cover private attachment hosted access
+> b38dc4db perf(feed): prevent ranked refresh on item merges
+> b6135953 fix(feed): batch sign private attachment URLs
+> 178cbd3c feat(feed): project private attachment storage paths
+> 274406c8 docs(feed): record media performance commit SHAs
+> c800092c test(feed): add media and performance production coverage
+> 0a5b99e6 perf(feed): bound long feed rendering and realtime refreshes
+> 3ffb09b1 perf(feed): remove card query and rendering bottlenecks
+> 3b35a7c4 fix(feed): harden feed media grid and viewer lifecycle
+> 28f77e9b fix(feed): replace placeholder thumbnail handling
+> 99c6c7eb refactor(feed): canonicalize attachment media contract
+> 92c03def fix(feed): stabilize realtime pagination updates
+> 1c7deddd feat(feed): add cursor pagination and load-more
+> a3913c88 feat(feed): add live now preview band

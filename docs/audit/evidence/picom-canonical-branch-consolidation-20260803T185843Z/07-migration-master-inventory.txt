@@ -1,0 +1,13 @@
+VERSION/FILENAME	HEAD	feat/community-rebuild	release/homepage-platform-stats-prerequisites	origin/main
+supabase/migrations/20260710121000_multi_tenant_realtime_storage_hardening.sql	YES	YES	YES	YES
+supabase/migrations/20260803100000_community_live_screen_sessions.sql	YES	YES	YES	NO
+supabase/migrations/20260803110000_go_live_broadcast_start.sql	YES	YES	YES	NO
+supabase/migrations/20260803130000_public_platform_stats.sql	YES	YES	YES	NO
+supabase/migrations/20260803140000_publisher_creator_program_core.sql	YES	YES	NO	NO
+supabase/migrations/20260803141000_publisher_livekit_broadcast_gate.sql	YES	YES	NO	NO
+supabase/migrations/20260803150000_live_now_publisher_discovery.sql	YES	YES	NO	NO
+supabase/migrations/20260803160000_publisher_eligibility_member_count_canonical.sql	YES	YES	NO	NO
+supabase/migrations/20260803170000_live_now_discovery_badge_join_dedupe.sql	YES	YES	NO	NO
+supabase/migrations/20260803171000_live_now_badge_realtime_revocation.sql	YES	YES	NO	NO
+supabase/migrations/20260803172000_publisher_schedule_reminders_and_notif_modes.sql	YES	YES	NO	NO
+supabase/migrations/20260803173000_verification_business_platform_foundation.sql	YES	YES	NO	NO

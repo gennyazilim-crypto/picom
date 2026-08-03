@@ -1,0 +1,5 @@
+toplevel=C:/Users/ACER/Desktop/picom-canonical-production
+remote=https://github.com/gennyazilim-crypto/picom.git
+canonicalBranch=release/picom-canonical-production
+canonicalHead=c28679dadd18d398977913c6d3c0417bfaeed0ab
+sourceDirtyWorktree=C:/Users/ACER/Desktop/picom (feat/community-rebuild; uncommitted brand icons left untouched)

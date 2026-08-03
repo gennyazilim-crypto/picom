@@ -1,0 +1,117 @@
+worktree C:/Users/ACER/Desktop/picom
+HEAD 4533587d207e79c0486783ad0eb5f4f48a0e67ca
+branch refs/heads/feat/community-rebuild
+
+worktree C:/Temp/picom-memory-audit-wt
+HEAD 6c922c093022d5738d94ce864339764901cdbf62
+detached
+
+worktree C:/tmp/picom-secret-community-feb83182
+HEAD 31e60ed4656296ff9daaa9b01b240f83f51644f6
+branch refs/heads/feat/self-hosted-secret-sms
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-feed-algo-worktree-20260712201002
+HEAD 6f82e0c49752f4eadcf52fdf14b4472786bb1c15
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-selfhost-task657-d31d735
+HEAD b7d3b4fc8e09c2e0cf2cac0cbe8fd81083f47475
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-social-auth-worktree-20260712195400
+HEAD 1c8d2b2e7867bd8a8b92df2aa93922ea7e9c7677
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task627-b9a86e9a7b3648
+HEAD 15973c1d6b0510827537607d095ad6b5ecda4195
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task628-1b43b67c3c2a4d
+HEAD 83dd0738bf24d5fd6086c44f5be198b1a275c16f
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task646-a1b2c3d4e5f6
+HEAD 42cd757002f196853e5402952860191b24a29ece
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task660-member-auth
+HEAD 8cdc921bd677afc7e8181f423f3e9fcef1a25ad7
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task661-livekit-integration
+HEAD 1e4a7a3893694d920d9603cd28b831bc25ba0e6f
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task662-member-voice
+HEAD 446ed5ee1e5e68664cb140cd3ccfc535b1560448
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task663-screen-share
+HEAD 98b64a9891616c0d63cfe28bb1d0ecc263b16eee
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task664-voice-ui
+HEAD 62c6b158a1bd605cc9cf4905bf540f1019352081
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task665-hosted-e2e-62c6b15
+HEAD 51bc046f991ddbebf8f75fb12eb2e0143369a1e2
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task666-windows-cert-51bc046
+HEAD dc18201b07848541e7bbeb654244678f1cc7fb06
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task667-security-gate-dc18201
+HEAD a17d1d925240dbbf354d2f099a24861bbc348e4a
+detached
+
+worktree C:/Users/ACER/AppData/Local/Temp/picom-task668-inclusion-a17d1d9
+HEAD d31d735446f72e4063f67c5a4bd803cdeda92609
+detached
+
+worktree C:/Users/ACER/Desktop/picom-canonical-production
+HEAD c28679dadd18d398977913c6d3c0417bfaeed0ab
+branch refs/heads/release/picom-canonical-production
+
+worktree C:/Users/ACER/Desktop/picom-feed-production-wt
+HEAD 5d3a2df0a28402812925733230dfcd5456e7f777
+detached
+prunable gitdir file points to non-existent location
+
+worktree C:/Users/ACER/Desktop/picom-platform-stats
+HEAD eedfa1db4d348532871c6cc4495cef7e7f25cb2e
+branch refs/heads/release/homepage-platform-stats
+
+worktree C:/Users/ACER/Desktop/picom-production-provisioning
+HEAD a4901e110407ea7c2eb8c621759399b90f7ff398
+detached
+
+worktree C:/Users/ACER/Desktop/picom-settings-closure-wt
+HEAD 19ae8364674850402dd6cb6aa617e665d73329b1
+branch refs/heads/settings/production-closure
+prunable gitdir file points to non-existent location
+
+worktree C:/Users/ACER/Desktop/picom-settings-package-wt
+HEAD 1cda33bb4b0254eff982023dbf7efca25d7ceafb
+detached
+prunable gitdir file points to non-existent location
+
+worktree C:/Users/ACER/Desktop/picom-stats-integration
+HEAD 1509627070a0844cf65662c647f6ca04a882480f
+branch refs/heads/release/homepage-platform-stats-integration
+
+worktree C:/Users/ACER/Desktop/picom-stats-prerequisites
+HEAD a4901e110407ea7c2eb8c621759399b90f7ff398
+branch refs/heads/release/homepage-platform-stats-prerequisites
+
+worktree C:/Users/ACER/Desktop/picom-task-715-feed-intelligence
+HEAD 758a9522e2a62fefe926805162a5ada1cdfaa54e
+branch refs/heads/codex/task-715-feed-intelligence
+prunable gitdir file points to non-existent location
+
+worktree C:/Users/ACER/Desktop/picom-task-715-feed-intelligence-current
+HEAD 54f4a4b37547c7f15fcf130e91a0154fcd29017d
+branch refs/heads/codex/task-715-feed-intelligence-current
+prunable gitdir file points to non-existent location
+

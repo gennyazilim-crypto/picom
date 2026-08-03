@@ -136,7 +136,11 @@ test("production manifest dual-hash record is correct", () => {
     || null;
   assert.ok(row, "manifest realtimeAuthorizationMigration / historical entry missing");
   assert.equal(row.legacyStagingSha256, LEGACY_SHA256);
-  assert.equal(row.canonicalPortableSha256, sha256(readFileSync(migrationPath)));
+  // Manifest records LF-normalized content so Windows CRLF checkouts still match.
+  assert.equal(
+    row.canonicalPortableSha256,
+    sha256(readFileSync(migrationPath, "utf8").replace(/\r\n/g, "\n")),
+  );
   assert.equal(row.schemaSemanticsEquivalent, true);
   assert.equal(row.stagingStatus, "APPLIED_LEGACY_EQUIVALENT");
   assert.match(String(row.productionStatus), /PENDING_APPLY|APPLIED_CANONICAL_MATCHED/);

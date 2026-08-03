@@ -1,0 +1,32 @@
+  codex/email-production-operations-20260715                         0ef39c9d [origin/codex/email-production-operations-20260715] feat complete production email operations
++ codex/task-715-feed-intelligence                                   758a9522 (C:/Users/ACER/Desktop/picom-task-715-feed-intelligence) feat add feed intelligence event tracking foundation
++ codex/task-715-feed-intelligence-current                           54f4a4b3 (C:/Users/ACER/Desktop/picom-task-715-feed-intelligence-current) [origin/main: ahead 8] feat add ai moderation layer
+  codex/v1-live-fix                                                  7696fc00 [origin/main: behind 6] fix allow joining communities without published rules
+  codex/voice-screen-live-fix-20260712                               b3656d46 [origin/main: behind 10] fix authenticated voice room access and LiveKit CSP
++ feat/community-rebuild                                             4533587d (C:/Users/ACER/Desktop/picom) fix(ui): restore companion, help, and profile regressions
+  feat/community-rebuild-publish                                     1bb30f19 [origin/feat/community-rebuild: behind 3] docs record Windows release blocker closure evidence
+  feat/companion-ui-restore                                          11d295ff [origin/feat/companion-ui-restore] fix(ui): restore companion, help, and profile regressions
+  feat/secret-community-production                                   5db2855a [origin/feat/secret-community-production] fix integrate secret community admin operations
++ feat/self-hosted-secret-sms                                        31e60ed4 (C:/tmp/picom-secret-community-feb83182) [origin/feat/self-hosted-secret-sms] ops harden self hosted SMS gateway
+  feat/self-hosted-secret-verification                               9682d480 [origin/feat/self-hosted-secret-verification] feat add self hosted secret voice verification
+  main                                                               1ecbd4bd [origin/main: behind 98] release certify signed Windows V1 candidate
+  release/0.1.1-beta.10                                              4ae18de3 feat(desktop): restore profile and password editing in Settings
+  release/0.1.1-beta.10-settings                                     2d9dc6ed [origin/release/0.1.1-beta.10-settings] feat(desktop): restore profile and password editing in Settings
++ release/homepage-platform-stats                                    eedfa1db (C:/Users/ACER/Desktop/picom-platform-stats) feat(stats): add secure public platform aggregates
++ release/homepage-platform-stats-integration                        15096270 (C:/Users/ACER/Desktop/picom-stats-integration) feat(stats): integrate secure public platform aggregates
++ release/homepage-platform-stats-prerequisites                      a4901e11 (C:/Users/ACER/Desktop/picom-stats-prerequisites) fix(db): align realtime hardening with hosted Supabase defaults
+* release/picom-canonical-production                                 c28679da merge(release): record homepage platform stats integration history
++ settings/production-closure                                        19ae8364 (C:/Users/ACER/Desktop/picom-settings-closure-wt) docs(audit): fix readiness report encoding and tip labels
+  remotes/origin/HEAD                                                -> origin/main
+  remotes/origin/codex/email-production-operations-20260715          0ef39c9d feat complete production email operations
+  remotes/origin/codex/v1-live-validation                            31a88073 fix connect Picom V1 core to live Supabase
+  remotes/origin/dependabot/npm_and_yarn/livekit-patches-f726bb4df7  b09f5347 deps: bump livekit-client
+  remotes/origin/dependabot/npm_and_yarn/routine-patches-04f2db9363  0a08713d deps: bump the routine-patches group across 1 directory with 4 updates
+  remotes/origin/dependabot/npm_and_yarn/supabase-patches-817fee20dc f73cc80d deps: bump @supabase/supabase-js
+  remotes/origin/feat/community-rebuild                              8994373b feat(auth): auto sign-in to desktop or app.picom.gg after registration
+  remotes/origin/feat/companion-ui-restore                           11d295ff fix(ui): restore companion, help, and profile regressions
+  remotes/origin/feat/secret-community-production                    5db2855a fix integrate secret community admin operations
+  remotes/origin/feat/self-hosted-secret-sms                         31e60ed4 ops harden self hosted SMS gateway
+  remotes/origin/feat/self-hosted-secret-verification                9682d480 feat add self hosted secret voice verification
+  remotes/origin/main                                                31e60ed4 ops harden self hosted SMS gateway
+  remotes/origin/release/0.1.1-beta.10-settings                      2d9dc6ed feat(desktop): restore profile and password editing in Settings

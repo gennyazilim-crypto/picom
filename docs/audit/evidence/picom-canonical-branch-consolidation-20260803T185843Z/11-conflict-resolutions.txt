@@ -1,0 +1,4 @@
+FILE|CANONICAL_VERSION|SOURCE_VERSION|RESOLUTION|WHY|TEST_COVERAGE
+20260710121000|portable 6cac3fc1 (0c90fa5f)|prereq 322fff85 (a4901e11)|KEEP_CANONICAL|staging/prod portable fix|realtime-authorization-migration-portability.test.mjs + consolidation test
+20260803130000|phase1 d2092cd4|stats 968867ef / divergent schema|KEEP_CANONICAL|staging APPLIED_AND_MATCHED|publisher-phase1 seal + consolidation test
+public_platform_stats.sql RLS test|phase1 profile entity_type|stats user/session entity_type|KEEP_CANONICAL|matches applied schema|consolidation test

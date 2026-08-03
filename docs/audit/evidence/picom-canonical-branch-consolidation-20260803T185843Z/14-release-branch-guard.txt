@@ -1,0 +1,2 @@
+script=scripts/assert-canonical-release-branch.mjs
+wiredInto=production:config:guard,build:production,supabase:db:push,supabase:db:push:dry-run

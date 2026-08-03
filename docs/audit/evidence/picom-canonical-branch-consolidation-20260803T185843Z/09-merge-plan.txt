@@ -1,0 +1,5 @@
+1. Base feat/community-rebuild -> release/picom-canonical-production
+2. Merge release/homepage-platform-stats-prerequisites (bring 3d54872d ancestry)
+3. Merge release/homepage-platform-stats (history only; keep ours on conflicts)
+4. Merge release/homepage-platform-stats-integration (history only; keep ours on conflicts)
+5. Do not merge dependabot / website-unrelated / obsolete release/0.1.1 branches into product baseline

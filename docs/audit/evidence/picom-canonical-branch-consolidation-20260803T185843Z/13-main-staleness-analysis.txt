@@ -1,0 +1,4 @@
+localMain=1ecbd4bdfc0dbb753b9c8b9b9ff0849ea2c14078
+originMain=31e60ed4656296ff9daaa9b01b240f83f51644f6
+MAIN_IS_STALE=YES
+reason=origin/main tip is feat/self-hosted-secret-sms (31e60ed4) and does not contain Phase1 hardening or realtime portability ancestry

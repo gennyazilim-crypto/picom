@@ -1,0 +1,4 @@
+20260803100000 community_live_screen_sessions -> required by 130000/140000/141000/150000/170000/172000
+20260803110000 go_live_broadcast_start -> required by 140000+
+20260710121000 realtime portable (LF 6cac3fc1) must not be replaced by legacy 6c7fbfc4 or prereq 322fff85
+production currently PARTIAL after live-screen restore; resume NOT run in this task

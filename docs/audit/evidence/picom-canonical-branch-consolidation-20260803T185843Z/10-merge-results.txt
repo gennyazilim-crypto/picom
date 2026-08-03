@@ -1,0 +1,10 @@
+c28679da merge(release): record homepage platform stats integration history
+cc3f6dce merge(release): record homepage platform stats branch history
+34f64f62 merge(release): integrate homepage platform stats prerequisites history
+a4901e11 fix(db): align realtime hardening with hosted Supabase defaults
+0bd39ade test(stats): add migration RLS and lifecycle coverage
+498a80c7 fix(stats): align aggregate schema with canonical user and broadcast lifecycle
+442d999d feat(live): add go-live session lifecycle
+3d54872d feat(live): add canonical live session persistence
+15096270 feat(stats): integrate secure public platform aggregates
+eedfa1db feat(stats): add secure public platform aggregates
