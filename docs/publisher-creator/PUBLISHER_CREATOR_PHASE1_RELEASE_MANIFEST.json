@@ -307,25 +307,47 @@
         "version": "20260803135200",
         "filename": "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
         "reason": "required by 20260803172000 ALTER"
+      },
+      {
+        "version": "20260803135300",
+        "filename": "20260803135300_profiles_deactivated_at_canonical.sql",
+        "reason": "required by 20260803140000 / 20260803160000 profiles.deactivated_at",
+        "sourceMigration": "NOT_FOUND_IN_GIT_HISTORY",
+        "canonicalSource": "STAGING_SCHEMA_INTROSPECTION"
       }
     ]
+  },
+  "profilesDeactivatedAtSource": {
+    "sourceMigration": "NOT_FOUND_IN_GIT_HISTORY",
+    "canonicalSource": "STAGING_SCHEMA_INTROSPECTION",
+    "stagingProjectRef": "ufmtvqtsklqsmqxefbbs",
+    "compatibilityVersion": "20260803135300",
+    "filename": "20260803135300_profiles_deactivated_at_canonical.sql",
+    "stagingType": "timestamp with time zone",
+    "stagingNullable": "YES",
+    "stagingDefault": null,
+    "stagingComment": "Soft deactivation timestamp; account is not deleted.",
+    "lfSha256": "0024f975d66c71e79e8c6311730c4103e8ec9862bdb9ce7fe500c3850b76ccbf"
   },
   "migrationDependencyGraph": {
     "pendingStart": "20260803140000",
     "noMissingPredecessors": "PASS",
     "scannedThrough": "20260803172000",
-    "note": "Verification foundation 20260803173000 excluded from Phase1 seal scope"
+    "note": "Verification foundation 20260803173000 excluded from Phase1 seal scope; production apply stopped once at 140000 missing profiles.deactivated_at then predecessor 135300 added"
   },
   "productionAppliedVersions": [
     "20260803100000",
     "20260803110000",
     "20260803130000",
-    "20260710121000"
-  ],
-  "pendingVersions": [
+    "20260710121000",
+    "20260720220000",
+    "20260731120000",
     "20260803135000",
     "20260803135100",
-    "20260803135200",
+    "20260803135200"
+  ],
+  "pendingVersions": [
+    "20260803135300",
     "20260803140000",
     "20260803141000",
     "20260803150000",

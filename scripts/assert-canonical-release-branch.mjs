@@ -37,6 +37,7 @@ const PHASE1_MIGRATIONS = Object.freeze([
   "20260803135000_platform_account_restrictions_canonical.sql",
   "20260803135100_notification_preferences_canonical.sql",
   "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
+  "20260803135300_profiles_deactivated_at_canonical.sql",
   "20260803140000_publisher_creator_program_core.sql",
   "20260803141000_publisher_livekit_broadcast_gate.sql",
   "20260803150000_live_now_publisher_discovery.sql",
@@ -135,6 +136,14 @@ function assertMigrations() {
   const parSql = readFileSync(par, "utf8");
   if (!/create\s+table\s+if\s+not\s+exists\s+public\.platform_account_restrictions/i.test(parSql)) {
     block("BLOCKED_MISSING_PREDECESSOR", "20260803135000 does not create public.platform_account_restrictions");
+  }
+  const deact = join(root, "supabase/migrations/20260803135300_profiles_deactivated_at_canonical.sql");
+  if (!existsSync(deact)) {
+    block("BLOCKED_MISSING_PREDECESSOR", "Missing profiles.deactivated_at predecessor 20260803135300");
+  }
+  const deactSql = readFileSync(deact, "utf8");
+  if (!/add\s+column\s+if\s+not\s+exists\s+deactivated_at/i.test(deactSql)) {
+    block("BLOCKED_MISSING_PREDECESSOR", "20260803135300 does not add public.profiles.deactivated_at");
   }
 
   const rtPath = join(root, REALTIME_REL);

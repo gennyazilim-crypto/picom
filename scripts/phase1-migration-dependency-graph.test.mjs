@@ -74,3 +74,16 @@ test("platform_account_restrictions predecessor exists at 20260803135000", () =>
   assert.match(sql, /expires_at/);
   assert.match(sql, /restricted_until/);
 });
+
+test("profiles.deactivated_at predecessor exists at 20260803135300 before 140000", () => {
+  const file = "20260803135300_profiles_deactivated_at_canonical.sql";
+  assert.ok(existsSync(join(dir, file)));
+  assert.ok(file < "20260803140000_publisher_creator_program_core.sql");
+  const sql = readFileSync(join(dir, file), "utf8");
+  assert.match(sql, /SOURCE_MIGRATION:\s*NOT_FOUND_IN_GIT_HISTORY/);
+  assert.match(sql, /CANONICAL_SOURCE:\s*STAGING_SCHEMA_INTROSPECTION/);
+  assert.match(sql, /COMPATIBILITY_VERSION:\s*20260803135300/);
+  assert.match(sql, /add column if not exists deactivated_at timestamptz null/i);
+  assert.match(sql, /PROFILES_DEACTIVATED_AT_INCOMPATIBLE_SCHEMA/);
+  assert.match(sql, /Soft deactivation timestamp/);
+});

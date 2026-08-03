@@ -41,6 +41,7 @@ const PHASE1 = [
   "20260803135000_platform_account_restrictions_canonical.sql",
   "20260803135100_notification_preferences_canonical.sql",
   "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
+  "20260803135300_profiles_deactivated_at_canonical.sql",
   "20260803140000_publisher_creator_program_core.sql",
   "20260803141000_publisher_livekit_broadcast_gate.sql",
   "20260803150000_live_now_publisher_discovery.sql",
