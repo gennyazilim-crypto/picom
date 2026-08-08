@@ -1,0 +1,26 @@
+TASK28 — Existing chat architecture inventory
+
+REUSE (patterns/helpers, not permission model):
+- public.messages + send_text_message_idempotent (community text channels)
+- public.direct_messages + send_direct_message_v2
+- meeting_chat_contexts / send_meeting_chat_message (meeting-scoped links into messages)
+- public.reports + community moderation queue
+- LiveWatchChat.tsx today: community channel messages + postgres_changes on messages
+- user_follows for follow graph
+- publisher_profile_is_active_account + platform_account_restrictions
+- publisher_streams (TASK27) for stream lifecycle
+- consume_publisher_stream_rate_limit pattern (DB rate windows)
+- is_root_owner / has_platform_permission('publisher.moderate_live')
+
+ABSENT / CREATE (dedicated Live Chat domain):
+- No stream-scoped live_chat_* tables
+- No stream moderators / timeout / ban / slow mode / pin for Live Now streams
+- No server anti-spam fingerprints for stream chat
+- LiveWatchChat is channel chat, not publisher_stream chat; must not overload community permissions
+
+Decision:
+- New tables keyed by publisher_streams.id (stream_id)
+- Optional live_session_id link to community_live_screen_sessions
+- All mutations via SECURITY DEFINER RPCs; no authenticated direct INSERT/UPDATE/DELETE
+- Realtime via postgres_changes on live_chat_messages + settings (RLS-gated)
+- New flags enableLiveChat / enableLiveModeration default OFF in production

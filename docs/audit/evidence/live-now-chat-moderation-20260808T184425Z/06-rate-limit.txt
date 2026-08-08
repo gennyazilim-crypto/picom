@@ -1,0 +1,2 @@
+﻿DB live_chat_rate_limits: burst 5/10s, sustained 30/60s, reaction 20/60s, report 10/3600s
+hint carries retry seconds; moderators bypass send rate/slow/spam

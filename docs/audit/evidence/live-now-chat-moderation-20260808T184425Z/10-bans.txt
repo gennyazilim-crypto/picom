@@ -1,0 +1,1 @@
+﻿Stream-scoped active unique ban; unban revokes; chat send/react denied; watch not auto-blocked

@@ -1,0 +1,5 @@
+﻿anon: no write; no select grants beyond defaults denied by RLS
+authenticated: SELECT only via policies; no INSERT/UPDATE/DELETE grants
+mutations: SECURITY DEFINER RPCs only
+audit/reports: owner/moderator scoped select
+rate_limits: no authenticated grant

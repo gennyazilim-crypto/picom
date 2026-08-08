@@ -1,0 +1,1 @@
+﻿list limit<=100; client slice(-200); indexes on (stream_id, created_at desc); no N+1 required for send path

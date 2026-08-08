@@ -1,0 +1,5 @@
+﻿TASK28 schema (2026-08-08T19:23:16.4840065Z)
+Tables: live_chat_settings, messages, reactions, moderators, timeouts, bans, reports, rate_limits, audit_events
+Keyed by publisher_streams.id; optional live_session_id link
+Soft moderation_state; no hard delete by default
+9 tables present on cqnsetsmcduraryemhbi

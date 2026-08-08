@@ -1,0 +1,1 @@
+﻿Durations 60..86400; expires_at > now() gate; USER_TIMED_OUT audit; auto-inactive without cleanup

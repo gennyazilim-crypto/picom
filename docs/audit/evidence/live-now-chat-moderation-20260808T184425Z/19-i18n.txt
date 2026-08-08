@@ -1,0 +1,1 @@
+﻿liveChatCatalog 10 locales; live-chat-i18n-parity.test.mjs

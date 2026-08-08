@@ -1,0 +1,1 @@
+﻿Normalized fingerprint sha256; duplicate>=2/60s reject; repeated-char run reject; URL/javascript/data HTML reject

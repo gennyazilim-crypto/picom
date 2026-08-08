@@ -1,0 +1,1 @@
+﻿One pinned_message_id; pin/unpin RPCs; reactions bounded keys; banned/timeout blocked

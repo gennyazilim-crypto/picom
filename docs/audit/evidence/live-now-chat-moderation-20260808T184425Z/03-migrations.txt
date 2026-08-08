@@ -1,0 +1,3 @@
+﻿20260808200000_live_chat_core.sql — applied + sealed
+20260808210000_live_chat_moderation_hardening.sql — applied + sealed
+Forward-only; no repair; no fixtures

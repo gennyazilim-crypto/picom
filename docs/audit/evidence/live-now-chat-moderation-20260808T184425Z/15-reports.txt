@@ -1,0 +1,1 @@
+﻿report_live_chat_message with categories; open-status dedupe; reporter/moderator visibility

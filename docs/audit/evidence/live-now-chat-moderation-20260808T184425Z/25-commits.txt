@@ -1,0 +1,5 @@
+TASK28 commit seal — filled after git commit + push
+Base HEAD: 4791e7004a0d35534957b93bf883359b7df832c3
+Branch: release/picom-canonical-production
+Push: normal only (no force)
+Unrelated dirty excluded: companion/auth/friends/DM / .tmp-* / supabase/.temp/

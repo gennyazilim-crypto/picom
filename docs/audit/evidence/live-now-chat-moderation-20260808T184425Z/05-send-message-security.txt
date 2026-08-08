@@ -1,0 +1,2 @@
+﻿send_live_chat_message derives auth.uid(); validates eligibility, content, links, spam, rate, slow mode, idempotency
+Client cannot forge sender/moderator/owner

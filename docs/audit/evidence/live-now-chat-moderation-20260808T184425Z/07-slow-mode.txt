@@ -1,0 +1,2 @@
+﻿slow_mode_seconds in (0,5,10,30,60,120); enforced by last visible message timestamp FOR UPDATE
+UI countdown is UX only

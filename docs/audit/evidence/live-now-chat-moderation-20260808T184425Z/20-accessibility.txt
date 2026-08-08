@@ -1,0 +1,1 @@
+﻿role=log + aria-live polite; keyboard Enter send; confirm dialogs for ban/unban/remove; status not color-only

@@ -1,0 +1,3 @@
+﻿Owner + assigned moderators + platform publisher.moderate_live/root
+assign/remove owner/platform only; self-promote denied for non-owners
+dashboard.read does not grant chat moderation

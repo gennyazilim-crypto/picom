@@ -1,0 +1,2 @@
+﻿Server URL detection; client text-only render (no dangerouslySetInnerHTML)
+Payloads remain inert strings in UI

@@ -1,0 +1,3 @@
+﻿TWO_CLIENT_RUNTIME: NOT_RUN
+No dual authenticated publisher/viewer processes executed in this seal.
+Static RPC/RLS/realtime wiring certified only.

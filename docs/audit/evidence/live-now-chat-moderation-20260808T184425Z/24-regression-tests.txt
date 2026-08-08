@@ -1,0 +1,20 @@
+TASK28 regression / static certification (authoritative worktree)
+UTC run: 20260808 (post-typecheck/build seal)
+
+live-chat-management-smoke.mjs          EXIT=0 PASS
+live-chat-i18n-parity.test.mjs           EXIT=0 PASS (2/2)
+publisher-stream-management-smoke.mjs    EXIT=0 PASS
+npm run typecheck                        EXIT=0
+npm run build                            EXIT=0
+npx vite build                           EXIT=0
+npm run desktop:smoke                    EXIT=0
+npm run secrets:smoke                    EXIT=0
+npm run production:config:guard          EXIT=0 PASS
+npm run release:canonical:guard          EXIT=0 PASS (base HEAD 4791e700)
+npm run git:large-files:check            EXIT=0 PASS
+
+LINT: NOT_CONFIGURED (unchanged; not introduced)
+Aikido MCP: unavailable in environment (not product blocker)
+
+Two-client authenticated realtime runtime: NOT_RUN (see 17-two-client-smoke.txt)
+OBS real client / TASK26 media/auth: unchanged NOT_RUN / NOT_CERTIFIED / BLOCKED_RATE_LIMIT

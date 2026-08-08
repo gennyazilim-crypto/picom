@@ -1,0 +1,3 @@
+﻿enableLiveChat OFF production; enableLiveModeration OFF production
+client-config PICOM_ENABLE_LIVE_CHAT / PICOM_ENABLE_LIVE_MODERATION
+Task27 stream flags unchanged OFF

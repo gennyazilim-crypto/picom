@@ -1,0 +1,2 @@
+﻿Publication supabase_realtime includes live_chat_messages + settings; replica identity full
+Client postgres_changes filter stream_id=eq
