@@ -1,0 +1,6 @@
+TASK27 reconnect / recovery
+States: live <-> reconnecting; reconnecting -> live|ending|failed
+Webhook ingress_ended -> DISCONNECTED; may move toward ending/ended/failed per RPC
+Duplicate active sessions blocked by partial unique index
+OBS real reconnect not exercised (OBS_REAL_CLIENT NOT_RUN)
+Protocol TCP reachability re-verified after livekit recreate

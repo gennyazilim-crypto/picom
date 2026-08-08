@@ -1,0 +1,4 @@
+TASK27 rate limits
+Table publisher_stream_rate_limits + consume_publisher_stream_rate_limit
+RPC create/credential rotate/test/start paths consume limits (server-side)
+Client debounce is not the security control

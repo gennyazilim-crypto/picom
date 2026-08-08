@@ -1,0 +1,7 @@
+TASK27 VPS deployment
+Host: 23.254.166.240 (picom-update-server)
+Services: picom-livekit, picom-livekit-ingress, picom-livekit-redis
+Webhook retargeted from staging to production
+livekit.yaml rtmp_base_url set to VPS IP pending DNS
+Firewall opened only 1935/tcp for ingest (no admin API ports)
+Scripts: deploy-livekit-ingress.ps1, tmp-t27-deploy-ingress-remote.sh, tmp-t27-fix-webhook.sh, tmp-t27-fix-rtmp-base.sh

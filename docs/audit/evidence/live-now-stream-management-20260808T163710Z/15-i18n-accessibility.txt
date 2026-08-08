@@ -1,0 +1,4 @@
+TASK27 i18n + a11y
+publisherProgramCatalog keys: streams.*, streamSetup.*, obs.*, streamCredential.*, streamHealth.*, controlRoom.*, streamStatus.*, streamErrors.*
+10-locale parity: publisher-program-i18n-parity.test.mjs PASS (includes PublisherStreamsWorkspace)
+Secret reveal: role=alertdialog, warning copy via streamCredential.revealWarning

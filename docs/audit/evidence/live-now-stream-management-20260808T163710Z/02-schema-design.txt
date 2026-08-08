@@ -1,0 +1,18 @@
+TASK27 schema design
+UTC: 2026-08-08T18:18:05Z
+Base HEAD: 58ab7322416720836a27d13cd4ea44a1d3f8fa7b
+
+Tables (production applied 20260808170000):
+- publisher_streams (lifecycle + connection_state + health_status + ingest_mode)
+- publisher_stream_credentials (secret_hash only; provider_ingress_id; ingest_url)
+- publisher_stream_audit_events
+- publisher_stream_rate_limits
+
+Invariants:
+- unique active stream per owner (connecting|live|reconnecting|ending)
+- client_request_id idempotency unique
+- visibility public|unlisted|private
+- ingest PICOM_NATIVE | OBS_EXTERNAL
+- Live Now discovery remains on community_live_screen_sessions via live_session_id link
+
+Does NOT replace community_live_screen_sessions or publisher_stream_schedules.

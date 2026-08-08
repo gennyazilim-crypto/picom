@@ -1,0 +1,5 @@
+TASK27 stream health
+Canonical enum: EXCELLENT|GOOD|DEGRADED|POOR|DISCONNECTED
+Sources wired: ingress webhook events map to GOOD / DISCONNECTED (no fabricated bitrate/FPS)
+UI shows only fields present on stream row (connection_state, health_status)
+Fake health values are forbidden; absent metrics are omitted

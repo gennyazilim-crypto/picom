@@ -1,0 +1,7 @@
+TASK27 RLS / security
+- Normal user: stream CRUD via RPC denied without broadcast eligibility
+- Publisher owner: create/read/update own streams via RPC
+- Credentials: no SELECT of secret_hash to clients via deny policy; RPCs return status/prefix only except one-time create/rotate edge plaintext
+- Direct table status mutation: no UPDATE policy for authenticated on publisher_streams (RPC-only transitions)
+- Root terminate: root_terminate_publisher_stream + STREAM_TERMINATED_BY_ROOT audit
+- service_apply_publisher_stream_ingress_event: service_role only

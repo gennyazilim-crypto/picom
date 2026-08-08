@@ -1,0 +1,26 @@
+TASK27 — Authoritative identity
+UTC evidence: 20260808T163710Z
+
+Worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Branch: release/picom-canonical-production
+HEAD: 58ab7322416720836a27d13cd4ea44a1d3f8fa7b
+Ancestor check 58ab7322: YES (exact HEAD)
+Partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T230959Z
+Remote: https://github.com/gennyazilim-crypto/picom
+
+Production Supabase: picom-production / cqnsetsmcduraryemhbi / eu-central-1
+Production LiveKit: wss://voice.picom.gg (docker picom-livekit livekit/livekit-server:v1.13.3)
+VPS: 23.254.166.240
+Redis: picom-livekit-redis redis:7-alpine (host network)
+
+Guards at start:
+PICOM_CANONICAL_RELEASE_GUARD=PASS
+PICOM_PRODUCTION_CONFIG_GUARD=PASS
+PICOM_GIT_LARGE_FILES=PASS
+SECRET_SCAN=PASS
+
+TASK26 blockers (preserved, not fake-passed):
+- REAL TWO-DESKTOP MEDIA: NOT_CERTIFIED
+- AUTH INBOX: BLOCKED_RATE_LIMIT
+
+Unrelated dirty (NOT task-scope): companion/authService friend/DM patches — left unstaged.

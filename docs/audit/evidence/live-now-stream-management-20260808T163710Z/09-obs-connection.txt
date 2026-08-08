@@ -1,0 +1,7 @@
+TASK27 OBS connection model
+Server URL derived from LiveKit Ingress CreateIngress (rtmp_base_url)
+Current production base: rtmp://23.254.166.240/live
+Stream key: one-time from livekit-ingress provisionForStream / create credential path
+Recommended settings documented (H.264, AAC 48kHz, keyframe 2s) — conservative bitrate; no marketing claims
+OBS_REAL_CLIENT: NOT_RUN (no physical OBS Studio session in this certification)
+EXTERNAL_INGEST_PROTOCOL: GO (container+1935 TCP public connect + UFW + webhook URL)

@@ -1,0 +1,14 @@
+TASK27 state machine (server-side publisher_stream_transition_allowed)
+Allowed:
+draft -> scheduled|ready|cancelled
+scheduled -> ready|cancelled
+ready -> connecting|cancelled
+connecting -> live|failed|ending
+live -> reconnecting|ending
+reconnecting -> live|ending|failed
+ending -> ended
+(ended|cancelled|failed terminal)
+
+Fail-closed for all other pairs.
+Audit event emitted per transition via publisher_stream_append_audit.
+Client cannot UPDATE status column directly.

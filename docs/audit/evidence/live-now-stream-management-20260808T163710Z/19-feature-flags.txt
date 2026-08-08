@@ -1,0 +1,6 @@
+TASK27 feature flags
+enablePublisherStreamManagement / enablePublisherExternalIngest
+Production default: OFF (appConfig.environment !== 'production' local defaults only)
+client-config reads PICOM_ENABLE_PUBLISHER_STREAM_MANAGEMENT / PICOM_ENABLE_PUBLISHER_EXTERNAL_INGEST (unset => false)
+Phase1 Go Live flag untouched
+External OBS not public-ON

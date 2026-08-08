@@ -1,0 +1,14 @@
+TASK27 LiveKit Ingress
+Image: livekit/ingress:v1.4.2
+Container: picom-livekit-ingress (Up)
+Server: livekit/livekit-server:v1.13.3 (picom-livekit)
+Redis: picom-livekit-redis
+Config dir: /home/picom/.config/picom/livekit
+rtmp_base_url: rtmp://23.254.166.240/live  (ingest.picom.gg DNS not published yet)
+whip_base_url: http://23.254.166.240:8085/whip (WHIP port not UFW-public; OBS uses RTMP)
+RTMP listen: *:1935
+UFW: 1935/tcp ALLOW
+Webhook: https://cqnsetsmcduraryemhbi.supabase.co/functions/v1/livekit-webhook
+Edge deployed: livekit-ingress, livekit-webhook, client-config
+Preflight: ingress_preflight_passed (see 07b-ingress-preflight.json)
+Protocol: plain RTMP (RTMPS not terminated yet) — documented in OBS_SETUP.md

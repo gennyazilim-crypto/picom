@@ -1,0 +1,5 @@
+TASK27 performance
+list_my_publisher_streams bounded (client requests limit <=80)
+Indexes: owner_status, live_session, client_request_id, active-owner unique
+No credential secret in list payload
+Health polling not storming by default (manual refresh + webhook-driven state)

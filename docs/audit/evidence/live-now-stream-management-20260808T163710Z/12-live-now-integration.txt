@@ -1,0 +1,5 @@
+TASK27 Live Now integration
+publisher_streams.live_session_id links to community_live_screen_sessions
+Discovery predicates remain on live sessions (public live only)
+OBS path: ingress_started -> service_apply -> may transition connecting->live when publishing
+Start button alone does not invent discovery presence without session/ingress evidence

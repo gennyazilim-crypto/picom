@@ -1,0 +1,6 @@
+TASK27 native Go Live regression
+Existing Go Live / community_live_screen_sessions path unchanged by design
+New flags enablePublisherStreamManagement + enablePublisherExternalIngest default OFF in production
+Phase1 enableGoLive left ON
+Static smoke + typecheck + build + desktop:smoke PASS
+No TASK26 media certification upgrade

@@ -1,0 +1,10 @@
+TASK27 migration
+Files:
+- supabase/migrations/20260808170000_publisher_stream_management.sql
+- supabase/migrations/20260808180000_publisher_stream_management_hardening.sql
+Applied to: cqnsetsmcduraryemhbi (picom-production)
+schema_migrations versions present: 20260808170000, 20260808180000
+Forward-only; no repair; no fixtures; no production user IDs
+SECURITY DEFINER RPCs with fixed search_path
+RLS enabled on all four tables; credential table deny authenticated direct access
+Hardening: OBS create/rotate RPC fail-closed to livekit-ingress edge; ready->live allowed for webhook; OBS client live requires PUBLISHING

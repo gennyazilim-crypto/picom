@@ -1,0 +1,36 @@
+TASK27 — Existing architecture inventory
+
+EXTEND (do not fork parallel live registry):
+- public.community_live_screen_sessions
+  statuses: starting|live|reconnecting|ended|terminated
+  visibility_mode: channel_members|community_members|public_discovery
+  RPCs: start/confirm/abort/end, authorize_live_broadcast_livekit,
+        list_visible_live_screen_sessions, list_publisher_live_now*
+- public.publisher_stream_schedules
+  statuses: draft|scheduled|ready|cancelled|blocked|completed
+  reminders: publisher_stream_schedule_reminders
+- Publisher gates: user_can_broadcast_on_picom_live / can_start_picom_live_stream
+- UI: GoLiveWorkspace, CreatorStudioWorkspace, PublisherDashboardWorkspace
+- Flags: enableGoLive, enableLiveNowDiscovery, enablePublisher*
+- Edge: livekit-token, livekit-webhook (meeting-scoped; ignores ingress_*), livekit-moderation
+
+ABSENT / CREATE:
+- LiveKit Ingress container (not deployed; no :1935 RTMP listener)
+- stream credential tables / hash model
+- OBS setup UX
+- publisher stream lifecycle beyond schedule draft/scheduled/ready
+- broadcast liveSessionId wiring gap in livekit-token (intents voice|video|screen only)
+
+VPS LiveKit compose (host network): picom-livekit + picom-livekit-redis only.
+Webhook URL currently still points at staging function host in livekit.yaml
+(ufmtvqtsklqsmqxefbbs) — production event path must be corrected as part of ingress/webhook work.
+
+Prior blocked evidence:
+docs/audit/evidence/live-now-publisher-stream-management-ve-yayin-credential-sistemi-20260803T213721Z/
+verdict then: PICOM STREAM MANAGEMENT: BLOCKED_LIVEKIT
+
+Decision:
+- Add publisher_streams + credentials + audit + transition RPCs
+- Native ingest continues via existing Go Live / LiveKit WebRTC
+- OBS_EXTERNAL uses LiveKit Ingress API when service is deployed
+- New flags enablePublisherStreamManagement + enablePublisherExternalIngest default OFF
