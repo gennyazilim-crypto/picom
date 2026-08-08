@@ -144,7 +144,102 @@ export type PublisherProgramI18nKey =
   | "review.liveBan"
   | "review.empty"
   | "review.defaultReason"
-  | "review.banReason";
+  | "review.banReason"
+  | "streams.aria"
+  | "streams.title"
+  | "streams.lede"
+  | "streams.refresh"
+  | "streams.gatedTitle"
+  | "streams.gatedBody"
+  | "streams.createTitle"
+  | "streams.editTitle"
+  | "streams.fieldTitle"
+  | "streams.fieldDescription"
+  | "streams.fieldCategory"
+  | "streams.fieldVisibility"
+  | "streams.fieldIngest"
+  | "streams.fieldScheduledAt"
+  | "streams.visibility.public"
+  | "streams.visibility.unlisted"
+  | "streams.visibility.private"
+  | "streams.ingest.native"
+  | "streams.ingest.obs"
+  | "streams.create"
+  | "streams.save"
+  | "streams.cancelEdit"
+  | "streams.created"
+  | "streams.updated"
+  | "streams.prepared"
+  | "streams.scheduled"
+  | "streams.cancelled"
+  | "streams.ended"
+  | "streams.empty"
+  | "streams.sectionsAria"
+  | "streams.section.upcoming"
+  | "streams.section.drafts"
+  | "streams.section.live"
+  | "streams.section.past"
+  | "streams.action.edit"
+  | "streams.action.schedule"
+  | "streams.action.delete"
+  | "streams.action.prepare"
+  | "streams.action.start"
+  | "streams.action.end"
+  | "streams.action.connection"
+  | "streams.action.test"
+  | "obs.panelAria"
+  | "obs.panelTitle"
+  | "obs.panelBody"
+  | "obs.ingestUrl"
+  | "obs.ingestUrlPending"
+  | "obs.createKey"
+  | "obs.rotate"
+  | "obs.revoke"
+  | "obs.test"
+  | "obs.copyIngestUrl"
+  | "streamCredential.revealTitle"
+  | "streamCredential.revealWarning"
+  | "streamCredential.streamKey"
+  | "streamCredential.copyKey"
+  | "streamCredential.dismiss"
+  | "streamCredential.copied"
+  | "streamCredential.createdOnce"
+  | "streamCredential.rotatedOnce"
+  | "streamCredential.revoked"
+  | "streamHealth.label"
+  | "streamHealth.tested"
+  | "streamHealth.EXCELLENT"
+  | "streamHealth.GOOD"
+  | "streamHealth.DEGRADED"
+  | "streamHealth.POOR"
+  | "streamHealth.DISCONNECTED"
+  | "controlRoom.connection"
+  | "controlRoom.nativeStartHint"
+  | "controlRoom.state.NOT_CONNECTED"
+  | "controlRoom.state.WAITING"
+  | "controlRoom.state.CONNECTED"
+  | "controlRoom.state.PUBLISHING"
+  | "controlRoom.state.UNHEALTHY"
+  | "controlRoom.state.DISCONNECTED"
+  | "controlRoom.state.REVOKED"
+  | "streamStatus.draft"
+  | "streamStatus.scheduled"
+  | "streamStatus.ready"
+  | "streamStatus.connecting"
+  | "streamStatus.live"
+  | "streamStatus.reconnecting"
+  | "streamStatus.ending"
+  | "streamStatus.ended"
+  | "streamStatus.cancelled"
+  | "streamStatus.failed"
+  | "streamErrors.FEATURE_DISABLED"
+  | "streamErrors.DATA_SOURCE_NOT_CONFIGURED"
+  | "streamErrors.AUTH_REQUIRED"
+  | "streamErrors.VALIDATION_ERROR"
+  | "streamErrors.STREAM_FORBIDDEN"
+  | "streamErrors.STREAM_NOT_FOUND"
+  | "streamErrors.STREAM_RPC_FAILED"
+  | "streamErrors.UNKNOWN_ERROR";
 
 type Catalog = Record<PublisherProgramI18nKey, string>;
 
@@ -296,6 +391,102 @@ const en: Catalog = {
   "review.empty": "Queue empty.",
   "review.defaultReason": "Reviewed by Root Panel",
   "review.banReason": "Live ban from review panel",
+  "streams.aria": "Publisher stream management",
+  "streams.title": "Streams",
+  "streams.lede": "Plan, prepare, and start Picom-native or OBS external streams.",
+  "streams.refresh": "Refresh",
+  "streams.gatedTitle": "Stream management is off",
+  "streams.gatedBody": "Publisher stream management is disabled in this build. Legacy schedule tools remain available when this flag is off.",
+  "streams.createTitle": "Create stream",
+  "streams.editTitle": "Edit stream",
+  "streams.fieldTitle": "Title",
+  "streams.fieldDescription": "Description",
+  "streams.fieldCategory": "Category",
+  "streams.fieldVisibility": "Visibility",
+  "streams.fieldIngest": "Ingest mode",
+  "streams.fieldScheduledAt": "Scheduled at",
+  "streams.visibility.public": "Public",
+  "streams.visibility.unlisted": "Unlisted",
+  "streams.visibility.private": "Private",
+  "streams.ingest.native": "Picom native",
+  "streams.ingest.obs": "OBS external",
+  "streams.create": "Create stream",
+  "streams.save": "Save changes",
+  "streams.cancelEdit": "Cancel",
+  "streams.created": "Stream created.",
+  "streams.updated": "Stream updated.",
+  "streams.prepared": "Stream prepared.",
+  "streams.scheduled": "Stream scheduled.",
+  "streams.cancelled": "Stream cancelled.",
+  "streams.ended": "Stream ended.",
+  "streams.empty": "No streams in this section.",
+  "streams.sectionsAria": "Stream sections",
+  "streams.section.upcoming": "Upcoming",
+  "streams.section.drafts": "Drafts",
+  "streams.section.live": "Live",
+  "streams.section.past": "Past",
+  "streams.action.edit": "Edit",
+  "streams.action.schedule": "Schedule",
+  "streams.action.delete": "Delete",
+  "streams.action.prepare": "Prepare",
+  "streams.action.start": "Start",
+  "streams.action.end": "End",
+  "streams.action.connection": "Connection",
+  "streams.action.test": "Test",
+  "obs.panelAria": "OBS external ingest",
+  "obs.panelTitle": "OBS connection",
+  "obs.panelBody": "Use the server URL in OBS. The stream key is shown once at create or rotate and is never stored by Picom.",
+  "obs.ingestUrl": "Ingest URL",
+  "obs.ingestUrlPending": "Create or rotate a key to reveal the ingest URL.",
+  "obs.createKey": "Create key",
+  "obs.rotate": "Rotate",
+  "obs.revoke": "Revoke",
+  "obs.test": "Test connection",
+  "obs.copyIngestUrl": "Copy ingest URL",
+  "streamCredential.revealTitle": "One-time stream key",
+  "streamCredential.revealWarning":
+    "Copy this key now. Picom stores only a hash and will not show the plaintext again. Closing this dialog clears it from memory.",
+  "streamCredential.streamKey": "Stream key",
+  "streamCredential.copyKey": "Copy stream key",
+  "streamCredential.dismiss": "I saved the key",
+  "streamCredential.copied": "Copied.",
+  "streamCredential.createdOnce": "Stream key created. Copy it now — it will not be shown again.",
+  "streamCredential.rotatedOnce": "Stream key rotated. Copy the new key now.",
+  "streamCredential.revoked": "Stream credential revoked.",
+  "streamHealth.label": "Health",
+  "streamHealth.tested": "Connection test · {state}",
+  "streamHealth.EXCELLENT": "Excellent",
+  "streamHealth.GOOD": "Good",
+  "streamHealth.DEGRADED": "Degraded",
+  "streamHealth.POOR": "Poor",
+  "streamHealth.DISCONNECTED": "Disconnected",
+  "controlRoom.connection": "Connection",
+  "controlRoom.nativeStartHint": "Opening Go Live for native publish. OBS publish is not simulated.",
+  "controlRoom.state.NOT_CONNECTED": "Not connected",
+  "controlRoom.state.WAITING": "Waiting",
+  "controlRoom.state.CONNECTED": "Connected",
+  "controlRoom.state.PUBLISHING": "Publishing",
+  "controlRoom.state.UNHEALTHY": "Unhealthy",
+  "controlRoom.state.DISCONNECTED": "Disconnected",
+  "controlRoom.state.REVOKED": "Revoked",
+  "streamStatus.draft": "Draft",
+  "streamStatus.scheduled": "Scheduled",
+  "streamStatus.ready": "Ready",
+  "streamStatus.connecting": "Connecting",
+  "streamStatus.live": "Live",
+  "streamStatus.reconnecting": "Reconnecting",
+  "streamStatus.ending": "Ending",
+  "streamStatus.ended": "Ended",
+  "streamStatus.cancelled": "Cancelled",
+  "streamStatus.failed": "Failed",
+  "streamErrors.FEATURE_DISABLED": "This stream feature is disabled.",
+  "streamErrors.DATA_SOURCE_NOT_CONFIGURED": "Supabase is not configured.",
+  "streamErrors.AUTH_REQUIRED": "Sign in to manage streams.",
+  "streamErrors.VALIDATION_ERROR": "Check the stream fields and try again.",
+  "streamErrors.STREAM_FORBIDDEN": "You do not have permission for this stream action.",
+  "streamErrors.STREAM_NOT_FOUND": "Stream was not found.",
+  "streamErrors.STREAM_RPC_FAILED": "Stream action failed.",
+  "streamErrors.UNKNOWN_ERROR": "Something went wrong.",
 };
 
 const tr: Catalog = {
@@ -418,6 +609,104 @@ const tr: Catalog = {
   "review.filter.fraud": "Fraud incelemesi",
   "review.riskDrop": "Risk uyarısı: başvuru sonrası olağan dışı sayı düşüşü.",
   "review.empty": "Kuyruk boş.",
+  "streams.aria": "Yayıncı yayın yönetimi",
+  "streams.title": "Yayınlar",
+  "streams.lede": "Picom yerel veya OBS harici yayınları planlayın, hazırlayın ve başlatın.",
+  "streams.refresh": "Yenile",
+  "streams.gatedTitle": "Yayın yönetimi kapalı",
+  "streams.gatedBody":
+    "Bu derlemede yayıncı yayın yönetimi kapalı. Bayrak kapalıyken eski takvim araçları kullanılabilir.",
+  "streams.createTitle": "Yayın oluştur",
+  "streams.editTitle": "Yayını düzenle",
+  "streams.fieldTitle": "Başlık",
+  "streams.fieldDescription": "Açıklama",
+  "streams.fieldCategory": "Kategori",
+  "streams.fieldVisibility": "Görünürlük",
+  "streams.fieldIngest": "Ingest modu",
+  "streams.fieldScheduledAt": "Planlanan zaman",
+  "streams.visibility.public": "Herkese açık",
+  "streams.visibility.unlisted": "Listelenmeyen",
+  "streams.visibility.private": "Özel",
+  "streams.ingest.native": "Picom yerel",
+  "streams.ingest.obs": "OBS harici",
+  "streams.create": "Yayın oluştur",
+  "streams.save": "Kaydet",
+  "streams.cancelEdit": "İptal",
+  "streams.created": "Yayın oluşturuldu.",
+  "streams.updated": "Yayın güncellendi.",
+  "streams.prepared": "Yayın hazırlandı.",
+  "streams.scheduled": "Yayın planlandı.",
+  "streams.cancelled": "Yayın iptal edildi.",
+  "streams.ended": "Yayın sonlandırıldı.",
+  "streams.empty": "Bu bölümde yayın yok.",
+  "streams.sectionsAria": "Yayın bölümleri",
+  "streams.section.upcoming": "Yaklaşan",
+  "streams.section.drafts": "Taslaklar",
+  "streams.section.live": "Canlı",
+  "streams.section.past": "Geçmiş",
+  "streams.action.edit": "Düzenle",
+  "streams.action.schedule": "Planla",
+  "streams.action.delete": "Sil",
+  "streams.action.prepare": "Hazırla",
+  "streams.action.start": "Başlat",
+  "streams.action.end": "Bitir",
+  "streams.action.connection": "Bağlantı",
+  "streams.action.test": "Test",
+  "obs.panelAria": "OBS harici ingest",
+  "obs.panelTitle": "OBS bağlantısı",
+  "obs.panelBody":
+    "OBS’de sunucu URL’sini kullanın. Yayın anahtarı yalnızca oluşturma veya rotasyonda bir kez gösterilir; Picom saklamaz.",
+  "obs.ingestUrl": "Ingest URL",
+  "obs.ingestUrlPending": "Ingest URL için anahtar oluşturun veya döndürün.",
+  "obs.createKey": "Anahtar oluştur",
+  "obs.rotate": "Döndür",
+  "obs.revoke": "İptal et",
+  "obs.test": "Bağlantıyı test et",
+  "obs.copyIngestUrl": "Ingest URL kopyala",
+  "streamCredential.revealTitle": "Tek seferlik yayın anahtarı",
+  "streamCredential.revealWarning":
+    "Bu anahtarı şimdi kopyalayın. Picom yalnızca hash saklar ve düz metni bir daha göstermez. Bu pencereyi kapatmak bellekteki anahtarı temizler.",
+  "streamCredential.streamKey": "Yayın anahtarı",
+  "streamCredential.copyKey": "Anahtarı kopyala",
+  "streamCredential.dismiss": "Anahtarı kaydettim",
+  "streamCredential.copied": "Kopyalandı.",
+  "streamCredential.createdOnce": "Yayın anahtarı oluşturuldu. Şimdi kopyalayın — bir daha gösterilmez.",
+  "streamCredential.rotatedOnce": "Yayın anahtarı döndürüldü. Yeni anahtarı şimdi kopyalayın.",
+  "streamCredential.revoked": "Yayın kimlik bilgisi iptal edildi.",
+  "streamHealth.label": "Sağlık",
+  "streamHealth.tested": "Bağlantı testi · {state}",
+  "streamHealth.EXCELLENT": "Mükemmel",
+  "streamHealth.GOOD": "İyi",
+  "streamHealth.DEGRADED": "Düşük",
+  "streamHealth.POOR": "Zayıf",
+  "streamHealth.DISCONNECTED": "Bağlı değil",
+  "controlRoom.connection": "Bağlantı",
+  "controlRoom.nativeStartHint": "Yerel yayın için Go Live açılıyor. OBS yayını simüle edilmez.",
+  "controlRoom.state.NOT_CONNECTED": "Bağlı değil",
+  "controlRoom.state.WAITING": "Bekliyor",
+  "controlRoom.state.CONNECTED": "Bağlı",
+  "controlRoom.state.PUBLISHING": "Yayında",
+  "controlRoom.state.UNHEALTHY": "Sağlıksız",
+  "controlRoom.state.DISCONNECTED": "Bağlantı kesildi",
+  "controlRoom.state.REVOKED": "İptal edildi",
+  "streamStatus.draft": "Taslak",
+  "streamStatus.scheduled": "Planlandı",
+  "streamStatus.ready": "Hazır",
+  "streamStatus.connecting": "Bağlanıyor",
+  "streamStatus.live": "Canlı",
+  "streamStatus.reconnecting": "Yeniden bağlanıyor",
+  "streamStatus.ending": "Bitiyor",
+  "streamStatus.ended": "Bitti",
+  "streamStatus.cancelled": "İptal",
+  "streamStatus.failed": "Başarısız",
+  "streamErrors.FEATURE_DISABLED": "Bu yayın özelliği kapalı.",
+  "streamErrors.DATA_SOURCE_NOT_CONFIGURED": "Supabase yapılandırılmadı.",
+  "streamErrors.AUTH_REQUIRED": "Yayınları yönetmek için oturum açın.",
+  "streamErrors.VALIDATION_ERROR": "Alanları kontrol edip yeniden deneyin.",
+  "streamErrors.STREAM_FORBIDDEN": "Bu yayın işlemi için yetkiniz yok.",
+  "streamErrors.STREAM_NOT_FOUND": "Yayın bulunamadı.",
+  "streamErrors.STREAM_RPC_FAILED": "Yayın işlemi başarısız.",
+  "streamErrors.UNKNOWN_ERROR": "Bir şeyler ters gitti.",
 };
 
 function pack(base: Catalog): Catalog {

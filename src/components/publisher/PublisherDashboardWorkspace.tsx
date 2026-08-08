@@ -6,7 +6,9 @@ import {
 } from "../../services/localization/publisherProgramCatalog";
 import { publisherProgramService } from "../../services/publisher/publisherProgramService";
 import type { PublisherProgramState } from "../../services/publisher/publisherProgramTypes";
+import { featureFlagService } from "../../services/featureFlagService";
 import { getSupabaseClient } from "../../services/supabase/supabaseClient";
+import { PublisherStreamsWorkspace } from "./PublisherStreamsWorkspace";
 import "./publisherProgram.css";
 
 type Props = Readonly<{
@@ -28,6 +30,7 @@ function t(key: PublisherProgramI18nKey, params?: Record<string, string | number
 }
 
 export function PublisherDashboardWorkspace({ onClose, onGoLive, onOpenApplication }: Props) {
+  const streamManagementEnabled = featureFlagService.isEnabled("enablePublisherStreamManagement");
   const [state, setState] = useState<PublisherProgramState | null>(null);
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +165,11 @@ export function PublisherDashboardWorkspace({ onClose, onGoLive, onOpenApplicati
         </div>
       ) : null}
 
-      {section === "streams" || section === "schedule" ? (
+      {section === "streams" && streamManagementEnabled ? (
+        <PublisherStreamsWorkspace onGoLive={onGoLive} />
+      ) : null}
+
+      {(section === "streams" && !streamManagementEnabled) || section === "schedule" ? (
         <div className="publisher-card">
           <h2>{t("dash.scheduleTitle")}</h2>
           <ul className="publisher-list">
