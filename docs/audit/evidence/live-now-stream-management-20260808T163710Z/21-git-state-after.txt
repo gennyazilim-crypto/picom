@@ -1,3 +1,4 @@
-HEAD before this seal file: 53dc64aeea50004f9d6796cf0882026ee077a815
+Authoritative HEAD after push: d33d3513f044256e3ad0e82d79e686853fdf252c
+Branch: release/picom-canonical-production (tracks origin)
 Unrelated dirty left unstaged: companion/auth/friends/DM
 Excluded: .tmp-t27-evidence-ts.txt supabase/.temp/

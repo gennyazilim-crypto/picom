@@ -2,7 +2,7 @@
 
 Evidence UTC stamp: 20260808T163710Z
 Authoritative branch: `release/picom-canonical-production`
-Base HEAD: `58ab7322416720836a27d13cd4ea44a1d3f8fa7b` (exact at start)
+Base HEAD: `58ab7322`; sealed HEAD: `d33d3513`
 Production Supabase: `picom-production` / `cqnsetsmcduraryemhbi`
 LiveKit: `wss://voice.picom.gg` @ `23.254.166.240`
 
