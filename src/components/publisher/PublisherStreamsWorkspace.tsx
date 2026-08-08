@@ -14,6 +14,8 @@ import {
   type PublisherStreamStatus,
   type PublisherStreamVisibility,
 } from "../../services/live/publisherStreamManagementService";
+import { LiveChatModeratorConsole } from "../live/LiveChatModeratorConsole";
+import { translateLiveChat } from "../../services/localization/liveChatCatalog";
 import "./PublisherStreamsWorkspace.css";
 
 type Props = Readonly<{
@@ -70,6 +72,8 @@ function toIsoLocal(value: string): string | null {
 export function PublisherStreamsWorkspace({ onGoLive, liveSessionId = null }: Props) {
   const streamMgmtEnabled = featureFlagService.isEnabled("enablePublisherStreamManagement");
   const externalIngestEnabled = featureFlagService.isEnabled("enablePublisherExternalIngest");
+  const liveChatEnabled = featureFlagService.isEnabled("enableLiveChat");
+  const liveModerationEnabled = featureFlagService.isEnabled("enableLiveModeration");
 
   const [streams, setStreams] = useState<PublisherStream[]>([]);
   const [section, setSection] = useState<SectionKey>("upcoming");
@@ -82,6 +86,7 @@ export function PublisherStreamsWorkspace({ onGoLive, liveSessionId = null }: Pr
   /** One-time secret reveal — React state only; cleared on modal close. Never localStorage. */
   const [secretReveal, setSecretReveal] = useState<PublisherStreamCredentialReveal | null>(null);
   const [obsPanelStreamId, setObsPanelStreamId] = useState<string | null>(null);
+  const [chatConsoleStreamId, setChatConsoleStreamId] = useState<string | null>(null);
   const [schedulePromptId, setSchedulePromptId] = useState<string | null>(null);
   const [scheduleAt, setScheduleAt] = useState("");
 
@@ -480,6 +485,16 @@ export function PublisherStreamsWorkspace({ onGoLive, liveSessionId = null }: Pr
                     {t("streams.action.end")}
                   </button>
                 ) : null}
+                {liveChatEnabled && liveModerationEnabled && LIVE_STATUSES.includes(stream.status) ? (
+                  <button
+                    type="button"
+                    className="publisher-ghost"
+                    disabled={busy}
+                    onClick={() => setChatConsoleStreamId(stream.id === chatConsoleStreamId ? null : stream.id)}
+                  >
+                    {translateLiveChat("controlRoom.moderation", localizationService.getLanguage())}
+                  </button>
+                ) : null}
                 {showObs ? (
                   <button
                     type="button"
@@ -509,6 +524,15 @@ export function PublisherStreamsWorkspace({ onGoLive, liveSessionId = null }: Pr
                     {t("streams.cancelEdit")}
                   </button>
                 </div>
+              ) : null}
+              {liveChatEnabled && liveModerationEnabled && chatConsoleStreamId === stream.id ? (
+                <LiveChatModeratorConsole
+                  streamId={stream.id}
+                  onNotice={(message, kind) => {
+                    if (kind === "error") setError(message);
+                    else setNotice(message);
+                  }}
+                />
               ) : null}
               {showObs && obsPanelStreamId === stream.id ? (
                 <div className="publisher-streams__obs" aria-label={t("obs.panelAria")}>
