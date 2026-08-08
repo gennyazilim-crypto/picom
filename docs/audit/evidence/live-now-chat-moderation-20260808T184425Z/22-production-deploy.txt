@@ -1,1 +1,4 @@
-﻿Target cqnsetsmcduraryemhbi; migrations applied; schema_migrations sealed 20260808200000 + 20260808210000
+﻿Target cqnsetsmcduraryemhbi
+Migrations applied + schema_migrations sealed: 20260808200000 + 20260808210000
+Edge: client-config redeployed with enableLiveChat/enableLiveModeration keys (env unset => OFF)
+Flags remain OFF in production
