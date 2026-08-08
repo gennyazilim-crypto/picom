@@ -8,6 +8,8 @@ f1a988c4 feat(live): add production live chat
 b4f660c4 feat(live): add stream moderation controls
 f1f36840 test(live): certify live chat authorization
 9a0b69c9 docs(live): document chat moderation architecture
-(seal) docs(live): finalize TASK28 evidence HEAD after push
+245023e1 docs(live): finalize TASK28 evidence HEAD after push
+c9445ddc docs(live): seal TASK28 commit evidence identity
 
+Sealed HEAD: c9445ddc2072225cd6c7f12642fb752639b93d9e
 Unrelated dirty excluded: companion/auth/friends/DM / .tmp-* / supabase/.temp/
