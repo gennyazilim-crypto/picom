@@ -1,7 +1,7 @@
-TASK28 git state after push
+﻿TASK28 git state after seal
 Branch: release/picom-canonical-production
-Remote: origin/release/picom-canonical-production @ 9a0b69c9292aa855b3e06be8c286d09d7c95f912
+Sealed HEAD: 245023e1b5dc651e8f20b1ca3aff07423ceba273
 Base: 4791e7004a0d35534957b93bf883359b7df832c3
-Ahead after first push: synced at 9a0b69c9
+Remote sync: normal push
 Unrelated dirty still present (not committed): companion/auth/friends/DM patches, .tmp-*, supabase/.temp/
 Force push: NOT USED
