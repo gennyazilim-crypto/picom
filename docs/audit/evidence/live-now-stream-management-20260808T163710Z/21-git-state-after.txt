@@ -1,0 +1,3 @@
+HEAD before this seal file: 53dc64aeea50004f9d6796cf0882026ee077a815
+Unrelated dirty left unstaged: companion/auth/friends/DM
+Excluded: .tmp-t27-evidence-ts.txt supabase/.temp/

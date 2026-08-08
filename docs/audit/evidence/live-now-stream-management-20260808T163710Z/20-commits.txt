@@ -1,0 +1,6 @@
+TASK27 commits (descendant of 58ab7322)
+f8e29d65 feat(live): add publisher stream management
+30e5a9e4 feat(live): add secure external ingest credentials
+efb0ea31 feat(live): integrate OBS production ingest
+d9294cb9 test(live): certify stream management security
+53dc64ae docs(live): document publisher stream operations
