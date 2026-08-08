@@ -33,6 +33,8 @@ export const FEATURE_FLAG_KEYS = [
   "enablePublisherNotificationPreferences",
   "enablePublisherStreamManagement",
   "enablePublisherExternalIngest",
+  "enableLiveChat",
+  "enableLiveModeration",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -58,6 +60,8 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   publisherNotificationPreferences: "enablePublisherNotificationPreferences",
   publisherStreamManagement: "enablePublisherStreamManagement",
   publisherExternalIngest: "enablePublisherExternalIngest",
+  liveChat: "enableLiveChat",
+  liveModeration: "enableLiveModeration",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -115,6 +119,8 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enablePublisherNotificationPreferences: appConfig.environment !== "production",
     enablePublisherStreamManagement: appConfig.environment !== "production",
     enablePublisherExternalIngest: appConfig.environment !== "production",
+    enableLiveChat: appConfig.environment !== "production",
+    enableLiveModeration: appConfig.environment !== "production",
   });
 }
 

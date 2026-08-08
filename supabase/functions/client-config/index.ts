@@ -81,6 +81,8 @@ Deno.serve((request: Request) => {
       enablePublisherNotificationPreferences: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_NOTIFICATION_PREFERENCES"),
       enablePublisherStreamManagement: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_STREAM_MANAGEMENT"),
       enablePublisherExternalIngest: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_EXTERNAL_INGEST"),
+      enableLiveChat: readPublicBooleanEnv("PICOM_ENABLE_LIVE_CHAT"),
+      enableLiveModeration: readPublicBooleanEnv("PICOM_ENABLE_LIVE_MODERATION"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

@@ -1,0 +1,133 @@
+.live-stream-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+  max-height: 520px;
+  border: 1px solid color-mix(in srgb, var(--border, #333) 80%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-chat, #121212) 92%, transparent);
+  overflow: hidden;
+}
+
+.live-stream-chat__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #333) 70%, transparent);
+}
+
+.live-stream-chat__header strong {
+  font-size: 0.95rem;
+}
+
+.live-stream-chat__header span {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.live-stream-chat__pin {
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--accent, #3b82f6) 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border, #333) 60%, transparent);
+}
+
+.live-stream-chat__pin p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+
+.live-stream-chat__list {
+  flex: 1;
+  overflow: auto;
+  padding: 10px 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.live-stream-chat__empty {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
+.live-stream-chat__item p {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92rem;
+}
+
+.live-stream-chat__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.live-stream-chat__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.live-stream-chat__actions button,
+.live-stream-chat__meta > button,
+.live-stream-chat__pin button,
+.live-stream-chat__composer button {
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--surface, #1f1f1f) 80%, transparent);
+  color: inherit;
+  cursor: pointer;
+}
+
+.live-stream-chat__composer {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border, #333) 70%, transparent);
+}
+
+.live-stream-chat__composer textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 56px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border, #333) 80%, transparent);
+  background: transparent;
+  color: inherit;
+  padding: 8px;
+}
+
+.live-stream-chat__slow {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.live-chat-mod-console {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.live-chat-mod-console section {
+  border: 1px solid color-mix(in srgb, var(--border, #333) 70%, transparent);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.live-chat-mod-console h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.live-chat-mod-console ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+}
