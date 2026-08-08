@@ -44,6 +44,7 @@ test("publisher UI components use catalog translator (no hardcoded TR eligibilit
   const files = [
     "src/components/publisher/PublisherApplicationWorkspace.tsx",
     "src/components/publisher/PublisherDashboardWorkspace.tsx",
+    "src/components/publisher/PublisherStreamsWorkspace.tsx",
     "src/components/rootDashboard/modules/PublisherCreatorReviewPage.tsx",
   ];
   for (const rel of files) {
