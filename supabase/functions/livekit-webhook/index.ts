@@ -1,23 +1,46 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
+import { parsePublisherStreamIdFromLiveKitRoomName } from "../_shared/livekit-room.ts";
 import { verifyLiveKitWebhook } from "../_shared/livekit-webhook-verifier.ts";
 
 type LiveKitWebhookEvent = {
-  id?: unknown; event?: unknown; createdAt?: unknown;
+  id?: unknown;
+  event?: unknown;
+  createdAt?: unknown;
   room?: { name?: unknown };
   participant?: { identity?: unknown; name?: unknown };
   track?: { sid?: unknown; type?: unknown; source?: unknown };
+  ingressInfo?: {
+    ingressId?: unknown;
+    ingress_id?: unknown;
+    roomName?: unknown;
+    room_name?: unknown;
+  };
 };
 
 const maxBodyBytes = 256 * 1024;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const meetingRoomPattern = /^meeting:([0-9a-f-]{36}):session:([0-9a-f-]{36})$/i;
-const handledEvents = new Set(["room_started", "room_finished", "participant_joined", "participant_left", "participant_connection_aborted", "track_published", "track_unpublished"]);
-const ignoredEvents = new Set(["egress_started", "egress_updated", "egress_ended", "ingress_started", "ingress_ended"]);
+const handledEvents = new Set([
+  "room_started",
+  "room_finished",
+  "participant_joined",
+  "participant_left",
+  "participant_connection_aborted",
+  "track_published",
+  "track_unpublished",
+]);
+const publisherIngressEvents = new Set(["ingress_started", "ingress_ended"]);
+const ignoredEvents = new Set(["egress_started", "egress_updated", "egress_ended"]);
+const acceptedEvents = new Set([...handledEvents, ...ignoredEvents, ...publisherIngressEvents]);
 
 function requiredEnv(name: string): string | null {
   const value = Deno.env.get(name);
   return value && value.trim() ? value.trim() : null;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function trackKind(value: unknown): "audio" | "video" | null {
@@ -33,6 +56,17 @@ function trackSource(value: unknown): "microphone" | "camera" | "screen_share" |
   if (value === 3 || normalized === "screen_share" || normalized === "screenshare") return "screen_share";
   if (value === 4 || normalized === "screen_share_audio" || normalized === "screenshareaudio") return "screen_share_audio";
   return "unknown";
+}
+
+function resolvePublisherRoomName(event: LiveKitWebhookEvent): string {
+  return asString(event.room?.name)
+    ?? asString(event.ingressInfo?.roomName)
+    ?? asString(event.ingressInfo?.room_name)
+    ?? "";
+}
+
+function resolveProviderIngressId(event: LiveKitWebhookEvent): string | null {
+  return asString(event.ingressInfo?.ingressId) ?? asString(event.ingressInfo?.ingress_id);
 }
 
 Deno.serve(async (request: Request) => {
@@ -66,8 +100,44 @@ Deno.serve(async (request: Request) => {
   const eventId = typeof event.id === "string" ? event.id.toLowerCase() : "";
   const eventType = typeof event.event === "string" ? event.event : "";
   const createdAtSeconds = Number(event.createdAt);
-  if (!uuidPattern.test(eventId) || !Number.isFinite(createdAtSeconds) || (!handledEvents.has(eventType) && !ignoredEvents.has(eventType))) return errorResponse("VALIDATION_ERROR", "LiveKit webhook event metadata is invalid.", 400);
+  if (!uuidPattern.test(eventId) || !Number.isFinite(createdAtSeconds) || !acceptedEvents.has(eventType)) {
+    return errorResponse("VALIDATION_ERROR", "LiveKit webhook event metadata is invalid.", 400);
+  }
+
+  const operator = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
+
+  // Publisher OBS ingress path: handle before generic ingress ignore.
+  if (publisherIngressEvents.has(eventType)) {
+    const roomName = resolvePublisherRoomName(event);
+    const streamId = parsePublisherStreamIdFromLiveKitRoomName(roomName);
+    if (streamId) {
+      const started = eventType === "ingress_started";
+      const { data, error } = await operator.rpc("service_apply_publisher_stream_ingress_event", {
+        target_stream_id: streamId,
+        target_event_type: eventType,
+        // ingress_started => CONNECTED/PUBLISHING + GOOD; ingress_ended => DISCONNECTED
+        target_connection_state: started ? "PUBLISHING" : "DISCONNECTED",
+        target_health_status: started ? "GOOD" : "DISCONNECTED",
+        target_provider_ingress_id: resolveProviderIngressId(event),
+        target_metadata: {
+          source: "livekit_webhook",
+          event_id: eventId,
+          payload_digest: digest,
+          connection_hint: started ? "CONNECTED" : "DISCONNECTED",
+          // Never include stream keys or secrets from ingressInfo.
+        },
+      });
+      if (error || !data) {
+        return errorResponse("INTERNAL_ERROR", "Publisher ingress webhook processing is temporarily unavailable.", 503, undefined, { "Retry-After": "30" });
+      }
+      return jsonResponse({ accepted: true, scope: "publisher_stream", eventId, eventType, streamId });
+    }
+    // Non-publisher ingress events remain intentionally ignored.
+    return jsonResponse({ accepted: true, ignored: true, eventId, eventType });
+  }
+
   if (ignoredEvents.has(eventType)) return jsonResponse({ accepted: true, ignored: true, eventId, eventType });
+
   const roomName = typeof event.room?.name === "string" ? event.room.name : "";
   const roomMatch = meetingRoomPattern.exec(roomName);
   if (!roomMatch || !uuidPattern.test(roomMatch[1]) || !uuidPattern.test(roomMatch[2])) return errorResponse("VALIDATION_ERROR", "Webhook room is not a canonical Picom meeting room.", 400);
@@ -79,7 +149,6 @@ Deno.serve(async (request: Request) => {
   if ((eventType.startsWith("participant_") || eventType.startsWith("track_")) && !participantIdentity) return errorResponse("VALIDATION_ERROR", "Webhook participant identity is missing.", 400);
   if (eventType.startsWith("track_") && (!trackSid || !kind)) return errorResponse("VALIDATION_ERROR", "Webhook track metadata is invalid.", 400);
 
-  const operator = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await operator.rpc("process_livekit_webhook_event", {
     target_event_id: eventId,
     target_event_type: eventType,

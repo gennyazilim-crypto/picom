@@ -123,3 +123,19 @@ export async function createLiveKitServerAdminToken({ apiKey, apiSecret, ttlSeco
   const signature = await signHmacSha256(unsignedToken, apiSecret);
   return { token: `${unsignedToken}.${signature}`, expiresAt: new Date(expiresAtSeconds * 1000).toISOString() };
 }
+
+export async function createLiveKitIngressAdminToken({ apiKey, apiSecret, ttlSeconds = 60 }: LiveKitServerAdminTokenInput): Promise<LiveKitTokenResult> {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const expiresAtSeconds = nowSeconds + Math.min(Math.max(ttlSeconds, 30), 120);
+  const header = encodeBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const payload = encodeBase64Url(JSON.stringify({
+    iss: apiKey,
+    sub: `picom-ingress-admin-${crypto.randomUUID()}`,
+    nbf: nowSeconds - 5,
+    exp: expiresAtSeconds,
+    video: { ingressAdmin: true },
+  }));
+  const unsignedToken = `${header}.${payload}`;
+  const signature = await signHmacSha256(unsignedToken, apiSecret);
+  return { token: `${unsignedToken}.${signature}`, expiresAt: new Date(expiresAtSeconds * 1000).toISOString() };
+}

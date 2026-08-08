@@ -35,3 +35,19 @@ export function createPicomMeetingLiveKitRoomName(roomId: string, sessionId: str
 export function matchesPicomMeetingLiveKitRoomName(roomName: string, roomId: string, sessionId: string): boolean {
   return roomName === createPicomMeetingLiveKitRoomName(roomId, sessionId);
 }
+
+export const liveKitPublisherStreamRoomPrefix = "publisher-stream";
+export const publisherStreamRoomPattern = /^publisher-stream:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+
+export function createPicomPublisherStreamLiveKitRoomName(streamId: string): string {
+  return `${liveKitPublisherStreamRoomPrefix}:${streamId}`;
+}
+
+export function matchesPicomPublisherStreamLiveKitRoomName(roomName: string, streamId: string): boolean {
+  return roomName === createPicomPublisherStreamLiveKitRoomName(streamId);
+}
+
+export function parsePublisherStreamIdFromLiveKitRoomName(roomName: string): string | null {
+  const match = publisherStreamRoomPattern.exec(roomName);
+  return match?.[1]?.toLowerCase() ?? null;
+}
