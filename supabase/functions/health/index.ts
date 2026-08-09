@@ -33,9 +33,15 @@ function toDependencyStatus(value: string): DependencyStatus {
 }
 
 function dependency(name: string, envName: string, required: boolean, fallback: DependencyStatus, message: string): HealthDependency {
+  const claimed = toDependencyStatus(readPublicEnv(envName, fallback));
+  // TASK34: env-claimed ok without an explicit probe flag is not production HEALTHY evidence.
+  const probed = readPublicEnv(`PICOM_HEALTH_${name.toUpperCase()}_PROBED`, "false").toLowerCase() === "true";
+  const status: DependencyStatus = (!probed && (claimed === "ok" || claimed === "ok_placeholder"))
+    ? "ok_placeholder"
+    : claimed;
   return {
     name,
-    status: toDependencyStatus(readPublicEnv(envName, fallback)),
+    status,
     required,
     message,
   };
@@ -74,12 +80,25 @@ function getDependencies(): HealthDependency[] {
   ];
 }
 
+function isPlaceholder(status: DependencyStatus): boolean {
+  return status === "ok_placeholder";
+}
+
 function isReady(dependencies: readonly HealthDependency[]): boolean {
-  return dependencies.every((item) => !item.required || (item.status !== "unavailable" && item.status !== "degraded"));
+  // Placeholders are not production readiness evidence (TASK34: no fake health).
+  return dependencies.every((item) => {
+    if (!item.required) return true;
+    if (isPlaceholder(item.status)) return false;
+    return item.status !== "unavailable" && item.status !== "degraded";
+  });
 }
 
 function hasDependencyDegradation(dependencies: readonly HealthDependency[]): boolean {
-  return dependencies.some((item) => item.status === "unavailable" || item.status === "degraded");
+  return dependencies.some((item) =>
+    item.status === "unavailable"
+    || item.status === "degraded"
+    || (item.required && isPlaceholder(item.status))
+  );
 }
 
 function liveResponse(): Response {
@@ -128,10 +147,13 @@ function combinedHealthResponse(): Response {
   const degraded = hasDependencyDegradation(dependencies);
   const status = ready ? (degraded ? "degraded" : "operational") : "degraded";
 
+  const hasPlaceholders = dependencies.some((item) => isPlaceholder(item.status));
   return jsonResponse({
     ok: true,
-    status,
-    message: ready && !degraded
+    status: hasPlaceholders ? "unknown" : status,
+    message: hasPlaceholders
+      ? "Dependency probes use env placeholders; do not treat as production HEALTHY evidence. Use admin-health / live-now-ops-status for real probes."
+      : ready && !degraded
       ? "Picom services are operational."
       : ready
         ? "Picom required services are ready, but one or more optional services are degraded."
@@ -152,6 +174,7 @@ function combinedHealthResponse(): Response {
     dependencies,
     endpoints: ["/health", "/health/live", "/health/ready"],
     timestamp: now(),
+    evidence_note: "LIVENESS_ONLY_UNLESS_REAL_PROBES_CONFIGURED",
   });
 }
 
