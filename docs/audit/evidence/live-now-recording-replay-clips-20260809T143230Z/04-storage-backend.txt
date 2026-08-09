@@ -1,0 +1,7 @@
+Egress FileOutput requires S3-compatible credentials.
+Supabase secrets inventory: LIVEKIT_* present; PICOM_RECORDING_S3_* ABSENT
+VPS /opt/picom/storage: empty
+Supabase private bucket created: publisher-stream-recordings (metadata path ready)
+CDN: not deployed
+Verdict: BLOCKED_STORAGE_CREDENTIAL for live Egress output
+Signed playback path implemented for when objects exist

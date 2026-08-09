@@ -1,0 +1,3 @@
+No Edge proxy of media bytes for playback — signed direct storage URL
+Archive list bounded (max 100)
+CDN: not deployed

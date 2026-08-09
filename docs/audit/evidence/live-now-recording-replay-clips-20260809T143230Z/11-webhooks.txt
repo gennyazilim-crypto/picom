@@ -1,0 +1,4 @@
+livekit-webhook now accepts egress_started|updated|ended|failed
+Maps to service_apply_publisher_egress_event with provider_event_id idempotency
+Signature verification required before processing
+Deployed EXIT=0

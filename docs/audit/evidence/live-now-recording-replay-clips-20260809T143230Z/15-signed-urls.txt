@@ -1,0 +1,4 @@
+Edge sign_playback mints Supabase Storage signed URL TTL 60–900s
+URL not stored in DB
+Refresh via re-invoke
+Runtime signed URL smoke: NOT_RUN (no READY media object)

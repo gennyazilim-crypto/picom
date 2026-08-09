@@ -1,0 +1,2 @@
+Thumbnail generation: job type THUMBNAIL reserved; worker pending ffmpeg
+Gate: PARTIAL (not fake)

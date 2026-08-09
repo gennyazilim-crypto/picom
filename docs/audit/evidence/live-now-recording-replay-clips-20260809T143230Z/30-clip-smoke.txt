@@ -1,0 +1,2 @@
+Clip production smoke: NOT_RUN (no READY replay media)
+Static boundary fixtures PASS in publisher-recording-smoke.mjs

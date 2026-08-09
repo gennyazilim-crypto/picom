@@ -1,0 +1,4 @@
+Egress deployment: NOT PERFORMED
+Reason: 2 vCPU VPS already hosts SFU+Ingress; capacity preflight fails safe
+Compose/image: not added to production host
+Verdict: BLOCKED_INFRASTRUCTURE

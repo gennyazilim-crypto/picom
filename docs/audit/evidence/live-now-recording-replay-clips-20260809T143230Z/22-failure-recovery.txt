@@ -1,0 +1,3 @@
+Recording FAILED leaves stream LIVE (separate status domains)
+Idempotent stop + webhook duplicate event short-circuit
+Capacity fail-closed at 1 active recording

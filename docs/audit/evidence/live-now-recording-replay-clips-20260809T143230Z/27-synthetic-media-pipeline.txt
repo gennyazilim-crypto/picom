@@ -1,0 +1,3 @@
+SYNTHETIC_MEDIA_PIPELINE: NOT_RUN
+Reason: Egress not deployed + storage credentials missing
+Cannot claim GO without provider

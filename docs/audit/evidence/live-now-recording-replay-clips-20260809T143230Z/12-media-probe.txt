@@ -1,0 +1,4 @@
+Media probe: publisher_media_jobs MEDIA_PROBE type reserved
+Worker stub fails closed without ffmpeg/storage (MEDIA_WORKER_INFRASTRUCTURE_PENDING)
+No fake probe success
+Verdict: PARTIAL / NOT_RUN runtime

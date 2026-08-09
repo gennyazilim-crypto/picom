@@ -1,0 +1,22 @@
+TASK30 VPS capacity preflight
+Host: hwsrv-1333695.hostwindsdns.com (23.254.166.240)
+UTC: 20260809T143230Z
+
+CPU: 2 vCPU — Intel Xeon E5-2670 v2 @ 2.50GHz
+RAM: 5.8 GiB total; ~5.0 GiB available; ~851 MiB used at sample
+Swap: NONE (0B)
+Disk: 99G total; 41G used; 54G avail (43%)
+
+Docker (sample):
+- picom-livekit 0.22% CPU / 16MiB
+- picom-livekit-ingress 0.06% CPU / 6MiB
+- picom-livekit-redis 0.68% CPU / 3MiB
+- email/reminder/auth/stats workers ~140MiB combined
+
+Egress impact estimate:
+- RoomComposite Egress (MP4) is CPU-heavy; on 2-core host sharing SFU+Ingress,
+  safe concurrent recording capacity is at most 1 and risks voice quality degradation.
+- Decision: DO NOT deploy LiveKit Egress on this production VPS without separate host
+  or CPU upgrade.
+
+Concurrency policy if later deployed elsewhere: max_concurrent_recordings = 1 (fail closed).

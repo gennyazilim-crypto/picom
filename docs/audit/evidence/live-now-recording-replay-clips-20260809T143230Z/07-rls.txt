@@ -1,0 +1,5 @@
+RLS enabled on recordings/replays/clips/jobs/audit
+Raw grants revoked from anon/authenticated (owner SELECT policies only where safe)
+No client INSERT of READY/storage_path
+dashboard.read does not grant media moderation
+Root moderation via root_moderate_publisher_replay only

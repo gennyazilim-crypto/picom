@@ -1,0 +1,4 @@
+enableLiveRecording=OFF
+enableLiveReplays=OFF
+enableLiveClips=OFF
+client-config PICOM_ENABLE_LIVE_RECORDING|REPLAYS|CLIPS wired (default false)

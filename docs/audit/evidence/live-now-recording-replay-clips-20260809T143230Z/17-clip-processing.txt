@@ -1,0 +1,4 @@
+request_publisher_clip max 60s; boundary fixtures in smoke PASS
+Jobs CLIP_EXTRACT via SKIP LOCKED
+Worker fail-closed until ffmpeg+storage
+Runtime clip smoke: NOT_RUN

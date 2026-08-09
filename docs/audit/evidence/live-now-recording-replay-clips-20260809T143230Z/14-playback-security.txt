@@ -1,0 +1,5 @@
+Playback authorization via publisher_media_can_playback_replay
+PRIVATE/UNLISTED: owner only (UUID obscurity rejected for unlisted non-owner)
+PUBLIC published + VISIBLE only
+TAKEDOWN/DELETED deny
+dashboard.read does not grant

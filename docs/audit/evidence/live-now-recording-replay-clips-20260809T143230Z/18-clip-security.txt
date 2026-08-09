@@ -1,0 +1,3 @@
+Owner-only clip create; foreign replay DENIED by RPC
+No client storage path input
+Root moderation separate from clip mutation

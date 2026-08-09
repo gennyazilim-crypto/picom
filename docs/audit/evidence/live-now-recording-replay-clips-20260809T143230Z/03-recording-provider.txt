@@ -1,0 +1,6 @@
+Preferred provider: LiveKit Egress
+Deployed on VPS: NO
+Compatible server: livekit-server v1.13.3 present
+Decision: DO NOT deploy Egress on 2-vCPU SFU host (capacity risk)
+PICOM_LIVEKIT_EGRESS_ENABLED: unset → fail-closed
+Verdict: BLOCKED_INFRASTRUCTURE

@@ -1,0 +1,4 @@
+services/publisher-media-worker stub present
+Claims via claim_publisher_media_jobs SKIP LOCKED
+Not deployed to VPS (storage/ffmpeg pending)
+Health: console structured start log only

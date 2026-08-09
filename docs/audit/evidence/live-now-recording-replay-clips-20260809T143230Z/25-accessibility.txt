@@ -1,0 +1,4 @@
+Archive table + labels; video controls; form labels for clip inputs
+role=alert errors; aria-labelledby section heading
+No autoplay audio
+AUTOMATIC_CAPTIONS: NOT_IMPLEMENTED

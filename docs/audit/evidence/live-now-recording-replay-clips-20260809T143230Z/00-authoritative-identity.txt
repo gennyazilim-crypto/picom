@@ -1,0 +1,15 @@
+TASK30 — Authoritative identity
+UTC evidence: 20260809T143230Z
+Worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Branch: release/picom-canonical-production
+HEAD: 96edd00833acbfbb5f2f1b02f1039cec574f3a6e
+Ancestor of 96edd008: YES (exact)
+Supabase: picom-production / cqnsetsmcduraryemhbi
+LiveKit: wss://voice.picom.gg
+VPS: 23.254.166.240
+Historical blockers preserved (must not upgrade):
+- TASK26 MEDIA NOT_CERTIFIED; AUTH INBOX BLOCKED_RATE_LIMIT
+- TASK27 OBS REAL CLIENT NOT_RUN
+- TASK28 CHAT TWO-CLIENT RUNTIME NOT_RUN
+- TASK29 ANALYTICS MULTI-VIEWER RUNTIME NOT_RUN
+Unrelated dirty excluded from TASK30 commits

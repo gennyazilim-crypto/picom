@@ -1,0 +1,4 @@
+Tables: publisher_recordings, publisher_replays, publisher_clips, publisher_media_jobs, publisher_media_audit_events
+Column: publisher_streams.recording_enabled (default false, MANUAL_RECORD)
+Bucket: publisher-stream-recordings
+RPCs: request/start/stop/list/update/playback/clip/claim/complete/egress/moderation

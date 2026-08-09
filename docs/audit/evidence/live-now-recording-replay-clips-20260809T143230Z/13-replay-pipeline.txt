@@ -1,0 +1,4 @@
+Replay draft/READY created by service_apply_publisher_egress_event when path present
+Publisher update_my_publisher_replay for title/visibility/publish/archive/delete
+Cannot set storage_path from client
+Runtime end-to-end: NOT_RUN (egress/storage blocked)

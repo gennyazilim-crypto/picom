@@ -1,8 +1,8 @@
 # LIVE NOW / PUBLISHER MASTER STATUS
 
-Updated: 20260809T093500Z
+Updated: 20260809T150000Z
 Branch: release/picom-canonical-production
-Authoritative TASK29 base HEAD: c3d87be4a7ad4ff3e67bec0697308e7910558d81
+Authoritative TASK30 base HEAD: 96edd00833acbfbb5f2f1b02f1039cec574f3a6e
 Prior partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T230959Z
 
 | TASK | STATUS | TESTS | BLOCKER |
@@ -12,7 +12,8 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 | 26 Real-device cert | PARTIAL | Storage closed-deny GO | Media two-desktop NOT_CERTIFIED; Auth inbox BLOCKED_RATE_LIMIT |
 | 27 Stream management | PARTIAL | schema/RLS/smoke/ingress preflight GO | OBS real client NOT_RUN; flags OFF; ingest DNS pending |
 | 28 Live chat + moderation | PARTIAL | schema/RLS/static smoke GO | Two-client runtime PARTIAL/NOT_RUN; flags OFF |
-| 29 Publisher analytics | PARTIAL | schema/RLS/static reconciliation GO | Bounded production runtime event smoke PARTIAL/NOT_RUN; flag OFF |
+| 29 Publisher analytics | PARTIAL | schema/RLS/static reconciliation GO | Multi-viewer runtime NOT_RUN; flag OFF |
+| 30 Recording/replay/clips | PARTIAL | schema/RLS/static smoke GO | Egress NOT deployed; S3 credentials missing; flags OFF |
 
 ## Feature flags (production)
 - Application/Review/Badge/Discovery/Go Live/Reminders/Notification Preferences: ON
@@ -21,6 +22,9 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 - enableLiveChat: **OFF**
 - enableLiveModeration: **OFF**
 - enablePublisherAnalytics: **OFF**
+- enableLiveRecording: **OFF**
+- enableLiveReplays: **OFF**
+- enableLiveClips: **OFF**
 
 ## TASK26 results (unchanged)
 - Closed application storage denial: GO
@@ -29,45 +33,43 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 
 ## TASK27 results (unchanged)
 - OBS REAL CLIENT CERTIFICATION: NOT_RUN
-- STREAM MANAGEMENT PRODUCTION: PARTIAL_OBS_CLIENT_CERTIFICATION
 
 ## TASK28 results (unchanged)
 - Two-client chat runtime: NOT_RUN
-- LIVE CHAT PRODUCTION: PARTIAL_RUNTIME_CERTIFICATION
 
-## TASK29 results
-- Migrations `20260808230000` + `20260808240000` + `20260808250000` + `20260808260000`
-- Events, viewer sessions, summaries, minute buckets, finalizer, LiveKit webhook mapping
-- Viewer bridge: resolve live_session → publisher_stream; terminal-status finalize trigger
-- Live Watch wires join/heartbeat/leave when flag ON and stream linked
-- Creator Studio polls lightweight live aggregate when flag ON
-- Watch-time credit max 45s gap; concurrent stale 90s
-- Dashboard Analytics tab gated by enablePublisherAnalytics
-- Production bounded multi-viewer runtime smoke: NOT_RUN → PARTIAL_RUNTIME_EVENT_CERTIFICATION
+## TASK29 results (unchanged)
+- Analytics multi-viewer runtime: NOT_RUN
+- PRODUCTION: PARTIAL_RUNTIME_EVENT_CERTIFICATION
+
+## TASK30 results
+- Migrations `20260808270000` + `20260808280000` + `20260808290000` sealed
+- Recording/replay/clip schema + RLS + signed playback claim RPC
+- Edge `publisher-recording` fail-closed without Egress/S3
+- Webhook egress event mapping wired
+- Archive UI + 10-locale catalog (flag-gated)
+- Media worker stub (ffmpeg/storage pending)
+- VPS capacity: 2 vCPU — Egress not deployed on SFU host
+- REAL DESKTOP RECORDING: NOT_CERTIFIED
+- SYNTHETIC MEDIA PIPELINE: NOT_RUN (provider blocked)
+- OBS_REAL_CLIENT_RECORDING: NOT_RUN
+- PRODUCTION: PARTIAL_INFRASTRUCTURE
 
 ## Evidence
 - TASK26: docs/audit/evidence/live-now-publisher-real-device-certification-2026-08-03T2252Z/
 - TASK27: docs/audit/evidence/live-now-stream-management-20260808T163710Z/
 - TASK28: docs/audit/evidence/live-now-chat-moderation-20260808T184425Z/
 - TASK29: docs/audit/evidence/live-now-publisher-analytics-20260809T092950Z/
+- TASK30: docs/audit/evidence/live-now-recording-replay-clips-20260809T143230Z/
 
 ## Verdict (cumulative)
-PICOM PUBLISHER ANALYTICS CODE: GO
-PICOM ANALYTICS EVENT INGESTION: GO
-PICOM ANALYTICS IDEMPOTENCY: GO
-PICOM VIEWER SESSION TRACKING: GO
-PICOM WATCH TIME: GO
-PICOM CONCURRENT VIEWERS: GO
-PICOM PEAK CONCURRENT: GO
-PICOM ANALYTICS RLS: GO
-PICOM ANALYTICS AGGREGATES: GO
-PICOM ANALYTICS FINALIZATION: GO
-PICOM ANALYTICS PRIVACY: GO
-PICOM PUBLISHER ANALYTICS DASHBOARD: GO
-PICOM PUBLISHER ANALYTICS 10 LOCALE: GO
-PICOM PUBLISHER ANALYTICS PRODUCTION: PARTIAL_RUNTIME_EVENT_CERTIFICATION
+PICOM LIVE RECORDING CODE: GO
+PICOM LIVE RECORDING RLS: GO
+PICOM LIVEKIT EGRESS: BLOCKED_INFRASTRUCTURE
+PICOM MEDIA STORAGE: BLOCKED_STORAGE_CREDENTIAL
+PICOM RECORDING FEATURE: OFF
+PICOM RECORDING PRODUCTION: PARTIAL_INFRASTRUCTURE
+PICOM ANALYTICS MULTI-VIEWER RUNTIME: NOT_RUN
 PICOM LIVE CHAT TWO-CLIENT RUNTIME: NOT_RUN
 PICOM OBS REAL CLIENT CERTIFICATION: NOT_RUN
 PICOM PHASE 1 REAL TWO-DESKTOP MEDIA: NOT_CERTIFIED
 PICOM AUTH INBOX ASSERTION: BLOCKED_RATE_LIMIT
-PICOM PUBLISHER PHASE 1 PRODUCTION: PARTIAL_EMAIL_AND_MEDIA_CERTIFICATION

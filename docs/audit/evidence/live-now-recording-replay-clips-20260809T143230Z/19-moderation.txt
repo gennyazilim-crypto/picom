@@ -1,0 +1,3 @@
+root_moderate_publisher_replay: takedown/restrict/restore with reason/actor/audit
+Publisher cannot bypass TAKEDOWN via visibility change
+AUTOMATED_COPYRIGHT_MATCHING: NOT_IMPLEMENTED

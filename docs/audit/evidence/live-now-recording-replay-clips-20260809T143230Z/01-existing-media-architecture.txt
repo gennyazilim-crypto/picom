@@ -1,0 +1,34 @@
+TASK30 existing media architecture inventory
+UTC: 20260809T143230Z
+
+LIVEKIT
+- Self-hosted: livekit/livekit-server:v1.13.3 (picom-livekit)
+- Ingress: livekit/ingress:v1.4.2 (picom-livekit-ingress)
+- Redis: redis:7-alpine (picom-livekit-redis)
+- Egress container: NONE (docker ps -a; EGRESS_NONE)
+- Webhook currently IGNORES egress_started/updated/ended (livekit-webhook)
+- livekit-server-sdk used in livekit-moderation / voice-occupancy (RoomServiceClient)
+- Capacity plan docs: recording/egress intentionally disabled until budgeted
+- Prior clips/replays evidence (20260803): PICOM CLIPS/REPLAY: BLOCKED_LIVEKIT
+
+STORAGE
+- Supabase Storage buckets exist for attachments, profile media, podcast-audio (100MB), publisher-application-documents
+- Signed URL pattern: createSignedUrl TTL in attachment/audio/emoji services
+- /opt/picom/storage on VPS: empty directory (no MinIO/S3 mount)
+- No in-repo S3/R2/MinIO recording credentials wiring found
+- CDN: no media.picom.gg / cdn.picom.gg deployment for VOD
+
+WORKERS
+- event-reminder-worker, email-worker on VPS (service-role + SKIP LOCKED pattern reusable)
+- No publisher-media-worker yet
+
+UI / DOMAIN
+- No publisher_recordings / publisher_replays / publisher_clips tables
+- Companion MediaRecorder is DM voice notes only — not stream recording
+- Publisher stream lifecycle on publisher_streams (TASK27)
+- Analytics finalizer (TASK29) does not create replays
+
+GAPS FOR TASK30
+- LiveKit Egress not deployed
+- Object storage for Egress FileOutput not provisioned
+- Recording/replay/clip schema, RPCs, archive UI, flags

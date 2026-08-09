@@ -1,0 +1,6 @@
+publisher-recording-smoke PASS exit 0
+typecheck PASS exit 0
+secrets:smoke PASS exit 0
+release:canonical:guard PASS exit 0
+LINT: NOT_CONFIGURED
+desktop:smoke / full npm ci: deferred timebox; static+typecheck sealed

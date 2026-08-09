@@ -1,0 +1,5 @@
+Edge function: publisher-recording (deployed)
+Actions: start, stop, sign_playback
+Fail-closed without PICOM_LIVEKIT_EGRESS_ENABLED + PICOM_RECORDING_S3_*
+RPC: request_publisher_stream_recording / request_stop / set_recording_enabled
+Client never receives LIVEKIT_API_SECRET
