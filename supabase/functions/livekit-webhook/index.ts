@@ -10,6 +10,15 @@ type LiveKitWebhookEvent = {
   room?: { name?: unknown };
   participant?: { identity?: unknown; name?: unknown };
   track?: { sid?: unknown; type?: unknown; source?: unknown };
+  egressInfo?: {
+    egressId?: unknown;
+    egress_id?: unknown;
+    roomName?: unknown;
+    room_name?: unknown;
+    file?: { location?: unknown; filename?: unknown; size?: unknown; duration?: unknown };
+    fileResults?: Array<{ location?: unknown; filename?: unknown; size?: unknown; duration?: unknown }>;
+    error?: unknown;
+  };
   ingressInfo?: {
     ingressId?: unknown;
     ingress_id?: unknown;
@@ -31,8 +40,9 @@ const handledEvents = new Set([
   "track_unpublished",
 ]);
 const publisherIngressEvents = new Set(["ingress_started", "ingress_ended"]);
-const ignoredEvents = new Set(["egress_started", "egress_updated", "egress_ended"]);
-const acceptedEvents = new Set([...handledEvents, ...ignoredEvents, ...publisherIngressEvents]);
+const publisherEgressEvents = new Set(["egress_started", "egress_updated", "egress_ended", "egress_failed"]);
+const ignoredEvents = new Set<string>();
+const acceptedEvents = new Set([...handledEvents, ...ignoredEvents, ...publisherIngressEvents, ...publisherEgressEvents]);
 
 function requiredEnv(name: string): string | null {
   const value = Deno.env.get(name);
@@ -134,6 +144,39 @@ Deno.serve(async (request: Request) => {
     }
     // Non-publisher ingress events remain intentionally ignored.
     return jsonResponse({ accepted: true, ignored: true, eventId, eventType });
+  }
+
+  // Publisher recording egress path.
+  if (publisherEgressEvents.has(eventType)) {
+    const egressId = asString(event.egressInfo?.egressId) ?? asString(event.egressInfo?.egress_id);
+    const roomName = asString(event.egressInfo?.roomName)
+      ?? asString(event.egressInfo?.room_name)
+      ?? asString(event.room?.name)
+      ?? "";
+    const streamId = parsePublisherStreamIdFromLiveKitRoomName(roomName);
+    const file = event.egressInfo?.fileResults?.[0] ?? event.egressInfo?.file;
+    const location = asString(file?.location) ?? asString(file?.filename);
+    const sizeBytes = Number(file?.size);
+    const durationNs = Number(file?.duration);
+    const durationMs = Number.isFinite(durationNs) && durationNs > 0 ? Math.floor(durationNs / 1_000_000) : null;
+    const { data, error } = await operator.rpc("service_apply_publisher_egress_event", {
+      target_event_id: eventId,
+      target_event_type: eventType,
+      target_egress_id: egressId,
+      target_stream_id: streamId,
+      target_recording_id: null,
+      target_status: null,
+      target_storage_bucket: location ? (Deno.env.get("PICOM_RECORDING_S3_BUCKET")?.trim() || "publisher-stream-recordings") : null,
+      target_storage_path: location,
+      target_size_bytes: Number.isFinite(sizeBytes) ? sizeBytes : null,
+      target_duration_ms: durationMs,
+      target_failure_code: eventType === "egress_failed" ? "EGRESS_FAILED" : null,
+      target_occurred_at: new Date(createdAtSeconds * 1000).toISOString(),
+    });
+    if (error || !data) {
+      return errorResponse("INTERNAL_ERROR", "Publisher egress webhook processing is temporarily unavailable.", 503, undefined, { "Retry-After": "30" });
+    }
+    return jsonResponse({ accepted: true, scope: "publisher_recording", eventId, eventType, streamId, egressId });
   }
 
   if (ignoredEvents.has(eventType)) return jsonResponse({ accepted: true, ignored: true, eventId, eventType });

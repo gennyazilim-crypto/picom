@@ -85,6 +85,9 @@ Deno.serve((request: Request) => {
       enableLiveModeration: readPublicBooleanEnv("PICOM_ENABLE_LIVE_MODERATION"),
       enableHavoocSupportHub: readPublicBooleanEnv("PICOM_ENABLE_HAVOOC_SUPPORT_HUB"),
       enablePublisherAnalytics: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_ANALYTICS"),
+      enableLiveRecording: readPublicBooleanEnv("PICOM_ENABLE_LIVE_RECORDING"),
+      enableLiveReplays: readPublicBooleanEnv("PICOM_ENABLE_LIVE_REPLAYS"),
+      enableLiveClips: readPublicBooleanEnv("PICOM_ENABLE_LIVE_CLIPS"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

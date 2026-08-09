@@ -37,6 +37,9 @@ export const FEATURE_FLAG_KEYS = [
   "enableLiveModeration",
   "enableHavoocSupportHub",
   "enablePublisherAnalytics",
+  "enableLiveRecording",
+  "enableLiveReplays",
+  "enableLiveClips",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -66,6 +69,9 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   liveModeration: "enableLiveModeration",
   havoocSupportHub: "enableHavoocSupportHub",
   publisherAnalytics: "enablePublisherAnalytics",
+  liveRecording: "enableLiveRecording",
+  liveReplays: "enableLiveReplays",
+  liveClips: "enableLiveClips",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -128,6 +134,9 @@ function createDefaultFeatureFlags(): FeatureFlags {
     // HAVOOC Support Hub: fail-closed in production until controlled enablement.
     enableHavoocSupportHub: appConfig.environment !== "production",
     enablePublisherAnalytics: appConfig.environment !== "production",
+    enableLiveRecording: appConfig.environment !== "production",
+    enableLiveReplays: appConfig.environment !== "production",
+    enableLiveClips: appConfig.environment !== "production",
   });
 }
 
