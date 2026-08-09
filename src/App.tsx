@@ -192,7 +192,6 @@ const GoLiveWorkspace = lazy(() => import("./components/live/GoLiveWorkspace").t
 const CreatorStudioWorkspace = lazy(() => import("./components/live/CreatorStudioWorkspace").then((m) => ({ default: m.CreatorStudioWorkspace })));
 const PublisherApplicationWorkspace = lazy(() => import("./components/publisher/PublisherApplicationWorkspace").then((m) => ({ default: m.PublisherApplicationWorkspace })));
 const PublisherCreatorStudioWorkspace = lazy(() => import("./components/publisher/PublisherCreatorStudioWorkspace").then((m) => ({ default: m.PublisherCreatorStudioWorkspace })));
-const HavoocSupportHubWorkspace = lazy(() => import("./components/havooc/HavoocSupportHubWorkspace").then((m) => ({ default: m.HavoocSupportHubWorkspace })));
 const HelpSupportWorkspace = lazy(() => import("./components/support/HelpSupportWorkspace").then((module) => ({ default: module.HelpSupportWorkspace })));
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
@@ -267,7 +266,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "live" | "support" | "rootPanel" | "publisherApply" | "publisherDashboard" | "havooc";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "live" | "support" | "rootPanel" | "publisherApply" | "publisherDashboard";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
   return communityNavigationService.getShellView(kind);
@@ -469,7 +468,7 @@ export function App() {
   const [profileReloadVersion,setProfileReloadVersion]=useState(0);
   const [previousViewBeforeProfile, setPreviousViewBeforeProfile] = useState<ActiveView | null>(null);
   const [directConversations, setDirectConversations] = useState<DirectConversation[]>(mockDirectConversations);
-  // Supabase DM history requires real UUIDs â€” never seed the active id from mock "dm-*" keys.
+  // Supabase DM history requires real UUIDs ÔÇö never seed the active id from mock "dm-*" keys.
   const [activeDirectConversationId, setActiveDirectConversationId] = useState(() => (dataSourceService.getStatus().isSupabase ? "" : mockDirectConversations[0]?.id ?? ""));
   const [friendState, setFriendState] = useState<FriendState>({ counts: { friends: 0, incoming: 0, outgoing: 0, pending: 0 }, friends: [], requests: [], suggestions: [] });
   const [profileRelationshipBusyUserId, setProfileRelationshipBusyUserId] = useState<string | null>(null);
@@ -904,7 +903,7 @@ export function App() {
     if (!webNavigation) return;
     const fromPath = webNavigation.parsed.activeView;
     if (fromPath && fromPath !== activeView && !webNavigation.parsed.isAuthRoute) {
-      // Honor direct URL entry (/live, /events, â€¦) without fighting in-app navigation mid-transition.
+      // Honor direct URL entry (/live, /events, ÔÇĞ) without fighting in-app navigation mid-transition.
       if (fromPath === "live" || fromPath === "events" || fromPath === "friends" || fromPath === "savedMessages" || fromPath === "discovery" || fromPath === "profile") {
         setActiveView(fromPath);
       }
@@ -1638,7 +1637,7 @@ export function App() {
       }
 
       let categoryRows = categoryResult.data;
-      // Never invent mock-style ids like `${uuid}-channels` â€” Postgres category_id is uuid.
+      // Never invent mock-style ids like `${uuid}-channels` ÔÇö Postgres category_id is uuid.
       if (!categoryRows.length) {
         const created = await communityStructureService.createTextCategory(communityId, "Channels");
         if (canceled) return;
@@ -1654,7 +1653,7 @@ export function App() {
         }
       }
 
-      // Categories query empty but channels still reference real category UUIDs â€” recover from channel rows.
+      // Categories query empty but channels still reference real category UUIDs ÔÇö recover from channel rows.
       if (!categoryRows.length && channelResult.data.length) {
         const recovered = new Map<string, (typeof categoryRows)[number]>();
         for (const channel of channelResult.data) {
@@ -1820,7 +1819,7 @@ export function App() {
 
     let settledOk = false;
     const communityId = activeCommunity.id;
-    // Capture roles once â€” do not depend on `activeCommunity.roles` or role hydration
+    // Capture roles once ÔÇö do not depend on `activeCommunity.roles` or role hydration
     // will cancel this request and the loaded-ref gate will skip the retry.
     const rolesForFallback = activeCommunity.roles;
     const requestId = ++membersFetchRequestIdRef.current;
@@ -2112,7 +2111,7 @@ export function App() {
         setActiveView("live");
         closeTransientOverlays();
         webNavigation?.syncFromApp("live", { liveSessionId: action.liveSessionId });
-        pushToast("Opening live streamâ€¦", "info");
+        pushToast("Opening live streamÔÇĞ", "info");
         return;
       }
 
@@ -2723,7 +2722,7 @@ export function App() {
       setDirectScreenPickerOpen(true);
     }
     pushToast(
-      call && call.status !== "failed" ? `Ringing ${peer.name}â€¦` : call?.failureMessage || "Could not ring this member.",
+      call && call.status !== "failed" ? `Ringing ${peer.name}ÔÇĞ` : call?.failureMessage || "Could not ring this member.",
       call && call.status !== "failed" ? "info" : "error",
     );
   }, [connectDirectVoice, pushToast]);
@@ -2912,7 +2911,7 @@ export function App() {
   }, [activeCommunity.id, activeCommunity.name, authSession, communityAccess.isMember, displayedActiveChannel.id, displayedActiveChannel.name, displayedActiveChannel.type, displayedCurrentUser.displayName, pushToast]);
 
   const leaveActiveVoiceRoom = useCallback(() => {
-    void import("./services/voiceService").then(({ voiceService }) => voiceService.leave().then(() => pushToast("Sesli odadan ayrÄ±ldÄ±n.", "info")));
+    void import("./services/voiceService").then(({ voiceService }) => voiceService.leave().then(() => pushToast("Sesli odadan ayr─▒ld─▒n.", "info")));
   }, [pushToast]);
 
   const expireVoiceChatMessage = useCallback(async (message: Message) => {
@@ -2958,7 +2957,7 @@ export function App() {
   const openConnectedVoiceRoom = useCallback(() => {
     const roomContext = voiceSnapshot.roomContext;
     if (!roomContext?.communityId || !roomContext.channelId) {
-      pushToast("BaÄŸlÄ± sesli oda bulunamadÄ±.", "error");
+      pushToast("Ba─şl─▒ sesli oda bulunamad─▒.", "error");
       return;
     }
 
@@ -2968,7 +2967,7 @@ export function App() {
       .find((candidate) => candidate.id === roomContext.channelId);
 
     if (!targetCommunity || !targetChannel) {
-      pushToast("BaÄŸlÄ± ses kanalÄ± artÄ±k kullanÄ±lamÄ±yor.", "error");
+      pushToast("Ba─şl─▒ ses kanal─▒ art─▒k kullan─▒lam─▒yor.", "error");
       return;
     }
 
@@ -2984,19 +2983,19 @@ export function App() {
       && candidate.canJoin
     ));
     if (!room) {
-      pushToast("BaÄŸlÄ± sesli oda artÄ±k kullanÄ±lamÄ±yor.", "error");
+      pushToast("Ba─şl─▒ sesli oda art─▒k kullan─▒lam─▒yor.", "error");
       return;
     }
     const targetCommunity = communities.find((candidate) => candidate.id === room.communityId);
     const targetChannel = targetCommunity?.categories.flatMap((category) => category.channels).find((candidate) => candidate.id === room.channelId);
     if (!targetCommunity || !targetChannel) {
-      pushToast("BaÄŸlÄ± ses kanalÄ± artÄ±k kullanÄ±lamÄ±yor.", "error");
+      pushToast("Ba─şl─▒ ses kanal─▒ art─▒k kullan─▒lam─▒yor.", "error");
       return;
     }
     setActiveView(communityViewForKind(targetCommunity.kind));
     switchCommunity(room.communityId, room.channelId);
     closeTransientOverlays();
-    pushToast("Ekran paylaÅŸÄ±mÄ± kontrolleri sesli odada aÃ§Ä±ldÄ±.", "success");
+    pushToast("Ekran payla┼ş─▒m─▒ kontrolleri sesli odada a├ğ─▒ld─▒.", "success");
   }, [activeVoiceRooms, closeTransientOverlays, communities, pushToast, switchCommunity, voiceSnapshot.roomContext]);
 
   const startActiveVoiceScreenShare = useCallback((sourceId: string, preset: "presentation" | "balanced" | "performance", sourceLabel?: string) => {
@@ -3439,7 +3438,7 @@ export function App() {
     return (
       <DesktopAppShell>
         <WindowTitleBar theme={theme} onToggleTheme={toggleTheme} onOpenSearch={() => undefined} />
-        <main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="home" size="xl" /></span><strong>Preparing your Picom workspaceâ€¦</strong></main>
+        <main className="first-run-onboarding onboarding-loading"><span className="onboarding-welcome-orb"><AppIcon name="home" size="xl" /></span><strong>Preparing your Picom workspaceÔÇĞ</strong></main>
       </DesktopAppShell>
     );
   }
@@ -3851,7 +3850,7 @@ export function App() {
         target = addCommunity(refreshed);
       }
     } else if (target) {
-      // Server join already succeeded (DiscoveryView); sync local visitor â†’ member even if list reload failed.
+      // Server join already succeeded (DiscoveryView); sync local visitor ÔåÆ member even if list reload failed.
       const defaultRole = target.roles.find((role) => role.name === "Member") ?? target.roles[0];
       patchCommunity(communityId, { currentUserMembershipUserId: currentUserId });
       replaceCommunityMembers(communityId, [
@@ -3963,7 +3962,7 @@ export function App() {
 
     const community = addCommunity(createCommunityFromSummary(summary, { includeTemplateChannels: dataSourceService.getStatus().isMock }));
     analyticsService.trackEvent("community_created", { mode: dataSourceService.getStatus().mode, kind: community.kind });
-    // Force a fresh sidebar hydrate â€” create payloads intentionally omit mock template channels in Supabase mode.
+    // Force a fresh sidebar hydrate ÔÇö create payloads intentionally omit mock template channels in Supabase mode.
     supabaseSidebarLoadedRef.current.delete(community.id);
     setSidebarReloadNonce((value) => value + 1);
     switchCommunity(community.id);
@@ -4370,25 +4369,6 @@ export function App() {
                 }}
               />
             </DeferredViewBoundary>
-          ) : activeView === "havooc" ? (
-            <DeferredViewBoundary label="Opening HAVOOC Support Hub">
-              <HavoocSupportHubWorkspace
-                currentUserId={currentUserId}
-                onClose={() => {
-                  setActiveView("mentionFeed");
-                  webNavigation?.navigate("/feed");
-                }}
-                onNotice={(message, kind = "info") => pushToast(message, kind)}
-                onRequireSignIn={() => pushToast("Sign in to leave a support note.", "info")}
-                onOpenProfile={(userId) => {
-                  const member =
-                    displayedCurrentUser.userId === userId
-                      ? displayedCurrentUser
-                      : communities.flatMap((community) => community.members).find((entry) => entry.userId === userId);
-                  if (member) openProfilePage(member);
-                }}
-              />
-            </DeferredViewBoundary>
           ) : activeView === "live" ? (
             <DeferredViewBoundary label={(webNavigation?.parsed.params.studioSessionId || creatorStudioSessionId) ? "Opening Creator Studio" : (webNavigation?.parsed.params.goLive || goLiveOpen) ? "Opening Go Live" : (webNavigation?.parsed.params.liveSessionId || liveWatchSessionId) ? "Opening Watch" : "Opening Live"}>
               {(webNavigation?.parsed.params.studioSessionId || creatorStudioSessionId) ? (
@@ -4756,7 +4736,7 @@ export function App() {
                 onMoveCategory={async (categoryId, direction) => {
                   if (!isSupabaseEntityId(categoryId)) {
                     supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
-                    pushToast("Category list was out of sync. Refreshing â€” try again in a moment.", "info");
+                    pushToast("Category list was out of sync. Refreshing ÔÇö try again in a moment.", "info");
                     return;
                   }
                   const result = await communityStructureService.moveTextCategory(activeCommunity.id, categoryId, direction);
@@ -4768,7 +4748,7 @@ export function App() {
                   let resolvedCategoryId = categoryId;
                   if (!isSupabaseEntityId(channelId)) {
                     supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
-                    pushToast("Channel list was out of sync. Refreshing â€” try again in a moment.", "info");
+                    pushToast("Channel list was out of sync. Refreshing ÔÇö try again in a moment.", "info");
                     return;
                   }
                   if (!isSupabaseEntityId(categoryId)) {
@@ -4777,7 +4757,7 @@ export function App() {
                     const found = listed.data.find((channel) => channel.id === channelId);
                     if (!found?.categoryId || !isSupabaseEntityId(found.categoryId)) {
                       supabaseSidebarLoadedRef.current.delete(activeCommunity.id);
-                      pushToast("Could not resolve this channel's category. Refreshing â€” try again in a moment.", "info");
+                      pushToast("Could not resolve this channel's category. Refreshing ÔÇö try again in a moment.", "info");
                       return;
                     }
                     resolvedCategoryId = found.categoryId;
@@ -4905,9 +4885,9 @@ export function App() {
                       onSelect: () => setReplyToMessageId(message.id),
                     },
                     {
-                      label: "React with ğŸ‘",
+                      label: "React with ­şæı",
                       disabled: Boolean(message.deletedAt) || !canSendMessage(communityAccess, displayedActiveChannel),
-                      onSelect: () => handleToggleMessageReaction(message, "ğŸ‘"),
+                      onSelect: () => handleToggleMessageReaction(message, "­şæı"),
                     },
                     {
                       label: "Edit message",
