@@ -11,8 +11,10 @@ import { getSupabaseClient } from "../../services/supabase/supabaseClient";
 import { PublisherStreamsWorkspace } from "./PublisherStreamsWorkspace";
 import { PublisherAnalyticsPanel } from "./PublisherAnalyticsPanel";
 import { PublisherReplayArchivePanel } from "./PublisherReplayArchivePanel";
+import { PublisherEarningsPanel } from "./PublisherEarningsPanel";
 import { translatePublisherAnalytics } from "../../services/localization/publisherAnalyticsCatalog";
 import { translatePublisherMedia } from "../../services/localization/publisherMediaCatalog";
+import { translatePublisherMonetization } from "../../services/localization/publisherMonetizationCatalog";
 import "./publisherProgram.css";
 
 type Props = Readonly<{
@@ -37,12 +39,13 @@ export function PublisherDashboardWorkspace({ onClose, onGoLive, onOpenApplicati
   const streamManagementEnabled = featureFlagService.isEnabled("enablePublisherStreamManagement");
   const analyticsEnabled = featureFlagService.isEnabled("enablePublisherAnalytics");
   const replaysEnabled = featureFlagService.isEnabled("enableLiveReplays");
+  const earningsEnabled = featureFlagService.isEnabled("enablePublisherEarningsDashboard");
   const [state, setState] = useState<PublisherProgramState | null>(null);
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [startAt, setStartAt] = useState("");
-  const [section, setSection] = useState<"overview" | "streams" | "analytics" | "archive" | "create" | "schedule" | "settings">("overview");
+  const [section, setSection] = useState<"overview" | "streams" | "analytics" | "archive" | "earnings" | "create" | "schedule" | "settings">("overview");
 
   async function refresh() {
     const program = await publisherProgramService.getProgramState();
@@ -109,7 +112,7 @@ export function PublisherDashboardWorkspace({ onClose, onGoLive, onOpenApplicati
     await refresh();
   }
 
-  const tabLabel: Record<Exclude<typeof section, "analytics" | "archive">, PublisherProgramI18nKey> = {
+  const tabLabel: Record<Exclude<typeof section, "analytics" | "archive" | "earnings">, PublisherProgramI18nKey> = {
     overview: "dash.tab.overview",
     streams: "dash.tab.streams",
     create: "dash.tab.create",
@@ -154,12 +157,14 @@ export function PublisherDashboardWorkspace({ onClose, onGoLive, onOpenApplicati
       </header>
 
       <nav className="publisher-tabs" aria-label={t("dash.tabsAria")}>
-        {(["overview", "streams", ...(analyticsEnabled ? (["analytics"] as const) : []), ...(replaysEnabled ? (["archive"] as const) : []), "create", "schedule", "settings"] as const).map((key) => (
+        {(["overview", "streams", ...(analyticsEnabled ? (["analytics"] as const) : []), ...(replaysEnabled ? (["archive"] as const) : []), ...(earningsEnabled ? (["earnings"] as const) : []), "create", "schedule", "settings"] as const).map((key) => (
           <button key={key} type="button" className={section === key ? "is-active" : ""} onClick={() => setSection(key)}>
             {key === "analytics"
               ? translatePublisherAnalytics("analytics.title", localizationService.getLanguage())
               : key === "archive"
                 ? translatePublisherMedia("media.archive", localizationService.getLanguage())
+              : key === "earnings"
+                ? translatePublisherMonetization("earnings.title", localizationService.getLanguage())
               : t(tabLabel[key])}
           </button>
         ))}
@@ -177,6 +182,7 @@ export function PublisherDashboardWorkspace({ onClose, onGoLive, onOpenApplicati
 
       {section === "analytics" && analyticsEnabled ? <PublisherAnalyticsPanel /> : null}
       {section === "archive" && replaysEnabled ? <PublisherReplayArchivePanel /> : null}
+      {section === "earnings" && earningsEnabled ? <PublisherEarningsPanel /> : null}
 
       {section === "streams" && streamManagementEnabled ? (
         <PublisherStreamsWorkspace onGoLive={onGoLive} />
