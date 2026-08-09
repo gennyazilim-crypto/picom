@@ -1,2 +1,2 @@
-Commits (filled after push)
-See git log after Task32 commits on release/picom-canonical-production
+﻿TASK32 commits (base 6ce67971 -> HEAD 66e51eb84b0c4bec0ff5be000041b2c0b0f88212)
+66e51eb8 docs(finance): document KYC payout operations 27a720b8 feat(publisher): add payout setup and statements UI 1dc56b61 feat(finance): add fail-closed KYC payout runtime gates 6c345f11 test(finance): certify payout accounting invariants 506344cc security(finance): harden payout authorization 07552db6 feat(finance): add payout reconciliation and statements dc5f5054 feat(finance): add publisher payout engine 68c9a94c feat(finance): add secure payout account domain f0790282 feat(finance): add publisher KYC and tax profile foundation

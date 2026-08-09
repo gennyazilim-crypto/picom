@@ -1,3 +1,5 @@
-Git state after (filled after push)
-Branch: release/picom-canonical-production
-Base: 6ce67971
+﻿Branch: release/picom-canonical-production
+HEAD: 66e51eb84b0c4bec0ff5be000041b2c0b0f88212
+Short: 66e51eb8
+Ahead of origin: yes (pre-push)
+Unrelated dirty left unstaged (havooc/companion/friends/tmp)
