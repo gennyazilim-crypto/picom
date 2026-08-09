@@ -44,6 +44,34 @@ const en: Catalog = {
   "earnings.fees": "Fees",
   "earnings.net": "Net",
   "earnings.aria": "Publisher earnings dashboard",
+  "finance.identityVerification": "Identity verification",
+  "finance.kyc": "KYC",
+  "finance.verificationRequired": "Verification required",
+  "finance.verificationPending": "Verification pending",
+  "finance.verificationVerified": "Verified",
+  "finance.verificationRestricted": "Restricted",
+  "finance.taxProfile": "Tax profile",
+  "finance.taxStatus": "Tax status",
+  "finance.payouts": "Payouts",
+  "finance.payoutAccount": "Payout account",
+  "finance.addPayoutAccount": "Add payout account",
+  "finance.payoutUnavailable": "Payouts unavailable",
+  "finance.payoutOnHold": "Payouts on hold",
+  "finance.availableForPayout": "Available for payout",
+  "finance.requestPayout": "Request payout",
+  "finance.minimumPayout": "Minimum payout",
+  "finance.payoutPending": "Payout pending",
+  "finance.payoutProcessing": "Payout processing",
+  "finance.payoutPaid": "Payout paid",
+  "finance.payoutFailed": "Payout failed",
+  "finance.payoutReversed": "Payout reversed",
+  "finance.statements": "Statements",
+  "finance.earningsStatement": "Earnings statement",
+  "finance.financeSetup": "Finance setup",
+  "finance.additionalInformationRequired": "Additional information required",
+  "finance.setup": "Setup",
+  "finance.notStarted": "Not started",
+  "finance.providerUnavailable": "Provider onboarding is currently unavailable.",
 };
 
 const tr: Catalog = {
@@ -61,6 +89,12 @@ const tr: Catalog = {
   "earnings.monetizationUnavailable": "Para kazanma şu anda kullanılamıyor.",
   "earnings.anonymous": "Anonim",
   "earnings.revenueBreakdown": "Gelir dökümü",
+  "finance.payouts": "Ödemeler",
+  "finance.statements": "Ekstreler",
+  "finance.financeSetup": "Finans kurulumu",
+  "finance.identityVerification": "Kimlik doğrulama",
+  "finance.payoutOnHold": "Ödemeler beklemeye alındı",
+  "finance.payoutUnavailable": "Ödemeler kullanılamıyor",
 };
 
 const de: Catalog = {
@@ -71,6 +105,9 @@ const de: Catalog = {
   "earnings.payoutsUnavailable": "Auszahlungen noch nicht verfügbar",
   "earnings.donations": "Spenden",
   "earnings.adRevenue": "Werbeeinnahmen",
+  "finance.payouts": "Auszahlungen",
+  "finance.statements": "Abrechnungen",
+  "finance.identityVerification": "Identitätsprüfung",
 };
 
 const fr: Catalog = {
@@ -81,6 +118,9 @@ const fr: Catalog = {
   "earnings.payoutsUnavailable": "Paiements pas encore disponibles",
   "earnings.donations": "Dons",
   "earnings.adRevenue": "Revenus publicitaires",
+  "finance.payouts": "Paiements",
+  "finance.statements": "Relevés",
+  "finance.identityVerification": "Vérification d'identité",
 };
 
 const es: Catalog = {
@@ -91,6 +131,9 @@ const es: Catalog = {
   "earnings.payoutsUnavailable": "Los pagos aún no están disponibles",
   "earnings.donations": "Donaciones",
   "earnings.adRevenue": "Ingresos por anuncios",
+  "finance.payouts": "Pagos",
+  "finance.statements": "Extractos",
+  "finance.identityVerification": "Verificación de identidad",
 };
 
 const it: Catalog = {
@@ -101,6 +144,9 @@ const it: Catalog = {
   "earnings.payoutsUnavailable": "Pagamenti non ancora disponibili",
   "earnings.donations": "Donazioni",
   "earnings.adRevenue": "Ricavi pubblicitari",
+  "finance.payouts": "Pagamenti",
+  "finance.statements": "Estratti",
+  "finance.identityVerification": "Verifica identità",
 };
 
 const pt: Catalog = {
@@ -111,6 +157,9 @@ const pt: Catalog = {
   "earnings.payoutsUnavailable": "Pagamentos ainda não disponíveis",
   "earnings.donations": "Doações",
   "earnings.adRevenue": "Receita de anúncios",
+  "finance.payouts": "Pagamentos",
+  "finance.statements": "Extratos",
+  "finance.identityVerification": "Verificação de identidade",
 };
 
 const ru: Catalog = {
@@ -121,6 +170,9 @@ const ru: Catalog = {
   "earnings.payoutsUnavailable": "Выплаты пока недоступны",
   "earnings.donations": "Донаты",
   "earnings.adRevenue": "Доход от рекламы",
+  "finance.payouts": "Выплаты",
+  "finance.statements": "Выписки",
+  "finance.identityVerification": "Проверка личности",
 };
 
 const ar: Catalog = {
@@ -139,6 +191,13 @@ const ar: Catalog = {
   "earnings.anonymous": "مجهول",
   "earnings.revenueBreakdown": "تفصيل الإيرادات",
   "earnings.activeSubscribers": "المشتركون النشطون",
+  "finance.payouts": "المدفوعات",
+  "finance.statements": "الكشوفات",
+  "finance.financeSetup": "إعداد المالية",
+  "finance.identityVerification": "التحقق من الهوية",
+  "finance.payoutOnHold": "المدفوعات معلّقة",
+  "finance.payoutUnavailable": "المدفوعات غير متاحة",
+  "finance.additionalInformationRequired": "مطلوب معلومات إضافية",
 };
 
 const ja: Catalog = {
@@ -149,6 +208,9 @@ const ja: Catalog = {
   "earnings.payoutsUnavailable": "支払い機能はまだ利用できません",
   "earnings.donations": "寄付",
   "earnings.adRevenue": "広告収益",
+  "finance.payouts": "支払い",
+  "finance.statements": "明細書",
+  "finance.identityVerification": "本人確認",
 };
 
 const CATALOGS: Record<UiLanguage, Catalog> = { en, tr, de, fr, es, it, pt, ru, ar, ja };
