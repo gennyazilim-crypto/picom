@@ -7,6 +7,9 @@ import { attachLiveScreenShareSession } from "../../services/live/liveScreenShar
 import { publisherProgramService } from "../../services/publisher/publisherProgramService";
 import { voiceService } from "../../services/voiceService";
 import { loggingService } from "../../services/loggingService";
+import { emergencyKillSwitchService } from "../../services/emergencyKillSwitchService";
+import { translateLiveNowOps } from "../../services/localization/liveNowOpsCatalog";
+import { emitLiveNowStructuredLog } from "../../services/ops/liveNowStructuredLog";
 import {
   attachLocalPreviewStream,
   detachLocalPreviewStream,
@@ -522,6 +525,19 @@ export function GoLiveWorkspace({
 
   const startLive = async () => {
     if (startingRef.current || startPhase !== "idle") return;
+    const goLiveAvailability = emergencyKillSwitchService.getFeatureAvailability("enableGoLive");
+    if (!goLiveAvailability.enabled) {
+      emitLiveNowStructuredLog({
+        service: "go_live",
+        severity: "WARN",
+        event: "go_live.kill_switch_or_flag_denied",
+        correlationId: correlationIdRef.current,
+        errorCode: goLiveAvailability.killSwitch ? "GO_LIVE_KILL_SWITCH" : "GO_LIVE_FLAG_OFF",
+        scope: "go_live",
+      });
+      onNotice(translateLiveNowOps("ops.goLiveUnavailable", navigator.language || "en"), "error");
+      return;
+    }
     const title = validateGoLiveTitle(draft.title);
     if (!title.ok) {
       onNotice(title.message, "error");

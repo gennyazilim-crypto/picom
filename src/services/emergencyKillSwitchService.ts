@@ -17,6 +17,15 @@ export const EMERGENCY_KILL_SWITCH_KEYS = [
   "disableAutoUpdate",
   "disableMessageEditing",
   "disableInvites",
+  // TASK34 Live Now / Publisher emergency kill switches (new attempts only; does not auto-terminate rooms).
+  "disableLiveNowDiscovery",
+  "disableGoLive",
+  "disablePublisherExternalIngest",
+  "disableLiveChat",
+  "disablePublisherAnalytics",
+  "disableLiveRecording",
+  "disableCreatorStudio",
+  "disablePublisherMonetization",
 ] as const;
 
 export type EmergencyKillSwitchKey = (typeof EMERGENCY_KILL_SWITCH_KEYS)[number];
@@ -49,6 +58,14 @@ const FEATURE_TO_KILL_SWITCH: Partial<Record<FeatureFlagKey, EmergencyKillSwitch
   enableWebhooks: "disableWebhooks",
   enableBots: "disableBots",
   enableAutoUpdate: "disableAutoUpdate",
+  enableLiveNowDiscovery: "disableLiveNowDiscovery",
+  enableGoLive: "disableGoLive",
+  enablePublisherExternalIngest: "disablePublisherExternalIngest",
+  enableLiveChat: "disableLiveChat",
+  enablePublisherAnalytics: "disablePublisherAnalytics",
+  enableLiveRecording: "disableLiveRecording",
+  enableCreatorStudio: "disableCreatorStudio",
+  enablePublisherMonetization: "disablePublisherMonetization",
 };
 
 function createDefaultKillSwitches(): EmergencyKillSwitches {
@@ -63,6 +80,14 @@ function createDefaultKillSwitches(): EmergencyKillSwitches {
     disableAutoUpdate: false,
     disableMessageEditing: false,
     disableInvites: false,
+    disableLiveNowDiscovery: false,
+    disableGoLive: false,
+    disablePublisherExternalIngest: false,
+    disableLiveChat: false,
+    disablePublisherAnalytics: false,
+    disableLiveRecording: false,
+    disableCreatorStudio: false,
+    disablePublisherMonetization: false,
   });
 }
 

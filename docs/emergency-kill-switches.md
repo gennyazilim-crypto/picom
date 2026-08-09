@@ -27,6 +27,14 @@ The current emergency kill switch keys are:
 - `disableAutoUpdate`
 - `disableMessageEditing`
 - `disableInvites`
+- `disableLiveNowDiscovery` (TASK34)
+- `disableGoLive` (TASK34 — blocks **new** Go Live attempts; does not auto-terminate active streams)
+- `disablePublisherExternalIngest` (TASK34)
+- `disableLiveChat` (TASK34)
+- `disablePublisherAnalytics` (TASK34)
+- `disableLiveRecording` (TASK34)
+- `disableCreatorStudio` (TASK34)
+- `disablePublisherMonetization` (TASK34)
 
 All default to `false`.
 
