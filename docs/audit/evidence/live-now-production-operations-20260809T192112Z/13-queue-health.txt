@@ -1,0 +1,3 @@
+﻿QUEUE HEALTH
+get_live_now_queue_health: email pending/retry/failed + oldest age; media pending; reminder pending due window.
+Recording media queue backlog is NOT an outage while pipeline BLOCKED.

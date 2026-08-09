@@ -1,0 +1,4 @@
+﻿BACKUP STATUS
+AUTOMATED_BACKUP: SUPABASE_HOSTED_CAPABILITY_PRESENT (project picom-production; exact schedule not exported to evidence)
+PITR: NOT_VERIFIED_IN_THIS_TASK (do not assume enabled)
+MANUAL_EXPORT: OPS_CAPABLE via dashboard/pg_dump with vault credentials (not executed)

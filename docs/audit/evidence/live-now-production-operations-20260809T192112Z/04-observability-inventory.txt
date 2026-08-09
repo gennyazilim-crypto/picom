@@ -1,0 +1,4 @@
+﻿OBSERVABILITY INVENTORY
+rg found no sentry/otel/prometheus/grafana production wiring.
+Reuse: loggingService + logRedaction + liveNow ops contracts + DB buckets/alerts.
+ALERT_TRANSPORT=NOT_CONFIGURED

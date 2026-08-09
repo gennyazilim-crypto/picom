@@ -1,0 +1,4 @@
+﻿REALTIME HEALTH
+Operational probe definition: subscription establish + authorized change delivery + reconnect.
+RUNTIME CERTIFICATION: CHAT TWO-CLIENT = NOT_RUN (unchanged)
+Do not claim full chat/role realtime certification.

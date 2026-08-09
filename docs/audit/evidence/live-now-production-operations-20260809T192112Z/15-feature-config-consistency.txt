@@ -1,0 +1,4 @@
+﻿FEATURE CONFIG CONSISTENCY
+Production defaults fail-closed for Task27-33 flags.
+Guards: evaluateLiveNowFeatureConfigConsistency + SQL evaluate_live_now_feature_config_consistency
+Impossible configs: recording ON while egress blocked; payout/monetization ON without provider; ingest without stream mgmt.

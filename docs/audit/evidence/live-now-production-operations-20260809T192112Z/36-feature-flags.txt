@@ -1,0 +1,14 @@
+﻿FEATURE FLAGS (production defaults)
+enableCreatorStudio=OFF
+enableLiveNowDiscovery=OFF
+enableGoLive=OFF
+enablePublisherStreamManagement=OFF
+enablePublisherExternalIngest=OFF
+enableLiveChat=OFF
+enablePublisherAnalytics=OFF
+enableLiveRecording=OFF
+enablePublisherMonetization=OFF
+enablePublisherKyc=OFF
+enablePublisherPayouts=OFF
+Kill switches added; default false.
+Task34 did not enable features to probe.

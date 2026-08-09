@@ -1,0 +1,3 @@
+﻿WEBHOOK MONITORING
+Observable: signature failures, unknown source, wrong environment, replay, malformed body, processing failure
+No raw sensitive payload logging.

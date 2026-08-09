@@ -1,0 +1,3 @@
+﻿SECURITY MONITORING
+Event codes + anomaly rules + abuse matrix FAIL_CLOSED expectations in liveNowSecurityMonitoring.ts
+No secrets in logs; redaction via logRedaction.ts

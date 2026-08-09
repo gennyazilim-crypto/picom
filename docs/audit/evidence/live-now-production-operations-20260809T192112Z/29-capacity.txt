@@ -1,0 +1,5 @@
+﻿CAPACITY
+No production stress test.
+MEDIA_CAPACITY_LOAD_CERTIFICATION: NOT_RUN
+Recording Egress remains BLOCKED_INFRASTRUCTURE.
+Disk/CPU/RAM live SSH inventory: NOT_COLLECTED_THIS_CANARY (avoid unnecessary prod restart/login); risk = constrained single VPS.

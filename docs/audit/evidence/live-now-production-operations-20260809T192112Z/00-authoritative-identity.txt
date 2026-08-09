@@ -1,0 +1,9 @@
+﻿AUTHORITATIVE_BASE=2ce0b9bec506d5eb642cb1932ea899ddc59726b9
+BRANCH=release/picom-canonical-production
+REPO=https://github.com/gennyazilim-crypto/picom
+HEAD_AT_START=2ce0b9bec506d5eb642cb1932ea899ddc59726b9
+WORKTREE=C:\Users\ACER\Desktop\picom-canonical-publish-clean
+PRODUCTION_SUPABASE=picom-production / cqnsetsmcduraryemhbi / eu-central-1
+LIVEKIT=wss://voice.picom.gg
+VPS=23.254.166.240
+TASK34_UTC=20260809T192112Z

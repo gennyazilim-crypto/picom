@@ -1,0 +1,4 @@
+﻿WORKER HEALTH
+email-worker: heartbeat table + local /health on 127.0.0.1
+event-reminder-worker: claim RPCs; idle empty queue OK
+publisher-media-worker: FFMPEG/storage blocked; fail-closed coded errors

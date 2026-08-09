@@ -1,0 +1,4 @@
+﻿SMTP HEALTH
+SMTP CONNECTION: via email-worker verify/heartbeat (runtime UNKNOWN without host access in this canary)
+PROVIDER ACCEPTANCE: separate from mailbox
+MAILBOX DELIVERY: AUTH_INBOX BLOCKED_RATE_LIMIT (historical, unchanged)

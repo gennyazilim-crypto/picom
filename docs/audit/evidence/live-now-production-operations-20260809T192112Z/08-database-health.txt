@@ -1,0 +1,5 @@
+﻿DATABASE HEALTH
+Migration applied: 20260808430000_live_now_production_ops.sql
+RPC: get_live_now_ops_status, get_live_now_queue_health, record_live_now_ops_metric
+No expensive full-table COUNT(*) on every probe; email queue counts limited to 7d window.
+PITR/AUTOMATED_BACKUP: not assumed; see 24-backup-status.txt

@@ -1,0 +1,4 @@
+﻿INGRESS HEALTH
+Architecture present (RTMP + livekit-ingress edge + webhook).
+OBS REAL CLIENT: NOT_RUN (listener health ≠ OBS certification)
+enablePublisherExternalIngest: OFF

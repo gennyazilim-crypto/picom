@@ -1,0 +1,23 @@
+﻿REGRESSION
+publisher-observability-smoke: PASS
+publisher-health-contract: PASS
+publisher-alert-rules: PASS
+publisher-security-monitoring: PASS
+publisher-feature-config-consistency: PASS
+publisher-dr-contract: PASS
+publisher-release-readiness: PASS
+emergency-kill-switches-smoke: PASS
+creator-studio-smoke: PASS
+publisher-kyc-payout-smoke: PASS
+publisher-stream-management-smoke: PASS
+live-chat-management-smoke: PASS
+desktop:smoke: PASS
+vite build: PASS (exit 0)
+secrets:smoke: PASS
+production:config:guard: PASS
+release:canonical:guard: PASS
+git:large-files:check: PASS
+npm ci: NOT_RERUN (node_modules present; bounded Task34)
+npm run typecheck: GLOBAL blocked HAVOOC; TASK34 scope PASS
+npm run build: covered by vite build PASS
+AIKIDO: scanned Task34 files; 0 findings (opengrep/checkov tooling noise noted)

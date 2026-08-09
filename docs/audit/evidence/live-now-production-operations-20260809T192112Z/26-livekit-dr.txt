@@ -1,0 +1,4 @@
+﻿LIVEKIT DR
+Single VPS SPOF 23.254.166.240
+Restart/config/secret/DNS/TLS documented in LIVE_NOW_DISASTER_RECOVERY.md
+No multi-region HA claim.

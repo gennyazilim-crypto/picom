@@ -1,0 +1,3 @@
+﻿WORKER DR
+Restart-safe claims, idempotent completions, stale lock handling documented.
+Kill/restart simulation on production user queues: NOT_RUN (prefer isolated queue).

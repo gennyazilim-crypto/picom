@@ -1,0 +1,4 @@
+﻿STRUCTURED LOGGING
+emitLiveNowStructuredLog fields: timestamp,service,severity,event,correlation_id,resource_id,error_code
+Severities: DEBUG INFO WARN ERROR CRITICAL
+Production default must not emit unrestricted DEBUG payloads.

@@ -1,0 +1,4 @@
+﻿DB PERFORMANCE
+Critical RPC EXPLAIN ANALYZE on production large mutations: NOT_RUN (unsafe).
+Indexes Task27-33 retained; no casual drops.
+Ops telemetry uses minute/hour buckets to bound growth.

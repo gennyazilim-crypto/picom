@@ -1,0 +1,5 @@
+﻿PRODUCTION VALIDATION
+supabase db push: applied 20260808430000_live_now_production_ops.sql
+functions deploy: live-now-ops-status, health, client-config
+canary signaling: PASS_BOUNDED
+public health after fix: status=unknown (placeholders)

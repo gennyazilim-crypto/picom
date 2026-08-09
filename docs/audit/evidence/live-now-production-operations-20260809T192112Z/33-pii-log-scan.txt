@@ -1,0 +1,3 @@
+﻿PII LOG SCAN
+liveNowStructuredLog + logRedaction PRIVATE_CONTENT_KEY_PATTERN for body/content/messageText
+Ops catalog user messages localized; no chat body logging by default.

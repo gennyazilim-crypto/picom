@@ -1,0 +1,4 @@
+﻿TYPECHECK SCOPE
+TYPECHECK_TASK34_SCOPE: PASS (SCOPE_ERROR_LINES=0)
+TYPECHECK_REPOSITORY_GLOBAL: BLOCKED_UNRELATED_DIRTY_HAVOOC
+Evidence: src/services/havooc/projectSupportNotesService.ts AnalyticsEventName mismatch (untracked unrelated dirty)

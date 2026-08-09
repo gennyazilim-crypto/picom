@@ -1,0 +1,14 @@
+﻿RUNTIME INVENTORY (TASK34)
+- Supabase production project: cqnsetsmcduraryemhbi
+- Edge functions deployed this task: live-now-ops-status, health, client-config
+- Existing: admin-health, livekit-token, livekit-ingress, livekit-webhook, moderation, publisher-payouts, client-config
+- DB health: get_admin_system_status_v2 + get_live_now_ops_status
+- Realtime: Supabase Realtime (chat two-client NOT_RUN preserved)
+- LiveKit SFU: voice.picom.gg -> 23.254.166.240
+- LiveKit Ingress: RTMP architecture present; OBS REAL CLIENT NOT_RUN
+- Workers: services/email-worker, services/event-reminder-worker, services/publisher-media-worker
+- SMTP: email-worker verify + heartbeats; mailbox delivery AUTH_INBOX BLOCKED_RATE_LIMIT
+- Feature flags: production fail-closed; enableCreatorStudio OFF; Task27-32 child OFF
+- Recording: BLOCKED_INFRASTRUCTURE / BLOCKED_STORAGE_CREDENTIAL
+- Monetization/KYC/Payout: NOT_CONFIGURED / OFF
+- APM: no Sentry/OTel/Prometheus/Grafana in repo

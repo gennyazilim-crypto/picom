@@ -1,0 +1,3 @@
+﻿ABUSE MONITORING
+Counters: chat_flood, invite_abuse, stream_creation_abuse, go_live_failure_abuse, report_spam, credential_rotation_abuse, payment_endpoint_abuse
+Deterministic thresholds only — not AI fraud scoring.

@@ -1,0 +1,3 @@
+﻿CORRELATION IDS
+createLiveNowCorrelationId opaque UUID scopes: publisher_application,stream_create,go_live,livekit_ingress,chat_moderation,analytics_finalize,recording_request,payment_flow,team_security,ops_probe
+No PII/secrets in ID.
