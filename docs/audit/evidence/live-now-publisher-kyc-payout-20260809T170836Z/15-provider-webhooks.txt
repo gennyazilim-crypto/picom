@@ -1,0 +1,5 @@
+Provider webhooks
+Edge: supabase/functions/publisher-payouts
+Signature required when secret present; absent => BLOCKED_PROVIDER_CONFIGURATION
+No invented event names executed
+Client redirect not authoritative

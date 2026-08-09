@@ -1,0 +1,5 @@
+Sensitive data security
+No full IBAN/tax ID/passport in schema for UI
+tax_id_redacted + masked payout labels only
+Encryption key not introduced (prefer provider refs)
+FINANCE_RETENTION_POLICY: PENDING_LEGAL_POLICY

@@ -1,0 +1,6 @@
+Regression / tests
+node scripts/publisher-kyc-payout-smoke.mjs => PASS exit 0
+.tmp-t32-internal-smoke.sql on picom-production => TASK32_INTERNAL_SMOKE PASS
+npm run typecheck: FAIL unrelated dirty havooc_support_note_* AnalyticsEventName (excluded from Task32)
+LINT: NOT_CONFIGURED
+Full npm ci/build/desktop:smoke deferred if time/env; Task32 static+SQL certified

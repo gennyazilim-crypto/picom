@@ -1,0 +1,5 @@
+Statements
+publisher_finance_statements finalized from ledger
+Monthly period; per-currency; SUPERSEDED on new version
+Labeled earnings statement not tax invoice
+Verdict: PICOM FINANCE STATEMENTS GO

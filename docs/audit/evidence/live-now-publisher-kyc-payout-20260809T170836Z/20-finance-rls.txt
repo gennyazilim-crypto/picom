@@ -1,0 +1,6 @@
+Finance RLS
+Owner-safe RPCs for KYC/tax/payouts/statements
+dashboard.read cannot approve
+finance.read/write/approve reused
+Stream moderator denied
+service_role for economic writers

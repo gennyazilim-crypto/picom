@@ -1,0 +1,26 @@
+TASK32 existing foundation inventory
+UTC: 20260809T170836Z
+
+REUSED (do not duplicate):
+- monetization_accounts (kyc_status, tax_status, payouts_enabled, payout_onboarding_status, provider_account_ref)
+- revenue_share_contracts.minimum_payout_amount_minor
+- publisher_finance_ledger_entries (PAYOUT / PAYOUT_REVERSAL already allowed)
+- publisher_finance_audit_events
+- publisher_finance_event_failures
+- provider_webhook_events + platform_idempotency_keys
+- Root RBAC finance.read / finance.write / finance.approve
+- publisher-payments Edge fail-closed (Task31)
+- verification_business / publisher program (separate from KYC)
+
+ABSENT:
+- No dedicated publisher_kyc_profiles / tax_profiles / payout_accounts / payout_requests
+- No KYC provider secrets (Stripe Identity / similar)
+- No payout worker
+- No statements domain
+- No hosted KYC document bucket required (prefer provider-hosted)
+
+APPROACH:
+- Extend ledger entry types with PAYOUT_RESERVED / PAYOUT_RELEASED
+- Add KYC/tax/payout domains provider-neutral
+- Fail-closed Edge publisher-payouts
+- Flags OFF; LIVE PAYOUT OFF; provider NOT_CONFIGURED

@@ -1,0 +1,5 @@
+Statement reconciliation fixture (internal_test)
+EUR prior month: sub+900 don+500 ad+300 refund-200 payout-1000
+net_revenue_minor=1700 refunds=200 payouts=1000
+USD separate net=2500 (no cross-currency sum)
+TASK32_INTERNAL_SMOKE=PASS

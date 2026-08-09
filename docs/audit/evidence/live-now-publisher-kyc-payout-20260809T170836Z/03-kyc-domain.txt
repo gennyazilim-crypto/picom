@@ -1,0 +1,7 @@
+TASK32 KYC domain
+Canonical states: NOT_STARTED REQUIRED ONBOARDING PENDING MORE_INFORMATION_REQUIRED VERIFIED REJECTED RESTRICTED EXPIRED
+Tables: publisher_kyc_profiles
+RPCs: service_sync_publisher_kyc_status (service_role), get_my_publisher_kyc_status (owner-safe)
+Provider-hosted preferred; no passport/selfie/biometric storage in PICOM
+Client cannot set VERIFIED
+Verdict: PICOM KYC DOMAIN GO

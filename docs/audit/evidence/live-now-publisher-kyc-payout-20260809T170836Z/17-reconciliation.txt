@@ -1,0 +1,4 @@
+Reconciliation
+publisher_payout_reconciliation_issues codes include AMOUNT_MISMATCH CURRENCY_MISMATCH STATUS_MISMATCH DUPLICATE_PROVIDER_REF MISSING_*
+No auto-fix economic mismatches
+Verdict: PICOM PAYOUT RECONCILIATION GO (contract)

@@ -1,0 +1,7 @@
+Payout engine
+Tables: publisher_payout_requests, publisher_payout_batches, publisher_payout_policies
+Statuses: REQUESTED..REVERSED
+Manual request + finance approval architecture; auto OFF
+Edge publisher-payouts fail-closed
+LIVE_PAYOUT: OFF
+Verdict: PICOM PAYOUT ENGINE GO

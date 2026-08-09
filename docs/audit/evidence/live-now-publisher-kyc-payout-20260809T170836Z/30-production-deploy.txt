@@ -1,0 +1,7 @@
+Production deploy
+Target: picom-production / cqnsetsmcduraryemhbi / eu-central-1
+Applied forward-only via supabase db query --linked -f:
+20260808340000..20260808380000 EXIT 0 each
+Sealed in supabase_migrations.schema_migrations
+Tables present: kyc tax accounts holds requests batches statements recon
+No migration repair / no db reset

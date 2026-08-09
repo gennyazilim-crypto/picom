@@ -1,0 +1,4 @@
+Provider sandbox
+KYC PROVIDER SANDBOX: NOT_CONFIGURED
+PAYOUT PROVIDER SANDBOX: NOT_CONFIGURED
+No real-money / no fake success

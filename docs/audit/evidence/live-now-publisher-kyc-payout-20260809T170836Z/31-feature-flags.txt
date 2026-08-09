@@ -1,0 +1,8 @@
+Feature flags (production defaults OFF)
+enablePublisherKyc
+enablePublisherTaxProfile
+enablePublisherPayoutAccounts
+enablePublisherPayouts
+enablePublisherStatements
+client-config reads PICOM_ENABLE_PUBLISHER_* public booleans (unset => false)
+Local defaults: appConfig.environment !== "production"

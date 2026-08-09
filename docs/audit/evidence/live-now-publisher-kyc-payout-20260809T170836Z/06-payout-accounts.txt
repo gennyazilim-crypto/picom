@@ -1,0 +1,6 @@
+Payout accounts
+Table: publisher_payout_accounts
+Statuses: PENDING VERIFICATION_REQUIRED VERIFIED RESTRICTED DISABLED
+Masked last4/display only; provider refs preferred
+Client cannot set VERIFIED (service upsert only)
+Verdict: PICOM PAYOUT ACCOUNT DOMAIN GO

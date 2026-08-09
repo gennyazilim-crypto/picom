@@ -1,0 +1,8 @@
+Tax profile domain
+Table: publisher_tax_profiles
+entity_type: INDIVIDUAL|BUSINESS
+tax_status domain + tax_id_redacted only
+No VAT/withholding engine
+TAX_ENGINE: BLOCKED_LEGAL_PROVIDER_CONFIGURATION
+Terms acceptance plumbing only; legal text BLOCKED_CONTENT_APPROVAL
+Verdict: PICOM TAX PROFILE DOMAIN GO

@@ -1,0 +1,6 @@
+Payout eligibility
+RPC: evaluate_publisher_payout_eligibility
+Gates: monetization, KYC VERIFIED, tax profile, payout account VERIFIED, holds, available balance, minimum policy, PROVIDER_NOT_CONFIGURED
+Public eligible always false without provider
+Internal SQL smoke: KYC expiry and hold gates observed
+Verdict: PICOM PAYOUT ELIGIBILITY GO

@@ -1,0 +1,4 @@
+Dashboard
+PublisherEarningsPanel: Setup / Payouts / Statements
+Readiness from get_my_publisher_finance_setup
+No fake Verified checkmarks; flags OFF in production

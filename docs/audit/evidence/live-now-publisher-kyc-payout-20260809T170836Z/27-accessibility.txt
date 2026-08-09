@@ -1,0 +1,4 @@
+Accessibility
+KYC status text + labelled CTA; payout amount/currency explicit
+Statement table keyboard-accessible markup in Earnings panel
+No color-only verification state (status strings)

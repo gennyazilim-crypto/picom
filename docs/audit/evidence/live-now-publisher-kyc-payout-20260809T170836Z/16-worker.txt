@@ -1,0 +1,4 @@
+Payout worker
+claim_publisher_payout_jobs uses FOR UPDATE SKIP LOCKED
+Runtime worker deploy: NOT attempted (no provider)
+Verdict: PAYOUT WORKER BLOCKED_PROVIDER_CONFIGURATION

@@ -1,0 +1,5 @@
+Payout race
+Fixture available=10000; requests 8000+8000
+Observed: first ok, second INSUFFICIENT_AVAILABLE_BALANCE; available never negative
+Method: service_request_publisher_payout_internal_test under FOR UPDATE
+Verdict: PICOM PAYOUT RACE SAFETY GO

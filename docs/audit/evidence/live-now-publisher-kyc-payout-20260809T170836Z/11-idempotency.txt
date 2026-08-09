@@ -1,0 +1,5 @@
+Idempotency
+Same idempotency key x10 => 1 logical request + 9 duplicates
+Paid webhook key x10 => one economic paid
+Reversal key x10 => one reversal
+Verdict: PICOM PAYOUT IDEMPOTENCY GO

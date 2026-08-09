@@ -1,0 +1,5 @@
+i18n
+Locales: en tr de fr es it pt ru ar ja
+Keys include identityVerification kyc payout* statements earningsStatement financeSetup additionalInformationRequired
+Arabic RTL catalog present
+publisher-kyc-payout-smoke: PASS

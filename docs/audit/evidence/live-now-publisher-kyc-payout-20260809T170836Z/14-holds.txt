@@ -1,0 +1,4 @@
+Holds
+publisher_payout_holds reason_codes: KYC COMPLIANCE CHARGEBACK_RISK MANUAL_REVIEW PROVIDER_RESTRICTION LEGAL
+Active hold => PAYOUT_HOLD_ACTIVE; release restores gate evaluation
+Finance.approve for create/release (migration policies)

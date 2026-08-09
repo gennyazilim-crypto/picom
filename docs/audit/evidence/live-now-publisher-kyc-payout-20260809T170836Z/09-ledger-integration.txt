@@ -1,0 +1,5 @@
+Ledger integration
+Entry types: PAYOUT_RESERVED PAYOUT_RELEASED PAYOUT PAYOUT_REVERSAL
+Reserve debits available; fail credits RELEASED; paid debits paid bucket; reverse credits available
+No snapshot mutation; immutable ledger append-only
+Verdict: PICOM PAYOUT LEDGER INTEGRATION GO

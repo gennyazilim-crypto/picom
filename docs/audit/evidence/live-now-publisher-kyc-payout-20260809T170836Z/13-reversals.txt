@@ -1,0 +1,5 @@
+Reversals
+service_mark_publisher_payout_reversed appends PAYOUT_REVERSAL credit
+Does not edit original PAYOUT entry
+Idempotent on replay
+Verdict: PICOM PAYOUT REVERSAL GO

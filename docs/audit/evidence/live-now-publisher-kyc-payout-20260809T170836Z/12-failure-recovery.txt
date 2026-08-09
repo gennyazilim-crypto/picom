@@ -1,0 +1,5 @@
+Failure recovery
+Provider fail path: PAYOUT_RELEASED restores reserved available
+Duplicate fail webhook idempotent
+No provider submit without credentials (fail-closed)
+Verdict: failure release GO (provider runtime NOT_CONFIGURED)

@@ -1,0 +1,7 @@
+KYC security
+- Direct client VERIFIED denied (service_role only sync)
+- Foreign KYC denied via RLS
+- Provider webhook Edge fail-closed without secrets
+- No raw document numbers in UI RPCs
+Static smoke + migration grants reviewed
+Verdict: PICOM KYC RLS GO
