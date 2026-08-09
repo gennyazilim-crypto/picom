@@ -1,5 +1,4 @@
 ﻿Branch: release/picom-canonical-production
-HEAD: 66e51eb84b0c4bec0ff5be000041b2c0b0f88212
-Short: 66e51eb8
-Ahead of origin: yes (pre-push)
+HEAD: 7c79cabe2d885a5cde72279a50d57bf4cea29a25
+Pushed: origin/release/picom-canonical-production @ 7c79cabe2d885a5cde72279a50d57bf4cea29a25
 Unrelated dirty left unstaged (havooc/companion/friends/tmp)
