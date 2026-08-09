@@ -1,0 +1,4 @@
+HEAD=879e31963578aa4c4352dfc7c7053ef7f51a497c
+branch=release/picom-canonical-production
+upstream=synced
+unrelated_dirty_excluded=HAVOOC+companion
