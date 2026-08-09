@@ -7,6 +7,8 @@ import { notifyLocalScreenShareStopped } from "../../services/live/liveScreenSha
 import { voiceService, type VoiceServiceSnapshot } from "../../services/voiceService";
 import { LiveWatchChat } from "./LiveWatchChat";
 import { GO_LIVE_CATEGORIES } from "./goLiveModel";
+import { publisherAnalyticsService, type PublisherStreamAnalytics } from "../../services/live/publisherAnalyticsService";
+import { featureFlagService } from "../../services/featureFlagService";
 import {
   CREATOR_STUDIO_TABS,
   activityEventLabel,
@@ -66,9 +68,11 @@ export function CreatorStudioWorkspace({
   const [metadataBusy, setMetadataBusy] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
   const [previewFit, setPreviewFit] = useState<"contain" | "cover">("contain");
+  const [liveAnalytics, setLiveAnalytics] = useState<PublisherStreamAnalytics | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const endingRef = useRef(false);
   const lastStatusRef = useRef<string>("");
+  const publisherStreamIdRef = useRef<string | null>(null);
 
   const localShare = useMemo(
     () => voice.screenShares.find((share) => share.isLocal) ?? null,
@@ -153,6 +157,38 @@ export function CreatorStudioWorkspace({
       window.clearInterval(timer);
     };
   }, [session?.reconnectCount, voice.cameraEnabled, voice.canSpeak, voice.connectionQuality, voice.muted, voice.screenSharing, voice.status]);
+
+  useEffect(() => {
+    if (!featureFlagService.isEnabled("enablePublisherAnalytics")) {
+      setLiveAnalytics(null);
+      publisherStreamIdRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    const refresh = async () => {
+      let streamId = publisherStreamIdRef.current;
+      if (!streamId) {
+        const resolved = await publisherAnalyticsService.resolveStreamIdForLiveSession(liveSessionId);
+        if (!resolved.ok || !resolved.data.streamId) {
+          if (!cancelled) setLiveAnalytics(null);
+          return;
+        }
+        streamId = resolved.data.streamId;
+        publisherStreamIdRef.current = streamId;
+      }
+      const result = await publisherAnalyticsService.getStreamAnalytics(streamId);
+      if (cancelled) return;
+      if (result.ok) setLiveAnalytics(result.data);
+    };
+    void refresh();
+    const timer = window.setInterval(() => {
+      void refresh();
+    }, 15_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [liveSessionId]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -420,7 +456,16 @@ export function CreatorStudioWorkspace({
 
             {tab === "viewers" ? (
               <ul className="creator-studio__list">
-                <li><strong>{session?.viewerCount ?? 0}</strong> concurrent · <strong>{session?.uniqueViewerCount ?? 0}</strong> unique</li>
+                <li>
+                  <strong>{liveAnalytics?.currentConcurrent ?? session?.viewerCount ?? 0}</strong> concurrent ·{" "}
+                  <strong>{liveAnalytics?.uniqueViewers ?? session?.uniqueViewerCount ?? 0}</strong> unique
+                  {liveAnalytics ? (
+                    <>
+                      {" "}· peak <strong>{liveAnalytics.peakConcurrent}</strong>
+                      {liveAnalytics.finalized ? null : <small> (live metrics)</small>}
+                    </>
+                  ) : null}
+                </li>
                 {viewers.length === 0 ? <li><small>No authenticated viewers currently present.</small></li> : null}
                 {viewers.map((viewer) => (
                   <li key={viewer.viewerUserId}>

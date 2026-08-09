@@ -23,6 +23,9 @@ import {
   selectBroadcasterScreenShare,
   type LiveWatchReportReasonId,
 } from "./liveWatchModel";
+import { publisherAnalyticsService } from "../../services/live/publisherAnalyticsService";
+import { localizationService } from "../../services/localizationService";
+import { featureFlagService } from "../../services/featureFlagService";
 import "./liveWatch.css";
 
 const VIEWER_HEARTBEAT_MS = 25_000;
@@ -77,6 +80,7 @@ export function LiveWatchWorkspace({
   const joinGenerationRef = useRef(0);
   const connectedRoomRef = useRef<string | null>(null);
   const joinedViewerRef = useRef(false);
+  const publisherAnalyticsSessionRef = useRef<string | null>(null);
   const sessionRef = useRef<LiveScreenShareSummary | null>(null);
   sessionRef.current = session;
 
@@ -205,6 +209,22 @@ export function LiveWatchWorkspace({
       joinedViewerRef.current = true;
       setSession((current) => (current ? { ...current, viewerCount: joinPresence.data } : current));
 
+      // Publisher analytics: only when flag ON and live session is linked to a publisher_stream.
+      // Merely opening a Live Now card does not reach this path — room join is required.
+      if (featureFlagService.isEnabled("enablePublisherAnalytics")) {
+        const resolved = await publisherAnalyticsService.resolveStreamIdForLiveSession(latest.id);
+        if (!isStale() && resolved.ok && resolved.data.streamId) {
+          const analyticsJoin = await publisherAnalyticsService.joinViewerSession({
+            streamId: resolved.data.streamId,
+            locale: localizationService.getLanguage(),
+            source: "live_now",
+          });
+          if (!isStale() && analyticsJoin.ok) {
+            publisherAnalyticsSessionRef.current = analyticsJoin.data.sessionId;
+          }
+        }
+      }
+
       if (!(connectedRoomRef.current === activeRoomName && voiceService.getSnapshot().status === "connected")) {
         const join = await voiceService.join({
           communityId: latest.communityId,
@@ -262,6 +282,10 @@ export function LiveWatchWorkspace({
             setSession((current) => (current ? { ...current, viewerCount: result.data } : current));
           }
         });
+        const analyticsSessionId = publisherAnalyticsSessionRef.current;
+        if (analyticsSessionId) {
+          void publisherAnalyticsService.heartbeat(analyticsSessionId);
+        }
       }, VIEWER_HEARTBEAT_MS);
     })();
 
@@ -269,6 +293,11 @@ export function LiveWatchWorkspace({
       cancelled = true;
       if (heartbeatTimer !== null) window.clearInterval(heartbeatTimer);
       void (async () => {
+        const analyticsSessionId = publisherAnalyticsSessionRef.current;
+        if (analyticsSessionId) {
+          publisherAnalyticsSessionRef.current = null;
+          await publisherAnalyticsService.leave(analyticsSessionId).catch(() => undefined);
+        }
         if (joinedThisGeneration || joinedViewerRef.current) {
           await liveScreenShareService.leaveAsViewer(activeSessionId);
           joinedViewerRef.current = false;
@@ -285,6 +314,11 @@ export function LiveWatchWorkspace({
   useEffect(() => {
     if (!session || !isEndedLiveStatus(session.status)) return;
     void (async () => {
+      const analyticsSessionId = publisherAnalyticsSessionRef.current;
+      if (analyticsSessionId) {
+        publisherAnalyticsSessionRef.current = null;
+        await publisherAnalyticsService.leave(analyticsSessionId).catch(() => undefined);
+      }
       if (joinedViewerRef.current) {
         await liveScreenShareService.leaveAsViewer(session.id);
         joinedViewerRef.current = false;
