@@ -35,6 +35,8 @@ export const FEATURE_FLAG_KEYS = [
   "enablePublisherExternalIngest",
   "enableLiveChat",
   "enableLiveModeration",
+  "enableHavoocSupportHub",
+  "enablePublisherAnalytics",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -62,6 +64,8 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   publisherExternalIngest: "enablePublisherExternalIngest",
   liveChat: "enableLiveChat",
   liveModeration: "enableLiveModeration",
+  havoocSupportHub: "enableHavoocSupportHub",
+  publisherAnalytics: "enablePublisherAnalytics",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -121,6 +125,9 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enablePublisherExternalIngest: appConfig.environment !== "production",
     enableLiveChat: appConfig.environment !== "production",
     enableLiveModeration: appConfig.environment !== "production",
+    // HAVOOC Support Hub: fail-closed in production until controlled enablement.
+    enableHavoocSupportHub: appConfig.environment !== "production",
+    enablePublisherAnalytics: appConfig.environment !== "production",
   });
 }
 

@@ -83,6 +83,8 @@ Deno.serve((request: Request) => {
       enablePublisherExternalIngest: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_EXTERNAL_INGEST"),
       enableLiveChat: readPublicBooleanEnv("PICOM_ENABLE_LIVE_CHAT"),
       enableLiveModeration: readPublicBooleanEnv("PICOM_ENABLE_LIVE_MODERATION"),
+      enableHavoocSupportHub: readPublicBooleanEnv("PICOM_ENABLE_HAVOOC_SUPPORT_HUB"),
+      enablePublisherAnalytics: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_ANALYTICS"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

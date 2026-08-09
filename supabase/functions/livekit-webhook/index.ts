@@ -139,6 +139,25 @@ Deno.serve(async (request: Request) => {
   if (ignoredEvents.has(eventType)) return jsonResponse({ accepted: true, ignored: true, eventId, eventType });
 
   const roomName = typeof event.room?.name === "string" ? event.room.name : "";
+  const publisherStreamId = parsePublisherStreamIdFromLiveKitRoomName(roomName);
+  if (publisherStreamId && handledEvents.has(eventType)) {
+    const participantIdentity = typeof event.participant?.identity === "string" ? event.participant.identity.slice(0, 180) : null;
+    if ((eventType.startsWith("participant_") || eventType.startsWith("track_")) && !participantIdentity) {
+      return errorResponse("VALIDATION_ERROR", "Webhook participant identity is missing.", 400);
+    }
+    const { data, error } = await operator.rpc("service_record_publisher_analytics_livekit_event", {
+      target_stream_id: publisherStreamId,
+      target_event_type: eventType,
+      target_event_id: eventId,
+      target_participant_identity: participantIdentity,
+      target_occurred_at: new Date(createdAtSeconds * 1000).toISOString(),
+    });
+    if (error || !data) {
+      return errorResponse("INTERNAL_ERROR", "Publisher analytics webhook processing is temporarily unavailable.", 503, undefined, { "Retry-After": "30" });
+    }
+    return jsonResponse({ accepted: true, scope: "publisher_analytics", eventId, eventType, streamId: publisherStreamId });
+  }
+
   const roomMatch = meetingRoomPattern.exec(roomName);
   if (!roomMatch || !uuidPattern.test(roomMatch[1]) || !uuidPattern.test(roomMatch[2])) return errorResponse("VALIDATION_ERROR", "Webhook room is not a canonical Picom meeting room.", 400);
   const participantIdentity = typeof event.participant?.identity === "string" ? event.participant.identity.slice(0, 180) : null;
