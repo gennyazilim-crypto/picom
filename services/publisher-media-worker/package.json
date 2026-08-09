@@ -1,0 +1,9 @@
+{
+  "name": "publisher-media-worker",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  }
+}
