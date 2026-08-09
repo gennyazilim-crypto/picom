@@ -1,1 +1,4 @@
-﻿filled after push
+﻿Branch: release/picom-canonical-production
+HEAD: 3678d221712cb837e677303dac8956f4a3617656
+Pushed: origin/release/picom-canonical-production @ 3678d221
+Unrelated dirty preserved as untracked/unstaged (HAVOOC/companion/tmp)

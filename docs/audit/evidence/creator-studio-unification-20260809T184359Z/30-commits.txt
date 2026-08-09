@@ -1,1 +1,9 @@
-﻿filled after push
+﻿TASK33 commits (base cd506327 -> HEAD 3678d221)
+f4e61345 chore(publisher): drop unrelated dirty files from Task33 commit
+67ccdae1 docs(publisher): document Creator Studio operations
+9d8b24d2 test(publisher): certify Creator Studio authorization
+87941366 feat(publisher): add unified Creator Studio
+d2dadfcf security(publisher): add Creator Studio security center
+ed250725 security(publisher): add granular Creator Studio RBAC
+8fddc6e0 feat(publisher): add Publisher team management
+3678d221 fix(publisher): keep Creator Studio App wiring free of unrelated HAVOOC
