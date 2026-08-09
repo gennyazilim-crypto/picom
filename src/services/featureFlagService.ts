@@ -45,6 +45,11 @@ export const FEATURE_FLAG_KEYS = [
   "enablePublisherDonations",
   "enablePublisherAdRevenue",
   "enablePublisherEarningsDashboard",
+  "enablePublisherKyc",
+  "enablePublisherTaxProfile",
+  "enablePublisherPayoutAccounts",
+  "enablePublisherPayouts",
+  "enablePublisherStatements",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -82,6 +87,11 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   publisherDonations: "enablePublisherDonations",
   publisherAdRevenue: "enablePublisherAdRevenue",
   publisherEarningsDashboard: "enablePublisherEarningsDashboard",
+  publisherKyc: "enablePublisherKyc",
+  publisherTaxProfile: "enablePublisherTaxProfile",
+  publisherPayoutAccounts: "enablePublisherPayoutAccounts",
+  publisherPayouts: "enablePublisherPayouts",
+  publisherStatements: "enablePublisherStatements",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -153,6 +163,12 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enablePublisherDonations: appConfig.environment !== "production",
     enablePublisherAdRevenue: appConfig.environment !== "production",
     enablePublisherEarningsDashboard: appConfig.environment !== "production",
+    // KYC / tax / payouts: fail-closed until provider + legal gates certified.
+    enablePublisherKyc: appConfig.environment !== "production",
+    enablePublisherTaxProfile: appConfig.environment !== "production",
+    enablePublisherPayoutAccounts: appConfig.environment !== "production",
+    enablePublisherPayouts: appConfig.environment !== "production",
+    enablePublisherStatements: appConfig.environment !== "production",
   });
 }
 

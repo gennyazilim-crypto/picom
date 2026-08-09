@@ -93,6 +93,11 @@ Deno.serve((request: Request) => {
       enablePublisherDonations: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_DONATIONS"),
       enablePublisherAdRevenue: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_AD_REVENUE"),
       enablePublisherEarningsDashboard: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_EARNINGS_DASHBOARD"),
+      enablePublisherKyc: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_KYC"),
+      enablePublisherTaxProfile: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_TAX_PROFILE"),
+      enablePublisherPayoutAccounts: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_PAYOUT_ACCOUNTS"),
+      enablePublisherPayouts: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_PAYOUTS"),
+      enablePublisherStatements: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_STATEMENTS"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

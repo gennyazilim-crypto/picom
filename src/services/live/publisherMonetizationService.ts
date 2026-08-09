@@ -135,4 +135,40 @@ export const publisherMonetizationService = {
     if (error) return { ok: false, error: error.message };
     return { ok: true, data };
   },
+
+  async getFinanceSetup(): Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; error: string }> {
+    const supabase = client();
+    if (!supabase) return { ok: false, error: "SUPABASE_UNAVAILABLE" };
+    const { data, error } = await supabase.rpc("get_my_publisher_finance_setup");
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data: (data ?? {}) as Record<string, unknown> };
+  },
+
+  async getPayoutRequests(): Promise<{ ok: true; items: unknown[] } | { ok: false; error: string }> {
+    const supabase = client();
+    if (!supabase) return { ok: false, error: "SUPABASE_UNAVAILABLE" };
+    const { data, error } = await supabase.rpc("get_my_publisher_payout_requests", { p_limit: 40 });
+    if (error) return { ok: false, error: error.message };
+    const payload = (data ?? {}) as { items?: unknown[] };
+    return { ok: true, items: Array.isArray(payload.items) ? payload.items : [] };
+  },
+
+  async getStatements(): Promise<{ ok: true; items: unknown[] } | { ok: false; error: string }> {
+    const supabase = client();
+    if (!supabase) return { ok: false, error: "SUPABASE_UNAVAILABLE" };
+    const { data, error } = await supabase.rpc("get_my_publisher_finance_statements", { p_limit: 24 });
+    if (error) return { ok: false, error: error.message };
+    const payload = (data ?? {}) as { items?: unknown[] };
+    return { ok: true, items: Array.isArray(payload.items) ? payload.items : [] };
+  },
+
+  async requestKycOnboarding(): Promise<{ ok: true; data: unknown } | { ok: false; error: string }> {
+    const supabase = client();
+    if (!supabase) return { ok: false, error: "SUPABASE_UNAVAILABLE" };
+    const { data, error } = await supabase.rpc("request_publisher_kyc_onboarding");
+    if (error) return { ok: false, error: error.message };
+    const payload = (data ?? {}) as { ok?: boolean; error?: string; message?: string };
+    if (payload.ok === false) return { ok: false, error: payload.error ?? payload.message ?? "KYC_UNAVAILABLE" };
+    return { ok: true, data };
+  },
 };
