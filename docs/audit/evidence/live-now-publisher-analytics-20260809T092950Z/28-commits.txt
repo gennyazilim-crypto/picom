@@ -1,0 +1,10 @@
+TASK29 commits (on release/picom-canonical-production):
+
+556ce508 feat(analytics): add live viewer event pipeline
+6b4bc941 security(analytics): enforce analytics RLS and privacy
+2ec5c1ef feat(publisher): add production analytics dashboard
+f64f20e2 test(analytics): certify watch-time reconciliation
+090675d9 docs(analytics): define publisher metrics
+
+Base: c3d87be4a7ad4ff3e67bec0697308e7910558d81
+Unrelated dirty excluded (HAVOOC, companion/auth/friends/DM).

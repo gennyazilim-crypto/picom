@@ -1,0 +1,6 @@
+After push:
+branch=release/picom-canonical-production
+HEAD=090675d9ecd28b27d750e32fff50fdc9fe6d9221
+upstream=origin/release/picom-canonical-production (synced at push of docs commit; follow-up seals 28-30)
+base_ancestor_of_c3d87be4=YES
+unrelated_dirty_excluded=HAVOOC + companion/auth/friends/DM + .tmp*
