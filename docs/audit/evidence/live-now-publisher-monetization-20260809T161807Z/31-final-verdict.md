@@ -2,6 +2,7 @@
 
 UTC: 20260809T161807Z
 Base HEAD: 850c10e7c814a350a27031bf430091a27a71aae7
+Sealed HEAD: 85b934f6cc99fc78b5c555d36ed1b5e22e55ca2a
 Branch: release/picom-canonical-production
 
 PICOM PUBLISHER MONETIZATION CODE: GO
