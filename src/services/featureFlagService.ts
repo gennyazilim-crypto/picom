@@ -40,6 +40,11 @@ export const FEATURE_FLAG_KEYS = [
   "enableLiveRecording",
   "enableLiveReplays",
   "enableLiveClips",
+  "enablePublisherMonetization",
+  "enablePublisherSubscriptions",
+  "enablePublisherDonations",
+  "enablePublisherAdRevenue",
+  "enablePublisherEarningsDashboard",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -72,6 +77,11 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   liveRecording: "enableLiveRecording",
   liveReplays: "enableLiveReplays",
   liveClips: "enableLiveClips",
+  publisherMonetization: "enablePublisherMonetization",
+  publisherSubscriptions: "enablePublisherSubscriptions",
+  publisherDonations: "enablePublisherDonations",
+  publisherAdRevenue: "enablePublisherAdRevenue",
+  publisherEarningsDashboard: "enablePublisherEarningsDashboard",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -137,6 +147,12 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableLiveRecording: appConfig.environment !== "production",
     enableLiveReplays: appConfig.environment !== "production",
     enableLiveClips: appConfig.environment !== "production",
+    // Monetization: fail-closed until provider/legal/payout gates certified.
+    enablePublisherMonetization: appConfig.environment !== "production",
+    enablePublisherSubscriptions: appConfig.environment !== "production",
+    enablePublisherDonations: appConfig.environment !== "production",
+    enablePublisherAdRevenue: appConfig.environment !== "production",
+    enablePublisherEarningsDashboard: appConfig.environment !== "production",
   });
 }
 

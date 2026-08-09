@@ -88,6 +88,11 @@ Deno.serve((request: Request) => {
       enableLiveRecording: readPublicBooleanEnv("PICOM_ENABLE_LIVE_RECORDING"),
       enableLiveReplays: readPublicBooleanEnv("PICOM_ENABLE_LIVE_REPLAYS"),
       enableLiveClips: readPublicBooleanEnv("PICOM_ENABLE_LIVE_CLIPS"),
+      enablePublisherMonetization: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_MONETIZATION"),
+      enablePublisherSubscriptions: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_SUBSCRIPTIONS"),
+      enablePublisherDonations: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_DONATIONS"),
+      enablePublisherAdRevenue: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_AD_REVENUE"),
+      enablePublisherEarningsDashboard: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_EARNINGS_DASHBOARD"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

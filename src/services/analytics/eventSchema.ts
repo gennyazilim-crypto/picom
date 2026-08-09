@@ -37,7 +37,11 @@ export type AnalyticsEventName =
   // feature usage
   | "feature_used_counted"
   // search
-  | "search_performed";
+  | "search_performed"
+  // publisher monetization (no amounts / no PII)
+  | "publisher_subscription_started"
+  | "publisher_subscription_cancelled"
+  | "publisher_donation_completed";
 
 export type AnalyticsMetadata = Record<string, string | number | boolean>;
 
@@ -74,6 +78,9 @@ const ALLOWED_METADATA: Record<AnalyticsEventName, readonly string[]> = {
   screen_share_started: ["mode"],
   feature_used_counted: ["feature", "count"],
   search_performed: ["resultBucket"],
+  publisher_subscription_started: ["mode"],
+  publisher_subscription_cancelled: ["mode"],
+  publisher_donation_completed: ["mode"],
 };
 
 // Allowlisted enum-like values (free strings are otherwise length-capped, never content).

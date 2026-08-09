@@ -218,6 +218,39 @@
       "properties": {
         "resultBucket": { "type": "string", "required": false, "pii": "none" }
       }
+    },
+    {
+      "name": "publisher_subscription_started",
+      "domain": "monetization",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Subscription became active after trusted provider confirmation. No amounts or payer PII.",
+      "properties": {
+        "mode": { "type": "string", "required": false, "pii": "none", "note": "sandbox|live|internal_test" }
+      }
+    },
+    {
+      "name": "publisher_subscription_cancelled",
+      "domain": "monetization",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Subscription cancel requested or finalized. No amounts or payer PII.",
+      "properties": {
+        "mode": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "publisher_donation_completed",
+      "domain": "monetization",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "Donation payment succeeded via trusted webhook. No amounts or donor PII in analytics.",
+      "properties": {
+        "mode": { "type": "string", "required": false, "pii": "none" }
+      }
     }
   ],
   "legacyMap": [
