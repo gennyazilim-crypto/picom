@@ -20,6 +20,11 @@ async function authenticatedClient() {
   const client = getSupabaseClient();
   if (!client) return null;
 
+  const { data: sessionData } = await client.auth.getSession();
+  if (sessionData.session?.user?.id) {
+    return { client, userId: sessionData.session.user.id };
+  }
+
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) return null;
 

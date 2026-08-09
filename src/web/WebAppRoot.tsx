@@ -200,6 +200,10 @@ function WebRoutes() {
         <Route path="/events/:eventId" element={<App />} />
         <Route path="/bookmarks" element={<App />} />
         <Route path="/saved" element={<App />} />
+        <Route path="/havooc" element={<App />} />
+        <Route path="/projects/havooc" element={<App />} />
+        <Route path="/publisher/apply" element={<App />} />
+        <Route path="/publisher/dashboard" element={<App />} />
         <Route path="*" element={<App />} />
       </Route>
     </Routes>

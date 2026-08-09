@@ -22,7 +22,17 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 function failure(code: DirectMessageErrorCode, message: string): DirectMessageServiceResult<never> { return { ok: false, error: { code, message } }; }
 function configuredClient() { const status = getSupabaseClientStatus(); const client = getSupabaseClient(); if (!status.configured || !client) return failure("NOT_CONFIGURED", status.reason ?? "Supabase is not configured."); return { ok: true as const, data: client }; }
-async function currentUserId(): Promise<DirectMessageServiceResult<string>> { const configured = configuredClient(); if (!configured.ok) return configured; const { data, error } = await configured.data.auth.getUser(); if (error || !data.user) return failure("AUTH_REQUIRED", "Sign in to use direct messages."); return { ok: true, data: data.user.id }; }
+async function currentUserId(): Promise<DirectMessageServiceResult<string>> {
+  const configured = configuredClient();
+  if (!configured.ok) return configured;
+  // Prefer local session so Companion windows that just hydrated storage are not treated as signed-out
+  // when getUser() briefly fails or races ahead of INITIAL_SESSION.
+  const { data: sessionData } = await configured.data.auth.getSession();
+  if (sessionData.session?.user?.id) return { ok: true, data: sessionData.session.user.id };
+  const { data, error } = await configured.data.auth.getUser();
+  if (error || !data.user) return failure("AUTH_REQUIRED", "Sign in to use direct messages.");
+  return { ok: true, data: data.user.id };
+}
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null; }
 function isMessageRow(value: unknown): value is MessageRow {
   if (!isRecord(value)) return false;

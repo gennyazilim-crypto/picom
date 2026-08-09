@@ -13,6 +13,7 @@ export type WebActiveView =
   | "live"
   | "publisherApply"
   | "publisherDashboard"
+  | "havooc"
   | "savedMessages"
   | "discovery"
   | "support"
@@ -109,6 +110,8 @@ export const WEB_ROUTES: readonly WebRouteDefinition[] = [
   { path: "/live/studio/:studioSessionId", activeView: "live", note: "Creator Studio handoff after Go Live" },
   { path: "/publisher/apply", activeView: "publisherApply", note: "Creator/Publisher application + eligibility" },
   { path: "/publisher/dashboard", activeView: "publisherDashboard", note: "Approved Creator/Publisher dashboard" },
+  { path: "/havooc", activeView: "havooc", note: "HAVOOC Support Hub + Support Notes" },
+  { path: "/projects/havooc", activeView: "havooc", note: "HAVOOC Support Hub alias" },
   { path: "/events", activeView: "events" },
   { path: "/events/create", activeView: "events", note: "Create event wizard intent" },
   { path: "/events/:eventId", activeView: "events", note: "Event detail deep link" },
@@ -181,6 +184,8 @@ export function pathFromActiveView(
       return "/publisher/apply";
     case "publisherDashboard":
       return "/publisher/dashboard";
+    case "havooc":
+      return "/havooc";
     case "savedMessages":
       return "/bookmarks";
     case "mentionFeed":
@@ -316,6 +321,14 @@ export function parseWebPath(pathname: string): ParsedWebPath {
 
   if (segments[0] === "publisher" && segments[1] === "dashboard") {
     return { activeView: "publisherDashboard", params: {}, isAuthRoute: false };
+  }
+
+  if (segments[0] === "havooc") {
+    return { activeView: "havooc", params: {}, isAuthRoute: false };
+  }
+
+  if (segments[0] === "projects" && segments[1] === "havooc") {
+    return { activeView: "havooc", params: {}, isAuthRoute: false };
   }
 
   if (segments[0] === "events") {

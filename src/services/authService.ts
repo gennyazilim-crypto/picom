@@ -115,6 +115,15 @@ function mapSupabaseError(error: AuthError): AuthServiceError {
     };
   }
 
+  // Missing/expired local session must never look like a wrong password.
+  if (
+    error.name === "AuthSessionMissingError"
+    || error.code === "session_not_found"
+    || /auth session missing|session missing|not authenticated|jwt expired|invalid jwt|refresh.?token/i.test(message)
+  ) {
+    return { code: "AUTH_SESSION_EXPIRED", message: "Your session expired. Please sign in again." };
+  }
+
   if (status === 400 || status === 401) {
     return { code: "AUTH_INVALID_CREDENTIALS", message: "Email or password is incorrect." };
   }
@@ -547,12 +556,46 @@ export const authService = {
       return { ok: true, data: null };
     }
 
-    const { data, error } = await configured.data.auth.getUser();
-    if (error) {
-      return { ok: false, error: mapSupabaseError(error) };
+    const client = configured.data;
+
+    // Companion (and other secondary windows) create a fresh client; wait for storage hydration
+    // so an already-signed-in Main session is not reported as missing.
+    let session = (await client.auth.getSession()).data.session;
+    if (!session) {
+      // Inside `if (!session)`, `session` is narrowed to null — use explicit Session typing.
+      session = await new Promise<Session | null>((resolve) => {
+        let settled = false;
+        let subscription = { unsubscribe() { /* replaced below */ } };
+        const finish = (value: Session | null) => {
+          if (settled) return;
+          settled = true;
+          subscription.unsubscribe();
+          globalThis.clearTimeout(timeout);
+          resolve(value);
+        };
+        const timeout = globalThis.setTimeout(() => finish(null), 2_000);
+        const listener = client.auth.onAuthStateChange((event, next) => {
+          if (event === "INITIAL_SESSION" || next) finish(next);
+        });
+        subscription = listener.data.subscription;
+        void client.auth.getSession().then(({ data: again }) => {
+          if (again.session) finish(again.session);
+        });
+      });
     }
 
-    return { ok: true, data: mapUser(data.user) };
+    if (!session?.user) {
+      return { ok: true, data: null };
+    }
+
+    const { data, error } = await client.auth.getUser();
+    if (error) {
+      // Keep the local session identity for shell UI. Transient getUser 401/network must not
+      // look like signed-out Companion ("Oturum gerekli" while Main is still logged in).
+      return { ok: true, data: mapUser(session.user) };
+    }
+
+    return { ok: true, data: mapUser(data.user ?? session.user) };
   },
 
   async signOut(): Promise<AuthServiceResult<void>> {

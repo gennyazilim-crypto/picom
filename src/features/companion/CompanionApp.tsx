@@ -268,12 +268,47 @@ function LoadingState({ label = "Canlı Picom verileri yükleniyor…" }: { labe
   );
 }
 
+function isCompanionAuthRequiredError(message: string): boolean {
+  return /AUTH_REQUIRED|AUTH_SESSION|session expired|sign in again|sign in to use|Email or password is incorrect|not authenticated|oturum|giriş yap/i.test(message);
+}
+
+function returnToMainMode(): void {
+  void window.picomDesktop?.companion?.returnToMain();
+}
+
+function AuthRequiredState() {
+  useEffect(() => {
+    // Only auto-return when Electron companion IPC exists; browsers keep the CTA visible.
+    if (!window.picomDesktop?.companion?.returnToMain) return;
+    const timer = window.setTimeout(() => returnToMainMode(), 600);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="companion-state companion-state--auth" role="status">
+      <AppIcon name="lock" size={18} />
+      <strong>Oturum gerekli</strong>
+      <span>Companion’ı kullanmak için önce Ana modda giriş yapın. Zaten giriş yaptıysanız Ana moda dönüp tekrar Companion’ı açın.</span>
+      <button type="button" className="companion-state__primary" onClick={returnToMainMode}>
+        Ana moda dön
+      </button>
+    </div>
+  );
+}
+
 function ErrorState({ message, retry }: { message: string; retry: () => void }) {
+  if (isCompanionAuthRequiredError(message)) {
+    return <AuthRequiredState />;
+  }
+
   return (
     <div className="companion-state companion-state--error">
       <AppIcon name="close" size={18} />
       <strong>{message}</strong>
-      <button type="button" onClick={retry}>Tekrar dene</button>
+      <div className="companion-state__actions">
+        <button type="button" onClick={retry}>Tekrar dene</button>
+        <button type="button" className="companion-state__primary" onClick={returnToMainMode}>Ana moda dön</button>
+      </div>
     </div>
   );
 }

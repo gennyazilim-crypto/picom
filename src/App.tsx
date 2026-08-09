@@ -192,6 +192,7 @@ const GoLiveWorkspace = lazy(() => import("./components/live/GoLiveWorkspace").t
 const CreatorStudioWorkspace = lazy(() => import("./components/live/CreatorStudioWorkspace").then((m) => ({ default: m.CreatorStudioWorkspace })));
 const PublisherApplicationWorkspace = lazy(() => import("./components/publisher/PublisherApplicationWorkspace").then((m) => ({ default: m.PublisherApplicationWorkspace })));
 const PublisherDashboardWorkspace = lazy(() => import("./components/publisher/PublisherDashboardWorkspace").then((m) => ({ default: m.PublisherDashboardWorkspace })));
+const HavoocSupportHubWorkspace = lazy(() => import("./components/havooc/HavoocSupportHubWorkspace").then((m) => ({ default: m.HavoocSupportHubWorkspace })));
 const HelpSupportWorkspace = lazy(() => import("./components/support/HelpSupportWorkspace").then((module) => ({ default: module.HelpSupportWorkspace })));
 const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow").then((module) => ({ default: module.OnboardingFlow })));
 const MentionFeedMain = lazy(() => import("./components/MentionFeedMain").then((module) => ({ default: module.MentionFeedMain })));
@@ -266,7 +267,7 @@ type PaletteResult = {
   run: () => void;
 };
 
-type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "live" | "support" | "rootPanel" | "publisherApply" | "publisherDashboard";
+type ActiveView = CommunityShellView | "mentionFeed" | "profile" | "directMessages" | "friends" | "savedMessages" | "discovery" | "events" | "live" | "support" | "rootPanel" | "publisherApply" | "publisherDashboard" | "havooc";
 
 function communityViewForKind(kind: Community["kind"]): ActiveView {
   return communityNavigationService.getShellView(kind);
@@ -4366,6 +4367,25 @@ export function App() {
                   setGoLiveOpen(true);
                   setActiveView("live");
                   webNavigation?.navigate("/go-live");
+                }}
+              />
+            </DeferredViewBoundary>
+          ) : activeView === "havooc" ? (
+            <DeferredViewBoundary label="Opening HAVOOC Support Hub">
+              <HavoocSupportHubWorkspace
+                currentUserId={currentUserId}
+                onClose={() => {
+                  setActiveView("mentionFeed");
+                  webNavigation?.navigate("/feed");
+                }}
+                onNotice={(message, kind = "info") => pushToast(message, kind)}
+                onRequireSignIn={() => pushToast("Sign in to leave a support note.", "info")}
+                onOpenProfile={(userId) => {
+                  const member =
+                    displayedCurrentUser.userId === userId
+                      ? displayedCurrentUser
+                      : communities.flatMap((community) => community.members).find((entry) => entry.userId === userId);
+                  if (member) openProfilePage(member);
                 }}
               />
             </DeferredViewBoundary>

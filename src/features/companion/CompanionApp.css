@@ -400,6 +400,33 @@ html[data-companion-window="true"] {
   color: var(--companion-danger);
 }
 
+.companion-state--auth {
+  color: var(--companion-text);
+  gap: 10px;
+  background: color-mix(in srgb, var(--companion-surface-soft) 88%, var(--companion-accent-soft));
+  border-radius: 14px;
+  margin: 16px;
+}
+
+.companion-state--auth span {
+  max-width: 28ch;
+  line-height: 1.4;
+  color: var(--companion-muted);
+}
+
+.companion-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.companion-state__primary {
+  border-color: color-mix(in srgb, var(--companion-accent) 55%, var(--companion-border)) !important;
+  background: var(--companion-accent) !important;
+  color: var(--companion-on-accent) !important;
+}
+
 .companion-spinner {
   width: 22px;
   height: 22px;

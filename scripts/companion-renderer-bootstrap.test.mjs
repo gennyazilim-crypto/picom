@@ -28,10 +28,12 @@ test("main.tsx imports and mounts CompanionApp for companion windows", () => {
   assert.match(src, /companionWindow\s*\?\s*<CompanionApp/);
 });
 
-test("CompanionApp remains the companion shell export", () => {
+test("CompanionApp routes missing auth away from blank error shell", () => {
   const src = readFileSync(APP, "utf8");
-  assert.match(src, /export function CompanionApp\s*\(/);
-  assert.match(src, /parseCompanionRoute/);
+  assert.match(src, /function isCompanionAuthRequiredError/);
+  assert.match(src, /function AuthRequiredState/);
+  assert.match(src, /returnToMainMode/);
+  assert.match(src, /Oturum gerekli/);
 });
 
 test("electron companion windows load picomWindow=companion query", () => {

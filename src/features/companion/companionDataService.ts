@@ -272,7 +272,11 @@ function shareCompanionRequest<T>(key: string, load: () => Promise<T>): Promise<
 
 function loadCurrentUser(): Promise<unknown> {
   return shareCompanionRequest("companion:current-user", async () => {
-    return unwrapResult<unknown>(await authService.getCurrentUser());
+    const user = unwrapResult<unknown>(await authService.getCurrentUser());
+    if (!user) {
+      throw new Error("AUTH_REQUIRED: Sign in from Main mode to use Companion.");
+    }
+    return user;
   });
 }
 
@@ -385,8 +389,9 @@ export const companionDataService = Object.freeze({
   },
 
   async loadHome(presenceValue?: unknown): Promise<CompanionHomeSnapshot> {
-    const [user, friendStateResult, conversations, communityOverview] = await Promise.all([
-      loadCurrentUser(),
+    // Resolve auth first so parallel service errors cannot surface as a blank Companion shell.
+    const user = await loadCurrentUser();
+    const [friendStateResult, conversations, communityOverview] = await Promise.all([
       friendRequestService.getFriendState(),
       loadDirectConversations(),
       loadCompanionCommunityOverview(),
