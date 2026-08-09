@@ -1,0 +1,5 @@
+Branch: release/picom-canonical-production
+HEAD (pre-push): e84841d9
+Base: 850c10e7
+Unrelated dirty left unstaged (HAVOOC/companion/auth/friends/DM/tmp/supabase.temp)
+TASK31 evidence directory sealed.

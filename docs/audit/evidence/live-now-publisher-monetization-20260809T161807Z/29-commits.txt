@@ -1,0 +1,7 @@
+TASK31 commits (after base 850c10e7):
+e8b7a7be feat(monetization): add publisher monetization foundation
+c2eb439b security(finance): harden finance authorization and webhooks
+48b8ea2f feat(publisher): add earnings dashboard
+54d7c927 test(finance): certify ledger reconciliation
+e84841d9 docs(finance): document publisher monetization architecture
+Normal push only. No force.
