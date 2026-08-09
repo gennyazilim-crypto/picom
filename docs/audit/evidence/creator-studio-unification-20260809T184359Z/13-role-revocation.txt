@@ -1,0 +1,1 @@
+﻿remove sets REMOVED+disabled_at; permission helper checks ACTIVE only — immediate deny

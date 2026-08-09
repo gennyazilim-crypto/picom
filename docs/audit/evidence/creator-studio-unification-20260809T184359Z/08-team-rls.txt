@@ -1,0 +1,1 @@
+﻿RLS select scoped; mutations RPC-only; invitations no broad select

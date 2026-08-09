@@ -1,0 +1,1 @@
+﻿SHA-256 token_hash only; rate limit 20/h; one-time; no plaintext in DB/logs

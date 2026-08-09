@@ -1,0 +1,1 @@
+﻿MANAGER lacks finance.read; FINANCE_MANAGER has finance.read; internal smoke PASS

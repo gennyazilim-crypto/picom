@@ -1,0 +1,1 @@
+﻿UI visibility + server has_permission; earnings requires finance/monetization

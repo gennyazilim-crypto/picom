@@ -1,8 +1,8 @@
 # LIVE NOW / PUBLISHER MASTER STATUS
 
-Updated: 20260809T170836Z
+Updated: 20260809T184359Z
 Branch: release/picom-canonical-production
-Authoritative TASK32 base HEAD: 6ce67971fa4a0153cf6c1e00c39257b5ddce67b7
+Authoritative TASK33 base HEAD: cd5063274e16f81fffbb840ba4f4cd30969c012f
 Prior partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T230959Z
 
 | TASK | STATUS | TESTS | BLOCKER |
@@ -16,16 +16,13 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 | 30 Recording/replay/clips | PARTIAL | schema/RLS/static smoke GO | Egress NOT deployed; S3 credentials missing; flags OFF |
 | 31 Publisher monetization | PARTIAL | schema/RLS/static ledger smoke GO | Provider NOT_CONFIGURED; legal terms; flags OFF |
 | 32 KYC / tax / payouts | PARTIAL | schema/RLS/static payout smoke GO | KYC/Payout provider NOT_CONFIGURED; legal/tax gates; flags OFF |
+| 33 Creator Studio unification | PARTIAL | schema/RLS/static RBAC smoke GO | enableCreatorStudio OFF; child flags OFF; session enum PARTIAL |
 
 ## Feature flags (production)
-- enablePublisherKyc: **OFF**
-- enablePublisherTaxProfile: **OFF**
-- enablePublisherPayoutAccounts: **OFF**
-- enablePublisherPayouts: **OFF**
-- enablePublisherStatements: **OFF**
-- (Task31 monetization flags remain OFF)
+- enableCreatorStudio: **OFF**
+- Task27–32 child flags remain **OFF**
 
-## TASK26–31 historical blockers (unchanged)
+## TASK26–32 historical blockers (unchanged)
 - REAL TWO-DESKTOP MEDIA: NOT_CERTIFIED
 - AUTH INBOX: BLOCKED_RATE_LIMIT
 - OBS REAL CLIENT: NOT_RUN
@@ -36,20 +33,19 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 - PAYMENT PROVIDER: BLOCKED_PROVIDER_CONFIGURATION
 - LIVE PAYMENT: OFF
 - LEGAL TERMS: BLOCKED_CONTENT_APPROVAL
-
-## TASK32 results
-- Migrations `20260808340000`–`20260808380000`
-- KYC + tax profile domains; payout accounts/holds/requests/batches
-- Ledger PAYOUT_RESERVED/RELEASED + paid/fail/reverse writers
-- Statements + reconciliation quarantine
-- Edge `publisher-payouts` fail-closed
-- Earnings Setup / Payouts / Statements UI (flag-gated)
-- KYC PROVIDER RUNTIME: NOT_CONFIGURED
-- PAYOUT PROVIDER RUNTIME: NOT_CONFIGURED
+- KYC PROVIDER: NOT_CONFIGURED
+- PAYOUT PROVIDER: NOT_CONFIGURED
+- LIVE PAYOUT: OFF
 - TAX ENGINE: BLOCKED_LEGAL_PROVIDER_CONFIGURATION
-- LIVE PAYOUTS: OFF
-- PRODUCTION: PARTIAL_PROVIDER_AND_LEGAL_GATES
+
+## TASK33 results
+- Migrations `20260808390000`–`20260808420000`
+- Publisher team RBAC + invitations (token hash only)
+- Finance isolation in built-in roles
+- Security Center (device sessions + audit hub); re-auth PARTIAL
+- Creator Studio shell wraps legacy dashboard when flag OFF
+- PRODUCTION: PARTIAL pending public flag enablement + multi-user invite runtime
 
 ## Evidence
-- TASK31: docs/audit/evidence/live-now-publisher-monetization-20260809T161807Z/
 - TASK32: docs/audit/evidence/live-now-publisher-kyc-payout-20260809T170836Z/
+- TASK33: docs/audit/evidence/creator-studio-unification-20260809T184359Z/

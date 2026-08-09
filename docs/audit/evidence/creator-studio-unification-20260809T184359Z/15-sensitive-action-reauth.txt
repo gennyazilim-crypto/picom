@@ -1,0 +1,1 @@
+﻿publisher_studio_require_recent_auth via JWT iat; MFA not claimed GO

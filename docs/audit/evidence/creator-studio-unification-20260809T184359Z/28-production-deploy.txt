@@ -1,0 +1,1 @@
+﻿Migrations applied forward-only; sealed schema_migrations

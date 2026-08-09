@@ -1,0 +1,17 @@
+TASK33 — Authoritative identity
+UTC evidence: 20260809T184359Z
+Worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Branch: release/picom-canonical-production
+HEAD: cd5063274e16f81fffbb840ba4f4cd30969c012f
+Ancestor of cd506327: YES (exact)
+Supabase: picom-production / cqnsetsmcduraryemhbi
+Historical blockers preserved (must not upgrade without evidence):
+- TASK26 MEDIA NOT_CERTIFIED; AUTH INBOX BLOCKED_RATE_LIMIT
+- TASK27 OBS REAL CLIENT NOT_RUN
+- TASK28 CHAT TWO-CLIENT NOT_RUN
+- TASK29 ANALYTICS MULTI-VIEWER NOT_RUN
+- TASK30 EGRESS BLOCKED_INFRASTRUCTURE; STORAGE BLOCKED_STORAGE_CREDENTIAL
+- TASK31 PAYMENT PROVIDER BLOCKED_PROVIDER_CONFIGURATION; LEGAL TERMS BLOCKED_CONTENT_APPROVAL; LIVE PAYMENT OFF
+- TASK32 KYC/PAYOUT PROVIDER NOT_CONFIGURED; LIVE PAYOUT OFF; TAX ENGINE BLOCKED_LEGAL_PROVIDER_CONFIGURATION
+Unrelated dirty excluded from TASK33 commits (HAVOOC/companion/friends/tmp)
+Task32 smoke false-positive IBAN: STALE; authoritative publisher-kyc-payout-smoke PASS

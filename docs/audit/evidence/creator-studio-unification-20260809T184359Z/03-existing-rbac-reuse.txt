@@ -1,0 +1,1 @@
+﻿Reused platform finance.* Root RBAC separately; community roles NOT reused; step-up + user_device_sessions reused; new publisher_studio_* registry

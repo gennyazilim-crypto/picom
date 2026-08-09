@@ -1,0 +1,1 @@
+﻿change_publisher_team_member_role + audit FINANCE_PERMISSION_CHANGED; server deny immediate

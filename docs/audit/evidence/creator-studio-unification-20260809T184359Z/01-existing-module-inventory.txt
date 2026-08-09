@@ -1,0 +1,31 @@
+TASK33 existing Publisher/Creator module inventory
+UTC: 20260809T184359Z
+
+REUSED (do not duplicate):
+- publisher_applications / publisher_badges / get_own_publisher_program_state
+- PublisherDashboardWorkspace (legacy shell to migrate into Creator Studio)
+- CreatorStudioWorkspace (LIVE control room for active stream — keep separate Live Control Room module)
+- PublisherStreamsWorkspace (Task27 stream management UI)
+- Live chat/moderation (Task28) flag-gated
+- PublisherAnalyticsPanel (Task29)
+- PublisherReplayArchivePanel (Task30)
+- PublisherEarningsPanel + KYC/payout/statements (Task31/32)
+- monetization_accounts + publisher_finance_* ledger/audit
+- platform finance.read/write/approve (Root RBAC) — keep isolated from Studio team roles
+- privileged_step_up_challenges / require_or_consume_step_up (sensitive re-auth primitive)
+- user_device_sessions + list_current_user_device_sessions / revoke_other_device_sessions
+- meeting_invites token_hash pattern (SHA-256 hex, no plaintext)
+- featureFlagService child flags (all Task27–32 remain OFF in production)
+- community_role_permissions (community-scoped — NOT reused for publisher studio)
+
+ABSENT before Task33:
+- publisher_team_members / invitations / studio role permission registry
+- unified Creator Studio shell with team/security hubs
+- publisher-scoped permission helper distinct from community RBAC
+
+APPROACH:
+- New publisher studio team RBAC (resource=publisher_user_id)
+- Reuse step-up + device sessions for Security Center
+- Wrap/extend PublisherDashboardWorkspace → Creator Studio shell
+- enableCreatorStudio OFF; child flags unchanged
+- No fake metrics / session lists / provider upgrades
