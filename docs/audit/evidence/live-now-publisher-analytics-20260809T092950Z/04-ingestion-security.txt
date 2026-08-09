@@ -1,0 +1,8 @@
+Client cannot insert raw events (no INSERT grants to authenticated/anon).
+Mutations via security definer RPCs only:
+- join_publisher_stream_viewer_session (auth derives viewer; rejects publisher-as-viewer)
+- record_publisher_viewer_heartbeat (session must belong to caller)
+- leave_publisher_stream_viewer_session
+LiveKit webhook uses service_role + signature verification + service_record_publisher_analytics_livekit_event
+Platform/locale/source allowlisted or normalized
+Rate limits on join/heartbeat

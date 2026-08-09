@@ -1,8 +1,8 @@
 # LIVE NOW / PUBLISHER MASTER STATUS
 
-Updated: 20260808T191500Z
+Updated: 20260809T093500Z
 Branch: release/picom-canonical-production
-Authoritative TASK28 base HEAD: 4791e7004a0d35534957b93bf883359b7df832c3
+Authoritative TASK29 base HEAD: c3d87be4a7ad4ff3e67bec0697308e7910558d81
 Prior partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T230959Z
 
 | TASK | STATUS | TESTS | BLOCKER |
@@ -12,6 +12,7 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 | 26 Real-device cert | PARTIAL | Storage closed-deny GO | Media two-desktop NOT_CERTIFIED; Auth inbox BLOCKED_RATE_LIMIT |
 | 27 Stream management | PARTIAL | schema/RLS/smoke/ingress preflight GO | OBS real client NOT_RUN; flags OFF; ingest DNS pending |
 | 28 Live chat + moderation | PARTIAL | schema/RLS/static smoke GO | Two-client runtime PARTIAL/NOT_RUN; flags OFF |
+| 29 Publisher analytics | PARTIAL | schema/RLS/static reconciliation GO | Bounded production runtime event smoke PARTIAL/NOT_RUN; flag OFF |
 
 ## Feature flags (production)
 - Application/Review/Badge/Discovery/Go Live/Reminders/Notification Preferences: ON
@@ -19,6 +20,7 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 - enablePublisherExternalIngest: **OFF**
 - enableLiveChat: **OFF**
 - enableLiveModeration: **OFF**
+- enablePublisherAnalytics: **OFF**
 
 ## TASK26 results (unchanged)
 - Closed application storage denial: GO
@@ -29,35 +31,42 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 - OBS REAL CLIENT CERTIFICATION: NOT_RUN
 - STREAM MANAGEMENT PRODUCTION: PARTIAL_OBS_CLIENT_CERTIFICATION
 
-## TASK28 results
-- Migrations `20260808200000` + `20260808210000` on cqnsetsmcduraryemhbi
-- Dedicated live_chat_* schema, RPC-only mutations, RLS select policies
-- Server rate limit / slow mode / anti-spam / ban / timeout / pin / reports / audit
-- Client: liveChatService, LiveStreamChatPanel, LiveChatModeratorConsole, 10-locale catalog
-- Realtime publication wired; authenticated two-client runtime: NOT_RUN / PARTIAL
+## TASK28 results (unchanged)
+- Two-client chat runtime: NOT_RUN
+- LIVE CHAT PRODUCTION: PARTIAL_RUNTIME_CERTIFICATION
+
+## TASK29 results
+- Migrations `20260808230000` + `20260808240000` + `20260808250000` + `20260808260000`
+- Events, viewer sessions, summaries, minute buckets, finalizer, LiveKit webhook mapping
+- Viewer bridge: resolve live_session → publisher_stream; terminal-status finalize trigger
+- Live Watch wires join/heartbeat/leave when flag ON and stream linked
+- Creator Studio polls lightweight live aggregate when flag ON
+- Watch-time credit max 45s gap; concurrent stale 90s
+- Dashboard Analytics tab gated by enablePublisherAnalytics
+- Production bounded multi-viewer runtime smoke: NOT_RUN → PARTIAL_RUNTIME_EVENT_CERTIFICATION
 
 ## Evidence
 - TASK26: docs/audit/evidence/live-now-publisher-real-device-certification-2026-08-03T2252Z/
 - TASK27: docs/audit/evidence/live-now-stream-management-20260808T163710Z/
 - TASK28: docs/audit/evidence/live-now-chat-moderation-20260808T184425Z/
+- TASK29: docs/audit/evidence/live-now-publisher-analytics-20260809T092950Z/
 
 ## Verdict (cumulative)
-PICOM LIVE CHAT CODE: GO
-PICOM LIVE CHAT DATABASE: GO
-PICOM LIVE CHAT RLS: GO
-PICOM LIVE CHAT REALTIME: PARTIAL
-PICOM LIVE CHAT RATE LIMIT: GO
-PICOM LIVE CHAT SLOW MODE: GO
-PICOM LIVE CHAT MODERATOR ROLES: GO
-PICOM LIVE CHAT TIMEOUT: GO
-PICOM LIVE CHAT BAN: GO
-PICOM LIVE CHAT MESSAGE REMOVAL: GO
-PICOM LIVE CHAT PINNING: GO
-PICOM LIVE CHAT ANTI-SPAM: GO
-PICOM LIVE CHAT XSS SECURITY: GO
-PICOM LIVE CHAT REPORTING: GO
-PICOM LIVE CHAT 10 LOCALE: GO
-PICOM LIVE CHAT PRODUCTION: PARTIAL_RUNTIME_CERTIFICATION
+PICOM PUBLISHER ANALYTICS CODE: GO
+PICOM ANALYTICS EVENT INGESTION: GO
+PICOM ANALYTICS IDEMPOTENCY: GO
+PICOM VIEWER SESSION TRACKING: GO
+PICOM WATCH TIME: GO
+PICOM CONCURRENT VIEWERS: GO
+PICOM PEAK CONCURRENT: GO
+PICOM ANALYTICS RLS: GO
+PICOM ANALYTICS AGGREGATES: GO
+PICOM ANALYTICS FINALIZATION: GO
+PICOM ANALYTICS PRIVACY: GO
+PICOM PUBLISHER ANALYTICS DASHBOARD: GO
+PICOM PUBLISHER ANALYTICS 10 LOCALE: GO
+PICOM PUBLISHER ANALYTICS PRODUCTION: PARTIAL_RUNTIME_EVENT_CERTIFICATION
+PICOM LIVE CHAT TWO-CLIENT RUNTIME: NOT_RUN
 PICOM OBS REAL CLIENT CERTIFICATION: NOT_RUN
 PICOM PHASE 1 REAL TWO-DESKTOP MEDIA: NOT_CERTIFIED
 PICOM AUTH INBOX ASSERTION: BLOCKED_RATE_LIMIT

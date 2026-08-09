@@ -1,0 +1,5 @@
+TASK29 event model
+Tables: publisher_analytics_events, publisher_viewer_sessions, publisher_stream_health_samples
+Required fields present: id, event_type, stream_id, publisher_user_id, viewer_user_id nullable, viewer_session_id, event_at, received_at, source, client_platform, app_version nullable, locale, device_class, correlation_id, idempotency_key, metadata, internal_test
+Forbidden: email/phone/raw IP/LiveKit token/stream key/auth token not stored
+Event types supported in append path: STREAM_* VIEWER_* NOTIFICATION_* FOLLOW_* CHAT_* STREAM_HEALTH_SAMPLE (+ LiveKit mapped)

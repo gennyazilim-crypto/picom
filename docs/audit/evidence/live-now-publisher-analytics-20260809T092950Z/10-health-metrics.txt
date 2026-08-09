@@ -1,0 +1,3 @@
+publisher_stream_health_samples optional; health_sample_count null when zero
+Do not fake bitrate/fps when unavailable
+Reconnect count aggregated from stream metadata/events where available

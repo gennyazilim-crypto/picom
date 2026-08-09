@@ -1,0 +1,4 @@
+Webhook maps participant_joined/left/aborted, room_started/finished
+Publisher identity skipped
+Signature verification required before trust
+Deployed livekit-webhook to cqnsetsmcduraryemhbi after TASK29 changes

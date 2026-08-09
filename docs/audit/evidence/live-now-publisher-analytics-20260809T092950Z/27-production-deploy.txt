@@ -1,0 +1,3 @@
+Target: picom-production cqnsetsmcduraryemhbi eu-central-1
+Applied migrations: 20260808230000 20260808240000 20260808250000 20260808260000 sealed
+Edge: client-config + livekit-webhook deployed EXIT=0

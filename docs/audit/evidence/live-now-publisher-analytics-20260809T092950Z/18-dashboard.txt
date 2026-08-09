@@ -1,0 +1,4 @@
+PublisherDashboardWorkspace Analytics tab → PublisherAnalyticsPanel
+Cards: streams, unique, sessions, peak, watch, avg, followers, chat
+Range 7/30/90; explicit no-data state; flag-gated
+No fake/demo metrics

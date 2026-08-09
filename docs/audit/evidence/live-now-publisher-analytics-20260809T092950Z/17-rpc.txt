@@ -1,0 +1,7 @@
+get_publisher_analytics_overview(range_days)
+get_publisher_stream_analytics(stream_id, include_internal)
+get_publisher_analytics_timeseries(...)
+join/heartbeat/leave viewer session RPCs
+resolve_publisher_stream_id_for_live_session
+service_record_publisher_analytics_livekit_event (service_role)
+dashboard.read does NOT grant analytics

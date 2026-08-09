@@ -1,0 +1,2 @@
+Aggregates from live_chat_* (TASK28): visible messages, reactions, moderation actions
+System messages not counted as user engagement

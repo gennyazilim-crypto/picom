@@ -1,0 +1,5 @@
+scripts/publisher-analytics-smoke.mjs
+Watch fixture total=210 avg=70
+Concurrency peak=3
+Static schema/RLS/flag/webhook assertions
+EXIT=0 PASS

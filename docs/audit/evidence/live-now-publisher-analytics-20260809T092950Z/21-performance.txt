@@ -1,0 +1,3 @@
+Dashboard uses aggregate RPC not raw event dump
+Creator Studio live poll 15s lightweight stream analytics only
+Indexed on stream_id/event_at, sessions, summaries

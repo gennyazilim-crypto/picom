@@ -1,0 +1,3 @@
+finalize_publisher_stream_analytics idempotent
+Also triggered by publisher_streams_analytics_finalize_trg on terminal status
+room_finished LiveKit path also finalizes

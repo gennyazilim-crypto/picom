@@ -1,0 +1,22 @@
+TASK29 RLS/grants/RPC inventory
+UTC: 20260809T092950Z
+
+rowsecurity=true:
+- publisher_analytics_events
+- publisher_analytics_minute_buckets
+- publisher_analytics_rate_limits
+- publisher_stream_analytics_summaries
+- publisher_stream_health_samples
+- publisher_viewer_sessions
+
+role_table_grants for anon/authenticated/public on raw events/sessions/summaries:
+- none (revoked in hardening)
+
+RPCs (security definer, fixed search_path):
+- join/heartbeat/leave viewer session
+- get_publisher_analytics_overview / get_publisher_stream_analytics / timeseries
+- finalize_publisher_stream_analytics
+- refresh_publisher_stream_live_analytics
+- service_record_publisher_analytics_livekit_event
+- resolve_publisher_stream_id_for_live_session
+- publisher_analytics_on_stream_terminal (trigger)

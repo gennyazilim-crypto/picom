@@ -1,0 +1,3 @@
+enablePublisherAnalytics production default OFF (fail-closed)
+client-config: PICOM_ENABLE_PUBLISHER_ANALYTICS
+Deployed client-config EXIT=0

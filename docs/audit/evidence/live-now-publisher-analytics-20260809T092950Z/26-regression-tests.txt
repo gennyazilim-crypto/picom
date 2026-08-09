@@ -1,0 +1,9 @@
+publisher-analytics-smoke PASS exit 0
+typecheck PASS exit 0
+build PASS exit 0
+secrets:smoke PASS exit 0
+production:config:guard PASS exit 0
+release:canonical:guard PASS exit 0
+git:large-files:check PASS exit 0
+LINT: NOT_CONFIGURED
+desktop:smoke: NOT_RUN in this seal (timeboxed; static + typecheck + build covered)

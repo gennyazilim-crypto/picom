@@ -1,0 +1,5 @@
+Credit function: least(45, floor(extract(epoch from (now - last_heartbeat))))
+Heartbeat interval client ~25s
+Stale close: last_heartbeat older than 90s
+No unlimited credit after crash
+Fixture: 120+60+30 = 210 total; avg 70

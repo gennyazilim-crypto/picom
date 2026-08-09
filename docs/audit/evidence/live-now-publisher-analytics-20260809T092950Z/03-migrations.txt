@@ -1,0 +1,10 @@
+TASK29 migrations applied + sealed on picom-production (cqnsetsmcduraryemhbi)
+
+20260808230000_publisher_analytics_core.sql
+20260808240000_publisher_analytics_rollups.sql
+20260808250000_publisher_analytics_hardening.sql
+20260808260000_publisher_analytics_viewer_bridge.sql
+
+Also present in schema_migrations (prior tasks / unrelated):
+20260808200000, 20260808210000 (TASK28 chat)
+20260808220000, 20260808220121 (support notes / unrelated to TASK29 seal commits)

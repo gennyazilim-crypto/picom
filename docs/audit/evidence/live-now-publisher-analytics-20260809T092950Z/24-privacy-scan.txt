@@ -1,0 +1,4 @@
+No email/phone/token/stream key in analytics tables or RPC payloads
+Publisher APIs return aggregates only
+Raw event SELECT revoked for authenticated/anon
+Secrets smoke PASS

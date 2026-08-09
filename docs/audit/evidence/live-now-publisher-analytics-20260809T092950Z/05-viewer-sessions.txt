@@ -1,0 +1,5 @@
+Canonical session: publisher_viewer_sessions
+One open session per (stream_id, viewer_user_id); reconnect refreshes heartbeat (grace continuity)
+Auth required; anonymous viewing not enabled for publisher analytics
+Page refresh: rejoin finds open session if not left/stale — does not invent LocalStorage identity
+Termination: leave RPC, stale repair, or finalizer close

@@ -1,0 +1,5 @@
+Current concurrent = open sessions with fresh heartbeat and internal_test=false
+Peak concurrent = max observed current during refresh/finalize
+Fixture A,B,C join then leave → peak 3
+Duplicate join same user does not inflate unique or peak beyond one session
+Publisher identity ignored in LiveKit participant mapping

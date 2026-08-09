@@ -1,0 +1,48 @@
+TASK29 existing analytics inventory
+UTC: 20260809T092950Z
+
+CLIENT ANALYTICS
+- src/services/analyticsService.ts — opt-in local queue; bridges to analyticsQueue
+- src/services/analytics/eventSchema.ts + event-registry.json — product taxonomy (no publisher live events yet)
+- docs/analytics.md / ANALYTICS_EVENT_SCHEMA — warehouse contract (analytics_events assumed on prod)
+
+LIVE VIEWER / PRESENCE
+- community_live_screen_sessions + community_live_screen_viewers (20260803100000)
+- join/leave/heartbeat_community_live_screen_viewer RPCs
+- Discovery viewer_count (not authoritative Publisher Analytics)
+
+PUBLISHER STREAMS
+- publisher_streams lifecycle (20260808170000 / hardening 180000)
+- LiveKit room naming: _shared/livekit-room.ts parsePublisherStreamIdFromLiveKitRoomName
+- livekit-webhook: ingress_started/ended for publisher; meeting participant events only today
+
+LIVE CHAT (TASK28)
+- live_chat_messages / reactions / audit_events for engagement aggregates
+
+FOLLOWERS
+- user_follows.created_at (20260710003100) — stream-window follower growth
+
+NOTIFICATIONS
+- publisher_stream_schedule_reminders with idempotency_key (20260803172000)
+- open tracking not canonical → sent + attributed join only if deep-link marker exists
+
+EXCLUSIONS
+- platform_stats_exclusions (test/seed/system/bot) reuse for internal_test filtering
+
+WORKERS
+- pg_cron analytics batch jobs exist for warehouse
+- event-reminder-worker claim pattern reusable
+- TASK29 finalizer: SQL RPC finalize_publisher_stream_analytics + optional heartbeat-driven live summary
+
+GAPS FOR TASK29
+- No publisher_analytics_* tables
+- No watch-time algorithm
+- No concurrent peak rollups for publisher_streams
+- enablePublisherAnalytics flag absent
+- Dashboard has no analytics tab
+
+REUSE DECISION
+- Dedicated publisher_analytics_* domain keyed to publisher_streams.id
+- Do not overload community_live_screen_viewers as Publisher Analytics authority
+- LiveKit webhook extended for publisher room participant join/leave
+- Client heartbeat RPC for authenticated viewers bound to stream

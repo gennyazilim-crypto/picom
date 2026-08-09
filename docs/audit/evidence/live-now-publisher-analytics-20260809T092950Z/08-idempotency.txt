@@ -1,0 +1,4 @@
+Unique constraint publisher_analytics_events_idempotency_unique
+LiveKit keys: livekit:<event_id>
+Finalizer key: finalize:<stream_id>
+Client retries with same key do not double insert

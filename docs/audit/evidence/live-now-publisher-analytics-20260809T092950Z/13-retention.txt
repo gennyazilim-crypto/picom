@@ -1,0 +1,3 @@
+Retention curve buckets 30s/1m/5m/10m/30m/60m when sessions support
+Zero denominator → null/no-data
+Data retention policy: RETENTION_POLICY_PENDING (no auto-delete worker)

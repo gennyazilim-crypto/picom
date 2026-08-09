@@ -1,0 +1,13 @@
+TASK29 — Authoritative identity
+UTC evidence: 20260809T092950Z
+Worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Branch: release/picom-canonical-production
+HEAD: c3d87be4a7ad4ff3e67bec0697308e7910558d81
+Ancestor of c3d87be4: YES (exact)
+Supabase: picom-production / cqnsetsmcduraryemhbi
+LiveKit: wss://voice.picom.gg
+Historical blockers preserved:
+- TASK26 MEDIA NOT_CERTIFIED; AUTH INBOX BLOCKED_RATE_LIMIT
+- TASK27 OBS REAL CLIENT NOT_RUN
+- TASK28 CHAT TWO-CLIENT RUNTIME NOT_RUN
+Unrelated dirty excluded from TASK29 commits: companion/auth/friends/DM + uncommitted HAVOOC Support Notes work

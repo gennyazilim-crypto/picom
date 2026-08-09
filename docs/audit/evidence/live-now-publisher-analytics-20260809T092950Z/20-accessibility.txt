@@ -1,0 +1,2 @@
+Panel: aria-labelledby, role=group range controls, aria-pressed, role=alert errors
+Metric cards as textual summary; table for recent streams
