@@ -1,0 +1,7 @@
+WEBHOOK SECURITY: GO (fail-closed foundation)
+Edge: supabase/functions/publisher-payments/index.ts
+Without PAYMENT_PROVIDER*: checkout 503 BLOCKED_PROVIDER_CONFIGURATION; webhook 202 ignored
+With secrets: missing/invalid signature DENIED; allowlist; env mismatch ignored
+Idempotent provider_webhook_events upsert
+No economic mutation until provider adapter certified
+No secrets in JSON responses

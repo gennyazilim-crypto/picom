@@ -1,0 +1,4 @@
+LIVE PAYMENT ACCEPTANCE: OFF
+PUBLIC MONETIZATION: OFF
+No live merchant activation in TASK31.
+OFF_PENDING_BUSINESS_GATES (provider + legal + KYC/payout).

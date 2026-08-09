@@ -1,0 +1,6 @@
+ENTITLEMENTS: domain GO (runtime provider sync NOT_RUN)
+Table: publisher_subscription_entitlements
+service_sync_publisher_subscription_entitlement (service_role)
+get_my_publisher_subscription_entitlement (own only)
+CANCEL_AT_PERIOD_END keeps entitlement until expires_at (policy)
+Subscriber-only chat: NOT activated (Task 28 remains PARTIAL/NOT_RUN)

@@ -1,0 +1,5 @@
+Unique idempotency_key on publisher_finance_ledger_entries
+Optional unique provider_event_id
+service_record_* writers return duplicate-safe results
+Static matrix (publisher-monetization-smoke.mjs): webhook-equivalent replay x2/x10 PASS
+Production internal_test: subscription revenue recorded then replayed; refund recorded; 4 ledger rows total

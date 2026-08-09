@@ -1,0 +1,7 @@
+LEDGER MODEL: directional single-sided publisher ledger
+Table: publisher_finance_ledger_entries (append-only)
+GROSS/fee lines: balance_bucket=non_balance
+NET/creator_share: pending|available
+Corrections: REFUND / CHARGEBACK / ADJUSTMENT compensating rows
+Period settlement table revenue_ledger retained from verification-business.
+Accounting doc: docs/publisher-creator/REVENUE_LEDGER.md

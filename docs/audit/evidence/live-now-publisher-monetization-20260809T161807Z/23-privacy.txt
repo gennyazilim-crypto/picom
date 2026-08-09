@@ -1,0 +1,4 @@
+PRIVACY:
+Publisher transaction RPC omits buyer email, billing address, card data, IP, fraud metadata, webhook bodies.
+Donation anonymous_display hides donor identity in UI.
+Analytics monetization events: mode only, no amounts/PII.

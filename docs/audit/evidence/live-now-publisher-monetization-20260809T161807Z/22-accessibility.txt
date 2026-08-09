@@ -1,0 +1,7 @@
+ACCESSIBILITY:
+- table headers scope=col
+- aria-label on earnings region and balance values
+- transaction filters labelled
+- textual table (no chart-only)
+- debit shown with minus prefix (not color-only)
+- payouts status as text role=status

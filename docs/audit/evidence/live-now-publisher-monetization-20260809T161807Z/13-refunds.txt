@@ -1,0 +1,5 @@
+REFUND ACCOUNTING: GO (ledger mechanics)
+service_record_refund: debit REFUND of publisher net only
+Provider fee refund behavior: NOT ASSUMED
+Fixture: gross 1000 / platform 100 / net 900 -> full refund 900 -> available 0
+Original rows retained; compensating entry appended

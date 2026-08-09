@@ -1,0 +1,7 @@
+PRODUCTION DEPLOY:
+target: cqnsetsmcduraryemhbi (picom-production, eu-central-1)
+linked: true
+applied: 20260808300000..20260808330000
+sealed in supabase_migrations.schema_migrations
+destructive SQL scan: no drop table/truncate/delete-from/reset/repair in TASK31 migrations
+first SQL failure policy: STOP (no failures)

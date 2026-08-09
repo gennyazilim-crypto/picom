@@ -1,0 +1,7 @@
+FINANCE RLS: GO
+Ledger direct select: finance.read / root only
+Ledger insert/update/delete: no authenticated policies; service_role writers
+Publisher: get_publisher_earnings_overview / transactions (own only)
+dashboard.read does NOT grant finance access (documented in RPC comment)
+Stream moderator: no finance grants
+Normal user: foreign earnings DENIED via ownership checks

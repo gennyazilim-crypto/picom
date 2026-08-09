@@ -1,0 +1,8 @@
+FEATURE FLAGS (production defaults OFF):
+enablePublisherMonetization=OFF
+enablePublisherSubscriptions=OFF
+enablePublisherDonations=OFF
+enablePublisherAdRevenue=OFF
+enablePublisherEarningsDashboard=OFF
+client-config: PICOM_ENABLE_PUBLISHER_* env readers
+Historical Task 26-30 flags unchanged / not upgraded

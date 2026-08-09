@@ -1,0 +1,6 @@
+DONATIONS: domain GO (provider runtime blocked)
+Table: publisher_donations
+message_moderation_state separate from payment status
+anonymous_display for UI
+service_record_donation_revenue service_role only
+Public Donate CTA: OFF

@@ -1,0 +1,6 @@
+Trigger: publisher_finance_prevent_ledger_mutation
+Exception: PUBLISHER_FINANCE_LEDGER_APPEND_ONLY
+UPDATE amount_minor / currency / publisher_user_id: DENIED
+DELETE ledger row: DENIED
+Corrections only via service_record_refund/chargeback or root adjustment.
+Audit table also append-only.

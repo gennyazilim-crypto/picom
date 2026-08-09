@@ -1,0 +1,7 @@
+SUBSCRIPTIONS: domain GO (provider runtime blocked)
+Tables: publisher_subscription_products, publisher_subscriptions
+Price authority: server product record
+Checkout: create_publisher_checkout_session -> PAYMENT_PROVIDER_NOT_CONFIGURED
+Cancel at period end: request_cancel_publisher_subscription (ownership checked)
+Immediate cancel: unsupported without provider
+Flags: enablePublisherSubscriptions OFF in production

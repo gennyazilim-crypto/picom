@@ -1,0 +1,5 @@
+CHARGEBACK ACCOUNTING: GO (ledger mechanics)
+service_record_chargeback: debit CHARGEBACK
+Available balance may go negative (no silent clamp to 0)
+Static over-chargeback fixture: 900 available - 1200 = -300
+Dispute status metadata: open|won|lost|closed when provided

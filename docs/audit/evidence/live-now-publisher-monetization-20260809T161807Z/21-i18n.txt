@@ -1,0 +1,6 @@
+10 LOCALE: GO
+Catalog: src/services/localization/publisherMonetizationCatalog.ts
+Locales: en, tr, de, fr, es, it, pt, ru, ar, ja
+Keys include earnings/monetization/subscriptions/donations/adRevenue/balances/refund/chargeback/payoutsUnavailable/anonymous
+Arabic RTL catalog present
+Currency formatting via Intl with currency fraction digits

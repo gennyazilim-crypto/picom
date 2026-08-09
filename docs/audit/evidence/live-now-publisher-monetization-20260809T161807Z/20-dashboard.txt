@@ -1,0 +1,7 @@
+EARNINGS DASHBOARD: GO (flag-gated)
+Component: PublisherEarningsPanel
+Sections: Overview, Subscriptions, Donations, Ad Revenue, Transactions
+Shows Pending / Available / Paid Out / Gross / Net / Refunds
+Paid Out clearly marked payouts unavailable
+Tab visible only when enablePublisherEarningsDashboard=true
+Production flag OFF

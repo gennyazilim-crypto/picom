@@ -1,0 +1,14 @@
+TASK31 — Authoritative identity
+UTC evidence: 20260809T161807Z
+Worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Branch: release/picom-canonical-production
+HEAD: 850c10e7c814a350a27031bf430091a27a71aae7
+Ancestor of 850c10e7: YES (exact)
+Supabase: picom-production / cqnsetsmcduraryemhbi
+Historical blockers preserved (must not upgrade):
+- TASK26 MEDIA NOT_CERTIFIED; AUTH INBOX BLOCKED_RATE_LIMIT
+- TASK27 OBS REAL CLIENT NOT_RUN
+- TASK28 CHAT TWO-CLIENT NOT_RUN
+- TASK29 ANALYTICS MULTI-VIEWER NOT_RUN
+- TASK30 EGRESS BLOCKED_INFRASTRUCTURE; STORAGE BLOCKED_STORAGE_CREDENTIAL
+Unrelated dirty excluded from TASK31 commits

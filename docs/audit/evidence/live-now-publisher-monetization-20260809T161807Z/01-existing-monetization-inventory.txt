@@ -1,0 +1,31 @@
+TASK31 existing monetization inventory
+UTC: 20260809T161807Z
+
+REUSED FOUNDATIONS (20260803173000 verification_business_platform_foundation)
+- monetization_accounts (program_type creator|publisher; monetization_status; payout_onboarding_status; compliance_status)
+- revenue_ledger (period settlement rows; amount_minor integers; immutable UPDATE/DELETE trigger REVENUE_LEDGER_APPEND_ONLY)
+- revenue_share_contracts (platform/partner percentages; hold_period_days; currency)
+- provider_webhook_events (provider+provider_event_id unique)
+- platform_idempotency_keys
+- account_entitlements (keys include monetization, publisher_analytics)
+- advertiser_accounts (+ members) — ads account shell, not delivery attribution
+- Root RBAC: finance.read / finance.write / finance.approve (NOT dashboard.read)
+
+TYPES
+- src/types/verificationBusiness/monetization.ts mirrors monetization + revenue_ledger
+
+PRODUCT DECISIONS
+- docs/billing-mvp-optional-decision.md: commercial MVP No-Go; no payment provider until approved
+- docs/enterprise-billing.md planning only
+
+ABSENT
+- No Stripe/Adyen/PayPal/Paddle code or secrets
+- No publisher_subscription_products / donations / directional entry ledger
+- No payment webhook Edge Function
+- No Publisher Earnings dashboard
+
+TASK31 APPROACH
+- Extend monetization_accounts with provider/payment readiness fields
+- Add directional publisher_finance_ledger_entries (append-only) for event-level accounting
+- Add subscription/donation/ad-attribution/entitlement domains provider-neutral
+- Keep public monetization flags OFF; PAYMENT PROVIDER SANDBOX NOT_CONFIGURED

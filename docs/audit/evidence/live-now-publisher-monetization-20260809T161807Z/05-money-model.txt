@@ -1,0 +1,5 @@
+MONEY MODEL: INTEGER MINOR UNITS
+Fields: amount_minor bigint + currency ISO 4217
+No float / real / double precision for money.
+No silent FX. Balances grouped by currency.
+Fixture: EUR 10.00 = 1000 minor.

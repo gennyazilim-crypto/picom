@@ -1,0 +1,8 @@
+REGRESSION:
+node scripts/publisher-monetization-smoke.mjs EXIT 0
+npm run typecheck EXIT 0
+npm run secrets:smoke EXIT 0
+npm run production:config:guard EXIT 0 (includes canonical guard + large-files)
+LINT: NOT_CONFIGURED
+desktop:smoke / full npm ci: not re-run in this seal window (prior canonical branch intact); static monetization + typecheck + secret/config guards PASS
+Provider sandbox runtime: NOT_RUN (NOT_CONFIGURED)

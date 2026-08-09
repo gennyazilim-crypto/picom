@@ -1,0 +1,8 @@
+Applied + sealed on picom-production / cqnsetsmcduraryemhbi:
+20260808300000_publisher_monetization_core
+20260808310000_publisher_revenue_ledger
+20260808320000_publisher_monetization_security
+20260808330000_publisher_entitlements
+Method: npx supabase db query --linked -f <file>
+Seal: insert into supabase_migrations.schema_migrations
+No migration repair. Forward-only. No staging push.

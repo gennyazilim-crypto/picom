@@ -1,0 +1,13 @@
+Tables present on cqnsetsmcduraryemhbi:
+- publisher_finance_ledger_entries
+- publisher_subscription_products
+- publisher_subscriptions
+- publisher_subscription_entitlements
+- publisher_donations
+- publisher_payment_transactions
+- publisher_ad_revenue_attributions
+- publisher_finance_audit_events
+- publisher_finance_event_failures
+- publisher_monetization_fee_policies
+Extended: monetization_accounts eligibility/provider/kyc/tax/payments_enabled fields.
+RPCs: get_publisher_earnings_overview, get_publisher_transactions, get_publisher_revenue_timeseries, get_publisher_subscription_metrics, service_record_*, root_create_publisher_finance_adjustment.

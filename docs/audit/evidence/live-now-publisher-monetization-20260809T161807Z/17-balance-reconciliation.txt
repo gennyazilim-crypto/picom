@@ -1,0 +1,5 @@
+BALANCE RECONCILIATION: GO (integer fixtures)
+Static smoke PASS
+Production internal_test rows created (excluded from real earnings RPC default)
+Expected: net 900 after sub; 0 after refund of 900
+earnings RPC p_include_internal_test=false excludes fixtures

@@ -1,0 +1,7 @@
+AD REVENUE ATTRIBUTION: GO (architecture; no live ad revenue fabricated)
+Table: publisher_ad_revenue_attributions
+traffic_status: VALID|PENDING_REVIEW|INVALID|WITHHELD
+creator_share + platform_share = gross constraint
+applied_share_bps + fee_policy_id versioned
+service_record_ad_revenue
+Invalid traffic settles 0 creator revenue (static fixture PASS)

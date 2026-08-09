@@ -1,8 +1,8 @@
 # LIVE NOW / PUBLISHER MASTER STATUS
 
-Updated: 20260809T150000Z
+Updated: 20260809T161807Z
 Branch: release/picom-canonical-production
-Authoritative TASK30 base HEAD: 96edd00833acbfbb5f2f1b02f1039cec574f3a6e
+Authoritative TASK31 base HEAD: 850c10e7c814a350a27031bf430091a27a71aae7
 Prior partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T230959Z
 
 | TASK | STATUS | TESTS | BLOCKER |
@@ -14,6 +14,7 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 | 28 Live chat + moderation | PARTIAL | schema/RLS/static smoke GO | Two-client runtime PARTIAL/NOT_RUN; flags OFF |
 | 29 Publisher analytics | PARTIAL | schema/RLS/static reconciliation GO | Multi-viewer runtime NOT_RUN; flag OFF |
 | 30 Recording/replay/clips | PARTIAL | schema/RLS/static smoke GO | Egress NOT deployed; S3 credentials missing; flags OFF |
+| 31 Publisher monetization | PARTIAL | schema/RLS/static ledger smoke GO | Provider NOT_CONFIGURED; KYC/payout/legal gates; flags OFF |
 
 ## Feature flags (production)
 - Application/Review/Badge/Discovery/Go Live/Reminders/Notification Preferences: ON
@@ -25,6 +26,11 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 - enableLiveRecording: **OFF**
 - enableLiveReplays: **OFF**
 - enableLiveClips: **OFF**
+- enablePublisherMonetization: **OFF**
+- enablePublisherSubscriptions: **OFF**
+- enablePublisherDonations: **OFF**
+- enablePublisherAdRevenue: **OFF**
+- enablePublisherEarningsDashboard: **OFF**
 
 ## TASK26 results (unchanged)
 - Closed application storage denial: GO
@@ -41,18 +47,24 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 - Analytics multi-viewer runtime: NOT_RUN
 - PRODUCTION: PARTIAL_RUNTIME_EVENT_CERTIFICATION
 
-## TASK30 results
-- Migrations `20260808270000` + `20260808280000` + `20260808290000` sealed
-- Recording/replay/clip schema + RLS + signed playback claim RPC
-- Edge `publisher-recording` fail-closed without Egress/S3
-- Webhook egress event mapping wired
-- Archive UI + 10-locale catalog (flag-gated)
-- Media worker stub (ffmpeg/storage pending)
-- VPS capacity: 2 vCPU — Egress not deployed on SFU host
-- REAL DESKTOP RECORDING: NOT_CERTIFIED
-- SYNTHETIC MEDIA PIPELINE: NOT_RUN (provider blocked)
-- OBS_REAL_CLIENT_RECORDING: NOT_RUN
+## TASK30 results (unchanged)
+- LIVEKIT EGRESS: BLOCKED_INFRASTRUCTURE
+- MEDIA STORAGE: BLOCKED_STORAGE_CREDENTIAL
 - PRODUCTION: PARTIAL_INFRASTRUCTURE
+
+## TASK31 results
+- Migrations `20260808300000`–`20260808330000` (extend monetization_accounts; directional ledger; RLS; entitlements)
+- Reused verification-business monetization/revenue_ledger/webhook idempotency/finance RBAC
+- Provider-neutral `publisher-payments` Edge fail-closed
+- Earnings dashboard + 10-locale catalog (flag-gated)
+- Integer minor-unit money model; append-only ledger; service_role writers only
+- PAYMENT PROVIDER SANDBOX: NOT_CONFIGURED
+- LIVE PAYMENT ACCEPTANCE: OFF
+- KYC: NOT_CERTIFIED
+- PAYOUTS: NOT_IMPLEMENTED
+- LEGAL_MONETIZATION_TERMS: BLOCKED_CONTENT_APPROVAL
+- TAX COMPLIANCE: BLOCKED_LEGAL_PROVIDER_CONFIGURATION
+- PRODUCTION: PARTIAL_PROVIDER_AND_LEGAL_GATES
 
 ## Evidence
 - TASK26: docs/audit/evidence/live-now-publisher-real-device-certification-2026-08-03T2252Z/
@@ -60,14 +72,19 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 - TASK28: docs/audit/evidence/live-now-chat-moderation-20260808T184425Z/
 - TASK29: docs/audit/evidence/live-now-publisher-analytics-20260809T092950Z/
 - TASK30: docs/audit/evidence/live-now-recording-replay-clips-20260809T143230Z/
+- TASK31: docs/audit/evidence/live-now-publisher-monetization-20260809T161807Z/
 
 ## Verdict (cumulative)
-PICOM LIVE RECORDING CODE: GO
-PICOM LIVE RECORDING RLS: GO
+PICOM PUBLISHER MONETIZATION CODE: GO
+PICOM MONEY MODEL: GO
+PICOM REVENUE LEDGER: GO
+PICOM PAYMENT PROVIDER SANDBOX: NOT_CONFIGURED
+PICOM LIVE PAYMENT ACCEPTANCE: OFF
+PICOM KYC: NOT_CERTIFIED
+PICOM PAYOUTS: NOT_IMPLEMENTED
+PICOM PUBLISHER MONETIZATION PRODUCTION: PARTIAL_PROVIDER_AND_LEGAL_GATES
 PICOM LIVEKIT EGRESS: BLOCKED_INFRASTRUCTURE
 PICOM MEDIA STORAGE: BLOCKED_STORAGE_CREDENTIAL
-PICOM RECORDING FEATURE: OFF
-PICOM RECORDING PRODUCTION: PARTIAL_INFRASTRUCTURE
 PICOM ANALYTICS MULTI-VIEWER RUNTIME: NOT_RUN
 PICOM LIVE CHAT TWO-CLIENT RUNTIME: NOT_RUN
 PICOM OBS REAL CLIENT CERTIFICATION: NOT_RUN
