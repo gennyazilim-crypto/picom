@@ -1,1 +1,14 @@
-Filled after seal commits + push.
+BRANCH=release/picom-canonical-production
+AHEAD_OF_ORIGIN=6 (pre-seal)
+UNRELATED_DIRTY_PRESERVED=
+  .tmp-*
+  scripts/havooc-*
+  src/components/havooc/
+  src/config/havoocLinks.ts
+  src/services/havooc/
+  src/services/localization/havoocSupportCatalog.ts
+  supabase/.temp/
+  supabase/migrations/20260808220000_project_support_notes.sql
+NO_RESET_HARD
+NO_CLEAN
+NO_STASH_UNRELATED

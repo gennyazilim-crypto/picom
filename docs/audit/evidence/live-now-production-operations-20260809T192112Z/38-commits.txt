@@ -1,1 +1,7 @@
-Commits created after this evidence file in seal step (filled post-commit).
+8686a84d feat(ops): add Live Now production health model
+b688b6f1 feat(ops): add Publisher observability and alert contracts
+0abad835 security(ops): add Live Now security monitoring
+a26d27fc feat(ops): add release readiness evaluation
+67fd3c2f docs(ops): add Live Now disaster recovery runbooks
+62817b88 test(ops): certify production operations contracts
+(seal commit follows for HEAD evidence)
