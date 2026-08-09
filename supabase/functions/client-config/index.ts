@@ -98,6 +98,7 @@ Deno.serve((request: Request) => {
       enablePublisherPayoutAccounts: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_PAYOUT_ACCOUNTS"),
       enablePublisherPayouts: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_PAYOUTS"),
       enablePublisherStatements: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_STATEMENTS"),
+      enableCreatorStudio: readPublicBooleanEnv("PICOM_ENABLE_CREATOR_STUDIO"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

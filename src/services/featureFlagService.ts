@@ -50,6 +50,7 @@ export const FEATURE_FLAG_KEYS = [
   "enablePublisherPayoutAccounts",
   "enablePublisherPayouts",
   "enablePublisherStatements",
+  "enableCreatorStudio",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -92,6 +93,7 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   publisherPayoutAccounts: "enablePublisherPayoutAccounts",
   publisherPayouts: "enablePublisherPayouts",
   publisherStatements: "enablePublisherStatements",
+  creatorStudio: "enableCreatorStudio",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -169,6 +171,8 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enablePublisherPayoutAccounts: appConfig.environment !== "production",
     enablePublisherPayouts: appConfig.environment !== "production",
     enablePublisherStatements: appConfig.environment !== "production",
+    // Creator Studio shell: fail-closed until RBAC/parity certified; child flags stay independent.
+    enableCreatorStudio: appConfig.environment !== "production",
   });
 }
 
