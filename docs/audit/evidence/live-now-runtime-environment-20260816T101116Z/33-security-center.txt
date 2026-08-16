@@ -1,0 +1,4 @@
+SECURITY CENTER
+No internal user with two managed sessions was available for runtime re-test.
+The historical distinction remains preserved: PICOM-managed device sessions must not be represented as all Supabase provider sessions.
+SECURITY_CENTER=PARTIAL_AUTH_PROVIDER_CAPABILITY.

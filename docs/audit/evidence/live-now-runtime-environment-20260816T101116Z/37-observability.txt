@@ -1,0 +1,4 @@
+OBSERVABILITY
+Static command: node scripts/publisher-observability-smoke.mjs => PASS.
+No Task36 live session existed from which to collect correlation IDs, health transitions, or security events.
+Static pass is not represented as runtime telemetry certification.

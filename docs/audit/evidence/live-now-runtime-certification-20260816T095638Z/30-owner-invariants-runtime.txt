@@ -1,0 +1,3 @@
+NOT RUN.
+
+Owner self-removal, owner demotion, and Manager-to-Owner self-escalation were not attempted through an actual API/UI session.

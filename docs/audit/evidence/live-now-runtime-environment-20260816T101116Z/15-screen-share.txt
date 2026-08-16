@@ -1,0 +1,4 @@
+REAL SCREEN SHARE
+Workstation display hardware is present (see 06-hardware.txt), but no current canonical desktop package can be launched and no authenticated Publisher/Viewer sessions exist.
+No in-app desktop capture, LiveKit screen-source metadata, or remote receive state was observed.
+SCREEN_SHARE=BLOCKED.

@@ -1,0 +1,4 @@
+LIVE ROLE REVOCATION
+NOT_RUN.
+No active Finance Manager session was created; no permission was altered and no protected RPC was called.
+LIVE_ROLE_REVOCATION=NOT_RUN.

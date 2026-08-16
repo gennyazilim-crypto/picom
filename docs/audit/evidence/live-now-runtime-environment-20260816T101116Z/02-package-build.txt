@@ -1,0 +1,12 @@
+TASK36 CURRENT PACKAGE BUILD
+UTC: 2026-08-16T10:11:16Z
+Worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Branch: release/picom-canonical-production
+HEAD: 96d8db3713baf6a098b1a2799863a68445310a74
+Package version from package.json: 0.1.1-beta.10
+Command: npm.cmd run package:win:dir
+Result: EXIT 2
+Failure before Electron builder/artifact creation:
+src/services/havooc/projectSupportNotesService.ts(89,26): TS2345: havooc_support_note_* is not assignable to AnalyticsEventName.
+Assessment: PACKAGED_DESKTOP_CURRENT=BLOCKED_BUILD.
+No existing installed package was used as a substitute because its canonical HEAD association is not proven.

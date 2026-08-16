@@ -1,0 +1,7 @@
+REAL MICROPHONE
+Physical microphone endpoint presence: YES (see 06-hardware.txt).
+Current canonical packaged desktop: BLOCKED_BUILD.
+Separate authenticated Publisher A / Viewer B: unavailable.
+Production LiveKit WSS/RTC: unavailable from the certification workstation.
+No microphone audio was recorded or simulated.
+MICROPHONE=BLOCKED.

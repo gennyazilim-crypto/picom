@@ -1,0 +1,3 @@
+NOT RUN.
+
+No Manager was removed during an active session. Immediate denial of a formerly allowed sensitive operation is not certified.

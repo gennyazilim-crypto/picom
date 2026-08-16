@@ -1,0 +1,5 @@
+NOT RUN.
+
+No isolated internal live room or independent authenticated client contexts were available. Publisher/viewer permission denial, suspended/revoked publisher denial, foreign-stream-token denial, and expired-token denial were not exercised.
+
+No service-role or synthetic token was substituted for an authenticated runtime client.

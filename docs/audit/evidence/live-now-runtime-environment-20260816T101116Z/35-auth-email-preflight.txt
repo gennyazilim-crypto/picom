@@ -1,0 +1,5 @@
+AUTH EMAIL PREFLIGHT
+Historical Task35 status: BLOCKED_RATE_LIMIT.
+Current certification environment has no approved test mailbox and no privileged provider-management credential to safely inspect a fresh provider/rate-limit state.
+No email request or retry was sent.
+AUTH_EMAIL_PREFLIGHT=BLOCKED_TEST_MAILBOX; historical rate-limit blocker remains unverified, not upgraded.

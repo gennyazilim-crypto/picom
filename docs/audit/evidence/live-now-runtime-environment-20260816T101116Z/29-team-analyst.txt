@@ -1,0 +1,3 @@
+CREATOR STUDIO ANALYST
+NOT_RUN at runtime.
+No Analyst session was available to verify analytics entitlement/feature-disabled behavior, finance denial, and team-management denial.

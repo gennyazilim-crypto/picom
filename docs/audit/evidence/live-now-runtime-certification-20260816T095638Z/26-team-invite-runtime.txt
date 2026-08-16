@@ -1,0 +1,3 @@
+NOT RUN.
+
+No internal invitation was created or accepted. Membership activation, Studio permission resolution, and an invite audit event remain unobserved at runtime.

@@ -1,0 +1,5 @@
+OBS REAL CLIENT RUNTIME
+OBS installation and executable identity are verified (17-obs-install.txt).
+No dedicated internal Publisher stream, current canonical PICOM package, production ingress reachability, or temporary stream credential was available.
+OBS was not configured or started against PICOM, and no credential was generated.
+OBS_REAL_CLIENT=NOT_RUN.

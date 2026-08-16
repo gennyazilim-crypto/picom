@@ -1,0 +1,22 @@
+TASK 35 — PICOM LIVE NOW / PUBLISHER REAL RUNTIME CERTIFICATION SWEEP
+Started (UTC): 2026-08-16T09:56:38Z
+
+Authoritative worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Repository: https://github.com/gennyazilim-crypto/picom
+Branch: release/picom-canonical-production
+HEAD: 96d8db3713baf6a098b1a2799863a68445310a74
+Authoritative base required by Task 35: 96d8db37 or a safe descendant
+Base verification: PASS (HEAD equals the required base)
+
+Production identifiers in scope:
+- Supabase project ref: cqnsetsmcduraryemhbi
+- LiveKit endpoint: wss://voice.picom.gg
+- VPS: 23.254.166.240
+
+Worktree preservation:
+- Tracked local modifications existed before Task 35 in App, message, voice, attachment, meeting-chat, and local-message-state files.
+- Untracked HAVOOC files, temporary Task 27–34 files, and an untracked Task 34 migration existed before Task 35.
+- None of those pre-existing files are edited by Task 35.
+
+Certification rule:
+Only new, observed runtime evidence can improve a runtime gate. Static, SQL, fixture, or service-role evidence is recorded only as regression/supporting evidence and never as real multi-client runtime proof.

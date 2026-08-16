@@ -1,0 +1,5 @@
+TURN
+Client TCP probes to 5349 and 443 timed out.
+No deployed TURN configuration, TLS certificate, TURN domain, or server-side listener was accessible for inspection.
+No domain, credential, port mapping, or firewall rule was invented.
+TURN=BLOCKED_CONFIGURATION.

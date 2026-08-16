@@ -1,0 +1,3 @@
+Task 35 code commits: none.
+
+This evidence-only sweep added no runtime feature or bug fix. The evidence directory is intentionally left uncommitted for user review; no force operation, reset, clean, stash, migration repair, or database reset was used.

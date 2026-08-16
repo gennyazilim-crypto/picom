@@ -1,0 +1,4 @@
+CREATOR STUDIO TEAM INVITE
+Static command: node scripts/creator-studio-smoke.mjs => PASS.
+Real Owner invitation and Manager acceptance: NOT_RUN.
+Reason: no approved separate internal identities/sessions were available. No membership was manually inserted.

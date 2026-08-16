@@ -1,0 +1,5 @@
+No production Auth/provider management session was available for a live capability inspection.
+
+No device-session row, provider-wide active-session enumeration, JWT iat evidence, or step-up primitive was manufactured. Historical classification is preserved:
+
+CREATOR STUDIO SECURITY CENTER: PARTIAL_AUTH_PROVIDER_CAPABILITY.

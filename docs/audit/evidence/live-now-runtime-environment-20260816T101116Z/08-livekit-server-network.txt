@@ -1,0 +1,7 @@
+LIVEKIT SERVER NETWORK
+Target VPS: 23.254.166.240.
+No approved VPS SSH credential or agent was available: PICOM_VPS_SSH_KEY=EMPTY_OR_UNSET and SSH_AUTH_SOCK=EMPTY_OR_UNSET.
+ssh -G showed only the local default user and default identity file paths; no connection was attempted with a guessed account.
+Therefore ss, docker ps/logs, firewall state, Nginx, certificate, and container-port inspection were not performed.
+LIVEKIT_SERVER_NETWORK=BLOCKED_NO_APPROVED_VPS_ACCESS.
+No server configuration or firewall change was made.

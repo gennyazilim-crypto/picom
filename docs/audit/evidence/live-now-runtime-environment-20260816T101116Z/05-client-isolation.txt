@@ -1,0 +1,6 @@
+CLIENT SESSION ISOLATION
+Source inspection: electron/main.cts implements resolveUserDataPathOverride().
+Supported isolated-profile inputs: PICOM_USER_DATA_DIR and --user-data-dir=<directory>.
+This is an existing safe local-only mechanism; a public launcher was not added.
+Actual isolated authenticated clients: NOT_CREATED, because no current canonical package and no approved distinct test identities were available.
+CLIENT_SESSION_ISOLATION=BLOCKED.

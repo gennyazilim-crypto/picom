@@ -1,0 +1,5 @@
+NOT RUN.
+
+No verification-email request was sent because there was no approved internal test account, approved mailbox, or current provider/rate-limit confirmation. No delivery status can be inferred.
+
+AUTH VERIFICATION EMAIL: BLOCKED_RATE_LIMIT (historical blocker preserved; not revalidated as clear).

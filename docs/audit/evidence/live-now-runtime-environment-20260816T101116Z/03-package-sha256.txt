@@ -1,0 +1,8 @@
+TASK36 PACKAGE IDENTITY AND CHECKSUM
+HEAD: 96d8db3713baf6a098b1a2799863a68445310a74
+PACKAGE_VERSION: 0.1.1-beta.10
+BUILD_MODE: official npm package:win:dir
+BUILD_TIMESTAMP_UTC: 2026-08-16T10:11:16Z
+ARTIFACT: NOT_CREATED
+SHA256: NOT_AVAILABLE
+Reason: official build stopped at the unrelated dirty HAVOOC TypeScript error before an artifact existed.

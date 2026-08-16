@@ -1,0 +1,7 @@
+GIT STATE AFTER TASK36
+HEAD: 96d8db3713baf6a098b1a2799863a68445310a74
+Branch: release/picom-canonical-production
+Tracked pre-existing dirty files preserved: src/App.tsx; src/components/MessageComposer.tsx; src/components/VoiceRoomView.css; src/components/VoiceRoomView.tsx; src/services/attachmentService.ts; src/services/meeting/meetingChatContextService.ts; src/state/useLocalMessageState.ts.
+Pre-existing untracked Task27-35/HAVOOC/Supabase temp files remain untouched.
+Task36 adds only docs/audit/evidence/live-now-runtime-environment-20260816T101116Z/ in this canonical worktree.
+No product, migration, or credential file was changed by Task36.

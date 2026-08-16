@@ -1,0 +1,4 @@
+LIVEKIT NETWORK AFTER
+No narrow server-side root cause could be proven without deployed configuration and approved VPS access.
+Consequently no network fix was applied and no after-state could be certified.
+LIVEKIT_CLIENT_NETWORK_AFTER=NOT_RUN; pre-fix status remains FAIL.

@@ -1,0 +1,3 @@
+NOT RUN.
+
+No same-user pair of approved authenticated sessions was available. Selective session revocation and the second session's next protected action were not tested.

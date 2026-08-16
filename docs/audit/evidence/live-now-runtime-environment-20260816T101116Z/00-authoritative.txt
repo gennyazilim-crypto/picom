@@ -1,0 +1,17 @@
+TASK 36 — PICOM LIVE NOW CERTIFICATION ENVIRONMENT BRING-UP + REAL RUNTIME GATE CLOSURE
+Started (UTC): 2026-08-16T10:11:16Z
+
+Authoritative worktree: C:\Users\ACER\Desktop\picom-canonical-publish-clean
+Branch: release/picom-canonical-production
+HEAD: 96d8db3713baf6a098b1a2799863a68445310a74
+Required base: 96d8db37
+Base verification: PASS (HEAD equals required base)
+
+Task 35 evidence source:
+docs/audit/evidence/live-now-runtime-certification-20260816T095638Z/
+
+Pre-existing dirty state was observed before Task 36:
+- tracked App, message, voice, attachment, meeting-chat, and local-message-state modifications;
+- untracked Havooc files, Task 27–35 temporary/evidence files, Supabase temp data, and a Havooc migration.
+
+Task 36 preserves all pre-existing dirty files. No secret, credential, token, password, or stream key is recorded in this evidence.

@@ -1,0 +1,5 @@
+OBS_CLIENT_AVAILABLE: NO
+
+No obs/obs64 command and no OBS Studio uninstall registration were found on the workstation. No OBS process was running.
+
+No binary was installed. Per Task 35, ffmpeg or another generated stream was not used as an OBS substitute.

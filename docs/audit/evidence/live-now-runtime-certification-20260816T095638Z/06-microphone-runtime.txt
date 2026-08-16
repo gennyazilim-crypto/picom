@@ -1,0 +1,5 @@
+NOT RUN.
+
+Actual microphone devices are present, but no approved Publisher A, independent Viewer B, authorized production room, or usable LiveKit media path was available. No microphone track was acquired, published, subscribed, or played.
+
+REAL MICROPHONE: NOT_CERTIFIED.

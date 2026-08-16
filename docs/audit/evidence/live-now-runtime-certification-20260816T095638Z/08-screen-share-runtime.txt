@@ -1,0 +1,5 @@
+NOT RUN.
+
+A desktop display is present and the local LiveKit static smoke confirms a capture bridge exists in source. No packaged canonical client was launched and no actual screen source was selected, published, rendered, or stopped in production.
+
+REAL SCREEN SHARE: NOT_CERTIFIED.

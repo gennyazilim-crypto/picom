@@ -1,0 +1,7 @@
+LIVEKIT DEPLOYED CONFIGURATION
+No deployed configuration source was accessible without approved VPS access.
+LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET, and VITE_LIVEKIT_URL were not supplied to the certification environment.
+npm run livekit:self-hosted:preflight => blocked: set LIVEKIT_URL or VITE_LIVEKIT_URL to the public wss:// endpoint.
+Actual HTTP/WebSocket port, RTC TCP port, UDP media range, TURN, external IP, proxy path, and certificate configuration: UNVERIFIED.
+Official reference consulted only for required verification after access is available: https://docs.livekit.io/transport/self-hosting/ports-firewall/ and https://docs.livekit.io/transport/self-hosting/deployment/.
+Documentation was not treated as deployed configuration.

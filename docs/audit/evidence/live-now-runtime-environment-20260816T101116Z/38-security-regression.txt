@@ -1,0 +1,6 @@
+NETWORK AND SECURITY REGRESSION
+Commands passed: desktop:smoke, secrets:smoke, production:config:guard, release:canonical:guard, git:large-files:check, package:verify, electron:security:smoke.
+Package configuration verification and Electron security smoke passed; expected source settings include contextIsolation=true, nodeIntegration=false, sandbox=true.
+No RLS, Auth, TLS, firewall, deployed server, Egress, or media-storage change was made.
+External client probes show required LiveKit ports are unavailable, not newly exposed.
+SECURITY_REGRESSION=PASS_NO_DEPLOYMENT_CHANGE.

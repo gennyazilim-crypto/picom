@@ -1,0 +1,5 @@
+CHAT TWO-CLIENT
+Static command: node scripts/live-chat-management-smoke.mjs => PASS.
+Real authenticated Client A/Client B Realtime exchange: NOT_RUN.
+Reason: approved separate identities, package, sessions, and internal live stream are unavailable.
+CHAT_TWO_CLIENT=NOT_RUN.

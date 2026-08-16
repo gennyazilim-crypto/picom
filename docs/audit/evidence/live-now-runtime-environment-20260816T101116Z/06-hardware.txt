@@ -1,0 +1,8 @@
+HARDWARE INVENTORY (device presence only)
+MIC_AVAILABLE=YES
+Observed endpoints: Microphone Array (AMD Audio Device); Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver).
+CAMERA_AVAILABLE=NO_CONFIRMED_PHYSICAL_DEVICE
+Only an Acer GAI Camera Software Component was observed; no present physical Camera/Webcam device was enumerated. No virtual camera was used.
+SCREEN_CAPTURE_AVAILABLE=YES_WORKSTATION_DISPLAY
+Observed display controllers: AMD Radeon(TM) Graphics; NVIDIA GeForce RTX 4060 Laptop GPU.
+In-app capture remains untested because the current canonical package cannot be built.

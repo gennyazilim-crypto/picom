@@ -1,0 +1,8 @@
+TEST IDENTITIES
+Canonical internal-test fixture scripts were found, including tmp-t25-external-runtime-smoke.mjs and related bounded cleanup scripts.
+They require a privileged provisioning path and use clearly marked internal test metadata.
+Environment presence check: SUPABASE_SERVICE_ROLE_KEY=EMPTY_OR_UNSET; SUPABASE_ACCESS_TOKEN=EMPTY_OR_UNSET.
+No approved pre-existing internal identities, approved provisioning credential, or approved test mailbox was available to this task.
+No account was created and no password/token was printed.
+PUBLISHER_A, VIEWER_B, VIEWER_C, TEAM_OWNER, TEAM_MANAGER, TEAM_ANALYST, TEAM_FINANCE: NOT_PROVISIONED.
+TEST_IDENTITIES=BLOCKED_ENVIRONMENT.

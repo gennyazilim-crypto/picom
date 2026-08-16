@@ -1,0 +1,9 @@
+OBS INSTALLATION
+Trusted package identity checked before install:
+winget source=winget; id=OBSProject.OBSStudio; publisher=OBS Project; version=32.2.1.
+Official install command: winget.exe install --id OBSProject.OBSStudio --exact --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity --silent
+Result: success; installer hash verified by winget.
+Installed verification: winget list --id OBSProject.OBSStudio --exact --source winget => OBS Studio 32.2.1.
+Executable: C:\Program Files\obs-studio\bin\64bit\obs64.exe
+File product: OBS Studio; product version: 32.2.1; company: OBS.
+OBS_INSTALL=GO.

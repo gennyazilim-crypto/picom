@@ -1,0 +1,15 @@
+TASK36 REGRESSION RESULTS
+PASS npm run desktop:smoke
+PASS npm run secrets:smoke
+PASS npm run production:config:guard
+PASS npm run release:canonical:guard
+PASS npm run git:large-files:check
+PASS npm run package:verify
+PASS npm run electron:security:smoke
+PASS node scripts/livekit-token-security-smoke.mjs
+PASS node scripts/publisher-stream-management-smoke.mjs
+PASS node scripts/live-chat-management-smoke.mjs
+PASS node scripts/publisher-analytics-smoke.mjs
+PASS node scripts/creator-studio-smoke.mjs
+PASS node scripts/publisher-observability-smoke.mjs
+Static regressions are supporting evidence only; no runtime gate was promoted from them.

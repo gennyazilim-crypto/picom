@@ -1,0 +1,3 @@
+NOT RUN.
+
+Two independent approved authenticated client contexts and an internal live stream were unavailable. No reused JWT, static RPC smoke, or service-role client was presented as a two-client chat session.

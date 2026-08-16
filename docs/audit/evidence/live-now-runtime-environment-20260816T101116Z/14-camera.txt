@@ -1,0 +1,5 @@
+REAL CAMERA
+No confirmed present physical camera device was enumerated on the certification workstation.
+No virtual camera, static image, or synthetic source was used.
+CAMERA=BLOCKED_ENVIRONMENT.
+The current package, identities, and LiveKit transport gates would independently also prevent remote certification.

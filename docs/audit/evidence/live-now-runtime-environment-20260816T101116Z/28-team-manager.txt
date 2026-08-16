@@ -1,0 +1,3 @@
+CREATOR STUDIO MANAGER
+NOT_RUN at runtime.
+No Manager session was available to prove allowed Studio action and finance.read denial.

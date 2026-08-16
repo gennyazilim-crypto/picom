@@ -1,0 +1,4 @@
+AUTH EMAIL RUNTIME
+NOT_RUN.
+No approved test mailbox exists for receipt verification. No verification email or password-reset email was sent.
+AUTH_INBOX=BLOCKED_TEST_MAILBOX.

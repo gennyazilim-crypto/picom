@@ -1,0 +1,4 @@
+CHAT MODERATION
+Static management regression passed (21-chat-two-client.txt).
+Real timeout, ban, soft-delete, and pin propagation was not run because no authorized internal client set exists.
+CHAT_MODERATION=NOT_RUN.

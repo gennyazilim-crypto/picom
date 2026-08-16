@@ -1,0 +1,3 @@
+OBS CREDENTIAL REVOCATION
+NOT_RUN.
+No temporary credential was issued, so there was nothing to revoke or reuse.

@@ -1,0 +1,4 @@
+OBS INGRESS
+NOT_RUN.
+There was no approved internal stream or temporary credential, and the production LiveKit endpoint is unreachable from the certification workstation.
+No RTMP configuration, stream key, ingress request, or production stream was created.

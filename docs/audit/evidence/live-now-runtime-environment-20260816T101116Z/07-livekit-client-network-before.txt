@@ -1,0 +1,8 @@
+LIVEKIT CLIENT NETWORK (certification workstation)
+DNS: voice.picom.gg A 23.254.166.240 (PASS)
+TCP_443=TIMEOUT_OR_UNREACHABLE
+TCP_7880=TIMEOUT_OR_UNREACHABLE
+TCP_7881=TIMEOUT_OR_UNREACHABLE
+TCP_5349=TIMEOUT_OR_UNREACHABLE
+HTTPS probe: curl.exe -I --connect-timeout 8 --max-time 12 https://voice.picom.gg/ => exit 28, connection timed out after 8012 ms.
+Assessment: LIVEKIT_CLIENT_NETWORK=FAIL. DNS resolution is not evidence of production WSS reachability.

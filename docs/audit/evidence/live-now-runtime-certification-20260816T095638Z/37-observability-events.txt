@@ -1,0 +1,5 @@
+Fresh static supporting evidence:
+- node scripts/publisher-observability-smoke.mjs: PASS (exit 0)
+- The smoke verifies observability contracts, structured logging/correlation markers, health model, and kill-switch wiring in source.
+
+No Task 35 production runtime event was emitted. Static evidence is not runtime observability certification.

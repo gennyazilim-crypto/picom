@@ -1,0 +1,3 @@
+CREATOR STUDIO FINANCE MANAGER
+NOT_RUN at runtime.
+No Finance Manager session was available to verify safe finance.read allowance and non-granted operation denial. No financial transaction was attempted.

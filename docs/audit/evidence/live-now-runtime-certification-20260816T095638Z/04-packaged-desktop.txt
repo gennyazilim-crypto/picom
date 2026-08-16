@@ -1,0 +1,10 @@
+Packaged desktop inventory:
+- Installed product: Picom Desktop 0.1.1-beta.10
+- Executable: C:\Users\ACER\AppData\Local\Programs\Picom\Picom.exe
+- SHA-256: 8AE5F52A15192BCF14803B45D9DEED6DB3B919BA19A7CE3AD92AACCF79509B99
+- Authenticode status: NotSigned
+- resources\app.asar is present.
+- No packaged executable was present under C:\Users\ACER\Desktop\picom-canonical-publish-clean.
+- The installed package does not provide an inspected embedded source commit that can tie it to 96d8db37.
+
+Verdict: PACKAGED_DESKTOP_AVAILABLE_BUT_CANONICAL_PROVENANCE_UNVERIFIED. It was not launched because no approved isolated authenticated test context was available.

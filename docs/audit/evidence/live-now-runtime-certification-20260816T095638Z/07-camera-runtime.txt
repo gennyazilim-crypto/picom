@@ -1,0 +1,5 @@
+NOT RUN.
+
+The ACER HD User Facing camera is present, but no approved Publisher A, independent Viewer B, authorized production room, or usable LiveKit media path was available. No camera track was acquired, published, rendered, or subscribed.
+
+REAL CAMERA: NOT_CERTIFIED.

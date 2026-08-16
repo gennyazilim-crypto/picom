@@ -1,0 +1,5 @@
+COMMITS
+Task35 code commit: NONE.
+Task36 product code commit: NONE.
+Task36 evidence is intentionally uncommitted in the existing dirty canonical worktree.
+No migration was created or modified.

@@ -1,0 +1,3 @@
+NOT RUN.
+
+No realtime client was disconnected or reconnected. Canonical merge, ordering, and duplicate behavior remain unverified at two-client runtime.

@@ -1,0 +1,12 @@
+Fresh regression commands and exit codes:
+- npm run livekit:smoke: 0
+- node scripts/publisher-stream-management-smoke.mjs: 0
+- node scripts/live-chat-management-smoke.mjs: 0
+- node scripts/publisher-analytics-smoke.mjs: 0
+- node scripts/creator-studio-smoke.mjs: 0
+- node scripts/publisher-observability-smoke.mjs: 0
+- npm run desktop:smoke: 0
+- npm run production:config:guard: 0
+- npm run auth:onboarding:production:smoke: 1
+
+Auth contract failure detail: the script expects a signup outcome that distinguishes verification-only signup with `requiresEmailVerification: !session`. The current source requires a session/user from Supabase signup, otherwise returns AUTH_PROVIDER_ERROR and states Confirm Email must be disabled. This is a static contract failure, not evidence of an email delivery result.

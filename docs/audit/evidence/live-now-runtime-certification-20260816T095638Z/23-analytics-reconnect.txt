@@ -1,0 +1,3 @@
+NOT RUN.
+
+No real Viewer B reconnect occurred, so continuation, double-count prevention, and bounded watch-time remain unverified.

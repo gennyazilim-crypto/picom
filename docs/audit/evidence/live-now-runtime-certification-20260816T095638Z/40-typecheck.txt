@@ -1,0 +1,10 @@
+Command: npm run typecheck -- --pretty false
+Exit code: 1
+
+Observed unrelated pre-existing Havooc error:
+src/services/havooc/projectSupportNotesService.ts(89,26): TS2345 — havooc_support_note_* values are not assignable to AnalyticsEventName.
+
+TYPECHECK_TASK35_SCOPE: PASS (Task 35 added evidence documents only; no TypeScript source was changed.)
+TYPECHECK_REPOSITORY_GLOBAL: BLOCKED_UNRELATED_DIRTY_HAVOOC.
+
+No Havooc file was edited to clear this error.

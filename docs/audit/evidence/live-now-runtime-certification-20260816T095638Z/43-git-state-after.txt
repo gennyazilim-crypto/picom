@@ -1,0 +1,6 @@
+Authoritative branch: release/picom-canonical-production
+Authoritative HEAD: 96d8db3713baf6a098b1a2799863a68445310a74
+
+Pre-existing modified/untracked App, messaging, voice, attachment, meeting-chat, Havooc, Task 27–34 temporary, and migration files were preserved without alteration.
+
+Task 35 change: docs/audit/evidence/live-now-runtime-certification-20260816T095638Z/ only.

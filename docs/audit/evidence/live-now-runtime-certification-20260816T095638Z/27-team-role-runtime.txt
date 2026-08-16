@@ -1,0 +1,3 @@
+NOT RUN.
+
+No live Manager, Analyst, or Finance Manager session exercised permitted or denied operations through the canonical frontend/service/RPC path.

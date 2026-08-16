@@ -1,0 +1,4 @@
+SESSION REVOCATION
+NOT_RUN.
+Selective runtime session revocation was not exercised because no approved internal user with two independently authenticated sessions was available.
+No provider-wide session claim is made.

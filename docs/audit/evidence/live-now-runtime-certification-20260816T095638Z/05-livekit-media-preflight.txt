@@ -1,0 +1,17 @@
+Command: LIVEKIT_URL=wss://voice.picom.gg npm run livekit:self-hosted:preflight
+Exit code: 1
+
+Observed checks:
+- secure websocket: PASS
+- self-hosted endpoint: PASS
+- LiveKit DNS: PASS (one address record)
+- TURN domain: FAIL (PICOM_LIVEKIT_TURN_DOMAIN is not defined in this environment)
+- LiveKit TLS 443: FAIL (trusted TLS connection failed)
+- WebRTC TCP 7881: FAIL (not reachable)
+- Manual media checks remain unrun: UDP 3478, UDP 50000-60000, two-client audio, remote screen share.
+
+Independent bounded probes:
+- voice.picom.gg TCP/443: TIMEOUT
+- unauthenticated https://cqnsetsmcduraryemhbi.supabase.co/auth/v1/health: HTTP 401
+
+The Supabase HTTP response proves only endpoint reachability. This preflight is not a media session and cannot certify LiveKit media.

@@ -1,0 +1,4 @@
+ANALYTICS MULTI-VIEWER
+Static command: node scripts/publisher-analytics-smoke.mjs => PASS.
+No Publisher A, Viewer B, or Viewer C real authenticated sessions were created and no analytics rows were inserted manually.
+ANALYTICS_MULTI_VIEWER=NOT_RUN.

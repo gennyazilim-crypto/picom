@@ -1,0 +1,6 @@
+TOKEN GATES
+Static canonical command: node scripts/livekit-token-security-smoke.mjs => PASS.
+Covered static checks: verified JWT boundary, role/type authorization, least-privilege token duration, renderer capability boundary, restricted CORS, bounded JSON, deterministic identity room, server secret boundary.
+Runtime Publisher A and Viewer B token issuance/privilege validation: NOT_RUN.
+Reason: separate approved internal identities, authenticated sessions, and reachable LiveKit endpoint are unavailable.
+No token values were recorded.

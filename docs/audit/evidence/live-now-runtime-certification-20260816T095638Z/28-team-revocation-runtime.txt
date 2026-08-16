@@ -1,0 +1,3 @@
+NOT RUN.
+
+Finance permission was not changed while a Finance Manager session remained open. Immediate server denial after live role revocation is not certified.

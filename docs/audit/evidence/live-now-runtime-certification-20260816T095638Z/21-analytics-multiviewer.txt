@@ -1,0 +1,5 @@
+NOT RUN.
+
+The 0 → 1 → 2 → 1 → 0 live concurrency transition was not observed from real viewer sessions.
+
+ANALYTICS MULTI-VIEWER: NOT_RUN.

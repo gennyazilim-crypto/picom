@@ -1,0 +1,4 @@
+LIVE MEMBER REMOVAL
+NOT_RUN.
+No active Manager session was created; no membership was altered and no retry was performed.
+MEMBER_REMOVAL=NOT_RUN.

@@ -1,0 +1,3 @@
+ANALYTICS FINALIZATION
+NOT_RUN.
+No internal stream was started or ended; no finalization result is claimed.

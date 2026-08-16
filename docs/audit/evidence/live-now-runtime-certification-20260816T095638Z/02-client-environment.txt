@@ -1,0 +1,10 @@
+Observed workstation inventory (UTC 2026-08-16):
+- Microphone endpoints present and OK: Microphone Array (AMD Audio Device); Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver).
+- Camera present and OK: ACER HD User Facing.
+- Display present and OK: 1920x1080 default monitor.
+- OBS executable/installed-product inventory: none found.
+- A packaged Picom Desktop 0.1.1-beta.10 installation exists outside the canonical worktree at C:\Users\ACER\AppData\Local\Programs\Picom\Picom.exe.
+- No process from that packaged installation was running during inventory. The running Electron processes belonged to C:\Users\ACER\Desktop\picom, not the authoritative worktree.
+- No second independent canonical desktop client or approved separate authentication context was available.
+
+This establishes device presence only. It does not establish capture permission, local-track publication, remote rendering, or two-client media.

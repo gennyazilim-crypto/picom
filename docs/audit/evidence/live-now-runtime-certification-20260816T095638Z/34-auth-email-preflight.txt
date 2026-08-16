@@ -1,0 +1,8 @@
+No provider-management credential or approved internal mailbox was available for an active SMTP/provider/rate-limit inspection.
+
+Local configuration inspection did not print secret values:
+- .env.production provides Supabase URL and project ref.
+- The production example declares SMTP configuration names, but its SMTP password placeholder is empty.
+- Unauthenticated Supabase Auth health returned HTTP 401, which proves only endpoint reachability.
+
+No email request was made. Historical AUTH INBOX blocker is preserved: BLOCKED_RATE_LIMIT.

@@ -1,0 +1,3 @@
+NOT RUN.
+
+No internal stream was ended. Finalizer execution, stable summary, time buckets, and stale-session handling were not observed.

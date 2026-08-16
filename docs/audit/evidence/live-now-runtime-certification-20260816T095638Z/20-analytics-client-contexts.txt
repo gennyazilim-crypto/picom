@@ -1,0 +1,3 @@
+NOT RUN.
+
+An internal publisher stream and two independent authenticated viewer sessions were unavailable. No fake viewer IDs, JWT reuse, direct database writes, or fixture RPCs were used.

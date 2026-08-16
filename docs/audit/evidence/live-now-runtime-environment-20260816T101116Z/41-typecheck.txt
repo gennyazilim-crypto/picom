@@ -1,0 +1,8 @@
+TYPECHECK
+Command: npm.cmd run typecheck
+Result: EXIT 2
+Exact blocker: src/services/havooc/projectSupportNotesService.ts(89,26): TS2345 AnalyticsEventName does not include havooc_support_note_create/edit/delete/report.
+This is pre-existing unrelated dirty HAVOOC work and was not modified.
+Task36 has no product TypeScript source changes; its scoped static Live Now regressions passed (40-regression.txt).
+TYPECHECK_TASK36_SCOPE=PASS_NO_TASK36_TS_CHANGE.
+TYPECHECK_REPOSITORY_GLOBAL=BLOCKED_UNRELATED_DIRTY_HAVOOC.
