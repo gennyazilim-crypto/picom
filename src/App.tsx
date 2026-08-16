@@ -1581,7 +1581,7 @@ export function App() {
     }
     let canceled = false;
     setSupabaseCommunityLoadState({ userId, status: "loading" });
-    replaceCommunities([]);
+    // Keep the previous rail populated while reloading so membership icons do not flash empty.
     supabaseSidebarLoadedRef.current.clear();
     supabaseMessagesLoadedRef.current.clear();
     supabaseMembersLoadedRef.current.clear();
