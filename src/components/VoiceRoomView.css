@@ -716,6 +716,43 @@
     linear-gradient(160deg, color-mix(in srgb, var(--meeting-panel-soft) 92%, var(--meeting-panel)), var(--meeting-panel));
 }
 
+.voice-room-tile--welcome-cover {
+  background: color-mix(in srgb, var(--meeting-canvas) 88%, #102030);
+}
+
+.voice-room-stage-grid .voice-room-tile--welcome .voice-room-tile__avatar {
+  overflow: hidden;
+}
+
+.voice-room-tile__cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.voice-room-stage-grid .voice-room-tile--welcome .voice-room-tile__avatar > :not(.voice-room-tile__cover) {
+  position: relative;
+  z-index: 1;
+}
+
+.voice-room-tile--welcome-cover .voice-room-tile__shade {
+  inset: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #102030 18%, transparent) 0%, transparent 38%),
+    linear-gradient(transparent 42%, color-mix(in srgb, var(--meeting-canvas) 92%, transparent));
+  z-index: 1;
+}
+
+.voice-room-tile--welcome-cover .voice-room-tile__identity {
+  z-index: 2;
+  color: var(--meeting-text);
+  text-shadow: 0 1px 12px color-mix(in srgb, #102030 45%, transparent);
+}
+
 .voice-room-tile--welcome .voice-room-tile__identity {
   display: grid;
   gap: 4px;

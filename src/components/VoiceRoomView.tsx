@@ -7,6 +7,7 @@ import type { VoiceRoomOccupancy } from "../types/voiceDiscovery";
 import { MEETING_REACTION_OPTIONS } from "../services/meeting/meetingReactionCatalog";
 import { voiceStageSignalService } from "../services/voice/voiceStageSignalService";
 import { userBlockingService } from "../services/userBlockingService";
+import { useProfileMedia } from "../hooks/useProfileMedia";
 import { AppIcon } from "./AppIcon";
 import { VoiceDevicePanel } from "./VoiceDevicePanel";
 import { MemberAvatar } from "./MemberAvatar";
@@ -624,13 +625,35 @@ function VoiceRoomWelcomeTile({
 }) {
   const member = community.members.find((entry) => entry.userId === currentUserId);
   const displayName = member?.displayName ?? "You";
+  const profileMedia = useProfileMedia(currentUserId);
+  const coverUrl = profileMedia.record?.cover.url?.trim() || null;
+  const [coverFailed, setCoverFailed] = useState(false);
+
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [coverUrl]);
+
+  const showCover = Boolean(coverUrl) && !coverFailed;
 
   return (
-    <article className="voice-room-tile voice-room-tile--welcome" aria-label="Your voice seat">
+    <article
+      className={`voice-room-tile voice-room-tile--welcome${showCover ? " voice-room-tile--welcome-cover" : ""}`}
+      aria-label="Your voice seat"
+    >
       <div className="voice-room-tile__signal" aria-hidden="true">
         <AppIcon name="headphones" size="xs" />
       </div>
       <div className="voice-room-tile__avatar">
+        {showCover && coverUrl ? (
+          <img
+            className="voice-room-tile__cover"
+            src={coverUrl}
+            alt=""
+            decoding="async"
+            draggable={false}
+            onError={() => setCoverFailed(true)}
+          />
+        ) : null}
         <MemberAvatar member={member} label={displayName} size={96} />
       </div>
       <div className="voice-room-tile__shade" aria-hidden="true" />
