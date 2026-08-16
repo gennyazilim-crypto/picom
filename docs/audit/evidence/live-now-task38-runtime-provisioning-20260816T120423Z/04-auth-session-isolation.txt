@@ -1,0 +1,16 @@
+The supplied installer reached its fail-closed production configuration screen before sign-in.
+
+A separate runtime test package from the same canonical source HEAD was built with public production renderer configuration only.
+
+RUNTIME_PACKAGE_EXE_SHA256=D3716B44F2A3927C3FFB6C417E414D56C7FBD8BA6F2008B5B06EF6721F36E6BD
+PUBLISHER_A=GO subject_sha256=f11b6d1c00df5bb5
+VIEWER_B=GO subject_sha256=2c12b74f30a7059c
+VIEWER_C=GO subject_sha256=28656ee8cc8e5beb
+TEAM_OWNER=GO subject_sha256=3aec9dfeadcfba01
+TEAM_MANAGER=GO subject_sha256=b49139d1a201347d
+TEAM_ANALYST=GO subject_sha256=bd05c49fff380ec9
+TEAM_FINANCE=GO subject_sha256=38d4d71586fb2baf
+
+Seven current packaged Desktop instances used distinct user-data roots, signed in through their UI, and their renderer sessions were verified to carry the expected distinct Auth subjects. Test processes and local profile roots were removed after verification.
+
+AUTH_SESSION_ISOLATION=GO

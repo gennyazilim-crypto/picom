@@ -54,10 +54,10 @@ Task34 must not silently upgrade historical blockers.
 - CREATOR STUDIO SECURITY CENTER: PARTIAL_AUTH_PROVIDER_CAPABILITY
 - CREATOR STUDIO PRODUCTION: PARTIAL_RUNTIME_TEAM_CERTIFICATION
 
-## Runtime-unblock evidence (20260816T113057Z)
+## Task38 runtime-provisioning evidence (20260816T120423Z)
 
-- Clean canonical HEAD `3b1d633155c3dfbacc652e33c43d5435ab4162af` passed typecheck, build, Windows x64 package, desktop/secret smoke, production config guard, large-file guard, and Electron security checks.
-- The package is current for this HEAD but unsigned (`Authenticode=NotSigned`), so it cannot support a signed GA verdict.
-- DNS for `voice.picom.gg` resolved to `23.254.166.240`; TCP `443`, `7880`, `7881`, `5349` failed and HTTPS timed out. No root cause or infrastructure change is claimed because VPS SSH was unreachable.
-- Test identities and an approved test mailbox were unavailable. Local multi-profile packaging isolation was exercised, but authenticated two-client claims remain blocked.
-- Full evidence: `docs/audit/evidence/live-now-runtime-unblock-20260816T113057Z/`.
+- Canonical HEAD `a99135729a7098cd841b84688cb7ac056346da8d` was used. The supplied installer SHA-256 matches its authoritative value but the package fails closed before sign-in because its public renderer environment is absent.
+- A separate current package from the same canonical HEAD, with only public production renderer configuration, authenticated seven separate internal test users in isolated packaged Desktop profiles. The test users are recorded in `platform_stats_exclusions` with reason `test`; credentials are Windows-DPAPI protected and absent from evidence.
+- DNS for `voice.picom.gg` resolved to `23.254.166.240`; TCP `443`, `7880`, `7881`, `5349` failed and HTTPS timed out. A configured SSH identity exists, but port `22` also times out, so no deployed Nginx, firewall, LiveKit, or TURN mutation is claimed.
+- The approved Auth mailbox path depends on the unreachable VPS. No verification or password-reset message was sent.
+- Full evidence: `docs/audit/evidence/live-now-task38-runtime-provisioning-20260816T120423Z/`.

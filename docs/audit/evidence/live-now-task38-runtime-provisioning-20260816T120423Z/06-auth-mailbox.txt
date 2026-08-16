@@ -1,0 +1,7 @@
+An approved Auth inbox assertion mechanism exists and uses an internal IMAP path through the production VPS.
+
+The required VPS SSH transport timed out before mailbox access could be verified.
+No verification or password-reset email was sent.
+
+AUTH_TEST_MAILBOX=BLOCKED_VPS_ACCESS
+AUTH_INBOX=NOT_RUN
