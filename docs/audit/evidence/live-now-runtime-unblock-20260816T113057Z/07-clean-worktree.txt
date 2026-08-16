@@ -1,0 +1,5 @@
+PATH=C:\Users\ACER\Desktop\picom-live-runtime-cert-wt
+MODE=detached
+HEAD=3b1d633155c3dfbacc652e33c43d5435ab4162af
+STATUS=CLEAN before certification outputs, which are ignored.
+npm ci=PASS

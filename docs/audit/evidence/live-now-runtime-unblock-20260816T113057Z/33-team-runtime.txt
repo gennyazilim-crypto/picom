@@ -1,0 +1,2 @@
+CREATOR_STUDIO_TEAM_RUNTIME=BLOCKED_PROVISIONING
+Creator Studio static RBAC smoke passed. Real owner-created invite, manager acceptance, and role-specific authenticated operations were not possible without internal identities.

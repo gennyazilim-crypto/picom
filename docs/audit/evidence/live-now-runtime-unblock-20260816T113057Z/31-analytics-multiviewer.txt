@@ -1,0 +1,3 @@
+ANALYTICS_MULTI_VIEWER=BLOCKED_PROVISIONING
+No manually seeded analytics records were used.
+Publisher analytics static smoke passed, but it is not a 0-to-1-to-2 runtime proof.

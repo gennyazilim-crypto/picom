@@ -12,7 +12,7 @@ Task34 must not silently upgrade historical blockers.
 | Badge | GO | GO | GO | GO | PARTIAL | PARTIAL | N/A | OFF | PARTIAL |
 | Live Now Discovery | GO | GO | GO | GO | PARTIAL | PARTIAL | N/A | OFF | PARTIAL |
 | Go Live | GO | GO | GO | GO | PARTIAL | PARTIAL | N/A | OFF | PARTIAL |
-| LiveKit Signaling | GO | N/A | N/A | GO | PARTIAL | PARTIAL | GO | N/A | PARTIAL |
+| LiveKit Signaling | GO | N/A | N/A | GO | FAIL | NOT_RUN | FAIL | N/A | BLOCKED |
 | Real Media | GO | N/A | N/A | PARTIAL | BLOCKED | NOT_RUN | GO | N/A | BLOCKED |
 | OBS | GO | GO | GO | GO | PARTIAL | NOT_RUN | PARTIAL | OFF | BLOCKED |
 | Chat | GO | GO | GO | GO | PARTIAL | NOT_RUN | N/A | OFF | PARTIAL |
@@ -31,8 +31,8 @@ Task34 must not silently upgrade historical blockers.
 | Tier | Verdict | Rationale |
 |------|---------|-----------|
 | INTERNAL | **GO** | Ops contracts + sealed Phase1 schema; flags OFF |
-| CONTROLLED_BETA | **GO** | Control plane + signaling + kill switches; media/payment gates explicit |
-| PUBLIC_BETA | **PARTIAL** | Media NOT_CERTIFIED; chat two-client NOT_RUN; auth inbox BLOCKED_RATE_LIMIT; alert transport NOT_CONFIGURED |
+| CONTROLLED_BETA | **BLOCKED** | Current certification package cannot reach `voice.picom.gg:443`; real LiveKit client verification cannot begin. |
+| PUBLIC_BETA | **BLOCKED** | Current WSS failure, media/OBS/chat/analytics two-client gaps, and provider gates remain. |
 | GENERAL_AVAILABILITY | **BLOCKED** | Historical Task26–33 blockers remain open |
 
 ## Historical blockers (unchanged)
@@ -53,3 +53,11 @@ Task34 must not silently upgrade historical blockers.
 - TAX ENGINE: BLOCKED_LEGAL_PROVIDER_CONFIGURATION
 - CREATOR STUDIO SECURITY CENTER: PARTIAL_AUTH_PROVIDER_CAPABILITY
 - CREATOR STUDIO PRODUCTION: PARTIAL_RUNTIME_TEAM_CERTIFICATION
+
+## Runtime-unblock evidence (20260816T113057Z)
+
+- Clean canonical HEAD `3b1d633155c3dfbacc652e33c43d5435ab4162af` passed typecheck, build, Windows x64 package, desktop/secret smoke, production config guard, large-file guard, and Electron security checks.
+- The package is current for this HEAD but unsigned (`Authenticode=NotSigned`), so it cannot support a signed GA verdict.
+- DNS for `voice.picom.gg` resolved to `23.254.166.240`; TCP `443`, `7880`, `7881`, `5349` failed and HTTPS timed out. No root cause or infrastructure change is claimed because VPS SSH was unreachable.
+- Test identities and an approved test mailbox were unavailable. Local multi-profile packaging isolation was exercised, but authenticated two-client claims remain blocked.
+- Full evidence: `docs/audit/evidence/live-now-runtime-unblock-20260816T113057Z/`.

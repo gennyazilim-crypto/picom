@@ -1,0 +1,4 @@
+Initial tracked dirty files: App, MessageComposer, VoiceRoomView CSS/TSX, attachmentService, meeting chat context, local message state.
+Initial untracked files were classified individually before staging.
+No initial staged files were present.
+Original HEAD was 96d8db3713baf6a098b1a2799863a68445310a74.

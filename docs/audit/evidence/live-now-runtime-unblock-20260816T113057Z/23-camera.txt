@@ -1,0 +1,3 @@
+CAMERA_HARDWARE=GO (physical ACER HD User Facing camera present)
+CAMERA_REAL_PUBLICATION=BLOCKED_RUNTIME_PREREQUISITES
+No virtual or synthetic camera was used.

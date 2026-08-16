@@ -1,0 +1,3 @@
+SECURITY_CENTER=PARTIAL_AUTH_PROVIDER_CAPABILITY
+Local security and Electron smoke tests passed. The current static account-settings smoke is stale after the settings structure changed and failed literal-string assertions; it is not used as runtime proof.
+Provider-wide Supabase session coverage remains outside PICOM-managed device records.

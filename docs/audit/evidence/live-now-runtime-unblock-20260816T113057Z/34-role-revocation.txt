@@ -1,0 +1,2 @@
+LIVE_ROLE_REVOCATION=BLOCKED_PROVISIONING
+No Finance Manager session was created; no server authorization result was fabricated.

@@ -1,0 +1,2 @@
+CHAT_RECONNECT=BLOCKED_PROVISIONING
+No authenticated chat session was created.

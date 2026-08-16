@@ -1,0 +1,2 @@
+FIREWALL_INSPECTION=BLOCKED_VPS_ACCESS
+No firewall rule was added, removed, or broadened.

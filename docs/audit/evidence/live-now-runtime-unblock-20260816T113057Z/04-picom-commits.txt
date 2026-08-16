@@ -1,0 +1,5 @@
+1f453212 fix(community): preserve current user membership in mapping
+bdf11fcb fix(community): retain rail while refreshing membership
+14f89f31 fix(chat): hydrate private message attachments
+239c859e feat(live): render profile cover in voice welcome tile
+3b1d6331 docs(live-now): record Task35 and Task36 runtime evidence

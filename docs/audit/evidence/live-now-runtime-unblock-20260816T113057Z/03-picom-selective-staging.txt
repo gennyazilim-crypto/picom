@@ -1,0 +1,3 @@
+git add . and git add -A were not used.
+Community mapping, community rail refresh, chat attachment hydration, Live Now cover rendering, and prior evidence were selectively staged as separate commits.
+No HAVOOC file or hunk was placed in the index.

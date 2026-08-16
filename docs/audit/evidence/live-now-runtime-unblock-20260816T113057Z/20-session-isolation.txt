@@ -1,0 +1,4 @@
+The current packaged Picom supports PICOM_USER_DATA_DIR and --user-data-dir overrides.
+Seven packaged instances started in distinct local profile roots (publisher-a, viewer-b, viewer-c, team-owner, team-manager, team-analyst, team-finance); each created distinct Local Storage and all test processes were stopped.
+No authenticated access or refresh token was available, so authenticated session separation was not proven.
+CLIENT_SESSION_ISOLATION=PARTIAL_LOCAL_PROFILE_ISOLATION

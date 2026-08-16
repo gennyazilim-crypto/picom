@@ -1,0 +1,2 @@
+DEPLOYED_CONFIG=UNAVAILABLE because VPS SSH was unreachable.
+The repository describes a WSS endpoint at voice.picom.gg and self-hosted ingress architecture, but it is not substituted for deployed configuration evidence.

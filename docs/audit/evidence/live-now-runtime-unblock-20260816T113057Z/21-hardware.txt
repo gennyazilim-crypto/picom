@@ -1,0 +1,4 @@
+Microphone-class devices detected: USB Ses Aygiti, Realtek Audio, and system audio devices.
+Physical camera detected: ACER HD User Facing (USB VID_0408 PID_4053), status OK.
+Display adapters detected: AMD Radeon(TM) Graphics and NVIDIA GeForce RTX 4060 Laptop GPU.
+Hardware inventory is not a remote media certification.

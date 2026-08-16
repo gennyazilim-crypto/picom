@@ -1,0 +1,3 @@
+Configured SSH identity file existed, but a non-interactive approved-alias connection to picom-update-server timed out on 23.254.166.240:22.
+No password guessing, credential printing, or infrastructure mutation was attempted.
+LIVEKIT_SERVER_DIAGNOSIS=BLOCKED_VPS_ACCESS

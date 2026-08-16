@@ -1,0 +1,2 @@
+OBS_KEY_REVOKE=NOT_RUN
+No temporary credential was created; no key was printed, retained, or revoked.

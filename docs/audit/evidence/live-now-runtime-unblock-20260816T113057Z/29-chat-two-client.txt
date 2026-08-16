@@ -1,0 +1,3 @@
+CHAT_TWO_CLIENT=BLOCKED_PROVISIONING
+Real A-to-B Supabase Realtime proof requires separate authenticated internal accounts and a scoped enabled feature path.
+No static SQL smoke was treated as two-client proof.

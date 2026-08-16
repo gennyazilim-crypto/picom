@@ -1,0 +1,4 @@
+TYPECHECK_PICOM_CHANGED_SCOPE=GO
+TYPECHECK_REPOSITORY_GLOBAL=BLOCKED_UNRELATED_DIRTY_HAVOOC in the original worktree.
+Original failure: projectSupportNotesService passes HAVOOC support-note event names not declared in AnalyticsEventName.
+Clean detached canonical typecheck: PASS (tsc --noEmit).

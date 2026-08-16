@@ -1,0 +1,5 @@
+PASS: community membership mapping regression
+PASS: attachment delivery, quarantine, meeting-chat, voice-room, voice-stage, LiveKit, token, webhook, publisher stream management, publisher analytics, publisher observability, Creator Studio, desktop security, and secret exposure smokes.
+PASS: clean canonical typecheck, build, Vite build, desktop smoke, secret smoke, production config guard, and large-file guard.
+PREEXISTING_STATIC_TEST_MISMATCH: community-only ServerRail smoke expects an obsolete inline overflow assertion; attachment malware smoke expects an obsolete uploadService hook; storage private-access smoke expects an obsolete hosted matrix marker; account security settings smoke expects pre-restructure literal strings.
+These failures were not introduced by the committed PICOM diffs and were not bypassed.

@@ -1,0 +1,3 @@
+MICROPHONE_HARDWARE=GO (USB Ses Aygiti present)
+MICROPHONE_REAL_PUBLICATION=BLOCKED_RUNTIME_PREREQUISITES
+Reason: LiveKit client network is FAIL and separate authenticated publisher/viewer identities are unavailable.

@@ -1,0 +1,3 @@
+TURN=BLOCKED_CONFIGURATION
+Reason: deployed LiveKit and TURN configuration cannot be inspected, and client connectivity to the required WSS endpoint fails.
+No unverified TURN hostname was invented.

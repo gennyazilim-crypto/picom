@@ -1,0 +1,3 @@
+No server-side root cause was provable without VPS access, so no network change was authorized.
+DNS remained PASS; TCP 443, 7880, 7881, and 5349 remained FAIL; HTTPS remained timeout.
+LIVEKIT_CLIENT_NETWORK_AFTER=FAIL_UNCHANGED

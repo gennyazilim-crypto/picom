@@ -1,0 +1,3 @@
+Electron screen-capture bridge and LiveKit screen-share static smoke passed.
+SCREEN_SHARE_REAL_PUBLICATION=BLOCKED_RUNTIME_PREREQUISITES
+No authenticated PICOM screen-share session was available to publish or receive.

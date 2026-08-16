@@ -1,0 +1,4 @@
+PUBLISHER_A, VIEWER_B, VIEWER_C, TEAM_OWNER, TEAM_MANAGER, TEAM_ANALYST, and TEAM_FINANCE were not provisioned.
+SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ACCESS_TOKEN were unavailable and were not replaced by fabricated sessions.
+Existing scripts needing privileged setup were not used as a substitute for real authenticated test users.
+TEST_IDENTITIES=BLOCKED_PROVISIONING

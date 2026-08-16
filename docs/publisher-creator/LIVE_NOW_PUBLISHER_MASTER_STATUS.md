@@ -1,6 +1,6 @@
 # LIVE NOW / PUBLISHER MASTER STATUS
 
-Updated: 20260809T192112Z (TASK34)
+Updated: 20260816T113057Z (runtime-unblock certification sweep)
 Branch: release/picom-canonical-production
 Authoritative TASK33 HEAD: 2ce0b9bec506d5eb642cb1932ea899ddc59726b9
 Prior partial tag (unchanged): picom-publisher-phase1-production-partial-20260803T230959Z
@@ -55,11 +55,21 @@ Prior partial tag (unchanged): picom-publisher-phase1-production-partial-2026080
 
 ## Release tier verdicts (Task34)
 - INTERNAL: **GO**
-- CONTROLLED_BETA: **GO**
-- PUBLIC_BETA: **PARTIAL**
+- CONTROLLED_BETA: **BLOCKED** (current certification client cannot reach `voice.picom.gg:443`)
+- PUBLIC_BETA: **BLOCKED** (current WSS failure and real-client gates remain unproven)
 - GENERAL_AVAILABILITY: **BLOCKED**
+
+## Runtime-unblock certification sweep
+- Clean canonical HEAD `3b1d633155c3dfbacc652e33c43d5435ab4162af`: typecheck, renderer/Electron build, Windows x64 package, desktop smoke, secret smoke, production config guard, and Electron security checks: **GO**.
+- Current installer SHA-256: `15A1C11F2CE2BCF8B371BEF06CC6DA486E37A58094342241F26EB29BCD1AA2EC`; Authenticode: **NotSigned**.
+- LiveKit client network: DNS **PASS** to `23.254.166.240`; TCP `443`, `7880`, `7881`, `5349` and HTTPS: **FAIL/TIMEOUT**. VPS SSH timed out, so deployed Nginx, firewall, LiveKit, and TURN configuration remain uninspected.
+- Test identities: **BLOCKED_PROVISIONING**. Local packaged-app profile isolation was exercised, but authenticated token/session isolation was not proven.
+- Hardware inventory found a microphone-class device and a physical `ACER HD User Facing` camera. Actual microphone, camera, and screen-share publication remain **BLOCKED_RUNTIME_PREREQUISITES**.
+- OBS 32.2.1 is installed; real OBS/Ingress, key revocation, chat two-client, analytics multi-viewer, Creator Studio team runtime, live revocation, member removal, and Auth inbox remain blocked without WSS, internal identities, and an approved test mailbox.
+- Unchanged external blockers remain: Egress, media storage, payments, legal, KYC/payouts, and tax engine.
 
 ## Evidence
 - TASK32: docs/audit/evidence/live-now-publisher-kyc-payout-20260809T170836Z/
 - TASK33: docs/audit/evidence/creator-studio-unification-20260809T184359Z/
 - TASK34: docs/audit/evidence/live-now-production-operations-<UTC>/
+- Runtime unblock: docs/audit/evidence/live-now-runtime-unblock-20260816T113057Z/

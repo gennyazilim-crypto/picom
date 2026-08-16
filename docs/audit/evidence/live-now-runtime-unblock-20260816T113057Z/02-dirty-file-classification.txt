@@ -1,0 +1,7 @@
+PICOM_COMMUNITY_FIX: src/utils/communityFactory.ts; membership regression script; the App rail-refresh hunk.
+PICOM_PRODUCT: App attachment hydration hunks; MessageComposer; attachmentService; meetingChatContextService; useLocalMessageState.
+LIVE_NOW: VoiceRoomView.tsx and VoiceRoomView.css.
+LIVE_NOW_DOCUMENTATION: Task35 and Task36 evidence directories.
+HAVOOC_ONLY: havooc support scripts, source folders, links, localization catalog, and project_support_notes migration.
+GENERATED: .tmp-t27 through .tmp-t34 files and supabase/.temp.
+MIXED_PICOM_HAVOOC: none found.

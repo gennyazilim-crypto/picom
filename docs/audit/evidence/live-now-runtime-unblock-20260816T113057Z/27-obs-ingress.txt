@@ -1,0 +1,3 @@
+Repository ingress contract and publisher stream-management static smoke passed.
+Deployed ingress container, RTMP listener, and webhook path could not be inspected because VPS SSH timed out.
+OBS_INGRESS=BLOCKED_VPS_ACCESS_AND_RUNTIME_PREREQUISITES

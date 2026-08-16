@@ -1,0 +1,4 @@
+verify-electron-packaging.mjs=PASS
+electron-security-smoke-test.mjs=PASS
+PACKAGED_SECURITY=contextIsolation=true; nodeIntegration=false; sandbox=true; webSecurity=true; allowRunningInsecureContent=false
+No security setting was weakened for certification.

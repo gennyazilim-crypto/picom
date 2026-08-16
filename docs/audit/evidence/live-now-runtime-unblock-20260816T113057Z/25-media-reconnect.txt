@@ -1,0 +1,2 @@
+MEDIA_RECONNECT=BLOCKED_RUNTIME_PREREQUISITES
+No test stream was created because WSS connectivity and separate authenticated sessions were unavailable.
