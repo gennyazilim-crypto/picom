@@ -265,7 +265,13 @@ export function useLocalMessageState(initialCommunities: Community[]) {
               isSameMessage(item, id, clientMessageId)
                 ? shouldKeepDeletedMessage(item, message)
                   ? item
-                  : { ...item, ...message, reactions: item.reactions ?? [], attachments: item.attachments ?? message.attachments }
+                  : {
+                      ...item,
+                      ...message,
+                      reactions: item.reactions ?? [],
+                      // Prefer newly hydrated attachments over an empty placeholder array.
+                      attachments: message.attachments?.length ? message.attachments : item.attachments ?? message.attachments,
+                    }
                 : item,
             )
           : [...community.messages, message];

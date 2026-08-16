@@ -3,7 +3,7 @@ import type { Attachment } from "../../types/community";
 import type { MeetingChatContext, MeetingChatDeepLinkInput, MeetingChatSendInput } from "../../types/meetingChat";
 import type { MeetingClientContext } from "../../types/meetingClient";
 import { currentUserId } from "../../data/mockCommunities";
-import { attachmentService, type AttachmentMetadataSummary } from "../attachmentService";
+import { attachmentService, toUiAttachment, type AttachmentMetadataSummary } from "../attachmentService";
 import { dataSourceService } from "../dataSourceService";
 import { deepLinkService } from "../deepLinkService";
 import { messageService, type DeleteMessageInput, type EditMessageInput, type MessageServiceResult, type MessageSummary } from "../messageService";
@@ -26,23 +26,6 @@ const text = (value: unknown): string => typeof value === "string" ? value : "";
 const nullableText = (value: unknown): string | null => typeof value === "string" ? value : null;
 const contextKey = (roomId: string, sessionId?: string | null) => `${roomId}:${sessionId ?? "room"}`;
 const fail = <T>(code: string, message: string): ContextResult<T> => ({ ok: false, error: { code, message } });
-
-function chatAttachment(item: AttachmentMetadataSummary): Attachment {
-  return {
-    id: item.id,
-    type: "image",
-    url: item.publicUrl ?? item.thumbnailUrl ?? "",
-    publicUrl: item.publicUrl,
-    thumbnailUrl: item.thumbnailUrl,
-    storagePath: item.storagePath,
-    mimeType: item.mimeType,
-    alt: item.fileName || "Meeting chat image",
-    width: item.width ?? undefined,
-    height: item.height ?? undefined,
-    blurhashPlaceholder: item.blurhashPlaceholder,
-    scanStatus: item.scanStatus,
-  };
-}
 
 export function mapMeetingChatContext(value: unknown): MeetingChatContext | null {
   const row=record(value);if(!row)return null;const contextKind=text(row.contextKind) as MeetingChatContext["contextKind"];
@@ -77,7 +60,7 @@ export const meetingChatContextService={
     const attachments=await attachmentService.listForMessages(page.data.items.map((message)=>message.id));
     if(!attachments.ok)return fail(attachments.error.code,attachments.error.message);
     const byMessage=new Map<string,Attachment[]>();
-    for(const item of attachments.data){if(!item.messageId)continue;const list=byMessage.get(item.messageId)??[];list.push(chatAttachment(item));byMessage.set(item.messageId,list)}
+    for(const item of attachments.data){if(!item.messageId)continue;const list=byMessage.get(item.messageId)??[];list.push(toUiAttachment(item));byMessage.set(item.messageId,list)}
     const byId=new Map(page.data.items.map((message)=>[message.id,message]));
     const items=page.data.items.map((message):MeetingChatMessage=>{const reply=message.replyToMessageId?byId.get(message.replyToMessageId):null;return{...message,attachments:byMessage.get(message.id)??[],replyPreview:message.replyToMessageId?{id:message.replyToMessageId,authorId:reply?.authorId??"",body:reply?.body??"Original message is outside the loaded history.",deleted:Boolean(reply?.deletedAt)||!reply}:null}});
     return{ok:true,data:{...page.data,items}};

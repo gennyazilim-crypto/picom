@@ -1,9 +1,12 @@
 import { currentUserId } from "../data/mockCommunities";
+import type { Attachment } from "../types/community";
 import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
-import type { AttachmentScanStatus } from "./attachmentScanService";
+import { attachmentScanService, type AttachmentScanStatus } from "./attachmentScanService";
 import { MESSAGE_ATTACHMENTS_BUCKET, type UploadedAttachmentSummary } from "./uploadService";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
+
+const ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, scan_status, status, created_at" as const;
 
@@ -90,6 +93,33 @@ function mapAttachmentMetadataRow(row: AttachmentMetadataRow): AttachmentMetadat
   };
 }
 
+/** Resolve pending rows for UI when no malware scanner is configured yet. */
+function resolveDisplayScanStatus(attachment: AttachmentMetadataSummary): AttachmentScanStatus {
+  if (attachment.scanStatus !== "pending") return attachment.scanStatus;
+  return attachmentScanService.scanFilePlaceholder({
+    fileName: attachment.fileName,
+    mimeType: attachment.mimeType,
+    sizeBytes: attachment.sizeBytes,
+  }).status;
+}
+
+export function toUiAttachment(item: AttachmentMetadataSummary): Attachment {
+  return {
+    id: item.id,
+    type: "image",
+    url: item.publicUrl ?? item.thumbnailUrl ?? "",
+    publicUrl: item.publicUrl,
+    thumbnailUrl: item.thumbnailUrl,
+    storagePath: item.storagePath,
+    mimeType: item.mimeType,
+    alt: item.fileName || "Image attachment",
+    width: item.width ?? undefined,
+    height: item.height ?? undefined,
+    blurhashPlaceholder: item.blurhashPlaceholder,
+    scanStatus: item.scanStatus,
+  };
+}
+
 const mockAttachmentMetadata = new Map<string, AttachmentMetadataSummary>();
 
 function cacheMockAttachment(attachment: AttachmentMetadataSummary): void {
@@ -127,9 +157,16 @@ export const attachmentService = {
 
     const dataSource = dataSourceService.getStatus();
 
+    const scan = attachmentScanService.scanFilePlaceholder({
+      fileName: upload.fileName,
+      mimeType: upload.mimeType,
+      sizeBytes: upload.sizeBytes,
+    });
+
     if (dataSource.isMock) {
+      const attachmentId = `mock-attachment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const attachment: AttachmentMetadataSummary = {
-        id: `mock-attachment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: attachmentId,
         messageId: null,
         uploaderId: upload.userId || currentUserId,
         storagePath: upload.storagePath,
@@ -137,12 +174,12 @@ export const attachmentService = {
         mimeType: upload.mimeType,
         sizeBytes: upload.sizeBytes,
         attachmentType: "image",
-        publicUrl: upload.publicUrl,
+        publicUrl: upload.publicUrl ?? `https://mock.picom.local/attachments/${attachmentId}`,
         thumbnailUrl: upload.thumbnailUrl,
         width: upload.width,
         height: upload.height,
         blurhashPlaceholder: upload.blurhashPlaceholder,
-        scanStatus: upload.scanStatus,
+        scanStatus: scan.status,
         status: "pending",
         createdAt: new Date().toISOString(),
       };
@@ -180,6 +217,7 @@ export const attachmentService = {
         thumbnail_url: null,
         width: upload.width,
         height: upload.height,
+        scan_status: scan.status,
         status: "pending",
       })
       .select(ATTACHMENT_METADATA_SELECT)
@@ -190,9 +228,14 @@ export const attachmentService = {
       return attachmentError("ATTACHMENT_METADATA_CREATE_FAILED", "Could not save attachment metadata.");
     }
 
+    const mapped = mapAttachmentMetadataRow(data);
+    const signed = await configured.data.storage
+      .from(MESSAGE_ATTACHMENTS_BUCKET)
+      .createSignedUrl(mapped.storagePath, ATTACHMENT_SIGNED_URL_TTL_SECONDS);
+
     return {
       ok: true,
-      data: mapAttachmentMetadataRow(data),
+      data: signed.data?.signedUrl ? { ...mapped, publicUrl: signed.data.signedUrl } : mapped,
     };
   },
 
@@ -217,12 +260,19 @@ export const attachmentService = {
       .select(ATTACHMENT_METADATA_SELECT)
       .in("message_id", ids)
       .eq("status", "attached")
-      .in("scan_status", ["clean", "skipped_development"]);
+      .in("scan_status", ["clean", "skipped_development", "pending"]);
     if (error) return attachmentError("ATTACHMENT_METADATA_LIST_FAILED", "Could not load message attachments.");
     const items = await Promise.all(((data ?? []) as AttachmentMetadataRow[]).map(async (row) => {
       const mapped = mapAttachmentMetadataRow(row);
-      const signed = await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).createSignedUrl(row.storage_path, 60 * 60);
-      return signed.data?.signedUrl ? { ...mapped, publicUrl: signed.data.signedUrl } : mapped;
+      const withScan: AttachmentMetadataSummary = {
+        ...mapped,
+        scanStatus: resolveDisplayScanStatus(mapped),
+      };
+      if (!attachmentScanService.canRenderAttachment(withScan.scanStatus)) return withScan;
+      const signed = await configured.data.storage
+        .from(MESSAGE_ATTACHMENTS_BUCKET)
+        .createSignedUrl(row.storage_path, ATTACHMENT_SIGNED_URL_TTL_SECONDS);
+      return signed.data?.signedUrl ? { ...withScan, publicUrl: signed.data.signedUrl } : withScan;
     }));
     return { ok: true, data: items };
   },

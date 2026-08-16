@@ -269,11 +269,17 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
       return null;
     }
 
+    // Private bucket: preview must use a signed URL. Blob previews are revoked after send.
     const uploadedUrl = metadata.data.publicUrl ?? result.data.publicUrl ?? null;
+    if (!uploadedUrl) {
+      updatePreview(preview.id, { status: "failed", progress: 0, error: "Picom could not prepare a private media preview." });
+      return null;
+    }
+
     const attachment: Attachment = {
       id: metadata.data.id,
       type: "image",
-      url: uploadedUrl || preview.url,
+      url: uploadedUrl,
       publicUrl: uploadedUrl,
       storagePath: metadata.data.storagePath,
       mimeType: metadata.data.mimeType,

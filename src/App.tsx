@@ -129,6 +129,7 @@ import { privateChannelPermissionService } from "./services/privateChannelPermis
 import { membersService } from "./services/membersService";
 import { communityRoleManagementService } from "./services/community/communityRoleManagementService";
 import { messageService, type MessageSummary } from "./services/messageService";
+import { attachmentService, toUiAttachment } from "./services/attachmentService";
 import { reactionService } from "./services/reactionService";
 import { messageSendQueueService } from "./services/messageSendQueueService";
 import { isMessageSendError } from "./services/messageSendObservability";
@@ -1168,6 +1169,22 @@ export function App() {
       deletedAt: message.deletedAt,
     });
 
+    void attachmentService.listForMessages([message.id]).then((attachmentsResult) => {
+      if (!attachmentsResult.ok || !attachmentsResult.data.length) return;
+      upsertLocalMessage({
+        id: message.id,
+        clientMessageId: message.clientMessageId,
+        communityId: message.communityId,
+        channelId: message.channelId,
+        authorId: message.authorId,
+        body: message.body,
+        sequence: message.sequence,
+        createdAt: message.createdAt,
+        editedAt: message.editedAt,
+        attachments: attachmentsResult.data.map(toUiAttachment),
+      });
+    });
+
     const isActivelyRead = activeView === "community" && message.channelId === activeChannel.id && isActiveMessageListNearBottom;
     if (!isActivelyRead && message.authorId !== currentUser.userId) {
       markChannelUnread({
@@ -1756,7 +1773,7 @@ export function App() {
     messageService.listMessages({
       communityId: activeCommunity.id,
       channelId: activeChannel.id,
-    }).then((result) => {
+    }).then(async (result) => {
       if (canceled) return;
 
       if (!result.ok) {
@@ -1765,7 +1782,23 @@ export function App() {
         return;
       }
 
-      const messages: Message[] = result.data.items.map(mapMessageSummaryToMessage);
+      const attachmentsResult = await attachmentService.listForMessages(result.data.items.map((item) => item.id));
+      if (canceled) return;
+
+      const attachmentsByMessage = new Map<string, Attachment[]>();
+      if (attachmentsResult.ok) {
+        for (const item of attachmentsResult.data) {
+          if (!item.messageId) continue;
+          const list = attachmentsByMessage.get(item.messageId) ?? [];
+          list.push(toUiAttachment(item));
+          attachmentsByMessage.set(item.messageId, list);
+        }
+      }
+
+      const messages: Message[] = result.data.items.map((summary) => ({
+        ...mapMessageSummaryToMessage(summary),
+        attachments: attachmentsByMessage.get(summary.id) ?? [],
+      }));
 
       replaceChannelMessages(activeCommunity.id, activeChannel.id, messages);
     });
