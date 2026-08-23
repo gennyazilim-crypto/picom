@@ -1,0 +1,5 @@
+> picom@0.1.1-beta.11 onboarding:rpc-contract:smoke
+> node scripts/onboarding-rpc-contract-regression.mjs
+
+Onboarding RPC contract regression passed (20260816000000_reconcile_account_onboarding_rpc_contract.sql).
+exit=0

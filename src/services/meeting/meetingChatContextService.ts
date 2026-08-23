@@ -30,13 +30,13 @@ const fail = <T>(code: string, message: string): ContextResult<T> => ({ ok: fals
 function chatAttachment(item: AttachmentMetadataSummary): Attachment {
   return {
     id: item.id,
-    type: "image",
+    type: item.attachmentType,
     url: item.publicUrl ?? item.thumbnailUrl ?? "",
     publicUrl: item.publicUrl,
     thumbnailUrl: item.thumbnailUrl,
     storagePath: item.storagePath,
     mimeType: item.mimeType,
-    alt: item.fileName || "Meeting chat image",
+    alt: item.fileName || "Meeting chat attachment",
     width: item.width ?? undefined,
     height: item.height ?? undefined,
     blurhashPlaceholder: item.blurhashPlaceholder,
@@ -92,7 +92,7 @@ export const meetingChatContextService={
     if(!context.canWrite)return fail("MEETING_CHAT_READ_ONLY","Join with chat permission before uploading attachments.");
     if(!files.length||files.length>4)return fail("MEETING_CHAT_ATTACHMENT_LIMIT","Choose between one and four images.");
     const created:AttachmentMetadataSummary[]=[];const uploadedPaths:string[]=[];
-    for(const file of files){const upload=await uploadService.uploadImageAttachment({communityId:context.communityId,channelId:context.channelId,file,signal});if(!upload.ok){await Promise.all(uploadedPaths.map((storagePath)=>uploadService.removePending(storagePath)));return fail(upload.error.code,upload.error.message)}uploadedPaths.push(upload.data.storagePath);const metadata=await attachmentService.createPendingAttachmentMetadata({upload:upload.data});if(!metadata.ok){await Promise.all(uploadedPaths.map((storagePath)=>uploadService.removePending(storagePath)));return fail(metadata.error.code,metadata.error.message)}created.push(metadata.data)}
+    for(const file of files){const upload=await uploadService.uploadImageAttachment({communityId:context.communityId,channelId:context.channelId,file,signal});if(!upload.ok){await Promise.all(uploadedPaths.map((storagePath)=>uploadService.removePending(storagePath)));return fail(upload.error.code,upload.error.message)}uploadedPaths.push(upload.data.storagePath);const metadata=await attachmentService.createPendingAttachmentMetadata({upload:upload.data});if(!metadata.ok){await Promise.all(uploadedPaths.map((storagePath)=>uploadService.removePending(storagePath)));return fail(metadata.error.code,metadata.error.message)}const safetyCheck=await attachmentService.completePendingAttachmentSafetyCheck(metadata.data.id);if(!safetyCheck.ok){return fail(safetyCheck.error.code,safetyCheck.error.message)}created.push({...metadata.data,scanStatus:safetyCheck.data})}
     return{ok:true,data:created};
   },
   editMessage(input:EditMessageInput){return messageService.editMessage(input)},

@@ -1,0 +1,6 @@
+required_phrase=APPROVE_PRODUCTION_E2E_IDENTITY_PROVISIONING
+operator_message_contains_phrase=NO
+process_env_contains_phrase=NO
+PICOM_PROD_E2E_EMAIL_A=unset
+decision=BLOCKED_OPERATOR_APPROVAL
+users_created=0

@@ -1,0 +1,6 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 version-policy:runtime
+> node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/version-policy-runtime-test.mjs
+
+version-policy runtime: 10 cases passed

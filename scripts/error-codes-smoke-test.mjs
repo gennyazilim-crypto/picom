@@ -51,8 +51,9 @@ for (const [label, needle] of uxChecks) {
 }
 
 const boundaryChecks = [
-  ["startup friendly error", "Picom needs a restart"],
-  ["developer diagnostics separation", "Developer diagnostics"],
+  ["startup friendly error", 't("startup.title")'],
+  ["localized startup actions", 't("startup.logsExported")'],
+  ["developer diagnostics separation", 't("startup.developerDiagnostics")'],
   ["redacted developer diagnostics", "redactDiagnosticsValue"]
 ];
 

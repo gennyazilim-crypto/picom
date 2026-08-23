@@ -11,28 +11,28 @@ const files = {
   attachmentGrid: readFileSync(resolve(root, "src/components/AttachmentGrid.tsx"), "utf8"),
   imagePreview: readFileSync(resolve(root, "src/components/ImagePreviewModal.tsx"), "utf8"),
   communityTypes: readFileSync(resolve(root, "src/types/community.ts"), "utf8"),
-  sharedAttachmentDto: readFileSync(resolve(root, "packages/shared/src/dto/attachment.ts"), "utf8"),
+  feedAttachment: readFileSync(resolve(root, "src/services/feed/feedAttachmentModel.ts"), "utf8"),
   doc: readFileSync(resolve(root, "docs/image-thumbnail-generation.md"), "utf8"),
 };
 
 const checks = [
-  [files.thumbnailService.includes("IMAGE_PROCESSOR_NOT_CONFIGURED"), "thumbnail placeholder reason"],
-  [files.thumbnailService.includes("generateThumbnailPlaceholder"), "thumbnail generation placeholder API"],
-  [files.uploadService.includes("attachmentThumbnailService.createThumbnailPlaceholder"), "upload pipeline uses thumbnail placeholder"],
+  [files.thumbnailService.includes("NATIVE_ORIGINAL_PREVIEW"), "native preview processor"],
+  [files.thumbnailService.includes("THUMBNAIL_PIPELINE_NOT_CONFIGURED_USE_NATIVE"), "native preview reason"],
+  [!files.thumbnailService.includes("EDGE_FUNCTION_PLACEHOLDER"), "no edge placeholder processor"],
+  [files.uploadService.includes("attachmentThumbnailService.createNativePreviewMetadata"), "upload uses native preview metadata"],
   [files.attachmentService.includes("thumbnail_url, width, height"), "attachment metadata selects dimensions"],
-  [files.attachmentService.includes("blurhashPlaceholder"), "attachment metadata carries blurhash placeholder"],
-  [files.attachmentGrid.includes("attachment.thumbnailUrl || attachment.publicUrl || attachment.url"), "AttachmentGrid prefers thumbnail"],
+  [files.attachmentGrid.includes("resolveNativeImagePreviewUrl"), "AttachmentGrid uses native preview resolver"],
   [files.attachmentGrid.includes("width={attachment.width ?? undefined}"), "AttachmentGrid reserves width"],
-  [files.imagePreview.includes("image.publicUrl || image.url"), "preview uses full image"],
+  [files.imagePreview.includes("image.publicUrl || image.url") || files.imagePreview.includes("active.publicUrl || active.url"), "preview uses full image"],
   [files.imagePreview.includes("attachmentQuarantineService.getAccessDecision"), "preview rechecks quarantine"],
-  [files.communityTypes.includes("blurhashPlaceholder?: string | null"), "runtime attachment type has blurhash placeholder"],
-  [files.sharedAttachmentDto.includes("blurhashPlaceholder?: string | null"), "shared DTO has blurhash placeholder"],
+  [files.feedAttachment.includes("thumbnailUrl"), "Feed attachment model has thumbnailUrl"],
+  [files.doc.includes("Approach B") || files.doc.includes("native"), "docs describe native preview approach"],
   [files.doc.includes("No `sharp`, ImageMagick, Canvas"), "docs avoid heavy renderer dependency"],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);
 if (failed.length > 0) {
-  throw new Error(`Image thumbnail placeholder smoke test failed: ${failed.join(", ")}`);
+  throw new Error(`Image thumbnail native-preview smoke test failed: ${failed.join(", ")}`);
 }
 
 const compiled = ts.transpileModule(files.thumbnailService, {
@@ -40,10 +40,22 @@ const compiled = ts.transpileModule(files.thumbnailService, {
 }).outputText;
 const thumbnailModule = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 if (thumbnailModule.createThumbnailStoragePath("communities/c1/channels/ch1/pending/u1/image.png") !== "communities/c1/channels/ch1/pending/u1/thumbnails/image.png.webp") {
-  throw new Error("Image thumbnail placeholder smoke test failed: deterministic sibling object path");
+  throw new Error("deterministic sibling object path failed");
 }
 if (thumbnailModule.createThumbnailStoragePath("../private/image.png") !== null) {
-  throw new Error("Image thumbnail placeholder smoke test failed: traversal-safe object path");
+  throw new Error("traversal-safe object path failed");
+}
+const preview = thumbnailModule.attachmentThumbnailService.createNativePreviewMetadata({
+  storagePath: "communities/c1/channels/ch1/pending/u1/image.png",
+  publicUrl: null,
+  mimeType: "image/jpeg",
+  sizeBytes: 1024,
+});
+if (preview.thumbnailUrl !== null || preview.generated !== false) {
+  throw new Error("native preview must not invent thumbnail URLs");
+}
+if (thumbnailModule.resolveNativeImagePreviewUrl({ thumbnailUrl: null, publicUrl: "https://x/a.jpg" }) !== "https://x/a.jpg") {
+  throw new Error("native preview must fall back to original URL");
 }
 
-console.log("Image thumbnail generation placeholder smoke test passed.");
+console.log("Image thumbnail native-preview smoke test passed.");

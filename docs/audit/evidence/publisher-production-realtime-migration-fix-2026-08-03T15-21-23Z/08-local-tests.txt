@@ -1,0 +1,8 @@
+﻿portability_tests=PASS (10/10)
+publisher_eligibility=PASS
+supabase:migrations:check=PASS
+secrets:smoke=PASS
+production:config:guard(.env.production.local)=PASS
+typecheck=FAIL pre-existing unrelated publicBadgeResolver.ts (.at / null vs undefined)
+npm run build=NOT_RUN_DUE_TO_TYPECHECK_PREEXISTING
+desktop:smoke=NOT_RUN_DUE_TO_TYPECHECK_PREEXISTING

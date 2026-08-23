@@ -1,7 +1,5 @@
 import type { UnifiedContentMention } from "../../types/contentMentions";
-import type { UnifiedFeedCursor, UnifiedFeedItem, UnifiedFeedPage, UnifiedFeedQuery } from "../../types/feed";
-import { rankUnifiedFeedItems, type UnifiedFeedRankingInput } from "../../utils/unifiedFeedRanking";
-import { dataSourceService } from "../dataSourceService";
+import type { UnifiedFeedItem, UnifiedFeedPage, UnifiedFeedQuery } from "../../types/feed";
 import { getSupabaseClient } from "../supabase/supabaseClient";
 
 export type FeedQueryResult = Readonly<{ ok: true; data: UnifiedFeedPage }> | Readonly<{ ok: false; error: Readonly<{ code: string; message: string }> }>;
@@ -12,8 +10,6 @@ type RankedFeedRow = Readonly<{
   listener_count: number; mention_count: number; is_unread: boolean; is_saved: boolean; is_follow_related: boolean;
   ranking_score: number; ranking_epoch: string;
 }>;
-const localRead = new Set<string>();
-const localSaved = new Set<string>();
 const PAGE_CACHE_LIMIT = 16;
 const PAGE_CACHE_FRESH_MS = 30_000;
 const PAGE_CACHE_STALE_MS = 5 * 60_000;
@@ -57,40 +53,8 @@ function mapRow(row: RankedFeedRow): UnifiedFeedItem {
   };
 }
 
-function isAfterCursor(score: number, item: UnifiedFeedRankingInput, cursor: UnifiedFeedCursor) {
-  if (score !== cursor.rankingScore) return score < cursor.rankingScore;
-  if (item.mention.createdAt !== cursor.createdAt) return item.mention.createdAt < cursor.createdAt;
-  return item.feedItemId < cursor.feedItemId;
-}
-
-async function mockPage(query: UnifiedFeedQuery): Promise<UnifiedFeedPage> {
-  const { mockUnifiedContentMentions } = await import("../../data/mockUnifiedContentMentions");
-  const rankingEpoch = query.cursor?.rankingEpoch ?? new Date().toISOString();
-  const followed = new Set(query.followedAuthorIds ?? []);
-  const inputs: UnifiedFeedRankingInput[] = mockUnifiedContentMentions
-    .filter((mention) => !query.sourceTypes?.length || query.sourceTypes.includes(mention.sourceType))
-    .filter((mention) => !query.createdAfter || mention.createdAt >= query.createdAfter)
-    .map((mention, index) => ({
-      feedItemId: mention.id, mention, mentionedUserIds: [mention.mentionedUserId],
-      metrics: { reactions: (index * 3) % 17, comments: (index * 2) % 11, listeners: mention.sourceType === "radio_session" || mention.sourceType.startsWith("podcast_") ? 24 + index * 9 : 0, mentionCount: 1 },
-      isUnread: !localRead.has(mention.id), isFollowRelated: followed.has(mention.authorId) || followed.has(mention.mentionedUserId),
-    })).filter((item) => query.mode === "popular" || item.isFollowRelated);
-  const ranked = rankUnifiedFeedItems(inputs, Date.parse(rankingEpoch)).filter(({ item, score }) => !query.cursor || isAfterCursor(score, item, query.cursor));
-  const limit = resultLimit(query.limit);
-  const page = ranked.slice(0, limit);
-  const items = page.map(({ item, score }): UnifiedFeedItem => ({ ...item, isSaved: localSaved.has(item.feedItemId), rankingScore: score, rankingEpoch }));
-  const last = items[items.length - 1];
-  return {
-    items,
-    nextCursor: ranked.length > page.length && last ? { rankingScore: last.rankingScore, createdAt: last.mention.createdAt, feedItemId: last.feedItemId, rankingEpoch } : null,
-    rankingEpoch,
-    emptyState: items.length ? null : query.mode === "following" ? "no_followed_mentions" : "no_visible_mentions",
-  };
-}
-
 export const feedQueryService = {
   async listPage(query: UnifiedFeedQuery): Promise<FeedQueryResult> {
-    if (dataSourceService.getStatus().isMock) return { ok: true, data: await mockPage(query) };
     const key = pageCacheKey(query);
     const cached = pageCache.get(key);
     const bypassFresh = bypassFreshCache.delete(key);
@@ -127,6 +91,4 @@ export const feedQueryService = {
   refresh(query: Omit<UnifiedFeedQuery, "cursor">) { const next = { ...query, cursor: null }; bypassFreshCache.add(pageCacheKey(next)); return this.listPage(next); },
   invalidateCache() { pageCache.clear(); bypassFreshCache.clear(); },
   cacheDiagnostics() { return { size: pageCache.size, maxPages: PAGE_CACHE_LIMIT, oldestAgeMs: pageCache.size ? Date.now() - Math.min(...[...pageCache.values()].map((entry) => entry.updatedAt)) : 0 } as const; },
-  setMockRead(feedItemId: string, read: boolean) { if (read) localRead.add(feedItemId); else localRead.delete(feedItemId); },
-  setMockSaved(feedItemId: string, saved: boolean) { if (saved) localSaved.add(feedItemId); else localSaved.delete(feedItemId); },
 };

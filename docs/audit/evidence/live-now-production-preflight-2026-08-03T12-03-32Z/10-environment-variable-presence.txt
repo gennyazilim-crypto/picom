@@ -1,0 +1,25 @@
+ENVIRONMENT VARIABLE PRESENCE (local .env.production / examples — values NOT printed)
+
+From .env.production.example (inventory placeholders):
+VITE_SUPABASE_URL: PRESENT (placeholder YOUR_PRODUCTION_PROJECT)
+VITE_SUPABASE_ANON_KEY: PRESENT (placeholder)
+SUPABASE_PROJECT_REF: MISSING (empty)
+SUPABASE_ACCESS_TOKEN: MISSING (empty placeholder)
+VITE_LIVEKIT_URL: PRESENT (placeholder)
+LIVEKIT_API_KEY: NOT_REQUIRED_IN_EXAMPLE / typically server-only — MISSING in example as usable secret
+LIVEKIT_API_SECRET: MISSING in example as usable secret
+DATABASE_URL: NOT_REQUIRED for renderer; server MISSING in example
+SUPABASE service credential key (server): MISSING in renderer-safe section (correct); server secret NOT verified on prod hosts
+worker DB/service credentials: MISSING / NOT_VERIFIED on production hosts
+notification/outbox configuration: NOT_VERIFIED
+public application URLs: PRESENT as placeholders (account.picom.gg / app.picom.gg / support.picom.gg)
+VITE_APP_ENV: PRESENT (production)
+feature flags: PARTIAL (Steam/Epic flags present as false in example)
+
+From local .env.production (presence only):
+VITE_SUPABASE_URL: PRESENT — host ref equals STAGING ufmtvqtsklqsmqxefbbs (BLOCKER: production file aliases staging)
+VITE_SUPABASE_ANON_KEY: PRESENT (value redacted)
+SUPABASE_PROJECT_REF: MISSING
+Distinct production LiveKit / worker secrets on production hosts: NOT_VERIFIED
+
+No secret values or hashes written to this file.

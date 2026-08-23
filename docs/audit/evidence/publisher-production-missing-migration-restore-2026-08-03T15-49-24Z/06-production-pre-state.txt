@@ -1,0 +1,9 @@
+﻿PRODUCTION_PRE_STATE
+to_regclass(public.community_live_screen_sessions)=NULL
+remnants=NONE
+history_20260803100000=MISSING
+history_20260803110000=MISSING
+history_20260803130000=PRESENT
+history_20260803140000=ABSENT
+failed_140000_partial_objects=NONE
+SAFE_TO_APPLY=YES

@@ -1,0 +1,9 @@
+{
+  "launchToCdpMs": 861,
+  "launchToWelcomeMs": 863,
+  "appearanceResumeLaunchMs": 677,
+  "speakerTestMs": 3020,
+  "cameraPreviewMs": 15067,
+  "screenPickerMs": 1112,
+  "readyToLoginMs": 168
+}

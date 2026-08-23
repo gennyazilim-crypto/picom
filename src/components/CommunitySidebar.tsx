@@ -23,6 +23,7 @@ import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import { AppIcon } from "./AppIcon";
 import { SidebarVoiceConnectionBar } from "./SidebarVoiceConnectionBar";
 import { getCommunityKindInviteSummary } from "../services/community/communityJoinRoutingService";
+import { communityArchiveEligibilityService, type CommunityArchiveEligibility } from "../services/community/communityArchiveEligibilityService";
 
 const CommunityAdminDeferredSection = lazy(() => import("./CommunityAdminDeferredSection").then((module) => ({ default: module.CommunityAdminDeferredSection })));
 
@@ -89,16 +90,54 @@ export function CommunitySidebar({ community, communities, access, activeChannel
     Object.fromEntries(community.categories.map((category) => [category.id, Boolean(category.collapsedByDefault)])),
   );
   const [openPanel, setOpenPanel] = useState<OpenCommunityPanel>(null);
+  const [adminInitialSection, setAdminInitialSection] = useState<import("./community/CommunityAdminSections").AdminSectionId | undefined>();
+  const [archiveEligibility, setArchiveEligibility] = useState<CommunityArchiveEligibility | null>(null);
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
   const kindSummary = getCommunityKindInviteSummary(community.kind);
   useEffect(() => { if (pendingInviteCode) setOpenPanel("joinInvite"); }, [pendingInviteCode]);
-  const deferredAdminSection = (section: import("./CommunityAdminDeferredSection").CommunityAdminDeferredSectionId) => (
+  useEffect(() => {
+    let cancelled = false;
+    setArchiveEligibility(null);
+    if (!access.isOwner) return () => { cancelled = true; };
+
+    void communityArchiveEligibilityService.getEligibility({
+      communityId: community.id,
+      isOwner: access.isOwner,
+      mockMemberCount: community.members.length,
+    }).then((result) => {
+      if (!cancelled && result.ok) setArchiveEligibility(result.data);
+    });
+    return () => { cancelled = true; };
+  }, [access.isOwner, community.id, community.members.length]);
+  const openAdminPanel = (initialSection?: import("./community/CommunityAdminSections").AdminSectionId) => {
+    setAdminInitialSection(initialSection);
+    setOpenPanel("admin");
+  };
+  const closeAdminPanel = () => {
+    setOpenPanel(null);
+    setAdminInitialSection(undefined);
+  };
+  const ownerArchiveRequiresTransfer = archiveEligibility?.requiresOwnershipTransfer ?? false;
+  const deferredAdminSection = (section: import("./CommunityAdminDeferredSection").CommunityAdminDeferredSectionId, onOpenOnboardingTask?: (itemId: import("../types/communityOnboarding").CommunityOnboardingItemId) => void) => (
     <Suspense fallback={<div className="empty-state compact" role="status">Opening admin tools...</div>}>
-      <CommunityAdminDeferredSection section={section} community={community} currentUser={currentUser} access={access} events={events} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} onCommunityMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onCancelEvent={onCancelEvent} />
+      <CommunityAdminDeferredSection section={section} community={community} currentUser={currentUser} access={access} archiveEligibility={archiveEligibility} events={events} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} onCommunityMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} onCreateEvent={onCreateEvent} onUpdateEvent={onUpdateEvent} onCancelEvent={onCancelEvent} onOpenOnboardingTask={onOpenOnboardingTask} />
     </Suspense>
   );
   const adminSectionTools = {
-    overview: deferredAdminSection("overview"),
+    overview: ({ selectSection, closePanel, openInvite }: { selectSection: (sectionId: import("./community/CommunityAdminSections").AdminSectionId) => void; closePanel: () => void; openInvite: () => void }) => deferredAdminSection("overview", (itemId) => {
+      const sectionByTask: Partial<Record<import("../types/communityOnboarding").CommunityOnboardingItemId, import("./community/CommunityAdminSections").AdminSectionId>> = {
+        set_icon: "community-settings",
+        add_description: "community-settings",
+        create_first_channel: "channels",
+        set_rules: "community-settings",
+        configure_roles: "roles",
+        configure_notifications: "community-settings",
+      };
+      if (itemId === "invite_people") { openInvite(); return; }
+      if (itemId === "send_first_message") { closePanel(); return; }
+      const target = sectionByTask[itemId];
+      if (target) selectSection(target);
+    }),
     channels: deferredAdminSection("channels"),
     events: deferredAdminSection("events"),
     moderation: deferredAdminSection("moderation"),
@@ -114,12 +153,11 @@ export function CommunitySidebar({ community, communities, access, activeChannel
       <CommunityHeader
         community={community}
         access={access}
-        onOpenAdminPanel={() => setOpenPanel("admin")}
+        onOpenAdminPanel={() => openAdminPanel()}
         onOpenModeratorPanel={() => setOpenPanel("moderator")}
         onOpenMemberPanel={() => setOpenPanel(access.isVisitor ? "visitor" : "member")}
         onOpenVisitorPanel={() => setOpenPanel("visitor")}
         onOpenJoinCommunity={() => setOpenPanel("join")}
-        onOpenLeaveCommunity={() => setOpenPanel("leave")}
         onPlaceholderAction={onPlaceholderAction}
       />
 
@@ -128,23 +166,6 @@ export function CommunitySidebar({ community, communities, access, activeChannel
           <span className="community-audio-entry-icon" aria-hidden="true"><AppIcon name="headphones" size="md" /></span>
           <span><strong>{community.kind === "podcast" ? "Podcast" : "Audio"}</strong><small>{community.kind === "podcast" ? "Shows and episodes" : "Community audio"}</small></span>
         </button> : null}
-        {access.isVisitor && visibleCategories.length ? (
-          <div className="community-readonly-notice" role="status">
-            <span className="community-readonly-notice-icon" aria-hidden="true">
-              <AppIcon name="eye" size="sm" />
-            </span>
-            <div className="community-readonly-notice-copy">
-              <strong>Public preview</strong>
-              <span>{kindSummary.visitorCopy}</span>
-            </div>
-            {access.canJoin ? (
-              <button type="button" className="channel-sidebar-action channel-sidebar-action--primary" onClick={() => setOpenPanel("join")}>
-                Join community
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
         {visibleCategories.length ? (
           <div className="channel-list">
             {visibleCategories.map((category) => (
@@ -254,7 +275,7 @@ export function CommunitySidebar({ community, communities, access, activeChannel
         <UserMiniCard member={currentUser} onOpenMicrophoneSettings={onOpenMicrophoneSettings} onOpenHeadphoneSettings={onOpenHeadphoneSettings} />
       </div>
 
-      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onCreateChannel={onCreateChannel} onMemberRolesChanged={onMemberRolesChanged} onCommunityRolesChanged={onCommunityRolesChanged} onCommunityUpdated={onCommunityUpdated} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
+      {openPanel === "admin" ? <CommunityAdminPanel community={community} access={access} initialSection={adminInitialSection} onClose={closeAdminPanel} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onCreateChannel={onCreateChannel} onMemberRolesChanged={onMemberRolesChanged} onCommunityRolesChanged={onCommunityRolesChanged} onCommunityUpdated={onCommunityUpdated} onPlaceholderAction={onPlaceholderAction} sectionTools={adminSectionTools} /> : null}
       {openPanel === "moderator" ? <CommunityModeratorPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onMembersChanged={onCommunityMembersChanged} onOpenModerationSource={(report) => { setOpenPanel(null); onOpenModerationSource(report); }} /> : null}
       {openPanel === "member" ? <CommunityMemberPanel community={community} access={access} onClose={() => setOpenPanel(null)} onOpenLeave={() => setOpenPanel("leave")} onOpenInvite={() => setOpenPanel("invite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}
       {openPanel === "visitor" ? <CommunityVisitorPanel community={community} access={access} isAuthenticated={isAuthenticated} onClose={() => setOpenPanel(null)} onOpenJoin={() => setOpenPanel("join")} onOpenJoinWithInvite={() => setOpenPanel("joinInvite")} onOpenGuidelines={() => setGuidelinesOpen(true)} onReport={() => setOpenPanel("report")} /> : null}

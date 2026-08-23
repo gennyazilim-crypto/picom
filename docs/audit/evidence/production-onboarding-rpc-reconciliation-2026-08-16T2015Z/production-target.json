@@ -1,0 +1,18 @@
+{
+  "MUTATION_TARGET": "picom-production / cqnsetsmcduraryemhbi",
+  "proof": [
+    "Supabase MCP list_projects: name=picom-production, id/ref=cqnsetsmcduraryemhbi, region=eu-central-1, status=ACTIVE_HEALTHY",
+    "Supabase MCP get_project: same id/ref/name/region/status",
+    "execute_sql current_database=postgres, current_user=postgres, cluster_name=main"
+  ],
+  "not_used_as_sole_proof": ".env.production",
+  "local_cli_link_is_staging": {
+    "supabase/.temp/project-ref": "ufmtvqtsklqsmqxefbbs",
+    "note": "Local CLI link is staging. Apply path must use MCP project_id cqnsetsmcduraryemhbi, not supabase db push from the linked staging project."
+  },
+  "org": {
+    "id": "agmihvcqyshjgwjgknor",
+    "plan": "free"
+  },
+  "staging_not_mutated": true
+}

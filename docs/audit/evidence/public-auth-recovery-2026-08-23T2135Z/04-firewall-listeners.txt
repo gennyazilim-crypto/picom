@@ -1,0 +1,16 @@
+ufw: active, logging low
+default: deny incoming, allow outgoing, deny routed
+ALLOW: 22/tcp, 80/tcp, 443/tcp, Nginx Full
+also ALLOW (LiveKit): 7881/tcp, 3478/udp, 5349/tcp, 50000:60000/udp, 1935/tcp
+ufw was not disabled.
+
+ss -lntp (sanitized):
+  nginx *:80 *:443
+  sshd *:22
+  docker-proxy 127.0.0.1:4180  (picom-auth-gateway)
+  node 127.0.0.1:8788
+  docker-proxy 127.0.0.1:8787  (email-worker)
+  docker-proxy 127.0.0.1:8790  (public-stats)
+  livekit *:7880 *:7881 *:5349
+  ingress *:8085 *:1935
+  redis 127.0.0.1:6379

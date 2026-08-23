@@ -1,0 +1,7 @@
+JWT_RLS_SMOKE=NOT_RUN
+CASE04=NOT_RUN
+CASE18=NOT_RUN
+REALTIME_REVOKE=NOT_RUN
+REMINDER_PREF=NOT_RUN
+I18N_UI_PROD=NOT_RUN
+reason=Publisher Phase 1 schema not applied on production (blocked at realtime.messages platform table)

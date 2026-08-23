@@ -1,0 +1,50 @@
+[
+  {
+    "scenario": "asar-unsafe-flags",
+    "result": "PACKAGED_PASS",
+    "evidence": "asar-flag-scan.txt",
+    "notes": "none"
+  },
+  {
+    "scenario": "S01-clean-first-launch",
+    "result": "FAIL",
+    "evidence": "screenshots/01-welcome.png",
+    "notes": "welcome=false title=Picom Desktop launchMs=512"
+  },
+  {
+    "scenario": "S16-auth",
+    "result": "BLOCKED_TEST_IDENTITY",
+    "evidence": "none",
+    "notes": "No dedicated test account in environment"
+  },
+  {
+    "scenario": "S36-legal-gate",
+    "result": "BLOCKED_TEST_IDENTITY",
+    "evidence": "none",
+    "notes": "Post-auth path not entered"
+  },
+  {
+    "scenario": "S37-account-onboarding",
+    "result": "BLOCKED_TEST_IDENTITY",
+    "evidence": "none",
+    "notes": "Post-auth path not entered"
+  },
+  {
+    "scenario": "S21-startup-item-change",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "none",
+    "notes": "Did not mutate host login items"
+  },
+  {
+    "scenario": "S22-start-in-tray",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "none",
+    "notes": "Did not alter host startup"
+  },
+  {
+    "scenario": "S57-installer",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "none",
+    "notes": "NSIS not executed against host"
+  }
+]

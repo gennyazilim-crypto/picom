@@ -1,0 +1,17 @@
+RLS PREFLIGHT — NOT EXECUTED against production
+
+Skipped: production project ref unverified. No policy DDL changes attempted.
+
+Matrix roles requested (deferred): anon, authenticated viewer, normal user, creator, publisher,
+dashboard.read-only, reviewer, root, elevated DB role, reminder worker.
+
+Staging-proven expectations (carry-forward, not production proof):
+- dashboard.read list-only vs approve/suspend separation
+- users cannot self-approve applications / self-activate badges
+- stream keys not public
+- claim_publisher_stream_schedule_reminders restricted to worker service credential role only
+- notification prefs owner-scoped via upsert RPC
+- application document upload gated to open applications
+
+status=BLOCKED_PRECONDITION
+policy_changes_this_task=NONE

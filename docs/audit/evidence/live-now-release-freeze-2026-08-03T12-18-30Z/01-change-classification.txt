@@ -1,0 +1,11 @@
+﻿Publisher/Creator Phase 1: src/components/publisher/*, src/services/publisher/*, migrations 130000-141000, root dashboard review page, docs/publisher-creator/*
+Live Now discovery: migrations 150000, publisherLiveNowService, LiveWorkspace/GoLive/FeedLiveNowPreviewBand, live discovery tests
+eligibility Case 04 fix: migration 160000, publisher-eligibility-* scripts/tests
+Case 18 badge dedupe: migration 170000, case18 evidence/smoke
+realtime badge revocation: migration 171000, jwt-rls-revocation evidence/smoke
+reminders: migration 172000, event-reminder-worker, reminder integration test
+notification preferences: migration 172000 modes, liveBroadcastFanoutPolicy, notif pref test
+i18n: src/services/localization/liveNowCatalog.ts, live-now-i18n-parity
+voiceService type fix: Uint8Array copy+set before publishData
+evidence/docs: live-now-* and publisher-creator-* evidence packs + PUBLISHER_CREATOR_*.md
+alakasız (excluded / stash): FeedRightActivityRail, brand/privacy copy, email/auth/DM noise, July migrations WIP, release-* build dirs

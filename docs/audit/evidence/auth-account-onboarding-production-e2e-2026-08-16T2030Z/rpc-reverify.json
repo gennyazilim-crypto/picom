@@ -1,0 +1,36 @@
+{
+  "PRODUCTION_ONBOARDING_RPC": "CANONICAL_5_ARG",
+  "TASK_02_HOSTED_RECONCILIATION": "APPLIED",
+  "oid": 29163,
+  "overload_count": 1,
+  "args": [
+    "target_profile jsonb",
+    "target_followed_user_ids uuid[]",
+    "target_theme text",
+    "target_start_choice text",
+    "target_invite_code text"
+  ],
+  "returns": [
+    "completed boolean",
+    "completed_at timestamp with time zone",
+    "followed_user_ids uuid[]",
+    "theme_mode text",
+    "initial_feed text",
+    "start_choice text"
+  ],
+  "security_definer": true,
+  "execute": {
+    "authenticated": true,
+    "anon": false,
+    "service_role": false
+  },
+  "hosted_migration_row": {
+    "version": "20260816202306",
+    "name": "reconcile_account_onboarding_rpc_contract"
+  },
+  "repo_migration_filename": "20260816000000_reconcile_account_onboarding_rpc_contract.sql",
+  "MIGRATION_HISTORY_VERSION_DRIFT": "OPEN_NONBLOCKING_FOR_AUTH_E2E",
+  "repair_attempted": false,
+  "db_push_attempted": false,
+  "PRODUCTION_5_ARG_FUNCTIONAL_E2E": "BLOCKED_TEST_IDENTITY"
+}

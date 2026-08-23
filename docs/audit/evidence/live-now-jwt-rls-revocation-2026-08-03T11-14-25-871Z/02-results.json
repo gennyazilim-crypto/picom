@@ -1,0 +1,143 @@
+{
+  "pass": 27,
+  "fail": 0,
+  "exitCode": 0,
+  "results": [
+    {
+      "caseId": "role_reviewer_can_review",
+      "status": "PASS",
+      "detail": "data=true"
+    },
+    {
+      "caseId": "role_readonly_list_only",
+      "status": "PASS",
+      "detail": "list=true review=false"
+    },
+    {
+      "caseId": "01_creator_starts_approved_live",
+      "status": "PASS",
+      "detail": "session=true status=starting"
+    },
+    {
+      "caseId": "02_viewer_list_sees_stream",
+      "status": "PASS",
+      "detail": "found=true"
+    },
+    {
+      "caseId": "02_viewer_count_sees_stream",
+      "status": "PASS",
+      "detail": "count=1"
+    },
+    {
+      "caseId": "02_viewer_search_sees_stream",
+      "status": "PASS",
+      "detail": "searchHas=true"
+    },
+    {
+      "caseId": "02_viewer_featured_candidate",
+      "status": "PASS",
+      "detail": "featuredHas=true (featured = top viewers from eligible list)"
+    },
+    {
+      "caseId": "02b_livekit_authorize_while_active",
+      "status": "PASS",
+      "detail": "authorized_payload_present_no_token_logged"
+    },
+    {
+      "caseId": "03_realtime_subscribed",
+      "status": "PASS",
+      "detail": "subscribed"
+    },
+    {
+      "caseId": "03_reviewer_suspend_badge",
+      "status": "PASS",
+      "detail": "status=suspended"
+    },
+    {
+      "caseId": "04_realtime_event_without_reload",
+      "status": "PASS",
+      "detail": "table=publisher_badges event=UPDATE"
+    },
+    {
+      "caseId": "04_list_hidden_after_suspend",
+      "status": "PASS",
+      "detail": "found=false"
+    },
+    {
+      "caseId": "04_count_zero_after_suspend",
+      "status": "PASS",
+      "detail": "count=0"
+    },
+    {
+      "caseId": "04_search_hidden_after_suspend",
+      "status": "PASS",
+      "detail": "searchHas=false"
+    },
+    {
+      "caseId": "04_featured_hidden_after_suspend",
+      "status": "PASS",
+      "detail": "featuredHas=false"
+    },
+    {
+      "caseId": "05_go_live_denied_after_suspend",
+      "status": "PASS",
+      "detail": "allowed=false"
+    },
+    {
+      "caseId": "05_livekit_token_denied_after_suspend",
+      "status": "PASS",
+      "detail": "PUBLISHER_BROADCAST_NOT_ALLOWED | 42501"
+    },
+    {
+      "caseId": "05_restart_broadcast_denied",
+      "status": "PASS",
+      "detail": "PUBLISHER_BROADCAST_NOT_ALLOWED | 42501"
+    },
+    {
+      "caseId": "06_reconnect_still_hidden",
+      "status": "PASS",
+      "detail": "found=false count=0 search=false featured=false"
+    },
+    {
+      "caseId": "07_readonly_can_list",
+      "status": "PASS",
+      "detail": "rows=0"
+    },
+    {
+      "caseId": "07_readonly_cannot_approve",
+      "status": "PASS",
+      "detail": "PUBLISHER_REVIEWER_REQUIRED | 42501"
+    },
+    {
+      "caseId": "07_readonly_cannot_suspend",
+      "status": "PASS",
+      "detail": "PUBLISHER_REVIEWER_REQUIRED | 42501"
+    },
+    {
+      "caseId": "08_user_cannot_insert_badge",
+      "status": "PASS",
+      "detail": "denied"
+    },
+    {
+      "caseId": "08_user_cannot_forge_approved_application",
+      "status": "PASS",
+      "detail": "denied"
+    },
+    {
+      "caseId": "08_creator_cannot_self_reactivate_badge",
+      "status": "PASS",
+      "detail": "permission denied for table publisher_badges | 42501"
+    },
+    {
+      "caseId": "08_creator_cannot_self_set_application_status",
+      "status": "PASS",
+      "detail": "permission denied for table publisher_applications | 42501"
+    },
+    {
+      "caseId": "cleanup",
+      "status": "PASS",
+      "detail": "fixtures removed"
+    }
+  ],
+  "utc": "2026-08-03T11:14:40.556Z"
+}

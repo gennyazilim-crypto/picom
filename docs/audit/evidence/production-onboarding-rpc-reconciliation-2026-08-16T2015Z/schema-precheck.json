@@ -1,0 +1,10 @@
+{
+  "COLUMN onboarding_completed": "PRESENT boolean NOT NULL default false",
+  "COLUMN onboarding_completed_at": "PRESENT timestamptz NULL",
+  "COLUMN onboarding_start_choice": "ABSENT",
+  "COLUMN onboarding_initial_feed": "ABSENT",
+  "onboarding_check_constraints": [],
+  "follow_user": "PRESENT (target_user_id uuid)",
+  "migration_additions_safe_for_hosted_state": true,
+  "note": "ADD COLUMN IF NOT EXISTS and NOT VALID checks are safe against current ABSENT columns and 23 incomplete profiles."
+}

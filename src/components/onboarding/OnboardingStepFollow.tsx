@@ -1,6 +1,8 @@
 import type { Member } from "../../types/community";
 import { AppIcon } from "../AppIcon";
 import { MemberAvatar } from "../MemberAvatar";
+import { ProfileDisplayName, ProfileUsername } from "../ProfileDisplayName";
+import { VerifiedBadge } from "../VerifiedBadge";
 
 type Props = { suggestions: Member[]; followedUserIds: string[]; onToggleFollow: (userId: string) => void };
 
@@ -11,7 +13,7 @@ export function OnboardingStepFollow({ suggestions, followedUserIds, onToggleFol
       <div className="onboarding-follow-list">
         {suggestions.slice(0, 10).map((member) => {
           const following = followedUserIds.includes(member.userId);
-          return <article className="onboarding-follow-row" key={member.userId}><MemberAvatar member={member} size={42} /><div><strong>{member.displayName}</strong><span>@{member.username} - {member.statusText}</span></div><button type="button" className={following ? "selected" : ""} onClick={() => onToggleFollow(member.userId)}>{following ? "Following" : "Follow"}</button></article>;
+          return <article className="onboarding-follow-row" key={member.userId}><MemberAvatar member={member} size={42} /><div><strong><ProfileDisplayName userId={member.userId} fallback={member.displayName} /></strong><VerifiedBadge userId={member.userId} verification={member.verification} size="xs" /><span>@<ProfileUsername userId={member.userId} fallback={member.username} /> - {member.statusText}</span></div><button type="button" className={following ? "selected" : ""} onClick={() => onToggleFollow(member.userId)}>{following ? "Following" : "Follow"}</button></article>;
         })}
       </div>
     </section>

@@ -3,9 +3,11 @@ import type { MouseEvent } from "react";
 import type { Member, Reaction } from "../types/community";
 import type { MentionCommentPreview as MentionCommentPreviewItem, MentionItem } from "../types/mentions";
 import { listMentionComments } from "../services/mentionCommentService";
+import { profileMediaStore } from "../services/profileMedia/profileMediaStore";
 import { AppIcon } from "./AppIcon";
 import { EmojiPicker } from "./EmojiPicker";
 import { MemberAvatar } from "./MemberAvatar";
+import { ProfileDisplayName, useProfileDisplayName } from "./ProfileDisplayName";
 
 type MentionFeedFooterProps = {
   item: MentionItem;
@@ -41,6 +43,17 @@ type MentionCommentPreviewProps = {
 
 const COLLAPSED_COMMENT_LIMIT = 2;
 
+function resolveLiveMember(member: Member): Member {
+  const record = profileMediaStore.getSnapshot(member.userId).record;
+  if (!record) return member;
+  return {
+    ...member,
+    displayName: record.displayName?.trim() || member.displayName,
+    username: (record.username?.trim() || member.username).replace(/^@+/, ""),
+    avatarUrl: record.avatar.thumbnailUrl ?? record.avatar.url ?? member.avatarUrl,
+  };
+}
+
 function renderCommentPreviewItem(
   preview: MentionCommentPreviewItem,
   member: Member | undefined,
@@ -52,14 +65,22 @@ function renderCommentPreviewItem(
       <button
         type="button"
         className="mention-comment-preview-avatar"
-        aria-label={member ? `Open ${member.displayName} profile` : "Open commenter profile"}
-        onClick={(event) => member && onOpenProfile(event, member)}
+        aria-label={member ? "Open commenter profile" : "Commenter profile unavailable"}
+        onClick={(event) => member && onOpenProfile(event, resolveLiveMember(member))}
         disabled={!member}
       >
         {member ? <MemberAvatar member={member} size={24} /> : <AppIcon name="user" size="xs" />}
       </button>
       <p>
-        <strong>{member?.displayName ?? "Picom member"}</strong>
+        <button
+          type="button"
+          className="mention-comment-preview-author"
+          aria-label={member ? "Open comment author profile" : "Comment author unavailable"}
+          onClick={(event) => member && onOpenProfile(event, resolveLiveMember(member))}
+          disabled={!member}
+        >
+          <strong><ProfileDisplayName userId={member?.userId} fallback={member?.displayName ?? "Picom member"} /></strong>
+        </button>
         <span className={expanded ? "is-expanded" : undefined}>{preview.body}</span>
       </p>
     </article>
@@ -89,6 +110,21 @@ export function EmojiReactionSummary({ reactions }: EmojiReactionSummaryProps) {
   );
 }
 
+function CommenterAvatarButton({ member, onOpenProfile }: { member: Member; onOpenProfile: (event: MouseEvent, member: Member) => void }) {
+  const displayName = useProfileDisplayName(member.userId, member.displayName);
+  return (
+    <button
+      type="button"
+      className="mention-comment-engagement-avatar"
+      title={displayName}
+      aria-label={`Open ${displayName} profile`}
+      onClick={(event) => onOpenProfile(event, resolveLiveMember(member))}
+    >
+      <MemberAvatar member={member} size={22} />
+    </button>
+  );
+}
+
 export function CommentEngagementSummary({ commenters, totalCount, onOpenComments, onOpenProfile }: CommentEngagementProps) {
   if (totalCount <= 0) return null;
 
@@ -107,16 +143,7 @@ export function CommentEngagementSummary({ commenters, totalCount, onOpenComment
         <AppIcon name="reply" size="xs" aria-hidden="true" />
       </button>
       {visibleCommenters.map((member) => (
-        <button
-          key={member.userId}
-          type="button"
-          className="mention-comment-engagement-avatar"
-          title={member.displayName}
-          aria-label={`Open ${member.displayName} profile`}
-          onClick={(event) => onOpenProfile(event, member)}
-        >
-          <MemberAvatar member={member} size={22} />
-        </button>
+        <CommenterAvatarButton key={member.userId} member={member} onOpenProfile={onOpenProfile} />
       ))}
       {overflow > 0 ? <span className="mention-comment-overflow">+{overflow}</span> : null}
     </div>

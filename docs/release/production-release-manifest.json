@@ -1,0 +1,488 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-03T23:06:06.767Z",
+  "releaseCommit": "d63025c4fa6ab0f700066b570da2e8fd07a395d8",
+  "branch": "feat/community-rebuild",
+  "environmentTarget": "production",
+  "stagingProjectRef": "ufmtvqtsklqsmqxefbbs",
+  "productionProjectRefCandidate": "cqnsetsmcduraryemhbi",
+  "productionMutationGuard": "BLOCKED_UNTIL_ENV_COMPLETE",
+  "hostedMigrationApplyStatus": "not_done",
+  "productionRemoteLatestMigration": "20260803221951",
+  "sealedMigrationRepair": {
+    "filename": "20260803240000_advertiser_campaign_delivery_and_revenue_attribution.sql",
+    "oldLfNormalizedSha256": "91b3d1990d6b3d1d46f2a89e3bf5a94da8e67b316419baa40bf17c86bfd846c9",
+    "newLfNormalizedSha256": "ca8f0de91b8ed06021046ce2992eac2e1fffc028f3cc909f7da3c69a79bb461e",
+    "exceptionDoc": "docs/release/MIGRATION_SEAL_EXCEPTION_20260803240000.md"
+  },
+  "hostedOnlyReconciliation": {
+    "version": "20260803221951",
+    "classification": "EXACT_RECONSTRUCTABLE",
+    "materializedFilename": "20260803221951_live_screen_session_metadata.sql",
+    "lfNormalizedSha256": "87d557e440a68257b41d426552dc702b09e958600d49d819fc99c55818ed4919",
+    "auditDoc": "docs/release/HOSTED_MIGRATION_RECONCILIATION_20260803221951.md"
+  },
+  "additiveViewDropMigration": {
+    "filename": "20260803225000_drop_foundation_public_business_views_for_catalog_rebuild.sql",
+    "lfNormalizedSha256": "8c0242941f4cdd9c9ae63e3d876fcdb201b71305add54ce26f7e9ce61cf7d53e"
+  },
+  "securityHardeningMigration": {
+    "filename": "20260803270000_advertising_acl_role_catalog_rls_and_test_hardening.sql",
+    "lfNormalizedSha256": "2468189af3abf322b982c633cf07f21288ac3634c84018004ebb1c292cc680c0"
+  },
+  "latestGateMigration": "20260803270000_advertising_acl_role_catalog_rls_and_test_hardening.sql",
+  "migrationFiles": [
+    "20260803100000_community_live_screen_sessions.sql",
+    "20260803110000_go_live_broadcast_start.sql",
+    "20260803130000_public_platform_stats.sql",
+    "20260803135000_platform_account_restrictions_canonical.sql",
+    "20260803135100_notification_preferences_canonical.sql",
+    "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
+    "20260803135300_profiles_deactivated_at_canonical.sql",
+    "20260803140000_publisher_creator_program_core.sql",
+    "20260803141000_publisher_livekit_broadcast_gate.sql",
+    "20260803150000_live_now_publisher_discovery.sql",
+    "20260803160000_publisher_eligibility_member_count_canonical.sql",
+    "20260803170000_live_now_discovery_badge_join_dedupe.sql",
+    "20260803171000_live_now_badge_realtime_revocation.sql",
+    "20260803172000_publisher_schedule_reminders_and_notif_modes.sql",
+    "20260803173000_verification_business_platform_foundation.sql",
+    "20260803210000_picom_verified_subscription_and_entitlements.sql",
+    "20260803220000_business_application_verification_and_team_management.sql",
+    "20260803221951_live_screen_session_metadata.sql",
+    "20260803225000_drop_foundation_public_business_views_for_catalog_rebuild.sql",
+    "20260803230000_business_catalog_brand_content_and_promotion_bridge.sql",
+    "20260803240000_advertiser_campaign_delivery_and_revenue_attribution.sql",
+    "20260803250000_partner_payout_tax_reconciliation_and_ad_transparency.sql",
+    "20260803260000_production_feature_canary_allowlist_and_rollout_gates.sql",
+    "20260803270000_advertising_acl_role_catalog_rls_and_test_hardening.sql"
+  ],
+  "migrationSha256List": [
+    {
+      "filename": "20260803100000_community_live_screen_sessions.sql",
+      "lfNormalizedSha256": "70a2d2a347bb4c19049b61b17ba58a38a6b768373de897499d73dd1f9dec69ee"
+    },
+    {
+      "filename": "20260803110000_go_live_broadcast_start.sql",
+      "lfNormalizedSha256": "899834c48af8123087955e2a9eced9d5842fcf5298a1ade52acd5441f987b1b4"
+    },
+    {
+      "filename": "20260803130000_public_platform_stats.sql",
+      "lfNormalizedSha256": "21faf46d9a5f5ac66dc8958f321db6890d06c894be694e8e2dbb5172ac0f0cbf"
+    },
+    {
+      "filename": "20260803135000_platform_account_restrictions_canonical.sql",
+      "lfNormalizedSha256": "37f3a93cfbe43d421221cb7186fe9abc8d47717c67b3220a0bcc04e6ec2ab7d0"
+    },
+    {
+      "filename": "20260803135100_notification_preferences_canonical.sql",
+      "lfNormalizedSha256": "679c8787a85fe8801012743cff503808b523a7607c2aeba0aeccf336c3199f33"
+    },
+    {
+      "filename": "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
+      "lfNormalizedSha256": "45ee464d0b844026f591bee4b1263f9d2e591a0e58bd99ceb38fdad9a0e32808"
+    },
+    {
+      "filename": "20260803135300_profiles_deactivated_at_canonical.sql",
+      "lfNormalizedSha256": "0024f975d66c71e79e8c6311730c4103e8ec9862bdb9ce7fe500c3850b76ccbf"
+    },
+    {
+      "filename": "20260803140000_publisher_creator_program_core.sql",
+      "lfNormalizedSha256": "4584cafe0efb22ae4ee8741ea918c19501cbeff4519cd443156aca7ab5ad7c6d"
+    },
+    {
+      "filename": "20260803141000_publisher_livekit_broadcast_gate.sql",
+      "lfNormalizedSha256": "5411423225032bf3dbd4d4c7b9bb481e4530d26057e752a1d7f5977a2ba6b7a3"
+    },
+    {
+      "filename": "20260803150000_live_now_publisher_discovery.sql",
+      "lfNormalizedSha256": "e911daf08f291e9937ba97ef89cf1c88d32b5c3e3ee88330b0c2527722059fe7"
+    },
+    {
+      "filename": "20260803160000_publisher_eligibility_member_count_canonical.sql",
+      "lfNormalizedSha256": "92db04ab3c83aaec49f9662a28a1176017f638466038ea597074621388fe3365"
+    },
+    {
+      "filename": "20260803170000_live_now_discovery_badge_join_dedupe.sql",
+      "lfNormalizedSha256": "7b79e415bbac31f34a3209b907b550466447c2a450654fa136db77726009826e"
+    },
+    {
+      "filename": "20260803171000_live_now_badge_realtime_revocation.sql",
+      "lfNormalizedSha256": "58c07b610e157393fef2c71f4469d86ee3aa73e77c737e496a53c03576e38a18"
+    },
+    {
+      "filename": "20260803172000_publisher_schedule_reminders_and_notif_modes.sql",
+      "lfNormalizedSha256": "13a866ec26d2e2460c84b4bd35013433c8edbc3bde1df2fb903a30cab8a862e0"
+    },
+    {
+      "filename": "20260803173000_verification_business_platform_foundation.sql",
+      "lfNormalizedSha256": "6fc0010d9a82e4b7fe0b0fdec95f686bedd6355b0456574de32cb04474dfd64c"
+    },
+    {
+      "filename": "20260803210000_picom_verified_subscription_and_entitlements.sql",
+      "lfNormalizedSha256": "a0a4ee0512f9be2fa33a22dd6299b25800f2a42f0cb67e7f5d1899a8a94d921d"
+    },
+    {
+      "filename": "20260803220000_business_application_verification_and_team_management.sql",
+      "lfNormalizedSha256": "be37310c444737a78f2bfc8950a6eb3c270b5783ebedde19d2f3357e4611b960"
+    },
+    {
+      "filename": "20260803221951_live_screen_session_metadata.sql",
+      "lfNormalizedSha256": "87d557e440a68257b41d426552dc702b09e958600d49d819fc99c55818ed4919"
+    },
+    {
+      "filename": "20260803225000_drop_foundation_public_business_views_for_catalog_rebuild.sql",
+      "lfNormalizedSha256": "8c0242941f4cdd9c9ae63e3d876fcdb201b71305add54ce26f7e9ce61cf7d53e"
+    },
+    {
+      "filename": "20260803230000_business_catalog_brand_content_and_promotion_bridge.sql",
+      "lfNormalizedSha256": "43908b6fca260fdb8fa3748d140873ac2e23661a9b78c813c12d0624ccc7e4d0"
+    },
+    {
+      "filename": "20260803240000_advertiser_campaign_delivery_and_revenue_attribution.sql",
+      "lfNormalizedSha256": "ca8f0de91b8ed06021046ce2992eac2e1fffc028f3cc909f7da3c69a79bb461e"
+    },
+    {
+      "filename": "20260803250000_partner_payout_tax_reconciliation_and_ad_transparency.sql",
+      "lfNormalizedSha256": "832e3c9be1d5963270972a9072e9eba0ea4b22768fed158ed81c326f36d788e3"
+    },
+    {
+      "filename": "20260803260000_production_feature_canary_allowlist_and_rollout_gates.sql",
+      "lfNormalizedSha256": "cc4a1ef16d3f53ad2f9601c4337d3dd6e56b471197c528625422a1411d5f80d6"
+    },
+    {
+      "filename": "20260803270000_advertising_acl_role_catalog_rls_and_test_hardening.sql",
+      "lfNormalizedSha256": "2468189af3abf322b982c633cf07f21288ac3634c84018004ebb1c292cc680c0"
+    }
+  ],
+  "expectedMigrationManifestSha256": "7cfac125f2fcf2f9c3b69b70f3ce9b90e2733abd6049cc38c4f7d8b1609a4b9d",
+  "edgeFunctions": [
+    {
+      "name": "accept-invite",
+      "sourcePath": "supabase/functions/accept-invite/index.ts",
+      "sourceSha256": "edab6023a6fd2157ede645d7d736590a168a1f97695a75ff4e095d99583e3fdf",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "account-deletion",
+      "sourcePath": "supabase/functions/account-deletion/index.ts",
+      "sourceSha256": "6e02b875919ba798b879d803cc79fdf3fc6c7db4eb3b4446403c8861155a80b0",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "account-deletion-finalize",
+      "sourcePath": "supabase/functions/account-deletion-finalize/index.ts",
+      "sourceSha256": "e6d809c35b4f06e134ab57b0bcf2c9f8eafcee66020ddf65cfd87add4799ea42",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "admin-health",
+      "sourcePath": "supabase/functions/admin-health/index.ts",
+      "sourceSha256": "2e37c6b9f5a592de28a333a4d77148a2fdde93aee3815154989c15537b10fa1d",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "ads-delivery",
+      "sourcePath": "supabase/functions/ads-delivery/index.ts",
+      "sourceSha256": "ab3dd20e56b94189e41f0ba869acc63dbf2abf26077e2ea29bd7a1ed3199c96b",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "billing-checkout",
+      "sourcePath": "supabase/functions/billing-checkout/index.ts",
+      "sourceSha256": "be3b983be9ee40611d4afe569ccc2172b1d91a686a59aacd29e3ca022f69f0f1",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "billing-portal",
+      "sourcePath": "supabase/functions/billing-portal/index.ts",
+      "sourceSha256": "18bba22fe19c23d232dad0221418f0b2126eb8ea23adaa258cc3959cd06e2ab7",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "billing-webhook",
+      "sourcePath": "supabase/functions/billing-webhook/index.ts",
+      "sourceSha256": "15ec0a4ee9f43ad90813612e9babe7e26de1a3925600e8adedf84982136a951b",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "business-document-upload-session",
+      "sourcePath": "supabase/functions/business-document-upload-session/index.ts",
+      "sourceSha256": "bcc824a07d57aaafaedc58e79d8d143bb26998a9dcbfdf697ac845c2e9689245",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "business-domain-verification-check",
+      "sourcePath": "supabase/functions/business-domain-verification-check/index.ts",
+      "sourceSha256": "0f6d79d0d8ffdfaff8ed831604741646bffc986e8d60682048fd0f93f3faa795",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "business-product-media-upload-session",
+      "sourcePath": "supabase/functions/business-product-media-upload-session/index.ts",
+      "sourceSha256": "e95c2f61eea393417096d0067f652b2b7b8617bc0fcc86cfe1baa86d1e0503a9",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "client-config",
+      "sourcePath": "supabase/functions/client-config/index.ts",
+      "sourceSha256": "0b4afc711151aabe0c38b392a387e54555fca49497f5b2e2c0addf1952f45b32",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "email-api",
+      "sourcePath": "supabase/functions/email-api/index.ts",
+      "sourceSha256": "ddf54b05b197a91c2f818f51167b85ef11cc25a8213b184512ce954baeeb5b3a",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "epic-auth",
+      "sourcePath": "supabase/functions/epic-auth/index.ts",
+      "sourceSha256": "3fdae3bcbdfcd17dc3d069aeaa6269fb8bc5775aea51ec9b21b0147c36402968",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "health",
+      "sourcePath": "supabase/functions/health/index.ts",
+      "sourceSha256": "8fdd00953d4b2d5ee25d2b9358ece9d29476b3eeebcf84056903ba0e18db9777",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "livekit-moderation",
+      "sourcePath": "supabase/functions/livekit-moderation/index.ts",
+      "sourceSha256": "98bca672193db3a7095919c32bb4226159c2a8921e25ebd62a8ec7f437e7be30",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "livekit-token",
+      "sourcePath": "supabase/functions/livekit-token/index.ts",
+      "sourceSha256": "f855b79394fe31c17b27ecd9bf5c22436e3855b3b47969c8af78e9cef7f3dddf",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "livekit-webhook",
+      "sourcePath": "supabase/functions/livekit-webhook/index.ts",
+      "sourceSha256": "b5991398a305d58a741fc64e03eb78083eea5a39124276cf524d81190f6396f8",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "meeting-captions",
+      "sourcePath": "supabase/functions/meeting-captions/index.ts",
+      "sourceSha256": "0695cf79886d9ad78e7e3b763c130d3aa10cd78a3ec79e84a95cf192f508cd5f",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "meeting-captions-agent",
+      "sourcePath": "supabase/functions/meeting-captions-agent/index.ts",
+      "sourceSha256": "383dde316e12f439b774682d9c63619fcac8454a41376c23adec2790136f633c",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "meeting-join",
+      "sourcePath": "supabase/functions/meeting-join/index.ts",
+      "sourceSha256": "fd73d4ee3730047a3d9825a933d4ca25d2d8cc469d637d7e04d7f406e8b12681",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "meeting-token",
+      "sourcePath": "supabase/functions/meeting-token/index.ts",
+      "sourceSha256": "f7607e636a48a392a031c5d5b5d73f86962c824e4b48383882cfa26fc8d590e4",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "moderation-helper",
+      "sourcePath": "supabase/functions/moderation-helper/index.ts",
+      "sourceSha256": "4592dacb51f412184a5db79b543562a0b0e2eae0e82f99d54b7b057108c1e410",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "notification-fanout",
+      "sourcePath": "supabase/functions/notification-fanout/index.ts",
+      "sourceSha256": "98aedba3f44dfacca875955569e58a7ca5920a7875754bb7ab2f85b9cca68dac",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "payout-onboarding-link",
+      "sourcePath": "supabase/functions/payout-onboarding-link/index.ts",
+      "sourceSha256": "532131b655f4da29620b1bbe93b5b4e42dcd071f488493c8a2f6b23e74d10842",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "resend-email-verification",
+      "sourcePath": "supabase/functions/resend-email-verification/index.ts",
+      "sourceSha256": "4002f057afc5a99cf762a977fb33a5c4ad869e568258ebbe31b02ead9f491e89",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "secret-community-verification",
+      "sourcePath": "supabase/functions/secret-community-verification/index.ts",
+      "sourceSha256": "4f7f8e6ec367492328d7ac7ff31eb9d33177c39dd6dbf79249545a14da926f25",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "send-email-verification",
+      "sourcePath": "supabase/functions/send-email-verification/index.ts",
+      "sourceSha256": "e505c366c19bc8e6e7010bcf84e48709143ab04b8ce70fbea1fd5f3e632ad989",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "session-continue",
+      "sourcePath": "supabase/functions/session-continue/index.ts",
+      "sourceSha256": "66ab5e3b55dfe8d3449e3a73b22fdfd92cb956d319f1502ce96434fe17f614d8",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "steam-auth",
+      "sourcePath": "supabase/functions/steam-auth/index.ts",
+      "sourceSha256": "1ad03b019023d3e9a61f822f6aec50c559d7ff04c57abcace19bde16c2b5c9c0",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "user-data-export",
+      "sourcePath": "supabase/functions/user-data-export/index.ts",
+      "sourceSha256": "1328f4a284a768dd716cec2fe53b373bfd5ee89afda1b96f79ef667e68ec9901",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "validate-file",
+      "sourcePath": "supabase/functions/validate-file/index.ts",
+      "sourceSha256": "9fdd3a6d0f3b33a7a09b6934e2c5399ab43488380ff486c666dfbf0f0fc40cbd",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "verification-account-session",
+      "sourcePath": "supabase/functions/verification-account-session/index.ts",
+      "sourceSha256": "6fc93f4a068ddee9bc497fa82f3a980989a747cb54890d8a1a3a629f2e29fcaf",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "voice-call-authorize",
+      "sourcePath": "supabase/functions/voice-call-authorize/index.ts",
+      "sourceSha256": "6aad928fad2b160317e3cdd06aae35cd17a230434bec5e785c501d20036dfb5e",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "voice-occupancy",
+      "sourcePath": "supabase/functions/voice-occupancy/index.ts",
+      "sourceSha256": "a4756d174368e11686d55960d38cd668f995ff48a0f4e0c2632c0cfc8beadf34",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "webhook-message",
+      "sourcePath": "supabase/functions/webhook-message/index.ts",
+      "sourceSha256": "cdbbc48c8a21b0c612c6becb2fef9efc4c10e91a01ec7751612ee8a48e6a0ef3",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    },
+    {
+      "name": "webhooks-payout-provider",
+      "sourcePath": "supabase/functions/webhooks-payout-provider/index.ts",
+      "sourceSha256": "dd0bfeddfd57fb25723d531e2baa57473289288fe4aa0f4aa1e0bd92fbe82c61",
+      "deployVersion": "NOT_DEPLOYED_THIS_TASK",
+      "jwtRequired": "UNKNOWN_UNTIL_HOSTED_CANARY",
+      "rollbackVersion": null
+    }
+  ],
+  "workerImageDigests": {
+    "email-worker": "BLOCKED_NO_IMMUTABLE_DIGEST",
+    "event-reminder-worker": "BLOCKED_NO_IMMUTABLE_DIGEST",
+    "advertising-scheduler": "BLOCKED_IMAGE_NOT_BUILT",
+    "ad-reconciliation-worker": "BLOCKED_IMAGE_NOT_BUILT",
+    "invalid-traffic-worker": "BLOCKED_IMAGE_NOT_BUILT",
+    "payout-worker": "BLOCKED_IMAGE_NOT_BUILT",
+    "payout-reconciliation-worker": "BLOCKED_IMAGE_NOT_BUILT",
+    "transparency-archive-worker": "BLOCKED_IMAGE_NOT_BUILT",
+    "retention-cleanup-worker": "BLOCKED_IMAGE_NOT_BUILT"
+  },
+  "webBuildArtifactHash": "NOT_COMPUTED_THIS_TASK",
+  "accountCenterArtifactHash": "NOT_COMPUTED_THIS_TASK",
+  "desktopArtifactHash": "NOT_COMPUTED_THIS_TASK",
+  "featureFlagDefaults": {
+    "verified_checkout_enabled": false,
+    "verified_identity_enabled": false,
+    "business_applications_enabled": false,
+    "business_public_profiles_enabled": false,
+    "business_product_publish_enabled": false,
+    "advertising_global_enabled": false,
+    "advertiser_onboarding_enabled": false,
+    "campaign_submission_enabled": false,
+    "campaign_activation_enabled": false,
+    "creator_monetization_enabled": false,
+    "publisher_monetization_enabled": false,
+    "payout_onboarding_enabled": false,
+    "payout_batch_processing_enabled": false,
+    "real_payouts_enabled": false
+  },
+  "closedBetaConfigVersion": "v1"
+}

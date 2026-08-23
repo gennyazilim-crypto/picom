@@ -187,7 +187,11 @@ function makeProfile(member: Member, communities: Community[], options: ProfileL
   const visibleCommunities = filterCommunitiesForViewer(communities, options.currentUserId);
   const profileCommunities = getMemberCommunities(visibleCommunities, member.userId);
   const primaryCommunity = profileCommunities[0] ?? communities[0];
-  const roles = profileCommunities.map((community) => getRole(community, member)?.name ?? "Member");
+  const communityRoles = profileCommunities.map((community) => ({
+    communityId: community.id,
+    roleName: getRole(community, member)?.name ?? "Member",
+  }));
+  const roles = communityRoles.map((row) => row.roleName);
   const uniqueRoles = Array.from(new Set(roles.length ? roles : ["Member"]));
   const activities = getMessageActivities(member, visibleCommunities).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
   const media = getMedia(member, visibleCommunities);
@@ -228,6 +232,7 @@ function makeProfile(member: Member, communities: Community[], options: ProfileL
     },
     media,
     activities: visibleActivities,
+    communityRoles,
   };
 }
 

@@ -66,8 +66,8 @@ values ('99300000-0000-4000-8000-000000000001', '99000000-0000-4000-8000-0000000
 insert into public.message_reactions (message_id, user_id, emoji)
 values ('99300000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000002', ':thumbsup:');
 
-insert into public.attachments (id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, status)
-values ('99400000-0000-4000-8000-000000000001', '99300000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000002', 'communities/99000000-0000-4000-8000-000000000001/channels/99200000-0000-4000-8000-000000000001/attached/owned.png', 'owned.png', 'image/png', 18, 'image', 'attached');
+insert into public.attachments (id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, status, scan_status)
+values ('99400000-0000-4000-8000-000000000001', '99300000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000002', 'communities/99000000-0000-4000-8000-000000000001/channels/99200000-0000-4000-8000-000000000001/attached/owned.png', 'owned.png', 'image/png', 18, 'image', 'attached', 'clean');
 
 select set_config('request.jwt.claim.sub', '98000000-0000-4000-8000-000000000002', true);
 set local role authenticated;

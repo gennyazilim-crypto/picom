@@ -5,13 +5,14 @@ import "./LoginBackgroundAnimation.css";
 type LoginBackgroundAnimationProps = { theme: "light" | "dark" };
 type NetworkChip = { icon?: IconName; text?: string; left: number; top: number; tone: "accent" | "warm" | "neutral"; delay: string };
 
+/** Keep chips at frame edges so they do not collide with the left auth hero. */
 const chips: NetworkChip[] = [
-  { icon: "inbox", left: 23, top: 32, tone: "accent", delay: "0s" },
-  { text: "@", left: 38, top: 24, tone: "warm", delay: "-9s" },
-  { icon: "microphone", left: 53, top: 32, tone: "neutral", delay: "-5s" },
-  { icon: "user", left: 23, top: 60, tone: "neutral", delay: "-12s" },
-  { icon: "image", left: 38, top: 68, tone: "accent", delay: "-7s" },
-  { icon: "headphones", left: 53, top: 60, tone: "neutral", delay: "-15s" },
+  { icon: "users", left: 6, top: 14, tone: "accent", delay: "0s" },
+  { text: "@", left: 48, top: 8, tone: "warm", delay: "-9s" },
+  { icon: "hash", left: 94, top: 18, tone: "neutral", delay: "-5s" },
+  { icon: "microphone", left: 8, top: 88, tone: "neutral", delay: "-12s" },
+  { icon: "headphones", left: 42, top: 92, tone: "accent", delay: "-7s" },
+  { icon: "inbox", left: 90, top: 78, tone: "neutral", delay: "-15s" },
 ];
 
 const wavePath = "M-100 620 C 250 520, 480 720, 800 600 S 1350 420, 1700 540";
@@ -60,7 +61,7 @@ export function LoginBackgroundAnimation({ theme }: LoginBackgroundAnimationProp
       </div>
 
       <svg className="login-v3-network" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
-        <path d="M25 35 40 27 55 35M25 63 40 71 55 63M25 35V63M55 35V63" />
+        <path d="M8 16 48 10 92 20M8 86 42 90 88 78" />
       </svg>
 
       <div className="login-v3-chips">

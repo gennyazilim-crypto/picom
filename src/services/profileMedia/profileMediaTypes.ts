@@ -1,3 +1,4 @@
+import type { VerificationSummary } from "../../types/verification";
 export const PROFILE_MEDIA_BUCKET = "profile-media" as const;
 
 export type ProfileMediaKind = "avatar" | "cover";
@@ -24,6 +25,8 @@ export type ProfileMediaRecord = Readonly<{
   userId: string;
   canView: boolean;
   displayName: string | null;
+  username: string | null;
+  verification: VerificationSummary;
   avatar: ProfileMediaAsset;
   cover: ProfileMediaAsset;
   updatedAt: string | null;

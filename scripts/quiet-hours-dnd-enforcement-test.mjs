@@ -5,6 +5,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 const service = read("src/services/notificationService.ts");
 const policy = read("src/services/notificationPolicyStateService.ts");
 const settings = read("src/services/settingsService.ts");
+const ownership = read("src/services/settings/notificationOwnership.ts");
 const modal = read("src/components/SettingsModal.tsx");
 const app = read("src/App.tsx");
 const inbox = read("src/services/notificationCenterService.ts");
@@ -13,8 +14,9 @@ for (const marker of ["isQuietHoursActive", "quietHoursSuppressesDesktop", "quie
 assert.ok(service.indexOf("if (doNotDisturb)") < service.indexOf("if (quietHoursSuppressesDesktop"), "DND must take precedence over mention and quiet-hours overrides");
 assert.ok(service.includes("isMention && settings.quietHours.allowMentions"), "quiet-hours mention override must remain explicit");
 for (const marker of ["mutedCommunityIds", "mutedChannelIds", "setDoNotDisturb", "setCommunityMuted", "setChannelMuted", "localStorage"]) assert.ok(policy.includes(marker), `missing persistent policy state: ${marker}`);
-assert.ok(settings.includes("currentSchemaVersion = 9") && settings.includes("fromVersion: 8") && settings.includes("allowMentionsFromMutedScopes: true"), "notification preference migrations must persist the muted-scope override");
-assert.ok(modal.includes("Allow mentions from muted communities and channels"), "settings must expose the mention override");
+const schemaVersion = Number(/currentSchemaVersion = (\d+)/.exec(settings)?.[1]);
+assert.ok(schemaVersion >= 9 && settings.includes("fromVersion: 8") && settings.includes("composeNotificationSettings") && ownership.includes("allowMentionsFromMutedScopes"), "notification ownership composition must preserve the muted-scope override across later settings schema versions");
+assert.ok(modal.includes("notifications.allowMentionsMuted.label"), "settings must expose the mention override through the localization catalog");
 assert.ok(app.includes('setDoNotDisturb(trayPresenceStatus === "dnd")'), "tray DND must feed the central policy state");
 assert.ok(inbox.includes("decideNotificationRoute"), "DND and Quiet Hours must not break inbox routing");
 console.log("Quiet Hours and DND enforcement test: PASS");

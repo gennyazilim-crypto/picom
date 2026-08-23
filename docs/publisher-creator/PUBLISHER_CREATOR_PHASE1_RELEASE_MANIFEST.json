@@ -1,0 +1,221 @@
+{
+  "name": "PICOM_PUBLISHER_CREATOR_PHASE1_RELEASE_MANIFEST",
+  "createdAt": "2026-08-03T13:41:53.000Z",
+  "canonicalStaging": {
+    "name": "picom-staging",
+    "projectRef": "ufmtvqtsklqsmqxefbbs"
+  },
+  "stagingV2Unused": {
+    "projectRef": "kbdotviopwlcqviggtrc",
+    "note": "Not used for Publisher/Creator Phase 1"
+  },
+  "priorStagingGoRelease": {
+    "tag": "picom-live-now-phase1-staging-go-2026-08-03",
+    "commitSha": "2f198ef61ffd0ac423c9713482c57da24c4967b7",
+    "tagObject": "29ee2a2fe604be1239c6f6f896286231b582b234",
+    "docsFollowUpSha": "9ff56fbe3f3cb46048e5a38858df41972d9b0e2e"
+  },
+  "productionCandidateTag": "picom-publisher-phase1-production-candidate-2026-08-03",
+  "productionCandidateCommitSha": "76d0439bf1eda8e5a208b26452b390f8690244b2",
+  "finalProductionCandidateTag": "picom-publisher-phase1-production-candidate-2026-08-03-final",
+  "finalProductionCandidateCommitSha": "448736697acf44e36887740b613c1dab16df2c27",
+  "production": {
+    "projectName": "picom-production",
+    "projectRef": "cqnsetsmcduraryemhbi",
+    "region": "eu-central-1",
+    "status": "ACTIVE_HEALTHY",
+    "identityDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_IDENTITY.json",
+    "rollbackDoc": "docs/publisher-creator/PUBLISHER_CREATOR_PRODUCTION_ROLLBACK.md",
+    "stagingV2PausedToFreeSlot": "kbdotviopwlcqviggtrc",
+    "migrationDeploy": {
+      "status": "PARTIAL_AFTER_LIVE_SCREEN_RESTORE",
+      "appliedThrough": "20260803110000",
+      "alsoApplied": ["20260803100000", "20260803110000", "20260803130000"],
+      "failedAt": "20260803140000_publisher_creator_program_core.sql",
+      "failure": "blocked on missing public.platform_account_restrictions after live-screen predecessors applied via include-all",
+      "realtimeProvisioning": "PROVISIONED",
+      "realtimePortabilityFix": "APPLIED_CANONICAL_MATCHED",
+      "liveScreenDependencies": "APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED",
+      "phase1PublisherMigrations": "PARTIAL_STOPPED_AT_20260803140000_PLATFORM_ACCOUNT_RESTRICTIONS",
+      "resumeEvidence": "docs/audit/evidence/publisher-production-missing-migration-restore-2026-08-03T15-49-24Z/"
+    },
+    "backupPitr": "NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED",
+    "featureFlagsDefault": "fail_closed_off_in_production"
+  },
+  "liveScreenDependencies": [
+    {
+      "version": "20260803100000",
+      "filename": "20260803100000_community_live_screen_sessions.sql",
+      "sha256": "70a2d2a347bb4c19049b61b17ba58a38a6b768373de897499d73dd1f9dec69ee",
+      "sourceCommit": "3d54872dd70b4d21397d34d227d480bcd15a2e7f",
+      "sourceBranch": "release/homepage-platform-stats-prerequisites",
+      "dependencyRole": "LIVE_SCREEN_BASE_SCHEMA",
+      "schemaObject": "public.community_live_screen_sessions",
+      "canonicalStagingStatus": "SCHEMA_MATCHED_HISTORY_GAP",
+      "productionStatus": "APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED",
+      "requiredBy": [
+        "20260803130000",
+        "20260803140000",
+        "20260803141000",
+        "20260803150000",
+        "20260803170000",
+        "20260803172000"
+      ],
+      "restoredToCandidateAt": "2026-08-03T15:49:24.000Z",
+      "rootCause": "Migration existed on release/homepage-platform-stats-prerequisites but was omitted from feat/community-rebuild; 20260803130000 could apply without the table while 20260803140000 fail-closed on missing relation"
+    },
+    {
+      "version": "20260803110000",
+      "filename": "20260803110000_go_live_broadcast_start.sql",
+      "sha256": "899834c48af8123087955e2a9eced9d5842fcf5298a1ade52acd5441f987b1b4",
+      "sourceCommit": "442d999de9d156cc42a44b57ae232099a1cc452a",
+      "sourceBranch": "release/homepage-platform-stats-prerequisites",
+      "dependencyRole": "LIVE_SCREEN_GO_LIVE_LAYER",
+      "schemaObject": "public.community_live_screen_sessions columns visibility_mode/client_request_id/description/language_code + starting status",
+      "canonicalStagingStatus": "SCHEMA_MATCHED_HISTORY_GAP",
+      "productionStatus": "APPLIED_OUT_OF_ORDER_CANONICAL_MATCHED",
+      "requiredBy": [
+        "20260803140000",
+        "20260803141000",
+        "20260803150000",
+        "20260803170000"
+      ],
+      "restoredToCandidateAt": "2026-08-03T15:49:24.000Z",
+      "rootCause": "Required predecessor for Phase 1 Go Live / discovery column and status semantics; omitted with base live-screen migration"
+    }
+  ],
+  "realtimeAuthorizationMigration": {
+    "version": "20260710121000",
+    "filename": "20260710121000_multi_tenant_realtime_storage_hardening.sql",
+    "legacyStagingSha256": "6c7fbfc4a8aac4829f2d4a6d6ae170b6ee537652991e101eb50e03e17b2d4bd8",
+    "canonicalPortableSha256": "6cac3fc152f34cd3ae433630747a7e2b3d1bf6abfafddc32a9bea78fce5b389a",
+    "compatibilityAmendment": "Removed redundant ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY; replaced with fail-closed platform RLS assertion guard",
+    "compatibilityReason": "Managed Supabase ownership model: postgres is not owner of realtime.messages (supabase_realtime_admin); CREATE POLICY is allowed while ALTER ENABLE RLS is not",
+    "schemaSemanticsEquivalent": true,
+    "policySemanticHash": "3beb709d58c59c8a1f2eeffde4283090c3b45ae69688924739988cdc47d07413",
+    "stagingStatus": "APPLIED_LEGACY_EQUIVALENT",
+    "productionStatus": "APPLIED_CANONICAL_MATCHED"
+  },
+  "migrations": [
+    {
+      "version": "20260803130000",
+      "filename": "20260803130000_public_platform_stats.sql",
+      "sha256": "d2092cd45ba24619769dc7da1b093e64b71eff353e24b0bedcd1761710c110ff",
+      "status": "APPLIED_AND_MATCHED"
+    },
+    {
+      "version": "20260803140000",
+      "filename": "20260803140000_publisher_creator_program_core.sql",
+      "sha256": "9d7314a9e5b43decf1cdb53eddffcd03a53ad2cccf6a11cc357905b5e0026806",
+      "status": "APPLIED_AND_MATCHED"
+    },
+    {
+      "version": "20260803141000",
+      "filename": "20260803141000_publisher_livekit_broadcast_gate.sql",
+      "sha256": "23439706df674fcbbab7deebf2c4dbf6bac9bd356c8e8c31d60b91f5cc3ed5f9",
+      "status": "APPLIED_AND_MATCHED"
+    },
+    {
+      "version": "20260803150000",
+      "filename": "20260803150000_live_now_publisher_discovery.sql",
+      "sha256": "b6ae5107eb70d8f34d9d3f745a2511c9743e4fefac0eab486322b362c2d4c4e3",
+      "status": "APPLIED_AND_MATCHED"
+    },
+    {
+      "version": "20260803160000",
+      "filename": "20260803160000_publisher_eligibility_member_count_canonical.sql",
+      "sha256": "208a648ca142fa75ae187731d14cef3dcc7ca7c1fc7970097f22a18fbf33e0b9",
+      "status": "APPLIED_AND_MATCHED"
+    },
+    {
+      "version": "20260803170000",
+      "filename": "20260803170000_live_now_discovery_badge_join_dedupe.sql",
+      "sha256": "6f3aea432eedbbd28b80965a77422762463de9bf34b6137ae139508457bd59ee",
+      "status": "APPLIED_AND_MATCHED"
+    },
+    {
+      "version": "20260803171000",
+      "filename": "20260803171000_live_now_badge_realtime_revocation.sql",
+      "sha256": "47f31b9125e8481d577dd9545ea8da789400037e09c73fe3dcc18f514c2ac7cc",
+      "status": "APPLIED_AND_MATCHED"
+    },
+    {
+      "version": "20260803172000",
+      "filename": "20260803172000_publisher_schedule_reminders_and_notif_modes.sql",
+      "sha256": "1ed726cf4432b44c2889e92c8637a7d1065d7eeb3c3582c23eda17cc3d06a54b",
+      "status": "APPLIED_AND_MATCHED"
+    }
+  ],
+  "localeRuntime": {
+    "supported": ["en", "tr", "de", "fr", "es", "it", "pt", "ru", "ar", "ja"],
+    "rtl": ["ar"],
+    "result": "GO"
+  },
+  "evidencePackages": [
+    {
+      "name": "live-now-case18-closure-2026-08-03T10-35-27",
+      "path": "docs/audit/evidence/live-now-case18-closure-2026-08-03T10-35-27/",
+      "relationToRelease": "pre_release_freeze",
+      "canonicalStagingRef": "ufmtvqtsklqsmqxefbbs",
+      "notes": "Case 18 PASS evidence captured before release freeze SHA 2f198ef6"
+    },
+    {
+      "name": "live-now-jwt-rls-revocation-2026-08-03T11-14-25-871Z",
+      "path": "docs/audit/evidence/live-now-jwt-rls-revocation-2026-08-03T11-14-25-871Z/",
+      "relationToRelease": "pre_release_freeze",
+      "canonicalStagingRef": "ufmtvqtsklqsmqxefbbs",
+      "notes": "JWT/RLS + realtime badge revocation PASS"
+    },
+    {
+      "name": "live-now-staging-final-closure-2026-08-03T11-43-48Z",
+      "path": "docs/audit/evidence/live-now-staging-final-closure-2026-08-03T11-43-48Z/",
+      "relationToRelease": "pre_release_freeze",
+      "canonicalStagingRef": "ufmtvqtsklqsmqxefbbs",
+      "notes": "Reminders + notification preferences + final staging closure"
+    },
+    {
+      "name": "picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z",
+      "path": "docs/audit/evidence/picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z/",
+      "relationToRelease": "post_release_docs_audit",
+      "canonicalStagingRef": "ufmtvqtsklqsmqxefbbs",
+      "notes": "Full audit package; may reference freeze SHA and later docs SHA 9ff56fbe"
+    },
+    {
+      "name": "publisher-phase1-final-hardening-2026-08-03T13-41-53Z",
+      "path": "docs/audit/evidence/publisher-phase1-final-hardening-2026-08-03T13-41-53Z/",
+      "relationToRelease": "production_candidate_hardening",
+      "canonicalStagingRef": "ufmtvqtsklqsmqxefbbs",
+      "notes": "10-locale runtime, migration seal, evidence integrity, production config guard"
+    }
+  ],
+  "commands": {
+    "migrationSeal": "powershell -File scripts/with-supabase-cli-token.ps1 node scripts/publisher-phase1-migration-seal.mjs --run",
+    "productionConfigGuard": "npm run production:config:guard",
+    "buildProduction": "npm run build:production",
+    "typecheck": "npm run typecheck",
+    "build": "npm run build",
+    "viteBuild": "npx vite build",
+    "desktopSmoke": "npm run desktop:smoke",
+    "i18nParity": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/ui-language-runtime.test.mjs scripts/live-now-i18n-parity.test.mjs scripts/publisher-program-i18n-parity.test.mjs",
+    "publisherUnit": "node --test scripts/publisher-eligibility-thresholds.test.mjs scripts/publisher-schedule-reminder-integration.test.mjs scripts/publisher-notification-pref-integration.test.mjs scripts/production-config-guard.test.mjs",
+    "secrets": "npm run secrets:smoke"
+  },
+  "results": {
+    "migrationHistory": "GO",
+    "evidenceIntegrity": "GO",
+    "localeRuntime": "GO",
+    "productionConfigSafety": "GO",
+    "productionProject": "GO",
+    "productionMigrations": "PARTIAL_BLOCKED_PLATFORM_REALTIME",
+    "productionBuild": "CONFIG_GUARD_PASS_WITH_LOCAL_ENV",
+    "productionInfrastructure": "CREATED_PARTIAL_SCHEMA",
+    "productionDeploy": "PARTIAL",
+    "lint": "NOT_CONFIGURED",
+    "secretScan": "PASS",
+    "phase1Production": "PARTIAL"
+  },
+  "secretScan": {
+    "result": "PASS",
+    "note": "No service-role/JWT/DB password/LiveKit secret values in committed source or this manifest"
+  }
+}

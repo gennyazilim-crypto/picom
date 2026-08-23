@@ -1,0 +1,26 @@
+[
+  {
+    "scenario": "version-gate",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/01-welcome-unblocked.png",
+    "notes": "{\"gate\":null,\"remoteHint\":false}"
+  },
+  {
+    "scenario": "welcome-interactive",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/01-welcome-unblocked.png",
+    "notes": "welcome=true continue=true"
+  },
+  {
+    "scenario": "personalize-reachable",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/02-personalize.png",
+    "notes": "next=true personalize=true"
+  },
+  {
+    "scenario": "appearance-reachable",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/03-appearance.png",
+    "notes": "next=true appearance=true"
+  }
+]

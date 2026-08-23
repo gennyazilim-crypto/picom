@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Member } from "../../types/community";
+import { useTranslation } from "../../i18n";
 
 type VoiceInvitePickerProps = Readonly<{
   members: readonly Member[];
@@ -9,6 +10,7 @@ type VoiceInvitePickerProps = Readonly<{
 }>;
 
 export function VoiceInvitePicker({ members, currentUserId, onSelect, onClose }: VoiceInvitePickerProps) {
+  const { t } = useTranslation("voice");
   const [query, setQuery] = useState("");
 
   const invitable = useMemo(() => {
@@ -20,25 +22,25 @@ export function VoiceInvitePicker({ members, currentUserId, onSelect, onClose }:
   }, [members, currentUserId, query]);
 
   return (
-    <div className="voice-call-overlay" role="dialog" aria-modal="true" aria-label="Invite someone to voice" onClick={onClose}>
+    <div className="voice-call-overlay" role="dialog" aria-modal="true" aria-label={t("invite.dialog")} onClick={onClose}>
       <div className="voice-call-card voice-invite-picker" onClick={(event) => event.stopPropagation()}>
-        <div className="voice-call-title">Invite to voice</div>
+        <div className="voice-call-title">{t("invite.title")}</div>
         <input
           className="voice-invite-picker__search"
           type="text"
           value={query}
           autoFocus
           maxLength={80}
-          placeholder="Search friends or members…"
-          aria-label="Search friends or members"
+          placeholder={t("invite.searchPlaceholder")}
+          aria-label={t("invite.searchAria")}
           onChange={(event) => setQuery(event.target.value)}
         />
         <ul className="voice-invite-picker__list">
           {invitable.length === 0 ? (
             <li className="voice-invite-picker__empty">
               {query.trim()
-                ? "No matches."
-                : "No friends or community members available to invite."}
+                ? t("invite.noMatches")
+                : t("invite.empty")}
             </li>
           ) : (
             invitable.map((member) => (
@@ -56,7 +58,7 @@ export function VoiceInvitePicker({ members, currentUserId, onSelect, onClose }:
             ))
           )}
         </ul>
-        <button type="button" className="voice-call-btn voice-call-btn--decline" onClick={onClose}>Close</button>
+        <button type="button" className="voice-call-btn voice-call-btn--decline" onClick={onClose}>{t("invite.close")}</button>
       </div>
     </div>
   );

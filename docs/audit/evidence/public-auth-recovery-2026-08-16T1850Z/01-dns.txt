@@ -1,0 +1,12 @@
+Resolver 1.1.1.1 and 8.8.8.8 plus local resolver. Type A only. No AAAA answers (empty, not NXDOMAIN-as-failure).
+
+picom.gg               A  TTL=1800  23.254.166.240
+www.picom.gg           A  TTL=1800  23.254.166.240
+account.picom.gg       A  TTL=1800  23.254.166.240
+auth.picom.gg          A  TTL=1800  23.254.166.240
+app.picom.gg           A  TTL=1800  23.254.166.240
+support.picom.gg       A  TTL=1800  23.254.166.240
+
+PTR:
+23.254.166.240 → hwsrv-1333695.hostwindsdns.com
+hwsrv-1333695.hostwindsdns.com → 23.254.166.240

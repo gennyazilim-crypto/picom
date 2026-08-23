@@ -1,0 +1,7 @@
+secrets:smoke                         PASS (detector regression + runtime walk)
+electron:security:smoke               PASS
+i18n:catalog-integrity:smoke          PASS
+google-provider-config-readback       ran (local/runtime only)
+hosted Google authorize probe         ran (provider disabled)
+packaged Windows                      NOT BUILT (E2E identities blocked)
+real provider / email / reset E2E     NOT RUN

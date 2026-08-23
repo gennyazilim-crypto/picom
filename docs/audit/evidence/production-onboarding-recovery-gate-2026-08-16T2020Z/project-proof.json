@@ -1,0 +1,29 @@
+{
+  "MUTATION_TARGET": "picom-production / cqnsetsmcduraryemhbi",
+  "mutation_performed": false,
+  "proof": {
+    "list_projects": {
+      "name": "picom-production",
+      "id": "cqnsetsmcduraryemhbi",
+      "ref": "cqnsetsmcduraryemhbi",
+      "region": "eu-central-1",
+      "status": "ACTIVE_HEALTHY",
+      "postgres": "17.6.1.155"
+    },
+    "get_project": {
+      "name": "picom-production",
+      "id": "cqnsetsmcduraryemhbi",
+      "region": "eu-central-1",
+      "status": "ACTIVE_HEALTHY"
+    },
+    "organization": {
+      "id": "agmihvcqyshjgwjgknor",
+      "plan": "free"
+    }
+  },
+  "local_cli_link": {
+    "ref": "ufmtvqtsklqsmqxefbbs",
+    "name": "picom-staging",
+    "supabase_db_push": "FORBIDDEN"
+  }
+}

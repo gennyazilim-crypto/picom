@@ -1,0 +1,6 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 first-launch:ready:runtime
+> node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/first-launch-ready-runtime-test.mjs
+
+First-launch Ready runtime: summary, stale state, review, completion, cleanup, gates, and handoff cases passed.

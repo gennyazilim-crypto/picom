@@ -1,0 +1,25 @@
+{
+  "MANAGED_BACKUP": "BLOCKED_INSPECTION",
+  "PITR": "BLOCKED_INSPECTION",
+  "inspected": [
+    "Supabase MCP get_project: no backup inventory, timestamp, retention, or PITR fields",
+    "Supabase MCP list_projects: health/region/engine only",
+    "Supabase MCP get_organization: plan=free; no backup catalog",
+    "Supabase MCP restore_project exists but is project-unpause (project_id only); NOT invoked; not a PITR API",
+    "Management API tokens unset: SUPABASE_ACCESS_TOKEN, SUPABASE_MANAGEMENT_TOKEN, PICOM_SUPABASE_ACCESS_TOKEN",
+    "1Password MCP serverStatus=error; not authenticated",
+    "No downloadable backup objects in repo/tmp/docs/ops"
+  ],
+  "not_used_as_sole_proof": "plan=free",
+  "plan_context_only": "free",
+  "existing_audit_records": [
+    "docs/audit/evidence/publisher-phase1-production-deploy-2026-08-03T14-09-19Z/11-monitoring-backup.txt: BACKUP_PITR=NOT_AVAILABLE_ON_CURRENT_PLAN_OR_UNVERIFIED",
+    "docs/release/TASK08D_BACKUP_RESTORE_AND_HOSTED_APPLY_RUNBOOK.md: BACKUP METADATA BLOCKED",
+    "docs/ops/disaster-recovery.md: stale project name piso; not a production backup artifact"
+  ],
+  "available_backups": [],
+  "last_backup_timestamp": null,
+  "retention": null,
+  "pitr_enablement": null,
+  "restore_points": []
+}

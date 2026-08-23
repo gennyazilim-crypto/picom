@@ -46,9 +46,12 @@ Deno.serve((request: Request) => {
   }
 
   return jsonResponse({
-    minimumSupportedVersion: readPublicVersion("PICOM_MINIMUM_SUPPORTED_VERSION", "1.0.0"),
-    recommendedClientVersion: readPublicVersion("PICOM_RECOMMENDED_CLIENT_VERSION", "1.0.0"),
-    latestVersion: readPublicVersion("PICOM_LATEST_VERSION", "1.0.0"),
+    // Current desktop ships 0.1.1-beta.N. A 1.0.0 fallback bricks every beta client
+    // behind Update required before a stable 1.0.0 exists. Operators can still raise
+    // PICOM_MINIMUM_SUPPORTED_VERSION to force obsolete builds off.
+    minimumSupportedVersion: readPublicVersion("PICOM_MINIMUM_SUPPORTED_VERSION", "0.1.1-beta.10"),
+    recommendedClientVersion: readPublicVersion("PICOM_RECOMMENDED_CLIENT_VERSION", "0.1.1-beta.10"),
+    latestVersion: readPublicVersion("PICOM_LATEST_VERSION", "0.1.1-beta.10"),
     releaseChannel: readReleaseChannel(),
     featureFlags: {
       enableRealtime: true,
@@ -72,6 +75,13 @@ Deno.serve((request: Request) => {
       enableForumChannels: false,
       enableAnnouncementChannels: false,
       enableSavedMessages: false,
+      enablePublisherApplication: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_APPLICATION"),
+      enablePublisherReview: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_REVIEW"),
+      enablePublisherBadgeDisplay: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_BADGE_DISPLAY"),
+      enableLiveNowDiscovery: readPublicBooleanEnv("PICOM_ENABLE_LIVE_NOW_DISCOVERY"),
+      enableGoLive: readPublicBooleanEnv("PICOM_ENABLE_GO_LIVE"),
+      enablePublisherReminders: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_REMINDERS"),
+      enablePublisherNotificationPreferences: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_NOTIFICATION_PREFERENCES"),
     },
     killSwitches: {
       disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),

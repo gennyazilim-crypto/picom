@@ -1,0 +1,31 @@
+{
+  "currentBranchFiles": [
+    "20260803100000_community_live_screen_sessions.sql",
+    "20260803110000_go_live_broadcast_start.sql",
+    "20260803130000_public_platform_stats.sql",
+    "20260803140000_publisher_creator_program_core.sql",
+    "20260803141000_publisher_livekit_broadcast_gate.sql",
+    "20260803150000_live_now_publisher_discovery.sql",
+    "20260803160000_publisher_eligibility_member_count_canonical.sql",
+    "20260803170000_live_now_discovery_badge_join_dedupe.sql",
+    "20260803171000_live_now_badge_realtime_revocation.sql",
+    "20260803172000_publisher_schedule_reminders_and_notif_modes.sql",
+    "20260803173000_verification_business_platform_foundation.sql"
+  ],
+  "sourceCommit3d54872d": [
+    "20260803100000_community_live_screen_sessions.sql"
+  ],
+  "releaseBranch": [
+    "20260803100000_community_live_screen_sessions.sql",
+    "20260803110000_go_live_broadcast_start.sql",
+    "20260803130000_public_platform_stats.sql"
+  ],
+  "missingOnCurrentVsSource": [],
+  "stagingHist": "[{\"version\":\"20260803130000\"},{\"version\":\"20260803140000\"},{\"version\":\"20260803141000\"},{\"version\":\"20260803150000\"},{\"version\":\"20260803160000\"},{\"version\":\"20260803170000\"},{\"version\":\"20260803171000\"},{\"version\":\"20260803172000\"}]",
+  "prodHist": "[{\"version\":\"20260803130000\"}]",
+  "stagingCols": "[{\"column_name\":\"id\"},{\"column_name\":\"livekit_room_name\"},{\"column_name\":\"community_id\"},{\"column_name\":\"channel_id\"},{\"column_name\":\"broadcaster_user_id\"},{\"column_name\":\"title\"},{\"column_name\":\"category\"},{\"column_name\":\"application_name\"},{\"column_name\":\"status\"},{\"column_name\":\"started_at\"},{\"column_name\":\"ended_at\"},{\"column_name\":\"last_heartbeat_at\"},{\"column_name\":\"viewer_count\"},{\"column_name\":\"participant_count\"},{\"column_name\":\"preview_updated_at\"},{\"column_name\":\"created_at\"},{\"column_name\":\"updated_at\"},{\"column_name\":\"client_request_id\"},{\"column_name\":\"description\"},{\"column_name\":\"language_code\"},{\"column_name\":\"visibility_mode\"},{\"column_name\":\"chat_mode\"},{\"column_name\":\"peak_concurrent_viewers\"},{\"column_name\":\"unique_viewer_count\"},{\"column_name\":\"reconnect_count\"},{\"column_name\":\"metadata\"},{\"column_name\":\"moderation_status\"},{\"column_name\":\"deleted_at\"},{\"column_name\":\"hidden_at\"},{\"column_name\":\"tags\"}]",
+  "prodRemnants": "[]",
+  "prodRegclass": "[{\"t\":null}]",
+  "prodFlagsHttp": 400,
+  "prodFlags": "{\"message\":\"Failed to run sql query: ERROR:  42P01: relation \\\"public.feature_flags\\\" does not exist\\nLINE 2:  from public.feature_flags\\n              ^\\n\"}"
+}

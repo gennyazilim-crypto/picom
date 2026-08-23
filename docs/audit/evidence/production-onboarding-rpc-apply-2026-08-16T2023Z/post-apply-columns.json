@@ -1,0 +1,17 @@
+{
+  "onboarding_start_choice": {
+    "present": true,
+    "data_type": "text",
+    "nullable": true,
+    "default": null,
+    "constraint": "profiles_onboarding_start_choice_check NOT VALID (null or createCommunity|joinInvite|mentionFeed)"
+  },
+  "onboarding_initial_feed": {
+    "present": true,
+    "data_type": "text",
+    "nullable": true,
+    "default": null,
+    "constraint": "profiles_onboarding_initial_feed_check NOT VALID (null or mention|community|invite)"
+  },
+  "manually_populated": false
+}

@@ -1,0 +1,25 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 build
+> npm run typecheck && npm run electron:build && vite build
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 typecheck
+> tsc --noEmit
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 electron:build
+> node scripts/build-electron.mjs
+
+Electron main process compiled and sandbox-safe preload bundle generated.
+vite v8.2.0 building client environment for production...
+[2Ktransforming...file:///C:/Users/ACER/Desktop/picom/node_modules/vite/dist/node/chunks/node.js:24447
+										if (!resolved) return Promise.reject(/* @__PURE__ */ new Error(`Failed to resolve ${url} from ${id}`));
+										                                                     ^
+
+Error: Failed to resolve ./assets/index-D4knU93T.js from C:/Users/ACER/Desktop/picom/index.html
+    at file:///C:/Users/ACER/Desktop/picom/node_modules/vite/dist/node/chunks/node.js:24447:64
+
+Node.js v24.15.0

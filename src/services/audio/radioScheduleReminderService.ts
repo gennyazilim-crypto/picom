@@ -215,7 +215,7 @@ async function dispatchEvent(reminder: RadioScheduleReminder, session: RadioSess
       context: { kind: "community", communityId: session.communityId, channelId: session.channelId, radioSessionId: session.id, label: "Radio schedule" },
     });
   }
-  if (route.desktop && notificationService.getPermission() === "granted") {
+  if (route.desktop) {
     await notificationService.showNotification({ title: copy.title, body: copy.preview, category, tag: notificationId, routing: { communityId: session.communityId, channelId: session.channelId } });
   }
 }

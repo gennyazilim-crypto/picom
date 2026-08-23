@@ -1,0 +1,26 @@
+{
+  "environment": "production",
+  "projectName": "picom-production",
+  "projectRef": "cqnsetsmcduraryemhbi",
+  "region": "eu-central-1",
+  "regionRationale": "docs/legal/data-residency.md primary EU production region (Frankfurt)",
+  "organizationId": "agmihvcqyshjgwjgknor",
+  "publicUrlHost": "cqnsetsmcduraryemhbi.supabase.co",
+  "expectedAuthSiteUrl": "https://app.picom.gg",
+  "expectedRedirectDomains": [
+    "https://app.picom.gg",
+    "https://account.picom.gg",
+    "https://picom.gg",
+    "picom://auth/callback",
+    "picom://auth/reset-password"
+  ],
+  "forbiddenStagingRefs": [
+    "ufmtvqtsklqsmqxefbbs",
+    "kbdotviopwlcqviggtrc"
+  ],
+  "notes": [
+    "No secrets in this file",
+    "Service role and DB password live only in gitignored local/ops stores",
+    "picom-staging-v2 was paused to INACTIVE to free free-plan project slot"
+  ]
+}

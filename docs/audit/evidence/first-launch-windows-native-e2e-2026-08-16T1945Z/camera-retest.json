@@ -1,0 +1,89 @@
+{
+  "result": "BLOCKED_ENVIRONMENT",
+  "selected": {
+    "ok": true,
+    "label": "ACER HD User Facing (0408:4053)",
+    "count": 3
+  },
+  "probe1": {
+    "status": "Camera is in use",
+    "error": "The selected camera is busy in another application. Close that application, then try again.",
+    "caption": "Local camera preview",
+    "videos": [
+      {
+        "src": false,
+        "w": 0,
+        "h": 0,
+        "live": false,
+        "audio": 0,
+        "settings": []
+      },
+      {
+        "src": false,
+        "w": 0,
+        "h": 0,
+        "live": false,
+        "audio": 0,
+        "settings": []
+      }
+    ],
+    "liveTracks": []
+  },
+  "probe2": {
+    "status": "Camera is in use",
+    "error": "The selected camera is busy in another application. Close that application, then try again.",
+    "caption": "Local camera preview",
+    "videos": [
+      {
+        "src": false,
+        "w": 0,
+        "h": 0,
+        "live": false,
+        "audio": 0
+      },
+      {
+        "src": false,
+        "w": 0,
+        "h": 0,
+        "live": false,
+        "audio": 0
+      }
+    ]
+  },
+  "live": false,
+  "audioLeak": false,
+  "picker": {
+    "status": "Choose a source",
+    "sources": [
+      {
+        "name": "Display 1 (1920×1080) · Primary",
+        "type": "Screen"
+      },
+      {
+        "name": "Picom Desktop",
+        "type": "Window"
+      },
+      {
+        "name": "Cursor Agents",
+        "type": "Window"
+      },
+      {
+        "name": "ChatGPT Classic",
+        "type": "Window"
+      },
+      {
+        "name": "figma login page - Google'da Ara - Google Chrome",
+        "type": "Window"
+      },
+      {
+        "name": "C:\\Windows\\System32\\cmd.exe",
+        "type": "Window"
+      }
+    ]
+  },
+  "cancel": {
+    "status": "Choose a source",
+    "sources": 6,
+    "videoLive": false
+  }
+}

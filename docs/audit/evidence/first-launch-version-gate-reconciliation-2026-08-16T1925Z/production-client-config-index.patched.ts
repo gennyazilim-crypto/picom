@@ -1,0 +1,139 @@
+import { handleCorsPreflight } from "../_shared/cors.ts";
+import { jsonResponse, methodNotAllowed } from "../_shared/http.ts";
+
+function readPublicEnv(name: string, fallback = "", maximumLength = 240): string {
+  const value = Deno.env.get(name);
+  return value && value.trim().length > 0 ? value.trim().slice(0, maximumLength) : fallback;
+}
+
+function readPublicVersion(name: string, fallback: string): string {
+  const value = readPublicEnv(name, fallback, 64);
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(value) ? value : fallback;
+}
+
+function readPublicUrl(name: string): string {
+  const value = readPublicEnv(name, "", 2048);
+  if (!value) return "";
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function readReleaseChannel(): "dev" | "beta" | "stable" {
+  const value = readPublicEnv("PICOM_RELEASE_CHANNEL", "dev");
+  return value === "beta" || value === "stable" ? value : "dev";
+}
+
+function readMaxUploadBytes(): number {
+  const value = Number(readPublicEnv("PICOM_MAX_UPLOAD_BYTES", "10485760"));
+  return Number.isFinite(value) && value > 0 ? Math.min(value, 50 * 1024 * 1024) : 10 * 1024 * 1024;
+}
+
+function readPublicBooleanEnv(name: string, fallback = false): boolean {
+  const value = readPublicEnv(name, fallback ? "true" : "false").toLowerCase();
+  return value === "1" || value === "true" || value === "on" || value === "enabled" || value === "yes";
+}
+
+Deno.serve((request: Request) => {
+  const preflight = handleCorsPreflight(request);
+  if (preflight) return preflight;
+
+  if (request.method !== "GET") {
+    return methodNotAllowed(["GET", "OPTIONS"]);
+  }
+
+  return jsonResponse({
+    // TASK 13A: keep production on the current 0.1.1-beta train. A 1.0.0 fallback
+    // bricks every shipped desktop client before a stable 1.0.0 exists.
+    minimumSupportedVersion: readPublicVersion("PICOM_MINIMUM_SUPPORTED_VERSION", "0.1.1-beta.10"),
+    recommendedClientVersion: readPublicVersion("PICOM_RECOMMENDED_CLIENT_VERSION", "0.1.1-beta.10"),
+    latestVersion: readPublicVersion("PICOM_LATEST_VERSION", "0.1.1-beta.10"),
+    releaseChannel: readReleaseChannel(),
+    featureFlags: {
+      enableRealtime: true,
+      enableVoiceRooms: true,
+      enableScreenShare: true,
+      enableDirectMessages: true,
+      enableFriends: true,
+      enableDiscovery: true,
+      enableBots: false,
+      enableWebhooks: false,
+      enableThreads: false,
+      enablePolls: false,
+      enableAdvancedModeration: false,
+      enableDiagnostics: true,
+      enableAutoUpdate: false,
+      enableAnalyticsPlaceholder: false,
+      enableAdminOperations: false,
+      enableDeveloperPortal: true,
+      enableCustomEmoji: false,
+      enableStickers: false,
+      enableForumChannels: false,
+      enableAnnouncementChannels: false,
+      enableSavedMessages: false,
+      enablePublisherApplication: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_APPLICATION"),
+      enablePublisherReview: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_REVIEW"),
+      enablePublisherBadgeDisplay: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_BADGE_DISPLAY"),
+      enableLiveNowDiscovery: readPublicBooleanEnv("PICOM_ENABLE_LIVE_NOW_DISCOVERY"),
+      enableGoLive: readPublicBooleanEnv("PICOM_ENABLE_GO_LIVE"),
+      enablePublisherReminders: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_REMINDERS"),
+      enablePublisherNotificationPreferences: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_NOTIFICATION_PREFERENCES"),
+      enablePublisherStreamManagement: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_STREAM_MANAGEMENT"),
+      enablePublisherExternalIngest: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_EXTERNAL_INGEST"),
+      enableLiveChat: readPublicBooleanEnv("PICOM_ENABLE_LIVE_CHAT"),
+      enableLiveModeration: readPublicBooleanEnv("PICOM_ENABLE_LIVE_MODERATION"),
+      enableHavoocSupportHub: readPublicBooleanEnv("PICOM_ENABLE_HAVOOC_SUPPORT_HUB"),
+      enablePublisherAnalytics: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_ANALYTICS"),
+      enableLiveRecording: readPublicBooleanEnv("PICOM_ENABLE_LIVE_RECORDING"),
+      enableLiveReplays: readPublicBooleanEnv("PICOM_ENABLE_LIVE_REPLAYS"),
+      enableLiveClips: readPublicBooleanEnv("PICOM_ENABLE_LIVE_CLIPS"),
+      enablePublisherMonetization: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_MONETIZATION"),
+      enablePublisherSubscriptions: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_SUBSCRIPTIONS"),
+      enablePublisherDonations: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_DONATIONS"),
+      enablePublisherAdRevenue: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_AD_REVENUE"),
+      enablePublisherEarningsDashboard: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_EARNINGS_DASHBOARD"),
+      enablePublisherKyc: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_KYC"),
+      enablePublisherTaxProfile: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_TAX_PROFILE"),
+      enablePublisherPayoutAccounts: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_PAYOUT_ACCOUNTS"),
+      enablePublisherPayouts: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_PAYOUTS"),
+      enablePublisherStatements: readPublicBooleanEnv("PICOM_ENABLE_PUBLISHER_STATEMENTS"),
+      enableCreatorStudio: readPublicBooleanEnv("PICOM_ENABLE_CREATOR_STUDIO"),
+    },
+    killSwitches: {
+      disableRealtime: readPublicBooleanEnv("PICOM_DISABLE_REALTIME"),
+      disableUploads: readPublicBooleanEnv("PICOM_DISABLE_UPLOADS"),
+      disableVoiceRooms: readPublicBooleanEnv("PICOM_DISABLE_VOICE_ROOMS"),
+      disableDiscovery: readPublicBooleanEnv("PICOM_DISABLE_DISCOVERY"),
+      disableWebhooks: readPublicBooleanEnv("PICOM_DISABLE_WEBHOOKS"),
+      disableBots: readPublicBooleanEnv("PICOM_DISABLE_BOTS"),
+      disableNativeNotifications: readPublicBooleanEnv("PICOM_DISABLE_NATIVE_NOTIFICATIONS"),
+      disableAutoUpdate: readPublicBooleanEnv("PICOM_DISABLE_AUTO_UPDATE"),
+      disableMessageEditing: readPublicBooleanEnv("PICOM_DISABLE_MESSAGE_EDITING"),
+      disableInvites: readPublicBooleanEnv("PICOM_DISABLE_INVITES"),
+      disableLiveNowDiscovery: readPublicBooleanEnv("PICOM_DISABLE_LIVE_NOW_DISCOVERY"),
+      disableGoLive: readPublicBooleanEnv("PICOM_DISABLE_GO_LIVE"),
+      disablePublisherExternalIngest: readPublicBooleanEnv("PICOM_DISABLE_PUBLISHER_EXTERNAL_INGEST"),
+      disableLiveChat: readPublicBooleanEnv("PICOM_DISABLE_LIVE_CHAT"),
+      disablePublisherAnalytics: readPublicBooleanEnv("PICOM_DISABLE_PUBLISHER_ANALYTICS"),
+      disableLiveRecording: readPublicBooleanEnv("PICOM_DISABLE_LIVE_RECORDING"),
+      disableCreatorStudio: readPublicBooleanEnv("PICOM_DISABLE_CREATOR_STUDIO"),
+      disablePublisherMonetization: readPublicBooleanEnv("PICOM_DISABLE_PUBLISHER_MONETIZATION"),
+    },
+    maintenance: {
+      status: readPublicEnv("PICOM_MAINTENANCE_STATUS", "operational"),
+      message: readPublicEnv("PICOM_MAINTENANCE_MESSAGE", "Picom services are operating normally.", 240),
+    },
+    uploadLimits: {
+      maxUploadBytes: readMaxUploadBytes(),
+      allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+    },
+    urls: {
+      statusPageUrl: readPublicUrl("PICOM_STATUS_PAGE_URL"),
+      supportUrl: readPublicUrl("PICOM_SUPPORT_URL"),
+      docsUrl: readPublicUrl("PICOM_DOCS_URL"),
+    },
+  });
+});

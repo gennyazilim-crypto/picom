@@ -9,7 +9,7 @@ const [main, preload, service, picker, control, dock, voice, focus, policy, leas
   readFile("supabase/tests/meeting_screen_share_lease.sql", "utf8"),
 ]);
 const checks=[
-  [main.includes('types: ["screen", "window"]')&&main.includes("isTrustedIpcEvent")&&main.includes("screenCaptureSessions"),"validated main-process source enumeration"],
+  [/desktopCapturer\.getSources\(\{\s*types,/.test(main)&&/readSources\(\["screen", "window"\]/.test(main)&&main.includes("isTrustedIpcEvent")&&main.includes("screenCaptureSessions"),"validated main-process source enumeration"],
   [preload.includes("invokeWhitelisted")&&!preload.includes("desktopCapturer:"),"minimal preload screen-capture bridge"],
   [service.includes("userInitiated: true")&&service.includes("isValidSource")&&service.includes("cancelSelection"),"explicit source validation and cancel service"],
   [picker.includes("useEffect")&&picker.includes("activeRequestId")&&picker.includes("thumbnailDataUrl"),"picker thumbnails and unmount cleanup"],

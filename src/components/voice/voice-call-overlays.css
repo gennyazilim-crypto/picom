@@ -7,7 +7,7 @@
   padding: 28px;
   background:
     radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--picom-aqua, #10c2bb) 18%, transparent), transparent 46%),
-    color-mix(in srgb, #d7e8f4 72%, transparent);
+    color-mix(in srgb, var(--bg-outer) 78%, transparent);
   backdrop-filter: blur(10px);
   will-change: opacity;
 }
@@ -166,6 +166,7 @@
   border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   box-shadow: var(--shadow-md, 0 24px 60px rgba(0, 0, 0, 0.45));
   text-align: center;
+  color: var(--text-primary, #102033);
 }
 
 .voice-call-avatar {
@@ -191,7 +192,7 @@
 .voice-call-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text, var(--text-primary, #fff));
+  color: var(--text-primary, #102033);
 }
 
 .voice-call-subtitle {
@@ -424,8 +425,8 @@
   padding: 10px 12px;
   border-radius: var(--radius-md, 10px);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  background: var(--surface, rgba(0, 0, 0, 0.2));
-  color: var(--text, #fff);
+  background: var(--surface-soft, rgba(0, 0, 0, 0.2));
+  color: var(--text-primary, #102033);
   font-size: 0.9rem;
 }
 
@@ -443,7 +444,7 @@
 .voice-invite-picker__empty {
   padding: 18px;
   text-align: center;
-  color: var(--text-muted, rgba(255, 255, 255, 0.55));
+  color: var(--text-muted, #7a8899);
   font-size: 0.88rem;
 }
 
@@ -457,7 +458,7 @@
   background: transparent;
   border-radius: var(--radius-md, 10px);
   cursor: pointer;
-  color: var(--text, #fff);
+  color: var(--text-primary, #102033);
   text-align: left;
 }
 
@@ -492,7 +493,7 @@
 }
 
 .voice-invite-picker__name small {
-  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  color: var(--text-muted, #7a8899);
   font-size: 0.78rem;
 }
 

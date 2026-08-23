@@ -1,0 +1,14 @@
+﻿SOURCE_MIGRATION_VS_STAGING_SCHEMA=MATCH_BASE_PLUS_GO_LIVE_SUBSET
+NOTE=Staging table includes Phase1 supersets (chat_mode, metadata, moderation_status, etc.) from later migrations already in staging history. Base+go-live columns from restored migrations are present.
+STAGING_HISTORY_100000=MISSING
+STAGING_HISTORY_110000=MISSING
+STAGING_HISTORY_STATUS=SCHEMA_MATCHED_HISTORY_GAP
+CANONICALITY=Proven by live staging schema objects matching source migration creates; history gap is staging bookkeeping drift, not branch-only obsolete SQL.
+PRODUCTION_TO_REGCLASS=NULL
+PRODUCTION_REMNANTS=NONE
+PRODUCTION_HISTORY_100000=MISSING
+PRODUCTION_HISTORY_110000=MISSING
+PRODUCTION_HISTORY_130000=PRESENT
+PRODUCTION_HISTORY_140000=ABSENT
+SAFE_TO_APPLY=YES
+FEATURE_FLAGS_TABLE=NOT_YET_PRESENT_ON_PROD

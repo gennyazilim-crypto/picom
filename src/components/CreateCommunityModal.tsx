@@ -8,6 +8,7 @@ import type { CommunityKind } from "../types/community";
 import type { CommunityTemplateId } from "../types/communityTemplates";
 import { AppIcon, type IconName } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
+import { useTranslation } from "../i18n";
 import "./CreateCommunityModal.css";
 
 const overlayIcons = mvpUiIconMap.overlays;
@@ -110,11 +111,48 @@ const TEXT_COMMUNITY_SUGGESTIONS: readonly TextCommunitySuggestion[] = [
     name: "Friends Circle",
     description: "A private space for friends to chat, share, and hang out.",
   },
+  {
+    id: "sports",
+    label: "Sports",
+    name: "Sports Club",
+    description: "Teams, fixtures, results, and match-day conversations.",
+  },
+  {
+    id: "music",
+    label: "Music",
+    name: "Music Room",
+    description: "Playlists, releases, listening parties, and artist talk.",
+  },
+  {
+    id: "creative",
+    label: "Creative",
+    name: "Creative Studio",
+    description: "Ideas, feedback, portfolios, and collaborative projects.",
+  },
+  {
+    id: "technology",
+    label: "Technology",
+    name: "Tech Lab",
+    description: "Products, code, hardware, and practical problem solving.",
+  },
+  {
+    id: "fitness",
+    label: "Fitness",
+    name: "Fitness Circle",
+    description: "Training plans, progress, and healthy routines together.",
+  },
+  {
+    id: "movies",
+    label: "Movies",
+    name: "Movie Night",
+    description: "Watch lists, reviews, recommendations, and live discussions.",
+  },
 ] as const;
 
 const STEPS = ["Community type", "Identity", "Access & setup"] as const;
 
 export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModalProps) {
+  const { t } = useTranslation("common");
   const [creationRequestId] = useState(() => crypto.randomUUID());
   const [step, setStep] = useState(0);
   const [kind, setKind] = useState<CommunityKind | null>("text");
@@ -132,7 +170,12 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
   const [saving, setSaving] = useState(false);
   const iconInputRef = useRef<HTMLInputElement>(null);
   const selectedTemplate = communityTemplates.find((template) => template.id === templateId) ?? communityTemplates[0];
-  const selectedKind = KIND_OPTIONS.find((option) => option.kind === kind) ?? null;
+  const kindOptions = KIND_OPTIONS.map((option) => ({
+    ...option,
+    title: t(`communityCreate.kind.${option.kind}.title`),
+    description: t(`communityCreate.kind.${option.kind}.description`),
+  }));
+  const selectedKind = kindOptions.find((option) => option.kind === kind) ?? null;
   const selectedSuggestion = TEXT_COMMUNITY_SUGGESTIONS.find((item) => item.id === suggestionId) ?? null;
   const dialogRef = useDialogFocusTrap<HTMLElement>(saving ? () => undefined : onClose);
   const textTemplateChannels = useMemo(() => selectedTemplate.categories.flatMap((category) => category.channels), [selectedTemplate]);
@@ -272,19 +315,19 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
         </button>
         <header className="typed-community-wizard__header">
           <div>
-            <span className="eyebrow">New community</span>
-            <h2 id="create-community-title">Create a Picom community</h2>
+            <span className="eyebrow">{t("communityCreate.new")}</span>
+            <h2 id="create-community-title">{t("communityCreate.title")}</h2>
             <p id="create-community-description">
-              Text communities are available now. Radio and Podcast stay locked until a later release.
+              {t("communityCreate.subtitle")}
             </p>
           </div>
           <span className="typed-community-wizard__step-count">Step {step + 1} of {STEPS.length}</span>
         </header>
-        <ol className="typed-community-wizard__progress" aria-label="Community creation progress">
+        <ol className="typed-community-wizard__progress" aria-label={t("communityCreate.progress")}>
           {STEPS.map((label, index) => (
             <li key={label} className={`${index === step ? "active" : ""} ${index < step ? "complete" : ""}`} aria-current={index === step ? "step" : undefined}>
               <span>{index < step ? "OK" : index + 1}</span>
-              <strong>{label}</strong>
+              <strong>{index === 0 ? t("communityCreate.stepType") : index === 1 ? t("communityCreate.stepIdentity") : t("communityCreate.stepAccess")}</strong>
             </li>
           ))}
         </ol>
@@ -293,12 +336,12 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
           {step === 0 ? (
             <section className="typed-community-wizard__step" aria-labelledby="community-kind-heading">
               <div className="typed-community-wizard__intro">
-                <span className="eyebrow">Required</span>
-                <h3 id="community-kind-heading">What are you creating?</h3>
-                <p>The selected type controls capabilities, navigation, and the shell opened after creation.</p>
+                <span className="eyebrow">{t("communityCreate.required")}</span>
+                <h3 id="community-kind-heading">{t("communityCreate.question")}</h3>
+                <p>{t("communityCreate.questionBody")}</p>
               </div>
-              <div className="community-kind-grid" role="radiogroup" aria-label="Community type">
-                {KIND_OPTIONS.map((option, index) => {
+              <div className="community-kind-grid" role="radiogroup" aria-label={t("communityCreate.stepType")}>
+                {kindOptions.map((option, index) => {
                   const enabled = isV1CommunityKindEnabled(option.kind);
                   const selected = kind === option.kind && enabled;
                   return (
@@ -322,7 +365,7 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
                         <span className="community-kind-card__copy">
                           <strong>
                             {option.title}
-                            {!enabled ? <span className="community-kind-card__badge">Locked</span> : null}
+                            {!enabled ? <span className="community-kind-card__badge">{t("communityCreate.locked")}</span> : null}
                           </strong>
                           <small>{option.description}</small>
                         </span>
@@ -333,7 +376,7 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
                         </ul>
                         <span className="community-kind-card__limit">
                           <AppIcon name="lock" size="xs" />
-                          {enabled ? option.limitation : "Coming in a later Picom release."}
+                          {enabled ? option.limitation : t("communityCreate.comingLater")}
                         </span>
                       </button>
                     </div>
@@ -604,11 +647,11 @@ export function CreateCommunityModal({ onClose, onSubmit }: CreateCommunityModal
             }
             disabled={saving}
           >
-            {step === 0 ? "Cancel" : "Back"}
+            {step === 0 ? t("action.cancel") : t("action.back")}
           </button>
           {step < STEPS.length - 1 ? (
             <button type="button" className="send-button" onClick={goNext} disabled={saving || (step === 0 && (!kind || !isV1CommunityKindEnabled(kind)))}>
-              {step === 0 ? "Continue" : "Next"}
+              {step === 0 ? t("action.continue") : t("action.next")}
               <AppIcon name="chevronRight" size="sm" />
             </button>
           ) : (

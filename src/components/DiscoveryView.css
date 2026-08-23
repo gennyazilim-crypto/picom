@@ -195,7 +195,7 @@
     linear-gradient(155deg, #fff 0%, color-mix(in srgb, #dff7f5 70%, #fff) 100%);
   box-shadow:
     0 16px 36px color-mix(in srgb, #000 22%, transparent),
-    0 0 0 4px color-mix(in srgb, var(--picom-crimson, #c41c30) 22%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--picom-crimson, #c71225) 22%, transparent),
     inset 0 1px 0 #fff;
   transform: rotate(-2deg);
 }
@@ -742,6 +742,199 @@
   color: var(--text-secondary);
 }
 
+/* Editorial discovery cards: the community identity is the visual, while the
+   membership-aware action remains the single, obvious next step. */
+.discovery-grid {
+  grid-template-columns: repeat(auto-fill, minmax(226px, 1fr));
+}
+
+.discovery-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.discovery-card-art {
+  position: relative;
+  isolation: isolate;
+  min-height: 302px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(145deg, var(--picom-teal), #26256b);
+}
+
+.discovery-card-art::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, #0b1430 4%, transparent) 0%, color-mix(in srgb, #0b1430 74%, transparent) 100%);
+}
+
+.discovery-card-art__gradient,
+.discovery-card-art__image {
+  position: absolute;
+  z-index: -3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.discovery-card-art__image { object-fit: cover; }
+
+.discovery-card-art__mesh {
+  position: absolute;
+  z-index: -2;
+  inset: -36% -18% auto auto;
+  width: 92%;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, #fff 36%, transparent);
+  border-radius: 41% 59% 63% 37% / 44% 37% 63% 56%;
+  transform: rotate(-22deg);
+  box-shadow: 0 0 0 20px color-mix(in srgb, #fff 8%, transparent), 0 0 0 42px color-mix(in srgb, #fff 7%, transparent), 0 24px 60px color-mix(in srgb, #10142e 46%, transparent);
+  pointer-events: none;
+}
+
+.discovery-card-art__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 0;
+}
+
+.discovery-card-category {
+  max-width: 70%;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #fff 42%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #10142e 28%, transparent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+
+.discovery-card-art .discovery-card-icon {
+  position: static;
+  z-index: auto;
+  width: 42px;
+  height: 42px;
+  border: 2px solid color-mix(in srgb, #fff 72%, transparent);
+  border-radius: 14px;
+  font-size: 15px;
+  box-shadow: 0 8px 20px color-mix(in srgb, #071024 28%, transparent);
+}
+
+.discovery-card-art__copy {
+  display: grid;
+  gap: 7px;
+  padding: 24px 16px 14px;
+}
+
+.discovery-card-art__eyebrow {
+  min-height: 0 !important;
+  margin: 0 !important;
+  color: color-mix(in srgb, #fff 76%, transparent) !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.discovery-card .discovery-card-art h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.18;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.discovery-card-art__description {
+  min-height: 0 !important;
+  margin: 0 !important;
+  color: color-mix(in srgb, #fff 87%, transparent) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.discovery-card-art .discovery-card-primary {
+  min-height: 47px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 14px 14px;
+  padding: 0 14px 0 16px;
+  border: 1px solid color-mix(in srgb, #fff 38%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, #fff 20%, transparent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.discovery-card-art .discovery-card-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, #fff 30%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, #061025 26%, transparent);
+  transform: translateX(2px);
+}
+
+.discovery-card-art .discovery-card-primary:disabled { opacity: .68; cursor: not-allowed; }
+
+.discovery-card--joined .discovery-card-art .discovery-card-primary {
+  border-color: color-mix(in srgb, var(--picom-aqua) 70%, #fff);
+  background: color-mix(in srgb, var(--picom-aqua) 45%, #0b5e70);
+  color: #fff;
+}
+
+.discovery-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  gap: 10px;
+  padding: 0 12px 0 14px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  background: var(--surface);
+}
+
+.discovery-card-footer .discovery-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 0;
+}
+
+.discovery-card-footer .discovery-card-secondary {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+}
+
 .discovery-empty {
   grid-column: 1 / -1;
   display: grid;
@@ -826,6 +1019,8 @@
   .discovery-card-actions {
     grid-template-columns: 1fr auto;
   }
+
+  .discovery-card-art { min-height: 282px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

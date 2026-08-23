@@ -1,0 +1,6 @@
+expected=e38a875bc06504b4112c7e2f114e19a64e46e580f24b725a523108b13a99c5a3
+actual=e38a875bc06504b4112c7e2f114e19a64e46e580f24b725a523108b13a99c5a3
+exists=True
+exe=C:\Users\ACER\AppData\Local\Temp\picom-task13a-20260816T1932Z\win-unpacked\Picom.exe
+match=True
+

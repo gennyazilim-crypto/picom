@@ -1,0 +1,14 @@
+{
+  "TASK_02_HOSTED_RECONCILIATION": "NOT_APPLIED",
+  "version_20260816000000": "ABSENT",
+  "reconcile_name_rows": [],
+  "latest_hosted": {
+    "version": "20260808430000",
+    "name": "live_now_production_ops"
+  },
+  "historical_onboarding_rows": [
+    { "version": "20260704002700", "name": "profiles_onboarding" },
+    { "version": "20260711150900", "name": "auth_profile_onboarding_production" }
+  ],
+  "continue_with_phase_a_assumptions": true
+}

@@ -1,0 +1,1 @@
+﻿select exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='user_can_broadcast_on_picom_live') as exists;

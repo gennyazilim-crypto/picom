@@ -1,0 +1,6 @@
+﻿git_sha=6c922c093022d5738d94ce864339764901cdbf62
+branch=feat/community-rebuild
+git_log_1=6c922c09 docs(feed): record clean dependency closure and staging package SHA
+working_tree=DIRTY
+publisher_migrations_status=untracked (??)
+note=Many unrelated modified/untracked files present; staging apply scoped to 2026080314* only

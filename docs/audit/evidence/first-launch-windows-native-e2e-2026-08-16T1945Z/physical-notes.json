@@ -1,0 +1,164 @@
+{
+  "appearanceFlash": {
+    "firstBackground": "rgb(28, 33, 31)",
+    "laterBackground": "rgb(28, 33, 31)",
+    "firstTheme": "dark",
+    "visibleFlashSuspected": false
+  },
+  "micBefore": {
+    "liveAudio": false,
+    "gum": []
+  },
+  "micPermission": {
+    "enableClicked": false,
+    "meterPresent": true,
+    "inputLabel": "Default - Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)",
+    "gum": []
+  },
+  "micSilence": {
+    "status": "Listening",
+    "meter": 0,
+    "falselyPassed": false
+  },
+  "micInput": {
+    "status": "Listening",
+    "peak": 0,
+    "inputLabel": "Default - Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)"
+  },
+  "microphonePhysical": "BLOCKED_ENVIRONMENT",
+  "micCycle1": {
+    "stoppedLive": 0,
+    "startedLive": 1
+  },
+  "micCycle2": {
+    "stoppedLive": 0,
+    "startedLive": 1
+  },
+  "micCycle3": {
+    "stoppedLive": 0,
+    "startedLive": 1
+  },
+  "speaker": {
+    "apiInvoked": true,
+    "heard": false,
+    "selectedOutput": "Default - Hoparlör (Realtek(R) Audio)",
+    "observation": "No reliable human/audio observation mechanism in this operator environment"
+  },
+  "cameraBefore": {
+    "liveVideo": false
+  },
+  "camera": {
+    "enableClicked": false,
+    "liveFrame": false,
+    "dimensions": [
+      {
+        "width": 0,
+        "height": 0,
+        "live": false
+      },
+      {
+        "width": 0,
+        "height": 0,
+        "live": false
+      }
+    ],
+    "audioFalse": true,
+    "audioLeak": false,
+    "screenshotStored": false,
+    "reason": "Camera frame not stored to avoid capturing a person or private environment"
+  },
+  "cameraPhysical": "BLOCKED_ENVIRONMENT",
+  "camCycle1": {
+    "stoppedSrc": false,
+    "startedLive": false
+  },
+  "camCycle2": {
+    "stoppedSrc": false,
+    "startedLive": false
+  },
+  "camCycle3": {
+    "stoppedSrc": false,
+    "startedLive": false
+  },
+  "screenSources": [
+    {
+      "name": "Display 1 (1920×1080) · Primary",
+      "type": "Screen"
+    },
+    {
+      "name": "Picom Desktop",
+      "type": "Window"
+    },
+    {
+      "name": "Cursor Agents",
+      "type": "Window"
+    },
+    {
+      "name": "ChatGPT Classic",
+      "type": "Window"
+    },
+    {
+      "name": "figma login page - Google'da Ara - Google Chrome",
+      "type": "Window"
+    },
+    {
+      "name": "C:\\Windows\\System32\\cmd.exe",
+      "type": "Window"
+    }
+  ],
+  "screen": {
+    "selected": {
+      "ok": true,
+      "name": "Picom Desktop"
+    },
+    "live": true,
+    "dimensions": [
+      {
+        "hasSrcObject": false,
+        "readyState": 0,
+        "width": 0,
+        "height": 0,
+        "audioTracks": 0,
+        "videoTracks": 0,
+        "videoLive": false
+      },
+      {
+        "hasSrcObject": true,
+        "readyState": 4,
+        "width": 1280,
+        "height": 800,
+        "audioTracks": 0,
+        "videoTracks": 1,
+        "videoLive": true
+      }
+    ]
+  },
+  "screenPhysical": "PASS",
+  "loginItem": "PASS",
+  "tray": {
+    "hideClicked": {
+      "ok": true
+    },
+    "processAliveWhileHidden": true,
+    "restoredByTrayApi": true,
+    "beforeSecond": 6,
+    "afterSecond": 6,
+    "secondRestored": true,
+    "noProcessExplosion": true
+  },
+  "startInTray": {
+    "hidden": false,
+    "hasFirstLaunch": true,
+    "launchMs": 676
+  },
+  "trayClose": "PASS",
+  "notificationCapability": {
+    "ok": true,
+    "native": true,
+    "supported": true
+  },
+  "notificationCreation": {
+    "ok": true,
+    "native": true
+  }
+}

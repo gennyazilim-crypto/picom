@@ -1,0 +1,27 @@
+{
+  "PRODUCTION_ONBOARDING_RPC": "CANONICAL_5_ARG",
+  "oid": 29163,
+  "overload_count": 1,
+  "arg_count": 5,
+  "arg3_overloads": 0,
+  "arg4_overloads": 0,
+  "arg5_overloads": 1,
+  "ordered_arguments": [
+    { "name": "target_profile", "type": "jsonb" },
+    { "name": "target_followed_user_ids", "type": "uuid[]" },
+    { "name": "target_theme", "type": "text" },
+    { "name": "target_start_choice", "type": "text" },
+    { "name": "target_invite_code", "type": "text" }
+  ],
+  "return_fields": [
+    { "name": "completed", "type": "boolean" },
+    { "name": "completed_at", "type": "timestamptz" },
+    { "name": "followed_user_ids", "type": "uuid[]" },
+    { "name": "theme_mode", "type": "text" },
+    { "name": "initial_feed", "type": "text" },
+    { "name": "start_choice", "type": "text" }
+  ],
+  "security": "DEFINER",
+  "search_path": "pg_catalog, public, extensions",
+  "owner": "postgres"
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { IconName } from "../AppIcon";
 import { AppIcon } from "../AppIcon";
 import type { UserSettingsSection } from "../../services/navigation/settingsNavigationPolicyService";
+import { useTranslation } from "../../i18n";
 
 export type SettingsNavChild = Readonly<{
   section: UserSettingsSection;
@@ -10,14 +11,14 @@ export type SettingsNavChild = Readonly<{
 }>;
 
 /** Nested items under Settings — maps 1:1 to existing modal sections. */
-export const GLOBAL_SETTINGS_NAV_CHILDREN: readonly SettingsNavChild[] = [
-  { section: "Account", label: "Account", icon: "user" },
-  { section: "Profile", label: "Profile", icon: "users" },
-  { section: "Privacy & Safety", label: "Privacy & Safety", icon: "lock" },
-  { section: "Appearance", label: "Appearance", icon: "sun" },
-  { section: "Notifications", label: "Notifications", icon: "bell" },
-  { section: "Voice & Audio", label: "Voice & Audio", icon: "microphone" },
-  { section: "Advanced", label: "Advanced", icon: "settings" },
+export const GLOBAL_SETTINGS_NAV_CHILDREN: readonly Omit<SettingsNavChild, "label">[] = [
+  { section: "Account", icon: "user" },
+  { section: "Profile", icon: "users" },
+  { section: "Privacy & Safety", icon: "lock" },
+  { section: "Appearance", icon: "sun" },
+  { section: "Notifications", icon: "bell" },
+  { section: "Voice & Audio", icon: "microphone" },
+  { section: "Advanced", icon: "settings" },
 ];
 
 type GlobalSettingsNavProps = Readonly<{
@@ -28,6 +29,7 @@ type GlobalSettingsNavProps = Readonly<{
 }>;
 
 export function GlobalSettingsNav({ compact, settingsOpen, activeSection, onOpenSection }: GlobalSettingsNavProps) {
+  const { t } = useTranslation("navigation");
   const [expanded, setExpanded] = useState(settingsOpen);
 
   useEffect(() => {
@@ -46,15 +48,15 @@ export function GlobalSettingsNav({ compact, settingsOpen, activeSection, onOpen
         type="button"
         className={`global-nav-item${settingsOpen ? " is-active" : ""}`}
         data-global-navigation-button="true"
-        aria-label="Open user settings"
+        aria-label={t("nav.settings.aria")}
         aria-current={settingsOpen ? "page" : undefined}
-        title="Settings"
+        title={t("nav.settings.label")}
         onClick={() => onOpenSection("Account")}
       >
         <span className="global-nav-item__icon" aria-hidden="true">
           <AppIcon name="settings" size="lg" />
         </span>
-        <span className="global-nav-item__label">Settings</span>
+        <span className="global-nav-item__label">{t("nav.settings.label")}</span>
       </button>
     );
   }
@@ -65,7 +67,7 @@ export function GlobalSettingsNav({ compact, settingsOpen, activeSection, onOpen
         type="button"
         className={`global-nav-item global-settings-nav__parent${parentActive ? " is-active" : ""}`}
         data-global-navigation-button="true"
-        aria-label="Settings"
+        aria-label={t("nav.settings.label")}
         aria-expanded={expanded}
         aria-controls="global-settings-submenu"
         onClick={() => setExpanded((value) => !value)}
@@ -73,30 +75,31 @@ export function GlobalSettingsNav({ compact, settingsOpen, activeSection, onOpen
         <span className="global-nav-item__icon" aria-hidden="true">
           <AppIcon name="settings" size="lg" />
         </span>
-        <span className="global-nav-item__label">Settings</span>
+        <span className="global-nav-item__label">{t("nav.settings.label")}</span>
         <span className={`global-settings-nav__chevron${expanded ? " is-open" : ""}`} aria-hidden="true">
           <AppIcon name="chevronDown" size="sm" />
         </span>
       </button>
 
       {expanded ? (
-        <div id="global-settings-submenu" className="global-settings-nav__children" role="group" aria-label="Settings sections">
+        <div id="global-settings-submenu" className="global-settings-nav__children" role="group" aria-label={t("settings.sections")}>
           {GLOBAL_SETTINGS_NAV_CHILDREN.map((child) => {
             const childActive = settingsOpen && activeSection === child.section;
+            const label = t(`settings.${child.section}`);
             return (
               <button
                 key={child.section}
                 type="button"
                 className={`global-settings-nav__child${childActive ? " is-active" : ""}`}
                 data-global-navigation-button="true"
-                aria-label={`Open ${child.label} settings`}
+                aria-label={t("settings.open", { name: label })}
                 aria-current={childActive ? "page" : undefined}
                 onClick={() => onOpenSection(child.section)}
               >
                 <span className="global-settings-nav__child-icon" aria-hidden="true">
                   <AppIcon name={child.icon} size="sm" />
                 </span>
-                <span className="global-settings-nav__child-label">{child.label}</span>
+                <span className="global-settings-nav__child-label">{label}</span>
               </button>
             );
           })}

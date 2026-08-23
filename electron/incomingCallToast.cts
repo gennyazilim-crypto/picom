@@ -1,5 +1,6 @@
 import { BrowserWindow, screen, type IpcMainInvokeEvent } from "electron";
 import path from "node:path";
+import { translateMain } from "./mainLocale.cjs";
 
 export type IncomingCallToastAction = "accept" | "decline" | "message";
 
@@ -154,7 +155,7 @@ export function showIncomingCallToast(payload: IncomingCallToastPayload, preload
     alwaysOnTop: true,
     hasShadow: false,
     focusable: true,
-    title: "Picom Incoming Call",
+    title: translateMain("notification.incomingCall"),
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,

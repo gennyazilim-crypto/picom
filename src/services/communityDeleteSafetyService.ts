@@ -66,6 +66,9 @@ export const communityDeleteSafetyService = {
         archive_reason: cleanReason,
       });
       const row = data?.[0];
+      if (error?.message.includes("COMMUNITY_OWNERSHIP_TRANSFER_REQUIRED")) {
+        return { ok: false, message: "Communities with more than 1,000 members require ownership transfer before they can be archived." };
+      }
       if (error || !row) return { ok: false, message: "Picom could not archive the community safely. No lifecycle changes were applied." };
       archivedAt = row.archived_at;
     } else {

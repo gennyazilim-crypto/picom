@@ -1,10 +1,11 @@
 ﻿import fs from 'node:fs';
 
 const servicePath = 'src/services/versionCompatibilityService.ts';
+const semverPath = 'src/services/versionSemver.ts';
 const docPath = 'docs/client-server-version-compatibility.md';
 const remoteDocPath = 'docs/remote-config.md';
 
-const service = fs.readFileSync(servicePath, 'utf8');
+const service = `${fs.readFileSync(servicePath, 'utf8')}\n${fs.readFileSync(semverPath, 'utf8')}`;
 const doc = fs.readFileSync(docPath, 'utf8');
 const remoteDoc = fs.readFileSync(remoteDocPath, 'utf8');
 

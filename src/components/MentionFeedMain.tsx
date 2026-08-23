@@ -5,14 +5,15 @@ import type { UpcomingEvent } from "../types/events";
 import type { FriendConnection } from "../types/friends";
 import type { DirectConversation } from "../types/directMessages";
 import type { MentionFeedTab, MentionItem, MentionQuickFilter } from "../types/mentions";
-import type { FollowedUserStory } from "../types/stories";
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import type { ActiveVoiceRoomSummary } from "../types/voiceDiscovery";
 import type { AudioFeedItem, AudioPlayableItem } from "../types/audio";
 import { useAudioCatalogState } from "../hooks/useAudioCatalog";
 import { rankMentionFeedItems } from "../utils/mentionFeedRanking";
+import { activitiesToMentionItems, mapMentionItemsToActivities } from "../services/feed/feedActivityMapper";
+import { useTranslation } from "../i18n";
 import { FeedCompanionRail } from "./FeedCompanionRail";
-import { FollowedPeopleStoriesHeader } from "./FollowedPeopleStoriesHeader";
+import { FeedLiveNowPreviewBand } from "./FeedLiveNowPreviewBand";
 import { MentionFeedHeader } from "./MentionFeedHeader";
 import { UnifiedFeedList } from "./UnifiedFeedList";
 import { RadioPanel } from "./audio/RadioPanel";
@@ -31,8 +32,8 @@ type MentionFeedMainProps = {
   items: MentionItem[];
   communities: Community[];
   friends: FriendConnection[];
+  pendingFriendRequestCount: number;
   events: UpcomingEvent[];
-  stories: FollowedUserStory[];
   voiceState: VoiceServiceSnapshot;
   activeVoiceRooms: ActiveVoiceRoomSummary[];
   followedUserIds: string[];
@@ -40,6 +41,15 @@ type MentionFeedMainProps = {
   directConversations: readonly DirectConversation[];
   activeTab: MentionFeedTab;
   activeFilter: MentionQuickFilter | null;
+  feedStatus?: "loading" | "ready" | "empty" | "error" | "offline";
+  feedHasMore?: boolean;
+  feedLoadingMore?: boolean;
+  feedEndReached?: boolean;
+  pendingNewCount?: number;
+  onLoadMore?: () => void;
+  onRetryFeed?: () => void;
+  onRevealNewActivities?: () => void;
+  onOpenLiveSession: (sessionId: string) => void;
   onTabChange: (tab: MentionFeedTab) => void;
   onOpenDirectConversation: (conversation: DirectConversation) => void;
   onOpenImage: (attachment: Attachment) => void;
@@ -50,9 +60,8 @@ type MentionFeedMainProps = {
   onOpenProfile: (event: MouseEvent, member: Member) => void;
   onOpenFriendProfile: (member: Member) => void;
   onFriendContextMenu: (event: MouseEvent, member: Member) => void;
+  onOpenFriends: () => void;
   onOpenMore: (event: MouseEvent, item: MentionItem) => void;
-  onMarkStorySeen: (storyId: string) => void;
-  onOpenStoryInChannel: (story: FollowedUserStory) => void;
   onToggleVoiceMute: () => void;
   onToggleVoiceDeafen: () => void;
   onLeaveVoice: () => void;
@@ -106,8 +115,8 @@ export function MentionFeedMain({
   items,
   communities,
   friends,
+  pendingFriendRequestCount,
   events,
-  stories,
   voiceState,
   activeVoiceRooms,
   followedUserIds,
@@ -115,6 +124,15 @@ export function MentionFeedMain({
   directConversations,
   activeTab,
   activeFilter,
+  feedStatus = "ready",
+  feedHasMore = false,
+  feedLoadingMore = false,
+  feedEndReached = false,
+  pendingNewCount = 0,
+  onLoadMore,
+  onRetryFeed,
+  onRevealNewActivities,
+  onOpenLiveSession,
   onTabChange,
   onOpenDirectConversation,
   onOpenImage,
@@ -125,9 +143,8 @@ export function MentionFeedMain({
   onOpenProfile,
   onOpenFriendProfile,
   onFriendContextMenu,
+  onOpenFriends,
   onOpenMore,
-  onMarkStorySeen,
-  onOpenStoryInChannel,
   onToggleVoiceMute,
   onToggleVoiceDeafen,
   onLeaveVoice,
@@ -138,10 +155,10 @@ export function MentionFeedMain({
   onCopyAudioReference,
   onReportAudio,
 }: MentionFeedMainProps) {
+  const { t } = useTranslation("feed");
   const audioCatalogState = useAudioCatalogState();
   const audioCatalog = audioCatalogState.snapshot;
   const reminderState = useRadioScheduleReminders(audioCatalog.radioSessions);
-  const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<AudioPlayableItem | null>(null);
   const [selectedRadioSessionId, setSelectedRadioSessionId] = useState<string | null>(null);
   const [selectedPodcastEpisodeId, setSelectedPodcastEpisodeId] = useState<string | null>(null);
@@ -150,18 +167,10 @@ export function MentionFeedMain({
   const [queriedFeedItems, setQueriedFeedItems] = useState<readonly UnifiedFeedItem[] | null>(null);
   const [feedQueryNotice, setFeedQueryNotice] = useState<string | null>(null);
   const rankingNowMs = useMemo(() => Date.now(), []);
-  const feedItems = useMemo(() => rankMentionFeedItems(items, { tab: "feed", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
-  const followingItems = useMemo(() => rankMentionFeedItems(items, { tab: "following", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, items, rankingNowMs]);
+  const canonicalItems = useMemo(() => activitiesToMentionItems(mapMentionItemsToActivities(items)), [items]);
+  const feedItems = useMemo(() => rankMentionFeedItems(canonicalItems, { tab: "feed", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, canonicalItems, rankingNowMs]);
+  const followingItems = useMemo(() => rankMentionFeedItems(canonicalItems, { tab: "following", followedUserIds, isAccessible: () => true, nowMs: rankingNowMs }), [followedUserIds, canonicalItems, rankingNowMs]);
   const locallyVisibleItems = useMemo(() => applyQuickFilter(activeTab === "feed" ? feedItems : followingItems, activeFilter), [activeFilter, activeTab, feedItems, followingItems]);
-  const visibleStories = useMemo(() => stories.filter((story) => {
-    if (!story.communityId) return true;
-    const community = communities.find((candidate) => candidate.id === story.communityId);
-    if (!community) return false;
-    const access = getCommunityAccess(currentUserId, community);
-    return access.isMember || access.canViewPublicContent;
-  }), [communities, currentUserId, stories]);
-  const storyIds = useMemo(() => visibleStories.map((story) => story.id), [visibleStories]);
-  const activeStoryIndex = activeStoryId ? storyIds.indexOf(activeStoryId) : -1;
   const accessibleAudioItems = useMemo(() => isV1FeatureEnabled("radio") || isV1FeatureEnabled("podcasts") ? audioCatalog.feedItems.filter((item) => {
     const community = communities.find((candidate) => candidate.id === item.communityId);
     if (!community) return false;
@@ -184,11 +193,12 @@ export function MentionFeedMain({
       limit: 50,
     }).then((result) => {
       if (!active) return;
-      if (result.ok) { setQueriedFeedItems(result.data.items); setFeedQueryNotice(result.data.isStale ? "Showing cached Feed results while Picom reconnects." : null); }
-      else { setFeedQueryNotice("Live ranking is unavailable. Showing cached visible updates."); setQueriedFeedItems(null); }
+      if (result.ok) { setQueriedFeedItems(result.data.items); setFeedQueryNotice(result.data.isStale ? t("stale") : null); }
+      else { setFeedQueryNotice(t("error.body")); setQueriedFeedItems(null); }
     });
     return () => { active = false; };
-  }, [activeFilter, activeTab, audioCatalog.feedItems, followedUserIds, items]);
+  // Ranked query must not re-run on every mention-item merge (App pagination/realtime owns item churn).
+  }, [activeFilter, activeTab, followedUserIds]);
   const queriedSourceOrder = useMemo(() => queriedFeedItems === null ? null : new Map(queriedFeedItems.map((item, index) => [item.mention.sourceId, index])), [queriedFeedItems]);
   const visibleItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleItems : locallyVisibleItems.filter((item) => queriedSourceOrder.has(item.messageId)).sort((left, right) => (queriedSourceOrder.get(left.messageId) ?? 999) - (queriedSourceOrder.get(right.messageId) ?? 999)), [locallyVisibleItems, queriedSourceOrder]);
   const visibleAudioItems = useMemo(() => queriedSourceOrder === null ? locallyVisibleAudioItems.slice(0, 12) : locallyVisibleAudioItems.filter((item) => queriedSourceOrder.has(item.sourceId ?? item.id.replace(/^feed-/, ""))).sort((left, right) => (queriedSourceOrder.get(left.sourceId ?? left.id.replace(/^feed-/, "")) ?? 999) - (queriedSourceOrder.get(right.sourceId ?? right.id.replace(/^feed-/, "")) ?? 999)).slice(0, 12), [locallyVisibleAudioItems, queriedSourceOrder]);
@@ -246,7 +256,7 @@ export function MentionFeedMain({
       const result = item.type === "podcast_episode"
         ? reacted ? await podcastService.removePodcastReaction(sourceId, emoji) : await podcastService.reactToPodcastEpisode(sourceId, emoji)
         : reacted ? await radioService.removeRadioReaction(sourceId, emoji) : await radioService.reactToRadio(sourceId, emoji);
-      if (!result.ok) { setFeedQueryNotice(result.error.message); return; }
+      if (!result.ok) { setFeedQueryNotice(t("error.body")); return; }
       await audioCatalogState.refresh();
     })();
   };
@@ -260,33 +270,10 @@ export function MentionFeedMain({
     const session = event.radioSessionId ? audioCatalog.radioSessions.find((candidate) => candidate.id === event.radioSessionId) : undefined;
     if (session) void reminderState.toggle(session);
   };
-  const openStory = (storyId: string) => {
-    setActiveStoryId(storyId);
-    onMarkStorySeen(storyId);
-  };
-  const closeStory = () => setActiveStoryId(null);
-  const previousStory = () => {
-    if (!storyIds.length || activeStoryIndex < 0) return;
-    openStory(storyIds[(activeStoryIndex - 1 + storyIds.length) % storyIds.length]);
-  };
-  const nextStory = () => {
-    if (!storyIds.length || activeStoryIndex < 0) return;
-    openStory(storyIds[(activeStoryIndex + 1) % storyIds.length]);
-  };
 
   return (
     <main className="mention-feed-main" aria-label="Home mention feed">
-      <FollowedPeopleStoriesHeader
-        stories={visibleStories}
-        communities={communities}
-        activeStoryId={activeStoryId}
-        onOpenStory={openStory}
-        onCloseStory={closeStory}
-        onPreviousStory={previousStory}
-        onNextStory={nextStory}
-        onOpenStoryProfile={onOpenProfile}
-        onOpenStoryInChannel={onOpenStoryInChannel}
-      />
+      <FeedLiveNowPreviewBand onOpenLiveSession={onOpenLiveSession} />
       <MentionFeedHeader
         activeTab={activeTab}
         feedCount={feedItems.length + accessibleAudioItems.length}
@@ -298,7 +285,26 @@ export function MentionFeedMain({
       />
       <div className="mention-feed-body-grid">
         <div className="mention-feed-primary-list">
+        {pendingNewCount > 0 && onRevealNewActivities ? (
+          <button type="button" className="feed-new-activities" onClick={onRevealNewActivities}>
+            {t("newActivities")} ({pendingNewCount})
+          </button>
+        ) : null}
         {feedQueryNotice ? <p className="feed-query-notice" role="status">{feedQueryNotice}</p> : null}
+        {feedStatus === "loading" && !visibleItems.length ? (
+          <div className="mention-empty-state" role="status" aria-live="polite"><strong>{t("loading")}</strong></div>
+        ) : null}
+        {feedStatus === "error" ? (
+          <div className="mention-empty-state" role="alert">
+            <strong>{t("error.title")}</strong>
+            <span>{t("error.body")}</span>
+            {onRetryFeed ? <button type="button" onClick={onRetryFeed}>{t("retry")}</button> : null}
+          </div>
+        ) : null}
+        {feedStatus === "offline" ? (
+          <div className="mention-empty-state" role="status"><strong>{t("offline")}</strong></div>
+        ) : null}
+        {feedStatus !== "error" ? (
         <UnifiedFeedList
           textItems={visibleItems}
           audioItems={visibleAudioItems}
@@ -306,6 +312,8 @@ export function MentionFeedMain({
           savedAudioIds={savedAudioIds}
           readAudioIds={readAudioIds}
           reminderAudioIds={audioReminderFeedIds}
+          emptyTitle={t(activeFilter === "unread" ? "empty.unread" : "empty.title")}
+          emptyBody={t("empty.body")}
           onOpenImage={onOpenImage}
           onOpenTextInChannel={onOpenInChannel}
           onToggleTextReaction={onToggleReaction}
@@ -323,20 +331,31 @@ export function MentionFeedMain({
           onCopyAudioReference={onCopyAudioReference}
           onReportAudio={onReportAudio}
         />
+        ) : null}
+        <div className="feed-pagination-footer">
+          {feedLoadingMore ? <p role="status">{t("loadingMore")}</p> : null}
+          {feedHasMore && !feedLoadingMore && onLoadMore ? (
+            <button type="button" className="feed-load-more" onClick={onLoadMore}>
+              {t("loadMore")}
+            </button>
+          ) : null}
+          {feedEndReached && !feedHasMore ? <p className="feed-end" role="status">{t("end")}</p> : null}
+        </div>
         </div>
         <FeedCompanionRail
           voiceState={voiceState}
           activeVoiceRooms={activeVoiceRooms}
           friends={friends}
+          pendingFriendRequestCount={pendingFriendRequestCount}
           events={companionEvents}
           communities={communities}
           onToggleMute={onToggleVoiceMute}
           onToggleDeafen={onToggleVoiceDeafen}
           onLeaveVoice={onLeaveVoice}
-          onOpenVoiceRoom={onOpenVoiceRoom}
           onOpenScreenShare={onOpenScreenShare}
           onOpenFriendProfile={onOpenFriendProfile}
           onFriendContextMenu={onFriendContextMenu}
+          onOpenFriends={onOpenFriends}
           onOpenEventCommunity={onOpenEventCommunity}
           onEventDetails={onEventDetails}
           onToggleEventReminder={toggleEventReminder}

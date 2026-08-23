@@ -5,6 +5,7 @@ import { loggingService } from "../services/loggingService";
 import { safeModeService } from "../services/safeModeService";
 import { crashReporterService } from "../services/crashReporterService";
 import { AppIcon } from "./AppIcon";
+import { useTranslation } from "../i18n";
 
 type DesktopStartupErrorBoundaryProps = {
   children: ReactNode;
@@ -18,6 +19,53 @@ type DesktopStartupErrorBoundaryState = {
   actionMessage: string | null;
   recoveryRecord: CrashRecoveryRecord | null;
 };
+
+type StartupErrorContentProps = Readonly<{
+  copied: boolean;
+  exported: boolean;
+  cleared: boolean;
+  actionMessage: string | null;
+  recoveryRecord: CrashRecoveryRecord | null;
+  developerDiagnostics: unknown;
+  onRestart: () => void;
+  onOpenSafeMode: () => void;
+  onExportLogs: () => void;
+  onCopyDiagnostics: () => void;
+  onClearRecoveryState: () => void;
+}>;
+
+function StartupErrorContent({ copied, exported, cleared, actionMessage, recoveryRecord, developerDiagnostics, onRestart, onOpenSafeMode, onExportLogs, onCopyDiagnostics, onClearRecoveryState }: StartupErrorContentProps) {
+  const { t } = useTranslation("errors");
+  return (
+    <main className="startup-error-screen" role="alert" aria-live="assertive">
+      <section className="startup-error-card" aria-labelledby="startup-error-title">
+        <div className="startup-error-mark" aria-hidden="true"><AppIcon name="close" size="lg" /></div>
+        <p className="eyebrow">{t("startup.kicker")}</p>
+        <h1 id="startup-error-title">{t("startup.title")}</h1>
+        <p>{t("startup.body")}</p>
+        <div className="startup-error-guidance">
+          <strong>{t("startup.guidanceTitle")}</strong>
+          <span>{t("startup.guidanceBody")}</span>
+        </div>
+        {recoveryRecord ? <p className="startup-error-meta">{t("startup.recordSaved")}</p> : null}
+        <div className="startup-error-actions">
+          <button type="button" className="primary" onClick={onRestart}>{t("startup.restart")}</button>
+          <button type="button" onClick={onOpenSafeMode}>{t("startup.safeMode")}</button>
+          <button type="button" onClick={onExportLogs}>{exported ? t("startup.logsExported") : t("startup.exportLogs")}</button>
+          <button type="button" onClick={onCopyDiagnostics}>{copied ? t("startup.detailsCopied") : t("startup.copyDetails")}</button>
+        </div>
+        {actionMessage ? <p className="startup-error-status" role="status">{t(actionMessage)}</p> : null}
+        {import.meta.env.DEV ? (
+          <details>
+            <summary>{t("startup.developerDiagnostics")}</summary>
+            <pre>{JSON.stringify(developerDiagnostics, null, 2)}</pre>
+            <button type="button" className="startup-error-clear" onClick={onClearRecoveryState}>{cleared ? t("startup.recoveryCleared") : t("startup.clearRecovery")}</button>
+          </details>
+        ) : null}
+      </section>
+    </main>
+  );
+}
 
 export class DesktopStartupErrorBoundary extends Component<
   DesktopStartupErrorBoundaryProps,
@@ -58,18 +106,18 @@ export class DesktopStartupErrorBoundary extends Component<
 
   private copyDiagnostics = async (): Promise<void> => {
     const result = await clipboardService.copyText(crashRecoveryService.getDiagnosticsText());
-    this.setState({ copied: result.ok, actionMessage: result.ok ? "Redacted support details copied." : "Support details could not be copied." });
+    this.setState({ copied: result.ok, actionMessage: result.ok ? "startup.detailsCopied" : "startup.copyDetails" });
   };
 
   private exportLogs = (): void => {
     const result = safeModeService.exportLogs();
-    this.setState({ exported: result.ok, actionMessage: result.message });
+    this.setState({ exported: result.ok, actionMessage: result.ok ? "startup.logsExported" : "startup.exportLogs" });
   };
 
   private clearRecoveryState = (): void => {
     crashRecoveryService.clearCrashState();
     loggingService.clearLogs();
-    this.setState({ cleared: true, copied: false, exported: false, actionMessage: "Local recovery state and logs cleared.", recoveryRecord: null });
+    this.setState({ cleared: true, copied: false, exported: false, actionMessage: "startup.recoveryCleared", recoveryRecord: null });
   };
 
   private restartRenderer = (): void => {
@@ -97,42 +145,6 @@ export class DesktopStartupErrorBoundary extends Component<
         })
       : null;
 
-    return (
-      <main className="startup-error-screen" role="alert" aria-live="assertive">
-        <section className="startup-error-card" aria-labelledby="startup-error-title">
-          <div className="startup-error-mark" aria-hidden="true"><AppIcon name="close" size="lg" /></div>
-          <p className="eyebrow">Desktop recovery</p>
-          <h1 id="startup-error-title">Picom needs a restart</h1>
-          <p>Your current workspace view stopped unexpectedly. Your account data and signed-in session were not changed.</p>
-          <div className="startup-error-guidance">
-            <strong>Start with a normal restart.</strong>
-            <span>If the problem returns, open Safe Mode to pause optional desktop services, then export logs for support.</span>
-          </div>
-          {this.state.recoveryRecord ? <p className="startup-error-meta">A redacted recovery record was saved locally.</p> : null}
-          <div className="startup-error-actions">
-            <button type="button" className="primary" onClick={this.restartRenderer}>
-              Restart Picom
-            </button>
-            <button type="button" onClick={this.restartInSafeMode}>
-              Open Safe Mode
-            </button>
-            <button type="button" onClick={this.exportLogs}>
-              {this.state.exported ? "Logs exported" : "Export support logs"}
-            </button>
-            <button type="button" onClick={this.copyDiagnostics}>
-              {this.state.copied ? "Support details copied" : "Copy support details"}
-            </button>
-          </div>
-          {this.state.actionMessage ? <p className="startup-error-status" role="status">{this.state.actionMessage}</p> : null}
-          {import.meta.env.DEV ? (
-            <details>
-              <summary>Developer diagnostics (local development only)</summary>
-              <pre>{JSON.stringify(developerDiagnostics, null, 2)}</pre>
-              <button type="button" className="startup-error-clear" onClick={this.clearRecoveryState}>{this.state.cleared ? "Recovery state cleared" : "Clear local recovery state"}</button>
-            </details>
-          ) : null}
-        </section>
-      </main>
-    );
+    return <StartupErrorContent copied={this.state.copied} exported={this.state.exported} cleared={this.state.cleared} actionMessage={this.state.actionMessage} recoveryRecord={this.state.recoveryRecord} developerDiagnostics={developerDiagnostics} onRestart={this.restartRenderer} onOpenSafeMode={this.restartInSafeMode} onExportLogs={this.exportLogs} onCopyDiagnostics={this.copyDiagnostics} onClearRecoveryState={this.clearRecoveryState} />;
   }
 }

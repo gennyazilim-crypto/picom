@@ -1,0 +1,17 @@
+PRODUCTION_PREFLIGHT=PASS_THEN_APPLY_PARTIAL
+project=picom-production
+ref=cqnsetsmcduraryemhbi
+region=eu-central-1
+status=ACTIVE_HEALTHY
+empty_greenfield_before_push=yes
+phase1_hash_match=yes
+destructive_scan=PASS_GREENFIELD_HISTORICAL_TRUNCATE_ALLOWED
+dry_run=PASS
+apply=PARTIAL
+applied_through=20260710090000
+failed_migration=20260710121000_multi_tenant_realtime_storage_hardening.sql
+failure_code=42P01
+failure_summary=realtime.messages missing; CREATE on schema realtime denied (owner=supabase_admin; postgres can_create=false)
+bootstrap_attempted=yes
+bootstrap_result=BLOCKED_PLATFORM_PERMISSION
+operator_unblock=Platform must provision realtime.messages (Realtime Authorization / supabase_admin) then resume db push --linked

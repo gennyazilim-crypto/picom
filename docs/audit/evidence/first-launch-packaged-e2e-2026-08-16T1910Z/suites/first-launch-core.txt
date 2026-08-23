@@ -1,0 +1,13 @@
+﻿first-launch:ready:runtime	0
+first-launch:personalization:runtime	0
+first-launch:privacy:runtime	0
+first-launch:notifications:runtime	0
+first-launch:desktop:runtime	0
+first-launch:camera-screen:runtime	0
+first-launch:audio:runtime	0
+appearance:studio:runtime	0
+first-launch:state:test	0
+first-launch:navigation-shell:test	0
+first-launch:smoke	0
+onboarding:rpc-contract:smoke	0
+i18n:catalog-integrity:smoke	0

@@ -16,6 +16,10 @@ import {
   isValidSessionContinueNonce,
 } from "../services/auth/sessionContinueService";
 import { authService, type AuthServiceSession } from "../services/authService";
+import {
+  appendAttributionToUrl,
+  captureAttributionFromLocation,
+} from "../services/marketing/attribution";
 import { WebNavigationProvider, useWebNavigation } from "./WebNavigationContext";
 
 function AuthLoadingGate({ label = "Loading Picom..." }: { label?: string }) {
@@ -34,7 +38,10 @@ function AuthLoadingGate({ label = "Loading Picom..." }: { label?: string }) {
 function RegisterRedirect() {
   useEffect(() => {
     const nonce = generateSessionContinueNonce();
-    window.location.replace(accountCenterUrls.registerWithNonce(nonce, "web"));
+    const attribution = captureAttributionFromLocation();
+    window.location.replace(
+      appendAttributionToUrl(accountCenterUrls.registerWithNonce(nonce, "web"), attribution),
+    );
   }, []);
   return <AuthLoadingGate label="Opening account registration..." />;
 }
@@ -191,7 +198,13 @@ function WebRoutes() {
         <Route path="/settings/*" element={<App />} />
         <Route path="/voice/:roomId" element={<App />} />
         <Route path="/friends" element={<App />} />
+        <Route path="/live" element={<App />} />
+        <Route path="/live-now/:liveSessionId" element={<App />} />
+        <Route path="/go-live" element={<App />} />
+        <Route path="/live/studio/:studioSessionId" element={<App />} />
         <Route path="/events" element={<App />} />
+        <Route path="/events/create" element={<App />} />
+        <Route path="/events/:eventId" element={<App />} />
         <Route path="/bookmarks" element={<App />} />
         <Route path="/saved" element={<App />} />
         <Route path="*" element={<App />} />

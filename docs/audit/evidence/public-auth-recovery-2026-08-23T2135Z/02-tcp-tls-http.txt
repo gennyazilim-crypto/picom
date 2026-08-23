@@ -1,0 +1,17 @@
+From Windows workstation 2026-08-23T21:35Z
+
+TCP 23.254.166.240:22  OPEN
+TCP 23.254.166.240:80  OPEN
+TCP 23.254.166.240:443 OPEN
+
+curl -I https://picom.gg/                 HTTP/1.1 200  nginx/1.24.0  ssl_verify_result=0
+curl -I https://account.picom.gg/         HTTP/1.1 200  ssl_verify_result=0
+curl https://auth.picom.gg/health         HTTP 200  {"ok":true,"host":"auth.picom.gg",...}
+curl https://auth.picom.gg/google/start   HTTP 400  text/html  title=Picom  "Invalid sign-in request."
+curl https://auth.picom.gg/steam/start    HTTP 400  text/html
+curl https://auth.picom.gg/epic/start     HTTP 400  text/html
+
+account.picom.gg/login   200
+account.picom.gg/forgot  200
+account.picom.gg/reset   200
+account.picom.gg/support 200

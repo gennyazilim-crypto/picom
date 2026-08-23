@@ -1,0 +1,21 @@
+{
+  "inspectedAt": "2026-08-16T19:31:00Z",
+  "production": {
+    "project": "picom-production",
+    "ref": "cqnsetsmcduraryemhbi",
+    "functionVersion": 17,
+    "endpoint": "https://cqnsetsmcduraryemhbi.supabase.co/functions/v1/client-config",
+    "minimumSupportedVersion": "0.1.1-beta.10",
+    "recommendedClientVersion": "0.1.1-beta.10",
+    "latestVersion": "0.1.1-beta.10",
+    "releaseChannel": "dev",
+    "enableAutoUpdate": false,
+    "publisherFlagsPreserved": true
+  },
+  "staging": {
+    "project": "picom-staging",
+    "ref": "ufmtvqtsklqsmqxefbbs",
+    "mutated": false,
+    "minimumSupportedVersion": "0.1.1-beta.10"
+  }
+}

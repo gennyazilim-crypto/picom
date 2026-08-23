@@ -1,0 +1,12 @@
+{
+  "alias": "E2E_USER_A",
+  "DEDICATED_TEST_IDENTITY_A": "NOT_FOUND",
+  "lookup_performed": false,
+  "lookup_reason": "No approved E2E email available. Arbitrary production user enumeration is forbidden.",
+  "EMAIL_STATE_USER_A": "UNKNOWN",
+  "onboarding_completed": null,
+  "CREDENTIAL_VALIDATION_USER_A": "NOT_RUN",
+  "IDENTITY_A_SUITABILITY": "FAIL",
+  "suitability_reason": "No dedicated production identity and no approved credentials.",
+  "personal_account_used": false
+}

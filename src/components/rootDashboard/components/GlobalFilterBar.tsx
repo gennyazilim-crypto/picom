@@ -1,3 +1,5 @@
+import { useTranslation } from "../../../i18n";
+
 export type RootDashboardDateRange = "24h" | "7d" | "30d" | "90d" | string;
 
 export type RootDashboardFilterState = Readonly<{
@@ -35,63 +37,64 @@ export type GlobalFilterBarProps = Readonly<{
 }>;
 
 export function GlobalFilterBar({ value, onChange, onSaveView }: GlobalFilterBarProps) {
+  const { t } = useTranslation("admin");
   const set = <K extends keyof RootDashboardFilterState>(key: K, next: RootDashboardFilterState[K]) => {
     onChange({ ...value, [key]: next });
   };
 
   return (
-    <div className="rd-filter-bar" role="search" aria-label="Dashboard filters">
+    <div className="rd-filter-bar" role="search" aria-label={t("filter.barLabel")}>
       <label>
-        Date
+        {t("filter.date")}
         <select value={value.dateRange} onChange={(event) => set("dateRange", event.target.value)}>
-          <option value="24h">Last 24h</option>
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="90d">Last 90 days</option>
+          <option value="24h">{t("filter.date.24h")}</option>
+          <option value="7d">{t("filter.date.7d")}</option>
+          <option value="30d">{t("filter.date.30d")}</option>
+          <option value="90d">{t("filter.date.90d")}</option>
         </select>
       </label>
       <label>
-        Environment
+        {t("filter.environment")}
         <select value={value.environment} onChange={(event) => set("environment", event.target.value)}>
-          <option value="production">Production</option>
-          <option value="staging">Staging</option>
-          <option value="development">Development</option>
+          <option value="production">{t("filter.environment.production")}</option>
+          <option value="staging">{t("filter.environment.staging")}</option>
+          <option value="development">{t("filter.environment.development")}</option>
         </select>
       </label>
       <label>
-        Region
+        {t("filter.region")}
         <select value={value.region} onChange={(event) => set("region", event.target.value)}>
-          <option value="all">All</option>
+          <option value="all">{t("filter.all")}</option>
           <option value="eu">EU</option>
           <option value="us">US</option>
         </select>
       </label>
       <label>
-        Platform
+        {t("filter.platform")}
         <select value={value.platform} onChange={(event) => set("platform", event.target.value)}>
-          <option value="all">All</option>
-          <option value="desktop">Desktop</option>
-          <option value="web">Web</option>
+          <option value="all">{t("filter.all")}</option>
+          <option value="desktop">{t("filter.platform.desktop")}</option>
+          <option value="web">{t("filter.platform.web")}</option>
         </select>
       </label>
       <label>
-        Status
+        {t("filter.status")}
         <select value={value.status} onChange={(event) => set("status", event.target.value)}>
-          <option value="all">All</option>
-          <option value="open">Open</option>
-          <option value="resolved">Resolved</option>
+          <option value="all">{t("filter.all")}</option>
+          <option value="open">{t("filter.status.open")}</option>
+          <option value="resolved">{t("filter.status.resolved")}</option>
         </select>
       </label>
       <label>
-        Search
-        <input value={value.search} onChange={(event) => set("search", event.target.value)} placeholder="Filter…" />
+        {t("filter.search")}
+        <input value={value.search} onChange={(event) => set("search", event.target.value)} placeholder={t("filter.searchPlaceholder")} />
       </label>
       <button type="button" onClick={() => onChange(EMPTY_ROOT_DASHBOARD_FILTERS)}>
-        Reset
+        {t("filter.reset")}
       </button>
       {onSaveView ? (
         <button type="button" onClick={onSaveView}>
-          Save view
+          {t("filter.saveView")}
         </button>
       ) : null}
     </div>

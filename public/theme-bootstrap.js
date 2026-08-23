@@ -39,7 +39,12 @@
   root.dataset.timeFormat = timeFormat;
   root.dataset.highContrast = accessibility.highContrast ? "true" : "false";
   root.dataset.reducedMotion = accessibility.reducedMotion ? "true" : "false";
-  root.dataset.largerText = accessibility.largerText ? "true" : "false";
+  root.dataset.textSize = accessibility.textSize === "large" || accessibility.textSize === "extra-large"
+    ? accessibility.textSize
+    : accessibility.largerText ? "large" : "default";
+  root.dataset.interfaceScale = accessibility.interfaceScale === 0.9 || accessibility.interfaceScale === 1 || accessibility.interfaceScale === 1.1 || accessibility.interfaceScale === 1.25
+    ? String(accessibility.interfaceScale)
+    : "1";
   root.dataset.focusRingStrong = accessibility.focusRingStrong ? "true" : "false";
   root.lang = language;
 }());

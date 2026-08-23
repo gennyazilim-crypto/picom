@@ -1,0 +1,14 @@
+migration-push|exit=0|log=01-migration-push.log
+typecheck|exit=0|log=02-typecheck.log
+i18n-parity|exit=0|tests=4/4|log=03-i18n-parity.log
+live-now-unit|exit=0|tests=61/61|log=04-live-now-unit-tests.log
+npm-build|exit=0|log=05-npm-build.log
+vite-build|exit=0|log=06-vite-build.log
+desktop-smoke|exit=0|log=07-desktop-smoke.log
+reminder-integration|exit=0|pass=9|fail=0|log=08-reminder-integration.log
+notif-pref-integration|exit=0|pass=9|fail=0|log=09-notif-pref-integration.log
+staging-ui-smoke|exit=0|pass=14|fail=0|log=10-staging-ui-smoke.log
+secrets-smoke|exit=0|log=11-secrets-smoke.log
+evidence-secret-scan|exit=0|result=PASS|log=12-evidence-secret-scan.log
+lint|status=NOT_CONFIGURED|note=no package.json lint script
+case04-case18-jwt-rls|status=CARRY_FORWARD_GO|note=not re-run per closure scope

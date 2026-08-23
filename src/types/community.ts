@@ -11,9 +11,11 @@ export type AttachmentId = string;
 
 export type UserStatus = "online" | "idle" | "dnd" | "offline";
 export type ChannelType = "text" | "voice" | "forum" | "announcement";
-export type AttachmentType = "image";
+export type AttachmentType = "image" | "video";
 export type AttachmentScanStatus = "pending" | "clean" | "suspicious" | "failed" | "skipped_development";
-export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "failed" | "queued_offline";
+import type { MessageSendAttemptState } from "../services/messageSendObservability";
+
+export type MessageDeliveryStatus = "draft" | "sending" | "sent" | "delivered" | "retryable_failed" | "failed" | "queued_offline";
 import type { PollData } from "./polls";
 export const BUILT_IN_ROLE_NAMES = ["Owner", "Admin", "Moderator", "Member"] as const;
 export type BuiltInRoleName = (typeof BUILT_IN_ROLE_NAMES)[number];
@@ -123,6 +125,7 @@ export interface Message {
   attachments?: Attachment[];
   reactions?: Reaction[];
   localStatus?: MessageDeliveryStatus;
+  sendAttempt?: MessageSendAttemptState;
   poll?: PollData;
   threadId?: string;
 }
@@ -152,6 +155,7 @@ export interface Community {
   id: CommunityId;
   kind: CommunityKind;
   ownerId?: UserId;
+  currentUserMembershipUserId?: UserId;
   name: string;
   icon: string;
   accentColor: string;

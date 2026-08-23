@@ -2,11 +2,12 @@ import type { MouseEvent } from "react";
 import type { Attachment, Channel, Community, Member } from "../types/community";
 import type { MentionItem } from "../types/mentions";
 import { MentionFeedCard } from "./MentionFeedCard";
+import { useTranslation } from "../i18n";
 
 export type MentionFeedListProps = {
   items: MentionItem[];
   communities: Community[];
-  onOpenImage: (attachment: Attachment) => void;
+  onOpenImage: (attachment: Attachment, gallery?: readonly Attachment[]) => void;
   onOpenInChannel: (item: MentionItem) => void;
   onToggleReaction: (id: string, emoji: string) => void;
   onToggleSaved: (id: string) => void;
@@ -44,11 +45,12 @@ export function MentionFeedList({
   onOpenProfile,
   onOpenMore,
 }: MentionFeedListProps) {
+  const { t } = useTranslation("feed");
   if (!items.length) {
     return (
       <div className="mention-empty-state">
-        <strong>No mentions match this view.</strong>
-        <span>Try another tab or clear the active quick filter.</span>
+        <strong>{t("list.emptyTitle")}</strong>
+        <span>{t("list.emptyBody")}</span>
       </div>
     );
   }

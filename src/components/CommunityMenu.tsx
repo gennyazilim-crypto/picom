@@ -15,6 +15,7 @@ import { getCommunityIconLabel, resolveCommunityMarkSrc } from "../utils/generat
 import "../communityGuidelines.css";
 import { CommunityInsightsView } from "./CommunityInsightsView";
 import { CommunityVerificationRequestCard } from "./VerificationRequestPanel";
+import { useTranslation } from "../i18n";
 import {
   adminNavGroups,
   adminSectionDefinitions,
@@ -194,6 +195,7 @@ function ModalShell({ title, eyebrow, onClose, children, className = "" }: { tit
 }
 
 function CommunityManagementShell({ community, title, eyebrow, onClose, children, className = "", headerAction }: { community: Community; title: string; eyebrow: string; onClose: () => void; children: ReactNode; className?: string; headerAction?: ReactNode }) {
+  const { t } = useTranslation("common");
   const dialogRef = useDialogFocusTrap<HTMLElement>(onClose);
   const markSrc = resolveCommunityMarkSrc(community);
 
@@ -212,7 +214,7 @@ function CommunityManagementShell({ community, title, eyebrow, onClose, children
           </div>
           <div className="community-mgmt-header-actions">
             {headerAction}
-            <button className="icon-button modal-close community-mgmt-close" type="button" aria-label={`Close ${title}`} onClick={onClose}>
+            <button className="icon-button modal-close community-mgmt-close" type="button" aria-label={`${t("action.close")} ${title}`} onClick={onClose}>
               <AppIcon name="close" size="lg" />
             </button>
           </div>
@@ -224,7 +226,12 @@ function CommunityManagementShell({ community, title, eyebrow, onClose, children
 }
 
 function CommunityAdminNav({ sections, groups, activeSection, onSelect, onOpenGuidelines }: { sections: typeof adminSectionDefinitions; groups: typeof adminNavGroups; activeSection: AdminSectionId; onSelect: (sectionId: AdminSectionId) => void; onOpenGuidelines: () => void }) {
+  const { t } = useTranslation("common");
   const availableIds = new Set(sections.map((section) => section.id));
+  const groupLabels: Record<string, string> = { General: t("communityAdmin.general"), Structure: t("communityAdmin.structure"), Integrations: t("communityAdmin.integrations"), Safety: t("communityAdmin.safety") };
+  const sectionLabels: Partial<Record<AdminSectionId, string>> = {
+    overview: t("communityAdmin.overview"), "community-settings": t("communityAdmin.settings"), verification: t("communityAdmin.verification"), channels: t("communityAdmin.channels"), roles: t("communityAdmin.roles"), members: t("communityAdmin.members"), invites: t("communityAdmin.invites"), events: t("communityAdmin.events"), moderation: t("communityAdmin.moderation"), "audit-log": t("communityAdmin.auditLog"), "danger-zone": t("communityAdmin.dangerZone"),
+  };
 
   return (
     <nav className="community-admin-nav" aria-label="Community admin sections">
@@ -238,7 +245,7 @@ function CommunityAdminNav({ sections, groups, activeSection, onSelect, onOpenGu
 
         return (
           <div key={group.label} className="community-admin-nav-group">
-            <span className="community-admin-nav-group-label">{group.label}</span>
+            <span className="community-admin-nav-group-label">{groupLabels[group.label] ?? group.label}</span>
             {groupSections.map((section) => (
               <button
                 key={section.id}
@@ -250,7 +257,7 @@ function CommunityAdminNav({ sections, groups, activeSection, onSelect, onOpenGu
                 <span className="community-admin-nav-icon" aria-hidden="true">
                   <AppIcon name={section.icon} size="sm" />
                 </span>
-                <span className="community-admin-nav-text">{section.label}</span>
+                <span className="community-admin-nav-text">{sectionLabels[section.id] ?? section.label}</span>
               </button>
             ))}
           </div>
@@ -261,15 +268,26 @@ function CommunityAdminNav({ sections, groups, activeSection, onSelect, onOpenGu
           <span className="community-admin-nav-icon" aria-hidden="true">
             <AppIcon name="lock" size="sm" />
           </span>
-          <span className="community-admin-nav-text">Guidelines</span>
+          <span className="community-admin-nav-text">{t("communityAdmin.guidelines")}</span>
         </button>
       </div>
     </nav>
   );
 }
 
-export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onMemberRolesChanged, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, sectionTools }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onMemberRolesChanged: (memberId: string, roleIds: string[], primaryRoleId: string) => void; onCommunityRolesChanged: (roles: Community["roles"]) => void; onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, ReactNode>> }) {
-  const [activeSection, setActiveSection] = useState<AdminSectionId>("overview");
+type AdminSectionToolContext = Readonly<{
+  selectSection: (sectionId: AdminSectionId) => void;
+  closePanel: () => void;
+  openInvite: () => void;
+}>;
+type AdminSectionTool = ReactNode | ((context: AdminSectionToolContext) => ReactNode);
+
+export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, onOpenGuidelines, onCreateChannel, onMemberRolesChanged, onCommunityRolesChanged, onCommunityUpdated, onPlaceholderAction, sectionTools, initialSection }: { community: Community; access: CommunityAccess; onClose: () => void; onOpenInvite: () => void; onOpenGuidelines: () => void; onCreateChannel: (categoryId: string) => void; onMemberRolesChanged: (memberId: string, roleIds: string[], primaryRoleId: string) => void; onCommunityRolesChanged: (roles: Community["roles"]) => void; onCommunityUpdated: (community: import("../services/communityService").CommunitySummary) => void; onPlaceholderAction: (message: string) => void; sectionTools?: Partial<Record<AdminSectionId, AdminSectionTool>>; initialSection?: AdminSectionId }) {
+  const { t } = useTranslation("common");
+  const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection ?? "overview");
+  useEffect(() => {
+    setActiveSection(initialSection ?? "overview");
+  }, [community.id, initialSection]);
   const sections = adminSectionDefinitions.filter((section) => {
     if (section.ownerOnly) return access.isOwner;
     return !section.permission || access.permissions.includes(section.permission);
@@ -279,33 +297,40 @@ export function CommunityAdminPanel({ community, access, onClose, onOpenInvite, 
     return <ModalShell title="Community management unavailable" eyebrow="Permission denied" onClose={onClose}><div className="auth-error">Owner or admin access is required.</div></ModalShell>;
   }
 
+  const renderSectionTool = (sectionId: AdminSectionId): ReactNode => {
+    const tool = sectionTools?.[sectionId];
+    return typeof tool === "function"
+      ? tool({ selectSection: setActiveSection, closePanel: onClose, openInvite: onOpenInvite })
+      : tool;
+  };
+
   const sectionContent = (() => {
     if (activeSection === "overview") return <CommunityAdminOverview community={community} access={access} />;
     if (activeSection === "insights") return <CommunityInsightsView community={community} access={access} />;
     if (activeSection === "community-settings") return <CommunitySettingsSection community={community} access={access} onUpdated={onCommunityUpdated} />;
     if (activeSection === "verification") return <CommunityVerificationRequestCard community={community} />;
-    if (activeSection === "channels") return sectionTools?.channels ?? <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
+    if (activeSection === "channels") return renderSectionTool("channels") ?? <CommunityChannelsSection community={community} onCreateChannel={onCreateChannel} />;
     if (activeSection === "roles") return <CommunityRolesSection community={community} access={access} onRolesChanged={onCommunityRolesChanged} />;
     if (activeSection === "members") return <CommunityMembersSection community={community} access={access} onMemberRolesChanged={onMemberRolesChanged} />;
-    if (activeSection === "emojis") return sectionTools?.emojis ?? <div className="community-admin-empty">No custom emojis loaded.</div>;
-    if (activeSection === "stickers") return sectionTools?.stickers ?? <div className="community-admin-empty">No sticker packs loaded.</div>;
-    if (activeSection === "bots") return sectionTools?.bots ?? <div className="community-admin-empty">No bots installed.</div>;
-    if (activeSection === "webhooks") return sectionTools?.webhooks ?? <div className="community-admin-empty">No webhooks configured.</div>;
+    if (activeSection === "emojis") return renderSectionTool("emojis") ?? <div className="community-admin-empty">No custom emojis loaded.</div>;
+    if (activeSection === "stickers") return renderSectionTool("stickers") ?? <div className="community-admin-empty">No sticker packs loaded.</div>;
+    if (activeSection === "bots") return renderSectionTool("bots") ?? <div className="community-admin-empty">No bots installed.</div>;
+    if (activeSection === "webhooks") return renderSectionTool("webhooks") ?? <div className="community-admin-empty">No webhooks configured.</div>;
     if (activeSection === "invites") return <CommunityInvitesSection community={community} access={access} onOpenInvite={onOpenInvite} />;
-    if (activeSection === "events") return sectionTools?.events ?? <div className="community-admin-empty">No events loaded.</div>;
-    if (activeSection === "moderation") return <CommunityModerationSection>{sectionTools?.moderation}</CommunityModerationSection>;
+    if (activeSection === "events") return renderSectionTool("events") ?? <div className="community-admin-empty">No events loaded.</div>;
+    if (activeSection === "moderation") return <CommunityModerationSection>{renderSectionTool("moderation")}</CommunityModerationSection>;
     if (activeSection === "audit-log") return <CommunityAuditLogPlaceholder community={community} canView={access.permissions.includes("viewAuditLog") && (access.isOwner || access.isAdmin)} />;
-    return <CommunityDangerZone>{sectionTools?.["danger-zone"]}</CommunityDangerZone>;
+    return <CommunityDangerZone>{renderSectionTool("danger-zone")}</CommunityDangerZone>;
   })();
 
   return (
-    <CommunityManagementShell community={community} title={`${community.name} management center`} eyebrow="Community administration" onClose={onClose}>
+    <CommunityManagementShell community={community} title={t("communityAdmin.managementCenter", { name: community.name })} eyebrow={t("communityAdmin.administration")} onClose={onClose}>
       <div className="community-admin-panel">
         <CommunityAdminNav sections={sections} groups={adminNavGroups} activeSection={activeSection} onSelect={setActiveSection} onOpenGuidelines={onOpenGuidelines} />
         <div className="community-admin-content" data-admin-section={activeSection}>
           <div className="community-admin-content-inner">
             {sectionContent}
-            {activeSection !== "channels" && activeSection !== "moderation" && activeSection !== "danger-zone" ? sectionTools?.[activeSection] : null}
+            {activeSection !== "channels" && activeSection !== "moderation" && activeSection !== "danger-zone" ? renderSectionTool(activeSection) : null}
           </div>
         </div>
       </div>

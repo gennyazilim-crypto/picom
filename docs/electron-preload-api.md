@@ -20,6 +20,8 @@ Every request uses a channel from `IPC_CHANNELS` through `invokeWhitelisted`. Ma
 | `isWindowMaximized()` | none | Boolean maximize/fullscreen visual state |
 | `onWindowMaximizeStateChanged(callback)` | callback | Subscribes to boolean state; returns unsubscribe |
 | `showNotification(payload)` | bounded title/body/tag/silent fields | Displays native notification when supported |
+| `notifications.getCapability()` | none | Reports whether Electron can create native notifications on this runtime |
+| `notifications.sendTest()` | none | Displays a main-owned, localized test notification; no renderer payload or deep link is accepted |
 
 Runtime info is diagnostics metadata only. It must not include environment variables, filesystem paths, usernames, hostnames, credentials, command execution, or mutable Electron objects.
 
@@ -104,6 +106,8 @@ The contract uses only:
 - `picom:screen-capture-select-source`
 - `picom:screen-capture-cancel-selection`
 - `picom:notification-show`
+- `picom:notification-get-capability`
+- `picom:notification-send-test`
 - `picom:incoming-call-show`
 - `picom:incoming-call-dismiss`
 - `picom:incoming-call-respond`

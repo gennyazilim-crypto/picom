@@ -1,0 +1,31 @@
+{
+  "present": true,
+  "completed": false,
+  "currentStep": "welcome",
+  "purposeIds": [],
+  "reviewAllSetup": false,
+  "locale": "en",
+  "theme": "system",
+  "density": "comfortable",
+  "textSize": "default",
+  "interfaceScale": 1,
+  "reducedMotion": false,
+  "highContrast": false,
+  "focusRingStrong": false,
+  "notifications": {
+    "enabled": true,
+    "nativeDesktopEnabled": true,
+    "directMessages": true,
+    "mentions": true,
+    "incomingCalls": true,
+    "friendRequests": true,
+    "communityAnnouncements": true,
+    "quietHours": {
+      "enabled": false,
+      "startTime": "22:00",
+      "endTime": "07:00",
+      "applyTo": "normal_messages_only",
+      "allowMentions": true
+    }
+  }
+}

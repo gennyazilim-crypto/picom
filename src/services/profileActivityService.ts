@@ -1,6 +1,6 @@
 import { getMockProfileForMember } from "../data/mockProfiles";
 import type { Community, Member } from "../types/community";
-import type { ProfileActivityItem, ProfileActivityType, ProfileMediaItem, ProfileStatus, UserProfile } from "../types/profile";
+import type { ProfileActivityItem, ProfileActivityType, ProfileCommunityRole, ProfileMediaItem, ProfileStatus, UserProfile } from "../types/profile";
 import { dataSourceService } from "./dataSourceService";
 import type { Json } from "./supabase/database.types";
 import { getSupabaseClient } from "./supabase/supabaseClient";
@@ -36,7 +36,7 @@ function emptyProductionProfile(base: UserProfile): UserProfile {
   return {
     ...base,
     coverUrl: undefined, location: undefined, timezone: undefined, joinedAt: "", bio: "",
-    roles: [], tags: [], media: [], activities: [], mainCommunityId: undefined, topRole: undefined,
+    roles: [], tags: [], media: [], activities: [], communityRoles: [], mainCommunityId: undefined, topRole: undefined,
     activityScore: undefined, preferredLanguage: undefined,
     stats: { communities: 0, posts: 0, mentions: 0, reactions: 0, followers: 0, following: 0, roles: 0 },
   };
@@ -64,7 +64,13 @@ function mapPayload(payload: Json, base: UserProfile): UserProfile {
   if (root.can_view_profile !== true) return { ...emptyProductionProfile(base), bio: "This profile is private.", privacyRestricted: true };
   const profile = asRecord(root.profile);
   const roleRows = asObjects(root.roles);
-  const roles = roleRows.map((row) => text(row.role_name)).filter((value): value is string => Boolean(value));
+  const communityRoles: ProfileCommunityRole[] = roleRows.flatMap((row) => {
+    const communityId = text(row.community_id);
+    const roleName = text(row.role_name);
+    if (!communityId || !roleName) return [];
+    return [{ communityId, roleName }];
+  });
+  const roles = communityRoles.map((row) => row.roleName);
   const activities: ProfileActivityItem[] = asObjects(root.activities).flatMap((row) => {
     const id = text(row.id); const type = text(row.type); const title = text(row.title); const preview = text(row.preview); const createdAt = text(row.created_at);
     if (!id || !type || !activityTypes.has(type as ProfileActivityType) || !title || !preview || !createdAt) return [];
@@ -96,7 +102,8 @@ function mapPayload(payload: Json, base: UserProfile): UserProfile {
     preferredLanguage: text(profile.preferred_language),
     onboardingCompleted: flag(profile.onboarding_completed, base.onboardingCompleted),
     topRole: uniqueRoles[0],
-    mainCommunityId: text(roleRows[0]?.community_id),
+    mainCommunityId: communityRoles[0]?.communityId,
+    communityRoles,
     isCurrentUser: base.isCurrentUser,
     stats: {
       communities: count(stats.communities), posts: count(stats.posts), mentions: count(stats.mentions), reactions: count(stats.reactions),

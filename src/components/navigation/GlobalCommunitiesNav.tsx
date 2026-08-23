@@ -4,6 +4,7 @@ import { isV1CommunityKindEnabled } from "../../config/v1ReleaseScope";
 import { getCommunityIconLabel, isCommunityIconImage, resolveCommunityMarkSrc } from "../../utils/generatedIdentity";
 import { AppIcon } from "../AppIcon";
 import { GlobalNavBadge } from "./GlobalNavBadge";
+import { useTranslation } from "../../i18n";
 
 const recentCommunitiesStorageKey = "picom.global-nav.recent-communities";
 const MAX_FREQUENT = 8;
@@ -61,6 +62,7 @@ export function GlobalCommunitiesNav({
   onOpenCommunities,
   onSelectCommunity,
 }: GlobalCommunitiesNavProps) {
+  const { t } = useTranslation("navigation");
   const [expanded, setExpanded] = useState(active);
   const [recentIds, setRecentIds] = useState<string[]>(() => readRecentCommunityIds());
 
@@ -117,18 +119,18 @@ export function GlobalCommunitiesNav({
         type="button"
         className={`global-nav-item${active ? " is-active" : ""}`}
         data-global-navigation-button="true"
-        aria-label="Open communities"
+        aria-label={t("nav.communities.aria")}
         aria-current={active ? "page" : undefined}
         aria-disabled={disabled || undefined}
         disabled={disabled}
-        title="Communities"
+        title={t("nav.communities.label")}
         onClick={onOpenCommunities}
       >
         <span className="global-nav-item__icon" aria-hidden="true">
           <AppIcon name="users" size="lg" />
         </span>
-        <span className="global-nav-item__label">Communities</span>
-        <GlobalNavBadge value={badge} destination="Communities" />
+        <span className="global-nav-item__label">{t("nav.communities.label")}</span>
+        <GlobalNavBadge value={badge} destination={t("nav.communities.label")} />
       </button>
     );
   }
@@ -139,7 +141,7 @@ export function GlobalCommunitiesNav({
         type="button"
         className={`global-nav-item global-settings-nav__parent${parentActive ? " is-active" : ""}`}
         data-global-navigation-button="true"
-        aria-label="Communities"
+        aria-label={t("nav.communities.label")}
         aria-expanded={expanded}
         aria-controls="global-communities-submenu"
         aria-disabled={disabled || undefined}
@@ -155,9 +157,9 @@ export function GlobalCommunitiesNav({
         <span className="global-nav-item__icon" aria-hidden="true">
           <AppIcon name="users" size="lg" />
         </span>
-        <span className="global-nav-item__label">Communities</span>
+        <span className="global-nav-item__label">{t("nav.communities.label")}</span>
         <span className="global-communities-nav__trailing">
-          <GlobalNavBadge value={badge} destination="Communities" />
+          <GlobalNavBadge value={badge} destination={t("nav.communities.label")} />
           <span className={`global-settings-nav__chevron${expanded ? " is-open" : ""}`} aria-hidden="true">
             <AppIcon name="chevronDown" size="sm" />
           </span>
@@ -165,7 +167,7 @@ export function GlobalCommunitiesNav({
       </button>
 
       {expanded ? (
-        <div id="global-communities-submenu" className="global-settings-nav__children global-communities-nav__children" role="group" aria-label="Joined communities">
+        <div id="global-communities-submenu" className="global-settings-nav__children global-communities-nav__children" role="group" aria-label={t("communities.joined") }>
           {frequentCommunities.length ? (
             frequentCommunities.map((community) => {
               const childActive = active && community.id === activeCommunityId;
@@ -175,7 +177,7 @@ export function GlobalCommunitiesNav({
                   type="button"
                   className={`global-settings-nav__child global-communities-nav__child${childActive ? " is-active" : ""}`}
                   data-global-navigation-button="true"
-                  aria-label={`Open ${community.name}`}
+                  aria-label={t("communities.open", { name: community.name })}
                   aria-current={childActive ? "page" : undefined}
                   title={community.name}
                   onClick={() => selectCommunity(community.id)}
@@ -188,7 +190,7 @@ export function GlobalCommunitiesNav({
               );
             })
           ) : (
-            <p className="global-communities-nav__empty">Join a community to pin it here.</p>
+            <p className="global-communities-nav__empty">{t("communities.empty")}</p>
           )}
         </div>
       ) : null}

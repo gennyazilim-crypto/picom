@@ -1,0 +1,2 @@
+CASE18=NOT_RUN
+reason=production migrations incomplete; Live Now discovery RPCs not applied

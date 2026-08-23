@@ -1,0 +1,50 @@
+{
+  "90%": {
+    "innerWidth": 1600,
+    "innerHeight": 1000,
+    "scrollWidth": 1600,
+    "clientWidth": 1600,
+    "horizontalOverflow": false,
+    "footerVisible": true,
+    "titlebarVisible": true,
+    "closeReachable": true,
+    "railVisible": true,
+    "compactVisible": false
+  },
+  "100%": {
+    "innerWidth": 1600,
+    "innerHeight": 1000,
+    "scrollWidth": 1600,
+    "clientWidth": 1600,
+    "horizontalOverflow": false,
+    "footerVisible": true,
+    "titlebarVisible": true,
+    "closeReachable": true,
+    "railVisible": true,
+    "compactVisible": false
+  },
+  "110%": {
+    "innerWidth": 1600,
+    "innerHeight": 1000,
+    "scrollWidth": 1600,
+    "clientWidth": 1600,
+    "horizontalOverflow": false,
+    "footerVisible": true,
+    "titlebarVisible": true,
+    "closeReachable": true,
+    "railVisible": true,
+    "compactVisible": false
+  },
+  "125%": {
+    "innerWidth": 1152,
+    "innerHeight": 720,
+    "scrollWidth": 1152,
+    "clientWidth": 1152,
+    "horizontalOverflow": false,
+    "footerVisible": true,
+    "titlebarVisible": true,
+    "closeReachable": true,
+    "railVisible": true,
+    "compactVisible": false
+  }
+}

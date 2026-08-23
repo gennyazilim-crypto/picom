@@ -1,20 +1,8 @@
 import { loggingService } from "./loggingService";
+import { desktopBehaviorService } from "./desktop/desktopBehaviorService";
 
 export type TrayAction = "open" | "settings" | "mute" | "quit" | "online" | "idle" | "dnd" | "invisible";
 export type TrayStatus = "online" | "idle" | "dnd" | "invisible";
-const CLOSE_TO_TRAY_KEY = "picom.tray.closeToTray.v1";
-
-function readCloseToTrayPreference(): boolean {
-  // Default ON: closing the window keeps Picom running in the system tray. Only an
-  // explicit opt-out ("false") disables it, so an unset or unreadable preference
-  // still keeps the app resident instead of fully quitting on close.
-  try { return window.localStorage.getItem(CLOSE_TO_TRAY_KEY) !== "false"; } catch { return true; }
-}
-
-function writeCloseToTrayPreference(enabled: boolean): void {
-  try { window.localStorage.setItem(CLOSE_TO_TRAY_KEY, String(enabled)); } catch { /* safe restricted fallback */ }
-}
-
 function getNativeTrayBridge() {
   return window.picomDesktop?.tray ?? null;
 }
@@ -37,18 +25,28 @@ export const trayService = {
   },
 
   getCloseToTrayEnabled(): boolean {
-    return readCloseToTrayPreference();
+    return desktopBehaviorService.getState().closeBehavior === "tray";
   },
 
   async setCloseToTrayEnabled(enabled: boolean) {
-    writeCloseToTrayPreference(enabled);
-    const bridge = getNativeTrayBridge();
-    if (!bridge?.setCloseToTray) return { ok: true, native: false, enabled, supported: false } as const;
-    return bridge.setCloseToTray(enabled);
+    const state = await desktopBehaviorService.updatePreferences({ closeBehavior: enabled ? "tray" : "quit" });
+    const applied = state.closeBehavior === (enabled ? "tray" : "quit");
+    return {
+      ok: applied,
+      native: Boolean(getNativeTrayBridge()),
+      enabled: state.closeBehavior === "tray",
+      supported: state.trayAvailable,
+    } as const;
   },
 
-  syncCloseToTrayPreference() {
-    return this.setCloseToTrayEnabled(readCloseToTrayPreference());
+  async syncCloseToTrayPreference() {
+    const state = await desktopBehaviorService.refresh();
+    return {
+      ok: true,
+      native: Boolean(getNativeTrayBridge()),
+      enabled: state.closeBehavior === "tray",
+      supported: state.trayAvailable,
+    } as const;
   },
 
   showWindow() {

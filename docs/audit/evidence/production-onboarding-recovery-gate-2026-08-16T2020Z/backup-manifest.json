@@ -1,0 +1,12 @@
+{
+  "LOGICAL_BACKUP": "BLOCKED_TOOLING",
+  "also_blocked": "BLOCKED_CREDENTIALS",
+  "created": false,
+  "reason": [
+    "pg_dump UNAVAILABLE",
+    "pg_restore UNAVAILABLE",
+    "psql UNAVAILABLE",
+    "no secure production DB credential in env or available secret manager"
+  ],
+  "artifact": null
+}

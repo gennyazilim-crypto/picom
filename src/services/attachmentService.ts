@@ -4,6 +4,7 @@ import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseC
 import type { AttachmentScanStatus } from "./attachmentScanService";
 import { MESSAGE_ATTACHMENTS_BUCKET, type UploadedAttachmentSummary } from "./uploadService";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
+import { loggingService } from "./loggingService";
 
 export const ATTACHMENT_METADATA_SELECT = "id, message_id, uploader_id, storage_path, file_name, mime_type, size_bytes, attachment_type, public_url, thumbnail_url, width, height, scan_status, status, created_at" as const;
 
@@ -15,7 +16,7 @@ export type AttachmentMetadataRow = Readonly<{
   file_name: string;
   mime_type: string;
   size_bytes: number;
-  attachment_type: "image";
+  attachment_type: "image" | "video";
   public_url: string | null;
   thumbnail_url: string | null;
   width: number | null;
@@ -33,7 +34,7 @@ export type AttachmentMetadataSummary = Readonly<{
   fileName: string;
   mimeType: string;
   sizeBytes: number;
-  attachmentType: "image";
+  attachmentType: "image" | "video";
   publicUrl: string | null;
   thumbnailUrl: string | null;
   width: number | null;
@@ -54,6 +55,7 @@ export type AttachmentServiceErrorCode =
   | "VALIDATION_ERROR"
   | "RATE_LIMITED"
   | "ATTACHMENT_METADATA_CREATE_FAILED"
+  | "ATTACHMENT_SCAN_FAILED"
   | "ATTACHMENT_METADATA_LIST_FAILED";
 
 export type AttachmentServiceError = Readonly<{
@@ -136,7 +138,7 @@ export const attachmentService = {
         fileName: upload.fileName,
         mimeType: upload.mimeType,
         sizeBytes: upload.sizeBytes,
-        attachmentType: "image",
+        attachmentType: upload.attachmentType,
         publicUrl: upload.publicUrl,
         thumbnailUrl: upload.thumbnailUrl,
         width: upload.width,
@@ -156,14 +158,19 @@ export const attachmentService = {
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    let uploaderId = upload.userId;
-    if (!uploaderId) {
-      const { data, error } = await configured.data.auth.getUser();
-      uploaderId = data.user?.id ?? "";
+    const { data: authData, error: authError } = await configured.data.auth.getUser();
+    const uploaderId = authData.user?.id ?? "";
 
-      if (error || !uploaderId) {
-        return attachmentError("AUTH_REQUIRED", "Sign in before saving attachment metadata.");
-      }
+    if (authError || !uploaderId) {
+      return attachmentError("AUTH_REQUIRED", "Sign in before saving attachment metadata.");
+    }
+
+    if (upload.userId && upload.userId !== uploaderId) {
+      loggingService.logWarn("Attachment metadata upload identity did not match the current session", {
+        uploadUserId: upload.userId,
+        currentUserId: uploaderId,
+      });
+      return attachmentError("AUTH_REQUIRED", "Your session changed while the attachment was uploading. Retry the image.");
     }
 
     const { data, error } = await configured.data
@@ -174,7 +181,7 @@ export const attachmentService = {
         file_name: upload.fileName,
         mime_type: upload.mimeType,
         size_bytes: upload.sizeBytes,
-        attachment_type: "image",
+        attachment_type: upload.attachmentType,
         // The bucket is private. Persist the storage path, never an expiring signed URL.
         public_url: null,
         thumbnail_url: null,
@@ -187,6 +194,10 @@ export const attachmentService = {
 
     if (error || !data) {
       if (isRateLimitError(error)) return attachmentError("RATE_LIMITED", rateLimitUserMessage);
+      loggingService.logWarn("Attachment metadata creation failed", {
+        code: error?.code ?? "unknown",
+        message: error?.message ?? "no returned row",
+      });
       return attachmentError("ATTACHMENT_METADATA_CREATE_FAILED", "Could not save attachment metadata.");
     }
 
@@ -194,6 +205,46 @@ export const attachmentService = {
       ok: true,
       data: mapAttachmentMetadataRow(data),
     };
+  },
+
+  /**
+   * Performs the server-side media signature check after the metadata row exists.
+   * A browser can never promote its own attachment from pending to clean.
+   */
+  async completePendingAttachmentSafetyCheck(attachmentId: string): Promise<AttachmentServiceResult<AttachmentScanStatus>> {
+    if (!attachmentId.trim()) return attachmentError("VALIDATION_ERROR", "Attachment ID is required.");
+
+    if (dataSourceService.getStatus().isMock) {
+      const existing = mockAttachmentMetadata.get(attachmentId);
+      if (!existing) return attachmentError("ATTACHMENT_SCAN_FAILED", "Attachment metadata is no longer available.");
+      cacheMockAttachment({ ...existing, scanStatus: "skipped_development" });
+      return { ok: true, data: "skipped_development" };
+    }
+
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+    const { data, error } = await configured.data.functions.invoke<{ scanStatus?: AttachmentScanStatus; message?: string }>("complete-message-attachment-scan", {
+      body: { attachmentId },
+    });
+    const scanStatus = data?.scanStatus;
+    if (error || !scanStatus || !["clean", "skipped_development"].includes(scanStatus)) {
+      if (isRateLimitError(error)) return attachmentError("RATE_LIMITED", rateLimitUserMessage);
+      loggingService.logWarn("Attachment safety check did not complete", {
+        attachmentId,
+        message: error?.message ?? data?.message ?? "no scan status returned",
+      });
+      return attachmentError("ATTACHMENT_SCAN_FAILED", data?.message ?? "Attachment safety check could not complete. Retry the media file.");
+    }
+    return { ok: true, data: scanStatus };
+  },
+
+  async createVerifiedAttachmentUrl(storagePath: string): Promise<AttachmentServiceResult<string>> {
+    if (!storagePath.trim()) return attachmentError("VALIDATION_ERROR", "Storage path is required.");
+    const configured = getConfiguredSupabaseClient();
+    if (!configured.ok) return configured;
+    const { data, error } = await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).createSignedUrl(storagePath, 60 * 60);
+    if (error || !data?.signedUrl) return attachmentError("ATTACHMENT_SCAN_FAILED", "Attachment access could not be refreshed. Retry the media file.");
+    return { ok: true, data: data.signedUrl };
   },
 
   attachMockToMessage(messageId: string, attachmentIds: readonly string[]): void {

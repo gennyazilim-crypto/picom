@@ -19,6 +19,9 @@ dist-electron/
 /tmp-electron-dev.err
 /tmp-electron-dev.out
 
+# Project-local scanner tooling (Checkov venv, scan artifacts)
+/.tools/
+
 packages/shared/dist/
 
 # Official LiveKit generator output contains deployment credentials.
@@ -27,3 +30,11 @@ packages/shared/dist/
 /infra/livekit/secrets/
 .intelligence-tasks/
 .intelligence-platform/
+
+# Local release/build scratch (not product)
+/NUL
+/relbuild/
+/release-brand-refresh/
+/release-memory-audit/
+/release-server-*/
+/release-update-*/

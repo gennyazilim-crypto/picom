@@ -1,4 +1,5 @@
 import type { DateStylePreference, TimeFormatPreference, UiLanguage } from "./settingsService";
+import { getUiLanguageBcp47, normalizeUiLanguage } from "./localization/uiLanguages";
 
 type DateTimeInput = string | number | Date | null | undefined;
 type DateTimeFormatOptions = Readonly<{ locale?: string; timeZone?: string; now?: Date }>;
@@ -9,7 +10,7 @@ let preferences: DateTimePreferences = { language: "en", dateStyle: "system", ti
 
 function getLocale(locale?: string): string | undefined {
   const candidate = locale
-    ?? (preferences.language === "tr" ? "tr-TR" : preferences.language === "en" ? "en-US" : undefined)
+    ?? getUiLanguageBcp47(normalizeUiLanguage(preferences.language))
     ?? (typeof navigator !== "undefined" ? navigator.languages?.[0] ?? navigator.language : undefined);
   if (!candidate) return undefined;
   try { return new Intl.DateTimeFormat(candidate).resolvedOptions().locale; } catch { return undefined; }

@@ -1,0 +1,6 @@
+npm run onboarding:rpc-contract:smoke
+exit=0
+Onboarding RPC contract regression passed (20260816000000_reconcile_account_onboarding_rpc_contract.sql).
+
+npm run typecheck
+exit=0

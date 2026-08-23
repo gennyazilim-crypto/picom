@@ -1,0 +1,42 @@
+{
+  "auth:onboarding:production:smoke": {
+    "exit": 1,
+    "classification": "STALE_TEST",
+    "assertion": "requiresEmailVerification: !session",
+    "current_product": "signUpWithEmailPassword requires a real session and always returns requiresEmailVerification: false; soft verification email is fire-and-forget and never blocks signup/login",
+    "action": "Do not change product semantics to satisfy the stale source-text marker"
+  },
+  "auth:sessions:smoke": {
+    "exit": 1,
+    "classification": "STALE_TEST",
+    "assertion": "SettingsModal.tsx must include literal 'Active sessions' and 'Revoke other sessions'",
+    "current_product": "sessionManagementService still exposes getActiveSessions/revokeOtherSessions; Settings Account now routes sessions to Account Center via i18n key account.sessions",
+    "action": "Do not restore hardcoded English strings in SettingsModal"
+  },
+  "auth:email-verification:smoke": {
+    "exit": 1,
+    "classification": "STALE_TEST",
+    "assertion": "SettingsModal.tsx must match /Email verification/, /Resend verification/, /Verification required/",
+    "current_product": "Copy lives in settingsI18n (account.emailPending = 'Email verification pending') and AccountSummarySection; authService still has requestEmailVerification/confirmEmailVerification/exchangeCodeForSession",
+    "action": "Do not change product semantics"
+  },
+  "build": {
+    "exit": 1,
+    "classification": "TEST_INFRA_BUG",
+    "detail": "vite failed to resolve ./assets/index-D4knU93T.js from repo-root index.html. That hashed entry is leftover dirty-tree output from a previous production vite build, not a first-party product defect in the accepted 0.1.1-beta.11 package.",
+    "action": "Did not checkout or rewrite index.html under TASK 13C dirty-tree protection"
+  },
+  "typecheck": { "exit": 0, "classification": "PASS_NOW" },
+  "onboarding:rpc-contract:smoke": { "exit": 0, "classification": "PASS_NOW" },
+  "first-launch:ready:runtime": { "exit": 0, "classification": "PASS_NOW" },
+  "first-launch:privacy:runtime": { "exit": 0, "classification": "PASS_NOW" },
+  "first-launch:smoke": { "exit": 0, "classification": "PASS_NOW" },
+  "i18n:catalog-integrity:smoke": { "exit": 0, "classification": "PASS_NOW" },
+  "legal:acceptance:test": { "exit": 0, "classification": "PASS_NOW" },
+  "auth:v2:contract": { "exit": 0, "classification": "PASS_NOW" },
+  "auth:login-method-guards:unit": { "exit": 0, "classification": "PASS_NOW" },
+  "auth:password-reset:smoke": { "exit": 0, "classification": "PASS_NOW" },
+  "electron:security": { "exit": 0, "classification": "PASS_NOW" },
+  "electron:preload": { "exit": 0, "classification": "PASS_NOW" },
+  "electron:ipc-fuzz": { "exit": 0, "classification": "PASS_NOW" }
+}

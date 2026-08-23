@@ -1,0 +1,17 @@
+typecheck exit=0 ms=3175
+build exit=1 ms=5649
+onboarding_rpc-contract_smoke exit=0 ms=675
+auth_onboarding_production_smoke exit=1 ms=591
+first-launch_ready_runtime exit=0 ms=615
+first-launch_privacy_runtime exit=0 ms=25006
+first-launch_smoke exit=0 ms=467
+i18n_catalog-integrity_smoke exit=0 ms=628
+legal_acceptance_test exit=0 ms=496
+auth_v2_contract exit=0 ms=506
+auth_login-method-guards_unit exit=0 ms=474
+auth_sessions_smoke exit=1 ms=443
+auth_email-verification_smoke exit=1 ms=445
+auth_password-reset_smoke exit=0 ms=448
+electron_security_smoke exit=0 ms=442
+electron_preload-contract_test exit=0 ms=442
+electron_ipc-fuzz_test exit=0 ms=507

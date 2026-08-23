@@ -1,0 +1,4 @@
+POLL_START=2026-08-03T14:54:23.703Z ref=cqnsetsmcduraryemhbi
+ts=2026-08-03T14:54:55.093Z round=1 elapsed_s=0 project_status=RESTARTING realtime_service=ACTIVE_HEALTHY;healthy=true db_connected=false replication_connected=false realtime.messages=MISSING realtime.subscription=MISSING realtime.schema_migrations=MISSING schema_owner=NONE result=PROJECT_NOT_HEALTHY
+ts=2026-08-03T14:55:18.921Z round=2 elapsed_s=46 project_status=ACTIVE_HEALTHY realtime_service=ACTIVE_HEALTHY;healthy=true db_connected=false replication_connected=false realtime.messages=EXISTS realtime.subscription=EXISTS realtime.schema_migrations=EXISTS schema_owner=supabase_admin result=PROVISIONED
+POLL_END=2026-08-03T14:55:18.923Z FINAL=PROVISIONED

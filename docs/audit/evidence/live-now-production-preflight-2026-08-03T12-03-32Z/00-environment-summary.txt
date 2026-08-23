@@ -1,0 +1,15 @@
+UTC_TIMESTAMP=2026-08-03T12-03-32Z
+task=PICOM Publisher/Creator + Live Now PRODUCTION PREFLIGHT
+mode=READ_ONLY (no migration apply, no db push, no deploy, no DML/DDL)
+git_sha=6c922c093022d5738d94ce864339764901cdbf62
+branch=feat/community-rebuild
+worktree=DIRTY
+staging_canonical_ref=ufmtvqtsklqsmqxefbbs
+staging_canonical_name=picom-staging
+staging_region=eu-west-1
+supabase_org_projects_visible=2
+production_project_ref=UNVERIFIED
+production_project_name=NOT_FOUND
+linked_cli_project=ufmtvqtsklqsmqxefbbs (picom-staging) when previously linked; .supabase/ absent in this checkout
+operator_action=STOPPED — production target cannot be definitively verified as distinct from staging
+production_mutations_this_task=NONE

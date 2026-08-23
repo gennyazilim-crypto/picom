@@ -1,0 +1,13 @@
+﻿UTC_TIMESTAMP=2026-08-03T02-51-23
+git_sha=6c922c093022d5738d94ce864339764901cdbf62
+branch=feat/community-rebuild
+working_tree=DIRTY (many unrelated local changes; publisher migrations untracked)
+node=v24.15.0
+supabase_cli=2.109.1
+expected_staging_ref=ufmtvqtsklqsmqxefbbs
+linked_project_ref_file=ufmtvqtsklqsmqxefbbs
+with_supabase_cli_token_forces_ref=ufmtvqtsklqsmqxefbbs
+environment_name=staging
+database_host_suffix=ufmtvqtsklqsmqxefbbs.supabase.co
+migration_count_expected=2
+migration_count_found=2

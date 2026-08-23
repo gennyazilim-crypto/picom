@@ -1,0 +1,14 @@
+epic-auth deploy: NOT ATTEMPTED (required Edge secrets missing)
+epic-auth live: HTTP 404 (unchanged)
+canonical Epic redirect: https://auth.picom.gg/epic/callback
+VITE_EPIC_PORTAL_READY: unset in .env.production (Epic button gated off)
+
+steam-auth live: PRESENT
+Steam OpenID realm secret name: PRESENT
+Steam OpenID return secret name: PRESENT
+STEAM_WEB_API_KEY: MISSING
+code path: fetchSteamProfile uses key only for persona/avatar; OpenID verifySteamAssertion does not
+STEAM_WEB_API_PROFILE_ENRICHMENT: OPTIONAL_BLOCKED
+canonical Steam realm: https://auth.picom.gg/
+canonical Steam return: https://auth.picom.gg/steam/callback
+live /steam/callback: HTTP 400 without OpenID assertion

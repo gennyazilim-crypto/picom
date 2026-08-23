@@ -1,0 +1,32 @@
+PICOM FIRST-LAUNCH PACKAGED E2E EVIDENCE
+timestamp=2026-08-16T1910Z
+branch=feat/community-rebuild
+git_HEAD=af6babcf060da058fb295b7b37c27f75ca5c6f25
+package_version=0.1.1-beta.11
+git_status_clean=no
+dirty_tree_preserved=yes
+packaging_command=npm run package:win:dir
+packaging_workaround=electron-builder --win --x64 --dir --config.directories.output=%TEMP%\picom-task13-20260816T1910Z
+package_win_dir_repo_exit=1
+package_win_dir_repo_error=EPERM rename release\win-unpacked.tmp -> release\win-unpacked
+temp_package_exit=0
+executable_path=C:\Users\ACER\AppData\Local\Temp\picom-task13-20260816T1910Z\win-unpacked\Picom.exe
+sha256=7189c84ae822d39773c4614d0141656f8f6de26373b8fef6b0905a8815a712d4
+build_timestamp=2026-08-16T21:16:19.8609490+02:00
+electron_builder=26.15.3
+electron=43.2.0
+node=v24.15.0
+windows=10.0.26200
+architecture=AMD64
+isolation=PICOM_USER_DATA_DIR -> docs/audit/evidence/first-launch-packaged-e2e-2026-08-16T1910Z/isolated-profile
+real_profile_untouched=%APPDATA%\Picom
+asar_unsafe_flags=none
+contextIsolation=true
+nodeIntegration=false
+sandbox=true
+webSecurity=true
+devTools_packaged=false
+fake_media_flags=absent
+single_instance=repo electron:dev stopped only for lock; not user installed Picom
+remote_version_gate=update_required minimum=1.0.0 current_client=0.1.1-beta.* source=remote
+installer_executed=no

@@ -1,0 +1,8 @@
+﻿RLS_STATIC_AUDIT=PASS
+dashboard_read_list_only=yes
+review_requires_can_review=yes
+livekit_broadcast_self_only=yes
+claim_reminders_service_role_only=yes
+notif_pref_owner_only=yes
+search_path_fixed=public, pg_temp
+runtime_carry_forward=jwt-rls 27/27 ufmt

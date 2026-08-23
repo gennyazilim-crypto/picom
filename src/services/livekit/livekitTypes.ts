@@ -1,4 +1,4 @@
-export type LiveKitIntent = "voice" | "video" | "screen";
+export type LiveKitIntent = "voice" | "video" | "screen" | "watch" | "broadcast";
 
 export type LiveKitTokenRequest = Readonly<{
   communityId: string;
@@ -6,6 +6,8 @@ export type LiveKitTokenRequest = Readonly<{
   roomName?: string;
   participantName?: string;
   intent?: LiveKitIntent;
+  /** Required when intent is "watch" or "broadcast" — backend revalidates the live session. */
+  liveSessionId?: string;
 }>;
 
 export type LiveKitTokenResponse = Readonly<{

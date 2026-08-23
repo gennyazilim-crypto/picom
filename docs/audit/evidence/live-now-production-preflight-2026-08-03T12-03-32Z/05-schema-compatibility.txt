@@ -1,0 +1,13 @@
+PRODUCTION SCHEMA COMPATIBILITY — NOT EXECUTED
+
+Skipped read-only production catalog probes because production project ref is unverified.
+
+Checks requested (deferred):
+- profiles / communities.owner_id / community_members columns
+- publisher_* tables, live sessions, schedule reminders, notification prefs
+- FKs, checks, indexes, RLS enabled, realtime publication, storage bucket metadata
+- community_members must NOT depend on nonexistent status column
+- founder eligibility via communities.owner_id; COUNT(DISTINCT user_id); no owner auto +1
+
+status=BLOCKED_PRECONDITION
+production_mutations=NONE

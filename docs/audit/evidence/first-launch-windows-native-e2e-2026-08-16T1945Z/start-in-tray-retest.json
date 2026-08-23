@@ -1,0 +1,21 @@
+{
+  "result": "PACKAGED_PASS",
+  "hiddenObservation": {
+    "processCount": 6,
+    "visibleMainWindows": 0
+  },
+  "snap": {
+    "hidden": false,
+    "hasLogin": true,
+    "hasFirstLaunch": false
+  },
+  "afterShow": {
+    "processCount": 6,
+    "visibleMainWindows": 1,
+    "snap": {
+      "hidden": false,
+      "hasLogin": true,
+      "hasFirstLaunch": false
+    }
+  }
+}

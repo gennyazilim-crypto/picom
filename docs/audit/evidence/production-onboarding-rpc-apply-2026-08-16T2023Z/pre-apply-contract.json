@@ -1,0 +1,13 @@
+{
+  "PRODUCTION_ONBOARDING_RPC": "LEGACY_3_ARG",
+  "oid": 21328,
+  "overload_count": 1,
+  "arg_count": 3,
+  "identity_args": "target_profile jsonb, target_followed_user_ids uuid[], target_theme text",
+  "result": "TABLE(completed boolean, completed_at timestamp with time zone, followed_user_ids uuid[], theme_mode text)",
+  "security": "DEFINER",
+  "search_path": "public",
+  "onboarding_start_choice": "ABSENT",
+  "onboarding_initial_feed": "ABSENT",
+  "version_20260816000000": "NOT_APPLIED"
+}

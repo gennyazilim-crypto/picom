@@ -259,12 +259,18 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     }
 
     if (controller.signal.aborted) {
+      await uploadService.removePending(result.data.storagePath);
       updatePreview(preview.id, { status: "canceled", progress: 0, error: "Upload canceled." });
       return null;
     }
 
     const metadata = await attachmentService.createPendingAttachmentMetadata({ upload: result.data });
     if (!metadata.ok) {
+      const removed = await uploadService.removePending(result.data.storagePath);
+      loggingService.logWarn("Removed pending attachment after metadata failure", {
+        metadataErrorCode: metadata.error.code,
+        pendingFileRemoved: removed,
+      });
       updatePreview(preview.id, { status: "failed", progress: 0, error: metadata.error.message });
       return null;
     }
@@ -272,7 +278,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
     const uploadedUrl = metadata.data.publicUrl ?? result.data.publicUrl ?? null;
     const attachment: Attachment = {
       id: metadata.data.id,
-      type: "image",
+      type: metadata.data.attachmentType,
       url: uploadedUrl || preview.url,
       publicUrl: uploadedUrl,
       storagePath: metadata.data.storagePath,
@@ -285,13 +291,33 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
       alt: metadata.data.fileName,
     };
 
-    updatePreview(preview.id, { status: "uploaded", progress: 100, attachment, error: undefined });
-    analyticsService.trackEvent("upload_success", { kind: "image", sizeBucket: preview.size < 1024 * 1024 ? "under_1mb" : "1mb_plus" });
-    return attachment;
+    const safetyCheck = await attachmentService.completePendingAttachmentSafetyCheck(metadata.data.id);
+    if (!safetyCheck.ok) {
+      updatePreview(preview.id, { status: "failed", progress: 0, attachment, error: safetyCheck.error.message });
+      return null;
+    }
+
+    const scannedAttachment = { ...attachment, scanStatus: safetyCheck.data };
+
+    updatePreview(preview.id, { status: "uploaded", progress: 100, attachment: scannedAttachment, error: undefined });
+    analyticsService.trackEvent("upload_success", { kind: scannedAttachment.type, sizeBucket: preview.size < 1024 * 1024 ? "under_1mb" : "1mb_plus" });
+    return scannedAttachment;
   };
 
   const retryPreviewUpload = async (preview: ComposerAttachmentItem) => {
     if (preview.status === "uploading") return;
+    if (preview.attachment?.id) {
+      updatePreview(preview.id, { status: "uploading", progress: 55, error: undefined });
+      const safetyCheck = await attachmentService.completePendingAttachmentSafetyCheck(preview.attachment.id);
+      if (!safetyCheck.ok) {
+        updatePreview(preview.id, { status: "failed", progress: 0, error: safetyCheck.error.message });
+        return;
+      }
+      const attachment = { ...preview.attachment, scanStatus: safetyCheck.data };
+      updatePreview(preview.id, { status: "uploaded", progress: 100, attachment, error: undefined });
+      pushToast(`${preview.name} uploaded.`, "success");
+      return;
+    }
     updatePreview(preview.id, { status: "pending", progress: 0, error: undefined, attachment: undefined });
     const attachment = await uploadPreview(preview.id, true);
     if (attachment) pushToast(`${preview.name} uploaded.`, "success");
@@ -319,7 +345,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
       attachments.push(attachment);
     }
 
-    await onSendMessage(value || `Shared ${attachments.length} image attachment${attachments.length > 1 ? "s" : ""}.`, attachments, replyToMessage?.id ?? null);
+    await onSendMessage(value || `Shared ${attachments.length} media attachment${attachments.length > 1 ? "s" : ""}.`, attachments, replyToMessage?.id ?? null);
     messageDraftService.clearDraft({ communityId, channelId: channel.id });
     stopTypingNow();
     onCancelReply();
@@ -343,7 +369,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
   return (
     <footer
       className={`message-composer ${dragging ? "dragging" : ""} ${disabledReason ? "is-disabled" : ""}`}
-      aria-label="Message composer. Drop image files here to attach them."
+      aria-label="Message composer. Drop image or video files here to attach them."
       onDragEnter={(event) => {
         if (disabledReason) return;
         if (!isFileDrag(event.dataTransfer)) return;
@@ -390,7 +416,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
         <div className="composer-previews">
           {previews.map((preview) => (
             <div key={preview.id} className={`composer-preview-item status-${preview.status}`}>
-              <img src={preview.url} alt={preview.name} />
+              {preview.type.startsWith("video/") ? <video src={preview.url} muted playsInline preload="metadata" aria-label={preview.name} /> : <img src={preview.url} alt={preview.name} />}
               <span className="composer-preview-progress" aria-hidden="true"><span style={{ width: `${preview.progress}%` }} /></span>
               <span className="composer-preview-status">{preview.error ?? getUploadStatusLabel(preview.status)}</span>
               {preview.status === "uploading" ? (
@@ -412,7 +438,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           ref={fileInputRef}
           className="composer-file-input"
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
+          accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm"
           multiple
           onChange={(event) => {
             if (event.target.files?.length) addFiles(event.target.files);
@@ -420,7 +446,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           }}
         />
         <div className="composer-leading">
-          <button className="composer-tool" aria-label="Attach image" disabled={Boolean(disabledReason)} onClick={() => fileInputRef.current?.click()}>
+          <button className="composer-tool" aria-label="Attach image or video" disabled={Boolean(disabledReason)} onClick={() => fileInputRef.current?.click()}>
             <AppIcon name={composerIcons.attach} size="md" />
           </button>
         </div>
@@ -494,7 +520,7 @@ export function MessageComposer({ communityId, channel, replyToMessage, replyToM
           communityId={communityId}
         />
       ) : null}
-      {dragging ? <div className="drop-hint"><AppIcon name={composerIcons.image} /> Drop images to attach</div> : null}
+      {dragging ? <div className="drop-hint"><AppIcon name={composerIcons.image} /> Drop media to attach</div> : null}
     </footer>
   );
 }

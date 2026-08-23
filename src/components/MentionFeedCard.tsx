@@ -1,13 +1,26 @@
-import type { MouseEvent } from "react";
+import { memo, type MouseEvent } from "react";
+import { useProfileDisplayName } from "./ProfileDisplayName";
 import type { Attachment, Channel, Community, Member } from "../types/community";
 import type { MentionItem } from "../types/mentions";
 import { dateTimeService } from "../services/dateTimeService";
+import { profileMediaStore } from "../services/profileMedia/profileMediaStore";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { AppIcon } from "./AppIcon";
 import { VerifiedAvatarFrame } from "./VerifiedAvatarFrame";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { MentionFeedFooter } from "./MentionFeedFooter";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
+
+function resolveLiveAuthor(author: Member): Member {
+  const record = profileMediaStore.getSnapshot(author.userId).record;
+  if (!record) return author;
+  return {
+    ...author,
+    displayName: record.displayName?.trim() || author.displayName,
+    username: (record.username?.trim() || author.username).replace(/^@+/, ""),
+    avatarUrl: record.avatar.thumbnailUrl ?? record.avatar.url ?? author.avatarUrl,
+  };
+}
 
 type MentionFeedCardProps = {
   item: MentionItem;
@@ -18,7 +31,7 @@ type MentionFeedCardProps = {
   commenters: Member[];
   commentPreviewMembers: Record<string, Member | undefined>;
   resolveMember: (userId: string) => Member | undefined;
-  onOpenImage: (attachment: Attachment) => void;
+  onOpenImage: (attachment: Attachment, gallery?: readonly Attachment[]) => void;
   onOpenInChannel: (item: MentionItem) => void;
   onToggleReaction: (id: string, emoji: string) => void;
   onToggleSaved: (id: string) => void;
@@ -28,7 +41,13 @@ type MentionFeedCardProps = {
 };
 
 function renderMentionBody(body: string, mentionedMembers: Member[]) {
-  const mentionNames = new Set(mentionedMembers.map((member) => `@${member.displayName}`));
+  const mentionNames = new Set(mentionedMembers.flatMap((member) => {
+    const liveMember = resolveLiveAuthor(member);
+    return [member.displayName, member.username, liveMember.displayName, liveMember.username]
+      .map((value) => value.trim().replace(/^@+/, ""))
+      .filter(Boolean)
+      .map((value) => `@${value}`);
+  }));
 
   return body.split(/(\s+)/).map((token, index) => {
     const cleanToken = token.replace(/[.,!?;:)]$/u, "");
@@ -48,7 +67,7 @@ function renderMentionBody(body: string, mentionedMembers: Member[]) {
   });
 }
 
-export function MentionFeedCard({
+export const MentionFeedCard = memo(function MentionFeedCard({
   item,
   author,
   community,
@@ -65,7 +84,7 @@ export function MentionFeedCard({
   onOpenProfile,
   onOpenMore,
 }: MentionFeedCardProps) {
-  const authorLabel = author?.displayName ?? "Picom member";
+  const authorLabel = useProfileDisplayName(author?.userId, author?.displayName ?? "Picom member");
   const verification = getUserVerificationSummary(author?.userId ?? item.authorId, [], author?.verification);
 
   return (
@@ -74,8 +93,8 @@ export function MentionFeedCard({
         <button
           className="mention-author-button"
           type="button"
-          onClick={(event) => author && onOpenProfile(event, author)}
-          aria-label={`Open ${authorLabel} profile preview`}
+          onClick={(event) => author && onOpenProfile(event, resolveLiveAuthor(author))}
+          aria-label={`Open ${authorLabel} profile`}
         >
           <VerifiedAvatarFrame
             user={author}
@@ -92,11 +111,11 @@ export function MentionFeedCard({
               <button
                 className="mention-author-name-button"
                 type="button"
-                onClick={(event) => author && onOpenProfile(event, author)}
+                onClick={(event) => author && onOpenProfile(event, resolveLiveAuthor(author))}
                 disabled={!author}
               >
                 <span>{authorLabel}</span>
-                <VerifiedBadge verification={verification} size="xs" />
+                <VerifiedBadge userId={author?.userId ?? item.authorId} verification={verification} size="xs" />
               </button>
               <span className="mention-topic-badge">
                 <AppIcon name="hash" size="xs" aria-hidden="true" />
@@ -144,4 +163,4 @@ export function MentionFeedCard({
       />
     </article>
   );
-}
+});

@@ -1,0 +1,7 @@
+npm run onboarding:rpc-contract:smoke
+exit=0
+Onboarding RPC contract regression passed (20260816000000_reconcile_account_onboarding_rpc_contract.sql).
+
+MIGRATION FINGERPRINT: PASS
+expected=0a1a3d88bed83e654e36e89da60c2b08a611a4da47cb2dd9eb38fad3ff1af07d
+actual=0a1a3d88bed83e654e36e89da60c2b08a611a4da47cb2dd9eb38fad3ff1af07d

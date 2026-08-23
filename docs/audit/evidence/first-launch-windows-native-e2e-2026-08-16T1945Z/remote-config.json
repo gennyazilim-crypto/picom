@@ -1,0 +1,68 @@
+{
+  "minimumSupportedVersion": "0.1.1-beta.10",
+  "recommendedClientVersion": "0.1.1-beta.10",
+  "latestVersion": "0.1.1-beta.10",
+  "releaseChannel": "dev",
+  "featureFlags": {
+    "enableRealtime": true,
+    "enableVoiceRooms": true,
+    "enableScreenShare": true,
+    "enableDirectMessages": true,
+    "enableFriends": true,
+    "enableDiscovery": true,
+    "enableBots": false,
+    "enableWebhooks": false,
+    "enableThreads": false,
+    "enablePolls": false,
+    "enableAdvancedModeration": false,
+    "enableDiagnostics": true,
+    "enableAutoUpdate": false,
+    "enableAnalyticsPlaceholder": false,
+    "enableAdminOperations": false,
+    "enableDeveloperPortal": true,
+    "enableCustomEmoji": false,
+    "enableStickers": false,
+    "enableForumChannels": false,
+    "enableAnnouncementChannels": false,
+    "enableSavedMessages": false,
+    "enablePublisherApplication": true,
+    "enablePublisherReview": true,
+    "enablePublisherBadgeDisplay": true,
+    "enableLiveNowDiscovery": true,
+    "enableGoLive": true,
+    "enablePublisherReminders": true,
+    "enablePublisherNotificationPreferences": true
+  },
+  "killSwitches": {
+    "disableRealtime": false,
+    "disableUploads": false,
+    "disableVoiceRooms": false,
+    "disableDiscovery": false,
+    "disableWebhooks": false,
+    "disableBots": false,
+    "disableNativeNotifications": false,
+    "disableAutoUpdate": false,
+    "disableMessageEditing": false,
+    "disableInvites": false
+  },
+  "maintenance": {
+    "status": "operational",
+    "message": "Picom services are operating normally."
+  },
+  "uploadLimits": {
+    "maxUploadBytes": 10485760,
+    "allowedMimeTypes": [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/gif"
+    ]
+  },
+  "urls": {
+    "statusPageUrl": "",
+    "supportUrl": "",
+    "docsUrl": ""
+  },
+  "source": "remote",
+  "fetchedAt": "2026-08-16T19:44:58.651Z"
+}

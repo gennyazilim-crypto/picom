@@ -1,0 +1,5 @@
+PRODUCTION_AUTH=NOT_CONFIGURED_PENDING_MIGRATION_COMPLETION
+expected_site_url=https://app.picom.gg
+expected_redirects=https://app.picom.gg,https://account.picom.gg,https://picom.gg,picom://auth/callback,picom://auth/reset-password
+smtp=NOT_APPLIED
+reason=Publisher Phase 1 schema not reached; Auth allowlist deferred until migration chain completes

@@ -1,0 +1,7 @@
+﻿LOCALE_RUNTIME
+- Added src/services/localization/uiLanguages.ts (10 locales + RTL)
+- settingsService/appearanceService/dateTimeService/localizationService/settingsI18n expanded
+- liveNowCatalog uses UiLanguage + normalizeUiLanguage
+- publisherProgramCatalog.ts + Publisher apply/dashboard/review wired
+- Settings language selector lists all 10 locales
+- Arabic sets document dir=rtl

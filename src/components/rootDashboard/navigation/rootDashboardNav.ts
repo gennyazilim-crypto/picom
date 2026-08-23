@@ -12,6 +12,11 @@ export type RootDashboardRouteKey =
   | "support"
   | "supportTeam"
   | "trustSafety"
+  | "publisherCreatorReview"
+  | "businessApplications"
+  | "businessOrganizations"
+  | "businessProducts"
+  | "businessPromotions"
   | "moderationTeam"
   | "security"
   | "securityTeam"
@@ -75,6 +80,11 @@ export const ROOT_DASHBOARD_NAV_GROUPS: readonly RootDashboardNavGroup[] = [
       { key: "support", label: "Support", icon: "bell" },
       { key: "supportTeam", label: "Support Team", icon: "users" },
       { key: "trustSafety", label: "Trust & Safety", icon: "lock" },
+      { key: "publisherCreatorReview", label: "Publisher & Creator Review", icon: "users" },
+      { key: "businessApplications", label: "Business applications", icon: "users" },
+      { key: "businessOrganizations", label: "Business organizations", icon: "settings" },
+      { key: "businessProducts", label: "Business products", icon: "image" },
+      { key: "businessPromotions", label: "Business promotions", icon: "pin" },
       { key: "moderationTeam", label: "Moderation Team", icon: "eye" },
       { key: "security", label: "Security", icon: "lock" },
       { key: "securityTeam", label: "Security Team", icon: "users" },

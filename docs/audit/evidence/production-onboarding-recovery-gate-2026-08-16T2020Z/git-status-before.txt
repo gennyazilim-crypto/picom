@@ -1,0 +1,4 @@
+captured_at_task_start=2026-08-16T2020Z
+short_status_line_count=467
+head=af6babcf060da058fb295b7b37c27f75ca5c6f25
+note=Full listing omitted; see sibling 13C.1 git-status-before if needed. This task added only the evidence directory.

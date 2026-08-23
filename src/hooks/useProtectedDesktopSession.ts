@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { authService, type AuthServiceSession } from "../services/authService";
+import { authService, type AuthServiceErrorCode, type AuthServiceSession } from "../services/authService";
+import { canonicalizeAuthErrorCode } from "../services/auth/authErrorMap";
 import { loggingService } from "../services/loggingService";
 import { multiClientSessionSyncService } from "../services/multiClientSessionSyncService";
 import { accountActivityService } from "../services/accountActivityService";
@@ -12,8 +13,11 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<AuthServiceErrorCode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [session, setSession] = useState<AuthServiceSession | null>(null);
+  const [mfaChallenge, setMfaChallenge] = useState<{ factorId: string; challengeId: string } | null>(null);
+  const [mfaError, setMfaError] = useState<string | null>(null);
   const sessionRef = useRef<AuthServiceSession | null>(null);
 
   useEffect(() => {
@@ -28,8 +32,10 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
 
       if (result.ok) {
         setSession(result.data);
+        setErrorCode(null);
       } else {
         loggingService.logWarn("Auth session check failed", { code: result.error.code });
+        setErrorCode(canonicalizeAuthErrorCode(result.error.code));
         setError(result.error.message);
       }
 
@@ -38,7 +44,10 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
 
     const unsubscribe = authService.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
-      if (event === "SIGNED_OUT") setError(null);
+      if (event === "SIGNED_OUT") {
+        setError(null);
+        setErrorCode(null);
+      }
       if (event === "SIGNED_IN") setNotice(null);
     });
 
@@ -79,6 +88,7 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
         if (!alive) return;
         setSession(null);
         setError(message);
+        setErrorCode("AUTH_SESSION_FAILED");
         notify?.(message, "error");
       });
     });
@@ -95,28 +105,65 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
     setError(null);
+    setErrorCode(null);
     setNotice(null);
+    setMfaError(null);
+    setMfaChallenge(null);
 
     const result = await authService.signInWithEmailPassword(email, password);
     if (result.ok) {
-      setSession(result.data);
+      if (result.data.kind === "mfa_required") {
+        setMfaChallenge(result.data.challenge);
+        setLoading(false);
+        return;
+      }
+      setSession(result.data.session);
       accountActivityService.recordActivity({
         type: "login_success",
-        userId: result.data.user?.id ?? null,
-        metadata: { provider: result.data.provider }
+        userId: result.data.session.user?.id ?? null,
+        metadata: { provider: result.data.session.provider }
       });
       notify?.("Signed in to Picom.", "success");
     } else {
       loggingService.logWarn("Auth sign-in failed", { code: result.error.code });
+      setErrorCode(canonicalizeAuthErrorCode(result.error.code));
       setError(result.error.message);
     }
 
     setLoading(false);
   }, [notify]);
 
+  const verifyMfa = useCallback(async (code: string) => {
+    if (!mfaChallenge) return;
+    setLoading(true);
+    setMfaError(null);
+    const result = await authService.verifyMfaChallenge(mfaChallenge.factorId, mfaChallenge.challengeId, code);
+    if (result.ok) {
+      setMfaChallenge(null);
+      setSession(result.data);
+      accountActivityService.recordActivity({
+        type: "login_success",
+        userId: result.data.user?.id ?? null,
+        metadata: { provider: result.data.provider, mfa: true }
+      });
+      notify?.("Signed in to Picom.", "success");
+    } else {
+      setMfaError(result.error.message);
+      setErrorCode(canonicalizeAuthErrorCode(result.error.code));
+    }
+    setLoading(false);
+  }, [mfaChallenge, notify]);
+
+  const cancelMfa = useCallback(() => {
+    setMfaChallenge(null);
+    setMfaError(null);
+    void authService.signOut();
+  }, []);
+
   const register = useCallback(async (email: string, password: string, displayName: string, acceptedLegalVersion: string) => {
     setLoading(true);
     setError(null);
+    setErrorCode(null);
     setNotice(null);
 
     const result = await authService.signUpWithEmailPassword(email, password, displayName, acceptedLegalVersion);
@@ -131,17 +178,26 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
         });
       }
       notify?.(result.data.message, "success");
-    } else {
-      loggingService.logWarn("Auth register failed", { code: result.error.code });
-      setError(result.error.message);
+      setLoading(false);
+      return {
+        ok: true as const,
+        requiresEmailVerification: result.data.requiresEmailVerification,
+        message: result.data.message,
+        email: email.trim().toLowerCase(),
+      };
     }
 
+    loggingService.logWarn("Auth register failed", { code: result.error.code, message: result.error.message });
+    setErrorCode(canonicalizeAuthErrorCode(result.error.code));
+    setError(result.error.message);
     setLoading(false);
+    return { ok: false as const };
   }, [notify]);
 
   const signOut = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setErrorCode(null);
     setNotice(null);
 
     const result = await authService.signOut();
@@ -151,10 +207,17 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
         userId: sessionRef.current?.user?.id ?? null,
         metadata: { provider: sessionRef.current?.provider ?? "unknown" }
       });
+      try {
+        const { resetMentionFeedAttachmentSigning } = await import("../services/mentionFeedService");
+        resetMentionFeedAttachmentSigning(null);
+      } catch {
+        // Feed signing cache clear is best-effort on logout.
+      }
       setSession(null);
       notify?.("Signed out.", "info");
     } else {
       loggingService.logWarn("Auth sign-out failed", { code: result.error.code });
+      setErrorCode(canonicalizeAuthErrorCode(result.error.code));
       setError(result.error.message);
     }
 
@@ -165,12 +228,17 @@ export function useProtectedDesktopSession(notify?: NoticeCallback) {
     ready,
     loading,
     error,
+    errorCode,
     notice,
     session,
     authenticated: Boolean(session),
+    mfaRequired: Boolean(mfaChallenge),
+    mfaError,
     signIn,
+    verifyMfa,
+    cancelMfa,
     register,
     signOut,
-    clearError: () => { setError(null); setNotice(null); },
+    clearError: () => { setError(null); setErrorCode(null); setNotice(null); setMfaError(null); },
   } as const;
 }

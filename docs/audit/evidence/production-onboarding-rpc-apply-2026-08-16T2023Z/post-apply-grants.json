@@ -1,0 +1,11 @@
+{
+  "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+  "execute": {
+    "authenticated": true,
+    "anon": false,
+    "service_role": false,
+    "postgres": true
+  },
+  "public_role_in_acl": false,
+  "matches_migration": true
+}

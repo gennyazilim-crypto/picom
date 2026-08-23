@@ -1,5 +1,4 @@
 import type { AuthError, Session, User } from "@supabase/supabase-js";
-import { dataSourceService } from "./dataSourceService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import { legalConfig } from "../config/legalConfig";
 import { termsAcceptanceService } from "./termsAcceptanceService";
@@ -16,6 +15,8 @@ export type AuthServiceUser = Readonly<{
   email: string | null;
   displayName: string | null;
   emailVerifiedAt?: string | null;
+  /** Auth account creation time (ISO). Used for Account Center "Member since". */
+  createdAt?: string | null;
 }>;
 
 export type AuthServiceSession = Readonly<{
@@ -23,6 +24,15 @@ export type AuthServiceSession = Readonly<{
   user: AuthServiceUser | null;
   expiresAt: number | null;
 }>;
+
+export type AuthMfaChallenge = Readonly<{
+  factorId: string;
+  challengeId: string;
+}>;
+
+export type AuthSignInOutcome =
+  | Readonly<{ kind: "session"; session: AuthServiceSession }>
+  | Readonly<{ kind: "mfa_required"; challenge: AuthMfaChallenge }>;
 
 export type AuthSignUpOutcome = Readonly<{
   session: AuthServiceSession | null;
@@ -54,9 +64,18 @@ export type AuthServiceErrorCode =
   | "AUTH_NOT_CONFIGURED"
   | "AUTH_INVALID_INPUT"
   | "AUTH_INVALID_CREDENTIALS"
+  | "AUTH_ACCOUNT_RESTRICTED"
   | "AUTH_RATE_LIMITED"
   | "AUTH_SESSION_EXPIRED"
-  | "AUTH_PROVIDER_ERROR";
+  | "AUTH_PROVIDER_ERROR"
+  // Canonical V2 codes. Legacy aliases above remain for existing call sites.
+  | "AUTH_NETWORK_ERROR"
+  | "AUTH_ACCOUNT_DISABLED"
+  | "AUTH_PROVIDER_FAILED"
+  | "AUTH_CALLBACK_FAILED"
+  | "AUTH_SESSION_FAILED"
+  | "AUTH_IDENTITY_ALREADY_LINKED"
+  | "AUTH_CANCELLED";
 
 export type AuthServiceError = Readonly<{
   code: AuthServiceErrorCode;
@@ -79,9 +98,48 @@ function authError(code: AuthServiceErrorCode, message: string): AuthServiceResu
 
 function mapSupabaseError(error: AuthError): AuthServiceError {
   const status = error.status ?? 0;
+  const message = String(error.message ?? "");
 
   if (isRateLimitError(error)) {
     return { code: "AUTH_RATE_LIMITED", message: rateLimitUserMessage };
+  }
+
+  if (status === 0 || /network|fetch|offline|failed to fetch|timeout/i.test(message)) {
+    return { code: "AUTH_NETWORK_ERROR", message: "We could not reach authentication. Check your connection and try again." };
+  }
+
+  if (/disabled|banned|deactivated|suspended/i.test(message)) {
+    return { code: "AUTH_ACCOUNT_DISABLED", message: "This account is unavailable. Contact support if you believe this is a mistake." };
+  }
+
+  // Hosted Auth returns this when custom SMTP cannot deliver the confirm-signup mail.
+  if (/confirmation email|error sending|smtp|mailer/i.test(message)) {
+    return {
+      code: "AUTH_PROVIDER_FAILED",
+      message: "Verification email could not be sent. Try again shortly or contact verify@picom.gg.",
+    };
+  }
+
+  if (/already registered|already been registered|user already exists/i.test(message)) {
+    return { code: "AUTH_INVALID_INPUT", message: "An account with this email already exists. Sign in or reset your password." };
+  }
+
+  // Unconfirmed accounts fail sign-in with a 400 too; without this branch the user is
+  // wrongly told their password is wrong even when it is correct.
+  if (error.code === "email_not_confirmed" || /email not confirmed|confirm your email|not been confirmed/i.test(message)) {
+    return {
+      code: "AUTH_PROVIDER_FAILED",
+      message: "Sign-in is blocked by Auth email confirmation. Soft verification requires Confirm Email to be disabled in Supabase Auth settings.",
+    };
+  }
+
+  // Missing/expired local session must never look like a wrong password.
+  if (
+    error.name === "AuthSessionMissingError"
+    || error.code === "session_not_found"
+    || /auth session missing|session missing|not authenticated|jwt expired|invalid jwt|refresh.?token/i.test(message)
+  ) {
+    return { code: "AUTH_SESSION_EXPIRED", message: "Your session expired. Please sign in again." };
   }
 
   if (status === 400 || status === 401) {
@@ -92,7 +150,7 @@ function mapSupabaseError(error: AuthError): AuthServiceError {
     return { code: "AUTH_SESSION_EXPIRED", message: "Your session expired. Please sign in again." };
   }
 
-  return { code: "AUTH_PROVIDER_ERROR", message: "Authentication failed. Please try again." };
+  return { code: "AUTH_PROVIDER_FAILED", message: "Authentication failed. Please try again." };
 }
 
 function mapUser(user: User | null): AuthServiceUser | null {
@@ -105,6 +163,7 @@ function mapUser(user: User | null): AuthServiceUser | null {
     email: user.email ?? null,
     displayName,
     emailVerifiedAt: user.email_confirmed_at ?? null,
+    createdAt: user.created_at ?? null,
   };
 }
 
@@ -127,6 +186,7 @@ function getMockSession(email = "mock@picom.local"): AuthServiceSession {
         email,
         displayName: "Picom Mock User",
         emailVerifiedAt: null,
+        createdAt: "2026-01-15T12:00:00.000Z",
       },
   };
 }
@@ -140,12 +200,6 @@ function getEmailVerificationSafeMessage(): string {
 }
 
 function getConfiguredClient() {
-  const dataSourceStatus = dataSourceService.getStatus();
-
-  if (dataSourceStatus.isMock) {
-    return { ok: true as const, data: null };
-  }
-
   const status = getSupabaseClientStatus();
 
   if (!status.enabled) {
@@ -178,7 +232,7 @@ export const authService = {
     return { ok: true, data: { reauthenticatedAt: new Date().toISOString(), provider: "supabase" } };
   },
 
-  async signInWithEmailPassword(email: string, password: string): Promise<AuthServiceResult<AuthServiceSession>> {
+  async signInWithEmailPassword(email: string, password: string): Promise<AuthServiceResult<AuthSignInOutcome>> {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !password) {
       return authError("AUTH_INVALID_INPUT", "Email and password are required.");
@@ -188,7 +242,7 @@ export const authService = {
     if (!configured.ok) return configured;
 
     if (!configured.data) {
-      return { ok: true, data: getMockSession(normalizedEmail) };
+      return { ok: true, data: { kind: "session", session: getMockSession(normalizedEmail) } };
     }
 
     const { data, error } = await configured.data.auth.signInWithPassword({ email: normalizedEmail, password });
@@ -198,13 +252,79 @@ export const authService = {
 
     const session = mapSession(data.session);
     if (!session?.user) return authError("AUTH_PROVIDER_ERROR", "Supabase did not create a valid session. Please sign in again.");
-    return { ok: true, data: session };
+
+    try {
+      const aal = await configured.data.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (!aal.error && aal.data.currentLevel === "aal1" && aal.data.nextLevel === "aal2") {
+        const factors = await configured.data.auth.mfa.listFactors();
+        const totp = factors.data?.totp?.find((factor) => factor.status === "verified");
+        if (totp) {
+          const challenge = await configured.data.auth.mfa.challenge({ factorId: totp.id });
+          if (!challenge.error && challenge.data) {
+            return {
+              ok: true,
+              data: {
+                kind: "mfa_required",
+                challenge: { factorId: totp.id, challengeId: challenge.data.id },
+              },
+            };
+          }
+        }
+      }
+    } catch {
+      // MFA APIs unavailable — continue with password session.
+    }
+
+    try {
+      const { data: restriction, error: restrictionError } = await configured.data.rpc("get_own_account_restriction");
+      if (!restrictionError && restriction && typeof restriction === "object" && !Array.isArray(restriction)) {
+        const row = restriction as { restricted?: boolean; status?: string };
+        if (row.restricted === true) {
+          await configured.data.auth.signOut();
+          const status = typeof row.status === "string" ? row.status : "restricted";
+          return authError(
+            "AUTH_ACCOUNT_RESTRICTED",
+            status === "disabled"
+              ? "This account has been disabled by Picom operators."
+              : "This account is temporarily suspended. Contact support if you need help.",
+          );
+        }
+      }
+    } catch {
+      // Restriction RPC may be undeployed; do not block sign-in on missing contract.
+    }
+
+    return { ok: true, data: { kind: "session", session } };
+  },
+
+  async verifyMfaChallenge(factorId: string, challengeId: string, code: string): Promise<AuthServiceResult<AuthServiceSession>> {
+    const trimmed = code.trim();
+    if (!/^\d{6}$/.test(trimmed)) {
+      return authError("AUTH_INVALID_INPUT", "Enter the 6-digit authenticator code.");
+    }
+    const configured = getConfiguredClient();
+    if (!configured.ok) return configured;
+    if (!configured.data) return authError("AUTH_NOT_CONFIGURED", "Supabase Auth is not configured.");
+
+    const { error } = await configured.data.auth.mfa.verify({
+      factorId,
+      challengeId,
+      code: trimmed,
+    });
+    if (error) return { ok: false, error: mapSupabaseError(error) };
+    const current = await configured.data.auth.getSession();
+    const mapped = mapSession(current.data.session);
+    if (!mapped?.user) return authError("AUTH_PROVIDER_ERROR", "MFA verification succeeded but no session is available.");
+    return { ok: true, data: mapped };
   },
 
   async signUpWithEmailPassword(email: string, password: string, displayName: string | undefined, acceptedLegalVersion: string): Promise<AuthServiceResult<AuthSignUpOutcome>> {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail || !password) {
       return authError("AUTH_INVALID_INPUT", "Email and password are required.");
+    }
+    if (/@(?:steam|epic|external)\.users\.picom\.local$/i.test(normalizedEmail)) {
+      return authError("AUTH_INVALID_INPUT", "This email domain is reserved for Picom sign-in providers.");
     }
     if (acceptedLegalVersion !== legalConfig.currentVersion) return authError("AUTH_INVALID_INPUT", "Accept the current Terms of Service and Privacy Notice before registering.");
 
@@ -213,7 +333,6 @@ export const authService = {
 
     if (!configured.data) {
       const session = getMockSession(normalizedEmail);
-      if (session.user) termsAcceptanceService.recordMockRegistrationAcceptance(session.user.id);
       return { ok: true, data: { session, user: session.user, requiresEmailVerification: false, message: "Picom mock account created." } };
     }
 
@@ -232,14 +351,25 @@ export const authService = {
 
     const session = mapSession(data.session);
     const user = mapUser(data.user);
-    if (!session && !user) return authError("AUTH_PROVIDER_ERROR", "Supabase did not return an account or session.");
+    if (!session || !user) {
+      return authError(
+        "AUTH_PROVIDER_ERROR",
+        "Account could not be signed in automatically. Soft verification requires Confirm Email to be disabled in Supabase Auth settings.",
+      );
+    }
+
+    // Soft verification email — never blocks signup/login.
+    void import("./softEmailVerificationService")
+      .then(({ resendSoftEmailVerification }) => resendSoftEmailVerification())
+      .catch(() => undefined);
+
     return {
       ok: true,
       data: {
         session,
         user,
-        requiresEmailVerification: !session,
-        message: session ? "Picom account created and signed in." : "Account created. Check your email to verify the account, then sign in.",
+        requiresEmailVerification: false,
+        message: "Picom account created and signed in.",
       },
     };
   },
@@ -268,7 +398,13 @@ export const authService = {
     }
 
     const { error } = await configured.data.auth.resetPasswordForEmail(normalizedEmail, { redirectTo: appConfig.supabase.passwordResetRedirectUrl });
-    if (error && isRateLimitError(error)) return authError("AUTH_RATE_LIMITED", rateLimitUserMessage);
+    if (error) {
+      if (isRateLimitError(error)) return authError("AUTH_RATE_LIMITED", rateLimitUserMessage);
+      return authError(
+        "AUTH_PROVIDER_ERROR",
+        "Password reset email could not be sent. Try again shortly or contact verify@picom.gg.",
+      );
+    }
 
     return {
       ok: true,
@@ -279,12 +415,17 @@ export const authService = {
     };
   },
 
-  async preparePasswordRecovery(code: string): Promise<AuthServiceResult<{ message: string }>> {
-    if (!/^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return authError("AUTH_INVALID_INPUT", "This password reset link is invalid or expired.");
+  async preparePasswordRecovery(params: { code?: string; tokenHash?: string }): Promise<AuthServiceResult<{ message: string }>> {
+    const { code, tokenHash } = params;
+    const candidate = tokenHash ?? code;
+    if (!candidate || !/^[a-zA-Z0-9._~-]{8,1024}$/.test(candidate)) return authError("AUTH_INVALID_INPUT", "This password reset link is invalid or expired.");
     const configured = getConfiguredClient();
     if (!configured.ok) return configured;
     if (!configured.data) return { ok: true, data: { message: "Mock password recovery is ready." } };
-    const { error } = await configured.data.auth.exchangeCodeForSession(code);
+    // token_hash uses verifyOtp (prefetch-safe, no PKCE verifier needed); code uses PKCE exchange.
+    const { error } = tokenHash
+      ? await configured.data.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" })
+      : await configured.data.auth.exchangeCodeForSession(code as string);
     if (error) return authError("AUTH_SESSION_EXPIRED", "This password reset link is invalid or expired. Request a new one.");
     return { ok: true, data: { message: "Choose a new password to finish recovery." } };
   },
@@ -342,7 +483,13 @@ export const authService = {
     lastEmailVerificationRequestAt = now;
 
     const { error } = await configured.data.auth.resend({ type: "signup", email: emailForResend, options: { emailRedirectTo: appConfig.supabase.emailVerificationRedirectUrl } });
-    if (error && isRateLimitError(error)) return authError("AUTH_RATE_LIMITED", rateLimitUserMessage);
+    if (error) {
+      if (isRateLimitError(error)) return authError("AUTH_RATE_LIMITED", rateLimitUserMessage);
+      return authError(
+        "AUTH_PROVIDER_ERROR",
+        "Verification email could not be sent. Try again shortly or contact verify@picom.gg.",
+      );
+    }
 
     return {
       ok: true,
@@ -353,12 +500,18 @@ export const authService = {
     };
   },
 
-  async confirmEmailVerification(code: string): Promise<AuthServiceResult<{ message: string; verifiedAt: string | null }>> {
-    if (!/^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return authError("AUTH_INVALID_INPUT", "This email verification link is invalid or expired.");
+  async confirmEmailVerification(params: { code?: string; tokenHash?: string; type?: string }): Promise<AuthServiceResult<{ message: string; verifiedAt: string | null }>> {
+    const { code, tokenHash, type } = params;
+    const candidate = tokenHash ?? code;
+    if (!candidate || !/^[a-zA-Z0-9._~-]{8,1024}$/.test(candidate)) return authError("AUTH_INVALID_INPUT", "This email verification link is invalid or expired.");
     const configured = getConfiguredClient();
     if (!configured.ok) return configured;
     if (!configured.data) return { ok: true, data: { message: "Mock email verification completed.", verifiedAt: new Date().toISOString() } };
-    const { error } = await configured.data.auth.exchangeCodeForSession(code);
+    // token_hash uses verifyOtp (prefetch-safe); code uses PKCE exchange. email_change tokens verify as that type.
+    const otpType = type === "email_change" ? "email_change" : "signup";
+    const { error } = tokenHash
+      ? await configured.data.auth.verifyOtp({ token_hash: tokenHash, type: otpType })
+      : await configured.data.auth.exchangeCodeForSession(code as string);
     if (error) return authError("AUTH_SESSION_EXPIRED", "This email verification link is invalid or expired. Request a new one.");
     const { data, error: userError } = await configured.data.auth.getUser();
     if (userError || !data.user?.email_confirmed_at) return authError("AUTH_PROVIDER_ERROR", "Email verification could not be confirmed. Request a new link.");
@@ -423,12 +576,48 @@ export const authService = {
       return { ok: true, data: null };
     }
 
-    const { data, error } = await configured.data.auth.getUser();
-    if (error) {
-      return { ok: false, error: mapSupabaseError(error) };
+    const client = configured.data;
+
+    // Companion (and other secondary windows) create a fresh client; wait for storage hydration
+    // so an already-signed-in Main session is not reported as missing.
+    // Captured before the `if (!session)` guard: inside that block TypeScript narrows
+    // `session` to `null`, so `NonNullable<typeof session>` would collapse to `never`.
+    type HydratedSession = NonNullable<Awaited<ReturnType<typeof client.auth.getSession>>["data"]["session"]>;
+    let session = (await client.auth.getSession()).data.session;
+    if (!session) {
+      session = await new Promise<HydratedSession | null>((resolve) => {
+        let settled = false;
+        let subscription = { unsubscribe() { /* replaced below */ } };
+        const finish = (value: HydratedSession | null) => {
+          if (settled) return;
+          settled = true;
+          subscription.unsubscribe();
+          globalThis.clearTimeout(timeout);
+          resolve(value);
+        };
+        const timeout = globalThis.setTimeout(() => finish(null), 2_000);
+        const listener = client.auth.onAuthStateChange((event, next) => {
+          if (event === "INITIAL_SESSION" || next) finish(next);
+        });
+        subscription = listener.data.subscription;
+        void client.auth.getSession().then(({ data: again }) => {
+          if (again.session) finish(again.session);
+        });
+      });
     }
 
-    return { ok: true, data: mapUser(data.user) };
+    if (!session?.user) {
+      return { ok: true, data: null };
+    }
+
+    const { data, error } = await client.auth.getUser();
+    if (error) {
+      // Keep the local session identity for shell UI. Transient getUser 401/network must not
+      // look like signed-out Companion ("Oturum gerekli" while Main is still logged in).
+      return { ok: true, data: mapUser(session.user) };
+    }
+
+    return { ok: true, data: mapUser(data.user ?? session.user) };
   },
 
   async signOut(): Promise<AuthServiceResult<void>> {

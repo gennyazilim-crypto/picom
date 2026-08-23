@@ -1,0 +1,14 @@
+{
+  "aliases": ["E2E_USER_A", "E2E_USER_B"],
+  "created_at": null,
+  "method": "NONE",
+  "backend_ref": "cqnsetsmcduraryemhbi",
+  "test_ownership": "not_established",
+  "fresh_onboarding_state": "unknown",
+  "email_verification_state": "UNKNOWN",
+  "legal_acceptance_performed": false,
+  "account_onboarding_performed": false,
+  "social_data_created": false,
+  "deleted_at_end": false,
+  "secrets_stored": false
+}

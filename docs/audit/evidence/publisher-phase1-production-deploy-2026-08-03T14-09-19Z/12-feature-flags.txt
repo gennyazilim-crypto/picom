@@ -1,0 +1,11 @@
+FEATURE_FLAGS=FAIL_CLOSED_DEFAULT_OFF_IN_PRODUCTION
+keys=
+enablePublisherApplication=OFF
+enablePublisherReview=OFF
+enablePublisherBadgeDisplay=OFF
+enableLiveNowDiscovery=OFF
+enableGoLive=OFF
+enablePublisherReminders=OFF
+enablePublisherNotificationPreferences=OFF
+controlled_enablement=NOT_STARTED
+reason=Migration chain incomplete; public rollout blocked

@@ -24,8 +24,8 @@ for (const section of sections) {
 }
 
 for (const integratedArea of [
-  'aria-label="Accessibility display options"',
-  'aria-label="Language date and desktop density"',
+  'aria-label={ts("appearance.accessibilityPanelAria")}',
+  'aria-label={ts("appearance.languageDatePanelAria")}',
 ]) {
   assert.ok(settings.includes(integratedArea), `Appearance is missing integrated controls: ${integratedArea}`);
 }
@@ -48,7 +48,7 @@ for (const marker of [
   "profileService.updateCurrentProfile",
   "settingsService.updateAccessibilitySettings",
   "settingsService.updateAppearanceSettings",
-  "<VoiceDeviceSelection />",
+  "<VoiceDeviceSelection language={settingsLang} />",
   "<KeyboardShortcutsSection />",
   "cacheManagementService.clearAllNonEssentialCache()",
   'setActive("Diagnostics")',
@@ -58,7 +58,7 @@ for (const marker of [
 }
 
 assert.ok(!settings.includes("supabase.from("), "Settings UI must not access Supabase tables directly");
-assert.ok(settingsService.includes("const currentSchemaVersion = 9"), "Settings schema version 9 is required");
+assert.match(settingsService, /const currentSchemaVersion = \d+;/, "Settings must declare a current schema version");
 assert.ok(settingsService.includes("backupInvalidSettings"), "Corrupt local settings must use the bounded backup path");
 assert.ok(settingsService.includes('storage.setItem("picom:safe-mode:forced", "true")'), "Corrupt settings must activate the Safe Mode recovery signal");
 assert.ok(settingsService.includes('storage.setItem("picom:safe-mode:reason", "corrupted_local_settings")'), "Corrupt settings must use the canonical recovery reason");

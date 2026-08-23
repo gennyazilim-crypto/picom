@@ -1,0 +1,8 @@
+TASK 13C.2A does not run Auth E2E suites.
+typecheck: NOT_REQUIRED
+build: NOT_REQUIRED
+packaged_register: NOT_STARTED
+admin_provisioning: NOT_USED
+hosted_rpc_reverify: PASS CANONICAL_5_ARG
+hosted_migration_row: 20260816202306 reconcile_account_onboarding_rpc_contract
+artifact_sha: PASS

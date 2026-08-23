@@ -1,0 +1,9 @@
+{
+  "PACKAGED_AUTH_BACKEND": "picom-production",
+  "ref": "cqnsetsmcduraryemhbi",
+  "host": "cqnsetsmcduraryemhbi.supabase.co",
+  "proof": "ASCII scan of packaged resources/app.asar found only cqnsetsmcduraryemhbi.supabase.co (6 occurrences). No staging ref.",
+  "env_production_host": "cqnsetsmcduraryemhbi.supabase.co",
+  "env_local_host": "ufmtvqtsklqsmqxefbbs.supabase.co",
+  "note": "Packaged artifact authenticates against production, not staging."
+}

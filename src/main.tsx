@@ -1,13 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import { DesktopStartupErrorBoundary } from "./components/DesktopStartupErrorBoundary";
+import { CompanionApp } from "./features/companion/CompanionApp";
+import { isCompanionWindowSearch } from "./features/companion/companionTypes";
 import { deepLinkService } from "./services/deepLinkService";
 import { safeModeService } from "./services/safeModeService";
 import { crashReporterService } from "./services/crashReporterService";
 import { localDataMigrationService } from "./services/localDataMigrationService";
 import { productionRuntimeConfigService } from "./services/productionRuntimeConfigService";
 import { settingsService } from "./services/settingsService";
+import { appearanceService } from "./services/appearanceService";
+import { DEFAULT_UI_LANGUAGE, normalizeUiLanguage } from "./services/localization/uiLanguages";
+import { I18nProvider } from "./i18n";
 import { profileMediaRealtimeService } from "./services/profileMedia/profileMediaRealtimeService";
 import { ProductionConfigurationError } from "./components/ProductionConfigurationError";
 import "./styles.css";
@@ -18,11 +23,14 @@ function markRuntime(): void {
 
   if (!runtimeInfo) {
     document.documentElement.dataset.runtime = "browser";
-    return;
+  } else {
+    document.documentElement.dataset.runtime = runtimeInfo.runtime;
+    document.documentElement.dataset.platform = runtimeInfo.platform;
   }
 
-  document.documentElement.dataset.runtime = runtimeInfo.runtime;
-  document.documentElement.dataset.platform = runtimeInfo.platform;
+  if (isCompanionWindowSearch()) {
+    document.documentElement.dataset.companionWindow = "true";
+  }
 }
 
 function getRootElement(): HTMLElement {
@@ -60,15 +68,35 @@ function scheduleOptionalRendererServices(safeModeActive: boolean): void {
   window.setTimeout(start, 0);
 }
 
-function bootstrapRenderer(): void {
+/** Switches between main desktop App and Electron Companion windows (`?picomWindow=companion`). */
+function DesktopRendererRoot() {
+  const [companionWindow, setCompanionWindow] = useState(() => isCompanionWindowSearch());
+
+  useEffect(() => {
+    const sync = () => {
+      const next = isCompanionWindowSearch();
+      setCompanionWindow(next);
+      if (next) document.documentElement.dataset.companionWindow = "true";
+      else delete document.documentElement.dataset.companionWindow;
+    };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+
+  return companionWindow ? <CompanionApp /> : <App />;
+}
+
+async function bootstrapRenderer(): Promise<void> {
   markRuntime();
   const productionConfiguration = productionRuntimeConfigService.getConfiguration();
   if (!productionConfiguration.ready) {
     ReactDOM.createRoot(getRootElement()).render(
       <React.StrictMode>
+      <I18nProvider locale={DEFAULT_UI_LANGUAGE}>
         <DesktopStartupErrorBoundary>
           <ProductionConfigurationError configuration={productionConfiguration} />
         </DesktopStartupErrorBoundary>
+      </I18nProvider>
       </React.StrictMode>,
     );
     return;
@@ -76,22 +104,31 @@ function bootstrapRenderer(): void {
   const migration = localDataMigrationService.migrateOnStartup();
   if (!migration.ok) safeModeService.enableSafeMode("local_data_migration_failed");
   // Warm settings so corrupted local JSON can flip Safe Mode before optional services start.
-  settingsService.getSettings();
+  const startupSettings = settingsService.getSettings();
+  const startupLocale = normalizeUiLanguage(startupSettings.appearanceSettings.language);
+  const startupTheme = appearanceService.resolveTheme(startupSettings.appearanceSettings.themeMode);
+  // Apply root attributes and the whitelisted native zoom before React paints the desktop.
+  appearanceService.applyDocumentPreferences(startupTheme, startupSettings.appearanceSettings, startupSettings.accessibilitySettings);
+  await appearanceService.applyInterfaceScale(startupSettings.accessibilitySettings.interfaceScale);
   const safeMode = safeModeService.getStartupState();
+  const companionWindow = isCompanionWindowSearch();
 
-  if (!safeMode.active) {
+  // Companion windows are dedicated shells; deep links belong on the main window.
+  if (!safeMode.active && !companionWindow) {
     deepLinkService.startNativeListener();
   }
 
   ReactDOM.createRoot(getRootElement()).render(
     <React.StrictMode>
-      <DesktopStartupErrorBoundary>
-        <App />
-      </DesktopStartupErrorBoundary>
+      <I18nProvider locale={startupLocale}>
+        <DesktopStartupErrorBoundary>
+          <DesktopRendererRoot />
+        </DesktopStartupErrorBoundary>
+      </I18nProvider>
     </React.StrictMode>
   );
 
   scheduleOptionalRendererServices(safeMode.active);
 }
 
-bootstrapRenderer();
+void bootstrapRenderer();

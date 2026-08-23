@@ -1,0 +1,7 @@
+picom.gg            A    23.254.166.240
+www.picom.gg        A    23.254.166.240
+account.picom.gg    A    23.254.166.240
+auth.picom.gg       A    23.254.166.240
+AAAA: none published (SOA only on AAAA lookup)
+getent on VPS: all three names → 23.254.166.240
+DNS not modified.

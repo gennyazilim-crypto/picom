@@ -1,4 +1,6 @@
 export type VoiceDevicePermission = "prompt" | "granted" | "denied" | "unsupported";
+export type VoiceDeviceSetupStatus = "unknown" | "prompt" | "requesting" | "granted" | "denied" | "unavailable" | "error" | "unsupported";
+export type VoiceDeviceErrorKind = "permission" | "unavailable" | "busy" | "unsupported" | "output-routing" | "unknown" | null;
 export type VoiceAudioCaptureOptions = Readonly<{
   deviceId?: ConstrainDOMString;
   echoCancellation?: ConstrainBoolean;
@@ -9,6 +11,7 @@ export type VoiceAudioCaptureOptions = Readonly<{
 export type VoiceDeviceOption = {
   deviceId: string;
   label: string;
+  labelIsFallback?: boolean;
   isDefault: boolean;
 };
 
@@ -19,6 +22,7 @@ export type VoiceDeviceSelectionOptions = Readonly<{
 export type VoiceDeviceSnapshot = {
   isSupported: boolean;
   permission: VoiceDevicePermission;
+  setupStatus: VoiceDeviceSetupStatus;
   inputDevices: VoiceDeviceOption[];
   outputDevices: VoiceDeviceOption[];
   selectedInputId: string;
@@ -30,9 +34,14 @@ export type VoiceDeviceSnapshot = {
   supportedConstraints: Readonly<{ echoCancellation: boolean; noiseSuppression: boolean; autoGainControl: boolean }>;
   microphoneTestActive: boolean;
   microphoneLevel: number;
+  /** True after a user has started a local microphone test during this app session. */
+  microphoneTestAttempted: boolean;
+  /** Set only after the local analyser has observed a real input threshold during this app session. */
+  microphoneTestPassed: boolean;
   outputTestActive: boolean;
   isLoading: boolean;
   error: string | null;
+  errorKind: VoiceDeviceErrorKind;
   notice: string | null;
   deviceRevision: number;
 };
@@ -74,6 +83,7 @@ const supportedMediaConstraints = mediaDevices?.getSupportedConstraints?.() ?? {
 let snapshot: VoiceDeviceSnapshot = {
   isSupported: Boolean(mediaDevices),
   permission: mediaDevices ? "prompt" : "unsupported",
+  setupStatus: mediaDevices ? "unknown" : "unsupported",
   inputDevices: [],
   outputDevices: [],
   ...initialPreferences,
@@ -84,9 +94,12 @@ let snapshot: VoiceDeviceSnapshot = {
   },
   microphoneTestActive: false,
   microphoneLevel: 0,
+  microphoneTestAttempted: false,
+  microphoneTestPassed: false,
   outputTestActive: false,
   isLoading: false,
   error: null,
+  errorKind: null,
   notice: null,
   deviceRevision: 0,
 };
@@ -101,6 +114,9 @@ let outputTestContext: AudioContext | null = null;
 let outputTestTimer: ReturnType<typeof setTimeout> | null = null;
 let outputTestResolve: (() => void) | null = null;
 let outputTestGeneration = 0;
+let microphoneTestGeneration = 0;
+let inputSelectionGeneration = 0;
+let refreshGeneration = 0;
 let deviceChangeTimer: ReturnType<typeof setTimeout> | null = null;
 let microphonePermissionStatus: PermissionStatus | null = null;
 let permissionStatusCleanup: (() => void) | null = null;
@@ -162,16 +178,29 @@ const toOptions = (devices: MediaDeviceInfo[], kind: MediaDeviceKind): VoiceDevi
     .map((device, index) => ({
       deviceId: device.deviceId,
       label: device.label || `${kind === "audioinput" ? "Microphone" : "Speaker"} ${index + 1}`,
+      labelIsFallback: !device.label,
       isDefault: device.deviceId === "default",
     }));
 
 const normalizeSelection = (selectedId: string, devices: VoiceDeviceOption[]) =>
-  devices.some((device) => device.deviceId === selectedId) ? selectedId : devices[0]?.deviceId || "default";
+  devices.some((device) => device.deviceId === selectedId)
+    ? selectedId
+    : devices.find((device) => device.deviceId === "default")?.deviceId ?? devices[0]?.deviceId ?? "default";
 
-const permissionFromError = (error: unknown): VoiceDevicePermission =>
+const errorKindFrom = (error: unknown): Exclude<VoiceDeviceErrorKind, null> =>
   error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "SecurityError")
-    ? "denied"
-    : snapshot.permission;
+    ? "permission"
+    : error instanceof DOMException && (error.name === "NotFoundError" || error.name === "OverconstrainedError")
+      ? "unavailable"
+      : error instanceof DOMException && (error.name === "NotReadableError" || error.name === "AbortError")
+        ? "busy"
+        : "unknown";
+
+const permissionFromError = (error: unknown): VoiceDevicePermission => {
+  const errorKind = errorKindFrom(error);
+  if (errorKind === "permission") return "denied";
+  return snapshot.permission;
+};
 
 const deviceErrorMessage = (error: unknown): string => error instanceof DOMException && (error.name === "NotReadableError" || error.name === "AbortError")
   ? "The selected microphone is busy in another application. Picom can fall back to the system default input."
@@ -182,17 +211,17 @@ const deviceErrorMessage = (error: unknown): string => error instanceof DOMExcep
 async function applyObservedMicrophonePermission(state: PermissionState): Promise<void> {
   if (state === "denied") {
     voiceDeviceService.stopMicrophoneTest();
-    emit({ permission: "denied", deviceRevision: snapshot.deviceRevision + 1, error: "Microphone permission was revoked. Enable it in system settings, then retry from Picom.", notice: "Microphone access changed; the meeting microphone was turned off." });
+    emit({ permission: "denied", setupStatus: "denied", deviceRevision: snapshot.deviceRevision + 1, error: "Microphone permission was revoked. Enable it in system settings, then retry from Picom.", errorKind: "permission", notice: "Microphone access changed; the meeting microphone was turned off." });
     publishPreferences();
     return;
   }
   if (state === "granted") {
-    emit({ permission: "granted", deviceRevision: snapshot.deviceRevision + 1, error: null, notice: "Microphone permission is available again. Picom is restoring your meeting device preference." });
+    emit({ permission: "granted", setupStatus: "granted", deviceRevision: snapshot.deviceRevision + 1, error: null, errorKind: null, notice: "Microphone permission is available again. Picom is restoring your meeting device preference." });
     await voiceDeviceService.refresh(false);
     publishPreferences();
     return;
   }
-  if (snapshot.permission !== "granted") emit({ permission: "prompt", error: null });
+  if (snapshot.permission !== "granted") emit({ permission: "prompt", setupStatus: "prompt", error: null, errorKind: null });
 }
 
 async function attachPermissionStatusListener(): Promise<void> {
@@ -262,6 +291,11 @@ export const voiceDeviceService = {
     return createAudioConstraints();
   },
 
+  supportsOutputSelection(): boolean {
+    if (typeof AudioContext === "undefined") return false;
+    return typeof (AudioContext.prototype as AudioContext & { setSinkId?: unknown }).setSinkId === "function";
+  },
+
   getPermissionGuidance(): string {
     if (typeof navigator === "undefined") return "Open the operating-system privacy settings, allow microphone access for Picom, then retry.";
     const platform = `${navigator.platform ?? ""} ${navigator.userAgent ?? ""}`.toLowerCase();
@@ -273,12 +307,12 @@ export const voiceDeviceService = {
 
   async refresh(requestPermission = false): Promise<VoiceDeviceSnapshot> {
     if (!mediaDevices?.enumerateDevices) {
-      emit({ isSupported: false, permission: "unsupported", error: "Media device selection is not supported in this runtime." });
+      emit({ isSupported: false, permission: "unsupported", setupStatus: "unsupported", error: "Media device selection is not supported in this runtime.", errorKind: "unsupported" });
       return snapshot;
     }
 
-    if (!requestPermission && snapshot.permission !== "granted") return snapshot;
-    emit({ isLoading: true, error: null, notice: null });
+    const generation = ++refreshGeneration;
+    emit({ isLoading: true, error: null, errorKind: null, notice: null, ...(requestPermission ? { setupStatus: "requesting" as const } : {}) });
     let permission = snapshot.permission;
     try {
       if (requestPermission) {
@@ -294,9 +328,8 @@ export const voiceDeviceService = {
       const outputDevices = toOptions(devices, "audiooutput");
       const selectedInputId = normalizeSelection(snapshot.selectedInputId, inputDevices);
       const selectedOutputId = normalizeSelection(snapshot.selectedOutputId, outputDevices);
-      const inputRemoved = previousInputId !== "default" && selectedInputId !== previousInputId;
-      const outputRemoved = previousOutputId !== "default" && selectedOutputId !== previousOutputId;
-      const restartMicrophoneTest = inputRemoved && snapshot.microphoneTestActive;
+      const inputRemoved = !inputDevices.some((device) => device.deviceId === previousInputId);
+      const outputRemoved = !outputDevices.some((device) => device.deviceId === previousOutputId);
       const notice = inputRemoved && outputRemoved
         ? "The selected microphone and speaker were removed. Picom switched to available system devices."
         : inputRemoved
@@ -304,20 +337,37 @@ export const voiceDeviceService = {
           : outputRemoved
             ? "The selected speaker was removed. Picom switched to an available output."
             : null;
-      emit({ inputDevices, outputDevices, selectedInputId, selectedOutputId, permission, isLoading: false, notice });
+      if (generation !== refreshGeneration) return snapshot;
+      if (inputRemoved) stopMicrophoneTestResources();
+      if (outputRemoved) stopOutputTestResources();
+      emit({
+        inputDevices,
+        outputDevices,
+        selectedInputId,
+        selectedOutputId,
+        permission,
+        setupStatus: permission === "granted" ? "granted" : permission,
+        isLoading: false,
+        notice,
+        microphoneTestActive: inputRemoved ? false : snapshot.microphoneTestActive,
+        microphoneLevel: inputRemoved ? 0 : snapshot.microphoneLevel,
+        microphoneTestAttempted: inputRemoved ? false : snapshot.microphoneTestAttempted,
+        microphoneTestPassed: inputRemoved ? false : snapshot.microphoneTestPassed,
+        outputTestActive: outputRemoved ? false : snapshot.outputTestActive,
+      });
       persist();
       if (selectedInputId !== previousInputId || selectedOutputId !== previousOutputId) {
-        if (restartMicrophoneTest) voiceDeviceService.stopMicrophoneTest();
-        if (outputRemoved && snapshot.outputTestActive) voiceDeviceService.stopOutputTest();
         publishPreferences();
-        if (restartMicrophoneTest) await voiceDeviceService.startMicrophoneTest();
       }
     } catch (error) {
       permission = permissionFromError(error);
+      if (generation !== refreshGeneration) return snapshot;
       emit({
         permission,
+        setupStatus: errorKindFrom(error) === "unavailable" ? "unavailable" : permission === "denied" ? "denied" : "error",
         isLoading: false,
         notice: null,
+        errorKind: errorKindFrom(error),
         error: permission === "denied" ? "Microphone permission was denied. Enable it in system settings and try again." : deviceErrorMessage(error),
       });
     }
@@ -326,30 +376,34 @@ export const voiceDeviceService = {
 
   async selectInput(deviceId: string): Promise<boolean> {
     if (!snapshot.inputDevices.some((device) => device.deviceId === deviceId)) return false;
+    const generation = ++inputSelectionGeneration;
     try {
-      const restartMicrophoneTest = snapshot.microphoneTestActive;
       const nextSnapshot = { ...snapshot, selectedInputId: deviceId };
       const stream = await mediaDevices!.getUserMedia({
         audio: createAudioConstraints(nextSnapshot),
         video: false,
       });
       stream.getTracks().forEach((track) => track.stop());
-      if (restartMicrophoneTest) voiceDeviceService.stopMicrophoneTest();
-      emit({ selectedInputId: deviceId, permission: "granted", error: null, notice: null });
+      if (generation !== inputSelectionGeneration) return false;
+      voiceDeviceService.stopMicrophoneTest();
+      emit({ selectedInputId: deviceId, permission: "granted", setupStatus: "granted", error: null, errorKind: null, notice: null });
       persist();
       publishPreferences();
-      if (restartMicrophoneTest) await voiceDeviceService.startMicrophoneTest();
       return true;
     } catch (error) {
+      if (generation !== inputSelectionGeneration) return false;
       if (deviceId !== "default" && snapshot.inputDevices.some((device) => device.deviceId === "default")) {
         try {
           const fallback = await mediaDevices!.getUserMedia({ audio: createAudioConstraints({ ...snapshot, selectedInputId: "default" }), video: false });
           fallback.getTracks().forEach((track) => track.stop());
-          emit({ selectedInputId: "default", permission: "granted", deviceRevision: snapshot.deviceRevision + 1, error: null, notice: "The selected microphone was unavailable. Picom switched to the system default input." });
+          if (generation !== inputSelectionGeneration) return false;
+          voiceDeviceService.stopMicrophoneTest();
+          emit({ selectedInputId: "default", permission: "granted", setupStatus: "granted", deviceRevision: snapshot.deviceRevision + 1, error: null, errorKind: null, notice: "The selected microphone was unavailable. Picom switched to the system default input." });
           persist();publishPreferences();return true;
         } catch { /* Report the original selection failure below. */ }
       }
-      emit({ permission: permissionFromError(error), error: deviceErrorMessage(error) });
+      const permission = permissionFromError(error);
+      emit({ permission, setupStatus: errorKindFrom(error) === "unavailable" ? "unavailable" : permission === "denied" ? "denied" : "error", errorKind: errorKindFrom(error), error: deviceErrorMessage(error) });
       return false;
     }
   },
@@ -357,7 +411,7 @@ export const voiceDeviceService = {
   selectOutput(deviceId: string, options: VoiceDeviceSelectionOptions = {}): boolean {
     if (!snapshot.outputDevices.some((device) => device.deviceId === deviceId)) return false;
     if (snapshot.outputTestActive) voiceDeviceService.stopOutputTest();
-    emit({ selectedOutputId: deviceId, error: null, notice: null });
+    emit({ selectedOutputId: deviceId, error: null, errorKind: null, notice: null });
     persist();
     if (options.notifyConsumers !== false) publishPreferences();
     return true;
@@ -377,47 +431,56 @@ export const voiceDeviceService = {
 
   async startMicrophoneTest(captureConstraints?: VoiceAudioCaptureOptions): Promise<boolean> {
     if (!mediaDevices?.getUserMedia || typeof AudioContext === "undefined") {
-      emit({ error: "Microphone testing is unavailable in this runtime." });
+      emit({ permission: "unsupported", setupStatus: "unsupported", error: "Microphone testing is unavailable in this runtime.", errorKind: "unsupported" });
       return false;
     }
     voiceDeviceService.stopMicrophoneTest();
+    const generation = ++microphoneTestGeneration;
     try {
-      microphoneTestStream = await mediaDevices.getUserMedia({ audio: captureConstraints ?? createAudioConstraints(), video: false });
-      microphoneTestContext = new AudioContext();
-      const source = microphoneTestContext.createMediaStreamSource(microphoneTestStream);
-      const analyser = microphoneTestContext.createAnalyser();
+      const stream = await mediaDevices.getUserMedia({ audio: captureConstraints ?? createAudioConstraints(), video: false });
+      if (generation !== microphoneTestGeneration) {
+        stream.getTracks().forEach((track) => track.stop());
+        return false;
+      }
+      const context = new AudioContext();
+      microphoneTestStream = stream;
+      microphoneTestContext = context;
+      const source = context.createMediaStreamSource(stream);
+      const analyser = context.createAnalyser();
       analyser.fftSize = 512;
       source.connect(analyser);
       const samples = new Uint8Array(analyser.fftSize);
-      emit({ permission: "granted", microphoneTestActive: true, microphoneLevel: 0, error: null });
+      emit({ permission: "granted", setupStatus: "granted", microphoneTestActive: true, microphoneLevel: 0, microphoneTestAttempted: true, microphoneTestPassed: false, error: null, errorKind: null });
       const measure = () => {
-        if (!microphoneTestContext || !microphoneTestStream) return;
+        if (generation !== microphoneTestGeneration || microphoneTestContext !== context || microphoneTestStream !== stream) return;
         analyser.getByteTimeDomainData(samples);
         let sum = 0;
         for (const sample of samples) { const normalized = (sample - 128) / 128; sum += normalized * normalized; }
-        emit({ microphoneLevel: Math.min(1, Math.sqrt(sum / samples.length) * 3.4) });
+        const level = Math.min(1, Math.sqrt(sum / samples.length) * 3.4);
+        emit({ microphoneLevel: level, microphoneTestPassed: snapshot.microphoneTestPassed || level >= 0.06 });
         microphoneTestFrame = requestAnimationFrame(measure);
       };
       measure();
       return true;
     } catch (error) {
-      stopMicrophoneTestResources();
+      if (generation === microphoneTestGeneration) stopMicrophoneTestResources();
       const permission = permissionFromError(error);
-      emit({ permission, microphoneTestActive: false, microphoneLevel: 0, error: permission === "denied" ? "Microphone permission was denied. Enable it in system settings and try again." : "The selected microphone could not be tested." });
+      if (generation === microphoneTestGeneration) emit({ permission, setupStatus: errorKindFrom(error) === "unavailable" ? "unavailable" : permission === "denied" ? "denied" : "error", microphoneTestActive: false, microphoneLevel: 0, errorKind: errorKindFrom(error), error: permission === "denied" ? "Microphone permission was denied. Enable it in system settings and try again." : "The selected microphone could not be tested." });
       return false;
     }
   },
 
   stopMicrophoneTest(): void {
+    microphoneTestGeneration += 1;
     stopMicrophoneTestResources();
     emit({ microphoneTestActive: false, microphoneLevel: 0 });
   },
 
   async testOutput(): Promise<boolean> {
-    if (typeof AudioContext === "undefined") { emit({ error: "Speaker testing is unavailable in this runtime." }); return false; }
+    if (typeof AudioContext === "undefined") { emit({ error: "Speaker testing is unavailable in this runtime.", errorKind: "unsupported" }); return false; }
     voiceDeviceService.stopOutputTest();
     const generation = ++outputTestGeneration;
-    emit({ outputTestActive: true, error: null });
+    emit({ outputTestActive: true, error: null, errorKind: null });
     const context = new AudioContext() as AudioContext & { setSinkId?: (sinkId: string) => Promise<void> };
     outputTestContext = context;
     try {
@@ -447,7 +510,7 @@ export const voiceDeviceService = {
       emit({ outputTestActive: false });
       return true;
     } catch (error) {
-      emit({ outputTestActive: false, error: error instanceof Error && error.message === "OUTPUT_ROUTING_UNSUPPORTED" ? "This runtime cannot route test audio to a selected speaker. Use the system default output." : "The selected speaker could not play the test tone." });
+      emit({ outputTestActive: false, errorKind: error instanceof Error && error.message === "OUTPUT_ROUTING_UNSUPPORTED" ? "output-routing" : "unknown", error: error instanceof Error && error.message === "OUTPUT_ROUTING_UNSUPPORTED" ? "This runtime cannot route test audio to a selected speaker. Use the system default output." : "The selected speaker could not play the test tone." });
       return false;
     } finally {
       if (outputTestContext === context) {
@@ -474,7 +537,7 @@ export const voiceDeviceService = {
 
   reset(): void {
     voiceDeviceService.stopTests();
-    emit({ ...defaultPreferences, error: null, notice: null });
+    emit({ ...defaultPreferences, setupStatus: "prompt", microphoneTestAttempted: false, microphoneTestPassed: false, error: null, errorKind: null, notice: null });
     persist();
     publishPreferences();
   },

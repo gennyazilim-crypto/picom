@@ -7,6 +7,7 @@ import { AppIcon, type IconName } from "./AppIcon";
 type CommunityOnboardingChecklistProps = {
   community: Community;
   currentUserId: UserId;
+  onOpenTask?: (itemId: CommunityOnboardingItemId) => void;
 };
 
 const itemIcons: Record<CommunityOnboardingItemId, IconName> = {
@@ -20,7 +21,7 @@ const itemIcons: Record<CommunityOnboardingItemId, IconName> = {
   configure_notifications: "bell",
 };
 
-export function CommunityOnboardingChecklist({ community, currentUserId }: CommunityOnboardingChecklistProps) {
+export function CommunityOnboardingChecklist({ community, currentUserId, onOpenTask }: CommunityOnboardingChecklistProps) {
   const [state, setState] = useState(() => communityOnboardingService.getState(community.id, currentUserId));
 
   const items = useMemo(() => communityOnboardingService.getItems(), []);
@@ -39,6 +40,14 @@ export function CommunityOnboardingChecklist({ community, currentUserId }: Commu
   function toggleItem(itemId: CommunityOnboardingItemId) {
     const next = communityOnboardingService.setItemCompleted(community.id, currentUserId, itemId, !completed[itemId]);
     setState(next);
+  }
+
+  function openItem(itemId: CommunityOnboardingItemId) {
+    if (onOpenTask) {
+      onOpenTask(itemId);
+      return;
+    }
+    toggleItem(itemId);
   }
 
   function dismissChecklist() {
@@ -74,7 +83,7 @@ export function CommunityOnboardingChecklist({ community, currentUserId }: Commu
               type="button"
               key={item.id}
               className={`onboarding-item${isComplete ? " complete" : ""}`}
-              onClick={() => toggleItem(item.id)}
+              onClick={() => openItem(item.id)}
               aria-pressed={isComplete}
             >
               <span className="onboarding-item-icon">

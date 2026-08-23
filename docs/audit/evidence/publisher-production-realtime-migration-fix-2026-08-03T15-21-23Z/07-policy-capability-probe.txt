@@ -1,0 +1,5 @@
+﻿probe_policy=__picom_realtime_policy_probe_202608031715
+begin_create_rollback=OK
+HTTP=201
+remaining_probe_policies=0
+RESULT=PASS

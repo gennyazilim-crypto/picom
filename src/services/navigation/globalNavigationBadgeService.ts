@@ -15,6 +15,7 @@ type BadgeDerivationInput = Readonly<{
   blockedUserIds: readonly string[];
   notificationPolicy: NotificationPolicyState;
   canViewChannel: (community: Community, channel: Channel) => boolean;
+  liveActive?: number;
   now?: number;
 }>;
 
@@ -33,18 +34,26 @@ function deriveBadges(input: BadgeDerivationInput): GlobalNavigationBadgeState {
     if (conversation.archivedAt || blocked.has(conversation.participantUserId) || isActiveMute(conversation, now)) return total;
     return total + Math.max(0, conversation.unreadCount);
   }, 0);
-  const incomingFriendRequestCount = Math.max(0, Math.floor(input.incomingFriendRequests));
+  const rawIncomingFriendRequests = Number(input.incomingFriendRequests);
+  const incomingFriendRequestCount = Number.isFinite(rawIncomingFriendRequests)
+    ? Math.max(0, Math.floor(rawIncomingFriendRequests))
+    : 0;
 
   const countedChannels = new Set<string>();
   let communityUnread = 0;
+  const communityUnreadById: Record<string, number> = {};
   for (const community of input.communities) {
     if (mutedCommunities.has(community.id)) continue;
+    let unreadForCommunity = 0;
     for (const channel of community.categories.flatMap((category) => category.channels)) {
       const key = `${community.id}:${channel.id}`;
       if (countedChannels.has(key) || mutedChannels.has(channel.id) || !input.canViewChannel(community, channel)) continue;
       countedChannels.add(key);
-      communityUnread += Math.max(0, channel.mentions ?? 0) || (channel.unread ? 1 : 0);
+      const channelUnread = Math.max(0, channel.mentions ?? 0) || (channel.unread ? 1 : 0);
+      unreadForCommunity += channelUnread;
+      communityUnread += channelUnread;
     }
+    if (unreadForCommunity > 0) communityUnreadById[community.id] = unreadForCommunity;
   }
 
   const radioLive = input.notificationPolicy.doNotDisturb ? 0 : new Set(input.activeVoiceRooms
@@ -65,6 +74,8 @@ function deriveBadges(input: BadgeDerivationInput): GlobalNavigationBadgeState {
   return {
     dmUnread: directMessageUnread + incomingFriendRequestCount,
     communityUnread,
+    communityUnreadById,
+    liveActive: isV1FeatureEnabled("liveWorkspace") ? (input.liveActive ?? 0) : 0,
     radioLive: isV1FeatureEnabled("radio") ? radioLive : 0,
     eventUpcoming: isV1FeatureEnabled("events") ? eventUpcoming : 0,
     bookmarkCount: 0,

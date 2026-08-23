@@ -1,7 +1,8 @@
-import type { MouseEvent } from "react";
+import { useMemo, type MouseEvent } from "react";
 import type { AudioFeedItem } from "../types/audio";
 import type { Attachment, Community, Member } from "../types/community";
 import type { MentionItem } from "../types/mentions";
+import { sliceFeedWindow } from "../services/feed/feedWindowing";
 import { MentionFeedCardEntry } from "./MentionFeedList";
 import { AudioFeedCard } from "./audio/AudioFeedCard";
 
@@ -12,7 +13,11 @@ type UnifiedFeedListProps = {
   savedAudioIds: ReadonlySet<string>;
   readAudioIds: ReadonlySet<string>;
   reminderAudioIds: ReadonlySet<string>;
-  onOpenImage: (attachment: Attachment) => void;
+  emptyTitle?: string;
+  emptyBody?: string;
+  ensureItemId?: string | null;
+  maxMountedItems?: number;
+  onOpenImage: (attachment: Attachment, gallery?: readonly Attachment[]) => void;
   onOpenTextInChannel: (item: MentionItem) => void;
   onToggleTextReaction: (id: string, emoji: string) => void;
   onToggleTextSaved: (id: string) => void;
@@ -35,18 +40,31 @@ type UnifiedEntry =
   | Readonly<{ kind: "audio"; id: string; createdAt: string; item: AudioFeedItem }>;
 
 export function UnifiedFeedList(props: UnifiedFeedListProps) {
-  const entries: UnifiedEntry[] = [
+  const entries: UnifiedEntry[] = useMemo(() => [
     ...props.textItems.map((item): UnifiedEntry => ({ kind: "text", id: item.id, createdAt: item.createdAt, item })),
     ...props.audioItems.map((item): UnifiedEntry => ({ kind: "audio", id: item.id, createdAt: item.createdAt, item })),
-  ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt) || right.id.localeCompare(left.id));
+  ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt) || right.id.localeCompare(left.id)), [props.audioItems, props.textItems]);
+
+  const windowed = useMemo(
+    () => sliceFeedWindow(entries, { maxMounted: props.maxMountedItems ?? 120, keepTail: true, ensureId: props.ensureItemId }),
+    [entries, props.ensureItemId, props.maxMountedItems],
+  );
 
   if (!entries.length) {
-    return <div className="mention-empty-state"><strong>No mentions match this view.</strong><span>Try another tab or clear the active quick filter.</span></div>;
+    return (
+      <div className="mention-empty-state">
+        <strong>{props.emptyTitle ?? "No mentions match this view."}</strong>
+        <span>{props.emptyBody ?? "Try another tab or clear the active quick filter."}</span>
+      </div>
+    );
   }
 
   return (
-    <section className="unified-feed-list" aria-label="Text, Radio, and Podcast mentions">
-      {entries.map((entry) => entry.kind === "text" ? (
+    <section className="unified-feed-list" aria-label="Text, Radio, and Podcast mentions" data-feed-mounted={windowed.items.length} data-feed-total={windowed.total}>
+      {windowed.trimmedLeading > 0 ? (
+        <p className="feed-window-trim" role="status">{windowed.trimmedLeading} older activities kept out of DOM</p>
+      ) : null}
+      {windowed.items.map((entry) => entry.kind === "text" ? (
         <MentionFeedCardEntry
           key={`text-${entry.id}`}
           item={entry.item}

@@ -1,0 +1,789 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-03T23:06:06.765Z",
+  "releaseCommit": "d63025c4fa6ab0f700066b570da2e8fd07a395d8",
+  "branch": "feat/community-rebuild",
+  "environmentTarget": "production",
+  "migrations": [
+    {
+      "filename": "20260803100000_community_live_screen_sessions.sql",
+      "timestamp": "20260803100000",
+      "lfNormalizedSha256": "70a2d2a347bb4c19049b61b17ba58a38a6b768373de897499d73dd1f9dec69ee",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "community_live_screen_sessions",
+          "community_live_screen_viewers",
+          "community_live_hidden_communities",
+          "community_live_share_reports"
+        ],
+        "functions": [
+          "can_view_live_screen_session",
+          "refresh_live_screen_session_viewer_count",
+          "are_users_friends",
+          "upsert_community_live_screen_session",
+          "heartbeat_community_live_screen_session",
+          "end_community_live_screen_session",
+          "join_community_live_screen_viewer",
+          "leave_community_live_screen_viewer",
+          "heartbeat_community_live_screen_viewer",
+          "cleanup_stale_community_live_screen_sessions",
+          "list_visible_live_screen_sessions",
+          "count_visible_live_screen_sessions"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803110000_go_live_broadcast_start.sql",
+      "timestamp": "20260803110000",
+      "lfNormalizedSha256": "899834c48af8123087955e2a9eced9d5842fcf5298a1ade52acd5441f987b1b4",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": [
+          "normalize_live_broadcast_title",
+          "list_go_live_broadcast_targets",
+          "start_community_live_screen_broadcast",
+          "confirm_community_live_screen_broadcast",
+          "abort_community_live_screen_broadcast",
+          "authorize_live_broadcast_livekit",
+          "expire_stale_starting_live_screen_sessions"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803130000_public_platform_stats.sql",
+      "timestamp": "20260803130000",
+      "lfNormalizedSha256": "21faf46d9a5f5ac66dc8958f321db6890d06c894be694e8e2dbb5172ac0f0cbf",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "platform_stats_exclusions",
+          "platform_stats_publication_control",
+          "public_platform_stats_snapshots"
+        ],
+        "functions": [
+          "approve_public_platform_stats_source",
+          "refresh_public_platform_stats",
+          "get_public_platform_stats"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803135000_platform_account_restrictions_canonical.sql",
+      "timestamp": "20260803135000",
+      "lfNormalizedSha256": "37f3a93cfbe43d421221cb7186fe9abc8d47717c67b3220a0bcc04e6ec2ab7d0",
+      "dependencies": [
+        "profiles"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "platform_account_restrictions"
+        ],
+        "functions": []
+      },
+      "estimatedLockRisk": "high",
+      "destructiveChange": true,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select to_regclass('public.platform_account_restrictions') is not null;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803135100_notification_preferences_canonical.sql",
+      "timestamp": "20260803135100",
+      "lfNormalizedSha256": "679c8787a85fe8801012743cff503808b523a7607c2aeba0aeccf336c3199f33",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "notification_preferences"
+        ],
+        "functions": []
+      },
+      "estimatedLockRisk": "high",
+      "destructiveChange": true,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803135200_live_broadcaster_notification_prefs_canonical.sql",
+      "timestamp": "20260803135200",
+      "lfNormalizedSha256": "45ee464d0b844026f591bee4b1263f9d2e591a0e58bd99ceb38fdad9a0e32808",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "live_broadcaster_notification_prefs"
+        ],
+        "functions": []
+      },
+      "estimatedLockRisk": "high",
+      "destructiveChange": true,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803135300_profiles_deactivated_at_canonical.sql",
+      "timestamp": "20260803135300",
+      "lfNormalizedSha256": "0024f975d66c71e79e8c6311730c4103e8ec9862bdb9ce7fe500c3850b76ccbf",
+      "dependencies": [
+        "profiles"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": []
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select exists (select 1 from information_schema.columns where table_name='profiles' and column_name='deactivated_at');",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803140000_publisher_creator_program_core.sql",
+      "timestamp": "20260803140000",
+      "lfNormalizedSha256": "4584cafe0efb22ae4ee8741ea918c19501cbeff4519cd443156aca7ab5ad7c6d",
+      "dependencies": [
+        "20260803135000_platform_account_restrictions_canonical.sql",
+        "20260803135300_profiles_deactivated_at_canonical.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "publisher_profiles",
+          "publisher_badges",
+          "publisher_applications",
+          "publisher_application_documents",
+          "publisher_review_actions",
+          "publisher_live_bans",
+          "publisher_stream_schedules"
+        ],
+        "functions": [
+          "can_list_publisher_applications",
+          "can_review_publisher_applications",
+          "publisher_profile_is_active_account",
+          "count_active_publisher_followers",
+          "largest_owned_active_community_stats",
+          "user_has_active_publisher_live_ban",
+          "user_has_active_publisher_badge",
+          "user_can_broadcast_on_picom_live",
+          "live_session_is_publisher_discovery_eligible",
+          "get_publisher_application_eligibility",
+          "submit_publisher_creator_application",
+          "get_own_publisher_applications",
+          "get_own_publisher_program_state",
+          "list_publisher_application_reviews",
+          "review_publisher_application",
+          "set_publisher_live_ban",
+          "can_view_live_screen_session",
+          "can_start_picom_live_stream",
+          "list_go_live_broadcast_targets",
+          "start_community_live_screen_broadcast",
+          "confirm_community_live_screen_broadcast"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803141000_publisher_livekit_broadcast_gate.sql",
+      "timestamp": "20260803141000",
+      "lfNormalizedSha256": "5411423225032bf3dbd4d4c7b9bb481e4530d26057e752a1d7f5977a2ba6b7a3",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": [
+          "authorize_live_broadcast_livekit"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803150000_live_now_publisher_discovery.sql",
+      "timestamp": "20260803150000",
+      "lfNormalizedSha256": "e911daf08f291e9937ba97ef89cf1c88d32b5c3e3ee88330b0c2527722059fe7",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": [
+          "can_view_live_screen_session",
+          "get_own_publisher_program_state",
+          "list_publisher_live_now",
+          "count_publisher_live_now",
+          "count_publisher_live_now_by_category",
+          "list_upcoming_publisher_schedules"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803160000_publisher_eligibility_member_count_canonical.sql",
+      "timestamp": "20260803160000",
+      "lfNormalizedSha256": "92db04ab3c83aaec49f9662a28a1176017f638466038ea597074621388fe3365",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": [
+          "publisher_profile_is_active_account",
+          "largest_owned_active_community_stats"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803170000_live_now_discovery_badge_join_dedupe.sql",
+      "timestamp": "20260803170000",
+      "lfNormalizedSha256": "7b79e415bbac31f34a3209b907b550466447c2a450654fa136db77726009826e",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": [
+          "list_publisher_live_now",
+          "list_upcoming_publisher_schedules"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803171000_live_now_badge_realtime_revocation.sql",
+      "timestamp": "20260803171000",
+      "lfNormalizedSha256": "58c07b610e157393fef2c71f4469d86ee3aa73e77c737e496a53c03576e38a18",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": []
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803172000_publisher_schedule_reminders_and_notif_modes.sql",
+      "timestamp": "20260803172000",
+      "lfNormalizedSha256": "13a866ec26d2e2460c84b4bd35013433c8edbc3bde1df2fb903a30cab8a862e0",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "publisher_stream_schedule_reminders"
+        ],
+        "functions": [
+          "upsert_live_broadcaster_notification_pref",
+          "set_publisher_stream_schedule_reminder",
+          "list_my_publisher_stream_schedule_reminders",
+          "sync_publisher_stream_schedule_reminders",
+          "claim_publisher_stream_schedule_reminders",
+          "normalize_live_broadcaster_notif_mode",
+          "fanout_live_broadcast_started"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803173000_verification_business_platform_foundation.sql",
+      "timestamp": "20260803173000",
+      "lfNormalizedSha256": "6fc0010d9a82e4b7fe0b0fdec95f686bedd6355b0456574de32cb04474dfd64c",
+      "dependencies": [],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "organizations",
+          "organization_members",
+          "organization_invitations",
+          "verification_cases",
+          "verification_case_status_history",
+          "account_entitlements",
+          "business_applications",
+          "business_application_status_history",
+          "business_profile_reserved_slugs",
+          "business_profiles",
+          "brand_assets",
+          "business_products",
+          "business_product_media",
+          "business_product_collections",
+          "business_product_collection_items",
+          "business_posts",
+          "business_post_products",
+          "advertiser_accounts",
+          "advertiser_account_members",
+          "monetization_accounts",
+          "revenue_share_contracts",
+          "revenue_ledger",
+          "provider_webhook_events",
+          "platform_idempotency_keys"
+        ],
+        "functions": [
+          "verification_business_touch_updated_at",
+          "verification_business_validate_subject",
+          "verification_business_validate_badge_subject",
+          "verification_business_validate_product_relationship",
+          "verification_business_validate_advertiser_owner",
+          "verification_business_require_owner_membership",
+          "verification_business_record_case_history",
+          "verification_business_record_application_history",
+          "verification_business_prevent_ledger_mutation",
+          "has_organization_role",
+          "verification_business_is_platform_admin",
+          "can_manage_organization_content",
+          "can_manage_organization_business",
+          "can_view_platform_subject",
+          "create_organization",
+          "manage_organization_member",
+          "submit_verification_case",
+          "submit_business_application",
+          "review_business_application",
+          "publish_business_profile",
+          "upsert_business_profile",
+          "create_business_post",
+          "create_business_product",
+          "tag_business_post_product",
+          "is_advertiser_account_member",
+          "can_view_advertiser_account",
+          "create_advertiser_account"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803210000_picom_verified_subscription_and_entitlements.sql",
+      "timestamp": "20260803210000",
+      "lfNormalizedSha256": "a0a4ee0512f9be2fa33a22dd6299b25800f2a42f0cb67e7f5d1899a8a94d921d",
+      "dependencies": [
+        "20260803173000_verification_business_platform_foundation.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "billing_customers",
+          "billing_products",
+          "picom_verified_subscriptions",
+          "picom_verified_subscription_history",
+          "billing_invoices",
+          "account_verification_sessions",
+          "billing_checkout_sessions"
+        ],
+        "functions": [
+          "picom_verified_touch_updated_at",
+          "picom_verified_prevent_history_mutation",
+          "picom_verified_subscription_is_entitling",
+          "picom_verified_account_is_restricted",
+          "picom_verified_email_is_verified",
+          "record_picom_verified_subscription_history",
+          "reconcile_picom_verified_entitlements",
+          "reconcile_verified_account_badge",
+          "resolve_ad_eligibility",
+          "get_picom_verified_summary"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803220000_business_application_verification_and_team_management.sql",
+      "timestamp": "20260803220000",
+      "lfNormalizedSha256": "be37310c444737a78f2bfc8950a6eb3c270b5783ebedde19d2f3357e4611b960",
+      "dependencies": [
+        "20260803210000_picom_verified_subscription_and_entitlements.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "business_application_submissions",
+          "business_application_documents",
+          "business_domain_verifications",
+          "business_profile_followers",
+          "organization_ownership_transfers",
+          "business_legal_document_versions",
+          "business_legal_acceptances",
+          "business_rate_limits",
+          "business_risk_flags"
+        ],
+        "functions": [
+          "business_prevent_submission_mutation",
+          "business_normalize_domain",
+          "business_is_consumer_email_domain",
+          "business_consume_rate_limit",
+          "business_application_transition_allowed",
+          "business_application_has_pending_malware",
+          "organization_has_active_business_badge",
+          "reconcile_business_organization_entitlements",
+          "approve_business_application",
+          "transition_business_application",
+          "upsert_business_application_draft",
+          "submit_business_application_snapshot",
+          "create_organization_invitation",
+          "accept_organization_invitation",
+          "start_organization_ownership_transfer",
+          "accept_organization_ownership_transfer",
+          "remove_organization_member_safe",
+          "follow_business_profile",
+          "unfollow_business_profile",
+          "request_business_domain_verification",
+          "create_business_document_record",
+          "complete_business_document_upload",
+          "get_business_application_applicant_dto",
+          "get_business_application_admin_dto",
+          "list_admin_business_applications",
+          "get_public_business_profile_bundle",
+          "publish_business_profile"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803221951_live_screen_session_metadata.sql",
+      "timestamp": "20260803221951",
+      "lfNormalizedSha256": "87d557e440a68257b41d426552dc702b09e958600d49d819fc99c55818ed4919",
+      "dependencies": [
+        "20260803173000_verification_business_platform_foundation.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": []
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803225000_drop_foundation_public_business_views_for_catalog_rebuild.sql",
+      "timestamp": "20260803225000",
+      "lfNormalizedSha256": "8c0242941f4cdd9c9ae63e3d876fcdb201b71305add54ce26f7e9ce61cf7d53e",
+      "dependencies": [
+        "20260803220000_business_application_verification_and_team_management.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": []
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803230000_business_catalog_brand_content_and_promotion_bridge.sql",
+      "timestamp": "20260803230000",
+      "lfNormalizedSha256": "43908b6fca260fdb8fa3748d140873ac2e23661a9b78c813c12d0624ccc7e4d0",
+      "dependencies": [
+        "20260803220000_business_application_verification_and_team_management.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "business_product_localizations",
+          "business_product_options",
+          "business_product_option_values",
+          "business_product_variants",
+          "business_product_variant_values",
+          "business_product_countries",
+          "business_product_collection_localizations",
+          "business_post_promotion_requests",
+          "ad_creative_snapshots",
+          "ad_campaign_source_links",
+          "business_content_moderation_history",
+          "business_content_reports",
+          "business_content_events",
+          "business_daily_metrics"
+        ],
+        "functions": [
+          "business_prevent_creative_snapshot_mutation",
+          "business_prevent_moderation_history_mutation",
+          "business_validate_https_url",
+          "business_url_domain",
+          "business_has_active_catalog_legal",
+          "business_has_active_sponsored_legal",
+          "business_organization_is_verified_active",
+          "business_product_has_pending_malware",
+          "submit_business_product_for_review",
+          "publish_business_product",
+          "unpublish_business_product",
+          "archive_business_product",
+          "root_review_business_product",
+          "publish_business_post",
+          "tag_business_post_product",
+          "create_business_post_promotion_request",
+          "create_business_promotion_creative_snapshot",
+          "create_business_campaign_draft_from_promotion",
+          "get_public_business_product",
+          "ingest_business_content_event",
+          "report_business_content",
+          "get_business_analytics_overview",
+          "resolve_sponsored_delivery_eligibility"
+        ]
+      },
+      "estimatedLockRisk": "high",
+      "destructiveChange": true,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803240000_advertiser_campaign_delivery_and_revenue_attribution.sql",
+      "timestamp": "20260803240000",
+      "lfNormalizedSha256": "ca8f0de91b8ed06021046ce2992eac2e1fffc028f3cc909f7da3c69a79bb461e",
+      "dependencies": [
+        "20260803230000_business_catalog_brand_content_and_promotion_bridge.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "ad_platform_settings",
+          "ad_placements",
+          "advertiser_invitations",
+          "advertiser_ownership_transfers",
+          "ad_sets",
+          "ad_creatives",
+          "ad_review_decisions",
+          "advertiser_funding_accounts",
+          "advertiser_funding_transactions",
+          "campaign_budget_reservations",
+          "ad_spend_ledger",
+          "advertiser_balance_snapshots",
+          "ad_delivery_decisions",
+          "ad_impressions",
+          "ad_clicks",
+          "ad_frequency_counters",
+          "user_ad_preferences",
+          "user_advertiser_blocks",
+          "user_ad_feedback",
+          "advertiser_conversion_sources",
+          "ad_conversion_events",
+          "ad_attribution_records",
+          "ad_partner_attributions",
+          "partner_revenue_accruals",
+          "ad_reconciliation_runs",
+          "ad_worker_jobs",
+          "advertising_legal_document_versions"
+        ],
+        "functions": [
+          "ads_touch_updated_at",
+          "ads_prevent_mutation",
+          "ads_setting_bool",
+          "is_advertiser_member_with_roles",
+          "ads_sensitive_targeting_keys",
+          "ads_allowed_targeting_keys",
+          "validate_ad_targeting_spec",
+          "ads_require_active_legal",
+          "ads_hash_binding",
+          "ads_allow_internal_transition",
+          "create_advertiser_account_v2",
+          "submit_advertiser_account",
+          "root_activate_advertiser_account",
+          "root_suspend_advertiser_account",
+          "ads_require_advertiser_owner_membership",
+          "ads_guard_advertiser_account_write",
+          "create_ad_campaign",
+          "create_ad_set",
+          "create_ad_creative",
+          "create_ad_creative_snapshot",
+          "submit_ad_campaign",
+          "root_approve_ad_campaign",
+          "root_reject_ad_campaign",
+          "root_approve_ad_creative",
+          "ads_guard_campaign_write",
+          "ads_guard_creative_write",
+          "compute_advertiser_available_balance_minor",
+          "reserve_campaign_budget",
+          "release_campaign_budget",
+          "activate_ad_campaign",
+          "pause_ad_campaign",
+          "record_ad_spend_charge",
+          "reverse_invalid_ad_spend",
+          "resolve_ad_delivery",
+          "record_ad_impression",
+          "record_ad_click",
+          "get_ad_decision_explanation",
+          "hide_ad_decision",
+          "report_ad_decision",
+          "root_toggle_ad_placement"
+        ]
+      },
+      "estimatedLockRisk": "high",
+      "destructiveChange": true,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803250000_partner_payout_tax_reconciliation_and_ad_transparency.sql",
+      "timestamp": "20260803250000",
+      "lfNormalizedSha256": "832e3c9be1d5963270972a9072e9eba0ea4b22768fed158ed81c326f36d788e3",
+      "dependencies": [
+        "20260803240000_advertiser_campaign_delivery_and_revenue_attribution.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "payout_platform_settings",
+          "monetization_applications",
+          "monetization_application_review_decisions",
+          "payout_profiles",
+          "tax_profiles",
+          "monetization_legal_document_versions",
+          "monetization_agreement_acceptances",
+          "finance_holds",
+          "finance_reserves",
+          "payout_schedules",
+          "partner_balance_snapshots",
+          "payout_batches",
+          "payout_items",
+          "payout_item_accruals",
+          "financial_adjustments",
+          "financial_reconciliation_runs",
+          "financial_reconciliation_findings",
+          "provider_balance_snapshots",
+          "ad_transparency_archive",
+          "ad_transparency_retention",
+          "payout_worker_jobs"
+        ],
+        "functions": [
+          "payout_setting_bool",
+          "payout_allow_internal_transition",
+          "payout_prevent_mutation",
+          "is_finance_operator",
+          "is_finance_approver",
+          "payout_require_active_legal",
+          "payout_guard_monetization_write",
+          "payout_guard_profile_write",
+          "payout_guard_tax_write",
+          "create_monetization_application",
+          "submit_monetization_application",
+          "root_review_monetization_application",
+          "accept_monetization_agreement",
+          "create_payout_profile",
+          "create_tax_profile",
+          "compute_partner_balance",
+          "resolve_payout_eligibility",
+          "preview_payout_batch",
+          "create_payout_batch",
+          "approve_payout_batch",
+          "cancel_payout_batch",
+          "root_toggle_payout_setting",
+          "materialize_ad_transparency_archive",
+          "get_public_ad_transparency_archive",
+          "apply_provider_payout_account_state",
+          "apply_provider_payout_item_event",
+          "claim_payout_batch_for_processing",
+          "payout_monetization_allows_accrual"
+        ]
+      },
+      "estimatedLockRisk": "high",
+      "destructiveChange": true,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select to_regclass('public.payout_platform_settings') is not null;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803260000_production_feature_canary_allowlist_and_rollout_gates.sql",
+      "timestamp": "20260803260000",
+      "lfNormalizedSha256": "cc4a1ef16d3f53ad2f9601c4337d3dd6e56b471197c528625422a1411d5f80d6",
+      "dependencies": [
+        "20260803250000_partner_payout_tax_reconciliation_and_ad_transparency.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [
+          "feature_canary_allowlist",
+          "feature_canary_allowlist_audit"
+        ],
+        "functions": [
+          "feature_canary_is_allowed",
+          "feature_canary_upsert",
+          "feature_canary_expire_stale"
+        ]
+      },
+      "estimatedLockRisk": "low",
+      "destructiveChange": false,
+      "backfillRequired": true,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select to_regclass('public.feature_canary_allowlist') is not null;",
+      "status": "local_present"
+    },
+    {
+      "filename": "20260803270000_advertising_acl_role_catalog_rls_and_test_hardening.sql",
+      "timestamp": "20260803270000",
+      "lfNormalizedSha256": "2468189af3abf322b982c633cf07f21288ac3634c84018004ebb1c292cc680c0",
+      "dependencies": [
+        "20260803260000_production_feature_canary_allowlist_and_rollout_gates.sql"
+      ],
+      "tablesFunctionsChanged": {
+        "tables": [],
+        "functions": []
+      },
+      "estimatedLockRisk": "high",
+      "destructiveChange": true,
+      "backfillRequired": false,
+      "rollbackStrategy": "forward-fix only; do not delete financial/audit rows; disable via feature flags/kill switches",
+      "validationQuery": "select 1;",
+      "status": "local_present"
+    }
+  ]
+}

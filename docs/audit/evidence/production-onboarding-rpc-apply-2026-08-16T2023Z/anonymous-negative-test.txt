@@ -1,0 +1,8 @@
+PRODUCTION RPC SECURITY: PASS
+
+method=SET role anon then call complete_current_user_onboarding
+jwt=none
+service_role=not used
+result=DENIED_INSUFFICIENT_PRIVILEGE
+mutation=none
+post_probe_aggregates_unchanged=true

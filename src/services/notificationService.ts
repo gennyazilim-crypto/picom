@@ -8,7 +8,29 @@ import type { NotificationCategory } from "../types/notifications";
 
 export type { NotificationCategory } from "../types/notifications";
 
-export type NotificationPermissionState = NotificationPermission | "unsupported";
+/** Electron native notifications are system-controlled, not browser-granted. */
+export type NotificationPermissionState = NotificationPermission | "system-controlled" | "unsupported";
+export type NotificationCapability =
+  | "native-checking"
+  | "native-available"
+  | "native-unsupported"
+  | "browser-permission-required"
+  | "browser-granted"
+  | "browser-blocked"
+  | "unsupported";
+
+export type NotificationRuntimeStatus = Readonly<{
+  runtime: string;
+  platform: string;
+  permission: NotificationPermissionState;
+  capability: NotificationCapability;
+  supported: boolean;
+  nativeBridgeAvailable: boolean;
+  requiresPermission: boolean;
+  nativeDesktopEnabled: boolean;
+  soundEnabled: boolean;
+  settings: NotificationSettings;
+}>;
 
 export interface NativeNotificationPayload {
   title: string;
@@ -25,6 +47,8 @@ export interface NotificationServiceResult {
   reason?: string;
   permission?: NotificationPermissionState;
 }
+
+export type NotificationTestCopy = Readonly<{ title: string; body: string }>;
 
 export interface NotificationRouteContext {
   category: NotificationCategory;
@@ -52,6 +76,7 @@ export interface NotificationRouteDecision {
 
 const recentNativeNotifications = new Map<string, number>();
 const DUPLICATE_WINDOW_MS = 5_000;
+let nativeCapability: boolean | null = null;
 
 function isMessageLikeCategory(category: NotificationCategory): boolean {
   return category === "message" || category === "direct_message" || category === "reply" || category === "reaction" || category === "community_announcement";
@@ -69,6 +94,7 @@ export function isNotificationCategoryEnabled(settings: NotificationSettings, ca
   if (category === "radio_reminder") return settings.radioReminders;
   if (category === "podcast_release") return settings.podcastReleases;
   if (category === "event_reminder") return settings.eventReminders;
+  if (category === "incoming_call") return settings.incomingCalls;
   return true;
 }
 
@@ -131,7 +157,11 @@ function getNotificationConstructor(): typeof Notification | null {
 }
 
 function getNativeNotificationBridge() {
-  return window.picomDesktop?.showNotification ?? null;
+  return typeof window === "undefined" ? null : window.picomDesktop?.showNotification ?? null;
+}
+
+function getNativeNotificationTestBridge() {
+  return typeof window === "undefined" ? null : window.picomDesktop?.notifications ?? null;
 }
 
 export function decideNotificationRoute(context: NotificationRouteContext): NotificationRouteDecision {
@@ -194,31 +224,68 @@ export function decideNotificationRoute(context: NotificationRouteContext): Noti
 export const notificationService = {
   getPermission(): NotificationPermissionState {
     if (getNativeNotificationBridge()) {
-      return "granted";
+      return nativeCapability === false ? "unsupported" : "system-controlled";
     }
 
     const NativeNotification = getNotificationConstructor();
     return NativeNotification ? NativeNotification.permission : "unsupported";
   },
 
-  getStatus() {
+  getStatus(): NotificationRuntimeStatus {
     const platform = platformService.getInfo();
+    const nativeBridgeAvailable = Boolean(getNativeNotificationBridge());
+    const permission = this.getPermission();
+    const capability: NotificationCapability = nativeBridgeAvailable
+      ? nativeCapability === true
+        ? "native-available"
+        : nativeCapability === false
+          ? "native-unsupported"
+          : "native-checking"
+      : permission === "granted"
+        ? "browser-granted"
+        : permission === "denied"
+          ? "browser-blocked"
+          : permission === "default"
+            ? "browser-permission-required"
+            : "unsupported";
+    const settings = settingsService.getSettings().notificationSettings;
 
     return {
       runtime: platform.runtime,
       platform: platform.platform,
-      permission: this.getPermission(),
-      supported: Boolean(getNativeNotificationBridge()) || this.getPermission() !== "unsupported",
-      nativeBridgeAvailable: Boolean(getNativeNotificationBridge()),
-      nativeDesktopEnabled: settingsService.getSettings().notificationSettings.nativeDesktopEnabled,
-      soundEnabled: settingsService.getSettings().notificationSettings.soundEnabled,
-      settings: settingsService.getSettings().notificationSettings,
+      permission,
+      capability,
+      supported: capability === "native-available" || capability === "native-checking" || capability === "browser-granted" || capability === "browser-permission-required",
+      nativeBridgeAvailable,
+      requiresPermission: capability === "browser-permission-required",
+      nativeDesktopEnabled: settings.nativeDesktopEnabled,
+      soundEnabled: settings.soundEnabled,
+      settings,
     };
+  },
+
+  async refreshStatus(): Promise<NotificationRuntimeStatus> {
+    const nativeBridge = getNativeNotificationTestBridge();
+    if (!getNativeNotificationBridge()) return this.getStatus();
+    if (!nativeBridge?.getCapability) {
+      nativeCapability = false;
+      return this.getStatus();
+    }
+    try {
+      const result = await nativeBridge.getCapability();
+      nativeCapability = result.ok ? result.supported : false;
+    } catch {
+      nativeCapability = false;
+    }
+    return this.getStatus();
   },
 
   async requestPermission(): Promise<NotificationServiceResult> {
     if (getNativeNotificationBridge()) {
-      return { ok: true, permission: "granted" };
+      const status = await this.refreshStatus();
+      return status.capability === "native-available"
+        ? { ok: true, permission: "system-controlled" }
+        : { ok: false, reason: "Native notifications are unavailable in this runtime.", permission: status.permission };
     }
 
     const NativeNotification = getNotificationConstructor();
@@ -282,8 +349,15 @@ export const notificationService = {
       }
     }
 
-    const permission = await this.requestPermission();
-    if (!permission.ok) { releaseNativeNotification(payload); return permission; }
+    const permission = this.getPermission();
+    if (permission !== "granted") {
+      releaseNativeNotification(payload);
+      return {
+        ok: false,
+        reason: permission === "default" ? "Notification permission requires an explicit user action." : "Notification permission was not granted.",
+        permission,
+      };
+    }
 
     const NativeNotification = getNotificationConstructor();
     if (!NativeNotification) {
@@ -306,12 +380,42 @@ export const notificationService = {
     }
   },
 
-  async showTestNotification() {
-    return this.showNotification({
-      title: "Picom",
-      body: "Your desktop notification preferences are working.",
-      category: "system",
-      tag: "picom-test-notification",
-    });
+  async showTestNotification(copy: NotificationTestCopy = { title: "PICOM", body: "Your desktop notifications are ready for testing." }): Promise<NotificationServiceResult> {
+    if (emergencyKillSwitchService.isActive("disableNativeNotifications")) {
+      return { ok: false, reason: "Native notifications are temporarily unavailable.", permission: this.getPermission() };
+    }
+    const settings = settingsService.getSettings().notificationSettings;
+    if (!settings.enabled || !settings.nativeDesktopEnabled) {
+      return { ok: false, reason: "Native desktop notifications are disabled in settings.", permission: this.getPermission() };
+    }
+
+    const nativeTest = getNativeNotificationTestBridge();
+    if (getNativeNotificationBridge() && nativeTest?.sendTest) {
+      const status = await this.refreshStatus();
+      if (status.capability !== "native-available") {
+        return { ok: false, reason: "Native notifications are unavailable in this runtime.", permission: status.permission };
+      }
+      try {
+        const result = await nativeTest.sendTest();
+        return { ok: result.ok, reason: result.ok ? undefined : result.error, permission: "system-controlled" };
+      } catch {
+        return { ok: false, reason: "Native notification test failed safely.", permission: "system-controlled" };
+      }
+    }
+
+    if (getNativeNotificationBridge()) {
+      return { ok: false, reason: "Native notification test is unavailable in this runtime.", permission: this.getPermission() };
+    }
+
+    const requested = await this.requestPermission();
+    if (!requested.ok || requested.permission !== "granted") return requested;
+    const NativeNotification = getNotificationConstructor();
+    if (!NativeNotification) return { ok: false, reason: "Native notifications unavailable in this runtime.", permission: "unsupported" };
+    try {
+      new NativeNotification(copy.title, { body: copy.body, tag: "picom-test-notification", silent: !settings.soundEnabled });
+      return { ok: true, permission: "granted" };
+    } catch {
+      return { ok: false, reason: "Notification could not be shown by the current runtime.", permission: "granted" };
+    }
   },
 };

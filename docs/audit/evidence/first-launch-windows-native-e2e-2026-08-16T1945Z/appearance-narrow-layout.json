@@ -1,0 +1,12 @@
+{
+  "innerWidth": 880,
+  "innerHeight": 576,
+  "scrollWidth": 880,
+  "clientWidth": 880,
+  "horizontalOverflow": false,
+  "footerVisible": true,
+  "titlebarVisible": true,
+  "closeReachable": true,
+  "railVisible": true,
+  "compactVisible": false
+}

@@ -1,0 +1,7 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 auth:sessions:smoke
+> node scripts/session-management-smoke-test.mjs
+
+Settings > Account should include an Active sessions section.
+Settings > Account should include other-session revocation.

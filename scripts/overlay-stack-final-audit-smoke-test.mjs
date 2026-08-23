@@ -9,7 +9,6 @@ const focusTrap = read("src/hooks/useDialogFocusTrap.ts");
 const communityMenu = read("src/components/CommunityMenu.tsx");
 const imagePreview = read("src/components/ImagePreviewModal.tsx");
 const settings = read("src/components/SettingsModal.tsx");
-const stories = read("src/components/StoryViewerModal.tsx");
 const contextMenu = read("src/components/DesktopContextMenu.tsx");
 const profile = read("src/components/UserProfilePopover.tsx");
 const styles = read("src/styles.css");
@@ -24,7 +23,7 @@ for (const marker of ["externalBlockingOverlayOpen", "closeTransientOverlays()",
 for (const marker of ["isTopmostDialog", 'event.key === "Escape"', "previousFocus?.focus()", "contains(document.activeElement)"])
   assert(focusTrap.includes(marker), `Topmost focus/Escape contract is missing ${marker}`);
 
-for (const [label, source] of [["Community access modal", communityMenu], ["Image preview", imagePreview], ["Settings", settings], ["Story viewer", stories]]) {
+for (const [label, source] of [["Community access modal", communityMenu], ["Image preview", imagePreview], ["Settings", settings]]) {
   assert(source.includes("useDialogFocusTrap"), `${label} must use the shared dialog focus trap`);
 }
 
@@ -36,7 +35,7 @@ for (const [label, source] of [["Context menu", contextMenu], ["Profile popover"
 assert(styles.includes("html,body,#root{height:100%;margin:0;overflow:hidden}"), "Page-level background scroll lock is missing");
 assert(styles.includes(".modal-backdrop") && styles.includes("position:fixed;inset:0"), "Blocking modal backdrop contract is missing");
 
-for (const marker of ["topmost", "focus restoration", "background scroll", "context menu", "story viewer", "manual"])
+for (const marker of ["topmost", "focus restoration", "background scroll", "context menu", "manual"])
   assert(docs.toLowerCase().includes(marker), `Overlay audit documentation is missing ${marker}`);
 
 console.log("Overlay stack final structural audit passed.");

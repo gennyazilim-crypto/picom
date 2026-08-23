@@ -1,0 +1,17 @@
+{
+  "PACKAGED_AUTH_BACKEND": "picom-production",
+  "ref": "cqnsetsmcduraryemhbi",
+  "host": "cqnsetsmcduraryemhbi.supabase.co",
+  "TASK_02_HOSTED_RECONCILIATION": "APPLIED",
+  "PRODUCTION_ONBOARDING_RPC": "CANONICAL_5_ARG",
+  "rpc_oid": 29163,
+  "rpc_args": "target_profile jsonb, target_followed_user_ids uuid[], target_theme text, target_start_choice text, target_invite_code text",
+  "rpc_returns": "completed, completed_at, followed_user_ids, theme_mode, initial_feed, start_choice",
+  "hosted_migration_row": {
+    "version": "20260816202306",
+    "name": "reconcile_account_onboarding_rpc_contract"
+  },
+  "repo_migration_filename": "20260816000000_reconcile_account_onboarding_rpc_contract.sql",
+  "MIGRATION_HISTORY_VERSION_DRIFT": "OPEN_NONBLOCKING_FOR_AUTH_E2E",
+  "schema_changed": false
+}

@@ -1,0 +1,8 @@
+RESTORE REHEARSAL:
+BLOCKED_ENVIRONMENT
+
+Docker engine unavailable.
+No local/disposable Postgres.
+supabase CLI unavailable.
+Did not restore to production or staging.
+Did not create a new cloud database.

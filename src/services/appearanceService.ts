@@ -1,6 +1,8 @@
 import type { AccessibilitySettings, AppearanceSettings, ThemeMode, ThemePreference } from "./settingsService";
+import { getAppearanceStudioRootAttributes, isInterfaceScale, type InterfaceScale } from "./appearanceStudioPreferences";
 import { dateTimeService } from "./dateTimeService";
 import { localizationService } from "./localizationService";
+import { getUiLanguageMetadata, normalizeUiLanguage } from "./localization/uiLanguages";
 
 function systemPrefersDark(): boolean {
   return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -13,19 +15,40 @@ export const appearanceService = {
 
   applyDocumentPreferences(theme: ThemeMode, appearance: AppearanceSettings, accessibility: AccessibilitySettings): void {
     const root = document.documentElement;
-    root.dataset.theme = theme;
-    root.dataset.themePreference = appearance.themeMode;
-    root.dataset.language = appearance.language;
-    root.dataset.density = appearance.density;
+    const language = normalizeUiLanguage(appearance.language);
+    const meta = getUiLanguageMetadata(language);
+    Object.assign(root.dataset, getAppearanceStudioRootAttributes(theme, appearance.themeMode, appearance.density, accessibility));
+    root.dataset.language = language;
     root.dataset.dateStyle = appearance.dateStyle;
     root.dataset.timeFormat = appearance.timeFormat;
-    root.dataset.highContrast = accessibility.highContrast ? "true" : "false";
-    root.dataset.reducedMotion = accessibility.reducedMotion ? "true" : "false";
-    root.dataset.largerText = accessibility.largerText ? "true" : "false";
-    root.dataset.focusRingStrong = accessibility.focusRingStrong ? "true" : "false";
-    root.lang = appearance.language;
-    localizationService.setLanguage(appearance.language);
-    dateTimeService.configure({ language: appearance.language, dateStyle: appearance.dateStyle, timeFormat: appearance.timeFormat });
+    root.lang = meta.bcp47;
+    root.dir = meta.direction;
+    localizationService.setLanguage(language);
+    dateTimeService.configure({ language, dateStyle: appearance.dateStyle, timeFormat: appearance.timeFormat });
+    // Best-effort: push the resolved locale into the Electron main process so the tray
+    // menu, tooltip, and native notifications follow the same language without a restart.
+    // Absent on the web build, so failures are non-fatal.
+    try {
+      void window.picomDesktop?.settings?.setLocale?.(language);
+    } catch {
+      /* renderer without the desktop bridge keeps renderer-only localization */
+    }
+  },
+
+  async applyInterfaceScale(scale: InterfaceScale): Promise<
+    | { ok: true; scale: InterfaceScale }
+    | { ok: false; error: "UI_SCALE_UNAVAILABLE" | "UI_SCALE_APPLY_FAILED" }
+  > {
+    const setUiScale = typeof window !== "undefined" ? window.picomDesktop?.appearance?.setInterfaceScale : undefined;
+    if (!setUiScale) return { ok: false, error: "UI_SCALE_UNAVAILABLE" };
+    try {
+      const result = await setUiScale(scale);
+      return result.ok && isInterfaceScale(result.scale)
+        ? { ok: true, scale: result.scale }
+        : { ok: false, error: "UI_SCALE_APPLY_FAILED" };
+    } catch {
+      return { ok: false, error: "UI_SCALE_APPLY_FAILED" };
+    }
   },
 
   subscribeToSystemTheme(listener: (theme: ThemeMode) => void): () => void {

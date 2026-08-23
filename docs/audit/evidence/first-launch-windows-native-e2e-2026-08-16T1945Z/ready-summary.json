@@ -1,0 +1,185 @@
+{
+  "snap": {
+    "heading": "This app is optimized for desktop.",
+    "rows": [
+      {
+        "label": "Language",
+        "value": "English",
+        "status": "configured"
+      },
+      {
+        "label": "Theme",
+        "value": "Dark",
+        "status": "configured"
+      },
+      {
+        "label": "Density",
+        "value": "Compact",
+        "status": "configured"
+      },
+      {
+        "label": "Text size",
+        "value": "Large",
+        "status": "configured"
+      },
+      {
+        "label": "Interface scale",
+        "value": "125%",
+        "status": "configured"
+      },
+      {
+        "label": "Microphone",
+        "value": "Configured",
+        "status": "configured"
+      },
+      {
+        "label": "Speaker",
+        "value": "Configured",
+        "status": "configured"
+      },
+      {
+        "label": "Camera",
+        "value": "Not tested",
+        "status": "not-tested"
+      },
+      {
+        "label": "Screen sharing",
+        "value": "Not tested",
+        "status": "not-tested"
+      },
+      {
+        "label": "Launch at startup",
+        "value": "Off",
+        "status": "configured"
+      },
+      {
+        "label": "Startup",
+        "value": "Start in system tray",
+        "status": "configured"
+      },
+      {
+        "label": "Close button",
+        "value": "Keep PICOM running in system tray",
+        "status": "configured"
+      },
+      {
+        "label": "Starts on",
+        "value": "Continue where I left off",
+        "status": "configured"
+      },
+      {
+        "label": "Desktop notifications",
+        "value": "Available",
+        "status": "configured"
+      },
+      {
+        "label": "Quiet hours",
+        "value": "22:00–07:00",
+        "status": "configured"
+      },
+      {
+        "label": "Do Not Disturb",
+        "value": "Do Not Disturb",
+        "status": "configured"
+      },
+      {
+        "label": "Privacy",
+        "value": "Review after sign-in",
+        "status": "deferred"
+      }
+    ],
+    "text": "Picom\nSearch Picom or press Ctrl K\nCompanion\nP\nPICOM\nDesktop Setup\n✓\n01 Welcome\nCompleted\n✓\n02 Personalize\nCompleted\n✓\n03 Appearance\nCompleted\n✓\n04 Audio & Video\nCompleted\n✓\n05 Desktop\nCompleted\n✓\n06 Notifications\nCompleted\n✓\n07 Privacy\nCompleted\n8\n08 Ready\nCurrent\nStep 8 of 8\nShowing 8 of 8 setup areas\nSetup tailored for Gaming + Friends & communication\nReview all setup options\nLanguage\nEnglish\nTürkçe\nDeutsch\nFrançais\nEspañol\nItaliano\nPortuguês\nNederlands\nPolski\nРусский\nStep 8 of 8: Ready\n\nREADY\n\nPICOM is ready for you.\n\nThis is the current setup on this device. Optional areas that were skipped or not tested can be configured later.\n\nSetup summary\nAppearance\nLanguage\nEnglish\nReview\nTheme\nDark\nReview\nDensity\nCompact\nReview\nText size\nLarge\nReview\nInterface scale\n125%\nReview\nAudio & Video\nMicrophone\nConfigured\nReview\nSpeaker\nConfigured\nReview\nCamera\nNot tested\nReview\nScreen sharing\nNot tested\nReview\nDesktop\nLaunch at startup\nOff\nReview\nStartup\nStart in system tray\nReview\nClose button\nKeep PICOM running in system tray\nReview\nStarts on\nContinue where I left off\nReview\nNotifications\nDesktop notifications\nAvailable\nReview\nQuiet hours\n22:00–07:00\nReview\nDo Not Disturb\nDo Not Disturb\nRevie"
+  },
+  "readyTruth": {
+    "appearanceConfigured": true,
+    "privacyDeferred": true,
+    "noFakeHundred": true,
+    "rows": [
+      {
+        "label": "Language",
+        "value": "English",
+        "status": "configured"
+      },
+      {
+        "label": "Theme",
+        "value": "Dark",
+        "status": "configured"
+      },
+      {
+        "label": "Density",
+        "value": "Compact",
+        "status": "configured"
+      },
+      {
+        "label": "Text size",
+        "value": "Large",
+        "status": "configured"
+      },
+      {
+        "label": "Interface scale",
+        "value": "125%",
+        "status": "configured"
+      },
+      {
+        "label": "Microphone",
+        "value": "Configured",
+        "status": "configured"
+      },
+      {
+        "label": "Speaker",
+        "value": "Configured",
+        "status": "configured"
+      },
+      {
+        "label": "Camera",
+        "value": "Not tested",
+        "status": "not-tested"
+      },
+      {
+        "label": "Screen sharing",
+        "value": "Not tested",
+        "status": "not-tested"
+      },
+      {
+        "label": "Launch at startup",
+        "value": "Off",
+        "status": "configured"
+      },
+      {
+        "label": "Startup",
+        "value": "Start in system tray",
+        "status": "configured"
+      },
+      {
+        "label": "Close button",
+        "value": "Keep PICOM running in system tray",
+        "status": "configured"
+      },
+      {
+        "label": "Starts on",
+        "value": "Continue where I left off",
+        "status": "configured"
+      },
+      {
+        "label": "Desktop notifications",
+        "value": "Available",
+        "status": "configured"
+      },
+      {
+        "label": "Quiet hours",
+        "value": "22:00–07:00",
+        "status": "configured"
+      },
+      {
+        "label": "Do Not Disturb",
+        "value": "Do Not Disturb",
+        "status": "configured"
+      },
+      {
+        "label": "Privacy",
+        "value": "Review after sign-in",
+        "status": "deferred"
+      }
+    ]
+  }
+}

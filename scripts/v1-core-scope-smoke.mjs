@@ -50,11 +50,13 @@ for (const file of trackedLogoConsumers) {
   const source = read(file);
   assert(!source.includes("picom-logo.png"), `${file} must not depend on an untracked logo.`);
   assert(
-    source.includes("brandLogoUrl") || source.includes("picom-logo-waveform-v2.png"),
+    source.includes("brandLogoUrl") || source.includes("picom-logo-mark-v1"),
     `${file} must use the tracked Picom logo.`,
   );
 }
-assert(fs.existsSync(path.join(root, "assets/brand/picom-logo-waveform-v2.png")), "Tracked Picom logo asset must exist.");
+assert(fs.existsSync(path.join(root, "assets/brand/picom-logo-mark-v1.webp")), "Tracked Picom logo asset must exist.");
+assert(fs.existsSync(path.join(root, "assets/brand/app-icon.png")), "Tracked Picom app icon must exist.");
+assert(fs.existsSync(path.join(root, "assets/brand/icons/32x32.png")), "Tracked favicon PNG must exist.");
 
 if (failures.length) {
   console.error("Picom V1 Core scope contract failed:");

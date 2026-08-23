@@ -6,10 +6,11 @@ import { helpSupportNavigationService } from "../../services/navigation/helpSupp
 import { AppIcon } from "../AppIcon";
 import { HelpCenterView } from "../HelpCenterView";
 import { LegalDocumentModal } from "../legal/LegalDocumentModal";
+import "./HelpSupportWorkspace.css";
 
 type Toast = (message: string, tone?: "info" | "success" | "error") => void;
 
-export function HelpSupportWorkspace({ onBack, pushToast }: Readonly<{ onBack: () => void; pushToast: Toast }>) {
+export function HelpSupportWorkspace({ pushToast }: Readonly<{ pushToast: Toast }>) {
   const [entry] = useState(() => helpSupportNavigationService.consume());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [busy, setBusy] = useState<"export" | "submit" | null>(null);
@@ -53,7 +54,6 @@ export function HelpSupportWorkspace({ onBack, pushToast }: Readonly<{ onBack: (
   return (
     <section aria-label="Help and Support workspace" style={{ minWidth: 0, minHeight: 0, flex: "1 1 auto", display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", overflow: "hidden", background: "var(--bg-chat)" }}>
       <header style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
-        <button type="button" className="icon-button" aria-label="Back to Feed" onClick={onBack}><span style={{ transform: "rotate(180deg)", display: "grid" }}><AppIcon name="chevronRight" size="sm" /></span></button>
         <div style={{ minWidth: 0, flex: 1 }}><strong>Help & Support</strong><span style={{ display: "block", color: "var(--text-muted)", fontSize: 12 }}>Local desktop guidance and privacy-safe support tools</span></div>
         <span role="status" style={{ padding: "6px 10px", borderRadius: 999, background: "var(--surface-soft)", color: online ? "var(--success)" : "var(--warning)", fontSize: 11, fontWeight: 800 }}>{online ? "Online" : "Offline guidance"}</span>
       </header>

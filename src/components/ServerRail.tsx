@@ -26,7 +26,13 @@ function CommunityRailMark({ community }: { community: Community }) {
 }
 
 export function ServerRail({ communities, activeCommunityId, onSelectCommunity, onUtilityAction, onContextMenu }: ServerRailProps) {
-  const visibleCommunities = communities.filter((community) => isV1CommunityKindEnabled(community.kind));
+  // Discovery can temporarily hydrate a public, read-only community for its preview.
+  // The server rail is a membership switcher, not a Discovery list: showing that
+  // preview here made it look as though the user had already joined it.
+  const visibleCommunities = communities.filter((community) => (
+    isV1CommunityKindEnabled(community.kind)
+    && Boolean(community.currentUserMembershipUserId)
+  ));
   return (
     <nav className="server-rail" aria-label="Community switcher">
       <div className="server-stack" style={{ flex: "1 1 auto" }}>

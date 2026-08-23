@@ -1,0 +1,2 @@
+Global navigation authenticated shell smoke test passed.
+exit=0

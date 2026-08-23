@@ -1,8 +1,7 @@
-import brandMarkUrl from "../../assets/brand/picom-logo-mic-chrome-v1.avif";
-import discoveryMarkUrl from "../../assets/brand/picom-logo-waveform-v2.avif";
+import brandMarkUrl from "../../assets/brand/picom-logo-mark-v1.webp";
 
 /** Primary Picom brand mark (sidebar, title bar, auth, root dashboard). */
 export const brandLogoUrl = brandMarkUrl;
 
-/** Discovery hero mark only — waveform wordmark, not used elsewhere. */
-export const discoveryLogoUrl = discoveryMarkUrl;
+/** Discovery uses the canonical Picom mark so every product surface stays consistent. */
+export const discoveryLogoUrl = brandMarkUrl;

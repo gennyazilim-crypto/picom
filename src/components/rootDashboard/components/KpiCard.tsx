@@ -1,3 +1,5 @@
+import { useTranslation } from "../../../i18n";
+
 export type KpiCardVariant = "standard" | "realtime" | "warning" | "trend" | "ratio" | "progress" | "stale";
 
 export type KpiCardProps = Readonly<{
@@ -33,6 +35,7 @@ export function KpiCard({
   variant = "standard",
   onDrillDown,
 }: KpiCardProps) {
+  const { t } = useTranslation("admin");
   const unavailable = !loading && (value === null || value === undefined);
   const aria = definition ? `${label}. ${definition}` : label;
   const className = [
@@ -46,16 +49,16 @@ export function KpiCard({
     <>
       <span>{label}</span>
       <strong>{loading ? "••••" : formatValue(value, unit)}</strong>
-      {unavailable ? <em>{unavailableReason ?? "Unavailable"}</em> : null}
+      {unavailable ? <em>{unavailableReason ?? t("kpi.unavailable")}</em> : null}
       {!unavailable && typeof trendPercent === "number" ? (
         <em className={`rd-kpi__trend ${trendPercent >= 0 ? "up" : "down"}`}>
-          {trendPercent >= 0 ? "+" : ""}{trendPercent.toFixed(1)}% vs prior
+          {t("kpi.trend", { delta: `${trendPercent >= 0 ? "+" : ""}${trendPercent.toFixed(1)}` })}
         </em>
       ) : null}
       {!unavailable && previousValue != null && trendPercent == null ? (
-        <em>Prior: {formatValue(previousValue, unit)}</em>
+        <em>{t("kpi.prior", { value: formatValue(previousValue, unit) })}</em>
       ) : null}
-      {freshnessIso ? <em>As of {new Date(freshnessIso).toLocaleString()}</em> : null}
+      {freshnessIso ? <em>{t("kpi.asOf", { timestamp: new Date(freshnessIso).toLocaleString() })}</em> : null}
     </>
   );
 

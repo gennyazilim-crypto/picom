@@ -1,0 +1,21 @@
+{
+  "DEDICATED_TEST_IDENTITY": "NOT_FOUND",
+  "searched": [
+    ".env.example (empty renderer supabase placeholders; no TEST_EMAIL)",
+    ".env.local / .env.production (hostnames only; no E2E/TEST_EMAIL/AUTH_TEST keys)",
+    "process environment E2E_EMAIL TEST_EMAIL AUTH_TEST PICOM_E2E_* PICOM_EDGE_TEST_*",
+    "CI workflow secret names PICOM_EDGE_TEST_EMAIL (staging Edge only; not present locally)",
+    "docs/audit TASK 13/13A/13B evidence (AUTH PACKAGED E2E BLOCKED_TEST_IDENTITY)",
+    "docs stating synthetic actors were never provisioned",
+    "1Password MCP unavailable"
+  ],
+  "not_used": [
+    "developer personal PICOM account",
+    "personal Google/Steam/Epic",
+    "arbitrary production user",
+    "credentials from logs",
+    "automatic production account creation"
+  ],
+  "ci_secret_names_only": ["PICOM_EDGE_TEST_EMAIL", "PICOM_EDGE_TEST_PASSWORD"],
+  "ci_secret_purpose": "hosted staging Edge Function validation; not a desktop production E2E identity available in this environment"
+}

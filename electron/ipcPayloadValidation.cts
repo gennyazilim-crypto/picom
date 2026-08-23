@@ -7,7 +7,8 @@ export type ScreenCaptureSelectionPayload = Readonly<{ requestId: string; source
 
 const safeDeepLinkSegmentPattern = /^[a-zA-Z0-9_-]{1,128}$/;
 const safeScreenCaptureRequestIdPattern = /^[a-f0-9-]{16,64}$/i;
-const safeScreenCaptureSourceIdPattern = /^(screen|window):[a-zA-Z0-9:_-]{1,240}$/;
+// Windows may emit display-backed ids that include `.` / `\` (e.g. \\.\DISPLAY2).
+const safeScreenCaptureSourceIdPattern = /^(screen|window):[a-zA-Z0-9:_\\.\-]{1,240}$/;
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -64,34 +65,54 @@ function isSafeDeepLinkSegment(value: string | undefined): value is string {
   return Boolean(value && safeDeepLinkSegmentPattern.test(value));
 }
 
+function isSafeAuthCallback(parsed: URL): boolean {
+  const allowedKeys = new Set(["code", "exchange", "state", "provider", "error", "error_description"]);
+  const keys = [...parsed.searchParams.keys()];
+  if (keys.some((key) => !allowedKeys.has(key)) || [...new Set(keys)].some((key) => parsed.searchParams.getAll(key).length !== 1)) return false;
+  const provider = parsed.searchParams.get("provider");
+  const state = parsed.searchParams.get("state");
+  const code = parsed.searchParams.get("code");
+  const exchange = parsed.searchParams.get("exchange");
+  const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
+  if (
+    (provider !== "google" && provider !== "apple" && provider !== "steam" && provider !== "epic")
+    || !state || !/^[A-Za-z0-9_-]{32,128}$/.test(state)
+    || [code, exchange, error].filter(Boolean).length !== 1
+  ) return false;
+  if (code) return (provider === "google" || provider === "apple") && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code);
+  if (exchange) return (provider === "steam" || provider === "epic") && /^[A-Za-z0-9_-]{32,128}$/.test(exchange);
+  return Boolean(error && error.length <= 240 && !/[\u0000-\u001f]/.test(error));
+}
+
 function isSupportedPicomDeepLink(parsed: URL): boolean {
   if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.hash) return false;
   const route = parsed.hostname;
   const segments = parsed.pathname.split("/").filter(Boolean);
   if (route === "auth" && segments.length === 1 && segments[0] === "callback") {
-    const allowedKeys = new Set(["code", "error", "error_description"]);
-    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
-    const code = parsed.searchParams.get("code");
-    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
-    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+    return isSafeAuthCallback(parsed);
+  }
+  if (route === "auth" && segments.length === 1 && segments[0] === "open" && !parsed.search) {
+    return true;
   }
   if (route === "auth" && segments.length === 1 && segments[0] === "reset-password") {
-    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    const allowedKeys = new Set(["code", "token_hash", "type", "error", "error_description"]);
     if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
     const type = parsed.searchParams.get("type");
     if (type && type !== "recovery") return false;
     const code = parsed.searchParams.get("code");
+    const tokenHash = parsed.searchParams.get("token_hash");
     const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
-    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+    return Boolean((tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash)) || (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
   }
   if (route === "auth" && segments.length === 1 && segments[0] === "verify-email") {
-    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    const allowedKeys = new Set(["code", "token_hash", "type", "error", "error_description"]);
     if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
     const type = parsed.searchParams.get("type");
     if (type && type !== "signup" && type !== "email_change") return false;
     const code = parsed.searchParams.get("code");
+    const tokenHash = parsed.searchParams.get("token_hash");
     const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
-    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+    return Boolean((tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash)) || (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
   }
   if (parsed.search) return false;
   if (route === "invite") return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
@@ -118,6 +139,7 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
     return segments.length===10&&segments[5]==="session"&&safe(6)&&segments[7]==="chat"&&segments[8]==="message"&&safe(9);
   }
   if (route === "dm") return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
+  if (route === "profile" || route === "live-now") return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
   return (route === "settings" || route === "friends") && segments.length === 0;
 }
 

@@ -18,7 +18,9 @@ type ActivePresenceSession = {
 
 let generation = 0;
 let activeSession: ActivePresenceSession | null = null;
-let sharingEnabled = true;
+// Never publish a new authenticated session until its account-owned privacy
+// policy has been confirmed by the server.
+let sharingEnabled = false;
 
 function createSessionId(): string {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();

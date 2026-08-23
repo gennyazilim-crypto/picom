@@ -13,8 +13,10 @@ function assertIncludes(text, expected, label) {
 const settingsService = read("src/services/settingsService.ts");
 const app = read("src/App.tsx");
 const appearance = read("src/services/appearanceService.ts");
+const appearanceStudioPreferences = read("src/services/appearanceStudioPreferences.ts");
 const settingsModal = read("src/components/SettingsModal.tsx");
 const localization = read("src/services/localizationService.ts");
+const settingsI18n = read("src/services/settings/settingsI18n.ts");
 const styles = read("src/styles.css");
 const doc = read("docs/high-contrast-reduced-motion.md");
 
@@ -22,7 +24,8 @@ for (const expected of [
   "AccessibilitySettings",
   "highContrast",
   "reducedMotion",
-  "largerText",
+  "textSize",
+  "interfaceScale",
   "focusRingStrong",
   "updateAccessibilitySettings",
 ]) {
@@ -30,27 +33,28 @@ for (const expected of [
 }
 
 for (const expected of [
-  "dataset.highContrast",
-  "dataset.reducedMotion",
-  "dataset.largerText",
-  "dataset.focusRingStrong",
+  "getAppearanceStudioRootAttributes",
+  "highContrast",
+  "reducedMotion",
+  "textSize",
+  "focusRingStrong",
 ]) {
-  assertIncludes(app + appearance, expected, "App root accessibility dataset");
+  assertIncludes(app + appearance + appearanceStudioPreferences, expected, "App root accessibility dataset");
 }
 
 for (const expected of [
   "High contrast mode",
   "Reduced motion",
-  "Larger text",
+  "Text size",
   "Strong focus ring",
 ]) {
-  assertIncludes(settingsModal + localization, expected, "SettingsModal accessibility controls");
+  assertIncludes(settingsModal + localization + settingsI18n, expected, "SettingsModal accessibility controls");
 }
 
 for (const expected of [
   "data-high-contrast",
   "data-reduced-motion",
-  "data-larger-text",
+  "data-text-size",
   "data-focus-ring-strong",
   "animation-delay: 0ms !important",
   "transition-delay: 0ms !important",

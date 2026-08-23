@@ -1,0 +1,6 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 i18n:catalog-integrity:smoke
+> node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/i18n-catalog-integrity-smoke.mjs
+
+i18n catalog integrity: PASS — 10 locales x 18 namespaces (1392 source keys), settings catalogs verified for 9/9 non-English locales, Live Now + Publisher parity OK.

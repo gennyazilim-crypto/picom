@@ -1,11 +1,12 @@
-import fs from "node:fs";
-import ts from "typescript";
+import { createRequire } from "node:module";
+import fs, { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const validationSource = fs.readFileSync("electron/ipcPayloadValidation.cts", "utf8");
-const compiled = ts.transpileModule(validationSource, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const validators = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+// TypeScript 7 no longer exposes transpileModule. Fuzz the compiled production validators.
+const require = createRequire(import.meta.url);
+const compiled = fileURLToPath(new URL("../dist-electron/ipcPayloadValidation.cjs", import.meta.url));
+if (!existsSync(compiled)) throw new Error("dist-electron/ipcPayloadValidation.cjs missing; run npm run electron:build");
+const validators = require(compiled);
 
 const invalidValues = [undefined, null, true, false, 0, 1, -1, NaN, Infinity, {}, [], ["close"], () => undefined, Symbol("invalid")];
 for (const value of invalidValues) {
@@ -46,7 +47,7 @@ for (const payload of [{ requestId: captureRequestId, userInitiated: false }, { 
   if (validators.parseScreenCaptureListPayload(payload) || validators.parseScreenCaptureSelectionPayload(payload) || validators.parseScreenCaptureCancelPayload(payload)) throw new Error("Unsafe screen capture payload accepted");
 }
 
-for (const link of ["picom://settings", "picom://friends", "picom://invite/ABC_123", "picom://community/community-1/channel/channel-2/message/message-3", "picom://auth/callback?code=abcdefgh"]) {
+for (const link of ["picom://settings", "picom://friends", "picom://invite/ABC_123", "picom://community/community-1/channel/channel-2/message/message-3", "picom://auth/callback?code=abcdefgh&provider=google&state=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"]) {
   if (!validators.isSafeDeepLink(link)) throw new Error(`Safe deep link rejected: ${link}`);
 }
 for (const link of ["picom://community/../secret", "picom://invite/a?token=x", "picom://community/x#fragment", "picom://auth/callback?code=x", "picom://auth/callback?code=abcdefgh&token=x", "https://example.com", "picom://unknown/value"]) {
@@ -68,7 +69,8 @@ for (let index = 0; index < 1000; index += 1) {
 const main = fs.readFileSync("electron/main.cts", "utf8");
 const preload = fs.readFileSync("electron/preload.cts", "utf8");
 const channels = fs.readFileSync("electron/ipcChannels.cts", "utf8");
-if (!main.includes('types: ["screen", "window"]') || !main.includes("screenCaptureGetSources, async (event, payload: unknown)")) throw new Error("Screen picker is not fixed-input/payload/sender-guarded");
+if (!main.includes('readSources(["screen"]') || !main.includes('readSources(["window"]')) throw new Error("Screen picker must enumerate screen and window sources through fixed typed queries");
+if (!main.includes("IPC_CHANNELS.screenCaptureGetSources, async (event, payload: unknown)")) throw new Error("Screen picker is not fixed-input/payload/sender-guarded");
 for (const marker of ["parseScreenCaptureListPayload", "parseScreenCaptureSelectionPayload", "parseScreenCaptureCancelPayload", "screenCaptureSessions", "SCREEN_CAPTURE_SESSION_TTL_MS"]) if (!main.includes(marker)) throw new Error(`Secure screen picker contract missing: ${marker}`);
 // Update IPC is an approved, frozen safe contract: main-owned electron-updater,
 // sender-trusted handlers, a narrow validated bridge, and a shape-checked state push.
@@ -78,7 +80,10 @@ for (const updateChannel of ["updateGetState", "updateCheck", "updateDownload", 
 if (!preload.includes("updates: {")) throw new Error("Update IPC bridge must be exposed under a narrow updates namespace");
 if (!preload.includes("isUpdaterState(value)")) throw new Error("Pushed update state must be shape-validated in preload");
 if (preload.includes("autoUpdater") || preload.includes("setFeedURL")) throw new Error("Preload must never expose raw updater objects or feed URLs");
-for (const forbidden of ["child_process", "exec(", "spawn(", "shell.openPath", "fs.rm", "fs.unlink", "fs.readdir"]) {
+if (!main.includes("IPC_CHANNELS.appOpenPath") || !main.includes("resolveSafeOpenPath") || !main.includes('target !== "logs" && target !== "downloads" && target !== "userData"')) {
+  throw new Error("Allowlisted shell.openPath opener is missing its target/sender guards");
+}
+for (const forbidden of ["child_process", "exec(", "spawn(", "fs.rm", "fs.unlink", "fs.readdir"]) {
   if (main.includes(forbidden)) throw new Error(`Forbidden native capability found in IPC main path: ${forbidden}`);
 }
 

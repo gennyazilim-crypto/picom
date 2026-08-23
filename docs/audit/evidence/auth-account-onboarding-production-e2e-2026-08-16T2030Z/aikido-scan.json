@@ -1,0 +1,16 @@
+{
+  "scanned": [
+    "scripts/supabase-auth-onboarding-production-smoke.mjs",
+    "scripts/session-management-smoke-test.mjs",
+    "scripts/email-verification-smoke-test.mjs"
+  ],
+  "issues": [
+    {
+      "file": "scripts/supabase-auth-onboarding-production-smoke.mjs",
+      "rule": "AIK_ts_generic_path_traversal",
+      "disposition": "accepted_false_positive",
+      "reason": "readFileSync paths are hardcoded repo-relative sources, not attacker-controlled input."
+    }
+  ],
+  "checkov": "ENOENT (scanner binary missing; not a product finding)"
+}

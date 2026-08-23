@@ -8,9 +8,15 @@ type DmCallInformationState = Readonly<{
   error: string | null;
   refresh: () => void;
   markConversationRead: (conversationId: string) => void;
+  dismissCall: (callId: string) => Promise<string | null>;
 }>;
 
-export function useDmCallInformation(currentUserId: string, enabled: boolean): DmCallInformationState {
+function mergeCall(current: readonly DmCall[], call: DmCall): DmCall[] {
+  return [call, ...current.filter((item) => item.id !== call.id)]
+    .sort((left, right) => Date.parse(right.startedAt) - Date.parse(left.startedAt));
+}
+
+export function useDmCallInformation(currentUserId: string, enabled: boolean, activeConversationId?: string): DmCallInformationState {
   const [calls, setCalls] = useState<readonly DmCall[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +38,21 @@ export function useDmCallInformation(currentUserId: string, enabled: boolean): D
     });
   }, [currentUserId, enabled]);
 
+  const ingestCallId = useCallback((callId?: string) => {
+    if (!enabled || !currentUserId) return;
+    if (!callId) {
+      refresh();
+      return;
+    }
+    void dmCallService.getCall(callId).then((result) => {
+      if (result.ok && result.data) {
+        setCalls((current) => mergeCall(current, result.data));
+        return;
+      }
+      refresh();
+    });
+  }, [currentUserId, enabled, refresh]);
+
   useEffect(() => {
     if (!enabled || !currentUserId) {
       setCalls([]);
@@ -41,16 +62,27 @@ export function useDmCallInformation(currentUserId: string, enabled: boolean): D
     }
     refresh();
     const offLocal = dmCallService.subscribeLocal((call) => {
-      setCalls((current) => [call, ...current.filter((item) => item.id !== call.id)]
-        .sort((left, right) => Date.parse(right.startedAt) - Date.parse(left.startedAt)));
+      setCalls((current) => mergeCall(current, call));
     });
-    const offRealtime = dmCallService.subscribeRealtime(currentUserId, refresh);
+    const offRealtime = dmCallService.subscribeRealtime(currentUserId, ingestCallId);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     return () => {
       generationRef.current += 1;
       offLocal();
       offRealtime();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
-  }, [currentUserId, enabled, refresh]);
+  }, [currentUserId, enabled, ingestCallId, refresh]);
+
+  useEffect(() => {
+    if (!enabled || !currentUserId || !activeConversationId) return;
+    refresh();
+  }, [activeConversationId, currentUserId, enabled, refresh]);
 
   const markConversationRead = useCallback((conversationId: string) => {
     const unread = calls.filter((call) => call.conversationId === conversationId && call.unread);
@@ -59,5 +91,20 @@ export function useDmCallInformation(currentUserId: string, enabled: boolean): D
     void Promise.all(unread.map((call) => dmCallService.markRead(call.id))).then(refresh);
   }, [calls, refresh]);
 
-  return { calls, loading, error, refresh, markConversationRead };
+  const dismissCall = useCallback(async (callId: string): Promise<string | null> => {
+    const previous = calls;
+    setCalls((current) => current.filter((call) => call.id !== callId));
+    const result = await dmCallService.hideCall(callId);
+    if (result.ok && result.data) {
+      setError(null);
+      return null;
+    }
+    setCalls(previous);
+    const message = result.ok ? "This call could not be removed from your history." : result.error.message;
+    setError(message);
+    refresh();
+    return message;
+  }, [calls, refresh]);
+
+  return { calls, loading, error, refresh, markConversationRead, dismissCall };
 }

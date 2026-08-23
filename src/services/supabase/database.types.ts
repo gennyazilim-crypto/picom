@@ -30,6 +30,8 @@ export type Database = {
           accent_color: string | null;
           onboarding_completed: boolean;
           onboarding_completed_at: string | null;
+          onboarding_start_choice: "createCommunity" | "joinInvite" | "mentionFeed" | null;
+          onboarding_initial_feed: "mention" | "community" | "invite" | null;
           is_bot: boolean;
           deletion_requested_at: string | null;
           accepted_terms_version: string | null;
@@ -38,6 +40,11 @@ export type Database = {
           privacy_accepted_at: string | null;
           dm_privacy: "everyone" | "friends" | "no_one";
           friend_request_privacy: "everyone" | "community_members" | "friends_of_friends" | "nobody";
+          email_verification_status: "pending" | "verified" | "expired" | "email_changed" | "delivery_failed";
+          email_verified_at: string | null;
+          email_verification_last_sent_at: string | null;
+          email_verification_reminder_dismissed_at: string | null;
+          email_verification_success_seen_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -75,6 +82,27 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["communities"]["Row"]> & Pick<Database["public"]["Tables"]["communities"]["Row"], "owner_id" | "name">;
         Update: Partial<Database["public"]["Tables"]["communities"]["Row"]>;
+        Relationships: [];
+      };
+      community_verifications: {
+        Row: {
+          id: string;
+          community_id: string;
+          status: "pending" | "approved" | "rejected" | "revoked";
+          type: "official_community";
+          reason: string | null;
+          category: "community" | "organization" | "creator" | "other";
+          official_links: string[];
+          supporting_text: string | null;
+          decision_reason: string | null;
+          reviewed_by: string | null;
+          requested_at: string;
+          reviewed_at: string | null;
+          revoked_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["community_verifications"]["Row"]> & Pick<Database["public"]["Tables"]["community_verifications"]["Row"], "community_id">;
+        Update: Partial<Database["public"]["Tables"]["community_verifications"]["Row"]>;
         Relationships: [];
       };
       roles: {
@@ -213,7 +241,7 @@ export type Database = {
           file_name: string;
           mime_type: string;
           size_bytes: number;
-          attachment_type: "image";
+          attachment_type: "image" | "video";
           width: number | null;
           height: number | null;
           public_url: string | null;
@@ -239,7 +267,7 @@ export type Database = {
         Relationships: [];
       };
       community_events: {
-        Row: { id:string;community_id:string;channel_id:string|null;title:string;description:string;starts_at:string;ends_at:string|null;event_type:"meeting"|"voice"|"release"|"review"|"social";created_by:string;cancelled_at:string|null;created_at:string;updated_at:string };
+        Row: { id:string;community_id:string|null;channel_id:string|null;title:string;description:string;starts_at:string;ends_at:string|null;event_type:"meeting"|"voice"|"release"|"review"|"social"|"community_event"|"voice_event"|"radio_event"|"podcast_event"|"gaming_event"|"announcement";created_by:string;cancelled_at:string|null;created_at:string;updated_at:string;status:"draft"|"published"|"cancelled"|"completed";visibility:"public"|"community_only"|"private";cover_image:string|null;timezone:string;location_type:string;location_data:Json;metadata:Json;published_at:string|null;completed_at:string|null };
         Insert: Partial<Database["public"]["Tables"]["community_events"]["Row"]> & Pick<Database["public"]["Tables"]["community_events"]["Row"],"community_id"|"title"|"starts_at"|"created_by">;
         Update: Partial<Database["public"]["Tables"]["community_events"]["Row"]>;Relationships:[];
       };
@@ -312,12 +340,12 @@ export type Database = {
         Insert:never;Update:never;Relationships:[];
       };
       community_event_rsvps: {
-        Row: { id:string;event_id:string;user_id:string;status:"interested"|"going"|"not_going";created_at:string;updated_at:string };
+        Row: { id:string;event_id:string;user_id:string;status:"interested"|"going"|"not_going"|"declined"|"attended";created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["community_event_rsvps"]["Row"]> & Pick<Database["public"]["Tables"]["community_event_rsvps"]["Row"],"event_id"|"user_id"|"status">;
         Update: Partial<Database["public"]["Tables"]["community_event_rsvps"]["Row"]>;Relationships:[];
       };
       community_event_reminders: {
-        Row: { id:string;event_id:string;user_id:string;minutes_before:number;enabled:boolean;created_at:string;updated_at:string };
+        Row: { id:string;event_id:string;user_id:string;minutes_before:number;enabled:boolean;reminder_time:string|null;sent_at:string|null;created_at:string;updated_at:string };
         Insert: Partial<Database["public"]["Tables"]["community_event_reminders"]["Row"]> & Pick<Database["public"]["Tables"]["community_event_reminders"]["Row"],"event_id"|"user_id">;
         Update: Partial<Database["public"]["Tables"]["community_event_reminders"]["Row"]>;Relationships:[];
       };
@@ -325,6 +353,31 @@ export type Database = {
         Row: { id: string; user_id: string; message_id: string; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["saved_messages"]["Row"]> & Pick<Database["public"]["Tables"]["saved_messages"]["Row"], "user_id" | "message_id">;
         Update: Partial<Database["public"]["Tables"]["saved_messages"]["Row"]>; Relationships: [];
+      };
+      event_invitations: {
+        Row: { id:string;event_id:string;user_id:string;invited_by:string;created_at:string;accepted_at:string|null };
+        Insert: Partial<Database["public"]["Tables"]["event_invitations"]["Row"]> & Pick<Database["public"]["Tables"]["event_invitations"]["Row"],"event_id"|"user_id"|"invited_by">;
+        Update: Partial<Database["public"]["Tables"]["event_invitations"]["Row"]>;Relationships:[];
+      };
+      event_comments: {
+        Row: { id:string;event_id:string;user_id:string;content:string;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["event_comments"]["Row"]> & Pick<Database["public"]["Tables"]["event_comments"]["Row"],"event_id"|"user_id"|"content">;
+        Update: Partial<Database["public"]["Tables"]["event_comments"]["Row"]>;Relationships:[];
+      };
+      event_notifications: {
+        Row: { id:string;event_id:string;user_id:string;actor_id:string|null;type:"invitation"|"reminder"|"starting_soon"|"cancelled"|"participant_joined"|"comment";metadata:Json;read_at:string|null;created_at:string };
+        Insert: Partial<Database["public"]["Tables"]["event_notifications"]["Row"]> & Pick<Database["public"]["Tables"]["event_notifications"]["Row"],"event_id"|"user_id"|"type">;
+        Update: Partial<Database["public"]["Tables"]["event_notifications"]["Row"]>;Relationships:[];
+      };
+      bookmark_collections: {
+        Row: { id:string;user_id:string;name:string;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["bookmark_collections"]["Row"]> & Pick<Database["public"]["Tables"]["bookmark_collections"]["Row"],"user_id"|"name">;
+        Update: Partial<Database["public"]["Tables"]["bookmark_collections"]["Row"]>;Relationships:[];
+      };
+      bookmarks: {
+        Row: { id:string;user_id:string;collection_id:string|null;content_type:"feed"|"message"|"radio"|"podcast"|"event"|"file"|"link";content_id:string;metadata:Json;created_at:string;updated_at:string };
+        Insert: Partial<Database["public"]["Tables"]["bookmarks"]["Row"]> & Pick<Database["public"]["Tables"]["bookmarks"]["Row"],"user_id"|"content_type"|"content_id">;
+        Update: Partial<Database["public"]["Tables"]["bookmarks"]["Row"]>;Relationships:[];
       };
       blocked_users: {
         Row: { id: string; blocker_id: string; blocked_user_id: string; created_at: string };
@@ -731,9 +784,9 @@ export type Database = {
         Relationships: [];
       };
       user_settings: {
-        Row: { user_id: string; schema_version: number; theme_mode: "light" | "dark" | "system"; notification_settings: Json; updated_at: string };
-        Insert: { user_id: string; schema_version?: number; theme_mode?: "light" | "dark" | "system"; notification_settings?: Json; updated_at?: string };
-        Update: { schema_version?: number; theme_mode?: "light" | "dark" | "system"; notification_settings?: Json; updated_at?: string };
+        Row: { user_id: string; schema_version: number; theme_mode: "light" | "dark" | "system"; preferred_locale: "en" | "tr" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "pl" | "ru"; preferred_locale_mode: "system" | "manual"; notification_settings: Json; updated_at: string };
+        Insert: { user_id: string; schema_version?: number; theme_mode?: "light" | "dark" | "system"; preferred_locale?: "en" | "tr" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "pl" | "ru"; preferred_locale_mode?: "system" | "manual"; notification_settings?: Json; updated_at?: string };
+        Update: { schema_version?: number; theme_mode?: "light" | "dark" | "system"; preferred_locale?: "en" | "tr" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "pl" | "ru"; preferred_locale_mode?: "system" | "manual"; notification_settings?: Json; updated_at?: string };
         Relationships: [];
       };
     };
@@ -798,6 +851,10 @@ export type Database = {
         Args: { target_community_id: string; confirmation_community_name: string; archive_reason?: string };
         Returns: Array<{ community_id: string; archived_at: string; archived_by: string }>;
       };
+      get_community_archive_eligibility: {
+        Args: { target_community_id: string };
+        Returns: Array<{ member_count: number; ownership_transfer_required: boolean }>;
+      };
       create_text_community_with_defaults: {
         Args: {
           target_creation_request_id: string;
@@ -840,7 +897,7 @@ export type Database = {
       cancel_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; canceled_at: string }> };
       list_public_discovery_communities: {
         Args: { search_text?: string | null; category_filter?: string | null; result_limit?: number };
-        Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request" }>;
+        Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request"; is_member: boolean }>;
       };
       join_or_request_discovery_community: { Args: { target_community_id: string }; Returns: "joined" | "requested" | "already_member" };
       set_community_discovery_listing: {
@@ -872,6 +929,7 @@ export type Database = {
       remove_friend: { Args: { other_user_id: string }; Returns: boolean };
       create_direct_conversation: { Args: { other_user_id: string }; Returns: string };
       list_direct_conversations: { Args: { result_limit?: number }; Returns: Array<{ id: string; participant_user_id: string; participant_name: string; participant_username: string; participant_status: string; participant_status_text: string; last_message_preview: string; updated_at: string; unread_count: number }> };
+      list_direct_messages: { Args: { target_conversation_id: string; before_created_at?: string | null; before_message_id?: string | null; result_limit?: number }; Returns: Array<{ id: string; conversation_id: string; author_id: string; body: string | null; reply_to_message_id: string | null; client_message_id: string | null; created_at: string; updated_at: string; edited_at: string | null; deleted_at: string | null }> };
       send_direct_message: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
       send_direct_message_v2: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id: string | null }; Returns: Json };
       send_direct_message_v3: { Args: { target_conversation_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id: string | null; target_attachments?: Json }; Returns: Json };
@@ -882,7 +940,7 @@ export type Database = {
       mark_direct_conversation_read_to: { Args: { target_conversation_id: string; target_message_id: string }; Returns: boolean };
       set_direct_conversation_muted: { Args: { target_conversation_id: string; target_muted_until: string | null }; Returns: boolean };
       set_direct_conversation_archived: { Args: { target_conversation_id: string; target_archived: boolean }; Returns: boolean };
-      list_direct_shared_media: { Args: { target_conversation_id: string; before_created_at?: string | null; before_attachment_id?: string | null; result_limit?: number }; Returns: Array<{ id: string; message_id: string; url: string; file_name: string | null; mime_type: string | null; file_size: number | null; width: number | null; height: number | null; created_at: string }> };
+      list_direct_shared_media: { Args: { target_conversation_id: string; before_created_at?: string | null; before_attachment_id?: string | null; result_limit?: number }; Returns: Array<{ id: string; message_id: string; url: string; storage_path: string | null; file_name: string | null; mime_type: string | null; file_size: number | null; width: number | null; height: number | null; created_at: string }> };
       accept_community_invite: {
         Args: { invite_code: string };
         Returns: Array<{ id: string; community_id: string; user_id: string; role_id: string | null; joined_at: string }>;
@@ -968,6 +1026,18 @@ export type Database = {
       get_root_dashboard_command_search_v1: { Args: { query: string; result_limit?: number }; Returns: Json };
       create_root_dashboard_export_job: { Args: { p_module_name: string; p_format?: string; p_row_limit?: number; p_filter_json?: Json; p_reason?: string | null; p_case_id?: string | null; p_correlation_id?: string | null }; Returns: string };
       list_root_dashboard_export_jobs: { Args: { page_cursor_created_at?: string | null; page_cursor_id?: string | null; page_limit?: number }; Returns: Json };
+      set_platform_account_status: { Args: { p_user_id: string; p_status: string; p_reason?: string | null; p_restricted_until?: string | null }; Returns: boolean };
+      set_root_community_discovery_status: { Args: { p_community_id: string; p_status: string; p_reason?: string | null }; Returns: boolean };
+      archive_root_community: { Args: { p_community_id: string; p_confirmation_name: string; p_reason: string }; Returns: boolean };
+      review_root_report: { Args: { p_report_id: string; p_status: string; p_reason?: string | null }; Returns: boolean };
+      end_root_meeting_session: { Args: { p_session_id: string; p_reason?: string | null }; Returns: boolean };
+      soft_delete_root_notification: { Args: { p_notification_id: string; p_reason?: string | null }; Returns: boolean };
+      set_root_radio_session_status: { Args: { p_session_id: string; p_status: string; p_reason?: string | null }; Returns: boolean };
+      moderate_root_podcast_episode: { Args: { p_episode_id: string; p_action: string; p_reason?: string | null }; Returns: boolean };
+      get_root_dashboard_engagement_series_v1: { Args: { p_days?: number }; Returns: Json };
+      get_own_account_restriction: { Args: Record<string, never>; Returns: Json };
+      get_admin_user_auth_meta: { Args: { p_user_id: string }; Returns: Json };
+      find_admin_user_auth_meta: { Args: { p_query: string }; Returns: Json };
       append_admin_operations_audit: { Args: { admin_action_type: string; admin_target_type: string; admin_target_id?: string | null }; Returns: number };
       can_manage_community_bots: { Args: { target_community_id: string }; Returns: boolean };
       issue_community_bot_credential: { Args: { target_community_id: string; target_bot_id: string }; Returns: Array<{ raw_token: string; token_prefix: string; created_at: string }> };
@@ -980,7 +1050,8 @@ export type Database = {
       get_poll_state: { Args: { target_poll_id: string }; Returns: Json };
       toggle_poll_vote: { Args: { target_poll_id: string; target_option_id: string }; Returns: Json };
       close_poll: { Args: { target_poll_id: string }; Returns: Json };
-      set_community_event_rsvp: { Args: { target_event_id: string; next_status: "interested" | "going" | "not_going" }; Returns: boolean };
+      set_community_event_rsvp: { Args: { target_event_id: string; next_status: "interested" | "going" | "not_going" | "declined" | "attended" }; Returns: boolean };
+      event_attendee_counts: { Args: { target_event_ids: string[] }; Returns: Array<{ event_id: string; attendee_count: number }> };
       claim_radio_session_reminder_event: { Args: { target_reminder_id: string; event_key: string; event_starts_at: string; event_status: "draft" | "scheduled" | "live" | "ended" | "cancelled" }; Returns: boolean };
       open_or_create_thread: { Args: { target_community_id: string; target_channel_id: string; target_parent_message_id: string; thread_name: string }; Returns: Json };
       send_thread_message: { Args: { target_thread_id: string; message_body: string; target_client_message_id: string }; Returns: Json };
@@ -1052,7 +1123,23 @@ export type Database = {
       process_meeting_notification_jobs:{Args:{target_now?:string;target_limit?:number};Returns:Json};
       create_managed_text_channel: { Args: { target_community_id: string; target_category_id?: string | null; channel_name: string; channel_type?: "text" | "voice" | "forum" | "announcement"; channel_topic?: string | null; channel_is_private?: boolean; channel_public_read_enabled?: boolean }; Returns: Array<Database["public"]["Tables"]["channels"]["Row"]> };
       send_text_message_idempotent: { Args: { target_community_id: string; target_channel_id: string; message_body: string; target_client_message_id: string; target_reply_to_message_id?: string | null; target_attachment_ids?: string[] }; Returns: Array<Database["public"]["Tables"]["messages"]["Row"]> };
-      complete_current_user_onboarding: { Args: { target_profile: Json; target_followed_user_ids?: string[]; target_theme?: "light" | "dark" | "system" }; Returns: Array<{ completed: boolean; completed_at: string; followed_user_ids: string[]; theme_mode: "light" | "dark" | "system" }> };
+      complete_current_user_onboarding: {
+        Args: {
+          target_profile: Json;
+          target_followed_user_ids?: string[];
+          target_theme?: "light" | "dark" | "system";
+          target_start_choice?: "createCommunity" | "joinInvite" | "mentionFeed";
+          target_invite_code?: string | null;
+        };
+        Returns: Array<{
+          completed: boolean;
+          completed_at: string;
+          followed_user_ids: string[];
+          theme_mode: "light" | "dark" | "system";
+          initial_feed: "mention" | "community" | "invite";
+          start_choice: "createCommunity" | "joinInvite" | "mentionFeed";
+        }>;
+      };
       follow_user: { Args: { target_user_id: string }; Returns: boolean };
       unfollow_user: { Args: { target_user_id: string }; Returns: boolean };
       set_message_reaction: { Args: { target_message_id: string; target_emoji: string; target_reacted: boolean }; Returns: Array<{ message_id: string; emoji: string; reaction_count: number; reacted_by_current_user: boolean }> };
@@ -1086,6 +1173,23 @@ export type Database = {
       submit_safety_report: {
         Args: { report_target_type: string; report_target_id: string; report_reason: string; report_description?: string | null; report_community_id?: string | null; report_conversation_id?: string | null };
         Returns: Array<Database["public"]["Tables"]["reports"]["Row"]>;
+      };
+      get_my_email_verification_status: { Args: Record<string, never>; Returns: Json };
+      dismiss_email_verification_reminder: { Args: Record<string, never>; Returns: Json };
+      mark_email_verification_success_seen: { Args: Record<string, never>; Returns: Json };
+      mark_email_verification_email_changed: { Args: Record<string, never>; Returns: Json };
+      list_my_social_auth_external_identities: {
+        Args: Record<string, never>;
+        Returns: Array<{
+          provider: string;
+          external_id: string;
+          linked_at: string;
+          last_used_at: string | null;
+        }>;
+      };
+      audit_provider_connection_change: {
+        Args: { target_provider: string; target_event: string };
+        Returns: string;
       };
     };
     Enums: {

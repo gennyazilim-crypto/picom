@@ -1,0 +1,12 @@
+2026-08-16T19:18:15.099Z artifact C:\Users\ACER\AppData\Local\Temp\picom-task13-20260816T1910Z\win-unpacked\Picom.exe
+2026-08-16T19:18:15.105Z sha256 7189c84ae822d39773c4614d0141656f8f6de26373b8fef6b0905a8815a712d4
+2026-08-16T19:18:15.276Z RESULT asar-unsafe-flags PACKAGED_PASS none
+2026-08-16T19:18:16.278Z launched pid=988
+2026-08-16T19:18:16.791Z cdp ws://127.0.0.1:9333/devtools/page/0EC8E8BA8590E817CA06131FC324B07E launchMs=512
+2026-08-16T19:18:18.725Z RESULT S01-clean-first-launch FAIL welcome=false title=Picom Desktop launchMs=512
+2026-08-16T19:18:18.726Z RESULT S16-auth BLOCKED_TEST_IDENTITY No dedicated test account in environment
+2026-08-16T19:18:18.726Z RESULT S36-legal-gate BLOCKED_TEST_IDENTITY Post-auth path not entered
+2026-08-16T19:18:18.726Z RESULT S37-account-onboarding BLOCKED_TEST_IDENTITY Post-auth path not entered
+2026-08-16T19:18:18.726Z RESULT S21-startup-item-change BLOCKED_ENVIRONMENT Did not mutate host login items
+2026-08-16T19:18:18.726Z RESULT S22-start-in-tray BLOCKED_ENVIRONMENT Did not alter host startup
+2026-08-16T19:18:18.726Z RESULT S57-installer BLOCKED_ENVIRONMENT NSIS not executed against host

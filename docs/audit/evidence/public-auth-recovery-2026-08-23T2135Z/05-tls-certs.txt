@@ -1,0 +1,24 @@
+nginx -t: ok
+nginx: active + enabled
+certbot.timer: enabled + active
+
+picom.gg
+  subject CN=picom.gg
+  issuer Let's Encrypt YE2
+  notBefore=2026-07-14  notAfter=2026-10-12
+  SAN: picom.gg, www.picom.gg
+
+account.picom.gg
+  subject CN=account.picom.gg
+  issuer Let's Encrypt YE2
+  notBefore=2026-07-26  notAfter=2026-10-24
+  SAN: account.picom.gg
+
+auth.picom.gg
+  subject CN=auth.picom.gg
+  issuer Let's Encrypt YE2
+  notBefore=2026-08-01  notAfter=2026-10-30
+  SAN: auth.picom.gg
+
+External curl ssl_verify_result=0 for all three hosts.
+TLS validation was not bypassed.

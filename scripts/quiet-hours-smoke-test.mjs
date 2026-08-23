@@ -1,28 +1,32 @@
-import { readFileSync } from "node:fs";
+import assert from "node:assert/strict";
+import { createServer } from "vite";
 
-const settings = readFileSync("src/services/settingsService.ts", "utf8");
-const service = readFileSync("src/services/notificationService.ts", "utf8");
-const modal = readFileSync("src/components/SettingsModal.tsx", "utf8");
-const docs = readFileSync("docs/quiet-hours.md", "utf8");
-
-const checks = [
-  [settings.includes("QuietHoursSettings"), "quiet hours settings type"],
-  [settings.includes("startTime: \"22:00\""), "default start time"],
-  [settings.includes("endTime: \"07:00\""), "default end time"],
-  [service.includes("isQuietHoursActive"), "quiet hours active helper"],
-  [service.includes("quietHoursSuppressesDesktop"), "desktop suppression helper"],
-  [service.includes("Quiet Hours suppressed this desktop notification."), "suppression reason"],
-  [service.includes("quietHoursShouldSilence"), "sounds-only silence helper"],
-  [modal.includes("Enable Quiet Hours"), "settings toggle"],
-  [modal.includes("type=\"time\""), "time inputs"],
-  [modal.includes("Allow mentions during Quiet Hours"), "mentions override UI"],
-  [docs.includes("Overnight schedules are supported"), "docs overnight support"],
-  [docs.includes("system timezone"), "docs local timezone"],
-];
-
-const failed = checks.filter(([ok]) => !ok).map(([, label]) => label);
-if (failed.length) {
-  throw new Error(`Quiet Hours smoke test failed: ${failed.join(", ")}`);
+class MemoryStorage {
+  #values = new Map();
+  getItem(key) { return this.#values.get(key) ?? null; }
+  setItem(key, value) { this.#values.set(key, String(value)); }
 }
 
-console.log("Quiet Hours smoke test passed.");
+globalThis.window = { localStorage: new MemoryStorage(), picomDesktop: undefined };
+
+const vite = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true, hmr: false }, appType: "custom" });
+try {
+  const { settingsService } = await vite.ssrLoadModule("/src/services/settingsService.ts");
+  const { isQuietHoursActive, quietHoursSuppressesDesktop, quietHoursShouldSilence } = await vite.ssrLoadModule("/src/services/notificationService.ts");
+  const settings = settingsService.getSettings().notificationSettings;
+  const quietHours = { ...settings.quietHours, enabled: true, startTime: "22:00", endTime: "07:00", applyTo: "all_notifications", allowMentions: false };
+  const configured = { ...settings, quietHours };
+
+  assert.match(settings.quietHours.startTime, /^([01]\d|2[0-3]):[0-5]\d$/, "default start time is normalized");
+  assert.match(settings.quietHours.endTime, /^([01]\d|2[0-3]):[0-5]\d$/, "default end time is normalized");
+  assert.equal(isQuietHoursActive(quietHours, new Date("2026-08-16T23:30:00")), true, "overnight quiet hours are active before midnight");
+  assert.equal(isQuietHoursActive(quietHours, new Date("2026-08-16T06:30:00")), true, "overnight quiet hours are active after midnight");
+  assert.equal(isQuietHoursActive(quietHours, new Date("2026-08-16T12:30:00")), false, "quiet hours end at the configured local time");
+  assert.equal(quietHoursSuppressesDesktop(configured, false, "direct_message", new Date("2026-08-16T23:30:00")), true, "all-notification policy suppresses desktop delivery");
+  assert.equal(quietHoursSuppressesDesktop({ ...configured, quietHours: { ...quietHours, allowMentions: true } }, true, "mention", new Date("2026-08-16T23:30:00")), false, "mention override remains truthful");
+  assert.equal(quietHoursSuppressesDesktop({ ...configured, quietHours: { ...quietHours, applyTo: "normal_messages_only" } }, false, "incoming_call", new Date("2026-08-16T23:30:00")), false, "normal-message policy does not suppress calls");
+  assert.equal(quietHoursShouldSilence({ ...configured, quietHours: { ...quietHours, applyTo: "sounds_only" } }, false, new Date("2026-08-16T23:30:00")), true, "sounds-only quiet hours do not claim to block delivery");
+  console.log("Quiet Hours runtime smoke test passed.");
+} finally {
+  await vite.close();
+}

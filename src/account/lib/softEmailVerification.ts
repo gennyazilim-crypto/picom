@@ -182,7 +182,7 @@ export async function markSoftEmailSuccessSeen(): Promise<void> {
 }
 
 export function softVerifyEmailPageUrl(token?: string): string {
-  if (token) return `${ACCOUNT_ORIGIN}/verify-email?token=${encodeURIComponent(token)}`;
+  if (token) return `${ACCOUNT_ORIGIN}/verify-email/${encodeURIComponent(token)}`;
   return `${ACCOUNT_ORIGIN}/verify-email`;
 }
 

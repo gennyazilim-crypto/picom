@@ -1,0 +1,15 @@
+EXIT_build:web=0
+EXIT_electron:build=0
+EXIT_feed:companion:smoke=0
+EXIT_feed:query:smoke=0
+EXIT_mentions:supabase:smoke=0
+EXIT_feed:security:definer:smoke=0
+EXIT_feed:actions:smoke=0
+EXIT_feed:media:smoke=0
+EXIT_feed:storage:security:static=0
+EXIT_feed:attachment:signing:smoke=0
+EXIT_feed:pagination:smoke=0
+EXIT_feed:i18n:parity=0
+EXIT_feed:perf:synthetic=0
+EXIT_feed:mapper:smoke=0
+EXIT_feed:realtime:cache:smoke=0

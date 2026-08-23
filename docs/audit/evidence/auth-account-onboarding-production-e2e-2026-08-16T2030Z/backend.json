@@ -1,0 +1,9 @@
+{
+  "PACKAGED_AUTH_BACKEND": "picom-production",
+  "ref": "cqnsetsmcduraryemhbi",
+  "host": "cqnsetsmcduraryemhbi.supabase.co",
+  "proof": "ASCII scan of packaged resources/app.asar: cqnsetsmcduraryemhbi=6, ufmtvqtsklqsmqxefbbs=0. One 127.0.0.1:54321 string occurrence remains a non-authoritative bundled fallback, not the packaged auth host.",
+  "env_production_host": "cqnsetsmcduraryemhbi.supabase.co",
+  "env_local_host": "ufmtvqtsklqsmqxefbbs.supabase.co",
+  "note": "Packaged artifact authenticates against production, not staging."
+}

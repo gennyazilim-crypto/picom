@@ -1,0 +1,6 @@
+﻿toplevel=C:/Users/ACER/Desktop/picom
+remote=https://github.com/gennyazilim-crypto/picom.git
+currentBranch=feat/community-rebuild
+currentHead=4533587d207e79c0486783ad0eb5f4f48a0e67ca
+dirtyWorktree=YES (feat/community-rebuild has uncommitted brand icon changes; not stashed, not cleaned)
+utc=20260803T185843Z

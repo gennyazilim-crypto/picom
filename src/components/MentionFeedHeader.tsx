@@ -1,5 +1,6 @@
 import { MentionFeedTabs } from "./MentionFeedTabs";
 import { MentionFeedMessageAlerts } from "./MentionFeedMessageAlerts";
+import { useTranslation } from "../i18n";
 import type { DirectConversation } from "../types/directMessages";
 import type { MentionFeedTab } from "../types/mentions";
 
@@ -22,6 +23,7 @@ export function MentionFeedHeader({
   onTabChange,
   onOpenDirectConversation,
 }: MentionFeedHeaderProps) {
+  const { t } = useTranslation("feed");
   const activeCount = activeTab === "feed" ? feedCount : followingCount;
 
   return (
@@ -39,7 +41,7 @@ export function MentionFeedHeader({
           onOpenConversation={onOpenDirectConversation}
         />
         <div className="mention-feed-toolbar-meta">
-          <span className="mention-feed-toolbar-count">{activeCount} gönderi</span>
+          <span className="mention-feed-toolbar-count">{t("posts.count", { count: activeCount })}</span>
         </div>
       </div>
     </header>

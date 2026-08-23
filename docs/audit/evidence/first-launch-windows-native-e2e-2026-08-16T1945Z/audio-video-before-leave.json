@@ -1,0 +1,314 @@
+{
+  "settings": {
+    "present": true,
+    "completed": false,
+    "currentStep": "audio-video",
+    "purposeIds": [
+      "gaming",
+      "friends"
+    ],
+    "reviewAllSetup": false,
+    "locale": "en",
+    "theme": "dark",
+    "density": "compact",
+    "textSize": "large",
+    "interfaceScale": 1.25,
+    "reducedMotion": true,
+    "highContrast": true,
+    "focusRingStrong": true,
+    "notifications": {
+      "enabled": true,
+      "nativeDesktopEnabled": true,
+      "directMessages": true,
+      "mentions": true,
+      "incomingCalls": true,
+      "friendRequests": true,
+      "communityAnnouncements": true,
+      "quietHours": {
+        "enabled": false,
+        "startTime": "22:00",
+        "endTime": "07:00",
+        "applyTo": "normal_messages_only",
+        "allowMentions": true
+      }
+    }
+  },
+  "media": {
+    "gum": [
+      {
+        "constraints": {
+          "audio": {
+            "echoCancellation": true,
+            "noiseSuppression": true,
+            "autoGainControl": true
+          },
+          "video": false
+        },
+        "at": 1786909517663
+      },
+      {
+        "constraints": {
+          "audio": {
+            "deviceId": {
+              "exact": "c39b93f68aa55e67e719ae21383df661d14e7482c95cc13e24e20e64920b3f26"
+            },
+            "echoCancellation": true,
+            "noiseSuppression": true,
+            "autoGainControl": true
+          },
+          "video": false
+        },
+        "at": 1786909527785
+      },
+      {
+        "constraints": {
+          "audio": {
+            "deviceId": {
+              "exact": "c39b93f68aa55e67e719ae21383df661d14e7482c95cc13e24e20e64920b3f26"
+            },
+            "echoCancellation": true,
+            "noiseSuppression": true,
+            "autoGainControl": true
+          },
+          "video": false
+        },
+        "at": 1786909527977
+      },
+      {
+        "constraints": {
+          "audio": {
+            "deviceId": {
+              "exact": "c39b93f68aa55e67e719ae21383df661d14e7482c95cc13e24e20e64920b3f26"
+            },
+            "echoCancellation": true,
+            "noiseSuppression": true,
+            "autoGainControl": true
+          },
+          "video": false
+        },
+        "at": 1786909529218
+      },
+      {
+        "constraints": {
+          "audio": {
+            "deviceId": {
+              "exact": "c39b93f68aa55e67e719ae21383df661d14e7482c95cc13e24e20e64920b3f26"
+            },
+            "echoCancellation": true,
+            "noiseSuppression": true,
+            "autoGainControl": true
+          },
+          "video": false
+        },
+        "at": 1786909530442
+      },
+      {
+        "constraints": {
+          "audio": false,
+          "video": {
+            "deviceId": {
+              "exact": "3b0049ec2da1e813300be8e220c09fb13981145eb6455f7d4ff7418506330fa0"
+            },
+            "width": {
+              "ideal": 1280,
+              "max": 1280
+            },
+            "height": {
+              "ideal": 720,
+              "max": 720
+            },
+            "frameRate": {
+              "ideal": 24,
+              "max": 30
+            }
+          }
+        },
+        "at": 1786909550989
+      },
+      {
+        "constraints": {
+          "audio": false,
+          "video": {
+            "deviceId": {
+              "exact": "3b0049ec2da1e813300be8e220c09fb13981145eb6455f7d4ff7418506330fa0"
+            },
+            "width": {
+              "ideal": 1280,
+              "max": 1280
+            },
+            "height": {
+              "ideal": 720,
+              "max": 720
+            },
+            "frameRate": {
+              "ideal": 24,
+              "max": 30
+            }
+          }
+        },
+        "at": 1786909552329
+      },
+      {
+        "constraints": {
+          "audio": false,
+          "video": {
+            "deviceId": {
+              "exact": "3b0049ec2da1e813300be8e220c09fb13981145eb6455f7d4ff7418506330fa0"
+            },
+            "width": {
+              "ideal": 1280,
+              "max": 1280
+            },
+            "height": {
+              "ideal": 720,
+              "max": 720
+            },
+            "frameRate": {
+              "ideal": 24,
+              "max": 30
+            }
+          }
+        },
+        "at": 1786909553656
+      },
+      {
+        "constraints": {
+          "audio": false,
+          "video": {
+            "mandatory": {
+              "chromeMediaSource": "desktop",
+              "chromeMediaSourceId": "window:10748810:1",
+              "maxWidth": 1920,
+              "maxHeight": 1080,
+              "maxFrameRate": 30
+            }
+          }
+        },
+        "at": 1786909556922
+      }
+    ],
+    "live": [
+      {
+        "audio": [
+          {
+            "state": "ended",
+            "label": "Default - Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)",
+            "muted": false
+          }
+        ],
+        "video": []
+      },
+      {
+        "audio": [
+          {
+            "state": "ended",
+            "label": "Microphone Array (AMD Audio Device)",
+            "muted": false
+          }
+        ],
+        "video": []
+      },
+      {
+        "audio": [
+          {
+            "state": "ended",
+            "label": "Microphone Array (AMD Audio Device)",
+            "muted": false
+          }
+        ],
+        "video": []
+      },
+      {
+        "audio": [
+          {
+            "state": "ended",
+            "label": "Microphone Array (AMD Audio Device)",
+            "muted": false
+          }
+        ],
+        "video": []
+      },
+      {
+        "audio": [
+          {
+            "state": "ended",
+            "label": "Microphone Array (AMD Audio Device)",
+            "muted": false
+          }
+        ],
+        "video": []
+      },
+      {
+        "audio": [],
+        "video": [
+          {
+            "state": "ended",
+            "label": "Screen",
+            "width": 0,
+            "height": 0
+          }
+        ]
+      }
+    ],
+    "videoElements": [
+      {
+        "hasSrcObject": false,
+        "readyState": 0,
+        "width": 0,
+        "height": 0,
+        "audioTracks": 0,
+        "videoTracks": 0,
+        "videoLive": false
+      },
+      {
+        "hasSrcObject": false,
+        "readyState": 0,
+        "width": 0,
+        "height": 0,
+        "audioTracks": 0,
+        "videoTracks": 0,
+        "videoLive": false
+      }
+    ],
+    "meterNow": 0,
+    "micStatus": "Test passed",
+    "inputLabel": "Microphone Array (AMD Audio Device)",
+    "outputLabel": "Default - Hoparlör (Realtek(R) Audio)"
+  },
+  "snap": {
+    "title": "Picom Desktop",
+    "theme": "dark",
+    "bodyClass": "",
+    "htmlClass": "",
+    "bg": "rgb(28, 33, 31)",
+    "heading": "This app is optimized for desktop.",
+    "hasWelcome": false,
+    "hasPersonalize": false,
+    "hasAppearance": false,
+    "hasAudio": true,
+    "hasCamera": true,
+    "hasScreen": true,
+    "hasDesktop": false,
+    "hasNotifications": false,
+    "hasPrivacy": false,
+    "hasReady": false,
+    "hasLogin": false,
+    "hasFirstLaunch": true,
+    "hasBlockingGate": false,
+    "continueText": "Continue",
+    "continueEnabled": true,
+    "progress": "Step 4 of 8",
+    "planPreview": [],
+    "selectedPurposes": [],
+    "reviewAllPresent": true,
+    "privacyDeferred": false,
+    "privacyInteractive": false,
+    "meterNow": 0,
+    "microphoneStatus": "Test passed",
+    "videoCount": 2,
+    "videoHasSrc": false,
+    "readyRows": [],
+    "hidden": false,
+    "textSlice": "Picom\nSearch Picom or press Ctrl K\nCompanion\nP\nPICOM\nDesktop Setup\n✓\n01 Welcome\nCompleted\n✓\n02 Personalize\nCompleted\n✓\n03 Appearance\nCompleted\n4\n04 Audio & Video\nCurrent\n5\n05 Desktop\nOptional\n6\n06 Notifications\nOptional\n7\n07 Privacy\nOptional\n8\n08 Ready\nUpcoming\nStep 4 of 8\nShowing 8 of 8 setup areas\nSetup tailored for Gaming + Friends & communication\nReview all setup options\nLanguage\nEnglish\nTürkçe\nDeutsch\nFrançais\nEspañol\nItaliano\nPortuguês\nNederlands\nPolski\nРусский\nStep 4 of 8: Audio & Video\n\nAUDIO & VIDEO\n\nSet up audio and video\n\nChoose voice devices, then optionally check your camera and screen sharing locally. Access is requested only when you choose to enable it.\n\nMicrophone\nInput device\nDefault - Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)\nCommunications - Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)\nMicrophone Array (AMD Audio Device)\nHeadset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)\nInput level\nTest passed\nTest microphone\nSpeaker\nOutput device\nDefault - Hoparlör (Realtek(R) Audio)\nCommunications - Headset Earphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)\nHeadset Earphone (CORSA"
+  }
+}

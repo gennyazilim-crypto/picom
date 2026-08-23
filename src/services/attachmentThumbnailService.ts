@@ -1,12 +1,19 @@
-export type AttachmentThumbnailPlaceholder = Readonly<{
+/**
+ * Feed / message image preview policy (Approach B).
+ * No Edge/thumbnail processor is configured in production.
+ * Cards use the scanned original (or a real thumbnail_url when Storage provides one).
+ * Never invent placeholder thumbnail URLs.
+ */
+
+export type AttachmentNativePreview = Readonly<{
   thumbnailUrl: string | null;
   thumbnailStoragePath: string | null;
   width: number | null;
   height: number | null;
   blurhashPlaceholder: string | null;
-  processor: "EDGE_FUNCTION_PLACEHOLDER";
+  processor: "NATIVE_ORIGINAL_PREVIEW";
   generated: false;
-  reason: "IMAGE_PROCESSOR_NOT_CONFIGURED";
+  reason: "THUMBNAIL_PIPELINE_NOT_CONFIGURED_USE_NATIVE";
 }>;
 
 export type AttachmentThumbnailInput = Readonly<{
@@ -16,8 +23,9 @@ export type AttachmentThumbnailInput = Readonly<{
   sizeBytes: number;
 }>;
 
-const supportedThumbnailMimeTypes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+const supportedImageMimeTypes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 
+/** Deterministic sibling path reserved for a future server-side thumbnail worker. Not written today. */
 export function createThumbnailStoragePath(storagePath: string): string | null {
   const normalized = storagePath.trim().replace(/\\/g, "/").replace(/^\/+/, "");
   if (!normalized || normalized.split("/").some((part) => !part || part === "." || part === "..")) return null;
@@ -28,9 +36,23 @@ export function createThumbnailStoragePath(storagePath: string): string | null {
   return `${directory}/thumbnails/${fileName}.webp`;
 }
 
+export function resolveNativeImagePreviewUrl(input: Readonly<{
+  thumbnailUrl?: string | null;
+  publicUrl?: string | null;
+  originalUrl?: string | null;
+}>): string | null {
+  const realThumb = typeof input.thumbnailUrl === "string" && input.thumbnailUrl.trim() ? input.thumbnailUrl.trim() : null;
+  if (realThumb) return realThumb;
+  const original = (typeof input.publicUrl === "string" && input.publicUrl.trim())
+    || (typeof input.originalUrl === "string" && input.originalUrl.trim())
+    || null;
+  return original;
+}
+
 export const attachmentThumbnailService = {
-  createThumbnailPlaceholder(input: AttachmentThumbnailInput): AttachmentThumbnailPlaceholder {
-    const thumbnailStoragePath = supportedThumbnailMimeTypes.has(input.mimeType)
+  /** Upload finalization: do not fabricate thumbnail URLs. */
+  createNativePreviewMetadata(input: AttachmentThumbnailInput): AttachmentNativePreview {
+    const thumbnailStoragePath = supportedImageMimeTypes.has(input.mimeType)
       ? createThumbnailStoragePath(input.storagePath)
       : null;
 
@@ -40,17 +62,14 @@ export const attachmentThumbnailService = {
       width: null,
       height: null,
       blurhashPlaceholder: null,
-      processor: "EDGE_FUNCTION_PLACEHOLDER",
+      processor: "NATIVE_ORIGINAL_PREVIEW",
       generated: false,
-      reason: "IMAGE_PROCESSOR_NOT_CONFIGURED",
+      reason: "THUMBNAIL_PIPELINE_NOT_CONFIGURED_USE_NATIVE",
     };
   },
 
-  // Future production integration point: generateThumbnailPlaceholder() can be
-  // replaced by a trusted Edge Function/worker after storage and private-channel
-  // access rules are finalized. Do not add heavy image processing dependencies
-  // in the Electron renderer.
-  generateThumbnailPlaceholder(input: AttachmentThumbnailInput): AttachmentThumbnailPlaceholder {
-    return this.createThumbnailPlaceholder(input);
-  },
+  resolvePreviewUrl: resolveNativeImagePreviewUrl,
 };
+
+/** @deprecated Use createNativePreviewMetadata — kept name aliases only for call-site migration. */
+export type AttachmentThumbnailPlaceholder = AttachmentNativePreview;

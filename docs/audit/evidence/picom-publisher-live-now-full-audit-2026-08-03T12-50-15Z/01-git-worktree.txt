@@ -1,0 +1,71 @@
+PWD=C:\Users\ACER\Desktop\picom
+GIT_ROOT=C:/Users/ACER/Desktop/picom
+BRANCH=feat/community-rebuild
+HEAD=9ff56fbe3f3cb46048e5a38858df41972d9b0e2e
+?? docs/audit/evidence/picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z/
+
+---LOG---
+
+9ff56fbe docs(publisher): record live now phase1 freeze SHA
+2f198ef6 feat(publisher): complete live now phase 1 staging release
+6c922c09 docs(feed): record clean dependency closure and staging package SHA
+6b0de2b2 fix(data-source): remove mock branches from channel members reactions
+a42211be test(data-source): assert production services have no mock branches
+
+---DIFFSTAT---
+
+
+---NAMESTATUS---
+
+
+---UNTRACKED---
+
+docs/audit/evidence/picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z/01-git-worktree.txt
+docs/audit/evidence/picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z/EVIDENCE_PATH.txt
+
+---TAG---
+
+picom-live-now-phase1-staging-go-2026-08-03
+object 2f198ef61ffd0ac423c9713482c57da24c4967b7
+type commit
+tag picom-live-now-phase1-staging-go-2026-08-03
+tagger picom <gennyazilim@gmail.com> 1785760385 +0200
+
+PICOM Live Now Phase 1 staging-tested release candidate
+
+SHA: 2f198ef61ffd0ac423c9713482c57da24c4967b7
+Evidence: docs/audit/evidence/live-now-release-freeze-2026-08-03T12-18-30Z/
+Production foundation: PENDING
+
+---TRACKED MIGRATIONS---
+
+supabase/migrations/20260803130000_public_platform_stats.sql
+supabase/migrations/20260803140000_publisher_creator_program_core.sql
+supabase/migrations/20260803141000_publisher_livekit_broadcast_gate.sql
+supabase/migrations/20260803150000_live_now_publisher_discovery.sql
+supabase/migrations/20260803160000_publisher_eligibility_member_count_canonical.sql
+supabase/migrations/20260803170000_live_now_discovery_badge_join_dedupe.sql
+supabase/migrations/20260803171000_live_now_badge_realtime_revocation.sql
+supabase/migrations/20260803172000_publisher_schedule_reminders_and_notif_modes.sql
+
+---FILE HASHES---
+
+20260803130000_public_platform_stats.sql D2092CD45BA24619769DC7DA1B093E64B71EFF353E24B0BEDCD1761710C110FF
+20260803140000_publisher_creator_program_core.sql 9D7314A9E5B43DECF1CDB53EDDFFCD03A53AD2CCCF6A11CC357905B5E0026806
+20260803141000_publisher_livekit_broadcast_gate.sql 23439706DF674FCBBAB7DEEBF2C4DBF6BAC9BD356C8E8C31D60B91F5CC3ED5F9
+20260803150000_live_now_publisher_discovery.sql B6AE5107EB70D8F34D9D3F745A2511C9743E4FEFAC0EAB486322B362C2D4C4E3
+20260803160000_publisher_eligibility_member_count_canonical.sql 208A648CA142FA75AE187731D14CEF3DCC7CA7C1FC7970097F22A18FBF33E0B9
+20260803170000_live_now_discovery_badge_join_dedupe.sql 6F3AEA432EEDBBD28B80965A77422762463DE9BF34B6137AE139508457BD59EE
+20260803171000_live_now_badge_realtime_revocation.sql 47F31B9125E8481D577DD9545EA8DA789400037E09C73FE3DCC18F514C2AC7CC
+20260803172000_publisher_schedule_reminders_and_notif_modes.sql 1ED726CF4432B44C2889E92C8637A7D1065D7EEB3C3582C23EDA17CC3D06A54B
+
+=== AUDIT CLASSIFICATION ===
+HEAD=9ff56fbe3f3cb46048e5a38858df41972d9b0e2e
+TAG_RELEASE=2f198ef61ffd0ac423c9713482c57da24c4967b7
+worktree_untracked=only this audit evidence dir
+diff_vs_HEAD=none (clean product tree)
+migrations_202608031*=TRACKED (8 files)
+release_commit_message=feat(publisher): complete live now phase 1 staging release
+docs_followup=9ff56fbe records freeze SHA
+reported_user_snapshot_SHA=6c922c09 DIRTY — STALE relative to current tree
+RELEASE_REPRODUCIBILITY=PASS (product frozen at tag 2f198ef61ffd0ac423c9713482c57da24c4967b7; tip has docs-only follow-up; no untracked product/migration files)

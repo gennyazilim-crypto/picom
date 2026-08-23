@@ -1,0 +1,7 @@
+typecheck_progression:
+fa35e7b8_clean: 50 (was 94 at ffcb7bf6 before earlier deps)
+after_message_profile_auth_livekit_nav_dm_root: 11
+after_attachment_resolver_dmview_messageservice: 4
+after_chime_userspage_revert: 0
+final_tip: 6b0de2b2 typecheck=0 qa=0 build:web=0 electron:build=0 feed_smokes=0
+package_sha256=F0C44A4EE4A8EB98ABC9CA9976CCE5E98E095D7BFDBC40FE530B496B200F5D26

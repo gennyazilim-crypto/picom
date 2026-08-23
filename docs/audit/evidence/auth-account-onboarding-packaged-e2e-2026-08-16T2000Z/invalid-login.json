@@ -1,0 +1,17 @@
+{
+  "result": "PACKAGED_PASS",
+  "before": {
+    "hasLogin": true,
+    "hasFirstLaunch": false,
+    "hasOnboarding": false
+  },
+  "after": {
+    "hasLogin": true,
+    "hasFirstLaunch": false,
+    "hasOnboarding": false,
+    "error": "Email or password is incorrect.",
+    "loading": false,
+    "hasSessionHint": false,
+    "emailUsed": "invalid-e2e@example.invalid"
+  }
+}

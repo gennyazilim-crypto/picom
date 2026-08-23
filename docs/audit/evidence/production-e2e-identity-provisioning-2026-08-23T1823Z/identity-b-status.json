@@ -1,0 +1,7 @@
+{
+  "alias": "E2E_USER_B",
+  "DEDICATED_TEST_IDENTITY_B": "NOT_REQUESTED",
+  "lookup_performed": false,
+  "IDENTITY_B_SUITABILITY": "NOT_REQUESTED",
+  "reason": "PICOM_PROD_E2E_EMAIL_B / PICOM_PROD_E2E_PASSWORD_B unset. B is not created merely because A is requested."
+}

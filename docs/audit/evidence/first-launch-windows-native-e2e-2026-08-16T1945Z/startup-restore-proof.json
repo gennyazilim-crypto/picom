@@ -1,0 +1,17 @@
+{
+  "original": {
+    "ok": true,
+    "native": true,
+    "supported": true,
+    "enabled": false,
+    "registry": "NO_PICOM_RUN_VALUE"
+  },
+  "restored": {
+    "ok": true,
+    "native": true,
+    "supported": true,
+    "enabled": false
+  },
+  "registry": "NO_PICOM_RUN_VALUE",
+  "match": true
+}

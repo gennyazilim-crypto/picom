@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import type { Community, Member } from "../types/community";
 import { communityDeleteSafetyService, type CommunityDeleteSafetyStatus } from "../services/communityDeleteSafetyService";
+import type { CommunityArchiveEligibility } from "../services/community/communityArchiveEligibilityService";
 import { AppIcon } from "./AppIcon";
 import "./CommunityDangerZone.css";
 
-type CommunityDeleteSafetyPanelProps = { community: Community; currentUser: Member };
+type CommunityDeleteSafetyPanelProps = { community: Community; currentUser: Member; eligibility: CommunityArchiveEligibility | null };
 
 function isCurrentUserOwner(community: Community, currentUser: Member): boolean {
   return community.roles.find((role) => role.id === currentUser.roleId)?.name === "Owner";
 }
 
-export function CommunityDeleteSafetyPanel({ community, currentUser }: CommunityDeleteSafetyPanelProps) {
+export function CommunityDeleteSafetyPanel({ community, currentUser, eligibility }: CommunityDeleteSafetyPanelProps) {
   const [confirmationName, setConfirmationName] = useState("");
   const [reason, setReason] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -30,6 +31,25 @@ export function CommunityDeleteSafetyPanel({ community, currentUser }: Community
   }, [community.id]);
 
   if (!canPrepareDelete) return null;
+
+  if (eligibility?.requiresOwnershipTransfer) {
+    return (
+      <section className="community-danger-action-card community-danger-action-card--archive" aria-label="Community ownership transfer requirement">
+        <header className="community-danger-action-header">
+          <span className="community-danger-action-icon" aria-hidden="true">
+            <AppIcon name="lock" size="sm" />
+          </span>
+          <div>
+            <strong>Ownership transfer required</strong>
+            <small>This community has {eligibility.memberCount.toLocaleString()} members.</small>
+          </div>
+        </header>
+        <p className="community-danger-warning">
+          Communities with more than 1,000 members must be transferred to another member instead of being archived.
+        </p>
+      </section>
+    );
+  }
 
   async function archiveCommunity() {
     setSubmitting(true);

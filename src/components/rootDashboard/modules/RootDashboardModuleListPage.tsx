@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "../../../i18n";
 import type { AdminOperationsAccess } from "../../../services/adminOperationsService";
 import { rootDashboardOperationsService } from "../../../services/rootDashboard/rootDashboardOperationsService";
 import type { RootDashboardListItem, RootDashboardModuleSection, RootDashboardModuleSummaryKind } from "../../../types/rootDashboardOperations";
@@ -28,10 +29,11 @@ export function RootDashboardModuleListPage({
   summary: summaryProp,
   summaryLabels,
   summaryModule,
-  emptyMessage = "No rows returned for this module.",
+  emptyMessage,
   toolbar,
   reloadToken = 0,
 }: RootDashboardModuleListPageProps) {
+  const { t } = useTranslation("admin");
   const [rows, setRows] = useState<RootDashboardListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export function RootDashboardModuleListPage({
     <section className="rd-module" aria-label={title}>
       <ModulePageHeader title={title} purpose={purpose} />
       {summaryEntries.length > 0 ? (
-        <div className="rd-kpi-strip" aria-label={`${title} summary`}>
+        <div className="rd-kpi-strip" aria-label={t("module.summaryLabel", { module: title })}>
           {summaryEntries.map(([key, value]) => (
             <KpiCard
               key={key}
@@ -90,13 +92,13 @@ export function RootDashboardModuleListPage({
         <DataTable
           loading={loading}
           rows={rows}
-          emptyMessage={emptyMessage}
+          emptyMessage={emptyMessage ?? t("module.noRows")}
           density="compact"
           columns={[
-            { id: "label", header: "Label", render: (row) => <strong className="rd-table__primary">{row.label}</strong> },
-            { id: "detail", header: "Detail", render: (row) => <span className="rd-table__muted">{row.detail}</span> },
-            { id: "status", header: "Status", render: (row) => <StatusPill value={row.status} /> },
-            { id: "createdAt", header: "Updated", render: (row) => <span className="rd-table__muted">{new Date(row.createdAt).toLocaleString()}</span> },
+            { id: "label", header: t("table.column.label"), render: (row) => <strong className="rd-table__primary">{row.label}</strong> },
+            { id: "detail", header: t("table.column.detail"), render: (row) => <span className="rd-table__muted">{row.detail}</span> },
+            { id: "status", header: t("table.column.status"), render: (row) => <StatusPill value={row.status} /> },
+            { id: "createdAt", header: t("table.column.updated"), render: (row) => <span className="rd-table__muted">{new Date(row.createdAt).toLocaleString()}</span> },
           ]}
         />
       )}

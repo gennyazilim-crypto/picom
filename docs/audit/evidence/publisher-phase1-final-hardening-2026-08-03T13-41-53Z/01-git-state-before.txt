@@ -1,0 +1,31 @@
+branch=feat/community-rebuild
+HEAD=9ff56fbe3f3cb46048e5a38858df41972d9b0e2e
+tag_release=picom-live-now-phase1-staging-go-2026-08-03
+ M package.json
+ M src/components/SettingsModal.tsx
+ M src/components/settings/AccountSummarySection.tsx
+ M src/components/settings/DiagnosticsSection.tsx
+ M src/components/settings/EmailPreferencesPanel.tsx
+ M src/components/settings/FeedbackSection.tsx
+ M src/components/settings/LegalSettingsSection.tsx
+ M src/components/settings/LogsViewer.tsx
+ M src/components/settings/ProfileMediaEditor.tsx
+ M src/components/settings/StorageCacheSection.tsx
+ M src/components/settings/UpdateSettingsSection.tsx
+ M src/components/settings/VoiceDeviceSelection.tsx
+ M src/components/settings/WindowsStartupSection.tsx
+ M src/services/appearanceService.ts
+ M src/services/dateTimeService.ts
+ M src/services/localization/liveNowCatalog.ts
+ M src/services/localizationService.ts
+ M src/services/settings/settingsI18n.ts
+ M src/services/settings/settingsI18nTr.ts
+ M src/services/settings/settingsSearchIndex.ts
+ M src/services/settingsService.ts
+?? docs/audit/evidence/picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z/
+?? docs/audit/evidence/publisher-phase1-final-hardening-2026-08-03T13-41-53Z/
+?? scripts/production-config-guard.mjs
+?? scripts/production-config-guard.test.mjs
+?? scripts/publisher-phase1-migration-seal.mjs
+?? scripts/ui-language-runtime.test.mjs
+?? src/services/localization/uiLanguages.ts

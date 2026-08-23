@@ -1,0 +1,8 @@
+﻿HEAD=448736697acf44e36887740b613c1dab16df2c27
+branch=feat/community-rebuild
+hardening_ancestor=76d0439bf1eda8e5a208b26452b390f8690244b2
+evidence_followup_ancestor=448736697acf44e36887740b613c1dab16df2c27
+final_candidate_tag=picom-publisher-phase1-production-candidate-2026-08-03-final
+prior_candidate_tag=picom-publisher-phase1-production-candidate-2026-08-03
+prior_candidate_points_to=76d0439b
+unrelated_untracked=docs/audit/evidence/picom-publisher-live-now-full-audit-2026-08-03T12-50-15Z/

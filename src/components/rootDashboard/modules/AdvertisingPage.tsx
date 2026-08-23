@@ -12,8 +12,15 @@ export function AdvertisingPage({ access }: ModulePageProps) {
   const [objective, setObjective] = useState("awareness");
   const [budgetCents, setBudgetCents] = useState("0");
   const [campaignId, setCampaignId] = useState("");
-  const [status, setStatus] = useState("draft");
-  const [reviewStatus, setReviewStatus] = useState("pending");
+  const [advertiserId, setAdvertiserId] = useState("");
+  const [creativeId, setCreativeId] = useState("");
+  const [snapshotId, setSnapshotId] = useState("");
+  const [placementKey, setPlacementKey] = useState("feed_inline");
+  const [placementEnabled, setPlacementEnabled] = useState(false);
+  const [globalDisabled, setGlobalDisabled] = useState(true);
+  const [reason, setReason] = useState("policy_review");
+  const [policyVersion, setPolicyVersion] = useState("ads-policy-v1");
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   const refresh = () => setReloadToken((value) => value + 1);
 
@@ -21,8 +28,8 @@ export function AdvertisingPage({ access }: ModulePageProps) {
     <RootDashboardModuleListPage
       access={access}
       section="ad_campaigns"
-      title="Advertising"
-      purpose="Campaign performance, pacing, and inventory controls."
+      title="Advertising operations"
+      purpose="Advertiser activation, campaign/creative review, placement kill switches, and delivery controls."
       summaryModule="advertising"
       summaryLabels={{
         active_campaigns: "Active campaigns",
@@ -35,7 +42,7 @@ export function AdvertisingPage({ access }: ModulePageProps) {
       toolbar={(
         <div className="rd-mutation-grid">
           <ModuleMutationForm
-            title="Upsert campaign"
+            title="Upsert legacy campaign draft"
             submitLabel="Save"
             onSuccess={() => { setName(""); refresh(); }}
             onSubmit={() => rootDashboardMutationService.upsertAdCampaign(access, {
@@ -54,40 +61,131 @@ export function AdvertisingPage({ access }: ModulePageProps) {
               <input type="number" min={0} value={budgetCents} onChange={(event) => setBudgetCents(event.target.value)} />
             </FieldLabel>
           </ModuleMutationForm>
+
           <ModuleMutationForm
-            title="Set campaign status"
-            submitLabel="Update"
-            onSuccess={refresh}
-            onSubmit={() => rootDashboardMutationService.setAdCampaignStatus(access, { campaignId, status })}
+            title="Activate advertiser"
+            submitLabel="Activate"
+            onSuccess={() => { setIdempotencyKey(crypto.randomUUID()); refresh(); }}
+            onSubmit={() => rootDashboardMutationService.rootActivateAdvertiser(access, {
+              advertiserId,
+              publicReasonCode: reason,
+              internalReasonCode: reason,
+              policyVersion,
+              idempotencyKey,
+            })}
+          >
+            <FieldLabel label="Advertiser id">
+              <input value={advertiserId} onChange={(event) => setAdvertiserId(event.target.value)} required />
+            </FieldLabel>
+            <FieldLabel label="Reason code">
+              <input value={reason} onChange={(event) => setReason(event.target.value)} required />
+            </FieldLabel>
+          </ModuleMutationForm>
+
+          <ModuleMutationForm
+            title="Suspend advertiser"
+            submitLabel="Suspend"
+            onSuccess={() => { setIdempotencyKey(crypto.randomUUID()); refresh(); }}
+            onSubmit={() => rootDashboardMutationService.rootSuspendAdvertiser(access, {
+              advertiserId,
+              publicReasonCode: reason,
+              internalReasonCode: reason,
+              policyVersion,
+              idempotencyKey,
+            })}
+          >
+            <FieldLabel label="Advertiser id">
+              <input value={advertiserId} onChange={(event) => setAdvertiserId(event.target.value)} required />
+            </FieldLabel>
+          </ModuleMutationForm>
+
+          <ModuleMutationForm
+            title="Approve campaign"
+            submitLabel="Approve"
+            onSuccess={() => { setIdempotencyKey(crypto.randomUUID()); refresh(); }}
+            onSubmit={() => rootDashboardMutationService.rootApproveAdCampaign(access, {
+              campaignId,
+              publicReasonCode: reason,
+              internalReasonCode: reason,
+              policyVersion,
+              idempotencyKey,
+            })}
           >
             <FieldLabel label="Campaign id">
               <input value={campaignId} onChange={(event) => setCampaignId(event.target.value)} required />
             </FieldLabel>
-            <FieldLabel label="Status">
-              <select value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="draft">draft</option>
-                <option value="in_review">in_review</option>
-                <option value="active">active</option>
-                <option value="paused">paused</option>
-                <option value="archived">archived</option>
+          </ModuleMutationForm>
+
+          <ModuleMutationForm
+            title="Reject campaign"
+            submitLabel="Reject"
+            onSuccess={() => { setIdempotencyKey(crypto.randomUUID()); refresh(); }}
+            onSubmit={() => rootDashboardMutationService.rootRejectAdCampaign(access, {
+              campaignId,
+              publicReasonCode: reason,
+              internalReasonCode: reason,
+              policyVersion,
+              idempotencyKey,
+            })}
+          >
+            <FieldLabel label="Campaign id">
+              <input value={campaignId} onChange={(event) => setCampaignId(event.target.value)} required />
+            </FieldLabel>
+          </ModuleMutationForm>
+
+          <ModuleMutationForm
+            title="Approve creative"
+            submitLabel="Approve"
+            onSuccess={() => { setIdempotencyKey(crypto.randomUUID()); refresh(); }}
+            onSubmit={() => rootDashboardMutationService.rootApproveAdCreative(access, {
+              creativeId,
+              snapshotId,
+              publicReasonCode: reason,
+              internalReasonCode: reason,
+              policyVersion,
+              idempotencyKey,
+            })}
+          >
+            <FieldLabel label="Creative id">
+              <input value={creativeId} onChange={(event) => setCreativeId(event.target.value)} required />
+            </FieldLabel>
+            <FieldLabel label="Snapshot id">
+              <input value={snapshotId} onChange={(event) => setSnapshotId(event.target.value)} required />
+            </FieldLabel>
+          </ModuleMutationForm>
+
+          <ModuleMutationForm
+            title="Placement kill switch"
+            submitLabel="Apply"
+            onSuccess={refresh}
+            onSubmit={() => rootDashboardMutationService.rootToggleAdPlacement(access, {
+              placementKey,
+              enabled: placementEnabled,
+            })}
+          >
+            <FieldLabel label="Placement key">
+              <input value={placementKey} onChange={(event) => setPlacementKey(event.target.value)} required />
+            </FieldLabel>
+            <FieldLabel label="Enabled">
+              <select value={placementEnabled ? "true" : "false"} onChange={(event) => setPlacementEnabled(event.target.value === "true")}>
+                <option value="false">false</option>
+                <option value="true">true</option>
               </select>
             </FieldLabel>
           </ModuleMutationForm>
+
           <ModuleMutationForm
-            title="Set review status"
-            submitLabel="Update"
+            title="Global advertising kill switch"
+            submitLabel="Apply"
             onSuccess={refresh}
-            onSubmit={() => rootDashboardMutationService.setAdReviewStatus(access, { campaignId, reviewStatus })}
+            onSubmit={() => rootDashboardMutationService.rootToggleAdvertisingGlobal(access, {
+              disabled: globalDisabled,
+            })}
           >
-            <FieldLabel label="Campaign id">
-              <input value={campaignId} onChange={(event) => setCampaignId(event.target.value)} required />
-            </FieldLabel>
-            <FieldLabel label="Review">
-              <select value={reviewStatus} onChange={(event) => setReviewStatus(event.target.value)}>
-                <option value="pending">pending</option>
-                <option value="in_review">in_review</option>
-                <option value="approved">approved</option>
-                <option value="rejected">rejected</option>
+            <FieldLabel label="Disable advertising">
+              <select value={globalDisabled ? "true" : "false"} onChange={(event) => setGlobalDisabled(event.target.value === "true")}>
+                <option value="true">true (kill)</option>
+                <option value="false">false</option>
               </select>
             </FieldLabel>
           </ModuleMutationForm>

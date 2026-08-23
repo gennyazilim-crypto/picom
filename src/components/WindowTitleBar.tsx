@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { brandLogoUrl } from "../config/brandAssets";
+import { appConfig } from "../config/appConfig";
+import "./WindowTitleBar.css";
 import { windowService } from "../services/windowService";
 import { AppIcon } from "./AppIcon";
 import { ThemeToggle } from "./ThemeToggle";
@@ -23,6 +25,8 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
   const [pendingAction, setPendingAction] = useState<"minimize" | "maximize" | "close" | null>(null);
   const [controlStatus, setControlStatus] = useState("");
   const [isOnline, setIsOnline] = useState(getBrowserOnline);
+  const [companionBusy, setCompanionBusy] = useState(false);
+  const companionAvailable = Boolean(appConfig.features.companionMode && window.picomDesktop?.companion?.enterMode);
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(getBrowserOnline());
@@ -34,7 +38,8 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
     };
   }, []);
 
-  useEffect(() => {    let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
     void windowService.isMaximized().then((value) => {
       if (mounted) {
@@ -70,6 +75,20 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
     setPendingAction(null);
   };
 
+  const enterCompanionMode = async () => {
+    if (!companionAvailable || companionBusy) return;
+    setCompanionBusy(true);
+    setControlStatus("");
+    try {
+      await window.picomDesktop?.companion?.enterMode();
+      setControlStatus("Switched to Companion mode.");
+    } catch {
+      setControlStatus("Companion mode could not be opened.");
+    } finally {
+      setCompanionBusy(false);
+    }
+  };
+
   return (
     <header className={`window-titlebar ${isMaximized ? "is-maximized" : ""}`} data-window-state={isMaximized ? "maximized" : "normal"}>
       <div className="window-brand">
@@ -83,12 +102,31 @@ export function WindowTitleBar({ theme, onToggleTheme, onOpenSearch, onOpenNotif
       </button>
 
       <div className="titlebar-actions">
+        {companionAvailable ? (
+          <button
+            type="button"
+            className="window-titlebar-companion-button"
+            aria-label="Switch to Picom Companion mode"
+            title="Switch to Picom Companion mode (Ctrl+Shift+C)"
+            disabled={companionBusy}
+            onClick={() => void enterCompanionMode()}
+          >
+            <span className="window-titlebar-companion-glyph" aria-hidden="true" />
+            <span>Companion</span>
+          </button>
+        ) : null}
         <span
           className={`titlebar-network-status${isOnline ? " is-online" : " is-offline"}`}
           role="status"
           aria-label={isOnline ? "Internet connection available" : "No internet connection"}
           title={isOnline ? "Online" : "Offline"}
-        />        {onOpenNotifications ? <button type="button" className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}><AppIcon name="bell" size="sm" />{notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}</button> : null}
+        />
+        {onOpenNotifications ? (
+          <button type="button" className="window-control titlebar-notification-button" aria-label="Open notifications" onClick={onOpenNotifications}>
+            <AppIcon name="bell" size="sm" />
+            {notificationUnreadCount ? <span>{notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}</span> : null}
+          </button>
+        ) : null}
         <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         <button type="button" className="window-control" aria-label="Minimize window" title="Minimize" disabled={pendingAction !== null} onClick={() => void runWindowAction("minimize")}>
           <AppIcon name={titleBarIcons.minimize} size="sm" />

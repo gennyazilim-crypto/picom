@@ -73,6 +73,21 @@
   font-size: 0.85rem;
 }
 
+.version-gate-retry {
+  margin-top: 16px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  background: var(--surface-sunken, rgba(255, 255, 255, 0.06));
+  color: inherit;
+  cursor: pointer;
+}
+
+.version-gate-retry:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .version-gate-banner {
   position: fixed;
   top: 0;

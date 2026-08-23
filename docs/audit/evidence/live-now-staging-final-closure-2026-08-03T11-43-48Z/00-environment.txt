@@ -1,0 +1,5 @@
+project_ref=ufmtvqtsklqsmqxefbbs
+environment=staging
+utc_stamp=2026-08-03T11-43-48Z
+migration=20260803172000_publisher_schedule_reminders_and_notif_modes.sql
+touched_prior_go_suites=none (Case04/Case18/JWT-RLS revocation not re-opened)

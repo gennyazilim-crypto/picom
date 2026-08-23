@@ -1,0 +1,17 @@
+AUTH PACKAGED E2E: BLOCKED_BACKEND
+
+Production still exposes the historical 3-argument complete_current_user_onboarding.
+
+Required hosted apply (separate explicitly authorized task; NOT applied in TASK 13C):
+
+  supabase/migrations/20260816000000_reconcile_account_onboarding_rpc_contract.sql
+  sha256=0a1a3d88bed83e654e36e89da60c2b08a611a4da47cb2dd9eb38fad3ff1af07d
+
+That migration:
+- drops 3-arg / 4-arg overloads
+- creates canonical 5-arg SECURITY DEFINER RPC
+- search_path = pg_catalog, public, extensions
+- grants EXECUTE to authenticated only (revokes public, anon, service_role)
+- adds profiles.onboarding_start_choice and profiles.onboarding_initial_feed
+
+Do not apply under TASK 13C.

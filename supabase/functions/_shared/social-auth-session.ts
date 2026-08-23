@@ -1,9 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Shared helpers for the custom social sign-in Edge Functions (steam-auth, epic-auth).
-// These mint a real Supabase session for an externally-verified identity using the
-// service-role key, then park it in public.social_auth_handoffs for the initiating
-// client to poll. SECURITY REVIEW REQUIRED before deploy/enable.
+// A service-role-only mapping binds each verified provider identity to exactly one
+// Supabase user. Sessions are parked in public.social_auth_handoffs for the
+// initiating client to poll.
 
 export type SocialSessionTokens = Readonly<{ access_token: string; refresh_token: string }>;
 export type SocialAuthProvider = "steam" | "epic";
@@ -23,23 +23,99 @@ export function isValidNonce(value: unknown): value is string {
 
 type ServiceClient = NonNullable<ReturnType<typeof getServiceClient>>;
 
-// Find or create the Supabase user for a synthetic/external identity, then mint a
-// session by generating a magic link and completing the verify step server-side.
-export async function mintSessionForIdentity(
+type ExternalIdentityInput = Readonly<{
+  provider: SocialAuthProvider;
+  externalId: string;
+  metadata: Record<string, unknown>;
+}>;
+
+type MappedUser = Readonly<{ id: string; email: string }>;
+
+function normalizeExternalId(value: string): string | null {
+  const externalId = value.trim();
+  return externalId.length >= 1 && externalId.length <= 160 && !/[\s\u0000-\u001f\u007f]/.test(externalId)
+    ? externalId
+    : null;
+}
+
+async function getMappedUser(
   client: ServiceClient,
-  identity: Readonly<{ email: string; metadata: Record<string, unknown> }>,
-): Promise<SocialSessionTokens | null> {
-  // Create the user if it does not exist yet (idempotent: ignore "already registered").
+  provider: SocialAuthProvider,
+  externalId: string,
+): Promise<MappedUser | null> {
+  const { data: mapping, error: mappingError } = await client
+    .from("social_auth_external_identities")
+    .select("user_id")
+    .eq("provider", provider)
+    .eq("external_id", externalId)
+    .maybeSingle();
+  if (mappingError || !mapping?.user_id) return null;
+
+  const { data, error } = await client.auth.admin.getUserById(mapping.user_id);
+  const user = data?.user;
+  if (error || !user?.email) return null;
+  if (user.app_metadata?.picom_external_provider !== provider
+    || user.app_metadata?.picom_external_id !== externalId) return null;
+
+  const { error: touchError } = await client
+    .from("social_auth_external_identities")
+    .update({ last_used_at: new Date().toISOString() })
+    .eq("provider", provider)
+    .eq("external_id", externalId)
+    .eq("user_id", user.id);
+  return touchError ? null : { id: user.id, email: user.email };
+}
+
+async function resolveOrCreateMappedUser(
+  client: ServiceClient,
+  identity: ExternalIdentityInput,
+): Promise<MappedUser | null> {
+  const externalId = normalizeExternalId(identity.externalId);
+  if (!externalId) return null;
+
+  const existing = await getMappedUser(client, identity.provider, externalId);
+  if (existing) return existing;
+
+  // The email is an internal Auth transport identifier only. Its random component
+  // prevents public provider IDs from becoming pre-registerable account handles.
+  const opaqueId = crypto.randomUUID().replaceAll("-", "");
+  const email = `${identity.provider}_${opaqueId}@external.users.picom.local`;
   const created = await client.auth.admin.createUser({
-    email: identity.email,
+    email,
     email_confirm: true,
     user_metadata: identity.metadata,
+    app_metadata: {
+      picom_external_identity: true,
+      picom_external_provider: identity.provider,
+      picom_external_id: externalId,
+    },
   });
-  if (created.error && !/already|exist|registered/i.test(created.error.message)) {
-    return null;
-  }
+  const createdUser = created.data?.user;
+  if (created.error || !createdUser?.email) return null;
 
-  const linked = await client.auth.admin.generateLink({ type: "magiclink", email: identity.email });
+  const { error: insertError } = await client.from("social_auth_external_identities").insert({
+    provider: identity.provider,
+    external_id: externalId,
+    user_id: createdUser.id,
+  });
+  if (!insertError) return { id: createdUser.id, email: createdUser.email };
+
+  // A concurrent verified callback may have won the unique mapping race. Remove
+  // this now-unmapped user and use only the database winner.
+  await client.auth.admin.deleteUser(createdUser.id);
+  return getMappedUser(client, identity.provider, externalId);
+}
+
+// Resolve the provider mapping, then mint a session from a one-time token entirely
+// server-side. Provider IDs and public profile fields never select a user by email.
+export async function mintSessionForIdentity(
+  client: ServiceClient,
+  identity: ExternalIdentityInput,
+): Promise<SocialSessionTokens | null> {
+  const mappedUser = await resolveOrCreateMappedUser(client, identity);
+  if (!mappedUser) return null;
+
+  const linked = await client.auth.admin.generateLink({ type: "magiclink", email: mappedUser.email });
   const tokenHash = linked.data?.properties?.hashed_token;
   if (linked.error || !tokenHash) return null;
 
@@ -57,22 +133,161 @@ export async function mintSessionForIdentity(
   return { access_token: session.access_token, refresh_token: session.refresh_token };
 }
 
-export async function createPendingHandoff(client: ServiceClient, nonce: string, provider: SocialAuthProvider): Promise<boolean> {
+export type SocialHandoffPurpose = "login" | "link";
+
+export type PendingHandoffRow = Readonly<{
+  nonce: string;
+  purpose: SocialHandoffPurpose;
+  link_user_id: string | null;
+}>;
+
+export async function createPendingHandoff(
+  client: ServiceClient,
+  nonce: string,
+  provider: SocialAuthProvider,
+  options: Readonly<{ purpose?: SocialHandoffPurpose; linkUserId?: string }> = {},
+): Promise<boolean> {
   await client.from("social_auth_handoffs").delete().lte("expires_at", new Date().toISOString());
-  const { error } = await client.from("social_auth_handoffs").insert({ nonce, provider, status: "pending" });
+  const purpose = options.purpose ?? "login";
+  const { error } = await client.from("social_auth_handoffs").insert({
+    nonce,
+    provider,
+    status: "pending",
+    purpose,
+    link_user_id: purpose === "link" ? options.linkUserId ?? null : null,
+  });
   return !error;
 }
 
-export async function isPendingHandoff(client: ServiceClient, nonce: string, provider: SocialAuthProvider): Promise<boolean> {
+export async function getPendingHandoff(
+  client: ServiceClient,
+  nonce: string,
+  provider: SocialAuthProvider,
+): Promise<PendingHandoffRow | null> {
   const { data, error } = await client
     .from("social_auth_handoffs")
-    .select("nonce")
+    .select("nonce,purpose,link_user_id")
     .eq("nonce", nonce)
     .eq("provider", provider)
     .eq("status", "pending")
     .gt("expires_at", new Date().toISOString())
     .maybeSingle();
-  return !error && Boolean(data?.nonce);
+  if (error || !data?.nonce) return null;
+  const purpose = data.purpose === "link" ? "link" : "login";
+  return {
+    nonce: data.nonce,
+    purpose,
+    link_user_id: typeof data.link_user_id === "string" ? data.link_user_id : null,
+  };
+}
+
+export async function isPendingHandoff(client: ServiceClient, nonce: string, provider: SocialAuthProvider): Promise<boolean> {
+  return Boolean(await getPendingHandoff(client, nonce, provider));
+}
+
+/** Bind a verified provider identity to an already-authenticated Picom user. */
+export async function linkIdentityToUser(
+  client: ServiceClient,
+  identity: ExternalIdentityInput,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; code: "invalid_identity" | "already_linked_other" | "already_linked_self" | "insert_failed" }> {
+  const externalId = normalizeExternalId(identity.externalId);
+  if (!externalId || !userId) return { ok: false, code: "invalid_identity" };
+
+  const { data: existing, error: existingError } = await client
+    .from("social_auth_external_identities")
+    .select("user_id")
+    .eq("provider", identity.provider)
+    .eq("external_id", externalId)
+    .maybeSingle();
+  if (existingError) return { ok: false, code: "insert_failed" };
+  if (existing?.user_id === userId) return { ok: false, code: "already_linked_self" };
+  if (existing?.user_id) return { ok: false, code: "already_linked_other" };
+
+  const { data: userOwned, error: ownedError } = await client
+    .from("social_auth_external_identities")
+    .select("external_id")
+    .eq("provider", identity.provider)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (ownedError) return { ok: false, code: "insert_failed" };
+  if (userOwned?.external_id) return { ok: false, code: "already_linked_self" };
+
+  const { error: insertError } = await client.from("social_auth_external_identities").insert({
+    provider: identity.provider,
+    external_id: externalId,
+    user_id: userId,
+  });
+  if (insertError) return { ok: false, code: "insert_failed" };
+
+  await client.from("account_security_events").insert({
+    user_id: userId,
+    event_type: "provider_linked",
+    metadata: { provider: identity.provider },
+  });
+  return { ok: true };
+}
+
+export async function unlinkIdentityFromUser(
+  client: ServiceClient,
+  provider: SocialAuthProvider,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; code: "not_linked" | "last_method" | "delete_failed" }> {
+  const { data: mapping, error: mappingError } = await client
+    .from("social_auth_external_identities")
+    .select("external_id")
+    .eq("provider", provider)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (mappingError || !mapping?.external_id) return { ok: false, code: "not_linked" };
+
+  const { data: userData, error: userError } = await client.auth.admin.getUserById(userId);
+  if (userError || !userData?.user) return { ok: false, code: "delete_failed" };
+
+  const identities = userData.user.identities ?? [];
+  const hasPassword = identities.some((row) => row.provider === "email")
+    || Boolean(userData.user.email && !userData.user.app_metadata?.picom_external_identity);
+  const nativeProviders = identities
+    .map((row) => row.provider)
+    .filter((p): p is string => typeof p === "string" && p !== "email");
+
+  const { data: externalRows } = await client
+    .from("social_auth_external_identities")
+    .select("provider")
+    .eq("user_id", userId);
+  const externalProviders = (externalRows ?? [])
+    .map((row) => row.provider)
+    .filter((p): p is string => typeof p === "string");
+
+  const remainingNative = nativeProviders;
+  const remainingExternal = externalProviders.filter((p) => p !== provider);
+  const remainingCount = (hasPassword ? 1 : 0)
+    + new Set([...remainingNative, ...remainingExternal]).size;
+  if (remainingCount < 1) return { ok: false, code: "last_method" };
+
+  const { error: deleteError } = await client
+    .from("social_auth_external_identities")
+    .delete()
+    .eq("provider", provider)
+    .eq("user_id", userId)
+    .eq("external_id", mapping.external_id);
+  if (deleteError) return { ok: false, code: "delete_failed" };
+
+  await client.from("account_security_events").insert({
+    user_id: userId,
+    event_type: "provider_unlinked",
+    metadata: { provider },
+  });
+  return { ok: true };
+}
+
+export async function resolveCallerUserId(request: Request, client: ServiceClient): Promise<string | null> {
+  const header = request.headers.get("Authorization") ?? "";
+  const match = /^Bearer\s+(.+)$/i.exec(header);
+  const token = match?.[1]?.trim();
+  if (!token || token.length < 20 || token.length > 4096) return null;
+  const { data, error } = await client.auth.getUser(token);
+  return error || !data.user?.id ? null : data.user.id;
 }
 
 export async function completeHandoff(client: ServiceClient, nonce: string, provider: SocialAuthProvider, session: SocialSessionTokens): Promise<boolean> {

@@ -1,6 +1,7 @@
 import type { VoiceServiceSnapshot } from "../services/voiceService";
 import { AppIcon } from "./AppIcon";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
+import { useTranslation } from "../i18n";
 import "./SidebarVoiceConnectionBar.css";
 
 type SidebarVoiceConnectionBarProps = {
@@ -26,6 +27,7 @@ export function SidebarVoiceConnectionBar({
   canUseCamera = true,
   canShareScreen = true,
 }: SidebarVoiceConnectionBarProps) {
+  const { t } = useTranslation("voice");
   const isLiveConnection =
     (voiceState.status === "connected" || voiceState.status === "reconnecting")
     && Boolean(voiceState.roomContext?.channelId);
@@ -34,27 +36,27 @@ export function SidebarVoiceConnectionBar({
     return null;
   }
 
-  const communityName = voiceState.roomContext?.communityName ?? "Picom community";
-  const channelName = voiceState.roomContext?.channelName ?? voiceState.roomName ?? "Voice room";
+  const communityName = voiceState.roomContext?.communityName ?? t("bar.communityFallback");
+  const channelName = voiceState.roomContext?.channelName ?? voiceState.roomName ?? t("bar.channelFallback");
   const statusCopy = voiceState.status === "reconnecting"
-    ? "Bağlantı yenileniyor…"
+    ? t("bar.reconnecting")
     : voiceState.screenSharing
-      ? "Ekran paylaşımı aktif"
-      : `Ses bağlantısı · ${communityName}`;
+      ? t("bar.screenSharing")
+      : t("bar.connected", { community: communityName });
 
   return (
-    <section className="sidebar-voice-connection" aria-label="Active voice connection">
+    <section className="sidebar-voice-connection" aria-label={t("bar.aria")}>
       <button
         type="button"
         className="sidebar-voice-connection-copy"
-        aria-label={`${channelName} sesli odasına git`}
+        aria-label={t("bar.openAria", { channel: channelName })}
         onClick={onOpenVoiceRoom}
       >
         <span className="sidebar-voice-connection-icon" aria-hidden="true">
           <AppIcon name="voice" size="md" />
         </span>
         <div className="sidebar-voice-connection-text">
-          <strong>Sesli oda</strong>
+          <strong>{t("bar.title")}</strong>
           <small title={channelName}>{statusCopy}</small>
         </div>
       </button>
@@ -63,7 +65,7 @@ export function SidebarVoiceConnectionBar({
         <button
           type="button"
           className="sidebar-voice-control"
-          aria-label={voiceState.muted ? "Mikrofonu aç" : "Mikrofonu kapat"}
+          aria-label={voiceState.muted ? t("bar.unmute") : t("bar.mute")}
           aria-pressed={voiceState.muted}
           onClick={onToggleMute}
         >
@@ -72,7 +74,7 @@ export function SidebarVoiceConnectionBar({
         <button
           type="button"
           className="sidebar-voice-control"
-          aria-label={voiceState.deafened ? "Sesi aç" : "Sesi kapat"}
+          aria-label={voiceState.deafened ? t("bar.undeafen") : t("bar.deafen")}
           aria-pressed={voiceState.deafened}
           onClick={onToggleDeafen}
         >
@@ -82,7 +84,7 @@ export function SidebarVoiceConnectionBar({
           <button
             type="button"
             className="sidebar-voice-control"
-            aria-label={voiceState.cameraEnabled ? "Kamerayı kapat" : "Kamerayı aç"}
+            aria-label={voiceState.cameraEnabled ? t("bar.cameraOff") : t("bar.cameraOn")}
             aria-pressed={Boolean(voiceState.cameraEnabled)}
             onClick={onToggleCamera}
           >
@@ -93,7 +95,7 @@ export function SidebarVoiceConnectionBar({
           <button
             type="button"
             className="sidebar-voice-control"
-            aria-label={voiceState.screenSharing ? "Ekran paylaşımını yönet" : "Ekran paylaş"}
+            aria-label={voiceState.screenSharing ? t("bar.manageScreenShare") : t("bar.shareScreen")}
             aria-pressed={voiceState.screenSharing}
             onClick={onOpenScreenShare}
           >
@@ -103,7 +105,7 @@ export function SidebarVoiceConnectionBar({
         <button
           type="button"
           className="sidebar-voice-control sidebar-voice-control-disconnect"
-          aria-label="Sesli odadan ayrıl"
+          aria-label={t("bar.leave")}
           onClick={onLeaveVoice}
         >
           <AppIcon name="close" size="sm" />

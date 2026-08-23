@@ -1,0 +1,9 @@
+OPERATOR APPROVAL:
+CONFIRMED
+
+phrase_present=APPROVE_PRODUCTION_ONBOARDING_RPC_APPLY
+authorized_target=picom-production / cqnsetsmcduraryemhbi
+authorized_migration=supabase/migrations/20260816000000_reconcile_account_onboarding_rpc_contract.sql
+narrow_recovery_accepted=docs/audit/evidence/production-onboarding-recovery-gate-2026-08-16T2020Z/
+managed_pitr_available=false
+full_logical_backup_available=false

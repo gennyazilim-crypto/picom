@@ -1,25 +1,26 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { setAuthRememberMe } from "../services/supabase/supabaseClient";
+import { useTranslation } from "../i18n";
 import { brandLogoUrl } from "../config/brandAssets";
 import { accountCenterUrls, isAllowedAccountCenterUrl } from "../config/accountCenterUrls";
 import { externalLinkService } from "../services/desktop/externalLinkService";
-import {
-  generateSessionContinueNonce,
-  pollSessionContinue,
-} from "../services/auth/sessionContinueService";
+import type { AuthServiceErrorCode } from "../services/authService";
+import { authErrorI18nKey } from "../services/auth/authErrorMap";
 import { AppIcon } from "./AppIcon";
 import { LoginBackgroundAnimation } from "./auth/LoginBackgroundAnimation";
-import { AuthHeroPanel } from "./auth/AuthHeroPanel";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
+import { AuthPasswordField } from "./auth/AuthPasswordField";
 
 type LoginScreenProps = {
   theme: "light" | "dark";
   loading: boolean;
   error: string | null;
+  errorCode?: AuthServiceErrorCode | null;
   notice?: string | null;
   initialEmail?: string;
   onSubmit: (email: string, password: string) => Promise<void>;
-  /** Optional MFA challenge step — shown after password when AAL2 is required. */
+  onCreateAccount: () => void;
+  onForgotPassword: () => void;
   mfaRequired?: boolean;
   mfaLoading?: boolean;
   mfaError?: string | null;
@@ -34,50 +35,6 @@ function readRememberedEmail(): string {
   return localStorage.getItem(REMEMBER_EMAIL_KEY) ?? "";
 }
 
-function PasswordField({
-  label,
-  value,
-  onChange,
-  autoComplete,
-  placeholder,
-  required = false,
-}: Readonly<{
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  autoComplete: string;
-  placeholder?: string;
-  required?: boolean;
-}>) {
-  const [revealed, setRevealed] = useState(false);
-
-  return (
-    <label className="auth-field auth-field--password">
-      <span>{label}</span>
-      <span className="auth-password-shell">
-        <input
-          type={revealed ? "text" : "password"}
-          autoComplete={autoComplete}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          required={required}
-        />
-        <button
-          type="button"
-          className={`auth-password-toggle${revealed ? " is-revealed" : ""}`}
-          aria-label={revealed ? "Hide password" : "Show password"}
-          aria-pressed={revealed}
-          onClick={() => setRevealed((current) => !current)}
-        >
-          <AppIcon name="eye" size="sm" />
-          {revealed ? <span className="auth-password-toggle-slash" aria-hidden="true" /> : null}
-        </button>
-      </span>
-    </label>
-  );
-}
-
 async function openAccountUrl(url: string): Promise<{ ok: true } | { ok: false; reason: string }> {
   if (!isAllowedAccountCenterUrl(url)) {
     return { ok: false, reason: "UNSAFE_EXTERNAL_URL" };
@@ -89,29 +46,26 @@ export function LoginScreen({
   theme,
   loading,
   error,
+  errorCode = null,
   notice = null,
   initialEmail,
   onSubmit,
+  onCreateAccount,
+  onForgotPassword,
   mfaRequired = false,
   mfaLoading = false,
   mfaError = null,
   onVerifyMfa,
   onCancelMfa,
 }: LoginScreenProps) {
+  const { t } = useTranslation("auth");
+  const displayError = errorCode ? t(authErrorI18nKey(errorCode)) : error;
   const [rememberedEmail] = useState(readRememberedEmail);
   const [email, setEmail] = useState(initialEmail?.trim() || rememberedEmail);
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(rememberedEmail !== "");
   const [mfaCode, setMfaCode] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [registerNotice, setRegisterNotice] = useState<string | null>(null);
-  const registerPollAbortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => {
-      registerPollAbortRef.current?.abort();
-    };
-  }, []);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -132,35 +86,10 @@ export function LoginScreen({
     }
   };
 
-  const openRegister = async () => {
-    setLinkError(null);
-    setRegisterNotice(null);
-    registerPollAbortRef.current?.abort();
-    const nonce = generateSessionContinueNonce();
-    const controller = new AbortController();
-    registerPollAbortRef.current = controller;
-    const url = accountCenterUrls.registerWithNonce(nonce, "desktop");
-    const result = await openAccountUrl(url);
-    if (!result.ok) {
-      setLinkError(externalLinkService.getUserFriendlyError(String(result.reason)));
-      return;
-    }
-    setRegisterNotice("Finish creating your account in the browser. Picom will sign you in automatically.");
-    void pollSessionContinue(nonce, { signal: controller.signal }).then((pollResult) => {
-      if (controller.signal.aborted) return;
-      if (pollResult.ok) {
-        setRegisterNotice("Account created — signing you in…");
-        return;
-      }
-      setRegisterNotice(pollResult.error.message);
-    });
-  };
-
   if (mfaRequired && onVerifyMfa) {
     return (
-      <main className="auth-desktop-frame" aria-label="Picom multi-factor authentication">
+      <main className="auth-desktop-frame auth-desktop-frame--compact" aria-label={t("login.mfa.frameAria")}>
         <LoginBackgroundAnimation theme={theme} />
-        <AuthHeroPanel variant="login" />
         <form
           className="auth-card auth-card--elevated"
           onSubmit={(event) => {
@@ -172,13 +101,13 @@ export function LoginScreen({
           <div className="auth-card-brand">
             <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
             <div>
-              <p className="eyebrow">Two-step verification</p>
-              <h2>Enter authenticator code</h2>
+              <p className="eyebrow">{t("login.mfa.eyebrow")}</p>
+              <h2>{t("login.mfa.title")}</h2>
             </div>
           </div>
-          <p className="auth-note">Open your authenticator app and enter the 6-digit code for Picom.</p>
+          <p className="auth-note">{t("login.mfa.note")}</p>
           <label className="auth-field">
-            <span>Authentication code</span>
+            <span>{t("login.mfa.codeLabel")}</span>
             <input
               type="text"
               inputMode="numeric"
@@ -197,12 +126,12 @@ export function LoginScreen({
             </div>
           ) : null}
           <button className="auth-submit" type="submit" disabled={mfaLoading || mfaCode.length !== 6}>
-            {mfaLoading ? "Verifying…" : "Verify"}
+            {mfaLoading ? t("login.mfa.verifying") : t("login.mfa.verify")}
             <AppIcon name="lock" size="sm" />
           </button>
           {onCancelMfa ? (
             <button className="auth-seed-button" type="button" disabled={mfaLoading} onClick={onCancelMfa}>
-              Back to sign in
+              {t("login.mfa.back")}
             </button>
           ) : null}
         </form>
@@ -211,39 +140,47 @@ export function LoginScreen({
   }
 
   return (
-    <main className="auth-desktop-frame" aria-label="Picom sign in">
+    <main className="auth-desktop-frame auth-desktop-frame--compact" aria-label={t("login.frameAria")}>
       <LoginBackgroundAnimation theme={theme} />
-      <AuthHeroPanel variant="login" />
 
       <form className="auth-card auth-card--elevated" onSubmit={submit}>
         <div className="auth-card-brand">
           <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
           <div>
-            <p className="eyebrow">Sign in</p>
-            <h2>Continue to Picom</h2>
+            <h2>{t("login.title")}</h2>
+            <p className="auth-card-subtitle">{t("login.subtitle")}</p>
           </div>
         </div>
 
         <label className="auth-field">
-          <span>Email</span>
-          <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" required />
+          <span>{t("field.email")}</span>
+          <input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder={t("field.email.placeholder")}
+            required
+            disabled={loading}
+          />
         </label>
 
-        <PasswordField
-          label="Password"
+        <AuthPasswordField
+          label={t("field.password")}
           value={password}
           onChange={setPassword}
           autoComplete="current-password"
-          placeholder="Enter your password"
+          placeholder={t("field.password.placeholder")}
           required
+          disabled={loading}
         />
 
-        {error ? (
+        {displayError ? (
           <div className="auth-error" role="alert">
-            {error}
+            {displayError}
           </div>
         ) : null}
-        {!error && notice ? (
+        {!displayError && notice ? (
           <div className="auth-success" role="status">
             {notice}
           </div>
@@ -253,42 +190,39 @@ export function LoginScreen({
             {linkError}
           </div>
         ) : null}
-        {!error && !notice && registerNotice ? (
-          <div className="auth-success" role="status">
-            {registerNotice}
-          </div>
-        ) : null}
 
         <div className="auth-options-row">
           <label className="auth-remember">
-            <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
-            <span>Remember me</span>
+            <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} disabled={loading} />
+            <span>{t("login.rememberMe")}</span>
           </label>
-          <button className="auth-secondary-link" type="button" onClick={() => void openLink(accountCenterUrls.forgotPassword)}>
-            Forgot password?
+          <button className="auth-secondary-link" type="button" disabled={loading} onClick={onForgotPassword}>
+            {t("login.forgotPassword")}
           </button>
         </div>
 
         <button className="auth-submit" type="submit" disabled={loading}>
-          {loading ? "Signing in…" : "Sign in"}
-          <AppIcon name="send" size="sm" />
+          {loading ? t("login.submitting") : t("login.submit")}
         </button>
 
         <SocialLoginButtons disabled={loading} layout="stacked" />
 
         <div className="auth-card-footer">
-          <button className="auth-text-link auth-text-link--strong" type="button" onClick={() => void openRegister()}>
-            Create an account
-          </button>
+          <p className="auth-switch-row">
+            <span>{t("login.noAccount")}</span>
+            <button className="auth-text-link auth-text-link--strong" type="button" disabled={loading} onClick={onCreateAccount}>
+              {t("login.createAccount")}
+            </button>
+          </p>
           <div className="auth-legal-links">
             <button className="auth-text-link" type="button" onClick={() => void openLink(accountCenterUrls.privacy)}>
-              Privacy
+              {t("login.legal.privacy")}
             </button>
             <button className="auth-text-link" type="button" onClick={() => void openLink(accountCenterUrls.terms)}>
-              Terms
+              {t("login.legal.terms")}
             </button>
             <button className="auth-text-link" type="button" onClick={() => void openLink(accountCenterUrls.support)}>
-              Support Center
+              {t("login.legal.support")}
             </button>
           </div>
         </div>

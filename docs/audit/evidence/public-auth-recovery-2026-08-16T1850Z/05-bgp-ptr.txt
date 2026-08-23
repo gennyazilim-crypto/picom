@@ -1,0 +1,17 @@
+ARIN RDAP 23.254.166.240
+NetName: HOSTWINDS-17-6
+CIDR: 23.254.128.0/17
+Registrant: HostPapa (HOSTP-7)
+Status: active
+PTR: hwsrv-1333695.hostwindsdns.com
+
+RIPEStat prefix-overview 23.254.166.240 and 23.254.166.0/24:
+warning: resource is not announced as its own prefix; aligned to less-specific 23.254.128.0/17
+announced: true
+ASN: 54290 HOSTWINDS - Hostwinds LLC.
+
+RIPEStat bgp-state:
+23.254.166.0/24  nr_routes=0  (not a separate BGP prefix)
+23.254.128.0/17  nr_routes=339  origin AS54290  (prefix is on the Internet)
+
+Interpretation: Hostwinds aggregate is globally routed. This does not prove the VPS NIC is up. Combined with neighbor :443 OPEN on .239, the path to the /24 works and 23.254.166.240 specifically does not answer.

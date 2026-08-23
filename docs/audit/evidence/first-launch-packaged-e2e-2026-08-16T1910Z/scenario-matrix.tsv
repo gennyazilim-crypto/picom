@@ -1,0 +1,9 @@
+Scenario	Result	Evidence	Notes
+asar-unsafe-flags	PACKAGED_PASS	asar-flag-scan.txt	none
+S01-clean-first-launch	FAIL	screenshots/01-welcome.png	welcome=false title=Picom Desktop launchMs=512
+S16-auth	BLOCKED_TEST_IDENTITY	none	No dedicated test account in environment
+S36-legal-gate	BLOCKED_TEST_IDENTITY	none	Post-auth path not entered
+S37-account-onboarding	BLOCKED_TEST_IDENTITY	none	Post-auth path not entered
+S21-startup-item-change	BLOCKED_ENVIRONMENT	none	Did not mutate host login items
+S22-start-in-tray	BLOCKED_ENVIRONMENT	none	Did not alter host startup
+S57-installer	BLOCKED_ENVIRONMENT	none	NSIS not executed against host

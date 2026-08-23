@@ -8,6 +8,7 @@ import { t } from "../i18n/messages";
 import { resolvePostLoginDestination } from "../lib/postLogin";
 import { getAccountSupabase } from "../lib/supabase";
 import { ROUTES } from "../routes";
+import { trackMarketingEvent } from "../../services/marketing/marketingEvents";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -180,7 +181,7 @@ export function LoginPage() {
       </div>
 
       <div className="ac-auth-card-footer">
-        <Link className="ac-btn ac-btn--secondary ac-btn--block" to={ROUTES.register}>
+        <Link className="ac-btn ac-btn--secondary ac-btn--block" to={ROUTES.register} onClick={() => trackMarketingEvent("signup_cta_clicked")}>
           {t("login.registerLink")}
         </Link>
         <a className="ac-text-link ac-text-link--center" href={SUPPORT_HOME_URL}>{t("login.help")}</a>

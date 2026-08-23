@@ -1,0 +1,23 @@
+ICMP 23.254.166.240: 4 sent, 0 received, 100% loss
+
+TCP from this workstation (10s):
+22    TIMEOUT 10016ms
+80    TIMEOUT 10001ms
+443   TIMEOUT 10010ms
+8080  TIMEOUT 10010ms
+8443  TIMEOUT 10005ms
+
+Control:
+1.1.1.1:443       OPEN 16ms
+example.com:443   OPEN
+
+SSH:
+ssh -o BatchMode=yes -o ConnectTimeout=8 picom-update-server
+→ ssh: connect to host 23.254.166.240 port 22: Connection timed out
+
+curl --connect-timeout 10:
+https://picom.gg/                 curl 28 Connection timed out after 10014 ms
+https://account.picom.gg/         curl 28 Connection timed out after 10013 ms
+https://auth.picom.gg/health      curl 28 Connection timed out after 10011 ms
+
+Cursor WebFetch to the same three URLs: Fetch timed out

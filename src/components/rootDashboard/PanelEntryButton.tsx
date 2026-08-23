@@ -1,4 +1,5 @@
 import { AppIcon } from "../AppIcon";
+import { useTranslation } from "../../i18n";
 import type { RootDashboardAccessStatus } from "../../services/rootDashboard/rootDashboardAccessService";
 
 type PanelEntryButtonProps = Readonly<{
@@ -13,6 +14,7 @@ type PanelEntryButtonProps = Readonly<{
  * Home mark matches the Picom mockup CTA (distinct from Settings gear).
  */
 export function PanelEntryButton({ compact = false, active = false, accessStatus, onOpen }: PanelEntryButtonProps) {
+  const { t } = useTranslation("admin");
   if (accessStatus === "denied") return null;
 
   if (accessStatus === "loading") {
@@ -22,9 +24,9 @@ export function PanelEntryButton({ compact = false, active = false, accessStatus
         className="global-nav-item rd-panel-entry is-skeleton"
         data-global-navigation-button="true"
         aria-busy="true"
-        aria-label="Checking Panel access"
+        aria-label={t("panel.checkingAccess")}
         disabled
-        title="Checking Panel access"
+        title={t("panel.checkingAccess")}
       >
         <span className="global-nav-item__icon" aria-hidden="true">
           <AppIcon name="home" size="lg" />
@@ -39,15 +41,15 @@ export function PanelEntryButton({ compact = false, active = false, accessStatus
       type="button"
       className={`global-nav-item rd-panel-entry${active ? " is-active" : ""}`}
       data-global-navigation-button="true"
-      aria-label="Open Panel"
+      aria-label={t("panel.open")}
       aria-current={active ? "page" : undefined}
-      title="Open root operations Panel"
+      title={t("panel.openTitle")}
       onClick={onOpen}
     >
       <span className="global-nav-item__icon" aria-hidden="true">
         <AppIcon name="home" size="lg" />
       </span>
-      {compact ? null : <span className="global-nav-item__label">Panel</span>}
+      {compact ? null : <span className="global-nav-item__label">{t("panel.name")}</span>}
     </button>
   );
 }

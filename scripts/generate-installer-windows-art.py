@@ -19,7 +19,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
-LOGO_PATH = ROOT / "assets" / "brand" / "picom-logo-mic-chrome-v1.png"
+LOGO_PATH = ROOT / "assets" / "brand" / "picom-logo-mark-v1.png"
 FALLBACK_ICON = ROOT / "assets" / "brand" / "app-icon.png"
 OUT_DIR = ROOT / "assets" / "installer" / "windows"
 SIDEBAR_PATH = OUT_DIR / "installer-sidebar-v2.bmp"

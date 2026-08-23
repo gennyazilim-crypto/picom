@@ -1,0 +1,2 @@
+WORKERS=NOT_DEPLOYED
+reason=Publisher Phase 1 migrations not applied; reminder/notification workers not pointed at production

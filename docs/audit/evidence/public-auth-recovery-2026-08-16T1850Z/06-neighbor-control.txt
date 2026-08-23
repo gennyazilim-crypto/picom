@@ -1,0 +1,15 @@
+Same-/24 TCP from this workstation (3.5s timeout). Not a port scan of the internet; five adjacent addresses only, to test whether Hostwinds IPs in this subnet are reachable.
+
+23.254.166.1    22=TIMEOUT  443=TIMEOUT
+23.254.166.2    22=TIMEOUT  443=TIMEOUT
+23.254.166.239  22=TIMEOUT  443=OPEN 130ms
+23.254.166.240  22=TIMEOUT  80=TIMEOUT  443=TIMEOUT   (PICOM production)
+23.254.166.241  22=TIMEOUT  443=TIMEOUT
+23.254.166.254  22=TIMEOUT  443=TIMEOUT
+
+PTR:
+23.254.166.1    no PTR
+23.254.166.239  hwsrv-409334.hostwindsdns.com
+23.254.166.241  client-23-254-166-241.hostwindsdns.com
+
+.239:443 completing in 130ms proves this client and this ISP path can reach another Hostwinds VPS next to the PICOM IP. The PICOM address is the one that is silent.

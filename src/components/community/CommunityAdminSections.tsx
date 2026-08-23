@@ -10,6 +10,7 @@ import { CommunityAuditLogSection } from "../CommunityAuditLogSection";
 import type { CommunitySummary } from "../../services/communityService";
 import { CommunitySettingsEditor } from "./CommunitySettingsEditor";
 import { isV1CommunityAdminSectionEnabled } from "../../config/v1ReleaseScope";
+import { useTranslation } from "../../i18n";
 
 const CommunityRoleManagement = lazy(() => import("./CommunityRoleManagement").then((module) => ({ default: module.CommunityRoleManagement })));
 const CommunityMemberRoleAssignment = lazy(() => import("./CommunityMemberRoleAssignment").then((module) => ({ default: module.CommunityMemberRoleAssignment })));
@@ -63,16 +64,17 @@ function SectionShell({ eyebrow, title, description, children }: { eyebrow: stri
 }
 
 export function CommunityAdminOverview({ community, access }: { community: Community; access: CommunityAccess }) {
+  const { t } = useTranslation("common");
   const channels = community.categories.flatMap((category) => category.channels);
   const metrics = [
-    { label: "Members", value: community.members.length, icon: "users" as const },
-    { label: "Channels", value: channels.length, icon: "hash" as const },
-    { label: "Roles", value: community.roles.length, icon: "lock" as const },
-    { label: "Messages", value: community.messages.length, icon: "inbox" as const },
+    { label: t("communityAdmin.members"), value: community.members.length, icon: "users" as const },
+    { label: t("communityAdmin.channels"), value: channels.length, icon: "hash" as const },
+    { label: t("communityAdmin.roles"), value: community.roles.length, icon: "lock" as const },
+    { label: t("communityAdmin.messages"), value: community.messages.length, icon: "inbox" as const },
   ];
 
   return (
-    <SectionShell eyebrow="Workspace health" title={`${community.name} overview`} description={`Signed in with ${access.status} access.`}>
+    <SectionShell eyebrow={t("communityAdmin.workspaceHealth")} title={t("communityAdmin.overviewTitle", { name: community.name })} description={t("communityAdmin.signedIn", { status: access.status })}>
       <div className="community-admin-metrics community-admin-metrics--hero">
         {metrics.map((metric) => (
           <article key={metric.label}>
@@ -86,7 +88,7 @@ export function CommunityAdminOverview({ community, access }: { community: Commu
       </div>
       <div className="community-admin-note">
         <AppIcon name="lock" size="sm" />
-        <span>Frontend section visibility improves UX. Supabase RLS remains the authorization boundary.</span>
+        <span>{t("communityAdmin.rlsBoundary")}</span>
       </div>
     </SectionShell>
   );

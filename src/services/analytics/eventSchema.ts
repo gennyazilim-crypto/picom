@@ -37,7 +37,12 @@ export type AnalyticsEventName =
   // feature usage
   | "feature_used_counted"
   // search
-  | "search_performed";
+  | "search_performed"
+  // HAVOOC support notes (never include note body / PII)
+  | "havooc_support_note_create"
+  | "havooc_support_note_edit"
+  | "havooc_support_note_delete"
+  | "havooc_support_note_report";
 
 export type AnalyticsMetadata = Record<string, string | number | boolean>;
 
@@ -74,10 +79,14 @@ const ALLOWED_METADATA: Record<AnalyticsEventName, readonly string[]> = {
   screen_share_started: ["mode"],
   feature_used_counted: ["feature", "count"],
   search_performed: ["resultBucket"],
+  havooc_support_note_create: ["projectKey"],
+  havooc_support_note_edit: ["projectKey"],
+  havooc_support_note_delete: ["projectKey"],
+  havooc_support_note_report: ["projectKey"],
 };
 
 // Allowlisted enum-like values (free strings are otherwise length-capped, never content).
-const ALLOWED_VIEWS = new Set(["community", "directMessages", "feed", "discovery", "friends", "profile", "settings", "voice"]);
+const ALLOWED_VIEWS = new Set(["community", "directMessages", "feed", "discovery", "friends", "profile", "settings", "voice", "havooc"]);
 const SENSITIVE_KEY = /(message|body|text|query|password|token|secret|channel|attachment|email|username|user_id|session_id|authorization|ip|location)/i;
 
 const MAX_STRING = 40;

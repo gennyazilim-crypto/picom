@@ -1,0 +1,6 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 first-launch:smoke
+> node scripts/first-launch-setup-smoke.mjs
+
+First-launch eight-step shell, device policy, resumable state, i18n catalog, and auth-ordering smoke passed.

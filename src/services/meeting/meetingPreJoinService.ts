@@ -116,6 +116,7 @@ function toCameraOptions(devices: MediaDeviceInfo[], revealLabels: boolean) {
     .map((device, index) => ({
       deviceId: device.deviceId || "default",
       label: revealLabels && device.label ? device.label : `Camera ${index + 1}`,
+      labelIsFallback: !(revealLabels && Boolean(device.label)),
       isDefault: device.deviceId === "default" || index === 0,
     }));
 }
@@ -185,7 +186,7 @@ async function refreshCameraDevices(restartPreviewOnFallback: boolean): Promise<
           cameraPreviewActive: false,
           cameraPreviewStream: null,
           notice: "The selected camera was removed. Picom switched to the system default camera.",
-          error: null,
+          error: createError("CAMERA_MISSING", "The selected camera was removed. Choose the available camera and start its preview when you are ready."),
         }
       : {}),
   });
@@ -200,7 +201,9 @@ async function handleCameraDeviceChange(): Promise<void> {
   if (cameraDeviceRefreshPending) return;
   cameraDeviceRefreshPending = true;
   try {
-    await refreshCameraDevices(true);
+    // A hot-plug event must never silently activate a fallback camera. The user
+    // can explicitly start a fresh preview after reviewing the new selection.
+    await refreshCameraDevices(false);
   } catch {
     emit({ error: createError("DEVICE_UNAVAILABLE", "Media devices changed, but Picom could not refresh the camera list.") });
   } finally {
@@ -305,6 +308,10 @@ export const meetingPreJoinService = {
       }
       cameraStream = stream;
       const videoTrack = stream.getVideoTracks()[0];
+      if (!videoTrack || videoTrack.readyState !== "live") {
+        releaseCameraStream();
+        throw new DOMException("No live camera track was returned.", "NotReadableError");
+      }
       videoTrack?.addEventListener(
         "ended",
         () => {

@@ -1,0 +1,6 @@
+﻿STAGING_LEGACY_SCHEMA_EQUIVALENCE=PASS
+rls_enabled=true
+relkind=p
+owner=supabase_realtime_admin
+policies=receive(r)+send(a) authenticated with can_access_picom_realtime_topic*
+note=staging policies later upgraded to subject-scoped helper; names/cmds/roles/deny-true match 20260710121000 surface

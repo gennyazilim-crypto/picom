@@ -2,6 +2,7 @@ import type { Member } from "../types/community";
 import { AppIcon } from "./AppIcon";
 import { mvpUiIconMap } from "./iconRegistry";
 import { MemberAvatar } from "./MemberAvatar";
+import { useTranslation } from "../i18n";
 
 const sidebarIcons = mvpUiIconMap.communitySidebar;
 
@@ -12,6 +13,7 @@ type UserMiniCardProps = {
 };
 
 export function UserMiniCard({ member, onOpenMicrophoneSettings, onOpenHeadphoneSettings }: UserMiniCardProps) {
+  const { t } = useTranslation("voice");
   return (
     <footer className="user-mini-card" style={{ gridTemplateColumns: "38px minmax(0, 1fr) 28px 28px" }}>
       <MemberAvatar member={member} size={38} />
@@ -22,8 +24,8 @@ export function UserMiniCard({ member, onOpenMicrophoneSettings, onOpenHeadphone
       <button
         type="button"
         className="mini-action"
-        aria-label="Mikrofon ayarları"
-        title="Mikrofon ayarları"
+        aria-label={t("miniCard.microphoneSettings")}
+        title={t("miniCard.microphoneSettings")}
         onClick={onOpenMicrophoneSettings}
       >
         <AppIcon name={sidebarIcons.mute} size="sm" />
@@ -31,8 +33,8 @@ export function UserMiniCard({ member, onOpenMicrophoneSettings, onOpenHeadphone
       <button
         type="button"
         className="mini-action"
-        aria-label="Kulaklık ayarları"
-        title="Kulaklık ayarları"
+        aria-label={t("miniCard.headphoneSettings")}
+        title={t("miniCard.headphoneSettings")}
         onClick={onOpenHeadphoneSettings}
       >
         <AppIcon name={sidebarIcons.deafen} size="sm" />

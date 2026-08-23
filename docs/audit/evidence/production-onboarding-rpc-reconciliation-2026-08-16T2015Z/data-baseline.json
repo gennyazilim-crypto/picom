@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-08-16T2015Z",
+  "project": "cqnsetsmcduraryemhbi",
+  "aggregates_only": true,
+  "total_profiles": 23,
+  "onboarding_completed_true": 0,
+  "onboarding_completed_false": 23,
+  "onboarding_completed_null": 0,
+  "completed_missing_timestamp": 0,
+  "incomplete_with_timestamp": 0,
+  "expected_post_apply_delta": "none attributable to migration DDL"
+}

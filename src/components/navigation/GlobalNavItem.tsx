@@ -2,6 +2,7 @@ import type { MouseEventHandler } from "react";
 import type { GlobalNavigationRegistryItem } from "../../types/globalNavigation";
 import { AppIcon } from "../AppIcon";
 import { GlobalNavBadge } from "./GlobalNavBadge";
+import { useTranslation } from "../../i18n";
 
 type GlobalNavItemProps = Readonly<{
   item: GlobalNavigationRegistryItem;
@@ -13,7 +14,8 @@ type GlobalNavItemProps = Readonly<{
 }>;
 
 export function GlobalNavItem({ item, active, compact, disabled, badge, onClick }: GlobalNavItemProps) {
-  const title = disabled ? item.unavailableReason ?? `${item.label} is unavailable.` : compact ? item.label : undefined;
+  const { t } = useTranslation("navigation");
+  const title = disabled ? item.unavailableReason ?? t("nav.unavailable", { name: item.label }) : compact ? item.label : undefined;
   return (
     <button
       type="button"

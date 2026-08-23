@@ -18,11 +18,10 @@ type CommunityHeaderProps = {
   onOpenMemberPanel: () => void;
   onOpenVisitorPanel: () => void;
   onOpenJoinCommunity: () => void;
-  onOpenLeaveCommunity: () => void;
   onPlaceholderAction: (message: string) => void;
 };
 
-export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenModeratorPanel, onOpenMemberPanel, onOpenVisitorPanel, onOpenJoinCommunity, onOpenLeaveCommunity, onPlaceholderAction }: CommunityHeaderProps) {
+export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenModeratorPanel, onOpenMemberPanel, onOpenVisitorPanel, onOpenJoinCommunity, onPlaceholderAction }: CommunityHeaderProps) {
   const openManagementCenter = () => {
     const destination = settingsNavigationPolicyService.resolveCommunityDestination(access);
     if (destination === "admin") {
@@ -44,7 +43,6 @@ export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenMod
   };
 
   void onOpenJoinCommunity;
-  void onOpenLeaveCommunity;
   void onPlaceholderAction;
 
   const logoSrc = resolveCommunityMarkSrc(community);
@@ -57,7 +55,6 @@ export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenMod
   }, [logoSrc, community.id]);
 
   const showLogo = Boolean(logoSrc) && !logoFailed;
-
   return (
     <header className="community-header community-header-with-menu">
       <div
@@ -89,9 +86,11 @@ export function CommunityHeader({ community, access, onOpenAdminPanel, onOpenMod
         <strong className="community-name-with-verification"><span>{community.name}</span><VerifiedBadge verification={getCommunityVerificationSummary(community.id, [], community.verification)} /></strong>
         <span>{access.isVisitor ? "Public preview" : "Desktop community"}</span>
       </div>
-      <button className="icon-button" aria-label="Open community settings" title="Open community settings" onClick={openManagementCenter}>
-        <AppIcon name={sidebarIcons.settings} size="sm" />
-      </button>
+      <div className="community-header-actions">
+        <button className="icon-button" aria-label="Open community settings" title="Open community settings" onClick={openManagementCenter}>
+          <AppIcon name={sidebarIcons.settings} size="sm" />
+        </button>
+      </div>
     </header>
   );
 }

@@ -14,6 +14,8 @@ import { CommunityWebhooksAdminSection } from "./CommunityWebhooksAdminSection";
 import { CommunityEmojisAdminSection } from "./CommunityEmojisAdminSection";
 import { CommunityStickersAdminSection } from "./CommunityStickersAdminSection";
 import { MeetingHistoryPanel } from "./meeting/MeetingHistoryPanel";
+import type { CommunityOnboardingItemId } from "../types/communityOnboarding";
+import type { CommunityArchiveEligibility } from "../services/community/communityArchiveEligibilityService";
 
 export type CommunityAdminDeferredSectionId = "overview" | "channels" | "events" | "moderation" | "bots" | "webhooks" | "emojis" | "stickers" | "danger-zone";
 type Props = {
@@ -21,6 +23,7 @@ type Props = {
   community: Community;
   currentUser: Member;
   access: CommunityAccess;
+  archiveEligibility: CommunityArchiveEligibility | null;
   events: UpcomingEvent[];
   onCreateCategory: (name: string) => void;
   onRenameCategory: (categoryId: string, name: string) => void;
@@ -35,10 +38,11 @@ type Props = {
   onCreateEvent: (input: CreateCommunityEventInput) => void;
   onUpdateEvent: (eventId: string, input: UpdateCommunityEventInput) => void;
   onCancelEvent: (eventId: string) => void;
+  onOpenOnboardingTask?: (itemId: CommunityOnboardingItemId) => void;
 };
 
-export function CommunityAdminDeferredSection({ section, community, currentUser, access, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCommunityMembersChanged, onOpenModerationSource, onCreateEvent, onUpdateEvent, onCancelEvent }: Props) {
-  if (section === "overview") return <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} />;
+export function CommunityAdminDeferredSection({ section, community, currentUser, access, archiveEligibility, events, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveCategory, onCreateChannel, onEditChannel, onDeleteChannel, onMoveChannel, onCommunityMembersChanged, onOpenModerationSource, onCreateEvent, onUpdateEvent, onCancelEvent, onOpenOnboardingTask }: Props) {
+  if (section === "overview") return <CommunityOnboardingChecklist community={community} currentUserId={currentUser.userId} onOpenTask={onOpenOnboardingTask} />;
   if (section === "channels") return <CommunityStructureManagementPanel community={community} currentUser={currentUser} access={access} onCreateCategory={onCreateCategory} onRenameCategory={onRenameCategory} onDeleteCategory={onDeleteCategory} onMoveCategory={onMoveCategory} onCreateChannel={onCreateChannel} onEditChannel={onEditChannel} onDeleteChannel={onDeleteChannel} onMoveChannel={onMoveChannel} />;
   if (section === "events") return <div className="community-admin-events-stack"><CommunityEventsAdminSection community={community} currentUserId={currentUser.userId} events={events} onCreate={onCreateEvent} onUpdate={onUpdateEvent} onCancel={onCancelEvent} /><MeetingHistoryPanel communityId={community.id} scope="community" canViewAttendance={access.permissions.includes("viewMeetingHistory")} /></div>;
   if (section === "moderation") return <CommunityModerationCenter community={community} access={access} mode="all" onMembersChanged={onCommunityMembersChanged} onOpenSource={onOpenModerationSource} />;
@@ -47,5 +51,5 @@ export function CommunityAdminDeferredSection({ section, community, currentUser,
   if (section === "emojis") return <CommunityEmojisAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;
   if (section === "stickers") return <CommunityStickersAdminSection communityId={community.id} currentUserId={currentUser.userId} canManage={access.permissions.includes("manageCommunity")} />;
   if (!access.isOwner) return null;
-  return <div className="community-admin-tools-stack"><CommunityOwnershipTransferPanel community={community} currentUser={currentUser} /><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} /></div>;
+  return <div className="community-admin-tools-stack"><CommunityOwnershipTransferPanel community={community} currentUser={currentUser} eligibility={archiveEligibility} /><CommunityDeleteSafetyPanel community={community} currentUser={currentUser} eligibility={archiveEligibility} /></div>;
 }

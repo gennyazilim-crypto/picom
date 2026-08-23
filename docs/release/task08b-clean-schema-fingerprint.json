@@ -1,0 +1,636 @@
+{
+  "generatedAt": "2026-08-03T22:30:59.277Z",
+  "task": "08B",
+  "latestMigration": "20260803260000",
+  "migrationCount": 261,
+  "tableCount": 292,
+  "tables": [
+    "abuse_events",
+    "account_deletion_requests",
+    "account_entitlements",
+    "account_security_events",
+    "account_security_verifications",
+    "account_session_handoffs",
+    "account_verification_sessions",
+    "ad_attribution_records",
+    "ad_campaign_source_links",
+    "ad_campaigns",
+    "ad_clicks",
+    "ad_conversion_events",
+    "ad_creative_snapshots",
+    "ad_creatives",
+    "ad_delivery_decisions",
+    "ad_frequency_counters",
+    "ad_impressions",
+    "ad_partner_attributions",
+    "ad_placements",
+    "ad_platform_settings",
+    "ad_reconciliation_runs",
+    "ad_review_decisions",
+    "ad_sets",
+    "ad_spend_ledger",
+    "ad_transparency_archive",
+    "ad_transparency_retention",
+    "ad_worker_jobs",
+    "admin_operations_audit",
+    "advertiser_account_members",
+    "advertiser_accounts",
+    "advertiser_balance_snapshots",
+    "advertiser_conversion_sources",
+    "advertiser_funding_accounts",
+    "advertiser_funding_transactions",
+    "advertiser_invitations",
+    "advertiser_ownership_transfers",
+    "advertising_legal_document_versions",
+    "analytics_data_quality_runs",
+    "announcement_channel_followers",
+    "app_admins",
+    "app_trust_roles",
+    "attachments",
+    "audio_feed_read_states",
+    "audit_log",
+    "billing_checkout_sessions",
+    "billing_customers",
+    "billing_invoices",
+    "billing_products",
+    "blocked_users",
+    "bot_action_rate_limits",
+    "bot_credentials",
+    "bots",
+    "brand_assets",
+    "business_application_documents",
+    "business_application_status_history",
+    "business_application_submissions",
+    "business_applications",
+    "business_content_events",
+    "business_content_moderation_history",
+    "business_content_reports",
+    "business_daily_metrics",
+    "business_domain_verifications",
+    "business_legal_acceptances",
+    "business_legal_document_versions",
+    "business_post_products",
+    "business_post_promotion_requests",
+    "business_posts",
+    "business_product_collection_items",
+    "business_product_collection_localizations",
+    "business_product_collections",
+    "business_product_countries",
+    "business_product_localizations",
+    "business_product_media",
+    "business_product_option_values",
+    "business_product_options",
+    "business_product_variant_values",
+    "business_product_variants",
+    "business_products",
+    "business_profile_followers",
+    "business_profile_reserved_slugs",
+    "business_profiles",
+    "business_rate_limits",
+    "business_risk_flags",
+    "campaign_budget_reservations",
+    "channel_categories",
+    "channels",
+    "communities",
+    "community_bans",
+    "community_bots",
+    "community_discovery_reviews",
+    "community_emojis",
+    "community_event_reminders",
+    "community_event_rsvps",
+    "community_events",
+    "community_invites",
+    "community_join_requests",
+    "community_live_hidden_communities",
+    "community_live_screen_sessions",
+    "community_live_screen_viewers",
+    "community_live_share_reports",
+    "community_member_role_audit",
+    "community_member_roles",
+    "community_member_timeouts",
+    "community_members",
+    "community_moderation_settings",
+    "community_permission_definitions",
+    "community_permission_overrides",
+    "community_role_permissions",
+    "community_rules",
+    "community_sticker_packs",
+    "community_stickers",
+    "community_structure_sections",
+    "community_verifications",
+    "community_voice_usage_daily",
+    "content_mentions",
+    "data_export_requests",
+    "direct_conversation_participants",
+    "direct_conversations",
+    "direct_message_attachments",
+    "direct_message_reactions",
+    "direct_messages",
+    "dm_call_device_events",
+    "dm_call_events",
+    "dm_call_invitations",
+    "dm_call_participants",
+    "dm_call_quality_samples",
+    "dm_calls",
+    "email_admin_actions",
+    "email_attempts",
+    "email_contact_submissions",
+    "email_events",
+    "email_hook_failures",
+    "email_messages",
+    "email_preferences",
+    "email_rate_limit_buckets",
+    "email_suppressions",
+    "email_template_versions",
+    "email_templates",
+    "email_worker_heartbeats",
+    "feature_canary_allowlist",
+    "feature_canary_allowlist_audit",
+    "finance_approval_requests",
+    "finance_holds",
+    "finance_reserves",
+    "financial_adjustments",
+    "financial_reconciliation_findings",
+    "financial_reconciliation_runs",
+    "forum_posts",
+    "friend_presence",
+    "friend_request_notifications",
+    "friend_requests",
+    "friendships",
+    "legal_acceptance_events",
+    "legal_policy_versions",
+    "live_broadcaster_notification_prefs",
+    "livekit_webhook_receipts",
+    "meeting_attendance",
+    "meeting_caption_consents",
+    "meeting_caption_dispatches",
+    "meeting_caption_sessions",
+    "meeting_chat_contexts",
+    "meeting_chat_message_links",
+    "meeting_events",
+    "meeting_invite_redemptions",
+    "meeting_invites",
+    "meeting_notification_jobs",
+    "meeting_participant_runtime_state",
+    "meeting_participant_tracks",
+    "meeting_reaction_signals",
+    "meeting_rooms",
+    "meeting_screen_share_leases",
+    "meeting_session_participants",
+    "meeting_sessions",
+    "meeting_waiting_entries",
+    "message_mentions",
+    "message_reactions",
+    "messages",
+    "moderation_action_records",
+    "moderation_appeals",
+    "monetization_accounts",
+    "monetization_agreement_acceptances",
+    "monetization_application_review_decisions",
+    "monetization_applications",
+    "monetization_legal_document_versions",
+    "notification_preferences",
+    "notifications",
+    "organization_invitations",
+    "organization_members",
+    "organization_ownership_transfers",
+    "organizations",
+    "partner_balance_snapshots",
+    "partner_revenue_accruals",
+    "payout_batches",
+    "payout_item_accruals",
+    "payout_items",
+    "payout_platform_settings",
+    "payout_profiles",
+    "payout_schedules",
+    "payout_worker_jobs",
+    "picom_verified_subscription_history",
+    "picom_verified_subscriptions",
+    "platform_account_restrictions",
+    "platform_idempotency_keys",
+    "platform_incidents",
+    "platform_permissions",
+    "platform_role_assignments",
+    "platform_role_catalog",
+    "platform_role_permissions",
+    "platform_stats_exclusions",
+    "platform_stats_publication_control",
+    "podcast_community_settings",
+    "podcast_episode_comments",
+    "podcast_episode_reactions",
+    "podcast_episodes",
+    "podcast_playback_progress",
+    "podcast_series",
+    "poll_options",
+    "poll_votes",
+    "polls",
+    "privileged_step_up_challenges",
+    "profile_details",
+    "profile_privacy_settings",
+    "profile_verifications",
+    "profiles",
+    "provider_balance_snapshots",
+    "provider_webhook_events",
+    "public_platform_stats_snapshots",
+    "publisher_application_documents",
+    "publisher_applications",
+    "publisher_badges",
+    "publisher_live_bans",
+    "publisher_profiles",
+    "publisher_review_actions",
+    "publisher_stream_schedule_reminders",
+    "publisher_stream_schedules",
+    "radio_announcements",
+    "radio_community_settings",
+    "radio_listeners",
+    "radio_program_follows",
+    "radio_program_hosts",
+    "radio_program_schedules",
+    "radio_programs",
+    "radio_session_hosts",
+    "radio_session_reactions",
+    "radio_session_reminders",
+    "radio_sessions",
+    "read_states",
+    "remote_feature_flags",
+    "report_submission_rate_limits",
+    "reports",
+    "revenue_ledger",
+    "revenue_share_contracts",
+    "roles",
+    "root_dashboard_audit",
+    "root_dashboard_export_jobs",
+    "root_owners",
+    "saved_audio_items",
+    "saved_messages",
+    "secret_community_acceptances",
+    "secret_community_invite_usage",
+    "secret_community_invites",
+    "secret_community_metadata",
+    "secret_community_security_events",
+    "secret_community_trust_history",
+    "secret_community_trust_profiles",
+    "secret_phone_sms_challenges",
+    "secret_phone_voice_challenges",
+    "secret_verification_rate_limits",
+    "social_auth_external_identities",
+    "social_auth_handoffs",
+    "social_auth_rate_limits",
+    "subscription_records",
+    "support_tickets",
+    "tax_profiles",
+    "thread_read_states",
+    "threads",
+    "user_action_rate_limits",
+    "user_ad_feedback",
+    "user_ad_preferences",
+    "user_advertiser_blocks",
+    "user_device_sessions",
+    "user_follows",
+    "user_presence_sessions",
+    "user_settings",
+    "verification_audit_logs",
+    "verification_badge_audit",
+    "verification_badges",
+    "verification_case_status_history",
+    "verification_cases",
+    "voice_story_events",
+    "webhook_rate_limits",
+    "webhooks"
+  ],
+  "enumCount": 3,
+  "enums": [
+    {
+      "enumlabel": "text",
+      "typname": "community_kind"
+    },
+    {
+      "enumlabel": "radio",
+      "typname": "community_kind"
+    },
+    {
+      "enumlabel": "podcast",
+      "typname": "community_kind"
+    }
+  ],
+  "rlsDisabled": [
+    "platform_role_catalog"
+  ],
+  "adsFunctions": [
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "819ba61c5055d4bc7d92b03ab32a70b2",
+      "proname": "ads_allow_internal_transition",
+      "prosecdef": false
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "3c6c637d1f62f44f69411739837d12ff",
+      "proname": "ads_allowed_targeting_keys",
+      "prosecdef": false
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "158bf2d4329179e97dacf0d9c10d9540",
+      "proname": "ads_guard_advertiser_account_write",
+      "prosecdef": true
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "ac15b995f2000c59f36cf4e583927e59",
+      "proname": "ads_guard_campaign_write",
+      "prosecdef": true
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "43b2037ac04de7b7f7c60352fcae3065",
+      "proname": "ads_guard_creative_write",
+      "prosecdef": true
+    },
+    {
+      "args": "raw_value text",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "6dc1d0055fccd570793c03f575615129",
+      "proname": "ads_hash_binding",
+      "prosecdef": false
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "975d10ade451cd06884a30d8df4ad28e",
+      "proname": "ads_prevent_mutation",
+      "prosecdef": true
+    },
+    {
+      "args": "doc_keys text[]",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "d3986a7e83798c29ccea7a5912029191",
+      "proname": "ads_require_active_legal",
+      "prosecdef": true
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "a6c6f5333e902d569c142fef347de33b",
+      "proname": "ads_require_advertiser_owner_membership",
+      "prosecdef": true
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "2b2e0bf9672ccd11e6cc86def662b0ff",
+      "proname": "ads_sensitive_targeting_keys",
+      "prosecdef": false
+    },
+    {
+      "args": "p_key text, p_default boolean",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "661042a2b9e989e29dcfc6dbd21c1426",
+      "proname": "ads_setting_bool",
+      "prosecdef": true
+    },
+    {
+      "args": "",
+      "config": "search_path=public, pg_temp",
+      "def_md5": "5d6b17a94d40bd65fd0d0ba89237f301",
+      "proname": "ads_touch_updated_at",
+      "prosecdef": true
+    }
+  ],
+  "adsAllowInternalTransitionGrants": [
+    {
+      "grantee": "PUBLIC",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "postgres",
+      "privilege_type": "EXECUTE"
+    },
+    {
+      "grantee": "service_role",
+      "privilege_type": "EXECUTE"
+    }
+  ],
+  "adsAllowInternalTransitionContract": {
+    "without_guc": false,
+    "with_guc": true
+  },
+  "remoteFeatureFlags": [],
+  "adPlatformSettings": [
+    {
+      "setting_key": "ad_reconciliation_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "ad_scheduler_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "advertiser_onboarding_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "advertising_enabled",
+      "setting_value": "true"
+    },
+    {
+      "setting_key": "advertising_global_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "advertising_global_kill_switch",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "campaign_activation_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "campaign_submission_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "political_advertising_enabled",
+      "setting_value": "false"
+    }
+  ],
+  "adPlacements": [
+    {
+      "enabled": "false",
+      "placement_key": "business_profile_recommendation"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "business_sponsored"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "community_rail"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "companion_rail"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "creator_content_sponsor"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "event_detail_sponsor"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "events_featured"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "feed_between_posts"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "feed_inline"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "live_now_card"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "live_now_featured"
+    },
+    {
+      "enabled": "false",
+      "placement_key": "publisher_community_sponsor"
+    }
+  ],
+  "payoutPlatformSettings": [
+    {
+      "setting_key": "batch_processing_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "creator_monetization_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "creator_payouts_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "global_payouts_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "global_payouts_kill_switch",
+      "setting_value": "true"
+    },
+    {
+      "setting_key": "payout_batch_processing_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "payout_default_currency",
+      "setting_value": "\"USD\""
+    },
+    {
+      "setting_key": "payout_default_schedule",
+      "setting_value": "\"monthly\""
+    },
+    {
+      "setting_key": "payout_dual_approval_required",
+      "setting_value": "true"
+    },
+    {
+      "setting_key": "payout_onboarding_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "payout_reconciliation_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "provider_payouts_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "publisher_monetization_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "publisher_payouts_enabled",
+      "setting_value": "false"
+    },
+    {
+      "setting_key": "real_payouts_enabled",
+      "setting_value": "false"
+    }
+  ],
+  "storageBuckets": [
+    {
+      "id": "audio-covers",
+      "name": "audio-covers",
+      "public": false
+    },
+    {
+      "id": "business-product-media",
+      "name": "business-product-media",
+      "public": false
+    },
+    {
+      "id": "business-profile-assets",
+      "name": "business-profile-assets",
+      "public": false
+    },
+    {
+      "id": "business-verification-documents",
+      "name": "business-verification-documents",
+      "public": false
+    },
+    {
+      "id": "community-branding",
+      "name": "community-branding",
+      "public": true
+    },
+    {
+      "id": "community-emojis",
+      "name": "community-emojis",
+      "public": false
+    },
+    {
+      "id": "community-stickers",
+      "name": "community-stickers",
+      "public": false
+    },
+    {
+      "id": "direct-message-attachments",
+      "name": "direct-message-attachments",
+      "public": false
+    },
+    {
+      "id": "message-attachments",
+      "name": "message-attachments",
+      "public": false
+    },
+    {
+      "id": "podcast-audio",
+      "name": "podcast-audio",
+      "public": false
+    },
+    {
+      "id": "profile-media",
+      "name": "profile-media",
+      "public": false
+    },
+    {
+      "id": "publisher-application-documents",
+      "name": "publisher-application-documents",
+      "public": false
+    }
+  ]
+}

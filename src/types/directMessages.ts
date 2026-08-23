@@ -1,9 +1,9 @@
-import type { UserStatus } from "./community";
+import type { AttachmentScanStatus, UserStatus } from "./community";
 
 export type DirectMessageAttachment = Readonly<{
   id: string;
   messageId?: string;
-  type: "image" | "file";
+  type: "image" | "video" | "file";
   url: string;
   name: string;
   mimeType?: string;
@@ -12,7 +12,14 @@ export type DirectMessageAttachment = Readonly<{
   width?: number;
   height?: number;
   createdAt?: string;
+  scanStatus?: AttachmentScanStatus;
 }>;
+
+export function directAttachmentTypeFromMime(mimeType?: string | null): DirectMessageAttachment["type"] {
+  if (mimeType?.startsWith("image/")) return "image";
+  if (mimeType?.startsWith("video/")) return "video";
+  return "file";
+}
 
 export type DirectMessageReplyPreview = Readonly<{
   messageId: string;
@@ -40,7 +47,8 @@ export type DirectMessage = Readonly<{
   replyPreview?: DirectMessageReplyPreview;
   reactions?: readonly DirectMessageReaction[];
   isPlaceholder?: boolean;
-  sendStatus?: "sending" | "sent" | "failed";
+  sendStatus?: "draft" | "sending" | "sent" | "delivered" | "retryable_failed" | "failed";
+  sendAttempt?: MessageSendAttemptState;
 }>;
 
 export type DirectMessageCursor = Readonly<{ createdAt: string; id: string }>;
@@ -87,3 +95,4 @@ export type DirectConversation = Readonly<{
   sharedMedia?: readonly DirectMessageAttachment[];
   messages: DirectMessage[];
 }>;
+import type { MessageSendAttemptState } from "../services/messageSendObservability";

@@ -1,0 +1,26 @@
+Target: https://cqnsetsmcduraryemhbi.supabase.co/auth/v1/authorize?provider=google
+Bodies contained no tokens or client secrets.
+
+canonical redirect_to=https://auth.picom.gg/google/callback
+  HTTP 400 validation_failed Unsupported provider: provider is not enabled
+
+canonical_state redirect_to=https://auth.picom.gg/google/callback?state=...
+  HTTP 400 validation_failed Unsupported provider: provider is not enabled
+
+account_callback redirect_to=https://account.picom.gg/auth/callback
+  HTTP 400 validation_failed Unsupported provider: provider is not enabled
+
+desktop redirect_to=picom://auth/callback
+  HTTP 400 validation_failed Unsupported provider: provider is not enabled
+
+evil redirect_to=https://evil.example/callback
+  HTTP 400 validation_failed Unsupported provider: provider is not enabled
+
+AUTH_CONFIG_API: NO_ACCESS_TOKEN
+GOOGLE_CONSOLE: NOT_ACCESSIBLE
+VITE_SUPABASE_GOOGLE_OAUTH_ENABLED: false (local .env.production flag name only)
+GOOGLE_CLIENT_ID: UNVERIFIED
+GOOGLE_CLIENT_SECRET: UNVERIFIED
+GOOGLE_REDIRECT_URI local: MISSING
+source canonical: https://auth.picom.gg/google/callback
+live gateway /google/callback: HTTP 400 (missing state; not nginx 404)

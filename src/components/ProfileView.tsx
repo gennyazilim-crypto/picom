@@ -6,12 +6,13 @@ import { dateTimeService } from "../services/dateTimeService";
 import { AppIcon, type IconName } from "./AppIcon";
 import { VerifiedProfileAvatar } from "./VerifiedProfileAvatar";
 import { ProfileCover } from "./ProfileCover";
-import { VerificationBadgeList } from "./VerificationBadgeList";
+import { useProfileDisplayName, useProfileUsername } from "./ProfileDisplayName";
 import { getUserVerificationSummary } from "../utils/verificationHelpers";
 import { useAudioCatalogState } from "../hooks/useAudioCatalog";
 import { ProfileAudioSections } from "./audio/ProfileAudioSections";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
 import { getCommunityIconLabel, resolveCommunityMarkSrc } from "../utils/generatedIdentity";
+import { useTranslation } from "../i18n";
 
 type ProfileViewProps = {
   profile: UserProfile;
@@ -30,6 +31,7 @@ type ProfileViewProps = {
   relationshipBusy?: boolean;
   onOpenMore?: (event: MouseEvent, profile: UserProfile) => void;
   onOpenCommunity?: (communityId: string) => void;
+  onOpenBookmarks?: () => void;
   dataState?: "idle" | "loading" | "ready" | "error";
   dataError?: string | null;
   onRetryData?: () => void;
@@ -80,44 +82,110 @@ function getActivityIcon(type: ProfileActivityItem["type"]): IconName {
   return "hash";
 }
 
-function statusLabel(status: UserProfile["status"]) {
-  if (status === "busy") return "Busy";
-  if (status === "idle") return "Idle";
-  if (status === "offline") return "Offline";
-  return "Online";
+function getActivityMessageAttachments(activity: ProfileActivityItem, communities: Community[]): Attachment[] {
+  if (!activity.messageId || !activity.communityId) return [];
+  const community = communities.find((candidate) => candidate.id === activity.communityId);
+  const message = community?.messages.find((candidate) => candidate.id === activity.messageId);
+  return (message?.attachments ?? []).filter((attachment) => attachment.type === "image");
+}
+
+function ActivityHeadline({
+  activity,
+  channelName,
+  communityName,
+}: {
+  activity: ProfileActivityItem;
+  channelName: string;
+  communityName: string;
+}) {
+  const channel = <strong>#{channelName}</strong>;
+  const community = <strong>{communityName}</strong>;
+  if (activity.type === "reaction") {
+    return <>Reacted in {channel}</>;
+  }
+  if (activity.type === "reply") {
+    return <>Replied in {channel}</>;
+  }
+  if (activity.type === "mention") {
+    return <>Mentioned in {channel}</>;
+  }
+  if (activity.type === "media_share") {
+    return <>Shared media in {channel} · {community}</>;
+  }
+  if (activity.type === "voice_join") {
+    return <>Joined voice in {channel}</>;
+  }
+  return <>Posted in {channel}</>;
+}
+
+function statusLabel(status: UserProfile["status"], t: (key: string) => string) {
+  if (status === "busy") return t("profile.busy");
+  if (status === "idle") return t("profile.idle");
+  if (status === "offline") return t("status.offline");
+  return t("status.online");
+}
+
+function friendActionLabel(status: UserProfile["friendshipStatus"], busy: boolean, t: (key: string) => string): string {
+  if (busy) return t("profile.updating");
+  if (status === "friends") return t("profile.unfriend");
+  if (status === "outgoing") return t("action.cancel");
+  if (status === "incoming") return t("action.confirm");
+  return t("profile.addFriend");
 }
 
 function ProfileActionButtons({ profile, isCurrentUser, onToggleFollow, onMessage, onFriendAction, onEditProfile, onRequestVerification, isBlocked = false, relationshipBusy = false, onOpenMore }: ProfileActionButtonsProps) {
+  const { t } = useTranslation("common");
   if (isCurrentUser) {
     return (
-      <div className="profile-action-row">
-        {onEditProfile ? <button type="button" className="profile-btn profile-btn--primary" onClick={onEditProfile}>
-          <AppIcon name="edit" size="sm" />
-          Edit profile
-        </button> : null}
-        {onRequestVerification ? <button type="button" className="profile-btn profile-btn--ghost" onClick={onRequestVerification}>
-          <AppIcon name="lock" size="sm" />
-          Verification
-        </button> : null}
-        <button type="button" className="profile-btn profile-btn--ghost profile-btn--icon" aria-label="More profile actions" onClick={(event) => onOpenMore?.(event, profile)}>
-          <AppIcon name="more" size="sm" />
-        </button>
+      <div className="profile-action-row" role="group" aria-label="Profile actions">
+        {onEditProfile ? (
+          <button type="button" className="profile-btn profile-btn--primary profile-btn--block" onClick={onEditProfile}>
+            <span className="profile-btn-icon" aria-hidden="true"><AppIcon name="edit" size="sm" /></span>
+            <span className="profile-btn-label">{t("profile.edit")}</span>
+          </button>
+        ) : null}
+        <div className={`profile-action-secondary${onRequestVerification ? "" : " profile-action-secondary--compact"}`}>
+          {onRequestVerification ? (
+            <button type="button" className="profile-btn profile-btn--ghost profile-btn--secondary" onClick={onRequestVerification}>
+              <span className="profile-btn-label">{t("communityAdmin.verification")}</span>
+            </button>
+          ) : null}
+          <button type="button" className="profile-btn profile-btn--ghost profile-btn--icon" aria-label="More profile actions" onClick={(event) => onOpenMore?.(event, profile)}>
+            <AppIcon name="more" size="sm" />
+          </button>
+        </div>
       </div>
     );
   }
 
+  const friendLabel = friendActionLabel(profile.friendshipStatus, relationshipBusy, t);
+  const followLabel = profile.isFollowing ? t("profile.unfollow") : t("profile.follow");
+
   return (
-    <div className="profile-action-row">
+    <div className="profile-action-row" role="group" aria-label="Profile actions">
       <button type="button" className="profile-btn profile-btn--primary profile-btn--block" disabled={isBlocked || relationshipBusy} onClick={() => onMessage?.(profile.id)}>
-        <AppIcon name="send" size="sm" />
-        Message
+        <span className="profile-btn-icon" aria-hidden="true"><AppIcon name="send" size="sm" /></span>
+        <span className="profile-btn-label">{t("profile.message")}</span>
       </button>
       <div className="profile-action-secondary">
-        <button type="button" className="profile-btn profile-btn--ghost" disabled={isBlocked || relationshipBusy} onClick={() => onToggleFollow(profile.id)}>
-          {profile.isFollowing ? "Unfollow" : "Follow"}
+        <button
+          type="button"
+          className="profile-btn profile-btn--ghost profile-btn--secondary"
+          disabled={isBlocked || relationshipBusy}
+          title={followLabel}
+          onClick={() => onToggleFollow(profile.id)}
+        >
+          <span className="profile-btn-label">{followLabel}</span>
         </button>
-        <button type="button" className="profile-btn profile-btn--ghost" disabled={isBlocked || relationshipBusy} onClick={() => onFriendAction?.(profile.id, profile.friendshipStatus === "friends" ? "remove" : profile.friendshipStatus === "outgoing" ? "cancel" : profile.friendshipStatus === "incoming" ? "accept" : "add")}>
-          {relationshipBusy ? "Updating..." : profile.friendshipStatus === "friends" ? "Remove friend" : profile.friendshipStatus === "outgoing" ? "Cancel request" : profile.friendshipStatus === "incoming" ? "Accept request" : "Add friend"}
+        <button
+          type="button"
+          className="profile-btn profile-btn--ghost profile-btn--secondary"
+          disabled={isBlocked || relationshipBusy}
+          title={friendLabel}
+          aria-label={friendLabel}
+          onClick={() => onFriendAction?.(profile.id, profile.friendshipStatus === "friends" ? "remove" : profile.friendshipStatus === "outgoing" ? "cancel" : profile.friendshipStatus === "incoming" ? "accept" : "add")}
+        >
+          <span className="profile-btn-label">{friendLabel}</span>
         </button>
         <button type="button" className="profile-btn profile-btn--ghost profile-btn--icon" aria-label="More profile actions" onClick={(event) => onOpenMore?.(event, profile)}>
           <AppIcon name="more" size="sm" />
@@ -131,7 +199,6 @@ export function ProfileLeftCard({
   profile,
   member,
   isCurrentUser,
-  onBack,
   onToggleFollow,
   onMessage,
   onFriendAction,
@@ -140,21 +207,19 @@ export function ProfileLeftCard({
   isBlocked,
   relationshipBusy,
   onOpenMore,
-}: ProfileActionButtonsProps & { member: Member; onBack: () => void }) {
+}: ProfileActionButtonsProps & { member: Member }) {
+  const { t } = useTranslation("common");
   const verification = getUserVerificationSummary(member.userId, profile.verificationBadges ?? [], profile.verification ?? member.verification);
+  const displayName = useProfileDisplayName(profile.id, profile.displayName);
+  const username = useProfileUsername(profile.id, profile.username);
   return (
     <aside className="profile-rail" aria-label="Profile summary">
-      <button className="profile-rail-back" type="button" onClick={onBack}>
-        <AppIcon name="chevronRight" size="sm" />
-        Back
-      </button>
-
       <article className="profile-identity-card">
-        <ProfileCover userId={profile.id} fallbackUrl={profile.coverUrl} label={profile.displayName + " cover photo"} className="profile-identity-cover" />
+        <ProfileCover userId={profile.id} fallbackUrl={profile.coverUrl} label={`${displayName} cover photo`} className="profile-identity-cover" />
         <div className="profile-identity-body">
           <VerifiedProfileAvatar
             member={member}
-            displayName={profile.displayName}
+            displayName={displayName}
             verification={verification}
             isCurrentUser={isCurrentUser}
             onEditAvatar={onEditProfile}
@@ -162,32 +227,53 @@ export function ProfileLeftCard({
           <div className="profile-identity-headline">
             <span className={`profile-presence-pill profile-presence-pill--${profile.status}`}>
               <i aria-hidden="true" />
-              {statusLabel(profile.status)}
+              {statusLabel(profile.status, t)}
             </span>
-            <h1 className="profile-name-with-verification"><span>{profile.displayName}</span></h1>
-            <p className="profile-handle">@{profile.username}</p>
-            <p className="profile-tagline">{profile.statusText ?? "Picom member"}</p>
+            <h1 className="profile-name-with-verification"><span>{displayName}</span></h1>
+            <p className="profile-handle">@{username}</p>
+            {profile.statusText?.trim() ? <p className="profile-tagline">{profile.statusText.trim()}</p> : null}
           </div>
-          {profile.roles.length ? (
-            <div className="profile-role-row">
-              {profile.roles.slice(0, 3).map((role) => (
-                <span key={role} className="profile-role-chip">{role}</span>
-              ))}
-            </div>
-          ) : null}
-          <VerificationBadgeList badges={profile.verificationBadges ?? []} />
+          {(() => {
+            const metrics: Array<readonly [string, number]> = [
+              ...(profile.privacy.showFollows
+                ? [[t("profile.followers"), profile.stats.followers] as const, [t("profile.following"), profile.stats.following] as const]
+                : []),
+              [t("profile.posts"), profile.stats.posts],
+              ...(profile.privacy.showCommunities ? [[t("profile.communities"), profile.stats.communities] as const] : []),
+            ];
+            if (!metrics.length) return null;
+            return (
+              <div className="profile-rail-stats" aria-label="Profile stats">
+                {metrics.map(([label, value]) => (
+                  <div key={label} className="profile-rail-stat">
+                    <strong>{value.toLocaleString()}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
           <dl className="profile-identity-facts">
             <div>
-              <dt>Location</dt>
-              <dd>{profile.location ?? "Not shared"}</dd>
+              <dt>
+                <AppIcon name="pin" size="xs" aria-hidden="true" />
+                {t("profile.location")}
+              </dt>
+              <dd>{profile.location ?? t("profile.notShared")}</dd>
             </div>
             <div>
-              <dt>Joined</dt>
+              <dt>
+                <AppIcon name="users" size="xs" aria-hidden="true" />
+                {t("profile.joined")}
+              </dt>
               <dd>{dateTimeService.formatCompactDateTime(profile.joinedAt)}</dd>
             </div>
             <div>
-              <dt>Language</dt>
-              <dd>{profile.preferredLanguage ?? "English"}</dd>
+              <dt>
+                <AppIcon name="settings" size="xs" aria-hidden="true" />
+                {t("profile.language")}
+              </dt>
+              <dd>{profile.preferredLanguage ?? t("profile.english")}</dd>
             </div>
           </dl>
           <ProfileActionButtons
@@ -251,14 +337,16 @@ export function ProfileStats({ profile }: { profile: UserProfile; audioStats?: {
   if (!metrics.length) return null;
 
   return (
-    <div className="profile-stats-strip" aria-label="Profile stats">
-      {metrics.map(([label, value]) => (
-        <article key={label} className="profile-stat-item">
-          <strong>{value.toLocaleString()}</strong>
-          <span>{label}</span>
-        </article>
-      ))}
-    </div>
+    <section className="profile-panel profile-stats-panel" aria-label="Profile stats">
+      <div className="profile-stats-strip">
+        {metrics.map(([label, value]) => (
+          <article key={label} className="profile-stat-item">
+            <strong>{value.toLocaleString()}</strong>
+            <span>{label}</span>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -268,29 +356,17 @@ export function ProfileBio({ profile }: { profile: UserProfile }) {
 
 function ProfileOverviewSection({ profile }: { profile: UserProfile }) {
   const hasBio = Boolean(profile.bio.trim());
-  const hasTags = profile.tags.length > 0;
-
-  if (!hasBio && !hasTags) return null;
+  if (!hasBio) return null;
 
   return (
-    <div className="profile-overview-body">
-      {hasBio ? (
+    <section className="profile-panel profile-overview-panel">
+      <div className="profile-overview-body">
         <div className="profile-overview-block">
           <h2 className="profile-overview-title">About</h2>
           <ProfileBio profile={profile} />
         </div>
-      ) : null}
-      {hasTags ? (
-        <div className="profile-overview-block">
-          {hasBio ? <h3 className="profile-overview-subtitle">Interests</h3> : <h2 className="profile-overview-title">Interests</h2>}
-          <div className="profile-tag-cloud profile-tag-cloud--inline">
-            {profile.tags.map((tag) => (
-              <span key={tag} className={`profile-tag${profile.roles.includes(tag) ? " is-role" : ""}`}>{tag}</span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -350,42 +426,90 @@ export function ProfileActivityList({
   communities: Community[];
   onOpenActivity: (activity: ProfileActivityItem) => void;
 }) {
+  const visibleActivities = activities.slice(0, 8);
+
   return (
-    <section className="profile-panel">
+    <section className="profile-panel profile-activity-panel">
       <header className="profile-panel-header profile-panel-header--compact">
-        <div>
-          <h2>Recent activity</h2>
-          <span className="profile-panel-subtitle">Access-filtered sources only</span>
-        </div>
+        <h2>Recent Activity</h2>
+        <span className="profile-panel-meta">{visibleActivities.length}</span>
       </header>
-      <div className="profile-activity-list">
-        {activities.slice(0, 8).map((activity) => (
-          <article key={activity.id} className="profile-activity-item">
-            <span className="profile-activity-icon" aria-hidden="true">
-              <AppIcon name={getActivityIcon(activity.type)} size="sm" />
-            </span>
-            <div className="profile-activity-copy">
-              <strong>{activity.title}</strong>
-              <p>{activity.preview}</p>
-              <small>
-                {getCommunityName(communities, activity.communityId)} / #{getChannelName(communities, activity.communityId, activity.channelId)} / {dateTimeService.formatCompactDateTime(activity.createdAt)}
-              </small>
-            </div>
-            {activity.communityId && activity.channelId ? (
-              <button type="button" className="profile-btn profile-btn--ghost" onClick={() => onOpenActivity(activity)}>
-                Open
-              </button>
-            ) : null}
-          </article>
-        ))}
-        {!activities.length ? (
-          <div className="profile-empty-state">
-            <AppIcon name="bell" size="lg" />
-            <strong>No visible recent activity</strong>
-            <span>Private channels and inaccessible communities are never included.</span>
-          </div>
-        ) : null}
-      </div>
+      {visibleActivities.length ? (
+        <ol className="profile-activity-list">
+          {visibleActivities.map((activity) => {
+            const canOpen = Boolean(activity.communityId && activity.channelId);
+            const communityName = getCommunityName(communities, activity.communityId);
+            const channelName = getChannelName(communities, activity.communityId, activity.channelId);
+            const preview = activity.preview?.trim() || "";
+            const attachments = getActivityMessageAttachments(activity, communities).slice(0, 4);
+            const showGallery = activity.type === "media_share" && attachments.length > 0;
+            const showFilePill = activity.type === "media_share" && attachments.length === 0;
+            const showComment = Boolean(preview) && (activity.type !== "media_share" || !showGallery);
+            const itemClassName = `profile-activity-item${canOpen ? " is-interactive" : ""}`;
+            const body = (
+              <>
+                <span className="profile-activity-icon" aria-hidden="true">
+                  <AppIcon name={getActivityIcon(activity.type)} size="sm" />
+                </span>
+                <div className="profile-activity-copy">
+                  <time className="profile-activity-time" dateTime={activity.createdAt}>
+                    {dateTimeService.formatRelativeTime(activity.createdAt)}
+                  </time>
+                  <p className="profile-activity-headline">
+                    <ActivityHeadline
+                      activity={activity}
+                      channelName={channelName}
+                      communityName={communityName}
+                    />
+                  </p>
+                  {showComment ? <p className="profile-activity-detail">{preview}</p> : null}
+                  {showFilePill ? (
+                    <span className="profile-activity-file">
+                      <AppIcon name="image" size="xs" />
+                      <span>{preview || "Shared media"}</span>
+                    </span>
+                  ) : null}
+                  {showGallery ? (
+                    <span className="profile-activity-gallery">
+                      {attachments.map((attachment) => (
+                        <img
+                          key={attachment.id}
+                          src={attachment.thumbnailUrl ?? attachment.publicUrl ?? attachment.url}
+                          alt={attachment.alt || "Shared media"}
+                          loading="lazy"
+                          draggable={false}
+                        />
+                      ))}
+                    </span>
+                  ) : null}
+                </div>
+              </>
+            );
+            return canOpen ? (
+              <li key={activity.id}>
+                <button
+                  type="button"
+                  className={itemClassName}
+                  onClick={() => onOpenActivity(activity)}
+                  aria-label={`Open ${activity.title}`}
+                >
+                  {body}
+                </button>
+              </li>
+            ) : (
+              <li key={activity.id}>
+                <article className={itemClassName}>{body}</article>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <div className="profile-empty-state">
+          <AppIcon name="bell" size="lg" />
+          <strong>No visible recent activity</strong>
+          <span>Private channels and inaccessible communities are never included.</span>
+        </div>
+      )}
     </section>
   );
 }
@@ -448,48 +572,131 @@ function ProfileRelationshipSummary({ profile, mutualCommunityCount }: { profile
   );
 }
 
+function userBelongsToCommunity(community: Community, userId: string): boolean {
+  if (!userId) return false;
+  if (community.members.some((member) => member.userId === userId)) return true;
+  // Rosters stay empty until a community is opened; owner/membership flags still prove membership.
+  if (community.ownerId === userId) return true;
+  if (community.currentUserMembershipUserId === userId) return true;
+  return false;
+}
+
+function communityCategoryLabel(category: Community["discoveryCategory"]): string | null {
+  if (category === "development") return "Development";
+  if (category === "design") return "Design";
+  if (category === "gaming") return "Gaming";
+  if (category === "music") return "Music";
+  if (category === "study") return "Study";
+  if (category === "work") return "Work";
+  return null;
+}
+
 function ProfileMutualCommunities({ profile, communities, currentUserId, onOpenCommunity }: { profile: UserProfile; communities: Community[]; currentUserId: string; onOpenCommunity?: (communityId: string) => void }) {
-  const visible = profile.privacy.showCommunities
-    ? communities.filter((community) => community.members.some((member) => member.userId === profile.id) && (profile.id === currentUserId || community.members.some((member) => member.userId === currentUserId)))
-    : [];
+  const isOwnProfile = profile.id === currentUserId;
+  // Server-projected mutual memberships (get_profile_domain_v1 roles). Prefer these over
+  // local roster membership checks — community.members is often empty until a community is opened.
+  const projectedCommunityIds = new Set(
+    (profile.communityRoles ?? []).map((row) => row.communityId).filter(Boolean),
+  );
+  const visible = !profile.privacy.showCommunities
+    ? []
+    : communities.filter((community) => {
+        if (isOwnProfile) {
+          return userBelongsToCommunity(community, profile.id);
+        }
+        if (projectedCommunityIds.size > 0) {
+          return projectedCommunityIds.has(community.id);
+        }
+        // Fallback before remote roles load: owner + shared membership heuristics.
+        if (!userBelongsToCommunity(community, currentUserId)) return false;
+        return community.ownerId === profile.id || userBelongsToCommunity(community, profile.id);
+      });
 
   return (
-    <section className="profile-panel">
+    <section className="profile-panel profile-communities-panel">
       <header className="profile-panel-header profile-panel-header--compact">
-        <div>
-          <h2>{profile.id === currentUserId ? "Communities" : "Mutual communities"}</h2>
-        </div>
+        <h2>{isOwnProfile ? "Communities" : "Mutual communities"}</h2>
         <span className="profile-panel-meta">{visible.length}</span>
       </header>
       {visible.length ? (
-        <div className="profile-community-list">
-          {visible.slice(0, 8).map((community) => {
-            const member = community.members.find((candidate) => candidate.userId === profile.id);
-            const role = community.roles.find((candidate) => candidate.id === member?.roleId);
-            const markSrc = resolveCommunityMarkSrc(community);
-            return (
-              <button type="button" key={community.id} className="profile-community-card" onClick={() => onOpenCommunity?.(community.id)}>
-                <span className={`profile-community-mark${markSrc ? " profile-community-mark--avatar" : ""}`} style={markSrc ? undefined : { background: community.accentColor }}>
-                  {markSrc ? (
-                    <img src={markSrc} alt="" draggable={false} />
-                  ) : (
-                    getCommunityIconLabel(community.name, community.icon)
-                  )}
-                </span>
-                <span className="profile-community-copy">
-                  <strong>{community.name}</strong>
-                  <small>{role?.name ?? "Member"}</small>
-                </span>
-                <AppIcon name="chevronRight" size="sm" />
-              </button>
-            );
-          })}
+        <div className="profile-community-scroller" role="region" aria-label={isOwnProfile ? "Communities" : "Mutual communities"}>
+          <ul className="profile-community-list">
+            {visible.slice(0, 12).map((community) => {
+              const memberCount = Math.max(
+                community.members.length,
+                community.ownerId || community.currentUserMembershipUserId ? 1 : 0,
+              );
+              const markSrc = resolveCommunityMarkSrc(community);
+              const heroSrc = community.bannerUrl?.trim() || markSrc;
+              const categoryLabel = communityCategoryLabel(community.discoveryCategory);
+              const description = (community.description ?? "").trim()
+                || `${categoryLabel ?? "Community"} · ${memberCount} member${memberCount === 1 ? "" : "s"}`;
+              const monogram = getCommunityIconLabel(community.name, community.icon);
+              return (
+                <li key={community.id} className="profile-community-list__item">
+                  <button
+                    type="button"
+                    className={`profile-community-card${heroSrc ? " profile-community-card--media" : " profile-community-card--fallback"}`}
+                    onClick={() => onOpenCommunity?.(community.id)}
+                  >
+                    <span
+                      className="profile-community-card__hero"
+                      style={
+                        heroSrc
+                          ? undefined
+                          : {
+                              background: `radial-gradient(circle at 78% 18%, color-mix(in srgb, ${community.accentColor} 55%, transparent) 0%, transparent 42%), linear-gradient(165deg, color-mix(in srgb, ${community.accentColor} 88%, #102226) 0%, #0d1416 72%)`,
+                            }
+                      }
+                      aria-hidden="true"
+                    >
+                      {heroSrc ? (
+                        <img src={heroSrc} alt="" draggable={false} referrerPolicy="no-referrer" />
+                      ) : null}
+                    </span>
+                    <span className="profile-community-card__shade" aria-hidden="true" />
+                    <span className="profile-community-card__body">
+                      <span
+                        className={`profile-community-card__mark${markSrc ? " profile-community-card__mark--image" : ""}`}
+                        style={markSrc ? undefined : { background: community.accentColor }}
+                        aria-hidden="true"
+                      >
+                        {markSrc ? (
+                          <img src={markSrc} alt="" draggable={false} referrerPolicy="no-referrer" />
+                        ) : (
+                          monogram
+                        )}
+                      </span>
+                      <strong className="profile-community-card__title">{community.name}</strong>
+                      <span className="profile-community-card__description">{description}</span>
+                      {categoryLabel ? (
+                        <span className="profile-community-card__chips">
+                          <span className="profile-community-card__chip">{categoryLabel}</span>
+                        </span>
+                      ) : null}
+                      <span className="profile-community-card__cta">Open</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       ) : (
         <div className="profile-empty-state">
           <AppIcon name="users" size="lg" />
-          <strong>{profile.privacy.showCommunities ? "No mutual communities" : "Communities are private"}</strong>
-          <span>Only communities visible to both accounts can appear here.</span>
+          <strong>
+            {profile.privacy.showCommunities
+              ? (isOwnProfile ? "No communities yet" : "No mutual communities")
+              : "Communities are private"}
+          </strong>
+          <span>
+            {profile.privacy.showCommunities
+              ? (isOwnProfile
+                ? "Communities you create or join will show up here."
+                : "Only communities visible to both accounts can appear here.")
+              : "Only communities visible to both accounts can appear here."}
+          </span>
         </div>
       )}
     </section>
@@ -502,6 +709,7 @@ export function ProfileMainPanel({
   onOpenActivity,
   onOpenImage,
   onOpenCommunity,
+  onOpenBookmarks,
   currentUserId,
   dataState = "ready",
   dataError,
@@ -512,6 +720,7 @@ export function ProfileMainPanel({
   onOpenActivity: (activity: ProfileActivityItem) => void;
   onOpenImage: (attachment: Attachment) => void;
   onOpenCommunity?: (communityId: string) => void;
+  onOpenBookmarks?: () => void;
   currentUserId: string;
   dataState?: "idle" | "loading" | "ready" | "error";
   dataError?: string | null;
@@ -571,11 +780,8 @@ export function ProfileMainPanel({
   const savedPodcasts = audioVisible && profile.isCurrentUser ? audioCatalog.snapshot.podcastEpisodes.filter((episode) => episode.isSavedByCurrentUser && episode.status === "published" && visibleCommunityIds.has(episode.communityId)) : [];
   return (
     <section className="profile-content" aria-label="Profile details">
-      <section className="profile-panel profile-hero-panel">
-        <ProfileStats profile={profile} />
-        <ProfileOverviewSection profile={profile} />
-      </section>
-      <ProfileDetailsGrid profile={profile} communities={communities} />
+      <ProfileOverviewSection profile={profile} />
+      {profile.id === currentUserId && onOpenBookmarks ? <section className="profile-panel"><div className="profile-panel-heading"><div><p className="eyebrow">Private library</p><h2>Bookmarks</h2><p>Open the Picom items you have saved and can still access.</p></div><button type="button" className="profile-btn profile-btn--ghost" onClick={onOpenBookmarks}>Open bookmarks</button></div></section> : null}
       <ProfileMutualCommunities profile={profile} communities={communities} currentUserId={currentUserId} onOpenCommunity={onOpenCommunity} />
       <ProfileActivityList activities={profile.activities} communities={communities} onOpenActivity={onOpenActivity} />
       <ProfileHeroGallery media={profile.media} onOpenImage={onOpenImage} />
@@ -602,7 +808,6 @@ export function ProfileView({
   member,
   communities,
   currentUserId,
-  onBack,
   onToggleFollow,
   onMessage,
   onFriendAction,
@@ -614,6 +819,7 @@ export function ProfileView({
   relationshipBusy,
   onOpenMore,
   onOpenCommunity,
+  onOpenBookmarks,
   dataState,
   dataError,
   onRetryData,
@@ -627,7 +833,6 @@ export function ProfileView({
           profile={profile}
           member={member}
           isCurrentUser={isCurrentUser}
-          onBack={onBack}
           onToggleFollow={onToggleFollow}
           onMessage={onMessage}
           onFriendAction={onFriendAction}
@@ -647,6 +852,7 @@ export function ProfileView({
           onOpenActivity={onOpenActivity}
           onOpenImage={onOpenImage}
           onOpenCommunity={onOpenCommunity}
+          onOpenBookmarks={onOpenBookmarks}
         />
       </div>
     </main>

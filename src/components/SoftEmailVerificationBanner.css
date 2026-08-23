@@ -1,9 +1,24 @@
-/* Soft email verification — slim non-blocking strip (never a hero block) */
+/* Soft email verification — slim non-blocking strip (never a hero block).
+   desktop-frame is a column flex; without these rules the banner becomes a
+   full-height left column beside AuthenticatedAppShell. */
+.desktop-frame {
+  flex-direction: column;
+}
+
+.desktop-frame > .authenticated-app-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
 .soft-email-banner {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 0 0 auto;
   flex-wrap: nowrap;
+  align-self: stretch;
+  width: auto;
   max-width: 100%;
   min-height: 0;
   margin: 0 12px 6px;
@@ -89,8 +104,3 @@
   padding: 0 6px;
 }
 
-@media (max-width: 900px) {
-  .soft-email-banner__copy p {
-    display: none;
-  }
-}

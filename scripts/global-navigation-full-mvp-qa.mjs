@@ -15,7 +15,7 @@ const contractScripts = [
 ];
 
 for (const script of contractScripts) {
-  const result = spawnSync(process.execPath, [`scripts/${script}`], { stdio: "inherit" });
+  const result = spawnSync(process.execPath, ["--experimental-strip-types", "--disable-warning=ExperimentalWarning", `scripts/${script}`], { stdio: "inherit" });
   assert.equal(result.status, 0, `${script} failed with exit code ${result.status ?? "unknown"}`);
 }
 
@@ -36,7 +36,7 @@ assert.doesNotMatch(settings, /"Help Center"/);
 for (const key of ["feed", "dm", "communities", "radio", "podcasts", "events", "bookmarks", "settings", "helpSupport"]) {
   assert.match(registry, new RegExp(`key: "${key}"`));
 }
-assert.match(sidebar, /aria-label="Main navigation"/);
+assert.match(sidebar, /aria-label=\{t\("sidebar\.mainNavigation"\)\}/);
 assert.match(sidebar, /data-navigation-mode/);
 assert.doesNotMatch(sidebar, /mobile|bottom navigation/i);
 

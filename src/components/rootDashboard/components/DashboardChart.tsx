@@ -1,3 +1,5 @@
+import { useTranslation } from "../../../i18n";
+
 type ChartKind =
   | "line"
   | "area"
@@ -44,6 +46,7 @@ function linePath(values: readonly number[], width: number, height: number) {
 }
 
 export function DashboardChart({ title, kind, series, categories = [], loading, emptyMessage, summary }: DashboardChartProps) {
+  const { t } = useTranslation("admin");
   const width = 320;
   const height = 120;
   const primary = series[0];
@@ -54,11 +57,11 @@ export function DashboardChart({ title, kind, series, categories = [], loading, 
         <strong>{title}</strong>
         <span>
           {kind}
-          {categories.length ? ` · ${categories.length} pts` : ""}
+          {categories.length ? ` · ${t("chart.points", { count: categories.length })}` : ""}
         </span>
       </header>
-      {loading ? <div className="rd-chart__empty">Loading chart…</div> : null}
-      {!loading && !hasData(series) ? <div className="rd-chart__empty">{emptyMessage ?? "No chart series available"}</div> : null}
+      {loading ? <div className="rd-chart__empty">{t("chart.loading")}</div> : null}
+      {!loading && !hasData(series) ? <div className="rd-chart__empty">{emptyMessage ?? t("chart.empty")}</div> : null}
       {!loading && hasData(series) && primary ? (
         <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-hidden="true">
           {kind === "bar" || kind === "stackedBar"
@@ -100,7 +103,7 @@ export function DashboardChart({ title, kind, series, categories = [], loading, 
           ) : null}
           {kind === "donut" || kind === "funnel" || kind === "heatmap" ? (
             <text x={width / 2} y={height / 2} textAnchor="middle" fill="currentColor" fontSize="11">
-              {kind} preview · {primary.values.length} values
+              {t("chart.preview", { kind, count: primary.values.length })}
             </text>
           ) : null}
         </svg>

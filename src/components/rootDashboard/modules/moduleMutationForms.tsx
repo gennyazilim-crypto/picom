@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { useTranslation } from "../../../i18n";
 import type { AdminOperationsResult } from "../../../types/adminOperations";
 import type { RootDashboardMutationOk } from "../../../types/rootDashboardOperations";
 
@@ -13,6 +14,7 @@ type ModuleMutationFormProps = Readonly<{
 }>;
 
 export function ModuleMutationForm({ title, children, submitLabel, onSubmit, onSuccess }: ModuleMutationFormProps) {
+  const { t } = useTranslation("admin");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export function ModuleMutationForm({ title, children, submitLabel, onSubmit, onS
       setError(result.message);
       return;
     }
-    setMessage(result.data.message ?? "Saved.");
+    setMessage(result.data.message ?? t("form.saved"));
     onSuccess?.();
   }
 
@@ -40,7 +42,7 @@ export function ModuleMutationForm({ title, children, submitLabel, onSubmit, onS
         {!error && message ? <span className="rd-mutation-form__ok">{message}</span> : null}
       </div>
       <div className="rd-mutation-form__fields">{children}</div>
-      <button type="submit" disabled={busy}>{busy ? "Working…" : submitLabel}</button>
+      <button type="submit" disabled={busy}>{busy ? t("form.working") : submitLabel}</button>
     </form>
   );
 }

@@ -1,0 +1,21 @@
+{
+  "auth:onboarding:production:smoke": {
+    "prior_13C": "STALE_TEST",
+    "now": "PASS",
+    "repair": "Semantic soft-verification markers, current App.tsx guard order, current user_settings hydrate select. Product soft-verification unchanged."
+  },
+  "auth:sessions:smoke": {
+    "prior": "stale Settings copy",
+    "now": "PASS",
+    "repair": "Account Center sessions route + i18n account.sessions"
+  },
+  "auth:email-verification:smoke": {
+    "prior": "stale Settings copy",
+    "now": "PASS",
+    "repair": "Account Center email route + i18n account.emailPending / account.emailVerified"
+  },
+  "auth:onboarding:finish:unit": {
+    "now": "MISSING_SCRIPT",
+    "note": "package.json script target does not exist. Not invented in this task."
+  }
+}

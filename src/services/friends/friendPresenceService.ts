@@ -1,6 +1,4 @@
-import { mockFriendState } from "../../data/mockFriends";
 import type { UserStatus } from "../../types/community";
-import { dataSourceService } from "../dataSourceService";
 import { getSupabaseClient } from "../supabase/supabaseClient";
 import { realtimeChannelNames } from "../supabase/realtimeService";
 
@@ -11,6 +9,12 @@ type PresenceSubscriptionKey = "friend-presence" | "dm-presence";
 type PresenceRpcName = "list_friend_presence" | "list_direct_conversation_presence";
 type ActivePresenceSubscription = Readonly<{ cancel: () => void }>;
 const activePresenceSubscriptions = new Map<PresenceSubscriptionKey, ActivePresenceSubscription>();
+let presenceRealtimeSubscriptionSequence = 0;
+
+function uniquePresenceChannelName(baseName: string): string {
+  presenceRealtimeSubscriptionSequence += 1;
+  return `${baseName}:subscription-${presenceRealtimeSubscriptionSequence}`;
+}
 
 function safePresence(status: unknown): FriendPresence {
   if (status === "online") return { status: "online", statusText: "Online" };
@@ -19,18 +23,13 @@ function safePresence(status: unknown): FriendPresence {
   return { status: "offline", statusText: "Offline" };
 }
 
-function mockSnapshot(friendIds: string[]): FriendPresenceSnapshot {
-  const allowed = new Set(friendIds);
-  return Object.fromEntries(
-    mockFriendState.friends
-      .filter((friend) => allowed.has(friend.userId))
-      .map((friend) => [friend.userId, safePresence(friend.status)]),
-  );
-}
-
 async function authenticatedClient() {
   const client = getSupabaseClient();
   if (!client) return null;
+  const { data: sessionData } = await client.auth.getSession();
+  if (sessionData.session?.user?.id) {
+    return { client, userId: sessionData.session.user.id };
+  }
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) return null;
   return { client, userId: data.user.id };
@@ -46,6 +45,9 @@ async function subscribeWithRpc(
   let active = true;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let pendingOfflineTimer: ReturnType<typeof setTimeout> | undefined;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let periodicRefreshTimer: ReturnType<typeof setInterval> | undefined;
+  let removeLifecycleListeners: (() => void) | undefined;
   let removeRealtimeChannel: (() => void) | undefined;
   let record: ActivePresenceSubscription;
   const cancel = () => {
@@ -53,6 +55,9 @@ async function subscribeWithRpc(
     active = false;
     if (refreshTimer) clearTimeout(refreshTimer);
     if (pendingOfflineTimer) clearTimeout(pendingOfflineTimer);
+    if (retryTimer) clearTimeout(retryTimer);
+    if (periodicRefreshTimer) clearInterval(periodicRefreshTimer);
+    removeLifecycleListeners?.();
     removeRealtimeChannel?.();
     if (activePresenceSubscriptions.get(subscriptionKey) === record) activePresenceSubscriptions.delete(subscriptionKey);
   };
@@ -70,10 +75,6 @@ async function subscribeWithRpc(
     pendingOfflineTimer = setTimeout(() => emit(Object.fromEntries(normalizedIds.map((userId) => [userId, safePresence("offline")]))), 250);
   };
 
-  if (dataSourceService.getStatus().isMock) {
-    queueMicrotask(() => emit(mockSnapshot(normalizedIds)));
-    return cancel;
-  }
 
   const auth = await authenticatedClient();
   if (!active || activePresenceSubscriptions.get(subscriptionKey) !== record) return cancel;
@@ -81,7 +82,20 @@ async function subscribeWithRpc(
   const refresh = async () => {
     const { data, error } = await auth.client.rpc(rpcName, { target_user_ids: normalizedIds });
     if (!active || activePresenceSubscriptions.get(subscriptionKey) !== record) return;
-    if (error) { scheduleOffline(); return; }
+    if (error) {
+      // A transient RPC/network failure is not evidence that every peer went offline.
+      // Keep the last verified UI state and retry after the connection has had time to recover.
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = setTimeout(() => {
+        retryTimer = undefined;
+        if (active && activePresenceSubscriptions.get(subscriptionKey) === record) void refresh();
+      }, 1_500);
+      return;
+    }
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = undefined;
+    }
     const snapshot: Record<string, FriendPresence> = {};
     for (const row of data ?? []) snapshot[row.user_id] = safePresence(row.status);
     for (const userId of normalizedIds) snapshot[userId] ??= safePresence("offline");
@@ -94,18 +108,52 @@ async function subscribeWithRpc(
 
   await refresh();
   if (!active || activePresenceSubscriptions.get(subscriptionKey) !== record) return cancel;
-  const channelName = subscriptionKey === "dm-presence"
-    ? `dm-presence:${auth.userId}`
-    : realtimeChannelNames.friendPresence(auth.userId);
+  const channelName = uniquePresenceChannelName(
+    subscriptionKey === "dm-presence"
+      ? `dm-presence:${auth.userId}`
+      : realtimeChannelNames.friendPresence(auth.userId),
+  );
   const channel = normalizedIds.length
     ? auth.client.channel(channelName).on(
       "postgres_changes",
       { event: "*", schema: "public", table: "friend_presence", filter: `user_id=in.(${normalizedIds.join(",")})` },
       scheduleRefresh,
-    ).subscribe()
+    ).subscribe((status) => {
+      if (status === "SUBSCRIBED") scheduleRefresh();
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        if (retryTimer) clearTimeout(retryTimer);
+        retryTimer = setTimeout(() => {
+          retryTimer = undefined;
+          if (active && activePresenceSubscriptions.get(subscriptionKey) === record) void refresh();
+        }, 1_500);
+      }
+    })
     : null;
   removeRealtimeChannel = channel ? () => { void auth.client.removeChannel(channel); } : undefined;
-  if (!active) removeRealtimeChannel?.();
+
+  if (!active) {
+    removeRealtimeChannel?.();
+    return cancel;
+  }
+
+  // Re-evaluate expiry even when an unclean peer shutdown produces no final database event.
+  periodicRefreshTimer = setInterval(scheduleRefresh, 30_000);
+
+  if (typeof window !== "undefined") {
+    const refreshOnResume = () => scheduleRefresh();
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === "visible") scheduleRefresh();
+    };
+    window.addEventListener("focus", refreshOnResume);
+    window.addEventListener("online", refreshOnResume);
+    document.addEventListener("visibilitychange", refreshOnVisibility);
+    removeLifecycleListeners = () => {
+      window.removeEventListener("focus", refreshOnResume);
+      window.removeEventListener("online", refreshOnResume);
+      document.removeEventListener("visibilitychange", refreshOnVisibility);
+    };
+  }
+
   return cancel;
 }
 

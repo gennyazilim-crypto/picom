@@ -1,8 +1,6 @@
-import { currentUserId } from "../data/mockCommunities";
-import { dataSourceService } from "./dataSourceService";
 import { fileService } from "./fileService";
 import { attachmentThumbnailService } from "./attachmentThumbnailService";
-import { attachmentScanService, type AttachmentScanStatus } from "./attachmentScanService";
+import type { AttachmentScanStatus } from "./attachmentScanService";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 
@@ -23,6 +21,7 @@ export type UploadedAttachmentSummary = Readonly<{
   storagePath: string;
   fileName: string;
   mimeType: string;
+  attachmentType: "image" | "video";
   sizeBytes: number;
   publicUrl: string | null;
   thumbnailUrl: string | null;
@@ -50,6 +49,13 @@ export type UploadServiceResult<T> =
   | Readonly<{ ok: true; data: T }>
   | Readonly<{ ok: false; error: UploadServiceError }>;
 
+type SignedAttachmentUploadResponse = Readonly<{
+  path?: string;
+  token?: string;
+  code?: string;
+  message?: string;
+}>;
+
 function uploadError(code: UploadServiceErrorCode, message: string): UploadServiceResult<never> {
   return { ok: false, error: { code, message } };
 }
@@ -64,10 +70,6 @@ export function sanitizeUploadFileName(fileName: string): string {
     .slice(0, 96);
 
   return cleaned || "attachment";
-}
-
-function createIdSuffix(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function validateInput(input: UploadImageAttachmentInput): UploadServiceError | null {
@@ -87,34 +89,12 @@ function validateInput(input: UploadImageAttachmentInput): UploadServiceError | 
   return null;
 }
 
-function createPendingStoragePath(input: UploadImageAttachmentInput, userId: string): string {
-  const safeName = sanitizeUploadFileName(input.file.name);
-  return `communities/${input.communityId}/channels/${input.channelId}/pending/${userId}/${createIdSuffix()}-${safeName}`;
-}
-
 function isUploadCanceled(input: UploadImageAttachmentInput): boolean {
   return Boolean(input.signal?.aborted);
 }
 
-function waitForMockUpload(signal?: AbortSignal): Promise<UploadServiceResult<true>> {
-  return new Promise((resolve) => {
-    if (signal?.aborted) {
-      resolve(uploadError("UPLOAD_CANCELED", "Upload canceled."));
-      return;
-    }
-
-    const timeout = globalThis.setTimeout(() => {
-      signal?.removeEventListener("abort", onAbort);
-      resolve({ ok: true, data: true });
-    }, 520);
-
-    const onAbort = () => {
-      globalThis.clearTimeout(timeout);
-      resolve(uploadError("UPLOAD_CANCELED", "Upload canceled."));
-    };
-
-    signal?.addEventListener("abort", onAbort, { once: true });
-  });
+function attachmentTypeForMimeType(mimeType: string): "image" | "video" {
+  return mimeType.startsWith("video/") ? "video" : "image";
 }
 
 function getConfiguredSupabaseClient() {
@@ -145,66 +125,41 @@ export const uploadService = {
     if (!contentValidation.ok) return uploadError("VALIDATION_ERROR", contentValidation.reason);
     if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
 
-    const dataSource = dataSourceService.getStatus();
-
-    if (dataSource.isMock) {
-      const mockDelay = await waitForMockUpload(input.signal);
-      if (!mockDelay.ok) return mockDelay;
-
-      const userId = input.userId ?? currentUserId;
-      const storagePath = createPendingStoragePath(input, userId);
-      const thumbnail = attachmentThumbnailService.createThumbnailPlaceholder({
-        storagePath,
-        publicUrl: null,
-        mimeType: input.file.type,
-        sizeBytes: input.file.size,
-      });
-      const scan = attachmentScanService.scanFilePlaceholder({
-        fileName: input.file.name,
-        mimeType: input.file.type,
-        sizeBytes: input.file.size,
-      });
-      input.onProgress?.({ percent: 100, stage: "finalizing" });
-      return {
-        ok: true,
-        data: {
-          bucket: MESSAGE_ATTACHMENTS_BUCKET,
-          userId,
-          storagePath,
-          fileName: sanitizeUploadFileName(input.file.name),
-          mimeType: input.file.type,
-          sizeBytes: input.file.size,
-          publicUrl: null,
-          thumbnailUrl: thumbnail.thumbnailUrl,
-          thumbnailStoragePath: thumbnail.thumbnailStoragePath,
-          width: thumbnail.width,
-          height: thumbnail.height,
-          blurhashPlaceholder: thumbnail.blurhashPlaceholder,
-          scanStatus: scan.status,
-        },
-      };
-    }
-
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return configured;
 
-    let userId = input.userId?.trim();
-    if (!userId) {
-      const { data, error } = await configured.data.auth.getUser();
-      userId = data.user?.id;
-
-      if (error || !userId) {
-        return uploadError("AUTH_REQUIRED", "Sign in before uploading attachments.");
-      }
+    const { data: authData, error: authError } = await configured.data.auth.getUser();
+    const userId = authData.user?.id;
+    if (authError || !userId) {
+      return uploadError("AUTH_REQUIRED", "Sign in before uploading attachments.");
     }
 
-    const storagePath = createPendingStoragePath(input, userId);
+    if (input.userId?.trim() && input.userId.trim() !== userId) {
+      return uploadError("AUTH_REQUIRED", "Your session changed while the attachment was preparing. Retry the image.");
+    }
+
+    const signedUpload = await configured.data.functions.invoke<SignedAttachmentUploadResponse>("create-message-attachment-upload", {
+      body: {
+        communityId: input.communityId,
+        channelId: input.channelId,
+        fileName: sanitizeUploadFileName(input.file.name),
+        mimeType: input.file.type,
+        sizeBytes: input.file.size,
+      },
+    });
+
+    if (signedUpload.error || !signedUpload.data?.path || !signedUpload.data.token) {
+      if (isRateLimitError(signedUpload.error)) return uploadError("RATE_LIMITED", rateLimitUserMessage);
+      return uploadError("UPLOAD_FAILED", signedUpload.data?.message ?? "Picom could not authorize this attachment upload.");
+    }
+
+    const storagePath = signedUpload.data.path;
     if (isUploadCanceled(input)) return uploadError("UPLOAD_CANCELED", "Upload canceled.");
 
     input.onProgress?.({ percent: 30, stage: "uploading" });
     const { error } = await configured.data.storage
       .from(MESSAGE_ATTACHMENTS_BUCKET)
-      .upload(storagePath, input.file, {
+      .uploadToSignedUrl(storagePath, signedUpload.data.token, input.file, {
         contentType: input.file.type,
         upsert: false,
       });
@@ -216,10 +171,10 @@ export const uploadService = {
 
     if (error) {
       if (isRateLimitError(error)) return uploadError("RATE_LIMITED", rateLimitUserMessage);
-      return uploadError("UPLOAD_FAILED", "Could not upload attachment.");
+      return uploadError("UPLOAD_FAILED", "Picom could not upload this attachment to protected storage.");
     }
 
-    const thumbnail = attachmentThumbnailService.createThumbnailPlaceholder({
+    const thumbnail = attachmentThumbnailService.createNativePreviewMetadata({
       storagePath,
       publicUrl: null,
       mimeType: input.file.type,
@@ -234,6 +189,7 @@ export const uploadService = {
         storagePath,
         fileName: sanitizeUploadFileName(input.file.name),
         mimeType: input.file.type,
+        attachmentType: attachmentTypeForMimeType(input.file.type),
         sizeBytes: input.file.size,
         publicUrl: null,
         thumbnailUrl: thumbnail.thumbnailUrl,
@@ -249,7 +205,6 @@ export const uploadService = {
   async removePending(storagePath: string): Promise<boolean> {
     const normalized = storagePath.trim().replace(/\\/g, "/");
     if (!normalized.includes("/pending/")) return false;
-    if (dataSourceService.getStatus().isMock) return true;
     const configured = getConfiguredSupabaseClient();
     if (!configured.ok) return false;
     const { error } = await configured.data.storage.from(MESSAGE_ATTACHMENTS_BUCKET).remove([normalized]);

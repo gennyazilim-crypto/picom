@@ -1,0 +1,13 @@
+PRODUCTION APPLY: APPLIED
+
+mechanism=Supabase MCP apply_migration
+project_id=cqnsetsmcduraryemhbi
+name=reconcile_account_onboarding_rpc_contract
+query=exact contents of 20260816000000_reconcile_account_onboarding_rpc_contract.sql
+start_utc=2026-08-16T20:23:06Z
+end_utc=2026-08-16T20:23:06Z
+mcp_success=true
+other_migrations_applied=false
+supabase_db_push=false
+staging_mutated=false
+user_rows_mutated=false

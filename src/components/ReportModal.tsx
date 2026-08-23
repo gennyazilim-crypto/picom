@@ -16,7 +16,7 @@ const reasons: Array<{ value: ReportReason; label: string; description: string }
   { value: "other", label: "Something else", description: "Another Community Guidelines concern." },
 ];
 
-const targetTitles: Record<ReportTargetType, string> = { message: "message", direct_message: "direct message", user: "user", community: "community", radio_session: "radio session", podcast_episode: "Podcast episode", podcast_comment: "Podcast comment" };
+const targetTitles: Record<ReportTargetType, string> = { message: "message", direct_message: "direct message", user: "user", community: "community", radio_session: "radio session", podcast_episode: "Podcast episode", podcast_comment: "Podcast comment", project_support_note: "support note" };
 
 const reasonIcons: Record<ReportReason, IconName> = {
   spam: "inbox",
@@ -35,6 +35,7 @@ const targetIcons: Partial<Record<ReportTargetType, IconName>> = {
   radio_session: "voice",
   podcast_episode: "play",
   podcast_comment: "reply",
+  project_support_note: "reply",
 };
 
 export function ReportModal({ target, reporterId, onClose, onResult }: Props) {

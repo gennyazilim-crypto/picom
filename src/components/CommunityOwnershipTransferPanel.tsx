@@ -1,19 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Community, Member } from "../types/community";
 import { communityOwnershipTransferService, type OwnershipTransferStatus } from "../services/communityOwnershipTransferService";
+import type { CommunityArchiveEligibility } from "../services/community/communityArchiveEligibilityService";
 import { AppIcon } from "./AppIcon";
 import "./CommunityDangerZone.css";
 
 type CommunityOwnershipTransferPanelProps = {
   community: Community;
   currentUser: Member;
+  eligibility: CommunityArchiveEligibility | null;
 };
 
 function isCurrentUserOwner(community: Community, currentUser: Member): boolean {
   return community.roles.find((role) => role.id === currentUser.roleId)?.name === "Owner";
 }
 
-export function CommunityOwnershipTransferPanel({ community, currentUser }: CommunityOwnershipTransferPanelProps) {
+export function CommunityOwnershipTransferPanel({ community, currentUser, eligibility }: CommunityOwnershipTransferPanelProps) {
   const [targetUserId, setTargetUserId] = useState("");
   const [confirmationName, setConfirmationName] = useState("");
   const [reason, setReason] = useState("");
@@ -39,7 +41,7 @@ export function CommunityOwnershipTransferPanel({ community, currentUser }: Comm
     setErrorMessage("");
   }, [community.id, eligibleMembers]);
 
-  if (!canPrepareTransfer) return null;
+  if (!canPrepareTransfer || eligibility?.requiresOwnershipTransfer === false) return null;
 
   async function transferOwnership() {
     setSubmitting(true);

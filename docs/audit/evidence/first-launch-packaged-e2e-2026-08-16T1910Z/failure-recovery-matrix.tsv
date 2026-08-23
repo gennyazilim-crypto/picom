@@ -1,0 +1,25 @@
+Scenario	Expected	Observed	Result	Evidence
+force close Welcome	resume welcome or nearest stable	not operated; version gate blocked UI	BLOCKED_ENVIRONMENT	screenshots/01-welcome.png
+force close Appearance	resume appearance	not reached	BLOCKED_ENVIRONMENT	screenshots/01-welcome.png
+invalid persisted step	migrate/sanitize	covered by first-launch:state:test	RUNTIME_TEST_PASS	suites/first-launch_state_test.txt
+invalid locale	fallback en	covered by first-launch:state:test	RUNTIME_TEST_PASS	suites/first-launch_state_test.txt
+invalid theme	fallback system	covered by first-launch:state:test	RUNTIME_TEST_PASS	suites/first-launch_state_test.txt
+invalid UI scale	clamp/safe	covered by appearance:studio:runtime	RUNTIME_TEST_PASS	suites/appearance_studio_runtime.txt
+mic permission denied	blocked, no fake ready	not safely reproduced on host	BLOCKED_ENVIRONMENT	suites/first-launch_audio_runtime.txt
+mic removed	invalidate tested state	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_audio_runtime.txt
+speaker unsupported	safe status	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_audio_runtime.txt
+camera denied	no fake success	not safely reproduced on host	BLOCKED_ENVIRONMENT	suites/first-launch_camera-screen_runtime.txt
+camera removed	safe fallback	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_camera-screen_runtime.txt
+screen picker cancelled	no passed state	not reached in package	BLOCKED_ENVIRONMENT	suites/first-launch_camera-screen_runtime.txt
+screen share stopped externally	no stale ready	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_camera-screen_runtime.txt
+tray unavailable fallback	no crash	startup/tray smokes	RUNTIME_TEST_PASS	suites/tray_integration_smoke.txt
+notification unsupported/blocked	capability status	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_notifications_runtime.txt
+privacy unauthenticated	deferred, no RPC	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_privacy_runtime.txt
+privacy load failure	fail-closed UI	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_privacy_runtime.txt
+completion persistence failure	fail-closed Ready	source runtime only	RUNTIME_TEST_PASS	suites/first-launch_ready_runtime.txt
+second instance	focus existing	not run under version gate	BLOCKED_ENVIRONMENT	PACKAGE.txt
+account switch	no privacy leak	no second fixture	BLOCKED_TEST_IDENTITY	00-summary.md
+malformed adaptive purpose IDs	sanitize	first-launch:personalization:runtime	RUNTIME_TEST_PASS	suites/first-launch_personalization_runtime.txt
+legacy permissions draft	map to notifications	first-launch:state:test / navigation-shell	RUNTIME_TEST_PASS	suites/first-launch_state_test.txt
+legacy completed v1/v2	stay completed	first-launch:state:test	RUNTIME_TEST_PASS	suites/first-launch_state_test.txt
+remote min version 1.0.0	blocking overlay, no first-run operate	observed on packaged launch	PACKAGED_PASS	screenshots/01-welcome.png

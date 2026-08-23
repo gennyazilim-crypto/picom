@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IPC_CHANNELS, isIpcChannel } from "./ipcChannels.cjs";
 import { parseScreenCaptureCancelPayload, parseScreenCaptureListPayload, parseScreenCaptureSelectionPayload } from "./ipcPayloadValidation.cjs";
+import { isAllowedInterfaceScale } from "./uiScalePolicy.cjs";
 
 type WindowAction = "minimize" | "maximize" | "close";
 type MaximizeStateHandler = (isMaximized: boolean) => void;
@@ -10,6 +11,12 @@ type SafeScreenCaptureSource = Readonly<{
   type: "screen" | "window";
   thumbnailDataUrl: string | null;
   appIconDataUrl: string | null;
+}>;
+type ScreenCaptureDiagnostics = Readonly<{
+  displayCount: number;
+  screenSourceCount: number;
+  windowSourceCount?: number;
+  incompleteDisplays: boolean;
 }>;
 type ScreenCaptureListRequest = Readonly<{ requestId: string; userInitiated: true }>;
 type ScreenCaptureSelectionRequest = Readonly<{ requestId: string; sourceId: string }>;
@@ -125,6 +132,25 @@ function isSafeDeepLinkSegment(value: string | undefined): value is string {
   return Boolean(value && safeDeepLinkSegmentPattern.test(value));
 }
 
+function isSafeAuthCallback(parsed: URL): boolean {
+  const allowedKeys = new Set(["code", "exchange", "state", "provider", "error", "error_description"]);
+  const keys = [...parsed.searchParams.keys()];
+  if (keys.some((key) => !allowedKeys.has(key)) || [...new Set(keys)].some((key) => parsed.searchParams.getAll(key).length !== 1)) return false;
+  const provider = parsed.searchParams.get("provider");
+  const state = parsed.searchParams.get("state");
+  const code = parsed.searchParams.get("code");
+  const exchange = parsed.searchParams.get("exchange");
+  const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
+  if (
+    (provider !== "google" && provider !== "apple" && provider !== "steam" && provider !== "epic")
+    || !state || !/^[A-Za-z0-9_-]{32,128}$/.test(state)
+    || [code, exchange, error].filter(Boolean).length !== 1
+  ) return false;
+  if (code) return (provider === "google" || provider === "apple") && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code);
+  if (exchange) return (provider === "steam" || provider === "epic") && /^[A-Za-z0-9_-]{32,128}$/.test(exchange);
+  return Boolean(error && error.length <= 240 && !/[\u0000-\u001f]/.test(error));
+}
+
 function isSupportedPicomDeepLink(parsed: URL): boolean {
   if (parsed.protocol !== "picom:" || parsed.username || parsed.password || parsed.hash) {
     return false;
@@ -134,30 +160,32 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
   const segments = parsed.pathname.split("/").filter(Boolean);
 
   if (route === "auth" && segments.length === 1 && segments[0] === "callback") {
-    const allowedKeys = new Set(["code", "error", "error_description"]);
-    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
-    const code = parsed.searchParams.get("code");
-    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
-    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+    return isSafeAuthCallback(parsed);
+  }
+
+  if (route === "auth" && segments.length === 1 && segments[0] === "open" && !parsed.search) {
+    return true;
   }
 
   if (route === "auth" && segments.length === 1 && segments[0] === "reset-password") {
-    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    const allowedKeys = new Set(["code", "token_hash", "type", "error", "error_description"]);
     if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
     const type = parsed.searchParams.get("type");
     if (type && type !== "recovery") return false;
     const code = parsed.searchParams.get("code");
+    const tokenHash = parsed.searchParams.get("token_hash");
     const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
-    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+    return Boolean((tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash)) || (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
   }
   if (route === "auth" && segments.length === 1 && segments[0] === "verify-email") {
-    const allowedKeys = new Set(["code", "type", "error", "error_description"]);
+    const allowedKeys = new Set(["code", "token_hash", "type", "error", "error_description"]);
     if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return false;
     const type = parsed.searchParams.get("type");
     if (type && type !== "signup" && type !== "email_change") return false;
     const code = parsed.searchParams.get("code");
+    const tokenHash = parsed.searchParams.get("token_hash");
     const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error");
-    return Boolean((code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
+    return Boolean((tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash)) || (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) || (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)));
   }
 
   if (parsed.search) return false;
@@ -184,6 +212,10 @@ function isSupportedPicomDeepLink(parsed: URL): boolean {
   if ((route === "radio" || route === "podcast") && segments.length === 3) {
     const expectedKind = route === "radio" ? "session" : "episode";
     return segments[1] === expectedKind && isSafeDeepLinkSegment(segments[0]) && isSafeDeepLinkSegment(segments[2]);
+  }
+
+  if (route === "profile" || route === "live-now") {
+    return segments.length === 1 && isSafeDeepLinkSegment(segments[0]);
   }
 
   return (route === "settings" || route === "friends") && segments.length === 0;
@@ -220,6 +252,25 @@ const runtimeInfo: PicomRuntimeInfo = Object.freeze({
 });
 
 const bridge = Object.freeze({
+  companion: Object.freeze({
+    getContext: () => invokeWhitelisted(IPC_CHANNELS.companionGetContext),
+    enterMode: () => invokeWhitelisted(IPC_CHANNELS.companionEnterMode),
+    openWindow: (request: unknown) => invokeWhitelisted(IPC_CHANNELS.companionOpenWindow, request),
+    closeCurrent: () => invokeWhitelisted(IPC_CHANNELS.companionCloseWindow),
+    returnToMain: () => invokeWhitelisted(IPC_CHANNELS.companionReturnToMain),
+    getPreferences: () => invokeWhitelisted(IPC_CHANNELS.companionGetPreferences),
+    setPreferences: (preferences: unknown) => invokeWhitelisted(IPC_CHANNELS.companionSetPreferences, preferences),
+    setAlwaysOnTop: (enabled: boolean) => invokeWhitelisted(IPC_CHANNELS.companionSetAlwaysOnTop, enabled),
+    setDockLayout: (layout: unknown) => invokeWhitelisted(IPC_CHANNELS.companionSetDockLayout, layout),
+    setWindowBounds: (bounds: unknown) => invokeWhitelisted(IPC_CHANNELS.companionSetWindowBounds, bounds),
+    setClickThrough: (enabled: boolean) => invokeWhitelisted(IPC_CHANNELS.companionSetClickThrough, enabled),
+    broadcast: (event: unknown) => invokeWhitelisted(IPC_CHANNELS.companionBroadcast, event),
+    onSync: (listener: (event: Readonly<{ topic: string; revision: number }>) => void) => {
+      const wrapped = (_event: Electron.IpcRendererEvent, payload: Readonly<{ topic: string; revision: number }>) => listener(payload);
+      ipcRenderer.on(IPC_CHANNELS.companionEvent, wrapped);
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.companionEvent, wrapped);
+    },
+  }),
   contractVersion: 1 as const,
   getRuntimeInfo: (): PicomRuntimeInfo => runtimeInfo,
   windowControl: (action: WindowAction) => {
@@ -232,6 +283,17 @@ const bridge = Object.freeze({
       | { ok: false; native: true; error: string }
     >;
   },
+  appearance: Object.freeze({
+    setInterfaceScale: (scale: unknown) => {
+      if (!isAllowedInterfaceScale(scale)) {
+        return Promise.resolve({ ok: false, native: true, error: "INVALID_UI_SCALE" } as const);
+      }
+      return invokeWhitelisted(IPC_CHANNELS.appearanceSetInterfaceScale, scale) as Promise<
+        | { ok: true; native: true; scale: number }
+        | { ok: false; native: true; error: string }
+      >;
+    },
+  }),
   isWindowMaximized: async (): Promise<boolean> => {
     const result = await invokeWhitelisted(IPC_CHANNELS.windowIsMaximized);
 
@@ -257,7 +319,13 @@ const bridge = Object.freeze({
       const safeRequest = parseScreenCaptureListPayload(request);
       if (!safeRequest) return Promise.resolve({ ok: false, native: true, error: "INVALID_SCREEN_CAPTURE_REQUEST" } as const);
       return invokeWhitelisted(IPC_CHANNELS.screenCaptureGetSources, safeRequest) as Promise<
-        | { ok: true; native: true; requestId: string; sources: SafeScreenCaptureSource[] }
+        | {
+            ok: true;
+            native: true;
+            requestId: string;
+            sources: SafeScreenCaptureSource[];
+            diagnostics?: ScreenCaptureDiagnostics;
+          }
         | { ok: false; native: true; error: string; platform?: string }
       >;
     },
@@ -277,12 +345,30 @@ const bridge = Object.freeze({
         | { ok: false; native: true; error: string }
       >;
     },
+    setContentProtection: (enabled: boolean) =>
+      invokeWhitelisted(IPC_CHANNELS.screenCaptureSetContentProtection, { enabled: Boolean(enabled) }) as Promise<
+        | { ok: true; native: true; enabled: boolean }
+        | { ok: false; native: true; error: string }
+      >,
   },
   showNotification: (payload: NativeNotificationPayload) =>
     invokeWhitelisted(IPC_CHANNELS.notificationShow, payload) as Promise<
       | { ok: true; native: true }
       | { ok: false; native: true; error: string }
     >,
+  notifications: {
+    getCapability: () =>
+      invokeWhitelisted(IPC_CHANNELS.notificationGetCapability) as Promise<
+        | { ok: true; native: true; supported: boolean }
+        | { ok: false; native: true; error: string }
+      >,
+    /** Fixed-content, payload-free native notification test. */
+    sendTest: () =>
+      invokeWhitelisted(IPC_CHANNELS.notificationSendTest) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+  },
   incomingCall: {
     show: (payload: IncomingCallToastPayload) =>
       invokeWhitelisted(IPC_CHANNELS.incomingCallShow, payload) as Promise<
@@ -484,7 +570,67 @@ const bridge = Object.freeze({
           }
         | { ok: false; native: true; error: string }
       >
-  }
+  },
+  settings: {
+    get: () =>
+      invokeWhitelisted(IPC_CHANNELS.settingsGet) as Promise<
+        | { ok: true; native: true; settings: Record<string, unknown> }
+        | { ok: false; native: true; error: string }
+      >,
+    set: (partial: Record<string, unknown>) =>
+      invokeWhitelisted(IPC_CHANNELS.settingsSet, partial) as Promise<
+        | { ok: true; native: true; settings: Record<string, unknown> }
+        | { ok: false; native: true; error: string }
+      >,
+    reset: () =>
+      invokeWhitelisted(IPC_CHANNELS.settingsReset) as Promise<
+        | { ok: true; native: true; settings: Record<string, unknown> }
+        | { ok: false; native: true; error: string }
+      >,
+    /** Pushes the renderer's resolved UI locale into main so tray/menus/notifications match. */
+    setLocale: (locale: string) =>
+      invokeWhitelisted(IPC_CHANNELS.settingsSetLocale, locale) as Promise<
+        | { ok: true; native: true; locale: string }
+        | { ok: false; native: true; error: string }
+      >,
+  },
+  cache: {
+    getUsage: () =>
+      invokeWhitelisted(IPC_CHANNELS.cacheGetUsage) as Promise<
+        | {
+            ok: true;
+            native: true;
+            usage: Readonly<{
+              userDataBytes: number;
+              cacheBytes: number;
+              logsBytes: number;
+              tempBytes: number;
+            }>;
+          }
+        | { ok: false; native: true; error: string }
+      >,
+    clear: (scope: "all" | "media" = "all") =>
+      invokeWhitelisted(IPC_CHANNELS.cacheClear, scope) as Promise<
+        | {
+            ok: true;
+            native: true;
+            usage: Readonly<{
+              userDataBytes: number;
+              cacheBytes: number;
+              logsBytes: number;
+              tempBytes: number;
+            }>;
+          }
+        | { ok: false; native: true; error: string }
+      >,
+  },
+  appPaths: {
+    open: (target: "logs" | "downloads" | "userData") =>
+      invokeWhitelisted(IPC_CHANNELS.appOpenPath, target) as Promise<
+        | { ok: true; native: true; target: "logs" | "downloads" | "userData" }
+        | { ok: false; native: true; error: string }
+      >,
+  },
 });
 
 contextBridge.exposeInMainWorld("picomDesktop", Object.freeze(bridge));

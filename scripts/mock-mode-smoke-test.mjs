@@ -23,20 +23,30 @@ function assertContains(relativePath, needle, label) {
   console.log(`✓ ${label}`);
 }
 
+function assertNotContains(relativePath, needle, label) {
+  const contents = readProjectFile(relativePath);
+  if (contents.includes(needle)) {
+    throw new Error(`${label} unexpectedly found in ${relativePath}`);
+  }
+
+  console.log(`OK ${label}`);
+}
+
 try {
   assertContains("src/data/mockCommunities.ts", "export const mockCommunities", "mock communities data");
   assertContains("src/services/authService.ts", "getMockSession", "mock auth session path");
-  assertContains("src/services/communityService.ts", "dataSource.isMock", "mock community service path");
-  assertContains("src/services/channelService.ts", "dataSource.isMock", "mock channel service path");
-  assertContains("src/services/messageService.ts", "dataSource.isMock", "mock message service path");
-  assertContains("src/services/membersService.ts", "dataSource.isMock", "mock members service path");
-  assertContains("src/services/reactionService.ts", "dataSource.isMock", "mock reactions service path");
-  assertContains("src/App.tsx", "dataSourceService.getStatus().isSupabase", "Supabase-only startup data effects");
+  assertNotContains("src/services/communityService.ts", "dataSource.isMock", "production community service has no mock branch");
+  assertNotContains("src/services/channelService.ts", "dataSource.isMock", "production channel service has no mock branch");
+  assertNotContains("src/services/messageService.ts", "dataSource.isMock", "production message service has no mock branch");
+  assertNotContains("src/services/membersService.ts", "dataSource.isMock", "production members service has no mock branch");
+  assertNotContains("src/services/reactionService.ts", "dataSource.isMock", "production reactions service has no mock branch");
+  assertContains("src/App.tsx", "communityService.listCommunities()", "Supabase-backed community startup loading");
+  assertContains("src/App.tsx", "channelService.listChannels(communityId)", "Supabase-backed channel startup loading");
   assertContains("src/config/dataSourcePolicy.ts", "selectMockFixture", "explicit mock fixture gate");
   const cleanupAudit = spawnSync(process.execPath, ["scripts/data-source-final-cleanup-smoke.mjs"], { cwd: root, encoding: "utf8" });
   if (cleanupAudit.status !== 0) throw new Error(cleanupAudit.stderr || cleanupAudit.stdout || "Data source cleanup audit failed.");
   process.stdout.write(cleanupAudit.stdout);
-  console.log("✓ Mock mode smoke test completed");
+  console.log("✓ Mock fixture isolation and production data-source smoke test completed");
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;

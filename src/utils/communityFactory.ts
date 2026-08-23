@@ -44,6 +44,7 @@ export function createCommunityFromSummary(summary: CommunitySummary, options: {
     id: summary.id,
     kind: summary.kind,
     ownerId: summary.ownerId ?? undefined,
+    currentUserMembershipUserId: summary.currentUserMembershipUserId,
     name: summary.name,
     icon: resolveCommunityIcon(summary.name, summary.iconUrl),
     bannerUrl: summary.bannerUrl ?? undefined,

@@ -1,0 +1,10 @@
+OPERATOR APPROVAL:
+MISSING
+
+required_phrase=APPROVE_PRODUCTION_E2E_IDENTITY_PROVISIONING
+inferred_from_task_text=no
+present_in_process_env=no
+present_in_user_env=no
+present_in_machine_env=no
+secret_manager=1password_mcp_unavailable
+action=STOP_BEFORE_PROVISIONING

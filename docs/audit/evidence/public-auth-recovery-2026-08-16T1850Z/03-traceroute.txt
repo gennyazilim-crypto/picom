@@ -1,0 +1,20 @@
+tracert -d -h 16 -w 1200 23.254.166.240
+
+  1  192.168.178.1
+  2  188.108.128.1
+  3  188.111.222.104
+  4  92.79.214.110
+  5  145.254.2.13
+  6  195.2.23.29
+  7  *
+  8  154.54.72.117     Cogent
+  9  154.54.82.2       Cogent
+ 10  154.54.172.170    Cogent
+ 11  154.54.40.110     Cogent
+ 12  154.54.41.53      Cogent
+ 13  154.54.47.214     Cogent (last answering hop)
+ 14  *
+ 15  *
+ 16  *
+
+Destination never answered. Same Cogent blackhole signature as the earlier 2026-08-16 auth.picom.gg probe.

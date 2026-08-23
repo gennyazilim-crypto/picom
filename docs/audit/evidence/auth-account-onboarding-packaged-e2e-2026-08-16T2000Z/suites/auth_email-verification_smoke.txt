@@ -1,0 +1,306 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> picom@0.1.1-beta.11 auth:email-verification:smoke
+> node scripts/email-verification-smoke-test.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Email verification/. Input:
+
+'import { profileMediaStore } from "../services/profileMedia/profileMediaStore";\r\n' +
+  'import { ProfileDisplayName, ProfileUsername } from "./ProfileDisplayName";\r\n' +
+  'import { useCallback, useEffect, useMemo, useRef, useState } from "react";\r\n' +
+  'import "./SettingsModal.css";\r\n' +
+  'import { notificationService } from "../services/notificationService";\r\n' +
+  'import { notificationPolicyStateService, type NotificationPolicyState } from "../services/notificationPolicyStateService";\r\n' +
+  'import type { Community } from "../types/community";\r\n' +
+  'import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";\r\n' +
+  'import { authService } from "../services/authService";\r\n' +
+  'import { menuService } from "../services/menuService";\r\n' +
+  'import { settingsNavGroups, settingsSections, settingsService, type AccessibilitySettings, type AppearanceSettings, type InterfaceScale, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";\r\n' +
+  'import { INTERFACE_SCALE_FACTORS, TEXT_SIZE_OPTIONS } from "../services/appearanceStudioPreferences";\r\n' +
+  'import {\r\n' +
+  '  searchSettingsCatalog,\r\n' +
+  '  settingsSearchResultDescription,\r\n' +
+  '  settingsSearchResultLabel,\r\n' +
+  '  type SettingsSearchHit,\r\n' +
+  '} from "../services/settings/settingsSearchIndex";\r\n' +
+  'import { AccountSummarySection } from "./settings/AccountSummarySection";\r\n' +
+  'import { LanguageRegionSection } from "./settings/LanguageRegionSection";\r\n' +
+  'import { WindowsStartupSection } from "./settings/WindowsStartupSection";\r\n' +
+  'import { StorageCacheSection } from "./settings/StorageCacheSection";\r\n' +
+  'import { translateSettings, translateSettingsNavGroup, translateSettingsSection, listSettingsLanguageOptions, type SettingsI18nKey } from "../services/settings/settingsI18n";\r\n' +
+  'import { appearanceService } from "../services/appearanceService";\r\n' +
+  'import { statusPageService } from "../services/statusPageService";\r\n' +
+  'import { dataSourceService } from "../services/dataSourceService";\r\n' +
+  'import { maintenanceStatusService, type MaintenanceStatusSnapshot } from "../services/maintenanceStatusService";\r\n' +
+  'import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";\r\n' +
+  'import { socialAuthService, SOCIAL_AUTH_PROVIDER_ORDER, getSocialAuthProviderLabel, type SocialAuthProvider, type SocialProviderAccountState } from "../services/auth/socialAuthService";\r\n' +
+  'import { accountDeletionService } from "../services/accountDeletionService";\r\n' +
+  'import { dataExportService } from "../services/dataExportService";\r\n' +
+  'import { accountCenterUrls, isAllowedAccountCenterUrl } from "../config/accountCenterUrls";\r\n' +
+  'import { externalLinkService } from "../services/desktop/externalLinkService";\r\n' +
+  'import { appLockService } from "../services/appLockService";\r\n' +
+  'import { startupService } from "../services/startupService";\r\n' +
+  'import { trayService } from "../services/trayService";\r\n' +
+  'import { updateService } from "../services/updateService";\r\n' +
+  'import { DEFAULT_COMPANION_PREFERENCES, getCompanionPreferences, updateCompanionPreferences } from "../features/companion/companionPreferences";\r\n' +
+  'import type { CompanionDockEdge, CompanionPreferences } from "../features/companion/companionTypes";\r\n' +
+  'import { dateTimeService } from "../services/dateTimeService";\r\n' +
+  'import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";\r\n' +
+  'import { safeModeService } from "../services/safeModeService";\r\n' +
+  'import { localDataMigrationService } from "../services/localDataMigrationService";\r\n' +
+  'import { feedUiStateService } from "../services/feed/feedUiStateService";\r\n' +
+  'import { communityNavigationService } from "../services/community/communityNavigationService";\r\n' +
+  'import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";\r\n' +
+  'import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";\r\n' +
+  'import { profilePrivacyService } from "../services/profilePrivacyService";\r\n' +
+  'import { directSafetyService } from "../services/directMessages/directSafetyService";\r\n' +
+  'import type { DirectMessagePrivacy } from "../types/directMessageSafety";\r\n' +
+  'import { profileService } from "../services/profileService";\r\n' +
+  'import type { ProfileSummary } from "../services/profileService";\r\n' +
+  'import { globalPresenceService } from "../services/presence/globalPresenceService";\r\n' +
+  'import { activityPresenceService, type ActivitySnapshot } from "../services/presence/activityPresenceService";\r\n' +
+  'import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";\r\n' +
+  'import { ProfileMediaEditor } from "./settings/ProfileMediaEditor";\r\n' +
+  'import { EmailPreferencesPanel } from "./settings/EmailPreferencesPanel";\r\n' +
+  'import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";\r\n' +
+  'import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";\r\n' +
+  'import type { ProfilePrivacySettings } from "../types/profilePrivacy";\r\n' +
+  'import { notificationDigestService } from "../services/notificationDigestService";\r\n' +
+  'import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";\r\n' +
+  'import { appConfig } from "../config/appConfig";\r\n' +
+  'import { AdminOperationsPanelRedirect } from "./AdminOperationsPanelRedirect";\r\n' +
+  'import { canAccessAdminOperationsView } from "./AdminOperationsView";\r\n' +
+  'import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";\r\n' +
+  'import { analyticsService } from "../services/analyticsService";\r\n' +
+  'import { crashReporterService } from "../services/crashReporterService";\r\n' +
+  'import { AppIcon } from "./AppIcon";\r\n' +
+  'import { KeyboardShortcutsSection } from "./KeyboardShortcutsSection";\r\n' +
+  'import { UpdateSettingsSection } from "./settings/UpdateSettingsSection";\r\n' +
+  'import { LegalSettingsSection } from "./settings/LegalSettingsSection";\r\n' +
+  'import { mvpUiIconMap } from "./iconRegistry";\r\n' +
+  'import { LegalDocumentModal } from "./legal/LegalDocumentModal";\r\n' +
+  'import type { LegalDocumentId } from "../data/legalDocuments";\r\n' +
+  'import { FeedbackSection } from "./settings/FeedbackSection";\r\n' +
+  'import { DiagnosticsSection } from "./settings/DiagnosticsSection";\r\n' +
+  'import { LogsViewer } from "./settings/LogsViewer";\r\n' +
+  'import { DeveloperPortalView } from "./DeveloperPortalView";\r\n' +
+  'import { featureFlagService } from "../services/featureFlagService";\r\n' +
+  'import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";\r\n' +
+  '\r\n' +
+  'const overlayIcons = mvpUiIconMap.overlays;\r\n' +
+  'type ToastTone = "info" | "error" | "success";\r\n' +
+  'type NotificationPreferenceKey = "mentions" | "replies" | "reactions" | "directMessages" | "communityAnnouncements" | "friendRequests" | "friendAcceptances" | "incomingCalls" | "radioLive" | "radioReminders" | "podcastReleases" | "eventReminders";\r\n' +
+  'const notificationPreferenceRows: ReadonlyArray<Readonly<{ key: NotificationPreferenceKey; labelKey: SettingsI18nKey; descriptionKey: SettingsI18nKey }>> = [\r\n' +
+  '  { key: "mentions", labelKey: "notifications.pref.mentions.label", descriptionKey: "notifications.pref.mentions.description" },\r\n' +
+  '  { key: "replies", labelKey: "notifications.pref.replies.label", descriptionKey: "notifications.pref.replies.description" },\r\n' +
+  '  { key: "reactions", labelKey: "notifications.pref.reactions.label", descriptionKey: "notifications.pref.reactions.description" },\r\n' +
+  '  { key: "directMessages", labelKey: "notifications.pref.directMessages.label", descriptionKey: "notifications.pref.directMessages.description" },\r\n' +
+  '  { key: "communityAnnouncements", labelKey: "notifications.pref.communityAnnouncements.label", descriptionKey: "notifications.pref.communityAnnouncements.description" },\r\n' +
+  '  { key: "friendRequests", labelKey: "notifications.pref.friendRequests.label", descriptionKey: "notifications.pref.friendRequests.description" },\r\n' +
+  '  { key: "friendAcceptances", labelKey: "notifications.pref.friendAcceptances.label", descriptionKey: "notifications.pref.friendAcceptances.description" },\r\n' +
+  '  { key: "incomingCalls", labelKey: "notifications.pref.incomingCalls.label", descriptionKey: "notifications.pref.incomingCalls.description" },\r\n' +
+  '  { key: "radioLive", labelKey: "notifications.pref.radioLive.label", descriptionKey: "notifications.pref.radioLive.description" },\r\n' +
+  '  { key: "radioReminders", labelKey: "notifications.pref.radioReminders.label", descriptionKey: "notifications.pref.radioReminders.description" },\r\n' +
+  '  { key: "podcastReleases", labelKey: "notifications.pref.podcastReleases.label", descriptionKey: "notifications.pref.podcastReleases.description" },\r\n' +
+  '  { key: "eventReminders", labelKey: "notifications.pref.eventReminders.label", descriptionKey: "notifications.pref.eventReminders.description" },\r\n' +
+  '];\r\n' +
+  '\r\n' +
+  'function formatCacheSize(bytes: number | null): string {\r\n' +
+  '  if (bytes === null) return "Not available";\r\n' +
+  '  if (bytes < 1024) return `${bytes} B`;\r\n' +
+  '  const units = ["KB", "MB", "GB"];\r\n' +
+  '  let value = bytes / 1024;\r\n' +
+  '  let unitIndex = 0;\r\n' +
+  '\r\n' +
+  '  while (value >= 1024 && unitIndex < units.length - 1) {\r\n' +
+  '    value /= 1024;\r\n' +
+  '    unitIndex += 1;\r\n' +
+  '  }\r\n' +
+  '\r\n' +
+  '  return `${value.toFixed(value >= 10 ? 1 : 2)} ${units[unitIndex]}`;\r\n' +
+  '}\r\n' +
+  '\r\n' +
+  'type SettingsModalProps = {\r\n' +
+  '  theme: "light" | "dark";\r\n' +
+  '  accessibilitySettings: AccessibilitySettings;\r\n' +
+  '  appearanceSettings: AppearanceSettings;\r\n' +
+  '  profileSettings: ProfileSettings;\r\n' +
+  '  communities: Community[];\r\n' +
+  '  onThemeChange: (theme: "light" | "dark") => void;\r\n' +
+  '  onAccessibilitySettingsChange: (settings: AccessibilitySettings) => void;\r\n' +
+  '  onInterfaceScaleChange: (scale: InterfaceScale) => Promise<boolean>;\r\n' +
+  '  onAppearanceSettingsChange: (settings: AppearanceSettings) => void;\r\n' +
+  '  onProfileSettingsChange: (settings: ProfileSettings) => void;\r\n' +
+  '  onClose: () => void;\r\n' +
+  '  pushToast: (message: string, tone?: ToastTone) => void;\r\n' +
+  '  onAccountDeletionRequested: () => void;\r\n' +
+  '  onLogout: () => Promise<void> | void;\r\n' +
+  '  currentUsername: string;\r\n' +
+  '  currentEmail?: string | null;\r\n' +
+  '  ownedCommunityCount: number;\r\n' +
+  '  currentEmailVerifiedAt?: string | null;\r\n' +
+  '  requireEmailVerification?: boolean;\r\n' +
+  '  developerPortalContext: {\r\n' +
+  '    communityId: string;\r\n' +
+  '    communityName: string;\r\n' +
+  '    ownerId: string;\r\n' +
+  '    canManageBots: boolean;\r\n' +
+  '    canMan'... 133939 more characters
+
+    at file:///C:/Users/ACER/Desktop/picom/scripts/email-verification-smoke-test.mjs:14:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'import { profileMediaStore } from "../services/profileMedia/profileMediaStore";\r\n' +
+    'import { ProfileDisplayName, ProfileUsername } from "./ProfileDisplayName";\r\n' +
+    'import { useCallback, useEffect, useMemo, useRef, useState } from "react";\r\n' +
+    'import "./SettingsModal.css";\r\n' +
+    'import { notificationService } from "../services/notificationService";\r\n' +
+    'import { notificationPolicyStateService, type NotificationPolicyState } from "../services/notificationPolicyStateService";\r\n' +
+    'import type { Community } from "../types/community";\r\n' +
+    'import { feedbackService, type FeedbackIssueType } from "../services/feedbackService";\r\n' +
+    'import { authService } from "../services/authService";\r\n' +
+    'import { menuService } from "../services/menuService";\r\n' +
+    'import { settingsNavGroups, settingsSections, settingsService, type AccessibilitySettings, type AppearanceSettings, type InterfaceScale, type NotificationSettings, type ProfileSettings, type SettingsSection } from "../services/settingsService";\r\n' +
+    'import { INTERFACE_SCALE_FACTORS, TEXT_SIZE_OPTIONS } from "../services/appearanceStudioPreferences";\r\n' +
+    'import {\r\n' +
+    '  searchSettingsCatalog,\r\n' +
+    '  settingsSearchResultDescription,\r\n' +
+    '  settingsSearchResultLabel,\r\n' +
+    '  type SettingsSearchHit,\r\n' +
+    '} from "../services/settings/settingsSearchIndex";\r\n' +
+    'import { AccountSummarySection } from "./settings/AccountSummarySection";\r\n' +
+    'import { LanguageRegionSection } from "./settings/LanguageRegionSection";\r\n' +
+    'import { WindowsStartupSection } from "./settings/WindowsStartupSection";\r\n' +
+    'import { StorageCacheSection } from "./settings/StorageCacheSection";\r\n' +
+    'import { translateSettings, translateSettingsNavGroup, translateSettingsSection, listSettingsLanguageOptions, type SettingsI18nKey } from "../services/settings/settingsI18n";\r\n' +
+    'import { appearanceService } from "../services/appearanceService";\r\n' +
+    'import { statusPageService } from "../services/statusPageService";\r\n' +
+    'import { dataSourceService } from "../services/dataSourceService";\r\n' +
+    'import { maintenanceStatusService, type MaintenanceStatusSnapshot } from "../services/maintenanceStatusService";\r\n' +
+    'import { sessionManagementService, type SessionDeviceSummary } from "../services/sessionManagementService";\r\n' +
+    'import { socialAuthService, SOCIAL_AUTH_PROVIDER_ORDER, getSocialAuthProviderLabel, type SocialAuthProvider, type SocialProviderAccountState } from "../services/auth/socialAuthService";\r\n' +
+    'import { accountDeletionService } from "../services/accountDeletionService";\r\n' +
+    'import { dataExportService } from "../services/dataExportService";\r\n' +
+    'import { accountCenterUrls, isAllowedAccountCenterUrl } from "../config/accountCenterUrls";\r\n' +
+    'import { externalLinkService } from "../services/desktop/externalLinkService";\r\n' +
+    'import { appLockService } from "../services/appLockService";\r\n' +
+    'import { startupService } from "../services/startupService";\r\n' +
+    'import { trayService } from "../services/trayService";\r\n' +
+    'import { updateService } from "../services/updateService";\r\n' +
+    'import { DEFAULT_COMPANION_PREFERENCES, getCompanionPreferences, updateCompanionPreferences } from "../features/companion/companionPreferences";\r\n' +
+    'import type { CompanionDockEdge, CompanionPreferences } from "../features/companion/companionTypes";\r\n' +
+    'import { dateTimeService } from "../services/dateTimeService";\r\n' +
+    'import { cacheManagementService, type CacheSummary } from "../services/cacheManagementService";\r\n' +
+    'import { safeModeService } from "../services/safeModeService";\r\n' +
+    'import { localDataMigrationService } from "../services/localDataMigrationService";\r\n' +
+    'import { feedUiStateService } from "../services/feed/feedUiStateService";\r\n' +
+    'import { communityNavigationService } from "../services/community/communityNavigationService";\r\n' +
+    'import { userBlockingService, type BlockedUserRecord } from "../services/userBlockingService";\r\n' +
+    'import { userSafetyCenterService, type UserSafetySettings } from "../services/userSafetyCenterService";\r\n' +
+    'import { profilePrivacyService } from "../services/profilePrivacyService";\r\n' +
+    'import { directSafetyService } from "../services/directMessages/directSafetyService";\r\n' +
+    'import type { DirectMessagePrivacy } from "../types/directMessageSafety";\r\n' +
+    'import { profileService } from "../services/profileService";\r\n' +
+    'import type { ProfileSummary } from "../services/profileService";\r\n' +
+    'import { globalPresenceService } from "../services/presence/globalPresenceService";\r\n' +
+    'import { activityPresenceService, type ActivitySnapshot } from "../services/presence/activityPresenceService";\r\n' +
+    'import { ProfileVerificationRequestCard } from "./VerificationRequestPanel";\r\n' +
+    'import { ProfileMediaEditor } from "./settings/ProfileMediaEditor";\r\n' +
+    'import { EmailPreferencesPanel } from "./settings/EmailPreferencesPanel";\r\n' +
+    'import { voiceService, type VoiceServiceSnapshot } from "../services/voiceService";\r\n' +
+    'import { VoiceDeviceSelection } from "./settings/VoiceDeviceSelection";\r\n' +
+    'import type { ProfilePrivacySettings } from "../types/profilePrivacy";\r\n' +
+    'import { notificationDigestService } from "../services/notificationDigestService";\r\n' +
+    'import { accountActivityService, type AccountActivityRecord } from "../services/accountActivityService";\r\n' +
+    'import { appConfig } from "../config/appConfig";\r\n' +
+    'import { AdminOperationsPanelRedirect } from "./AdminOperationsPanelRedirect";\r\n' +
+    'import { canAccessAdminOperationsView } from "./AdminOperationsView";\r\n' +
+    'import { adminOperationsService, type AdminOperationsAccess } from "../services/adminOperationsService";\r\n' +
+    'import { analyticsService } from "../services/analyticsService";\r\n' +
+    'import { crashReporterService } from "../services/crashReporterService";\r\n' +
+    'import { AppIcon } from "./AppIcon";\r\n' +
+    'import { KeyboardShortcutsSection } from "./KeyboardShortcutsSection";\r\n' +
+    'import { UpdateSettingsSection } from "./settings/UpdateSettingsSection";\r\n' +
+    'import { LegalSettingsSection } from "./settings/LegalSettingsSection";\r\n' +
+    'import { mvpUiIconMap } from "./iconRegistry";\r\n' +
+    'import { LegalDocumentModal } from "./legal/LegalDocumentModal";\r\n' +
+    'import type { LegalDocumentId } from "../data/legalDocuments";\r\n' +
+    'import { FeedbackSection } from "./settings/FeedbackSection";\r\n' +
+    'import { DiagnosticsSection } from "./settings/DiagnosticsSection";\r\n' +
+    'import { LogsViewer } from "./settings/LogsViewer";\r\n' +
+    'import { DeveloperPortalView } from "./DeveloperPortalView";\r\n' +
+    'import { featureFlagService } from "../services/featureFlagService";\r\n' +
+    'import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";\r\n' +
+    '\r\n' +
+    'const overlayIcons = mvpUiIconMap.overlays;\r\n' +
+    'type ToastTone = "info" | "error" | "success";\r\n' +
+    'type NotificationPreferenceKey = "mentions" | "replies" | "reactions" | "directMessages" | "communityAnnouncements" | "friendRequests" | "friendAcceptances" | "incomingCalls" | "radioLive" | "radioReminders" | "podcastReleases" | "eventReminders";\r\n' +
+    'const notificationPreferenceRows: ReadonlyArray<Readonly<{ key: NotificationPreferenceKey; labelKey: SettingsI18nKey; descriptionKey: SettingsI18nKey }>> = [\r\n' +
+    '  { key: "mentions", labelKey: "notifications.pref.mentions.label", descriptionKey: "notifications.pref.mentions.description" },\r\n' +
+    '  { key: "replies", labelKey: "notifications.pref.replies.label", descriptionKey: "notifications.pref.replies.description" },\r\n' +
+    '  { key: "reactions", labelKey: "notifications.pref.reactions.label", descriptionKey: "notifications.pref.reactions.description" },\r\n' +
+    '  { key: "directMessages", labelKey: "notifications.pref.directMessages.label", descriptionKey: "notifications.pref.directMessages.description" },\r\n' +
+    '  { key: "communityAnnouncements", labelKey: "notifications.pref.communityAnnouncements.label", descriptionKey: "notifications.pref.communityAnnouncements.description" },\r\n' +
+    '  { key: "friendRequests", labelKey: "notifications.pref.friendRequests.label", descriptionKey: "notifications.pref.friendRequests.description" },\r\n' +
+    '  { key: "friendAcceptances", labelKey: "notifications.pref.friendAcceptances.label", descriptionKey: "notifications.pref.friendAcceptances.description" },\r\n' +
+    '  { key: "incomingCalls", labelKey: "notifications.pref.incomingCalls.label", descriptionKey: "notifications.pref.incomingCalls.description" },\r\n' +
+    '  { key: "radioLive", labelKey: "notifications.pref.radioLive.label", descriptionKey: "notifications.pref.radioLive.description" },\r\n' +
+    '  { key: "radioReminders", labelKey: "notifications.pref.radioReminders.label", descriptionKey: "notifications.pref.radioReminders.description" },\r\n' +
+    '  { key: "podcastReleases", labelKey: "notifications.pref.podcastReleases.label", descriptionKey: "notifications.pref.podcastReleases.description" },\r\n' +
+    '  { key: "eventReminders", labelKey: "notifications.pref.eventReminders.label", descriptionKey: "notifications.pref.eventReminders.description" },\r\n' +
+    '];\r\n' +
+    '\r\n' +
+    'function formatCacheSize(bytes: number | null): string {\r\n' +
+    '  if (bytes === null) return "Not available";\r\n' +
+    '  if (bytes < 1024) return `${bytes} B`;\r\n' +
+    '  const units = ["KB", "MB", "GB"];\r\n' +
+    '  let value = bytes / 1024;\r\n' +
+    '  let unitIndex = 0;\r\n' +
+    '\r\n' +
+    '  while (value >= 1024 && unitIndex < units.length - 1) {\r\n' +
+    '    value /= 1024;\r\n' +
+    '    unitIndex += 1;\r\n' +
+    '  }\r\n' +
+    '\r\n' +
+    '  return `${value.toFixed(value >= 10 ? 1 : 2)} ${units[unitIndex]}`;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'type SettingsModalProps = {\r\n' +
+    '  theme: "light" | "dark";\r\n' +
+    '  accessibilitySettings: AccessibilitySettings;\r\n' +
+    '  appearanceSettings: AppearanceSettings;\r\n' +
+    '  profileSettings: ProfileSettings;\r\n' +
+    '  communities: Community[];\r\n' +
+    '  onThemeChange: (theme: "light" | "dark") => void;\r\n' +
+    '  onAccessibilitySettingsChange: (settings: AccessibilitySettings) => void;\r\n' +
+    '  onInterfaceScaleChange: (scale: InterfaceScale) => Promise<boolean>;\r\n' +
+    '  onAppearanceSettingsChange: (settings: AppearanceSettings) => void;\r\n' +
+    '  onProfileSettingsChange: (settings: ProfileSettings) => void;\r\n' +
+    '  onClose: () => void;\r\n' +
+    '  pushToast: (message: string, tone?: ToastTone) => void;\r\n' +
+    '  onAccountDeletionRequested: () => void;\r\n' +
+    '  onLogout: () => Promise<void> | void;\r\n' +
+    '  currentUsername: string;\r\n' +
+    '  currentEmail?: string | null;\r\n' +
+    '  ownedCommunityCount: number;\r\n' +
+    '  currentEmailVerifiedAt?: string | null;\r\n' +
+    '  requireEmailVerification?: boolean;\r\n' +
+    '  developerPortalContext: {\r\n' +
+    '    communityId: string;\r\n' +
+    '    communityName: string;\r\n' +
+    '    ownerId: string;\r\n' +
+    '    canManageBots: boolean;\r\n' +
+    '    canMan'... 133939 more characters,
+  expected: /Email verification/,
+  operator: 'match',
+  diff: 'simple'
+}
+
+Node.js v24.15.0

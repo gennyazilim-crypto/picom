@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "selectedMicrophoneId": null,
+  "selectedSpeakerId": null,
+  "selectedCameraId": null,
+  "inputVolume": 1,
+  "outputVolume": 1,
+  "closeToTray": true,
+  "startupVisibility": "normal",
+  "closeBehavior": "tray",
+  "startupDestination": "last",
+  "lastSafeLocation": null,
+  "rememberWindowBounds": true,
+  "launchMinimized": false,
+  "nativeDesktopEnabled": true,
+  "soundEnabled": true,
+  "notifyWhileFocused": true,
+  "taskbarFlash": true,
+  "trayBadge": true,
+  "titlebarBadge": true,
+  "quietHours": {
+    "enabled": false,
+    "startTime": "22:00",
+    "endTime": "07:00",
+    "applyTo": "normal_messages_only",
+    "allowMentions": true
+  }
+}

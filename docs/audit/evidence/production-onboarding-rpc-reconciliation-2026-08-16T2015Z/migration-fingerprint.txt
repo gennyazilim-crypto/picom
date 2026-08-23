@@ -1,0 +1,7 @@
+MIGRATION FINGERPRINT: PASS
+
+file=supabase/migrations/20260816000000_reconcile_account_onboarding_rpc_contract.sql
+algorithm=SHA256
+expected=0a1a3d88bed83e654e36e89da60c2b08a611a4da47cb2dd9eb38fad3ff1af07d
+actual=0a1a3d88bed83e654e36e89da60c2b08a611a4da47cb2dd9eb38fad3ff1af07d
+bytes=7493

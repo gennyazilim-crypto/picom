@@ -4,6 +4,8 @@ import { brandConfig } from "../../config/brandConfig";
 import { brandLogoUrl } from "../../config/brandAssets";
 import { networkStatusService, type NetworkState } from "../../services/networkStatusService";
 import { AppIcon } from "../AppIcon";
+import { UserAvatar } from "../UserAvatar";
+import { useProfileDisplayName, useProfileUsername } from "../ProfileDisplayName";
 import {
   ROOT_DASHBOARD_NAV_GROUPS,
   findRootDashboardNavItem,
@@ -11,6 +13,7 @@ import {
 } from "./navigation/rootDashboardNav";
 
 export type RootDashboardShellUser = Readonly<{
+  userId: string;
   displayName: string;
   username: string;
   email?: string;
@@ -79,9 +82,11 @@ export function RootDashboardShell({
   }, [connectionStatus]);
 
   const activeItem = useMemo(() => findRootDashboardNavItem(activeRoute), [activeRoute]);
+  const displayName = useProfileDisplayName(currentUser.userId, currentUser.displayName);
+  const username = useProfileUsername(currentUser.userId, currentUser.username);
   const exit = onExit ?? onClose;
   const tone = realtimeTone(networkState);
-  const commandChord = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K";
+  const commandChord = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "Cmd K" : "Ctrl K";
 
   const toggleGroup = (groupId: string) => {
     setCollapsedGroups((current) => ({ ...current, [groupId]: !current[groupId] }));
@@ -97,8 +102,8 @@ export function RootDashboardShell({
             </span>
             {compact ? null : (
               <div className="rd-sidebar__brand-copy">
-                <strong>{brandConfig.name} Panel</strong>
-                <span>Operations</span>
+                <strong>{brandConfig.name}</strong>
+                <span>Root Panel</span>
               </div>
             )}
             {exit ? (
@@ -144,14 +149,14 @@ export function RootDashboardShell({
             })}
           </nav>
           <div className="rd-sidebar__foot">
-            <button type="button" className="rd-account-menu" aria-label="Root account menu" title={currentUser.email ?? `@${currentUser.username}`}>
-              <span className="rd-account-menu__avatar" aria-hidden="true">
-                <AppIcon name="user" size="sm" />
+            <button type="button" className="rd-account-menu" aria-label="Root account menu" title={currentUser.email ?? `@${username}`}>
+              <span className="rd-account-menu__avatar">
+                <UserAvatar userId={currentUser.userId} displayName={displayName} size={28} className="rd-account-menu__avatar-image" alt={displayName + " profile photo"} />
               </span>
               {compact ? null : (
                 <span className="rd-account-menu__copy">
-                  <strong>{currentUser.displayName}</strong>
-                  <small>@{currentUser.username}</small>
+                  <strong>{displayName}</strong>
+                  <small>@{username}</small>
                 </span>
               )}
             </button>
@@ -165,7 +170,7 @@ export function RootDashboardShell({
               <AppIcon name="chevronRight" size="xs" />
               <strong>{activeItem?.label ?? activeRoute}</strong>
             </div>
-            <span className="rd-header__meta">@{currentUser.username}</span>
+            <span className="rd-header__meta">@{username}</span>
           </div>
           <div className="rd-header__actions">
             <button type="button" className="rd-header__command" onClick={onOpenCommandCenter}>

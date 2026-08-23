@@ -1,0 +1,40 @@
+{
+  "function": "public.complete_current_user_onboarding",
+  "project": "picom-production",
+  "ref": "cqnsetsmcduraryemhbi",
+  "inspection": "pg_proc + identity arguments",
+  "overload_count": 1,
+  "arg_count": 3,
+  "ordered_arguments": [
+    { "name": "target_profile", "type": "jsonb" },
+    { "name": "target_followed_user_ids", "type": "uuid[]" },
+    { "name": "target_theme", "type": "text" }
+  ],
+  "return_shape": "TABLE(completed boolean, completed_at timestamptz, followed_user_ids uuid[], theme_mode text)",
+  "security": "DEFINER",
+  "search_path": "public",
+  "grants_execute": {
+    "anon": false,
+    "authenticated": true,
+    "service_role": true
+  },
+  "classification": "LEGACY_3_ARG",
+  "canonical_target": {
+    "arg_count": 5,
+    "ordered_arguments": [
+      { "name": "target_profile", "type": "jsonb" },
+      { "name": "target_followed_user_ids", "type": "uuid[]" },
+      { "name": "target_theme", "type": "text" },
+      { "name": "target_start_choice", "type": "text" },
+      { "name": "target_invite_code", "type": "text" }
+    ]
+  },
+  "profiles_columns_present": ["onboarding_completed", "onboarding_completed_at"],
+  "profiles_columns_missing_for_task02": ["onboarding_start_choice", "onboarding_initial_feed"],
+  "client_contract": "src/services/onboarding/onboardingService.ts sends 5 named args",
+  "generated_types": "src/services/supabase/database.types.ts Args has 5 fields",
+  "required_migration": "supabase/migrations/20260816000000_reconcile_account_onboarding_rpc_contract.sql",
+  "required_migration_sha256": "0a1a3d88bed83e654e36e89da60c2b08a611a4da47cb2dd9eb38fad3ff1af07d",
+  "hosted_schema_migrations_20260816": [],
+  "mutation_applied_this_task": false
+}

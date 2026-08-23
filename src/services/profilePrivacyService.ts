@@ -150,7 +150,7 @@ export const profilePrivacyService = {
       statusText: undefined,
       bio: "This profile is private.",
       roles: [], tags: [], location: undefined, timezone: undefined, mainCommunityId: undefined, topRole: undefined,
-      activities: [], media: [],
+      communityRoles: [], activities: [], media: [],
       stats: { communities: 0, posts: 0, mentions: 0, reactions: 0, followers: 0, following: 0, roles: 0 },
       privacy: restrictedProfilePrivacyProjection,
       privacyRestricted: true,
@@ -164,6 +164,7 @@ export const profilePrivacyService = {
       activities: projection.showActivity ? profile.activities : [],
       media: projection.showMedia ? profile.media : [],
       roles: projection.showCommunities ? profile.roles : [],
+      communityRoles: projection.showCommunities ? profile.communityRoles : [],
       mainCommunityId: projection.showCommunities ? profile.mainCommunityId : undefined,
       topRole: projection.showCommunities ? profile.topRole : undefined,
       stats: {

@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-08-16T2023Z-post",
+  "total_profiles": 23,
+  "onboarding_completed_true": 0,
+  "onboarding_completed_false": 23,
+  "onboarding_completed_null": 0,
+  "delta_vs_pre_apply": {
+    "total_profiles": 0,
+    "completed_true": 0,
+    "completed_false": 0,
+    "completed_null": 0
+  },
+  "PRODUCTION_DATA_PRESERVATION": "PASS"
+}

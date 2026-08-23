@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "../../i18n";
 import type { Community } from "../../types/community";
 import type { CommunityRule } from "../../types/communityRules";
 import type { CommunityAccess, CommunityVisibility } from "../../types/communityAccess";
@@ -46,6 +47,7 @@ function readInitialIconUrl(community: Community) {
 }
 
 export function CommunitySettingsEditor({ community, access, onUpdated }: Props) {
+  const { t } = useTranslation("common");
   const canManage = access.permissions.includes("manageCommunity");
   const iconInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +72,7 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
   const [typeSettings, setTypeSettings] = useState<CommunityTypeSettings>(() => normalizeCommunityTypeSettings(community.kind, community.typeSettings ?? getDefaultCommunityTypeSettings(community.kind)));
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeIsSuccess, setNoticeIsSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
     setBannerFile(null);
     setUploadError(null);
     setNotice(null);
+    setNoticeIsSuccess(false);
     if (iconInputRef.current) iconInputRef.current.value = "";
     if (bannerInputRef.current) bannerInputRef.current.value = "";
   }, [community.id, community.name, community.description, community.icon, community.bannerUrl, community.visibility, community.publicReadEnabled, community.defaultNotificationLevel, community.rulesEnabled, community.rulesVersion, community.discoveryListed, community.discoveryCategory, community.discoveryJoinPolicy, community.kind, community.typeSettings]);
@@ -199,16 +203,19 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
     if (!canManage) return;
     const cleanedName = name.trim().replace(/\s+/g, " ");
     if (!cleanedName) {
-      setNotice("Community name is required.");
+      setNoticeIsSuccess(false);
+      setNotice(t("communitySettings.nameRequired"));
       return;
     }
     if (rulesEnabled && !rules.length) {
-      setNotice("Add at least one rule before requiring acceptance.");
+      setNoticeIsSuccess(false);
+      setNotice(t("communitySettings.ruleRequired"));
       return;
     }
 
     setSaving(true);
     setNotice(null);
+    setNoticeIsSuccess(false);
     setUploadError(null);
     const uploadedPaths: string[] = [];
     let nextIconUrl = iconUrl;
@@ -221,6 +228,7 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
       if (!file) continue;
       const uploaded = await communityBrandingService.upload(community.id, kind, file);
       if (!uploaded.ok) {
+        setNoticeIsSuccess(false);
         setNotice(uploaded.message);
         setSaving(false);
         return;
@@ -247,6 +255,7 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
 
     if (!result.ok) {
       await Promise.all(uploadedPaths.map((path) => communityBrandingService.remove(path)));
+      setNoticeIsSuccess(false);
       setNotice(result.error.message);
       setSaving(false);
       return;
@@ -263,7 +272,8 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
       });
       if (!discoveryResult.ok) {
         onUpdated(result.data);
-        setNotice(`Community settings were saved, but ${discoveryResult.message}`);
+        setNoticeIsSuccess(false);
+        setNotice(t("communitySettings.savePartial", { message: discoveryResult.message }));
         setSaving(false);
         return;
       }
@@ -297,50 +307,51 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
       discoveryCategory,
       discoveryJoinPolicy,
     });
+    setNoticeIsSuccess(true);
     setNotice(
       discoveryChanged && discoveryListed
-        ? "Community settings saved. Discovery listing submitted for review."
+        ? t("communitySettings.savedListed")
         : discoveryChanged
-          ? "Community settings saved. Community removed from Discovery."
-          : "Community settings saved.",
+          ? t("communitySettings.savedUnlisted")
+          : t("communitySettings.saved"),
     );
     setSaving(false);
   };
 
   const resolvedBanner = bannerPreview ?? bannerUrl;
   const resolvedIcon = iconPreview ?? iconUrl;
-  const typeLabel = community.kind === "text" ? "Text defaults" : community.kind === "radio" ? "Radio defaults" : "Podcast defaults";
+  const typeLabel = community.kind === "text" ? t("communitySettings.textDefaults") : community.kind === "radio" ? t("communitySettings.radioDefaults") : t("communitySettings.podcastDefaults");
   const nameLength = name.trim().length;
   const descriptionLength = description.length;
 
   return (
     <div className="community-settings-editor">
-      <section className="community-settings-card community-settings-branding" aria-label="Community branding">
+      <section className="community-settings-card community-settings-branding" aria-label={t("communitySettings.branding")}>
         <div className="community-settings-brand-hero">
           <div className="community-settings-banner-preview">
             {resolvedBanner ? (
-              <img src={resolvedBanner} alt="Community banner preview" />
+              <img src={resolvedBanner} alt={t("communitySettings.bannerPreview")} />
             ) : (
               <div className="community-settings-banner-empty">
                 <AppIcon name="image" size="xl" />
-                <span>Banner preview</span>
+                <span>{t("communitySettings.bannerPreview")}</span>
               </div>
             )}
           </div>
           <div className="community-settings-icon-row">
             <div className="community-settings-icon-preview">
-              {resolvedIcon ? <img src={resolvedIcon} alt="Community icon preview" /> : <span aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || "?"}</span>}
+              {resolvedIcon ? <img src={resolvedIcon} alt={t("communitySettings.iconPreview")} /> : <span aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || "?"}</span>}
             </div>
             <div className="community-settings-brand-copy">
-              <strong>Branding assets</strong>
-              <small>PNG, JPG, or WEBP. Icon up to 2 MB · Banner up to 6 MB.</small>
+              <strong>{t("communitySettings.brandingAssets")}</strong>
+              <small>{t("communitySettings.brandingHint")}</small>
             </div>
           </div>
         </div>
 
         <div className="community-settings-upload-grid">
           <div className="community-settings-upload-slot">
-            <FieldLabel hint="Shown in the community rail and headers">Icon</FieldLabel>
+            <FieldLabel hint={t("communitySettings.iconHint")}>{t("communitySettings.icon")}</FieldLabel>
             <div className="community-settings-upload-toolbar">
               <label className={`community-settings-action community-settings-action--ghost community-settings-file-trigger${!canManage ? " is-disabled" : ""}`}>
                 <input
@@ -351,11 +362,11 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
                   onChange={(event) => selectFile("icon", event.target.files?.[0] ?? null)}
                 />
                 <AppIcon name="image" size="sm" />
-                {iconFile || iconUrl ? "Replace icon" : "Choose icon"}
+                {iconFile || iconUrl ? t("communitySettings.replaceIcon") : t("communitySettings.chooseIcon")}
               </label>
               {iconFile || iconUrl ? (
                 <button type="button" className="community-settings-action community-settings-action--ghost" disabled={!canManage || saving} onClick={() => clearStoredAsset("icon")}>
-                  Remove
+                  {t("action.remove")}
                 </button>
               ) : null}
             </div>
@@ -363,7 +374,7 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
           </div>
 
           <div className="community-settings-upload-slot">
-            <FieldLabel hint="Wide image for the community header">Banner</FieldLabel>
+            <FieldLabel hint={t("communitySettings.bannerHint")}>{t("communitySettings.banner")}</FieldLabel>
             <div className="community-settings-upload-toolbar">
               <label className={`community-settings-action community-settings-action--ghost community-settings-file-trigger${!canManage ? " is-disabled" : ""}`}>
                 <input
@@ -374,11 +385,11 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
                   onChange={(event) => selectFile("banner", event.target.files?.[0] ?? null)}
                 />
                 <AppIcon name="image" size="sm" />
-                {bannerFile || bannerUrl ? "Replace banner" : "Choose banner"}
+                {bannerFile || bannerUrl ? t("communitySettings.replaceBanner") : t("communitySettings.chooseBanner")}
               </label>
               {bannerFile || bannerUrl ? (
                 <button type="button" className="community-settings-action community-settings-action--ghost" disabled={!canManage || saving} onClick={() => clearStoredAsset("banner")}>
-                  Remove
+                  {t("action.remove")}
                 </button>
               ) : null}
             </div>
@@ -392,37 +403,37 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
         ) : null}
       </section>
 
-      <section className="community-settings-card" aria-label="Community identity fields">
+      <section className="community-settings-card" aria-label={t("communitySettings.identity")}>
         <header className="community-settings-card-header">
-          <strong>Identity</strong>
-          <span>Name and description appear across discovery, invites, and member navigation.</span>
+          <strong>{t("communitySettings.identity")}</strong>
+          <span>{t("communitySettings.identityDescription")}</span>
         </header>
         <div className="community-settings-fields community-settings-fields--split">
           <label className="community-settings-field">
             <span className="community-settings-label-row">
-              <FieldLabel>Name</FieldLabel>
+              <FieldLabel>{t("communitySettings.name")}</FieldLabel>
               <span className={`community-settings-count${nameLength === 0 ? " is-empty" : ""}`}>{nameLength}/80</span>
             </span>
             <input className="community-settings-input" value={name} maxLength={80} disabled={!canManage || saving} onChange={(event) => setName(event.target.value)} />
           </label>
           <label className="community-settings-field community-settings-field--full">
             <span className="community-settings-label-row">
-              <FieldLabel>Description</FieldLabel>
+              <FieldLabel>{t("communitySettings.description")}</FieldLabel>
               <span className="community-settings-count">{descriptionLength}/500</span>
             </span>
-            <textarea className="community-settings-textarea" rows={4} maxLength={500} value={description} disabled={!canManage || saving} onChange={(event) => setDescription(event.target.value)} placeholder="What should members know about this community?" />
+            <textarea className="community-settings-textarea" rows={4} maxLength={500} value={description} disabled={!canManage || saving} onChange={(event) => setDescription(event.target.value)} placeholder={t("communitySettings.descriptionPlaceholder")} />
           </label>
         </div>
       </section>
 
-      <section className="community-settings-card" aria-label="Access and notifications">
+      <section className="community-settings-card" aria-label={t("communitySettings.access")}>
         <header className="community-settings-card-header">
-          <strong>Access and notifications</strong>
-          <span>Visibility and default notification levels apply to new members.</span>
+          <strong>{t("communitySettings.access")}</strong>
+          <span>{t("communitySettings.accessDescription")}</span>
         </header>
         <div className="community-settings-fields community-settings-fields--split">
           <label className="community-settings-field">
-            <FieldLabel>Visibility</FieldLabel>
+            <FieldLabel>{t("communitySettings.visibility")}</FieldLabel>
             <select
               className="community-settings-select"
               value={visibility}
@@ -436,16 +447,16 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
                 }
               }}
             >
-              <option value="public">Public</option>
-              <option value="secret">Secret</option>
+              <option value="public">{t("communitySettings.public")}</option>
+              <option value="secret">{t("communitySettings.secret")}</option>
             </select>
           </label>
           <label className="community-settings-field">
-            <FieldLabel>Default notifications</FieldLabel>
+            <FieldLabel>{t("communitySettings.defaultNotifications")}</FieldLabel>
             <select className="community-settings-select" value={defaultNotificationLevel} disabled={!canManage || saving} onChange={(event) => setDefaultNotificationLevel(event.target.value as CommunityNotificationLevel)}>
-              <option value="all">All activity</option>
-              <option value="mentions">Mentions</option>
-              <option value="none">None</option>
+              <option value="all">{t("communitySettings.allActivity")}</option>
+              <option value="mentions">{t("communitySettings.mentions")}</option>
+              <option value="none">{t("communitySettings.none")}</option>
             </select>
           </label>
         </div>
@@ -453,16 +464,16 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
           checked={visibility === "public" && publicReadEnabled}
           disabled={!canManage || saving || visibility !== "public"}
           onChange={setPublicReadEnabled}
-          title="Allow visitors to read public content"
-          description="Visitors can browse read-only content without joining."
+          title={t("communitySettings.allowPublicRead")}
+          description={t("communitySettings.allowPublicReadDescription")}
         />
       </section>
 
       {isV1FeatureEnabled("discoveryMarketplace") ? (
-        <section className="community-settings-card" aria-label="Discovery listing">
+        <section className="community-settings-card" aria-label={t("communitySettings.discoveryListing")}>
           <header className="community-settings-card-header">
-            <strong>Discovery listing</strong>
-            <span>Only reviewed public communities appear in Discover. Private content is never included.</span>
+            <strong>{t("communitySettings.discoveryListing")}</strong>
+            <span>{t("communitySettings.discoveryDescription")}</span>
           </header>
           <ToggleRow
             checked={discoveryListed}
@@ -471,41 +482,41 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
               setDiscoveryListed(checked);
               if (checked) setPublicReadEnabled(true);
             }}
-            title="Submit this community to Discovery"
-            description={discoveryListed ? "Listing changes are reviewed before becoming public." : "Your community remains accessible only through its existing links and memberships."}
+            title={t("communitySettings.submitDiscovery")}
+            description={discoveryListed ? t("communitySettings.discoveryOnDescription") : t("communitySettings.discoveryOffDescription")}
           />
           <div className="community-settings-fields community-settings-fields--split">
             <label className="community-settings-field">
-              <FieldLabel>Category</FieldLabel>
+              <FieldLabel>{t("communitySettings.category")}</FieldLabel>
               <select className="community-settings-select" value={discoveryCategory} disabled={!canManage || saving || !discoveryListed} onChange={(event) => setDiscoveryCategory(event.target.value as DiscoveryCategory)}>
-                <option value="development">Development</option>
-                <option value="design">Design</option>
-                <option value="gaming">Gaming</option>
-                <option value="music">Music</option>
-                <option value="study">Study</option>
-                <option value="work">Work</option>
+                <option value="development">{t("communitySettings.categoryDevelopment")}</option>
+                <option value="design">{t("communitySettings.categoryDesign")}</option>
+                <option value="gaming">{t("communitySettings.categoryGaming")}</option>
+                <option value="music">{t("communitySettings.categoryMusic")}</option>
+                <option value="study">{t("communitySettings.categoryStudy")}</option>
+                <option value="work">{t("communitySettings.categoryWork")}</option>
               </select>
             </label>
             <label className="community-settings-field">
-              <FieldLabel>Join policy</FieldLabel>
+              <FieldLabel>{t("communitySettings.joinPolicy")}</FieldLabel>
               <select className="community-settings-select" value={discoveryJoinPolicy} disabled={!canManage || saving || !discoveryListed} onChange={(event) => setDiscoveryJoinPolicy(event.target.value as DiscoveryJoinPolicy)}>
-                <option value="open">Open join</option>
-                <option value="request">Request approval</option>
+                <option value="open">{t("communitySettings.openJoin")}</option>
+                <option value="request">{t("communitySettings.requestApproval")}</option>
               </select>
             </label>
           </div>
         </section>
       ) : null}
 
-      <section className="community-settings-card" aria-label="Rules and join acceptance">
+      <section className="community-settings-card" aria-label={t("communitySettings.rules")}>
         <header className="community-settings-card-header">
-          <strong>Rules and join acceptance</strong>
-          <span>Published text appears in the visitor join confirmation.</span>
+          <strong>{t("communitySettings.rules")}</strong>
+          <span>{t("communitySettings.rulesDescription")}</span>
         </header>
         <div className="community-settings-fields community-settings-fields--split">
-          <ToggleRow checked={rulesEnabled} disabled={!canManage || saving} onChange={setRulesEnabled} title="Require rules acceptance" description="New members must accept published rules before joining." />
+          <ToggleRow checked={rulesEnabled} disabled={!canManage || saving} onChange={setRulesEnabled} title={t("communitySettings.requireRules")} description={t("communitySettings.requireRulesDescription")} />
           <label className="community-settings-field">
-            <FieldLabel>Rules version</FieldLabel>
+            <FieldLabel>{t("communitySettings.rulesVersion")}</FieldLabel>
             <input className="community-settings-input" value={rulesVersion} maxLength={32} disabled={!canManage || saving} onChange={(event) => setRulesVersion(event.target.value)} />
           </label>
         </div>
@@ -513,17 +524,17 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
           {rules.map((rule) => (
             <article className="community-settings-rule-card" key={rule.id}>
               <div className="community-settings-rule-fields">
-                <input className="community-settings-input" value={rule.title} maxLength={120} aria-label="Rule title" placeholder="Rule title" disabled={!canManage || saving} onChange={(event) => updateRule(rule.id, { title: event.target.value })} />
-                <textarea className="community-settings-textarea" rows={3} value={rule.body} maxLength={2000} aria-label="Rule text" placeholder="Describe expected community behavior." disabled={!canManage || saving} onChange={(event) => updateRule(rule.id, { body: event.target.value })} />
+                <input className="community-settings-input" value={rule.title} maxLength={120} aria-label={t("communitySettings.ruleTitle")} placeholder={t("communitySettings.ruleTitle")} disabled={!canManage || saving} onChange={(event) => updateRule(rule.id, { title: event.target.value })} />
+                <textarea className="community-settings-textarea" rows={3} value={rule.body} maxLength={2000} aria-label={t("communitySettings.ruleText")} placeholder={t("communitySettings.ruleTextPlaceholder")} disabled={!canManage || saving} onChange={(event) => updateRule(rule.id, { body: event.target.value })} />
               </div>
               <div className="community-settings-rule-actions">
                 <label className="community-settings-toggle community-settings-toggle--compact">
                   <span>
-                    <strong>Required</strong>
+                    <strong>{t("communitySettings.required")}</strong>
                   </span>
                   <input type="checkbox" checked={rule.required} disabled={!canManage || saving} onChange={(event) => updateRule(rule.id, { required: event.target.checked })} />
                 </label>
-                <button type="button" className="community-settings-action community-settings-action--ghost community-settings-action--danger" aria-label="Remove rule" disabled={!canManage || saving || rules.length <= 1} onClick={() => setRules((items) => items.filter((item) => item.id !== rule.id))}>
+                <button type="button" className="community-settings-action community-settings-action--ghost community-settings-action--danger" aria-label={t("communitySettings.removeRule")} disabled={!canManage || saving || rules.length <= 1} onClick={() => setRules((items) => items.filter((item) => item.id !== rule.id))}>
                   <AppIcon name="trash" size="sm" />
                 </button>
               </div>
@@ -540,8 +551,8 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
               {
                 id: `draft-${crypto.randomUUID()}`,
                 communityId: community.id,
-                title: "New rule",
-                body: "Describe the expected community behavior.",
+                title: t("communitySettings.newRule"),
+                body: t("communitySettings.ruleTextPlaceholder"),
                 required: true,
                 position: items.length,
                 createdAt: new Date().toISOString(),
@@ -551,25 +562,25 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
           }
         >
           <AppIcon name="plus" size="sm" />
-          Add rule
+          {t("communitySettings.addRule")}
         </button>
       </section>
 
-      <section className="community-settings-card" aria-label="Community type defaults">
+      <section className="community-settings-card" aria-label={t("communitySettings.typeDefaults")}>
         <header className="community-settings-card-header">
           <strong>{typeLabel}</strong>
-          <span>These defaults apply after saving. Changes take effect for new activity immediately.</span>
+          <span>{t("communitySettings.defaultsDescription")}</span>
         </header>
         <div className="community-settings-stack">
-          {isV1FeatureEnabled("voiceRooms") ? <ToggleRow checked={typeSettings.voiceRoomsEnabled} disabled={!canManage || saving} onChange={(checked) => setTypeSettings({ ...typeSettings, voiceRoomsEnabled: checked })} title="Enable normal voice rooms for this community type" /> : null}
+          {isV1FeatureEnabled("voiceRooms") ? <ToggleRow checked={typeSettings.voiceRoomsEnabled} disabled={!canManage || saving} onChange={(checked) => setTypeSettings({ ...typeSettings, voiceRoomsEnabled: checked })} title={t("communitySettings.normalVoice")} /> : null}
           {typeSettings.kind === "text" ? (
             <>
               <label className="community-settings-field">
-                <FieldLabel>Maximum message length</FieldLabel>
+                <FieldLabel>{t("communitySettings.maxMessageLength")}</FieldLabel>
                 <input className="community-settings-input" type="number" min={250} max={4000} value={typeSettings.maxMessageLength} disabled={!canManage || saving} onChange={(event) => setTypeSettings({ ...typeSettings, maxMessageLength: Number(event.target.value) })} />
               </label>
-              <ToggleRow checked={typeSettings.attachmentsEnabled} disabled={!canManage || saving} onChange={(checked) => setTypeSettings({ ...typeSettings, attachmentsEnabled: checked })} title="Allow attachments" />
-              <ToggleRow checked={typeSettings.reactionsEnabled} disabled={!canManage || saving} onChange={(checked) => setTypeSettings({ ...typeSettings, reactionsEnabled: checked })} title="Allow reactions" />
+              <ToggleRow checked={typeSettings.attachmentsEnabled} disabled={!canManage || saving} onChange={(checked) => setTypeSettings({ ...typeSettings, attachmentsEnabled: checked })} title={t("communitySettings.allowAttachments")} />
+              <ToggleRow checked={typeSettings.reactionsEnabled} disabled={!canManage || saving} onChange={(checked) => setTypeSettings({ ...typeSettings, reactionsEnabled: checked })} title={t("communitySettings.allowReactions")} />
             </>
           ) : typeSettings.kind === "radio" ? (
             <>
@@ -621,21 +632,21 @@ export function CommunitySettingsEditor({ community, access, onUpdated }: Props)
 
       <footer className="community-settings-footer">
         {notice ? (
-          <p className={`community-settings-notice${notice.toLowerCase().includes("saved") ? " is-success" : " is-error"}`} role="status">
+          <p className={`community-settings-notice${noticeIsSuccess ? " is-success" : " is-error"}`} role="status">
             {notice}
           </p>
         ) : dirty ? (
           <p className="community-settings-notice" role="status">
-            You have unsaved changes.
+            {t("communitySettings.unsaved")}
           </p>
         ) : (
           <p className="community-settings-notice" role="status">
-            {canManage ? "All changes are up to date." : "You need Manage Community permission to edit these settings."}
+            {canManage ? t("communitySettings.upToDate") : t("communitySettings.noPermission")}
           </p>
         )}
         <button type="button" className="community-settings-action" disabled={!canManage || !name.trim() || saving || (rulesEnabled && !rules.length)} onClick={() => void save()}>
           <AppIcon name="send" size="sm" />
-          {saving ? "Saving..." : "Save community settings"}
+          {saving ? t("status.saving") : t("communitySettings.save")}
         </button>
       </footer>
     </div>

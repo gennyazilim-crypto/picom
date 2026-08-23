@@ -1,0 +1,4 @@
+BACKUP VALIDATION:
+NOT_APPLICABLE
+
+No logical archive was created. pg_restore --list was not run.

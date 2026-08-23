@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "configKey": "closed-beta",
+  "version": "v1",
+  "environmentTarget": "production",
+  "generatedForTask": "TASK-07",
+  "notes": "Values are operational limits, not feature enables. Paid systems remain default-off until Root + legal + provider gates pass.",
+  "limits": {
+    "maxAdvertiserAccounts": 25,
+    "maxActiveCampaignsPerAdvertiser": 2,
+    "maxDailySpendMinorUnits": 50000,
+    "maxLifetimeSpendMinorUnits": 250000,
+    "allowedPlacements": ["feed_inline"],
+    "manualCreativeReviewRequired": true,
+    "manualCampaignActivationRequired": true,
+    "sensitiveCategoriesAllowed": false,
+    "politicalAdsEnabled": false,
+    "notificationAdsEnabled": false,
+    "dmAdsEnabled": false,
+    "voiceAdsEnabled": false,
+    "minimumFrequencyCapHours": 6,
+    "crossDeviceTargetingEnabled": false,
+    "retargetingEnabled": false,
+    "lookalikeAudienceEnabled": false,
+    "automatedPurchaseOptimizationEnabled": false,
+    "payoutCadence": "monthly_manual",
+    "accrualHoldDays": 30,
+    "dualApprovalRequired": true,
+    "globalAdvertisingKillSwitchDefault": true,
+    "globalPayoutKillSwitchDefault": true
+  },
+  "stages": [
+    {
+      "id": 0,
+      "name": "Disabled",
+      "maxDurationDays": null,
+      "entry": ["dedicated_production_verified", "feature_flags_default_off"],
+      "exit": ["hosted_schema_verified", "monitoring_baseline"],
+      "rollbackTrigger": ["any_critical_security_finding"],
+      "owner": "platform-sre"
+    },
+    {
+      "id": 1,
+      "name": "Internal Canary",
+      "maxDurationDays": 14,
+      "entry": ["stage0_exit", "canary_allowlist_ready", "provider_test_mode_secrets"],
+      "exit": ["internal_canary_metrics_stable", "no_financial_invariant_failure"],
+      "rollbackTrigger": ["kill_switch_drill_failure", "ad_free_leak", "rls_bypass"],
+      "owner": "platform-sre"
+    },
+    {
+      "id": 2,
+      "name": "Invite-only Closed Beta",
+      "maxDurationDays": 30,
+      "entry": ["stage1_exit", "legal_documents_active", "closed_beta_allowlist"],
+      "exit": ["error_budget_met", "reconciliation_daily_ok"],
+      "rollbackTrigger": ["budget_overspend", "private_document_exposure", "duplicate_payout_risk"],
+      "owner": "growth-ops + finance"
+    },
+    {
+      "id": 3,
+      "name": "Limited Production",
+      "maxDurationDays": 45,
+      "entry": ["stage2_exit", "finance_signoff", "country_allowlist"],
+      "exit": ["stable_error_budget", "placement_validation"],
+      "rollbackTrigger": ["reconciliation_large_variance", "secret_leak"],
+      "owner": "finance + platform-sre"
+    },
+    {
+      "id": 4,
+      "name": "General Availability",
+      "maxDurationDays": null,
+      "entry": ["all_go_gates_pass", "closed_beta_evidence", "legal_finance_signoff"],
+      "exit": [],
+      "rollbackTrigger": ["any_no_go_condition"],
+      "owner": "executive + finance + legal"
+    }
+  ],
+  "featureFlagDefaults": {
+    "verified_checkout_enabled": false,
+    "verified_identity_enabled": false,
+    "business_applications_enabled": false,
+    "business_public_profiles_enabled": false,
+    "business_product_publish_enabled": false,
+    "advertising_global_enabled": false,
+    "advertiser_onboarding_enabled": false,
+    "campaign_submission_enabled": false,
+    "campaign_activation_enabled": false,
+    "creator_monetization_enabled": false,
+    "publisher_monetization_enabled": false,
+    "payout_onboarding_enabled": false,
+    "payout_batch_processing_enabled": false,
+    "real_payouts_enabled": false
+  }
+}

@@ -1,0 +1,254 @@
+[
+  {
+    "scenario": "sha256",
+    "result": "PACKAGED_PASS",
+    "evidence": "artifact-sha256-operator.txt",
+    "notes": "e38a875bc06504b4112c7e2f114e19a64e46e580f24b725a523108b13a99c5a3"
+  },
+  {
+    "scenario": "isolated-profile-fresh",
+    "result": "PACKAGED_PASS",
+    "evidence": "isolated-profile/",
+    "notes": "empty isolated profile"
+  },
+  {
+    "scenario": "remote-version-policy",
+    "result": "PACKAGED_PASS",
+    "evidence": "remote-config.json",
+    "notes": "{\"source\":\"remote\",\"min\":\"0.1.1-beta.10\",\"gate\":false,\"welcome\":true}"
+  },
+  {
+    "scenario": "fresh-first-run-incomplete",
+    "result": "PACKAGED_PASS",
+    "evidence": "initial-settings.json",
+    "notes": "{\"present\":true,\"completed\":false,\"currentStep\":\"welcome\",\"purposeIds\":[],\"reviewAllSetup\":false,\"locale\":\"en\",\"theme\":\"system\",\"density\":\"comfortable\",\"textSize\":\"default\",\"interfaceScale\":1,\"reducedMotion\":false,\"highContrast\":false,\"focusRingStrong\":false,\"notifications\":{\"enabled\":true,\"nativeDesktopEnabled\":true,\"directMessages\":true,\"mentions\":true,\"incomingCalls\":true,\"friendRequests\":true,\"communityAnnouncements\":true,\"quietHours\":{\"enabled\":false,\"startTime\":\"22:00\",\"endTime\":\"07:00\",\"applyTo\":\"normal_messages_only\",\"allowMentions\":true}}}"
+  },
+  {
+    "scenario": "personalization-gaming-friends",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/02-personalize-gaming-friends.png",
+    "notes": "{\"gaming\":{\"ok\":true,\"text\":\"Gaming\",\"tag\":\"LABEL\"},\"friends\":{\"ok\":true,\"text\":\"Friends\",\"tag\":\"LABEL\"},\"purposes\":[\"Friends & communication\",\"Gaming\"],\"plan\":[\"Appearance\",\"Audio & Video\",\"Desktop\",\"Notifications\",\"Privacy\",\"Ready\"],\"reviewAll\":true,\"progress\":\"Step 2 of 8\"}"
+  },
+  {
+    "scenario": "appearance-packaged-controls",
+    "result": "FAIL",
+    "evidence": "screenshots/03-appearance-dark.png",
+    "notes": "{\"present\":true,\"completed\":false,\"currentStep\":\"appearance\",\"purposeIds\":[\"gaming\",\"friends\"],\"reviewAllSetup\":false,\"locale\":\"en\",\"theme\":\"dark\",\"density\":\"compact\",\"textSize\":\"large\",\"interfaceScale\":1.25,\"reducedMotion\":true,\"highContrast\":true,\"focusRingStrong\":true,\"notifications\":{\"enabled\":true,\"nativeDesktopEnabled\":true,\"directMessages\":true,\"mentions\":true,\"incomingCalls\":true,\"friendRequests\":true,\"communityAnnouncements\":true,\"quietHours\":{\"enabled\":false,\"startTime\":\"22:00\",\"endTime\":\"07:00\",\"applyTo\":\"normal_messages_only\",\"allowMentions\":true}}}"
+  },
+  {
+    "scenario": "appearance-125-layout",
+    "result": "PACKAGED_PASS",
+    "evidence": "appearance-scale-layout.json",
+    "notes": "{\"innerWidth\":1152,\"innerHeight\":720,\"scrollWidth\":1152,\"clientWidth\":1152,\"horizontalOverflow\":false,\"footerVisible\":true,\"titlebarVisible\":true,\"closeReachable\":true,\"railVisible\":true,\"compactVisible\":false}"
+  },
+  {
+    "scenario": "appearance-restart-resume",
+    "result": "FAIL",
+    "evidence": "screenshots/03b-appearance-resume-first-paint.png",
+    "notes": "{\"resumed\":{\"present\":true,\"completed\":false,\"currentStep\":\"appearance\",\"purposeIds\":[\"gaming\",\"friends\"],\"reviewAllSetup\":false,\"locale\":\"en\",\"theme\":\"dark\",\"density\":\"compact\",\"textSize\":\"large\",\"interfaceScale\":1.25,\"reducedMotion\":true,\"highContrast\":true,\"focusRingStrong\":true,\"notifications\":{\"enabled\":true,\"nativeDesktopEnabled\":true,\"directMessages\":true,\"mentions\":true,\"incomingCalls\":true,\"friendRequests\":true,\"communityAnnouncements\":true,\"quietHours\":{\"enabled\":false,\"startTime\":\"22:00\",\"endTime\":\"07:00\",\"applyTo\":\"normal_messages_only\",\"allowMentions\":true}}},\"flash\":{\"firstBackground\":\"rgb(28, 33, 31)\",\"laterBackground\":\"rgb(28, 33, 31)\",\"firstTheme\":\"dark\",\"visibleFlashSuspected\":false}}"
+  },
+  {
+    "scenario": "microphone-inactive-before-action",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/04-audio-before-permission.png",
+    "notes": "{\"liveAudio\":false,\"gum\":[]}"
+  },
+  {
+    "scenario": "microphone-silence-no-false-pass",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "{\"status\":\"Listening\",\"meter\":0,\"falselyPassed\":false}"
+  },
+  {
+    "scenario": "microphone-physical",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "screenshots/05-audio-test.png",
+    "notes": "{\"status\":\"Listening\",\"peak\":0,\"inputLabel\":\"Default - Headset Microphone (CORSAIR VOID WIRELESS v2 Gaming Receiver) (1b1c:2a08)\"}"
+  },
+  {
+    "scenario": "microphone-cleanup",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "{\"leftoverMic\":false,\"cycles\":[{\"stoppedLive\":0,\"startedLive\":1},{\"stoppedLive\":0,\"startedLive\":1},{\"stoppedLive\":0,\"startedLive\":1}]}"
+  },
+  {
+    "scenario": "microphone-hotplug",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "physical-notes.json",
+    "notes": "No safely removable external microphone on this host"
+  },
+  {
+    "scenario": "speaker-physical",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "physical-notes.json",
+    "notes": "{\"apiInvoked\":true,\"heard\":false,\"selectedOutput\":\"Default - Hoparlör (Realtek(R) Audio)\",\"observation\":\"No reliable human/audio observation mechanism in this operator environment\"}"
+  },
+  {
+    "scenario": "camera-physical",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "physical-notes.json",
+    "notes": "{\"enableClicked\":false,\"liveFrame\":false,\"dimensions\":[{\"width\":0,\"height\":0,\"live\":false},{\"width\":0,\"height\":0,\"live\":false}],\"audioFalse\":true,\"audioLeak\":false,\"screenshotStored\":false,\"reason\":\"Camera frame not stored to avoid capturing a person or private environment\"}"
+  },
+  {
+    "scenario": "camera-cleanup",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "{\"clean\":[{\"hasSrcObject\":false,\"readyState\":0,\"width\":0,\"height\":0,\"audioTracks\":0,\"videoTracks\":0,\"videoLive\":false},{\"hasSrcObject\":false,\"readyState\":0,\"width\":0,\"height\":0,\"audioTracks\":0,\"videoTracks\":0,\"videoLive\":false}],\"cycles\":[{\"stoppedSrc\":false,\"startedLive\":false},{\"stoppedSrc\":false,\"startedLive\":false},{\"stoppedSrc\":false,\"startedLive\":false}]}"
+  },
+  {
+    "scenario": "camera-hotplug",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "physical-notes.json",
+    "notes": "No safely removable external camera on this host"
+  },
+  {
+    "scenario": "screen-picker-sources",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "{\"count\":6,\"hasScreen\":true,\"hasWindow\":true}"
+  },
+  {
+    "scenario": "screen-picker-cancel",
+    "result": "FAIL",
+    "evidence": "physical-notes.json",
+    "notes": "Re-opened picker without selecting a source; no success state claimed"
+  },
+  {
+    "scenario": "screen-capture-packaged",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/07-screen-preflight-safe.png",
+    "notes": "{\"selected\":{\"ok\":true,\"name\":\"Picom Desktop\"},\"live\":true,\"dimensions\":[{\"hasSrcObject\":false,\"readyState\":0,\"width\":0,\"height\":0,\"audioTracks\":0,\"videoTracks\":0,\"videoLive\":false},{\"hasSrcObject\":true,\"readyState\":4,\"width\":1280,\"height\":800,\"audioTracks\":0,\"videoTracks\":1,\"videoLive\":true}]}"
+  },
+  {
+    "scenario": "screen-stop-cleanup",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "[{\"hasSrcObject\":false,\"readyState\":0,\"width\":0,\"height\":0,\"audioTracks\":0,\"videoTracks\":0,\"videoLive\":false},{\"hasSrcObject\":false,\"readyState\":0,\"width\":0,\"height\":0,\"audioTracks\":0,\"videoTracks\":0,\"videoLive\":false}]"
+  },
+  {
+    "scenario": "desktop-native-startup-read",
+    "result": "PACKAGED_PASS",
+    "evidence": "startup-original.json",
+    "notes": "{\"ok\":true,\"native\":true,\"supported\":true,\"enabled\":false}"
+  },
+  {
+    "scenario": "windows-login-item",
+    "result": "PACKAGED_PASS",
+    "evidence": "startup-restore-proof.json",
+    "notes": "{\"original\":false,\"toggled\":true,\"restored\":false}"
+  },
+  {
+    "scenario": "close-to-tray-restore",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/08-desktop.png",
+    "notes": "{\"hideClicked\":{\"ok\":true},\"processAliveWhileHidden\":true,\"restoredByTrayApi\":true,\"beforeSecond\":6,\"afterSecond\":6,\"secondRestored\":true,\"noProcessExplosion\":true}"
+  },
+  {
+    "scenario": "second-instance",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "{\"beforeSecond\":6,\"afterSecond\":6}"
+  },
+  {
+    "scenario": "start-in-tray",
+    "result": "FAIL",
+    "evidence": "physical-notes.json",
+    "notes": "{\"hiddenStartup\":{\"hidden\":false,\"hasFirstLaunch\":true,\"launchMs\":676},\"restored\":true}"
+  },
+  {
+    "scenario": "quit-mode-titlebar",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "processCount=0"
+  },
+  {
+    "scenario": "quit-desktop-resume",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "heading=This app is optimized for desktop."
+  },
+  {
+    "scenario": "notification-capability",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/09-notifications.png",
+    "notes": "{\"ok\":true,\"native\":true,\"supported\":true}"
+  },
+  {
+    "scenario": "windows-notification-creation",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "{\"ok\":true,\"native\":true}"
+  },
+  {
+    "scenario": "windows-toast-visibility",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "physical-notes.json",
+    "notes": "No reliable human observation of the Windows toast surface"
+  },
+  {
+    "scenario": "notification-click",
+    "result": "BLOCKED_ENVIRONMENT",
+    "evidence": "physical-notes.json",
+    "notes": "Toast not visually accessible; existing test fixture has no navigation payload"
+  },
+  {
+    "scenario": "privacy-pre-auth-deferred",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/10-privacy-deferred.png",
+    "notes": "{\"deferred\":true,\"interactive\":false}"
+  },
+  {
+    "scenario": "ready-factual-summary",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/11-ready.png",
+    "notes": "{\"appearanceConfigured\":true,\"privacyDeferred\":true,\"noFakeHundred\":true,\"rows\":[{\"label\":\"Language\",\"value\":\"English\",\"status\":\"configured\"},{\"label\":\"Theme\",\"value\":\"Dark\",\"status\":\"configured\"},{\"label\":\"Density\",\"value\":\"Compact\",\"status\":\"configured\"},{\"label\":\"Text size\",\"value\":\"Large\",\"status\":\"configured\"},{\"label\":\"Interface scale\",\"value\":\"125%\",\"status\":\"configured\"},{\"label\":\"Microphone\",\"value\":\"Configured\",\"status\":\"configured\"},{\"label\":\"Speaker\",\"value\":\"Configured\",\"status\":\"configured\"},{\"label\":\"Camera\",\"value\":\"Not tested\",\"status\":\"not-tested\"},{\"label\":\"Screen sharing\",\"value\":\"Not tested\",\"status\":\"not-tested\"},{\"label\":\"Launch at startup\",\"value\":\"Off\",\"status\":\"configured\"},{\"label\":\"Startup\",\"value\":\"Start in system tray\",\"status\":\"configured\"},{\"label\":\"Close button\",\"value\":\"Keep PICOM running in system tray\",\"status\":\"configured\"},{\"label\":\"Starts on\",\"value\":\"Continue where I left off\",\"status\":\"configured\"},{\"label\":\"Desktop notifications\",\"value\":\"Available\",\"status\":\"configured\"},{\"label\":\"Quiet hours\",\"value\":\"22:00–07:00\",\"status\":\"configured\"},{\"label\":\"Do Not Disturb\",\"value\":\"Do Not Disturb\",\"status\":\"configured\"},{\"label\":\"Privacy\",\"value\":\"Review after sign-in\",\"status\":\"deferred\"}]}"
+  },
+  {
+    "scenario": "ready-review-review-audio",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/11-ready.png",
+    "notes": "{\"clicked\":{\"ok\":true,\"text\":\"Review audio\"},\"heading\":\"This app is optimized for desktop.\"}"
+  },
+  {
+    "scenario": "ready-review-review-desktop",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/11-ready.png",
+    "notes": "{\"clicked\":{\"ok\":true,\"text\":\"Review desktop\"},\"heading\":\"This app is optimized for desktop.\"}"
+  },
+  {
+    "scenario": "ready-review-review-notification",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/11-ready.png",
+    "notes": "{\"clicked\":{\"ok\":true,\"text\":\"Review notification\"},\"heading\":\"This app is optimized for desktop.\"}"
+  },
+  {
+    "scenario": "ready-review-review-privacy",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/11-ready.png",
+    "notes": "{\"clicked\":{\"ok\":true,\"text\":\"Review privacy\"},\"heading\":\"This app is optimized for desktop.\"}"
+  },
+  {
+    "scenario": "completion-to-login",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/12-login-after-completion.png",
+    "notes": "{\"complete\":true,\"hasLogin\":true,\"completed\":{\"present\":true,\"completed\":true,\"currentStep\":\"ready\",\"purposeIds\":[],\"reviewAllSetup\":false,\"locale\":\"en\",\"theme\":\"dark\",\"density\":\"compact\",\"textSize\":\"large\",\"interfaceScale\":1.25,\"reducedMotion\":true,\"highContrast\":true,\"focusRingStrong\":true,\"notifications\":{\"enabled\":true,\"nativeDesktopEnabled\":true,\"directMessages\":true,\"mentions\":true,\"incomingCalls\":true,\"friendRequests\":false,\"communityAnnouncements\":false,\"quietHours\":{\"enabled\":true,\"startTime\":\"22:00\",\"endTime\":\"07:00\",\"applyTo\":\"normal_messages_only\",\"allowMentions\":true}}}}"
+  },
+  {
+    "scenario": "post-completion-resources",
+    "result": "PACKAGED_PASS",
+    "evidence": "physical-notes.json",
+    "notes": "{\"gum\":[],\"live\":[],\"videoElements\":[],\"meterNow\":0,\"micStatus\":\"\",\"inputLabel\":\"\",\"outputLabel\":\"\"}"
+  },
+  {
+    "scenario": "auth-packaged-e2e",
+    "result": "BLOCKED_TEST_IDENTITY",
+    "evidence": "screenshots/12-login-after-completion.png",
+    "notes": "Stopped at Login; TASK 13C owns auth"
+  },
+  {
+    "scenario": "restart-suppresses-first-run",
+    "result": "PACKAGED_PASS",
+    "evidence": "screenshots/13-restart-after-completion.png",
+    "notes": "{\"hasLogin\":true,\"hasFirstLaunch\":false,\"postState\":{\"present\":true,\"completed\":true,\"currentStep\":\"ready\",\"purposeIds\":[],\"reviewAllSetup\":false,\"locale\":\"en\",\"theme\":\"dark\",\"density\":\"compact\",\"textSize\":\"large\",\"interfaceScale\":1.25,\"reducedMotion\":true,\"highContrast\":true,\"focusRingStrong\":true,\"notifications\":{\"enabled\":true,\"nativeDesktopEnabled\":true,\"directMessages\":true,\"mentions\":true,\"incomingCalls\":true,\"friendRequests\":false,\"communityAnnouncements\":false,\"quietHours\":{\"enabled\":true,\"startTime\":\"22:00\",\"endTime\":\"07:00\",\"applyTo\":\"normal_messages_only\",\"allowMentions\":true}}}}"
+  }
+]

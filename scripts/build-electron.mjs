@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { copyFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
@@ -9,6 +9,10 @@ const projectRoot = path.resolve(scriptDirectory, "..");
 const electronOutputDirectory = path.join(projectRoot, "dist-electron");
 const preloadEntry = path.join(projectRoot, "electron", "preload.cts");
 const preloadOutput = path.join(electronOutputDirectory, "preload.cjs");
+const uiScalePolicySource = path.join(projectRoot, "electron", "uiScalePolicy.cjs");
+const uiScalePolicyOutput = path.join(electronOutputDirectory, "uiScalePolicy.cjs");
+const desktopBehaviorPolicySource = path.join(projectRoot, "electron", "desktopBehaviorPolicy.cjs");
+const desktopBehaviorPolicyOutput = path.join(electronOutputDirectory, "desktopBehaviorPolicy.cjs");
 const typescriptCli = path.join(projectRoot, "node_modules", "typescript", "bin", "tsc");
 
 const typeScriptResult = spawnSync(
@@ -57,5 +61,10 @@ const unresolvedLocalRequire = /require\(["']\.\//u.test(bundledPreload);
 if (unresolvedLocalRequire) {
   throw new Error("Sandboxed Electron preload bundle contains an unresolved local require().");
 }
+
+// Main-process TypeScript deliberately imports this small, typed CommonJS policy.
+// Keep the packaged main bundle self-contained without exposing it to the renderer.
+await copyFile(uiScalePolicySource, uiScalePolicyOutput);
+await copyFile(desktopBehaviorPolicySource, desktopBehaviorPolicyOutput);
 
 console.log("Electron main process compiled and sandbox-safe preload bundle generated.");

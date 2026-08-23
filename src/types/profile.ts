@@ -27,6 +27,12 @@ export type ProfileActivityItem = {
   createdAt: string;
 };
 
+/** Privacy-projected community memberships from get_profile_domain_v1 (mutual for other viewers). */
+export type ProfileCommunityRole = {
+  communityId: CommunityId;
+  roleName: string;
+};
+
 export type ProfileStats = {
   communities: number;
   posts: number;
@@ -66,6 +72,7 @@ export type UserProfile = {
   stats: ProfileStats;
   media: ProfileMediaItem[];
   activities: ProfileActivityItem[];
+  communityRoles?: ProfileCommunityRole[];
 };
 
 export type ProfileLookupOptions = {

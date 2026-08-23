@@ -42,6 +42,12 @@ declare global {
     thumbnailDataUrl: string | null;
     appIconDataUrl: string | null;
   };
+  type PicomScreenCaptureDiagnostics = {
+    displayCount: number;
+    screenSourceCount: number;
+    windowSourceCount?: number;
+    incompleteDisplays: boolean;
+  };
   type PicomPickedImageFile = {
     name: string;
     type: string;
@@ -69,8 +75,46 @@ declare global {
     checkedAt: string | null;
   };
 
+  type PicomCompanionWindowType = "home" | "chat" | "voice" | "video" | "community" | "dock" | "bubble" | "settings" | "notification" | "gaming";
+  type PicomCompanionWindowRequest = Readonly<{
+    type: PicomCompanionWindowType;
+    conversationId?: string;
+    callId?: string;
+    communityId?: string;
+    channelId?: string;
+  }>;
+  type PicomCompanionPreferences = Readonly<{
+    version: 1;
+    startupMode: "main" | "companion";
+    alwaysOnTop: boolean;
+    compactDensity: boolean;
+    closeToTray: boolean;
+    showNotifications: boolean;
+    theme: "system" | "light" | "dark";
+    windowOpacity: number;
+    dockEdge: "left" | "right" | "top" | "bottom";
+    smartCollapse: boolean;
+    dockAutoHide: boolean;
+    gamingAutoDetect: boolean;
+  }>;
+  type PicomCompanionContext = Readonly<PicomCompanionWindowRequest & { key: string }>;
   interface Window {
     picomDesktop?: {
+      companion: Readonly<{
+        getContext: () => Promise<PicomCompanionContext | null>;
+        enterMode: () => Promise<Readonly<{ key: string; created: boolean; mainWindowHidden: boolean }>>;
+        openWindow: (request: PicomCompanionWindowRequest) => Promise<Readonly<{ key: string; created: boolean }>>;
+        closeCurrent: () => Promise<boolean>;
+        returnToMain: () => Promise<boolean>;
+        getPreferences: () => Promise<PicomCompanionPreferences>;
+        setPreferences: (preferences: Partial<Omit<PicomCompanionPreferences, "version">>) => Promise<PicomCompanionPreferences>;
+        setAlwaysOnTop: (enabled: boolean) => Promise<PicomCompanionPreferences>;
+        setDockLayout: (layout: "collapsed" | "rail" | "expanded") => Promise<Readonly<{ ok: boolean; layout?: "collapsed" | "rail" | "expanded" }>>;
+        setWindowBounds: (bounds: Readonly<{ x?: number; y?: number; width?: number; height?: number; alwaysOnTop?: boolean }>) => Promise<Readonly<{ ok: boolean }>>;
+        setClickThrough: (enabled: boolean) => Promise<Readonly<{ ok: boolean; enabled?: boolean }>>;
+        broadcast: (event: Readonly<{ topic: string }>) => Promise<Readonly<{ topic: string; revision: number }>>;
+        onSync: (listener: (event: Readonly<{ topic: string; revision: number }>) => void) => () => void;
+      }>;
       contractVersion: 1;
       getRuntimeInfo: () => {
         runtime: "electron";
@@ -87,6 +131,12 @@ declare global {
         | { ok: true; native: true; action: PicomWindowAction; maximized: boolean }
         | { ok: false; native: true; error: string }
       >;
+      appearance?: {
+        setInterfaceScale: (scale: number) => Promise<
+          | { ok: true; native: true; scale: number }
+          | { ok: false; native: true; error: string }
+        >;
+      };
       isWindowMaximized?: () => Promise<boolean>;
       onWindowMaximizeStateChanged?: (callback: (isMaximized: boolean) => void) => () => void;
       showNotification?: (
@@ -95,6 +145,17 @@ declare global {
         | { ok: true; native: true }
         | { ok: false; native: true; error: string }
       >;
+      notifications?: {
+        getCapability: () => Promise<
+          | { ok: true; native: true; supported: boolean }
+          | { ok: false; native: true; error: string }
+        >;
+        /** Fixed-content test only; no renderer-provided notification payload. */
+        sendTest: () => Promise<
+          | { ok: true; native: true }
+          | { ok: false; native: true; error: string }
+        >;
+      };
       incomingCall?: {
         show: (
           payload: PicomIncomingCallToastPayload
@@ -116,7 +177,13 @@ declare global {
       };
       screenCapture?: {
         getSources: (request: { requestId: string; userInitiated: true }) => Promise<
-          | { ok: true; native: true; requestId: string; sources: PicomScreenCaptureSource[] }
+          | {
+              ok: true;
+              native: true;
+              requestId: string;
+              sources: PicomScreenCaptureSource[];
+              diagnostics?: PicomScreenCaptureDiagnostics;
+            }
           | { ok: false; native: true; error: string; platform?: string }
         >;
         selectSource: (request: { requestId: string; sourceId: string }) => Promise<
@@ -125,6 +192,10 @@ declare global {
         >;
         cancelSelection: (request: { requestId: string }) => Promise<
           | { ok: true; native: true; canceled: true }
+          | { ok: false; native: true; error: string }
+        >;
+        setContentProtection?: (enabled: boolean) => Promise<
+          | { ok: true; native: true; enabled: boolean }
           | { ok: false; native: true; error: string }
         >;
       };
@@ -238,6 +309,59 @@ declare global {
                 supported: boolean;
               }>;
             }
+          | { ok: false; native: true; error: string }
+        >;
+      };
+      settings?: {
+        get: () => Promise<
+          | { ok: true; native: true; settings: Record<string, unknown> }
+          | { ok: false; native: true; error: string }
+        >;
+        set: (partial: Record<string, unknown>) => Promise<
+          | { ok: true; native: true; settings: Record<string, unknown> }
+          | { ok: false; native: true; error: string }
+        >;
+        reset: () => Promise<
+          | { ok: true; native: true; settings: Record<string, unknown> }
+          | { ok: false; native: true; error: string }
+        >;
+        /** Pushes the renderer's resolved UI locale into main (tray, menus, notifications). */
+        setLocale?: (locale: string) => Promise<
+          | { ok: true; native: true; locale: string }
+          | { ok: false; native: true; error: string }
+        >;
+      };
+      cache?: {
+        getUsage: () => Promise<
+          | {
+              ok: true;
+              native: true;
+              usage: Readonly<{
+                userDataBytes: number;
+                cacheBytes: number;
+                logsBytes: number;
+                tempBytes: number;
+              }>;
+            }
+          | { ok: false; native: true; error: string }
+        >;
+        clear: (scope?: "all" | "media") => Promise<
+          | {
+              ok: true;
+              native: true;
+              usage: Readonly<{
+                userDataBytes: number;
+                cacheBytes: number;
+                logsBytes: number;
+                tempBytes: number;
+              }>;
+            }
+          | { ok: false; native: true; error: string }
+        >;
+      };
+      appPaths?: {
+        open: (target: "logs" | "downloads" | "userData") => Promise<
+          | { ok: true; native: true; target: "logs" | "downloads" | "userData" }
           | { ok: false; native: true; error: string }
         >;
       };

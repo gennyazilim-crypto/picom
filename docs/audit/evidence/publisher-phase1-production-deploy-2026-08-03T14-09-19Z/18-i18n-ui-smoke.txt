@@ -1,0 +1,3 @@
+I18N_UI=CODE_READY_STAGING_VERIFIED
+production_runtime_smoke=NOT_RUN
+reason=production app rollout blocked until migrations complete; 10-locale runtime already GO in hardening package

@@ -1,0 +1,7 @@
+NOT_APPLIED
+reason=blocked before migration can create picom realtime.messages policies
+platform_rls_enabled=true
+prod_picom_policies=[]
+staging_policies_present=yes (subject-scoped)
+probe_create_policy=OK under postgres
+forbidden_actions_not_taken=owner_change,hash_change,history_repair,manual_table_create

@@ -1,0 +1,4 @@
+{
+  "staging": "[{\"name\":\"public.platform_account_restrictions\"},{\"name\":\"public.user_restrictions\"}]",
+  "prod": "[]"
+}

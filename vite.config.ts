@@ -65,17 +65,30 @@ export function createProductionCsp(env: Record<string, string>): string {
     safeOrigin(env.VITE_STATUS_PAGE_URL),
   ]);
   const storageOrigins = unique([supabaseOrigin, localHttpOrigin(env.VITE_SUPABASE_URL)]);
+  // Google Ads is opt-in at runtime and enabled only when a real public Ads ID is
+  // present at build time. Keep the CSP origin list exact; do not use wildcards.
+  const googleAdsEnabled = /^AW-\d{6,20}$/.test(env.VITE_GOOGLE_ADS_ID ?? "")
+    && /^[A-Za-z0-9_-]{1,128}$/.test(env.VITE_GOOGLE_ADS_REGISTRATION_COMPLETED_CONVERSION_LABEL ?? "");
+  const googleAdsScriptOrigins = googleAdsEnabled ? ["https://www.googletagmanager.com"] : [];
+  const googleAdsNetworkOrigins = googleAdsEnabled
+    ? [
+      "https://www.googletagmanager.com",
+      "https://www.google.com",
+      "https://www.googleadservices.com",
+      "https://pagead2.googlesyndication.com",
+    ]
+    : [];
   const directives = [
     "default-src 'self'",
     "base-uri 'none'",
     "object-src 'none'",
     "frame-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self'",
+    `script-src 'self'${googleAdsScriptOrigins.length ? ` ${googleAdsScriptOrigins.join(" ")}` : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob:${storageOrigins.length ? ` ${storageOrigins.join(" ")}` : ""}`,
+    `img-src 'self' data: blob:${storageOrigins.length ? ` ${storageOrigins.join(" ")}` : ""}${googleAdsNetworkOrigins.length ? ` ${googleAdsNetworkOrigins.join(" ")}` : ""}`,
     "font-src 'self' data:",
-    `connect-src 'self'${connectOrigins.length ? ` ${connectOrigins.join(" ")}` : ""}`,
+    `connect-src 'self'${connectOrigins.length ? ` ${connectOrigins.join(" ")}` : ""}${googleAdsNetworkOrigins.length ? ` ${googleAdsNetworkOrigins.join(" ")}` : ""}`,
     `media-src 'self' blob:${storageOrigins.length ? ` ${storageOrigins.join(" ")}` : ""}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",

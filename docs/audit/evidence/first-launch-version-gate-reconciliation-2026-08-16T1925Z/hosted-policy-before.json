@@ -1,0 +1,26 @@
+{
+  "inspectedAt": "2026-08-16T19:25:00Z",
+  "staging": {
+    "project": "picom-staging",
+    "ref": "ufmtvqtsklqsmqxefbbs",
+    "endpoint": "https://ufmtvqtsklqsmqxefbbs.supabase.co/functions/v1/client-config",
+    "minimumSupportedVersion": "0.1.1-beta.10",
+    "recommendedClientVersion": "0.1.1-beta.10",
+    "latestVersion": "0.1.1-beta.10",
+    "releaseChannel": "beta",
+    "enableAutoUpdate": true
+  },
+  "production": {
+    "project": "picom-production",
+    "ref": "cqnsetsmcduraryemhbi",
+    "endpoint": "https://cqnsetsmcduraryemhbi.supabase.co/functions/v1/client-config",
+    "minimumSupportedVersion": "1.0.0",
+    "recommendedClientVersion": "1.0.0",
+    "latestVersion": "1.0.0",
+    "releaseChannel": "dev",
+    "enableAutoUpdate": false
+  },
+  "repoSourceDefaultBefore": "1.0.0",
+  "clientFallbackDefault": "0.1.0",
+  "apiCompatibilityHeaderDefault": "0.1.0"
+}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "../../../i18n";
 import { DashboardState } from "./DashboardState";
 
 export type DataTableSortDirection = "asc" | "desc";
@@ -68,6 +69,7 @@ export function DataTable<T extends { id: string }>({
   density = "compact",
   bulkActions,
 }: DataTableProps<T>) {
+  const { t } = useTranslation("admin");
   if (noPermission) return <DashboardState tone="noPermission" />;
   if (loading) return <DashboardState tone="loading" />;
   if (error) return <DashboardState tone="error" detail={error} />;
@@ -80,7 +82,7 @@ export function DataTable<T extends { id: string }>({
     <div className="rd-table-wrap">
       {bulkActions && selectedIds.length ? (
         <div className="rd-table-bulk" role="status">
-          <span>{selectedIds.length} selected</span>
+          <span>{t("table.selected", { count: selectedIds.length })}</span>
           <div className="rd-table-bulk__actions">{bulkActions}</div>
         </div>
       ) : null}
@@ -92,7 +94,7 @@ export function DataTable<T extends { id: string }>({
                 <input
                   type="checkbox"
                   checked={allSelected}
-                  aria-label="Select all rows"
+                  aria-label={t("table.selectAll")}
                   onChange={(event) => onSelect(event.target.checked ? rows.map((row) => row.id) : [])}
                 />
               </th>
@@ -121,7 +123,7 @@ export function DataTable<T extends { id: string }>({
                     <input
                       type="checkbox"
                       checked={selected}
-                      aria-label={`Select row ${row.id}`}
+                      aria-label={t("table.selectRow", { id: row.id })}
                       onChange={(event) => {
                         onSelect(event.target.checked ? [...selectedIds, row.id] : selectedIds.filter((id) => id !== row.id));
                       }}
@@ -138,15 +140,13 @@ export function DataTable<T extends { id: string }>({
       </table>
       {onPageChange && typeof total === "number" ? (
         <div className="rd-table-foot">
-          <span>
-            Page {page} · {pageSize}/page · {total} total
-          </span>
+          <span>{t("table.pagination", { page, pageSize, total })}</span>
           <div className="rd-table-foot__actions">
             <button type="button" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
-              Previous
+              {t("table.previous")}
             </button>
             <button type="button" disabled={page * pageSize >= total} onClick={() => onPageChange(page + 1)}>
-              Next
+              {t("table.next")}
             </button>
           </div>
         </div>

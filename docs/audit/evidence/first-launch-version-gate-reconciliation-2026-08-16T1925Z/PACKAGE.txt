@@ -1,0 +1,17 @@
+PICOM TASK 13A VERSION GATE RECONCILIATION
+timestamp=2026-08-16T1925Z
+branch=feat/community-rebuild
+git_HEAD=af6babcf060da058fb295b7b37c27f75ca5c6f25
+package_version=0.1.1-beta.11
+git_status_clean=no
+dirty_tree_preserved=yes
+packaging_command=npm run typecheck && npm run build && electron-builder --win --x64 --dir --config.directories.output=%TEMP%\picom-task13a-20260816T1932Z
+executable_path=C:\Users\ACER\AppData\Local\Temp\picom-task13a-20260816T1932Z\win-unpacked\Picom.exe
+sha256=e38a875bc06504b4112c7e2f114e19a64e46e580f24b725a523108b13a99c5a3
+build_timestamp=2026-08-16T21:33:20+02:00
+isolation=PICOM_USER_DATA_DIR isolated-profile-rerun
+hosted_mutation=APPLIED picom-production client-config v17
+hosted_min_after=0.1.1-beta.10
+packaged_version_gate=PASS
+packaged_first_run_unblock=PASS
+auth=BLOCKED_TEST_IDENTITY

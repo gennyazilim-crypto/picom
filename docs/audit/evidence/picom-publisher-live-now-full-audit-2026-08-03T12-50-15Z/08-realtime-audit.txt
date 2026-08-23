@@ -1,0 +1,4 @@
+﻿REALTIME_REVOCATION=PASS
+publication_add_badges_profiles=yes duplicate_object safe
+client_subscribe_refetch=publisherLiveNowService.ts
+prior_smoke=27/27

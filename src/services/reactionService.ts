@@ -1,4 +1,3 @@
-import { dataSourceService } from "./dataSourceService";
 import { isRateLimitError, rateLimitUserMessage } from "./rateLimitError";
 import { getSupabaseClient, getSupabaseClientStatus } from "./supabase/supabaseClient";
 
@@ -63,11 +62,6 @@ async function setReaction(input: ReactionMutationInput, reacted: boolean): Prom
   if (!validation.ok) return validation;
   const emoji = input.emoji.trim();
 
-  const dataSource = dataSourceService.getStatus();
-  if (dataSource.isMock) {
-    return { ok: true, data: { messageId: input.messageId, emoji, count: reacted ? 1 : 0, reactedByCurrentUser: reacted } };
-  }
-
   const configured = configuredClient();
   if (!configured.ok) return configured;
   const { data, error } = await configured.data.rpc("set_message_reaction", {
@@ -95,8 +89,6 @@ export const reactionService = {
   async listSummaries(messageIds: readonly string[]): Promise<ReactionServiceResult<ReactionSummary[]>> {
     const ids = [...new Set(messageIds.filter(Boolean))].slice(0, 100);
     if (!ids.length) return { ok: true, data: [] };
-    const dataSource = dataSourceService.getStatus();
-    if (dataSource.isMock) return { ok: true, data: [] };
     const configured = configuredClient();
     if (!configured.ok) return configured;
     const { data, error } = await configured.data.rpc("list_message_reaction_summaries", { target_message_ids: ids });

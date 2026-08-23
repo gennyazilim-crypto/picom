@@ -1,0 +1,7 @@
+{
+  "hist": "[{\"version\":\"20260803100000\"},{\"version\":\"20260803110000\"},{\"version\":\"20260803130000\"}]",
+  "tables": "[{\"sessions\":\"community_live_screen_sessions\",\"viewers\":\"community_live_screen_viewers\",\"hidden\":\"community_live_hidden_communities\",\"reports\":\"community_live_share_reports\",\"restrictions\":null,\"publisher_programs\":null}]",
+  "meta": "[{\"relkind\":\"r\",\"rls\":true,\"owner\":\"postgres\"}]",
+  "cols": "[{\"column_name\":\"id\"},{\"column_name\":\"livekit_room_name\"},{\"column_name\":\"community_id\"},{\"column_name\":\"channel_id\"},{\"column_name\":\"broadcaster_user_id\"},{\"column_name\":\"title\"},{\"column_name\":\"category\"},{\"column_name\":\"application_name\"},{\"column_name\":\"status\"},{\"column_name\":\"started_at\"},{\"column_name\":\"ended_at\"},{\"column_name\":\"last_heartbeat_at\"},{\"column_name\":\"viewer_count\"},{\"column_name\":\"participant_count\"},{\"column_name\":\"preview_updated_at\"},{\"column_name\":\"created_at\"},{\"column_name\":\"updated_at\"},{\"column_name\":\"client_request_id\"},{\"column_name\":\"description\"},{\"column_name\":\"language_code\"},{\"column_name\":\"visibility_mode\"}]",
+  "pols": "[{\"polname\":\"community_live_screen_sessions_broadcaster_update\"},{\"polname\":\"community_live_screen_sessions_select\"}]"
+}

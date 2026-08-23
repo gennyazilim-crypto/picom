@@ -1,0 +1,7 @@
+﻿HEAD=21b9e089684015b1012192f8eb8731d031ced80e
+branch=feat/community-rebuild
+commit=21b9e089 docs(prod): seal realtime provision resume and alter-owner blocker
+candidate_final=448736697acf44e36887740b613c1dab16df2c27
+production_go_tag=NOT_CREATED
+linked_ref=ufmtvqtsklqsmqxefbbs
+uncommitted_excluded=MentionFeedMain.css; tmp scripts; unrelated full-audit evidence

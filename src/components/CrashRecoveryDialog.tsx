@@ -1,4 +1,5 @@
 import type { CrashRecoveryRecord } from "../services/crashRecoveryService";
+import { useTranslation } from "../i18n";
 
 type CrashRecoveryDialogProps = {
   record: CrashRecoveryRecord;
@@ -26,9 +27,10 @@ export function CrashRecoveryDialog({
   onExportLogs,
   onResetSettings,
 }: CrashRecoveryDialogProps) {
+  const { t } = useTranslation("errors");
   const body = record.suspectedUncleanShutdown
-    ? "Picom may not have closed cleanly last time. Continue normally, or start with optional services paused."
-    : "A previous renderer crash was detected. Your session is intact. Diagnostics stay redacted if you export logs.";
+    ? t("recovery.uncleanBody")
+    : t("recovery.crashBody");
 
   return (
     <div className="crash-recovery-backdrop" role="presentation">
@@ -44,8 +46,8 @@ export function CrashRecoveryDialog({
             <span className="crash-recovery-mark__glyph">!</span>
           </div>
           <div className="crash-recovery-header-copy">
-            <p className="crash-recovery-kicker">Recovery</p>
-            <h2 id="crash-recovery-title">Picom recovered from a previous problem</h2>
+          <p className="crash-recovery-kicker">{t("recovery.kicker")}</p>
+          <h2 id="crash-recovery-title">{t("recovery.title")}</h2>
           </div>
         </header>
 
@@ -55,38 +57,38 @@ export function CrashRecoveryDialog({
 
         <dl className="crash-recovery-meta">
           <div>
-            <dt>Detected</dt>
+            <dt>{t("recovery.detected")}</dt>
             <dd title={formatRecoveryTime(record.timestamp)}>{formatRecoveryTime(record.timestamp)}</dd>
           </div>
           <div>
-            <dt>Type</dt>
+            <dt>{t("recovery.type")}</dt>
             <dd title={record.errorName}>{record.errorName}</dd>
           </div>
           <div>
-            <dt>Log ID</dt>
+            <dt>{t("recovery.logId")}</dt>
             <dd title={record.logId}>{record.logId}</dd>
           </div>
         </dl>
 
         <div className="crash-recovery-actions">
           <button type="button" className="crash-recovery-btn crash-recovery-btn--primary" onClick={onContinue}>
-            Continue normally
+            {t("recovery.continue")}
           </button>
           <div className="crash-recovery-actions__secondary">
             <button type="button" className="crash-recovery-btn" onClick={onSafeMode}>
-              Safe Mode
+              {t("recovery.safeMode")}
             </button>
             <button type="button" className="crash-recovery-btn" onClick={onExportLogs}>
-              Export logs
+              {t("recovery.exportLogs")}
             </button>
           </div>
           <button type="button" className="crash-recovery-btn crash-recovery-btn--quiet" onClick={onResetSettings}>
-            Reset local settings
+            {t("recovery.resetSettings")}
           </button>
         </div>
 
         <p className="crash-recovery-footnote">
-          Passwords, tokens, cookies, auth headers, and private secrets are redacted before export.
+          {t("recovery.footnote")}
         </p>
       </section>
     </div>

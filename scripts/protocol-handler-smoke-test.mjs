@@ -40,9 +40,17 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const forbidden = [/shell\.openPath\(/, /child_process/, /execFile/, /javascript:/i.test(text.main) ? /javascript:/i : /a^/];
+// Restrict this assertion to the deep-link intake path. The main process also has a
+// separately allowlisted user-initiated file opener, which must not make the protocol
+// contract fail merely because it lives in the same module.
+const protocolStart = text.main.indexOf('function extractDeepLinkFromArgs');
+const protocolEnd = text.main.indexOf('function registerIpcHandlers');
+const protocolMain = protocolStart >= 0
+  ? text.main.slice(protocolStart, protocolEnd > protocolStart ? protocolEnd : undefined)
+  : text.main;
+const forbidden = [/shell\.openPath\(/, /child_process/, /execFile/, /javascript:/i.test(protocolMain) ? /javascript:/i : /a^/];
 for (const pattern of forbidden) {
-  if (pattern.test(`${text.main}\n${text.preload}`)) {
+  if (pattern.test(`${protocolMain}\n${text.preload}`)) {
     console.error(`Protocol handler wiring contains forbidden native execution pattern: ${pattern}`);
     process.exit(1);
   }

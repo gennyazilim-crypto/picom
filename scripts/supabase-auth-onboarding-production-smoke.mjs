@@ -21,7 +21,11 @@ const allMigrations = readdirSync(resolve("supabase/migrations"))
   .join("\n");
 
 expectIncludes(auth, "AuthSignUpOutcome", "Signup must expose a verification-aware outcome.");
-expectIncludes(auth, "requiresEmailVerification: !session", "Signup must distinguish email verification from an authenticated session.");
+expectIncludes(auth, "requiresEmailVerification: false", "Canonical signup must not block on email verification after a real session.");
+expectIncludes(auth, "Soft verification requires Confirm Email", "Signup must fail closed when Supabase does not return an authenticated session.");
+expectIncludes(auth, "softEmailVerificationService", "Soft verification email must remain fire-and-forget and never gate login.");
+expectIncludes(auth, "never blocks signup/login", "Soft verification must remain non-blocking.");
+expect(!auth.includes("requiresEmailVerification: !session"), "Signup must not treat a missing session as a successful verification-only outcome.");
 expect(!auth.includes("mapSession(data.session) ?? getMockSession"), "Supabase sign-in must never fall back to a mock session.");
 expectIncludes(auth, ".auth.refreshSession()", "Session restore must refresh an expiring session.");
 expectIncludes(auth, ".auth.getUser()", "Session restore must validate the current user with Supabase.");
@@ -30,19 +34,27 @@ expectIncludes(sessionHook, "setSession(result.data.session)", "Registration mus
 expectIncludes(sessionHook, "setNotice(result.data.message)", "Registration must expose its safe completion state.");
 expectIncludes(registerScreen, 'className="auth-success"', "Register screen must render a non-error verification notice.");
 
-const firstLaunchGuard = app.indexOf("!firstLaunchSetupCompleted");
-const authLoadingGuard = app.indexOf("if (!authReady)");
-const authGuard = app.indexOf("passwordRecoveryMode || !authSession");
+const firstLaunchGuard = app.indexOf("if (!safeMode.active && !firstLaunchSetup.completed)");
+const authLoadingGuard = app.indexOf("Restoring your Picom session");
+const authGuard = app.indexOf('guestAuthView === "register"');
+const legalGuard = app.indexOf("<TermsReacceptPrompt");
 const onboardingView = app.indexOf("<OnboardingFlow");
-// Auth-loading must render before the signed-out login guard so a refresh never
-// flashes the login screen while the Supabase session is still restoring.
-expect(firstLaunchGuard >= 0 && authLoadingGuard > firstLaunchGuard && authGuard > authLoadingGuard && onboardingView > authGuard, "First launch, auth-loading, signed-out, and onboarding guards must remain separated and ordered.");
+// Device first-run, session restore, signed-out login, legal acceptance, then
+// account onboarding. A refresh must not flash login or skip legal.
+expect(
+  firstLaunchGuard >= 0
+    && authLoadingGuard > firstLaunchGuard
+    && authGuard > authLoadingGuard
+    && legalGuard > authGuard
+    && onboardingView > legalGuard,
+  "First launch, auth-loading, signed-out, legal, and onboarding guards must remain separated and ordered.",
+);
 
 expectIncludes(onboarding, 'client.rpc("complete_current_user_onboarding"', "Supabase onboarding must use the transactional service boundary.");
 expect(!onboarding.includes("if (localRecord) return"), "Supabase onboarding must not use local state as authority.");
 expectIncludes(onboarding, "client.from(\"user_follows\")", "Supabase onboarding state must restore persisted follows.");
 expectIncludes(settings, "theme_mode: accountSettings.appearanceSettings.themeMode", "Theme preference must sync to the account.");
-expectIncludes(settings, 'select("schema_version,theme_mode,notification_settings")', "Theme preference must hydrate after session restore.");
+expectIncludes(settings, 'select("schema_version,theme_mode,preferred_locale,preferred_locale_mode,notification_settings")', "Theme preference must hydrate after session restore.");
 
 for (const marker of [
   "security definer",

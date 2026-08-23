@@ -1,0 +1,26 @@
+npm run typecheck                         PASS
+npm run auth:v2:contract                  PASS
+npm run auth:login-method-guards:unit     PASS
+npm run auth:social:steam-epic:smoke      PASS  (source contract; not live provider login)
+npm run auth:google:config:readback       ran
+  SUPABASE_URL PRESENT
+  SUPABASE_ANON_KEY PRESENT
+  GOOGLE_OAUTH_ENABLED_FLAG PRESENT
+  GOOGLE_CLIENT_ID UNVERIFIED
+  GOOGLE_CLIENT_SECRET UNVERIFIED
+  GOOGLE_REDIRECT_URI MISSING (local env; expected to live in hosted Auth config)
+  AUTH_PICOM_GG PRESENT
+  SUPABASE_REDIRECT_ALLOWLIST UNVERIFIED
+npm run electron:security:smoke           PASS
+  contextIsolation / nodeIntegration / sandbox asserted in source
+npm run secrets:smoke                     FAIL
+  MarketingConsentBoundary.tsx matched /\bCOOKIE\s*=/i
+  No service-role / Epic / Steam / Google client secret found in that finding.
+  Pre-existing scanner false-positive; not introduced by this recovery.
+
+Not run this session:
+  full production Electron package
+  packaged Windows secret scan
+  live Google / Epic / Steam operator E2E
+  password-reset email completion
+  controlled VPS reboot

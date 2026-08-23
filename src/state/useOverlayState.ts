@@ -8,6 +8,13 @@ export interface OverlayMenuItem {
   icon?: IconName;
   tone?: "normal" | "danger";
   disabled?: boolean;
+  kind?: "action" | "range";
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  valueSuffix?: string;
+  onValueChange?: (value: number) => void;
   onSelect?: () => void;
 }
 
@@ -29,6 +36,11 @@ interface ProfileOverlay {
   y: number;
 }
 
+export type ImagePreviewState = Readonly<{
+  image: Attachment;
+  gallery: readonly Attachment[];
+}>;
+
 export function useOverlayState() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -36,7 +48,7 @@ export function useOverlayState() {
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [menu, setMenu] = useState<ContextMenuOverlay | null>(null);
   const [profile, setProfile] = useState<ProfileOverlay | null>(null);
-  const [preview, setPreview] = useState<Attachment | null>(null);
+  const [preview, setPreview] = useState<ImagePreviewState | null>(null);
   const [toasts, setToasts] = useState<OverlayToast[]>([]);
   const toastTimeoutsRef = useRef(new Map<OverlayToast["id"], number>());
 
@@ -79,12 +91,13 @@ export function useOverlayState() {
     setProfile({ member, x, y });
   }, []);
 
-  const openPreview = useCallback((attachment: Attachment) => {
+  const openPreview = useCallback((attachment: Attachment, gallery?: readonly Attachment[]) => {
     setSettingsOpen(false);
     setPaletteOpen(false);
     setMenu(null);
     setProfile(null);
-    setPreview(attachment);
+    const images = (gallery?.length ? gallery : [attachment]).filter((item) => item.type === "image");
+    setPreview({ image: attachment, gallery: images.length ? images : [attachment] });
   }, []);
 
   const closeTransientOverlays = useCallback(() => {

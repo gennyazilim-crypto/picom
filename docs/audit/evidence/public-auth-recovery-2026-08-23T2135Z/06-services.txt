@@ -1,0 +1,43 @@
+docker ps (sanitized):
+  picom-auth-gateway          Up (recreated this session)  127.0.0.1:4180->4180/tcp
+  picom-public-stats          Up 32 hours                  127.0.0.1:8790
+  picom-livekit               Up 32 hours
+  picom-livekit-ingress       Up 32 hours
+  picom-email-worker          Up 32 hours (healthy)        127.0.0.1:8787
+  picom-event-reminder-worker Up 32 hours
+  picom-secret-sms-gateway    Up 32 hours
+  picom-livekit-redis         Up 32 hours
+
+auth-gateway.env keys after fix:
+  SUPABASE_URL
+  ACCOUNT_CENTER_URL
+  AUTH_GATEWAY_PORT
+  SUPABASE_ANON_KEY
+  (SUPABASE_SERVICE_ROLE_KEY removed from this file only)
+
+URL host: cqnsetsmcduraryemhbi.supabase.co
+
+Local resolve probes:
+  picom_local:200
+  account_local:200
+  auth_health_local:200
+  google_start:400
+  steam_start:400
+  epic_start:400
+
+Upstream Edge (status only, no bodies):
+  steam-auth: HTTP 200
+  epic-auth: HTTP 404
+  health: HTTP 200
+
+Production Edge function list includes steam-auth, not epic-auth.
+
+Production Edge secret NAMES present:
+  AUTH_GATEWAY_PUBLIC_URL, STEAM_OPENID_REALM, STEAM_OPENID_RETURN_URL,
+  SOCIAL_AUTH_RATE_LIMIT_SALT, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY, ...
+Production Edge secret NAMES missing:
+  EPIC_CLIENT_ID, EPIC_CLIENT_SECRET, EPIC_DEPLOYMENT_ID, STEAM_WEB_API_KEY
+  (Google client id/secret live in Auth dashboard, not this Edge secret list)
+
+auth.identities providers: email=23  social=0
+auth.users=23  public.profiles=23

@@ -1,0 +1,22 @@
+{
+  "completed": {
+    "result": "PACKAGED_PASS",
+    "snap": {
+      "hasFirstLaunch": false,
+      "hasLogin": true,
+      "completed": true,
+      "step": "ready"
+    }
+  },
+  "permissions": {
+    "result": "PACKAGED_PASS",
+    "snap": {
+      "hasNotifications": true,
+      "hasFirstLaunch": true,
+      "step": "notifications",
+      "heading": "This app is optimized for desktop.",
+      "text": "Picom\nSearch Picom or press Ctrl K\nCompanion\nP\nPICOM\nMasaüstü Kurulumu\n✓\n01 Hoş geldiniz\nTamamlandı\n✓\n02 Kişiselleştir\nTamamlandı\n✓\n03 Görünüm\nTamamlandı\n✓\n04 Ses ve Video\nTamamlandı\n✓\n05 Masaüstü\nTamamlandı\n6\n06 Bildirimler\nGeçerli\n7\n07 Gizlilik\nİsteğe bağlı\n8\n08 Hazır\nSıradaki\n8 adımın 6. adımı\n8 kurulum alanından 8 tanesi gösteriliyor\nTüm kurulum seçeneklerini gözden geçir\nDil\nEnglish\nTürkçe\nDe"
+    },
+    "note": "Packaged isolated fixture migrated permissions → notifications"
+  }
+}

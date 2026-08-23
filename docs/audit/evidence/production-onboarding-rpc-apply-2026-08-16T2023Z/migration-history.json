@@ -1,0 +1,13 @@
+{
+  "TASK_02_HOSTED_RECONCILIATION": "APPLIED",
+  "hosted_row": {
+    "version": "20260816202306",
+    "name": "reconcile_account_onboarding_rpc_contract"
+  },
+  "repo_filename_version": "20260816000000",
+  "note": "MCP apply_migration records an apply-time version. SQL executed is the authorized file. No second history row was inserted.",
+  "previous_tip": {
+    "version": "20260808430000",
+    "name": "live_now_production_ops"
+  }
+}

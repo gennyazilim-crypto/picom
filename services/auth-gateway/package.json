@@ -1,0 +1,14 @@
+{
+  "name": "@picom/auth-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Branded auth.picom.gg Steam/Epic gateway — browser never sees supabase.co",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node --test ../../scripts/steam-openid-brand-policy.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

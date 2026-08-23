@@ -1,0 +1,1 @@
+﻿select position('dashboard.read' in pg_get_functiondef(p.oid)) = 0 as review_excludes_dashboard_read from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='can_review_publisher_applications';

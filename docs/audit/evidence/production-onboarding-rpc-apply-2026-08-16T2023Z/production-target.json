@@ -1,0 +1,11 @@
+{
+  "MUTATION_TARGET": "picom-production / cqnsetsmcduraryemhbi",
+  "name": "picom-production",
+  "ref": "cqnsetsmcduraryemhbi",
+  "region": "eu-central-1",
+  "status": "ACTIVE_HEALTHY",
+  "proven_immediately_before_apply": true,
+  "local_cli_link": "ufmtvqtsklqsmqxefbbs",
+  "supabase_db_push": "NOT_USED",
+  "staging_mutated": false
+}

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import type { Community, Member } from "../../types/community";
 import type { GlobalNavigationAvailability, GlobalNavigationBadgeState, GlobalNavigationKey, GlobalUtilityKey } from "../../types/globalNavigation";
-import { primaryGlobalNavigationItems, utilityGlobalNavigationItems } from "../../services/navigation/globalNavigationRegistry";
+import { getPrimaryGlobalNavigationItems, getUtilityGlobalNavigationItems } from "../../services/navigation/globalNavigationRegistry";
 import type { UserSettingsSection } from "../../services/navigation/settingsNavigationPolicyService";
 import { brandLogoUrl } from "../../config/brandAssets";
 import { brandConfig } from "../../config/brandConfig";
@@ -12,6 +12,7 @@ import { GlobalSettingsNav } from "./GlobalSettingsNav";
 import { GlobalUserCard } from "./GlobalUserCard";
 import { PanelEntryButton } from "../rootDashboard/PanelEntryButton";
 import type { RootDashboardAccessStatus } from "../../services/rootDashboard/rootDashboardAccessService";
+import { useTranslation } from "../../i18n";
 import "./globalNavigation.css";
 
 type GlobalAppSidebarProps = Readonly<{
@@ -74,6 +75,9 @@ function writeStorageFlag(key: string, value: boolean) {
 const workspaceRoutes = new Set<GlobalNavigationKey>(["feed", "dm", "communities"]);
 
 export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, availability, currentUser, communities = [], activeCommunityId = null, onSelectCommunity, compact = false, settingsOpen = false, activeSettingsSection = null, onNavigate, onOpenSettings, onOpenHelpSupport, onOpenProfile, onOpenUserMenu, panelAccessStatus, onOpenPanel, isPanelActive = false }: GlobalAppSidebarProps) {
+  const { t } = useTranslation("navigation");
+  const primaryGlobalNavigationItems = useMemo(() => getPrimaryGlobalNavigationItems(t), [t]);
+  const utilityGlobalNavigationItems = useMemo(() => getUtilityGlobalNavigationItems(t), [t]);
   const rootRef = useRef<HTMLElement>(null);
   const responsiveCompact = useResponsiveCompactMode();
   const [userCollapsed, setUserCollapsed] = useState(() => readStorageFlag(sidebarCollapsedStorageKey));
@@ -136,12 +140,12 @@ export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, av
       ref={rootRef}
       className={`global-app-sidebar${isCompact ? " is-compact" : ""}`}
       data-navigation-mode={isCompact ? "compact" : "wide"}
-      aria-label="Picom global navigation"
+      aria-label={t("sidebar.navigation")}
       aria-expanded={!isCompact}
       onKeyDown={moveNavigationFocus}
     >
       <div className="global-sidebar-head">
-        <button type="button" className="global-sidebar-brand" data-global-navigation-button="true" aria-label="Open Feed" title={isCompact ? "Feed" : undefined} onClick={() => handleNavigate("feed")}>
+        <button type="button" className="global-sidebar-brand" data-global-navigation-button="true" aria-label={t("nav.feed.aria")} title={isCompact ? t("nav.feed.label") : undefined} onClick={() => handleNavigate("feed")}>
           <span className="global-sidebar-brand__mark" aria-hidden="true">
             <img className="picom-brand-logo" src={brandLogoUrl} alt="" width={34} height={34} decoding="async" />
           </span>
@@ -151,9 +155,9 @@ export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, av
           <button
             type="button"
             className="global-sidebar-toggle"
-            aria-label={isCompact ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={isCompact ? t("sidebar.expand") : t("sidebar.collapse")}
             aria-expanded={!isCompact}
-            title={isCompact ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCompact ? t("sidebar.expand") : t("sidebar.collapse")}
             onClick={toggleCollapsed}
           >
             <AppIcon name="chevronRight" size="md" className={`global-sidebar-toggle__icon${isCompact ? "" : " is-expanded"}`} aria-hidden="true" />
@@ -161,7 +165,7 @@ export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, av
         ) : null}
       </div>
 
-      <nav className="global-sidebar-primary" aria-label="Main navigation">
+      <nav className="global-sidebar-primary" aria-label={t("sidebar.mainNavigation")}>
         {primaryGlobalNavigationItems.map((item) => {
           const disabled = item.status(availability) === "unavailable";
           if (item.key === "communities") {
@@ -184,7 +188,7 @@ export function GlobalAppSidebar({ activeRoute, activeUtility = null, badges, av
       </nav>
 
       <div className="global-sidebar-bottom">
-        <nav className="global-sidebar-utilities" aria-label="Application utilities">
+        <nav className="global-sidebar-utilities" aria-label={t("sidebar.utilities")}>
           {utilityGlobalNavigationItems.map((item) => {
             if (item.key === "settings") {
               return (

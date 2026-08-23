@@ -6,6 +6,7 @@ import { ACCOUNT_AUTH, LEGAL_POLICY_VERSION } from "../config";
 import { t } from "../i18n/messages";
 import { getAccountSupabase } from "../lib/supabase";
 import { ROUTES } from "../routes";
+import { trackMarketingEvent } from "../../services/marketing/marketingEvents";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
 
@@ -57,6 +58,7 @@ export function RegisterPage() {
       setError(t("common.required"));
       return;
     }
+    trackMarketingEvent("registration_started");
     setLoading(true);
     const usernameOk = await checkUsername();
     if (!usernameOk) {
@@ -132,6 +134,7 @@ export function RegisterPage() {
       p_terms_version: LEGAL_POLICY_VERSION.terms,
       p_privacy_version: LEGAL_POLICY_VERSION.privacy,
     });
+    let profileReady = !profileRpcError;
     if (profileRpcError) {
       const { error: insertError } = await supabase.from("profiles").upsert(
         {
@@ -148,11 +151,16 @@ export function RegisterPage() {
       if (insertError) {
         console.warn("register profile fallback", insertError.message);
       }
+      profileReady = !insertError;
     }
 
     void import("../lib/softEmailVerification").then(({ sendSoftEmailVerification }) =>
       sendSoftEmailVerification("send"),
     );
+
+    // Only count the primary conversion once the auth account and required profile
+    // record both exist. The event has no user or form-field payload.
+    if (profileReady) trackMarketingEvent("registration_completed");
 
     const { continueToProduct, captureContinueContextFromLocation } = await import("../lib/continueToProduct");
     captureContinueContextFromLocation();

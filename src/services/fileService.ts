@@ -2,6 +2,10 @@ export interface LocalAttachmentPreview { id: string; name: string; url: string;
 export const allowedImageMimeTypes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 export const allowedImageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
 export const maxImageFileSizeBytes = 10 * 1024 * 1024;
+export const allowedVideoMimeTypes = new Set(["video/mp4", "video/webm"]);
+export const allowedVideoExtensions = new Set([".mp4", ".webm"]);
+export const maxVideoFileSizeBytes = 50 * 1024 * 1024;
+export const allowedMessageAttachmentMimeTypes = new Set([...allowedImageMimeTypes, ...allowedVideoMimeTypes]);
 
 export type FileValidationErrorCode = "UNSUPPORTED_MIME_TYPE" | "UNSUPPORTED_EXTENSION" | "FILE_TOO_LARGE" | "INVALID_FILE_SIGNATURE";
 
@@ -38,29 +42,38 @@ function matchesImageSignature(bytes: Uint8Array, mimeType: string): boolean {
   return false;
 }
 
+function matchesVideoSignature(bytes: Uint8Array, mimeType: string): boolean {
+  if (mimeType === "video/mp4") return bytes.length >= 12 && String.fromCharCode(...bytes.slice(4, 8)) === "ftyp";
+  if (mimeType === "video/webm") return bytes.length >= 4 && [0x1a, 0x45, 0xdf, 0xa3].every((value, index) => bytes[index] === value);
+  return false;
+}
+
 export const fileService = {
   validate(file: File): FileValidationResult {
-    if (!allowedImageMimeTypes.has(file.type)) {
+    if (!allowedMessageAttachmentMimeTypes.has(file.type)) {
       return {
         ok: false,
         code: "UNSUPPORTED_MIME_TYPE",
-        reason: "Only PNG, JPEG, WEBP, and GIF images are supported in the MVP.",
+        reason: "Only PNG, JPEG, WEBP, GIF, MP4, and WebM files are supported.",
       };
     }
 
-    if (!allowedImageExtensions.has(getFileExtension(file.name))) {
+    const isImage = allowedImageMimeTypes.has(file.type);
+    const allowedExtensions = isImage ? allowedImageExtensions : allowedVideoExtensions;
+    if (!allowedExtensions.has(getFileExtension(file.name))) {
       return {
         ok: false,
         code: "UNSUPPORTED_EXTENSION",
-        reason: "Image file extension must be PNG, JPG, JPEG, WEBP, or GIF.",
+        reason: isImage ? "Image file extension must be PNG, JPG, JPEG, WEBP, or GIF." : "Video file extension must be MP4 or WebM.",
       };
     }
 
-    if (file.size > maxImageFileSizeBytes) {
+    const maximumBytes = isImage ? maxImageFileSizeBytes : maxVideoFileSizeBytes;
+    if (file.size > maximumBytes) {
       return {
         ok: false,
         code: "FILE_TOO_LARGE",
-        reason: "Image is larger than the 10 MB MVP limit.",
+        reason: isImage ? "Image is larger than the 10 MB limit." : "Video is larger than the 50 MB limit.",
       };
     }
 
@@ -68,12 +81,13 @@ export const fileService = {
   },
   async validateContent(file: File): Promise<FileValidationResult> {
     try {
-      const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-      if (!matchesImageSignature(bytes, file.type)) {
+      const bytes = new Uint8Array(await file.slice(0, 64).arrayBuffer());
+      const valid = allowedImageMimeTypes.has(file.type) ? matchesImageSignature(bytes, file.type) : matchesVideoSignature(bytes, file.type);
+      if (!valid) {
         return {
           ok: false,
           code: "INVALID_FILE_SIGNATURE",
-          reason: "The file contents do not match the selected image type.",
+          reason: "The file contents do not match the selected media type.",
         };
       }
       return { ok: true };
@@ -81,7 +95,7 @@ export const fileService = {
       return {
         ok: false,
         code: "INVALID_FILE_SIGNATURE",
-        reason: "Picom could not verify this image safely.",
+      reason: "Picom could not verify this media file safely.",
       };
     }
   },

@@ -1,0 +1,798 @@
+ M .env.example
+ M .env.production.example
+ M .gitignore
+ M assets/brand/README.md
+ M assets/brand/app-icon.ico
+ M assets/brand/app-icon.png
+ M assets/brand/app-icon.svg
+ M assets/brand/icons/1024x1024.png
+ M assets/brand/icons/128x128.png
+ M assets/brand/icons/16x16.png
+ M assets/brand/icons/256x256.png
+ M assets/brand/icons/32x32.png
+ M assets/brand/icons/48x48.png
+ M assets/brand/icons/512x512.png
+ M assets/brand/icons/64x64.png
+ M assets/brand/picom-logo-v2.png
+ M assets/brand/picom-logo.png
+ M assets/installer/windows/installer-sidebar-v2.bmp
+ M docs/audit/feed-production-readiness.md
+ M docs/audit/settings-production-readiness.md
+ M docs/auto-update-architecture.md
+ M docs/desktop-auto-update-beta-rollout.md
+ M docs/electron-preload-api.md
+ M docs/email/AUTH_EMAIL_TEMPLATE_REPORT.md
+ M docs/installer/previews/installer-sidebar.png
+ M docs/installer/previews/picom-logo-transparent.png
+ M docs/password-reset-production.md
+ M docs/renderer-asset-inventory.md
+ M docs/renderer-performance-budget-audit.md
+ M docs/safe-rollout.md
+ M docs/supabase-auth-onboarding-production.md
+ M electron-builder.macos-release.yml
+ M electron-builder.yml
+ M electron/activityPresence.cts
+ M electron/updater.cts
+ M index.html
+ M infra/email/Dockerfile
+ M infra/email/docker-compose.email.yml
+ M infra/email/email.production.env.example
+ M scripts/attachment-malware-scanning-smoke-test.mjs
+ M scripts/community-events-foundation-smoke-test.mjs
+ M scripts/desktop-auto-update-beta-rollout-smoke-test.mjs
+ M scripts/desktop-updater-native-wiring-smoke.mjs
+ M scripts/direct-message-interactions-smoke.mjs
+ M scripts/direct-messages-production-smoke-test.mjs
+ M scripts/direct-messages-services-realtime-smoke.mjs
+ M scripts/electron-dev.mjs
+ M scripts/electron-preload-contract-test.mjs
+ M scripts/email-sender-policy-scan.mjs
+ M scripts/email-service-smoke-test.mjs
+ M scripts/email-verification-smoke-test.mjs
+ M scripts/env-safety-smoke-test.mjs
+ M scripts/feed-companion-integration-smoke.mjs
+ M scripts/friends-ui-presence-smoke.mjs
+ M scripts/generate-iconix-sprite.ps1
+ M scripts/generate-installer-windows-art.py
+ M scripts/global-navigation-badges-notifications-deep-links-smoke.mjs
+ M scripts/livekit-token-security-smoke.mjs
+ M scripts/meeting-production-screen-share-smoke.mjs
+ M scripts/password-reset-smoke-test.mjs
+ M scripts/performance-budget-ci.mjs
+ M scripts/profile-edit-storage-smoke.mjs
+ M scripts/screen-share-publish-render-full-mvp-smoke.mjs
+ M scripts/screen-share-quality-test.mjs
+ M scripts/set-auth-smtp-sender.mjs
+ M scripts/settings-full-mvp-e2e-qa.mjs
+ M scripts/settings-menu-completeness-smoke.mjs
+ M scripts/social-auth-steam-epic-smoke.mjs
+ M scripts/supabase-auth-onboarding-production-smoke.mjs
+ M scripts/supabase-realtime-presence-integration-smoke.mjs
+ M scripts/verify-electron-packaging.mjs
+ M services/email-worker/emailPolicy.mjs
+ M services/email-worker/index.mjs
+ M services/email-worker/templates.mjs
+ M src/App.tsx
+ M src/components/AppLockScreen.tsx
+ M src/components/CommunityAuditLogSection.tsx
+ M src/components/CommunityEmojisAdminSection.tsx
+ M src/components/CommunityEventsAdminSection.css
+ M src/components/CommunityEventsAdminSection.tsx
+ M src/components/CommunityHeader.tsx
+ M src/components/CommunityOwnershipTransferPanel.tsx
+ M src/components/CommunitySidebar.tsx
+ M src/components/CreateChannelModal.tsx
+ M src/components/DesktopAppShell.tsx
+ M src/components/DesktopContextMenu.css
+ M src/components/DesktopContextMenu.tsx
+ M src/components/DirectMessagesView.css
+ M src/components/DiscoveryView.css
+ M src/components/DiscoveryView.tsx
+ M src/components/EmojiPicker.tsx
+ M src/components/FeedCompanionRail.tsx
+ M src/components/FeedLiveNowPreviewBand.css
+ M src/components/FeedLiveNowPreviewBand.tsx
+ M src/components/ForumChannelView.tsx
+ M src/components/FriendsView.tsx
+ M src/components/HelpCenterView.tsx
+ M src/components/KeyboardShortcutsSection.css
+ M src/components/KeyboardShortcutsSection.tsx
+ M src/components/MemberGroup.tsx
+ M src/components/MemberModerationModal.tsx
+ M src/components/MentionFeedMain.css
+ M src/components/MentionFeedMain.tsx
+ M src/components/MentionFeedMessageAlerts.tsx
+ M src/components/MentionRightPanel.tsx
+ M src/components/MessageComposer.tsx
+ M src/components/MessageItem.tsx
+ M src/components/MessageList.tsx
+ M src/components/ProfileView.css
+ M src/components/ProfileView.tsx
+ M src/components/ServerRail.tsx
+ M src/components/SettingsModal.tsx
+ M src/components/StickerMessage.tsx
+ M src/components/StickerPicker.tsx
+ M src/components/ThreadPanel.tsx
+ M src/components/UserMiniCard.tsx
+ M src/components/UserProfilePopover.tsx
+ M src/components/VerifiedAvatarFrame.tsx
+ M src/components/VersionCompatibilityNotice.css
+ M src/components/VersionCompatibilityNotice.tsx
+ M src/components/VoiceRoomView.css
+ M src/components/VoiceRoomView.tsx
+ M src/components/WindowTitleBar.tsx
+ M src/components/audio/AudioFeedCard.tsx
+ M src/components/audio/CommunityAudioView.tsx
+ M src/components/audio/PodcastCommunityShell.tsx
+ M src/components/audio/PodcastEpisodeDetail.tsx
+ M src/components/audio/RadioCommunityShell.tsx
+ M src/components/audio/RadioHostProducerPanel.tsx
+ M src/components/audio/RadioPanel.tsx
+ M src/components/audio/RadioProductionTeamPanel.tsx
+ M src/components/community/CommunityAdminSections.tsx
+ M src/components/community/CommunityInviteManagement.tsx
+ M src/components/community/CommunityMemberRoleAssignment.tsx
+ M src/components/community/CommunityModerationCenter.tsx
+ M src/components/community/CommunitySettingsEditor.tsx
+ M src/components/legal/LegalDocumentModal.tsx
+ M src/components/live/BroadcasterChannelView.tsx
+ M src/components/live/GoLiveWorkspace.tsx
+ M src/components/live/LiveShareCard.tsx
+ M src/components/live/LiveWorkspace.tsx
+ M src/components/live/goLiveModel.ts
+ M src/components/live/liveWorkspace.css
+ M src/components/meeting/MeetingChatPanel.tsx
+ M src/components/meeting/MeetingInfoPanel.tsx
+ M src/components/meeting/MeetingParticipantActionsProvider.tsx
+ M src/components/meeting/MeetingParticipantTile.tsx
+ M src/components/meeting/MeetingPeoplePanel.tsx
+ M src/components/meeting/MeetingScreenShareFocus.css
+ M src/components/meeting/MeetingScreenShareFocus.tsx
+ M src/components/meeting/MeetingSpeakerFocus.tsx
+ M src/components/meeting/MeetingStageAudience.tsx
+ M src/components/meeting/MeetingWaitingRoomHostQueue.tsx
+ M src/components/navigation/GlobalAppSidebar.tsx
+ M src/components/navigation/GlobalCommunitiesNav.tsx
+ M src/components/navigation/GlobalEventsWorkspace.css
+ M src/components/navigation/GlobalNavItem.tsx
+ M src/components/navigation/GlobalSettingsNav.tsx
+ M src/components/navigation/GlobalUserCard.tsx
+ M src/components/navigation/globalNavigation.css
+ M src/components/rootDashboard/RootDashboardApp.tsx
+ M src/components/rootDashboard/components/GlobalFilterBar.tsx
+ M src/components/rootDashboard/modules/AdCreativeReviewPage.tsx
+ M src/components/rootDashboard/modules/AnalyticsPage.tsx
+ M src/components/rootDashboard/modules/CommunitiesPage.tsx
+ M src/components/rootDashboard/modules/ContentPage.tsx
+ M src/components/rootDashboard/modules/MessagingDmSafetyPage.tsx
+ M src/components/rootDashboard/modules/NotificationOpsPage.tsx
+ M src/components/rootDashboard/modules/OverviewPage.tsx
+ M src/components/rootDashboard/modules/PodcastOpsPage.tsx
+ M src/components/rootDashboard/modules/RadioOpsPage.tsx
+ M src/components/rootDashboard/modules/RevenuePage.tsx
+ M src/components/rootDashboard/modules/VoiceOpsPage.tsx
+ M src/components/rootDashboard/modules/index.ts
+ M src/components/rootDashboard/navigation/rootDashboardNav.ts
+ M src/components/rootDashboard/rootDashboard.css
+ M src/components/settings/AccountSummarySection.tsx
+ M src/components/support/HelpSupportWorkspace.tsx
+ M src/components/voice/ScreenSharePickerModal.css
+ M src/components/voice/ScreenSharePickerModal.tsx
+ M src/components/voice/ScreenShareViewer.tsx
+ M src/components/voice/VoiceInvitePicker.tsx
+ M src/components/voice/VoiceRoomChatPanel.tsx
+ M src/components/voice/voice-call-overlays.css
+ M src/config/brandAssets.ts
+ M src/config/brandConfig.ts
+ M src/data/mockProfiles.ts
+ M src/hooks/useDirectTypingBroadcast.ts
+ M src/hooks/useProfileMedia.ts
+ M src/hooks/useSupabaseMessageRealtime.ts
+ M src/hooks/useSupabasePresenceChannel.ts
+ M src/hooks/useSupabaseTypingBroadcast.ts
+ M src/hooks/useVoiceCallInvites.ts
+ M src/main.tsx
+ M src/services/accountDeletionService.ts
+ M src/services/activeVoiceRoomDiscoveryService.ts
+ M src/services/adminOperationsService.ts
+ M src/services/advancedSearchService.ts
+ M src/services/announcementChannelService.ts
+ M src/services/appealService.ts
+ M src/services/attachmentService.ts
+ M src/services/audio/audioDataSource.ts
+ M src/services/audio/audioFeedReadStateService.ts
+ M src/services/audio/audioPlayerService.ts
+ M src/services/audio/podcastCommunityService.ts
+ M src/services/audio/podcastProgressService.ts
+ M src/services/audio/podcastPublishingService.ts
+ M src/services/audio/podcastRealtimeService.ts
+ M src/services/audio/radioCommunityService.ts
+ M src/services/audio/radioCoverService.ts
+ M src/services/audio/radioRealtimeService.ts
+ M src/services/audio/radioScheduleReminderService.ts
+ M src/services/auditLogService.ts
+ M src/services/botCredentialService.ts
+ M src/services/botService.ts
+ M src/services/channelCategoryService.ts
+ M src/services/channelListQuery.ts
+ M src/services/community/communityInviteService.ts
+ M src/services/community/communityMembershipService.ts
+ M src/services/community/communityRoleAssignmentService.ts
+ M src/services/community/communityRoleManagementService.ts
+ M src/services/community/communityStructureService.ts
+ M src/services/community/secretCommunityService.ts
+ M src/services/communityBrandingService.ts
+ M src/services/communityDeleteSafetyService.ts
+ M src/services/communityInsightsService.ts
+ M src/services/communityOwnershipTransferService.ts
+ M src/services/communityRulesService.ts
+ M src/services/customEmojiService.ts
+ M src/services/dataExportService.ts
+ M src/services/dataSourceService.ts
+ M src/services/diagnostics/diagnosticsService.ts
+ M src/services/directMessages/directConversationService.ts
+ M src/services/directMessages/directRealtimeService.ts
+ M src/services/directMessages/directSafetyService.ts
+ M src/services/discoveryModerationService.ts
+ M src/services/eventReminderService.ts
+ M src/services/forumService.ts
+ M src/services/friends/friendPresenceService.ts
+ M src/services/friends/friendRequestService.ts
+ M src/services/live/goLiveService.ts
+ M src/services/livekit/livekitService.ts
+ M src/services/livekit/meetingTokenService.ts
+ M src/services/localizationService.ts
+ M src/services/maintenanceStatusService.ts
+ M src/services/meeting/meetingCaptionService.ts
+ M src/services/meeting/meetingChatContextService.ts
+ M src/services/meeting/meetingControlService.ts
+ M src/services/meeting/meetingHistoryService.ts
+ M src/services/meeting/meetingHostControlService.ts
+ M src/services/meeting/meetingInviteNavigationService.ts
+ M src/services/meeting/meetingLiveKitAdapter.ts
+ M src/services/meeting/meetingParticipantModerationService.ts
+ M src/services/meeting/meetingParticipantReconciliationService.ts
+ M src/services/meeting/meetingRepository.ts
+ M src/services/meeting/meetingRoomAdminService.ts
+ M src/services/meeting/meetingSchedulingService.ts
+ M src/services/meeting/meetingScreenShareLeaseService.ts
+ M src/services/meeting/meetingSignalService.ts
+ M src/services/meeting/meetingStageService.ts
+ M src/services/meeting/meetingWaitingRoomRealtimeService.ts
+ M src/services/meeting/meetingWaitingRoomService.ts
+ M src/services/memberManagementService.ts
+ M src/services/mentionCommentService.ts
+ M src/services/mentions/unifiedContentMentionService.ts
+ M src/services/messageDeleteMutation.ts
+ M src/services/messageEditMutation.ts
+ M src/services/messageListQuery.ts
+ M src/services/navigation/settingsNavigationPolicyService.ts
+ M src/services/networkStatusService.ts
+ M src/services/notificationCenterService.ts
+ M src/services/offlineSyncConflictService.ts
+ M src/services/permissions/communityPermissions.ts
+ M src/services/pollService.ts
+ M src/services/presence/activityPresenceService.ts
+ M src/services/presence/globalPresenceService.ts
+ M src/services/profileActivityService.ts
+ M src/services/profileAvatarService.ts
+ M src/services/profileMedia/profileMediaImage.worker.ts
+ M src/services/profileMedia/profileMediaImageProcessor.ts
+ M src/services/profileMedia/profileMediaRealtimeService.ts
+ M src/services/profileMedia/profileMediaUploadService.ts
+ M src/services/profilePrivacyService.ts
+ M src/services/profileService.ts
+ M src/services/profileVerificationService.ts
+ M src/services/relationshipService.ts
+ M src/services/remoteConfigService.ts
+ M src/services/reportService.ts
+ M src/services/rootDashboard/rootDashboardAccessService.ts
+ M src/services/rootDashboard/rootDashboardMutationService.ts
+ M src/services/rootDashboard/rootDashboardOperationsService.ts
+ M src/services/savedMessageService.ts
+ M src/services/sessionManagementService.ts
+ M src/services/settings/settingsI18n.ts
+ M src/services/settings/settingsI18nTr.ts
+ M src/services/settings/settingsModalEn.ts
+ M src/services/stickerPackService.ts
+ M src/services/storyService.ts
+ M src/services/supabase/directMessageRealtimeService.ts
+ M src/services/supabase/notificationInboxService.ts
+ M src/services/supabase/readStateService.ts
+ M src/services/termsAcceptanceService.ts
+ M src/services/threadService.ts
+ M src/services/userBlockingService.ts
+ M src/services/userSafetyCenterService.ts
+ M src/services/verificationRequestService.ts
+ M src/services/versionCompatibilityService.ts
+ M src/services/voice/incomingCallDesktopToastService.ts
+ M src/services/voice/ringtoneService.ts
+ M src/services/voice/voiceCallInviteService.ts
+ M src/services/voiceModerationService.ts
+ M src/services/webhookService.ts
+ M src/types/adminOperations.ts
+ M src/types/rootDashboardOperations.ts
+ M src/types/voiceDiscovery.ts
+ M src/utils/communityFactory.ts
+ M src/utils/verificationHelpers.ts
+ M src/web/routeMap.ts
+ M supabase/config.toml
+ M supabase/functions/_shared/api-compatibility.ts
+ M supabase/functions/_shared/social-auth-session.ts
+ M supabase/functions/_shared/soft-email-verification.ts
+ M supabase/functions/client-config/index.ts
+ M supabase/functions/epic-auth/index.ts
+ M supabase/functions/livekit-token/index.ts
+ M supabase/functions/release-manifest.json
+ M supabase/functions/steam-auth/index.ts
+ M supabase/templates/change-email.html
+ M supabase/templates/confirm-signup.html
+ M supabase/templates/invite-user.html
+ M supabase/templates/reset-password.html
+ M supabase/tests/rls/mention_feed_access.sql
+ M vite.config.ts
+?? .claude/
+?? .cursor/
+?? .env.web.example
+?? .intelligence-platform-51-100/
+?? .tmp-aikido-batch1.json
+?? .tmp-aikido-settings-scan.json
+?? .tmp-onboarding-schema.sql
+?? .tmp-onboarding-user.sql
+?? .tmp-production-tasks/
+?? .tmp-tasks-723-810/
+?? .tmp-user-delete-schema.sql
+?? .tmp-verify-design/
+?? assets/brand/app-icon-source.png
+?? assets/brand/icons/192x192.png
+?? assets/brand/picom-logo-speed-v1.avif
+?? assets/brand/picom-logo-speed-v1.png
+?? assets/brand/picom-logo-speed-v1.webp
+?? config/test-community-delete-allowlist.json
+?? config/test-community-seed-registry.json
+?? docs/WEB_ARCHITECTURE.md
+?? docs/WEB_DEPLOYMENT.md
+?? docs/WEB_FEATURE_PARITY.md
+?? docs/WEB_QA_REPORT.md
+?? docs/WEB_SECURITY_AUDIT.md
+?? docs/account-center-accessibility-audit.md
+?? docs/account-center-architecture.md
+?? docs/account-center-auth-flow.md
+?? docs/account-center-auth-flows.md
+?? docs/account-center-dark-theme.md
+?? docs/account-center-database-schema.md
+?? docs/account-center-email-system.md
+?? docs/account-center-email-verification.md
+?? docs/account-center-light-theme.md
+?? docs/account-center-manus-reference-analysis.md
+?? docs/account-center-production-readiness.md
+?? docs/account-center-public-auth-deployment.md
+?? docs/account-center-responsive-design.md
+?? docs/account-center-rls-policies.md
+?? docs/account-center-rls.md
+?? docs/account-center-security-model.md
+?? docs/account-center-security.md
+?? docs/account-center-smtp-dns-configuration.md
+?? docs/account-center-storage.md
+?? docs/account-center-supabase-configuration.md
+?? docs/account-center-test-report.md
+?? docs/account-center-theme-system.md
+?? docs/account-center-ui-implementation-report.md
+?? docs/account-center-verification-system.md
+?? docs/account-center-visual-regression-report.md
+?? docs/audit/auth-e2e-test-report.md
+?? docs/audit/auth-email-connections-production-gate.md
+?? docs/audit/auth-picom-gg-brand-domain-gate.md
+?? docs/audit/auth-picom-gg-custom-domain-gate.md
+?? docs/audit/auth-production-readiness.md
+?? docs/audit/auth-supabase-connection-audit.md
+?? docs/audit/desktop-email-verification-test-report.md
+?? docs/audit/evidence/auth-picom-gg-brand-2026-08-01T16-43-31/
+?? docs/audit/evidence/feed-closure-static-20260802-111533.log.codes.json
+?? docs/audit/evidence/feed-closure-static2-20260802-112531.log.json
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-11-59/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-20-02/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-21-46/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-25-47/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-37-28/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-44-03/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-46-15/interactive/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T12-55-02/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T13-03-15/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T13-07-05/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T19-59-23/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T20-04-02/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T20-20-56/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T20-29-51/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T20-36-13/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T20-39-37/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T20-43-45/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T20-53-06/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T21-19-25/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T21-35-12/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T21-57-44/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T22-07-58/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T22-15-32/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T22-22-48/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T22-35-39/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T22-48-08/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T23-01-07/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T23-12-08/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T23-21-46/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-02T23-33-39/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-03T00-13-47/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-03T00-21-15/
+?? docs/audit/evidence/feed-packaged-e2e-2026-08-03T00-27-40/
+?? docs/audit/evidence/feed-packaged-e2e-prep-20260802-113907.log.json
+?? docs/audit/evidence/feed-private-attachment-hosted-2026-08-02T09-16-56-252Z/
+?? docs/audit/evidence/feed-private-attachment-hosted-2026-08-02T09-18-21-858Z/
+?? docs/audit/evidence/feed-private-attachment-hosted-2026-08-02T09-20-51-517Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T02-16-21-835Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T02-17-36-473Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T02-21-59-123Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T02-24-29-461Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T02-26-12-736Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T05-19-45-219Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T05-21-08-536Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T09-23-53-618Z/
+?? docs/audit/evidence/feed-security-hosted-2026-08-02T09-25-07-771Z/
+?? docs/audit/evidence/feed-voice-diagnose-2026-08-02T23-51-29/
+?? docs/audit/evidence/feed-voice-diagnose-2026-08-02T23-54-59/
+?? docs/audit/evidence/feed-voice-diagnose-2026-08-02T23-58-57/
+?? docs/audit/evidence/feed-voice-diagnose-2026-08-03T00-02-42/
+?? docs/audit/evidence/feed-voice-diagnose-2026-08-03T00-04-20/
+?? docs/audit/evidence/feed-voice-diagnose-2026-08-03T00-08-00/
+?? docs/audit/evidence/feed-voice-diagnose-2026-08-03T00-11-44/
+?? docs/audit/evidence/live-now-publisher-staging-closure-2026-08-03T08-56-17/
+?? docs/audit/evidence/publisher-creator-staging-apply-2026-08-03T02-51-23/
+?? docs/audit/evidence/settings-packaged-2026-08-01T18-28-40-010Z/
+?? docs/audit/evidence/settings-packaged-2026-08-01T21-51-09-639Z/
+?? docs/audit/evidence/settings-packaged-2026-08-01T22-30-33-518Z/
+?? docs/audit/evidence/settings-static-suite-2026-08-01.json
+?? docs/audit/evidence/steam-ac-link-2026-08-01T16-51-45-193Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T16-52-42-317Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T16-57-03-197Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-00-14-464Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-04-44-647Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-05-39-208Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-13-30-486Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-26-52-250Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-35-45-831Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-42-05-465Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-51-14-279Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-53-20-650Z/
+?? docs/audit/evidence/steam-ac-link-2026-08-01T17-54-41-979Z/
+?? docs/audit/evidence/steam-ac-link-operator-e2e-run.log.err
+?? docs/audit/evidence/steam-brand-gate-2026-08-01T17-40-24/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T13-30-11-059Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T13-33-34-698Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T13-35-51-510Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T13-46-17-923Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T13-50-37-500Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T14-44-25-218Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T15-44-07-123Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T15-59-50-881Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T16-07-58-238Z/
+?? docs/audit/evidence/steam-epic-packaged-2026-08-01T16-16-34-219Z/
+?? docs/audit/feed-current-state-audit.md
+?? docs/audit/login-session-test-report.md
+?? docs/audit/password-reset-test-report.md
+?? docs/audit/rls-security-audit.md
+?? docs/audit/signup-auto-login-test-report.md
+?? docs/audit/smtp-email-delivery-test-report.md
+?? docs/audit/soft-email-verification-test-report.md
+?? docs/audit/sql-migration-audit.md
+?? docs/audit/supabase-auth-redirect-allowlist-audit.md
+?? docs/audit/supabase-database-linter-security-hardening.md
+?? docs/audit/supabase-message-send-regression-20260729.md
+?? docs/auth/AUTH_EMAIL_ARCHITECTURE.md
+?? docs/auth/GOOGLE_STAGING_OPERATOR_MANIFEST.md
+?? docs/auth/SUPABASE_DASHBOARD_CONFIG_MANIFEST.md
+?? docs/auth/auth-bug-audit.md
+?? docs/auth/desktop-auth-test.md
+?? docs/auth/social-auth-security-hardening.md
+?? docs/auth/sql-and-rls-audit.md
+?? docs/auth/user-facing-domain-architecture.md
+?? docs/companion/
+?? docs/desktop-auth-simplification.md
+?? docs/desktop-email-verification-notifications.md
+?? docs/desktop-web-account-links.md
+?? docs/email/CLAUDE_DESIGN_PROMPT_VERIFY_EMAIL_BRIDGE.md
+?? docs/email/CONFIRM_SIGNUP_TEMPLATE.md
+?? docs/email/VERIFY_EMAIL_BRIDGE.md
+?? docs/email/design/
+?? docs/email/picom-mailbox-routing-and-live-status.md
+?? docs/email/templates/
+?? docs/events/
+?? docs/live/
+?? docs/login-implementation.md
+?? docs/marketing/
+?? docs/operations/
+?? docs/performance/evidence/
+?? docs/picom-public-origins.md
+?? docs/publisher-creator/
+?? docs/screen-share/
+?? docs/smtp-configuration.md
+?? docs/soft-email-verification-architecture.md
+?? docs/soft-email-verification-database.md
+?? docs/soft-email-verification-edge-functions.md
+?? docs/soft-email-verification-production-readiness.md
+?? docs/soft-email-verification-security.md
+?? docs/soft-email-verification-test-report.md
+?? docs/supabase-auth-configuration.md
+?? docs/supabase-confirm-email-migration.md
+?? docs/support-center-architecture.md
+?? docs/support-center-security.md
+?? docs/support-ticket-system.md
+?? docs/task-checkpoints/task-auth-email-live-smtp-evidence.md
+?? docs/task-checkpoints/task-auth-email-social-security-completion.md
+?? docs/task-checkpoints/task-events-bookmarks-production.md
+?? docs/update/production-auto-update.md
+?? docs/verification-email-system.md
+?? docs/web-account-production-readiness.md
+?? docs/web-account-test-report.md
+?? docs/web-auth-architecture.md
+?? electron-build-out.txt
+?? iconix.svg
+?? index-a_AW6HTm.js
+?? index.account.html
+?? index.support.html
+?? infra/auth-gateway/
+?? infra/email/picom-event-reminder-worker.service
+?? infra/nginx/
+?? public/favicon.ico
+?? public/manifest.webmanifest
+?? relbuild/
+?? release-brand-candidate/
+?? release-brand-refresh/
+?? release-memory-audit/
+?? release-server-20260719-2025/
+?? release-update-20260719-225612/
+?? release-update-20260719-225850/
+?? scripts/.tmp-aikido-b0-meta.txt
+?? scripts/.tmp-aikido-b0.json
+?? scripts/.tmp-aikido-b1-meta.txt
+?? scripts/.tmp-aikido-b1.json
+?? scripts/.tmp-aikido-b2-meta.txt
+?? scripts/.tmp-aikido-b2.json
+?? scripts/.tmp-aikido-b3-meta.txt
+?? scripts/.tmp-aikido-b3.json
+?? scripts/.tmp-aikido-batch-0-line.json
+?? scripts/.tmp-aikido-batch-0.json
+?? scripts/.tmp-aikido-batch-1.json
+?? scripts/.tmp-aikido-batch-2.json
+?? scripts/.tmp-aikido-batch-3.json
+?? scripts/.tmp-aikido-call-args.json
+?? scripts/.tmp-aikido-call-ub.js
+?? scripts/.tmp-aikido-core.json
+?? scripts/.tmp-aikido-mini.json
+?? scripts/.tmp-aikido-one-0.json
+?? scripts/.tmp-aikido-one-1.json
+?? scripts/.tmp-aikido-one-10.json
+?? scripts/.tmp-aikido-one-11.json
+?? scripts/.tmp-aikido-one-12.json
+?? scripts/.tmp-aikido-one-13.json
+?? scripts/.tmp-aikido-one-14.json
+?? scripts/.tmp-aikido-one-15.json
+?? scripts/.tmp-aikido-one-16.json
+?? scripts/.tmp-aikido-one-2.json
+?? scripts/.tmp-aikido-one-3.json
+?? scripts/.tmp-aikido-one-4.json
+?? scripts/.tmp-aikido-one-5.json
+?? scripts/.tmp-aikido-one-6.json
+?? scripts/.tmp-aikido-one-7.json
+?? scripts/.tmp-aikido-one-8.json
+?? scripts/.tmp-aikido-one-9.json
+?? scripts/.tmp-aikido-tracked.json
+?? scripts/.tmp-aikido-untracked-a.json
+?? scripts/.tmp-aikido-untracked-b.json
+?? scripts/.tmp-aikido-watch-batch1.json
+?? scripts/.tmp-check-supabase-host.mjs
+?? scripts/.tmp-inspect-asar.cjs
+?? scripts/account-center-auth-public-contract.mjs
+?? scripts/account-center-rls-smoke.mjs
+?? scripts/admin-send-apology-password-reset.mjs
+?? scripts/apply-new-app-icon.py
+?? scripts/broadcaster-channel-hosted-rls.mjs
+?? scripts/broadcaster-channel-model.test.ts
+?? scripts/broadcaster-channel-packaged-e2e.mjs
+?? scripts/broadcaster-channel-production-gate.mjs
+?? scripts/build-web.mjs
+?? scripts/checkov-local-scan.mjs
+?? scripts/companion-mode-contract-test.mjs
+?? scripts/confirm-email-off-hosted-probe.mjs
+?? scripts/creator-studio-hosted-rls-matrix.mjs
+?? scripts/creator-studio-model.test.ts
+?? scripts/delete-test-communities-unit.mjs
+?? scripts/delete-test-communities.mjs
+?? scripts/delete-test-communities.ts
+?? scripts/email-brand-domain-policy.test.mjs
+?? scripts/email-brand-preview.mjs
+?? scripts/email-multi-sender-health.mjs
+?? scripts/email-multi-sender-mailbox-e2e.mjs
+?? scripts/email-multi-sender-mailbox-imap-e2e.py
+?? scripts/email-preview.mjs
+?? scripts/email-sender-routing-unit.mjs
+?? scripts/email-test-send.mjs
+?? scripts/email-worker-unit-test.mjs
+?? scripts/epic-portal-readiness-probe.mjs
+?? scripts/events-hosted-phase1-gates.mjs
+?? scripts/events-production-smoke.mjs
+?? scripts/feed-packaged-interactive-e2e.mjs
+?? scripts/feed-packaged-leak-detector-regression.mjs
+?? scripts/feed-packaged-livekit-token-diagnose.mjs
+?? scripts/feed-packaged-seed-probe-diagnose.mjs
+?? scripts/feed-packaged-voice-join-diagnose.mjs
+?? scripts/fixtures/
+?? scripts/generate-auth-bridges.mjs
+?? scripts/go-live-hosted-rls-matrix.mjs
+?? scripts/go-live-model.test.ts
+?? scripts/go-live-packaged-interactive-smoke.mjs
+?? scripts/go-live-preview-model.test.ts
+?? scripts/go-live-staging-e2e.mjs
+?? scripts/go-live-viewer-only-harness.cjs
+?? scripts/google-provider-config-readback.mjs
+?? scripts/lib/feed-packaged-e2e/
+?? scripts/lib/testCommunityDelete.mjs
+?? scripts/live-broadcast-fanout-prefs.test.ts
+?? scripts/live-discovery-model.test.ts
+?? scripts/live-now-cta-state.test.mjs
+?? scripts/live-now-cta-state.test.ts
+?? scripts/live-now-electron-harness.cjs
+?? scripts/live-now-eligibility.test.mjs
+?? scripts/live-now-i18n-parity.test.mjs
+?? scripts/live-now-staging-e2e.mjs
+?? scripts/live-screen-share-scoring.test.ts
+?? scripts/live-watch-broadcaster-stayalive-harness.cjs
+?? scripts/live-watch-hosted-rls-matrix.mjs
+?? scripts/live-watch-model.test.ts
+?? scripts/live-watch-packaged-interactive-smoke.mjs
+?? scripts/live-watch-route.test.ts
+?? scripts/live-watch-visual-smoke.html
+?? scripts/login-method-guards-unit.mjs
+?? scripts/message-send-observability-unit.mts
+?? scripts/onboarding-finish-production-unit.mjs
+?? scripts/performance/
+?? scripts/profile-avatar-cross-surface-smoke.mjs
+?? scripts/profile-identity-cross-surface-smoke.mjs
+?? scripts/provider-collision-takeover-suite.mjs
+?? scripts/publish-desktop-release-0.1.1-beta.10.sh
+?? scripts/publisher-creator-jwt-smoke.mjs
+?? scripts/publisher-creator-staging-smoke.mjs
+?? scripts/publisher-eligibility-sql-smoke.sql
+?? scripts/publisher-eligibility-thresholds.test.mjs
+?? scripts/publisher-evidence-secret-scan.mjs
+?? scripts/push-auth-email-templates.mjs
+?? scripts/root-dashboard-hosted-deploy.mjs
+?? scripts/root-dashboard-users-production-smoke.mjs
+?? scripts/set-auth-redirect-allowlist.mjs
+?? scripts/steam-account-center-link-operator-e2e.mjs
+?? scripts/steam-epic-hosted-live-gate.mjs
+?? scripts/steam-epic-packaged-operator-e2e.mjs
+?? scripts/steam-openid-brand-policy.test.mjs
+?? scripts/steam-provider-security-mailbox-imap.py
+?? scripts/supabase-auth-connections-rls-hosted.mjs
+?? scripts/supabase-live-moderator-rls-hosted.mjs
+?? scripts/supabase-message-send-regression-hosted.mjs
+?? scripts/supabase-security-advisor-hosted-smoke.mjs
+?? scripts/web-production-smoke-test.mjs
+?? scripts/welcome-email-unit.mjs
+?? scripts/with-supabase-cli-token.ps1
+?? services/auth-gateway/
+?? services/email-worker/brandAuthTemplates.mjs
+?? services/email-worker/emailBrandDomain.mjs
+?? services/email-worker/errors.mjs
+?? services/email-worker/processMessage.mjs
+?? services/email-worker/welcomeTemplate.mjs
+?? services/event-reminder-worker/
+?? sites/
+?? smoke-out.txt
+?? src/components/CreateChannelModal.css
+?? src/components/FeedRightActivityRail.css
+?? src/components/FeedRightActivityRail.tsx
+?? src/components/UpdateNotification.css
+?? src/components/UpdateNotification.tsx
+?? src/components/WindowTitleBar.css
+?? src/components/publisher/
+?? src/components/rootDashboard/modules/PublisherCreatorReviewPage.tsx
+?? src/components/support/HelpSupportWorkspace.css
+?? src/hooks/useCommunityVerification.ts
+?? src/services/community/communityVerificationService.ts
+?? src/services/live/publisherLiveNowService.ts
+?? src/services/localization/
+?? src/services/publisher/
+?? src/services/rootDashboard/rootDashboardUserService.ts
+?? src/services/screenShare/
+?? src/support/
+?? src/types/rootDashboardUsers.ts
+?? supabase/functions/_shared/account-center-url.ts
+?? supabase/functions/admin-user-actions/
+?? supabase/functions/auth-reset-bridge/
+?? supabase/functions/create-message-attachment-upload/
+?? supabase/functions/get-email-verification-status/
+?? supabase/functions/scan-message-attachment/
+?? supabase/functions/verify-email-address/
+?? supabase/migrations/20260719033000_profile_avatar_cross_surface_visibility.sql
+?? supabase/migrations/20260719034000_profile_username_cross_surface_consistency.sql
+?? supabase/migrations/20260719035000_profile_verification_cross_surface_realtime.sql
+?? supabase/migrations/20260719036000_community_verification_cross_surface_realtime.sql
+?? supabase/migrations/20260719037000_followed_content_stories_rpc_repair.sql
+?? supabase/migrations/20260719038000_dm_call_ring_window_extend.sql
+?? supabase/migrations/20260719039000_dm_call_timeline_invitee_visibility.sql
+?? supabase/migrations/20260719040000_dm_call_timeline_user_hide.sql
+?? supabase/migrations/20260719210000_dm_attachment_media_upload_fix.sql
+?? supabase/migrations/20260719233000_community_attachment_upload_policy_fix.sql
+?? supabase/migrations/20260719235500_discovery_community_banners.sql
+?? supabase/migrations/20260720211500_companion_dm_media_contract.sql
+?? supabase/migrations/20260720212500_companion_dm_attachment_body_compatibility.sql
+?? supabase/migrations/20260720220000_social_auth_external_identity_security.sql
+?? supabase/migrations/20260723090000_events_bookmarks_production.sql
+?? supabase/migrations/20260723090100_event_notification_inbox_projection.sql
+?? supabase/migrations/20260723110000_remote_history_placeholder.sql
+?? supabase/migrations/20260723120000_remote_history_placeholder.sql
+?? supabase/migrations/20260723130000_remote_history_placeholder.sql
+?? supabase/migrations/20260723140000_remote_history_placeholder.sql
+?? supabase/migrations/20260723150000_remote_history_placeholder.sql
+?? supabase/migrations/20260723160000_remote_history_placeholder.sql
+?? supabase/migrations/20260723170000_remote_history_placeholder.sql
+?? supabase/migrations/20260723180000_remote_history_placeholder.sql
+?? supabase/migrations/20260725143000_dm_shared_media_signed_url_fix.sql
+?? supabase/migrations/20260725190000_search_discoverable_profiles.sql
+?? supabase/migrations/20260725210000_discovery_public_directory.sql
+?? supabase/migrations/20260725213000_reload_postgrest_schema.sql
+?? supabase/migrations/20260726003000_community_members_owner_select.sql
+?? supabase/migrations/20260726180000_list_direct_messages_page.sql
+?? supabase/migrations/20260726200000_root_dashboard_ops_actions.sql
+?? supabase/migrations/20260726211000_admin_users_email_verified.sql
+?? supabase/migrations/20260726235900_account_deletion_participants_fix.sql
+?? supabase/migrations/20260727010000_account_center_foundation.sql
+?? supabase/migrations/20260727020000_support_center_foundation.sql
+?? supabase/migrations/20260727030000_soft_email_verification.sql
+?? supabase/migrations/20260728180000_root_user_management_production.sql
+?? supabase/migrations/20260728190000_onboarding_complete_upsert_hardening.sql
+?? supabase/migrations/20260728200000_admin_hard_delete_test_community.sql
+?? supabase/migrations/20260728210000_welcome_email_on_registration.sql
+?? supabase/migrations/20260728220000_events_production_hardening.sql
+?? supabase/migrations/20260728230000_fix_event_notification_recipient_ambiguity.sql
+?? supabase/migrations/20260728231000_fix_personal_event_manage_rls.sql
+?? supabase/migrations/20260728232000_events_email_enqueue_and_realtime_fix.sql
+?? supabase/migrations/20260728233000_events_email_correlation_and_cancel_view.sql
+?? supabase/migrations/20260729100000_email_stale_processing_recovery.sql
+?? supabase/migrations/20260729110000_security_definer_acl_and_event_cover_hardening.sql
+?? supabase/migrations/20260729111000_event_cover_owner_read_policy.sql
+?? supabase/migrations/20260729223000_restore_announcement_channel_send.sql
+?? supabase/migrations/20260729230000_community_live_screen_sessions.sql
+?? supabase/migrations/20260730010000_community_live_screen_interactions.sql
+?? supabase/migrations/20260730220000_get_visible_live_screen_session.sql
+?? supabase/migrations/20260730223000_live_watch_subscribe_only_and_moderation.sql
+?? supabase/migrations/20260730230000_live_watch_moderation_controls_hotfix.sql
+?? supabase/migrations/20260730231000_live_watch_private_channel_visibility.sql
+?? supabase/migrations/20260730232000_live_watch_moderation_case_audit_once.sql
+?? supabase/migrations/20260731080000_go_live_broadcast_start.sql
+?? supabase/migrations/20260731120000_auth_connections_link_unlink.sql
+?? supabase/migrations/20260731190000_creator_studio_production.sql
+?? supabase/migrations/20260731191000_creator_studio_audit_metadata_action.sql
+?? supabase/migrations/20260731192000_creator_studio_unique_viewer_lock.sql
+?? supabase/migrations/20260731193000_live_moderation_force_end_presence_audit.sql
+?? supabase/migrations/20260731200000_broadcaster_channel_page.sql
+?? supabase/migrations/20260731210000_live_broadcast_started_fanout.sql
+?? supabase/migrations/20260731211000_live_broadcast_deep_link_safe.sql
+?? supabase/migrations/20260801150000_registration_sender_policy_product_welcome.sql
+?? supabase/migrations/20260801180000_auth_provider_security_email_templates.sql
+?? supabase/migrations/20260803130000_public_platform_stats.sql
+?? supabase/migrations/20260803140000_publisher_creator_program_core.sql
+?? supabase/migrations/20260803141000_publisher_livekit_broadcast_gate.sql
+?? supabase/migrations/20260803150000_live_now_publisher_discovery.sql
+?? supabase/tests/rls/community_live_screen_sessions.sql
+?? supabase/tests/rls/public_platform_stats.sql
+?? supabase/tests/root_dashboard_users_production.sql
+?? tmp-aikido-auth-scan.json
+?? tmp-fullscreen-bug.mp4
+?? tsc-root-filter.txt
+?? tsc_full_output.txt
+?? tsconfig.probe2.json
+?? typecheck-out.txt
+?? vite.config.account.ts
+?? vite.config.support.ts
+6c922c093022d5738d94ce864339764901cdbf62
+feat/community-rebuild

@@ -1,0 +1,12 @@
+{
+  "name": "@picom/event-reminder-worker",
+  "private": true,
+  "type": "module",
+  "description": "Claims and delivers community event reminders via inbox + email_messages",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  }
+}

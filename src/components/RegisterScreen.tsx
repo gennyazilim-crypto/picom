@@ -1,48 +1,53 @@
 import { useState, type FormEvent } from "react";
-import { isMockMode } from "../config/appConfig";
 import { brandLogoUrl } from "../config/brandAssets";
-import { AppIcon } from "./AppIcon";
-import { ThemeToggle } from "./ThemeToggle";
+import { useTranslation } from "../i18n";
 import { SocialLoginButtons } from "./auth/SocialLoginButtons";
+import { LoginBackgroundAnimation } from "./auth/LoginBackgroundAnimation";
+import { AuthPasswordField } from "./auth/AuthPasswordField";
 import { LegalDocumentModal } from "./legal/LegalDocumentModal";
 import type { LegalDocumentId } from "../data/legalDocuments";
 import { legalConfig } from "../config/legalConfig";
+import type { AuthServiceErrorCode } from "../services/authService";
+import { authErrorI18nKey } from "../services/auth/authErrorMap";
 
 type RegisterScreenProps = {
   theme: "light" | "dark";
   loading: boolean;
   error: string | null;
+  errorCode?: AuthServiceErrorCode | null;
   notice?: string | null;
-  onToggleTheme: () => void;
   onSubmit: (email: string, password: string, displayName: string, acceptedLegalVersion: string) => Promise<void>;
   onSwitchToLogin: () => void;
 };
 
-export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, onSubmit, onSwitchToLogin }: RegisterScreenProps) {
-  const [displayName, setDisplayName] = useState(isMockMode ? "Picom User" : "");
-  const [email, setEmail] = useState(isMockMode ? "new@picom.local" : "");
-  const [password, setPassword] = useState(isMockMode ? "PicomDev123!" : "");
-  const [confirmPassword, setConfirmPassword] = useState(isMockMode ? "PicomDev123!" : "");
+export function RegisterScreen({ theme, loading, error, errorCode = null, notice, onSubmit, onSwitchToLogin }: RegisterScreenProps) {
+  const { t } = useTranslation("auth");
+  const displayError = errorCode ? t(authErrorI18nKey(errorCode)) : error;
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [openLegalDocument, setOpenLegalDocument] = useState<LegalDocumentId | null>(null);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (loading) return;
     setLocalError(null);
 
     if (!acceptedLegal) {
-      setLocalError("Accept the Terms of Service and Privacy Policy to create an account.");
+      setLocalError(t("register.error.legalRequired"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setLocalError("Passwords do not match.");
+      setLocalError(t("register.error.passwordMismatch"));
       return;
     }
 
     if (password.length < 8) {
-      setLocalError("Password must be at least 8 characters.");
+      setLocalError(t("register.error.passwordTooShort", { count: 8 }));
       return;
     }
 
@@ -50,105 +55,89 @@ export function RegisterScreen({ theme, loading, error, notice, onToggleTheme, o
   };
 
   return (
-    <main className="auth-desktop-frame" aria-label="Create Picom account">
-      <section className="auth-hero" aria-hidden="true">
-        <div className="auth-logo-orb auth-logo-orb--brand">
-          <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
-        </div>
-        <p className="eyebrow">Create workspace access</p>
-        <h1>Start your Picom desktop account.</h1>
-        <p>
-          Register with email and password for the Supabase-backed MVP. The desktop shell stays compact, polished,
-          and ready for communities, channels, and realtime chat.
-        </p>
-        <div className="auth-feature-list">
-          <span><AppIcon name="user" size="sm" /> Profile</span>
-          <span><AppIcon name="lock" size="sm" /> RLS-ready</span>
-          <span><AppIcon name="bell" size="sm" /> Notifications later</span>
-        </div>
-      </section>
+    <main className="auth-desktop-frame auth-desktop-frame--compact" aria-label={t("register.frameAria")}>
+      <LoginBackgroundAnimation theme={theme} />
 
-      <form className="auth-card" onSubmit={submit}>
-        <div className="auth-card-header">
+      <form className="auth-card auth-card--elevated" onSubmit={submit}>
+        <div className="auth-card-brand">
+          <img className="picom-brand-logo" src={brandLogoUrl} alt="" />
           <div>
-            <p className="eyebrow">New account</p>
-            <h2>Register</h2>
+            <h2>{t("register.title")}</h2>
+            <p className="auth-card-subtitle">{t("register.subtitle")}</p>
           </div>
-          <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} compact />
         </div>
 
         <label className="auth-field">
-          <span>Display name</span>
+          <span>{t("field.displayName")}</span>
           <input
             type="text"
             autoComplete="name"
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
-            placeholder="Your display name"
+            placeholder={t("field.displayName.placeholder")}
             required
+            disabled={loading}
           />
         </label>
 
         <label className="auth-field">
-          <span>Email</span>
+          <span>{t("field.email")}</span>
           <input
             type="email"
             autoComplete="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@company.com"
+            placeholder={t("field.email.placeholder")}
             required
+            disabled={loading}
           />
         </label>
 
-        <label className="auth-field">
-          <span>Password</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Create a password"
-            required
-          />
-        </label>
+        <AuthPasswordField
+          label={t("field.password")}
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          placeholder={t("field.newPassword.placeholder")}
+          required
+          disabled={loading}
+        />
 
-        <label className="auth-field">
-          <span>Confirm password</span>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Confirm your password"
-            required
-          />
-        </label>
+        <AuthPasswordField
+          label={t("field.confirmPassword")}
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          autoComplete="new-password"
+          placeholder={t("field.confirmPassword.placeholder")}
+          required
+          disabled={loading}
+        />
 
         <label className="legal-acceptance-row">
-          <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} required />
-          <span>I agree to the <button type="button" onClick={() => setOpenLegalDocument("terms")}>Terms of Service</button> and <button type="button" onClick={() => setOpenLegalDocument("privacy")}>Privacy Policy</button>.</span>
+          <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} required disabled={loading} />
+          <span>
+            {t("register.legal.agreePrefix")}{" "}
+            <button type="button" onClick={() => setOpenLegalDocument("terms")}>{t("legal.link.terms")}</button>
+            {t("register.legal.agreeSeparator")}{" "}
+            <button type="button" onClick={() => setOpenLegalDocument("privacy")}>{t("legal.link.privacy")}</button>
+            {t("register.legal.agreeSuffix")}
+          </span>
         </label>
-        <p className="auth-note">Acceptance version {legalConfig.currentVersion} and its server timestamp are recorded with your profile.</p>
 
-        {localError || error ? <div className="auth-error" role="alert">{localError ?? error}</div> : null}
-        {!localError && !error && notice ? <div className="auth-success" role="status">{notice}</div> : null}
-
-        <div className="auth-divider"><span>or continue with</span></div>
-        <SocialLoginButtons disabled={loading || !acceptedLegal} />
+        {localError || displayError ? <div className="auth-error" role="alert">{localError ?? displayError}</div> : null}
+        {!localError && !displayError && notice ? <div className="auth-success" role="status">{notice}</div> : null}
 
         <button className="auth-submit" type="submit" disabled={loading || !acceptedLegal}>
-          {loading ? "Creating account..." : "Create account"}
-          <AppIcon name="send" size="sm" />
+          {loading ? t("register.submitting") : t("register.submit")}
         </button>
 
-        <button className="auth-secondary-link" type="button" onClick={onSwitchToLogin}>
-          Already have an account? Sign in
-        </button>
+        <SocialLoginButtons disabled={loading || !acceptedLegal} layout="stacked" />
 
-        <p className="auth-note">
-          Registration uses the centralized auth wrapper. Passwords are passed to Supabase Auth only and are not logged.
-        </p>
+        <div className="auth-card-footer">
+          <button className="auth-text-link auth-text-link--strong" type="button" disabled={loading} onClick={onSwitchToLogin}>
+            {t("register.haveAccount")}
+          </button>
+        </div>
       </form>
       {openLegalDocument ? <LegalDocumentModal documentId={openLegalDocument} onClose={() => setOpenLegalDocument(null)} /> : null}
     </main>

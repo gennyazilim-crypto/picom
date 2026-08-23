@@ -1,0 +1,18 @@
+﻿PICOM FEED PACKAGED E2E CLOSURE SNAPSHOT
+timestamp=2026-08-02T11:55:36.8870529+02:00
+branch=feat/community-rebuild
+HEAD=b0f9a3a8265c9be76947b380633cac2742fe8cd8
+HEAD_SHORT=b0f9a3a8
+clean_worktree=C:\Users\ACER\Desktop\picom-feed-production-wt
+clean_HEAD=ffcb7bf6
+clean_status_lines=0
+dirty_status_lines=701
+typecheck_clean_exit=2
+typecheck_clean_errors=94
+typecheck_dirty_exit=0
+package_win_dir_staging=NOT_RUN
+packaged_e2e=NOT_RUN
+browser_fps=NOT_RUN
+electron_memory=NOT_RUN
+production_migrations_applied=false
+blocker=Clean committed tip typecheck FAIL (94). Dirty main typecheck PASS but packaging from dirty tree forbidden; bulk src WIP absorb blocked by review policy.

@@ -1,0 +1,5 @@
+DIRTY_TREE_AT_TASK_START=already_dirty
+NOTE=Repository was already heavily dirty from TASK 02–13C.1. This task did not reset, stash, clean, checkout unrelated, stage, commit, or push.
+AFTER_SHORT_STATUS_COUNT=472
+AFTER_FILE=git-status-after.txt
+HEAD=af6babcf060da058fb295b7b37c27f75ca5c6f25

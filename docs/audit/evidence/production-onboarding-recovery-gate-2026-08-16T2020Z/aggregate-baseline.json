@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-08-16T2020Z",
+  "project": "cqnsetsmcduraryemhbi",
+  "aggregates_only": true,
+  "total_profiles": 23,
+  "onboarding_completed_true": 0,
+  "onboarding_completed_false": 23,
+  "onboarding_completed_null": 0,
+  "previous_13c1_baseline": {
+    "captured_at": "2026-08-16T2015Z",
+    "total_profiles": 23,
+    "onboarding_completed_true": 0,
+    "onboarding_completed_false": 23,
+    "onboarding_completed_null": 0
+  },
+  "delta_since_13c1": "none"
+}

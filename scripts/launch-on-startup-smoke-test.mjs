@@ -43,8 +43,8 @@ const checkpoint = read(files.checkpoint);
   "toggleLaunchOnStartup()",
   "setStartMinimizedToTray(enabled: boolean)",
   "refreshNativeState()",
-  "window.picomDesktop?.startup",
-  "localStorage.setItem(startupSettingsKey",
+  "desktopBehaviorService",
+  "setLaunchAtStartup",
 ].forEach((needle) => assertIncludes(service, needle, `startup service ${needle}`));
 
 [
@@ -52,8 +52,8 @@ const checkpoint = read(files.checkpoint);
   "const [startupSettings, setStartupSettings]",
   "updateLaunchOnStartup",
   "updateStartMinimizedToTray",
-  "Launch Picom on startup",
-  "Start minimized to tray placeholder",
+  "advanced.launchPicom.label",
+  "advanced.startMinimized.label",
 ].forEach((needle) => assertIncludes(settings, needle, `settings startup UI ${needle}`));
 
 [
@@ -82,5 +82,8 @@ const forbiddenRuntimePatterns = [
 [service, settings].forEach((text) => {
   forbiddenRuntimePatterns.forEach((pattern) => assertNotIncludes(text, pattern, "direct startup OS registration in renderer/service"));
 });
+
+assertNotIncludes(service, "localStorage", "local startup preference source");
+assertNotIncludes(service, "placeholder", "placeholder startup behavior");
 
 console.log("Launch on startup production smoke test passed.");

@@ -1,0 +1,9 @@
+﻿UTC: 2026-08-03T14:45:57.9664681Z
+branch: feat/community-rebuild
+HEAD: c50f51a88c5dd841cb8c71304e6653d0b3ef6607
+candidate_final: 448736697acf44e36887740b613c1dab16df2c27
+candidate: 76d0439bf1eda8e5a208b26452b390f8690244b2
+ancestor_448_of_HEAD: yes
+production_ref_expected: cqnsetsmcduraryemhbi
+linked_before: ufmtvqtsklqsmqxefbbs
+unrelated_dirty: MentionFeedMain.css (exclude from prod commit)

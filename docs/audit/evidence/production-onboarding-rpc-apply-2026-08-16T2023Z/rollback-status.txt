@@ -1,0 +1,6 @@
+PRODUCTION ROLLBACK:
+NOT_REQUIRED
+
+emergency_script=docs/audit/evidence/production-onboarding-recovery-gate-2026-08-16T2020Z/emergency-rollback.sql
+executed=false
+columns_dropped=false

@@ -218,6 +218,50 @@
       "properties": {
         "resultBucket": { "type": "string", "required": false, "pii": "none" }
       }
+    },
+    {
+      "name": "havooc_support_note_create",
+      "domain": "engagement",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "A HAVOOC support note was created. Note body is Forbidden and never collected.",
+      "properties": {
+        "projectKey": { "type": "string", "required": false, "pii": "none", "note": "canonical project slug e.g. havooc" }
+      }
+    },
+    {
+      "name": "havooc_support_note_edit",
+      "domain": "engagement",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "A HAVOOC support note was edited. Note body is Forbidden and never collected.",
+      "properties": {
+        "projectKey": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "havooc_support_note_delete",
+      "domain": "engagement",
+      "owner": "product",
+      "status": "active",
+      "since": 1,
+      "description": "A HAVOOC support note was deleted. Note body is Forbidden and never collected.",
+      "properties": {
+        "projectKey": { "type": "string", "required": false, "pii": "none" }
+      }
+    },
+    {
+      "name": "havooc_support_note_report",
+      "domain": "trust-safety",
+      "owner": "trust-safety",
+      "status": "active",
+      "since": 1,
+      "description": "A HAVOOC support note was reported. Note body is Forbidden and never collected.",
+      "properties": {
+        "projectKey": { "type": "string", "required": false, "pii": "none" }
+      }
     }
   ],
   "legacyMap": [

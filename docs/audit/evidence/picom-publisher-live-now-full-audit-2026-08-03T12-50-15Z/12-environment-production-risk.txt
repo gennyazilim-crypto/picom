@@ -1,0 +1,9 @@
+﻿SOURCE=local env files + docs/audit/evidence/live-now-production-preflight-2026-08-03T12-03-32Z
+VARIABLE_NAME|PRESENT/MISSING|TARGET_ENVIRONMENT
+VITE_SUPABASE_URL (.env.production)|PRESENT|staging:ufmtvqtsklqsmqxefbbs (BLOCKER)
+VITE_SUPABASE_URL (.env.local)|PRESENT|staging:ufmtvqtsklqsmqxefbbs
+SUPABASE_PROJECT_REF (.env.production.example)|MISSING_OR_PLACEHOLDER|production-placeholder
+kbdotviopwlcqviggtrc in any .env*|ABSENT|n/a
+PRODUCTION_INFRASTRUCTURE|NOT_CREATED|org list showed only picom-staging + picom-staging-v2
+PRODUCTION_CONFIG_SAFETY|BLOCKED|.env.production aliases staging host ref
+NOTE=Secret values not logged. Host-ref equality only.

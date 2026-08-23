@@ -351,6 +351,91 @@ export const rootDashboardMutationService = {
     });
   },
 
+  rootActivateAdvertiser(
+    access: AdminOperationsAccess,
+    input: Readonly<{ advertiserId: string; publicReasonCode: string; internalReasonCode: string; policyVersion: string; idempotencyKey: string }>,
+  ) {
+    return invokeMutationRpc(access, "root_activate_advertiser_account", {
+      target_account_id: input.advertiserId,
+      public_reason_code: input.publicReasonCode,
+      internal_reason_code: input.internalReasonCode,
+      policy_version: input.policyVersion,
+      idempotency_key: input.idempotencyKey,
+    });
+  },
+
+  rootSuspendAdvertiser(
+    access: AdminOperationsAccess,
+    input: Readonly<{ advertiserId: string; publicReasonCode: string; internalReasonCode: string; policyVersion: string; idempotencyKey: string }>,
+  ) {
+    return invokeMutationRpc(access, "root_suspend_advertiser_account", {
+      target_account_id: input.advertiserId,
+      public_reason_code: input.publicReasonCode,
+      internal_reason_code: input.internalReasonCode,
+      policy_version: input.policyVersion,
+      idempotency_key: input.idempotencyKey,
+    });
+  },
+
+  rootApproveAdCampaign(
+    access: AdminOperationsAccess,
+    input: Readonly<{ campaignId: string; publicReasonCode: string; internalReasonCode: string; policyVersion: string; idempotencyKey: string }>,
+  ) {
+    return invokeMutationRpc(access, "root_approve_ad_campaign", {
+      target_campaign_id: input.campaignId,
+      public_reason_code: input.publicReasonCode,
+      internal_reason_code: input.internalReasonCode,
+      policy_version: input.policyVersion,
+      idempotency_key: input.idempotencyKey,
+    });
+  },
+
+  rootRejectAdCampaign(
+    access: AdminOperationsAccess,
+    input: Readonly<{ campaignId: string; publicReasonCode: string; internalReasonCode: string; policyVersion: string; idempotencyKey: string }>,
+  ) {
+    return invokeMutationRpc(access, "root_reject_ad_campaign", {
+      target_campaign_id: input.campaignId,
+      public_reason_code: input.publicReasonCode,
+      internal_reason_code: input.internalReasonCode,
+      policy_version: input.policyVersion,
+      idempotency_key: input.idempotencyKey,
+    });
+  },
+
+  rootApproveAdCreative(
+    access: AdminOperationsAccess,
+    input: Readonly<{ creativeId: string; snapshotId: string; publicReasonCode: string; internalReasonCode: string; policyVersion: string; idempotencyKey: string }>,
+  ) {
+    return invokeMutationRpc(access, "root_approve_ad_creative", {
+      target_creative_id: input.creativeId,
+      target_snapshot_id: input.snapshotId,
+      public_reason_code: input.publicReasonCode,
+      internal_reason_code: input.internalReasonCode,
+      policy_version: input.policyVersion,
+      idempotency_key: input.idempotencyKey,
+    });
+  },
+
+  rootToggleAdPlacement(
+    access: AdminOperationsAccess,
+    input: Readonly<{ placementKey: string; enabled: boolean }>,
+  ) {
+    return invokeMutationRpc(access, "root_toggle_ad_placement", {
+      target_placement_key: input.placementKey,
+      target_enabled: input.enabled,
+    });
+  },
+
+  rootToggleAdvertisingGlobal(
+    access: AdminOperationsAccess,
+    input: Readonly<{ disabled: boolean }>,
+  ) {
+    return invokeMutationRpc(access, "root_toggle_advertising_global", {
+      target_disabled: input.disabled,
+    });
+  },
+
   async listExportJobs(
     access: AdminOperationsAccess,
   ): Promise<AdminOperationsResult<RootDashboardListPage>> {

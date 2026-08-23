@@ -1,4 +1,3 @@
-import { dataSourceService } from "../dataSourceService";
 import { getSupabaseClient } from "../supabase/supabaseClient";
 import { realtimeChannelNames } from "../supabase/realtimeService";
 
@@ -32,6 +31,8 @@ const tables = [
 ] as const;
 
 let diagnostics = { status: "idle" as FeedRealtimeStatus, lastEventAt: null as string | null, invalidationCount: 0, reconnectCount: 0 };
+let activeUnsubscribe: (() => void) | null = null;
+let activeUserId: string | null = null;
 
 function sourceIdFor(table: string, payload: { new?: unknown; old?: unknown }) {
   const row = ((payload.new && typeof payload.new === "object" ? payload.new : payload.old) ?? {}) as Record<string, unknown>;
@@ -42,15 +43,17 @@ function sourceIdFor(table: string, payload: { new?: unknown; old?: unknown }) {
 
 export const feedRealtimeService = {
   async subscribe(handlers: FeedRealtimeHandlers): Promise<() => void> {
-    if (dataSourceService.getStatus().isMock) {
-      diagnostics = { ...diagnostics, status: "connected" };
-      queueMicrotask(() => handlers.onStatus?.("connected"));
-      return () => { diagnostics = { ...diagnostics, status: "idle" }; };
-    }
     const client = getSupabaseClient();
     if (!client) { handlers.onError?.("Feed realtime is unavailable until Picom reconnects."); return () => undefined; }
     const { data, error } = await client.auth.getUser();
     if (error || !data.user) { handlers.onError?.("Sign in again to restore Feed realtime."); return () => undefined; }
+
+    // Prevent duplicate feed channels from overlapping remounts / user switches.
+    if (activeUnsubscribe) {
+      activeUnsubscribe();
+      activeUnsubscribe = null;
+      activeUserId = null;
+    }
 
     let active = true;
     let connectedOnce = false;
@@ -88,12 +91,19 @@ export const feedRealtimeService = {
       else if (status === "CLOSED") setStatus("disconnected");
     });
 
-    return () => {
+    const unsubscribe = () => {
       active = false;
       if (refreshTimer) clearTimeout(refreshTimer);
       setStatus("idle");
       void client.removeChannel(channel);
+      if (activeUnsubscribe === unsubscribe) {
+        activeUnsubscribe = null;
+        activeUserId = null;
+      }
     };
+    activeUnsubscribe = unsubscribe;
+    activeUserId = data.user.id;
+    return unsubscribe;
   },
   diagnostics() { return { ...diagnostics }; },
 };

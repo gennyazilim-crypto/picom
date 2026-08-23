@@ -1,0 +1,9 @@
+hostname: hwsrv-1333695.hostwindsdns.com
+uptime: up 1 day, 7 hours
+ens3: UP, inet 23.254.166.240/24
+default via 23.254.166.1 dev ens3 proto static
+outbound ping 1.1.1.1: 2/2 received
+getent hosts picom.gg account.picom.gg auth.picom.gg → 23.254.166.240
+SSH: picom-update-server succeeded (BatchMode)
+Provider portal / DDoS / billing pages: not opened this session.
+Behavioral proof that inbound 22/80/443 are not null-routed: all three TCP ports open from workstation.

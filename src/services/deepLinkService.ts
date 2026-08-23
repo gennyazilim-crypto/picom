@@ -5,12 +5,15 @@ export type DeepLinkAction =
   | { type: "podcast"; communityId: string; episodeId: string }
   | { type: "meeting"; communityId: string; channelId?: string; roomId: string; sessionId?: string; messageId?: string; inviteToken?: string }
   | { type: "meetingChat"; communityId: string; channelId: string; roomId: string; sessionId?: string; messageId?: string }
-  | { type: "authCallback"; code?: string; error?: string }
+  | { type: "authCallback"; provider: "google" | "apple" | "steam" | "epic"; state: string; code?: string; exchange?: string; error?: string }
+  | { type: "authOpen" }
   | { type: "sessionContinue"; nonce?: string; error?: string }
   | { type: "passwordRecovery"; code?: string; tokenHash?: string; authType?: string; error?: string }
   | { type: "emailVerification"; code?: string; tokenHash?: string; authType?: string; error?: string }
   | { type: "friends" }
-  | { type: "directMessage"; conversationId: string };
+  | { type: "directMessage"; conversationId: string }
+  | { type: "liveNow"; liveSessionId: string }
+  | { type: "profile"; username: string };
 
 export type DeepLinkParseResult =
   | { ok: true; url: string; action: DeepLinkAction }
@@ -28,9 +31,46 @@ function isSafeSegment(value: string | undefined): value is string {
   return Boolean(value && safeSegmentPattern.test(value));
 }
 
+function parseSocialAuthCallback(raw: string): DeepLinkParseResult {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+  }
+  const allowedKeys = new Set(["code", "exchange", "state", "provider", "error", "error_description"]);
+  const keys = [...parsed.searchParams.keys()];
+  if (keys.some((key) => !allowedKeys.has(key)) || [...new Set(keys)].some((key) => parsed.searchParams.getAll(key).length !== 1)) {
+    return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+  }
+
+  const provider = parsed.searchParams.get("provider");
+  const state = parsed.searchParams.get("state");
+  const code = parsed.searchParams.get("code") ?? undefined;
+  const exchange = parsed.searchParams.get("exchange") ?? undefined;
+  const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
+  if (
+    (provider !== "google" && provider !== "apple" && provider !== "steam" && provider !== "epic")
+    || !state
+    || !/^[A-Za-z0-9_-]{32,128}$/.test(state)
+    || [code, exchange, error].filter(Boolean).length !== 1
+  ) return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+
+  if (code && (provider === "google" || provider === "apple") && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) {
+    return { ok: true, url: raw, action: { type: "authCallback", provider, state, code } };
+  }
+  if (exchange && (provider === "steam" || provider === "epic") && /^[A-Za-z0-9_-]{32,128}$/.test(exchange)) {
+    return { ok: true, url: raw, action: { type: "authCallback", provider, state, exchange } };
+  }
+  if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) {
+    return { ok: true, url: raw, action: { type: "authCallback", provider, state, error } };
+  }
+  return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+}
+
 function parseAuthQueryAction(
   raw: string,
-  kind: "authCallback" | "passwordRecovery" | "emailVerification",
+  kind: "passwordRecovery" | "emailVerification",
   allowedKeys: ReadonlySet<string>,
   allowedType?: ReadonlySet<string>,
 ): DeepLinkParseResult {
@@ -41,7 +81,7 @@ function parseAuthQueryAction(
     return { ok: false, reason: "INVALID_DEEP_LINK" };
   }
   if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) {
-    return { ok: false, reason: kind === "authCallback" ? "INVALID_AUTH_CALLBACK" : kind === "passwordRecovery" ? "INVALID_PASSWORD_RECOVERY_LINK" : "INVALID_EMAIL_VERIFICATION_LINK" };
+    return { ok: false, reason: kind === "passwordRecovery" ? "INVALID_PASSWORD_RECOVERY_LINK" : "INVALID_EMAIL_VERIFICATION_LINK" };
   }
   if (allowedType) {
     const type = parsed.searchParams.get("type");
@@ -54,19 +94,23 @@ function parseAuthQueryAction(
   const tokenHash = parsed.searchParams.get("token_hash") ?? undefined;
   const authType = parsed.searchParams.get("type") ?? undefined;
   // token_hash (verifyOtp) is prefetch-safe and preferred; fall back to the PKCE code.
-  if (tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash) && kind !== "authCallback") {
+  if (tokenHash && /^[a-zA-Z0-9._~-]{8,1024}$/.test(tokenHash)) {
     return { ok: true, url: raw, action: { type: kind, tokenHash, authType } };
   }
   if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: raw, action: { type: kind, code } };
   if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: kind, error } };
-  return { ok: false, reason: kind === "authCallback" ? "INVALID_AUTH_CALLBACK" : kind === "passwordRecovery" ? "INVALID_PASSWORD_RECOVERY_LINK" : "INVALID_EMAIL_VERIFICATION_LINK" };
+  return { ok: false, reason: kind === "passwordRecovery" ? "INVALID_PASSWORD_RECOVERY_LINK" : "INVALID_EMAIL_VERIFICATION_LINK" };
 }
 
 /** Browser SPA auth redirects: /auth/callback|reset-password|verify-email?code=… */
 function parseBrowserAuthLink(parsed: URL, raw: string): DeepLinkParseResult {
+  if (parsed.username || parsed.password) return { ok: false, reason: "UNSUPPORTED_DEEP_LINK_PROTOCOL" };
   const path = parsed.pathname.replace(/\/+$/, "") || "/";
   if (path === "/auth/callback") {
-    return parseAuthQueryAction(raw, "authCallback", new Set(["code", "error", "error_description"]));
+    if (parsed.protocol !== "https:" || parsed.hostname.toLowerCase() !== "auth.picom.gg") {
+      return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+    }
+    return parseSocialAuthCallback(raw);
   }
   if (path === "/auth/reset-password") {
     return parseAuthQueryAction(raw, "passwordRecovery", new Set(["code", "token_hash", "type", "error", "error_description"]), new Set(["recovery"]));
@@ -129,18 +173,19 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
     }
     return { ok: false, reason: "UNSUPPORTED_DEEP_LINK_PROTOCOL" };
   }
+  if (parsed.username || parsed.password) {
+    return { ok: false, reason: "INVALID_DEEP_LINK" };
+  }
 
   const route = parsed.hostname;
   const segments = parsed.pathname.split("/").filter(Boolean);
 
   if (route === "auth" && segments.length === 1 && segments[0] === "callback" && !parsed.hash) {
-    const allowedKeys = new Set(["code", "error", "error_description"]);
-    if ([...parsed.searchParams.keys()].some((key) => !allowedKeys.has(key))) return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
-    const code = parsed.searchParams.get("code") ?? undefined;
-    const error = parsed.searchParams.get("error_description") ?? parsed.searchParams.get("error") ?? undefined;
-    if (code && /^[a-zA-Z0-9._~-]{8,1024}$/.test(code)) return { ok: true, url: raw, action: { type: "authCallback", code } };
-    if (error && error.length <= 240 && !/[\u0000-\u001f]/.test(error)) return { ok: true, url: raw, action: { type: "authCallback", error } };
-    return { ok: false, reason: "INVALID_AUTH_CALLBACK" };
+    return parseSocialAuthCallback(raw);
+  }
+
+  if (route === "auth" && segments.length === 1 && segments[0] === "open" && !parsed.hash && !parsed.search) {
+    return { ok: true, url: "picom://auth/open", action: { type: "authOpen" } };
   }
 
   if (route === "auth" && segments.length === 1 && segments[0] === "session" && !parsed.hash) {
@@ -192,6 +237,22 @@ export function parseDeepLink(value: string): DeepLinkParseResult {
 
   if (route === "community") {
     return parseCommunityLink(segments);
+  }
+
+  if (route === "live-now" && segments.length === 1 && isSafeSegment(segments[0]) && !parsed.search && !parsed.hash) {
+    return {
+      ok: true,
+      url: `picom://live-now/${segments[0]}`,
+      action: { type: "liveNow", liveSessionId: segments[0] },
+    };
+  }
+
+  if (route === "profile" && segments.length === 1 && isSafeSegment(segments[0]) && !parsed.search && !parsed.hash) {
+    return {
+      ok: true,
+      url: `picom://profile/${segments[0]}`,
+      action: { type: "profile", username: segments[0].toLowerCase() },
+    };
   }
 
   if (route === "radio" && segments.length === 3 && segments[1] === "session" && isSafeSegment(segments[0]) && isSafeSegment(segments[2]) && !parsed.search && !parsed.hash) {

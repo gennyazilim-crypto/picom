@@ -105,6 +105,12 @@ verify_jwt = true
 [functions.validate-file]
 verify_jwt = true
 
+[functions.create-message-attachment-upload]
+verify_jwt = true
+
+[functions.complete-message-attachment-scan]
+verify_jwt = true
+
 [functions.webhook-message]
 verify_jwt = false
 
@@ -130,6 +136,33 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.secret-community-verification]
+verify_jwt = true
+
+[functions.business-document-upload-session]
+verify_jwt = true
+
+[functions.business-domain-verification-check]
+verify_jwt = true
+
+[functions.business-product-media-upload-session]
+verify_jwt = true
+
+[functions.billing-checkout]
+verify_jwt = true
+
+[functions.billing-portal]
+verify_jwt = true
+
+[functions.billing-webhook]
+verify_jwt = false
+
+[functions.verified-payment]
+verify_jwt = true
+
+[functions.iyzico-webhook]
+verify_jwt = false
+
+[functions.verification-account-session]
 verify_jwt = true
 
 [analytics]

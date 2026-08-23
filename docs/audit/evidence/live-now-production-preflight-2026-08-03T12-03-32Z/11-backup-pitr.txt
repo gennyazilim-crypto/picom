@@ -1,0 +1,14 @@
+BACKUP / PITR — NOT VERIFIED
+
+Cannot query Supabase project backup/PITR settings without a verified production project ref.
+
+Required before APPROVED_TO_RUN:
+- last successful backup timestamp
+- PITR enabled + retention
+- operator restore access
+- maintenance window + incident owner
+- forward-fix migration strategy (do not edit applied migration files)
+
+status=BLOCKED (backup/PITR unverified; also production target missing)
+manual_snapshot_required=UNKNOWN
+rollback_strategy=FORWARD_ONLY (policy stated; not executable without target)

@@ -1,0 +1,1 @@
+﻿select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('can_start_picom_live_stream','user_can_broadcast_on_picom_live','can_list_publisher_applications','can_review_publisher_applications','authorize_live_broadcast_livekit') order by 1;
