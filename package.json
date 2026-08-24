@@ -215,6 +215,8 @@
     "verification:badges:smoke": "node scripts/profile-verification-badges-smoke-test.mjs",
     "verification-business:domain:test": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verification-business-domain-contract-test.mjs",
     "verification-business:rls:test": "supabase test db --local supabase/tests/rls/verification_business_platform.sql",
+    "security-invoker-views:contract:test": "node scripts/security-invoker-public-views-contract-test.mjs",
+    "security-invoker-views:rls:test": "supabase test db --local supabase/tests/rls/security_invoker_public_business_views.sql",
     "business:domain:test": "node scripts/business-application-domain-contract-test.mjs",
     "business:storage:test": "node scripts/business-application-storage-contract-test.mjs",
     "business:rls:test": "supabase test db --local supabase/tests/rls/business_application_platform.sql",

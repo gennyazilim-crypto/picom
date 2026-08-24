@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(37);
+select plan(38);
 
 insert into auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, aud, role)
 values
@@ -115,7 +115,8 @@ select throws_like($$ insert into public.account_entitlements(subject_type, subj
 
 select set_config('request.jwt.claim.sub', '72000000-0000-0000-0000-000000000002', true);
 select results_eq($$ select count(*)::bigint from public.verification_cases where subject_id = '72000000-0000-0000-0000-000000000001' $$, array[0::bigint], 'unrelated user cannot read another verification case');
-select results_eq($$ select count(*)::bigint from public.business_profiles where organization_id = '82000000-0000-0000-0000-000000000001' $$, array[0::bigint], 'organization B outsider cannot read organization A editor profile');
+select results_eq($$ select count(*)::bigint from public.business_profiles where organization_id = '82000000-0000-0000-0000-000000000002' $$, array[0::bigint], 'organization B outsider cannot read an unpublished editor profile');
+select throws_ok($$ select legal_name from public.business_profiles where organization_id = '82000000-0000-0000-0000-000000000001' $$, '42501', null, 'organization B outsider cannot read private legal_name of a published profile');
 select results_eq($$ select count(*)::bigint from public.business_products where id = '84000000-0000-0000-0000-000000000002' $$, array[0::bigint], 'unrelated user cannot read a draft product');
 select results_eq($$ select count(*)::bigint from public.advertiser_accounts $$, array[0::bigint], 'non-member cannot obtain advertiser account access');
 select results_eq($$ select count(*)::bigint from public.business_application_owner_views $$, array[0::bigint], 'unrelated user cannot read application owner views');
@@ -161,7 +162,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '72000000-0000-0000-0000-000000000006', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select results_eq($$ select count(*)::bigint from public.business_applications where id = '83000000-0000-0000-0000-000000000001' $$, array[1::bigint], 'root admin can read application review data');
-select results_eq($$ select internal_review_notes from public.business_applications where id = '83000000-0000-0000-0000-000000000001' $$, array['INTERNAL_ONLY_NOTES'::text], 'root admin can read internal application review notes');
+select ok(not has_column_privilege('authenticated', 'public.business_applications', 'internal_review_notes', 'select'), 'internal review notes are not granted to client roles');
 
 select * from finish();
 rollback;
