@@ -1,0 +1,10 @@
+{
+  "PACKAGED_AUTH_BACKEND": "picom-production",
+  "ref": "cqnsetsmcduraryemhbi",
+  "TASK_02_HOSTED_RECONCILIATION": "APPLIED",
+  "PRODUCTION_ONBOARDING_RPC": "CANONICAL_5_ARG",
+  "rpc_oid": 29163,
+  "rpc_args": "target_profile jsonb, target_followed_user_ids uuid[], target_theme text, target_start_choice text, target_invite_code text",
+  "MIGRATION_HISTORY_VERSION_DRIFT": "OPEN_NONBLOCKING_FOR_AUTH_E2E",
+  "schema_changed": false
+}

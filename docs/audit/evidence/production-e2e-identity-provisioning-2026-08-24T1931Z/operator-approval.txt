@@ -1,0 +1,13 @@
+continuation=2026-08-24T1931Z
+operator_message=devam et
+inferred_approval_from_continue=no
+required_phrase=APPROVE_PRODUCTION_E2E_IDENTITY_PROVISIONING
+present_in_operator_message=no
+present_in_process_env=no
+present_in_user_env=no
+present_in_machine_env=no
+PICOM_PROD_E2E_EMAIL_A=unset
+PICOM_PROD_E2E_PASSWORD_A=unset
+PICOM_PROD_E2E_EMAIL_B=unset
+PICOM_PROD_E2E_PASSWORD_B=unset
+decision=STOP_BEFORE_PROVISIONING

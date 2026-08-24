@@ -1,0 +1,3 @@
+PACKAGED_REGISTER: NOT_STARTED
+REASON: OPERATOR APPROVAL MISSING; PICOM_PROD_E2E_* credentials unset
+NEXT: send exact phrase APPROVE_PRODUCTION_E2E_IDENTITY_PROVISIONING and set secure env vars in this shell session

@@ -1,0 +1,9 @@
+{
+  "aliases": ["E2E_USER_A", "E2E_USER_B"],
+  "method": "NONE",
+  "backend_ref": "cqnsetsmcduraryemhbi",
+  "provisioned": false,
+  "legal_acceptance_performed": false,
+  "account_onboarding_performed": false,
+  "secrets_stored": false
+}
