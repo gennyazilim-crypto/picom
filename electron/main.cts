@@ -288,6 +288,11 @@ function isTrustedIpcEvent(event: Electron.IpcMainInvokeEvent): boolean {
   return isTrustedAppUrl(event.sender.getURL());
 }
 
+/** Desktop notification presentation is initiated only by the primary application window. */
+function isTrustedMainWindowIpcEvent(event: Electron.IpcMainInvokeEvent): boolean {
+  return isTrustedIpcEvent(event)
+    && Boolean(mainWindow && !mainWindow.isDestroyed() && BrowserWindow.fromWebContents(event.sender) === mainWindow);
+}
 
 function extractDeepLinkFromArgs(args: string[]): string | null {
   return args.find((arg) => isSafeDeepLink(arg)) ?? null;
