@@ -1,0 +1,2 @@
+FRIEND_ONLINE=NOT_RUN
+REASON=Requires real hosted presence transition and preference/privacy evidence.

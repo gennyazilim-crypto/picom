@@ -1,0 +1,5 @@
+CANONICAL_BRANCH=release/picom-canonical-production
+CANONICAL_HEAD_AFTER=6ae964f64ee05942264eed43592bb072dbf037c8
+REMOTE_CANONICAL_HEAD=6ae964f64ee05942264eed43592bb072dbf037c8
+PUSH_METHOD=Normal push; no force push or force tag.
+REMOTE_MATCH=PASS

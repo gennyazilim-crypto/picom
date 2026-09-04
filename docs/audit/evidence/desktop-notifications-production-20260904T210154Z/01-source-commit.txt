@@ -1,0 +1,4 @@
+SOURCE_COMMIT=bafda2b572e1b6ce05333dfc35353280bd12f114
+SOURCE_ANALYSIS=38 source paths inspected before integration.
+SCOPE_DECISION=Notification-owned changes were integrated. The unrelated FRIEND_RECOMMENDATIONS_ENABLED flag was intentionally excluded.
+SOURCE_NOT_DIRECT_ANCESTOR=YES

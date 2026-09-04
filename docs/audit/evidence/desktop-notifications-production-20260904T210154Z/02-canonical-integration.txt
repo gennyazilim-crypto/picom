@@ -1,0 +1,4 @@
+CANONICAL_INTEGRATION_COMMITS=26a0d2c47d61cfdd761b621a9f5dfc06386d7d06,6ae964f64ee05942264eed43592bb072dbf037c8
+INTEGRATION_METHOD=Notification-specific canonical integration; source conflicts were resolved against current canonical architecture.
+SECURITY_FIX=6ae964f64ee05942264eed43592bb072dbf037c8 restricts toast presentation IPC to the primary trusted application window.
+UNRELATED_PRODUCT_CHANGES=NONE

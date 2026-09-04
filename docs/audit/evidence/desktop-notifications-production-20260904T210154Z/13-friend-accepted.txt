@@ -1,0 +1,2 @@
+FRIEND_REQUEST_ACCEPTED=NOT_RUN
+REASON=Requires real hosted two-user event evidence; no synthetic production relationship was created.

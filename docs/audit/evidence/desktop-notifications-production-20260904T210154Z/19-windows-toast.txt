@@ -1,0 +1,2 @@
+WINDOWS_TOAST=NOT_RUN
+REASON=Requires an actual packaged/current Windows Desktop runtime and real hosted event delivery.

@@ -1,0 +1,3 @@
+POSITION_ABOVE_TASKBAR=NOT_RUN
+STATIC_CONTRACT=PASS (desktop notification host uses display.workArea and display matching).
+RUNTIME_PROOF=NOT_AVAILABLE

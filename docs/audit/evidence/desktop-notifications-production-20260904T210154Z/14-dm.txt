@@ -1,0 +1,2 @@
+DM_RECEIVED=NOT_RUN
+REASON=Requires real hosted DM and authenticated recipient runtime evidence; no production DM was sent for this blocked release.

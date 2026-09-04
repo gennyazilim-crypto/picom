@@ -1,0 +1,2 @@
+HOSTED_RLS=NOT_RUN
+REASON=Requires two authenticated internal production identities after an approved migration apply. Service-role proof is not a substitute.

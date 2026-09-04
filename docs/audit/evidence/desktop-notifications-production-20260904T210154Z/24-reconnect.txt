@@ -1,0 +1,2 @@
+RECONNECT=NOT_RUN
+REASON=Requires real authenticated hosted subscription disconnect/reconciliation evidence.

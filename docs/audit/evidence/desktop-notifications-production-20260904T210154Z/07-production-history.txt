@@ -1,0 +1,7 @@
+TARGET_REF=cqnsetsmcduraryemhbi
+TARGET_NAME=picom-production
+TARGET_STATUS=ACTIVE_HEALTHY
+TARGET_REGION=eu-central-1
+PITR_ENABLED=TRUE
+REMOTE_MIGRATION_HISTORY=NOT_READ
+REMOTE_MIGRATION_HISTORY_REASON=No approved linked production database session was opened before required two-person target confirmation and operator/backup evidence.

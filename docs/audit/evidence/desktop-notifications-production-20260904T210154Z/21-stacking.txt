@@ -1,0 +1,3 @@
+STACKING=NOT_RUN
+STATIC_CONTRACT=PASS (maximum visible toast count is three).
+RUNTIME_PROOF=NOT_AVAILABLE

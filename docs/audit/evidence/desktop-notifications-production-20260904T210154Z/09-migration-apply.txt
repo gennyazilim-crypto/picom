@@ -1,0 +1,3 @@
+MIGRATION_APPLY=NOT_PERFORMED
+AUTHORIZED_MIGRATION=20260904100000_production_desktop_notifications.sql
+REASON=Production preflight is blocked; broad or partial migration application is prohibited.

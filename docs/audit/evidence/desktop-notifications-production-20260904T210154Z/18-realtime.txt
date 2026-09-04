@@ -1,0 +1,2 @@
+REALTIME_RECONNECT=NOT_RUN
+REASON=Requires an authenticated hosted notification subscription after approved migration apply.

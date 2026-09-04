@@ -1,0 +1,5 @@
+PRODUCTION_PREFLIGHT=BLOCKED
+BLOCKER_1=REMOTE migration history and dependency order are not independently evidenced.
+BLOCKER_2=Canonical runbook two-person target confirmation is not evidenced.
+BLOCKER_3=Named production database operator and backup/restore gate evidence are not evidenced.
+ACTION=No production link, SQL, migration, feature-flag, or runtime test action was performed.

@@ -1,0 +1,13 @@
+TYPECHECK=PASS
+ELECTRON_BUILD=PASS
+VITE_BUILD=PASS
+DESKTOP_SMOKE=PASS
+DESKTOP_NOTIFICATION_CONTRACT=PASS
+DESKTOP_IPC_SECURITY=PASS
+SETTINGS_I18N_SCAN=PASS
+SECRETS_SMOKE=PASS
+GIT_LARGE_FILES=PASS
+LOCAL_MIGRATION_INTEGRITY=PASS (283 local migrations uniquely ordered and BOM-free)
+ROUTING_SMOKE=PASS
+NOTIFICATION_INBOX_SMOKE=PASS
+KNOWN_BASELINE_TESTS_NOT_PASS=notifications:quiet-dnd:enforcement:test and notifications:preferences:smoke expect schema version 9; canonical base already uses version 10. No production behavior was changed to satisfy stale test literals.

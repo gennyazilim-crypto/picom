@@ -1,0 +1,4 @@
+RELEASE_MANIFEST=NOT_SEALED
+REASON=The canonical production runbook requires an independently captured remote migration history, backup/restore evidence, two-person target confirmation, and a named database operator before production apply.
+NO_EXECUTABLE_PRODUCTION_RELEASE_MANIFEST_WAS_CREATED.
+FEATURE_FLAG_INITIAL_STATE=DESKTOP_NOTIFICATIONS_ENABLED=OFF (source default; hosted value not changed or re-read in this run).

@@ -1,0 +1,2 @@
+FINAL_WINDOWS_CANARY=NOT_RUN
+REASON=Cannot run before hosted RLS, event, privacy, and Windows runtime gates pass.
