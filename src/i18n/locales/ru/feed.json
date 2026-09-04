@@ -78,5 +78,24 @@
   "alerts.newDirectMessage": "Новое личное сообщение",
   "alerts.openAria": "Открыть непрочитанное личное сообщение. {{preview}}. Непрочитано: {{count}}.",
   "list.emptyTitle": "Ни одно упоминание не подходит под это представление.",
-  "list.emptyBody": "Попробуйте другую вкладку или сбросьте активный быстрый фильтр."
+  "list.emptyBody": "Попробуйте другую вкладку или сбросьте активный быстрый фильтр.",
+  "discover.friendRecommendations": "Рекомендации друзей",
+  "discover.friendRecommendationsEmpty": "Сейчас нет новых рекомендаций друзей.",
+  "discover.friendRecommendationError": "Рекомендации друзей временно недоступны.",
+  "discover.friendRecommendationRetry": "Повторить",
+  "discover.friendRecommendationRefresh": "Обновить",
+  "discover.friendRecommendationRefreshAria": "Обновить рекомендации друзей",
+  "discover.friendRecommendationDismiss": "Скрыть рекомендацию {{name}}",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} общий друг",
+    "few": "{{count}} общих друга",
+    "many": "{{count}} общих друзей",
+    "other": "{{count}} общих друзей"
+  },
+  "discover.friendRecommendationSharedCommunity": "В одном сообществе",
+  "discover.friendRecommendationSharedInterests": "Похожие интересы",
+  "discover.friendRecommendationPopularInNetwork": "Популярно в вашей сети",
+  "discover.friendRecommendationDiscovery": "Возможно, вы знакомы",
+  "discover.friendRecommendationAdd": "Добавить друга",
+  "discover.friendRecommendationRequested": "Запрос отправлен"
 }

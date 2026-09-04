@@ -72,5 +72,22 @@
   "alerts.newDirectMessage": "Yeni direkt mesaj",
   "alerts.openAria": "Okunmamış direkt mesajı aç. {{preview}}. {{count}} okunmamış.",
   "list.emptyTitle": "Bu görünümle eşleşen bahsetme yok.",
-  "list.emptyBody": "Başka bir sekmeyi dene ya da etkin hızlı filtreyi temizle."
+  "list.emptyBody": "Başka bir sekmeyi dene ya da etkin hızlı filtreyi temizle.",
+  "discover.friendRecommendations": "Arkadaş önerileri",
+  "discover.friendRecommendationsEmpty": "Şu anda yeni arkadaş önerisi yok.",
+  "discover.friendRecommendationError": "Arkadaş önerileri şu anda kullanılamıyor.",
+  "discover.friendRecommendationRetry": "Tekrar dene",
+  "discover.friendRecommendationRefresh": "Yenile",
+  "discover.friendRecommendationRefreshAria": "Arkadaş önerilerini yenile",
+  "discover.friendRecommendationDismiss": "{{name}} önerisini kaldır",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} ortak arkadaş",
+    "other": "{{count}} ortak arkadaş"
+  },
+  "discover.friendRecommendationSharedCommunity": "Aynı toplulukta",
+  "discover.friendRecommendationSharedInterests": "Benzer ilgi alanları",
+  "discover.friendRecommendationPopularInNetwork": "Ağında popüler",
+  "discover.friendRecommendationDiscovery": "Tanıyor olabileceğin kişiler",
+  "discover.friendRecommendationAdd": "Arkadaş ekle",
+  "discover.friendRecommendationRequested": "İstek gönderildi"
 }

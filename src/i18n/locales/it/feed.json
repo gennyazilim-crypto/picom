@@ -75,5 +75,23 @@
   "alerts.newDirectMessage": "Nuovo messaggio diretto",
   "alerts.openAria": "Apri il messaggio diretto non letto. {{preview}}. {{count}} non letti.",
   "list.emptyTitle": "Nessuna menzione corrisponde a questa vista.",
-  "list.emptyBody": "Prova un'altra scheda oppure azzera il filtro rapido attivo."
+  "list.emptyBody": "Prova un'altra scheda oppure azzera il filtro rapido attivo.",
+  "discover.friendRecommendations": "Suggerimenti di amicizia",
+  "discover.friendRecommendationsEmpty": "Al momento non ci sono nuovi suggerimenti di amicizia.",
+  "discover.friendRecommendationError": "I suggerimenti di amicizia non sono temporaneamente disponibili.",
+  "discover.friendRecommendationRetry": "Riprova",
+  "discover.friendRecommendationRefresh": "Aggiorna",
+  "discover.friendRecommendationRefreshAria": "Aggiorna i suggerimenti di amicizia",
+  "discover.friendRecommendationDismiss": "Nascondi il suggerimento di {{name}}",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} amico in comune",
+    "many": "{{count}} amici in comune",
+    "other": "{{count}} amici in comune"
+  },
+  "discover.friendRecommendationSharedCommunity": "Nella stessa community",
+  "discover.friendRecommendationSharedInterests": "Interessi simili",
+  "discover.friendRecommendationPopularInNetwork": "Popolare nella tua rete",
+  "discover.friendRecommendationDiscovery": "Persone che potresti conoscere",
+  "discover.friendRecommendationAdd": "Aggiungi amico",
+  "discover.friendRecommendationRequested": "Richiesta inviata"
 }

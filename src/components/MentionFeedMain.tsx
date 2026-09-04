@@ -61,6 +61,7 @@ type MentionFeedMainProps = {
   onOpenFriendProfile: (member: Member) => void;
   onFriendContextMenu: (event: MouseEvent, member: Member) => void;
   onOpenFriends: () => void;
+  onSendFriendRequest?: (userId: string) => boolean | Promise<boolean>;
   onOpenMore: (event: MouseEvent, item: MentionItem) => void;
   onToggleVoiceMute: () => void;
   onToggleVoiceDeafen: () => void;
@@ -144,6 +145,7 @@ export function MentionFeedMain({
   onOpenFriendProfile,
   onFriendContextMenu,
   onOpenFriends,
+  onSendFriendRequest,
   onOpenMore,
   onToggleVoiceMute,
   onToggleVoiceDeafen,
@@ -346,6 +348,7 @@ export function MentionFeedMain({
           voiceState={voiceState}
           activeVoiceRooms={activeVoiceRooms}
           friends={friends}
+          currentUserId={currentUserId}
           pendingFriendRequestCount={pendingFriendRequestCount}
           events={companionEvents}
           communities={communities}
@@ -356,6 +359,7 @@ export function MentionFeedMain({
           onOpenFriendProfile={onOpenFriendProfile}
           onFriendContextMenu={onFriendContextMenu}
           onOpenFriends={onOpenFriends}
+          onSendFriendRequest={onSendFriendRequest ?? (() => false)}
           onOpenEventCommunity={onOpenEventCommunity}
           onEventDetails={onEventDetails}
           onToggleEventReminder={toggleEventReminder}

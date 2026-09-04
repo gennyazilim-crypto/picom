@@ -3523,7 +3523,7 @@ export function App() {
     setProfileRelationshipBusyUserId((current) => current === userId ? null : current);
   }, [directMessageUserId, friendState.requests, profileRelationshipBusyUserId, pushToast, refreshFriendState]);
 
-  const sendFriendRequest = useCallback(async (userId: string) => { const result=await relationshipService.sendFriendRequest(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend request sent.","success"); }, [pushToast, refreshFriendState]);
+  const sendFriendRequest = useCallback(async (userId: string): Promise<boolean> => { const result=await relationshipService.sendFriendRequest(userId); if(!result.ok){pushToast(result.error,"error");return false;} await refreshFriendState(); pushToast("Friend request sent.","success"); return true; }, [pushToast, refreshFriendState]);
   const removeFriend = useCallback(async (userId: string) => { const result=await relationshipService.removeFriend(userId); if(!result.ok){pushToast(result.error,"error");return;} await refreshFriendState(); pushToast("Friend removed.","info"); }, [pushToast, refreshFriendState]);
   const blockFriend = useCallback(async (userId: string) => { const friend=friendState.friends.find((item)=>item.userId===userId); if(!friend)return; const result=await relationshipService.blockFriend(friend); if(!result.ok){pushToast(result.error,"error");return;} setBlockedUserVersion((value)=>value+1); await refreshFriendState(); pushToast("User blocked and removed from friends.","success"); }, [friendState.friends, pushToast, refreshFriendState]);
   const unblockFriend = useCallback(async (userId: string) => { const blocked=userBlockingService.listBlockedUsers().find((item)=>item.userId===userId); if(!blocked)return; const persisted=await userBlockingService.setBlockedUser(blocked,false); if(!persisted){pushToast("Could not unblock this user.","error");return;} setBlockedUserVersion((value)=>value+1); await refreshFriendState(); pushToast("User unblocked.","success"); }, [pushToast, refreshFriendState]);
@@ -4474,6 +4474,7 @@ export function App() {
                 onTabChange={changeMentionTab}
                 onOpenDirectConversation={openDirectConversation}
                 onOpenFriends={() => openFriends("all")}
+                onSendFriendRequest={(userId) => sendFriendRequest(userId)}
                 onOpenImage={openPreview}
                 onOpenInChannel={openMentionInChannel}
                 onToggleReaction={toggleMentionReaction}

@@ -919,6 +919,9 @@ export type Database = {
       cancel_friend_request: { Args: { target_request_id: string }; Returns: boolean };
       list_friend_relationship_state: { Args: Record<string, never>; Returns: Json };
       list_friend_suggestions: { Args: { result_limit?: number }; Returns: Array<{ user_id: string; display_name: string; username: string; avatar_url: string | null; mutual_community_count: number; followed_by_current_user: boolean }> };
+      get_friend_recommendations: { Args: { result_limit?: number; refresh_seed?: string | null }; Returns: Array<{ user_id: string; display_name: string; username: string; avatar_url: string | null; verified_public: boolean; mutual_friend_count: number; shared_community_count: number; reason_code: "MUTUAL_FRIENDS" | "SHARED_COMMUNITY" | "SHARED_INTERESTS" | "POPULAR_IN_NETWORK" | "DISCOVERY" }> };
+      dismiss_friend_recommendation: { Args: { target_user_id: string }; Returns: boolean };
+      record_friend_recommendation_event: { Args: { target_user_id: string; event_name: "profile_open" | "request_sent" | "accepted" }; Returns: boolean };
       set_my_friend_presence: { Args: { target_status: string; share_presence: boolean }; Returns: undefined };
       list_friend_presence: { Args: { target_user_ids: string[] }; Returns: Array<{ user_id: string; status: string; status_text: string; last_seen_at: string | null }> };
       list_direct_conversation_presence: { Args: { target_user_ids: string[] }; Returns: Array<{ user_id: string; status: string; status_text: string; last_seen_at: string | null }> };

@@ -412,6 +412,29 @@
   border-color:var(--accent);
   background:var(--surface-hover);
 }
+
+.feed-friend-empty--loading{min-height:116px;align-content:center}
+.feed-recommendation-skeleton{display:block;height:12px;border-radius:999px;background:linear-gradient(90deg,var(--surface-hover),var(--surface-soft),var(--surface-hover));background-size:200% 100%;animation:feed-recommendation-shimmer 1.25s ease-in-out infinite}
+.feed-recommendation-skeleton:nth-child(2){width:82%}
+.feed-recommendation-skeleton:nth-child(3){width:64%}
+@keyframes feed-recommendation-shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
+.friend-recommendation-refresh,.friend-recommendation-dismiss{border:1px solid color-mix(in srgb,var(--border) 86%,transparent);background:var(--surface);color:var(--text-muted);cursor:pointer}
+.friend-recommendation-refresh{width:30px;height:30px;border-radius:10px;display:grid;place-items:center}
+.friend-recommendation-refresh:hover:not(:disabled),.friend-recommendation-refresh:focus-visible,.friend-recommendation-dismiss:hover,.friend-recommendation-dismiss:focus-visible{border-color:var(--accent);color:var(--accent);background:var(--surface-hover)}
+.friend-recommendation-refresh:disabled{opacity:.58;cursor:wait}
+.friend-recommendation-list{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.friend-recommendation-person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.friend-recommendation-identity{min-width:0;display:flex;align-items:center;gap:8px;border:0;border-radius:12px;background:transparent;color:var(--text-primary);padding:5px;text-align:left;cursor:pointer}
+.friend-recommendation-identity:hover,.friend-recommendation-identity:focus-visible{background:var(--surface-hover)}
+.friend-recommendation-copy{min-width:0;display:grid;gap:2px}
+.friend-recommendation-copy strong,.friend-recommendation-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.friend-recommendation-copy strong{font-size:12px}
+.friend-recommendation-copy small{color:var(--text-muted);font-size:11px}
+.friend-recommendation-actions{display:inline-flex;align-items:center;gap:5px}
+.friend-recommendation-action{border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text-primary);padding:5px 7px;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
+.friend-recommendation-action:hover:not(:disabled),.friend-recommendation-action:focus-visible{border-color:var(--accent);color:var(--accent)}
+.friend-recommendation-action.is-active,.friend-recommendation-action:disabled{opacity:.62;cursor:default}
+.friend-recommendation-dismiss{width:26px;height:26px;border-radius:9px;display:grid;place-items:center}
 .feed-friend-row{
   min-width:0;
   width:100%;

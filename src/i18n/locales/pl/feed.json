@@ -78,5 +78,24 @@
   "alerts.newDirectMessage": "Nowa wiadomość prywatna",
   "alerts.openAria": "Otwórz nieprzeczytaną wiadomość prywatną. {{preview}}. Nieprzeczytane: {{count}}.",
   "list.emptyTitle": "Żadna wzmianka nie pasuje do tego widoku.",
-  "list.emptyBody": "Wypróbuj inną kartę albo wyczyść aktywny filtr szybki."
+  "list.emptyBody": "Wypróbuj inną kartę albo wyczyść aktywny filtr szybki.",
+  "discover.friendRecommendations": "Propozycje znajomych",
+  "discover.friendRecommendationsEmpty": "Nie ma teraz nowych propozycji znajomych.",
+  "discover.friendRecommendationError": "Propozycje znajomych są tymczasowo niedostępne.",
+  "discover.friendRecommendationRetry": "Spróbuj ponownie",
+  "discover.friendRecommendationRefresh": "Odśwież",
+  "discover.friendRecommendationRefreshAria": "Odśwież propozycje znajomych",
+  "discover.friendRecommendationDismiss": "Odrzuć propozycję {{name}}",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} wspólny znajomy",
+    "few": "{{count}} wspólnych znajomych",
+    "many": "{{count}} wspólnych znajomych",
+    "other": "{{count}} wspólnych znajomych"
+  },
+  "discover.friendRecommendationSharedCommunity": "W tej samej społeczności",
+  "discover.friendRecommendationSharedInterests": "Podobne zainteresowania",
+  "discover.friendRecommendationPopularInNetwork": "Popularne w Twojej sieci",
+  "discover.friendRecommendationDiscovery": "Osoby, które możesz znać",
+  "discover.friendRecommendationAdd": "Dodaj znajomego",
+  "discover.friendRecommendationRequested": "Zaproszenie wysłane"
 }

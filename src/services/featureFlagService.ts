@@ -31,6 +31,7 @@ export const FEATURE_FLAG_KEYS = [
   "enableGoLive",
   "enablePublisherReminders",
   "enablePublisherNotificationPreferences",
+  "FRIEND_RECOMMENDATIONS_ENABLED",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -54,6 +55,7 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   goLive: "enableGoLive",
   publisherReminders: "enablePublisherReminders",
   publisherNotificationPreferences: "enablePublisherNotificationPreferences",
+  friendRecommendations: "FRIEND_RECOMMENDATIONS_ENABLED",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -109,6 +111,7 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableGoLive: appConfig.environment !== "production",
     enablePublisherReminders: appConfig.environment !== "production",
     enablePublisherNotificationPreferences: appConfig.environment !== "production",
+    FRIEND_RECOMMENDATIONS_ENABLED: false,
   });
 }
 

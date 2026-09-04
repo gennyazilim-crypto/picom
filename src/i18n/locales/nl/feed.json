@@ -72,5 +72,22 @@
   "alerts.newDirectMessage": "Nieuw direct bericht",
   "alerts.openAria": "Ongelezen direct bericht openen. {{preview}}. {{count}} ongelezen.",
   "list.emptyTitle": "Geen vermeldingen komen overeen met deze weergave.",
-  "list.emptyBody": "Probeer een ander tabblad of wis het actieve snelfilter."
+  "list.emptyBody": "Probeer een ander tabblad of wis het actieve snelfilter.",
+  "discover.friendRecommendations": "Vriendschapssuggesties",
+  "discover.friendRecommendationsEmpty": "Er zijn nu geen nieuwe vriendschapssuggesties.",
+  "discover.friendRecommendationError": "Vriendschapssuggesties zijn tijdelijk niet beschikbaar.",
+  "discover.friendRecommendationRetry": "Opnieuw proberen",
+  "discover.friendRecommendationRefresh": "Vernieuwen",
+  "discover.friendRecommendationRefreshAria": "Vriendschapssuggesties vernieuwen",
+  "discover.friendRecommendationDismiss": "Suggestie voor {{name}} verbergen",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} gemeenschappelijke vriend",
+    "other": "{{count}} gemeenschappelijke vrienden"
+  },
+  "discover.friendRecommendationSharedCommunity": "In dezelfde community",
+  "discover.friendRecommendationSharedInterests": "Vergelijkbare interesses",
+  "discover.friendRecommendationPopularInNetwork": "Populair in je netwerk",
+  "discover.friendRecommendationDiscovery": "Mensen die je misschien kent",
+  "discover.friendRecommendationAdd": "Vriend toevoegen",
+  "discover.friendRecommendationRequested": "Verzoek verzonden"
 }

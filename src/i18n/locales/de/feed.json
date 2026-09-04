@@ -72,5 +72,22 @@
   "alerts.newDirectMessage": "Neue Direktnachricht",
   "alerts.openAria": "Ungelesene Direktnachricht öffnen. {{preview}}. {{count}} ungelesen.",
   "list.emptyTitle": "Keine Erwähnungen passen zu dieser Ansicht.",
-  "list.emptyBody": "Probiere einen anderen Tab oder setze den aktiven Schnellfilter zurück."
+  "list.emptyBody": "Probiere einen anderen Tab oder setze den aktiven Schnellfilter zurück.",
+  "discover.friendRecommendations": "Freundschaftsvorschläge",
+  "discover.friendRecommendationsEmpty": "Derzeit gibt es keine neuen Freundschaftsvorschläge.",
+  "discover.friendRecommendationError": "Freundschaftsvorschläge sind vorübergehend nicht verfügbar.",
+  "discover.friendRecommendationRetry": "Erneut versuchen",
+  "discover.friendRecommendationRefresh": "Aktualisieren",
+  "discover.friendRecommendationRefreshAria": "Freundschaftsvorschläge aktualisieren",
+  "discover.friendRecommendationDismiss": "Vorschlag für {{name}} ausblenden",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} gemeinsamer Freund",
+    "other": "{{count}} gemeinsame Freunde"
+  },
+  "discover.friendRecommendationSharedCommunity": "In derselben Community",
+  "discover.friendRecommendationSharedInterests": "Ähnliche Interessen",
+  "discover.friendRecommendationPopularInNetwork": "Beliebt in deinem Netzwerk",
+  "discover.friendRecommendationDiscovery": "Personen, die du vielleicht kennst",
+  "discover.friendRecommendationAdd": "Freund hinzufügen",
+  "discover.friendRecommendationRequested": "Anfrage gesendet"
 }

@@ -75,5 +75,23 @@
   "alerts.newDirectMessage": "Mensaje directo nuevo",
   "alerts.openAria": "Abrir mensaje directo sin leer. {{preview}}. {{count}} sin leer.",
   "list.emptyTitle": "Ninguna mención coincide con esta vista.",
-  "list.emptyBody": "Prueba otra pestaña o borra el filtro rápido activo."
+  "list.emptyBody": "Prueba otra pestaña o borra el filtro rápido activo.",
+  "discover.friendRecommendations": "Sugerencias de amistad",
+  "discover.friendRecommendationsEmpty": "No hay nuevas sugerencias de amistad ahora mismo.",
+  "discover.friendRecommendationError": "Las sugerencias de amistad no están disponibles temporalmente.",
+  "discover.friendRecommendationRetry": "Reintentar",
+  "discover.friendRecommendationRefresh": "Actualizar",
+  "discover.friendRecommendationRefreshAria": "Actualizar sugerencias de amistad",
+  "discover.friendRecommendationDismiss": "Descartar la sugerencia de {{name}}",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} amigo en común",
+    "many": "{{count}} amigos en común",
+    "other": "{{count}} amigos en común"
+  },
+  "discover.friendRecommendationSharedCommunity": "En la misma comunidad",
+  "discover.friendRecommendationSharedInterests": "Intereses similares",
+  "discover.friendRecommendationPopularInNetwork": "Popular en tu red",
+  "discover.friendRecommendationDiscovery": "Personas que quizá conozcas",
+  "discover.friendRecommendationAdd": "Añadir amistad",
+  "discover.friendRecommendationRequested": "Solicitud enviada"
 }

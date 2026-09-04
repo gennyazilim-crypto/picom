@@ -76,6 +76,25 @@ export type FriendSuggestion = Readonly<{
   followedByCurrentUser: boolean;
 }>;
 
+export type FriendRecommendationReason =
+  | "MUTUAL_FRIENDS"
+  | "SHARED_COMMUNITY"
+  | "SHARED_INTERESTS"
+  | "POPULAR_IN_NETWORK"
+  | "DISCOVERY";
+
+/** UI-safe projection returned by the authenticated recommendation RPC. */
+export type FriendRecommendation = Readonly<{
+  userId: string;
+  displayName: string;
+  username: string;
+  avatarUrl?: string;
+  verifiedPublic: boolean;
+  mutualFriendCount: number;
+  sharedCommunityCount: number;
+  reasonCode: FriendRecommendationReason;
+}>;
+
 export type FriendState = Readonly<{
   friends: FriendConnection[];
   requests: FriendRequest[];

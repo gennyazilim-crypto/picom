@@ -13,11 +13,13 @@ import { AudioMiniPlayer } from "./audio/AudioMiniPlayer";
 import { NoiseShieldCompactStatus } from "./voice/NoiseShieldControl";
 import { isV1FeatureEnabled } from "../config/v1ReleaseScope";
 import { useProfileMedia } from "../hooks/useProfileMedia";
+import { FriendRecommendationsRail } from "./FriendRecommendationsRail";
 
 type FeedCompanionRailProps = {
   voiceState: VoiceServiceSnapshot;
   activeVoiceRooms: ActiveVoiceRoomSummary[];
   friends: FriendConnection[];
+  currentUserId: string;
   pendingFriendRequestCount: number;
   events: UpcomingEvent[];
   communities: Community[];
@@ -28,6 +30,7 @@ type FeedCompanionRailProps = {
   onOpenFriendProfile: (member: Member) => void;
   onFriendContextMenu: (event: MouseEvent, member: Member) => void;
   onOpenFriends: () => void;
+  onSendFriendRequest: (userId: string) => boolean | Promise<boolean>;
   onOpenEventCommunity: (communityId: string) => void;
   onEventDetails: (event: UpcomingEvent) => void;
   onToggleEventReminder: (event: UpcomingEvent) => void;
@@ -292,6 +295,7 @@ export function FeedCompanionRail({
   voiceState,
   activeVoiceRooms,
   friends,
+  currentUserId,
   pendingFriendRequestCount,
   events,
   communities,
@@ -302,6 +306,7 @@ export function FeedCompanionRail({
   onOpenFriendProfile,
   onFriendContextMenu,
   onOpenFriends,
+  onSendFriendRequest,
   onOpenEventCommunity,
   onEventDetails,
   onToggleEventReminder,
@@ -318,6 +323,7 @@ export function FeedCompanionRail({
   return (
     <aside className="feed-companion-rail" aria-label="Feed companion rail">
       <FriendsStatusSection friends={friends} pendingFriendRequestCount={pendingFriendRequestCount} communities={communities} onOpenFriendProfile={onOpenFriendProfile} onFriendContextMenu={onFriendContextMenu} onOpenFriends={onOpenFriends} />
+      <FriendRecommendationsRail currentUserId={currentUserId} friends={friends} pendingFriendRequestCount={pendingFriendRequestCount} onOpenProfile={onOpenFriendProfile} onSendFriendRequest={onSendFriendRequest} />
       <UpcomingEventsSection events={events} communities={communities} onOpenEventCommunity={onOpenEventCommunity} onEventDetails={onEventDetails} onToggleEventReminder={onToggleEventReminder} />
       {showStickyStack ? (
         <div className="feed-rail-sticky-stack">

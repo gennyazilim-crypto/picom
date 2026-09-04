@@ -75,5 +75,23 @@
   "alerts.newDirectMessage": "Nova mensagem direta",
   "alerts.openAria": "Abrir mensagem direta não lida. {{preview}}. {{count}} não lidas.",
   "list.emptyTitle": "Nenhuma menção corresponde a esta visualização.",
-  "list.emptyBody": "Tente outra aba ou limpe o filtro rápido ativo."
+  "list.emptyBody": "Tente outra aba ou limpe o filtro rápido ativo.",
+  "discover.friendRecommendations": "Sugestões de amizade",
+  "discover.friendRecommendationsEmpty": "Não há novas sugestões de amizade agora.",
+  "discover.friendRecommendationError": "As sugestões de amizade estão temporariamente indisponíveis.",
+  "discover.friendRecommendationRetry": "Tentar novamente",
+  "discover.friendRecommendationRefresh": "Atualizar",
+  "discover.friendRecommendationRefreshAria": "Atualizar sugestões de amizade",
+  "discover.friendRecommendationDismiss": "Dispensar a sugestão de {{name}}",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} amigo em comum",
+    "many": "{{count}} amigos em comum",
+    "other": "{{count}} amigos em comum"
+  },
+  "discover.friendRecommendationSharedCommunity": "Na mesma comunidade",
+  "discover.friendRecommendationSharedInterests": "Interesses semelhantes",
+  "discover.friendRecommendationPopularInNetwork": "Popular na sua rede",
+  "discover.friendRecommendationDiscovery": "Pessoas que talvez conheça",
+  "discover.friendRecommendationAdd": "Adicionar amigo",
+  "discover.friendRecommendationRequested": "Pedido enviado"
 }

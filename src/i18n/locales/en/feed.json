@@ -72,5 +72,22 @@
   "alerts.newDirectMessage": "New direct message",
   "alerts.openAria": "Open unread direct message. {{preview}}. {{count}} unread.",
   "list.emptyTitle": "No mentions match this view.",
-  "list.emptyBody": "Try another tab or clear the active quick filter."
+  "list.emptyBody": "Try another tab or clear the active quick filter.",
+  "discover.friendRecommendations": "Friend suggestions",
+  "discover.friendRecommendationsEmpty": "No new friend suggestions right now.",
+  "discover.friendRecommendationError": "Friend suggestions are temporarily unavailable.",
+  "discover.friendRecommendationRetry": "Retry",
+  "discover.friendRecommendationRefresh": "Refresh",
+  "discover.friendRecommendationRefreshAria": "Refresh friend suggestions",
+  "discover.friendRecommendationDismiss": "Dismiss {{name}}",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} mutual friend",
+    "other": "{{count}} mutual friends"
+  },
+  "discover.friendRecommendationSharedCommunity": "In the same community",
+  "discover.friendRecommendationSharedInterests": "Similar interests",
+  "discover.friendRecommendationPopularInNetwork": "Popular in your network",
+  "discover.friendRecommendationDiscovery": "People you may know",
+  "discover.friendRecommendationAdd": "Add friend",
+  "discover.friendRecommendationRequested": "Request sent"
 }

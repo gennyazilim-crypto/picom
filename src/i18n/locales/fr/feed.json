@@ -75,5 +75,23 @@
   "alerts.newDirectMessage": "Nouveau message privé",
   "alerts.openAria": "Ouvrir le message privé non lu. {{preview}}. {{count}} non lus.",
   "list.emptyTitle": "Aucune mention ne correspond à cette vue.",
-  "list.emptyBody": "Essaie un autre onglet ou efface le filtre rapide actif."
+  "list.emptyBody": "Essaie un autre onglet ou efface le filtre rapide actif.",
+  "discover.friendRecommendations": "Suggestions d'amis",
+  "discover.friendRecommendationsEmpty": "Aucune nouvelle suggestion d'ami pour le moment.",
+  "discover.friendRecommendationError": "Les suggestions d'amis sont temporairement indisponibles.",
+  "discover.friendRecommendationRetry": "Réessayer",
+  "discover.friendRecommendationRefresh": "Actualiser",
+  "discover.friendRecommendationRefreshAria": "Actualiser les suggestions d'amis",
+  "discover.friendRecommendationDismiss": "Masquer la suggestion de {{name}}",
+  "discover.friendRecommendationMutualFriends": {
+    "one": "{{count}} ami en commun",
+    "many": "{{count}} amis en commun",
+    "other": "{{count}} amis en commun"
+  },
+  "discover.friendRecommendationSharedCommunity": "Dans la même communauté",
+  "discover.friendRecommendationSharedInterests": "Centres d'intérêt similaires",
+  "discover.friendRecommendationPopularInNetwork": "Populaire dans votre réseau",
+  "discover.friendRecommendationDiscovery": "Personnes que vous connaissez peut-être",
+  "discover.friendRecommendationAdd": "Ajouter un ami",
+  "discover.friendRecommendationRequested": "Demande envoyée"
 }
