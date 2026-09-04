@@ -51,6 +51,7 @@ export const FEATURE_FLAG_KEYS = [
   "enablePublisherPayouts",
   "enablePublisherStatements",
   "enableCreatorStudio",
+  "DESKTOP_NOTIFICATIONS_ENABLED",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -94,6 +95,7 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   publisherPayouts: "enablePublisherPayouts",
   publisherStatements: "enablePublisherStatements",
   creatorStudio: "enableCreatorStudio",
+  desktopNotifications: "DESKTOP_NOTIFICATIONS_ENABLED",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -173,6 +175,8 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enablePublisherStatements: appConfig.environment !== "production",
     // Creator Studio shell: fail-closed until RBAC/parity certified; child flags stay independent.
     enableCreatorStudio: appConfig.environment !== "production",
+    // Desktop notification delivery remains disabled until the sealed rollout is approved.
+    DESKTOP_NOTIFICATIONS_ENABLED: false,
   });
 }
 

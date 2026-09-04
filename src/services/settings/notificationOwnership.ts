@@ -24,6 +24,10 @@ export const NOTIFICATION_SYNCED_KEYS = [
   "communityAnnouncements",
   "friendRequests",
   "friendAcceptances",
+  "friendOnline",
+  "followedUsersLive",
+  "followedPublishersLive",
+  "showMessagePreview",
   "radioLive",
   "radioReminders",
   "podcastReleases",
@@ -60,6 +64,10 @@ export type NotificationSyncedSettings = Readonly<{
   communityAnnouncements: boolean;
   friendRequests: boolean;
   friendAcceptances: boolean;
+  friendOnline: boolean;
+  followedUsersLive: boolean;
+  followedPublishersLive: boolean;
+  showMessagePreview: boolean;
   radioLive: boolean;
   radioReminders: boolean;
   podcastReleases: boolean;
@@ -107,6 +115,10 @@ export const defaultNotificationSyncedSettings = (): NotificationSyncedSettings 
   communityAnnouncements: true,
   friendRequests: true,
   friendAcceptances: true,
+  friendOnline: false,
+  followedUsersLive: true,
+  followedPublishersLive: true,
+  showMessagePreview: false,
   radioLive: true,
   radioReminders: true,
   podcastReleases: true,
@@ -184,6 +196,10 @@ export function splitNotificationOwnership(raw: Partial<NotificationSettings> | 
       communityAnnouncements: source.communityAnnouncements !== false,
       friendRequests: source.friendRequests !== false,
       friendAcceptances: source.friendAcceptances !== false,
+      friendOnline: source.friendOnline === true,
+      followedUsersLive: source.followedUsersLive !== false,
+      followedPublishersLive: source.followedPublishersLive !== false,
+      showMessagePreview: source.showMessagePreview === true,
       radioLive: source.radioLive !== false,
       radioReminders: source.radioReminders !== false,
       podcastReleases: source.podcastReleases !== false,
@@ -218,6 +234,10 @@ export function composeNotificationSettings(
     communityAnnouncements: synced.communityAnnouncements,
     friendRequests: synced.friendRequests,
     friendAcceptances: synced.friendAcceptances,
+    friendOnline: synced.friendOnline,
+    followedUsersLive: synced.followedUsersLive,
+    followedPublishersLive: synced.followedPublishersLive,
+    showMessagePreview: synced.showMessagePreview,
     radioLive: synced.radioLive,
     radioReminders: synced.radioReminders,
     podcastReleases: synced.podcastReleases,

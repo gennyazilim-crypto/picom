@@ -121,6 +121,10 @@ export interface NotificationSettings {
   communityAnnouncements: boolean;
   friendRequests: boolean;
   friendAcceptances: boolean;
+  friendOnline: boolean;
+  followedUsersLive: boolean;
+  followedPublishersLive: boolean;
+  showMessagePreview: boolean;
   radioLive: boolean;
   radioReminders: boolean;
   podcastReleases: boolean;

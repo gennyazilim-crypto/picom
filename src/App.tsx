@@ -94,6 +94,8 @@ import { CrashRecoveryDialog } from "./components/CrashRecoveryDialog";
 import { NotificationPermissionPrompt } from "./components/NotificationPermissionPrompt";
 import { NotificationCenterPopover } from "./components/NotificationCenterPopover";
 import { notificationCenterService, type NotificationCenterItem } from "./services/notificationCenterService";
+import { productionNotificationService } from "./services/desktop/productionNotificationService";
+import { featureFlagService } from "./services/featureFlagService";
 import { notificationPolicyStateService } from "./services/notificationPolicyStateService";
 import { clipboardService } from "./services/clipboardService";
 import { deepLinkService, type DeepLinkAction } from "./services/deepLinkService";
@@ -512,6 +514,7 @@ export function App() {
   const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [notificationCenterItems, setNotificationCenterItems] = useState(() => notificationCenterService.list());
+  const notificationCenterItemsRef = useRef(notificationCenterItems);
   const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<NotificationPermissionPromptData | null>(null);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const [reportTarget, setReportTarget] = useState<ReportModalTarget | null>(null);
@@ -785,11 +788,13 @@ export function App() {
     void relationshipService.subscribeToFriendState((state) => {
       if (active) setFriendState(state);
     }).then((cleanup) => { if (!active) cleanup(); else unsubscribeState = cleanup; });
-    void relationshipService.subscribeToFriendNotifications((notification) => {
-      if (!active) return;
-      void refreshFriendState();
-      void relationshipService.routeFriendNotification(notification);
-    }).then((cleanup) => { if (!active) cleanup(); else unsubscribeNotifications = cleanup; });
+    if (!featureFlagService.isEnabled("DESKTOP_NOTIFICATIONS_ENABLED")) {
+      void relationshipService.subscribeToFriendNotifications((notification) => {
+        if (!active) return;
+        void refreshFriendState();
+        void relationshipService.routeFriendNotification(notification);
+      }).then((cleanup) => { if (!active) cleanup(); else unsubscribeNotifications = cleanup; });
+    }
     return () => { active = false; unsubscribeNotifications?.(); unsubscribeState?.(); };
   }, [authSession?.user?.id, refreshFriendState]);
   const friendPresenceIds = friendState.friends.map((friend) => friend.userId).sort().join("|");
@@ -3305,6 +3310,68 @@ export function App() {
     notificationCenterService.markRead(item.id);
     pushToast(item.title, "info");
   }, [authSession?.user, blockedUserIds, communities, currentUserId, openAuthorizedCommunityMessage, openDirectMessages, openPodcastEpisodeSource, pushToast, setActiveChannelId, switchCommunity]);
+
+  useEffect(() => {
+    notificationCenterItemsRef.current = notificationCenterItems;
+  }, [notificationCenterItems]);
+
+  useEffect(() => {
+    if (!authSession?.user?.id) return;
+    return productionNotificationService.start({
+      currentUserId: authSession.user.id,
+      activeConversationId: activeDirectConversationId,
+      isDirectMessagesViewActive: activeView === "directMessages",
+      onAction: (notification, action) => {
+        const existing = notificationCenterItemsRef.current.find((item) => item.id === notification.id);
+        if (existing && (action === "open" || action === "message" || action === "watch-live")) {
+          openNotificationSource(existing);
+          return;
+        }
+        const actorId = typeof notification.safeMetadata.actor_user_id === "string" ? notification.safeMetadata.actor_user_id : undefined;
+        const requestId = typeof notification.safeMetadata.request_id === "string" ? notification.safeMetadata.request_id : undefined;
+        const conversationId = typeof notification.safeMetadata.conversation_id === "string" ? notification.safeMetadata.conversation_id : undefined;
+        const liveSessionId = typeof notification.safeMetadata.live_session_id === "string" ? notification.safeMetadata.live_session_id : undefined;
+        if (action === "open" && notification.type === "friend_request_received") {
+          setFriendsViewTab("pending");
+          setActiveView("friends");
+          return;
+        }
+        if (action === "open" && notification.type === "dm_received" && conversationId) {
+          setActiveDirectConversationId(conversationId);
+          setActiveView("directMessages");
+          return;
+        }
+        if (action === "accept" && requestId) {
+          void relationshipService.acceptFriendRequest(requestId).then((result) => {
+            if (!result.ok) pushToast(result.error, "error");
+            else void refreshFriendState();
+          });
+          return;
+        }
+        if (action === "decline" && requestId) {
+          void relationshipService.declineFriendRequest(requestId).then((result) => {
+            if (!result.ok) pushToast(result.error, "error");
+            else void refreshFriendState();
+          });
+          return;
+        }
+        if (action === "message" && actorId) {
+          openDirectMessages(actorId);
+          return;
+        }
+        if (action === "watch-live" && liveSessionId) {
+          setLiveWatchSessionId(liveSessionId);
+          setActiveView("live");
+          return;
+        }
+        if (actorId) {
+          setPreviousViewBeforeProfile((previous) => (activeView === "profile" ? previous : activeView));
+          setActiveProfileUserId(actorId);
+          setActiveView("profile");
+        }
+      },
+    });
+  }, [activeDirectConversationId, activeView, authSession?.user?.id, openDirectMessages, openNotificationSource, pushToast, refreshFriendState]);
 
   const createCommunityEvent = useCallback(async (input: CreateCommunityEventInput) => { const event=await communityEventService.createEvent(input);if(event){setCommunityEvents((current)=>[event,...current]);pushToast("Event created.","success");}else pushToast("Event could not be created.","error"); },[pushToast]);
   const updateCommunityEvent = useCallback(async (eventId: string, input: UpdateCommunityEventInput) => { const event = await communityEventService.updateEvent(eventId, input); if (event) { setCommunityEvents((current) => current.map((item) => item.id === eventId ? event : item)); pushToast("Event updated.", "success"); } else pushToast("Event could not be updated.", "error"); }, [pushToast]);

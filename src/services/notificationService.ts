@@ -65,6 +65,9 @@ export function isNotificationCategoryEnabled(settings: NotificationSettings, ca
   if (category === "community_announcement") return settings.communityAnnouncements;
   if (category === "friend_request") return settings.friendRequests;
   if (category === "friend_acceptance") return settings.friendAcceptances;
+  if (category === "friend_online") return settings.friendOnline;
+  if (category === "followed_user_live") return settings.followedUsersLive;
+  if (category === "followed_publisher_live") return settings.followedPublishersLive;
   if (category === "radio_live") return settings.radioLive;
   if (category === "radio_reminder") return settings.radioReminders;
   if (category === "podcast_release") return settings.podcastReleases;
