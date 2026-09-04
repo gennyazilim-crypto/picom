@@ -951,4 +951,12 @@ export const settingsI18nDe: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Minimiert starten",
   "windows.startMinimizedHint": "Der nächste Start erfolgt minimiert in der Taskleiste.",
   "windows.startupUpdated": "Autostart-Einstellung aktualisiert.",
+  "notifications.pref.friendOnline.label": "Freund online",
+  "notifications.pref.friendOnline.description": "Benachrichtigen, wenn ein Freund online kommt, mit einer Pause gegen Benachrichtigungsflut.",
+  "notifications.pref.followedUsersLive.label": "Gefolgte Nutzer live",
+  "notifications.pref.followedUsersLive.description": "Benachrichtigen, wenn ein gefolgter Nutzer einen zulässigen öffentlichen Livestream startet.",
+  "notifications.pref.followedPublishersLive.label": "Gefolgte Publisher live",
+  "notifications.pref.followedPublishersLive.description": "Benachrichtigen, wenn ein gefolgter Creator oder Publisher einen zulässigen öffentlichen Livestream startet.",
+  "notifications.pref.messagePreview.label": "Nachrichtenvorschau",
+  "notifications.pref.messagePreview.description": "Eine kurze bereinigte Vorschau in Desktop-Benachrichtigungen für Direktnachrichten zeigen.",
 };

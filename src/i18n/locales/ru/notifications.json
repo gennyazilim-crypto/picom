@@ -1,1 +1,15 @@
-{}
+{
+  "desktop.someone": "Кто-то",
+  "desktop.friendRequestReceived.body": "Отправил вам заявку в друзья.",
+  "desktop.friendRequestAccepted.body": "Принял вашу заявку в друзья.",
+  "desktop.dmReceived.hidden": "Вы получили новое сообщение.",
+  "desktop.friendOnline.body": "Сейчас в сети.",
+  "desktop.liveNow.body": "Сейчас в эфире.",
+  "desktop.accept": "Принять",
+  "desktop.decline": "Отклонить",
+  "desktop.message": "Сообщение",
+  "desktop.viewProfile": "Открыть профиль",
+  "desktop.openConversation": "Открыть чат",
+  "desktop.watchLive": "Смотреть эфир",
+  "desktop.dismiss": "Закрыть"
+}

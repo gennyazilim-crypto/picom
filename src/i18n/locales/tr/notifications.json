@@ -1,1 +1,15 @@
-{}
+{
+  "desktop.someone": "Bir kullanıcı",
+  "desktop.friendRequestReceived.body": "Sana arkadaşlık isteği gönderdi.",
+  "desktop.friendRequestAccepted.body": "Arkadaşlık isteğini kabul etti.",
+  "desktop.dmReceived.hidden": "Yeni bir mesaj aldın.",
+  "desktop.friendOnline.body": "Şimdi çevrimiçi.",
+  "desktop.liveNow.body": "Şu anda canlı yayında.",
+  "desktop.accept": "Kabul et",
+  "desktop.decline": "Reddet",
+  "desktop.message": "Mesaj",
+  "desktop.viewProfile": "Profili görüntüle",
+  "desktop.openConversation": "Sohbeti aç",
+  "desktop.watchLive": "Canlı izle",
+  "desktop.dismiss": "Kapat"
+}

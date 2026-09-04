@@ -82,7 +82,7 @@ import { useDialogFocusTrap } from "../hooks/useDialogFocusTrap";
 
 const overlayIcons = mvpUiIconMap.overlays;
 type ToastTone = "info" | "error" | "success";
-type NotificationPreferenceKey = "mentions" | "replies" | "reactions" | "directMessages" | "communityAnnouncements" | "friendRequests" | "friendAcceptances" | "incomingCalls" | "radioLive" | "radioReminders" | "podcastReleases" | "eventReminders";
+type NotificationPreferenceKey = "mentions" | "replies" | "reactions" | "directMessages" | "communityAnnouncements" | "friendRequests" | "friendAcceptances" | "friendOnline" | "followedUsersLive" | "followedPublishersLive" | "incomingCalls" | "radioLive" | "radioReminders" | "podcastReleases" | "eventReminders";
 const notificationPreferenceRows: ReadonlyArray<Readonly<{ key: NotificationPreferenceKey; labelKey: SettingsI18nKey; descriptionKey: SettingsI18nKey }>> = [
   { key: "mentions", labelKey: "notifications.pref.mentions.label", descriptionKey: "notifications.pref.mentions.description" },
   { key: "replies", labelKey: "notifications.pref.replies.label", descriptionKey: "notifications.pref.replies.description" },
@@ -91,6 +91,9 @@ const notificationPreferenceRows: ReadonlyArray<Readonly<{ key: NotificationPref
   { key: "communityAnnouncements", labelKey: "notifications.pref.communityAnnouncements.label", descriptionKey: "notifications.pref.communityAnnouncements.description" },
   { key: "friendRequests", labelKey: "notifications.pref.friendRequests.label", descriptionKey: "notifications.pref.friendRequests.description" },
   { key: "friendAcceptances", labelKey: "notifications.pref.friendAcceptances.label", descriptionKey: "notifications.pref.friendAcceptances.description" },
+  { key: "friendOnline", labelKey: "notifications.pref.friendOnline.label", descriptionKey: "notifications.pref.friendOnline.description" },
+  { key: "followedUsersLive", labelKey: "notifications.pref.followedUsersLive.label", descriptionKey: "notifications.pref.followedUsersLive.description" },
+  { key: "followedPublishersLive", labelKey: "notifications.pref.followedPublishersLive.label", descriptionKey: "notifications.pref.followedPublishersLive.description" },
   { key: "incomingCalls", labelKey: "notifications.pref.incomingCalls.label", descriptionKey: "notifications.pref.incomingCalls.description" },
   { key: "radioLive", labelKey: "notifications.pref.radioLive.label", descriptionKey: "notifications.pref.radioLive.description" },
   { key: "radioReminders", labelKey: "notifications.pref.radioReminders.label", descriptionKey: "notifications.pref.radioReminders.description" },
@@ -1485,6 +1488,10 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
                     <input type="checkbox" disabled={!notificationSettings.enabled} checked={notificationSettings[preference.key]} onChange={(event) => updateNotifications({ [preference.key]: event.target.checked })} />
                   </label>
                 ))}
+                <label className="settings-toggle-row">
+                  <span><strong>{ts("notifications.pref.messagePreview.label")}</strong><small>{ts("notifications.pref.messagePreview.description")}</small></span>
+                  <input type="checkbox" disabled={!notificationSettings.enabled || !notificationSettings.directMessages} checked={notificationSettings.showMessagePreview} onChange={(event) => updateNotifications({ showMessagePreview: event.target.checked })} />
+                </label>
                 <label className="settings-toggle-row">
                   <span><strong>{ts("notifications.mentionsOnly.label")}</strong><small>{ts("notifications.mentionsOnly.hint")}</small></span>
                   <input type="checkbox" checked={notificationSettings.mentionsOnly} onChange={(event) => updateNotifications({ mentionsOnly: event.target.checked })} />

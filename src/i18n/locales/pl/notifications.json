@@ -1,1 +1,15 @@
-{}
+{
+  "desktop.someone": "Ktoś",
+  "desktop.friendRequestReceived.body": "Wysłał(a) Ci zaproszenie do znajomych.",
+  "desktop.friendRequestAccepted.body": "Zaakceptował(a) Twoje zaproszenie do znajomych.",
+  "desktop.dmReceived.hidden": "Masz nową wiadomość.",
+  "desktop.friendOnline.body": "Jest teraz online.",
+  "desktop.liveNow.body": "Jest na żywo.",
+  "desktop.accept": "Akceptuj",
+  "desktop.decline": "Odrzuć",
+  "desktop.message": "Wiadomość",
+  "desktop.viewProfile": "Zobacz profil",
+  "desktop.openConversation": "Otwórz rozmowę",
+  "desktop.watchLive": "Oglądaj na żywo",
+  "desktop.dismiss": "Zamknij"
+}

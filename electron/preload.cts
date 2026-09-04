@@ -38,6 +38,18 @@ type IncomingCallActionPayload = Readonly<{
   action: IncomingCallToastAction;
   inviteId: string;
 }>;
+type DesktopNotificationToastAction = "open" | "dismiss" | "accept" | "decline" | "message" | "watch-live";
+type DesktopNotificationToastPayload = Readonly<{
+  notificationId: string;
+  type: "friend-request" | "friend-accepted" | "dm" | "friend-online" | "live";
+  title: string;
+  body: string;
+  closeLabel: string;
+  soundEnabled: boolean;
+  accent: "indigo" | "teal" | "rose";
+  primaryAction?: Readonly<{ action: Exclude<DesktopNotificationToastAction, "dismiss">; label: string }>;
+  secondaryAction?: Readonly<{ action: Exclude<DesktopNotificationToastAction, "dismiss">; label: string }>;
+}>;
 type TrayStatus = "online" | "idle" | "dnd" | "invisible";
 type TrayAction = "open" | "settings" | "mute" | "quit" | TrayStatus;
 type TrayActionPayload = Readonly<{
@@ -118,6 +130,24 @@ function isTrayActionPayload(value: unknown): value is TrayActionPayload {
     isTrayStatus(action);
 
   return actionValid && isTrayStatus(record.status) && typeof record.muted === "boolean";
+}
+
+function isDesktopNotificationToastPayload(value: unknown): value is DesktopNotificationToastPayload {
+  if (!value || typeof value !== "object") return false;
+  const input = value as Record<string, unknown>;
+  const id = input.notificationId;
+  const type = input.type;
+  const accent = input.accent;
+  const validId = typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27,36}$/i.test(id);
+  const validType = type === "friend-request" || type === "friend-accepted" || type === "dm" || type === "friend-online" || type === "live";
+  const validAccent = accent === "indigo" || accent === "teal" || accent === "rose";
+  const validText = typeof input.title === "string" && input.title.length <= 160 && typeof input.body === "string" && input.body.length <= 320 && typeof input.closeLabel === "string" && input.closeLabel.length <= 80 && typeof input.soundEnabled === "boolean";
+  const validAction = (candidate: unknown): boolean => candidate === undefined || (
+    typeof candidate === "object" && candidate !== null
+    && typeof (candidate as Record<string, unknown>).label === "string"
+    && ((candidate as Record<string, unknown>).action === "open" || (candidate as Record<string, unknown>).action === "accept" || (candidate as Record<string, unknown>).action === "decline" || (candidate as Record<string, unknown>).action === "message" || (candidate as Record<string, unknown>).action === "watch-live")
+  );
+  return validId && validType && validAccent && validText && validAction(input.primaryAction) && validAction(input.secondaryAction);
 }
 
 function invokeWhitelisted(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -368,6 +398,29 @@ const bridge = Object.freeze({
         | { ok: true; native: true }
         | { ok: false; native: true; error: string }
       >,
+  },
+  desktopNotificationToast: {
+    show: (payload: DesktopNotificationToastPayload) => {
+      if (!isDesktopNotificationToastPayload(payload)) return Promise.resolve({ ok: false, native: true, error: "INVALID_DESKTOP_NOTIFICATION_TOAST" } as const);
+      return invokeWhitelisted(IPC_CHANNELS.desktopNotificationToastShow, payload) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >;
+    },
+    act: (payload: Readonly<{ action: DesktopNotificationToastAction; notificationId: string }>) =>
+      invokeWhitelisted(IPC_CHANNELS.desktopNotificationToastAction, payload) as Promise<
+        | { ok: true; native: true }
+        | { ok: false; native: true; error: string }
+      >,
+    onAction: (callback: (payload: Readonly<{ action: DesktopNotificationToastAction; notificationId: string }>) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, value: unknown) => {
+        if (!value || typeof value !== "object") return;
+        const record = value as Record<string, unknown>;
+        if (typeof record.notificationId === "string" && (record.action === "open" || record.action === "dismiss" || record.action === "accept" || record.action === "decline" || record.action === "message" || record.action === "watch-live")) callback({ action: record.action, notificationId: record.notificationId });
+      };
+      ipcRenderer.on(IPC_CHANNELS.desktopNotificationToastEvent, listener);
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.desktopNotificationToastEvent, listener);
+    },
   },
   incomingCall: {
     show: (payload: IncomingCallToastPayload) =>

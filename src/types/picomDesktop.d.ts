@@ -156,6 +156,21 @@ declare global {
           | { ok: false; native: true; error: string }
         >;
       };
+      desktopNotificationToast?: {
+        show: (payload: Readonly<{
+          notificationId: string;
+          type: "friend-request" | "friend-accepted" | "dm" | "friend-online" | "live";
+          title: string;
+          body: string;
+          closeLabel: string;
+          soundEnabled: boolean;
+          accent: "indigo" | "teal" | "rose";
+          primaryAction?: Readonly<{ action: "open" | "accept" | "decline" | "message" | "watch-live"; label: string }>;
+          secondaryAction?: Readonly<{ action: "open" | "accept" | "decline" | "message" | "watch-live"; label: string }>;
+        }>) => Promise<{ ok: true; native: true } | { ok: false; native: true; error: string }>;
+        act: (payload: Readonly<{ action: "open" | "dismiss" | "accept" | "decline" | "message" | "watch-live"; notificationId: string }>) => Promise<{ ok: true; native: true } | { ok: false; native: true; error: string }>;
+        onAction: (callback: (payload: Readonly<{ action: "open" | "dismiss" | "accept" | "decline" | "message" | "watch-live"; notificationId: string }>) => void) => () => void;
+      };
       incomingCall?: {
         show: (
           payload: PicomIncomingCallToastPayload

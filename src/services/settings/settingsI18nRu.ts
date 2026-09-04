@@ -951,4 +951,12 @@ export const settingsI18nRu: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Запускать свёрнутым",
   "windows.startMinimizedHint": "При следующем запуске приложение будет свёрнуто на панель задач.",
   "windows.startupUpdated": "Настройка автозапуска обновлена.",
+  "notifications.pref.friendOnline.label": "Друг в сети",
+  "notifications.pref.friendOnline.description": "Уведомлять, когда друг появляется в сети, с паузой против лишних уведомлений.",
+  "notifications.pref.followedUsersLive.label": "Отслеживаемые пользователи в эфире",
+  "notifications.pref.followedUsersLive.description": "Уведомлять, когда отслеживаемый пользователь запускает подходящий публичный эфир.",
+  "notifications.pref.followedPublishersLive.label": "Отслеживаемые publishers в эфире",
+  "notifications.pref.followedPublishersLive.description": "Уведомлять, когда отслеживаемый Creator или Publisher запускает подходящий публичный эфир.",
+  "notifications.pref.messagePreview.label": "Предпросмотр сообщения",
+  "notifications.pref.messagePreview.description": "Показывать короткий очищенный текст в уведомлениях о личных сообщениях.",
 };

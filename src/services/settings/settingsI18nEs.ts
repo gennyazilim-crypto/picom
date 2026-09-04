@@ -951,4 +951,12 @@ export const settingsI18nEs: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Iniciar minimizado",
   "windows.startMinimizedHint": "El siguiente inicio se minimizará a la barra de tareas.",
   "windows.startupUpdated": "Ajuste de inicio actualizado.",
+  "notifications.pref.friendOnline.label": "Amigo en línea",
+  "notifications.pref.friendOnline.description": "Avisar cuando un amigo se conecte, con una pausa para evitar ruido.",
+  "notifications.pref.followedUsersLive.label": "Usuarios seguidos en directo",
+  "notifications.pref.followedUsersLive.description": "Avisar cuando un usuario seguido inicie una transmisión pública apta.",
+  "notifications.pref.followedPublishersLive.label": "Publishers seguidos en directo",
+  "notifications.pref.followedPublishersLive.description": "Avisar cuando un Creator o Publisher seguido inicie una transmisión pública apta.",
+  "notifications.pref.messagePreview.label": "Vista previa del mensaje",
+  "notifications.pref.messagePreview.description": "Mostrar una vista previa breve y saneada en las notificaciones de mensajes directos.",
 };

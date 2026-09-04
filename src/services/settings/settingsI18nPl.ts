@@ -951,4 +951,12 @@ export const settingsI18nPl: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Uruchamiaj zminimalizowane",
   "windows.startMinimizedHint": "Następne uruchomienie rozpocznie się zminimalizowane na pasku zadań.",
   "windows.startupUpdated": "Ustawienie autostartu zaktualizowane.",
+  "notifications.pref.friendOnline.label": "Znajomy online",
+  "notifications.pref.friendOnline.description": "Powiadamiaj, gdy znajomy pojawi się online, z przerwą ograniczającą nadmiar powiadomień.",
+  "notifications.pref.followedUsersLive.label": "Obserwowani użytkownicy na żywo",
+  "notifications.pref.followedUsersLive.description": "Powiadamiaj, gdy obserwowany użytkownik rozpocznie kwalifikowaną publiczną transmisję.",
+  "notifications.pref.followedPublishersLive.label": "Obserwowani publisherzy na żywo",
+  "notifications.pref.followedPublishersLive.description": "Powiadamiaj, gdy obserwowany Creator lub Publisher rozpocznie kwalifikowaną publiczną transmisję.",
+  "notifications.pref.messagePreview.label": "Podgląd wiadomości",
+  "notifications.pref.messagePreview.description": "Pokazuj krótki, oczyszczony podgląd w powiadomieniach o wiadomościach bezpośrednich.",
 };

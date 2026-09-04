@@ -951,4 +951,12 @@ export const settingsI18nFr: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Démarrer réduit",
   "windows.startMinimizedHint": "Le prochain lancement démarrera réduit dans la barre des tâches.",
   "windows.startupUpdated": "Paramètre de démarrage mis à jour.",
+  "notifications.pref.friendOnline.label": "Ami en ligne",
+  "notifications.pref.friendOnline.description": "Avertir lorsqu’un ami se connecte, avec un délai pour éviter le bruit.",
+  "notifications.pref.followedUsersLive.label": "Utilisateurs suivis en direct",
+  "notifications.pref.followedUsersLive.description": "Avertir lorsqu’un utilisateur suivi démarre un direct public éligible.",
+  "notifications.pref.followedPublishersLive.label": "Publishers suivis en direct",
+  "notifications.pref.followedPublishersLive.description": "Avertir lorsqu’un Creator ou Publisher suivi démarre un direct public éligible.",
+  "notifications.pref.messagePreview.label": "Aperçu du message",
+  "notifications.pref.messagePreview.description": "Afficher un court aperçu assaini dans les notifications de messages directs.",
 };

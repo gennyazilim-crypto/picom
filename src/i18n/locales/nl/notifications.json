@@ -1,1 +1,15 @@
-{}
+{
+  "desktop.someone": "Iemand",
+  "desktop.friendRequestReceived.body": "Heeft je een vriendschapsverzoek gestuurd.",
+  "desktop.friendRequestAccepted.body": "Heeft je vriendschapsverzoek geaccepteerd.",
+  "desktop.dmReceived.hidden": "Je hebt een nieuw bericht ontvangen.",
+  "desktop.friendOnline.body": "Is nu online.",
+  "desktop.liveNow.body": "Is nu live.",
+  "desktop.accept": "Accepteren",
+  "desktop.decline": "Weigeren",
+  "desktop.message": "Bericht",
+  "desktop.viewProfile": "Profiel bekijken",
+  "desktop.openConversation": "Gesprek openen",
+  "desktop.watchLive": "Live kijken",
+  "desktop.dismiss": "Sluiten"
+}

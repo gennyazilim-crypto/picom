@@ -1,1 +1,15 @@
-{}
+{
+  "desktop.someone": "Alguien",
+  "desktop.friendRequestReceived.body": "Te envió una solicitud de amistad.",
+  "desktop.friendRequestAccepted.body": "Aceptó tu solicitud de amistad.",
+  "desktop.dmReceived.hidden": "Recibiste un mensaje nuevo.",
+  "desktop.friendOnline.body": "Ahora está en línea.",
+  "desktop.liveNow.body": "Está en directo.",
+  "desktop.accept": "Aceptar",
+  "desktop.decline": "Rechazar",
+  "desktop.message": "Mensaje",
+  "desktop.viewProfile": "Ver perfil",
+  "desktop.openConversation": "Abrir conversación",
+  "desktop.watchLive": "Ver en directo",
+  "desktop.dismiss": "Cerrar"
+}

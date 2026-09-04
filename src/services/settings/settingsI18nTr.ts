@@ -951,4 +951,12 @@ export const settingsI18nTr: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Küçültülmüş başlat",
   "windows.startMinimizedHint": "Sonraki açılış görev çubuğunda küçültülmüş başlar.",
   "windows.startupUpdated": "Başlangıç ayarı güncellendi.",
+  "notifications.pref.friendOnline.label": "Arkadaş çevrimiçi",
+  "notifications.pref.friendOnline.description": "Bir arkadaş çevrimiçi olduğunda, gürültüyü önlemek için bekleme süresiyle bildir.",
+  "notifications.pref.followedUsersLive.label": "Takip edilen kullanıcılar canlı",
+  "notifications.pref.followedUsersLive.description": "Takip ettiğin bir kullanıcı uygun herkese açık canlı yayın başlattığında bildir.",
+  "notifications.pref.followedPublishersLive.label": "Takip edilen yayıncılar canlı",
+  "notifications.pref.followedPublishersLive.description": "Takip ettiğin Creator veya Publisher uygun herkese açık canlı yayın başlattığında bildir.",
+  "notifications.pref.messagePreview.label": "Mesaj önizlemesi",
+  "notifications.pref.messagePreview.description": "Doğrudan mesaj masaüstü bildirimlerinde kısa, temizlenmiş önizleme göster.",
 };

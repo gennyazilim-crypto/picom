@@ -951,4 +951,12 @@ export const settingsI18nNl: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Geminimaliseerd starten",
   "windows.startMinimizedHint": "De volgende keer start de app geminimaliseerd in de taakbalk.",
   "windows.startupUpdated": "Opstartinstelling bijgewerkt.",
+  "notifications.pref.friendOnline.label": "Vriend online",
+  "notifications.pref.friendOnline.description": "Melden wanneer een vriend online komt, met een wachttijd tegen meldingsruis.",
+  "notifications.pref.followedUsersLive.label": "Gevolgde gebruikers live",
+  "notifications.pref.followedUsersLive.description": "Melden wanneer een gevolgde gebruiker een geschikte openbare livestream start.",
+  "notifications.pref.followedPublishersLive.label": "Gevolgde publishers live",
+  "notifications.pref.followedPublishersLive.description": "Melden wanneer een gevolgde Creator of Publisher een geschikte openbare livestream start.",
+  "notifications.pref.messagePreview.label": "Berichtvoorbeeld",
+  "notifications.pref.messagePreview.description": "Een korte opgeschoonde voorbeeldtekst in meldingen voor directe berichten tonen.",
 };

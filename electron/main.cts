@@ -58,6 +58,15 @@ import {
   setIncomingCallToastActionHandler,
   showIncomingCallToast,
 } from "./incomingCallToast.cjs";
+import {
+  handleDesktopNotificationToastAction,
+  initializeDesktopNotificationToastHost,
+  isDesktopNotificationToastSender,
+  resolveDesktopNotificationToastPreloadPath,
+  setDesktopNotificationToastActionHandler,
+  showDesktopNotificationToast,
+  type DesktopNotificationToastPayload,
+} from "./desktopNotificationToastHost.cjs";
 import { prepareNotificationAvatar } from "./notificationAvatarCache.cjs";
 import {
   measureCacheUsage,
@@ -907,6 +916,30 @@ function registerIpcHandlers(): void {
     }
   });
 
+  setDesktopNotificationToastActionHandler((action, notificationId) => {
+    if (action !== "dismiss") focusMainWindow();
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send(IPC_CHANNELS.desktopNotificationToastEvent, { action, notificationId });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.desktopNotificationToastShow, (event, payload: unknown) => {
+    if (!isTrustedMainWindowIpcEvent(event)) return { ok: false, native: true, error: "UNTRUSTED_DESKTOP_NOTIFICATION_SENDER" } as const;
+    const candidate = payload as Partial<DesktopNotificationToastPayload> | null;
+    const validType = candidate?.type === "friend-request" || candidate?.type === "friend-accepted" || candidate?.type === "dm" || candidate?.type === "friend-online" || candidate?.type === "live";
+    const validAccent = candidate?.accent === "indigo" || candidate?.accent === "teal" || candidate?.accent === "rose";
+    if (!candidate || typeof candidate.notificationId !== "string" || !/^[0-9a-f]{8}-[0-9a-f-]{27,36}$/i.test(candidate.notificationId) || !validType || !validAccent || typeof candidate.title !== "string" || typeof candidate.body !== "string" || typeof candidate.closeLabel !== "string" || typeof candidate.soundEnabled !== "boolean") return { ok: false, native: true, error: "INVALID_DESKTOP_NOTIFICATION_TOAST" } as const;
+    showDesktopNotificationToast(candidate as DesktopNotificationToastPayload, resolveDesktopNotificationToastPreloadPath());
+    return { ok: true, native: true } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.desktopNotificationToastAction, (event, payload: unknown) => {
+    if (!isDesktopNotificationToastSender(event) || !payload || typeof payload !== "object") return { ok: false, native: true, error: "UNTRUSTED_DESKTOP_NOTIFICATION_TOAST_SENDER" } as const;
+    const value = payload as Record<string, unknown>;
+    return handleDesktopNotificationToastAction(value.action, value.notificationId)
+      ? { ok: true, native: true } as const
+      : { ok: false, native: true, error: "INVALID_DESKTOP_NOTIFICATION_TOAST_ACTION" } as const;
+  });
+
   setIncomingCallToastActionHandler((action, inviteId) => {
     incomingCallPresentationGeneration += 1;
     focusMainWindow();
@@ -1401,6 +1434,7 @@ if (!hasSingleInstanceLock) {
   });
 
   app.whenReady().then(() => {
+    initializeDesktopNotificationToastHost();
     Menu.setApplicationMenu(null);
     registerProtocolHandler();
     registerIpcHandlers();

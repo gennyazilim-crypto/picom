@@ -951,4 +951,12 @@ export const settingsI18nIt: Record<SettingsI18nKey, string> = {
   "windows.startMinimized": "Avvia ridotto a icona",
   "windows.startMinimizedHint": "Il prossimo avvio parte ridotto a icona nella barra delle applicazioni.",
   "windows.startupUpdated": "Impostazione di avvio aggiornata.",
+  "notifications.pref.friendOnline.label": "Amico online",
+  "notifications.pref.friendOnline.description": "Avvisa quando un amico torna online, con una pausa per evitare rumore.",
+  "notifications.pref.followedUsersLive.label": "Utenti seguiti in diretta",
+  "notifications.pref.followedUsersLive.description": "Avvisa quando un utente seguito avvia una diretta pubblica idonea.",
+  "notifications.pref.followedPublishersLive.label": "Publisher seguiti in diretta",
+  "notifications.pref.followedPublishersLive.description": "Avvisa quando un Creator o Publisher seguito avvia una diretta pubblica idonea.",
+  "notifications.pref.messagePreview.label": "Anteprima messaggio",
+  "notifications.pref.messagePreview.description": "Mostra una breve anteprima ripulita nelle notifiche desktop dei messaggi diretti.",
 };
