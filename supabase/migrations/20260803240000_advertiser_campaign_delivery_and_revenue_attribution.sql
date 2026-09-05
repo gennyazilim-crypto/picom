@@ -1,9 +1,7 @@
 -- PICOM advertiser campaign delivery, budget ledger, and partner revenue attribution.
 -- Additive only. Does not rewrite prior migrations or DROP TABLE.
 begin;
-
 create extension if not exists pgcrypto with schema extensions;
-
 -- ---------------------------------------------------------------------------
 -- Platform settings / kill switches
 -- ---------------------------------------------------------------------------
@@ -13,7 +11,6 @@ create table if not exists public.ad_platform_settings (
   updated_by uuid references public.profiles(id) on delete set null,
   updated_at timestamptz not null default now()
 );
-
 insert into public.ad_platform_settings (setting_key, setting_value) values
   ('advertising_enabled', 'true'::jsonb),
   ('advertising_global_kill_switch', 'false'::jsonb),
@@ -21,7 +18,6 @@ insert into public.ad_platform_settings (setting_key, setting_value) values
   ('ad_scheduler_enabled', 'false'::jsonb),
   ('ad_reconciliation_enabled', 'false'::jsonb)
 on conflict (setting_key) do nothing;
-
 create table if not exists public.ad_placements (
   placement_key text primary key check (placement_key ~ '^[a-z][a-z0-9_]{1,63}$'),
   surface text not null,
@@ -35,7 +31,6 @@ create table if not exists public.ad_placements (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 insert into public.ad_placements (placement_key, surface, format, enabled) values
   ('feed_inline', 'feed', 'inline', false),
   ('feed_between_posts', 'feed', 'inline', false),
@@ -50,7 +45,6 @@ insert into public.ad_placements (placement_key, surface, format, enabled) value
   ('publisher_community_sponsor', 'publisher', 'sponsor', false),
   ('business_sponsored', 'business', 'sponsored', false)
 on conflict (placement_key) do nothing;
-
 -- ---------------------------------------------------------------------------
 -- Advertiser account extensions
 -- ---------------------------------------------------------------------------
@@ -67,27 +61,22 @@ alter table public.advertiser_accounts
   add column if not exists suspended_at timestamptz,
   add column if not exists advertising_purpose text,
   add column if not exists estimated_monthly_spend_minor bigint check (estimated_monthly_spend_minor is null or estimated_monthly_spend_minor >= 0);
-
 alter table public.advertiser_accounts drop constraint if exists advertiser_accounts_billing_status_check;
 alter table public.advertiser_accounts
   add constraint advertiser_accounts_billing_status_check
   check (billing_status in ('unconfigured', 'not_configured', 'pending', 'funded', 'payment_required', 'active', 'past_due', 'blocked', 'suspended'));
-
 alter table public.advertiser_accounts drop constraint if exists advertiser_accounts_advertising_status_check;
 alter table public.advertiser_accounts
   add constraint advertiser_accounts_advertising_status_check
   check (advertising_status in ('draft', 'pending', 'pending_verification', 'active', 'limited', 'suspended', 'revoked'));
-
 alter table public.advertiser_accounts drop constraint if exists advertiser_accounts_risk_status_check;
 alter table public.advertiser_accounts
   add constraint advertiser_accounts_risk_status_check
   check (risk_status in ('unknown', 'normal', 'clear', 'review_required', 'restricted', 'high_risk', 'blocked'));
-
 alter table public.advertiser_account_members drop constraint if exists advertiser_account_members_role_check;
 alter table public.advertiser_account_members
   add constraint advertiser_account_members_role_check
   check (role in ('owner', 'advertiser_owner', 'advertiser_admin', 'billing_manager', 'campaign_manager', 'creative_manager', 'analyst', 'compliance_contact'));
-
 create table if not exists public.advertiser_invitations (
   id uuid primary key default gen_random_uuid(),
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
@@ -101,7 +90,6 @@ create table if not exists public.advertiser_invitations (
   revoked_at timestamptz,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.advertiser_ownership_transfers (
   id uuid primary key default gen_random_uuid(),
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
@@ -114,7 +102,6 @@ create table if not exists public.advertiser_ownership_transfers (
   created_at timestamptz not null default now(),
   check (from_user_id <> to_user_id)
 );
-
 -- ---------------------------------------------------------------------------
 -- Campaign / ad set / creative extensions
 -- ---------------------------------------------------------------------------
@@ -139,9 +126,7 @@ alter table public.ad_campaigns
   add column if not exists paused_at timestamptz,
   add column if not exists completed_at timestamptz,
   add column if not exists cancelled_at timestamptz;
-
 update public.ad_campaigns set total_budget_minor = coalesce(total_budget_minor, budget_cents) where total_budget_minor is null;
-
 alter table public.ad_campaigns drop constraint if exists ad_campaigns_status_check;
 alter table public.ad_campaigns
   add constraint ad_campaigns_status_check
@@ -149,22 +134,18 @@ alter table public.ad_campaigns
     'draft', 'submitted', 'in_review', 'requires_changes', 'approved', 'scheduled', 'active',
     'paused', 'budget_exhausted', 'completed', 'rejected', 'suspended', 'cancelled', 'archived'
   ));
-
 alter table public.ad_campaigns drop constraint if exists ad_campaigns_buying_type_check;
 alter table public.ad_campaigns
   add constraint ad_campaigns_buying_type_check
   check (buying_type in ('fixed_cpm', 'fixed_cpc', 'reserved', 'internal_sponsorship'));
-
 alter table public.ad_campaigns drop constraint if exists ad_campaigns_pacing_mode_check;
 alter table public.ad_campaigns
   add constraint ad_campaigns_pacing_mode_check
   check (pacing_mode in ('even', 'accelerated', 'scheduled'));
-
 alter table public.ad_campaigns drop constraint if exists ad_campaigns_delivery_status_check;
 alter table public.ad_campaigns
   add constraint ad_campaigns_delivery_status_check
   check (delivery_status in ('idle', 'scheduled', 'delivering', 'paused', 'exhausted', 'completed', 'blocked'));
-
 alter table public.ad_campaigns drop constraint if exists ad_campaigns_objective_check;
 alter table public.ad_campaigns
   add constraint ad_campaigns_objective_check
@@ -172,7 +153,6 @@ alter table public.ad_campaigns
     'awareness', 'reach', 'traffic', 'engagement', 'video_views', 'profile_visits',
     'product_views', 'event_interest', 'app_install', 'lead_generation'
   ));
-
 create table if not exists public.ad_sets (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references public.ad_campaigns(id) on delete restrict,
@@ -199,7 +179,6 @@ create table if not exists public.ad_sets (
   updated_at timestamptz not null default now(),
   check (end_at is null or start_at is null or end_at > start_at)
 );
-
 create table if not exists public.ad_creatives (
   id uuid primary key default gen_random_uuid(),
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
@@ -227,7 +206,6 @@ create table if not exists public.ad_creatives (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 alter table public.ad_creative_snapshots
   add column if not exists campaign_id uuid references public.ad_campaigns(id) on delete restrict,
   add column if not exists ad_set_id uuid references public.ad_sets(id) on delete restrict,
@@ -238,18 +216,15 @@ alter table public.ad_creative_snapshots
   add column if not exists status text not null default 'draft',
   add column if not exists approved_at timestamptz,
   add column if not exists retired_at timestamptz;
-
 alter table public.ad_creative_snapshots drop constraint if exists ad_creative_snapshots_status_check;
 alter table public.ad_creative_snapshots
   add constraint ad_creative_snapshots_status_check
   check (status in ('draft', 'submitted', 'approved', 'rejected', 'suspended', 'retired'));
-
 -- Make Business-bridge snapshot columns nullable for general creatives.
 alter table public.ad_creative_snapshots
   alter column organization_id drop not null,
   alter column source_post_id drop not null,
   alter column source_post_version drop not null;
-
 -- ---------------------------------------------------------------------------
 -- Review decisions (append-only)
 -- ---------------------------------------------------------------------------
@@ -271,7 +246,6 @@ create table if not exists public.ad_review_decisions (
   created_at timestamptz not null default now(),
   unique (subject_type, subject_id, idempotency_key)
 );
-
 -- ---------------------------------------------------------------------------
 -- Funding / budget / spend ledger
 -- ---------------------------------------------------------------------------
@@ -288,7 +262,6 @@ create table if not exists public.advertiser_funding_accounts (
   updated_at timestamptz not null default now(),
   unique (advertiser_account_id, funding_type, currency)
 );
-
 create table if not exists public.advertiser_funding_transactions (
   id uuid primary key default gen_random_uuid(),
   funding_account_id uuid not null references public.advertiser_funding_accounts(id) on delete restrict,
@@ -308,7 +281,6 @@ create table if not exists public.advertiser_funding_transactions (
   created_at timestamptz not null default now(),
   unique (advertiser_account_id, idempotency_key)
 );
-
 create table if not exists public.campaign_budget_reservations (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references public.ad_campaigns(id) on delete restrict,
@@ -328,7 +300,6 @@ create table if not exists public.campaign_budget_reservations (
   check (consumed_amount_minor <= amount_minor),
   unique (campaign_id, idempotency_key)
 );
-
 create table if not exists public.ad_spend_ledger (
   id uuid primary key default gen_random_uuid(),
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
@@ -356,7 +327,6 @@ create table if not exists public.ad_spend_ledger (
   check (cash_amount_minor + credit_amount_minor = gross_amount_minor),
   unique (advertiser_account_id, idempotency_key)
 );
-
 create table if not exists public.advertiser_balance_snapshots (
   id uuid primary key default gen_random_uuid(),
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
@@ -369,7 +339,6 @@ create table if not exists public.advertiser_balance_snapshots (
   source text not null default 'ledger_recompute' check (source in ('ledger_recompute', 'manual_audit')),
   correlation_id text
 );
-
 -- ---------------------------------------------------------------------------
 -- Delivery / events / frequency / preferences
 -- ---------------------------------------------------------------------------
@@ -397,7 +366,6 @@ create table if not exists public.ad_delivery_decisions (
   unique (request_id, placement_key),
   unique (idempotency_key)
 );
-
 create table if not exists public.ad_impressions (
   id uuid primary key default gen_random_uuid(),
   decision_id uuid not null references public.ad_delivery_decisions(id) on delete restrict,
@@ -415,7 +383,6 @@ create table if not exists public.ad_impressions (
   unique (decision_id, client_event_id),
   unique (idempotency_key)
 );
-
 create table if not exists public.ad_clicks (
   id uuid primary key default gen_random_uuid(),
   decision_id uuid not null references public.ad_delivery_decisions(id) on delete restrict,
@@ -428,7 +395,6 @@ create table if not exists public.ad_clicks (
   idempotency_key text not null,
   unique (idempotency_key)
 );
-
 create table if not exists public.ad_frequency_counters (
   id uuid primary key default gen_random_uuid(),
   subject_hash text not null,
@@ -442,20 +408,17 @@ create table if not exists public.ad_frequency_counters (
   last_impression_at timestamptz,
   unique (subject_hash, campaign_id, ad_set_id, advertiser_account_id, placement_key, window_start)
 );
-
 create table if not exists public.user_ad_preferences (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   ads_hidden boolean not null default false,
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.user_advertiser_blocks (
   user_id uuid not null references public.profiles(id) on delete cascade,
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
   created_at timestamptz not null default now(),
   primary key (user_id, advertiser_account_id)
 );
-
 create table if not exists public.user_ad_feedback (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -473,7 +436,6 @@ create table if not exists public.user_ad_feedback (
   moderation_case_id uuid,
   created_at timestamptz not null default now()
 );
-
 create table if not exists public.advertiser_conversion_sources (
   id uuid primary key default gen_random_uuid(),
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
@@ -484,7 +446,6 @@ create table if not exists public.advertiser_conversion_sources (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 create table if not exists public.ad_conversion_events (
   id uuid primary key default gen_random_uuid(),
   advertiser_account_id uuid not null references public.advertiser_accounts(id) on delete restrict,
@@ -502,7 +463,6 @@ create table if not exists public.ad_conversion_events (
   idempotency_key text not null,
   unique (advertiser_account_id, idempotency_key)
 );
-
 create table if not exists public.ad_attribution_records (
   id uuid primary key default gen_random_uuid(),
   conversion_event_id uuid not null references public.ad_conversion_events(id) on delete restrict,
@@ -514,7 +474,6 @@ create table if not exists public.ad_attribution_records (
   attributed_at timestamptz not null default now(),
   unique (conversion_event_id)
 );
-
 create table if not exists public.ad_partner_attributions (
   id uuid primary key default gen_random_uuid(),
   partner_type text not null check (partner_type in ('creator', 'publisher')),
@@ -541,7 +500,6 @@ create table if not exists public.ad_partner_attributions (
   check (platform_share_minor + partner_share_minor = eligible_revenue_minor),
   unique (idempotency_key)
 );
-
 create table if not exists public.partner_revenue_accruals (
   id uuid primary key default gen_random_uuid(),
   partner_attribution_id uuid not null references public.ad_partner_attributions(id) on delete restrict,
@@ -556,7 +514,6 @@ create table if not exists public.partner_revenue_accruals (
   created_at timestamptz not null default now(),
   unique (idempotency_key)
 );
-
 create table if not exists public.ad_reconciliation_runs (
   id uuid primary key default gen_random_uuid(),
   period_start timestamptz not null,
@@ -569,7 +526,6 @@ create table if not exists public.ad_reconciliation_runs (
   check (period_end > period_start),
   unique (period_start, period_end)
 );
-
 create table if not exists public.ad_worker_jobs (
   id uuid primary key default gen_random_uuid(),
   job_type text not null check (job_type in (
@@ -587,7 +543,6 @@ create table if not exists public.ad_worker_jobs (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 -- ---------------------------------------------------------------------------
 -- Helper / guard functions
 -- ---------------------------------------------------------------------------
@@ -602,7 +557,6 @@ begin
   return new;
 end;
 $$;
-
 create or replace function public.ads_prevent_mutation()
 returns trigger
 language plpgsql
@@ -613,7 +567,6 @@ begin
   raise exception 'ADS_APPEND_ONLY' using errcode = '55000';
 end;
 $$;
-
 create or replace function public.ads_setting_bool(p_key text, p_default boolean default false)
 returns boolean
 language sql
@@ -626,7 +579,6 @@ as $$
     p_default
   );
 $$;
-
 create or replace function public.is_advertiser_member_with_roles(
   target_account_id uuid,
   allowed_roles text[]
@@ -648,7 +600,6 @@ as $$
       )
   );
 $$;
-
 create or replace function public.ads_sensitive_targeting_keys()
 returns text[]
 language sql
@@ -662,7 +613,6 @@ as $$
     'financial_hardship', 'criminal_allegation', 'biometric_data', 'retargeting'
   ]::text[];
 $$;
-
 create or replace function public.ads_allowed_targeting_keys()
 returns text[]
 language sql
@@ -675,7 +625,6 @@ as $$
     'contextual_interest', 'followed_business', 'device_class', 'daypart'
   ]::text[];
 $$;
-
 create or replace function public.validate_ad_targeting_spec(spec jsonb)
 returns void
 language plpgsql
@@ -699,7 +648,6 @@ begin
   end loop;
 end;
 $$;
-
 create or replace function public.ads_require_active_legal(doc_keys text[])
 returns void
 language plpgsql
@@ -724,7 +672,6 @@ exception
     raise exception 'LEGAL_COPY_REQUIRED' using errcode = 'P0001';
 end;
 $$;
-
 create or replace function public.ads_hash_binding(raw_value text)
 returns text
 language sql
@@ -733,16 +680,14 @@ set search_path = public, pg_temp
 as $$
   select encode(extensions.digest(coalesce(raw_value, ''), 'sha256'), 'hex');
 $$;
-
 create or replace function public.ads_allow_internal_transition()
 returns boolean
 language sql
 stable
 set search_path = public, pg_temp
-as $
+as $$
   select coalesce(nullif(current_setting('picom.ads_internal', true), ''), '') = '1';
-$;
-
+$$;
 -- ---------------------------------------------------------------------------
 -- Advertiser onboarding / lifecycle
 -- ---------------------------------------------------------------------------
@@ -809,7 +754,6 @@ begin
   return account_id;
 end;
 $$;
-
 create or replace function public.submit_advertiser_account(target_account_id uuid)
 returns void
 language plpgsql
@@ -833,7 +777,6 @@ begin
   end if;
 end;
 $$;
-
 create or replace function public.root_activate_advertiser_account(
   target_account_id uuid,
   public_reason_code text,
@@ -870,7 +813,6 @@ begin
     and risk_status <> 'blocked';
 end;
 $$;
-
 create or replace function public.root_suspend_advertiser_account(
   target_account_id uuid,
   public_reason_code text,
@@ -907,7 +849,6 @@ begin
     and status in ('active', 'scheduled', 'approved');
 end;
 $$;
-
 -- Last owner guard
 create or replace function public.ads_require_advertiser_owner_membership()
 returns trigger
@@ -942,12 +883,10 @@ begin
   return coalesce(new, old);
 end;
 $$;
-
 drop trigger if exists ads_require_advertiser_owner on public.advertiser_account_members;
 create trigger ads_require_advertiser_owner
   before update or delete on public.advertiser_account_members
   for each row execute function public.ads_require_advertiser_owner_membership();
-
 -- Client cannot self-activate advertiser or write spend limits
 create or replace function public.ads_guard_advertiser_account_write()
 returns trigger
@@ -973,12 +912,10 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists ads_guard_advertiser_account_write on public.advertiser_accounts;
 create trigger ads_guard_advertiser_account_write
   before update on public.advertiser_accounts
   for each row execute function public.ads_guard_advertiser_account_write();
-
 -- ---------------------------------------------------------------------------
 -- Campaign / ad set / creative lifecycle
 -- ---------------------------------------------------------------------------
@@ -1041,7 +978,6 @@ begin
   return campaign_id;
 end;
 $$;
-
 create or replace function public.create_ad_set(
   target_campaign_id uuid,
   target_name text,
@@ -1108,7 +1044,6 @@ begin
   return ad_set_id;
 end;
 $$;
-
 create or replace function public.create_ad_creative(
   target_advertiser_account_id uuid,
   target_campaign_id uuid,
@@ -1158,7 +1093,6 @@ begin
   return creative_id;
 end;
 $$;
-
 create or replace function public.create_ad_creative_snapshot(target_creative_id uuid)
 returns uuid
 language plpgsql
@@ -1217,7 +1151,6 @@ begin
   return snapshot_id;
 end;
 $$;
-
 create or replace function public.submit_ad_campaign(target_campaign_id uuid)
 returns void
 language plpgsql
@@ -1261,7 +1194,6 @@ begin
   where id = target_campaign_id;
 end;
 $$;
-
 create or replace function public.root_approve_ad_campaign(
   target_campaign_id uuid,
   public_reason_code text,
@@ -1294,7 +1226,6 @@ begin
     and status in ('submitted', 'in_review', 'requires_changes');
 end;
 $$;
-
 create or replace function public.root_reject_ad_campaign(
   target_campaign_id uuid,
   public_reason_code text,
@@ -1326,7 +1257,6 @@ begin
   where id = target_campaign_id;
 end;
 $$;
-
 create or replace function public.root_approve_ad_creative(
   target_creative_id uuid,
   target_snapshot_id uuid,
@@ -1369,7 +1299,6 @@ begin
   -- Approved marker is stored on creative + review decision; delivery uses snapshot status via service role path below.
 end;
 $$;
-
 -- Guard: clients cannot mark campaign active / creative approved directly
 create or replace function public.ads_guard_campaign_write()
 returns trigger
@@ -1392,12 +1321,10 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists ads_guard_campaign_write on public.ad_campaigns;
 create trigger ads_guard_campaign_write
   before update on public.ad_campaigns
   for each row execute function public.ads_guard_campaign_write();
-
 create or replace function public.ads_guard_creative_write()
 returns trigger
 language plpgsql
@@ -1416,12 +1343,10 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists ads_guard_creative_write on public.ad_creatives;
 create trigger ads_guard_creative_write
   before update on public.ad_creatives
   for each row execute function public.ads_guard_creative_write();
-
 -- ---------------------------------------------------------------------------
 -- Funding / reservation / spend
 -- ---------------------------------------------------------------------------
@@ -1464,7 +1389,6 @@ begin
   return greatest(credits - debits, 0);
 end;
 $$;
-
 create or replace function public.reserve_campaign_budget(
   target_campaign_id uuid,
   target_funding_account_id uuid,
@@ -1543,7 +1467,6 @@ begin
   return reservation_id;
 end;
 $$;
-
 create or replace function public.release_campaign_budget(
   target_campaign_id uuid,
   target_idempotency_key text
@@ -1592,7 +1515,6 @@ begin
   end if;
 end;
 $$;
-
 create or replace function public.activate_ad_campaign(target_campaign_id uuid)
 returns void
 language plpgsql
@@ -1648,7 +1570,6 @@ begin
   end if;
 end;
 $$;
-
 create or replace function public.pause_ad_campaign(target_campaign_id uuid)
 returns void
 language plpgsql
@@ -1670,7 +1591,6 @@ begin
   end if;
 end;
 $$;
-
 create or replace function public.record_ad_spend_charge(
   target_advertiser_account_id uuid,
   target_campaign_id uuid,
@@ -1769,7 +1689,6 @@ begin
   return ledger_id;
 end;
 $$;
-
 create or replace function public.reverse_invalid_ad_spend(
   target_spend_ledger_id uuid,
   target_idempotency_key text,
@@ -1823,7 +1742,6 @@ begin
   return reversal_id;
 end;
 $$;
-
 -- ---------------------------------------------------------------------------
 -- Delivery engine
 -- ---------------------------------------------------------------------------
@@ -2030,7 +1948,6 @@ begin
   );
 end;
 $$;
-
 create or replace function public.record_ad_impression(
   target_decision_id uuid,
   target_visibility_ratio numeric,
@@ -2121,7 +2038,6 @@ begin
   return jsonb_build_object('impression_id', impression_id, 'billable', billable, 'duplicate', false);
 end;
 $$;
-
 create or replace function public.record_ad_click(
   target_decision_id uuid,
   target_idempotency_key text,
@@ -2182,7 +2098,6 @@ begin
   );
 end;
 $$;
-
 create or replace function public.get_ad_decision_explanation(target_decision_id uuid)
 returns jsonb
 language plpgsql
@@ -2213,7 +2128,6 @@ begin
   );
 end;
 $$;
-
 create or replace function public.hide_ad_decision(target_decision_id uuid, target_action text)
 returns void
 language plpgsql
@@ -2248,7 +2162,6 @@ begin
   end if;
 end;
 $$;
-
 create or replace function public.report_ad_decision(
   target_decision_id uuid,
   target_reason text
@@ -2280,7 +2193,6 @@ begin
   return feedback_id;
 end;
 $$;
-
 create or replace function public.root_toggle_ad_placement(target_placement_key text, target_enabled boolean)
 returns void
 language plpgsql
@@ -2299,7 +2211,6 @@ begin
   end if;
 end;
 $$;
-
 create or replace function public.root_toggle_advertising_global(target_disabled boolean)
 returns void
 language plpgsql
@@ -2316,7 +2227,6 @@ begin
     set setting_value = excluded.setting_value, updated_by = excluded.updated_by, updated_at = now();
 end;
 $$;
-
 -- ---------------------------------------------------------------------------
 -- Partner attribution + reconciliation
 -- ---------------------------------------------------------------------------
@@ -2420,7 +2330,6 @@ begin
   return attribution_id;
 end;
 $$;
-
 create or replace function public.reconcile_ad_revenue_period(
   period_start timestamptz,
   period_end timestamptz,
@@ -2513,7 +2422,6 @@ exception
     raise;
 end;
 $$;
-
 -- ---------------------------------------------------------------------------
 -- Append-only triggers + legal seed
 -- ---------------------------------------------------------------------------
@@ -2521,27 +2429,22 @@ drop trigger if exists ads_spend_ledger_append_only on public.ad_spend_ledger;
 create trigger ads_spend_ledger_append_only
   before update or delete on public.ad_spend_ledger
   for each row execute function public.ads_prevent_mutation();
-
 drop trigger if exists ads_funding_tx_append_only on public.advertiser_funding_transactions;
 create trigger ads_funding_tx_append_only
   before update or delete on public.advertiser_funding_transactions
   for each row execute function public.ads_prevent_mutation();
-
 drop trigger if exists ads_review_decisions_append_only on public.ad_review_decisions;
 create trigger ads_review_decisions_append_only
   before update or delete on public.ad_review_decisions
   for each row execute function public.ads_prevent_mutation();
-
 drop trigger if exists ads_partner_attr_append_only on public.ad_partner_attributions;
 create trigger ads_partner_attr_append_only
   before update or delete on public.ad_partner_attributions
   for each row execute function public.ads_prevent_mutation();
-
 drop trigger if exists ads_partner_accrual_no_delete on public.partner_revenue_accruals;
 create trigger ads_partner_accrual_no_delete
   before delete on public.partner_revenue_accruals
   for each row execute function public.ads_prevent_mutation();
-
 create table if not exists public.advertising_legal_document_versions (
   id uuid primary key default gen_random_uuid(),
   document_key text not null check (document_key in (
@@ -2557,7 +2460,6 @@ create table if not exists public.advertising_legal_document_versions (
   created_at timestamptz not null default now(),
   unique (document_key, version)
 );
-
 insert into public.advertising_legal_document_versions (document_key, version, status)
 values
   ('advertising_terms', 'v1-draft', 'pending_legal'),
@@ -2575,7 +2477,6 @@ values
   ('business_partner_terms', 'v1-draft', 'pending_legal'),
   ('appeal_complaint_procedure', 'v1-draft', 'pending_legal')
 on conflict (document_key, version) do nothing;
-
 -- Move legal table creation earlier is handled above; ensure RLS + grants.
 
 alter table public.ad_platform_settings enable row level security;
@@ -2605,7 +2506,6 @@ alter table public.partner_revenue_accruals enable row level security;
 alter table public.ad_reconciliation_runs enable row level security;
 alter table public.ad_worker_jobs enable row level security;
 alter table public.advertising_legal_document_versions enable row level security;
-
 revoke all on table
   public.ad_platform_settings, public.ad_placements, public.advertiser_invitations,
   public.advertiser_ownership_transfers, public.ad_sets, public.ad_creatives, public.ad_review_decisions,
@@ -2617,7 +2517,6 @@ revoke all on table
   public.partner_revenue_accruals, public.ad_reconciliation_runs, public.ad_worker_jobs,
   public.advertising_legal_document_versions
 from public, anon;
-
 revoke all on table
   public.ad_platform_settings, public.advertiser_invitations, public.advertiser_ownership_transfers,
   public.ad_review_decisions, public.advertiser_funding_transactions, public.campaign_budget_reservations,
@@ -2626,47 +2525,38 @@ revoke all on table
   public.ad_conversion_events, public.ad_attribution_records, public.ad_partner_attributions,
   public.partner_revenue_accruals, public.ad_reconciliation_runs, public.ad_worker_jobs
 from authenticated;
-
 -- Member read policies (no client writes to financial/event tables)
 create policy ads_placements_authenticated_select on public.ad_placements
   for select to authenticated using (true);
-
 create policy ads_sets_member_select on public.ad_sets
   for select to authenticated
   using (public.is_advertiser_account_member(advertiser_account_id) or public.verification_business_is_platform_admin());
-
 create policy ads_creatives_member_select on public.ad_creatives
   for select to authenticated
   using (public.is_advertiser_account_member(advertiser_account_id) or public.verification_business_is_platform_admin());
-
 create policy ads_funding_accounts_billing_select on public.advertiser_funding_accounts
   for select to authenticated
   using (
     public.is_advertiser_member_with_roles(advertiser_account_id, array['advertiser_owner', 'owner', 'billing_manager', 'advertiser_admin'])
     or public.verification_business_is_platform_admin()
   );
-
 create policy ads_spend_ledger_billing_select on public.ad_spend_ledger
   for select to authenticated
   using (
     public.is_advertiser_member_with_roles(advertiser_account_id, array['advertiser_owner', 'owner', 'billing_manager', 'advertiser_admin', 'analyst'])
     or public.verification_business_is_platform_admin()
   );
-
 create policy ads_user_prefs_own on public.user_ad_preferences
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
-
 create policy ads_user_blocks_own on public.user_advertiser_blocks
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
-
 create policy ads_user_feedback_own_select on public.user_ad_feedback
   for select to authenticated
   using (user_id = auth.uid() or public.verification_business_is_platform_admin());
-
 create policy ads_partner_accrual_subject_select on public.partner_revenue_accruals
   for select to authenticated
   using (
@@ -2676,13 +2566,10 @@ create policy ads_partner_accrual_subject_select on public.partner_revenue_accru
     )
     or public.verification_business_is_platform_admin()
   );
-
 create policy ads_legal_versions_select on public.advertising_legal_document_versions
   for select to authenticated using (true);
-
 create policy ads_admin_settings_select on public.ad_platform_settings
   for select to authenticated using (public.verification_business_is_platform_admin());
-
 -- Revoke execute from PUBLIC/anon on all ads functions; grant selectively
 do $$
 declare
@@ -2700,7 +2587,6 @@ begin
     execute format('revoke all on function public.%s from public, anon, authenticated', fn);
   end loop;
 end $$;
-
 revoke all on function public.ads_setting_bool(text, boolean) from public, anon;
 revoke all on function public.is_advertiser_member_with_roles(uuid, text[]) from public, anon;
 revoke all on function public.validate_ad_targeting_spec(jsonb) from public, anon;
@@ -2735,7 +2621,6 @@ revoke all on function public.root_toggle_ad_placement(text, boolean) from publi
 revoke all on function public.root_toggle_advertising_global(boolean) from public, anon;
 revoke all on function public.attribute_partner_ad_revenue(uuid, uuid, text, uuid, uuid, uuid, text) from public, anon;
 revoke all on function public.reconcile_ad_revenue_period(timestamptz, timestamptz, text) from public, anon;
-
 grant execute on function public.create_advertiser_account_v2(text, uuid, text, text, text, text, text, text, bigint, text) to authenticated;
 grant execute on function public.submit_advertiser_account(uuid) to authenticated;
 grant execute on function public.create_ad_campaign(uuid, text, text, text, bigint, bigint, timestamptz, timestamptz, text, text) to authenticated;
@@ -2756,7 +2641,6 @@ grant execute on function public.report_ad_decision(uuid, text) to authenticated
 grant execute on function public.compute_advertiser_available_balance_minor(uuid, text) to authenticated;
 grant execute on function public.is_advertiser_member_with_roles(uuid, text[]) to authenticated;
 grant execute on function public.validate_ad_targeting_spec(jsonb) to authenticated;
-
 grant execute on function public.root_activate_advertiser_account(uuid, text, text, text, text) to authenticated;
 grant execute on function public.root_suspend_advertiser_account(uuid, text, text, text, text) to authenticated;
 grant execute on function public.root_approve_ad_campaign(uuid, text, text, text, text) to authenticated;
@@ -2767,7 +2651,6 @@ grant execute on function public.root_toggle_advertising_global(boolean) to auth
 grant execute on function public.reverse_invalid_ad_spend(uuid, text, text, text) to authenticated;
 grant execute on function public.attribute_partner_ad_revenue(uuid, uuid, text, uuid, uuid, uuid, text) to authenticated;
 grant execute on function public.reconcile_ad_revenue_period(timestamptz, timestamptz, text) to authenticated;
-
 -- service_role retains full access by default in Supabase
 
 commit;
