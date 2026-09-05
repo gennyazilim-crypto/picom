@@ -73,4 +73,4 @@ for (const version of recoveredVersions) {
 
 console.log("PICOM_DESKTOP_NOTIFICATION_HISTORY_PROVENANCE_GUARD=PASS");
 console.log(`legacyRemoteOnly=${remoteOnly.join(",")}`);
-console.log(`singlePendingMigration=${notificationVersion}`);
+console.log(`classifiedPendingCandidate=${notificationVersion}`);

@@ -26,7 +26,8 @@
         "Read-only inspection of supabase_migrations.schema_migrations"
       ],
       "evidence": "docs/audit/evidence/desktop-notification-remote-fetch-recovery-20260905T144848Z/03-20260808220000-provenance-gap.md",
-      "releaseEffect": "The version is allowed only as this exact documented legacy exception. It is never materialized locally and never re-applied."
+      "releaseEffect": "The version is allowed only as this exact documented legacy exception. It is never materialized locally and never re-applied.",
+      "officialDbPushCompatibility": "BLOCKED: Supabase CLI requires a local migration file for every remote version and rejects this non-forging exception before it can calculate pending migrations."
     }
   ]
 }
