@@ -53,3 +53,26 @@ Production migration resume is **not** part of branch consolidation. Resume only
 2. Clean canonical worktree
 3. Canonical production baseline tag present
 4. Explicit follow-up production task authorized
+
+## Sealed solo-founder release worktree exception
+
+If the designated production worktree cannot truthfully satisfy the clean,
+canonical-source gate, do not reset, clean, overwrite, or otherwise alter it.
+For one sealed `SOLO_FOUNDER_LOW_RISK_FORWARD` release, a fresh worktree may be
+used only when all of the following are recorded in the sealed manifest:
+
+1. Its exact canonical commit is on `origin/release/picom-canonical-production`.
+2. Its detached `picom-canonical-production-*` annotated tag resolves to that
+   same commit.
+3. Its path, expected `HEAD`, and clean status are recorded before the final
+   preflight.
+4. `npm run release:canonical:guard` passes from that tagged worktree.
+5. The worktree contains no source changes. The only permitted temporary file is
+   the policy-governed comments-only legacy compatibility shim, and it must be
+   confirmed already applied remotely, absent from the pending set, uncommitted,
+   and removed after the operation.
+
+This exception never authorizes a development checkout, a dirty worktree, a
+noncanonical branch, a force update, or a high-risk migration. It exists solely
+to preserve a safe release path without mutating a concurrently dirty canonical
+worktree.
