@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
 const root = process.cwd();
 const read = (relative) => readFile(path.join(root, relative), "utf8");
 
-const migration = await read("supabase/migrations/20260904100000_production_desktop_notifications.sql");
+const migrationFiles = (await readdir(path.join(root, "supabase/migrations")))
+  .filter((file) => /^\d{14}_production_desktop_notifications\.sql$/.test(file));
+assert.equal(migrationFiles.length, 1, "exactly one executable desktop notification migration is required");
+const migration = await read(path.join("supabase/migrations", migrationFiles[0]));
 const host = await read("electron/desktopNotificationToastHost.cts");
 const main = await read("electron/main.cts");
 const center = await read("src/services/notificationCenterService.ts");
@@ -39,6 +42,9 @@ for (const required of [
 ]) assert.match(migration, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
 assert.doesNotMatch(migration, /order\s+by\s+random\s*\(/i);
+assert.doesNotMatch(migration, /when\s+'followed_user_live'\s*,\s*'followed_publisher_live'\s+then/i);
+assert.match(migration, /target_actor_id is null/);
+assert.match(migration, /target_dedupe_key is null/);
 assert.match(migration, /before insert on public\.notifications/);
 assert.match(migration, /delivery_attempted_at/);
 assert.match(migration, /stream\.live_session_id::text = split_part\(new\.source_event_id, ':', 2\)/);

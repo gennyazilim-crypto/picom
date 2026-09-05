@@ -87,9 +87,24 @@ declare
   category_value text;
   actor_name text;
 begin
-  if target_recipient_id is null or target_type not in (
-    'friend_request_received','friend_request_accepted','dm_received','friend_online','followed_user_live','followed_publisher_live'
-  ) then
+  if target_recipient_id is null
+    or target_actor_id is null
+    or target_recipient_id = target_actor_id
+    or target_type is null
+    or target_type not in (
+      'friend_request_received','friend_request_accepted','dm_received','friend_online','followed_user_live','followed_publisher_live'
+    )
+    or target_resource_id is null
+    or target_context_kind is null
+    or target_context_kind not in ('community', 'dm', 'system')
+    or target_dedupe_key is null
+    or btrim(target_dedupe_key) = ''
+    or not (
+      (target_type in ('friend_request_received', 'friend_request_accepted') and target_resource_type = 'friend_request')
+      or (target_type = 'dm_received' and target_resource_type = 'direct_message')
+      or (target_type = 'friend_online' and target_resource_type = 'profile')
+      or (target_type in ('followed_user_live', 'followed_publisher_live') and target_resource_type = 'live_stream')
+    ) then
     return null;
   end if;
   if target_actor_id is not null and public.users_are_blocked(target_recipient_id, target_actor_id) then
@@ -102,7 +117,8 @@ begin
     into actor_name from public.profiles profile where profile.id = target_actor_id;
   category_value := case target_type
     when 'dm_received' then 'dm'
-    when 'followed_user_live', 'followed_publisher_live' then 'event'
+    when 'followed_user_live' then 'event'
+    when 'followed_publisher_live' then 'event'
     else 'system'
   end;
   insert into public.notifications(
