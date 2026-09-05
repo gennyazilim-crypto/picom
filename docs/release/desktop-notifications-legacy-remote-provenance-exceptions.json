@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "scope": "desktop-notifications production release preflight",
+  "production": {
+    "projectRef": "cqnsetsmcduraryemhbi",
+    "projectName": "picom-production",
+    "region": "eu-central-1"
+  },
+  "failClosed": {
+    "unknownRemoteOnlyVersion": "BLOCK",
+    "historicalSqlReconstruction": "FORBIDDEN",
+    "schemaMigrationHistoryMutation": "FORBIDDEN",
+    "placeholderMigrationFile": "FORBIDDEN"
+  },
+  "exceptions": [
+    {
+      "version": "20260808220000",
+      "remoteStatus": "APPLIED",
+      "exactSql": "UNAVAILABLE",
+      "classification": "LEGACY_REMOTE_PROVENANCE_GAP",
+      "reason": "The hosted schema_migrations record has no migration name, statements, rollback, creator, or idempotency metadata. Official migration fetch emitted only a synthetic semicolon file and therefore did not recover SQL.",
+      "recoveryAttempts": [
+        "Git history and reachable branches",
+        "Existing PICOM worktrees and audit evidence",
+        "Official supabase migration fetch --linked in an isolated worktree",
+        "Read-only inspection of supabase_migrations.schema_migrations"
+      ],
+      "evidence": "docs/audit/evidence/desktop-notification-remote-fetch-recovery-20260905T144848Z/03-20260808220000-provenance-gap.md",
+      "releaseEffect": "The version is allowed only as this exact documented legacy exception. It is never materialized locally and never re-applied."
+    }
+  ]
+}
