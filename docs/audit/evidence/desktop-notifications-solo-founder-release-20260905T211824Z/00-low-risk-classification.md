@@ -1,7 +1,7 @@
 # Desktop Notifications — Solo-Founder Low-Risk Classification
 
-**Reviewed source:** `72f512ae9bb149720cd11f0b1358a03e503560ee`  
-**Migration:** `20260904100000_production_desktop_notifications.sql`  
+**Reviewed source:** `72f512ae9bb149720cd11f0b1358a03e503560ee`
+**Migration:** `20260904100000_production_desktop_notifications.sql`
 **Target:** `picom-production` / `cqnsetsmcduraryemhbi` / `eu-central-1`
 
 ## Classification
