@@ -1,0 +1,76 @@
+# Sealed Release Manifest — Desktop Notifications
+
+## Seal
+
+```text
+RELEASE_MODE: SOLO_FOUNDER_LOW_RISK_FORWARD
+SEALED_AT_UTC: 2026-09-05T21:18:24Z
+RELEASE_SOURCE_HEAD: 72f512ae9bb149720cd11f0b1358a03e503560ee
+CANONICAL_BRANCH: release/picom-canonical-production
+SEALED_RELEASE_WORKTREE: C:\Users\ACER\Desktop\picom-solo-founder-notification-release
+WORKTREE_STATE_REQUIRED: CLEAN_EXCEPT_FOR_EPHEMERAL_POLICY_GOVERNED_SHIM
+```
+
+## Target and migration
+
+```text
+PROJECT_NAME: picom-production
+PROJECT_REF: cqnsetsmcduraryemhbi
+REGION: eu-central-1
+MIGRATION_VERSION: 20260904100000
+MIGRATION_FILE: supabase/migrations/20260904100000_production_desktop_notifications.sql
+MIGRATION_SHA256_CONVENTION: LF_NORMALIZED_UTF8
+MIGRATION_SHA256: 5FAFBABF8A31812C2F23E3D5C7FCC4E9B0A4709C0754ADA07474B626B26EF502
+FEATURE_FLAG_BEFORE: OFF
+```
+
+## Required gate record
+
+```text
+TARGET_IDENTITY: GO
+PITR_CURRENT: GO
+PITR_RETENTION: 7_DAYS
+PITR_RECOVERY_WINDOW_OBSERVED: 2026-08-29T21:15:06Z..2026-09-05T21:15:06Z
+RESTORE_DRILL_CURRENT: PENDING_PERIODIC_DR_CERTIFICATION
+TWO_PERSON_CONFIRMATION: NOT_REQUIRED_SOLO_FOUNDER_POLICY
+OPERATOR_TYPE: AUTHENTICATED_SOLO_FOUNDER_RELEASE_OPERATOR
+OPERATOR_SCOPE: SUPABASE_ORGANIZATION_OWNER_CURRENTLY_BROADER_THAN_IDEAL
+OPERATOR_IDENTITY: AUTHENTICATED_SUPABASE_CLI_PRINCIPAL_FINGERPRINT_921A0CE5936797AD
+CANONICAL_SOURCE: GO
+MIGRATION_RISK_CLASS: LOW_RISK_FORWARD
+DESTRUCTIVE_SCAN: PASS
+DEPENDENCY_ORDER: GO_WITH_DOCUMENTED_LEGACY_PROVENANCE_EXCEPTION
+TYPECHECK: PASS_RECORDED_FOR_UNCHANGED_PRODUCT_SOURCE
+BUILD: PASS_RECORDED_FOR_UNCHANGED_PRODUCT_SOURCE
+FOCUSED_NOTIFICATION_CONTRACT: PASS
+DB_PUSH_DRY_RUN: EXACTLY_ONE
+PENDING_COUNT: 1
+PENDING_VERSION: 20260904100000
+```
+
+## Legacy history exception
+
+```text
+VERSION: 20260808220000
+CLASSIFICATION: LEGACY_REMOTE_PROVENANCE_GAP
+ORIGINAL_SQL: UNAVAILABLE
+SOURCE_POLICY: docs/release/desktop-notifications-legacy-remote-provenance-exceptions.json
+CLI_COMPATIBILITY_SHIM: EPHEMERAL_COMMENTS_ONLY_NOT_CANONICAL
+SHIM_EXECUTION: FORBIDDEN
+```
+
+## Follow-up security debt
+
+```text
+DR-001: Perform periodic isolated production restore drill.
+SEC-DB-001: Create dedicated scoped production migration operator.
+GOV-001: Enable two-person production approval when a second authorized operator exists.
+```
+
+## Apply authorization boundary
+
+Only the official linked Supabase CLI workflow may apply this migration. It
+must be preceded by a final exact-one dry-run from the sealed canonical release
+worktree. No `--include-all`, migration repair, manual migration-history edit,
+database reset, or ad-hoc production SQL is authorized. If any pending version
+besides `20260904100000` is reported, stop without applying SQL.
