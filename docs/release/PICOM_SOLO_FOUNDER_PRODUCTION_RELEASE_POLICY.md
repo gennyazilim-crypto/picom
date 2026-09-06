@@ -101,12 +101,52 @@ Fail closed at each boundary:
 
 This coordination mode does not permit `--include-all`, migration repair,
 manual history mutation, database reset, a broad SQL executor, or an apply of
-any version outside the sealed pending set.
+any version outside the sealed pending set, except for the narrowly scoped
+controlled out-of-order release described below.
 
 The apply must use the official linked migration workflow. It must stop if the
 CLI offers any migration outside the sealed ordered version set. `--include-all`,
 `migration repair`, manual migration-history edits, database reset, and ad-hoc
-production SQL are forbidden.
+production SQL are forbidden unless the controlled out-of-order exception is
+sealed for that exact release.
+
+## Controlled out-of-order migration release exception
+
+`CONTROLLED_OUT_OF_ORDER_MIGRATION_RELEASE` is a single-release exception for
+an already-reviewed migration set whose immutable version identifiers sort
+before a production migration that was legitimately applied first. It is not a
+general permission to use `--include-all`.
+
+It is allowed only when all of the following are evidenced in the same sealed
+release manifest:
+
+- production history is fully reconciled with zero unexplained remote-only
+  versions and is stable across bounded read-only snapshots;
+- every candidate file has a reviewed immutable SHA, hosted pgTAP and hosted
+  RLS evidence, a current PITR gate, and a current schema-compatibility review;
+- the affected feature flags and finalizer schedulers are verified OFF;
+- the official linked `supabase db push --linked --include-all --dry-run` output
+  passes an automated exact ordered-set guard; and
+- production history is read again immediately before the apply and still has
+  the recorded count, latest version, and absent candidate versions.
+
+The sealed manifest must state why normal ordering cannot plan the release,
+the exact `--include-all` scope, the immutable versions and hashes, and the
+fact that no broader release authorization is created. A subsequent dry-run
+must pass the same guard immediately before apply.
+
+For the current deletion release, the only permitted set is, in order:
+
+```text
+20260906120000
+20260906130000
+```
+
+The release guard is `scripts/controlled-out-of-order-migration-release-guard.mjs`.
+It fails closed unless the CLI output contains that set exactly once and in the
+listed order. Any additional, missing, duplicate, or reordered version aborts
+the release. `--include-all` returns to forbidden-by-default as soon as this
+sealed release is completed or aborted.
 
 ## Restore-drill policy
 

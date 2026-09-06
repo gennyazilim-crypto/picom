@@ -542,6 +542,7 @@
     "feed:private-attachment:hosted:test": "node scripts/feed-private-attachment-hosted-matrix.mjs --run",
     "verification-business:creator-publisher:regression": "node scripts/verification-business-creator-publisher-regression.mjs",
     "release:canonical:guard": "node scripts/assert-canonical-release-branch.mjs",
+    "release:deletion:out-of-order:guard": "node scripts/controlled-out-of-order-migration-release-guard.mjs",
     "git:large-files:check": "node scripts/check-git-large-files.mjs",
     "release:canonical:consolidation:test": "node --test scripts/canonical-branch-consolidation.test.mjs",
     "supabase:db:push:dry-run": "npm run release:canonical:guard && supabase db push --dry-run"
