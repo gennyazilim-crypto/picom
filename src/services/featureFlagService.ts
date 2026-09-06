@@ -52,6 +52,8 @@ export const FEATURE_FLAG_KEYS = [
   "enablePublisherStatements",
   "enableCreatorStudio",
   "DESKTOP_NOTIFICATIONS_ENABLED",
+  "COMMUNITY_30_DAY_DELETION_ENABLED",
+  "ACCOUNT_30_DAY_DELETION_ENABLED",
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -96,6 +98,8 @@ export const PRODUCTION_FEATURE_FLAGS = Object.freeze({
   publisherStatements: "enablePublisherStatements",
   creatorStudio: "enableCreatorStudio",
   desktopNotifications: "DESKTOP_NOTIFICATIONS_ENABLED",
+  communityThirtyDayDeletion: "COMMUNITY_30_DAY_DELETION_ENABLED",
+  accountThirtyDayDeletion: "ACCOUNT_30_DAY_DELETION_ENABLED",
 } as const satisfies Record<string, FeatureFlagKey>);
 
 export type FeatureFlagSnapshot = Readonly<{
@@ -177,6 +181,10 @@ function createDefaultFeatureFlags(): FeatureFlags {
     enableCreatorStudio: appConfig.environment !== "production",
     // Desktop notification delivery remains disabled until the sealed rollout is approved.
     DESKTOP_NOTIFICATIONS_ENABLED: false,
+    // Deletion lifecycles are server-authoritative but their owner-facing entry
+    // points remain off until hosted certification and controlled rollout.
+    COMMUNITY_30_DAY_DELETION_ENABLED: false,
+    ACCOUNT_30_DAY_DELETION_ENABLED: false,
   });
 }
 

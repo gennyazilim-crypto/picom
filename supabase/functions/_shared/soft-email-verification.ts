@@ -223,6 +223,61 @@ export async function sendVerificationEmail(input: {
   return { ok: true };
 }
 
+/**
+ * Uses the established verification sender contract. The raw account-deletion
+ * credential is passed directly to the provider and never stored or logged.
+ */
+export async function sendAccountDeletionConfirmationEmail(input: {
+  to: string;
+  displayName: string;
+  confirmUrl: string;
+  expiresAt: string;
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const apiKey = requiredEnv("EMAIL_PROVIDER_API_KEY") ?? requiredEnv("RESEND_API_KEY");
+  if (!apiKey) return { ok: false, message: "EMAIL_PROVIDER_API_KEY is not configured" };
+
+  const from = `PICOM Verification <${emailFromAddress()}>`;
+  const subject = "PICOM hesap silme isteğinizi onaylayın";
+  const text = [
+    `Merhaba ${input.displayName || "PICOM kullanıcısı"},`,
+    "",
+    "Hesap silme isteğiniz için onay bağlantısı istediniz.",
+    "Bağlantıyı onayladığınızda 30 günlük geri alma süresi başlar. Bu süre boyunca hesabınızı korumak için silme işlemini iptal edebilirsiniz.",
+    "",
+    `Hesap silme isteğini onayla: ${input.confirmUrl}`,
+    `Bu bağlantı ${input.expiresAt} tarihine kadar geçerlidir ve yalnızca bir kez kullanılabilir.`,
+    "",
+    "Bu isteği siz yapmadıysanız bu e-postayı yok sayın.",
+    "",
+    "PICOM",
+  ].join("\n");
+  const html = `<!doctype html><html><body style="font-family:Segoe UI,Arial,sans-serif;background:#15181a;color:#e8ecef;padding:24px">
+  <div style="max-width:520px;margin:0 auto;background:#22262a;border:1px solid #3a424a;border-radius:12px;padding:28px">
+    <p style="color:#14b8a6;font-weight:700;letter-spacing:.04em">PICOM</p>
+    <h1 style="font-size:1.35rem;margin:0 0 12px">Hesap silme isteğinizi onaylayın</h1>
+    <p>Merhaba ${escapeHtml(input.displayName || "PICOM kullanıcısı")},</p>
+    <p>Bu bağlantıyı onayladığınızda 30 günlük geri alma süresi başlar. Bu süre boyunca hesabınızı korumak için silme işlemini iptal edebilirsiniz.</p>
+    <p style="margin:28px 0"><a href="${escapeHtml(input.confirmUrl)}" style="background:#b91c1c;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:600">Hesap Silme İsteğini Onayla</a></p>
+    <p style="color:#9aa3ab;font-size:0.9rem">Bu tek kullanımlık bağlantı ${escapeHtml(input.expiresAt)} tarihine kadar geçerlidir.</p>
+    <p style="color:#9aa3ab;font-size:0.9rem">Bu isteği siz yapmadıysanız bu e-postayı yok sayın.</p>
+  </div></body></html>`;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from,
+      to: [input.to],
+      reply_to: emailReplyTo(),
+      subject,
+      text,
+      html,
+    }),
+  });
+  if (!response.ok) return { ok: false, message: `provider_status_${response.status}` };
+  return { ok: true };
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")

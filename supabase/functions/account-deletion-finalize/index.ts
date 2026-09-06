@@ -3,8 +3,6 @@ import { handleCorsPreflight } from "../_shared/cors.ts";
 import { errorResponse, jsonResponse, methodNotAllowed } from "../_shared/http.ts";
 import { readBoundedJsonObject } from "../_shared/request.ts";
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function requiredEnv(name: string): string | null {
   const value = Deno.env.get(name);
   return value && value.trim() ? value.trim() : null;
@@ -22,36 +20,52 @@ async function safeEqual(left: string, right: string): Promise<boolean> {
   return different === 0;
 }
 
-Deno.serve(async (request: Request) => {
+Deno.serve(async (request) => {
   const preflight = handleCorsPreflight(request);
   if (preflight) return preflight;
   if (request.method !== "POST") return methodNotAllowed(["POST", "OPTIONS"]);
-  if (requiredEnv("ACCOUNT_DELETION_FINALIZATION_ENABLED") !== "true") return errorResponse("FORBIDDEN", "Account finalization is disabled pending legal and operations approval.", 503);
+  if (requiredEnv("ACCOUNT_DELETION_FINALIZATION_ENABLED") !== "true") {
+    return errorResponse("FORBIDDEN", "Account finalization is disabled pending legal and operations approval.", 503);
+  }
   const expectedSecret = requiredEnv("ACCOUNT_DELETION_WORKER_SECRET");
   const suppliedSecret = request.headers.get("x-picom-worker-secret") ?? "";
-  if (!expectedSecret || !suppliedSecret || !(await safeEqual(expectedSecret, suppliedSecret))) return errorResponse("FORBIDDEN", "Worker authorization failed.", 403);
-
-  const parsed = await readBoundedJsonObject<{ requestId?: unknown }>(request, { maxBytes: 512, allowedKeys: new Set(["requestId"]) });
+  if (!expectedSecret || !suppliedSecret || !(await safeEqual(expectedSecret, suppliedSecret))) {
+    return errorResponse("FORBIDDEN", "Worker authorization failed.", 403);
+  }
+  const parsed = await readBoundedJsonObject<{ batchLimit?: unknown }>(request, { maxBytes: 256, allowedKeys: new Set(["batchLimit"]) });
   if (!parsed.ok) return parsed.response;
-  const requestId = typeof parsed.body.requestId === "string" ? parsed.body.requestId : "";
-  if (!uuidPattern.test(requestId)) return errorResponse("VALIDATION_ERROR", "A valid request ID is required.", 400);
+  const batchLimit = typeof parsed.body.batchLimit === "number" && Number.isInteger(parsed.body.batchLimit)
+    ? Math.max(1, Math.min(parsed.body.batchLimit, 100))
+    : 25;
   const supabaseUrl = requiredEnv("SUPABASE_URL");
   const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) return errorResponse("INTERNAL_ERROR", "Finalization dependencies are unavailable.", 503);
   const operator = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  const { data: prepared, error: prepareError } = await operator.rpc("prepare_account_deletion_anonymization", { target_request_id: requestId });
-  const preparedRow = Array.isArray(prepared) ? prepared[0] : prepared;
-  if (prepareError || !preparedRow?.target_user_id) return errorResponse("VALIDATION_ERROR", "The deletion request is not eligible for finalization.", 409);
+  const { data: prepared, error: prepareError } = await operator.rpc("finalize_due_account_deletions", { batch_limit: batchLimit });
+  if (prepareError) return errorResponse("INTERNAL_ERROR", "Due account deletions could not be prepared safely.", 409);
 
-  const { error: authError } = await operator.auth.admin.deleteUser(preparedRow.target_user_id, true);
-  if (authError) {
-    await operator.from("account_deletion_requests").update({ finalization_status: "auth_soft_delete_failed" }).eq("id", requestId).eq("user_id", preparedRow.target_user_id);
-    return errorResponse("INTERNAL_ERROR", "Profile anonymization completed, but Auth soft deletion requires operator retry.", 503);
+  const completed: string[] = [];
+  const failed: string[] = [];
+  for (const row of Array.isArray(prepared) ? prepared : []) {
+    if (!row?.request_id || !row?.target_user_id) continue;
+    const { error: signOutError } = await operator.auth.admin.signOut(row.target_user_id, "global");
+    const { error: authError } = signOutError ? { error: signOutError } : await operator.auth.admin.deleteUser(row.target_user_id, true);
+    if (authError) {
+      await operator.from("account_deletion_requests").update({ finalization_status: "auth_soft_delete_failed" }).eq("id", row.request_id).eq("user_id", row.target_user_id);
+      failed.push(row.request_id);
+      continue;
+    }
+    const { error: completeError } = await operator.rpc("complete_account_deletion_finalization", {
+      target_request_id: row.request_id,
+      target_user_id: row.target_user_id,
+    });
+    if (completeError) {
+      failed.push(row.request_id);
+      continue;
+    }
+    completed.push(row.request_id);
   }
 
-  const completedAt = new Date().toISOString();
-  await operator.from("account_deletion_requests").update({ status: "completed", finalization_status: "completed", completed_at: completedAt }).eq("id", requestId).eq("user_id", preparedRow.target_user_id);
-  await operator.from("account_security_events").insert({ user_id: preparedRow.target_user_id, event_type: "account_auth_soft_deleted", request_id: requestId, metadata: { stage: "completed" } });
-  return jsonResponse({ status: "completed", requestId, completedAt }, { headers: { "Cache-Control": "no-store" } });
+  return jsonResponse({ completed, failed }, { headers: { "Cache-Control": "no-store" } });
 });

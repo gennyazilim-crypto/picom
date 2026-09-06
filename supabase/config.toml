@@ -115,9 +115,12 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.account-deletion]
-verify_jwt = true
+verify_jwt = false
 
 [functions.account-deletion-finalize]
+verify_jwt = false
+
+[functions.community-deletion-finalize]
 verify_jwt = false
 
 [functions.steam-auth]

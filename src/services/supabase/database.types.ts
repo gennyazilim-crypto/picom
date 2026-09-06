@@ -77,6 +77,11 @@ export type Database = {
           archived_at: string | null;
           archived_by: string | null;
           archive_reason: string | null;
+          deletion_requested_at: string | null;
+          scheduled_deletion_at: string | null;
+          deletion_cancelled_at: string | null;
+          deleted_at: string | null;
+          deletion_restore_state: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -529,7 +534,7 @@ export type Database = {
         Relationships: [];
       };
       account_deletion_requests: {
-        Row: { id: string; user_id: string; status: "requested" | "reviewing" | "canceled" | "completed"; requested_at: string; canceled_at: string | null; completed_at: string | null; anonymize_after: string | null; sessions_revoked_at: string | null; session_revocation_status: "pending" | "completed" | "failed"; finalization_status: "pending" | "profile_anonymized" | "auth_soft_delete_failed" | "completed" };
+        Row: { id: string; user_id: string; status: "requested" | "email_pending" | "pending_deletion" | "reviewing" | "canceled" | "completed" | "failed"; requested_at: string; canceled_at: string | null; completed_at: string | null; anonymize_after: string | null; email_confirmation_requested_at: string | null; email_confirmed_at: string | null; scheduled_deletion_at: string | null; deletion_cancelled_at: string | null; sessions_revoked_at: string | null; session_revocation_status: "pending" | "completed" | "failed"; finalization_status: "pending" | "profile_anonymized" | "auth_soft_delete_failed" | "completed" | "failed" };
         Insert: Partial<Database["public"]["Tables"]["account_deletion_requests"]["Row"]> & Pick<Database["public"]["Tables"]["account_deletion_requests"]["Row"], "user_id">;
         Update: never;
         Relationships: [];
@@ -891,6 +896,11 @@ export type Database = {
       accept_current_legal_terms: { Args: Record<string, never>; Returns: Array<{ terms_version: string; privacy_version: string; accepted_at: string }> };
       request_current_user_account_deletion: { Args: { confirmation_username: string }; Returns: Array<{ request_id: string; requested_at: string; anonymize_after: string }> };
       cancel_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; canceled_at: string }> };
+      begin_current_user_account_deletion: { Args: Record<string, never>; Returns: Array<{ request_id: string; email_confirmation_expires_at: string | null }> };
+      get_current_user_account_deletion_status: { Args: Record<string, never>; Returns: Array<{ request_id: string; status: string; requested_at: string; scheduled_deletion_at: string | null }> };
+      request_community_deletion: { Args: { target_community_id: string }; Returns: Array<{ community_id: string; scheduled_deletion_at: string }> };
+      cancel_community_deletion: { Args: { target_community_id: string }; Returns: Array<{ community_id: string; cancelled_at: string }> };
+      get_community_deletion_status: { Args: { target_community_id: string }; Returns: Array<{ deletion_requested_at: string | null; scheduled_deletion_at: string | null; deleted_at: string | null }> };
       list_public_discovery_communities: {
         Args: { search_text?: string | null; category_filter?: string | null; result_limit?: number };
         Returns: Array<{ id: string; name: string; description: string | null; icon_url: string | null; accent_color: string; category: string | null; member_count: number; join_policy: "open" | "request" }>;
