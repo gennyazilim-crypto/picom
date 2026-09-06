@@ -20,9 +20,18 @@ function block(code, detail) {
 }
 
 function extractPendingVersions(output) {
-  const expression = /supabase[\\/]migrations[\\/](\d{14})_[^\s]+\.sql/g;
+  const planStart = output.indexOf("Would push these migrations:");
+  if (planStart < 0) {
+    block("BLOCKED_UNPARSEABLE_DRY_RUN_PLAN", "Supabase CLI migration-plan marker was not found.");
+  }
+
+  // Supabase CLI v2.109.1 writes the completion marker before the rendered
+  // bullet rows when streams are merged. Parse only filename-shaped versions
+  // after the immutable plan marker; exact-set equality still rejects extras.
+  const plan = output.slice(planStart);
+  const expression = /\b(\d{14})_[A-Za-z0-9_.-]+\.sql\b/g;
   const found = [];
-  for (const match of output.matchAll(expression)) found.push(match[1]);
+  for (const match of plan.matchAll(expression)) found.push(match[1]);
   return found;
 }
 
