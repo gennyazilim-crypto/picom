@@ -65,6 +65,44 @@ apply:
 | Feature containment | The dependent feature flag is verified OFF before apply. |
 | Operator | The current authenticated release operator is identified and recorded without secrets. |
 
+## Solo-operator stable release window
+
+`SOLO_OPERATOR_STABLE_WINDOW` is a coordination mode for a qualifying
+`SOLO_FOUNDER_LOW_RISK_FORWARD` release. It is not an enforceable global
+migration freeze and must never be represented as one.
+
+It may replace an unavailable cross-operator migration freeze only when all of
+the following are true:
+
+- PICOM remains in solo-founder release mode;
+- no active production-migration CI/workflow or local migration process is
+  observed;
+- production migration history is fully reconciled, with no unexplained
+  remote-only versions;
+- two bounded read-only history snapshots have the same count, latest version,
+  and recent-version tail; and
+- the official dry-run and apply are performed in one short, recorded release
+  window with no unrelated PICOM production database work.
+
+The release manifest must record the expected canonical commit, remote history
+count, latest version, migration set, and the limitation
+`NO_ENFORCEABLE_CROSS_OPERATOR_FREEZE`.
+
+Fail closed at each boundary:
+
+1. Read history immediately before dry-run and abort if count or latest version
+   differs from the recorded window values.
+2. Run the official linked dry-run and require exact ordered-set equality with
+   the manifest.
+3. Re-read history after dry-run and immediately before apply; any version,
+   count, or latest-version change aborts the release.
+4. Do not reconcile a newly observed remote migration and apply an unrelated
+   release in the same window. Start a fresh stable-window release instead.
+
+This coordination mode does not permit `--include-all`, migration repair,
+manual history mutation, database reset, a broad SQL executor, or an apply of
+any version outside the sealed pending set.
+
 The apply must use the official linked migration workflow. It must stop if the
 CLI offers any migration outside the sealed ordered version set. `--include-all`,
 `migration repair`, manual migration-history edits, database reset, and ad-hoc
