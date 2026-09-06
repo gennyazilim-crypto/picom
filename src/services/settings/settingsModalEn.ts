@@ -463,6 +463,16 @@ export const settingsModalEn = {
   "advanced.copyFeedbackReport": "Copy feedback report",
   "advanced.exportDiagnosticsJson": "Export diagnostics JSON",
   "advanced.openDiagnosticsFeedback": "Open Diagnostics feedback",
+  "community.deletion.title": "Delete community",
+  "community.deletion.body": "Mark this community for deletion. You can cancel the deletion for 30 days before it is permanently removed.",
+  "community.deletion.request": "Delete community",
+  "community.deletion.pending": "{name} is scheduled for permanent deletion on {date}.",
+  "community.deletion.cancelAction": "Cancel deletion",
+  "community.deletion.confirmTitle": "Delete this community?",
+  "community.deletion.confirmBody": "Are you sure you want to delete {name}? You can undo this within 30 days.",
+  "community.deletion.cancel": "Cancel",
+  "community.deletion.working": "Saving…",
+  "community.deletion.error": "PICOM could not update the community deletion request safely.",
 } as const;
 
 export type SettingsModalEnKey = keyof typeof settingsModalEn;

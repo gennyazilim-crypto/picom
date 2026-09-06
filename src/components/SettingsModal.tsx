@@ -126,11 +126,9 @@ type SettingsModalProps = {
   onProfileSettingsChange: (settings: ProfileSettings) => void;
   onClose: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
-  onAccountDeletionRequested: () => void;
   onLogout: () => Promise<void> | void;
   currentUsername: string;
   currentEmail?: string | null;
-  ownedCommunityCount: number;
   currentEmailVerifiedAt?: string | null;
   requireEmailVerification?: boolean;
   developerPortalContext: {
@@ -153,7 +151,7 @@ function getLiveBlockedUsername(userId: string, fallback: string): string {
   return (profileMediaStore.getSnapshot(userId).record?.username?.trim() || fallback).replace(/^@+/, "");
 }
 
-export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onAccountDeletionRequested, onLogout, currentUsername, currentEmail, ownedCommunityCount, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext, onOpenPanel, onOpenPublisherApply, onOpenPublisherDashboard }: SettingsModalProps) {
+export function SettingsModal({ theme, accessibilitySettings, appearanceSettings, profileSettings, communities, onThemeChange, onAccessibilitySettingsChange, onAppearanceSettingsChange, onProfileSettingsChange, onClose, pushToast, onLogout, currentUsername, currentEmail, currentEmailVerifiedAt, requireEmailVerification = false, developerPortalContext, onOpenPanel, onOpenPublisherApply, onOpenPublisherDashboard }: SettingsModalProps) {
   const settingsLang = appearanceSettings.language;
   const ts = (key: SettingsI18nKey, params?: Record<string, string | number>) => translateSettings(key, settingsLang, params);
   const sectionLabel = (section: SettingsSection) => translateSettingsSection(section, settingsLang);
@@ -192,9 +190,6 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
   const [sessionRevokeConfirmationOpen, setSessionRevokeConfirmationOpen] = useState(false);
   const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
   const [accountDeletionStatus, setAccountDeletionStatus] = useState(() => accountDeletionService.getStatus());
-  const [accountDeletionConfirmText, setAccountDeletionConfirmText] = useState("");
-  const [accountDeletionPassword, setAccountDeletionPassword] = useState("");
-  const [accountDeletionBusy, setAccountDeletionBusy] = useState(false);
   const [dataExportStatus, setDataExportStatus] = useState(() => dataExportService.getStatus());
   const [appLockSettings, setAppLockSettings] = useState(() => appLockService.getSettings());
   const [startupSettings, setStartupSettings] = useState(() => startupService.getState());
@@ -789,30 +784,6 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     onClose();
     await onLogout();
   };
-  const accountDeletionConfirmationText = currentUsername;
-  const requestAccountDeletion = async () => {
-    if (accountDeletionBusy) return;
-    setAccountDeletionBusy(true);
-    const reauthentication = await authService.reauthenticateCurrentUser(accountDeletionPassword);
-    setAccountDeletionPassword("");
-    if (!reauthentication.ok) {
-      setAccountDeletionBusy(false);
-      pushToast(reauthentication.error.message, "error");
-      return;
-    }
-    const result = await accountDeletionService.requestDeletion({ confirmationText: accountDeletionConfirmText, expectedUsername: accountDeletionConfirmationText, ownedCommunityCount });
-    setAccountDeletionBusy(false);
-    if (!result.ok) {
-      pushToast(result.message, "error");
-      return;
-    }
-
-    setAccountDeletionStatus(result.data);
-    setAccountDeletionConfirmText("");
-    accountActivityService.recordActivity({ type: "account_deletion_requested", metadata: { sessionsRevoked: result.data.sessionsRevoked } });
-    pushToast(result.data.message, "success");
-    onAccountDeletionRequested();
-  };
   const updateCloseToTray = async (enabled: boolean) => {
     const result = await trayService.setCloseToTrayEnabled(enabled);
     if (!result.ok) {
@@ -821,17 +792,6 @@ export function SettingsModal({ theme, accessibilitySettings, appearanceSettings
     }
     setCloseToTrayEnabled(enabled);
     pushToast(enabled ? ts("toast.closeToTrayEnabled") : ts("toast.closeToTrayDisabled"), "success");
-  };
-  const cancelAccountDeletion = async () => {
-    const result = await accountDeletionService.cancelDeletion();
-    if (!result.ok) {
-      pushToast(result.message, "error");
-      return;
-    }
-
-    setAccountDeletionStatus(result.data);
-    setAccountDeletionConfirmText("");
-    pushToast(ts("toast.deletionCanceled"), "info");
   };
   const requestDataExport = async () => {
     const pending = dataExportService.requestExport(profileDraft);

@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { communityDeleteSafetyService, type CommunityDeletionStatus } from "../services/communityDeleteSafetyService";
+import { featureFlagService } from "../services/featureFlagService";
+import { translateSettings } from "../services/settings/settingsI18n";
+import { settingsService } from "../services/settingsService";
 import type { Community, Member } from "../types/community";
-import { communityDeleteSafetyService, type CommunityDeleteSafetyStatus } from "../services/communityDeleteSafetyService";
 import { AppIcon } from "./AppIcon";
 import "./CommunityDangerZone.css";
 
@@ -10,124 +13,141 @@ function isCurrentUserOwner(community: Community, currentUser: Member): boolean 
   return community.roles.find((role) => role.id === currentUser.roleId)?.name === "Owner";
 }
 
+function formatDate(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+}
+
+/**
+ * The recovery state is always loaded from the canonical RPC. No archived
+ * community state, password, or confirmation text is persisted in the client.
+ */
 export function CommunityDeleteSafetyPanel({ community, currentUser }: CommunityDeleteSafetyPanelProps) {
-  const [confirmationName, setConfirmationName] = useState("");
-  const [reason, setReason] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [status, setStatus] = useState<CommunityDeleteSafetyStatus | null>(() =>
-    communityDeleteSafetyService.getStatus(community.id),
-  );
+  const language = settingsService.getSettings().appearanceSettings.language;
+  const t = (key: Parameters<typeof translateSettings>[0], params?: Record<string, string | number>) => translateSettings(key, language, params);
+  const [status, setStatus] = useState<CommunityDeletionStatus | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const canPrepareDelete = isCurrentUserOwner(community, currentUser);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [creationEnabled, setCreationEnabled] = useState(() => featureFlagService.isEnabled("COMMUNITY_30_DAY_DELETION_ENABLED"));
+  const confirmationDialogRef = useRef<HTMLElement | null>(null);
+  const canManageDeletion = isCurrentUserOwner(community, currentUser);
+
+  useEffect(() => featureFlagService.subscribe((snapshot) => {
+    setCreationEnabled(snapshot.flags.COMMUNITY_30_DAY_DELETION_ENABLED);
+  }), []);
 
   useEffect(() => {
-    setStatus(communityDeleteSafetyService.getStatus(community.id));
-    setConfirmationName("");
-    setReason("");
-    setCurrentPassword("");
+    let cancelled = false;
+    setStatus(null);
     setErrorMessage("");
-  }, [community.id]);
+    void communityDeleteSafetyService.getStatus(community.id).then((result) => {
+      if (cancelled) return;
+      if (result.ok) setStatus(result.data);
+      else setErrorMessage(result.message || t("community.deletion.error"));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [community.id, language]);
 
-  if (!canPrepareDelete) return null;
+  useEffect(() => {
+    if (confirmOpen) confirmationDialogRef.current?.focus();
+  }, [confirmOpen]);
 
-  async function archiveCommunity() {
+  if (!canManageDeletion) return null;
+
+  const scheduledAt = status?.scheduledDeletionAt ?? null;
+  if (!scheduledAt && !creationEnabled) return null;
+
+  async function requestDeletion() {
     setSubmitting(true);
     setErrorMessage("");
-    const result = await communityDeleteSafetyService.archiveCommunity(
-      community,
-      currentUser,
-      confirmationName,
-      reason,
-      currentPassword,
-    );
-    setCurrentPassword("");
+    const result = await communityDeleteSafetyService.requestDeletion(community.id);
     setSubmitting(false);
     if (!result.ok) {
-      setErrorMessage(result.message);
+      setErrorMessage(result.message || t("community.deletion.error"));
       return;
     }
     setStatus(result.data);
-    setConfirmationName("");
-    setReason("");
+    setConfirmOpen(false);
   }
 
-  const ready = confirmationName.trim() === community.name && reason.trim().length >= 10 && currentPassword.length >= 8;
+  async function cancelDeletion() {
+    setSubmitting(true);
+    setErrorMessage("");
+    const result = await communityDeleteSafetyService.cancelDeletion(community.id);
+    setSubmitting(false);
+    if (!result.ok) {
+      setErrorMessage(result.message || t("community.deletion.error"));
+      return;
+    }
+    setStatus(result.data);
+  }
 
   return (
-    <section className="community-danger-action-card community-danger-action-card--archive" aria-label="Community archive safety">
-      <header className="community-danger-action-header">
-        <span className="community-danger-action-icon" aria-hidden="true">
-          <AppIcon name="trash" size="sm" />
-        </span>
-        <div>
-          <strong>Archive community</strong>
-          <small>Disables access without hard-deleting content, audit logs, or security history.</small>
+    <>
+      <section className="community-danger-action-card community-danger-action-card--delete" aria-label={t("community.deletion.title")}>
+        <header className="community-danger-action-header">
+          <span className="community-danger-action-icon" aria-hidden="true">
+            <AppIcon name="trash" size="sm" />
+          </span>
+          <div>
+            <strong>{t("community.deletion.title")}</strong>
+            <small>{t("community.deletion.body")}</small>
+          </div>
+        </header>
+
+        {scheduledAt ? (
+          <>
+            <p className="community-danger-warning">
+              <AppIcon name="calendar" size="sm" />
+              {t("community.deletion.pending", { name: community.name, date: formatDate(scheduledAt, language) })}
+            </p>
+            <footer className="community-danger-action-footer">
+              <button type="button" className="community-mgmt-action" disabled={submitting} onClick={() => void cancelDeletion()}>
+                {submitting ? t("community.deletion.working") : t("community.deletion.cancelAction")}
+              </button>
+            </footer>
+          </>
+        ) : (
+          <footer className="community-danger-action-footer">
+            <button type="button" className="community-mgmt-action community-mgmt-action--danger" disabled={submitting} onClick={() => setConfirmOpen(true)}>
+              {t("community.deletion.request")}
+            </button>
+          </footer>
+        )}
+
+        {errorMessage ? <p className="community-mgmt-notice is-error" role="alert">{errorMessage}</p> : null}
+      </section>
+
+      {confirmOpen ? (
+        <div className="community-delete-confirm-backdrop" role="presentation" onMouseDown={() => !submitting && setConfirmOpen(false)}>
+          <section
+            ref={confirmationDialogRef}
+            className="community-delete-confirm-dialog"
+            role="dialog"
+            tabIndex={-1}
+            aria-modal="true"
+            aria-labelledby="community-delete-confirm-title"
+            aria-describedby="community-delete-confirm-description"
+            onMouseDown={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && !submitting) setConfirmOpen(false);
+            }}
+          >
+            <h3 id="community-delete-confirm-title">{t("community.deletion.confirmTitle")}</h3>
+            <p id="community-delete-confirm-description">{t("community.deletion.confirmBody", { name: community.name })}</p>
+            <div className="community-delete-confirm-actions">
+              <button type="button" className="community-mgmt-action" disabled={submitting} onClick={() => setConfirmOpen(false)}>
+                {t("community.deletion.cancel")}
+              </button>
+              <button type="button" className="community-mgmt-action community-mgmt-action--danger" disabled={submitting} onClick={() => void requestDeletion()}>
+                {submitting ? t("community.deletion.working") : t("community.deletion.request")}
+              </button>
+            </div>
+          </section>
         </div>
-      </header>
-
-      <p className="community-danger-warning">
-        <AppIcon name="lock" size="sm" />
-        Archive removes the community from normal access. Recovery is an operations-controlled restore after integrity checks.
-      </p>
-
-      <label className="community-mgmt-field">
-        <span>Archive reason</span>
-        <textarea
-          className="community-mgmt-textarea"
-          rows={3}
-          maxLength={500}
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          placeholder="Explain why this community is being archived"
-        />
-      </label>
-
-      <label className="community-mgmt-field">
-        <span>Type the community name</span>
-        <input
-          className="community-mgmt-input"
-          value={confirmationName}
-          onChange={(event) => setConfirmationName(event.target.value)}
-          placeholder={community.name}
-          aria-label="Confirm community archive"
-        />
-      </label>
-
-      <label className="community-mgmt-field">
-        <span>Current password</span>
-        <input
-          className="community-mgmt-input"
-          type="password"
-          autoComplete="current-password"
-          value={currentPassword}
-          onChange={(event) => setCurrentPassword(event.target.value)}
-          placeholder="Re-authenticate to archive"
-          aria-label="Current password for community archive"
-        />
-      </label>
-
-      <footer className="community-danger-action-footer">
-        <button
-          type="button"
-          className="community-mgmt-action community-mgmt-action--danger"
-          disabled={submitting || status?.status === "archived" || !ready}
-          onClick={() => void archiveCommunity()}
-        >
-          {submitting ? "Verifying and archiving…" : "Archive community"}
-        </button>
-      </footer>
-
-      {errorMessage ? (
-        <p className="community-mgmt-notice is-error" role="alert">
-          {errorMessage}
-        </p>
       ) : null}
-      {status ? (
-        <p className="community-mgmt-notice" role="status">
-          {status.message}
-        </p>
-      ) : null}
-    </section>
+    </>
   );
 }

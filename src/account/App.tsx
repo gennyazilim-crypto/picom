@@ -13,6 +13,7 @@ import { AuthErrorPage } from "./pages/AuthErrorPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { DataExportPage } from "./pages/DataExportPage";
 import { DeactivatePage } from "./pages/DeactivatePage";
+import { ConfirmAccountDeletionPage } from "./pages/ConfirmAccountDeletionPage";
 import { DeletePage } from "./pages/DeletePage";
 import { EmailChangePage } from "./pages/EmailChangePage";
 import { ConfirmEmailChangePage } from "./pages/ConfirmEmailChangePage";
@@ -91,6 +92,7 @@ export function App() {
           <Route path={ROUTES.confirmEmailChange} element={<PublicAuthLayout><ConfirmEmailChangePage /></PublicAuthLayout>} />
           <Route path={ROUTES.confirmEmailChangeLegacy} element={<PublicAuthLayout><ConfirmEmailChangePage /></PublicAuthLayout>} />
           <Route path={ROUTES.openAppCode} element={<PublicAuthLayout><OpenAppPage /></PublicAuthLayout>} />
+          <Route path={ROUTES.deleteAccountConfirm} element={<PublicAuthLayout><ConfirmAccountDeletionPage /></PublicAuthLayout>} />
 
           <Route path={ROUTES.mfaChallenge} element={<ProtectedRoute><PublicAuthLayout><MfaChallengePage /></PublicAuthLayout></ProtectedRoute>} />
           <Route path={ROUTES.authCallback} element={<PublicAuthLayout><AuthCallbackPage /></PublicAuthLayout>} />

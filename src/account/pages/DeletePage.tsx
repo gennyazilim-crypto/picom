@@ -1,94 +1,64 @@
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { accountDeletionService, type AccountDeletionStatus } from "../../services/accountDeletionService";
+import { featureFlagService } from "../../services/featureFlagService";
 import { FormStatus } from "../components/FormStatus";
 import { t } from "../i18n/messages";
-import { useAuth } from "../lib/session";
-import { getAccountSupabase } from "../lib/supabase";
+
+function formatScheduledDate(value: string | null): string {
+  if (!value) return "";
+  return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+}
 
 export function DeletePage() {
-  const { user, signOut } = useAuth();
-  const [username, setUsername] = useState("");
-  const [expectedUsername, setExpectedUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [ack, setAck] = useState(false);
-  const [activeRequest, setActiveRequest] = useState(false);
+  const [status, setStatus] = useState<AccountDeletionStatus>(() => accountDeletionService.getStatus());
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [creationEnabled, setCreationEnabled] = useState(() => featureFlagService.isEnabled("ACCOUNT_30_DAY_DELETION_ENABLED"));
 
   useEffect(() => {
-    if (!user?.id) return;
     let cancelled = false;
-    const load = async () => {
-      const supabase = getAccountSupabase();
-      const [{ data: profile }, { data: request }] = await Promise.all([
-        supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
-        supabase
-          .from("account_deletion_requests")
-          .select("id,status")
-          .in("status", ["requested", "reviewing"])
-          .order("requested_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-      if (cancelled) return;
-      setExpectedUsername(profile?.username ?? "");
-      setActiveRequest(Boolean(request));
-    };
-    void load();
+    void accountDeletionService.refreshStatus().then((next) => {
+      if (!cancelled) setStatus(next);
+    });
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, []);
 
-  const requestDeletion = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!user?.email || !ack) {
-      setError(t("common.required"));
-      return;
-    }
+  useEffect(() => featureFlagService.subscribe((snapshot) => {
+    setCreationEnabled(snapshot.flags.ACCOUNT_30_DAY_DELETION_ENABLED);
+  }), []);
+
+  async function requestDeletion() {
     setLoading(true);
     setError(null);
     setMessage(null);
-    const supabase = getAccountSupabase();
-    const { error: reauthError } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password,
-    });
-    if (reauthError) {
-      setLoading(false);
-      setError(t("password.reauthFailed"));
-      return;
-    }
-
-    const { data, error: invokeError } = await supabase.functions.invoke("account-deletion", {
-      body: { action: "request", confirmationUsername: username.trim() },
-    });
+    const result = await accountDeletionService.requestDeletion();
     setLoading(false);
-    if (invokeError || (data as { status?: string } | null)?.status !== "requested") {
-      setError(invokeError?.message || t("common.error"));
+    if (!result.ok) {
+      setError(result.message || t("delete.emailSendFailed"));
       return;
     }
-    setActiveRequest(true);
-    setMessage(t("delete.requested"));
-    await supabase.auth.signOut({ scope: "global" });
-    await signOut();
-  };
+    setStatus(result.data);
+    setMessage(result.data.status === "email_pending" ? t("delete.emailSent") : t("delete.emailConfirmed"));
+  }
 
-  const cancelDeletion = async () => {
+  async function cancelDeletion() {
     setLoading(true);
     setError(null);
-    const supabase = getAccountSupabase();
-    const { data, error: invokeError } = await supabase.functions.invoke("account-deletion", {
-      body: { action: "cancel" },
-    });
+    const result = await accountDeletionService.cancelDeletion();
     setLoading(false);
-    if (invokeError || (data as { status?: string } | null)?.status !== "canceled") {
-      setError(invokeError?.message || t("common.error"));
+    if (!result.ok) {
+      setError(result.message || t("common.error"));
       return;
     }
-    setActiveRequest(false);
+    setStatus(result.data);
     setMessage(t("delete.canceled"));
-  };
+  }
+
+  const pendingDeletion = status.status === "pending_deletion";
+  const emailPending = status.status === "email_pending";
 
   return (
     <section className="ac-page">
@@ -98,28 +68,27 @@ export function DeletePage() {
         <h2>{t("delete.danger")}</h2>
         <FormStatus tone="success" message={message} />
         <FormStatus tone="error" message={error} />
-        {activeRequest ? (
-          <button type="button" className="ac-btn ac-btn--ghost" disabled={loading} onClick={() => void cancelDeletion()}>
-            {loading ? t("form.working") : t("delete.cancelRequest")}
+
+        {pendingDeletion ? (
+          <>
+            <p className="ac-muted">{t("delete.scheduled").replace("{date}", formatScheduledDate(status.scheduledDeletionAt))}</p>
+            <button type="button" className="ac-btn ac-btn--ghost" disabled={loading} onClick={() => void cancelDeletion()}>
+              {loading ? t("form.working") : t("delete.cancelRequest")}
+            </button>
+          </>
+        ) : emailPending ? (
+          <>
+            <p className="ac-muted">{t("delete.emailSent")}</p>
+            <button type="button" className="ac-btn ac-btn--ghost" disabled={loading} onClick={() => void cancelDeletion()}>
+              {loading ? t("form.working") : t("delete.cancelRequest")}
+            </button>
+          </>
+        ) : creationEnabled ? (
+          <button type="button" className="ac-btn ac-btn--danger" disabled={loading} onClick={() => void requestDeletion()}>
+            {loading ? t("form.working") : t("delete.submit")}
           </button>
         ) : (
-          <form className="ac-form" onSubmit={(e) => void requestDeletion(e)}>
-            <label className="ac-field">
-              <span>{t("password.current")}</span>
-              <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-            </label>
-            <label className="ac-field">
-              <span>{t("delete.confirmUsername")}</span>
-              <input required value={username} onChange={(e) => setUsername(e.target.value)} placeholder={expectedUsername || undefined} />
-            </label>
-            <label className="ac-check">
-              <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} />
-              <span>{t("delete.danger")}</span>
-            </label>
-            <button className="ac-btn ac-btn--danger" type="submit" disabled={loading}>
-              {loading ? t("form.working") : t("delete.submit")}
-            </button>
-          </form>
+          <p className="ac-muted">{t("delete.unavailable")}</p>
         )}
       </div>
     </section>

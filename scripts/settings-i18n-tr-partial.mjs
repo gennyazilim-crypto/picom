@@ -917,5 +917,15 @@ export default {
   "advanced.feedback.includeLogsHint": "Günlükler dışa aktarımdan önce loggingService tarafından maskelenir.",
   "advanced.copyFeedbackReport": "Geri bildirim raporunu kopyala",
   "advanced.exportDiagnosticsJson": "Tanılamayı JSON dışa aktar",
-  "advanced.openDiagnosticsFeedback": "Tanılama geri bildirimini aç"
+  "advanced.openDiagnosticsFeedback": "Tanılama geri bildirimini aç",
+  "community.deletion.title": "Topluluğu sil",
+  "community.deletion.body": "Bu topluluğu silinmek üzere işaretleyin. Kalıcı olarak kaldırılmadan önce 30 gün boyunca silme işlemini iptal edebilirsiniz.",
+  "community.deletion.request": "Topluluğu sil",
+  "community.deletion.pending": "{name} topluluğu {date} tarihinde kalıcı olarak silinecek.",
+  "community.deletion.cancelAction": "Silme işlemini iptal et",
+  "community.deletion.confirmTitle": "Bu topluluk silinsin mi?",
+  "community.deletion.confirmBody": "{name} topluluğunu silmek istediğinize emin misiniz? Bu işlemi 30 gün içinde geri alabilirsiniz.",
+  "community.deletion.cancel": "İptal",
+  "community.deletion.working": "Kaydediliyor…",
+  "community.deletion.error": "PICOM topluluk silme isteğini güvenle güncelleyemedi."
 };

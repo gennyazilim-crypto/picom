@@ -43,6 +43,11 @@
   background: color-mix(in srgb, var(--danger) 5%, var(--surface));
 }
 
+.community-management-modal .community-danger-action-card--delete {
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--border));
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+}
+
 .community-management-modal .community-danger-action-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -67,6 +72,12 @@
 }
 
 .community-management-modal .community-danger-action-card--archive .community-danger-action-icon {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 24%, var(--border));
+}
+
+.community-management-modal .community-danger-action-card--delete .community-danger-action-icon {
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 10%, var(--surface));
   border-color: color-mix(in srgb, var(--danger) 24%, var(--border));
@@ -117,6 +128,43 @@
 
 .community-management-modal .community-danger-action-card .community-mgmt-notice {
   margin-top: -2px;
+}
+
+.community-delete-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in srgb, #000 48%, transparent);
+}
+
+.community-delete-confirm-dialog {
+  width: min(100%, 420px);
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.community-delete-confirm-dialog h3,
+.community-delete-confirm-dialog p {
+  margin: 0;
+}
+
+.community-delete-confirm-dialog p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.community-delete-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 @media (max-width: 720px) {

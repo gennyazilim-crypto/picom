@@ -58,6 +58,8 @@ export const ROUTES = {
   data: "/account/data",
   deactivate: "/account/deactivate",
   deleteAccount: "/account/delete",
+  /** One-time account deletion email confirmation endpoint. */
+  deleteAccountConfirm: "/delete-confirmation",
 } as const;
 
 export type AccountRoutePath = (typeof ROUTES)[keyof typeof ROUTES];
@@ -109,4 +111,5 @@ export const RETURN_TO_ALLOWLIST: readonly string[] = [
   ROUTES.data,
   ROUTES.deactivate,
   ROUTES.deleteAccount,
+  ROUTES.deleteAccountConfirm,
 ];
