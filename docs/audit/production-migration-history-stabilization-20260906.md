@@ -23,6 +23,10 @@ authorization to execute them again.
   `20260906220000`.
 - No version, count, or latest-version change occurred during this bounded
   observation window.
+- After the exact-source reconciliation, Snapshot C was
+  `2026-09-06T14:05:31.109521Z` and Snapshot D was
+  `2026-09-06T14:06:21.910887Z`; both reported count `312` and latest
+  `20260906220000`, with the same twelve-version tail.
 - The remote rows contain no `created_by` or `idempotency_key` attribution.
 - No tracked Git commit or branch contained these three filenames before this
   reconciliation. No active local Supabase migration process or CI workflow
