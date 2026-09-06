@@ -22,7 +22,7 @@ for (const marker of ["account_deletion_email_confirmations", "interval '30 days
   if (!migration.includes(marker)) failures.push(`account lifecycle migration missing: ${marker}`);
 }
 if (!confirmPage.includes("window.history.replaceState")) failures.push("confirmation token is not removed from browser history");
-if (!config.includes("[functions.account-deletion]\nverify_jwt = false")) failures.push("public one-time confirmation endpoint is not configured");
+if (!/\[functions\.account-deletion\]\s*\r?\nverify_jwt\s*=\s*false/.test(config)) failures.push("public one-time confirmation endpoint is not configured");
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);

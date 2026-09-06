@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(30);
+select plan(41);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
 values
@@ -20,7 +20,12 @@ values
   ('b6100000-0000-4000-8000-000000000002','delete-member','Delete Member','online','QA','#10C2BB'),
   ('b6100000-0000-4000-8000-000000000003','delete-moderator','Delete Moderator','online','QA','#4466AA'),
   ('b6100000-0000-4000-8000-000000000004','delete-finalizer','Delete Finalizer','online','QA','#334455')
-on conflict (id) do update set username = excluded.username, display_name = excluded.display_name;
+on conflict (id) do update set
+  username = excluded.username,
+  display_name = excluded.display_name,
+  is_deleted = false,
+  deleted_at = null,
+  deletion_requested_at = null;
 
 insert into public.communities(id,owner_id,kind,name,accent_color,visibility,public_read_enabled,discovery_listed)
 values ('b6200000-0000-4000-8000-000000000001','b6100000-0000-4000-8000-000000000001','text','Thirty Day Delete QA','#007571','public',true,true)
@@ -61,6 +66,38 @@ select ok((select visibility='private' and not public_read_enabled and not disco
 select throws_like($$insert into public.community_members(community_id,user_id,role_id) values('b6200000-0000-4000-8000-000000000001','b6100000-0000-4000-8000-000000000002','b6300000-0000-4000-8000-000000000002')$$,'%COMMUNITY_DELETION_PENDING%','pending deletion disables new joins');
 select lives_ok($$select * from public.cancel_community_deletion('b6200000-0000-4000-8000-000000000001')$$,'owner can cancel own pending deletion');
 select ok((select scheduled_deletion_at is null and visibility='public' and public_read_enabled and discovery_listed from public.communities where id='b6200000-0000-4000-8000-000000000001'),'community cancellation restores the saved public settings');
+reset role;
+
+-- The broad own-row profile policy remains available for normal edits, while
+-- account-deletion lifecycle fields are guarded independently.
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000002',true);
+select set_config('request.jwt.claim.role','authenticated',true);
+set local role authenticated;
+select lives_ok($$update public.profiles set display_name='Deletion Member Updated', bio='Profile editing remains available' where id='b6100000-0000-4000-8000-000000000002'$$,'owner can still update regular profile fields');
+select throws_like($$select * from public.update_own_profile_domain(jsonb_build_object('displayName','Deletion Member RPC','bio','RPC profile edit','deleted_at',now()::text,'is_deleted',true))$$,'%PROFILE_PATCH_FIELD_INVALID%','canonical profile RPC rejects lifecycle keys');
+select is((select deleted_at from public.profiles where id='b6100000-0000-4000-8000-000000000002'),null::timestamptz,'profile RPC payload cannot set deleted_at');
+select throws_like($$update public.profiles set deleted_at=now() where id='b6100000-0000-4000-8000-000000000002'$$,'%PROFILE_DELETION_LIFECYCLE_MANAGED_SERVER_SIDE%','owner cannot directly set deleted_at');
+select throws_like($$update public.profiles set is_deleted=true where id='b6100000-0000-4000-8000-000000000002'$$,'%PROFILE_DELETION_LIFECYCLE_MANAGED_SERVER_SIDE%','owner cannot directly set is_deleted');
+select throws_like($$update public.profiles set deletion_requested_at=now() where id='b6100000-0000-4000-8000-000000000002'$$,'%PROFILE_DELETION_LIFECYCLE_MANAGED_SERVER_SIDE%','owner cannot directly set deletion_requested_at');
+select lives_ok($$update public.profiles set display_name='Foreign mutation attempt' where id='b6100000-0000-4000-8000-000000000001'$$,'foreign profile update is filtered by RLS');
+select is((select display_name from public.profiles where id='b6100000-0000-4000-8000-000000000001'),'Delete Owner','foreign profile remains unchanged');
+reset role;
+
+select set_config('request.jwt.claim.role','service_role',true);
+set local role service_role;
+select lives_ok($$update public.profiles set is_deleted=true, deleted_at=now(), deletion_requested_at=now() where id='b6100000-0000-4000-8000-000000000002'$$,'trusted service lifecycle path can finalize profile deletion');
+reset role;
+
+select set_config('request.jwt.claim.role','authenticated',true);
+select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000002',true);
+set local role authenticated;
+select throws_like($$update public.profiles set deleted_at=null where id='b6100000-0000-4000-8000-000000000002'$$,'%PROFILE_DELETION_LIFECYCLE_MANAGED_SERVER_SIDE%','owner cannot clear deleted_at');
+select ok((select is_deleted and deleted_at is not null from public.profiles where id='b6100000-0000-4000-8000-000000000002'),'failed direct mutation leaves lifecycle state intact');
+reset role;
+
+select set_config('request.jwt.claim.role','service_role',true);
+set local role service_role;
+update public.profiles set is_deleted=false, deleted_at=null, deletion_requested_at=null where id='b6100000-0000-4000-8000-000000000002';
 reset role;
 
 select set_config('request.jwt.claim.sub','b6100000-0000-4000-8000-000000000002',true);

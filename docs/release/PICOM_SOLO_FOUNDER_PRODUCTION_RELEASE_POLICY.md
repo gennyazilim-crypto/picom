@@ -29,6 +29,15 @@ A migration is low risk only when all of the following are true:
   existing data; and
 - the dependent feature can remain disabled after migration.
 
+### LOW_RISK_FORWARD_WITH_DESTRUCTIVE_FEATURE_DORMANT
+
+This limited variant is eligible only when migration apply itself is additive
+and non-destructive, while a separately guarded future finalizer is present but
+cannot run because its explicit activation setting and production scheduler
+remain off. The sealed manifest must name that dormant destructive capability,
+its disabled controls, and the separate certification required before either
+control may be enabled.
+
 ### HIGH_RISK
 
 The following are high risk and are not eligible for this policy: `DROP`,
@@ -51,13 +60,13 @@ apply:
 | Canonical source | Clean canonical source commit and immutable migration file are identified. |
 | Migration integrity | LF-normalized migration SHA matches the sealed manifest. |
 | Safety review | Destructive scan passes; dependency order is valid; RLS, grants, and search-path controls are reviewed. |
-| Pending set | Official linked CLI dry-run reports exactly the manifest's single pending migration. |
-| Quality | Typecheck, build, and focused notification contracts pass for the sealed source. |
+| Pending set | Official linked CLI dry-run reports exactly the sealed manifest's ordered pending migration set. A release normally contains one migration; a tightly coupled, forward-only dependency pair is allowed only when every version is explicitly sealed and no unsafe partial release is possible. |
+| Quality | Typecheck, build, and focused release contracts pass for the sealed source. |
 | Feature containment | The dependent feature flag is verified OFF before apply. |
 | Operator | The current authenticated release operator is identified and recorded without secrets. |
 
 The apply must use the official linked migration workflow. It must stop if the
-CLI offers any migration other than the sealed single version. `--include-all`,
+CLI offers any migration outside the sealed ordered version set. `--include-all`,
 `migration repair`, manual migration-history edits, database reset, and ad-hoc
 production SQL are forbidden.
 
